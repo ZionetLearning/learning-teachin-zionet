@@ -1,0 +1,32 @@
+{
+  "profiles": {
+    "Docker Compose": {
+      "commandName": "DockerCompose",
+      "commandVersion": "1.0",
+      "composeLaunchAction": "LaunchBrowser",
+      "composeLaunchServiceName": "transactionmanager",
+      "composeLaunchUrl": "{Scheme}://localhost:{ServicePort}/swagger",
+      "serviceActions": {
+        "todoaccessor": "StartDebugging",
+        "todoaccessor-dapr": "StartWithoutDebugging",
+        "todomanager": "StartDebugging",
+        "todomanager-dapr": "StartWithoutDebugging",
+        "notificationmanager": "StartDebugging",
+        "notificationmanager-dapr": "StartWithoutDebugging",
+        "apigateway": "StartDebugging",
+        "mongodb": "StartWithoutDebugging",
+        "placement": "StartWithoutDebugging",
+        "rabbitmq": "StartWithoutDebugging",
+        "bankaccountaccessor": "StartDebugging",
+        "bankaccountaccessor-dapr": "StartWithoutDebugging",
+        "redis": "StartWithoutDebugging",
+        "transactionmanager": "StartDebugging",
+        "transactionmanager-dapr": "StartWithoutDebugging",
+        "useraccountaccessor": "StartDebugging",
+        "useraccountaccessor-dapr": "StartWithoutDebugging",
+        "zipkin": "StartWithoutDebugging",
+        "signalr": "StartWithoutDebugging"
+      }
+    }
+  }
+}
