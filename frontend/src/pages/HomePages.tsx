@@ -1,6 +1,8 @@
 import { useNavigate } from "react-router-dom";
+import { useStyles } from "./style";
 
 export const HomePage = () => {
+  const classes = useStyles();
   const navigate = useNavigate();
 
   const handleNavigation = (path: string) => {
@@ -8,34 +10,36 @@ export const HomePage = () => {
   };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "16px",
-        maxWidth: "600px",
-        margin: "0 auto",
-        marginTop: "50px",
-      }}
-    >
+    <div className={classes.homePageWrapper}>
       <h1>Welcome to our internal playground project</h1>
 
       <h2>Chat Tools</h2>
-      <button onClick={() => handleNavigation("/chat/yo")}>
+      <button
+        className={classes.button}
+        onClick={() => handleNavigation("/chat/yo")}
+      >
         Chat - Yo (Yonatan)
       </button>
-      <button onClick={() => handleNavigation("/chat/da")}>
+      <button
+        className={classes.button}
+        onClick={() => handleNavigation("/chat/da")}
+      >
         Chat - Da (Daniel)
       </button>
 
       <h2>Avatar Tools</h2>
-      <button onClick={() => handleNavigation("/avatar/ou")}>
+      <button
+        className={classes.button}
+        onClick={() => handleNavigation("/avatar/ou")}
+      >
         Avatar - Ou (Ouriel)
       </button>
-      <button onClick={() => handleNavigation("/avatar/sh")}>
+      <button
+        className={classes.button}
+        onClick={() => handleNavigation("/avatar/sh")}
+      >
         Avatar - Sh (Shirley)
       </button>
     </div>
   );
 };
-
