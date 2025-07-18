@@ -31,3 +31,8 @@ obj/
 **/*.AssemblyInfo.cs
 **/*.nuget.dgspec.json
 **/*.assets.cache
+
+# ===============================
+# Configuration files
+# ===============================
+*.env
