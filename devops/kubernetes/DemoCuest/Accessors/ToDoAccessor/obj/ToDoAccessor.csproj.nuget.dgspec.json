@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "c:\\Users\\shaha\\source\\repos\\learning-teachin-zionet\\devops\\kubernetes\\DemoCuest\\Accessors\\ToDoAccessor\\ToDoAccessor.csproj": {}
+    "C:\\Users\\shaha\\source\\repos\\learning-teachin-zionet\\devops\\kubernetes\\DemoCuest\\Accessors\\ToDoAccessor\\ToDoAccessor.csproj": {}
   },
   "projects": {
-    "c:\\Users\\shaha\\source\\repos\\learning-teachin-zionet\\devops\\kubernetes\\DemoCuest\\Accessors\\ToDoAccessor\\ToDoAccessor.csproj": {
+    "C:\\Users\\shaha\\source\\repos\\learning-teachin-zionet\\devops\\kubernetes\\DemoCuest\\Accessors\\ToDoAccessor\\ToDoAccessor.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "c:\\Users\\shaha\\source\\repos\\learning-teachin-zionet\\devops\\kubernetes\\DemoCuest\\Accessors\\ToDoAccessor\\ToDoAccessor.csproj",
+        "projectUniqueName": "C:\\Users\\shaha\\source\\repos\\learning-teachin-zionet\\devops\\kubernetes\\DemoCuest\\Accessors\\ToDoAccessor\\ToDoAccessor.csproj",
         "projectName": "ToDoAccessor",
-        "projectPath": "c:\\Users\\shaha\\source\\repos\\learning-teachin-zionet\\devops\\kubernetes\\DemoCuest\\Accessors\\ToDoAccessor\\ToDoAccessor.csproj",
+        "projectPath": "C:\\Users\\shaha\\source\\repos\\learning-teachin-zionet\\devops\\kubernetes\\DemoCuest\\Accessors\\ToDoAccessor\\ToDoAccessor.csproj",
         "packagesPath": "C:\\Users\\shaha\\.nuget\\packages\\",
-        "outputPath": "c:\\Users\\shaha\\source\\repos\\learning-teachin-zionet\\devops\\kubernetes\\DemoCuest\\Accessors\\ToDoAccessor\\obj\\",
+        "outputPath": "C:\\Users\\shaha\\source\\repos\\learning-teachin-zionet\\devops\\kubernetes\\DemoCuest\\Accessors\\ToDoAccessor\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

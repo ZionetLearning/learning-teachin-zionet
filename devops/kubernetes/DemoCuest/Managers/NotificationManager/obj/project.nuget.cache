@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "/46DmkLax8g=",
+  "dgSpecHash": "3wi0aqykAYM=",
   "success": true,
-  "projectFilePath": "c:\\Users\\shaha\\source\\repos\\learning-teachin-zionet\\devops\\kubernetes\\DemoCuest\\Managers\\NotificationManager\\NotificationManager.csproj",
+  "projectFilePath": "C:\\Users\\shaha\\source\\repos\\learning-teachin-zionet\\devops\\kubernetes\\DemoCuest\\Managers\\NotificationManager\\NotificationManager.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\shaha\\.nuget\\packages\\azure.core\\1.39.0\\azure.core.1.39.0.nupkg.sha512",
     "C:\\Users\\shaha\\.nuget\\packages\\azure.identity\\1.11.4\\azure.identity.1.11.4.nupkg.sha512",

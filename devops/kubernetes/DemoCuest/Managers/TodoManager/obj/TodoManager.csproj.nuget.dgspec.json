@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "c:\\Users\\shaha\\source\\repos\\learning-teachin-zionet\\devops\\kubernetes\\DemoCuest\\Managers\\TodoManager\\TodoManager.csproj": {}
+    "C:\\Users\\shaha\\source\\repos\\learning-teachin-zionet\\devops\\kubernetes\\DemoCuest\\Managers\\TodoManager\\TodoManager.csproj": {}
   },
   "projects": {
-    "c:\\Users\\shaha\\source\\repos\\learning-teachin-zionet\\devops\\kubernetes\\DemoCuest\\Managers\\TodoManager\\TodoManager.csproj": {
+    "C:\\Users\\shaha\\source\\repos\\learning-teachin-zionet\\devops\\kubernetes\\DemoCuest\\Managers\\TodoManager\\TodoManager.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "c:\\Users\\shaha\\source\\repos\\learning-teachin-zionet\\devops\\kubernetes\\DemoCuest\\Managers\\TodoManager\\TodoManager.csproj",
+        "projectUniqueName": "C:\\Users\\shaha\\source\\repos\\learning-teachin-zionet\\devops\\kubernetes\\DemoCuest\\Managers\\TodoManager\\TodoManager.csproj",
         "projectName": "TodoManager",
-        "projectPath": "c:\\Users\\shaha\\source\\repos\\learning-teachin-zionet\\devops\\kubernetes\\DemoCuest\\Managers\\TodoManager\\TodoManager.csproj",
+        "projectPath": "C:\\Users\\shaha\\source\\repos\\learning-teachin-zionet\\devops\\kubernetes\\DemoCuest\\Managers\\TodoManager\\TodoManager.csproj",
         "packagesPath": "C:\\Users\\shaha\\.nuget\\packages\\",
-        "outputPath": "c:\\Users\\shaha\\source\\repos\\learning-teachin-zionet\\devops\\kubernetes\\DemoCuest\\Managers\\TodoManager\\obj\\",
+        "outputPath": "C:\\Users\\shaha\\source\\repos\\learning-teachin-zionet\\devops\\kubernetes\\DemoCuest\\Managers\\TodoManager\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

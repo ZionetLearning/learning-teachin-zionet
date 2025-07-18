@@ -1,0 +1,39 @@
+*.user
+*.suo
+*.log
+bin/
+obj/
+
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.sqlite
+*.db
+
+# Build folders
+bin/
+obj/
+
+# Dapr
+.dapr/
+
+# Other temp files
+*.log
+*.cache
+
+
+
+# Build and temp files
+bin/
+obj/
+*.cache
+*.db
+*.sqlite
+
+# MSBuild / VS auto-generated files
+**/GeneratedMSBuildEditorConfig.cs
+**/*.AssemblyInfo.cs
+**/*.nuget.dgspec.json
+**/*.assets.cache
