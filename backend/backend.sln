@@ -9,27 +9,55 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Engine", "Engine\Engine.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Manager", "Manager\Manager.csproj", "{D3EBF624-E649-AFC4-723A-75579D18DC0C}"
 EndProject
+Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{E2C0D16F-E647-4E4B-BF85-8E61F7C2A82A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dapr", "dapr", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+	ProjectSection(SolutionItems) = preProject
+		dapr\config.yaml = dapr\config.yaml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "components", "components", "{F0FF105B-41F5-4E9B-B432-5CDE99DEE70E}"
+	ProjectSection(SolutionItems) = preProject
+		dapr\components\pubsub.yaml = dapr\components\pubsub.yaml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		NoVariablesDefault|Any CPU = NoVariablesDefault|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{2CCE9A29-D761-B329-0660-CE29026D8FC4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{2CCE9A29-D761-B329-0660-CE29026D8FC4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2CCE9A29-D761-B329-0660-CE29026D8FC4}.NoVariablesDefault|Any CPU.ActiveCfg = Release|Any CPU
+		{2CCE9A29-D761-B329-0660-CE29026D8FC4}.NoVariablesDefault|Any CPU.Build.0 = Release|Any CPU
 		{2CCE9A29-D761-B329-0660-CE29026D8FC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2CCE9A29-D761-B329-0660-CE29026D8FC4}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C6834DE9-48FD-31C1-8DF5-D96BED81EDC8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C6834DE9-48FD-31C1-8DF5-D96BED81EDC8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C6834DE9-48FD-31C1-8DF5-D96BED81EDC8}.NoVariablesDefault|Any CPU.ActiveCfg = Release|Any CPU
+		{C6834DE9-48FD-31C1-8DF5-D96BED81EDC8}.NoVariablesDefault|Any CPU.Build.0 = Release|Any CPU
 		{C6834DE9-48FD-31C1-8DF5-D96BED81EDC8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C6834DE9-48FD-31C1-8DF5-D96BED81EDC8}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D3EBF624-E649-AFC4-723A-75579D18DC0C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D3EBF624-E649-AFC4-723A-75579D18DC0C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D3EBF624-E649-AFC4-723A-75579D18DC0C}.NoVariablesDefault|Any CPU.ActiveCfg = Release|Any CPU
+		{D3EBF624-E649-AFC4-723A-75579D18DC0C}.NoVariablesDefault|Any CPU.Build.0 = Release|Any CPU
 		{D3EBF624-E649-AFC4-723A-75579D18DC0C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D3EBF624-E649-AFC4-723A-75579D18DC0C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E2C0D16F-E647-4E4B-BF85-8E61F7C2A82A}.Debug|Any CPU.ActiveCfg = NoVariablesDefault
+		{E2C0D16F-E647-4E4B-BF85-8E61F7C2A82A}.Debug|Any CPU.Build.0 = NoVariablesDefault
+		{E2C0D16F-E647-4E4B-BF85-8E61F7C2A82A}.NoVariablesDefault|Any CPU.ActiveCfg = NoVariablesDefault
+		{E2C0D16F-E647-4E4B-BF85-8E61F7C2A82A}.NoVariablesDefault|Any CPU.Build.0 = NoVariablesDefault
+		{E2C0D16F-E647-4E4B-BF85-8E61F7C2A82A}.Release|Any CPU.ActiveCfg = NoVariablesDefault
+		{E2C0D16F-E647-4E4B-BF85-8E61F7C2A82A}.Release|Any CPU.Build.0 = NoVariablesDefault
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{F0FF105B-41F5-4E9B-B432-5CDE99DEE70E} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2C733277-52CE-4338-A414-EF30D2066690}

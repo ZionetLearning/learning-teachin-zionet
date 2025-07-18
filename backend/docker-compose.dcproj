@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" Sdk="Microsoft.Docker.Sdk">
+  <PropertyGroup Label="Globals">
+    <ProjectVersion>2.1</ProjectVersion>
+    <DockerTargetOS>Linux</DockerTargetOS>
+    <ProjectGuid>e2c0d16f-e647-4e4b-bf85-8e61f7c2a82a</ProjectGuid>
+    <DockerLaunchAction>None</DockerLaunchAction>
+    <DockerServiceUrl>
+    </DockerServiceUrl>
+    <DockerServiceName>
+    </DockerServiceName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DEBUG_AWS|AnyCPU'" />
+  <ItemGroup>
+    <None Include=".dockerignore" />
+    <None Include="dapr\components\pubsub.yaml" />
+    <None Include="dapr\components\statestore.yaml" />
+    <None Include="dapr\config.yaml" />
+    <None Include="docker-compose.yaml" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="dapr\**" />
+  </ItemGroup>
+  <ProjectExtensions>
+    <VisualStudio>
+      <UserProperties launchsettings_1json__JsonSchema="" />
+    </VisualStudio>
+  </ProjectExtensions>
+</Project>

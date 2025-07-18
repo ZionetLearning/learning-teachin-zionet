@@ -16,9 +16,6 @@ obj/
 bin/
 obj/
 
-# Dapr
-.dapr/
-
 # Other temp files
 *.log
 *.cache
