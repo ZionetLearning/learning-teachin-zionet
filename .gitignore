@@ -1,47 +1,33 @@
-*.user
-*.suo
-*.log
-bin/
-obj/
-
-
-# Visual Studio
+# ===============================
+# Visual Studio & VS Code
+# ===============================
 .vs/
 *.user
 *.suo
-*.sqlite
-*.db
 
-# Build folders
+# ===============================
+# Build output & intermediate
+# ===============================
 bin/
 obj/
 
-# Other temp files
+# ===============================
+# Temporary & cache files
+# ===============================
 *.log
 *.cache
+*.nuget.cache
 
-
-
-# Build and temp files
-bin/
-obj/
-*.cache
+# ===============================
+# Databases
+# ===============================
 *.db
 *.sqlite
 
-# MSBuild / VS auto-generated files
+# ===============================
+# Auto-generated files
+# ===============================
 **/GeneratedMSBuildEditorConfig.cs
 **/*.AssemblyInfo.cs
 **/*.nuget.dgspec.json
 **/*.assets.cache
-
-
-# Ignore build output
-bin/
-obj/
-
-# Cache and build artifacts
-*.nuget.cache
-*.db
-*.sqlite
-

@@ -3,27 +3,16 @@
   <PropertyGroup Label="Globals">
     <ProjectVersion>2.1</ProjectVersion>
     <DockerTargetOS>Linux</DockerTargetOS>
-    <ProjectGuid>e2c0d16f-e647-4e4b-bf85-8e61f7c2a82a</ProjectGuid>
-    <DockerLaunchAction>None</DockerLaunchAction>
-    <DockerServiceUrl>
-    </DockerServiceUrl>
-    <DockerServiceName>
-    </DockerServiceName>
+    <DockerLaunchAction>Launch</DockerLaunchAction>
+    <ProjectGuid>81dded9d-158b-e303-5f62-77a2896d2a5a</ProjectGuid>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DEBUG_AWS|AnyCPU'" />
   <ItemGroup>
     <None Include=".dockerignore" />
-    <None Include="dapr\components\pubsub.yaml" />
-    <None Include="dapr\components\statestore.yaml" />
-    <None Include="dapr\config.yaml" />
     <None Include="docker-compose.yaml" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Remove="dapr\**" />
   </ItemGroup>
   <ProjectExtensions>
     <VisualStudio>
-      <UserProperties launchsettings_1json__JsonSchema="" />
+      <UserProperties />
     </VisualStudio>
   </ProjectExtensions>
 </Project>
