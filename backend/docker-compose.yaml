@@ -32,6 +32,22 @@ services:
     networks:
       sb-emulator:
 
+
+# -------------------- PostgreSQL DB --------------------
+  postgres:
+    image: postgres:15
+    container_name: postgres-db
+    restart: always
+    environment:
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: postgres
+        POSTGRES_DB: appdb
+    ports:
+        - "5432:5432"
+    volumes:
+        - pgdata:/var/lib/postgresql/data
+
+
   # ------------------------ Manager Service ---------------------------
   manager:
     build:
@@ -109,8 +125,14 @@ services:
       - "5003:5003"
     environment:
       - ASPNETCORE_URLS=http://+:5003
+      - DB_HOST=postgres-db
+      - DB_PORT=5432
+      - DB_NAME=appdb
+      - DB_USER=postgres
+      - DB_PASS=postgres
     depends_on:
       - servicebus-emulator
+      - postgres
     networks:
       - microservice-net
       - sb-emulator
@@ -140,3 +162,7 @@ networks:
     driver: bridge
   sb-emulator:
     driver: bridge
+
+# ------------------------ Shared Volumes ---------------------------
+volumes:
+      pgdata:
