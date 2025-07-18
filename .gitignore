@@ -37,3 +37,14 @@ obj/
 **/*.AssemblyInfo.cs
 **/*.nuget.dgspec.json
 **/*.assets.cache
+
+
+# Ignore build output
+bin/
+obj/
+
+# Cache and build artifacts
+*.nuget.cache
+*.db
+*.sqlite
+
