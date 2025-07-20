@@ -1,10 +1,13 @@
-import { ChatDa } from "../features";
+import { ChatDa } from '../features';
+import useChatDaStyles from '../features/chat/chat-da/style';
 
 export const ChatDaPage = () => {
-  return (
-    <div>
-      <h1>Chat Da Page</h1>
-      <ChatDa />
-    </div>
-  );
+	const classes = useChatDaStyles();
+	return (
+		<div className={classes.pageWrapper}>
+			<div className={classes.chatWrapper}>
+				<ChatDa />
+			</div>
+		</div>
+	);
 };

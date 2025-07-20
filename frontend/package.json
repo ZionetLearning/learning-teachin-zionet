@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@react-nano/use-event-source": "^0.16.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-jss": "^10.10.0",
