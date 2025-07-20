@@ -1,0 +1,33 @@
+# cosmosdb-emulator-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cosmosdb-emulator
+  namespace: devops-model
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cosmosdb-emulator
+  template:
+    metadata:
+      labels:
+        app: cosmosdb-emulator
+    spec:
+      containers:
+        - name: cosmosdb
+          image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator
+          ports:
+            - containerPort: 8081 # HTTPS port
+            - containerPort: 10250 # Emulator control
+          env:
+            - name: AZURE_COSMOS_EMULATOR_PARTITION_COUNT
+              value: "3"
+            - name: AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE
+              value: "true"
+          volumeMounts:
+            - mountPath: /tmp/cosmos/appdata
+              name: cosmosdata
+      volumes:
+        - name: cosmosdata
+          emptyDir: {}

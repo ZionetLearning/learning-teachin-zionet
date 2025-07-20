@@ -25,4 +25,13 @@ resource "kubectl_manifest" "all_manifests" {
   yaml_body = templatefile("${path.module}/../kubernetes/${each.value}", {
     DOCKER_REGISTRY = var.docker_registry
   })
+
+  depends_on = [null_resource.dapr_init]
+}
+
+resource "null_resource" "dapr_init" {
+  provisioner "local-exec" {
+
+    command = "dapr init -k; kubectl apply -f todoqueue.yaml -n devops-model; kubectl apply -f clientcallback.yaml -n devops-model; kubectl apply -f clientresponsequeue.yaml -n devops-model; kubectl apply -f todomanagercallbackqueue.yaml -n devops-model;"
+  }
 }

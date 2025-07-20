@@ -8,7 +8,8 @@ metadata:
   labels:
     io.kompose.service: signalr
   name: signalr
-  namespace: default
+  namespace: devops-model
+  ##namespace: default
 spec:
   replicas: 1
   selector:
@@ -36,7 +37,6 @@ spec:
               value: "8888"
           image: ${DOCKER_REGISTRY}/signalremulator
           name: signalr
-          imagePullPolicy: Never # for local
           ports:
             - containerPort: 8888
               hostPort: 8888

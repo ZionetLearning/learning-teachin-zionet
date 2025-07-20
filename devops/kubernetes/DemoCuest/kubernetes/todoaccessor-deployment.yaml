@@ -4,14 +4,12 @@ metadata:
   annotations:
     kompose.cmd: C:\Program Files\kompose\kompose.exe convert -f docker-compose.yml
     kompose.version: 1.30.0 (9d8dcb518)
-    dapr.io/enabled: "true"
-    dapr.io/app-id: "notificationmanager"
-    dapr.io/app-port: "8080"
   creationTimestamp: null
   labels:
     io.kompose.service: todoaccessor
   name: todoaccessor
-  namespace: default
+  namespace: devops-model
+  ##namespace: default
 spec:
   replicas: 1
   selector:
@@ -23,6 +21,10 @@ spec:
       annotations:
         kompose.cmd: C:\Program Files\kompose\kompose.exe convert -f docker-compose.yml
         kompose.version: 1.30.0 (9d8dcb518)
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "todoaccessor"
+        dapr.io/app-port: "8080"
+        dapr.io/config: "dapr-config"
       creationTimestamp: null
       labels:
         io.kompose.network/democuest-democuest-dapr: "true"

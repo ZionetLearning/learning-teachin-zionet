@@ -1,0 +1,13 @@
+# cosmosdb-emulator-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: cosmosdb-emulator
+  namespace: devops-model
+spec:
+  selector:
+    app: cosmosdb-emulator
+  ports:
+    - protocol: TCP
+      port: 8081
+      targetPort: 8081
