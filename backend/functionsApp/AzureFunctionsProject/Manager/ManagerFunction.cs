@@ -12,7 +12,7 @@ namespace AzureFunctionsProject.Manager
     /// <summary>
     /// HTTP API front-end for enqueuing and retrieving generic Data entities via Service Bus and PostgreSQL.
     /// </summary>
-    public class DataAccessorFunction
+    public sealed class DataAccessorFunction
     {
         private readonly ServiceBusSender _queueSender;
         private readonly HttpClient _accessorClient;
@@ -26,7 +26,9 @@ namespace AzureFunctionsProject.Manager
             IHttpClientFactory clientFactory,
             ILogger<DataAccessorFunction> logger)
         {
-            _queueSender = sbClient.CreateSender(Queues.Incoming);
+            var queueName = Environment.GetEnvironmentVariable("IncomingQueueName")
+                            ?? throw new InvalidOperationException("IncomingQueueName is not configured");
+            _queueSender = sbClient.CreateSender(queueName);
             _accessorClient = clientFactory.CreateClient("accessor");
             _logger = logger;
         }
