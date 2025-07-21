@@ -26,9 +26,7 @@ namespace AzureFunctionsProject.Manager
             IAccessorClient accessor,
             ILogger<DataAccessorFunction> logger)
         {
-            var queueName = Environment.GetEnvironmentVariable("IncomingQueueName")
-                            ?? throw new InvalidOperationException("IncomingQueueName is not configured");
-            _queueSender = sbClient.CreateSender(queueName);
+            _queueSender = sbClient.CreateSender(Queues.Incoming);
             _accessor = accessor;
             _logger = logger;
         }
