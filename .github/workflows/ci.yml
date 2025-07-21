@@ -20,8 +20,11 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
-      - name: Restore & Build
-        run: dotnet build --no-restore
+      - name: Restore dependencies
+        run: dotnet restore ./backend/backend.sln
+
+      - name: Build
+        run: dotnet build ./backend/backend.sln --no-restore
 
       - name: Test
-        run: dotnet test --no-build --verbosity normal
+        run: dotnet test ./backend/Backend.ComponentTests/Backend.ComponentTests.csproj --no-build --verbosity normal
