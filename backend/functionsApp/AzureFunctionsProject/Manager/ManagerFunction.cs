@@ -1,4 +1,5 @@
 using Azure.Messaging.ServiceBus;
+using AzureFunctionsProject.Common;
 using AzureFunctionsProject.Models;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
@@ -43,7 +44,7 @@ namespace AzureFunctionsProject.Manager
         /// </summary>
         [Function("GetAllData")]
         public async Task<HttpResponseData> GetAll(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "data")]
+            [HttpTrigger(AuthorizationLevel.Function, "get", Route = Routes.ManagerGetAll)]
             HttpRequestData req)
         {
             var respOut = req.CreateResponse();
@@ -72,7 +73,7 @@ namespace AzureFunctionsProject.Manager
         /// </summary>
         [Function("GetDataById")]
         public async Task<HttpResponseData> GetById(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "data/{id}")]
+            [HttpTrigger(AuthorizationLevel.Function, "get", Route = Routes.ManagerGetById)]
             HttpRequestData req,
             string id)
         {
@@ -118,7 +119,7 @@ namespace AzureFunctionsProject.Manager
         /// </summary>
         [Function("CreateData")]
         public async Task<HttpResponseData> Create(
-            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "data")]
+            [HttpTrigger(AuthorizationLevel.Function, "post", Route = Routes.ManagerCreate)]
             HttpRequestData req)
         {
             DataDto dto;
@@ -172,7 +173,7 @@ namespace AzureFunctionsProject.Manager
         /// </summary>
         [Function("UpdateData")]
         public async Task<HttpResponseData> Update(
-            [HttpTrigger(AuthorizationLevel.Function, "put", Route = "data/{id}")]
+            [HttpTrigger(AuthorizationLevel.Function, "put", Route = Routes.ManagerUpdate)]
             HttpRequestData req,
             string id)
         {
@@ -238,7 +239,7 @@ namespace AzureFunctionsProject.Manager
         /// </summary>
         [Function("DeleteData")]
         public async Task<HttpResponseData> Delete(
-            [HttpTrigger(AuthorizationLevel.Function, "delete", Route = "data/{id}")]
+            [HttpTrigger(AuthorizationLevel.Function, "delete", Route = Routes.ManagerDelete)]
             HttpRequestData req,
             string id)
         {
