@@ -1,4 +1,4 @@
-name: Run component tests
+﻿name: Run component tests
 
 on:
   workflow_dispatch:
@@ -19,13 +19,16 @@ jobs:
         with:
           ref: ${{ github.event.inputs.branch }}
 
-      - name: Setup .NET 9
+      - name: Setup .NET 9
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '9.0.x'
 
-      - name: Restore & Build
-        run: dotnet build --no-restore
+      - name: Restore dependencies
+        run: dotnet restore ./backend/ContainerApp/backend.sln
 
-      - name: Test
-        run: dotnet test --no-build --verbosity normal
+      - name: Build solution
+        run: dotnet build ./backend/ContainerApp/backend.sln --no-restore
+
+      - name: Run component tests
+        run: dotnet test ./backend/ComponentTests/ComponentTests.csproj --no-build --verbosity normal
