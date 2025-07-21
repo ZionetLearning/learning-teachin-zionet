@@ -146,7 +146,8 @@ namespace AzureFunctionsProject.Manager
                 var msg = new ServiceBusMessage(messageBody)
                 {
                     MessageId = dto.Id.ToString(),
-                    Subject = "CreateData"
+                    Subject = "CreateData",
+                    TimeToLive = TimeSpan.FromMinutes(5)
                 };
                 await _queueSender.SendMessageAsync(msg);
 
@@ -214,7 +215,8 @@ namespace AzureFunctionsProject.Manager
                 var msg = new ServiceBusMessage(messageBody)
                 {
                     MessageId = $"{dto.Id}:{dto.Version}",
-                    Subject = "UpdateData"
+                    Subject = "UpdateData",
+                    TimeToLive = TimeSpan.FromMinutes(5)
                 };
                 await _queueSender.SendMessageAsync(msg);
 
@@ -264,7 +266,8 @@ namespace AzureFunctionsProject.Manager
                     MessageId = version.HasValue
                         ? $"{guid}:{version}"
                         : guid.ToString(),
-                    Subject = "DeleteData"
+                    Subject = "DeleteData",
+                    TimeToLive = TimeSpan.FromMinutes(5)
                 };
                 await _queueSender.SendMessageAsync(msg);
 
