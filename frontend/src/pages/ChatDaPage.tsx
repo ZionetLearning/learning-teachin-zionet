@@ -1,5 +1,4 @@
 import { ChatDa } from "../features";
-import React from 'react';
 
 export const ChatDaPage = () => {
   return (
