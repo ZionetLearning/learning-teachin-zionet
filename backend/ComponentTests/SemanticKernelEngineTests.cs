@@ -15,33 +15,28 @@ namespace Backend.ComponentTests
 
         public SemanticKernelEngineTests()
         {
-            string? apiKeyNullable = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
-
-            if (string.IsNullOrWhiteSpace(apiKeyNullable))
+            string? apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+            if (string.IsNullOrWhiteSpace(apiKey))
             {
                 var config = new ConfigurationBuilder()
                     .AddUserSecrets<SemanticKernelEngineTests>(optional: true)
                     .Build();
-
-                apiKeyNullable = config["OpenAI:ApiKey"];
+                apiKey = config["OpenAI:ApiKey"];
             }
 
-            if (string.IsNullOrWhiteSpace(apiKeyNullable))
+            if (string.IsNullOrWhiteSpace(apiKey))
             {
-                throw new InvalidOperationException(
-                    "Не найден OPENAI_API_KEY: задайте переменную окружения или user‑secret");
+                throw new InvalidOperationException("Not found OPENAI_API_KEY");
             }
-
-            string apiKey = apiKeyNullable!;
 
             var modelId = Environment.GetEnvironmentVariable("OPENAI_MODEL_ID")
                           ?? "gpt-4o-mini";
 
             var builder = Kernel.CreateBuilder();
-            builder.AddOpenAIChatCompletion(
+
+            builder.Services.AddOpenAIChatCompletion(
                 modelId: modelId,
-                apiKey: apiKey,
-                serviceId: "openai");
+                apiKey: apiKey);
 
             var kernel = builder.Build();
             _chatService = kernel.Services.GetRequiredService<IChatCompletionService>();

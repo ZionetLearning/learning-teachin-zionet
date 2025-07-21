@@ -5,6 +5,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+	    <UserSecretsId>Backend.ComponentTests-OpenAI</UserSecretsId>
+	    	      <UserSecretsId>Backend.ComponentTests-OpenAI</UserSecretsId>
+	  <UserSecretsId>Backend.ComponentTests-OpenAI</UserSecretsId>
+
+    <UserSecretsId>a5e79277-b962-40f5-b788-c3ea6d48e1fd</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -29,12 +34,6 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="launchSettings.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
 </Project>
