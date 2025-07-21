@@ -1,4 +1,4 @@
-﻿using System.IO;
+﻿using System;
 using System.Threading.Tasks;
 using Xunit;
 using Microsoft.Extensions.Configuration;
@@ -11,34 +11,43 @@ namespace Backend.ComponentTests
 {
     public class SemanticKernelEngineTests
     {
-        private readonly Kernel _kernel;
         private readonly IChatCompletionService _chatService;
 
         public SemanticKernelEngineTests()
         {
-            var config = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
-                .Build();
+            string? apiKeyNullable = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
 
-            var openAiSection = config.GetSection("OpenAI");
-            //var endpoint = openAiSection["Endpoint"];
-            var apiKey = openAiSection["ApiKey"];
-            var modelId = openAiSection["ModelId"] ?? "gpt-4o-mini";
+            if (string.IsNullOrWhiteSpace(apiKeyNullable))
+            {
+                var config = new ConfigurationBuilder()
+                    .AddUserSecrets<SemanticKernelEngineTests>(optional: true)
+                    .Build();
 
-            if (string.IsNullOrWhiteSpace(apiKey))
-                throw new InvalidDataException(
-                    "There is no ApiKey in the OpenAI section of appsettings.json"
-                );
+                apiKeyNullable = config["OpenAI:ApiKey"];
+            }
+
+            if (string.IsNullOrWhiteSpace(apiKeyNullable))
+            {
+                throw new InvalidOperationException(
+                    "Не найден OPENAI_API_KEY: задайте переменную окружения или user‑secret");
+            }
+
+            string apiKey = apiKeyNullable!;
+
+            var modelId = Environment.GetEnvironmentVariable("OPENAI_MODEL_ID")
+                          ?? "gpt-4o-mini";
 
             var builder = Kernel.CreateBuilder();
-            builder.AddOpenAIChatCompletion(modelId, apiKey);
+            builder.AddOpenAIChatCompletion(
+                modelId: modelId,
+                apiKey: apiKey,
+                serviceId: "openai");
 
-            _kernel = builder.Build();
-            _chatService = _kernel.GetRequiredService<IChatCompletionService>();
+            var kernel = builder.Build();
+            _chatService = kernel.Services.GetRequiredService<IChatCompletionService>();
         }
 
-        [Fact(DisplayName = "ChatCompletion returns a response with the number 4")]
+        [Fact(DisplayName = "ChatCompletion returns a response with '4' or 'four'")]
         public async Task ChatCompletion_ReturnsExpectedAnswer()
         {
             // arrange
@@ -52,14 +61,13 @@ namespace Backend.ComponentTests
             Assert.NotEmpty(results);
             var response = results[0].Content;
             Assert.False(string.IsNullOrWhiteSpace(response));
+
             bool hasDigit = response.Contains("4");
-            bool hasWord = response
-                .IndexOf("four", StringComparison.OrdinalIgnoreCase) >= 0;
+            bool hasWord = response.IndexOf("four", StringComparison.OrdinalIgnoreCase) >= 0;
 
             Assert.True(
                 hasDigit || hasWord,
-                $"The response was expected to contain '4' or 'four', but received:{response}"
-            );
+                $"Expected '4' or 'four' in response, but got: {response}");
         }
     }
 }
