@@ -1,4 +1,4 @@
-import { AvatarOu } from "../features";
+import { AvatarOu } from '../features';
 
 export const AvatarOuPage = () => {
   return (

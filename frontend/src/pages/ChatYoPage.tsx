@@ -1,4 +1,4 @@
-import { ChatYo } from '../features';
+import { ChatYo } from "../features";
 
 export const ChatYoPage = () => {
   return (
