@@ -1,13 +1,13 @@
 import { useState } from "react";
 import Lottie from "react-lottie";
 import { Play, Square, Volume2, VolumeX } from "lucide-react";
-import { useTTS } from "./hooks/useTTS";
-import { useAvatarOuStyles } from "./style";
-import speakingAnimation from "./animations/Santa.json"; // Lottie JSON
-import idleAnimation from "./animations/Idle.json"; // Optional
+import { useTTS } from "./hooks";
+import { useStyles } from "./style";
+import speakingSantaAnimation from "./animations/speakingSantaAnimation.json";
+import idleSantaAnimation from "./animations/idleSantaAnimation.json";
 
 export const AvatarOu = () => {
-  const classes = useAvatarOuStyles();
+  const classes = useStyles();
   const [text, setText] = useState("שלום, איך שלומך היום?");
   const { speak, stop, toggleMute, isPlaying, isMuted } = useTTS({
     lang: "he-IL",
@@ -35,7 +35,7 @@ export const AvatarOu = () => {
   const animationOptions = {
     loop: true,
     autoplay: true,
-    animationData: isPlaying ? speakingAnimation : idleAnimation,
+    animationData: isPlaying ? speakingSantaAnimation : idleSantaAnimation,
     rendererSettings: { preserveAspectRatio: "xMidYMid slice" },
   };
 

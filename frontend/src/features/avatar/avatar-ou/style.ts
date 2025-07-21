@@ -1,8 +1,7 @@
 import { createUseStyles } from "react-jss";
 
-export const useAvatarOuStyles = createUseStyles({
+export const useStyles = createUseStyles({
   container: {
-    height: "100vh",
     background:
       "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)",
     padding: "2rem",
@@ -10,11 +9,6 @@ export const useAvatarOuStyles = createUseStyles({
   },
 
   wrapper: {
-    width: "100%",
-    height: "100%",
-    maxWidth: "100%",
-    minWidth: "1100px",
-    margin: "0 auto",
     display: "flex",
     flexDirection: "column",
   },
@@ -63,7 +57,6 @@ export const useAvatarOuStyles = createUseStyles({
     borderRadius: "0.75rem",
     padding: "2rem",
     border: "1px solid #e2e8f0",
-    // flex: '0 0 450px',
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
@@ -143,7 +136,6 @@ export const useAvatarOuStyles = createUseStyles({
     display: "flex",
     flexDirection: "column",
     gap: "1.5rem",
-    overflow: "auto",
   },
 
   inputLabel: {
