@@ -1,8 +1,9 @@
-using System.Net;
+using AzureFunctionsProject.Common;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using Npgsql;
+using System.Net;
 
 namespace AzureFunctionsProject.Accessor
 {
@@ -21,7 +22,7 @@ namespace AzureFunctionsProject.Accessor
 
         [Function("AccessorGetAllData")]
         public async Task<HttpResponseData> GetAll(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "accessor/data")]
+            [HttpTrigger(AuthorizationLevel.Function, "get", Route = Routes.AccessorGetAll)]
             HttpRequestData req)
         {
             return req.CreateResponse(HttpStatusCode.BadRequest);
@@ -30,7 +31,7 @@ namespace AzureFunctionsProject.Accessor
 
         [Function("AccessorGetDataById")]
         public async Task<HttpResponseData> GetById(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "accessor/data/{id}")]
+            [HttpTrigger(AuthorizationLevel.Function, "get", Route = Routes.AccessorGetById)]
             HttpRequestData req,
             string id)
         {

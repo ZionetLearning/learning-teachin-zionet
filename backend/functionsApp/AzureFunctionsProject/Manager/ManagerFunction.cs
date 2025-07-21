@@ -1,4 +1,5 @@
 using Azure.Messaging.ServiceBus;
+using AzureFunctionsProject.Common;
 using AzureFunctionsProject.Models;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
@@ -25,12 +26,15 @@ namespace AzureFunctionsProject.Manager
             IAccessorClient accessor,
             ILogger<DataAccessorFunction> logger)
         {
-            var queueName = Environment.GetEnvironmentVariable("IncomingQueueName")
-                            ?? throw new InvalidOperationException("IncomingQueueName is not configured");
-            _queueSender = sbClient.CreateSender(queueName);
+            _queueSender = sbClient.CreateSender(Queues.Incoming);
             _accessor = accessor;
             _logger = logger;
         }
+
+        private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        };
 
         /// <summary>
         /// 1. GET /api/data
@@ -38,7 +42,7 @@ namespace AzureFunctionsProject.Manager
         /// </summary>
         [Function("GetAllData")]
         public async Task<HttpResponseData> GetAll(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "data")]
+            [HttpTrigger(AuthorizationLevel.Function, "get", Route = Routes.ManagerGetAll)]
             HttpRequestData req)
         {
             var respOut = req.CreateResponse();
@@ -67,7 +71,7 @@ namespace AzureFunctionsProject.Manager
         /// </summary>
         [Function("GetDataById")]
         public async Task<HttpResponseData> GetById(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "data/{id}")]
+            [HttpTrigger(AuthorizationLevel.Function, "get", Route = Routes.ManagerGetById)]
             HttpRequestData req,
             string id)
         {
@@ -85,13 +89,12 @@ namespace AzureFunctionsProject.Manager
                 if (dto is null)
                 {
                     respOut.StatusCode = HttpStatusCode.NotFound;
+                    return respOut;
                 }
-                else
-                {
-                    respOut.StatusCode = HttpStatusCode.OK;
-                    respOut.Headers.Add("ETag", $"\"{dto.Version}\"");
-                    await respOut.WriteAsJsonAsync(dto);
-                }
+
+                respOut.StatusCode = HttpStatusCode.OK;
+                respOut.Headers.Add("ETag", $"\"{dto.Version}\"");
+                await respOut.WriteAsJsonAsync(dto);
             }
             catch (HttpRequestException hre) when (hre.StatusCode == HttpStatusCode.NotFound)
             {
@@ -103,7 +106,6 @@ namespace AzureFunctionsProject.Manager
                 respOut.StatusCode = HttpStatusCode.InternalServerError;
                 await respOut.WriteStringAsync("Error retrieving data");
             }
-
             return respOut;
         }
 
@@ -113,14 +115,14 @@ namespace AzureFunctionsProject.Manager
         /// </summary>
         [Function("CreateData")]
         public async Task<HttpResponseData> Create(
-            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "data")]
+            [HttpTrigger(AuthorizationLevel.Function, "post", Route = Routes.ManagerCreate)]
             HttpRequestData req)
         {
             DataDto dto;
             try
             {
-                dto = await JsonSerializer.DeserializeAsync<DataDto>(req.Body)
-                      ?? throw new InvalidDataException();
+                dto = await JsonSerializer.DeserializeAsync<DataDto>(req.Body,JsonOptions)
+                    ?? throw new InvalidDataException();
             }
             catch
             {
@@ -144,7 +146,8 @@ namespace AzureFunctionsProject.Manager
                 var msg = new ServiceBusMessage(messageBody)
                 {
                     MessageId = dto.Id.ToString(),
-                    Subject = "CreateData"
+                    Subject = "CreateData",
+                    TimeToLive = TimeSpan.FromMinutes(5)
                 };
                 await _queueSender.SendMessageAsync(msg);
 
@@ -167,7 +170,7 @@ namespace AzureFunctionsProject.Manager
         /// </summary>
         [Function("UpdateData")]
         public async Task<HttpResponseData> Update(
-            [HttpTrigger(AuthorizationLevel.Function, "put", Route = "data/{id}")]
+            [HttpTrigger(AuthorizationLevel.Function, "put", Route = Routes.ManagerUpdate)]
             HttpRequestData req,
             string id)
         {
@@ -186,8 +189,8 @@ namespace AzureFunctionsProject.Manager
             DataDto dto;
             try
             {
-                dto = await JsonSerializer.DeserializeAsync<DataDto>(req.Body)
-                      ?? throw new InvalidDataException();
+                dto = await JsonSerializer.DeserializeAsync<DataDto>(req.Body,JsonOptions)
+                    ?? throw new InvalidDataException();
             }
             catch
             {
@@ -212,7 +215,8 @@ namespace AzureFunctionsProject.Manager
                 var msg = new ServiceBusMessage(messageBody)
                 {
                     MessageId = $"{dto.Id}:{dto.Version}",
-                    Subject = "UpdateData"
+                    Subject = "UpdateData",
+                    TimeToLive = TimeSpan.FromMinutes(5)
                 };
                 await _queueSender.SendMessageAsync(msg);
 
@@ -233,7 +237,7 @@ namespace AzureFunctionsProject.Manager
         /// </summary>
         [Function("DeleteData")]
         public async Task<HttpResponseData> Delete(
-            [HttpTrigger(AuthorizationLevel.Function, "delete", Route = "data/{id}")]
+            [HttpTrigger(AuthorizationLevel.Function, "delete", Route = Routes.ManagerDelete)]
             HttpRequestData req,
             string id)
         {
@@ -262,7 +266,8 @@ namespace AzureFunctionsProject.Manager
                     MessageId = version.HasValue
                         ? $"{guid}:{version}"
                         : guid.ToString(),
-                    Subject = "DeleteData"
+                    Subject = "DeleteData",
+                    TimeToLive = TimeSpan.FromMinutes(5)
                 };
                 await _queueSender.SendMessageAsync(msg);
 

@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace AzureFunctionsProject.Models
+﻿namespace AzureFunctionsProject.Models
 {
     /// <summary>
     /// Data transfer object for generic Data entities.

@@ -1,5 +1,4 @@
-﻿
-namespace AzureFunctionsProject.Models
+﻿namespace AzureFunctionsProject.Common
 {
     public static class Queues
     {

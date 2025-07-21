@@ -9,8 +9,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Engines", "Engines", "{4AAC
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Managers", "Managers", "{62962A45-5ED8-4B07-88FF-2F364D0E5690}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiGateway", "ApiGateway\ApiGateway.csproj", "{1E483800-150A-41B4-AA7B-34055FA62D01}"
-EndProject
 Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{81DDED9D-158B-E303-5F62-77A2896D2A5A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ToDoAccessor", "Accessors\ToDoAccessor\ToDoAccessor.csproj", "{54AF6ACF-FB74-481D-BD07-55A24A16766E}"
@@ -48,12 +46,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SignalREmulator", "SignalRE
 		SignalREmulator\Dockerfile = SignalREmulator\Dockerfile
 		SignalREmulator\settings.json = SignalREmulator\settings.json
 	EndProjectSection
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserAccountAccessor", "Accessors\UserAccountAccessor\UserAccountAccessor.csproj", "{2066D519-BE2C-4BDB-8992-138EFF72A985}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BankAccountAccessor", "Accessors\BankAccountAccessor\BankAccountAccessor.csproj", "{0E1F922E-0995-494A-A2BE-8AAB67BA950A}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TransactionManager", "Managers\TransactionManager\TransactionManager.csproj", "{DB66EE57-EA95-4BC0-A07A-DB1381E47B2A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
