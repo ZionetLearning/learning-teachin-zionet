@@ -1,6 +1,9 @@
 ﻿name: CI
 
 on:
+  push:
+    branches:
+      - add-component-test-ai  
   pull_request:
     branches: [main]
 
