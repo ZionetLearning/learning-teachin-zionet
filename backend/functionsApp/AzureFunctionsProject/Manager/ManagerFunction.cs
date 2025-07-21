@@ -97,7 +97,6 @@ namespace AzureFunctionsProject.Manager
                 respOut.StatusCode = HttpStatusCode.OK;
                 respOut.Headers.Add("ETag", $"\"{dto.Version}\"");
                 await respOut.WriteAsJsonAsync(dto);
-                return respOut;
             }
             catch (HttpRequestException hre) when (hre.StatusCode == HttpStatusCode.NotFound)
             {
@@ -109,6 +108,7 @@ namespace AzureFunctionsProject.Manager
                 respOut.StatusCode = HttpStatusCode.InternalServerError;
                 await respOut.WriteStringAsync("Error retrieving data");
             }
+            return respOut;
         }
 
         /// <summary>
