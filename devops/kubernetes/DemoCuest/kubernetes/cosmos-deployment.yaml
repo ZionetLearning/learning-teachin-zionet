@@ -1,4 +1,3 @@
-# cosmosdb-emulator-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -15,19 +14,25 @@ spec:
         app: cosmosdb-emulator
     spec:
       containers:
-        - name: cosmosdb
+        - name: cosmosdb-emulator
           image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator
           ports:
-            - containerPort: 8081 # HTTPS port
-            - containerPort: 10250 # Emulator control
+            - containerPort: 8081  # HTTPS port for emulator
+            - containerPort: 10250 # Emulator control (optional)
           env:
             - name: AZURE_COSMOS_EMULATOR_PARTITION_COUNT
               value: "3"
             - name: AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE
               value: "true"
+            - name: AZURE_COSMOS_EMULATOR_ALLOW_NETWORK_ACCESS
+              value: "true"
+            - name: AZURE_COSMOS_EMULATOR_NOUI
+              value: "true"
+            - name: AZURE_COSMOS_EMULATOR_ENABLE_PREVIEW
+              value: "true"
           volumeMounts:
-            - mountPath: /tmp/cosmos/appdata
-              name: cosmosdata
+            - name: cosmosdata
+              mountPath: /tmp/cosmos/appdata
       volumes:
         - name: cosmosdata
           emptyDir: {}

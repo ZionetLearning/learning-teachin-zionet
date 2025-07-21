@@ -57,6 +57,18 @@ resource "kubernetes_secret" "signalr_connection" {
   depends_on = [kubernetes_namespace.devops_model]
 }
 
+resource "kubernetes_secret" "cosmosdb_connection" {
+  metadata {
+    name      = "cosmosdb-connection"
+    namespace = kubernetes_namespace.devops_model.metadata[0].name
+  }
+  data = {
+    CosmosDbConnectionString = "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;"
+  }
+  type = "Opaque"
+  depends_on = [kubernetes_namespace.devops_model]
+}
+
 resource "kubectl_manifest" "namespace" {
   yaml_body = file("${path.module}/../kubernetes/namespace-model.yaml")
   depends_on = [kubernetes_namespace.devops_model]
@@ -103,7 +115,8 @@ resource "kubectl_manifest" "dapr_config" {
   depends_on = [
     null_resource.wait_for_dapr_control_plane,
     kubectl_manifest.namespace,
-    kubernetes_secret.signalr_connection
+    kubernetes_secret.signalr_connection,
+    kubernetes_secret.cosmosdb_connection
   ]
 }
 
@@ -112,7 +125,8 @@ resource "kubectl_manifest" "dapr_components" {
   yaml_body   = file("${path.module}/../kubernetes/dapr/components/${each.value}")
   depends_on  = [
     kubectl_manifest.dapr_config,
-    kubernetes_secret.signalr_connection
+    kubernetes_secret.signalr_connection,
+    kubernetes_secret.cosmosdb_connection
   ]
 }
 

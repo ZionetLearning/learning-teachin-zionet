@@ -36,6 +36,15 @@ spec:
               value: Development
             - name: ASPNETCORE_URLS
               value: http://+:8080
+            - name: TodoCosmosDbSettings__ConnectionString
+              valueFrom:
+                secretKeyRef:
+                  name: cosmosdb-connection
+                  key: CosmosDbConnectionString
+            - name: TodoCosmosDbSettings__DatabaseName
+              value: ToDoDatabase
+            - name: TodoCosmosDbSettings__ContainerName
+              value: ToDos
           image: ${DOCKER_REGISTRY}/todoaccessor
           name: todoaccessor
           ports:

@@ -36,7 +36,10 @@ spec:
             - name: ASPNETCORE_URLS
               value: http://notificationmanager:8080
             - name: AZURE__SignalR__ConnectionString
-              value: Endpoint=http://host.docker.internal:8888;Port=8888;AccessKey=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGH;Version=1.0;
+              valueFrom:
+                secretKeyRef:
+                  name: dapr-secretstore
+                  key: SignalRConnectionString
           image: ${DOCKER_REGISTRY}/notificationmanager:latest
           name: notificationmanager
           ports:
