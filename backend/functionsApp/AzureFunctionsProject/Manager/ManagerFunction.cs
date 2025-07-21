@@ -3,7 +3,6 @@ using AzureFunctionsProject.Models;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
-using System.Net.Http.Json;
 using System.Net;
 using System.Text.Json;
 
@@ -15,7 +14,7 @@ namespace AzureFunctionsProject.Manager
     public sealed class DataAccessorFunction
     {
         private readonly ServiceBusSender _queueSender;
-        private readonly HttpClient _accessorClient;
+        private readonly IAccessorClient _accessor;
         private readonly ILogger<DataAccessorFunction> _logger;
 
         /// <summary>
@@ -23,13 +22,13 @@ namespace AzureFunctionsProject.Manager
         /// </summary>
         public DataAccessorFunction(
             ServiceBusClient sbClient,
-            IHttpClientFactory clientFactory,
+            IAccessorClient accessor,
             ILogger<DataAccessorFunction> logger)
         {
             var queueName = Environment.GetEnvironmentVariable("IncomingQueueName")
                             ?? throw new InvalidOperationException("IncomingQueueName is not configured");
             _queueSender = sbClient.CreateSender(queueName);
-            _accessorClient = clientFactory.CreateClient("accessor");
+            _accessor = accessor;
             _logger = logger;
         }
 
@@ -46,8 +45,7 @@ namespace AzureFunctionsProject.Manager
             try
             {
                 // call the accessor function
-                var list = await _accessorClient
-                              .GetFromJsonAsync<List<DataDto>>("api/accessor/data");
+                var list = await _accessor.GetAllDataAsync();
 
                 respOut.StatusCode = HttpStatusCode.OK;
                 await respOut.WriteAsJsonAsync(list);
@@ -83,8 +81,7 @@ namespace AzureFunctionsProject.Manager
 
             try
             {
-                var dto = await _accessorClient
-                           .GetFromJsonAsync<DataDto>($"api/accessor/data/{id}");
+                var dto = await _accessor.GetDataByIdAsync(guid);
                 if (dto is null)
                 {
                     respOut.StatusCode = HttpStatusCode.NotFound;

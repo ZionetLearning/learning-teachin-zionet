@@ -1,4 +1,5 @@
 using Azure.Messaging.ServiceBus;
+using AzureFunctionsProject.Manager;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Builder;
 using Microsoft.Extensions.Configuration;
@@ -31,12 +32,13 @@ builder.Services.AddSingleton<Func<NpgsqlConnection>>(sp =>
 );
 
 // 5. Accessor HTTP client
-builder.Services.AddHttpClient("accessor", client =>
-{
+builder.Services
+     .AddHttpClient<IAccessorClient, AccessorClient>(client =>
+     {
     client.BaseAddress = new Uri(
-        builder.Configuration.GetValue<string>("FUNCTIONS_BASE_URL")
-        ?? "http://localhost:7071/"
-    );
-});
+    builder.Configuration
+                        .GetValue<string>("FUNCTIONS_BASE_URL")
+                 ?? "http://localhost:7071/");
+         });
 
 builder.Build().Run();
