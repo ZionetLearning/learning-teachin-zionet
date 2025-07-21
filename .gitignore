@@ -36,5 +36,3 @@ obj/
 # Configuration files
 # ===============================
 *.env
-
-node_modules
