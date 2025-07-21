@@ -5,7 +5,6 @@ export const AvatarShPage = () => {
     <div>
       <h1>Avatar Sh Page
          
-         
       </h1>
       <AvatarSh />
     </div>
