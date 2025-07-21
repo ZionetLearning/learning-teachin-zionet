@@ -26,6 +26,12 @@ export const HomePage = () => {
       >
         Chat - Da (Daniel)
       </button>
+      <button
+        className={classes.button}
+        onClick={() => handleNavigation("/chat/ou")}
+      >
+        Chat - Ou (Ouriel)
+      </button>
 
       <h2>Avatar Tools</h2>
       <button

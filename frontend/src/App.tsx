@@ -8,6 +8,7 @@ import {
 } from "./pages";
 
 import "./App.css";
+import { ChatOuPage } from "./pages/ChatOuPage";
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/chat/yo" element={<ChatYoPage />} />
         <Route path="/chat/da" element={<ChatDaPage />} />
+        <Route path="/chat/ou" element={<ChatOuPage />} />
         <Route path="/avatar/ou" element={<AvatarOuPage />} />
         <Route path="/avatar/sh" element={<AvatarShPage />} />
       </Routes>
