@@ -5,7 +5,7 @@ import {
 	type Action,
 	type Message,
 	type State,
-} from '../../types/chat-da';
+} from '../../../../../types';
 
 export const ChatDaContext = createContext<{
 	state: State;

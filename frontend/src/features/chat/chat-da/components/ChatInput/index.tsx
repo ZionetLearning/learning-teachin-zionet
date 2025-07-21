@@ -1,5 +1,6 @@
-import useChatDaStyles from '../../features/chat/chat-da/style';
-import { SendIcon } from '../icons';
+import { SendIcon } from './icons';
+
+import useStyles from './style';
 
 interface InputProps {
 	input: string;
@@ -14,7 +15,7 @@ export const ChatInput = ({
 	sendMessage,
 	disabled,
 }: InputProps) => {
-	const classes = useChatDaStyles();
+	const classes = useStyles();
 
 	return (
 		<footer className={classes.inputWrapper}>
@@ -29,10 +30,13 @@ export const ChatInput = ({
 						setInput('');
 					}
 				}}
+				autoComplete="off"
 				placeholder="Type a message..."
 				disabled={disabled}
 			/>
 			<SendIcon
+				width={40}
+				height={40}
 				className={classes.sendButton}
 				fill={disabled ? '#ccc' : 'currentColor'}
 				stroke={disabled ? '#ccc' : 'currentColor'}

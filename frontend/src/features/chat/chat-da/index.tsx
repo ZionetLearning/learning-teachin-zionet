@@ -1,16 +1,15 @@
 import { useState } from 'react';
 
-import { ChatDaProvider } from '../../../context/chat-da/chatProvider';
-import { FullScreenChat } from './FullScreenChat';
-import { SidebarChat } from './SidebarChat';
+import { ChatProvider } from './providers/chat-provider';
+import { FullScreenChat, SidebarChat } from './views';
 
-import useChatDaStyles from './style';
+import useStyles from './style';
 
 export const ChatDa = () => {
-	const classes = useChatDaStyles();
+	const classes = useStyles();
 	const [view, setView] = useState<'sidebar' | 'full'>('sidebar');
 	return (
-		<ChatDaProvider>
+		<ChatProvider>
 			<button
 				className={classes.toggleButton}
 				onClick={() =>
@@ -20,6 +19,6 @@ export const ChatDa = () => {
 				Toggle View
 			</button>
 			{view === 'sidebar' ? <SidebarChat /> : <FullScreenChat />}
-		</ChatDaProvider>
+		</ChatProvider>
 	);
 };

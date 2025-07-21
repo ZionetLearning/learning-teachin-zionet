@@ -5,9 +5,9 @@ import {
 	useEventSourceListener,
 } from '@react-nano/use-event-source';
 
-import { useChatContext } from '../context/chat-da/chatContext';
-import { MockEventSource } from '../features/chat/chat-da/mock-eventsource';
-import { ChatAction } from '../types/chat-da';
+import { ChatAction } from '../../../../types/chat-da';
+import { useChatContext } from '../context/chat-context';
+import { MockEventSource } from '../mock-eventsource';
 
 export const useChat = () => {
 	const { dispatch } = useChatContext();

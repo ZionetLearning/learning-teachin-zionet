@@ -1,8 +1,9 @@
-import useChatDaStyles from '../../features/chat/chat-da/style';
-import type { Message } from '../../types/chat-da';
+import type { Message } from '../../../../../types';
+
+import useStyles from './style';
 
 export const ChatMessage = ({ message }: { message: Message }) => {
-	const classes = useChatDaStyles();
+	const classes = useStyles();
 
 	return (
 		<div

@@ -1,14 +1,6 @@
 import { createUseStyles } from 'react-jss';
 
-const useChatDaStyles = createUseStyles({
-	pageWrapper: {
-		display: 'flex',
-		height: 'calc(100vh - 4rem)',
-	},
-	chatWrapper: {
-		flex: 1,
-		display: 'flex',
-	},
+const useStyles = createUseStyles({
 	sidebar: {
 		flex: '0 0 30%',
 		display: 'flex',
@@ -41,70 +33,6 @@ const useChatDaStyles = createUseStyles({
 		borderRadius: 4,
 		cursor: 'pointer',
 	},
-	message: {
-		maxWidth: '80%',
-		padding: '8px 12px',
-		borderRadius: 12,
-		fontSize: 14,
-		overflowWrap: 'break-word',
-		wordBreak: 'break-word',
-	},
-	userMessage: {
-		alignSelf: 'flex-end',
-		background: '#007aff',
-		color: '#fff',
-		textAlign: 'left',
-	},
-	botMessage: {
-		alignSelf: 'flex-start',
-		background: '#e5e5ea',
-		color: '#000',
-		textAlign: 'left',
-	},
-	input: {
-		boxSizing: 'border-box',
-		width: '100%',
-		padding: 8,
-		borderRadius: 4,
-		border: '1px solid #ccc',
-		fontSize: 14,
-		backgroundColor: '#fff',
-		color: '#333',
-		outline: 'none',
-	},
-	inputWrapper: {
-		display: 'flex',
-		alignItems: 'center',
-		gap: 8,
-		borderTop: '1px solid #ccc',
-		padding: 8,
-		background: '#f5f5f5',
-	},
-	sendButton: {
-		width: 40,
-		height: 40,
-		backgroundColor: 'transparent',
-		border: 'none',
-		cursor: 'pointer',
-		color: '#007bff',
-		'&:hover': {
-			color: '#0056b3',
-		},
-	},
-	header: {
-		backgroundColor: '#007bff',
-		padding: '10px 20px',
-		fontSize: '1.5rem',
-		boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-		gap: 8,
-		display: 'flex',
-		alignItems: 'center',
-		justifyContent: 'center',
-	},
-	chatIcon: {
-		width: 24,
-		height: 24,
-	},
 });
 
-export default useChatDaStyles;
+export default useStyles;

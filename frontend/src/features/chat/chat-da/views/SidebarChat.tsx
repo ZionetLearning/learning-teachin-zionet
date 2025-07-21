@@ -1,17 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { useChatContext } from '../../../context/chat-da/chatContext';
-import { useChat } from '../../../hooks/useChat';
-import { ChatHeader } from '../../../components/chat-da/ChatHeader';
-import { ChatInput } from '../../../components/chat-da/ChatInput';
-import { ChatMessage } from '../../../components/chat-da/ChatMessage';
+import { ChatHeader, ChatInput, ChatMessage } from '../components';
+import { useChatContext } from '../context/chat-context';
+import { useChat } from '../hooks';
 
-import useChatDaStyles from './style';
+import useStyles from '../style';
 
-export const FullScreenChat = () => {
+export const SidebarChat = () => {
 	const { sendMessage } = useChat();
 	const { state } = useChatContext();
-	const classes = useChatDaStyles();
+	const classes = useStyles();
 
 	const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -31,7 +29,7 @@ export const FullScreenChat = () => {
 	);
 
 	return (
-		<div className={classes.fullScreen}>
+		<aside className={classes.sidebar}>
 			<ChatHeader />
 			<main className={classes.messagesContainer}>
 				{state.messages.map((message) => (
@@ -45,6 +43,6 @@ export const FullScreenChat = () => {
 				sendMessage={sendMessage}
 				disabled={botTyping}
 			/>
-		</div>
+		</aside>
 	);
 };

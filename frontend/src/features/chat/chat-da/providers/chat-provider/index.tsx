@@ -1,9 +1,9 @@
 import { useReducer, type ReactNode } from 'react';
 
-import type { State } from '../../types/chat-da';
-import { ChatDaContext, ChatReducer } from './chatContext';
+import type { State } from '../../../../../types';
+import { ChatDaContext, ChatReducer } from '../../context/chat-context';
 
-export const ChatDaProvider = ({ children }: { children: ReactNode }) => {
+export const ChatProvider = ({ children }: { children: ReactNode }) => {
 	const [state, dispatch] = useReducer(ChatReducer, { messages: [] } as State);
 
 	return (
