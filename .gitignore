@@ -39,3 +39,29 @@ obj/
 # Configuration files
 # ===============================
 *.env
+
+# VS / .NET build artifacts
+bin/
+obj/
+
+# VS Code and VS settings
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.cache
+*.dbmdl
+
+# Docker
+Docker/
+docker-compose.*
+**/*.dcproj
+
+# Local settings
+Properties/launchSettings.json
+
+# Debug
+*.pdb
+
+*.cache

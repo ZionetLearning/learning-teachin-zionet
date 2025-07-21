@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  azure-sql-edge:
+    image: mcr.microsoft.com/azure-sql-edge:latest
+    hostname: sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "YourStrongPassw0rd"
+    ports:
+      - "1433:1433"
+
+  servicebus-emulator:
+    image: mcr.microsoft.com/azure-messaging/servicebus-emulator:latest
+    depends_on:
+      - azure-sql-edge
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "YourStrongPassw0rd"
+      SAS_KEY_VALUE: "YourSASKey"
+      SQL_SERVER: "sqlserver"
+      SQL_PORT: "1433"
+      CONFIG_FILE_PATH: "/ServiceBus_Emulator/ConfigFiles/Config.json"
+    ports:
+      - "5672:5672"
+      - "9090:9090" 
+    volumes:
+      - ./config.json:/ServiceBus_Emulator/ConfigFiles/Config.json
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    container_name: azurite
+    ports:
+      - "10000:10000" # Blob
+      - "10001:10001" # Queue
+      - "10002:10002" # Table
+  azurefunctionsproject:
+    image: ${DOCKER_REGISTRY-}azurefunctionsproject
+    build:
+      context: .
+      dockerfile: AzureFunctionsProject/Dockerfile
+
+  servicebus-web-ui:
+    image: ndelvalle/servicebus-web
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVICEBUS_CONNECTION_STRING=Endpoint=sb://localhost/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true
+
