@@ -3,9 +3,10 @@
 on:
   push:
     branches:
-      - add-component-test-ai  
+      - add-component-test-ai
   pull_request:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   test:
@@ -13,7 +14,8 @@ jobs:
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
       - name: Setup .NET 9
         uses: actions/setup-dotnet@v3
@@ -21,10 +23,10 @@ jobs:
           dotnet-version: '9.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore ./backend/backend.sln
+        run: dotnet restore ./backend/ContainerApp/backend.sln
 
-      - name: Build
-        run: dotnet build ./backend/backend.sln --no-restore
+      - name: Build solution
+        run: dotnet build ./backend/ContainerApp/backend.sln --no-restore
 
-      - name: Test
-        run: dotnet test ./backend/Backend.ComponentTests/Backend.ComponentTests.csproj --no-build --verbosity normal
+      - name: Run component tests
+        run: dotnet test ./backend/ComponentTests/ComponentTests.csproj --no-build --verbosity normal
