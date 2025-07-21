@@ -72,9 +72,7 @@ export const AvatarOu = () => {
                 }`}
               >
                 <div
-                  className={`${classes.statusDot} ${
-                    isPlaying ? classes.statusDotPlaying : ""
-                  }`}
+                  className={`${classes.statusDot} ${isPlaying ? classes.statusDotPlaying : ""}`}
                 ></div>
                 {isPlaying ? "מדבר עכשיו" : "מוכן לדבר"}
               </div>
