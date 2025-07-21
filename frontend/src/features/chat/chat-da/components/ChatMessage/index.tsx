@@ -1,18 +1,18 @@
-import type { Message } from '../../../../../types';
+import type { Message } from "../../../../../types";
 
-import useStyles from './style';
+import useStyles from "./style";
 
 export const ChatMessage = ({ message }: { message: Message }) => {
-	const classes = useStyles();
+  const classes = useStyles();
 
-	return (
-		<div
-			key={message.id}
-			className={`${classes.message} ${
-				message.sender === 'user' ? classes.userMessage : classes.botMessage
-			}`}
-		>
-			{message.text}
-		</div>
-	);
+  return (
+    <div
+      key={message.id}
+      className={`${classes.message} ${
+        message.sender === "user" ? classes.userMessage : classes.botMessage
+      }`}
+    >
+      {message.text}
+    </div>
+  );
 };

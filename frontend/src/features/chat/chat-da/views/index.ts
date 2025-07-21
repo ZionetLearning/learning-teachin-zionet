@@ -1,2 +1,2 @@
-export { FullScreenChat } from './FullScreenChat';
-export { SidebarChat } from './SidebarChat';
+export { FullScreenChat } from "./FullScreenChat";
+export { SidebarChat } from "./SidebarChat";

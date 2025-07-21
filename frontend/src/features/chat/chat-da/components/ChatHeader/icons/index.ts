@@ -1,1 +1,1 @@
-export { ChatIcon } from './ChatIcon';
+export { ChatIcon } from "./ChatIcon";

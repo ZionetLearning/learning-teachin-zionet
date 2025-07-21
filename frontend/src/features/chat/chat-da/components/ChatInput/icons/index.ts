@@ -1,1 +1,1 @@
-export { SendIcon } from './SendIcon';
+export { SendIcon } from "./SendIcon";
