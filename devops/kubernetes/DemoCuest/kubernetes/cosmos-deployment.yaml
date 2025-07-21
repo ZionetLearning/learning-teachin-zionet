@@ -30,6 +30,8 @@ spec:
               value: "true"
             - name: AZURE_COSMOS_EMULATOR_ENABLE_PREVIEW
               value: "true"
+            - name: AZURE_COSMOS_EMULATOR_CERTIFICATE_POLICY
+              value: accept_certificate
           volumeMounts:
             - name: cosmosdata
               mountPath: /tmp/cosmos/appdata

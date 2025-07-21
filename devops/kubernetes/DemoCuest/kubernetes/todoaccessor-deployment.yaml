@@ -9,7 +9,6 @@ metadata:
     io.kompose.service: todoaccessor
   name: todoaccessor
   namespace: devops-model
-  ##namespace: default
 spec:
   replicas: 1
   selector:
@@ -45,11 +44,23 @@ spec:
               value: ToDoDatabase
             - name: TodoCosmosDbSettings__ContainerName
               value: ToDos
+            - name: AZURE_COSMOS_EMULATOR_SKIP_CERT_VALIDATION
+              value: "true"
           image: ${DOCKER_REGISTRY}/todoaccessor
           name: todoaccessor
           ports:
             - containerPort: 8080
-              #hostPort: 5075
               protocol: TCP
           resources: {}
+          volumeMounts:
+            - name: cosmosdbemulator-crt
+              mountPath: /certs/cosmosdbemulator.crt
+              subPath: cosmosdbemulator.crt
       restartPolicy: Always
+      volumes:
+        - name: cosmosdbemulator-crt
+          secret:
+            secretName: cosmosdb-cert
+            items:
+              - key: cosmosdbemulator.crt
+                path: cosmosdbemulator.crt

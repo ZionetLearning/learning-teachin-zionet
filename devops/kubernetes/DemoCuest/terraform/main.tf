@@ -63,7 +63,19 @@ resource "kubernetes_secret" "cosmosdb_connection" {
     namespace = kubernetes_namespace.devops_model.metadata[0].name
   }
   data = {
-    CosmosDbConnectionString = "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;"
+    CosmosDbConnectionString = "AccountEndpoint=https://cosmosdb-emulator:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;"
+  }
+  type = "Opaque"
+  depends_on = [kubernetes_namespace.devops_model]
+}
+
+resource "kubernetes_secret" "cosmosdb_cert" {
+  metadata {
+    name      = "cosmosdb-cert"
+    namespace = kubernetes_namespace.devops_model.metadata[0].name
+  }
+  data = {
+    "cosmosdbemulator.crt" = filebase64("${path.module}/../kubernetes/cosmosdbemulator.crt")
   }
   type = "Opaque"
   depends_on = [kubernetes_namespace.devops_model]
@@ -116,7 +128,8 @@ resource "kubectl_manifest" "dapr_config" {
     null_resource.wait_for_dapr_control_plane,
     kubectl_manifest.namespace,
     kubernetes_secret.signalr_connection,
-    kubernetes_secret.cosmosdb_connection
+    kubernetes_secret.cosmosdb_connection,
+    kubernetes_secret.cosmosdb_cert
   ]
 }
 
@@ -126,7 +139,8 @@ resource "kubectl_manifest" "dapr_components" {
   depends_on  = [
     kubectl_manifest.dapr_config,
     kubernetes_secret.signalr_connection,
-    kubernetes_secret.cosmosdb_connection
+    kubernetes_secret.cosmosdb_connection,
+    kubernetes_secret.cosmosdb_cert
   ]
 }
 
