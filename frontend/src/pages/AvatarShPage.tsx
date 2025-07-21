@@ -1,4 +1,4 @@
-import { AvatarSh } from "../features";
+import { AvatarSh } from '../features';
 
 export const AvatarShPage = () => {
   return (
