@@ -24,5 +24,3 @@ To test using curl:
 ```bash
 curl -X POST -H "Content-Type: text/plain" -d "Hello from cURL" http://localhost:7071/api/send
 ```
-
-
