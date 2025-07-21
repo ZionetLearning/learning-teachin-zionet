@@ -32,6 +32,11 @@ namespace AzureFunctionsProject.Manager
             _logger = logger;
         }
 
+        private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        };
+
         /// <summary>
         /// 1. GET /api/data
         /// Retrieves all Data records via the accessor.
@@ -119,8 +124,8 @@ namespace AzureFunctionsProject.Manager
             DataDto dto;
             try
             {
-                dto = await JsonSerializer.DeserializeAsync<DataDto>(req.Body)
-                      ?? throw new InvalidDataException();
+                dto = await JsonSerializer.DeserializeAsync<DataDto>(req.Body,JsonOptions)
+                    ?? throw new InvalidDataException();
             }
             catch
             {
@@ -186,8 +191,8 @@ namespace AzureFunctionsProject.Manager
             DataDto dto;
             try
             {
-                dto = await JsonSerializer.DeserializeAsync<DataDto>(req.Body)
-                      ?? throw new InvalidDataException();
+                dto = await JsonSerializer.DeserializeAsync<DataDto>(req.Body,JsonOptions)
+                    ?? throw new InvalidDataException();
             }
             catch
             {
