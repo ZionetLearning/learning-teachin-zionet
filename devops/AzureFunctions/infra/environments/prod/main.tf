@@ -73,3 +73,17 @@ module "function_app" {
   storage_account_access_key = module.storage_account.primary_access_key
   service_bus_connection_string = module.service_bus.connection_string
 }
+
+module "database" {
+  source              = "../../modules/database"
+
+  cosmos_account_name = var.cosmos_account_name
+  database_name       = var.database_name
+  location            = module.resource_group.location
+  resource_group_name = module.resource_group.name
+  offer_type          = var.offer_type
+  kind                = var.kind
+  consistency_policy  = var.consistency_policy
+  failover_priority   = var.failover_priority
+  capabilities        = var.capabilities
+}

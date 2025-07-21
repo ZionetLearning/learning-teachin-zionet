@@ -39,3 +39,51 @@ variable "app_service_plan_sku" {
         size = string
     })
 }
+
+
+
+# cosmos_account_name
+variable "cosmos_account_name" {
+  description = "Name of the Cosmos DB account"
+  type        = string
+}
+
+# database_name
+variable "database_name" {
+  description = "Name of the Mongo database"
+  type        = string
+}
+
+# var.offer_type
+variable "offer_type" {
+  description = "Offer type for the Cosmos DB account (e.g., Standard)"
+  type        = string
+}
+
+# var.kind
+variable "kind" {
+  description = "Kind of the Cosmos DB account (e.g., MongoDB, GlobalDocumentDB)"
+  type        = string
+}
+
+# consistency_policy
+variable "consistency_policy" {
+  description = "Consistency policy for the Cosmos DB account"
+  type        = object({
+    consistency_level = string
+  })
+}
+
+# failover_priority
+variable "failover_priority" {
+  description = "Failover priority for the Cosmos DB account"
+  type        = number
+}
+
+# capabilities
+variable "capabilities" {
+  description = "Capabilities for the Cosmos DB account"
+  type        = list(object({
+    name = string
+  }))
+}
