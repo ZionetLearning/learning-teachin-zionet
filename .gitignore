@@ -1,0 +1,38 @@
+# ===============================
+# Visual Studio & VS Code
+# ===============================
+.vs/
+*.user
+*.suo
+
+# ===============================
+# Build output & intermediate
+# ===============================
+bin/
+obj/
+
+# ===============================
+# Temporary & cache files
+# ===============================
+*.log
+*.cache
+*.nuget.cache
+
+# ===============================
+# Databases
+# ===============================
+*.db
+*.sqlite
+
+# ===============================
+# Auto-generated files
+# ===============================
+**/GeneratedMSBuildEditorConfig.cs
+**/*.AssemblyInfo.cs
+**/*.nuget.dgspec.json
+**/*.assets.cache
+
+# ===============================
+# Configuration files
+# ===============================
+*.env
