@@ -2,10 +2,10 @@
   "UserConfig": {
     "Namespaces": [
       {
-        "Name": "sbemulatorns",
+        "Name": "host.docker.internal",
         "Queues": [
           {
-            "Name": "queue.1",
+            "Name": "emailqueue",
             "Properties": {
               "DeadLetteringOnMessageExpiration": false,
               "DefaultMessageTimeToLive": "PT1H",
