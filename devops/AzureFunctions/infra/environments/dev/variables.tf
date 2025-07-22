@@ -49,48 +49,78 @@ variable "location" {
   description = "Azure region"
 }
 
-# cosmos_account_name
-variable "cosmos_account_name" {
-  description = "Name of the Cosmos DB account"
+# PostgreSQL database variables
+
+# admin_username
+variable "admin_username" {
   type        = string
+  description = "PostgreSQL administrator username"
+}
+
+# admin_password
+variable "admin_password" {
+  type        = string
+  sensitive   = true
+  description = "PostgreSQL administrator password"
+}
+
+# version
+variable "version" {
+  type        = string
+  description = "PostgreSQL version"
+}
+
+# sku_name
+variable "sku_name" {
+  type        = string
+  description = "SKU name for the PostgreSQL server"
+}
+
+# storage_mb
+variable "storage_mb" {
+  type        = number
+  description = "Storage size in MB for the PostgreSQL server"
+}
+
+# password_auth_enabled
+variable "password_auth_enabled" {
+  type        = bool
+  description = "Enable password authentication for PostgreSQL"
+}
+
+# active_directory_auth_enabled
+variable "active_directory_auth_enabled" {
+  type        = bool
+  description = "Enable Active Directory authentication for PostgreSQL"
+}
+
+# backup_retention_days
+variable "backup_retention_days" {
+  type        = number
+  description = "Number of days to retain backups for PostgreSQL"
+}
+
+# geo_redundant_backup_enabled
+variable "geo_redundant_backup_enabled" {
+  type        = bool
+  description = "Enable geo-redundant backups for PostgreSQL"
+}
+
+# high_availability_mode
+variable "high_availability_mode" {
+  type        = string
+  description = "High availability mode for PostgreSQL (e.g., ZoneRedundant, Disabled)"
+}
+
+# delegated_subnet_id
+variable "delegated_subnet_id" {
+  type        = string
+  description = "ID of the delegated subnet for PostgreSQL"
 }
 
 # database_name
 variable "database_name" {
-  description = "Name of the Mongo database"
   type        = string
+  description = "Name of the PostgreSQL database to create"
 }
 
-# var.offer_type
-variable "offer_type" {
-  description = "Offer type for the Cosmos DB account (e.g., Standard)"
-  type        = string
-}
-
-# var.kind
-variable "kind" {
-  description = "Kind of the Cosmos DB account (e.g., MongoDB, GlobalDocumentDB)"
-  type        = string
-}
-
-# consistency_policy
-variable "consistency_policy" {
-  description = "Consistency policy for the Cosmos DB account"
-  type        = object({
-    consistency_level = string
-  })
-}
-
-# failover_priority
-variable "failover_priority" {
-  description = "Failover priority for the Cosmos DB account"
-  type        = number
-}
-
-# capabilities
-variable "capabilities" {
-  description = "Capabilities for the Cosmos DB account"
-  type        = list(object({
-    name = string
-  }))
-}

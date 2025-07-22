@@ -1,7 +1,20 @@
-output "cosmosdb_account_name" {
-  value = azurerm_cosmosdb_account.this.name
+output "postgres_fqdn" {
+  value       = azurerm_postgresql_flexible_server.this.fqdn
+  description = "Fully qualified domain name of the PostgreSQL server"
 }
 
-output "cosmosdb_database_name" {
-  value = azurerm_cosmosdb_mongo_database.this.name
+output "postgres_admin_username" {
+  value       = azurerm_postgresql_flexible_server.this.administrator_login
+  description = "Administrator username"
+}
+
+output "postgres_database_name" {
+  value       = var.database_name
+  description = "Database name"
+}
+
+output "postgres_connection_string" {
+  value = "Host=${azurerm_postgresql_flexible_server.this.fqdn};Database=${var.database_name};Username=${azurerm_postgresql_flexible_server.this.administrator_login};Password=${var.admin_password};SslMode=Require"
+  description = "Full PostgreSQL connection string"
+  sensitive   = true
 }

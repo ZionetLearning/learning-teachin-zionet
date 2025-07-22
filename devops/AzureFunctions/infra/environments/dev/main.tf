@@ -77,13 +77,25 @@ module "function_app" {
 module "database" {
   source              = "../../modules/database"
 
-  cosmos_account_name = var.cosmos_account_name
-  database_name       = var.database_name
+  server_name         = "pg-${var.resource_group_name}"
   location            = module.resource_group.location
   resource_group_name = module.resource_group.name
-  offer_type          = var.offer_type
-  kind                = var.kind
-  consistency_policy  = var.consistency_policy
-  failover_priority   = var.failover_priority
-  capabilities        = var.capabilities
+
+  admin_username      = var.admin_username
+  admin_password      = var.admin_password
+
+  version             = var.version
+  sku_name            = var.sku_name
+  storage_mb          = var.storage_mb
+
+  password_auth_enabled         = var.password_auth_enabled
+  active_directory_auth_enabled = var.active_directory_auth_enabled
+
+  backup_retention_days         = var.backup_retention_days
+  geo_redundant_backup_enabled  = var.geo_redundant_backup_enabled
+
+  high_availability_mode        = var.high_availability_mode
+  delegated_subnet_id           = var.delegated_subnet_id
+
+  database_name       = var.database_name
 }

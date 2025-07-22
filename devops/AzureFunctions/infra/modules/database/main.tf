@@ -1,28 +1,25 @@
-resource "azurerm_cosmosdb_account" "this" {
-  name                = var.cosmos_account_name
-  location            = var.location
-  resource_group_name = var.resource_group_name
-  offer_type          = var.offer_type
-  kind                = var.kind
+resource "azurerm_postgresql_flexible_server" "this" {
+  name                   = var.server_name
+  location               = var.location
+  resource_group_name    = var.resource_group_name
+  administrator_login    = var.admin_username
+  administrator_password = var.admin_password
 
-  consistency_policy {
-    consistency_level = var.consistency_policy.consistency_level
+  version    = var.version
+  sku_name   = var.sku_name
+  storage_mb = var.storage_mb
+
+  backup_retention_days        = var.backup_retention_days
+  geo_redundant_backup_enabled = var.geo_redundant_backup_enabled
+
+  authentication {
+    password_auth_enabled         = var.password_auth_enabled
+    active_directory_auth_enabled = var.active_directory_auth_enabled
   }
 
-  geo_location {
-    location          = var.location
-    failover_priority = var.failover_priority
+  high_availability {
+    mode = var.high_availability_mode
   }
 
-  capabilities {
-    name = var.capabilities[0].name
-  }
-
-  depends_on = [azurerm_resource_group.this]
-}
-
-resource "azurerm_cosmosdb_mongo_database" "this" {
-  name                = var.database_name
-  resource_group_name = var.resource_group_name
-  account_name        = azurerm_cosmosdb_account.this.name
+  delegated_subnet_id = var.delegated_subnet_id
 }

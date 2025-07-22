@@ -1,53 +1,76 @@
-variable "cosmos_account_name" {
-  description = "Name of the Cosmos DB account"
+variable "server_name" {
   type        = string
-}
-
-variable "database_name" {
-  description = "Name of the Mongo database"
-  type        = string
+  description = "Name of the PostgreSQL flexible server"
 }
 
 variable "location" {
-  description = "Azure region"
   type        = string
+  description = "Azure region"
 }
 
 variable "resource_group_name" {
-  description = "Resource group name"
   type        = string
+  description = "Name of the resource group"
 }
 
-# offer_type
-variable "offer_type" {
-  description = "Offer type for the Cosmos DB account (e.g., Standard)"
+variable "admin_username" {
   type        = string
+  description = "PostgreSQL administrator username"
 }
 
-# kind
-variable "kind" {
-  description = "Kind of the Cosmos DB account (e.g., MongoDB, GlobalDocumentDB)"
+variable "admin_password" {
   type        = string
+  sensitive   = true
+  description = "Administrator password (sensitive)"
 }
 
-# consistency_policy
-variable "consistency_policy" {
-  description = "Consistency policy for the Cosmos DB account"
-  type        = object({
-    consistency_level = string
-  })
+variable "version" {
+  type        = string
+  description = "PostgreSQL version"
 }
 
-# failover_priority
-variable "failover_priority" {
-  description = "Failover priority for the Cosmos DB account"
+variable "sku_name" {
+  type        = string
+  description = "SKU name for pricing tier (e.g., B1ms)"
+}
+
+variable "storage_mb" {
   type        = number
+  description = "Storage size in MB"
 }
 
-# capabilities
-variable "capabilities" {
-  description = "Capabilities for the Cosmos DB account"
-  type        = list(object({
-    name = string
-  }))
+variable "backup_retention_days" {
+  type        = number
+  description = "Number of days to retain backups"
+}
+
+variable "geo_redundant_backup_enabled" {
+  type        = bool
+  description = "Enable geo-redundant backup (only for supported SKUs)"
+}
+
+variable "password_auth_enabled" {
+  type        = bool
+  description = "Enable password authentication"
+}
+
+variable "active_directory_auth_enabled" {
+  type        = bool
+  default     = false
+  description = "Enable Active Directory authentication"
+}
+
+variable "high_availability_mode" {
+  type        = string
+  description = "High availability mode (e.g., 'Disabled', 'ZoneRedundant')"
+}
+
+variable "delegated_subnet_id" {
+  type        = string
+  description = "Delegated subnet ID if using VNet integration"
+}
+
+variable "database_name" {
+  type        = string
+  description = "Name of the PostgreSQL database"
 }

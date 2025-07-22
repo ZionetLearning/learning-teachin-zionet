@@ -87,3 +87,66 @@ variable "capabilities" {
     name = string
   }))
 }
+
+# PostgreSQL database variables
+
+variable "admin_username" {
+  type        = string
+  description = "PostgreSQL administrator username"
+}
+
+variable "admin_password" {
+  type        = string
+  sensitive   = true
+  description = "PostgreSQL administrator password"
+}
+
+variable "version" {
+  type        = string
+  description = "PostgreSQL version"
+}
+
+variable "sku_name" {
+  type        = string
+  description = "PostgreSQL SKU (pricing tier)"
+}
+
+variable "storage_mb" {
+  type        = number
+  description = "PostgreSQL storage size in MB"
+}
+
+variable "password_auth_enabled" {
+  type        = bool
+  description = "Enable password-based authentication"
+}
+
+variable "active_directory_auth_enabled" {
+  type        = bool
+  description = "Enable Active Directory authentication"
+}
+
+variable "backup_retention_days" {
+  type        = number
+  description = "Backup retention period in days"
+}
+
+variable "geo_redundant_backup_enabled" {
+  type        = bool
+  description = "Enable geo-redundant backups"
+}
+
+variable "high_availability_mode" {
+  type        = string
+  description = "High availability mode"
+}
+
+variable "delegated_subnet_id" {
+  type        = string
+  description = "Delegated subnet ID (for VNet integration)"
+}
+
+variable "database_name" {
+  type        = string
+  description = "Name of the PostgreSQL database"
+}
