@@ -10,7 +10,6 @@ const lips = import.meta.glob("./assets/lips/*.svg", { eager: true });
 
 const lipsArray = Object.values(lips).map((mod) => (mod as SvgModule).default);
 
-// מיפוי ישיר מ-Viseme ID לתמונה
 const visemeMap: Record<number, string> = lipsArray.reduce(
   (acc, curr, idx) => {
     acc[idx] = curr;
