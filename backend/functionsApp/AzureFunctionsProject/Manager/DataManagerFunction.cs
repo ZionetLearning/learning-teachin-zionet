@@ -12,21 +12,21 @@ namespace AzureFunctionsProject.Manager
     /// <summary>
     /// HTTP API front-end for enqueuing and retrieving generic Data entities via Service Bus and PostgreSQL.
     /// </summary>
-    public sealed class DataAccessorFunction
+    public sealed class DataManagerFunction
     {
         private readonly ServiceBusSender _queueSender;
         private readonly IAccessorClient _accessor;
         private readonly IEngineClient _engine;
-        private readonly ILogger<DataAccessorFunction> _logger;
+        private readonly ILogger<DataManagerFunction> _logger;
 
         /// <summary>
         /// Constructor: injects ServiceBusClient, DB factory, and Logger.
         /// </summary>
-        public DataAccessorFunction(
+        public DataManagerFunction(
             ServiceBusClient sbClient,
             IAccessorClient accessor,
             IEngineClient engine,
-            ILogger<DataAccessorFunction> logger)
+            ILogger<DataManagerFunction> logger)
         {
             _queueSender = sbClient.CreateSender(Queues.Incoming);
             _accessor = accessor;
