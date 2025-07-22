@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import * as sdk from "microsoft-cognitiveservices-speech-sdk";
 import avatar from "./assets/avatar.svg";
 import { useStyles } from "./style";
 
@@ -8,82 +9,98 @@ const lips = import.meta.glob("./assets/lips/*.svg", { eager: true });
 
 const lipsArray = Object.values(lips).map((mod) => (mod as SvgModule).default);
 
+// מיפוי ישיר מ-Viseme ID לתמונה
+const visemeMap: Record<number, string> = lipsArray.reduce(
+  (acc, curr, idx) => {
+    acc[idx] = curr;
+    return acc;
+  },
+  {} as Record<number, string>
+);
+
 export const AvatarSh = () => {
   const classes = useStyles();
-
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [currentLips, setCurrentLips] = useState(lipsArray[0]);
+  const [currentViseme, setCurrentViseme] = useState<number>(0);
   const [text, setText] = useState("");
 
-  useEffect(() => {
-    if (!isSpeaking) {
-      setCurrentLips(lipsArray[0]);
-      return;
-    }
-    let index = 0;
-    const interval = setInterval(() => {
-      index = (index + 1) % lipsArray.length;
-      setCurrentLips(lipsArray[index]);
-    }, 100);
-    return () => clearInterval(interval);
-  }, [isSpeaking]);
-
-  const speak = () => {
+  const speakWithAzure = () => {
     if (!text.trim()) return;
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "en-US";
-    utterance.rate = 0.95;
-    utterance.pitch = 15;
+    const speechKey = import.meta.env.VITE_AZURE_SPEECH_KEY!;
+    const speechRegion = import.meta.env.VITE_AZURE_REGION!;
+    const speechConfig = sdk.SpeechConfig.fromSubscription(
+      speechKey,
+      speechRegion
+    );
 
-    const handleVoiceAssignment = () => {
-      const voices = window.speechSynthesis.getVoices();
+    speechConfig.speechSynthesisVoiceName = "he-IL-HilaNeural";
+    speechConfig.setProperty(
+      "SpeechServiceConnection_SynthVoiceVisemeEvent",
+      "true"
+    );
 
-      const ziraVoice = voices.find(
-        (v) => v.name === "Microsoft Zira - English (United States)"
+    const audioConfig = sdk.AudioConfig.fromDefaultSpeakerOutput();
+    const synthesizer = new sdk.SpeechSynthesizer(speechConfig, audioConfig);
+
+    const visemes: { offset: number; visemeId: number }[] = [];
+
+    synthesizer.visemeReceived = (_, e) => {
+      console.log(
+        `Viseme ID: ${e.visemeId}, offset: ${e.audioOffset / 10000}ms`
       );
-      if (ziraVoice) {
-        utterance.voice = ziraVoice;
-      } else {
-        console.warn("Zira not found, using default voice");
-      }
-
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => {
-        setIsSpeaking(false);
-        window.speechSynthesis.cancel(); // force stop to cut trailing audio artifacts
-      };
-      window.speechSynthesis.speak(utterance);
+      visemes.push({ visemeId: e.visemeId, offset: e.audioOffset / 10000 });
     };
 
-    if (window.speechSynthesis.getVoices().length === 0) {
-      window.speechSynthesis.addEventListener(
-        "voiceschanged",
-        handleVoiceAssignment,
-        { once: true }
-      );
-    } else {
-      handleVoiceAssignment();
-    }
+    synthesizer.synthesisCompleted = () => {
+      console.log("Finished speaking");
+      setCurrentViseme(0);
+      synthesizer.close();
+    };
+
+    synthesizer.speakTextAsync(
+      text,
+      () => {
+        if (visemes.length) {
+          visemes.forEach(({ visemeId, offset }) => {
+            setTimeout(() => {
+              setCurrentViseme(visemeId);
+            }, offset);
+          });
+
+          const totalDuration = Math.max(...visemes.map((v) => v.offset));
+          setTimeout(() => setCurrentViseme(0), totalDuration + 500);
+        }
+      },
+      (err) => {
+        console.error("Speech error:", err);
+        setCurrentViseme(0);
+        synthesizer.close();
+      }
+    );
   };
 
   return (
     <div>
       <div className={classes.wrapper}>
         <img src={avatar} alt="Avatar" className={classes.avatar} />
-        <img src={currentLips} alt="Lips" className={classes.lipsImage} />
+        <img
+          src={visemeMap[currentViseme]}
+          alt="Lips"
+          className={classes.lipsImage}
+        />
       </div>
       <div style={{ marginTop: "20px" }}>
         <input
           type="text"
-          placeholder="Write something"
+          placeholder="כתוב פה משהו בעברית"
           value={text}
           onChange={(e) => setText(e.target.value)}
           className={classes.input}
+          dir="rtl"
         />
         <br />
-        <button onClick={speak} className={classes.button}>
-          Speak
+        <button onClick={speakWithAzure} className={classes.button}>
+          דברי
         </button>
       </div>
     </div>

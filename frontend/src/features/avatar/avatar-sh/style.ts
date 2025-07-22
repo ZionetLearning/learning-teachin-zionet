@@ -19,6 +19,15 @@ export const useStyles = createUseStyles({
       background: "#1B81A6FF",
     },
   },
+  buttonRed: {
+    marginTop: "10px",
+    background: "red",
+    color: "white",
+    padding: [10, 20],
+    border: "none",
+    borderRadius: 15,
+    cursor: "pointer",
+  },
   lipsImage: {
     position: "absolute",
     top: "42%",
