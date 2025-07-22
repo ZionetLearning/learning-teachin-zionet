@@ -5,6 +5,7 @@ on:
 
 jobs:
   login-check:
+    environment: Development
     runs-on: ubuntu-latest
 
     permissions:
