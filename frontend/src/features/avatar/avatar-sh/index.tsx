@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import avatar from "./assets/avatar.svg";
+import { useStyles } from "./style";
 
 type SvgModule = { default: string };
 
@@ -8,6 +9,8 @@ const lips = import.meta.glob("./assets/lips/*.svg", { eager: true });
 const lipsArray = Object.values(lips).map((mod) => (mod as SvgModule).default);
 
 export const AvatarSh = () => {
+  const classes = useStyles();
+
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [currentLips, setCurrentLips] = useState(lipsArray[0]);
   const [text, setText] = useState("");
@@ -31,12 +34,14 @@ export const AvatarSh = () => {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = "en-US";
     utterance.rate = 0.95;
-    utterance.pitch = 10.1;
+    utterance.pitch = 15;
 
     const handleVoiceAssignment = () => {
       const voices = window.speechSynthesis.getVoices();
-      console.log("Available voices:", voices.map((v) => v.name));
-      const ziraVoice = voices.find(v => v.name === "Microsoft Zira - English (United States)");
+
+      const ziraVoice = voices.find(
+        (v) => v.name === "Microsoft Zira - English (United States)"
+      );
       if (ziraVoice) {
         utterance.voice = ziraVoice;
       } else {
@@ -44,33 +49,29 @@ export const AvatarSh = () => {
       }
 
       utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
+      utterance.onend = () => {
+        setIsSpeaking(false);
+        window.speechSynthesis.cancel(); // force stop to cut trailing audio artifacts
+      };
       window.speechSynthesis.speak(utterance);
     };
 
     if (window.speechSynthesis.getVoices().length === 0) {
-      window.speechSynthesis.addEventListener("voiceschanged", handleVoiceAssignment, { once: true });
+      window.speechSynthesis.addEventListener(
+        "voiceschanged",
+        handleVoiceAssignment,
+        { once: true }
+      );
     } else {
       handleVoiceAssignment();
     }
   };
 
   return (
-    <div style={{ textAlign: "center", marginTop: "40px" }}>
-      <div style={{ position: "relative", width: "300px", height: "300px", margin: "0 auto" }}>
-        <img src={avatar} alt="Avatar" style={{ width: "100%", height: "100%" }} />
-        <img
-          src={currentLips}
-          alt="Lips"
-          style={{
-            position: "absolute",
-            top: "42%",
-            left: "40%",
-            width: "20%",
-            height: "20%",
-            pointerEvents: "none",
-          }}
-        />
+    <div>
+      <div className={classes.wrapper}>
+        <img src={avatar} alt="Avatar" className={classes.avatar} />
+        <img src={currentLips} alt="Lips" className={classes.lipsImage} />
       </div>
       <div style={{ marginTop: "20px" }}>
         <input
@@ -78,18 +79,10 @@ export const AvatarSh = () => {
           placeholder="Write something"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          style={{ fontSize: "18px", padding: "10px", width: "300px" }}
+          className={classes.input}
         />
         <br />
-        <button
-          onClick={speak}
-          style={{
-            marginTop: "10px",
-            fontSize: "20px",
-            padding: "10px 20px",
-            cursor: "pointer",
-          }}
-        >
+        <button onClick={speak} className={classes.button}>
           Speak
         </button>
       </div>
