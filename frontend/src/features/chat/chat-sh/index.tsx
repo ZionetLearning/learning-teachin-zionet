@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { sendChatMessage } from "./services";
+import aiAvatar from "./assets/ai-avatar.svg";
 
 export const ChatSh = () => {
   const [messages, setMessages] = useState<{ role: string; content: string }[]>(
@@ -11,7 +12,6 @@ export const ChatSh = () => {
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop =
@@ -21,7 +21,6 @@ export const ChatSh = () => {
 
   const handleSend = async () => {
     if (!input.trim()) return;
-
     const userMessage = { role: "user", content: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
@@ -30,7 +29,6 @@ export const ChatSh = () => {
     try {
       const response = await sendChatMessage(input);
       setDisplayedAIMessage("");
-
       let index = 0;
       const interval = setInterval(() => {
         setDisplayedAIMessage((prev) => prev + response[index]);
@@ -55,28 +53,28 @@ export const ChatSh = () => {
     <div
       style={{
         maxWidth: "700px",
-        margin: "40px auto",
+        margin: "30px auto",
         display: "flex",
         flexDirection: "column",
         fontFamily: "Arial, sans-serif",
         border: "1px solid #ddd",
         borderRadius: "12px",
-        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
         overflow: "hidden",
+        boxShadow: "0 6px 20px rgba(0,0,0,0.1)",
         height: "70vh",
       }}
     >
       <div
         style={{
-          background: "#4A90E2",
-          color: "white",
-          padding: "20px",
+          background: "#cce6ff",
+          padding: "18px",
           fontSize: "24px",
           fontWeight: "bold",
           textAlign: "center",
+          color: "#3c3c3c",
         }}
       >
-        AI Chat
+        Azure OpenAI Chat
       </div>
 
       <div
@@ -86,44 +84,72 @@ export const ChatSh = () => {
           padding: "20px",
           display: "flex",
           flexDirection: "column",
-          gap: "12px",
+          gap: "15px",
           overflowY: "auto",
-          height: "500px",
+          height: "60vh",
+          background: "#f9f9f9",
         }}
       >
         {messages.map((msg, idx) => (
           <div
             key={idx}
             style={{
-              alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
-              background: msg.role === "user" ? "#4CAF50" : "#f0f0f0",
-              color: msg.role === "user" ? "white" : "#333",
-              padding: "12px 16px",
-              borderRadius: "20px",
-              maxWidth: "70%",
-              wordWrap: "break-word",
-              fontSize: "16px",
-              transition: "all 0.3s ease",
+              display: "flex",
+              flexDirection: msg.role === "user" ? "row-reverse" : "row",
+              alignItems: "flex-end",
+              gap: "10px",
             }}
           >
-            {msg.content}
+            {msg.role === "assistant" && (
+              <img
+                src={aiAvatar}
+                alt="avatar"
+                style={{ width: "40px", height: "40px", borderRadius: "50%" }}
+              />
+            )}
+            <div
+              style={{
+                background: msg.role === "user" ? "#a6d6ff" : "#e2e2e2",
+                color: "#333",
+                padding: "12px 16px",
+                borderRadius: "16px",
+                maxWidth: "65%",
+                wordWrap: "break-word",
+                fontSize: "16px",
+                lineHeight: "1.5",
+              }}
+            >
+              {msg.content}
+            </div>
           </div>
         ))}
 
         {displayedAIMessage && (
           <div
             style={{
-              alignSelf: "flex-start",
-              background: "#f0f0f0",
-              padding: "12px 16px",
-              borderRadius: "20px",
-              maxWidth: "70%",
-              fontSize: "16px",
-              wordWrap: "break-word",
-              fontStyle: "italic",
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "flex-end",
+              gap: "10px",
             }}
           >
-            {displayedAIMessage}
+            <img
+              src={aiAvatar}
+              alt="avatar"
+              style={{ width: "40px", height: "40px", borderRadius: "50%" }}
+            />
+            <div
+              style={{
+                background: "#e2e2e2",
+                color: "#333",
+                padding: "12px 16px",
+                borderRadius: "16px",
+                maxWidth: "65%",
+                fontSize: "16px",
+              }}
+            >
+              {displayedAIMessage}
+            </div>
           </div>
         )}
       </div>
@@ -131,8 +157,9 @@ export const ChatSh = () => {
       <div
         style={{
           display: "flex",
-          padding: "15px",
           borderTop: "1px solid #ddd",
+          background: "#f0f0f0",
+          padding: "15px",
           gap: "10px",
         }}
       >
@@ -143,29 +170,28 @@ export const ChatSh = () => {
             fontSize: "16px",
             borderRadius: "8px",
             border: "1px solid #ccc",
+            background: "#ffffff",
           }}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Type your message..."
           disabled={isLoading}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") handleSend();
-          }}
+          onKeyDown={(e) => e.key === "Enter" && handleSend()}
         />
         <button
+          onClick={handleSend}
+          disabled={isLoading}
           style={{
             background: isLoading ? "#aaa" : "#4A90E2",
             color: "white",
             fontSize: "16px",
-            border: "none",
             borderRadius: "8px",
-            padding: "12px 20px",
+            border: "none",
+            padding: "0 20px",
             cursor: isLoading ? "not-allowed" : "pointer",
           }}
-          onClick={handleSend}
-          disabled={isLoading}
         >
-          {isLoading ? "..." : "Send"}
+          {isLoading ? "..." : "➤"}
         </button>
       </div>
     </div>
