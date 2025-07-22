@@ -52,10 +52,6 @@ spec:
             - containerPort: 8080
               protocol: TCP
           resources: {}
-          volumeMounts:
-            - name: cosmosdbemulator-crt
-              mountPath: /certs/cosmosdbemulator.crt
-              subPath: cosmosdbemulator.crt
       restartPolicy: Always
       volumes:
         - name: cosmosdbemulator-crt

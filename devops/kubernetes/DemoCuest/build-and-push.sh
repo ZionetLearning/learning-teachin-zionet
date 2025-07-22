@@ -8,9 +8,6 @@ set +a
 # Define services and paths
 declare -A services=(
   ["todoaccessor"]="./Accessors/ToDoAccessor"
-  ["todomanager"]="./Managers/TodoManager"
-  ["notificationmanager"]="./Managers/NotificationManager"
-  ["signalremulator"]="./SignalREmulator"
 )
 
 # Build and push loop

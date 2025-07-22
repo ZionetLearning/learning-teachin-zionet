@@ -33,6 +33,38 @@ namespace ToDoAccessor.Services
             var database = cosmosClient.GetDatabase(settings.DatabaseName);
             _container = database.GetContainer(settings.ContainerName);
         }
+        
+ /* //constructor that works with cosmosdb-emulator
+        public TodoService(IOptions<TodoCosmosDbSettings> databaseSettings)
+        {
+            var settings = databaseSettings.Value;
+
+
+            CosmosClientOptions clientOptions = new CosmosClientOptions
+            {
+                ApplicationName = "ToDoApp",
+                ConnectionMode = ConnectionMode.Gateway // <---- ADD THIS LINE
+            };
+
+            // Accept self-signed certs in development (ONLY for emulator)
+            if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
+            {
+                clientOptions.HttpClientFactory = () =>
+                {
+                    var handler = new HttpClientHandler
+                    {
+                        ServerCertificateCustomValidationCallback = (req, cert, chain, errors) => true
+                    };
+                    return new HttpClient(handler, disposeHandler: true);
+                };
+            }
+
+            var cosmosClient = new CosmosClient(settings.ConnectionString, clientOptions);
+            
+            var database = cosmosClient.GetDatabase(settings.DatabaseName);
+            _container = database.GetContainer(settings.ContainerName);
+        }
+*/
 
         public async Task<List<Todo>> GetAllTodosAsync()
         {

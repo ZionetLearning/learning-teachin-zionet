@@ -4,7 +4,6 @@ set -e
 
 K8S_DIR="./k8s"
 NAMESPACE_FILE="$K8S_DIR/namespace-model.yaml"
-APP_CONFIG="$K8S_DIR/app-config.yaml"
 
 echo "🔍 Checking prerequisites..."
 command -v docker >/dev/null 2>&1 || { echo "❌ Docker not found. Aborting."; exit 1; }
@@ -42,11 +41,12 @@ echo "🌐 Applying services..."
 kubectl apply -f "$K8S_DIR/services" --recursive
 
 # Step 6: Apply deployments
-echo "📦 Applying deployments..."
-kubectl apply -f "$K8S_DIR/deployments" --recursive
+export DOCKER_REGISTRY="benny902" # or read from env/.env file
+echo "📦 Applying deployments with registry substitution..."
+find "$K8S_DIR/deployments" -type f -name '*.yaml' | while read file; do
+  echo "Applying $file"
+  envsubst < "$file" | kubectl apply -f -
+done
 
-# Step 7: Apply app config
-#echo "⚙️ Applying app config..."
-#kubectl apply -f "$APP_CONFIG"
 
 echo "✅ All resources applied successfully!"
