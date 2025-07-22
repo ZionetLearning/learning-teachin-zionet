@@ -1,0 +1,9 @@
+﻿namespace AzureFunctionsProject.Exceptions
+{
+    public class AccessorClientException : Exception
+    {
+        public AccessorClientException(string message, Exception inner)
+            : base(message, inner) { }
+    }
+
+}

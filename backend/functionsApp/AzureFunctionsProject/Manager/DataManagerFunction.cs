@@ -1,5 +1,6 @@
 using Azure.Messaging.ServiceBus;
 using AzureFunctionsProject.Common;
+using AzureFunctionsProject.Exceptions;
 using AzureFunctionsProject.Models;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
@@ -57,6 +58,12 @@ namespace AzureFunctionsProject.Manager
                 respOut.StatusCode = HttpStatusCode.OK;
                 await respOut.WriteAsJsonAsync(list, cancellationToken);
             }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "Accessor: GET data failed");
+                throw new AccessorClientException(
+                    $"Failed to retrieve Data from the Accessor service", ex);
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Manager GetAllData error");
@@ -100,9 +107,11 @@ namespace AzureFunctionsProject.Manager
                 respOut.Headers.Add("ETag", $"\"{dto.Version}\"");
                 await respOut.WriteAsJsonAsync(dto, cancellationToken);
             }
-            catch (HttpRequestException hre) when (hre.StatusCode == HttpStatusCode.NotFound)
+            catch (HttpRequestException ex)
             {
-                respOut.StatusCode = HttpStatusCode.NotFound;
+                _logger.LogError(ex, "Accessor: GET data failed");
+                throw new AccessorClientException(
+                    $"Failed to retrieve Data from the Accessor service", ex);
             }
             catch (Exception ex)
             {

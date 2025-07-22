@@ -1,4 +1,5 @@
 ﻿using AzureFunctionsProject.Common;
+using AzureFunctionsProject.Exceptions;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
@@ -35,6 +36,12 @@ namespace AzureFunctionsProject.Engine
 
                 resp.StatusCode = HttpStatusCode.OK;
                 await resp.WriteAsJsonAsync(result);
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "Accessor: GET data failed");
+                throw new AccessorClientException(
+                    $"Failed to retrieve Data from the Accessor service", ex);
             }
             catch (Exception ex)
             {
