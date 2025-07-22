@@ -44,8 +44,6 @@ spec:
               value: ToDoDatabase
             - name: TodoCosmosDbSettings__ContainerName
               value: ToDos
-            - name: AZURE_COSMOS_EMULATOR_SKIP_CERT_VALIDATION
-              value: "true"
           image: ${DOCKER_REGISTRY}/todoaccessor
           name: todoaccessor
           ports:
@@ -53,10 +51,3 @@ spec:
               protocol: TCP
           resources: {}
       restartPolicy: Always
-      volumes:
-        - name: cosmosdbemulator-crt
-          secret:
-            secretName: cosmosdb-cert
-            items:
-              - key: cosmosdbemulator.crt
-                path: cosmosdbemulator.crt

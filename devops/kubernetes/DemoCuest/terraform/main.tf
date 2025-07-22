@@ -1,143 +1,101 @@
-terraform {
-  required_providers {
-    kubectl = {
-      source  = "gavinbunney/kubectl"
-      version = "~> 1.14.0"
-    }
-    kubernetes = {
-      source  = "hashicorp/kubernetes"
-      version = "~> 2.26"
-    }
-    helm = {
-      source  = "hashicorp/helm"
-      version = "~> 2.13"
-    }
-  }
+########################################
+# 1. Azure infra: RG, AKS, Service Bus, Cosmos
+########################################
+resource "azurerm_resource_group" "main" {
+  name     = var.resource_group_name
+  location = var.location
 }
 
-provider "kubectl" {
-  config_path = "~/.kube/config"
+module "aks" {
+  source              = "./modules/aks"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = var.location
+  cluster_name        = var.aks_cluster_name
+  node_count          = var.node_count
+  vm_size             = var.vm_size
+}
+
+module "servicebus" {
+  source              = "./modules/servicebus"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = var.location
+  namespace_name      = var.servicebus_namespace
+  sku                 = var.sku
+}
+
+module "cosmosdb" {
+  source                = "./modules/cosmosdb"
+  resource_group_name   = azurerm_resource_group.main.name
+  location              = "North Europe" # over ride because it made error that 'full'
+  cosmosdb_account_name = var.cosmosdb_account_name
+}
+
+########################################
+# 2. AKS kube-config for providers
+########################################
+data "azurerm_kubernetes_cluster" "main" {
+  name                = module.aks.cluster_name
+  resource_group_name = azurerm_resource_group.main.name
 }
 
 provider "kubernetes" {
-  config_path = "~/.kube/config"
+  host                   = module.aks.kube_config["host"]
+  client_certificate     = base64decode(module.aks.kube_config["client_certificate"])
+  client_key             = base64decode(module.aks.kube_config["client_key"])
+  cluster_ca_certificate = base64decode(module.aks.kube_config["cluster_ca_certificate"])
 }
 
 provider "helm" {
-  kubernetes {
-    config_path = "~/.kube/config"
+  kubernetes = {
+    host                   = data.azurerm_kubernetes_cluster.main.kube_config[0].host
+    client_certificate     = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].client_certificate)
+    client_key             = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].client_key)
+    cluster_ca_certificate = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].cluster_ca_certificate)
   }
 }
 
-variable "docker_registry" {
-  type = string
-}
-
-locals {
-  yaml_files = fileset("${path.module}/../kubernetes", "*.yaml")
-  dapr_components  = fileset("${path.module}/../kubernetes/dapr/components", "*.yaml")
-  dapr_config_file = "${path.module}/../kubernetes/dapr/config.yaml"
-}
-
-resource "kubernetes_namespace" "devops_model" {
-  metadata {
-    name = "devops-model"
-  }
-}
-
-resource "kubernetes_secret" "signalr_connection" {
-  metadata {
-    name      = "dapr-secretstore"
-    namespace = kubernetes_namespace.devops_model.metadata[0].name
-  }
-  data = {
-    SignalRConnectionString = "Endpoint=http://host.docker.internal:8888;Port=8888;AccessKey=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGH;Version=1.0;"
-  }
-  type = "Opaque"
-  depends_on = [kubernetes_namespace.devops_model]
-}
-
-resource "kubernetes_secret" "cosmosdb_connection" {
-  metadata {
-    name      = "cosmosdb-connection"
-    namespace = kubernetes_namespace.devops_model.metadata[0].name
-  }
-  data = {
-    CosmosDbConnectionString = "AccountEndpoint=https://cosmosdb-emulator:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;"
-  }
-  type = "Opaque"
-  depends_on = [kubernetes_namespace.devops_model]
-}
-
-resource "kubernetes_secret" "cosmosdb_cert" {
-  metadata {
-    name      = "cosmosdb-cert"
-    namespace = kubernetes_namespace.devops_model.metadata[0].name
-  }
-  data = {
-    "cosmosdbemulator.crt" = filebase64("${path.module}/../kubernetes/cosmosdbemulator.crt")
-  }
-  type = "Opaque"
-  depends_on = [kubernetes_namespace.devops_model]
-}
-
-resource "kubectl_manifest" "namespace" {
-  yaml_body = file("${path.module}/../kubernetes/namespace-model.yaml")
-  depends_on = [kubernetes_namespace.devops_model]
-}
-
-resource "kubectl_manifest" "dapr_system_ns" {
-  yaml_body = <<YAML
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: dapr-system
-YAML
-}
-
+########################################
+# 3. Dapr control-plane
+########################################
 resource "helm_release" "dapr" {
   name             = "dapr"
-  namespace        = "dapr-system"
-  repository       = "https://dapr.github.io/helm-charts/"
+  repository       = "https://dapr.github.io/helm-charts"
   chart            = "dapr"
-  version          = "1.14.4"
-  create_namespace = false
-  depends_on       = [kubectl_manifest.dapr_system_ns]
+  namespace        = "dapr-system"
+  create_namespace = true
+  version          = "1.13.0"
 }
 
-resource "null_resource" "wait_for_dapr_control_plane" {
-  depends_on = [helm_release.dapr]
-  provisioner "local-exec" {
-    command = "bash ./wait-for-dapr.sh"
+########################################
+# 4. devops-model namespace for the workloads
+########################################
+resource "kubernetes_namespace" "model" {
+  metadata { name = "devops-model" }
+}
+
+########################################
+# 5. Apply *all* YAML manifests under ./k8s
+########################################
+module "k8s_manifests" {
+  source          = "./modules/k8s_manifests"
+  k8s_dir         = "${path.module}/../k8s"
+  docker_registry = var.docker_registry
+
+  namespace = kubernetes_namespace.model.metadata[0].name
+
+  # pass the alias exactly as the child module expects
+  providers = {
+    kubectl.inherited = kubectl.inherited   # ← change this line
   }
-}
 
-resource "kubectl_manifest" "dapr_config" {
-  yaml_body  = file(local.dapr_config_file)
   depends_on = [
-    null_resource.wait_for_dapr_control_plane,
-    kubectl_manifest.namespace,
-    kubernetes_secret.signalr_connection,
+    kubernetes_secret.azure_service_bus,
     kubernetes_secret.cosmosdb_connection,
-    kubernetes_secret.cosmosdb_cert
+    helm_release.dapr
   ]
 }
 
-resource "kubectl_manifest" "dapr_components" {
-  for_each    = { for f in local.dapr_components : f => f }
-  yaml_body   = file("${path.module}/../kubernetes/dapr/components/${each.value}")
-  depends_on  = [
-    kubectl_manifest.dapr_config,
-    kubernetes_secret.signalr_connection,
-    kubernetes_secret.cosmosdb_connection,
-    kubernetes_secret.cosmosdb_cert
-  ]
-}
-
-resource "kubectl_manifest" "all_manifests" {
-  for_each = { for f in local.yaml_files : f => f }
-  yaml_body = templatefile("${path.module}/../kubernetes/${each.value}", {
-    DOCKER_REGISTRY = var.docker_registry
-  })
-  depends_on = [kubectl_manifest.dapr_components]
-}
+### how to start
+### terraform init
+### terraform plan -var-file="terraform.tfvars.dev"
+### terraform apply -var-file="terraform.tfvars.dev"

@@ -4,27 +4,15 @@ metadata:
   name: todoqueue
   namespace: devops-model
 spec:
-  type: bindings.rabbitmq
+  type: bindings.azure.servicebusqueues
   version: v1
   metadata:
   - name: queueName
     value: todoqueue
-  - name: host
-    value: "amqp://rabbitmq:5672?connection_attempts=10&retry_delay=10"
-  - name: durable
-    value: false
-  - name: deleteWhenUnused
-    value: false
-  - name: ttlInSeconds
-    value: 10
-  - name: prefetchCount
-    value: 0
-  - name: exclusive
-    value: false
-  - name: maxPriority
-    value: 5
-  - name: contentType
-    value: "text/plain"
+  - name: connectionString
+    secretKeyRef:
+      name: azure-service-bus-secret
+      key: connectionstring
 scopes:
-  - todomanager
-  - todoaccessor
+- todomanager
+- todoaccessor

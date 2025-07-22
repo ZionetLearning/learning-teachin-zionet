@@ -4,14 +4,14 @@ metadata:
   name: clientcallback
   namespace: devops-model
 spec:
-  type: bindings.azure.signalr
+  type: bindings.azure.servicebusqueues
   version: v1
   metadata:
-    - name: connectionString
-      secretKeyRef:
-        name: dapr-secretstore
-        key: SignalRConnectionString
-    - name: hub 
-      value: todohub
+  - name: queueName
+    value: null
+  - name: connectionString
+    secretKeyRef:
+      name: azure-service-bus-secret
+      key: connectionstring
 scopes:
-  - notificationmanager
+- notificationmanager

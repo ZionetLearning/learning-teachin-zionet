@@ -1,0 +1,1 @@
+{"Modules":[{"Key":"","Source":"","Dir":"."},{"Key":"aks","Source":"./modules/aks","Dir":"modules/aks"},{"Key":"cosmosdb","Source":"./modules/cosmosdb","Dir":"modules/cosmosdb"},{"Key":"k8s_manifests","Source":"./modules/k8s_manifests","Dir":"modules/k8s_manifests"},{"Key":"servicebus","Source":"./modules/servicebus","Dir":"modules/servicebus"}]}
