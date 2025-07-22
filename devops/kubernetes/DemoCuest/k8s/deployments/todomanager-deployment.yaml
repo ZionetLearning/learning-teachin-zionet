@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todomanager
+  namespace: devops-model
+  labels:
+    io.kompose.service: todomanager
+  annotations:
+    kompose.cmd: C:\Program Files\kompose\kompose.exe convert -f docker-compose.yml
+    kompose.version: 1.30.0 (9d8dcb518)
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: todomanager
+  template:
+    metadata:
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "todomanager"
+        dapr.io/app-port: "8080"
+        dapr.io/config: "dapr-config"
+        kompose.cmd: C:\Program Files\kompose\kompose.exe convert -f docker-compose.yml
+        kompose.version: 1.30.0 (9d8dcb518)
+      labels:
+        io.kompose.network/democuest-democuest-dapr: "true"
+        io.kompose.service: todomanager
+    spec:
+      containers:
+        - name: todomanager
+          image: ${DOCKER_REGISTRY}/todomanager
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Development
+            - name: ASPNETCORE_URLS
+              value: http://todomanager:8080
+          volumeMounts:
+            - name: config-volume
+              mountPath: /app/config
+              readOnly: true
+      volumes:
+        - name: config-volume
+          configMap:
+            name: app-config
+      restartPolicy: Always

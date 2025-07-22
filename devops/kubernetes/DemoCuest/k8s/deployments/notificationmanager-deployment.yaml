@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: C:\Program Files\kompose\kompose.exe convert -f docker-compose.yml
+    kompose.version: 1.30.0 (9d8dcb518)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: notificationmanager
+  name: notificationmanager
+  namespace: devops-model
+  ##namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: notificationmanager
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: C:\Program Files\kompose\kompose.exe convert -f docker-compose.yml
+        kompose.version: 1.30.0 (9d8dcb518)
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "notificationmanager"
+        dapr.io/app-port: "8080"
+      creationTimestamp: null
+      labels:
+        io.kompose.network/democuest-democuest-dapr: "true"
+        io.kompose.service: notificationmanager
+    spec:
+      containers:
+        - env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Development
+            - name: ASPNETCORE_URLS
+              value: http://notificationmanager:8080
+            - name: AZURE__SignalR__ConnectionString
+              valueFrom:
+                secretKeyRef:
+                  name: dapr-secretstore
+                  key: SignalRConnectionString
+          image: ${DOCKER_REGISTRY}/notificationmanager:latest
+          name: notificationmanager
+          ports:
+            - containerPort: 8080
+              #hostPort: 5072
+              protocol: TCP
+          resources: {}
+      restartPolicy: Always
