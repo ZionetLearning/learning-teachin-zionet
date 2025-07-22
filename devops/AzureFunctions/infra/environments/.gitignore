@@ -1,5 +1,5 @@
 # Environment-specific Terraform files
-terraform.tfvars
+# terraform.tfvars
 *.auto.tfvars
 .terraform/
 *.tfstate
