@@ -24,7 +24,7 @@ variable "admin_password" {
   description = "Administrator password (sensitive)"
 }
 
-variable "version" {
+variable "db_version" {
   type        = string
   description = "PostgreSQL version"
 }

@@ -78,13 +78,13 @@ module "database" {
   source              = "../../modules/database"
 
   server_name         = "pg-${var.resource_group_name}"
-  location            = module.resource_group.location
+  location            = var.db_location
   resource_group_name = module.resource_group.name
 
   admin_username      = var.admin_username
   admin_password      = var.admin_password
 
-  version             = var.version
+  db_version          = var.db_version
   sku_name            = var.sku_name
   storage_mb          = var.storage_mb
 

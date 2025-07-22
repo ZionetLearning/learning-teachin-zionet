@@ -150,24 +150,3 @@ variable "database_name" {
   type        = string
   description = "Name of the PostgreSQL database"
 }
-
-
-# backend_storage_account_name
-variable "backend_storage_account_name" {
-  type        = string
-  description = "Name of the backend storage account for Terraform state"
-  default     = "teachintfstate"
-}
- 
-
-variable "backend_storage_continer_name" {
-  type        = string
-  description = "Name of the backend storage container for Terraform state"
-  default     = "tfstate-azurefunction-prod"
-}
-  
-variable "backend_key" {
-  type        = string
-  description = "Defines the blob name where the state file will be stored"
-  default     = "azure-functions-prod.tfstate"
-}  

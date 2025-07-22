@@ -30,3 +30,9 @@ output "queue_names" {
   value       = [for queue in azurerm_servicebus_queue.this : queue.name]
 }
 
+output "connection_string" {
+  description = "The primary connection string for the Service Bus namespace (alias for primary_connection_string)"
+  value       = azurerm_servicebus_namespace.this.default_primary_connection_string
+  sensitive   = true
+}
+

@@ -5,7 +5,7 @@ resource "azurerm_postgresql_flexible_server" "this" {
   administrator_login    = var.admin_username
   administrator_password = var.admin_password
 
-  version    = var.version
+  version    = var.db_version
   sku_name   = var.sku_name
   storage_mb = var.storage_mb
 
@@ -17,8 +17,11 @@ resource "azurerm_postgresql_flexible_server" "this" {
     active_directory_auth_enabled = var.active_directory_auth_enabled
   }
 
-  high_availability {
-    mode = var.high_availability_mode
+  dynamic "high_availability" {
+    for_each = var.high_availability_mode != "" && var.high_availability_mode != null ? [1] : []
+    content {
+      mode = var.high_availability_mode
+    }
   }
 
   delegated_subnet_id = var.delegated_subnet_id

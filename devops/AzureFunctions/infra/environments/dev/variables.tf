@@ -6,6 +6,14 @@ variable "resource_group_name" {
 variable "location" {
     description = "Azure region for the resources"
     type        = string
+    default     = "West Europe"
+}
+
+variable "db_location" {
+    description = "Location for the PostgreSQL database"
+    type        = string
+    default     = "Israel Central"
+  
 }
 
 
@@ -42,13 +50,6 @@ variable "app_service_plan_sku" {
     })
 }
 
-
-variable "location" {
-  type        = string
-  default     = "East US"
-  description = "Azure region"
-}
-
 # PostgreSQL database variables
 
 # admin_username
@@ -64,8 +65,8 @@ variable "admin_password" {
   description = "PostgreSQL administrator password"
 }
 
-# version
-variable "version" {
+# db_version
+variable "db_version" {
   type        = string
   description = "PostgreSQL version"
 }
@@ -123,23 +124,3 @@ variable "database_name" {
   type        = string
   description = "Name of the PostgreSQL database to create"
 }
-
-# backend_storage_account_name
-variable "backend_storage_account_name" {
-  type        = string
-  description = "Name of the backend storage account for Terraform state"
-  default     = "teachintfstate"
-}
- 
-
-variable "backend_storage_continer_name" {
-  type        = string
-  description = "Name of the backend storage container for Terraform state"
-  default     = "tfstate-azurefunction-dev"
-}
-  
-variable "backend_key" {
-  type        = string
-  description = "Defines the blob name where the state file will be stored"
-  default     = "azure-functions-dev.tfstate"
-}  
