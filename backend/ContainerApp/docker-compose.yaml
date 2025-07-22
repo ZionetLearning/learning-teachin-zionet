@@ -9,8 +9,13 @@ services:
     environment:
       ACCEPT_EULA: "${ACCEPT_EULA}"
       MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD}"
+    ports:
+      - "1433:1433"  # Optional: expose for local dev
+    # volumes:
+    #   - sqledge-data:/var/opt/mssql
     networks:
-      sb-emulator:
+      - sb-emulator
+    restart: unless-stopped
 
   # -------------------- Azure Service Bus Emulator --------------------
   servicebus-emulator:
@@ -19,7 +24,6 @@ services:
     pull_policy: always
     volumes:
        - ./servicebus-emulator:/ServiceBus_Emulator/ConfigFiles
-
     ports:
       - "5672:5672"
       - "5300:5300"
@@ -46,7 +50,9 @@ services:
         - "5432:5432"
     volumes:
         - pgdata:/var/lib/postgresql/data
-
+    networks:
+      - microservice-net
+      - sb-emulator
 
   # ------------------------ Manager Service ---------------------------
   manager:
@@ -57,6 +63,7 @@ services:
       - "5001:5001"
     environment:
       - ASPNETCORE_URLS=http://+:5001
+      - DAPR_HTTP_PORT=3500
     depends_on:
       - servicebus-emulator
     networks:
@@ -79,8 +86,7 @@ services:
     ]
     volumes:
       - ./dapr:/dapr
-    networks:
-      - microservice-net
+    network_mode: "service:manager"
 
   # ------------------------ Engine Service ---------------------------
   engine:
@@ -91,6 +97,7 @@ services:
       - "5002:5002"
     environment:
       - ASPNETCORE_URLS=http://+:5002
+      - DAPR_HTTP_PORT=3501
     depends_on:
       - servicebus-emulator
     networks:
@@ -113,8 +120,7 @@ services:
     ]
     volumes:
       - ./dapr:/dapr
-    networks:
-      - microservice-net
+    network_mode: "service:engine"
 
   # ------------------------ Accessor Service ---------------------------
   accessor:
@@ -125,6 +131,7 @@ services:
       - "5003:5003"
     environment:
       - ASPNETCORE_URLS=http://+:5003
+      - DAPR_HTTP_PORT=3502
       - DB_HOST=postgres-db
       - DB_PORT=5432
       - DB_NAME=appdb
@@ -153,8 +160,20 @@ services:
     ]
     volumes:
       - ./dapr:/dapr
+    network_mode: "service:accessor"
+
+
+  # ------------------------- placement -----------------------------
+
+  placement:
+    image: "daprio/dapr"
+    command: ["./placement", "-port", "50006"]
+    ports:
+      - "50006:50006"
+    container_name: placement
     networks:
       - microservice-net
+
 
 # ------------------------ Shared Networks ---------------------------
 networks:
@@ -166,3 +185,4 @@ networks:
 # ------------------------ Shared Volumes ---------------------------
 volumes:
       pgdata:
+      # sqledge-data:
