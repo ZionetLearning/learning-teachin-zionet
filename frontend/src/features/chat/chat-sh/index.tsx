@@ -117,6 +117,7 @@ export const ChatSh = () => {
                 wordWrap: "break-word",
                 fontSize: "16px",
                 lineHeight: "1.5",
+                textAlign: "left",
               }}
             >
               {msg.content}
@@ -146,6 +147,8 @@ export const ChatSh = () => {
                 borderRadius: "16px",
                 maxWidth: "65%",
                 fontSize: "16px",
+                                textAlign: "left",
+
               }}
             >
               {displayedAIMessage}
