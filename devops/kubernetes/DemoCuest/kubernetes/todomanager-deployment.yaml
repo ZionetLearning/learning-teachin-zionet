@@ -36,12 +36,4 @@ spec:
               value: Development
             - name: ASPNETCORE_URLS
               value: http://todomanager:8080
-          volumeMounts:
-            - name: config-volume
-              mountPath: /app/config
-              readOnly: true
-      volumes:
-        - name: config-volume
-          configMap:
-            name: app-config
       restartPolicy: Always
