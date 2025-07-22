@@ -108,17 +108,7 @@ resource "helm_release" "dapr" {
 resource "null_resource" "wait_for_dapr_control_plane" {
   depends_on = [helm_release.dapr]
   provisioner "local-exec" {
-    command = <<EOT
-echo for (\$i=0; \$i -lt 30; \$i++) {>> wait-for-dapr.ps1
-echo   if ((kubectl get pods -n dapr-system ^| Select-String 'sidecar-injector')) { exit 0 }>> wait-for-dapr.ps1
-echo   Write-Host "Waiting for Dapr control plane to be available...">> wait-for-dapr.ps1
-echo   Start-Sleep -Seconds 2>> wait-for-dapr.ps1
-echo }>> wait-for-dapr.ps1
-echo Write-Error "Timeout waiting for Dapr control plane">> wait-for-dapr.ps1
-echo exit 1>> wait-for-dapr.ps1
-powershell -ExecutionPolicy Bypass -File wait-for-dapr.ps1
-del wait-for-dapr.ps1
-EOT
+    command = "bash ./wait-for-dapr.sh"
   }
 }
 
