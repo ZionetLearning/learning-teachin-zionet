@@ -15,7 +15,7 @@ app_service_plan_sku = "Y1" # Consumption Plan
 
 # PostgreSQL Flexible Server
 admin_username = "pgadmin"
-admin_password = "VerySecure123!"
+#admin_password = "VerySecure123!"
 
 version     = "15"
 sku_name    = "B1ms"

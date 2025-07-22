@@ -15,7 +15,7 @@ app_service_plan_sku = "Y1"
 
 # PostgreSQL Flexible Server
 admin_username = "pgadmin"
-admin_password = "DevStrongPassword123!"
+#admin_password = "DevStrongPassword123!"
 
 version     = "15"
 sku_name    = "B1ms"
