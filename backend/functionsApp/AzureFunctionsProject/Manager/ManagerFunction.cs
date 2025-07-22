@@ -16,6 +16,7 @@ namespace AzureFunctionsProject.Manager
     {
         private readonly ServiceBusSender _queueSender;
         private readonly IAccessorClient _accessor;
+        private readonly IEngineClient _engine;
         private readonly ILogger<DataAccessorFunction> _logger;
 
         /// <summary>
@@ -24,10 +25,12 @@ namespace AzureFunctionsProject.Manager
         public DataAccessorFunction(
             ServiceBusClient sbClient,
             IAccessorClient accessor,
+            IEngineClient engine,
             ILogger<DataAccessorFunction> logger)
         {
             _queueSender = sbClient.CreateSender(Queues.Incoming);
             _accessor = accessor;
+            _engine = engine;
             _logger = logger;
         }
 
@@ -37,7 +40,7 @@ namespace AzureFunctionsProject.Manager
         };
 
         /// <summary>
-        /// 1. GET /api/data
+        ///  GET /api/data
         /// Retrieves all Data records via the accessor.
         /// </summary>
         [Function("GetAllData")]
@@ -66,7 +69,7 @@ namespace AzureFunctionsProject.Manager
 
 
         /// <summary>
-        /// 2. GET /api/data/{id}
+        ///  GET /api/data/{id}
         /// Retrieves a single Data record by ID via the accessor.
         /// </summary>
         [Function("GetDataById")]
@@ -109,8 +112,32 @@ namespace AzureFunctionsProject.Manager
             return respOut;
         }
 
+         /// <summary>
+        /// GET /api/data/process
+        ///  calls EngineFunction, returns processed result.
+        /// </summary>
+        [Function("ProcessData")]
+        public async Task<HttpResponseData> ProcessData(
+            [HttpTrigger(AuthorizationLevel.Function, "get", Route = Routes.ManagerProcessData)]
+            HttpRequestData req)
+        {
+            var outResp = req.CreateResponse();
+            try
+            {
+                var result = await _engine.ProcessDataAsync();
+                outResp.StatusCode = HttpStatusCode.OK;
+                await outResp.WriteAsJsonAsync(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Manager to Engine process failed");
+                outResp.StatusCode = HttpStatusCode.InternalServerError;
+                await outResp.WriteStringAsync("Error processing data");
+            }
+            return outResp;
+        }
         /// <summary>
-        /// 3. POST /api/data
+        /// POST /api/data
         /// Enqueues a CREATE action for a new Data record.
         /// </summary>
         [Function("CreateData")]
@@ -165,7 +192,7 @@ namespace AzureFunctionsProject.Manager
         }
 
         /// <summary>
-        /// 4. PUT /api/data/{id}
+        ///  PUT /api/data/{id}
         /// Enqueues an UPDATE action, requiring If-Match header for concurrency.
         /// </summary>
         [Function("UpdateData")]
@@ -232,7 +259,7 @@ namespace AzureFunctionsProject.Manager
         }
 
         /// <summary>
-        /// 5. DELETE /api/data/{id}
+        ///  DELETE /api/data/{id}
         /// Enqueues a DELETE action; optional If-Match for concurrency.
         /// </summary>
         [Function("DeleteData")]
@@ -282,5 +309,4 @@ namespace AzureFunctionsProject.Manager
             }
         }
     }
-
 }
