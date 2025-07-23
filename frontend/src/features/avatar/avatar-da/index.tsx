@@ -1,19 +1,22 @@
-import { Canvas } from '@react-three/fiber';
-import { Experience } from './Experience';
-import { Leva } from 'leva';
+import { Canvas } from "@react-three/fiber";
+import { Leva } from "leva";
+
+import { Scene } from "./Scene";
+
+import { useStyles } from "./style";
 
 export const AvatarDa = () => {
-	return (
-		<>
-			<Leva hidden />
-			<div
-				style={{ width: 'calc(100vw - 18rem)', height: 'calc(100vh - 4rem)' }}
-			>
-				<Canvas shadows camera={{ position: [0, 0, 8], fov: 42 }}>
-					<color attach="background" args={['#000']} />
-					<Experience />
-				</Canvas>
-			</div>
-		</>
-	);
+  const classes = useStyles();
+  return (
+    <>
+      <Leva hidden />
+      <Canvas
+        className={classes.fullScreenCanvas}
+        shadows
+        camera={{ position: [0, 0, 8], fov: 42 }}
+      >
+        <Scene />
+      </Canvas>
+    </>
+  );
 };

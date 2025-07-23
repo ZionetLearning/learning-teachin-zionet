@@ -1,3 +1,3 @@
-export * from './avatar-ou';
-export * from './avatar-sh';
-export * from './avatar-da';
+export * from "./avatar-ou";
+export * from "./avatar-sh";
+export * from "./avatar-da";
