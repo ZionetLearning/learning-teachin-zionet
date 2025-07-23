@@ -8,10 +8,8 @@ namespace Engine.Endpoints
     {
        public static void MapEngineEndpoints(this WebApplication app)
         {
-            app.MapGet("/tasks", async (IEngineService service, ILoggerFactory loggerFactory) =>
+            app.MapGet("/tasks", async (IEngineService service, ILogger<EngineService> logger) =>
             {
-                var logger = loggerFactory.CreateLogger("EngineEndpoints");
-
                 try
                 {
                     var tasks = await service.GetAllTasksAsync();
@@ -25,10 +23,8 @@ namespace Engine.Endpoints
                 }
             });
 
-            app.MapPost($"/{QueueNames.ManagerToEngine}-input", async (TaskModel task, IEngineService service, ILoggerFactory loggerFactory) =>
+            app.MapPost($"/{QueueNames.ManagerToEngine}-input", async (TaskModel task, IEngineService service, ILogger<EngineService> logger) =>
             {
-                var logger = loggerFactory.CreateLogger("EngineEndpoints");
-
                 try
                 {
                     logger.LogDebug("Received task from queue input: {Id} - {Name}", task.Id, task.Name);

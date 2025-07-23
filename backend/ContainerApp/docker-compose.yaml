@@ -47,7 +47,7 @@ services:
       - microservice-net
     restart: unless-stopped
 
-# -------------------- PostgreSQL DB --------------------
+# ------------------------- PostgreSQL DB --------------------------
   postgres:
     image: postgres:15
     container_name: postgres-db
@@ -55,14 +55,26 @@ services:
     environment:
         POSTGRES_USER: postgres
         POSTGRES_PASSWORD: postgres
-        POSTGRES_DB: appdb
+        POSTGRES_DB: postgres_db
     ports:
         - "5432:5432"
     volumes:
         - pgdata:/var/lib/postgresql/data
     networks:
-      - microservice-net
-      - sb-emulator
+        - microservice-net
+ 
+
+  # ---------------------- pgAdmin for PostgreSQL ----------------------
+  pgadmin:
+      image: dpage/pgadmin4
+      container_name: pgadmin
+      environment:
+        PGADMIN_DEFAULT_EMAIL: admin@admin.com
+        PGADMIN_DEFAULT_PASSWORD: admin
+      ports:
+        - "8080:80"
+      networks:
+        - microservice-net
 
   # ------------------------ Manager Service ---------------------------
   manager:
@@ -73,7 +85,6 @@ services:
       - "5001:5001"
     environment:
       - ASPNETCORE_URLS=http://+:5001
-      - DAPR_HTTP_PORT=3500
     depends_on:
       - servicebus-emulator
     networks:
@@ -107,7 +118,6 @@ services:
       - "5002:5002"
     environment:
       - ASPNETCORE_URLS=http://+:5002
-      - DAPR_HTTP_PORT=3501
     depends_on:
       - servicebus-emulator
     networks:
@@ -141,7 +151,6 @@ services:
       - "5003:5003"
     environment:
       - ASPNETCORE_URLS=http://+:5003
-      - DAPR_HTTP_PORT=3502
       - DB_HOST=postgres-db
       - DB_PORT=5432
       - DB_NAME=appdb

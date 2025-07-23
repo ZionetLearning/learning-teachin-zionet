@@ -2,7 +2,7 @@
   "UserConfig": {
     "Namespaces": [
       {
-        "Name": "sbemulatorns",
+        "Name": "host.docker.internal",
         "Queues": [
           {
             "Name": "manager-to-engine",
