@@ -7,7 +7,7 @@ env:
   AZURE_APP_NAME: 'fa-azurefunctions-dev-rg'
   AZURE_RG: 'azurefunctions-dev-rg'
   DOTNET_VERSION: '8.0'
-  FUNCTION_PATH: 'devops/AzureFunctions/Solution1/Manager/Functions'
+  FUNCTION_PATH: 'devops/AzureFunctions/Solution1/Manager'
 
 jobs:
   deploy:
