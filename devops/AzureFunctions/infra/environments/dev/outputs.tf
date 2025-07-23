@@ -4,15 +4,26 @@ output "resource_group_name" {
   value       = module.resource_group.name
 }
 
-output "function_app_name" {
-  description = "The name of the Function App"
-  value       = module.function_app.name
+output "function_apps_info" {
+  description = "Information about all Function Apps"
+  value = {
+    names      = module.function_apps.function_app_ids
+    urls       = module.function_apps.function_app_urls
+    hostnames  = module.function_apps.function_app_hostnames
+  }
 }
 
-output "function_app_default_hostname" {
-  description = "The default hostname of the Function App"
-  value       = module.function_app.default_hostname
+# Individual outputs for backward compatibility
+output "accessor_function_app_url" {
+  description = "The URL of the Accessor Function App"
+  value       = module.function_apps.function_app_urls["accessor"]
 }
+
+output "manager_function_app_url" {
+  description = "The URL of the Manager Function App"
+  value       = module.function_apps.function_app_urls["manager"]
+}
+
 
 output "storage_account_name" {
   description = "The name of the storage account"
