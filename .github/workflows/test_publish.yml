@@ -50,11 +50,6 @@ jobs:
 
     - name: Set WEBSITE_RUN_FROM_PACKAGE setting
       run: |
-        URL=$(az functionapp deployment list-publishing-credentials \
-          --name $AZURE_APP_NAME \
-          --resource-group $AZURE_RG \
-          --query publishingUserName -o tsv)
-
         az functionapp config appsettings set \
           --name $AZURE_APP_NAME \
           --resource-group $AZURE_RG \
