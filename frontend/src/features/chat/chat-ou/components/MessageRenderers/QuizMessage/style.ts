@@ -3,7 +3,6 @@ import { createUseStyles } from "react-jss";
 export const useStyles = createUseStyles({
   container: {
     width: "100%",
-    // Remove redundant styling - MessageItem handles the outer container
   },
 
   question: {

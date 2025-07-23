@@ -17,13 +17,10 @@ const LinkMessage: React.FC<LinkMessageProps> = ({
   const classes = useStyles();
 
   const handleClick = () => {
-    // For demo purposes, we'll use window.location for navigation
-    // In a real app with react-router-dom, this would use navigate()
+
     if (url.startsWith("/")) {
-      // Internal navigation
       window.location.href = url;
     } else {
-      // External link
       window.open(url, "_blank", "noopener,noreferrer");
     }
   };

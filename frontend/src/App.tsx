@@ -2,13 +2,13 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import {
   ChatYoPage,
   ChatDaPage,
+  ChatOuPage,
   AvatarOuPage,
   AvatarShPage,
   HomePage,
 } from "./pages";
 
 import "./App.css";
-import { ChatOuPage } from "./pages/ChatOuPage";
 
 function App() {
   return (

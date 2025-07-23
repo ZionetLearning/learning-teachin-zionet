@@ -3,7 +3,6 @@ import { createUseStyles } from "react-jss";
 export const useStyles = createUseStyles({
   container: {
     width: "100%",
-    // Remove redundant styling - MessageItem handles the container
   },
 
   fallbackText: {
@@ -25,7 +24,6 @@ export const useStyles = createUseStyles({
     display: "inline-block",
   },
 
-  // Styles for when component is successfully rendered
   componentWrapper: {
     width: "100%",
     "& > *": {

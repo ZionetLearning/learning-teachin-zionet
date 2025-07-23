@@ -19,7 +19,7 @@ import {
   INITIAL_CONVERSATION_CONFIG,
   MESSAGE_PATTERNS,
   TIMING_CONFIG,
-} from "./mock-messages";
+} from "./MockMessages";
 
 export class MockChatService implements MockAIService {
   private readonly aiSender: MessageSender = AI_SENDER;
@@ -28,7 +28,6 @@ export class MockChatService implements MockAIService {
 
   private isTyping = false;
 
-  // MockDataProvider implementation
   getInitialConversation(): MockConversation {
     return {
       id: INITIAL_CONVERSATION_CONFIG.id,
@@ -56,8 +55,6 @@ export class MockChatService implements MockAIService {
       TIMING_CONFIG.networkDelay.min;
     return new Promise((resolve) => setTimeout(resolve, delay));
   }
-
-  // MockAIService implementation
   async generateResponse(
     userMessage: string,
     context?: MessageContext
@@ -68,7 +65,6 @@ export class MockChatService implements MockAIService {
     const timestamp = new Date();
     const lowerMessage = userMessage.toLowerCase();
 
-    // Determine response type based on keywords
     if (
       MESSAGE_PATTERNS.image.some((keyword) => lowerMessage.includes(keyword))
     ) {

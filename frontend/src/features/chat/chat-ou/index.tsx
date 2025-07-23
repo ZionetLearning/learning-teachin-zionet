@@ -17,7 +17,6 @@ export const ChatOu: React.FC = () => {
 
   const [showError, setShowError] = useState(false);
 
-  // Show error when it occurs
   useEffect(() => {
     if (error) {
       setShowError(true);

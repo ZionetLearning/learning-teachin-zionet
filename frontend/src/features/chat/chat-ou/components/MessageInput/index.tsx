@@ -1,6 +1,6 @@
 import React, { useState, useRef, type KeyboardEvent } from "react";
 import { useStyles } from "./style";
-import { useContext } from "../../hooks/useContext";
+import { useContext } from "../../hooks";
 import type { MessageContext } from "../../types";
 
 const DEMO_SUGGESTIONS = [
@@ -42,7 +42,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputValue(event.target.value);
 
-    // Auto-resize textarea
+
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
@@ -59,7 +59,6 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   const handleSendMessage = async () => {
     const trimmedValue = inputValue.trim();
 
-    // Validation
     if (!trimmedValue || isSending || disabled || isLoading) {
       return;
     }
@@ -67,18 +66,15 @@ export const MessageInput: React.FC<MessageInputProps> = ({
     setIsSending(true);
 
     try {
-      // Send message with context if attached
       const contextToSend =
         isContextAttached && currentContext ? currentContext : undefined;
       await onSendMessage(trimmedValue, contextToSend);
       setInputValue("");
 
-      // Reset textarea height
       if (textareaRef.current) {
         textareaRef.current.style.height = "auto";
       }
 
-      // Optionally detach context after sending
       if (isContextAttached) {
         detachContext();
       }
@@ -105,13 +101,11 @@ export const MessageInput: React.FC<MessageInputProps> = ({
     setInputValue(suggestion);
     setShowSuggestions(false);
 
-    // Auto-resize textarea
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
 
-    // Focus the textarea
     textareaRef.current?.focus();
   };
 
@@ -122,7 +116,6 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   };
 
   const handleInputBlur = () => {
-    // Delay hiding suggestions to allow clicking on them
     setTimeout(() => setShowSuggestions(false), 150);
   };
 

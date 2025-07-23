@@ -24,14 +24,12 @@ export function useChat(): UseChatReturn {
 
   const messageServiceRef = useRef<MessageServiceImpl | null>(null);
 
-  // Initialize message service
   useEffect(() => {
     const initializeService = async () => {
       try {
         if (!messageServiceRef.current) {
           messageServiceRef.current = new MessageServiceImpl();
 
-          // Subscribe to message updates
           const unsubscribe = messageServiceRef.current.subscribeToMessages((updatedMessages) => {
             setMessages(updatedMessages);
             setIsInitialized(true);
@@ -56,7 +54,6 @@ export function useChat(): UseChatReturn {
     if (err instanceof Error) {
       errorMessage = err.message;
       
-      // Categorize error types
       if (err.message.includes('network') || err.message.includes('fetch')) {
         errorType = 'network';
       } else if (err.message.includes('validation')) {
@@ -92,7 +89,6 @@ export function useChat(): UseChatReturn {
       return;
     }
 
-    // Store last message for retry functionality
     setLastMessageContent({ content, context });
     setIsLoading(true);
     setError(undefined);

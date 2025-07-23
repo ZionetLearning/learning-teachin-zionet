@@ -4,15 +4,15 @@ export const useStyles = createUseStyles({
   container: {
     display: "flex",
     flexDirection: "column",
-    height: "628px", // Fixed height instead of 100%
+    height: "628px", 
     width: "100%",
     maxWidth: "800px",
-    // margin: "0 auto",
+
     border: "1px solid #e1e5e9",
     borderRadius: "12px",
     backgroundColor: "#ffffff",
     overflow: "hidden",
-    position: "relative", // For absolute positioning of loading overlay
+    position: "relative", 
     fontFamily:
       "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
   },
@@ -25,12 +25,12 @@ export const useStyles = createUseStyles({
     flex: 1,
     display: "flex",
     flexDirection: "column",
-    minHeight: 0, // Important for flex child to shrink
+    minHeight: 0, 
   },
 
   messageList: {
     flex: 1,
-    minHeight: 0, // Important for flex child to shrink properly
+    minHeight: 0, 
   },
 
   inputArea: {
@@ -110,10 +110,9 @@ export const useStyles = createUseStyles({
     "100%": { transform: "rotate(360deg)" },
   },
 
-  // Responsive design
   "@media (max-width: 768px)": {
     container: {
-      height: "calc(100vh - 40px)", // Account for page padding
+      height: "calc(100vh - 40px)",
       maxWidth: "100%",
       borderRadius: "8px",
       margin: "20px",

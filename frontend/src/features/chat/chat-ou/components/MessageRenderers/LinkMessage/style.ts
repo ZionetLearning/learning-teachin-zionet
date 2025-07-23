@@ -14,11 +14,10 @@ export const useStyles = createUseStyles({
   content: {
     display: "flex",
     alignItems: "center",
-    padding: "8px 0", // Minimal padding since MessageItem handles container
+    padding: "8px 0", 
     transition: "all 0.2s ease",
 
     "&:hover": {
-      // Subtle hover effect without changing background (MessageItem handles that)
       opacity: 0.8,
     },
   },
@@ -32,7 +31,7 @@ export const useStyles = createUseStyles({
 
   textContent: {
     flex: 1,
-    minWidth: 0, // Allow text to truncate
+    minWidth: 0,
   },
 
   title: {
@@ -43,7 +42,6 @@ export const useStyles = createUseStyles({
     fontFamily:
       '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
 
-    // Truncate long titles
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
@@ -54,7 +52,6 @@ export const useStyles = createUseStyles({
     color: "#6b7280",
     lineHeight: "1.4",
 
-    // Limit to 2 lines
     display: "-webkit-box",
     WebkitLineClamp: 2,
     WebkitBoxOrient: "vertical",

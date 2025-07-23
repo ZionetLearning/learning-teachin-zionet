@@ -1,6 +1,5 @@
 import type { MessageSender } from "../types";
 
-// Mock senders
 export const AI_SENDER: MessageSender = {
   id: "ai-assistant",
   name: "AI Assistant",
@@ -15,7 +14,6 @@ export const USER_SENDER: MessageSender = {
   avatar: "👤",
 };
 
-// Mock response templates
 export const TEXT_RESPONSE_TEMPLATES = [
   "That's interesting! Regarding \"{userMessage}\", here's what I think:",
   'Great question about "{userMessage}". Let me share some insights:',
@@ -28,14 +26,13 @@ export const TEXT_FOLLOWUP_MESSAGES = [
   "I'd be happy to dive deeper into any specific part you're curious about.",
 ];
 
-// Image response templates
 export const IMAGE_CAPTIONS = [
   "Here's an image that relates to your request!",
   "I found this visual that might help illustrate the concept.",
   "This image should provide some context for what you're asking about.",
 ];
 
-// Quiz data
+
 export const MOCK_QUIZZES = [
   {
     question: "What's the largest planet in our solar system?",

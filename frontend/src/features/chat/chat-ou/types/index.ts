@@ -1,4 +1,3 @@
-// Message types
 export type {
   Message,
   BaseMessage,
@@ -9,10 +8,8 @@ export type {
   MessageContext,
 } from "./Message";
 
-// Chat state types
 export type { ChatState, MessageStore, ChatError, ErrorHandler } from "./Chat";
 
-// Service interfaces
 export type {
   MessageService,
   ContextService,
