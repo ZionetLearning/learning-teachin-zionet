@@ -19,7 +19,6 @@ export function useContext(): UseContextReturn {
   const [isContextAttached, setIsContextAttached] = useState(false);
   const contextServiceRef = useRef<ContextServiceImpl | null>(null);
 
-  // Initialize context service
   useEffect(() => {
     if (!contextServiceRef.current) {
       contextServiceRef.current = new ContextServiceImpl();

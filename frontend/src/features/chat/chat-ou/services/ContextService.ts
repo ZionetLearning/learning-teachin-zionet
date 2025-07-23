@@ -22,7 +22,7 @@ export class ContextServiceImpl implements ContextService {
   attachContext(message: string): MessageContext {
     const baseContext = this.getCurrentPageContext();
 
-    // Add message-specific context
+
     return {
       ...baseContext,
       metadata: {
@@ -52,7 +52,6 @@ export class ContextServiceImpl implements ContextService {
       timestamp: new Date().toISOString(),
     };
 
-    // Extract meta tags
     const metaTags = document.querySelectorAll("meta");
     const metaData: Record<string, string> = {};
 
@@ -69,7 +68,6 @@ export class ContextServiceImpl implements ContextService {
       metadata.metaTags = metaData;
     }
 
-    // Get viewport dimensions
     metadata.viewport = {
       width: window.innerWidth,
       height: window.innerHeight,
@@ -77,8 +75,7 @@ export class ContextServiceImpl implements ContextService {
 
     return metadata;
   }
-
-  // Utility method to format context for display
+y
   formatContextForDisplay(context: MessageContext): string {
     const parts: string[] = [];
 
@@ -97,7 +94,6 @@ export class ContextServiceImpl implements ContextService {
     return parts.join("\n");
   }
 
-  // Check if context has meaningful data
   hasSignificantContext(context: MessageContext): boolean {
     return !!(
       context.selectedText ||
