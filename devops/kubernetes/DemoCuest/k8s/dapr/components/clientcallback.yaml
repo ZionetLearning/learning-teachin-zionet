@@ -9,7 +9,7 @@ spec:
   metadata:
     - name: connectionString
       secretKeyRef:
-        name: dapr-secretstore
+        name: signalr-connection
         key: SignalRConnectionString
     - name: hub 
       value: todohub

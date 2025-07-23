@@ -116,7 +116,7 @@ resource "kubernetes_namespace" "model" {
 ### how to destroy
 ### ### terraform destroy -var-file="terraform.tfvars.dev"
 
-### az aks get-credentials   --resource-group democuest-rg-dev   --name democuest-aks-dev   --overwrite-existing
+### az aks get-credentials   --resource-group democuest-aks-rg-dev   --name democuest-aks-dev   --overwrite-existing
 ### to be able to '  kubectl get pods -n devops-model   ' 
 
 ### to get external ip '   kubectl -n devops-model get svc todomanager   '

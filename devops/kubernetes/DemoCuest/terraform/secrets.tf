@@ -8,7 +8,7 @@ resource "kubernetes_secret" "azure_service_bus" {
   }
 
   data = {
-    connectionstring = base64encode(module.servicebus.connection_string)
+    AzureServiceBusConnectionString = module.servicebus.connection_string
   }
 }
 
@@ -22,6 +22,19 @@ resource "kubernetes_secret" "cosmosdb_connection" {
   }
 
   data = {
-    CosmosDbConnectionString = base64encode(module.cosmosdb.connection_string)
+    CosmosDbConnectionString = module.cosmosdb.connection_string
+  }
+}
+
+########################
+# SignalR secret
+########################
+resource "kubernetes_secret" "signalr_connection" {
+  metadata {
+    name      = "signalr-connection"
+    namespace = kubernetes_namespace.model.metadata[0].name
+  }
+  data = {
+    SignalRConnectionString = module.signalr.primary_connection_string
   }
 }

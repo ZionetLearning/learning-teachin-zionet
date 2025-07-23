@@ -12,7 +12,7 @@ spec:
   - name: connectionString
     secretKeyRef:
       name: azure-service-bus-secret
-      key: connectionstring
+      key: AzureServiceBusConnectionString
 scopes:
 - todomanager
 - todoaccessor

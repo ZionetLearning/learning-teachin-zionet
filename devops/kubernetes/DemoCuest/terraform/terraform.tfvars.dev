@@ -1,5 +1,5 @@
 location               = "westeurope"
-resource_group_name    = "democuest-rg-dev"
+resource_group_name    = "democuest-aks-rg-dev"
 aks_cluster_name       = "democuest-aks-dev"
 servicebus_namespace   = "democuest-sb-dev"
 cosmosdb_account_name  = "democuestcosmosdev"

@@ -19,7 +19,6 @@ spec:
         dapr.io/enabled: "true"
         dapr.io/app-id: "todomanager"
         dapr.io/app-port: "8080"
-        dapr.io/config: "dapr-config"
         kompose.cmd: C:\Program Files\kompose\kompose.exe convert -f docker-compose.yml
         kompose.version: 1.30.0 (9d8dcb518)
       labels:

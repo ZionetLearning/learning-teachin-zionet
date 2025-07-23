@@ -6,19 +6,19 @@ K8S_DIR="./k8s"
 NAMESPACE_FILE="$K8S_DIR/namespace-model.yaml"
 
 # step 1: connect to azure
-az aks get-credentials   --resource-group democuest-rg-dev   --name democuest-aks-dev   --overwrite-existing
+az aks get-credentials   --resource-group democuest-aks-rg-dev   --name democuest-aks-dev   --overwrite-existing
 
 # Step 2: Create namespace
 echo "Creating namespace..."
 kubectl apply -f "$NAMESPACE_FILE"
 
 # Step 3: Apply secrets
-echo "Applying secrets..."
-kubectl apply -f "$K8S_DIR/secrets" --recursive
+# echo "Applying secrets..."
+# kubectl apply -f "$K8S_DIR/secrets" --recursive
 
 # Step 4: Apply Dapr components
 echo "Applying Dapr components..."
-kubectl apply -f "$K8S_DIR/dapr" --recursive
+kubectl apply -f "$K8S_DIR/dapr/components" --recursive
 
 # Step 5: Apply services
 echo "Applying services..."
