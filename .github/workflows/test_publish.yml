@@ -4,7 +4,8 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_APP_NAME: 'fa-azurefunctions-dev-rg'
+  AZURE_APP_NAME: 'fa-manager-azurefunctions-dev-rg'
+  AZURE_APP_NAME_ACCESSOR: 'fa-accessor-azurefunctions-dev-rg'
   AZURE_RG: 'azurefunctions-dev-rg'
   DOTNET_VERSION: '8.0'
   FUNCTION_PATH: 'devops/AzureFunctions/Solution1/Manager'
@@ -56,6 +57,6 @@ jobs:
       uses: Azure/functions-action@v1
       id: deploy_accessor
       with:
-        app-name: 'fa-accessor-azurefunctions-dev-rg'
+        app-name: ${{ env.AZURE_APP_NAME_ACCESSOR }}
         package: '${{ env.FUNCTION_PATH_ACCESSOR }}/publish'
         sku: 'flexconsumption'
