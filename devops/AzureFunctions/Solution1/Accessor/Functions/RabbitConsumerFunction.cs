@@ -1,77 +1,48 @@
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
-using MongoDB.Driver;
-using RabbitMQ.Client;
-using System.Text;
-using AccessorService.Models;
-using System.Net.Http.Json;
+using Npgsql;
+using System;
+using System.Threading.Tasks;
 
 namespace Accessor.Functions;
 
-public class RabbitConsumerFunction
+public class ServiceBusConsumerFunction
 {
-    private readonly ILogger _logger;
-    private readonly IMongoCollection<MessageDocument> _collection;
+    private readonly ILogger<ServiceBusConsumerFunction> _logger;
 
-    public RabbitConsumerFunction(ILoggerFactory loggerFactory)
+    public ServiceBusConsumerFunction(ILogger<ServiceBusConsumerFunction> logger)
     {
-        _logger = loggerFactory.CreateLogger<RabbitConsumerFunction>();
-
-        var mongoUri = Environment.GetEnvironmentVariable("MongoConnection");
-        var client = new MongoClient(mongoUri);
-        var database = client.GetDatabase("MyDatabase");
-        _collection = database.GetCollection<MessageDocument>("Messages");
+        _logger = logger;
     }
 
-    [Function("RabbitConsumerFunction")]
-    public async Task RunAsync([TimerTrigger("*/10 * * * * *")] TimerInfo timerInfo)
+    [Function("ServiceBusConsumerFunction")]
+    public async Task RunAsync(
+        [ServiceBusTrigger("myqueue", Connection = "ServiceBusConnectionString")] string message)
     {
-        _logger.LogInformation($"[Consumer] Triggered at: {DateTime.UtcNow}");
+        _logger.LogInformation($"[Consumer] Received message: {message}");
 
         try
         {
-            var rabbitUri = Environment.GetEnvironmentVariable("RabbitMQConnection");
-            var callbackUrl = Environment.GetEnvironmentVariable("CallbackUrl");
+            // Build PostgreSQL connection string from environment variables
+            var host = Environment.GetEnvironmentVariable("Database__Host");
+            var database = Environment.GetEnvironmentVariable("Database__Database");
+            var username = Environment.GetEnvironmentVariable("Database__Username");
+            var password = Environment.GetEnvironmentVariable("Database__Password");
 
-            var factory = new ConnectionFactory
-            {
-                Uri = new Uri(rabbitUri)
-            };
+            var connectionString = $"Host={host};Database={database};Username={username};Password={password};Ssl Mode=Require";
 
+            await using var connection = new NpgsqlConnection(connectionString);
+            await connection.OpenAsync();
 
-            using var connection = await factory.CreateConnectionAsync();
-            using var channel = await connection.CreateChannelAsync();
+            var cmd = new NpgsqlCommand("INSERT INTO messages (body) VALUES (@body)", connection);
+            cmd.Parameters.AddWithValue("@body", message);
+            await cmd.ExecuteNonQueryAsync();
 
-            var result = await channel.BasicGetAsync("myqueue", autoAck: true);
-
-            if (result != null)
-            {
-                var message = Encoding.UTF8.GetString(result.Body.ToArray());
-                _logger.LogInformation($"[Consumer] Received: {message}");
-
-                var doc = new MessageDocument { Body = message };
-                await _collection.InsertOneAsync(doc);
-                _logger.LogInformation("[Consumer] Saved to MongoDB.");
-
-                // Send confirmation to Manager
-                using var httpClient = new HttpClient();
-                var payload = new { status = "success", message = message };
-
-                var response = await httpClient.PostAsJsonAsync(callbackUrl, payload);
-
-                if (response.IsSuccessStatusCode)
-                    _logger.LogInformation("[Consumer] Callback sent successfully.");
-                else
-                    _logger.LogError($"[Consumer] Failed to send callback. Status: {response.StatusCode}");
-            }
-            else
-            {
-                _logger.LogInformation("[Consumer] No message found.");
-            }
+            _logger.LogInformation("[Consumer] Message inserted into PostgreSQL.");
         }
         catch (Exception ex)
         {
-            _logger.LogError($"[Consumer] Error: {ex.Message}");
+            _logger.LogError(ex, "[Consumer] Error while processing message.");
         }
     }
 }
