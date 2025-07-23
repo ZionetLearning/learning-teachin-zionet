@@ -2,6 +2,9 @@
 
 set -e
 
+# set to local kubcetl context
+kubectl config use-context docker-desktop
+
 K8S_DIR="./k8s for local with rabbitmq and cosmosdb-emulator/k8s"
 NAMESPACE_FILE="$K8S_DIR/namespace-model.yaml"
 

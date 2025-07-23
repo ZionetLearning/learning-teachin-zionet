@@ -2,6 +2,9 @@
 
 set -e
 
+# set to cloud kubcetl context
+kubectl config use-context democuest-aks-dev
+
 K8S_DIR="./k8s"
 NAMESPACE_FILE="$K8S_DIR/namespace-model.yaml"
 
