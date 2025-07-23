@@ -18,4 +18,9 @@ resource "azurerm_postgresql_flexible_server" "this" {
   }
 
   delegated_subnet_id = var.delegated_subnet_id
+
+  # Prevent zone configuration changes that require specific high availability setup
+  lifecycle {
+    ignore_changes = [zone, high_availability]
+  }
 }
