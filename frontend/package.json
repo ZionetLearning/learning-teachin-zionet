@@ -11,9 +11,11 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@react-nano/use-event-source": "^0.16.0",
+    "axios": "^1.10.0",
     "lottie-web": "^5.13.0",
     "lucide-react": "^0.525.0",
-    "@react-nano/use-event-source": "^0.16.0",
+    "microsoft-cognitiveservices-speech-sdk": "^1.45.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-jss": "^10.10.0",
