@@ -33,7 +33,7 @@ const MessageList: React.FC<MessageListProps> = ({
         setShowScrollToBottom(false);
       }
     },
-    [isUserScrolling, isNearBottom]
+    [isUserScrolling, isNearBottom],
   );
 
   const scrollTimeoutRef = useRef<number | null>(null);

@@ -16,7 +16,7 @@ export interface ContextService {
 export interface MockAIService {
   generateResponse(
     userMessage: string,
-    context?: MessageContext
+    context?: MessageContext,
   ): Promise<Message>;
   simulateTyping(): Promise<void>;
   simulateNetworkDelay(): Promise<void>;

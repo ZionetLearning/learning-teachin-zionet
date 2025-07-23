@@ -1,7 +1,11 @@
 import React from "react";
 import type { Message } from "../../types";
 import { useStyles } from "./style";
-import { ImageMessage, TextMessage, GenerativeUIMessage } from "../MessageRenderers";
+import {
+  ImageMessage,
+  TextMessage,
+  GenerativeUIMessage,
+} from "../MessageRenderers";
 
 interface MessageItemProps {
   message: Message;
