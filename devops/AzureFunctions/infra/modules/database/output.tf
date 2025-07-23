@@ -8,6 +8,12 @@ output "postgres_admin_username" {
   description = "Administrator username"
 }
 
+output "postgres_admin_password" {
+  value       = var.admin_password
+  description = "Administrator password"
+  sensitive   = true
+}
+
 output "postgres_database_name" {
   value       = var.database_name
   description = "Database name"

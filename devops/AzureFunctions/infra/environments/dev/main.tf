@@ -29,14 +29,7 @@ module "service_bus" {
   location           = module.resource_group.location
   
   queues = {
-    # "orders" = {
-    #   max_delivery_count = 5
-    # }
-    # "payments" = {
-    #   max_delivery_count = 1
-    #   enable_partitioning = true
-    # }
-    # "notifications" = {}  # Use defaults
+    "myqueue" = {}  
   }
 }
 
@@ -76,6 +69,7 @@ module "function_apps" {
         "Database__Host" = module.database.postgres_fqdn
         "Database__Database" = module.database.postgres_database_name
         "Database__Username" = module.database.postgres_admin_username
+        "Database__Password" = module.database.postgres_admin_password
       }) : config.app_settings
       function_type           = config.function_type
       environment             = config.environment
