@@ -94,7 +94,6 @@ module "database" {
   backup_retention_days         = var.backup_retention_days
   geo_redundant_backup_enabled  = var.geo_redundant_backup_enabled
 
-  high_availability_mode        = var.high_availability_mode
   delegated_subnet_id           = var.delegated_subnet_id
 
   database_name       = var.database_name

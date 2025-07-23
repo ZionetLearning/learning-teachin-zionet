@@ -6,7 +6,6 @@ variable "resource_group_name" {
 variable "location" {
     description = "Azure region for the resources"
     type        = string
-    default     = "West Europe"
 }
 
 variable "db_location" {
@@ -107,11 +106,6 @@ variable "geo_redundant_backup_enabled" {
   description = "Enable geo-redundant backups for PostgreSQL"
 }
 
-# high_availability_mode
-variable "high_availability_mode" {
-  type        = string
-  description = "High availability mode for PostgreSQL (e.g., ZoneRedundant, Disabled)"
-}
 
 # delegated_subnet_id
 variable "delegated_subnet_id" {

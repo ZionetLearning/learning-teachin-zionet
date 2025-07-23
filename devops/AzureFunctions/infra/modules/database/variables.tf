@@ -60,10 +60,11 @@ variable "active_directory_auth_enabled" {
   description = "Enable Active Directory authentication"
 }
 
-variable "high_availability_mode" {
-  type        = string
-  description = "High availability mode (e.g., 'Disabled', 'ZoneRedundant')"
-}
+# variable "high_availability_mode" {
+#   type        = string
+#   description = "High availability mode (e.g., 'Disabled', 'ZoneRedundant')"
+#   default     = ""
+# }
 
 variable "delegated_subnet_id" {
   type        = string

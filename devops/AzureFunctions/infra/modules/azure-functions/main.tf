@@ -6,5 +6,9 @@ resource "azurerm_linux_function_app" "this" {
   storage_account_access_key = var.storage_account_access_key
   service_plan_id            = var.app_service_plan_id
 
-  site_config {}
+  site_config {
+      application_stack {
+      dotnet_version = "8.0"
+    }
+  }
 }

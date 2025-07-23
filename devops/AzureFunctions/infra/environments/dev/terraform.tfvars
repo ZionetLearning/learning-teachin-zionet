@@ -30,8 +30,7 @@ active_directory_auth_enabled  = false
 backup_retention_days         = 7
 geo_redundant_backup_enabled  = false
 
-# PostgreSQL High Availability - set to empty string to disable
-high_availability_mode = ""
+
 
 # Networking (leave empty for now - you can configure this later)
 delegated_subnet_id    = null
