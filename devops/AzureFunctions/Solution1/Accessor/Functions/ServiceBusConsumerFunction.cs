@@ -1,8 +1,7 @@
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Npgsql;
-using System;
-using System.Threading.Tasks;
+
 
 namespace Accessor.Functions;
 
