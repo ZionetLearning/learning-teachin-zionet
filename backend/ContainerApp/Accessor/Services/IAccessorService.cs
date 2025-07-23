@@ -1,4 +1,4 @@
-using Accessor.Models;
+﻿using Accessor.Models;
 
 namespace Accessor.Services
 {
@@ -6,5 +6,9 @@ namespace Accessor.Services
     {
         Task<TaskModel?> GetTaskByIdAsync(int id);
         Task SaveTaskAsync(TaskModel task);
+        Task InitializeAsync();
+        Task<bool> DeleteTaskAsync(int taskId);
+        Task<bool> UpdateTaskNameAsync(int taskId, string newName);
+
     }
 }
