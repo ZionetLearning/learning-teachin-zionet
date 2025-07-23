@@ -76,9 +76,17 @@ public static class ManagerEndpoints
            IManagerService manager) =>
         {
             logger.LogInformation("Get account by id from account manager with {id}", id);
+            try
+            {
+                var success = await manager.UpdateTaskName(id, name);
+                return success ? Results.Ok("Task name updated") : Results.NotFound("Task not found");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error updating task name for ID {Id}", id);
+                return Results.Problem("An error occurred while updating the task name.");
+            }       
 
-            var success = await manager.UpdateTaskName(id, name);
-            return success ? Results.Ok("Task name updated") : Results.NotFound("Task not found");
         });
 
         #endregion
@@ -92,8 +100,17 @@ public static class ManagerEndpoints
             IManagerService manager) =>
         {
             logger.LogInformation("Delete task with id {id}", id);
-            var success = await manager.DeleteTask(id);
-            return success ? Results.Ok("Task deleted") : Results.NotFound("Task not found");
+            try
+            {
+                var success = await manager.DeleteTask(id);
+                return success ? Results.Ok("Task deleted") : Results.NotFound("Task not found");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error deleting task with ID {Id}", id);
+                return Results.Problem("An error occurred while deleting the task.");
+            }
+
         });
 
 

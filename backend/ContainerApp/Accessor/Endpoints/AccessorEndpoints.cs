@@ -53,7 +53,7 @@ namespace Accessor.Endpoints
 
 
 
-            app.MapPost("/emailqueue-input", async (
+            app.MapPost($"/{QueueNames.TaskUpdateInput}", async (
             [FromBody] UpdateTaskName request,
             IAccessorService accessorService,
             ILogger<Program> logger) =>
@@ -81,21 +81,29 @@ namespace Accessor.Endpoints
 
 
 
-            app.MapDelete("/user/{taskId}", async (int taskId,
+            app.MapDelete("/task/{taskId}", async (int taskId,
                 IAccessorService accessorService,
                 ILogger<Program> logger) =>
             {
                 logger.LogInformation($"[Accessor] Received DELETE request for Task ID: {taskId}");
-
-                var deleted = await accessorService.DeleteTaskAsync(taskId);
-                if (!deleted)
+                try
                 {
-                    logger.LogWarning($"[Accessor] Task with ID {taskId} not found.");
-                    return Results.NotFound($"Task with ID {taskId} not found.");
+                    var deleted = await accessorService.DeleteTaskAsync(taskId);
+                    if (!deleted)
+                    {
+                        logger.LogWarning($"[Accessor] Task with ID {taskId} not found.");
+                        return Results.NotFound($"Task with ID {taskId} not found.");
+                    }
+
+                    logger.LogInformation($"[Accessor] Task with ID {taskId} deleted successfully.");
+                    return Results.Ok($"Task {taskId} deleted.");
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, $"[Accessor] Failed to delete task with ID {taskId}");
+                    return Results.Problem("Internal server error while deleting task.");
                 }
 
-                logger.LogInformation($"[Accessor] Task with ID {taskId} deleted successfully.");
-                return Results.Ok($"Task {taskId} deleted.");
             });
 
 

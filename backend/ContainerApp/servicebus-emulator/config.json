@@ -33,7 +33,7 @@
             }
           },
           {
-            "Name": "emailqueue",
+            "Name": "taskupdate",
             "Properties": {
               "DeadLetteringOnMessageExpiration": false,
               "DefaultMessageTimeToLive": "PT1H",

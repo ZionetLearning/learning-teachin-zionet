@@ -71,7 +71,7 @@ public class ManagerService : IManagerService
             }
 
             await _daprClient.InvokeBindingAsync(
-                "emailqueue",
+                QueueNames.TaskUpdate,
                 "create",
                 new
                 {
@@ -103,7 +103,7 @@ public class ManagerService : IManagerService
             await _daprClient.InvokeMethodAsync(
                 HttpMethod.Delete,
                 "accessor",
-                $"user/{id}");
+                $"task/{id}");
 
             _logger.LogInformation($"{nameof(DeleteTask)}: task with id: {id} has been deleted");
             return true;

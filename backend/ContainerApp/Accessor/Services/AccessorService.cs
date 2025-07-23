@@ -25,11 +25,8 @@ namespace Accessor.Services;
 
         try
         {
-            //await _dbContext.Database.OpenConnectionAsync();
-            //_logger.LogInformation("Connected to PostgreSQL during startup.");
-            //await _dbContext.Database.CloseConnectionAsync();
             _logger.LogInformation("Applying EF Core migrations...");
-            await _dbContext.Database.MigrateAsync();  // <-- this ensures schema is up-to-date
+            await _dbContext.Database.MigrateAsync();
             _logger.LogInformation("Database migration completed.");
         }
         catch (Exception ex)
@@ -37,10 +34,6 @@ namespace Accessor.Services;
             _logger.LogError(ex, "Failed to connect to PostgreSQL during startup.");
         }
             }
-
-
-
-
 
 
     public async Task<bool> UpdateTaskNameAsync(int taskId, string newName)
