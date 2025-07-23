@@ -154,14 +154,17 @@ namespace AzureFunctionsProject.Manager
         [Function("CreateData")]
         public async Task<HttpResponseData> CreateDataAsync(
             [HttpTrigger(AuthorizationLevel.Function, "post", Route = Routes.ManagerCreate)]
-            HttpRequestData req, CancellationToken cancellationToken)
+    HttpRequestData req,
+            CancellationToken cancellationToken)
         {
             _logger.LogInformation("Received CreateData request POST /api/data");
+
             DataDto dto;
             try
             {
-                dto = await JsonSerializer.DeserializeAsync<DataDto>(req.Body, _jsonOptions, cancellationToken)
-                    ?? throw new InvalidDataException();
+                dto = await JsonSerializer.DeserializeAsync<DataDto>(
+                          req.Body, _jsonOptions, cancellationToken)
+                      ?? throw new InvalidDataException();
             }
             catch (JsonException jex)
             {
@@ -183,13 +186,14 @@ namespace AzureFunctionsProject.Manager
             try
             {
                 _logger.LogInformation("Enqueuing CREATE for {DataId}", dto.Id);
-                var message = new ServiceBusMessage(messageBody)
+                var msg = new ServiceBusMessage(messageBody)
                 {
                     MessageId = dto.Id.ToString(),
                     Subject = "CreateData",
                     TimeToLive = TimeSpan.FromMinutes(5)
                 };
-                await _queueSender.SendMessageAsync(message, cancellationToken);
+                // Use injected sender
+                await _queueSender.SendMessageAsync(msg, cancellationToken);
 
                 var resp = req.CreateResponse(HttpStatusCode.Accepted);
                 resp.Headers.Add("Location", $"/api/data/{dto.Id}");
@@ -198,9 +202,9 @@ namespace AzureFunctionsProject.Manager
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to enqueue CREATE for {DataId}", dto.Id);
-                var resp = req.CreateResponse(HttpStatusCode.InternalServerError);
-                await resp.WriteStringAsync("Could not enqueue create", cancellationToken);
-                return resp;
+                var error = req.CreateResponse(HttpStatusCode.InternalServerError);
+                await error.WriteStringAsync("Could not enqueue create", cancellationToken);
+                return error;
             }
         }
 
