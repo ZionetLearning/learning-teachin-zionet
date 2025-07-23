@@ -1,0 +1,67 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36310.24
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Accessor", "Accessor\Accessor.csproj", "{2CCE9A29-D761-B329-0660-CE29026D8FC4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Engine", "Engine\Engine.csproj", "{C6834DE9-48FD-31C1-8DF5-D96BED81EDC8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Manager", "Manager\Manager.csproj", "{D3EBF624-E649-AFC4-723A-75579D18DC0C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dapr", "dapr", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+	ProjectSection(SolutionItems) = preProject
+		dapr\config.yaml = dapr\config.yaml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "components", "components", "{F0FF105B-41F5-4E9B-B432-5CDE99DEE70E}"
+	ProjectSection(SolutionItems) = preProject
+		emailqueue-input.yaml = emailqueue-input.yaml
+		dapr\components\taskupdate-input.yaml = dapr\components\taskupdate-input.yaml
+		dapr\components\taskupdate.yaml = dapr\components\taskupdate.yaml
+	EndProjectSection
+EndProject
+Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{81DDED9D-158B-E303-5F62-77A2896D2A5A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		NoVariablesDefault|Any CPU = NoVariablesDefault|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2CCE9A29-D761-B329-0660-CE29026D8FC4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2CCE9A29-D761-B329-0660-CE29026D8FC4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2CCE9A29-D761-B329-0660-CE29026D8FC4}.NoVariablesDefault|Any CPU.ActiveCfg = Release|Any CPU
+		{2CCE9A29-D761-B329-0660-CE29026D8FC4}.NoVariablesDefault|Any CPU.Build.0 = Release|Any CPU
+		{2CCE9A29-D761-B329-0660-CE29026D8FC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2CCE9A29-D761-B329-0660-CE29026D8FC4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C6834DE9-48FD-31C1-8DF5-D96BED81EDC8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C6834DE9-48FD-31C1-8DF5-D96BED81EDC8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C6834DE9-48FD-31C1-8DF5-D96BED81EDC8}.NoVariablesDefault|Any CPU.ActiveCfg = Release|Any CPU
+		{C6834DE9-48FD-31C1-8DF5-D96BED81EDC8}.NoVariablesDefault|Any CPU.Build.0 = Release|Any CPU
+		{C6834DE9-48FD-31C1-8DF5-D96BED81EDC8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C6834DE9-48FD-31C1-8DF5-D96BED81EDC8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D3EBF624-E649-AFC4-723A-75579D18DC0C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D3EBF624-E649-AFC4-723A-75579D18DC0C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D3EBF624-E649-AFC4-723A-75579D18DC0C}.NoVariablesDefault|Any CPU.ActiveCfg = Release|Any CPU
+		{D3EBF624-E649-AFC4-723A-75579D18DC0C}.NoVariablesDefault|Any CPU.Build.0 = Release|Any CPU
+		{D3EBF624-E649-AFC4-723A-75579D18DC0C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D3EBF624-E649-AFC4-723A-75579D18DC0C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{81DDED9D-158B-E303-5F62-77A2896D2A5A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{81DDED9D-158B-E303-5F62-77A2896D2A5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{81DDED9D-158B-E303-5F62-77A2896D2A5A}.NoVariablesDefault|Any CPU.ActiveCfg = Release|Any CPU
+		{81DDED9D-158B-E303-5F62-77A2896D2A5A}.NoVariablesDefault|Any CPU.Build.0 = Release|Any CPU
+		{81DDED9D-158B-E303-5F62-77A2896D2A5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{81DDED9D-158B-E303-5F62-77A2896D2A5A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{F0FF105B-41F5-4E9B-B432-5CDE99DEE70E} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2C733277-52CE-4338-A414-EF30D2066690}
+	EndGlobalSection
+EndGlobal
