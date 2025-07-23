@@ -33,7 +33,7 @@ module "service_bus" {
     #   max_delivery_count = 5
     # }
     # "payments" = {
-    #   max_delivery_count = 10
+    #   max_delivery_count = 1
     #   enable_partitioning = true
     # }
     # "notifications" = {}  # Use defaults
