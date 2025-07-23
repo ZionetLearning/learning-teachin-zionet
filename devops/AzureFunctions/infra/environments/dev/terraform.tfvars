@@ -1,5 +1,5 @@
 # Resource Group
-resource_group_name = "azurefunctions-dev"
+resource_group_name = "azurefunctions-dev-rg"
 location            = "West Europe" 
 
 # Service Bus

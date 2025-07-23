@@ -1,6 +1,13 @@
-variable "function_app_name" {
-  type        = string
-  description = "The name of the function app."
+variable "function_apps" {
+  type = map(object({
+    name                     = string
+    cors_allowed_origins     = list(string)
+    cors_support_credentials = bool
+    app_settings            = map(string)
+    function_type           = string
+    environment             = string
+  }))
+  description = "Map of function apps to create with their configurations"
 }
 
 variable "location" {
@@ -33,12 +40,8 @@ variable "service_bus_connection_string" {
   description = "The connection string for the Service Bus."
 }
 
-variable "cors_allowed_origins" {
-  type        = list(string)
-  description = "List of allowed origins for CORS."
-}
-
-variable "cors_support_credentials" {
-  type        = bool
-  description = "Whether to support credentials in CORS requests."
+variable "common_tags" {
+  type        = map(string)
+  description = "Common tags to apply to all resources"
+  default     = {}
 }

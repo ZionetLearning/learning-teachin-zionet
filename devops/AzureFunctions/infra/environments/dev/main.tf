@@ -60,22 +60,38 @@ module "app_service_plan" {
   sku = var.app_service_plan_sku
 }
 
-# Create the Function App
-module "function_app" {
+# Create multiple Function Apps
+module "function_apps" {
   source = "../../modules/azure-functions"
   
-  function_app_name          = "fa-${var.resource_group_name}"
+  function_apps = {
+    for key, config in var.function_apps_config : key => {
+      name                     = "${config.name}-${var.resource_group_name}"
+      cors_allowed_origins     = config.cors_allowed_origins
+      cors_support_credentials = config.cors_support_credentials
+      # Add database connection string to accessor function
+      app_settings            = key == "accessor" ? merge(config.app_settings, {
+        "ConnectionStrings__DefaultConnection" = module.database.postgres_connection_string
+        "Database__Provider" = "PostgreSQL"
+        "Database__Host" = module.database.postgres_fqdn
+        "Database__Database" = module.database.postgres_database_name
+        "Database__Username" = module.database.postgres_admin_username
+      }) : config.app_settings
+      function_type           = config.function_type
+      environment             = config.environment
+    }
+  }
+  
   location                   = module.resource_group.location
   resource_group_name        = module.resource_group.name
   app_service_plan_id        = module.app_service_plan.id
   storage_account_name       = module.storage_account.name
   storage_account_access_key = module.storage_account.primary_access_key
   service_bus_connection_string = module.service_bus.connection_string
-  
-  # CORS Configuration
-  cors_allowed_origins     = var.cors_allowed_origins
-  cors_support_credentials = var.cors_support_credentials
+  common_tags               = var.common_tags
 }
+
+
 
 
 module "database" {

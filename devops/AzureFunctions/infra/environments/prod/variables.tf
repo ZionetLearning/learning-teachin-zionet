@@ -164,17 +164,59 @@ variable "database_name" {
   description = "Name of the PostgreSQL database"
 }
 
-# CORS Configuration for Azure Functions
-variable "cors_allowed_origins" {
-  type        = list(string)
-  description = "List of allowed origins for CORS in production environment"
-  default = [
-        "*"
-  ]
+#------------------- Azure Functions -------------------
+
+# Multiple Function Apps Configuration
+variable "function_apps_config" {
+  type = map(object({
+    name                     = string
+    cors_allowed_origins     = list(string)
+    cors_support_credentials = bool
+    app_settings            = map(string)
+    function_type           = string
+    environment             = string
+  }))
+  description = "Configuration for multiple function apps"
+  default = {
+    accessor = {
+      name                     = "fa-accessor"
+      cors_allowed_origins     = ["https://yourdomain.com", "https://www.yourdomain.com"]
+      cors_support_credentials = false
+      app_settings            = {
+        "ACCESSOR_SPECIFIC_SETTING" = "accessor_prod_value"
+      }
+      function_type           = "accessor"
+      environment             = "prod"
+    }
+    manager = {
+      name                     = "fa-manager"
+      cors_allowed_origins     = ["https://yourdomain.com", "https://www.yourdomain.com"]
+      cors_support_credentials = false
+      app_settings            = {
+        "MANAGER_SPECIFIC_SETTING" = "manager_prod_value"
+      }
+      function_type           = "manager"
+      environment             = "prod"
+    }
+    engine = {
+      name                     = "fa-engine"
+      cors_allowed_origins     = ["https://yourdomain.com", "https://www.yourdomain.com"]
+      cors_support_credentials = false
+      app_settings            = {
+        "ENGINE_SPECIFIC_SETTING" = "engine_prod_value"
+      }
+      function_type           = "engine"
+      environment             = "prod"
+    }
+  }
 }
 
-variable "cors_support_credentials" {
-  type        = bool
-  description = "Whether to support credentials in CORS requests for production"
-  default     = true  
+variable "common_tags" {
+  type        = map(string)
+  description = "Common tags for all resources"
+  default = {
+    "Environment" = "prod"
+    "Project"     = "learning-teachin-zionet"
+    "ManagedBy"   = "terraform"
+  }
 }
