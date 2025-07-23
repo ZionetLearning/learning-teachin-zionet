@@ -1,6 +1,5 @@
 using Accessor.Endpoints;
 using Accessor.Services;
-using Dapr.Client;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDaprClient();

@@ -8,9 +8,8 @@ namespace Accessor.Endpoints
     {
         public static void MapAccessorEndpoints(this WebApplication app)
         {
-            app.MapGet("/task/{id:int}", async (int id, IAccessorService service, ILoggerFactory loggerFactory) =>
+            app.MapGet("/task/{id:int}", async (int id, IAccessorService service, ILogger<AccessorService> logger) =>
             {
-                var logger = loggerFactory.CreateLogger("AccessorEndpoints");
                 try
                 {
                     var task = await service.GetTaskByIdAsync(id);
@@ -30,9 +29,8 @@ namespace Accessor.Endpoints
                 }
             });
 
-            app.MapPost($"/{QueueNames.EngineToAccessor}-input", async (TaskModel task, IAccessorService service, ILoggerFactory loggerFactory) =>
+            app.MapPost($"/{QueueNames.EngineToAccessor}-input", async (TaskModel task, IAccessorService service, ILogger<AccessorService> logger) =>
             {
-                var logger = loggerFactory.CreateLogger("AccessorEndpoints");
                 try
                 {
                     await service.SaveTaskAsync(task);

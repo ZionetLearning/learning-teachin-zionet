@@ -5,15 +5,11 @@ namespace Manager.Endpoints
 {
     public static class ManagerEndpoints
     {
-        private static readonly Dictionary<int, TaskModel> _tasks = new();
-
         public static void MapManagerEndpoints(this WebApplication app)
         {
 
-            app.MapGet("/task/{id:int}", async (int id, IManagerService service, ILoggerFactory loggerFactory) =>
+            app.MapGet("/task/{id:int}", async (int id, IManagerService service, ILogger<ManagerService> logger) =>
             {
-                var logger = loggerFactory.CreateLogger("ManagerEndpoints");
-
                 try
                 {
                     var task = await service.GetTaskAsync(id);
@@ -33,10 +29,8 @@ namespace Manager.Endpoints
                 }
             });
 
-            app.MapPost("/task", async (TaskModel task, IManagerService service, ILoggerFactory loggerFactory) =>
+            app.MapPost("/task", async (TaskModel task, IManagerService service, ILogger<ManagerService> logger) =>
             {
-                var logger = loggerFactory.CreateLogger("ManagerEndpoints");
-
                 try
                 {
                     logger.LogDebug("Received task for processing: {Id} - {Name}", task.Id, task.Name);
