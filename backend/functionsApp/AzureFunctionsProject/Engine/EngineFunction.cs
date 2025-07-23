@@ -9,11 +9,11 @@ namespace AzureFunctionsProject.Engine
 {
     public sealed class EngineFunction
     {
-        private readonly AzureFunctionsProject.Manager.IAccessorClient _accessor;
+        private readonly Manager.IAccessorClient _accessor;
         private readonly ILogger<EngineFunction> _logger;
 
         public EngineFunction(
-            AzureFunctionsProject.Manager.IAccessorClient accessor,
+            Manager.IAccessorClient accessor,
             ILogger<EngineFunction> logger)
         {
             _accessor = accessor;
@@ -21,35 +21,39 @@ namespace AzureFunctionsProject.Engine
         }
 
         [Function("ProcessDataEngine")]
-        public async Task<HttpResponseData> Process(
+        public async Task<HttpResponseData> ProcessDataAsync(
             [HttpTrigger(AuthorizationLevel.Function, "get", Route = Routes.EngineProcess)]
-            HttpRequestData req)
+            HttpRequestData req,
+            CancellationToken cancellationToken)
         {
-            var resp = req.CreateResponse();
+            _logger.LogInformation("EngineFunction: starting data processing");
+            var response = req.CreateResponse();
+
             try
             {
-                // 1. fetch everything via the accessor
-                var all = await _accessor.GetAllDataAsync();
-
-                // 2. do your operation—here we just count rows
+                var all = await _accessor.GetAllDataAsync(cancellationToken);
                 var result = new { TotalCount = all.Count };
 
-                resp.StatusCode = HttpStatusCode.OK;
-                await resp.WriteAsJsonAsync(result);
+                response.StatusCode = HttpStatusCode.OK;
+                await response.WriteAsJsonAsync(result, cancellationToken);
             }
-            catch (HttpRequestException ex)
+            catch (AccessorClientException ex)
             {
-                _logger.LogError(ex, "Accessor: GET data failed");
-                throw new AccessorClientException(
-                    $"Failed to retrieve Data from the Accessor service", ex);
+                _logger.LogError(ex, "EngineFunction: failed to retrieve data from Accessor");
+                response.StatusCode = HttpStatusCode.BadGateway;
+                await response.WriteStringAsync(
+                    "Failed to retrieve data from accessor service",
+                    cancellationToken
+                );
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Engine processing failed");
-                resp.StatusCode = HttpStatusCode.InternalServerError;
-                await resp.WriteStringAsync("Error in engine");
+                _logger.LogError(ex, "EngineFunction: unexpected error");
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                await response.WriteStringAsync("Error in engine processing", cancellationToken);
             }
-            return resp;
+
+            return response;
         }
     }
 }

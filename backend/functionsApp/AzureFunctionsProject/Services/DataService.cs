@@ -1,6 +1,12 @@
-﻿using AzureFunctionsProject.Models;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using AzureFunctionsProject.Models;
 using Microsoft.Extensions.Logging;
 using Npgsql;
+using Polly;
+using Polly.Retry;
 
 namespace AzureFunctionsProject.Services
 {
@@ -8,122 +14,145 @@ namespace AzureFunctionsProject.Services
     {
         private readonly Func<NpgsqlConnection> _dbFactory;
         private readonly ILogger<DataService> _logger;
+        private readonly AsyncRetryPolicy _retryPolicy;
 
         public DataService(Func<NpgsqlConnection> dbFactory, ILogger<DataService> logger)
         {
             _dbFactory = dbFactory;
             _logger = logger;
+            _retryPolicy = Policy
+                .Handle<NpgsqlException>()
+                .WaitAndRetryAsync(
+                    retryCount: 3,
+                    sleepDurationProvider: attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt)),
+                    onRetry: (ex, delay, retryCount, ctx) =>
+                        _logger.LogWarning(ex,
+                            "DB transient error, retry {RetryCount} in {Delay}s",
+                            retryCount, delay.TotalSeconds)
+                );
+            // Ensure table once at startup
+            _ = EnsureTableExistsAsync(CancellationToken.None);
         }
 
-        /// <summary>
-        /// Ensures the 'data' table exists.
-        /// </summary>
-        private async Task EnsureTableExistsAsync()
-        {
-            try
+        private Task EnsureTableExistsAsync(CancellationToken ct = default) =>
+            _retryPolicy.ExecuteAsync(async token =>
             {
                 using var conn = _dbFactory();
-                await conn.OpenAsync();
-
-                var createSql = @"
+                await conn.OpenAsync(token);
+                const string sql = @"
                     CREATE TABLE IF NOT EXISTS data (
                         id UUID PRIMARY KEY,
                         payload TEXT NOT NULL
                     );";
+                await using var cmd = new NpgsqlCommand(sql, conn);
+                await cmd.ExecuteNonQueryAsync(token);
+            }, ct);
 
-                await using var cmd = new NpgsqlCommand(createSql, conn);
-                await cmd.ExecuteNonQueryAsync();
-            }
-            catch (Exception ex)
+        public Task<List<DataDto>> GetAllAsync(CancellationToken ct = default) =>
+            _retryPolicy.ExecuteAsync(async token =>
             {
-                _logger.LogError(ex, "Error ensuring data table exists");
-                throw;
-            }
-        }
+                _logger.LogInformation("GetAllAsync starting");
+                await using var conn = _dbFactory();
+                await conn.OpenAsync(token);
 
-        public async Task<List<DataDto>> GetAllAsync()
-        {
-            await EnsureTableExistsAsync();
+                await using var cmd = new NpgsqlCommand(
+                    "SELECT id, payload, xmin AS version FROM data", conn);
+                await using var reader = await cmd.ExecuteReaderAsync(token);
 
-            using var conn = _dbFactory();
-            await conn.OpenAsync();
-            await using var cmd = new NpgsqlCommand(
-                "SELECT id, payload, xmin AS version FROM data", conn);
-            await using var reader = await cmd.ExecuteReaderAsync();
+                var list = new List<DataDto>();
+                while (await reader.ReadAsync(token))
+                {
+                    list.Add(new DataDto
+                    {
+                        Id = reader.GetFieldValue<Guid>(0),
+                        Payload = reader.GetString(1),
+                        Version = reader.GetFieldValue<uint>(2)
+                    });
+                }
+                _logger.LogInformation("GetAllAsync returned {Count} items", list.Count);
+                return list;
+            }, ct);
 
-            var list = new List<DataDto>();
-            while (await reader.ReadAsync())
+        public Task<DataDto?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
+            _retryPolicy.ExecuteAsync(async token =>
             {
-                list.Add(new DataDto
+                _logger.LogInformation("GetByIdAsync starting for {Id}", id);
+                await using var conn = _dbFactory();
+                await conn.OpenAsync(token);
+
+                await using var cmd = new NpgsqlCommand(
+                    "SELECT id, payload, xmin AS version FROM data WHERE id = @id", conn);
+                cmd.Parameters.AddWithValue("id", id);
+
+                await using var reader = await cmd.ExecuteReaderAsync(token);
+                if (!await reader.ReadAsync(token))
+                {
+                    _logger.LogWarning("GetByIdAsync found no record for {Id}", id);
+                    return null;
+                }
+
+                var dto = new DataDto
                 {
                     Id = reader.GetFieldValue<Guid>(0),
                     Payload = reader.GetString(1),
                     Version = reader.GetFieldValue<uint>(2)
-                });
-            }
-            return list;
-        }
+                };
+                _logger.LogInformation("GetByIdAsync retrieved {Id}@v{Version}", dto.Id, dto.Version);
+                return dto;
+            }, ct);
 
-        public async Task<DataDto?> GetByIdAsync(Guid id)
-        {
-            await EnsureTableExistsAsync();
-
-            using var conn = _dbFactory();
-            await conn.OpenAsync();
-            await using var cmd = new NpgsqlCommand(
-                "SELECT id, payload, xmin AS version FROM data WHERE id = @id", conn);
-            cmd.Parameters.AddWithValue("id", id);
-
-            await using var reader = await cmd.ExecuteReaderAsync();
-            if (!await reader.ReadAsync()) return null;
-
-            return new DataDto
+        public Task CreateAsync(DataDto entity, CancellationToken ct = default) =>
+            _retryPolicy.ExecuteAsync(async token =>
             {
-                Id = reader.GetFieldValue<Guid>(0),
-                Payload = reader.GetString(1),
-                Version = reader.GetFieldValue<uint>(2)
-            };
-        }
+                _logger.LogInformation("CreateAsync inserting {Id}", entity.Id);
+                await using var conn = _dbFactory();
+                await conn.OpenAsync(token);
 
-        public async Task CreateAsync(DataDto entity)
-        {
-            await EnsureTableExistsAsync();
+                await using var cmd = new NpgsqlCommand(
+                    "INSERT INTO data(id, payload) VALUES(@id, @payload)", conn);
+                cmd.Parameters.AddWithValue("id", entity.Id);
+                cmd.Parameters.AddWithValue("payload", entity.Payload);
 
-            using var conn = _dbFactory();
-            await conn.OpenAsync();
-            await using var cmd = new NpgsqlCommand(
-                "INSERT INTO data(id, payload) VALUES(@id, @payload)", conn);
-            cmd.Parameters.AddWithValue("id", entity.Id);
-            cmd.Parameters.AddWithValue("payload", entity.Payload);
+                await cmd.ExecuteNonQueryAsync(token);
+                _logger.LogInformation("CreateAsync succeeded for {Id}", entity.Id);
+            }, ct);
 
-            await cmd.ExecuteNonQueryAsync();
-        }
+        public Task UpdateAsync(DataDto entity, CancellationToken ct = default) =>
+            _retryPolicy.ExecuteAsync(async token =>
+            {
+                _logger.LogInformation("UpdateAsync for {Id}@v{Version}", entity.Id, entity.Version);
+                await using var conn = _dbFactory();
+                await conn.OpenAsync(token);
 
-        public async Task UpdateAsync(DataDto entity)
-        {
-            await EnsureTableExistsAsync();
+                // Enforce optimistic concurrency via xmin
+                await using var cmd = new NpgsqlCommand(
+                    @"UPDATE data 
+                      SET payload = @payload 
+                      WHERE id = @id AND xmin = @version", conn);
+                cmd.Parameters.AddWithValue("id", entity.Id);
+                cmd.Parameters.AddWithValue("payload", entity.Payload);
+                cmd.Parameters.AddWithValue("version", (long)entity.Version);
 
-            using var conn = _dbFactory();
-            await conn.OpenAsync();
-            await using var cmd = new NpgsqlCommand(
-                "UPDATE data SET payload = @payload WHERE id = @id", conn);
-            cmd.Parameters.AddWithValue("id", entity.Id);
-            cmd.Parameters.AddWithValue("payload", entity.Payload);
+                var rows = await cmd.ExecuteNonQueryAsync(token);
+                if (rows == 0)
+                    throw new InvalidOperationException($"Concurrent update conflict for {entity.Id}");
 
-            await cmd.ExecuteNonQueryAsync();
-        }
+                _logger.LogInformation("UpdateAsync succeeded for {Id}", entity.Id);
+            }, ct);
 
-        public async Task DeleteAsync(Guid id)
-        {
-            await EnsureTableExistsAsync();
+        public Task DeleteAsync(Guid id, CancellationToken ct = default) =>
+            _retryPolicy.ExecuteAsync(async token =>
+            {
+                _logger.LogInformation("DeleteAsync for {Id}", id);
+                await using var conn = _dbFactory();
+                await conn.OpenAsync(token);
 
-            using var conn = _dbFactory();
-            await conn.OpenAsync();
-            await using var cmd = new NpgsqlCommand(
-                "DELETE FROM data WHERE id = @id", conn);
-            cmd.Parameters.AddWithValue("id", id);
+                await using var cmd = new NpgsqlCommand(
+                    "DELETE FROM data WHERE id = @id", conn);
+                cmd.Parameters.AddWithValue("id", id);
 
-            await cmd.ExecuteNonQueryAsync();
-        }
+                await cmd.ExecuteNonQueryAsync(token);
+                _logger.LogInformation("DeleteAsync succeeded for {Id}", id);
+            }, ct);
     }
 }
