@@ -1,5 +1,5 @@
 # Resource Group
-resource_group_name = "prod-rg"
+resource_group_name = "prod"
 location            = "West Europe"
 
 # Service Bus

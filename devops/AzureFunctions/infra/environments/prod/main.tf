@@ -72,19 +72,23 @@ module "function_app" {
   storage_account_name       = module.storage_account.name
   storage_account_access_key = module.storage_account.primary_access_key
   service_bus_connection_string = module.service_bus.connection_string
+  
+  # CORS Configuration
+  cors_allowed_origins     = var.cors_allowed_origins
+  cors_support_credentials = var.cors_support_credentials
 }
 
 module "database" {
   source              = "../../modules/database"
 
   server_name         = "pg-${var.resource_group_name}"
-  location            = module.resource_group.location
+  location            = var.db_location
   resource_group_name = module.resource_group.name
 
   admin_username      = var.admin_username
   admin_password      = var.admin_password
 
-  version             = var.version
+  db_version          = var.db_version
   sku_name            = var.sku_name
   storage_mb          = var.storage_mb
 
@@ -94,7 +98,6 @@ module "database" {
   backup_retention_days         = var.backup_retention_days
   geo_redundant_backup_enabled  = var.geo_redundant_backup_enabled
 
-  high_availability_mode        = var.high_availability_mode
   delegated_subnet_id           = var.delegated_subnet_id
 
   database_name       = var.database_name

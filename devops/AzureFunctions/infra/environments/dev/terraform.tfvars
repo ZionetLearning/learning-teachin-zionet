@@ -1,5 +1,5 @@
 # Resource Group
-resource_group_name = "azurefunctions-dev-rg"
+resource_group_name = "azurefunctions-dev"
 location            = "West Europe" 
 
 # Service Bus
@@ -37,3 +37,4 @@ delegated_subnet_id    = null
 
 # Database Name
 database_name = "appdb-dev"
+

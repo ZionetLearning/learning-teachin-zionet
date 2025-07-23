@@ -71,6 +71,10 @@ module "function_app" {
   storage_account_name       = module.storage_account.name
   storage_account_access_key = module.storage_account.primary_access_key
   service_bus_connection_string = module.service_bus.connection_string
+  
+  # CORS Configuration
+  cors_allowed_origins     = var.cors_allowed_origins
+  cors_support_credentials = var.cors_support_credentials
 }
 
 

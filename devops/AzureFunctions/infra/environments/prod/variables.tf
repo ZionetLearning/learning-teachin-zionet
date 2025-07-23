@@ -8,6 +8,19 @@ variable "location" {
     type        = string
 }
 
+variable "db_location" {
+    description = "Location for the PostgreSQL database"
+    type        = string
+    default     = "Israel Central"
+  
+}
+
+# db_version
+variable "db_version" {
+  type        = string
+  description = "PostgreSQL version"
+}
+
 variable "servicebus_namespace_name" {
     description = "Name of the Service Bus Namespace"
     type        = string
@@ -149,4 +162,19 @@ variable "delegated_subnet_id" {
 variable "database_name" {
   type        = string
   description = "Name of the PostgreSQL database"
+}
+
+# CORS Configuration for Azure Functions
+variable "cors_allowed_origins" {
+  type        = list(string)
+  description = "List of allowed origins for CORS in production environment"
+  default = [
+        "*"
+  ]
+}
+
+variable "cors_support_credentials" {
+  type        = bool
+  description = "Whether to support credentials in CORS requests for production"
+  default     = true  
 }

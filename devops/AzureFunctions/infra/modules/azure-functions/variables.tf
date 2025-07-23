@@ -32,3 +32,13 @@ variable "service_bus_connection_string" {
   type        = string
   description = "The connection string for the Service Bus."
 }
+
+variable "cors_allowed_origins" {
+  type        = list(string)
+  description = "List of allowed origins for CORS."
+}
+
+variable "cors_support_credentials" {
+  type        = bool
+  description = "Whether to support credentials in CORS requests."
+}
