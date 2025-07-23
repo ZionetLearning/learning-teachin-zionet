@@ -1,4 +1,5 @@
 using AzureFunctionsProject.Common;
+using AzureFunctionsProject.Exceptions;
 using AzureFunctionsProject.Models;
 using AzureFunctionsProject.Services;
 using Microsoft.Azure.Functions.Worker;
@@ -13,7 +14,7 @@ namespace AzureFunctionsProject.Accessor
     {
         private readonly IDataService _service;
         private readonly ILogger<DataAccessorFunction> _logger;
-        private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
+        private static readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true
         };
@@ -27,20 +28,21 @@ namespace AzureFunctionsProject.Accessor
         [Function("AccessorGetAllData")]
         public async Task<HttpResponseData> GetAll(
             [HttpTrigger(AuthorizationLevel.Function, "get", Route = Routes.AccessorGetAll)]
-            HttpRequestData req)
+            HttpRequestData req, CancellationToken cancellationToken)
         {
+            _logger.LogInformation("Accessor: GET all data");
             var resp = req.CreateResponse();
             try
             {
-                var list = await _service.GetAllAsync();
+                var list = await _service.GetAllAsync(cancellationToken);
                 resp.StatusCode = HttpStatusCode.OK;
-                await resp.WriteAsJsonAsync(list);
+                await resp.WriteAsJsonAsync(list, cancellationToken);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Accessor GetAllData error");
                 resp.StatusCode = HttpStatusCode.InternalServerError;
-                await resp.WriteStringAsync("Error fetching data");
+                await resp.WriteStringAsync("Error fetching data", cancellationToken);
             }
             return resp;
         }
@@ -49,19 +51,20 @@ namespace AzureFunctionsProject.Accessor
         public async Task<HttpResponseData> GetById(
             [HttpTrigger(AuthorizationLevel.Function, "get", Route = Routes.AccessorGetById)]
             HttpRequestData req,
-            string id)
+            string id, CancellationToken cancellationToken)
         {
+            _logger.LogInformation("Accessor: GET data/{Id}", id);
             var resp = req.CreateResponse();
             if (!Guid.TryParse(id, out var guid))
             {
                 resp.StatusCode = HttpStatusCode.BadRequest;
-                await resp.WriteStringAsync("Invalid GUID");
+                await resp.WriteStringAsync("Invalid GUID", cancellationToken);
                 return resp;
             }
 
             try
             {
-                var dto = await _service.GetByIdAsync(guid);
+                var dto = await _service.GetByIdAsync(guid, cancellationToken);
                 if (dto is null)
                 {
                     resp.StatusCode = HttpStatusCode.NotFound;
@@ -70,13 +73,13 @@ namespace AzureFunctionsProject.Accessor
 
                 resp.StatusCode = HttpStatusCode.OK;
                 resp.Headers.Add("ETag", $"\"{dto.Version}\"");
-                await resp.WriteAsJsonAsync(dto);
+                await resp.WriteAsJsonAsync(dto, cancellationToken);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Accessor GetDataById error for {Id}", id);
                 resp.StatusCode = HttpStatusCode.InternalServerError;
-                await resp.WriteStringAsync("Error fetching data");
+                await resp.WriteStringAsync("Error fetching data", cancellationToken);
             }
             return resp;
         }
@@ -84,9 +87,10 @@ namespace AzureFunctionsProject.Accessor
         [Function("AccessorProcessQueue")]
         public async Task ProcessQueueAsync(
             [ServiceBusTrigger(Queues.Incoming, Connection = "ServiceBusConnection")]
-            string messageBody)
+            string messageBody, CancellationToken cancellationToken)
         {
-            var wrapper = JsonSerializer.Deserialize<QueueMessage>(messageBody, JsonOptions)
+            _logger.LogInformation("Accessor: processing queue message");
+            var wrapper = JsonSerializer.Deserialize<QueueMessage>(messageBody, _jsonOptions)
                           ?? throw new InvalidOperationException("Invalid queue message");
 
             try
@@ -94,13 +98,13 @@ namespace AzureFunctionsProject.Accessor
                 switch (wrapper.Action)
                 {
                     case "Create":
-                        await _service.CreateAsync(wrapper.Entity!);
+                        await _service.CreateAsync(wrapper.Entity!, cancellationToken);
                         break;
                     case "Update":
-                        await _service.UpdateAsync(wrapper.Entity!);
+                        await _service.UpdateAsync(wrapper.Entity!, cancellationToken);
                         break;
                     case "Delete":
-                        await _service.DeleteAsync(wrapper.Id!.Value);
+                        await _service.DeleteAsync(wrapper.Id!.Value, cancellationToken);
                         break;
                     default:
                         _logger.LogWarning("Unknown action in queue: {Action}", wrapper.Action);
@@ -110,7 +114,8 @@ namespace AzureFunctionsProject.Accessor
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing queue message");
-                throw;
+                throw new AccessorClientException(
+                    $"Error processing queue message", ex);
             }
         }
     }
