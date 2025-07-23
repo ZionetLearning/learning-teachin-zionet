@@ -1,6 +1,18 @@
+using Accessor.Endpoints;
+using Accessor.Services;
+
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddDaprClient();
+
+builder.Services.AddControllers().AddDapr();
+
+builder.Services.AddScoped<IAccessorService, AccessorService>();
+
 var app = builder.Build();
 
-app.MapGet("/", () => "Hello World!");
+app.UseCloudEvents();
+app.MapControllers();
+app.MapSubscribeHandler();
+app.MapAccessorEndpoints();
 
 app.Run();
