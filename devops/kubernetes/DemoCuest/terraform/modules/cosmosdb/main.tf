@@ -19,3 +19,24 @@ resource "azurerm_cosmosdb_account" "main" {
     failover_priority = 0
   }
 }
+
+resource "azurerm_cosmosdb_sql_database" "main" {
+  name                = var.cosmosdb_sql_database_name
+  resource_group_name = var.resource_group_name
+  account_name        = azurerm_cosmosdb_account.main.name
+  throughput          = 400
+}
+
+resource "azurerm_cosmosdb_sql_container" "main" {
+  name                = var.cosmosdb_sql_container_name
+  resource_group_name = var.resource_group_name
+  account_name        = azurerm_cosmosdb_account.main.name
+  database_name       = azurerm_cosmosdb_sql_database.main.name
+  partition_key_paths = var.cosmosdb_partition_key_path != "" ? [var.cosmosdb_partition_key_path] : ["/id"]
+  throughput          = 400
+
+  indexing_policy {
+    indexing_mode = "consistent"
+  }
+}
+

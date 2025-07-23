@@ -24,7 +24,7 @@ variable "sku" {
 }
 
 variable "queue_names" {
-  description = "List of queues to create (leave empty if you create queues elsewhere)"
+  description = "List of queues to create"
   type        = list(string)
   default     = []
 }

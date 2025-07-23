@@ -10,6 +10,15 @@ variable "aks_cluster_name" {
 variable "servicebus_namespace" {
   type = string
 }
+variable "queue_names" {
+  type = list(string)
+  default = [
+              "clientcallback",
+              "clientresponsequeue",
+              "todomanagercallbackqueue",
+              "todoqueue"
+            ]
+}
 variable "cosmosdb_account_name" {
   type = string
 }
@@ -40,4 +49,35 @@ variable "tenant_id" {
 variable "docker_registry" {
   description = "Container registry/org used in deployment YAMLs"
   type        = string
+}
+
+variable "cosmosdb_sql_database_name" {
+  type    = string
+  default = "ToDoDatabase"
+}
+
+variable "cosmosdb_sql_container_name" {
+  type    = string
+  default = "ToDos"
+}
+
+variable "cosmosdb_partition_key_path" {
+  type    = string
+  default = "/id"
+}
+
+variable "signalr_name" {
+  type        = string
+  description = "SignalR service name (must be globally unique)"
+  default     = "signalRdemoCuest"
+}
+
+variable "signalr_sku_name" {
+  type        = string
+  default     = "Free_F1"
+}
+
+variable "signalr_sku_capacity" {
+  type        = number
+  default     = 1
 }

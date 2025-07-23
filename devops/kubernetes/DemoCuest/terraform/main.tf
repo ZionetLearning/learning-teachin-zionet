@@ -21,6 +21,16 @@ module "servicebus" {
   location            = var.location
   namespace_name      = var.servicebus_namespace
   sku                 = var.sku
+  queue_names         = var.queue_names
+}
+
+module "signalr" {
+  source              = "./modules/signalr"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = var.location
+  signalr_name        = var.signalr_name
+  sku_name            = var.signalr_sku_name
+  sku_capacity        = var.signalr_sku_capacity
 }
 
 module "cosmosdb" {
@@ -28,6 +38,9 @@ module "cosmosdb" {
   resource_group_name   = azurerm_resource_group.main.name
   location              = "North Europe" # over ride because it made error that 'full'
   cosmosdb_account_name = var.cosmosdb_account_name
+  cosmosdb_sql_database_name = var.cosmosdb_sql_database_name
+  cosmosdb_sql_container_name = var.cosmosdb_sql_container_name
+  cosmosdb_partition_key_path = var.cosmosdb_partition_key_path
 }
 
 ########################################
@@ -73,27 +86,27 @@ resource "kubernetes_namespace" "model" {
   metadata { name = "devops-model" }
 }
 
-########################################
-# 5. Apply *all* YAML manifests under ./k8s
-########################################
-module "k8s_manifests" {
-  source          = "./modules/k8s_manifests"
-  k8s_dir         = "${path.module}/../k8s"
-  docker_registry = var.docker_registry
+# ########################################
+# # 5. Apply *all* YAML manifests under ./k8s
+# ########################################
+# module "k8s_manifests" {
+#   source          = "./modules/k8s_manifests"
+#   k8s_dir         = "${path.module}/../k8s"
+#   docker_registry = var.docker_registry
 
-  namespace = kubernetes_namespace.model.metadata[0].name
+#   namespace = kubernetes_namespace.model.metadata[0].name
 
-  # pass the alias exactly as the child module expects
-  providers = {
-    kubectl.inherited = kubectl.inherited
-  }
+#   # pass the alias exactly as the child module expects
+#   providers = {
+#     kubectl.inherited = kubectl.inherited
+#   }
 
-  depends_on = [
-    kubernetes_secret.azure_service_bus,
-    kubernetes_secret.cosmosdb_connection,
-    helm_release.dapr
-  ]
-}
+#   depends_on = [
+#     kubernetes_secret.azure_service_bus,
+#     kubernetes_secret.cosmosdb_connection,
+#     helm_release.dapr
+#   ]
+# }
 
 ### how to start
 ### terraform init
