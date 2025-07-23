@@ -18,16 +18,12 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 
-# Secrets (optional - in case you use tfvars for secrets)
+# Secrets
 *.tfvars
 *.tfvars.json
 
 # Terraform log
 .terraform.log
-
-# Env-specific var files (optional)
-terraform.tfvars
-terraform.tfvars.json
 
 # Backup files
 *.backup
