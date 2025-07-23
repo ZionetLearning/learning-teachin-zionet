@@ -8,6 +8,8 @@ env:
   AZURE_RG: 'azurefunctions-dev-rg'
   DOTNET_VERSION: '8.0'
   FUNCTION_PATH: 'devops/AzureFunctions/Solution1/Manager'
+  FUNCTION_PATH_ACCESSOR: 'devops/AzureFunctions/Solution1/Accessor'
+
 
 jobs:
   deploy:
@@ -34,7 +36,7 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
-    - name: Build Function App
+    - name: Build Function Manager App
       run: dotnet publish -c Release -o ./publish
       working-directory: ${{ env.FUNCTION_PATH }}
 
@@ -44,4 +46,16 @@ jobs:
       with:
         app-name: ${{ env.AZURE_APP_NAME }}
         package: '${{ env.FUNCTION_PATH }}/publish'
+        sku: 'flexconsumption'
+
+    - name: Build Accessor Function App
+      run: dotnet publish -c Release -o ./publish
+      working-directory: ${{ env.FUNCTION_PATH_ACCESSOR }}
+
+    - name: Deploy Accessor Function App
+      uses: Azure/functions-action@v1
+      id: deploy_accessor
+      with:
+        app-name: 'fa-accessor-azurefunctions-dev-rg'
+        package: '${{ env.FUNCTION_PATH_ACCESSOR }}/publish'
         sku: 'flexconsumption'
