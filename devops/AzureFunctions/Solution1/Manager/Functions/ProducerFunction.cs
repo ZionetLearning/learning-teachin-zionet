@@ -20,6 +20,8 @@ public class ProducerFunction
     public async Task<HttpResponseData> Run(
         [HttpTrigger(AuthorizationLevel.Function, "post", Route = "send")] HttpRequestData req)
     {
+
+        _logger.LogInformation("ProducerFunction triggered to send a message to Service Bus.");
         var response = req.CreateResponse();
 
         try
