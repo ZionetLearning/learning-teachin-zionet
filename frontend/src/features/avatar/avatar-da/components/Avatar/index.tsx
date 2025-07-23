@@ -136,6 +136,19 @@ export const Avatar = (props: JSX.IntrinsicElements["group"]) => {
     group,
   ); // initialize animations to control idle and talking states in <group>
 
+  useEffect(
+    /**
+     * function sets up the idle animation loop
+     * it configures the idle animation to repeat indefinitely and plays it with a fade-in effect
+     */
+    function setupIdleLoop() {
+      const idle = actions.Idle!;
+      idle.setLoop(THREE.LoopRepeat, Infinity);
+      idle.fadeIn(0.5).play();
+    },
+    [actions.Idle],
+  );
+
   const { smoothMorphTarget, morphTargetSmoothing } = useControls({
     smoothMorphTarget: true,
     morphTargetSmoothing: 0.5,
@@ -252,33 +265,6 @@ export const Avatar = (props: JSX.IntrinsicElements["group"]) => {
         }
       }
     },
-  );
-
-  useEffect(
-    /**
-     * function sets up the idle animation loop
-     * it configures the idle animation to repeat indefinitely and plays it with a fade-in effect
-     */
-    function setupIdleLoop() {
-      const idle = actions.Idle!;
-      idle.clampWhenFinished = false;
-      idle.setLoop(THREE.LoopRepeat, Infinity);
-      idle.fadeIn(0.5).play();
-    },
-    [actions.Idle],
-  );
-
-  useEffect(
-    /**
-     * function sets up the talking animation loop
-     * it configures the talking animation to repeat indefinitely and plays it with a fade-in effect
-     */
-    function setupTalkingLoop() {
-      const talk = actions.Talking!;
-      talk.clampWhenFinished = false;
-      talk.setLoop(THREE.LoopRepeat, Infinity);
-    },
-    [actions.Talking],
   );
 
   return (
