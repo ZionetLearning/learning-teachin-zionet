@@ -1,7 +1,7 @@
 import { Canvas } from "@react-three/fiber";
 import { Leva } from "leva";
 
-import { Scene } from "./Scene";
+import { Scene } from "./views";
 
 import { useStyles } from "./style";
 

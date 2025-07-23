@@ -1,8 +1,8 @@
 import { Environment, useTexture } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 
-import { Avatar } from "./Avatar";
-import { backgroundJpg } from "./assets";
+import { Avatar } from "../components/Avatar";
+import { backgroundJpg } from "../assets";
 
 export const Scene = () => {
   const texture = useTexture(backgroundJpg);

@@ -7,7 +7,7 @@ import * as sdk from "microsoft-cognitiveservices-speech-sdk";
 import * as THREE from "three";
 import { SkeletonUtils, type GLTF } from "three-stdlib";
 
-import { IdleFbx, TalkingFbx, modelGlb } from "./assets";
+import { IdleFbx, TalkingFbx, modelGlb } from "../../assets";
 
 import { useStyles } from "./style";
 
@@ -43,32 +43,41 @@ type GLTFResult = GLTF & {
   animations: GLTFAction[];
 };
 
-// maps Azure viseme IDs to morph target names for the avatar's mouth animations.
+// maps Azure viseme IDs to morph target names for the avatar's mouth animations
 const azureVisemeToMorph: Record<number, string> = {
-  0: "viseme_PP",
+  0: "viseme_sil",
   1: "viseme_PP",
   2: "viseme_FF",
   3: "viseme_TH",
   4: "viseme_DD",
-  5: "viseme_KK",
+  5: "viseme_kk",
   6: "viseme_CH",
   7: "viseme_SS",
-  8: "viseme_NN",
+  8: "viseme_nn",
   9: "viseme_RR",
-  10: "viseme_oo",
-  11: "viseme_O",
-  12: "viseme_AA",
-  13: "viseme_ee",
-  14: "viseme_ee",
+  10: "viseme_aa",
+  11: "viseme_E",
+  12: "viseme_I",
+  13: "viseme_O",
+  14: "viseme_U",
   15: "viseme_OO",
-  16: "viseme_UU",
-  17: "viseme_CH",
+  16: "viseme_sil",
+  17: "viseme_sil",
   18: "viseme_PP",
-  19: "viseme_FF",
-  20: "viseme_PP",
-  21: "viseme_PP",
+  19: "viseme_sil",
+  20: "viseme_sil",
+  21: "viseme_sil",
 };
 
+/**
+ * Avatar
+ *
+ * renders a Wolf3D‐based 3D character with idle/talking FBX animations
+ * and Azure‐powered lip‐sync via morph targets.
+ *
+ * props:
+ *   – all standard <group> props (position, rotation, scale, etc.)
+ */
 export const Avatar = (props: JSX.IntrinsicElements["group"]) => {
   const classes = useStyles();
 
@@ -79,6 +88,8 @@ export const Avatar = (props: JSX.IntrinsicElements["group"]) => {
   const isSpeakingRef = useRef<boolean>(false); // tracks if the avatar is currently speaking
   const inputEl = useRef<HTMLInputElement>(null);
   const buttonEl = useRef<HTMLButtonElement>(null);
+  const morphPairsRef = useRef<[number, number][]>([]); // pairs of morph target indices for head and teeth animations
+  const visemeIndexRef = useRef<Record<number, { h: number; t: number }>>({}); // maps viseme IDs to morph target indices for head and teeth
 
   const { scene } = useGLTF(modelGlb); // load the GLB model (Avatar)
   const { animations: idleAnimation } = useFBX(IdleFbx); // load the idle animation
@@ -86,6 +97,36 @@ export const Avatar = (props: JSX.IntrinsicElements["group"]) => {
 
   const clone = useMemo(() => SkeletonUtils.clone(scene), [scene]); // clone the scene to avoid modifying the original
   const { nodes, materials } = useGraph(clone) as unknown as GLTFResult; // extract nodes and materials from the cloned scene
+
+  useEffect(
+    /**
+     * updates the morph targets for the avatar's head and teeth based on the current viseme
+     */
+    function updateMorphTargets() {
+      if (!nodes?.Wolf3D_Head || !nodes?.Wolf3D_Teeth) return;
+      const headDict = nodes.Wolf3D_Head.morphTargetDictionary!;
+      const teethDict = nodes.Wolf3D_Teeth.morphTargetDictionary!;
+
+      morphPairsRef.current = Object.values(azureVisemeToMorph)
+        .map((name) => {
+          const h = headDict[name],
+            t = teethDict[name];
+          return h != null && t != null ? ([h, t] as [number, number]) : null;
+        })
+        .filter((x): x is [number, number] => !!x);
+
+      visemeIndexRef.current = Object.entries(azureVisemeToMorph).reduce(
+        (acc, [id, name]) => {
+          const h = headDict[name],
+            t = teethDict[name];
+          if (h != null && t != null) acc[+id] = { h, t };
+          return acc;
+        },
+        {} as Record<number, { h: number; t: number }>,
+      );
+    },
+    [nodes],
+  );
 
   idleAnimation[0].name = "Idle"; // set the name for the idle animation
   talkingAnimation[0].name = "Talking"; // set the name for the talking animation
@@ -122,22 +163,21 @@ export const Avatar = (props: JSX.IntrinsicElements["group"]) => {
       "SpeechServiceConnection_SynthVoiceVisemeEvent",
       "true",
     );
-
-    const speaker = new sdk.SpeakerAudioDestination();
-    // eslint-disable-next-line prefer-const
-    let synth: sdk.SpeechSynthesizer;
     let lastOffset = 0; // tracks the last audio offset for fallback cleanup
+    const speaker = new sdk.SpeakerAudioDestination();
+    const audioConfig = sdk.AudioConfig.fromSpeakerOutput(speaker); // create audio output configuration using the speaker
+    const synth = new sdk.SpeechSynthesizer(speechConfig, audioConfig);
     const buffered: { offsetMs: number; id: number }[] = []; // buffer for viseme events
 
     speaker.onAudioStart = () => {
-      actions.Idle?.fadeOut(0.2);
-      actions.Talking?.reset().fadeIn(0.2).play();
+      actions.Idle!.crossFadeTo(actions.Talking!, 0.2, false);
+      actions.Talking!.reset().play();
     };
 
     // clean up when audio ends: fade animations back, reset viseme, and close synthesizer
     const cleanup = () => {
-      actions.Talking?.fadeOut(0.2);
-      actions.Idle?.reset().fadeIn(0.2).play();
+      actions.Talking!.crossFadeTo(actions.Idle!, 0.5, false);
+      actions.Idle!.reset().play();
       visemeRef.current = 0;
       synth.close();
       if (fallbackRef.current) clearTimeout(fallbackRef.current);
@@ -146,9 +186,6 @@ export const Avatar = (props: JSX.IntrinsicElements["group"]) => {
       buttonEl.current!.disabled = false;
     };
     speaker.onAudioEnd = cleanup;
-
-    const audioConfig = sdk.AudioConfig.fromSpeakerOutput(speaker); // create audio output configuration using the speaker
-    synth = new sdk.SpeechSynthesizer(speechConfig, audioConfig);
 
     // capture each viseme event along with its audio offset (in ms)
     synth.visemeReceived = (_s, e) => {
@@ -179,48 +216,39 @@ export const Avatar = (props: JSX.IntrinsicElements["group"]) => {
   useFrame(
     /**
      * function animates the avatar's speech by updating morph target influences
-     * it uses the viseme reference to determine which morph target to apply
-     * it runs on every frame to ensure smooth transitions
+     * it lerps the morph target influences for the head and teeth based on the current viseme
+     * if the avatar is not speaking, it resets the morph targets to 0
      */
     function animateSpeech() {
-      const head = nodes.Wolf3D_Head;
-      const teeth = nodes.Wolf3D_Teeth;
-      const headDict = head.morphTargetDictionary!;
-      const teethDict = teeth.morphTargetDictionary!;
-      const headInf = head.morphTargetInfluences!;
-      const teethInf = teeth.morphTargetInfluences!;
+      if (!isSpeakingRef.current) return;
 
-      const clearInfluence = (idx: number) => {
-        headInf[idx] = teethInf[idx] = smoothMorphTarget
-          ? THREE.MathUtils.lerp(headInf[idx], 0, morphTargetSmoothing)
+      const headInf = nodes.Wolf3D_Head.morphTargetInfluences!;
+      const teethInf = nodes.Wolf3D_Teeth.morphTargetInfluences!;
+
+      morphPairsRef.current.forEach(([h, t]) => {
+        headInf[h] = smoothMorphTarget
+          ? THREE.MathUtils.lerp(headInf[h], 0, morphTargetSmoothing)
           : 0;
-      };
-
-      Object.values(azureVisemeToMorph).forEach((morphName) => {
-        const hIdx = headDict[morphName];
-        const tIdx = teethDict[morphName];
-        if (hIdx != null && tIdx != null) clearInfluence(hIdx);
+        teethInf[t] = smoothMorphTarget
+          ? THREE.MathUtils.lerp(teethInf[t], 0, morphTargetSmoothing)
+          : 0;
       });
 
-      const morphTarget = azureVisemeToMorph[visemeRef.current];
-      if (morphTarget) {
-        const hIdx = headDict[morphTarget];
-        const tIdx = teethDict[morphTarget];
-        if (hIdx != null && tIdx != null) {
-          if (!smoothMorphTarget) {
-            headInf[hIdx] = teethInf[tIdx] = 1;
-          } else {
-            headInf[hIdx] = THREE.MathUtils.lerp(
-              headInf[hIdx],
-              1,
-              morphTargetSmoothing,
-            );
-            teethInf[tIdx] = THREE.MathUtils.lerp(
-              teethInf[tIdx],
-              1,
-              morphTargetSmoothing,
-            );
-          }
+      const curr = visemeIndexRef.current[visemeRef.current];
+      if (curr) {
+        if (smoothMorphTarget) {
+          headInf[curr.h] = THREE.MathUtils.lerp(
+            headInf[curr.h],
+            1,
+            morphTargetSmoothing,
+          );
+          teethInf[curr.t] = THREE.MathUtils.lerp(
+            teethInf[curr.t],
+            1,
+            morphTargetSmoothing,
+          );
+        } else {
+          headInf[curr.h] = teethInf[curr.t] = 1;
         }
       }
     },
@@ -279,7 +307,7 @@ export const Avatar = (props: JSX.IntrinsicElements["group"]) => {
           </button>
         </div>
       </Html>
-      <group name="Armature" {...props} dispose={null} ref={group}>
+      <group name="group" {...props} dispose={null} ref={group}>
         <primitive object={nodes.Hips} />
         <skinnedMesh
           geometry={nodes.Wolf3D_Hair.geometry}
