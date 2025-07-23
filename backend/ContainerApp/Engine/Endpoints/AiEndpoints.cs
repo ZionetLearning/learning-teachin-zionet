@@ -25,6 +25,6 @@ public static class AiEndpoints
                 return Results.Ok();
             })
             .WithTopic("pubsub", TopicNames.ManagerToAi);
-        ;
+        
     }
 }

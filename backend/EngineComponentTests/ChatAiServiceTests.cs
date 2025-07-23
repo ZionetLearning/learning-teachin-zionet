@@ -17,9 +17,6 @@ public class ChatAiServiceTests
     [SkippableFact(DisplayName = "ProcessAsync: answer contains 4 or four")]
     public async Task ProcessAsync_Returns_Number4()
     {
-        Skip.If(string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AZURE_OPENAI_API_KEY")),
-        "No AzureOpenAI key - skip live test");
-
         // Arrange
         var service = new ChatAiService(_fx.Kernel, NullLogger<ChatAiService>.Instance);
 
