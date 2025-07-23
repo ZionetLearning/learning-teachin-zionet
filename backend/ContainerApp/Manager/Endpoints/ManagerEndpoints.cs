@@ -14,13 +14,14 @@ public static class ManagerEndpoints
 
         #region HTTP PUT
 
-        // PUT /manager/{id}/{email}
-        app.MapPut("/manager/{id}/{name}", async (int id, string name, ILogger<Program> logger, IManagerService manager) =>
+        app.MapPut("/manager/{id}/{name}", async (int id, 
+            string name, ILogger<ManagerService> logger, 
+            IManagerService manager) =>
         {
             logger.LogInformation("Get account by id from account manager with {id}", id);
 
-            var success = await manager.UpdateUserEmail(id, name);
-            return success ? Results.Ok("Email updated") : Results.NotFound("User not found");
+            var success = await manager.UpdateTaskName(id, name);
+            return success ? Results.Ok("Task name updated") : Results.NotFound("Task not found");
         });
 
         #endregion
@@ -33,12 +34,13 @@ public static class ManagerEndpoints
         #region HTTP DELETE
 
 
-        // DELETE /manager/{id}
-        app.MapDelete("/manager/{id}", async (int id, ILogger<Program> logger, IManagerService manager) =>
+        app.MapDelete("/manager/{id}", async (int id, 
+            ILogger<ManagerService> logger, 
+            IManagerService manager) =>
         {
-            logger.LogInformation("Delete account by id from account manager with {id}", id);
-            var success = await manager.DeleteUser(id);
-            return success ? Results.Ok("User deleted") : Results.NotFound("User not found");
+            logger.LogInformation("Delete task with id {id}", id);
+            var success = await manager.DeleteTask(id);
+            return success ? Results.Ok("Task deleted") : Results.NotFound("Task not found");
         });
 
 

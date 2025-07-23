@@ -9,7 +9,8 @@ public class AccessorDbContext : DbContext
     }
 
 
-    // Define the DB name 
+    // Define the DB  
     public DbSet<TaskModel> Tasks { get; set; }
 
 }
+// This class represents the database context for the Accessor service.

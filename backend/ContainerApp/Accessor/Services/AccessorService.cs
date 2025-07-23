@@ -23,9 +23,12 @@ public class AccessorService : IAccessorService
 
         try
         {
-            await _dbContext.Database.OpenConnectionAsync();
-            _logger.LogInformation("Connected to PostgreSQL during startup.");
-            await _dbContext.Database.CloseConnectionAsync();
+            //await _dbContext.Database.OpenConnectionAsync();
+            //_logger.LogInformation("Connected to PostgreSQL during startup.");
+            //await _dbContext.Database.CloseConnectionAsync();
+            _logger.LogInformation("Applying EF Core migrations...");
+            await _dbContext.Database.MigrateAsync();  // <-- this ensures schema is up-to-date
+            _logger.LogInformation("Database migration completed.");
         }
         catch (Exception ex)
         {

@@ -5,7 +5,7 @@ namespace Manager.Services;
 
 public interface IManagerService
 {
-    public Task<bool> UpdateUserEmail(int id, string newTaskName);
-    public Task<bool> DeleteUser(int id);
+    public Task<bool> UpdateTaskName(int id, string newTaskName);
+    public Task<bool> DeleteTask(int id);
 
 }

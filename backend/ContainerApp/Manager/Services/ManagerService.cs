@@ -19,13 +19,13 @@ public class ManagerService : IManagerService
         _daprClient = daprClient;
     }
 
-    public async Task<bool> UpdateUserEmail(int id, string newTaskName)
+    public async Task<bool> UpdateTaskName(int id, string newTaskName)
     {
-        _logger.LogInformation($"Inside {nameof(UpdateUserEmail)}");
+        _logger.LogInformation($"Inside {nameof(UpdateTaskName)}");
         try
         {
             if (id <= 0 || string.IsNullOrEmpty(newTaskName)) {
-                _logger.LogError("Invalid input: id or email is null or empty.");
+                _logger.LogError("Invalid input: id or task name is null or empty.");
                 return false;
             }
 
@@ -38,7 +38,7 @@ public class ManagerService : IManagerService
                     Name = newTaskName
                 });
 
-            _logger.LogInformation("Email update sent to queue.");
+            _logger.LogInformation("Task name update sent to queue.");
 
             return true;
 
@@ -54,9 +54,9 @@ public class ManagerService : IManagerService
 
 
 
-    public async Task<bool> DeleteUser(int id)
+    public async Task<bool> DeleteTask(int id)
     {
-        _logger.LogInformation($"Inside {nameof(DeleteUser)}");
+        _logger.LogInformation($"Inside {nameof(DeleteTask)}");
         try
         {
             if (id <= 0)
@@ -70,7 +70,7 @@ public class ManagerService : IManagerService
                 "accessor", 
                 $"user/{id}");
 
-            _logger.LogInformation($"{nameof(DeleteUser)}: user with id: {id} has been deleted");
+            _logger.LogInformation($"{nameof(DeleteTask)}: task with id: {id} has been deleted");
 
             return true;
         }
