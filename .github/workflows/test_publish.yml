@@ -3,8 +3,14 @@ name: Deploy Azure Function App
 on:
   workflow_dispatch:
 
+env:
+  AZURE_APP_NAME: 'fa-azurefunctions-dev-rg'
+  AZURE_RG: 'azurefunctions-dev-rg'
+  DOTNET_VERSION: '8.0'
+  FUNCTION_PATH: 'devops/AzureFunctions/Solution1/TriggerCheck'
+
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
     environment: Development
 
@@ -12,46 +18,32 @@ jobs:
       id-token: write
       contents: read
 
-    env:
-      AZURE_APP_NAME: fa-azurefunctions-dev-rg   # ⬅️ Replace this
-      AZURE_RG: azurefunctions-dev-rg            # ⬅️ Your resource group
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Azure Login via OIDC
+    - name: Azure Login (OIDC)
       uses: azure/login@v2
       with:
-        client-id: ${{ secrets.AZURE_CLIENT_ID }}
-        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-    - name: Set up .NET
+    - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '8.0'
+        dotnet-version: ${{ env.DOTNET_VERSION }}
 
-    - name: Publish Function App
+    - name: Build Function App
       run: dotnet publish -c Release -o ./publish
-      working-directory: devops/AzureFunctions/Solution1/TriggerCheck
+      working-directory: ${{ env.FUNCTION_PATH }}
 
-    - name: Zip function app package
-      run: zip -r functionapp.zip ./*
-      working-directory: devops/AzureFunctions/Solution1/TriggerCheck/publish
+    - name: Deploy to Azure Function App
+      uses: Azure/functions-action@v1
+      id: deploy
+      with:
+        app-name: ${{ env.AZURE_APP_NAME }}
+        package: '${{ env.FUNCTION_PATH }}/publish'
+        sku: 'flexconsumption'
 
-    - name: Deploy using zip deploy (Kudu)
-      run: |
-        az functionapp deployment source config-zip \
-          --name $AZURE_APP_NAME \
-          --resource-group $AZURE_RG \
-          --src functionapp.zip
-      working-directory: devops/AzureFunctions/Solution1/TriggerCheck/publish
-
-    - name: Set WEBSITE_RUN_FROM_PACKAGE setting
-      run: |
-        az functionapp config appsettings set \
-          --name $AZURE_APP_NAME \
-          --resource-group $AZURE_RG \
-          --settings WEBSITE_RUN_FROM_PACKAGE=1
 
