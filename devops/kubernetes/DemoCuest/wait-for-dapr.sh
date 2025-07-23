@@ -4,7 +4,7 @@ for i in {1..60}; do
   if [[ -n "$POD" ]]; then
     READY=$(kubectl get pod -n dapr-system "$POD" -o jsonpath='{.status.containerStatuses[0].ready}' 2>/dev/null)
     if [[ "$READY" == "true" ]]; then
-      echo "✅ Dapr sidecar injector ($POD) is READY!"
+      echo "Dapr sidecar injector ($POD) is READY!"
       exit 0
     else
       echo "Waiting for Dapr sidecar injector ($POD) to be ready..."
@@ -14,5 +14,5 @@ for i in {1..60}; do
   fi
   sleep 2
 done
-echo "❌ Timeout waiting for Dapr sidecar injector to be ready."
+echo "Timeout waiting for Dapr sidecar injector to be ready."
 exit 1
