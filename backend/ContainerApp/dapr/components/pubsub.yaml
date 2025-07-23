@@ -3,22 +3,14 @@ kind: Component
 metadata:
   name: pubsub
 spec:
-  type: pubsub.rabbitmq
+  type: pubsub.azure.servicebus
   version: v1
   metadata:
-    - name: host
-      value: "amqp://user:pass@rabbitmq:5672"
-    - name: durable
-      value: "true"
-    - name: prefetchCount
-      value: "50"
-    - name: backOffDuration
-      value: "5s"
-    - name: backOffMaxRetries
-      value: "3"
-    - name: deadLetterTopic
-      value: "ai-dead"
-    - name: requeueInFailure
+    - name: connectionString
+      value: "Endpoint=sb://sbemulatorns/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=localSecret;UseDevelopmentEmulator=true"
+    - name: consumerID
+      value: "engine"
+    - name: disableEntityManagement
       value: "true"
   scopes:
     - manager

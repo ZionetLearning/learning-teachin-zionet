@@ -2,7 +2,7 @@
   "UserConfig": {
     "Namespaces": [
       {
-        "Name": "host.docker.internal",
+        "Name": "sbemulatorns",
         "Queues": [
           {
             "Name": "manager-to-engine",
@@ -38,7 +38,9 @@
           {
             "Name": "manager-to-ai",
             "Properties": {
-              "DefaultMessageTimeToLive": "PT1H"
+                "DefaultMessageTimeToLive": "PT1H",
+                "DuplicateDetectionHistoryTimeWindow": "PT20S",
+                "RequiresDuplicateDetection": false
             },
             "Subscriptions": [
               {
@@ -58,7 +60,9 @@
           {
             "Name": "ai-to-manager",
             "Properties": {
-              "DefaultMessageTimeToLive": "PT1H"
+                "DefaultMessageTimeToLive": "PT1H",
+                "DuplicateDetectionHistoryTimeWindow": "PT20S",
+                "RequiresDuplicateDetection": false
             },
             "Subscriptions": [
               {
