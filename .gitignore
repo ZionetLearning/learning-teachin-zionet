@@ -39,3 +39,4 @@ obj/
 # Configuration files
 # ===============================
 *.env
+/backend/functionsApp/AzureFunctionsProject/local.settings.json

@@ -17,6 +17,7 @@ namespace AzureFunctionsProject.Manager
         private readonly ServiceBusSender _queueSender;
         private readonly IAccessorClient _accessor;
         private readonly ILogger<DataAccessorFunction> _logger;
+        private readonly string _devTag;
 
         /// <summary>
         /// Constructor: injects ServiceBusClient, DB factory, and Logger.
@@ -29,6 +30,7 @@ namespace AzureFunctionsProject.Manager
             _queueSender = sbClient.CreateSender(Queues.Incoming);
             _accessor = accessor;
             _logger = logger;
+            _devTag = Environment.MachineName;
         }
 
         private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
@@ -149,6 +151,7 @@ namespace AzureFunctionsProject.Manager
                     Subject = "CreateData",
                     TimeToLive = TimeSpan.FromMinutes(5)
                 };
+                msg.ApplicationProperties["DevTag"] = _devTag; // for local development filtering
                 await _queueSender.SendMessageAsync(msg);
 
                 var resp = req.CreateResponse(HttpStatusCode.Accepted);
