@@ -32,17 +32,14 @@ public sealed class ChatAiService : IChatAiService
 
         try
         {
-            // 1. Создаём prompt-функцию
             var func = _kernel.CreateFunctionFromPrompt(
-                "Ты дружелюбный помощник. Ответь развёрнуто на вопрос:\n{{$input}}");
+                "Answer the question:\n{{$input}}");
 
-            // 2. Готовим аргументы. Ключ "input" обязателен — он матчится с {{$input}} в промпте.
             var args = new KernelArguments
             {
                 ["input"] = request.Question
             };
 
-            // 3. Вызываем функцию. Возьмём строку сразу типизированно.
             var answer = await _kernel.InvokeAsync<string>(func, args, ct) ?? string.Empty;
 
             return new AiResponseModel

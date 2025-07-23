@@ -1,5 +1,4 @@
-﻿using Dapr.Client;
-using Engine.Constants;
+﻿using Engine.Constants;
 using Engine.Models;
 using Engine.Services;
 
@@ -9,7 +8,7 @@ public static class AiEndpoints
 {
     public static void MapAiEndpoints(this WebApplication app)
     {
-        app.MapPost($"/{QueueNames.ManagerToAi}-input",
+        app.MapPost($"/{TopicNames.ManagerToAi}",
             async (AiRequestModel req,
                    IChatAiService aiService,
                    IAiReplyPublisher publisher,
@@ -24,6 +23,8 @@ public static class AiEndpoints
                 await publisher.PublishAsync(response, req.ReplyToTopic, ct);
 
                 return Results.Ok();
-            });
+            })
+            .WithTopic("pubsub", TopicNames.ManagerToAi);
+        ;
     }
 }

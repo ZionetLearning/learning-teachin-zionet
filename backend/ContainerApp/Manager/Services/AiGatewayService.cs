@@ -2,8 +2,6 @@
 using Manager.Constants;
 using Manager.Models;
 using System.Collections.Concurrent;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace Manager.Services
 {
@@ -21,11 +19,11 @@ namespace Manager.Services
         }
         public async Task<string> SendQuestionAsync(string question, CancellationToken ct = default)
         {
-            var msg = AiRequestModel.Create(question, QueueNames.AiToManager);
+            var msg = AiRequestModel.Create(question, TopicNames.AiToManager);
 
             _log.LogInformation("Send question {Id} (TTL={Ttl})", msg.Id, msg.TtlSeconds);
 
-            await _dapr.PublishEventAsync("pubsub", QueueNames.ManagerToAi, msg, ct);
+            await _dapr.PublishEventAsync("pubsub", TopicNames.ManagerToAi, msg, ct);
 
             return msg.Id;
         }

@@ -42,14 +42,14 @@ public static class AiEndpoints
             });
 
         // 3) Dapr приносит ответ от AI
-        app.MapPost($"/{QueueNames.AiToManager}-input",
+        app.MapPost($"/ai/{TopicNames.AiToManager}",
             async (AiResponseModel msg, IAiGatewayService ai, ILoggerFactory lf, CancellationToken ct) =>
             {
                 var log = lf.CreateLogger("AiEndpoints.PubSub");
                 try
                 {
                     await ai.SaveAnswerAsync(msg, ct);
-                    log.LogInformation("Ответ сохранён");
+                    log.LogInformation("Answer saved");
                     return Results.Ok();
                 }
                 catch (Exception ex)
@@ -57,6 +57,8 @@ public static class AiEndpoints
                     log.LogError(ex, "Ошибка при сохранении ответа");
                     return Results.Problem("AI answer handling failed");
                 }
-            });
+            })
+            .WithTopic("pubsub", TopicNames.AiToManager);
+        
     }
 }

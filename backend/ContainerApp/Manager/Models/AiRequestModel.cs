@@ -12,7 +12,7 @@ namespace Manager.Models
 
         public int TtlSeconds { get; init; } = 60;
 
-        public string ReplyToTopic { get; init; } = QueueNames.AiToManager;
+        public string ReplyToTopic { get; init; } = TopicNames.AiToManager;
 
         public static AiRequestModel Create(string question, string replyToTopic, int ttlSeconds = 60)
         {

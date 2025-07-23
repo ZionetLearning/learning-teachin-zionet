@@ -1,4 +1,5 @@
 ﻿using Dapr.Client;
+using Engine.Constants;
 using Engine.Models;
 
 namespace Engine.Services;
@@ -17,6 +18,6 @@ public sealed class AiReplyPublisher : IAiReplyPublisher
     public async Task PublishAsync(AiResponseModel response, string replyToTopic, CancellationToken ct = default)
     {
         _log.LogInformation("Publishing AI answer {Id} to topic {Topic}", response.Id, replyToTopic);
-        await _dapr.PublishEventAsync("pubsub", replyToTopic, response, ct);
+        await _dapr.PublishEventAsync("pubsub", TopicNames.AiToManager, response, ct);
     }
 }

@@ -36,6 +36,16 @@ services:
     networks:
       sb-emulator:
 
+ # -------------------- Redis (pub/sub for Dapr) --------------------
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    networks:
+      - microservice-net
+    restart: unless-stopped
 
 # -------------------- PostgreSQL DB --------------------
   postgres:
