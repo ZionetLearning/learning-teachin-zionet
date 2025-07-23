@@ -17,4 +17,5 @@ namespace Accessor.Models
         [Required]
         public string Payload { get; set; } = string.Empty;
     }
+
 }

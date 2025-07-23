@@ -20,4 +20,12 @@ export const useStyles = createUseStyles({
       background: "#1B81A6FF",
     },
   },
+  chatDaPageWrapper: {
+    display: "flex",
+    height: "calc(100vh - 4rem)",
+  },
+  chatDaChatWrapper: {
+    flex: 1,
+    display: "flex",
+  },
 });
