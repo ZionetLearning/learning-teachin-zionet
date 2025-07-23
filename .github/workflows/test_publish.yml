@@ -3,38 +3,45 @@ name: Deploy Azure Function App
 on:
   workflow_dispatch:
 
+env:
+  AZURE_APP_NAME: 'fa-azurefunctions-dev-rg'
+  AZURE_RG: 'azurefunctions-dev-rg'
+  DOTNET_VERSION: '8.0'
+  FUNCTION_PATH: 'devops/AzureFunctions/Solution1/Manager/Functions'
+
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
     environment: Development
 
     permissions:
-      id-token: write      # Required for OIDC login
-      contents: read       # Required for actions/checkout
+      id-token: write
+      contents: read
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
-      
-    - name: Azure Login via OIDC
+
+    - name: Azure Login (OIDC)
       uses: azure/login@v2
       with:
-        client-id: ${{ secrets.AZURE_CLIENT_ID }}
-        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-    - name: Set up .NET
+    - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '8.0'
+        dotnet-version: ${{ env.DOTNET_VERSION }}
 
-    - name: Publish Function App
+    - name: Build Function App
       run: dotnet publish -c Release -o ./publish
-      working-directory: devops/AzureFunctions/Solution1/TriggerCheck
+      working-directory: ${{ env.FUNCTION_PATH }}
 
     - name: Deploy to Azure Function App
-      uses: azure/webapps-deploy@v3
+      uses: Azure/functions-action@v1
+      id: deploy
       with:
-        app-name: fa-azurefunctions-dev-rg
-        publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
-        package: devops/AzureFunctions/Solution1/TriggerCheck/publish
+        app-name: ${{ env.AZURE_APP_NAME }}
+        package: '${{ env.FUNCTION_PATH }}/publish'
+        sku: 'flexconsumption'

@@ -25,7 +25,7 @@ public class ProducerFunction
         try
         {
             string messageBody = await req.ReadAsStringAsync();
-            string connectionString = Environment.GetEnvironmentVariable("ServiceBusConnection");
+            string connectionString = Environment.GetEnvironmentVariable("ServiceBusConnectionString");
             string queueName = "myqueue";
 
             var client = new ServiceBusClient(connectionString);
