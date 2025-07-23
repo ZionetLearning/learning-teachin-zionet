@@ -33,7 +33,7 @@ jobs:
       working-directory: devops/AzureFunctions/Solution1/TriggerCheck
 
     - name: Deploy to Azure Function App
-      uses: azure/webapps-deploy@v2
+      uses: azure/webapps-deploy@v3
       with:
         app-name: fa-azurefunctions-dev-rg
         publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
