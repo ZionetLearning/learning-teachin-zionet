@@ -2,9 +2,6 @@
 
 set -e
 
-# set to local kubcetl context
-kubectl config use-context docker-desktop
-
 K8S_DIR="./k8s for local with rabbitmq and cosmosdb-emulator/k8s"
 NAMESPACE_FILE="$K8S_DIR/namespace-model.yaml"
 
@@ -14,7 +11,8 @@ command -v kubectl >/dev/null 2>&1 || { echo "kubectl not found. Aborting."; exi
 
 echo "Docker and kubectl are available."
 
-echo "Enabling Kubernetes in Docker Desktop (make sure it's enabled in the UI)..."
+# set to local kubcetl context
+kubectl config use-context docker-desktop
 
 # Step 1: Create namespace
 echo "Creating namespace..."

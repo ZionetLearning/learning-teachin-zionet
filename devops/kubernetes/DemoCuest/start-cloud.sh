@@ -2,14 +2,15 @@
 
 set -e
 
-# set to cloud kubcetl context
-kubectl config use-context democuest-aks-dev
 
 K8S_DIR="./k8s"
 NAMESPACE_FILE="$K8S_DIR/namespace-model.yaml"
 
 # step 1: connect to azure
 az aks get-credentials   --resource-group democuest-aks-rg-dev   --name democuest-aks-dev   --overwrite-existing
+
+# set to cloud kubcetl context
+kubectl config use-context democuest-aks-dev
 
 # Step 2: Create namespace
 echo "Creating namespace..."
