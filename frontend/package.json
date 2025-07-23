@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@react-nano/use-event-source": "^0.16.0",
+    "axios": "^1.10.0",
     "@react-three/drei": "^10.5.1",
     "@react-three/fiber": "^9.2.0",
     "leva": "^0.10.0",
