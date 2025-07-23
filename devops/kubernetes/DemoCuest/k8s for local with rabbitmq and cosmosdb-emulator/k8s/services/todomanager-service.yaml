@@ -11,7 +11,7 @@ metadata:
   namespace: devops-model
   #namespace: default
 spec:
-  type: LoadBalancer
+  type: NodePort
   ports:
     - name: "5073"
       port: 5073

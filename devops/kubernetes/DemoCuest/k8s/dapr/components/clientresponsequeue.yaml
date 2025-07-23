@@ -16,3 +16,4 @@ spec:
 scopes:
 - notificationmanager
 - todomanager
+- todoaccessor

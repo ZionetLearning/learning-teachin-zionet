@@ -6,16 +6,14 @@ metadata:
     kompose.version: 1.30.0 (9d8dcb518)
   creationTimestamp: null
   labels:
-    io.kompose.service: todomanager
-  name: todomanager
+    io.kompose.service: zipkin
+  name: zipkin
   namespace: devops-model
   #namespace: default
 spec:
-  type: LoadBalancer
   ports:
-    - name: "5073"
-      port: 5073
-      targetPort: 8080
-      nodePort: 30073  # must be between 30000–32767
+    - name: "9411"
+      port: 9411
+      targetPort: 9411
   selector:
-    io.kompose.service: todomanager
+    io.kompose.service: zipkin

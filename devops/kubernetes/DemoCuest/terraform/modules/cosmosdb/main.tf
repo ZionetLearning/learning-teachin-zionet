@@ -3,8 +3,12 @@ resource "azurerm_cosmosdb_account" "main" {
   location            = var.location
   resource_group_name = var.resource_group_name
 
-  offer_type          = "Standard"
-  kind                = "GlobalDocumentDB"
+  offer_type          = "Standard"  # Required even for serverless
+  kind                = "GlobalDocumentDB"  # SQL API
+
+  capabilities {
+    name = "EnableServerless"
+  }
 
   consistency_policy {
     consistency_level = "Session"

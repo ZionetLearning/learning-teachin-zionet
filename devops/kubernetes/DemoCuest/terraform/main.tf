@@ -85,7 +85,7 @@ module "k8s_manifests" {
 
   # pass the alias exactly as the child module expects
   providers = {
-    kubectl.inherited = kubectl.inherited   # ← change this line
+    kubectl.inherited = kubectl.inherited
   }
 
   depends_on = [
@@ -99,3 +99,17 @@ module "k8s_manifests" {
 ### terraform init
 ### terraform plan -var-file="terraform.tfvars.dev"
 ### terraform apply -var-file="terraform.tfvars.dev"
+
+### how to destroy
+### ### terraform destroy -var-file="terraform.tfvars.dev"
+
+### az aks get-credentials   --resource-group democuest-rg-dev   --name democuest-aks-dev   --overwrite-existing
+### to be able to '  kubectl get pods -n devops-model   ' 
+
+### to get external ip '   kubectl -n devops-model get svc todomanager   '
+
+### see logs of pods '   $ kubectl -n devops-model logs deployment/todoaccessor -f   '
+
+### apply new/updated yaml '    kubectl apply -f ./todoaccessor-deployment.yaml -n devops-model   '
+
+### restart pod  '   kubectl rollout restart deployment/todoaccessor -n devops-model  '

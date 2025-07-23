@@ -2,7 +2,7 @@
 
 set -e
 
-K8S_DIR="./k8s"
+K8S_DIR="./k8s for local with rabbitmq and cosmosdb-emulator/k8s"
 NAMESPACE_FILE="$K8S_DIR/namespace-model.yaml"
 
 echo "Checking prerequisites..."

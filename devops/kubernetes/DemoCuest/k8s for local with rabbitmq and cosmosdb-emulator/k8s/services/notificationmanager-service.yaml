@@ -6,16 +6,16 @@ metadata:
     kompose.version: 1.30.0 (9d8dcb518)
   creationTimestamp: null
   labels:
-    io.kompose.service: todomanager
-  name: todomanager
+    io.kompose.service: notificationmanager
+  name: notificationmanager
   namespace: devops-model
-  #namespace: default
+  ##namespace: default
 spec:
-  type: LoadBalancer
+  type: NodePort
   ports:
-    - name: "5073"
-      port: 5073
+    - name: "5072"
+      port: 5072
       targetPort: 8080
-      nodePort: 30073  # must be between 30000–32767
+      nodePort: 30072  # must be between 30000–32767
   selector:
-    io.kompose.service: todomanager
+    io.kompose.service: notificationmanager

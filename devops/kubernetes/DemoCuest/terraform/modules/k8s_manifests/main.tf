@@ -33,7 +33,7 @@ variable "docker_registry" {
 ###############################################################################
 locals {
   secret_files      = fileset("${var.k8s_dir}/secrets",     "*.yaml")
-  dapr_files        = fileset("${var.k8s_dir}/dapr",        "*.yaml")
+  dapr_files        = fileset("${var.k8s_dir}/dapr/components",        "*.yaml")
   service_files     = fileset("${var.k8s_dir}/services",    "*.yaml")
   deployment_files  = fileset("${var.k8s_dir}/deployments", "*.yaml")
 

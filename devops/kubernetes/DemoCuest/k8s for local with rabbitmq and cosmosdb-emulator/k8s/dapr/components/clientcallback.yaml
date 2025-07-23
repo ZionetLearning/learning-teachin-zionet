@@ -14,4 +14,4 @@ spec:
     - name: hub 
       value: todohub
 scopes:
-- notificationmanager
+  - notificationmanager

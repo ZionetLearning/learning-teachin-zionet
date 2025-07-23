@@ -6,16 +6,17 @@ metadata:
     kompose.version: 1.30.0 (9d8dcb518)
   creationTimestamp: null
   labels:
-    io.kompose.service: todomanager
-  name: todomanager
+    io.kompose.service: rabbitmq
+  name: rabbitmq
   namespace: devops-model
-  #namespace: default
+  ##namespace: default
 spec:
-  type: LoadBalancer
   ports:
-    - name: "5073"
-      port: 5073
-      targetPort: 8080
-      nodePort: 30073  # must be between 30000–32767
+    - name: "5672"
+      port: 5672
+      targetPort: 5672
+    - name: "15672"
+      port: 15672
+      targetPort: 15672
   selector:
-    io.kompose.service: todomanager
+    io.kompose.service: rabbitmq
