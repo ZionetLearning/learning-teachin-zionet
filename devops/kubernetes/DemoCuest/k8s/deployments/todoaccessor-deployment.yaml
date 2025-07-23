@@ -43,7 +43,7 @@ spec:
               value: ToDoDatabase
             - name: TodoCosmosDbSettings__ContainerName
               value: ToDos
-          image: benny902/todoaccessor
+          image: ${DOCKER_REGISTRY}/todoaccessor
           name: todoaccessor
           ports:
             - containerPort: 8080
