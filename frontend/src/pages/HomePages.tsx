@@ -16,6 +16,12 @@ export const HomePage = () => {
       <h2>Chat Tools</h2>
       <button
         className={classes.button}
+        onClick={() => handleNavigation("/chat/sh")}
+      >
+        Chat - Sh (Shirley - OpenAI)
+      </button>
+      <button
+        className={classes.button}
         onClick={() => handleNavigation("/chat/yo")}
       >
         Chat - Yo (Yonatan)
