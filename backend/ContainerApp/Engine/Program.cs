@@ -12,9 +12,19 @@ builder.Services.AddSingleton(sp =>
 {
     var cfg = sp.GetRequiredService<IConfiguration>();
 
-    var endpoint = cfg["AzureOpenAI:Endpoint"] ?? throw new("Endpoint?");
-    var apiKey = cfg["AzureOpenAI:ApiKey"] ?? throw new("ApiKey?");
-    var deployment = cfg["AzureOpenAI:DeploymentName"] ?? throw new("Deployment?");
+    var section = cfg.GetSection("AzureOpenAI");
+    var endpoint = section["Endpoint"];
+    var apiKey = section["ApiKey"];
+    var deployment = section["DeploymentName"];
+
+    if (string.IsNullOrWhiteSpace(endpoint))
+        throw new InvalidOperationException("AzureOpenAI:Endpoint not set in config or environment variables");
+
+    if (string.IsNullOrWhiteSpace(apiKey))
+        throw new InvalidOperationException("AzureOpenAI:ApiKey not set - check appsettings.json and environment variables");
+
+    if (string.IsNullOrWhiteSpace(deployment))
+        throw new InvalidOperationException("AzureOpenAI:DeploymentName not set");
 
     return Kernel.CreateBuilder()
                  .AddAzureOpenAIChatCompletion(

@@ -8,26 +8,23 @@ public static class AiEndpoints
 {
     public static void MapAiEndpoints(this WebApplication app)
     {
-        // 1) Пользователь задаёт вопрос
         app.MapPost("/ai/question",
             async (AiRequestModel dto, IAiGatewayService aiService, ILoggerFactory logger, CancellationToken ct) =>
             {
                 var log = logger.CreateLogger("AiEndpoints.Http");
                 try
                 {
-                    // TTL можем брать из dto (если хочешь гибко) или фиксированно
                     var id = await aiService.SendQuestionAsync(dto.Question, ct);
-                    log.LogInformation("Вопрос {Id} принят", id);
+                    log.LogInformation("Request {Id} accept", id);
                     return Results.Accepted($"/ai/answer/{id}", new { questionId = id });
                 }
                 catch (Exception ex)
                 {
-                    log.LogError(ex, "Ошибка при отправке вопроса");
+                    log.LogError(ex, "Error sending question");
                     return Results.Problem("AI question failed");
                 }
             });
 
-        // 2) Проверяем ответ
         app.MapGet("/ai/answer/{id}",
             async (string id, IAiGatewayService ai, ILoggerFactory lf, CancellationToken ct) =>
             {
@@ -35,13 +32,12 @@ public static class AiEndpoints
                 var ans = await ai.GetAnswerAsync(id, ct);
                 if (ans is null)
                 {
-                    log.LogDebug("Ответ для {Id} ещё не готов", id);
+                    log.LogDebug("The answer for {Id} is not ready yet", id);
                     return Results.NotFound(new { error = "Answer not ready" });
                 }
                 return Results.Ok(new { id, answer = ans });
             });
 
-        // 3) Dapr приносит ответ от AI
         app.MapPost($"/ai/{TopicNames.AiToManager}",
             async (AiResponseModel msg, IAiGatewayService ai, ILoggerFactory lf, CancellationToken ct) =>
             {
@@ -54,7 +50,7 @@ public static class AiEndpoints
                 }
                 catch (Exception ex)
                 {
-                    log.LogError(ex, "Ошибка при сохранении ответа");
+                    log.LogError(ex, "Error saving answer");
                     return Results.Problem("AI answer handling failed");
                 }
             })

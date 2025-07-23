@@ -36,15 +36,23 @@ services:
     networks:
       sb-emulator:
 
- # -------------------- Redis (pub/sub for Dapr) --------------------
-  redis:
-    image: redis:7-alpine
-    container_name: redis
-    command: ["redis-server", "--appendonly", "yes"]
+ # -------------------- Rabbitmq (pub/sub for Dapr) --------------------
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
     ports:
-      - "6379:6379"
+      - "5673:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: pass
     networks:
       - microservice-net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     restart: unless-stopped
 
 # ------------------------- PostgreSQL DB --------------------------
@@ -95,7 +103,10 @@ services:
     image: "daprio/daprd:latest"
     container_name: manager-dapr
     depends_on:
-      - manager
+      rabbitmq:
+        condition: service_healthy
+      manager:
+        condition: service_started
     command: [
       "./daprd",
       "-app-id", "manager",
@@ -128,7 +139,10 @@ services:
     image: "daprio/daprd:latest"
     container_name: engine-dapr
     depends_on:
-      - engine
+      rabbitmq:
+        condition: service_healthy
+      engine:
+        condition: service_started
     command: [
       "./daprd",
       "-app-id", "engine",
@@ -167,7 +181,10 @@ services:
     image: "daprio/daprd:latest"
     container_name: accessor-dapr
     depends_on:
-      - accessor
+      rabbitmq:
+        condition: service_healthy
+      accessor:
+        condition: service_started
     command: [
       "./daprd",
       "-app-id", "accessor",
