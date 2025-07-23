@@ -1,0 +1,40 @@
+name: Deploy Azure Function App
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment: Development
+
+    permissions:
+      id-token: write      # Required for OIDC login
+      contents: read       # Required for actions/checkout
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Azure Login via OIDC
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+    - name: Set up .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0'
+
+    - name: Publish Function App
+      run: dotnet publish -c Release -o ./publish
+      working-directory: devops/AzureFunctions/Solution1/TriggerCheck
+
+    - name: Deploy to Azure Function App
+      uses: Azure/functions-action@v1
+      with:
+        app-name: fa-azurefunctions-dev-rg
+        publish-profile: '<publishData><publishProfile profileName="fa-azurefunctions-dev-rg - Web Deploy" publishMethod="MSDeploy" publishUrl="fa-azurefunctions-dev-rg.scm.azurewebsites.net:443" msdeploySite="fa-azurefunctions-dev-rg" userName="REDACTED" userPWD="REDACTED" destinationAppUrl="http://fa-azurefunctions-dev-rg.azurewebsites.net" SQLServerDBConnectionString="REDACTED" mySQLDBConnectionString="" hostingProviderForumLink="" controlPanelLink="https://portal.azure.com" webSystem="WebSites"><databases /></publishProfile><publishProfile profileName="fa-azurefunctions-dev-rg - FTP" publishMethod="FTP" publishUrl="ftp://waws-prod-am2-425.ftp.azurewebsites.windows.net/site/wwwroot" ftpPassiveMode="True" userName="REDACTED" userPWD="REDACTED" destinationAppUrl="http://fa-azurefunctions-dev-rg.azurewebsites.net" SQLServerDBConnectionString="REDACTED" mySQLDBConnectionString="" hostingProviderForumLink="" controlPanelLink="https://portal.azure.com" webSystem="WebSites"><databases /></publishProfile><publishProfile profileName="fa-azurefunctions-dev-rg - Zip Deploy" publishMethod="ZipDeploy" publishUrl="fa-azurefunctions-dev-rg.scm.azurewebsites.net:443" userName="REDACTED" userPWD="REDACTED" destinationAppUrl="http://fa-azurefunctions-dev-rg.azurewebsites.net" SQLServerDBConnectionString="REDACTED" mySQLDBConnectionString="" hostingProviderForumLink="" controlPanelLink="https://portal.azure.com" webSystem="WebSites"><databases /></publishProfile></publishData>'
+        package: devops/AzureFunctions/Solution1/TriggerCheck/publish
