@@ -9,13 +9,17 @@ jobs:
     environment: Development
 
     permissions:
-      id-token: write      # Required for OIDC login
-      contents: read       # Required for actions/checkout
+      id-token: write
+      contents: read
+
+    env:
+      AZURE_APP_NAME: fa-azurefunctions-dev-rg   # ⬅️ Replace this
+      AZURE_RG: azurefunctions-dev-rg            # ⬅️ Your resource group
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
-      
+
     - name: Azure Login via OIDC
       uses: azure/login@v2
       with:
@@ -32,9 +36,27 @@ jobs:
       run: dotnet publish -c Release -o ./publish
       working-directory: devops/AzureFunctions/Solution1/TriggerCheck
 
-    - name: Deploy to Azure Function App
-      uses: azure/webapps-deploy@v3
-      with:
-        app-name: fa-azurefunctions-dev-rg
-        publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
-        package: devops/AzureFunctions/Solution1/TriggerCheck/publish
+    - name: Zip function app package
+      run: zip -r functionapp.zip ./*
+      working-directory: devops/AzureFunctions/Solution1/TriggerCheck/publish
+
+    - name: Deploy using zip deploy (Kudu)
+      run: |
+        az functionapp deployment source config-zip \
+          --name $AZURE_APP_NAME \
+          --resource-group $AZURE_RG \
+          --src functionapp.zip
+      working-directory: devops/AzureFunctions/Solution1/TriggerCheck/publish
+
+    - name: Set WEBSITE_RUN_FROM_PACKAGE setting
+      run: |
+        URL=$(az functionapp deployment list-publishing-credentials \
+          --name $AZURE_APP_NAME \
+          --resource-group $AZURE_RG \
+          --query publishingUserName -o tsv)
+
+        az functionapp config appsettings set \
+          --name $AZURE_APP_NAME \
+          --resource-group $AZURE_RG \
+          --settings WEBSITE_RUN_FROM_PACKAGE=1
+
