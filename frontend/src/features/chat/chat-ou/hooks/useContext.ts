@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import type { MessageContext } from "../types";
-import { ContextServiceImpl } from "../services/ContextService";
+import { ContextServiceImpl } from "../services";
 
 export interface UseContextReturn {
   currentContext: MessageContext | null;

@@ -6,7 +6,7 @@ export const useStyles = createUseStyles({
     flexDirection: "column",
     height: "100%",
     overflow: "hidden",
-    position: "relative", // Needed for absolute positioning of scroll button
+    position: "relative",
   },
 
   messagesList: {
@@ -17,7 +17,7 @@ export const useStyles = createUseStyles({
     flexDirection: "column",
     gap: "8px",
 
-    // Custom scrollbar styling
+
     "&::-webkit-scrollbar": {
       width: "6px",
     },
@@ -64,7 +64,6 @@ export const useStyles = createUseStyles({
 
     "& > div": {
       "& > div:first-child": {
-        // Hide header for consecutive messages from same sender
         display: "none",
       },
     },
@@ -173,7 +172,6 @@ export const useStyles = createUseStyles({
     },
   },
 
-  // Responsive design
   "@media (max-width: 768px)": {
     messagesList: {
       padding: "12px",

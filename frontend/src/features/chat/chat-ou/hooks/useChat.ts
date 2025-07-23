@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { Message, MessageContext, ChatError } from "../types";
-import { MessageServiceImpl } from "../services/MessageService";
+import { MessageServiceImpl } from "../services";
 
 export interface UseChatReturn {
   messages: Message[];

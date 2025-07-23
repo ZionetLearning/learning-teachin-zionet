@@ -20,8 +20,8 @@ export const useStyles = createUseStyles({
     alignSelf: "flex-end",
     backgroundColor: "#007bff",
     color: "white",
-    marginLeft: "20%", // Add left margin to push user messages more to the right
-    borderBottomRightRadius: "4px", // Make the bottom right corner less rounded for user messages
+    marginLeft: "20%", 
+    borderBottomRightRadius: "4px",
     "& $senderName": {
       color: "rgba(255, 255, 255, 0.9)",
     },
@@ -41,8 +41,8 @@ export const useStyles = createUseStyles({
     backgroundColor: "#f8f9fa",
     color: "#333",
     border: "1px solid #e9ecef",
-    marginRight: "20%", // Add right margin to keep AI messages more to the left
-    borderBottomLeftRadius: "4px", // Make the bottom left corner less rounded for AI messages
+    marginRight: "20%", 
+    borderBottomLeftRadius: "4px",
   },
 
   messageHeader: {
@@ -81,7 +81,6 @@ export const useStyles = createUseStyles({
 
   messageContent: {
     lineHeight: "1.5",
-    // Ensure inner components have proper spacing
     "& > *": {
       width: "100%",
     },
@@ -122,11 +121,11 @@ export const useStyles = createUseStyles({
     },
 
     userMessage: {
-      marginLeft: "10%", // Reduce left margin on mobile
+      marginLeft: "10%", 
     },
 
     aiMessage: {
-      marginRight: "10%", // Reduce right margin on mobile
+      marginRight: "10%",
     },
 
     messageHeader: {

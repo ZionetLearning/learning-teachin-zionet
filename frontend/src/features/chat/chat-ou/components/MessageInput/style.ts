@@ -200,7 +200,7 @@ export const useStyles = createUseStyles({
   sendIcon: {
     fontSize: "16px",
     lineHeight: 1,
-    transform: "translateX(1px)", // Slight adjustment for visual centering
+    transform: "translateX(1px)",
   },
 
   loadingSpinner: {

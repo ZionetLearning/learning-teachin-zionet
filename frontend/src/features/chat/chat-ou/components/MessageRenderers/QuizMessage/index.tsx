@@ -14,8 +14,7 @@ interface QuizMessageProps {
   allowMultiple?: boolean;
 }
 
-// Helper function to get the correct class name for option status
-const getOptionClassName = (status: string, classes: any) => {
+const getOptionClassName = (status: string, classes: Record<string, string>) => {
   switch (status) {
     case "correct":
       return classes.optionCorrect;

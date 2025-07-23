@@ -20,7 +20,7 @@ export interface MessageStore {
 export interface ChatError {
   type: "network" | "validation" | "rendering" | "context";
   message: string;
-  details?: any;
+  details?: unknown;
   timestamp: Date;
 }
 

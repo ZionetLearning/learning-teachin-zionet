@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { type ImageMessage as ImageMessageType } from "../../../types/Message";
+import { type ImageMessage as ImageMessageType } from "../../../types";
 import { useStyles } from "./style";
 
 interface ImageMessageProps {

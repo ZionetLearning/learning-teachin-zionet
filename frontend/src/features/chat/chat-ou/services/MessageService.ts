@@ -21,13 +21,10 @@ export class MessageServiceImpl implements MessageService {
 
   constructor() {
     this.chatService = new MockChatService();
-
-    // Initialize with sample conversation
     this.initializeWithSampleData();
   }
 
   async sendMessage(content: string, context?: MessageContext): Promise<void> {
-    // Create user message
     const userMessage: TextMessage = {
       id: `user-${Date.now()}`,
       type: "text",
@@ -37,20 +34,16 @@ export class MessageServiceImpl implements MessageService {
       context,
     };
 
-    // Add user message to the conversation
     this.addMessage(userMessage);
 
     try {
-      // Generate AI response
       const aiResponse = await this.chatService.generateResponse(
         content,
         context
       );
 
-      // Add AI response to the conversation
       this.addMessage(aiResponse);
-    } catch (error) {
-      // Handle error by adding an error message
+    } catch {
       const errorMessage: TextMessage = {
         id: `error-${Date.now()}`,
         type: "text",
@@ -75,11 +68,7 @@ export class MessageServiceImpl implements MessageService {
 
   subscribeToMessages(callback: (messages: Message[]) => void): () => void {
     this.subscribers.push(callback);
-
-    // Immediately call with current messages
     callback(this.getMessages());
-
-    // Return unsubscribe function
     return () => {
       const index = this.subscribers.indexOf(callback);
       if (index > -1) {
@@ -103,7 +92,6 @@ export class MessageServiceImpl implements MessageService {
     this.messages = [...initialConversation.messages];
   }
 
-  // Additional utility methods for message management
   public clearMessages(): void {
     this.messages = [];
     this.notifySubscribers();

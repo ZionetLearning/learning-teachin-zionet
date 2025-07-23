@@ -4,7 +4,7 @@ export interface ContextService {
   getCurrentPageContext(): MessageContext;
   attachContext(message: string): MessageContext;
   extractSelectedText(): string | undefined;
-  getPageMetadata(): Record<string, any>;
+  getPageMetadata(): Record<string, unknown>;
 }
 
 export class ContextServiceImpl implements ContextService {
@@ -42,8 +42,8 @@ export class ContextServiceImpl implements ContextService {
     return undefined;
   }
 
-  getPageMetadata(): Record<string, any> {
-    const metadata: Record<string, any> = {
+  getPageMetadata(): Record<string, unknown> {
+    const metadata: Record<string, unknown> = {
       url: window.location.href,
       pathname: window.location.pathname,
       search: window.location.search,
@@ -75,7 +75,7 @@ export class ContextServiceImpl implements ContextService {
 
     return metadata;
   }
-y
+
   formatContextForDisplay(context: MessageContext): string {
     const parts: string[] = [];
 
@@ -93,6 +93,7 @@ y
 
     return parts.join("\n");
   }
+
 
   hasSignificantContext(context: MessageContext): boolean {
     return !!(

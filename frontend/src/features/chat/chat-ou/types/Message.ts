@@ -9,7 +9,7 @@ export interface MessageContext {
   pageUrl?: string;
   pageTitle?: string;
   selectedText?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface BaseMessage {
@@ -37,7 +37,7 @@ export interface GenerativeUIMessage extends BaseMessage {
   type: "generative-ui";
   content: {
     componentType: string;
-    props: Record<string, any>;
+    props: Record<string, unknown>;
     fallbackText: string;
   };
 }

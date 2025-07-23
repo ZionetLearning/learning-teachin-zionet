@@ -10,7 +10,7 @@ export interface ContextService {
   getCurrentPageContext(): MessageContext;
   attachContext(message: string): MessageContext;
   extractSelectedText(): string | undefined;
-  getPageMetadata(): Record<string, any>;
+  getPageMetadata(): Record<string, unknown>;
 }
 
 export interface MockAIService {
