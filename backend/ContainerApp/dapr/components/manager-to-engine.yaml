@@ -1,0 +1,18 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: manager-to-engine
+spec:
+  type: bindings.azure.servicebusqueues
+  version: v1
+  metadata:
+    - name: connectionString
+      value: "Endpoint=sb://host.docker.internal/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=localSecret;UseDevelopmentEmulator=true;"
+    - name: queueName
+      value: "manager-to-engine"
+    - name: direction
+      value: output
+    - name: disableEntityManagement
+      value: "true"
+scopes:
+  - manager

@@ -2,6 +2,21 @@ version: "3.9"
 
 services:
 
+  # -------------------- Dapr placement service --------------------
+
+  placement:
+      image: "daprio/placement:latest"
+      container_name: placement
+      command: ["./placement", "-port", "50006"]
+      ports:
+        - "50006:50006"
+      networks:
+        - microservice-net
+
+ 
+
+
+
   # -------------------- Azure SQL Edge --------------------
   sqledge:
     container_name: sqledge
@@ -9,8 +24,14 @@ services:
     environment:
       ACCEPT_EULA: "${ACCEPT_EULA}"
       MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD}"
+    ports:
+      - "1433:1433"  # Optional: expose for local dev
+    # volumes:
+    #   - sqledge-data:/var/opt/mssql
     networks:
-      sb-emulator:
+      - sb-emulator
+    restart: unless-stopped
+
 
   # -------------------- Azure Service Bus Emulator --------------------
   servicebus-emulator:
@@ -19,7 +40,6 @@ services:
     pull_policy: always
     volumes:
        - ./servicebus-emulator:/ServiceBus_Emulator/ConfigFiles
-
     ports:
       - "5672:5672"
       - "5300:5300"
@@ -31,9 +51,12 @@ services:
       - sqledge
     networks:
       sb-emulator:
+          aliases:
+            - servicebus-emulator
 
 
-# -------------------- PostgreSQL DB --------------------
+
+# ------------------------- PostgreSQL DB --------------------------
   postgres:
     image: postgres:15
     container_name: postgres-db
@@ -41,12 +64,26 @@ services:
     environment:
         POSTGRES_USER: postgres
         POSTGRES_PASSWORD: postgres
-        POSTGRES_DB: appdb
+        POSTGRES_DB: postgres_db
     ports:
         - "5432:5432"
     volumes:
         - pgdata:/var/lib/postgresql/data
+    networks:
+        - microservice-net
+ 
 
+  # ---------------------- pgAdmin for PostgreSQL ----------------------
+  pgadmin:
+      image: dpage/pgadmin4
+      container_name: pgadmin
+      environment:
+        PGADMIN_DEFAULT_EMAIL: admin@admin.com
+        PGADMIN_DEFAULT_PASSWORD: admin
+      ports:
+        - "8080:80"
+      networks:
+        - microservice-net
 
   # ------------------------ Manager Service ---------------------------
   manager:
@@ -79,8 +116,7 @@ services:
     ]
     volumes:
       - ./dapr:/dapr
-    networks:
-      - microservice-net
+    network_mode: "service:manager"
 
   # ------------------------ Engine Service ---------------------------
   engine:
@@ -113,8 +149,7 @@ services:
     ]
     volumes:
       - ./dapr:/dapr
-    networks:
-      - microservice-net
+    network_mode: "service:engine"
 
   # ------------------------ Accessor Service ---------------------------
   accessor:
@@ -127,7 +162,7 @@ services:
       - ASPNETCORE_URLS=http://+:5003
       - DB_HOST=postgres-db
       - DB_PORT=5432
-      - DB_NAME=appdb
+      - DB_NAME=postgres_db
       - DB_USER=postgres
       - DB_PASS=postgres
     depends_on:
@@ -153,8 +188,9 @@ services:
     ]
     volumes:
       - ./dapr:/dapr
-    networks:
-      - microservice-net
+    network_mode: "service:accessor"
+
+
 
 # ------------------------ Shared Networks ---------------------------
 networks:
@@ -166,3 +202,4 @@ networks:
 # ------------------------ Shared Volumes ---------------------------
 volumes:
       pgdata:
+      # sqledge-data:

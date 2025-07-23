@@ -3,5 +3,6 @@ export * from "./AvatarShPage";
 export * from "./AvatarDaPage";
 export * from "./ChatDaPage";
 export * from "./ChatYoPage";
+export * from "./ChatOuPage";
 export * from "./HomePages";
 export * from "./ChatShPage";
