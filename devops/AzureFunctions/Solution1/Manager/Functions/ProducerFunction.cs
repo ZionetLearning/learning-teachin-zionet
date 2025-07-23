@@ -9,7 +9,7 @@ namespace Manager.Functions;
 
 public class ProducerFunction
 {
-    private readonly ILogger<SendMessageFunction> _logger;
+    private readonly ILogger<ProducerFunction> _logger;
 
     public ProducerFunction(ILogger<ProducerFunction> logger)
     {
