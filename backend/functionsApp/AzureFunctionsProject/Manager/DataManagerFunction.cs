@@ -1,64 +1,74 @@
 using Azure.Messaging.ServiceBus;
 using AzureFunctionsProject.Common;
+using AzureFunctionsProject.Exceptions;
 using AzureFunctionsProject.Models;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Text.Json;
+using System.Threading;
 
 namespace AzureFunctionsProject.Manager
 {
     /// <summary>
     /// HTTP API front-end for enqueuing and retrieving generic Data entities via Service Bus and PostgreSQL.
     /// </summary>
-    public sealed class DataAccessorFunction
+    public sealed class DataManagerFunction
     {
         private readonly ServiceBusSender _queueSender;
         private readonly IAccessorClient _accessor;
-        private readonly ILogger<DataAccessorFunction> _logger;
+        private readonly IEngineClient _engine;
+        private readonly ILogger<DataManagerFunction> _logger;
 
         /// <summary>
         /// Constructor: injects ServiceBusClient, DB factory, and Logger.
         /// </summary>
-        public DataAccessorFunction(
+        public DataManagerFunction(
             ServiceBusClient sbClient,
             IAccessorClient accessor,
-            ILogger<DataAccessorFunction> logger)
+            IEngineClient engine,
+            ILogger<DataManagerFunction> logger)
         {
             _queueSender = sbClient.CreateSender(Queues.Incoming);
             _accessor = accessor;
+            _engine = engine;
             _logger = logger;
         }
 
-        private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
+        private static readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true
         };
 
         /// <summary>
-        /// 1. GET /api/data
+        ///  GET /api/data
         /// Retrieves all Data records via the accessor.
         /// </summary>
         [Function("GetAllData")]
-        public async Task<HttpResponseData> GetAll(
+        public async Task<HttpResponseData> GetAllAsync(
             [HttpTrigger(AuthorizationLevel.Function, "get", Route = Routes.ManagerGetAll)]
-            HttpRequestData req)
+            HttpRequestData req, CancellationToken cancellationToken)
         {
+            _logger.LogInformation("Handling GET /api/data");
             var respOut = req.CreateResponse();
             try
             {
-                // call the accessor function
-                var list = await _accessor.GetAllDataAsync();
-
+                var list = await _accessor.GetAllDataAsync(cancellationToken);
                 respOut.StatusCode = HttpStatusCode.OK;
-                await respOut.WriteAsJsonAsync(list);
+                await respOut.WriteAsJsonAsync(list, cancellationToken);
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "Accessor: GET data failed");
+                throw new AccessorClientException(
+                    $"Failed to retrieve Data from the Accessor service", ex);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Manager GetAllData error");
                 respOut.StatusCode = HttpStatusCode.InternalServerError;
-                await respOut.WriteStringAsync("Error retrieving data");
+                await respOut.WriteStringAsync("Error retrieving data", cancellationToken);
             }
 
             return respOut;
@@ -66,26 +76,27 @@ namespace AzureFunctionsProject.Manager
 
 
         /// <summary>
-        /// 2. GET /api/data/{id}
+        ///  GET /api/data/{id}
         /// Retrieves a single Data record by ID via the accessor.
         /// </summary>
         [Function("GetDataById")]
-        public async Task<HttpResponseData> GetById(
+        public async Task<HttpResponseData> GetByIdAsync(
             [HttpTrigger(AuthorizationLevel.Function, "get", Route = Routes.ManagerGetById)]
             HttpRequestData req,
-            string id)
+            string id, CancellationToken cancellationToken)
         {
+            _logger.LogInformation("Handling GET /api/data/{Id}", id);
             var respOut = req.CreateResponse();
             if (!Guid.TryParse(id, out var guid))
             {
                 respOut.StatusCode = HttpStatusCode.BadRequest;
-                await respOut.WriteStringAsync("Invalid GUID");
+                await respOut.WriteStringAsync("Invalid GUID", cancellationToken);
                 return respOut;
             }
 
             try
             {
-                var dto = await _accessor.GetDataByIdAsync(guid);
+                var dto = await _accessor.GetDataByIdAsync(guid, cancellationToken);
                 if (dto is null)
                 {
                     respOut.StatusCode = HttpStatusCode.NotFound;
@@ -94,40 +105,72 @@ namespace AzureFunctionsProject.Manager
 
                 respOut.StatusCode = HttpStatusCode.OK;
                 respOut.Headers.Add("ETag", $"\"{dto.Version}\"");
-                await respOut.WriteAsJsonAsync(dto);
+                await respOut.WriteAsJsonAsync(dto, cancellationToken);
             }
-            catch (HttpRequestException hre) when (hre.StatusCode == HttpStatusCode.NotFound)
+            catch (HttpRequestException ex)
             {
-                respOut.StatusCode = HttpStatusCode.NotFound;
+                _logger.LogError(ex, "Accessor: GET data failed");
+                throw new AccessorClientException(
+                    $"Failed to retrieve Data from the Accessor service", ex);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Manager GetById error for {Id}", id);
                 respOut.StatusCode = HttpStatusCode.InternalServerError;
-                await respOut.WriteStringAsync("Error retrieving data");
+                await respOut.WriteStringAsync("Error retrieving data", cancellationToken);
             }
             return respOut;
         }
 
+         /// <summary>
+        /// GET /api/data/process
+        ///  calls EngineFunction, returns processed result.
+        /// </summary>
+        [Function("ProcessData")]
+        public async Task<HttpResponseData> ProcessDataAsync(
+            [HttpTrigger(AuthorizationLevel.Function, "get", Route = Routes.ManagerProcessData)]
+            HttpRequestData req, CancellationToken cancellationToken)
+        {
+            _logger.LogInformation("Handling GET /api/data/process");
+            var outResp = req.CreateResponse();
+            try
+            {
+                var result = await _engine.ProcessDataAsync(cancellationToken);
+                outResp.StatusCode = HttpStatusCode.OK;
+                await outResp.WriteAsJsonAsync(result, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Manager to Engine process failed");
+                outResp.StatusCode = HttpStatusCode.InternalServerError;
+                await outResp.WriteStringAsync("Error processing data", cancellationToken);
+            }
+            return outResp;
+        }
         /// <summary>
-        /// 3. POST /api/data
+        /// POST /api/data
         /// Enqueues a CREATE action for a new Data record.
         /// </summary>
         [Function("CreateData")]
-        public async Task<HttpResponseData> Create(
+        public async Task<HttpResponseData> CreateDataAsync(
             [HttpTrigger(AuthorizationLevel.Function, "post", Route = Routes.ManagerCreate)]
-            HttpRequestData req)
+    HttpRequestData req,
+            CancellationToken cancellationToken)
         {
+            _logger.LogInformation("Received CreateData request POST /api/data");
+
             DataDto dto;
             try
             {
-                dto = await JsonSerializer.DeserializeAsync<DataDto>(req.Body,JsonOptions)
-                    ?? throw new InvalidDataException();
+                dto = await JsonSerializer.DeserializeAsync<DataDto>(
+                          req.Body, _jsonOptions, cancellationToken)
+                      ?? throw new InvalidDataException();
             }
-            catch
+            catch (JsonException jex)
             {
+                _logger.LogWarning(jex, "Invalid JSON body in CreateData");
                 var bad = req.CreateResponse(HttpStatusCode.BadRequest);
-                await bad.WriteStringAsync("Invalid JSON body");
+                await bad.WriteStringAsync("Invalid JSON body", cancellationToken);
                 return bad;
             }
 
@@ -149,7 +192,8 @@ namespace AzureFunctionsProject.Manager
                     Subject = "CreateData",
                     TimeToLive = TimeSpan.FromMinutes(5)
                 };
-                await _queueSender.SendMessageAsync(msg);
+                // Use injected sender
+                await _queueSender.SendMessageAsync(msg, cancellationToken);
 
                 var resp = req.CreateResponse(HttpStatusCode.Accepted);
                 resp.Headers.Add("Location", $"/api/data/{dto.Id}");
@@ -158,45 +202,51 @@ namespace AzureFunctionsProject.Manager
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to enqueue CREATE for {DataId}", dto.Id);
-                var resp = req.CreateResponse(HttpStatusCode.InternalServerError);
-                await resp.WriteStringAsync("Could not enqueue create");
-                return resp;
+                var error = req.CreateResponse(HttpStatusCode.InternalServerError);
+                await error.WriteStringAsync("Could not enqueue create", cancellationToken);
+                return error;
             }
         }
 
         /// <summary>
-        /// 4. PUT /api/data/{id}
+        ///  PUT /api/data/{id}
         /// Enqueues an UPDATE action, requiring If-Match header for concurrency.
         /// </summary>
         [Function("UpdateData")]
-        public async Task<HttpResponseData> Update(
+        public async Task<HttpResponseData> UpdateDataAsync(
             [HttpTrigger(AuthorizationLevel.Function, "put", Route = Routes.ManagerUpdate)]
             HttpRequestData req,
-            string id)
+            string id, CancellationToken cancellationToken)
         {
+            _logger.LogInformation("Handling PUT /api/data/{Id}", id);
             if (!Guid.TryParse(id, out var guid))
-                return req.CreateResponse(HttpStatusCode.BadRequest);
+            {
+                var badId = req.CreateResponse(HttpStatusCode.BadRequest);
+                await badId.WriteStringAsync("Invalid GUID", cancellationToken);
+                return badId;
+            }
 
             // Parse ETag for optimistic concurrency
             if (!req.Headers.TryGetValues("If-Match", out var etags) ||
                 !uint.TryParse(etags.First().Trim('"'), out var incomingVersion))
             {
                 var pre = req.CreateResponse(HttpStatusCode.PreconditionRequired);
-                await pre.WriteStringAsync("Missing or invalid If-Match header");
+                await pre.WriteStringAsync("Missing or invalid If-Match header", cancellationToken);
                 return pre;
             }
 
             DataDto dto;
             try
             {
-                dto = await JsonSerializer.DeserializeAsync<DataDto>(req.Body,JsonOptions)
+                dto = await JsonSerializer.DeserializeAsync<DataDto>(req.Body, _jsonOptions, cancellationToken)
                     ?? throw new InvalidDataException();
             }
-            catch
+            catch (JsonException jex)
             {
-                var bad = req.CreateResponse(HttpStatusCode.BadRequest);
-                await bad.WriteStringAsync("Invalid JSON body");
-                return bad;
+                _logger.LogWarning(jex, "Invalid JSON body in UpdateData");
+                var badJson = req.CreateResponse(HttpStatusCode.BadRequest);
+                await badJson.WriteStringAsync("Invalid JSON body", cancellationToken);
+                return badJson;
             }
 
             dto.Id = guid;
@@ -210,41 +260,45 @@ namespace AzureFunctionsProject.Manager
 
             try
             {
-                _logger.LogInformation("Enqueuing UPDATE for {DataId} @v{Version}",
-                                        dto.Id, dto.Version);
+                _logger.LogInformation("Enqueuing UPDATE for {DataId} @v{Version}",dto.Id, dto.Version);
                 var msg = new ServiceBusMessage(messageBody)
                 {
                     MessageId = $"{dto.Id}:{dto.Version}",
                     Subject = "UpdateData",
                     TimeToLive = TimeSpan.FromMinutes(5)
                 };
-                await _queueSender.SendMessageAsync(msg);
+                await _queueSender.SendMessageAsync(msg, cancellationToken);
 
                 return req.CreateResponse(HttpStatusCode.Accepted);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to enqueue UPDATE for {DataId}", dto.Id);
-                var resp = req.CreateResponse(HttpStatusCode.InternalServerError);
-                await resp.WriteStringAsync("Could not enqueue update");
-                return resp;
+                var error = req.CreateResponse(HttpStatusCode.InternalServerError);
+                await error.WriteStringAsync("Could not enqueue update", cancellationToken);
+                return error;
             }
         }
 
         /// <summary>
-        /// 5. DELETE /api/data/{id}
+        ///  DELETE /api/data/{id}
         /// Enqueues a DELETE action; optional If-Match for concurrency.
         /// </summary>
         [Function("DeleteData")]
-        public async Task<HttpResponseData> Delete(
+        public async Task<HttpResponseData> DeleteDataAsync(
             [HttpTrigger(AuthorizationLevel.Function, "delete", Route = Routes.ManagerDelete)]
             HttpRequestData req,
-            string id)
+            string id, CancellationToken cancellationToken)
         {
-            if (!Guid.TryParse(id, out var guid))
-                return req.CreateResponse(HttpStatusCode.BadRequest);
+            _logger.LogInformation("Handling DELETE /api/data/{Id}", id);
 
-            // Optional ETag support
+            if (!Guid.TryParse(id, out var guid))
+            {
+                var badId = req.CreateResponse(HttpStatusCode.BadRequest);
+                await badId.WriteStringAsync("Invalid GUID", cancellationToken);
+                return badId;
+            }
+
             uint? version = null;
             if (req.Headers.TryGetValues("If-Match", out var etags) &&
                 uint.TryParse(etags.First().Trim('"'), out var v))
@@ -259,8 +313,7 @@ namespace AzureFunctionsProject.Manager
 
             try
             {
-                _logger.LogInformation("Enqueuing DELETE for {DataId} @v{Version}",
-                                        guid, version);
+                _logger.LogInformation("Enqueuing DELETE for {DataId} @v{Version}", guid, version);
                 var msg = new ServiceBusMessage(messageBody)
                 {
                     MessageId = version.HasValue
@@ -269,7 +322,7 @@ namespace AzureFunctionsProject.Manager
                     Subject = "DeleteData",
                     TimeToLive = TimeSpan.FromMinutes(5)
                 };
-                await _queueSender.SendMessageAsync(msg);
+                await _queueSender.SendMessageAsync(msg, cancellationToken);
 
                 return req.CreateResponse(HttpStatusCode.NoContent);
             }
@@ -277,10 +330,9 @@ namespace AzureFunctionsProject.Manager
             {
                 _logger.LogError(ex, "Failed to enqueue DELETE for {DataId}", guid);
                 var resp = req.CreateResponse(HttpStatusCode.InternalServerError);
-                await resp.WriteStringAsync("Could not enqueue delete");
+                await resp.WriteStringAsync("Could not enqueue delete", cancellationToken);
                 return resp;
             }
         }
     }
-
 }
