@@ -97,7 +97,7 @@ namespace AzureFunctionsProject.Accessor
             if (envelope == null)
             {
                 _logger.LogError("Deserialized envelope was null for message: {MessageBody}", messageBody);
-                throw new AccessorClientException("Invalid queue message");
+                throw new AccessorClientException($"Invalid queue message. InvocationId={context.InvocationId}");
             }
 
             var action = envelope.Action;
