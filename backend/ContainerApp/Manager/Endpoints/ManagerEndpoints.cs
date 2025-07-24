@@ -9,15 +9,16 @@ public static class ManagerEndpoints
     public static void MapManagerEndpoints(this WebApplication app)
     {
 
+
         #region HTTP GET
 
         app.MapGet("/task/{id:int}", async (int id,
-            IManagerService service,
+            IManagerService managerService,
             ILogger<ManagerService> logger) =>
         {
             try
             {
-                var task = await service.GetTaskAsync(id);
+                var task = await managerService.GetTaskAsync(id);
                 if (task is not null)
                 {
                     logger.LogInformation("Retrieved task with ID {Id}", id);
@@ -41,14 +42,14 @@ public static class ManagerEndpoints
 
 
         app.MapPost("/task", async (TaskModel task,
-            IManagerService service,
+            IManagerService managerService,
             ILogger<ManagerService> logger) =>
         {
             try
             {
                 logger.LogDebug("Received task for processing: {Id} - {Name}", task.Id, task.Name);
 
-                var (success, message) = await service.ProcessTaskAsync(task);
+                var (success, message) = await managerService.ProcessTaskAsync(task);
 
                 if (success)
                 {
@@ -71,14 +72,14 @@ public static class ManagerEndpoints
 
         #region HTTP PUT
 
-        app.MapPut("/manager/{id}/{name}", async (int id,
+        app.MapPut("/task/{id}/{name}", async (int id,
            string name, ILogger<ManagerService> logger,
-           IManagerService manager) =>
+           IManagerService managerService) =>
         {
             logger.LogInformation("Get account by id from account manager with {id}", id);
             try
             {
-                var success = await manager.UpdateTaskName(id, name);
+                var success = await managerService.UpdateTaskName(id, name);
                 return success ? Results.Ok("Task name updated") : Results.NotFound("Task not found");
             }
             catch (Exception ex)
@@ -95,14 +96,14 @@ public static class ManagerEndpoints
         #region HTTP DELETE
 
 
-        app.MapDelete("/manager/{id}", async (int id,
+        app.MapDelete("/task/{id}", async (int id,
             ILogger<ManagerService> logger,
-            IManagerService manager) =>
+            IManagerService managerService) =>
         {
             logger.LogInformation("Delete task with id {id}", id);
             try
             {
-                var success = await manager.DeleteTask(id);
+                var success = await managerService.DeleteTask(id);
                 return success ? Results.Ok("Task deleted") : Results.NotFound("Task not found");
             }
             catch (Exception ex)
@@ -118,5 +119,4 @@ public static class ManagerEndpoints
 
 
     }
-
 }

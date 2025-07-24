@@ -24,13 +24,12 @@ namespace Engine.Services
 
         public async Task ProcessTaskAsync(TaskModel task)
         {
+            _logger.LogInformation($"Inside: {nameof(ProcessTaskAsync)}");
             if (task is null)
             {
                 _logger.LogWarning("Attempted to process a null task");
                 throw new ArgumentNullException(nameof(task), "Task cannot be null");
             }
-
-            _log.Add(task);
             _logger.LogInformation("Logged task: {Id} - {Name}", task.Id, task.Name);
 
             try
@@ -41,7 +40,7 @@ namespace Engine.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to send task {Id} to Accessor", task.Id);
-                throw; // Let caller handle this
+                throw;
             }
         }
     }

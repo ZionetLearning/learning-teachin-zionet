@@ -2,8 +2,7 @@
 using Accessor.Models;
 using Accessor.Services;
 using Microsoft.AspNetCore.Mvc;
-using System.Text.Json.Nodes;
-using Accessor.Models;
+
 
 namespace Accessor.Endpoints
 {
@@ -11,11 +10,13 @@ namespace Accessor.Endpoints
     {
         public static void MapAccessorEndpoints(this WebApplication app)
         {
-            app.MapGet("/task/{id:int}", async (int id, IAccessorService service, ILogger<AccessorService> logger) =>
+            app.MapGet("/task/{id:int}", async (int id, 
+                IAccessorService accessorService, 
+                ILogger<AccessorService> logger) =>
             {
                 try
                 {
-                    var task = await service.GetTaskByIdAsync(id);
+                    var task = await accessorService.GetTaskByIdAsync(id);
                     if (task is not null)
                     {
                         logger.LogInformation("Successfully retrieved task {Id}", task.Id);
@@ -35,11 +36,12 @@ namespace Accessor.Endpoints
 
 
 
-            app.MapPost($"/{QueueNames.EngineToAccessor}-input", async (TaskModel task, IAccessorService service, ILogger<AccessorService> logger) =>
+            app.MapPost($"/{QueueNames.EngineToAccessor}-input", 
+                async (TaskModel task, IAccessorService accessorService, ILogger<AccessorService> logger) =>
             {
                 try
                 {
-                    await service.SaveTaskAsync(task);
+                    await accessorService.SaveTaskAsync(task);
                     logger.LogInformation("Task {Id} saved successfully", task.Id);
                     return Results.Ok(new { Status = "Saved", task.Id });
                 }

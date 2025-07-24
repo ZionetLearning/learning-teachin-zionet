@@ -1,17 +1,12 @@
 ﻿using Accessor.Models;
-
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
-using System.Threading.Tasks;
-
 
 
 namespace Accessor.Services;
     public class AccessorService : IAccessorService
     {
         private readonly ILogger<AccessorService> _logger;
-        private static readonly Dictionary<int, TaskModel> _store = new();
-    private readonly AccessorDbContext _dbContext;
+        private readonly AccessorDbContext _dbContext;
 
     public AccessorService(AccessorDbContext dbContext, ILogger<AccessorService> logger)
         {
@@ -38,6 +33,7 @@ namespace Accessor.Services;
 
     public async Task<bool> UpdateTaskNameAsync(int taskId, string newName)
     {
+        _logger.LogInformation($"Inside:{nameof(UpdateTaskNameAsync)}");
         try
         {
             var task = await _dbContext.Tasks.FindAsync(taskId);
@@ -56,7 +52,8 @@ namespace Accessor.Services;
 
 
     public async Task<bool> DeleteTaskAsync(int taskId)
-        {
+    {
+        _logger.LogInformation($"Inside:{nameof(DeleteTaskAsync)}");
         try
             {
             var task = await _dbContext.Tasks.FindAsync(taskId);
@@ -74,29 +71,52 @@ namespace Accessor.Services;
     }
 
 
-    public Task<TaskModel?> GetTaskByIdAsync(int id)
+    public async Task<TaskModel?> GetTaskByIdAsync(int id)
     {
-        if (_store.TryGetValue(id, out var task))
+        _logger.LogInformation($"Inside:{nameof(GetTaskByIdAsync)}");
+        try
         {
-            _logger.LogDebug("Task found in store: {Id} - {Name}", task.Id, task.Name);
-            return Task.FromResult<TaskModel?>(task);
-        }
+            var task = await _dbContext.Tasks
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.Id == id);
 
-        _logger.LogInformation("Task with ID {Id} does not exist in the store", id);
-        return Task.FromResult<TaskModel?>(null);
+            if (task == null)
+            {
+                _logger.LogWarning("Task with ID {TaskId} not found.", id);
+                return null;
+            }
+
+            _logger.LogInformation("Fetched task ID {TaskId}: {TaskName}", task.Id, task.Name);
+            return task;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving task with ID {TaskId}", id);
+            throw;
+        }
     }
 
 
-    public Task SaveTaskAsync(TaskModel task)
+    public async Task SaveTaskAsync(TaskModel task)
     {
-        if (task is null)
+        _logger.LogInformation($"Inside:{nameof(SaveTaskAsync)}");
+        try
         {
-            _logger.LogWarning("Received null task to save");
-            throw new ArgumentNullException(nameof(task));
-        }
+            _dbContext.Tasks.Add(task);
+            await _dbContext.SaveChangesAsync();
 
-        _store[task.Id] = task;
-        _logger.LogInformation("Stored task: {Id} - {Name}", task.Id, task.Name);
-        return Task.CompletedTask;
+            _logger.LogInformation("Task {TaskId} saved successfully.", task.Id);
+        }
+        catch (DbUpdateException dbEx)
+        {
+            _logger.LogError(dbEx, "Failed to save task {TaskId} to the database due to DB error.", task.Id);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error occurred while saving task {TaskId}", task.Id);
+            throw;
+        }
     }
+    
 }
