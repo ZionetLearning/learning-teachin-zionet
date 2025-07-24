@@ -9,7 +9,6 @@ metadata:
     io.kompose.service: notificationmanager
   name: notificationmanager
   namespace: devops-model
-  ##namespace: default
 spec:
   type: NodePort
   ports:

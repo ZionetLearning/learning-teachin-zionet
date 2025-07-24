@@ -9,7 +9,6 @@ metadata:
     io.kompose.service: todoaccessor
   name: todoaccessor
   namespace: devops-model
-  #namespace: default
 spec:
   type: NodePort
   ports:

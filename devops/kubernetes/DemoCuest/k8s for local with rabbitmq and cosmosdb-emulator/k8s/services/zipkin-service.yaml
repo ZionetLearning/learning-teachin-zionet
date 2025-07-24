@@ -9,7 +9,6 @@ metadata:
     io.kompose.service: zipkin
   name: zipkin
   namespace: devops-model
-  #namespace: default
 spec:
   ports:
     - name: "9411"

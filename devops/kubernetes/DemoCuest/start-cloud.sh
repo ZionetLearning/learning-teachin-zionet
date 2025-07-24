@@ -37,3 +37,24 @@ find "$K8S_DIR/deployments" -type f -name '*.yaml' | while read file; do
 done
 
 echo "All resources applied successfully!"
+
+# Step 7: Wait for todomanager service to get an external IP
+echo "Waiting for external IP for todomanager service..."
+
+for i in {1..30}; do
+  EXTERNAL_IP=$(kubectl -n devops-model get svc todomanager -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+  
+  if [[ -n "$EXTERNAL_IP" ]]; then
+    echo "External IP is ready: $EXTERNAL_IP"
+    break
+  fi
+
+  echo "Attempt $i: External IP not yet assigned. Waiting 10s..."
+  sleep 10
+done
+
+if [[ -z "$EXTERNAL_IP" ]]; then
+  echo "Failed to get external IP after waiting. Check 'kubectl get svc todomanager'"
+else
+  echo "You can now access the app at: http://$EXTERNAL_IP:5073"
+fi

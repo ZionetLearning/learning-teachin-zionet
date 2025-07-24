@@ -9,7 +9,6 @@ metadata:
     io.kompose.service: redis
   name: redis
   namespace: devops-model
-  ##namespace: default
 spec:
   replicas: 1
   selector:

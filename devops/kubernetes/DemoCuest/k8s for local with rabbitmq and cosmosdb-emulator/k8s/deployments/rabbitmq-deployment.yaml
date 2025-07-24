@@ -9,7 +9,6 @@ metadata:
     io.kompose.service: rabbitmq
   name: rabbitmq
   namespace: devops-model
-  ##namespace: default
 spec:
   replicas: 1
   selector:

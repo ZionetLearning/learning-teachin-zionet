@@ -9,7 +9,6 @@ metadata:
     io.kompose.service: signalr
   name: signalr
   namespace: devops-model
-  ##namespace: default
 spec:
   ports:
     - name: "8888"

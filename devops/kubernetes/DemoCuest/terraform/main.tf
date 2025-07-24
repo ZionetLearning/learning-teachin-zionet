@@ -59,7 +59,7 @@ provider "kubernetes" {
 }
 
 provider "helm" {
-  kubernetes {
+  kubernetes = {
     host                   = data.azurerm_kubernetes_cluster.main.kube_config[0].host
     client_certificate     = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].client_certificate)
     client_key             = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].client_key)
@@ -86,32 +86,14 @@ resource "kubernetes_namespace" "model" {
   metadata { name = "devops-model" }
 }
 
-# ########################################
-# # 5. Apply *all* YAML manifests under ./k8s
-# ########################################
-# module "k8s_manifests" {
-#   source          = "./modules/k8s_manifests"
-#   k8s_dir         = "${path.module}/../k8s"
-#   docker_registry = var.docker_registry
-
-#   namespace = kubernetes_namespace.model.metadata[0].name
-
-#   # pass the alias exactly as the child module expects
-#   providers = {
-#     kubectl.inherited = kubectl.inherited
-#   }
-
-#   depends_on = [
-#     kubernetes_secret.azure_service_bus,
-#     kubernetes_secret.cosmosdb_connection,
-#     helm_release.dapr
-#   ]
-# }
-
 ### how to start
 ### terraform init
 ### terraform plan -var-file="terraform.tfvars.dev"
 ### terraform apply -var-file="terraform.tfvars.dev"
+
+### after apply is done, run the script to set up the yaml files
+### ./start-cloud.sh
+
 
 ### how to destroy
 ### ### terraform destroy -var-file="terraform.tfvars.dev"

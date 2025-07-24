@@ -9,7 +9,6 @@ metadata:
     io.kompose.service: todomanager
   name: todomanager
   namespace: devops-model
-  #namespace: default
 spec:
   type: LoadBalancer
   ports:
