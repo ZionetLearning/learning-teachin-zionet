@@ -1,4 +1,4 @@
-name: Build and push DemoCuest images
+name: Azure Login Test
 
 on:
   workflow_dispatch:
@@ -32,7 +32,7 @@ jobs:
         run: |
           RG_NAME=democuest-acr
           LOCATION=westeurope
-          ACR_NAME=aks-democuest12345
+          ACR_NAME=aksdemocuest12345
 
           az group create --name $RG_NAME --location $LOCATION
 
