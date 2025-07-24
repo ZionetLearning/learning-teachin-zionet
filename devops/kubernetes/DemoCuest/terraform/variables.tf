@@ -38,13 +38,11 @@ variable "sku" {
 variable "subscription_id" {
   description = "Azure subscription ID"
   type        = string
-  default     = ""
 }
 
 variable "tenant_id" {
   description = "Azure tenant ID"
   type        = string
-  default     = ""
 }
 
 # Docker Hub (or ACR) org that prefixes every image URL
