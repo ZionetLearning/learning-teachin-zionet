@@ -28,6 +28,5 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Using Include="System.Threading.ExecutionContext" />
   </ItemGroup>
 </Project>
