@@ -39,9 +39,11 @@ public class ServiceBusConsumerFunction
                 _logger.LogError("[Consumer] Invalid database configuration. InvocationId: {InvocationId}", invocationId);
                 throw new InvalidOperationException("Invalid database configuration");
             }
-
+            _logger.LogDebug("[Consumer]----------> Valid database configuration: {@Config}", connectionConfig);
+            // Build connection string
             var connectionString = BuildConnectionString(connectionConfig);
-            
+
+            _logger.LogDebug("[Consumer] Database connection string: {ConnectionString}", connectionString);
             _logger.LogInformation("[Consumer] Attempting database connection. InvocationId: {InvocationId}", invocationId);
 
             await using var connection = new NpgsqlConnection(connectionString);
