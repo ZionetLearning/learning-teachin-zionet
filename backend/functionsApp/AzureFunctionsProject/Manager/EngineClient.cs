@@ -12,6 +12,9 @@ namespace AzureFunctionsProject.Manager
         private readonly HttpClient _http;
         private readonly ILogger<EngineClient> _logger;
         private static readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        };
         private const string BaseProcess = "api/" + Routes.EngineProcess;
 
         public EngineClient(HttpClient httpClient, ILogger<EngineClient> logger)
@@ -28,9 +31,7 @@ namespace AzureFunctionsProject.Manager
 
                 var resp = await _http.GetAsync(BaseProcess, ct);
                 resp.EnsureSuccessStatusCode();
-                return await resp.Content.ReadFromJsonAsync<ProcessResult>(
-                           new JsonSerializerOptions { PropertyNameCaseInsensitive = true }, ct)
-                       ?? throw new InvalidOperationException("Empty result");
+                return await resp.Content.ReadFromJsonAsync<ProcessResult>(_jsonOptions, ct)?? throw new InvalidOperationException("Empty result");
             }
             catch (HttpRequestException ex)
             {
