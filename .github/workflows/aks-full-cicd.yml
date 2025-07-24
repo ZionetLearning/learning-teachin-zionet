@@ -22,14 +22,14 @@ jobs:
       tag: ${{ github.sha }}
     secrets: inherit
 
-  aks-terraform:
-    uses: ./.github/workflows/aks-terraform.yml
+  aks-terraform-apply:
+    uses: ./.github/workflows/aks-terraform-apply.yml
     with:
       environment: ${{ github.event.inputs.environment || 'Development' }}
     secrets: inherit
 
   aks-kubectl-apply:
-    needs: [build-and-push-images, aks-terraform]
+    needs: [build-and-push-images, aks-terraform-apply]
     uses: ./.github/workflows/aks-kubectl-apply.yml
     with:
       environment: ${{ github.event.inputs.environment || 'Development' }}
