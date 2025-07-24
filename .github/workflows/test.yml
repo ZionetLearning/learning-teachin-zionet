@@ -1,19 +1,22 @@
-name: Azure Login Test
+name: Build and push DemoCuest images
 
 on:
-  workflow_dispatch:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
 
 jobs:
-  login-check:
-    environment: Development
+  deploy:
     runs-on: ubuntu-latest
-
+    environment: ${{ inputs.environment }}
     permissions:
-      id-token: write      # Required for OIDC login
-      contents: read       # Required for actions/checkout
+      id-token: write
+      contents: read
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Azure Login via OIDC
@@ -23,5 +26,40 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Show current Azure account
-        run: az account show
+      - name: Ensure resource group and ACR exist
+        run: |
+          RG_NAME=democuest-acr
+          LOCATION=westeurope
+          ACR_NAME=aks-democuest
+
+          az group create --name $RG_NAME --location $LOCATION
+
+          if ! az acr show --name $ACR_NAME --resource-group $RG_NAME &>/dev/null; then
+            az acr create --resource-group $RG_NAME --name $ACR_NAME --sku Basic --location $LOCATION
+          fi
+
+          echo "ACR_NAME=$ACR_NAME" >> $GITHUB_ENV
+          echo "ACR_LOGIN_SERVER=$ACR_NAME.azurecr.io" >> $GITHUB_ENV
+
+      - name: Docker login to ACR
+        run: |
+          az acr login --name $ACR_NAME
+
+      - name: Build and Push Images
+        run: |
+          declare -A services=(
+            ["todoaccessor"]="Accessors/ToDoAccessor"
+            ["todomanager"]="Managers/TodoManager"
+            ["notificationmanager"]="Managers/NotificationManager"
+          )
+          ROOT_DIR="devops/kubernetes/DemoCuest"
+          for name in "${!services[@]}"; do
+            relpath="${services[$name]}"
+            context="$ROOT_DIR"
+            dockerfile="$ROOT_DIR/$relpath/Dockerfile"
+            image="$ACR_LOGIN_SERVER/$name:latest"
+            echo "Building $image from $dockerfile (context $context)..."
+            docker build -t "$image" -f "$dockerfile" "$context"
+            echo "Pushing $image..."
+            docker push "$image"
+          done
