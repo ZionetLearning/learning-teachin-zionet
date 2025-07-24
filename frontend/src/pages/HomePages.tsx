@@ -65,6 +65,16 @@ export const HomePage = () => {
             Avatar - Da (Daniel)
           </button>
         </div>
+        {/* Practices Tools Column*/}
+        <div className={classes.column}>
+          <h2>Practices Tools</h2>
+          <button
+            className={classes.button}
+            onClick={() => handleNavigation("typing")}
+          >
+            Typing Practice
+          </button>
+        </div>
       </div>
     </div>
   );

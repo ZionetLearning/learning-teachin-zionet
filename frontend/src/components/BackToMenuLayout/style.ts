@@ -26,4 +26,7 @@ export const useStyles = createUseStyles({
     boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
     zIndex: 1000,
   },
+  main: {
+    marginTop: 60,
+  },
 });
