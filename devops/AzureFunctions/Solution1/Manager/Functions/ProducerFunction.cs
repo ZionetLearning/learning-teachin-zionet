@@ -76,4 +76,75 @@ public class ProducerFunction
 
         return response;
     }
+
+    private async Task<bool> WaitForCallbackMessage(ServiceBusClient client, string callbackQueueName, string correlationId)
+    {
+        ServiceBusReceiver receiver = null;
+        try
+        {
+            receiver = client.CreateReceiver(callbackQueueName);
+            
+            // Set timeout for waiting (e.g., 30 seconds)
+            var timeout = TimeSpan.FromSeconds(30);
+            var cancellationToken = new CancellationTokenSource(timeout).Token;
+
+            _logger.LogInformation("Waiting for callback message with CorrelationId: {correlationId}", correlationId);
+
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                try
+                {
+                    // Receive message with timeout
+                    ServiceBusReceivedMessage receivedMessage = await receiver.ReceiveMessageAsync(TimeSpan.FromSeconds(5), cancellationToken);
+                    
+                    if (receivedMessage != null)
+                    {
+                        _logger.LogInformation("Received callback message with CorrelationId: {receivedCorrelationId}", receivedMessage.CorrelationId);
+                        
+                        // Check if this is the callback for our message
+                        if (receivedMessage.CorrelationId == correlationId)
+                        {
+                            _logger.LogInformation("Callback matched for CorrelationId: {correlationId}", correlationId);
+                            
+                            // Complete the callback message to remove it from the queue
+                            await receiver.CompleteMessageAsync(receivedMessage);
+                            return true;
+                        }
+                        else
+                        {
+                            // This callback is for a different message, abandon it so it can be processed again
+                            _logger.LogWarning("Callback message CorrelationId mismatch. Expected: {expected}, Received: {received}", 
+                                correlationId, receivedMessage.CorrelationId);
+                            await receiver.AbandonMessageAsync(receivedMessage);
+                        }
+                    }
+                }
+                catch (ServiceBusException ex) when (ex.Reason == ServiceBusFailureReason.MessageNotFound)
+                {
+                    // No message available, continue waiting
+                    await Task.Delay(1000, cancellationToken); // Wait 1 second before trying again
+                }
+            }
+
+            _logger.LogWarning("Timeout waiting for callback message with CorrelationId: {correlationId}", correlationId);
+            return false; // Timeout reached
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning("Callback wait cancelled for CorrelationId: {correlationId}", correlationId);
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error waiting for callback message with CorrelationId: {correlationId}", correlationId);
+            return false;
+        }
+        finally
+        {
+            if (receiver != null)
+            {
+                await receiver.DisposeAsync();
+            }
+        }
+    }
 }
