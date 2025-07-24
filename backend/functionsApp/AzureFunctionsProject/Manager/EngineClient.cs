@@ -11,7 +11,7 @@ namespace AzureFunctionsProject.Manager
     {
         private readonly HttpClient _http;
         private readonly ILogger<EngineClient> _logger;
-
+        private static readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
         private const string BaseProcess = "api/" + Routes.EngineProcess;
 
         public EngineClient(HttpClient httpClient, ILogger<EngineClient> logger)
