@@ -23,8 +23,9 @@ public class ServiceBusConsumerFunction
 
     [Function("ServiceBusConsumerFunction")]
     public async Task RunAsync(
-        [ServiceBusTrigger("myqueue", Connection = "ServiceBusConnectionString")] ServiceBusReceivedMessage message,
-        FunctionContext context)
+    [ServiceBusTrigger("myqueue", Connection = "ServiceBusConnectionString")]
+    ServiceBusReceivedMessage message,
+    FunctionContext context)
     {
         using var activity = new Activity("ProcessServiceBusMessage");
         activity.Start();
@@ -33,4 +34,5 @@ public class ServiceBusConsumerFunction
 
         activity.Stop();
     }
+
 }
