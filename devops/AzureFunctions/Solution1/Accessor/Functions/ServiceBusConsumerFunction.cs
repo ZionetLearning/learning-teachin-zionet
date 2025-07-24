@@ -112,7 +112,7 @@ public class ServiceBusConsumerFunction
         };
     }
 
-    private static bool IsValidConfiguration(DatabaseConfiguration config)
+    private bool IsValidConfiguration(DatabaseConfiguration config)
     {
         _logger.LogDebug("[Consumer] Validating database configuration: {@Config}", config);
         return !string.IsNullOrEmpty(config.Host) &&
