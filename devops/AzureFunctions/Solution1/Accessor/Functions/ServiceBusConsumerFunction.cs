@@ -1,4 +1,5 @@
 using Accessor.Functions.Services;
+using Azure.Messaging.ServiceBus;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -22,13 +23,13 @@ public class ServiceBusConsumerFunction
 
     [Function("ServiceBusConsumerFunction")]
     public async Task RunAsync(
-        [ServiceBusTrigger("myqueue", Connection = "ServiceBusConnectionString")] string message,
+        [ServiceBusTrigger("myqueue", Connection = "ServiceBusConnectionString")] ServiceBusReceivedMessage message,
         FunctionContext context)
     {
         using var activity = new Activity("ProcessServiceBusMessage");
         activity.Start();
 
-        await _processor.ProcessMessageAsync(message, context.InvocationId);
+        await _processor.ProcessMessageAsync(message.Body.ToString(), context.InvocationId, message.CorrelationId);
 
         activity.Stop();
     }
