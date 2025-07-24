@@ -85,6 +85,3 @@ resource "helm_release" "dapr" {
 resource "kubernetes_namespace" "model" {
   metadata { name = "devops-model" }
 }
-
-
-
