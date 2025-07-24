@@ -57,6 +57,21 @@ services:
         aliases:
           - sb-emulator
 
+  # ------------- SignalR Emulator -------------
+  signalr-emulator:
+    build:
+      context: ./AzureFunctionsProject/SignalREmulator
+      dockerfile: Dockerfile
+    container_name: signalr-emulator
+    ports:
+      - "8080:8080"
+    environment:
+      ASRS_EMULATOR_PORT: 8080
+    networks:
+      sb-emulator:
+        aliases:
+          - signalr-emulator
+
 volumes:
   pgdata:
   mssql-data:

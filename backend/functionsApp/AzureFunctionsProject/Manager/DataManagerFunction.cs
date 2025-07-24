@@ -334,5 +334,38 @@ namespace AzureFunctionsProject.Manager
                 return resp;
             }
         }
+
+        [Function("Negotiate")]
+        public static async Task<HttpResponseData> Negotiate(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = Routes.ManagerSignalRNegotiate)] HttpRequestData req,
+            [SignalRConnectionInfoInput(HubName = "serverless", ConnectionStringSetting = "AzureSignalRConnectionString")]
+            SignalRConnectionInfo connectionInfo)
+        {
+            var response = req.CreateResponse(HttpStatusCode.OK);
+            response.Headers.Add("Content-Type", "application/json");
+
+            var json = JsonSerializer.Serialize(connectionInfo, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            });
+
+            await response.WriteStringAsync(json);
+            return response;
+        }
+
+        [Function("GetDataBySignalR")]
+        [SignalROutput(HubName = "serverless", ConnectionStringSetting = "AzureSignalRConnectionString")]
+        public SignalRMessageAction GetDataBySignalR(
+            [HttpTrigger(AuthorizationLevel.Function, "get", Route = Routes.ManagerSignalRSendData)] HttpRequestData _)
+        {
+            var dummy = new { time = DateTime.UtcNow, value = new Random().Next(1000) };
+
+            _logger.LogInformation("Sending dummy message: {@Dummy}", dummy);
+            // this will broadcast to all connected clients
+            return new SignalRMessageAction("newMessage")
+            {
+                Arguments = new[] { dummy },
+            };
+        }
     }
 }
