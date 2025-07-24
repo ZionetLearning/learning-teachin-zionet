@@ -1,4 +1,4 @@
-name: Terraform Destroy with Provisioning
+name: AKS - Terraform Destroy with Provisioning
 
 on:
   workflow_call:

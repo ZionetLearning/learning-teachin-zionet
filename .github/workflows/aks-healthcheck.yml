@@ -1,4 +1,4 @@
-name: Healthcheck App
+name: AKS - Healthcheck App
 
 on:
   workflow_call:

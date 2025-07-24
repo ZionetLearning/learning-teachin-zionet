@@ -1,4 +1,4 @@
-name: Aks full CICD
+name: AKS - Full CICD
 
 on:
   #push:
@@ -29,7 +29,8 @@ jobs:
     secrets: inherit
 
   aks-kubectl-apply:
-    needs: [build-and-push-images, aks-terraform-apply]
+    #needs: [build-and-push-images, aks-terraform-apply]
+    needs: [aks-terraform-apply]
     uses: ./.github/workflows/aks-kubectl-apply.yml
     with:
       environment: ${{ github.event.inputs.environment || 'Development' }}
