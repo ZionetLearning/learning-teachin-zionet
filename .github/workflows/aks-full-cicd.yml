@@ -38,7 +38,7 @@ jobs:
 
   healthcheck:
     needs: [aks-kubectl-apply]
-    uses: ./.github/workflows/healthcheck.yml
+    uses: ./.github/workflows/aks-healthcheck.yml
     with:
       app_url: ${{ needs.aks-kubectl-apply.outputs.app_url }}
       environment: ${{ github.event.inputs.environment || 'Development' }}
