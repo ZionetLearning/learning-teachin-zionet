@@ -105,15 +105,16 @@ public class ServiceBusConsumerFunction
     {
         return new DatabaseConfiguration
         {
-            Host = _configuration["Database__Host"],
-            Database = _configuration["Database__Database"],
-            Username = _configuration["Database__Username"],
-            Password = _configuration["Database__Password"]
+            Host = Environment.GetEnvironmentVariable("Database__Host"),
+            Database = Environment.GetEnvironmentVariable("Database__Database"),
+            Username = Environment.GetEnvironmentVariable("Database__Username"),
+            Password = Environment.GetEnvironmentVariable("Database__Password")
         };
     }
 
     private static bool IsValidConfiguration(DatabaseConfiguration config)
     {
+        _logger.LogDebug("[Consumer] Validating database configuration: {@Config}", config);
         return !string.IsNullOrEmpty(config.Host) &&
                !string.IsNullOrEmpty(config.Database) &&
                !string.IsNullOrEmpty(config.Username) &&
