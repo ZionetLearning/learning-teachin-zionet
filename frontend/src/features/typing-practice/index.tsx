@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useStyles } from "./style";
 import type { ExerciseState, DifficultyLevel, Exercise } from "./types";
 import { getRandomExercise, compareTexts } from "./utils";
-import { speakHebrew } from "../../services/azureTTS";
+import { speakHebrew } from "../../services";
 import { LevelSelection, FeedbackDisplay, AudioControls } from "./components";
 
 export const TypingPractice = () => {
