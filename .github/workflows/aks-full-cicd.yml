@@ -19,7 +19,7 @@ jobs:
   build-and-push-images:
     uses: ./.github/workflows/build-and-push-images.yml
     with:
-      tag: ${{ github.sha }}
+      environment: ${{ github.event.inputs.environment }}
     secrets: inherit
 
   aks-terraform-apply:
