@@ -23,8 +23,8 @@ services:
     image: mcr.microsoft.com/azure-sql-edge:latest
     restart: always
     environment:
-      ACCEPT_EULA: "${ACCEPT_EULA}"
-      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD}"
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "changeMe123!"
     ports:
       - "1433:1433"
     volumes:
@@ -41,8 +41,8 @@ services:
     depends_on:
       - sqledge
     environment:
-      ACCEPT_EULA: "${ACCEPT_EULA}"
-      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD}"
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "changeMe123!"
       SQL_SERVER: "sqlserver"
       SQL_PORT: "1433"
       # where your config.json lives on the host
@@ -51,7 +51,7 @@ services:
       - "5672:5672"    # AMQP
       - "9090:9090"    # (optional) HTTP management
     volumes:
-      - "${CONFIG_PATH}:/ServiceBus_Emulator/ConfigFiles/config.json:ro"
+      - ./config.json:/ServiceBus_Emulator/ConfigFiles/config.json:ro
     networks:
       sb-emulator:
         aliases:
