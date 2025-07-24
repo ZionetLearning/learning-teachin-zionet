@@ -1,0 +1,66 @@
+﻿version: '3.8'
+
+services:
+  # ---------------- Postgres ----------------
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres-db
+    restart: always
+    environment:
+      POSTGRES_DB: orders
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Password123
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - sb-emulator
+
+  # ------------ SQL Edge (for SB Emulator) ------------
+  sqledge:
+    container_name: sqledge
+    image: mcr.microsoft.com/azure-sql-edge:latest
+    restart: always
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "changeMe123!"
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql-data:/var/opt/mssql
+    networks:
+      sb-emulator:
+        aliases:
+          - sqlserver
+
+  # --------- Azure Service Bus Emulator ---------
+  servicebus-emulator:
+    container_name: servicebus-emulator
+    image: mcr.microsoft.com/azure-messaging/servicebus-emulator:latest
+    depends_on:
+      - sqledge
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "changeMe123!"
+      SQL_SERVER: "sqlserver"
+      SQL_PORT: "1433"
+      # where your config.json lives on the host
+      CONFIG_FILE_PATH: "/ServiceBus_Emulator/ConfigFiles/config.json"
+    ports:
+      - "5672:5672"    # AMQP
+      - "9090:9090"    # (optional) HTTP management
+    volumes:
+      - ./config.json:/ServiceBus_Emulator/ConfigFiles/config.json:ro
+    networks:
+      sb-emulator:
+        aliases:
+          - sb-emulator
+
+volumes:
+  pgdata:
+  mssql-data:
+
+networks:
+  sb-emulator:
+    driver: bridge
