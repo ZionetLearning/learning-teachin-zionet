@@ -87,35 +87,65 @@ namespace AzureFunctionsProject.Accessor
         [Function("AccessorProcessQueue")]
         public async Task ProcessQueueAsync(
             [ServiceBusTrigger(Queues.Incoming, Connection = "ServiceBusConnection")]
-            string messageBody, CancellationToken cancellationToken)
+            string messageBody,
+            FunctionContext context)
         {
             _logger.LogInformation("Accessor: processing queue message");
-            var wrapper = JsonSerializer.Deserialize<QueueMessage>(messageBody, _jsonOptions)
-                          ?? throw new InvalidOperationException("Invalid queue message");
+
+            // parse message
+            var envelope = JsonSerializer.Deserialize<QueueEnvelope<DataDto>>(messageBody, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+            if (envelope == null)
+            {
+                _logger.LogError("Deserialized envelope was null for message: {MessageBody}", messageBody);
+                throw new AccessorClientException("Invalid queue message");
+            }
+
+            var action = envelope.Action;
+            var dto = envelope.Entity;
 
             try
             {
-                switch (wrapper.Action)
+                switch (action)
                 {
                     case "Create":
-                        await _service.CreateAsync(wrapper.Entity!, cancellationToken);
+                        await _service.CreateAsync(dto);
                         break;
+
                     case "Update":
-                        await _service.UpdateAsync(wrapper.Entity!, cancellationToken);
+                        try
+                        {
+                            await _service.UpdateAsync(dto);
+                        }
+                        catch (InvalidOperationException ex)
+                        {
+                            // version mismatch: no-op, complete message
+                            _logger.LogWarning(ex,
+                                "Concurrent update conflict for {DataId}@v{Version}, skipping update",
+                                dto.Id, dto.Version);
+                        }
                         break;
+
                     case "Delete":
-                        await _service.DeleteAsync(wrapper.Id!.Value, cancellationToken);
+                        if (!envelope.Id.HasValue)
+                        {
+                            _logger.LogError("Delete message missing Id: {MessageBody}", messageBody);
+                            break;
+                        }
+                        await _service.DeleteAsync(envelope.Id.Value);
                         break;
+
                     default:
-                        _logger.LogWarning("Unknown action in queue: {Action}", wrapper.Action);
+                        _logger.LogError("Unknown action '{Action}' in queue message", action);
                         break;
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing queue message");
-                throw new AccessorClientException(
-                    $"Error processing queue message", ex);
+                throw new AccessorClientException("Error processing queue message",ex);
             }
         }
     }

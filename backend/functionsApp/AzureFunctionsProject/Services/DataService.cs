@@ -120,11 +120,11 @@ namespace AzureFunctionsProject.Services
                 await using var conn = _dbFactory();
                 await conn.OpenAsync(token);
 
-                // Enforce optimistic concurrency via xmin
+                // Enforce optimistic concurrency by casting xmin through text to bigint
                 await using var cmd = new NpgsqlCommand(
-                    @"UPDATE data 
-                      SET payload = @payload 
-                      WHERE id = @id AND xmin = @version", conn);
+                    @"UPDATE data
+                      SET payload = @payload
+                      WHERE id = @id AND (xmin::text)::bigint = @version", conn);
                 cmd.Parameters.AddWithValue("id", entity.Id);
                 cmd.Parameters.AddWithValue("payload", entity.Payload);
                 cmd.Parameters.AddWithValue("version", (long)entity.Version);
