@@ -33,7 +33,8 @@ module "service_bus" {
   location           = module.resource_group.location
   
   queues = {
-    "myqueue" = {}  
+    "myqueue" = {}
+    "callbackqueue" = {}
   }
 }
 
