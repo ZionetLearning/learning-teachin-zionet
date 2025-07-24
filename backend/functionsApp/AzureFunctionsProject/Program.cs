@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Npgsql;
+using AzureFunctionsProject.Services;
 
 var builder = FunctionsApplication.CreateBuilder(args);
 
@@ -40,5 +41,14 @@ builder.Services
                         .GetValue<string>("FUNCTIONS_BASE_URL")
                  ?? "http://localhost:7071/");
          });
+    // 6. Engine HTTP client (same base URL)
+    builder.Services
+         .AddHttpClient<IEngineClient, EngineClient>(client =>
+         {
+    client.BaseAddress = new Uri(
+    builder.Configuration.GetValue<string>("FUNCTIONS_BASE_URL")
+    ?? "http://localhost:7278/");});
+
+builder.Services.AddSingleton<IDataService, DataService>();
 
 builder.Build().Run();
