@@ -1,9 +1,11 @@
+using Azure.Messaging.ServiceBus;
 using AzureFunctionsProject.Common;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using System.Net;
+using System.Text.Json;
 
 namespace AzureFunctionsProject.Accessor
 {
@@ -38,6 +40,29 @@ namespace AzureFunctionsProject.Accessor
         {
                 return req.CreateResponse(HttpStatusCode.BadRequest);
 
+        }
+        [Function("AccessorProcessQueue")]
+        public async Task ProcessQueueAsync(
+        [ServiceBusTrigger(Queues.Incoming, Connection = "ServiceBusConnection")]
+        ServiceBusReceivedMessage message,
+        ServiceBusMessageActions actions,
+        FunctionContext context)
+        {
+            string body = message.Body.ToString();
+            string msgDevTag = message.ApplicationProperties.TryGetValue("DevTag", out var tag)
+                ? tag?.ToString() ?? "unknown"
+                : "unknown";
+
+            if (msgDevTag == _devTag)
+            {
+                _logger.LogInformation("Processed: {Body} (Dev={Dev})", body, msgDevTag);
+                await actions.CompleteMessageAsync(message);
+            }
+            else
+            {
+                _logger.LogInformation("Skipped: {Body} (Dev={Dev})", body, msgDevTag);
+                await actions.AbandonMessageAsync(message);
+            }
         }
     }
 }
