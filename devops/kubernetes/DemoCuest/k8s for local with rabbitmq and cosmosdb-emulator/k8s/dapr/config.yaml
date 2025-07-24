@@ -1,0 +1,14 @@
+apiVersion: dapr.io/v1alpha1
+kind: Configuration
+metadata:
+  name: dapr-config
+  namespace: devops-model
+spec:
+  mtls:
+    enabled: false
+    controlPlaneTrustDomain: "localhost"
+    sentryAddress: "localhost:50001"
+  tracing:
+    samplingRate: "1"
+    zipkin:
+      endpointAddress: http://zipkin:9411/api/v2/spans

@@ -39,7 +39,7 @@ export class MockChatService implements MockAIService {
           content: INITIAL_CONVERSATION_CONFIG.welcomeMessage.content,
           timestamp: new Date(
             Date.now() -
-              INITIAL_CONVERSATION_CONFIG.welcomeMessage.timestampOffset
+              INITIAL_CONVERSATION_CONFIG.welcomeMessage.timestampOffset,
           ),
           sender: this.aiSender,
         },
@@ -57,7 +57,7 @@ export class MockChatService implements MockAIService {
   }
   async generateResponse(
     userMessage: string,
-    context?: MessageContext
+    context?: MessageContext,
   ): Promise<Message> {
     await this.simulateTyping();
 
@@ -72,7 +72,7 @@ export class MockChatService implements MockAIService {
         messageId,
         timestamp,
         userMessage,
-        context
+        context,
       );
     }
 
@@ -83,7 +83,7 @@ export class MockChatService implements MockAIService {
         messageId,
         timestamp,
         userMessage,
-        context
+        context,
       );
     }
 
@@ -94,7 +94,7 @@ export class MockChatService implements MockAIService {
         messageId,
         timestamp,
         userMessage,
-        context
+        context,
       );
     }
 
@@ -117,7 +117,7 @@ export class MockChatService implements MockAIService {
     messageId: string,
     timestamp: Date,
     userMessage: string,
-    context?: MessageContext
+    context?: MessageContext,
   ): TextMessage {
     let response = TEXT_RESPONSE_TEMPLATES[
       Math.floor(Math.random() * TEXT_RESPONSE_TEMPLATES.length)
@@ -143,7 +143,7 @@ export class MockChatService implements MockAIService {
     messageId: string,
     timestamp: Date,
     _userMessage: string,
-    context?: MessageContext
+    context?: MessageContext,
   ): ImageMessage {
     const imageId = Math.floor(Math.random() * 100) + 1;
 
@@ -166,7 +166,7 @@ export class MockChatService implements MockAIService {
     messageId: string,
     timestamp: Date,
     _userMessage: string,
-    context?: MessageContext
+    context?: MessageContext,
   ): GenerativeUIMessage {
     const randomQuiz =
       MOCK_QUIZZES[Math.floor(Math.random() * MOCK_QUIZZES.length)];
@@ -189,7 +189,7 @@ export class MockChatService implements MockAIService {
     messageId: string,
     timestamp: Date,
     userMessage: string,
-    context?: MessageContext
+    context?: MessageContext,
   ): GenerativeUIMessage {
     const randomLink =
       MOCK_LINKS[Math.floor(Math.random() * MOCK_LINKS.length)];

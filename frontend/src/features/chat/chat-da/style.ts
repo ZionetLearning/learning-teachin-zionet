@@ -24,7 +24,6 @@ const useStyles = createUseStyles({
   },
   toggleButton: {
     position: "absolute",
-    top: 8,
     left: 8,
     padding: "6px 12px",
     border: "none",

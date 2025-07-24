@@ -7,7 +7,18 @@ export const useStyles = createUseStyles({
     gap: "16px",
     maxWidth: "600px",
     margin: "0 auto",
-    marginTop: "50px",
+  },
+  columnsWrapper: {
+    display: "flex",
+    gap: "15%",
+    flexWrap: "wrap",
+    justifyContent: "center",
+  },
+  column: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "20px",
+    minWidth: 200,
   },
   button: {
     background: "#59BEDFFF",
@@ -27,5 +38,16 @@ export const useStyles = createUseStyles({
   chatDaChatWrapper: {
     flex: 1,
     display: "flex",
+    marginTop: "5%",
+  },
+  fullScreenAvatarDaPage: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    margin: 0,
+    padding: 0,
+    overflow: "hidden",
   },
 });

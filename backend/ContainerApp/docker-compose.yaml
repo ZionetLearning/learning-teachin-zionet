@@ -51,9 +51,13 @@ services:
       - sqledge
     networks:
       sb-emulator:
-          aliases:
-            - servicebus-emulator
-
+        aliases:
+          - sbemulatorns
+    healthcheck:
+      test: ["CMD", "/bin/bash", "-c", "nc -z localhost 5672"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
 
 
 # ------------------------- PostgreSQL DB --------------------------
@@ -104,7 +108,8 @@ services:
     image: "daprio/daprd:latest"
     container_name: manager-dapr
     depends_on:
-      - manager
+      manager:
+        condition: service_started
     command: [
       "./daprd",
       "-app-id", "manager",
@@ -137,7 +142,8 @@ services:
     image: "daprio/daprd:latest"
     container_name: engine-dapr
     depends_on:
-      - engine
+      engine:
+        condition: service_started
     command: [
       "./daprd",
       "-app-id", "engine",
@@ -176,7 +182,8 @@ services:
     image: "daprio/daprd:latest"
     container_name: accessor-dapr
     depends_on:
-      - accessor
+      accessor:
+        condition: service_started
     command: [
       "./daprd",
       "-app-id", "accessor",

@@ -32,7 +32,6 @@ export const IMAGE_CAPTIONS = [
   "This image should provide some context for what you're asking about.",
 ];
 
-
 export const MOCK_QUIZZES = [
   {
     question: "What's the largest planet in our solar system?",

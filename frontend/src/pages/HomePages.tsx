@@ -13,45 +13,59 @@ export const HomePage = () => {
     <div className={classes.homePageWrapper}>
       <h1>Welcome to our internal playground project</h1>
 
-      <h2>Chat Tools</h2>
-      <button
-        className={classes.button}
-        onClick={() => handleNavigation("/chat/sh")}
-      >
-        Chat - Sh (Shirley - OpenAI)
-      </button>
-      <button
-        className={classes.button}
-        onClick={() => handleNavigation("/chat/yo")}
-      >
-        Chat - Yo (Yonatan)
-      </button>
-      <button
-        className={classes.button}
-        onClick={() => handleNavigation("/chat/da")}
-      >
-        Chat - Da (Daniel)
-      </button>
-      <button
-        className={classes.button}
-        onClick={() => handleNavigation("/chat/ou")}
-      >
-        Chat - Ou (Ouriel)
-      </button>
+      <div className={classes.columnsWrapper}>
+        {/* Chat Tools Column */}
+        <div className={classes.column}>
+          <h2>Chat Tools</h2>
+          <button
+            className={classes.button}
+            onClick={() => handleNavigation("/chat/sh")}
+          >
+            Chat - Sh (Shirley - OpenAI)
+          </button>
+          <button
+            className={classes.button}
+            onClick={() => handleNavigation("/chat/yo")}
+          >
+            Chat - Yo (Yonatan)
+          </button>
+          <button
+            className={classes.button}
+            onClick={() => handleNavigation("/chat/da")}
+          >
+            Chat - Da (Daniel)
+          </button>
+          <button
+            className={classes.button}
+            onClick={() => handleNavigation("/chat/ou")}
+          >
+            Chat - Ou (Ouriel)
+          </button>
+        </div>
 
-      <h2>Avatar Tools</h2>
-      <button
-        className={classes.button}
-        onClick={() => handleNavigation("/avatar/ou")}
-      >
-        Avatar - Ou (Ouriel)
-      </button>
-      <button
-        className={classes.button}
-        onClick={() => handleNavigation("/avatar/sh")}
-      >
-        Avatar - Sh (Shirley)
-      </button>
+        {/* Avatar Tools Column */}
+        <div className={classes.column}>
+          <h2>Avatar Tools</h2>
+          <button
+            className={classes.button}
+            onClick={() => handleNavigation("/avatar/ou")}
+          >
+            Avatar - Ou (Ouriel)
+          </button>
+          <button
+            className={classes.button}
+            onClick={() => handleNavigation("/avatar/sh")}
+          >
+            Avatar - Sh (Shirley)
+          </button>
+          <button
+            className={classes.button}
+            onClick={() => handleNavigation("/avatar/da")}
+          >
+            Avatar - Da (Daniel)
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
