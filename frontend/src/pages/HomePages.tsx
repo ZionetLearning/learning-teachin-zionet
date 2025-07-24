@@ -52,6 +52,12 @@ export const HomePage = () => {
       >
         Avatar - Sh (Shirley)
       </button>
+      <button
+        className={classes.button}
+        onClick={() => handleNavigation("/avatar/da")}
+      >
+        Avatar - Da (Daniel)
+      </button>
     </div>
   );
 };
