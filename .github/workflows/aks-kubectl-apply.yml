@@ -34,20 +34,21 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Attach ACR to AKS (allow image pulls)
-        run: |
-          az aks update \
-            --resource-group $AKS_RG \
-            --name $AKS_NAME \
-            --attach-acr $DOCKER_REGISTRY
-
       - name: Set up variables
         run: |
           echo "K8S_DIR=devops/kubernetes/DemoCuest/k8s" >> $GITHUB_ENV
           echo "NAMESPACE_FILE=devops/kubernetes/DemoCuest/k8s/namespace-model.yaml" >> $GITHUB_ENV
           echo "DOCKER_REGISTRY=aksdemocuest12345.azurecr.io" >> $GITHUB_ENV
+          echo "ACR_NAME=aksdemocuest12345" >> $GITHUB_ENV
           echo "AKS_RG=democuest-aks-rg-dev" >> $GITHUB_ENV
           echo "AKS_NAME=democuest-aks-dev" >> $GITHUB_ENV
+
+      - name: Attach ACR to AKS (allow image pulls)
+        run: |
+          az aks update \
+            --resource-group $AKS_RG \
+            --name $AKS_NAME \
+            --attach-acr $ACR_NAME
 
       - name: Get AKS credentials
         run: |
