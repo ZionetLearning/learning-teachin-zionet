@@ -85,26 +85,3 @@ resource "helm_release" "dapr" {
 resource "kubernetes_namespace" "model" {
   metadata { name = "devops-model" }
 }
-
-### how to start
-### terraform init
-### terraform plan -var-file="terraform.tfvars.dev"
-### terraform apply -var-file="terraform.tfvars.dev"
-
-### after apply is done, run the script to set up the yaml files
-### ./start-cloud.sh
-
-
-### how to destroy
-### ### terraform destroy -var-file="terraform.tfvars.dev"
-
-### az aks get-credentials   --resource-group democuest-aks-rg-dev   --name democuest-aks-dev   --overwrite-existing
-### to be able to '  kubectl get pods -n devops-model   ' 
-
-### to get external ip '   kubectl -n devops-model get svc todomanager   '
-
-### see logs of pods '   $ kubectl -n devops-model logs deployment/todoaccessor -f   '
-
-### apply new/updated yaml '    kubectl apply -f ./todoaccessor-deployment.yaml -n devops-model   '
-
-### restart pod  '   kubectl rollout restart deployment/todoaccessor -n devops-model  '

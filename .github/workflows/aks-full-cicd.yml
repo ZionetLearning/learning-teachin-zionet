@@ -1,0 +1,44 @@
+name: Aks full CICD
+
+on:
+  #push:
+   # branches:
+    #  - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Select environment'
+        required: true
+        default: 'Development'
+        type: choice
+        options:
+          - Development
+          - Production
+
+jobs:
+  build-and-push-images:
+    uses: ./.github/workflows/build-and-push-images.yml
+    with:
+      tag: ${{ github.sha }}
+    secrets: inherit
+
+  aks-terraform:
+    uses: ./.github/workflows/aks-terraform.yml
+    with:
+      environment: ${{ github.event.inputs.environment || 'Development' }}
+    secrets: inherit
+
+  aks-kubectl-apply:
+    needs: [build-and-push-images, aks-terraform]
+    uses: ./.github/workflows/aks-kubectl-apply.yml
+    with:
+      environment: ${{ github.event.inputs.environment || 'Development' }}
+    secrets: inherit
+
+  healthcheck:
+    needs: [aks-kubectl-apply]
+    uses: ./.github/workflows/healthcheck.yml
+    with:
+      app_url: ${{ needs.aks-kubectl-apply.outputs.app_url }}
+      environment: ${{ github.event.inputs.environment || 'Development' }}
+    secrets: inherit

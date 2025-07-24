@@ -1,0 +1,20 @@
+name: Healthcheck App
+
+on:
+  workflow_call:
+    inputs:
+      app_url:
+        required: true
+        type: string
+      environment:
+        required: true
+        type: string
+
+jobs:
+  healthcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check app health
+        run: |
+          echo "Checking health at ${{ inputs.app_url }}"
+          curl -sSf ${{ inputs.app_url }} || exit 1
