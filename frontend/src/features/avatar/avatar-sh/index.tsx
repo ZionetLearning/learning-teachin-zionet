@@ -34,16 +34,20 @@ export const AvatarSh = () => {
     );
 
     speechConfig.speechSynthesisVoiceName = "he-IL-HilaNeural";
+    // enable viseme event stream
     speechConfig.setProperty(
       "SpeechServiceConnection_SynthVoiceVisemeEvent",
       "true",
     );
 
     const audioConfig = sdk.AudioConfig.fromDefaultSpeakerOutput();
+
+    //creates the tool that converts the text into speech 
     const synthesizer = new sdk.SpeechSynthesizer(speechConfig, audioConfig);
 
     const visemes: { offset: number; visemeId: number }[] = [];
 
+    //event triggered when a viseme is received from Azure
     synthesizer.visemeReceived = (_, e) => {
       console.log(
         `Viseme ID: ${e.visemeId}, offset: ${e.audioOffset / 10000}ms`,
@@ -57,10 +61,12 @@ export const AvatarSh = () => {
       synthesizer.close();
     };
 
+    // start speaking the text
     synthesizer.speakTextAsync(
       text,
       () => {
         if (visemes.length) {
+          // schedule each viseme to be shown at the right time
           visemes.forEach(({ visemeId, offset }) => {
             setTimeout(() => {
               setCurrentViseme(visemeId);

@@ -12,14 +12,17 @@ export async function sendChatMessage(message: string): Promise<string> {
     "api-key": API_KEY,
   };
 
+  //chat payload: a system prompt + user's message
   const data = {
     messages: [
-      { role: "system", content: "You are a cool person" },
+      { role: "system", content: "You are a cool person" }, // optional system instruction (sets behavior)
       { role: "user", content: message },
     ],
     max_tokens: 500,
   };
 
   const response = await axios.post(API_URL, data, { headers });
+
+  //returns the assistant's reply text
   return response.data.choices[0].message.content;
 }

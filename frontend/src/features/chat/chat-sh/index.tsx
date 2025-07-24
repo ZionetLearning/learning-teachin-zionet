@@ -10,6 +10,7 @@ export const ChatSh = () => {
   );
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  // simulate typing effect from the assistant
   const [displayedAIMessage, setDisplayedAIMessage] = useState("");
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -29,12 +30,15 @@ export const ChatSh = () => {
     setIsLoading(true);
 
     try {
+       // send message to Azure OpenAI
       const response = await sendChatMessage(input);
       setDisplayedAIMessage("");
       let index = 0;
       const interval = setInterval(() => {
         setDisplayedAIMessage((prev) => prev + response[index]);
         index++;
+
+        //when done, add full response to messages
         if (index >= response.length) {
           clearInterval(interval);
           setMessages((prev) => [
@@ -44,7 +48,7 @@ export const ChatSh = () => {
           setDisplayedAIMessage("");
           setIsLoading(false);
         }
-      }, 25);
+      }, 25); // typing speed
     } catch (error) {
       alert("Error: " + error);
       setIsLoading(false);
