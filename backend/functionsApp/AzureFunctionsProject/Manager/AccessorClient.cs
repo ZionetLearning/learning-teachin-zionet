@@ -25,12 +25,21 @@ namespace AzureFunctionsProject.Manager
 
         public async Task<List<DataDto>> GetAllDataAsync(CancellationToken ct = default)
         {
-            var list = await _http.GetFromJsonAsync<List<DataDto>>(
-                BaseGetAll,
-                _jsonOptions,
-                ct
-            );
-            return list ?? new List<DataDto>();
+            try
+            {
+                var list = await _http.GetFromJsonAsync<List<DataDto>>(
+                    BaseGetAll,
+                    _jsonOptions,
+                    ct
+                );
+                return list ?? new List<DataDto>();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+
         }
 
         public async Task<DataDto?> GetDataByIdAsync(Guid id, CancellationToken ct = default)
