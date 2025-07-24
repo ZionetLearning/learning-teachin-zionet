@@ -39,7 +39,7 @@ export class MessageServiceImpl implements MessageService {
     try {
       const aiResponse = await this.chatService.generateResponse(
         content,
-        context
+        context,
       );
 
       this.addMessage(aiResponse);
