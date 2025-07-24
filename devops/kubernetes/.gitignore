@@ -18,10 +18,6 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 
-# Secrets
-*.tfvars
-*.tfvars.json
-
 # Terraform log
 .terraform.log
 
