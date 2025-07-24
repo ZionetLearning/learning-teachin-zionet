@@ -27,14 +27,20 @@ interface RawQuizProps extends Record<string, unknown> {
 }
 
 // Type guards
-const isLinkProps = (props: Record<string, unknown>): props is LinkMessageProps => {
-  return typeof props.title === 'string' && typeof props.url === 'string';
+const isLinkProps = (
+  props: Record<string, unknown>,
+): props is LinkMessageProps => {
+  return typeof props.title === "string" && typeof props.url === "string";
 };
 
-const isRawQuizProps = (props: Record<string, unknown>): props is RawQuizProps => {
-  return typeof props.question === 'string' && 
-         Array.isArray(props.options) && 
-         typeof props.correctAnswer === 'number';
+const isRawQuizProps = (
+  props: Record<string, unknown>,
+): props is RawQuizProps => {
+  return (
+    typeof props.question === "string" &&
+    Array.isArray(props.options) &&
+    typeof props.correctAnswer === "number"
+  );
 };
 
 interface GenerativeUIMessageProps {
@@ -43,7 +49,7 @@ interface GenerativeUIMessageProps {
 
 const componentFactory = (
   componentType: string,
-  props: Record<string, unknown>
+  props: Record<string, unknown>,
 ) => {
   try {
     switch (componentType) {

@@ -30,15 +30,20 @@ export function useChat(): UseChatReturn {
         if (!messageServiceRef.current) {
           messageServiceRef.current = new MessageServiceImpl();
 
-          const unsubscribe = messageServiceRef.current.subscribeToMessages((updatedMessages) => {
-            setMessages(updatedMessages);
-            setIsInitialized(true);
-          });
+          const unsubscribe = messageServiceRef.current.subscribeToMessages(
+            (updatedMessages) => {
+              setMessages(updatedMessages);
+              setIsInitialized(true);
+            },
+          );
 
           return unsubscribe;
         }
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : "Failed to initialize chat service";
+        const errorMessage =
+          err instanceof Error
+            ? err.message
+            : "Failed to initialize chat service";
         setError(errorMessage);
         console.error("Chat initialization error:", err);
       }
@@ -49,19 +54,19 @@ export function useChat(): UseChatReturn {
 
   const handleError = useCallback((err: unknown, operation: string) => {
     let errorMessage: string;
-    let errorType: ChatError['type'] = 'network';
+    let errorType: ChatError["type"] = "network";
 
     if (err instanceof Error) {
       errorMessage = err.message;
-      
-      if (err.message.includes('network') || err.message.includes('fetch')) {
-        errorType = 'network';
-      } else if (err.message.includes('validation')) {
-        errorType = 'validation';
-      } else if (err.message.includes('render')) {
-        errorType = 'rendering';
-      } else if (err.message.includes('context')) {
-        errorType = 'context';
+
+      if (err.message.includes("network") || err.message.includes("fetch")) {
+        errorType = "network";
+      } else if (err.message.includes("validation")) {
+        errorType = "validation";
+      } else if (err.message.includes("render")) {
+        errorType = "rendering";
+      } else if (err.message.includes("context")) {
+        errorType = "context";
       }
     } else {
       errorMessage = `Failed to ${operation}`;
@@ -71,36 +76,42 @@ export function useChat(): UseChatReturn {
       type: errorType,
       message: errorMessage,
       details: err,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
     setError(chatError.message);
     console.error(`Chat ${operation} error:`, chatError);
   }, []);
 
-  const sendMessage = useCallback(async (content: string, context?: MessageContext) => {
-    if (!messageServiceRef.current) {
-      handleError(new Error("Chat service not initialized"), "send message");
-      return;
-    }
+  const sendMessage = useCallback(
+    async (content: string, context?: MessageContext) => {
+      if (!messageServiceRef.current) {
+        handleError(new Error("Chat service not initialized"), "send message");
+        return;
+      }
 
-    if (!content.trim()) {
-      handleError(new Error("Message content cannot be empty"), "send message");
-      return;
-    }
+      if (!content.trim()) {
+        handleError(
+          new Error("Message content cannot be empty"),
+          "send message",
+        );
+        return;
+      }
 
-    setLastMessageContent({ content, context });
-    setIsLoading(true);
-    setError(undefined);
+      setLastMessageContent({ content, context });
+      setIsLoading(true);
+      setError(undefined);
 
-    try {
-      await messageServiceRef.current.sendMessage(content, context);
-    } catch (err) {
-      handleError(err, "send message");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [handleError]);
+      try {
+        await messageServiceRef.current.sendMessage(content, context);
+      } catch (err) {
+        handleError(err, "send message");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [handleError],
+  );
 
   const retryLastMessage = useCallback(async () => {
     if (!lastMessageContent) {
@@ -130,6 +141,6 @@ export function useChat(): UseChatReturn {
     sendMessage,
     clearMessages,
     retryLastMessage,
-    isInitialized
+    isInitialized,
   };
 }
