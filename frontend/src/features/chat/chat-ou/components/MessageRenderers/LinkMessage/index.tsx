@@ -17,7 +17,6 @@ const LinkMessage: React.FC<LinkMessageProps> = ({
   const classes = useStyles();
 
   const handleClick = () => {
-
     if (url.startsWith("/")) {
       window.location.href = url;
     } else {

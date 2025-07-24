@@ -14,7 +14,10 @@ interface QuizMessageProps {
   allowMultiple?: boolean;
 }
 
-const getOptionClassName = (status: string, classes: Record<string, string>) => {
+const getOptionClassName = (
+  status: string,
+  classes: Record<string, string>,
+) => {
   switch (status) {
     case "correct":
       return classes.optionCorrect;
@@ -45,7 +48,7 @@ const QuizMessage: React.FC<QuizMessageProps> = ({
       setSelectedOptions((prev) =>
         prev.includes(optionId)
           ? prev.filter((id) => id !== optionId)
-          : [...prev, optionId]
+          : [...prev, optionId],
       );
     } else {
       setSelectedOptions([optionId]);
@@ -80,14 +83,14 @@ const QuizMessage: React.FC<QuizMessageProps> = ({
   const getScore = () => {
     const correctOptions = options.filter((opt) => opt.isCorrect);
     const selectedCorrect = selectedOptions.filter(
-      (id) => options.find((opt) => opt.id === id)?.isCorrect
+      (id) => options.find((opt) => opt.id === id)?.isCorrect,
     );
 
     return {
       correct: selectedCorrect.length,
       total: correctOptions.length,
       percentage: Math.round(
-        (selectedCorrect.length / correctOptions.length) * 100
+        (selectedCorrect.length / correctOptions.length) * 100,
       ),
     };
   };
