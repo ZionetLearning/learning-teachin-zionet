@@ -32,7 +32,7 @@ jobs:
         run: |
           RG_NAME=democuest-acr
           LOCATION=westeurope
-          ACR_NAME=aks-democuest
+          ACR_NAME=aks-democuest12345
 
           az group create --name $RG_NAME --location $LOCATION
 
