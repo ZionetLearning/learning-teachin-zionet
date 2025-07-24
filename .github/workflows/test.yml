@@ -10,14 +10,15 @@ on:
 
 jobs:
   deploy:
+    environment: Development
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
+
     permissions:
-      id-token: write
-      contents: read
+      id-token: write      # Required for OIDC login
+      contents: read       # Required for actions/checkout
 
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Azure Login via OIDC
