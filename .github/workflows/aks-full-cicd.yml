@@ -18,20 +18,28 @@ on:
 jobs:
   build-and-push-images:
     uses: ./.github/workflows/build-and-push-images.yml
+    permissions:
+      id-token: write
+      contents: read
     with:
       environment: ${{ github.event.inputs.environment }}
     secrets: inherit
 
   aks-terraform-apply:
     uses: ./.github/workflows/aks-terraform-apply.yml
+    permissions:
+      id-token: write
+      contents: read
     with:
       environment: ${{ github.event.inputs.environment || 'Development' }}
     secrets: inherit
 
   aks-kubectl-apply:
-    #needs: [build-and-push-images, aks-terraform-apply]
-    needs: [aks-terraform-apply]
+    needs: [build-and-push-images, aks-terraform-apply]
     uses: ./.github/workflows/aks-kubectl-apply.yml
+    permissions:
+      id-token: write
+      contents: read
     with:
       environment: ${{ github.event.inputs.environment || 'Development' }}
     secrets: inherit
