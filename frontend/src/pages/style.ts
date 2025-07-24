@@ -27,6 +27,7 @@ export const useStyles = createUseStyles({
   chatDaChatWrapper: {
     flex: 1,
     display: "flex",
+    marginTop: "5%",
   },
   fullScreenAvatarDaPage: {
     position: "absolute",
