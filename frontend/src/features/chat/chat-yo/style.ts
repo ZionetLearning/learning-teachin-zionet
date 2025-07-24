@@ -18,7 +18,22 @@ export const useStyles = createUseStyles({
         "& .rce-mbox-right-notch": {
             fill: "#11bbff !important",
         },
+        "& .rce-container-mbox-right": {
+            flexDirection: 'row-reverse',
+        },
+        "& .rce-mbox-right .rce-mbox-title": {
+            textAlign: 'right',
+            justifyContent: 'flex-end',
+        },
     },
+
+    rightMessage: {
+        backgroundColor: "#11bbff"
+    },
+    leftMessage: {
+        backgroundColor: "#FFFFFF"
+    },
+
     input: {
         border: "1px solid #ddd",
         borderRadius: "0%",
