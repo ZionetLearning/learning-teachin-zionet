@@ -5,7 +5,35 @@
         "Name": "sbemulatorns",
         "Queues": [
           {
-            "Name": "queue.1",
+            "Name": "manager-to-engine",
+            "Properties": {
+              "DeadLetteringOnMessageExpiration": false,
+              "DefaultMessageTimeToLive": "PT1H",
+              "DuplicateDetectionHistoryTimeWindow": "PT20S",
+              "ForwardDeadLetteredMessagesTo": "",
+              "ForwardTo": "",
+              "LockDuration": "PT1M",
+              "MaxDeliveryCount": 3,
+              "RequiresDuplicateDetection": false,
+              "RequiresSession": false
+            }
+          },
+          {
+            "Name": "engine-to-accessor",
+            "Properties": {
+              "DeadLetteringOnMessageExpiration": false,
+              "DefaultMessageTimeToLive": "PT1H",
+              "DuplicateDetectionHistoryTimeWindow": "PT20S",
+              "ForwardDeadLetteredMessagesTo": "",
+              "ForwardTo": "",
+              "LockDuration": "PT1M",
+              "MaxDeliveryCount": 3,
+              "RequiresDuplicateDetection": false,
+              "RequiresSession": false
+            }
+          },
+          {
+            "Name": "taskupdate",
             "Properties": {
               "DeadLetteringOnMessageExpiration": false,
               "DefaultMessageTimeToLive": "PT1H",
@@ -21,6 +49,50 @@
         ],
 
         "Topics": [
+          {
+            "Name": "manager-to-ai",
+            "Properties": {
+                "DefaultMessageTimeToLive": "PT1H",
+                "DuplicateDetectionHistoryTimeWindow": "PT20S",
+                "RequiresDuplicateDetection": false
+            },
+            "Subscriptions": [
+              {
+                "Name": "engine",
+                "Properties": {
+                  "DefaultMessageTimeToLive": "PT1H",
+                  "MaxDeliveryCount": 3,
+                  "LockDuration": "PT1M",
+                  "DeadLetteringOnMessageExpiration": false,
+                  "RequiresSession": false,
+                  "ForwardTo": "",
+                  "ForwardDeadLetteredMessagesTo": ""
+                }
+              }
+            ]
+          },
+          {
+            "Name": "ai-to-manager",
+            "Properties": {
+                "DefaultMessageTimeToLive": "PT1H",
+                "DuplicateDetectionHistoryTimeWindow": "PT20S",
+                "RequiresDuplicateDetection": false
+            },
+            "Subscriptions": [
+              {
+                "Name": "manager",
+                "Properties": {
+                  "DefaultMessageTimeToLive": "PT1H",
+                  "MaxDeliveryCount": 3,
+                  "LockDuration": "PT1M",
+                  "DeadLetteringOnMessageExpiration": false,
+                  "RequiresSession": false,
+                  "ForwardTo": "",
+                  "ForwardDeadLetteredMessagesTo": ""
+                }
+              }
+            ]
+          },
           {
             "Name": "topic.1",
             "Properties": {

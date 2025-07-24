@@ -1,0 +1,19 @@
+# Environment-specific Terraform files
+# terraform.tfvars
+*.auto.tfvars
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfplan.*
+
+# Environment secrets
+secrets.tf
+secrets.tfvars
+*secret*
+*password*
+*key*
+
+# Logs
+*.log
+crash.log
