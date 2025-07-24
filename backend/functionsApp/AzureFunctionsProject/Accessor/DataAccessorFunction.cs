@@ -107,25 +107,24 @@ namespace AzureFunctionsProject.Accessor
             {
                 switch (action)
                 {
-                    case "Create":
+                    case QueueActions.Create:
                         await _service.CreateAsync(dto);
                         break;
 
-                    case "Update":
+                    case QueueActions.Update:
                         try
                         {
                             await _service.UpdateAsync(dto);
                         }
                         catch (InvalidOperationException ex)
                         {
-                            // version mismatch: no-op, complete message
                             _logger.LogWarning(ex,
                                 "Concurrent update conflict for {DataId}@v{Version}, skipping update",
                                 dto.Id, dto.Version);
                         }
                         break;
 
-                    case "Delete":
+                    case QueueActions.Delete:
                         if (!envelope.Id.HasValue)
                         {
                             _logger.LogError("Delete message missing Id: {MessageBody}", messageBody);
