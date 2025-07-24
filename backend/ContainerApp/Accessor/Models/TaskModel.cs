@@ -1,15 +1,21 @@
-using System.Text.Json.Serialization;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Accessor.Models
+
+// how the data is stored in the DB
 {
+    [Table("Tasks")]
     public class TaskModel
     {
-        [JsonPropertyName("id")]
+        [Key]
         public int Id { get; set; }
-        [JsonPropertyName("name")]
-        public required string Name { get; set; }
-        [JsonPropertyName("payload")]
-        public required string Payload { get; set; }
+
+        [Required]
+        public string Name { get; set; } = string.Empty;
+
+        [Required]
+        public string Payload { get; set; } = string.Empty;
     }
 
 }

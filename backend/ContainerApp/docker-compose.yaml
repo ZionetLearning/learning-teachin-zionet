@@ -2,6 +2,21 @@ version: "3.9"
 
 services:
 
+  # -------------------- Dapr placement service --------------------
+
+  placement:
+      image: "daprio/placement:latest"
+      container_name: placement
+      command: ["./placement", "-port", "50006"]
+      ports:
+        - "50006:50006"
+      networks:
+        - microservice-net
+
+ 
+
+
+
   # -------------------- Azure SQL Edge --------------------
   sqledge:
     container_name: sqledge
@@ -16,6 +31,7 @@ services:
     networks:
       - sb-emulator
     restart: unless-stopped
+
 
   # -------------------- Azure Service Bus Emulator --------------------
   servicebus-emulator:
@@ -152,7 +168,7 @@ services:
       - ASPNETCORE_URLS=http://+:5003
       - DB_HOST=postgres-db
       - DB_PORT=5432
-      - DB_NAME=appdb
+      - DB_NAME=postgres_db
       - DB_USER=postgres
       - DB_PASS=postgres
     depends_on:
@@ -181,17 +197,6 @@ services:
       - ./dapr:/dapr
     network_mode: "service:accessor"
 
-
-  # ------------------------- placement -----------------------------
-
-  placement:
-    image: "daprio/dapr"
-    command: ["./placement", "-port", "50006"]
-    ports:
-      - "50006:50006"
-    container_name: placement
-    networks:
-      - microservice-net
 
 
 # ------------------------ Shared Networks ---------------------------

@@ -14,7 +14,7 @@ export interface UseContextReturn {
 
 export function useContext(): UseContextReturn {
   const [currentContext, setCurrentContext] = useState<MessageContext | null>(
-    null
+    null,
   );
   const [isContextAttached, setIsContextAttached] = useState(false);
   const contextServiceRef = useRef<ContextServiceImpl | null>(null);

@@ -7,7 +7,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Dapr.AspNetCore" Version="1.15.4" />
+    <Folder Include="Models\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Dapr.Actors.AspNetCore" Version="1.15.4" />
+    <PackageReference Include="Dapr.Client" Version="1.15.4" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.3" />
+	<PackageReference Include="Dapr.AspNetCore">
+	  <Version>1.15.4</Version>
+	</PackageReference>
   </ItemGroup>
 
 </Project>

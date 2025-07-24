@@ -32,7 +32,7 @@ export const ChatOu: React.FC = () => {
         // Error is already handled by useChat hook
       }
     },
-    [sendMessage]
+    [sendMessage],
   );
 
   const handleDismissError = useCallback(() => {

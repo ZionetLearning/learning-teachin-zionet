@@ -4,7 +4,7 @@ export const useStyles = createUseStyles({
   container: {
     display: "flex",
     flexDirection: "column",
-    height: "628px", 
+    height: "628px",
     width: "100%",
     maxWidth: "800px",
 
@@ -12,7 +12,7 @@ export const useStyles = createUseStyles({
     borderRadius: "12px",
     backgroundColor: "#ffffff",
     overflow: "hidden",
-    position: "relative", 
+    position: "relative",
     fontFamily:
       "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
   },
@@ -25,12 +25,12 @@ export const useStyles = createUseStyles({
     flex: 1,
     display: "flex",
     flexDirection: "column",
-    minHeight: 0, 
+    minHeight: 0,
   },
 
   messageList: {
     flex: 1,
-    minHeight: 0, 
+    minHeight: 0,
   },
 
   inputArea: {

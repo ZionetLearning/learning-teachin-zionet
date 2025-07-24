@@ -11,4 +11,5 @@ namespace Manager.Models
         [JsonPropertyName("payload")]
         public required string Payload { get; set; }
     }
+
 }

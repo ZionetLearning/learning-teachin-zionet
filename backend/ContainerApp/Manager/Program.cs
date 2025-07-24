@@ -1,13 +1,18 @@
-using Manager.Endpoints;
 using Manager.Services;
+using Manager.Endpoints;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDaprClient();
+// ---- Services ----
+builder.Services.AddControllers();
+
 builder.Services.AddControllers().AddDapr();
+
 
 builder.Services.AddScoped<IManagerService, ManagerService>();
 builder.Services.AddScoped<IAiGatewayService, AiGatewayService>();
+
 
 var app = builder.Build();
 
