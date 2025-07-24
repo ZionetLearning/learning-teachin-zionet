@@ -92,11 +92,8 @@ namespace AzureFunctionsProject.Accessor
         {
             _logger.LogInformation("Accessor: processing queue message");
 
-            // parse message
-            var envelope = JsonSerializer.Deserialize<QueueEnvelope<DataDto>>(messageBody, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
+            var envelope = JsonSerializer.Deserialize<QueueEnvelope<DataDto>>(messageBody, _jsonOptions);
+
             if (envelope == null)
             {
                 _logger.LogError("Deserialized envelope was null for message: {MessageBody}", messageBody);
