@@ -34,6 +34,11 @@ jobs:
       - name: Set Terraform working directory
         run: echo "TF_DIR=./devops/kubernetes/DemoCuest/terraform" >> $GITHUB_ENV
 
+      - name: Debug ARM envs
+        run: |
+          env | grep ARM_
+          env | grep AZURE_
+
       - name: Terraform Init
         run: terraform init
         working-directory: ${{ env.TF_DIR }}
