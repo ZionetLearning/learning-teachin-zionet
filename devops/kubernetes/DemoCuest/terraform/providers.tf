@@ -4,6 +4,7 @@ terraform {
     storage_account_name = "teachintfstate"
     container_name       = "tfstate-aks"
     key                  = "dev.terraform.tfstate"
+    use_azuread_auth     = true # added because of githubactions
   }
 
   required_providers {
