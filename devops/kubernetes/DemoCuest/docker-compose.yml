@@ -2,18 +2,18 @@ services:
 #############################################
 # The API Gateway Service 
 #############################################
-  apigateway:
-    image: ${DOCKER_REGISTRY-}ocelot  
-    container_name: apigateway-ocelot
-    environment:
-      - ASPNETCORE_URLS=http://+:80
-    build:
-      context: ApiGateway
-      dockerfile: Dockerfile 
-    ports:
-      - "80:80"
-    networks:
-      - democuest-dapr  
+  # apigateway:
+  #   image: ${DOCKER_REGISTRY-}ocelot  
+  #   container_name: apigateway-ocelot
+  #   environment:
+  #     - ASPNETCORE_URLS=http://+:80
+  #   build:
+  #     context: ApiGateway
+  #     dockerfile: Dockerfile 
+  #   ports:
+  #     - "80:80"
+  #   networks:
+  #     - democuest-dapr  
 
 
 #############################################

@@ -18,8 +18,13 @@
         public const string ManagerCreate = "data";
         public const string ManagerUpdate = "data/{id}";
         public const string ManagerDelete = "data/{id}";
+        public const string ManagerProcessData = "process";
+
         public const string ManagerSignalRNegotiate = "negotiate";
         public const string ManagerSignalRSendData = "SendDataBySignalR";
+
+        // Engine HTTP endpoint
+        public const string EngineProcess = "engine/process";
 
     }
 }
