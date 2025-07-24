@@ -7,7 +7,18 @@ export const useStyles = createUseStyles({
     gap: "16px",
     maxWidth: "600px",
     margin: "0 auto",
-    marginTop: "50px",
+  },
+  columnsWrapper: {
+    display: "flex",
+    gap: "15%",
+    flexWrap: "wrap",
+    justifyContent: "center",
+  },
+  column: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "20px",
+    minWidth: 200,
   },
   button: {
     background: "#59BEDFFF",
