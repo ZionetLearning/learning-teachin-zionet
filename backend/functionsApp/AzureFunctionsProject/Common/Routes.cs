@@ -18,5 +18,8 @@
         public const string ManagerCreate = "data";
         public const string ManagerUpdate = "data/{id}";
         public const string ManagerDelete = "data/{id}";
+        public const string ManagerSignalRNegotiate = "negotiate";
+        public const string ManagerSignalRSendData = "SendDataBySignalR";
+
     }
 }
