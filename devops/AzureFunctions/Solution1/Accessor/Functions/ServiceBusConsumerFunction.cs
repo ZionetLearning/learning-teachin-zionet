@@ -22,14 +22,19 @@ public class ServiceBusConsumerFunction
 
     [Function("ServiceBusConsumerFunction")]
     public async Task RunAsync(
-        [ServiceBusTrigger("myqueue", Connection = "ServiceBusConnectionString")] string message,
-        FunctionContext context)
+    [ServiceBusTrigger("myqueue", Connection = "ServiceBusConnectionString")]
+    ServiceBusReceivedMessage message,
+    FunctionContext context)
     {
         using var activity = new Activity("ProcessServiceBusMessage");
         activity.Start();
 
-        await _processor.ProcessMessageAsync(message, context.InvocationId);
+        string body = message.Body.ToString();
+        string? correlationId = message.CorrelationId;
+
+        await _processor.ProcessMessageAsync(body, context.InvocationId, correlationId);
 
         activity.Stop();
     }
+
 }
