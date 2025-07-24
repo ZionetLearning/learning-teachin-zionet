@@ -359,9 +359,8 @@ namespace AzureFunctionsProject.Manager
             [HttpTrigger(AuthorizationLevel.Function, "get", Route = Routes.ManagerSignalRSendData)] HttpRequestData _)
         {
             var dummy = new { time = DateTime.UtcNow, value = new Random().Next(1000) };
-            var messageJson = JsonSerializer.Serialize(dummy);
 
-            _logger.LogInformation("Sending dummy message: {0}", messageJson);
+            _logger.LogInformation("Sending dummy message: {@Dummy}", dummy);
             // this will broadcast to all connected clients
             return new SignalRMessageAction("newMessage")
             {
