@@ -26,7 +26,7 @@ Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-co
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ComponentTests", "ComponentTests", "{DF2F1EB2-307F-466A-A7AF-72E7C386066E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EngineComponentTests", "..\EngineComponentTests\EngineComponentTests.csproj", "{6A311F7E-C7E8-42D5-ABB5-BAEC78C6B9C4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EngineComponentTests", "EngineComponentTests\EngineComponentTests.csproj", "{6A311F7E-C7E8-42D5-ABB5-BAEC78C6B9C4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
