@@ -12,10 +12,10 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["NotificationManager/NotificationManager.csproj", "NotificationManager/"]
-RUN dotnet restore "./NotificationManager/NotificationManager.csproj"
+COPY ["Managers/NotificationManager/NotificationManager.csproj", "Managers/NotificationManager/"]
+RUN dotnet restore "./Managers/NotificationManager/NotificationManager.csproj"
 COPY . .
-WORKDIR "/src/NotificationManager"
+WORKDIR "/src/Managers/NotificationManager"
 RUN dotnet build "./NotificationManager.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # This stage is used to publish the service project to be copied to the final stage

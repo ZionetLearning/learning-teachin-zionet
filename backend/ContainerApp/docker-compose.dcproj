@@ -8,6 +8,7 @@
   </PropertyGroup>
   <ItemGroup>
     <None Include=".dockerignore" />
+    <None Include=".env" />
     <None Include="docker-compose.yaml" />
   </ItemGroup>
   <ProjectExtensions>
