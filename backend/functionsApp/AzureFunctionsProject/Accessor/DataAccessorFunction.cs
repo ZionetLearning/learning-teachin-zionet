@@ -153,7 +153,7 @@ namespace AzureFunctionsProject.Accessor
         }
         [Function("AccessorProcessQueue")]
         public async Task ProcessQueueAsync(
-        [ServiceBusTrigger(Queues.Incoming, Connection = "ServiceBusConnection")]
+        [ServiceBusTrigger(Queues.IncomingCloud, Connection = "ServiceBusConnection")]
         ServiceBusReceivedMessage message,
         ServiceBusMessageActions actions,
         FunctionContext context)
