@@ -8,7 +8,7 @@ import {
   HomePage,
   ChatShPage,
   AvatarDaPage,
-  TypingPracticePage
+  TypingPracticePage,
 } from "./pages";
 import { BackToMenuLayout } from "./components";
 
