@@ -7,7 +7,7 @@ spec:
   version: v1
   metadata:
     - name: connectionString
-      value: "Endpoint=sb://host.docker.internal/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=localSecret;UseDevelopmentEmulator=true;"
+      value: "Endpoint=sb://sbemulatorns/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=localSecret;UseDevelopmentEmulator=true"
     - name: queueName
       value: "manager-to-engine"
     - name: direction

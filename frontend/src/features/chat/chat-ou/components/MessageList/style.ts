@@ -17,7 +17,6 @@ export const useStyles = createUseStyles({
     flexDirection: "column",
     gap: "8px",
 
-
     "&::-webkit-scrollbar": {
       width: "6px",
     },

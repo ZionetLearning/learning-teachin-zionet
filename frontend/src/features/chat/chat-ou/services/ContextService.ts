@@ -22,7 +22,6 @@ export class ContextServiceImpl implements ContextService {
   attachContext(message: string): MessageContext {
     const baseContext = this.getCurrentPageContext();
 
-
     return {
       ...baseContext,
       metadata: {
@@ -93,7 +92,6 @@ export class ContextServiceImpl implements ContextService {
 
     return parts.join("\n");
   }
-
 
   hasSignificantContext(context: MessageContext): boolean {
     return !!(

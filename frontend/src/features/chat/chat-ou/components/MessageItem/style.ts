@@ -20,7 +20,7 @@ export const useStyles = createUseStyles({
     alignSelf: "flex-end",
     backgroundColor: "#007bff",
     color: "white",
-    marginLeft: "20%", 
+    marginLeft: "20%",
     borderBottomRightRadius: "4px",
     "& $senderName": {
       color: "rgba(255, 255, 255, 0.9)",
@@ -41,7 +41,7 @@ export const useStyles = createUseStyles({
     backgroundColor: "#f8f9fa",
     color: "#333",
     border: "1px solid #e9ecef",
-    marginRight: "20%", 
+    marginRight: "20%",
     borderBottomLeftRadius: "4px",
   },
 
@@ -121,7 +121,7 @@ export const useStyles = createUseStyles({
     },
 
     userMessage: {
-      marginLeft: "10%", 
+      marginLeft: "10%",
     },
 
     aiMessage: {

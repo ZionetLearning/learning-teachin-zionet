@@ -14,7 +14,7 @@ export const useStyles = createUseStyles({
   content: {
     display: "flex",
     alignItems: "center",
-    padding: "8px 0", 
+    padding: "8px 0",
     transition: "all 0.2s ease",
 
     "&:hover": {

@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: C:\Program Files\kompose\kompose.exe convert -f docker-compose.yml
+    kompose.version: 1.30.0 (9d8dcb518)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: signalr
+  name: signalr
+  namespace: devops-model
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: signalr
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: C:\Program Files\kompose\kompose.exe convert -f docker-compose.yml
+        kompose.version: 1.30.0 (9d8dcb518)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/democuest-default: "true"
+        io.kompose.service: signalr
+    spec:
+      containers:
+        - env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Development
+            - name: ASPNETCORE_URLS
+              value: http://+:8888;http://+:7071
+            - name: ASRS_EMULATOR_PORT
+              value: "8888"
+          image: ${DOCKER_REGISTRY}/signalremulator
+          name: signalr
+          ports:
+            - containerPort: 8888
+              hostPort: 8888
+              protocol: TCP
+            - containerPort: 7071
+              hostPort: 7071
+              protocol: TCP
+          resources: {}
+      restartPolicy: Always

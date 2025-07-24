@@ -1,0 +1,27 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: transactionresponsequeue
+  namespace: devops-model
+spec:
+  type: bindings.rabbitmq
+  version: v1
+  metadata:
+  - name: queueName
+    value: transactionresponsequeue
+  - name: host
+    value: "amqp://rabbitmq:5672"
+  - name: durable
+    value: true
+  - name: deleteWhenUnused
+    value: false
+  - name: ttlInSeconds
+    value: 60
+  - name: prefetchCount
+    value: 0
+  - name: exclusive
+    value: false
+  - name: maxPriority
+    value: 5
+  - name: contentType
+    value: "text/plain"

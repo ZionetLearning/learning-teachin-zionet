@@ -6,7 +6,7 @@ import { useStyles } from "./style";
 export const ChatSh = () => {
   const classes = useStyles();
   const [messages, setMessages] = useState<{ role: string; content: string }[]>(
-    []
+    [],
   );
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);

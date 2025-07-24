@@ -15,7 +15,7 @@ const visemeMap: Record<number, string> = lipsArray.reduce(
     acc[idx] = curr;
     return acc;
   },
-  {} as Record<number, string>
+  {} as Record<number, string>,
 );
 
 export const AvatarSh = () => {
@@ -30,13 +30,13 @@ export const AvatarSh = () => {
     const speechRegion = import.meta.env.VITE_AZURE_REGION!;
     const speechConfig = sdk.SpeechConfig.fromSubscription(
       speechKey,
-      speechRegion
+      speechRegion,
     );
 
     speechConfig.speechSynthesisVoiceName = "he-IL-HilaNeural";
     speechConfig.setProperty(
       "SpeechServiceConnection_SynthVoiceVisemeEvent",
-      "true"
+      "true",
     );
 
     const audioConfig = sdk.AudioConfig.fromDefaultSpeakerOutput();
@@ -46,7 +46,7 @@ export const AvatarSh = () => {
 
     synthesizer.visemeReceived = (_, e) => {
       console.log(
-        `Viseme ID: ${e.visemeId}, offset: ${e.audioOffset / 10000}ms`
+        `Viseme ID: ${e.visemeId}, offset: ${e.audioOffset / 10000}ms`,
       );
       visemes.push({ visemeId: e.visemeId, offset: e.audioOffset / 10000 });
     };
@@ -75,7 +75,7 @@ export const AvatarSh = () => {
         console.error("Speech error:", err);
         setCurrentViseme(0);
         synthesizer.close();
-      }
+      },
     );
   };
 
