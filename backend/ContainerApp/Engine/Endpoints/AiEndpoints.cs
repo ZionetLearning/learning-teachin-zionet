@@ -6,16 +6,17 @@ namespace Engine.Endpoints;
 
 public static class AiEndpoints
 {
+    private sealed class ManagerToAiEndpoint { }
+
     public static void MapAiEndpoints(this WebApplication app)
     {
         app.MapPost($"/{TopicNames.ManagerToAi}",
             async (AiRequestModel req,
                    IChatAiService aiService,
                    IAiReplyPublisher publisher,
-                   ILoggerFactory lf,
+                   ILogger<ManagerToAiEndpoint> log,
                    CancellationToken ct) =>
             {
-                var log = lf.CreateLogger("AiEndpoints.ManagerToAi");
                 log.LogInformation("Received AI question {Id} from manager", req.Id);
 
                 var response = await aiService.ProcessAsync(req, ct);

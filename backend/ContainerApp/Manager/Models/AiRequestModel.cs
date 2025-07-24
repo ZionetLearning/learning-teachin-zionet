@@ -4,11 +4,11 @@ namespace Manager.Models
 {
     public sealed class AiRequestModel
     {
-        public string Id { get; init; } = Guid.NewGuid().ToString("N");
+        public required string Id { get; init; }
 
         public string Question { get; init; } = string.Empty;
 
-        public long SentAt { get; init; } = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        public long SentAt { get; init; }
 
         public int TtlSeconds { get; init; } = 60;
 

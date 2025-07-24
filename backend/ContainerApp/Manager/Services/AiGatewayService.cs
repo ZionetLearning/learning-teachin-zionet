@@ -10,12 +10,12 @@ namespace Manager.Services
         private readonly DaprClient _dapr;
         private readonly ILogger<AiGatewayService> _log;
 
-        private static readonly ConcurrentDictionary<string, string> _answers = new(); //to do on real
-
+        // In‑memory cache → replace with a proper store later
+        private static readonly ConcurrentDictionary<string, string> _answers = new();
         public AiGatewayService(DaprClient dapr, ILogger<AiGatewayService> log)
         {
-            _dapr = dapr;
-            _log = log;
+            _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
+            _log = log ?? throw new ArgumentNullException(nameof(log));
         }
         public async Task<string> SendQuestionAsync(string question, CancellationToken ct = default)
         {
@@ -23,23 +23,49 @@ namespace Manager.Services
 
             _log.LogInformation("Send question {Id} (TTL={Ttl})", msg.Id, msg.TtlSeconds);
 
-            await _dapr.PublishEventAsync("pubsub", TopicNames.ManagerToAi, msg, ct);
-
-            return msg.Id;
+            try
+            {
+                await _dapr.PublishEventAsync("pubsub", TopicNames.ManagerToAi, msg, ct);
+                return msg.Id;
+            }
+            catch (Exception ex)
+            {
+                _log.LogError(ex, "Failed to publish question {Id} to topic {Topic}", msg.Id, TopicNames.ManagerToAi);
+                throw; // let the upper layer decide what to do
+            }
         }
 
         public Task SaveAnswerAsync(AiResponseModel msg, CancellationToken ct = default)
         {
+            _log.LogInformation("Start endpoint ${Name}.", nameof(SaveAnswerAsync));
 
-            _answers[msg.Id] = msg.Answer;
-            _log.LogInformation("Answer saved for {CorrelationId}", msg.Id);
-            return Task.CompletedTask;
+            try
+            {
+                _answers[msg.Id] = msg.Answer;
+                _log.LogInformation("Answer saved for {CorrelationId}", msg.Id);
+                return Task.CompletedTask;
+            }
+            catch (Exception ex)
+            {
+                _log.LogError(ex, "Failed to cache answer for {CorrelationId}", msg.Id);
+                throw; 
+            }
         }
 
         public Task<string?> GetAnswerAsync(string questionIdOrHash, CancellationToken ct = default)
         {
-            _answers.TryGetValue(questionIdOrHash, out var ans);
-            return Task.FromResult(ans);
+            _log.LogInformation("Start endpoint ${Name}.", nameof(GetAnswerAsync));
+
+            try
+            {
+                _answers.TryGetValue(questionIdOrHash, out var answer);
+                return Task.FromResult(answer);
+            }
+            catch (Exception ex)
+            {
+                _log.LogError(ex, "Failed to read answer for {CorrelationId}", questionIdOrHash);
+                return Task.FromResult<string?>(null);
+            }
         }
 
     }

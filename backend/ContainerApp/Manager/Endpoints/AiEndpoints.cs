@@ -6,12 +6,15 @@ namespace Manager.Endpoints;
 
 public static class AiEndpoints
 {
+    private sealed class QuestionEndpoint { }
+    private sealed class AnswerEndpoint { }
+    private sealed class PubSubEndpoint { }
+
     public static void MapAiEndpoints(this WebApplication app)
     {
         app.MapPost("/ai/question",
-            async (AiRequestModel dto, IAiGatewayService aiService, ILoggerFactory logger, CancellationToken ct) =>
+            async (AiRequestModel dto, IAiGatewayService aiService, ILogger<QuestionEndpoint> log, CancellationToken ct) =>
             {
-                var log = logger.CreateLogger("AiEndpoints.Http");
                 try
                 {
                     var id = await aiService.SendQuestionAsync(dto.Question, ct);
@@ -26,22 +29,29 @@ public static class AiEndpoints
             });
 
         app.MapGet("/ai/answer/{id}",
-            async (string id, IAiGatewayService ai, ILoggerFactory lf, CancellationToken ct) =>
+            async (string id, IAiGatewayService ai, ILogger<AnswerEndpoint> log, CancellationToken ct) =>
             {
-                var log = lf.CreateLogger("AiEndpoints.Http");
-                var ans = await ai.GetAnswerAsync(id, ct);
-                if (ans is null)
+                try
                 {
-                    log.LogDebug("The answer for {Id} is not ready yet", id);
-                    return Results.NotFound(new { error = "Answer not ready" });
+                    var ans = await ai.GetAnswerAsync(id, ct);
+                    if (ans is null)
+                    {
+                        log.LogDebug("Answer for {Id} not ready", id);
+                        return Results.NotFound(new { error = "Answer not ready" });
+                    }
+
+                    return Results.Ok(new { id, answer = ans });
                 }
-                return Results.Ok(new { id, answer = ans });
+                catch (Exception ex)
+                {
+                    log.LogError(ex, "Error retrieving answer {Id}", id);
+                    return Results.Problem("AI answer retrieval failed");
+                }
             });
 
         app.MapPost($"/ai/{TopicNames.AiToManager}",
-            async (AiResponseModel msg, IAiGatewayService ai, ILoggerFactory lf, CancellationToken ct) =>
+            async (AiResponseModel msg, IAiGatewayService ai, ILogger<PubSubEndpoint> log, CancellationToken ct) =>
             {
-                var log = lf.CreateLogger("AiEndpoints.PubSub");
                 try
                 {
                     await ai.SaveAnswerAsync(msg, ct);
