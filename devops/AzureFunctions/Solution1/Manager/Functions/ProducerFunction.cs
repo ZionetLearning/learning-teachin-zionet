@@ -18,7 +18,8 @@ public class ProducerFunction
 
     [Function("ProducerFunction")]
     public async Task<HttpResponseData> Run(
-        [HttpTrigger(AuthorizationLevel.Function, "post", Route = "send")] HttpRequestData req)
+        [HttpTrigger(AuthorizationLevel.Function, "post", Route = "send")] HttpRequestData req
+        )
     {
 
         _logger.LogInformation("ProducerFunction triggered to send a message to Service Bus.");
@@ -28,14 +29,39 @@ public class ProducerFunction
         {
             string messageBody = await req.ReadAsStringAsync();
             string connectionString = Environment.GetEnvironmentVariable("ServiceBusConnectionString");
-            string queueName = "myqueue";
+            const string queueName = "myqueue";
+            const string callbackQueueName = "callbackqueue";
 
             var client = new ServiceBusClient(connectionString);
             ServiceBusSender sender = client.CreateSender(queueName);
 
-            await sender.SendMessageAsync(new ServiceBusMessage(messageBody));
+            // Generate a unique correlation ID for this message
+            string correlationId = Guid.NewGuid().ToString();
+            var message = new ServiceBusMessage(messageBody);
+            message.CorrelationId = correlationId;
+            message.ReplyTo = callbackQueueName; // Optional: specify callback queue
 
-            _logger.LogInformation("Message sent to Service Bus: {message}", messageBody);
+            await sender.SendMessageAsync(message);
+            _logger.LogInformation("Message sent to Service Bus with CorrelationId: {correlationId}", correlationId);
+
+
+
+
+        // Wait for callback message in callbackQueue
+            bool callbackReceived = await WaitForCallbackMessage(client, callbackQueueName, correlationId);
+
+            if (callbackReceived)
+            {
+                response.StatusCode = HttpStatusCode.OK;
+                await response.WriteStringAsync("Message sent and callback received successfully.");
+            }
+            else
+            {
+                response.StatusCode = HttpStatusCode.RequestTimeout;
+                await response.WriteStringAsync("Message sent but callback not received within timeout.");
+            }
+
+
 
             response.StatusCode = HttpStatusCode.OK;
             await response.WriteStringAsync("Message sent to Service Bus.");

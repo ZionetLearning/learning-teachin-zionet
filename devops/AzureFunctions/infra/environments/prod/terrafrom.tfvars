@@ -30,4 +30,4 @@ geo_redundant_backup_enabled  = false
 high_availability_mode = "Disabled"
 delegated_subnet_id    = null
 
-database_name = "appdb-prod"
+database_name = "postgres"
