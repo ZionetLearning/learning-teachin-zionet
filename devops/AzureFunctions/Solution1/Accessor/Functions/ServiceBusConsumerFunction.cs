@@ -52,7 +52,11 @@ public class ServiceBusConsumerFunction
             if (message.DeliveryCount >= 3) // Max retry attempts
             {
                 _logger.LogWarning("Max delivery attempts reached. Dead lettering message. MessageId: {MessageId}", message.MessageId);
-                await messageActions.DeadLetterMessageAsync(message, "MaxDeliveryCountExceeded", ex.Message);
+                await messageActions.DeadLetterMessageAsync(message, new Dictionary<string, object>
+                {
+                    ["DeadLetterReason"] = "MaxDeliveryCountExceeded",
+                    ["DeadLetterErrorDescription"] = ex.Message
+                });
             }
             else
             {
