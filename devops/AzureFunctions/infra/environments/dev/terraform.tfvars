@@ -36,5 +36,5 @@ geo_redundant_backup_enabled  = false
 delegated_subnet_id    = null
 
 # Database Name
-database_name = "appdb-dev"
+database_name = "postgres"
 

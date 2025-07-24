@@ -26,6 +26,8 @@ public class ServiceBusConsumerFunction
     ServiceBusReceivedMessage message,
     FunctionContext context)
     {
+        _logger.LogInformation("ServiceBusConsumerFunction triggered to process a message from Service Bus.");
+        _logger.LogInformation("Message received with CorrelationId: {correlationId} and message: {Message}", message.CorrelationId, message.Body.ToString());
         using var activity = new Activity("ProcessServiceBusMessage");
         activity.Start();
 

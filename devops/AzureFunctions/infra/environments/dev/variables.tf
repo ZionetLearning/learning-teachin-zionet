@@ -136,7 +136,11 @@ variable "function_apps_config" {
   default = {
     accessor = {
       name                     = "fa-accessor"
-      cors_allowed_origins     = ["*"]  # Allow all origins for dev convenience
+      cors_allowed_origins     = [
+        "*",
+        "https://portal.azure.com",
+        "https://ms.portal.azure.com"
+      ]
       cors_support_credentials = false  # Must be false when using "*"
       app_settings            = {
         "ACCESSOR_SPECIFIC_SETTING" = "accessor_value"
@@ -146,7 +150,11 @@ variable "function_apps_config" {
     }
     manager = {
       name                     = "fa-manager"
-      cors_allowed_origins     = ["*"]  # Allow all origins for dev convenience
+      cors_allowed_origins     = [
+        "*",
+        "https://portal.azure.com",
+        "https://ms.portal.azure.com"
+      ]
       cors_support_credentials = false  # Must be false when using "*"
       app_settings            = {
         "MANAGER_SPECIFIC_SETTING" = "manager_value"
