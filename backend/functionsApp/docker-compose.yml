@@ -1,7 +1,7 @@
 ﻿version: '3.8'
 
 services:
-  # -------- Your Azure Function --------
+  # -------- Azure Function --------
   azurefunctionsproject:
     build:
       context: .
