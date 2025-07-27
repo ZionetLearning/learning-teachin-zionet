@@ -1,7 +1,6 @@
 using Accessor.Endpoints;
 using Accessor.Services;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,11 +10,11 @@ builder.Services.AddControllers().AddDapr();
 
 builder.Services.AddScoped<IAccessorService, AccessorService>();
 
-
 // Add database context
 builder.Services.AddDbContext<AccessorDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
 
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 var app = builder.Build();
 

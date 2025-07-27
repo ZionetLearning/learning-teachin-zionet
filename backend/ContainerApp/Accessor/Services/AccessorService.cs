@@ -1,17 +1,21 @@
 ﻿using Accessor.Models;
+using AutoMapper;
 using Microsoft.EntityFrameworkCore;
-
 
 namespace Accessor.Services;
     public class AccessorService : IAccessorService
     {
         private readonly ILogger<AccessorService> _logger;
         private readonly AccessorDbContext _dbContext;
+        private readonly IMapper _mapper;
 
-    public AccessorService(AccessorDbContext dbContext, ILogger<AccessorService> logger)
+    public AccessorService(AccessorDbContext dbContext, 
+        ILogger<AccessorService> logger,
+        IMapper mapper)
         {
-        _dbContext = dbContext;
+            _dbContext = dbContext;
             _logger = logger;
+            _mapper = mapper;
         }
 
     public async Task InitializeAsync()

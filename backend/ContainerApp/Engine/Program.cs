@@ -34,6 +34,9 @@ builder.Services.AddSingleton(sp =>
                  .Build();
 });
 
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+
 var app = builder.Build();
 
 app.UseCloudEvents();
