@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import * as Sentry from "@sentry/react";
 import { ChatOu } from "../features";
-import { initializeSentry } from "../utils/sentry";
+import { initializeSentry } from "../services";
 
 export const ChatOuPage = () => {
   useEffect(() => {
