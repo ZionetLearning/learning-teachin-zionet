@@ -80,7 +80,7 @@ services:
     networks:
       sb-emulator:
         aliases:
-          - servicebus-emulator
+          - sb-emulator
 
 volumes:
   pgdata:
