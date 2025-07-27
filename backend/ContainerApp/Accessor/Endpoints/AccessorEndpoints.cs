@@ -10,8 +10,11 @@ namespace Accessor.Endpoints
     {
         public static void MapAccessorEndpoints(this WebApplication app)
         {
-            app.MapGet("/task/{id:int}", async (int id, 
-                IAccessorService accessorService, 
+
+            #region HTTP GET
+
+            app.MapGet("/task/{id:int}", async (int id,
+                IAccessorService accessorService,
                 ILogger<AccessorService> logger) =>
             {
                 try
@@ -33,26 +36,26 @@ namespace Accessor.Endpoints
                 }
             });
 
+            #endregion
 
 
+            #region HTTP POST
 
-            app.MapPost($"/{QueueNames.EngineToAccessor}-input", 
+            app.MapPost($"/{QueueNames.EngineToAccessor}-input",
                 async (TaskModel task, IAccessorService accessorService, ILogger<AccessorService> logger) =>
-            {
-                try
                 {
-                    await accessorService.SaveTaskAsync(task);
-                    logger.LogInformation("Task {Id} saved successfully", task.Id);
-                    return Results.Ok(new { Status = "Saved", task.Id });
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Failed to save task {Id}", task.Id);
-                    return Results.Problem("An error occurred while saving the task.");
-                }
-            });
-
-
+                    try
+                    {
+                        await accessorService.SaveTaskAsync(task);
+                        logger.LogInformation("Task {Id} saved successfully", task.Id);
+                        return Results.Ok(new { Status = "Saved", task.Id });
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Failed to save task {Id}", task.Id);
+                        return Results.Problem("An error occurred while saving the task.");
+                    }
+                });
 
 
             app.MapPost($"/{QueueNames.TaskUpdateInput}", async (
@@ -81,7 +84,10 @@ namespace Accessor.Endpoints
                 }
             });
 
+            #endregion
 
+
+            #region HTTP DELETE
 
             app.MapDelete("/task/{taskId}", async (int taskId,
                 IAccessorService accessorService,
@@ -108,14 +114,7 @@ namespace Accessor.Endpoints
 
             });
 
-
-
-
-
-
-
-
-
+            #endregion
 
         }
     }
