@@ -39,3 +39,4 @@ obj/
 # Configuration files
 # ===============================
 *.env
+.DS_Store

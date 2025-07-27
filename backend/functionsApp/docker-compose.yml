@@ -57,9 +57,46 @@ services:
         aliases:
           - sb-emulator
 
+           # ------------ Azure Storage Emulator (Azurite) ------------
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    container_name: azurite
+    ports:
+      - "10000:10000"   # Blob endpoint
+      - "10001:10001"   # Queue endpoint
+    volumes:
+      - azurite_data:/data
+    networks:
+      - sb-emulator
+
+  # ------------ Your Azure Function ------------
+  function:
+    build:
+      context: ./AzureFunctionsProject    # adjust path if needed
+      dockerfile: Dockerfile
+    container_name: functions-app
+    ports:
+      - "7071:80"       # maps Function port → localhost:7071
+    environment:
+      # point the Functions host to Azurite for all storage bindings
+      AzureWebJobsStorage: "UseDevelopmentStorage=true"
+      FUNCTIONS_WORKER_RUNTIME: dotnet-isolated
+
+      # if you have Service Bus triggers, mirror your emulator’s connection settings here:
+      # (replace <…> with the values from your config.json)
+      ServiceBusConnection__fullyQualifiedNamespace: sb-emulator
+      ServiceBusConnection__sharedAccessKeyName: RootManageSharedAccessKey
+      ServiceBusConnection__sharedAccessKey: <your‐root‐key>
+    depends_on:
+      - azurite
+      - servicebus-emulator
+    networks:
+      - sb-emulator
+
 volumes:
   pgdata:
   mssql-data:
+  azurite_data:
 
 networks:
   sb-emulator:
