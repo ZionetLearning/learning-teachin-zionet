@@ -46,7 +46,7 @@ namespace Accessor.Endpoints
                 {
                     try
                     {
-                        await accessorService.SaveTaskAsync(task);
+                        await accessorService.CreateTaskAsync(task);
                         logger.LogInformation("Task {Id} saved successfully", task.Id);
                         return Results.Ok(new { Status = "Saved", task.Id });
                     }

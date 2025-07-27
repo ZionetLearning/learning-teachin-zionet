@@ -22,7 +22,7 @@ namespace Accessor.Services;
         _cacheOptions =  cacheOptions ?? throw new ArgumentNullException(nameof(cacheOptions));
     }
 
-
+    
     public async Task InitializeAsync()
         {
         _logger.LogInformation("Initializing DB...");
@@ -32,6 +32,12 @@ namespace Accessor.Services;
             _logger.LogInformation("Applying EF Core migrations...");
             await _dbContext.Database.MigrateAsync();
             _logger.LogInformation("Database migration completed.");
+
+            _logger.LogInformation("Clearing in-memory cache...");
+            if (_cache is MemoryCache memCache)
+            {
+                memCache.Compact(1.0);
+            }
         }
         catch (Exception ex)
             {
@@ -45,14 +51,12 @@ namespace Accessor.Services;
             _logger.LogInformation($"Inside:{nameof(GetTaskByIdAsync)}");
             try
             {
-
-                // Try cache
-                if (_cache.TryGetValue(id, out CachedTaskEntry cachedEntry))
+                // Check if the data exists in cache
+                if (_cache.TryGetValue(id, out var obj) && obj is CachedTaskEntry cachedEntry)
                 {
-                    _logger.LogInformation("Returning task {Id} from cache (ETag = {ETag})", id, cachedEntry!.ETag);
+                    _logger.LogInformation("Returning task {Id} from cache (ETag = {ETag})", id, cachedEntry.ETag);
                     return cachedEntry.Task;
                 }
-
 
                 var task = await _dbContext.Tasks
                     .AsNoTracking()
@@ -66,11 +70,14 @@ namespace Accessor.Services;
 
                 // Cache result with ETag
                 var etag = GenerateEtag(task);
-                _cache.Set(id, new CachedTaskEntry { Task = task, ETag = etag }, _cacheOptions);
+                cachedEntry = new CachedTaskEntry { ETag = etag, Task = task };
+
+                // Create a new CachedTaskEntry to store in cache
+                _cache.Set(id, cachedEntry, _cacheOptions);
 
                 _logger.LogInformation("Fetched task {Id} from DB and cached with ETag = {ETag}", id, etag);
                 return task;
-        }
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving task with ID {TaskId}", id);
@@ -79,9 +86,9 @@ namespace Accessor.Services;
         }
 
 
-    public async Task SaveTaskAsync(TaskModel task)
+    public async Task CreateTaskAsync(TaskModel task)
         {
-            _logger.LogInformation($"Inside:{nameof(SaveTaskAsync)}");
+            _logger.LogInformation($"Inside:{nameof(CreateTaskAsync)}");
             try
             {
                 task.UpdatedAt = DateTime.UtcNow;
@@ -89,6 +96,13 @@ namespace Accessor.Services;
                 _dbContext.Tasks.Add(task);
                 await _dbContext.SaveChangesAsync();
 
+                // Check if the task already exists in the cache
+                if (_cache.TryGetValue(task.Id, out var obj) && obj is CachedTaskEntry cachedEntry)
+                {
+                    _logger.LogWarning("Task {TaskId} already exists in cache. somthing wrong! ",task.Id);
+                    throw new InvalidOperationException($"Task with ID {task.Id} already exists in cache.");
+                }
+        
                 var etag = GenerateEtag(task);
                 _cache.Set(task.Id, new CachedTaskEntry { Task = task, ETag = etag }, _cacheOptions);
 
@@ -118,9 +132,20 @@ namespace Accessor.Services;
             task.Name = newName;
             task.UpdatedAt = DateTime.UtcNow;
             await _dbContext.SaveChangesAsync();
-            var etag = GenerateEtag(task);
-            _cache.Set(task.Id, new CachedTaskEntry { Task = task, ETag = etag }, _cacheOptions);
 
+            // Update the cache data with the new name and ETag
+            if (_cache.TryGetValue(task.Id, out var obj) && obj is CachedTaskEntry cachedEntry)
+            {
+                cachedEntry.Task.Name = newName;
+                cachedEntry.Task.UpdatedAt = task.UpdatedAt;
+                cachedEntry.ETag = GenerateEtag(task);
+                _logger.LogInformation("Updated cached task {TaskId} with new name and ETag.", taskId);
+            }
+            else
+            {
+                _logger.LogWarning("Cache miss while updating task {TaskId}. Cache might be stale.", taskId);
+                return false;
+            }
             return true;
         }
         catch (Exception ex)
