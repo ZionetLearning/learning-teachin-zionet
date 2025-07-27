@@ -1,26 +1,31 @@
-name: AKS - Terraform Apply with Provisioning
+name: AKS - Terraform Destroy
 
 on:
-  workflow_call:
+  workflow_dispatch:
     inputs:
       environment:
+        description: 'Select environment to destroy'
         required: true
-        type: string
+        default: 'Development'
+        type: choice
+        options:
+          - Development
+          - Production
 
 jobs:
-  aks-terraform:
+  aks-terraform-destroy:
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
+    environment: ${{ github.event.inputs.environment }}
     permissions:
-      id-token: write      # Required for OIDC login
-      contents: read       # For actions/checkout
+      id-token: write
+      contents: read
 
     env:
-      ARM_USE_OIDC: "true" # tell provider to use the OIDC token
+      ARM_USE_OIDC: "true"
       ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      ARM_USE_AZUREAD: "true" # matches `use_azuread_auth = true`
+      ARM_USE_AZUREAD: "true"
 
     steps:
       - name: Checkout repository
@@ -41,27 +46,23 @@ jobs:
       - name: Set Terraform working directory
         run: echo "TF_DIR=./devops/kubernetes/DemoCuest/terraform" >> $GITHUB_ENV
 
+      - name: Extract environment variables
+        id: extract_env
+        run: |
+          if [ "${{ github.event.inputs.environment }}" == "Development" ]; then
+            SHORT_ENV="dev"
+          elif [ "${{ github.event.inputs.environment }}" == "Production" ]; then
+            SHORT_ENV="prod"
+          else
+            echo "Unknown environment: ${{ github.event.inputs.environment }}"
+            exit 1
+          fi
+          echo "short_env=$SHORT_ENV" >> $GITHUB_ENV
+
       - name: Terraform Init
         run: terraform init
         working-directory: ${{ env.TF_DIR }}
 
-      - name: Extract environment variables
-        id: extract_env
-        run: |
-          if [ "${{ inputs.environment }}" == "Development" ]; then
-            SHORT_ENV="dev"
-          elif [ "${{ inputs.environment }}" == "Production" ]; then
-            SHORT_ENV="prod"
-          else
-            echo "Unknown environment: ${{ inputs.environment }}"
-            exit 1
-          fi
-          echo "short_env=$SHORT_ENV" >> $GITHUB_ENV
-          
-      - name: Terraform Plan
-        run: terraform plan -var-file="terraform.tfvars.${{ env.short_env }}"
-        working-directory: ${{ env.TF_DIR }}
-
-      - name: Terraform Apply
-        run: terraform apply -auto-approve -var-file="terraform.tfvars.${{ env.short_env }}"
+      - name: Terraform Destroy
+        run: terraform destroy -auto-approve -var-file="terraform.tfvars.${{ env.short_env }}"
         working-directory: ${{ env.TF_DIR }}
