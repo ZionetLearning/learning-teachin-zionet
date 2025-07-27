@@ -14,6 +14,7 @@
     "@react-nano/use-event-source": "^0.16.0",
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.18.0",
+    "@sentry/react": "^9.42.0",
     "axios": "^1.10.0",
     "leva": "^0.10.0",
     "lottie-web": "^5.13.0",
