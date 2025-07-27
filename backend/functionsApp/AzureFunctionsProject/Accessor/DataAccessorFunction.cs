@@ -93,10 +93,8 @@ namespace AzureFunctionsProject.Accessor
             _logger.LogInformation("Accessor: processing queue message");
 
             // parse message
-            var envelope = JsonSerializer.Deserialize<QueueEnvelope<DataDto>>(messageBody, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
+            var envelope = JsonSerializer.Deserialize<QueueEnvelope<DataDto>>(messageBody, _jsonOptions);
+
             if (envelope == null)
             {
                 _logger.LogError("Deserialized envelope was null for message: {MessageBody}", messageBody);
@@ -110,11 +108,11 @@ namespace AzureFunctionsProject.Accessor
             {
                 switch (action)
                 {
-                    case "Create":
+                    case QueueActions.Create:
                         await _service.CreateAsync(dto);
                         break;
 
-                    case "Update":
+                    case QueueActions.Update:
                         try
                         {
                             await _service.UpdateAsync(dto);
@@ -128,7 +126,7 @@ namespace AzureFunctionsProject.Accessor
                         }
                         break;
 
-                    case "Delete":
+                    case QueueActions.Delete:
                         if (!envelope.Id.HasValue)
                         {
                             _logger.LogError("Delete message missing Id: {MessageBody}", messageBody);
