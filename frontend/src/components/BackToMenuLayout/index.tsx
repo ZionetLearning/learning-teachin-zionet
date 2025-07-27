@@ -17,7 +17,7 @@ export const BackToMenuLayout = () => {
           </button>
         </header>
       )}
-      <main>
+      <main className={classes.main}>
         <Outlet />
       </main>
     </div>
