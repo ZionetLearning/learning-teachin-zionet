@@ -2,11 +2,11 @@
 FROM mcr.microsoft.com/azure-functions/dotnet-isolated:4-dotnet-isolated8.0 AS base
 WORKDIR /home/site/wwwroot
 
-# Tell the Functions runtime to bind to port 7278 inside the container
-ENV FUNCTIONS_HTTPWORKER_PORT=7278
+# Tell the Functions runtime to bind to port 7071 inside the container
+ENV FUNCTIONS_HTTPWORKER_PORT=7071
 
 # Document that port
-EXPOSE 7278
+EXPOSE 7071
 
 # 2) Build stage: restore & compile your C# project
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build

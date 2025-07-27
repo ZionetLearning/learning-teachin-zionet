@@ -39,7 +39,7 @@ builder.Services
     client.BaseAddress = new Uri(
     builder.Configuration
                         .GetValue<string>("FUNCTIONS_BASE_URL")
-                 ?? "http://localhost:7278/");
+                 ?? "http://localhost:7071/");
          });
     // 6. Engine HTTP client (same base URL)
     builder.Services
@@ -47,7 +47,7 @@ builder.Services
          {
     client.BaseAddress = new Uri(
     builder.Configuration.GetValue<string>("FUNCTIONS_BASE_URL")
-    ?? "http://localhost:7278/");});
+    ?? "http://localhost:7071/");});
 
 builder.Services.AddSingleton<IDataService, DataService>();
 

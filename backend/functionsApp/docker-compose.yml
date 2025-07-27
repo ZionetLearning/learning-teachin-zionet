@@ -8,7 +8,7 @@ services:
       dockerfile: AzureFunctionsProject/Dockerfile
     image: azurefunctionsproject
     ports:
-      - "7278:7071"    # map host 7278 → container 7278 (FUNCTIONS_HTTPWORKER_PORT) 
+      - "7071:7071"
     environment:
       # override your local.settings.json values here
       AzureWebJobsStorage: "UseDevelopmentStorage=true"
@@ -19,7 +19,7 @@ services:
         SharedAccessKey=local;
         UseDevelopmentEmulator=true
       PostgreSqlConnection: "Host=postgres;Port=5432;Database=orders;Username=postgres;Password=Password123"
-      FUNCTIONS_BASE_URL: "http://localhost:7278/"
+      FUNCTIONS_BASE_URL: "http://localhost:7071/"
     depends_on:
       - postgres
       - sqledge
