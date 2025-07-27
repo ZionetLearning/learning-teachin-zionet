@@ -1,6 +1,7 @@
-name: Deploy App to AKS
+name: AKS - Deploy App to AKS
 
 on:
+  workflow_dispatch:
   workflow_call:
     inputs:
       environment:
@@ -33,26 +34,56 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Set script as executable
-        run: chmod +x ./start-cloud.sh
+      - name: Set up variables
+        run: |
+          echo "K8S_DIR=devops/kubernetes/DemoCuest/k8s" >> $GITHUB_ENV
+          echo "NAMESPACE_FILE=devops/kubernetes/DemoCuest/k8s/namespace-model.yaml" >> $GITHUB_ENV
+          echo "DOCKER_REGISTRY=benny902" >> $GITHUB_ENV
+          echo "AKS_RG=democuest-aks-rg-dev" >> $GITHUB_ENV
+          echo "AKS_NAME=democuest-aks-dev" >> $GITHUB_ENV
 
-      - name: Run deployment script
-        run: ./start-cloud.sh
-        working-directory: ./devops/kubernetes/DemoCuest
+      - name: Get AKS credentials
+        run: |
+          az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
 
-      - name: Extract External URL of todomanager
+      - name: Set kubectl context
+        run: kubectl config use-context $AKS_NAME
+
+      - name: Create namespace
+        run: kubectl apply -f $NAMESPACE_FILE
+
+      - name: Apply Dapr components
+        run: kubectl apply -f "$K8S_DIR/dapr/components" --recursive
+
+      - name: Apply services
+        run: kubectl apply -f "$K8S_DIR/services" --recursive
+
+      - name: Apply deployments (with registry substitution)
+        run: |
+          find "$K8S_DIR/deployments" -type f -name '*.yaml' | while read file; do
+            echo "Applying $file"
+            DOCKER_REGISTRY=$DOCKER_REGISTRY envsubst < "$file" | kubectl apply -f -
+          done
+
+      - name: Wait for external IP for todomanager service
+        id: wait_for_ip
+        run: |
+          echo "Waiting for external IP for todomanager service..."
+          for i in {1..30}; do
+            EXTERNAL_IP=$(kubectl -n devops-model get svc todomanager -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+            if [[ -n "$EXTERNAL_IP" ]]; then
+              echo "External IP is ready: $EXTERNAL_IP"
+              echo "app_url=http://$EXTERNAL_IP:5073/swagger" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+            echo "Attempt $i: External IP not yet assigned. Waiting 10s..."
+            sleep 10
+          done
+          echo "Failed to get external IP after waiting. Check 'kubectl get svc todomanager'"
+          exit 1
+
+      - name: Output external URL
         id: extract_url
         run: |
-          echo "Extracting external IP of todomanager service..."
-          IP=$(kubectl -n devops-model get svc todomanager -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-          
-          if [[ -z "$IP" ]]; then
-            echo "Error: External IP not found."
-            exit 1
-          fi
-
-          FULL_URL="http://$IP:5073/swagger"
-          echo "app_url=$FULL_URL" >> $GITHUB_OUTPUT
-          echo "App URL: $FULL_URL"
-
-
+          echo "app_url=${{ steps.wait_for_ip.outputs.app_url }}" >> $GITHUB_OUTPUT
+          echo "App URL: ${{ steps.wait_for_ip.outputs.app_url }}"
