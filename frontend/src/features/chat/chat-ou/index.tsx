@@ -17,7 +17,7 @@ export const ChatOu: React.FC = () => {
 
   const [showError, setShowError] = useState(false);
 
-//  forcing an error to test Error Boundary of sentry
+  //  forcing an error to test Error Boundary of sentry
   //  useEffect(() => {
   //   throw new Error("Test error for Sentry Error Boundary");
   // }, []);
@@ -37,7 +37,7 @@ export const ChatOu: React.FC = () => {
         // Error is already handled by useChat hook
       }
     },
-    [sendMessage],
+    [sendMessage]
   );
 
   const handleDismissError = useCallback(() => {
