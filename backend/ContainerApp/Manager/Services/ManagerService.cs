@@ -9,7 +9,6 @@ public class ManagerService : IManagerService
     private readonly IConfiguration _configuration;
     private readonly ILogger<ManagerService> _logger;
     private readonly DaprClient _daprClient;
-    private static readonly Dictionary<int, TaskModel> _tasks = new();
 
     public ManagerService(IConfiguration configuration, ILogger<ManagerService> logger, DaprClient daprClient)
     {
@@ -18,28 +17,36 @@ public class ManagerService : IManagerService
         _daprClient = daprClient;
     }
 
-    public Task<TaskModel?> GetTaskAsync(int id)
+    public async Task<TaskModel?> GetTaskAsync(int id)
     {
-        if (_tasks.TryGetValue(id, out var task))
+        _logger.LogInformation($"Inside:{nameof(GetTaskAsync)}");
+        try
         {
-            _logger.LogInformation("Fetched task: {Id} - {Name}", task.Id, task.Name);
-            return Task.FromResult<TaskModel?>(task);
-        }
+            var task = await _daprClient.InvokeMethodAsync<TaskModel>(
+                HttpMethod.Get,
+                "accessor",
+                $"task/{id}"
+            );
 
-        _logger.LogWarning("Task with ID {Id} not found", id);
-        return Task.FromResult<TaskModel?>(null);
+            return task;
+        }
+        
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get task with ID {TaskId} from Accessor service.", id);
+            throw;
+        }
+        
     }
 
     public async Task<(bool success, string message)> ProcessTaskAsync(TaskModel task)
     {
+        _logger.LogInformation($"Inside: {nameof(ProcessTaskAsync)}");
         if (task is null)
         {
             _logger.LogWarning("Null task received for processing");
             return (false, "Task is null");
         }
-
-        _tasks[task.Id] = task;
-        _logger.LogInformation("Manager received task: {Id} - {Name}", task.Id, task.Name);
 
         try
         {
