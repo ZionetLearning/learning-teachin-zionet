@@ -1,14 +1,17 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useStyles } from "./style";
 import { Speaker } from "../Speaker";
+import { askAzureOpenAI } from "../../../chat/chat-yo/services";
+import { useHebrewSentence } from "../../hooks";
 export const Game = () => {
     const classes = useStyles();
     const [sentences, setSentences] = useState<string[]>([]);
-
-    useEffect(() => {
-
-    }, []);
+    const [currentSentence, setCurrentSentence] = useState<string>("");
+    const { loading, error, fetchSentence, setSentence } = useHebrewSentence();
     
+    useEffect(() => {
+        setCurrentSentence(fetchSentence());
+    }, []);
     const handlePlay = () => {
         if (sentences.length === 0) {
             // fetch sentence from azure TTS
