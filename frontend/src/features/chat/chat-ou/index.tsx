@@ -17,6 +17,11 @@ export const ChatOu: React.FC = () => {
 
   const [showError, setShowError] = useState(false);
 
+//  forcing an error to test Error Boundary of sentry
+  //  useEffect(() => {
+  //   throw new Error("Test error for Sentry Error Boundary");
+  // }, []);
+
   useEffect(() => {
     if (error) {
       setShowError(true);
