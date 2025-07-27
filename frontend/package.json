@@ -11,6 +11,8 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@microsoft/applicationinsights-react-js": "^3.3.1",
+    "@microsoft/applicationinsights-web": "^3.3.9",
     "@react-nano/use-event-source": "^0.16.0",
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.18.0",
