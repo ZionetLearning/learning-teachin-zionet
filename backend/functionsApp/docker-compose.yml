@@ -1,6 +1,32 @@
 ﻿version: '3.8'
 
 services:
+  # -------- Your Azure Function --------
+  azurefunctionsproject:
+    build:
+      context: .
+      dockerfile: AzureFunctionsProject/Dockerfile
+    image: azurefunctionsproject
+    ports:
+      - "7278:7071"    # map host 7278 → container 7278 (FUNCTIONS_HTTPWORKER_PORT) 
+    environment:
+      # override your local.settings.json values here
+      AzureWebJobsStorage: "UseDevelopmentStorage=true"
+      FUNCTIONS_WORKER_RUNTIME: "dotnet-isolated"
+      ServiceBusConnection: >-
+        Endpoint=sb://servicebus-emulator:5672/;
+        SharedAccessKeyName=local;
+        SharedAccessKey=local;
+        UseDevelopmentEmulator=true
+      PostgreSqlConnection: "Host=postgres;Port=5432;Database=orders;Username=postgres;Password=Password123"
+      FUNCTIONS_BASE_URL: "http://localhost:7278/"
+    depends_on:
+      - postgres
+      - sqledge
+      - servicebus-emulator
+    networks:
+      - sb-emulator
+
   # ---------------- Postgres ----------------
   postgres:
     image: postgres:15-alpine
@@ -17,7 +43,7 @@ services:
     networks:
       - sb-emulator
 
-  # ------------ SQL Edge (for SB Emulator) ------------
+  # ------------ SQL Edge (for SB Emulator) ------------
   sqledge:
     container_name: sqledge
     image: mcr.microsoft.com/azure-sql-edge:latest
@@ -34,7 +60,7 @@ services:
         aliases:
           - sqlserver
 
-  # --------- Azure Service Bus Emulator ---------
+  # --------- Azure Service Bus Emulator ---------
   servicebus-emulator:
     container_name: servicebus-emulator
     image: mcr.microsoft.com/azure-messaging/servicebus-emulator:latest
@@ -45,17 +71,16 @@ services:
       MSSQL_SA_PASSWORD: "changeMe123!"
       SQL_SERVER: "sqlserver"
       SQL_PORT: "1433"
-      # where your config.json lives on the host
       CONFIG_FILE_PATH: "/ServiceBus_Emulator/ConfigFiles/config.json"
     ports:
-      - "5672:5672"    # AMQP
-      - "9090:9090"    # (optional) HTTP management
+      - "5672:5672"   # AMQP
+      - "9090:9090"   # HTTP management UI
     volumes:
       - ./config.json:/ServiceBus_Emulator/ConfigFiles/config.json:ro
     networks:
       sb-emulator:
         aliases:
-          - sb-emulator
+          - servicebus-emulator
 
 volumes:
   pgdata:
