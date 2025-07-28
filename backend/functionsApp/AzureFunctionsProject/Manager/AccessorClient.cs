@@ -40,8 +40,14 @@ namespace AzureFunctionsProject.Manager
             catch (HttpRequestException ex)
             {
                 _logger.LogError(ex, "Accessor: GET all data failed");
-                throw new AccessorClientException(
-                    "Failed to retrieve all Data from the Accessor service", ex);
+
+                var jsonError = JsonSerializer.Serialize(new
+                {
+                    error = "Failed to retrieve all data from the accessor service",
+                    source = nameof(GetAllDataAsync)
+                });
+
+                throw new AccessorClientException(jsonError, ex);
             }
         }
 
@@ -60,8 +66,14 @@ namespace AzureFunctionsProject.Manager
             catch (HttpRequestException ex)
             {
                 _logger.LogError(ex, "Accessor: GET data/{Id} failed", id);
-                throw new AccessorClientException(
-                    "Failed to retrieve all Data from the Accessor service", ex);
+
+                var jsonError = JsonSerializer.Serialize(new
+                {
+                    error = $"Failed to retrieve data for ID {id} from the accessor service",
+                    source = nameof(GetDataByIdAsync)
+                });
+
+                throw new AccessorClientException(jsonError, ex);
             }
         }
 
@@ -84,8 +96,14 @@ namespace AzureFunctionsProject.Manager
             catch (HttpRequestException ex)
             {
                 _logger.LogError(ex, "Accessor: POST data failed");
-                throw new AccessorClientException(
-                    "Failed to retrieve all Data from the Accessor service", ex);
+
+                var jsonError = JsonSerializer.Serialize(new
+                {
+                    error = $"Failed to create data with ID {dto.Id}",
+                    source = nameof(CreateAsync)
+                });
+
+                throw new AccessorClientException(jsonError, ex);
             }
         }
 
@@ -111,9 +129,16 @@ namespace AzureFunctionsProject.Manager
             catch (HttpRequestException ex)
             {
                 _logger.LogError(ex, "Accessor: PUT data/{Id} failed", id);
-                throw new AccessorClientException(
-                    "Failed to retrieve all Data from the Accessor service", ex);
+
+                var jsonError = JsonSerializer.Serialize(new
+                {
+                    error = $"Failed to update data with ID {id}",
+                    source = nameof(UpdateAsync)
+                });
+
+                throw new AccessorClientException(jsonError, ex);
             }
+
         }
 
         public async Task DeleteAsync(Guid id, CancellationToken ct = default)
@@ -129,8 +154,14 @@ namespace AzureFunctionsProject.Manager
             catch (HttpRequestException ex)
             {
                 _logger.LogError(ex, "Accessor: DELETE data/{Id} failed", id);
-                throw new AccessorClientException(
-                    "Failed to retrieve all Data from the Accessor service", ex);
+
+                var jsonError = JsonSerializer.Serialize(new
+                {
+                    error = $"Failed to delete data with ID {id}",
+                    source = nameof(DeleteAsync)
+                });
+
+                throw new AccessorClientException(jsonError, ex);
             }
         }
     }

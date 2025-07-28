@@ -17,7 +17,7 @@
     "serviceBus": {
       "messageHandlerOptions": {
         "maxConcurrentCalls": 16,
-        "autoCompleteMessages": false
+        "autoCompleteMessages": true
       }
     }
   },

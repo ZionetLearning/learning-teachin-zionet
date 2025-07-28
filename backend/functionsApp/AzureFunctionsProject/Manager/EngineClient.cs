@@ -35,7 +35,14 @@ namespace AzureFunctionsProject.Manager
             catch (HttpRequestException ex)
             {
                 _logger.LogError(ex, "HTTP request to Engine failed");
-                throw new EngineClientException("Failed to reach Engine service", ex);
+
+                var jsonError = JsonSerializer.Serialize(new
+                {
+                    error = "Failed to reach Engine service",
+                    source = nameof(ProcessDataAsync)
+                });
+
+                throw new EngineClientException(jsonError, ex);
             }
         }
     }

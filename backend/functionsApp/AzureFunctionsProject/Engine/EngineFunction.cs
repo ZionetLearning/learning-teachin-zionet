@@ -40,17 +40,28 @@ namespace AzureFunctionsProject.Engine
             catch (AccessorClientException ex)
             {
                 _logger.LogError(ex, "EngineFunction: failed to retrieve data from Accessor");
+
+                var errorPayload = new
+                {
+                    error = "Failed to retrieve data from accessor service",
+                    trace = req.FunctionContext.InvocationId
+                };
+
                 response.StatusCode = HttpStatusCode.BadGateway;
-                await response.WriteStringAsync(
-                    "Failed to retrieve data from accessor service",
-                    cancellationToken
-                );
+                await response.WriteAsJsonAsync(errorPayload, cancellationToken);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "EngineFunction: unexpected error");
+
+                var errorPayload = new
+                {
+                    error = "Error in engine processing",
+                    trace = req.FunctionContext.InvocationId
+                };
+
                 response.StatusCode = HttpStatusCode.InternalServerError;
-                await response.WriteStringAsync("Error in engine processing", cancellationToken);
+                await response.WriteAsJsonAsync(errorPayload, cancellationToken);
             }
 
             return response;

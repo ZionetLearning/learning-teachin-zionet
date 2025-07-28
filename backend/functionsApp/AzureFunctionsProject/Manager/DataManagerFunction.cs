@@ -7,7 +7,6 @@ using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Text.Json;
-using System.Threading;
 
 namespace AzureFunctionsProject.Manager
 {
@@ -61,16 +60,29 @@ namespace AzureFunctionsProject.Manager
             catch (HttpRequestException ex)
             {
                 _logger.LogError(ex, "Accessor: GET data failed");
-                throw new AccessorClientException(
-                    $"Failed to retrieve Data from the Accessor service", ex);
+
+                var errorPayload = new
+                {
+                    error = "Failed to retrieve data from the accessor service",
+                    trace = req.FunctionContext.InvocationId
+                };
+
+                respOut.StatusCode = HttpStatusCode.BadGateway;
+                await respOut.WriteAsJsonAsync(errorPayload, cancellationToken);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Manager GetAllData error");
-                respOut.StatusCode = HttpStatusCode.InternalServerError;
-                await respOut.WriteStringAsync("Error retrieving data", cancellationToken);
-            }
 
+                var errorPayload = new
+                {
+                    error = "Unexpected error while retrieving data",
+                    trace = req.FunctionContext.InvocationId
+                };
+
+                respOut.StatusCode = HttpStatusCode.InternalServerError;
+                await respOut.WriteAsJsonAsync(errorPayload, cancellationToken);
+            }
             return respOut;
         }
 
@@ -110,14 +122,28 @@ namespace AzureFunctionsProject.Manager
             catch (HttpRequestException ex)
             {
                 _logger.LogError(ex, "Accessor: GET data failed");
-                throw new AccessorClientException(
-                    $"Failed to retrieve Data from the Accessor service", ex);
+
+                var errorPayload = new
+                {
+                    error = "Failed to retrieve data from the accessor service",
+                    trace = req.FunctionContext.InvocationId
+                };
+
+                respOut.StatusCode = HttpStatusCode.BadGateway;
+                await respOut.WriteAsJsonAsync(errorPayload, cancellationToken);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Manager GetById error for {Id}", id);
+
+                var errorPayload = new
+                {
+                    error = "Unexpected error while retrieving data",
+                    trace = req.FunctionContext.InvocationId
+                };
+
                 respOut.StatusCode = HttpStatusCode.InternalServerError;
-                await respOut.WriteStringAsync("Error retrieving data", cancellationToken);
+                await respOut.WriteAsJsonAsync(errorPayload, cancellationToken);
             }
             return respOut;
         }
@@ -142,8 +168,15 @@ namespace AzureFunctionsProject.Manager
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Manager to Engine process failed");
+
+                var errorPayload = new
+                {
+                    error = "Error processing data",
+                    trace = req.FunctionContext.InvocationId
+                };
+
                 outResp.StatusCode = HttpStatusCode.InternalServerError;
-                await outResp.WriteStringAsync("Error processing data", cancellationToken);
+                await outResp.WriteAsJsonAsync(errorPayload, cancellationToken);
             }
             return outResp;
         }
@@ -169,8 +202,15 @@ namespace AzureFunctionsProject.Manager
             catch (JsonException jex)
             {
                 _logger.LogWarning(jex, "Invalid JSON body in CreateData");
+
                 var bad = req.CreateResponse(HttpStatusCode.BadRequest);
-                await bad.WriteStringAsync("Invalid JSON body", cancellationToken);
+                var errorPayload = new
+                {
+                    error = "Invalid JSON body",
+                    trace = req.FunctionContext.InvocationId
+                };
+
+                await bad.WriteAsJsonAsync(errorPayload, cancellationToken);
                 return bad;
             }
 
@@ -202,8 +242,15 @@ namespace AzureFunctionsProject.Manager
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to enqueue CREATE for {DataId}", dto.Id);
+
                 var error = req.CreateResponse(HttpStatusCode.InternalServerError);
-                await error.WriteStringAsync("Could not enqueue create", cancellationToken);
+                var errorPayload = new
+                {
+                    error = "Could not enqueue create",
+                    trace = req.FunctionContext.InvocationId
+                };
+
+                await error.WriteAsJsonAsync(errorPayload, cancellationToken);
                 return error;
             }
         }
@@ -245,7 +292,11 @@ namespace AzureFunctionsProject.Manager
             {
                 _logger.LogWarning(jex, "Invalid JSON body in UpdateData");
                 var badJson = req.CreateResponse(HttpStatusCode.BadRequest);
-                await badJson.WriteStringAsync("Invalid JSON body", cancellationToken);
+                await badJson.WriteAsJsonAsync(new
+                {
+                    error = "Invalid JSON body",
+                    trace = req.FunctionContext.InvocationId
+                }, cancellationToken);
                 return badJson;
             }
 
@@ -274,8 +325,13 @@ namespace AzureFunctionsProject.Manager
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to enqueue UPDATE for {DataId}", dto.Id);
+
                 var error = req.CreateResponse(HttpStatusCode.InternalServerError);
-                await error.WriteStringAsync("Could not enqueue update", cancellationToken);
+                await error.WriteAsJsonAsync(new
+                {
+                    error = "Could not enqueue update",
+                    trace = req.FunctionContext.InvocationId
+                }, cancellationToken);
                 return error;
             }
         }
@@ -329,8 +385,13 @@ namespace AzureFunctionsProject.Manager
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to enqueue DELETE for {DataId}", guid);
+
                 var resp = req.CreateResponse(HttpStatusCode.InternalServerError);
-                await resp.WriteStringAsync("Could not enqueue delete", cancellationToken);
+                await resp.WriteAsJsonAsync(new
+                {
+                    error = "Could not enqueue delete",
+                    trace = req.FunctionContext.InvocationId
+                }, cancellationToken);
                 return resp;
             }
         }

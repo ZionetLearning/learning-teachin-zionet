@@ -5,6 +5,7 @@ using AzureFunctionsProject.Services;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 using System.Net;
 using System.Text.Json;
 
@@ -41,8 +42,15 @@ namespace AzureFunctionsProject.Accessor
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Accessor GetAllData error");
+
+                var errorPayload = new
+                {
+                    error = "Error fetching data",
+                    trace = req.FunctionContext.InvocationId
+                };
+
                 resp.StatusCode = HttpStatusCode.InternalServerError;
-                await resp.WriteStringAsync("Error fetching data", cancellationToken);
+                await resp.WriteAsJsonAsync(errorPayload, cancellationToken);
             }
             return resp;
         }
@@ -78,8 +86,15 @@ namespace AzureFunctionsProject.Accessor
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Accessor GetDataById error for {Id}", id);
+
+                var errorPayload = new
+                {
+                    error = "Error fetching data",
+                    trace = req.FunctionContext.InvocationId
+                };
+
                 resp.StatusCode = HttpStatusCode.InternalServerError;
-                await resp.WriteStringAsync("Error fetching data", cancellationToken);
+                await resp.WriteAsJsonAsync(errorPayload, cancellationToken);
             }
             return resp;
         }
@@ -97,8 +112,9 @@ namespace AzureFunctionsProject.Accessor
 
             if (envelope == null)
             {
-                _logger.LogError("Deserialized envelope was null for message: {MessageBody}", messageBody);
-                throw new AccessorClientException("Invalid queue message");
+                var traceId = context.InvocationId;
+                _logger.LogError("Deserialized envelope was null for message: {MessageBody}, TraceId: {TraceId}", messageBody, traceId);
+                throw new AccessorClientException($"Invalid queue message. TraceId={traceId}");
             }
 
             var action = envelope.Action;
@@ -142,9 +158,18 @@ namespace AzureFunctionsProject.Accessor
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error processing queue message");
-                throw new AccessorClientException("Error processing queue message",ex);
+                _logger.LogError(ex, "Error processing queue message. TraceId: {TraceId}", context.InvocationId);
+
+                throw new AccessorClientException(
+                    JsonSerializer.Serialize(new
+                    {
+                        error = "Error processing queue message",
+                        trace = context.InvocationId
+            }),
+                    ex
+                );
             }
+
         }
     }
 }
