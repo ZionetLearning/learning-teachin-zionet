@@ -10,31 +10,8 @@ namespace Accessor.Endpoints
     {
         public static void MapAccessorEndpoints(this WebApplication app)
         {
-            app.MapGet("/task/{id:int}", async (int id, 
-                IAccessorService accessorService, 
-                ILogger<AccessorService> logger) =>
-            {
-                try
-                {
-                    var task = await accessorService.GetTaskByIdAsync(id);
-                    if (task is not null)
-                    {
-                        logger.LogInformation("Successfully retrieved task {Id}", task.Id);
-                        return Results.Ok(task);
-                    }
-
-                    logger.LogWarning("Task with ID {Id} not found", id);
-                    return Results.NotFound(new { Message = $"Task with ID {id} not found" });
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Unhandled error while retrieving task {Id}", id);
-                    return Results.Problem("An error occurred while fetching the task.");
-                }
-            });
-
-
-
+            app.MapGet("/task/{id:int}", GetTaskById);
+            
 
             app.MapPost($"/{QueueNames.EngineToAccessor}-input", 
                 async (TaskModel task, IAccessorService accessorService, ILogger<AccessorService> logger) =>
@@ -107,16 +84,34 @@ namespace Accessor.Endpoints
                 }
 
             });
-
-
-
-
-
-
-
-
-
-
         }
+
+        #region HandlerMethods
+
+        public static async Task<IResult> GetTaskById(
+            int id,
+            IAccessorService accessorService,
+            ILogger<AccessorService> logger)
+        {
+            try
+            {
+                var task = await accessorService.GetTaskByIdAsync(id);
+                if (task != null)
+                {
+                    logger.LogInformation("Successfully retrieved task {Id}", task.Id);
+                    return Results.Ok(task);
+                }
+
+                logger.LogWarning("Task with ID {Id} not found", id);
+                return Results.NotFound(new { Message = $"Task with ID {id} not found" });
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Unhandled error while retrieving task {Id}", id);
+                return Results.Problem("An error occurred while fetching the task.");
+            }
+        }
+
+        #endregion
     }
 }
