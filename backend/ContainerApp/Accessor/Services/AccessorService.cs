@@ -42,13 +42,14 @@ namespace Accessor.Services;
         catch (Exception ex)
             {
             _logger.LogError(ex, "Failed to connect to PostgreSQL during startup.");
+            throw;
         }
             }
 
 
     public async Task<TaskModel?> GetTaskByIdAsync(int id)
         {
-            _logger.LogInformation($"Inside:{nameof(GetTaskByIdAsync)}");
+            _logger.LogInformation("Inside:{Method}", nameof(GetTaskByIdAsync));
             try
             {
                 // Check if the data exists in cache
@@ -88,7 +89,7 @@ namespace Accessor.Services;
 
     public async Task CreateTaskAsync(TaskModel task)
         {
-            _logger.LogInformation($"Inside:{nameof(CreateTaskAsync)}");
+            _logger.LogInformation("Inside:{Method}", nameof(CreateTaskAsync));
             try
             {
                 task.UpdatedAt = DateTime.UtcNow;
@@ -123,7 +124,7 @@ namespace Accessor.Services;
 
     public async Task<bool> UpdateTaskNameAsync(int taskId, string newName)
     {
-        _logger.LogInformation($"Inside:{nameof(UpdateTaskNameAsync)}");
+        _logger.LogInformation("Inside:{Method}",nameof(UpdateTaskNameAsync));
         try
         {
             var task = await _dbContext.Tasks.FindAsync(taskId);
@@ -133,7 +134,7 @@ namespace Accessor.Services;
             task.UpdatedAt = DateTime.UtcNow;
             await _dbContext.SaveChangesAsync();
 
-            // Update the cache data with the new name and ETag
+            // Check if the id is inside the cache, and then update the cache data with the new name and ETag
             if (_cache.TryGetValue(task.Id, out var obj) && obj is CachedTaskEntry cachedEntry)
             {
                 cachedEntry.Task.Name = newName;
@@ -158,7 +159,7 @@ namespace Accessor.Services;
 
     public async Task<bool> DeleteTaskAsync(int taskId)
     {
-        _logger.LogInformation($"Inside:{nameof(DeleteTaskAsync)}");
+        _logger.LogInformation("Inside:{Method}", nameof(DeleteTaskAsync));
         try
             {
             var task = await _dbContext.Tasks.FindAsync(taskId);
