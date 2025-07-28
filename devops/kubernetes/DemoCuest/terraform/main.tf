@@ -48,8 +48,8 @@ module "database" {
   source              = "./modules/database"
 
   server_name         = "pg-${var.resource_group_name}"
-  location            = var.location
-  resource_group_name = module.resource_group.name
+  location            = var.db_location
+  resource_group_name = azurerm_resource_group.main.name
 
   admin_username      = var.admin_username
   admin_password      = var.admin_password

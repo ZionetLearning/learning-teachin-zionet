@@ -19,9 +19,9 @@ variable "queue_names" {
               "taskupdate-input"
             ]
 }
-variable "cosmosdb_account_name" {
-  type = string
-}
+# variable "cosmosdb_account_name" {
+#   type = string
+# }
 variable "node_count" {
   type    = number
   default = 2
@@ -51,20 +51,20 @@ variable "docker_registry" {
   type        = string
 }
 
-variable "cosmosdb_sql_database_name" {
-  type    = string
-  default = "ToDoDatabase"
-}
+# variable "cosmosdb_sql_database_name" {
+#   type    = string
+#   default = "ToDoDatabase"
+# }
 
-variable "cosmosdb_sql_container_name" {
-  type    = string
-  default = "ToDos"
-}
+# variable "cosmosdb_sql_container_name" {
+#   type    = string
+#   default = "ToDos"
+# }
 
-variable "cosmosdb_partition_key_path" {
-  type    = string
-  default = "/id"
-}
+# variable "cosmosdb_partition_key_path" {
+#   type    = string
+#   default = "/id"
+# }
 
 variable "signalr_name" {
   type        = string
@@ -85,6 +85,14 @@ variable "signalr_sku_capacity" {
 
 
 # PostgreSQL database variables
+
+variable "db_location" {
+    description = "Location for the PostgreSQL database"
+    type        = string
+    default     = "Israel Central"
+  
+}
+
 
 # admin_username
 variable "admin_username" {
