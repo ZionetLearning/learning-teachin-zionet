@@ -74,6 +74,12 @@ export const HomePage = () => {
           >
             Typing Practice
           </button>
+          <button
+            className={classes.button}
+            onClick={() => handleNavigation("word-order-game")}
+          >
+            Word Order Game
+          </button>
         </div>
       </div>
     </div>

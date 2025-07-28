@@ -1,3 +1,5 @@
+import { useStyles } from "./style";
 export const Header = () => {
-    return (<h1>Word Order Game</h1>);
+    const classes = useStyles();
+    return (<h1 className={classes.header}>Word Order Game</h1>);
 }

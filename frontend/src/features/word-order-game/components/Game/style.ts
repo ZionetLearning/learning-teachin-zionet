@@ -1,20 +1,100 @@
 import { createUseStyles } from "react-jss";
-
 export const useStyles = createUseStyles({
     gameContainer: {
-        flexDirection: "row"
+        display: "flex",
+        flexDirection: "row",
+        justifyContent: "center",
+        gap: "0px",
     },
     speakersContainer: {
         display: "flex",
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
+        gap: "10px"
+    },
+    gameLogic: {
+        display: "flex",
+        flexDirection: "column",
+        gap: "40px",
+        paddingLeft: "200px"
+    },
+    answerArea: {
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 24,
+        marginTop: 8,
+    },
+    dashLine: {
+        width: 520,
+        height: 0,
+        borderBottom: "2px solid #9bb9c8",
+    },
+    dashLineWithWords: {
+        position: "relative",
+        width: 520,
+        minHeight: 64,                
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 8,
+        justifyContent: "center",
+        alignItems: "flex-end",        
+        "&::after": {
+            content: '""',               
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: 6,                   
+            borderBottom: "2px solid #9bb9c8",
+            pointerEvents: "none",
+        },
+    },
+    bankWord: {
+        padding: "8px 14px",
+        borderRadius: 12,
+        border: "1px solid #d8e2e8",
+        background: "#fff",
+        boxShadow: "0 1px 2px rgba(0,0,0,0.06)",
+        fontSize: 18,
+        cursor: "pointer",
+    },
+    chosenWord: {
+        padding: "8px 14px",
+        borderRadius: 12,
+        border: "1px solid #cfe7d8",
+        background: "#e8f8ef",
+        boxShadow: "0 1px 2px rgba(0,0,0,0.06)",
+        fontSize: 18,
+        cursor: "pointer",
+        marginBottom: "8px"
     },
     sideButtons: {
+        display: "flex",
         flexDirection: "column",
+        gap: "20px",
+        paddingLeft: "100px",
+        paddingRight: "95px",
+        "& > button": {
+            background: "#eef6fb",
+            border: "1px solid #cfe3ef",
+            color: "#0d3b50",
+            borderRadius: 12,
+            padding: "10px 18px",
+            fontSize: 16,
+            cursor: "pointer",
+            transition: "background .15s, transform .05s",
+        },
+        "& > button:hover": {
+            background: "#dff0f9",
+        },
+        "& > button:active": {
+            transform: "translateY(1px)",
+        },
     },
     wordsBank: {
         display: "flex",
         flexDirection: "row",
+        gap: "5px"
     }
 });

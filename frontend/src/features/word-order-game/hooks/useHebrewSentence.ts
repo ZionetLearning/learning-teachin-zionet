@@ -1,16 +1,24 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { askAzureOpenAI } from "../../chat/chat-yo/services";
 
-export const useHebrewSentence = async () => {
+export const useHebrewSentence = () => {
     const [sentence, setSentence] = useState<string>("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    const pendingRef = useRef(false);
+    const didInitRef = useRef(false);
+
     const fetchSentence = useCallback(async () => {
+
+        if (pendingRef.current) return sentence;
+        pendingRef.current = true;
         setLoading(true);
         setError(null);
         try {
-            const response = await askAzureOpenAI("צור משפטים קצרים וברורים בעברית ללומדי מתחילים.", "צור משפט אחד קצר בעברית, ללא ניקוד.");
+            const response = await askAzureOpenAI(
+                "צור משפט אחד קצר בעברית, ללא ניקוד.",
+                "צור משפטים קצרים וברורים בעברית ללומדי מתחילים.");
             setSentence(response);
             return response;
         }
@@ -20,8 +28,16 @@ export const useHebrewSentence = async () => {
         }
         finally {
             setLoading(false);
+            pendingRef.current = false;
         }
     }, []);
 
-    return { loading, error, fetchSentence, setSentence };
+    const initOnce = useCallback(async () => {
+        if (didInitRef.current) return;
+        didInitRef.current = true;
+        await fetchSentence();
+    }, [fetchSentence]);
+
+
+    return { sentence, loading, error, fetchSentence, initOnce };
 }
