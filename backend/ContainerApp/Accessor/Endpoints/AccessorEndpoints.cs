@@ -13,7 +13,7 @@ namespace Accessor.Endpoints
         public static void MapAccessorEndpoints(this WebApplication app)
         {
             app.MapGet("/task/{id:int}", GetTaskById);
-            app.MapPost($"/{QueueNames.EngineToAccessor}-input", SaveTask);
+            app.MapPost($"/{QueueNames.EngineToAccessor}-input", CreateTask);
             app.MapPost($"/{QueueNames.TaskUpdateInput}", UpdateTaskName);
             app.MapDelete("/task/{taskId}", DeleteTask);
 
@@ -47,14 +47,14 @@ namespace Accessor.Endpoints
             }
         }
         
-        public static async Task<IResult> SaveTask(
+        public static async Task<IResult> CreateTask(
             TaskModel task,
             IAccessorService accessorService,
             ILogger logger)
         {
             try
             {
-                await accessorService.SaveTaskAsync(task);
+                await accessorService.CreateTaskAsync(task);
                 logger.LogInformation("Task {Id} saved successfully", task.Id);
                 return Results.Ok(new { Status = "Saved", task.Id });
             }

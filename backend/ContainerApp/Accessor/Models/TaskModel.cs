@@ -16,6 +16,9 @@ namespace Accessor.Models
 
         [Required]
         public string Payload { get; set; } = string.Empty;
+
+        [Required]
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     }
 
 }

@@ -66,13 +66,13 @@ public class AccessorEndpointsTests
 
     
     [Fact]
-    public async Task SaveTask_ReturnsOk_WhenSuccessful()
+    public async Task CreateTask_ReturnsOk_WhenSuccessful()
     {
         // Arrange
         var task = new TaskModel { Id = 42, Name = "UnitTest Task" };
 
         // Act
-        var result = await AccessorEndpoints.SaveTask(task, _mockService.Object, _mockLogger.Object);
+        var result = await AccessorEndpoints.CreateTask(task, _mockService.Object, _mockLogger.Object);
         // Assert
         var okResult = Assert.IsType<IValueHttpResult>(result, exactMatch: false);
 
