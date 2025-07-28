@@ -69,7 +69,7 @@ variable "cosmosdb_partition_key_path" {
 variable "signalr_name" {
   type        = string
   description = "SignalR service name (must be globally unique)"
-  default     = "signalRdemoCuest"
+  default     = "signalRdemoCuest123"
 }
 
 variable "signalr_sku_name" {
