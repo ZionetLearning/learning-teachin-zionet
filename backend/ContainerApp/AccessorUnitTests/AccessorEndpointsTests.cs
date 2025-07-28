@@ -40,6 +40,32 @@ public class AccessorEndpointsTests
     }
     
     [Fact]
+    public async Task GetTaskById_ReturnsNotFound_WhenTaskDoesNotExist()
+    {
+        // Arrange
+        var mockService = new Mock<IAccessorService>();
+        var mockLogger = new Mock<ILogger>();
+
+        int taskId = 999; // non-existing task ID
+        mockService.Setup(s => s.GetTaskByIdAsync(taskId)).ReturnsAsync((TaskModel?)null);
+
+        // Act
+        var result = await AccessorEndpoints.GetTaskById(taskId, mockService.Object, mockLogger.Object);
+
+        // Assert
+        var statusResult = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
+        Assert.Equal(404, statusResult.StatusCode);
+        
+        var notFoundResult = Assert.IsType<IValueHttpResult>(result, exactMatch: false);
+        var response = notFoundResult.Value;
+
+        Assert.NotNull(response);
+        var messageProp = response.GetType().GetProperty("Message")?.GetValue(response)?.ToString();
+        Assert.Equal($"Task with ID {taskId} not found", messageProp);
+    }
+
+    
+    [Fact]
     public async Task SaveTask_ReturnsOk_WhenSuccessful()
     {
         // Arrange
@@ -60,9 +86,6 @@ public class AccessorEndpointsTests
         var idProp = value.GetType().GetProperty("Id")?.GetValue(value);
         var statusProp = value.GetType().GetProperty("Status")?.GetValue(value);
 
-        _testOutputHelper.WriteLine("Id: " + idProp);
-        _testOutputHelper.WriteLine("Status: " + statusProp);
-
         Assert.Equal(42, idProp);
         Assert.Equal("Saved", statusProp);
     }
@@ -82,9 +105,32 @@ public class AccessorEndpointsTests
 
         // Assert
         var okResult = Assert.IsType<Ok<string>>(result);
-        Assert.Contains("updated successfully", okResult.Value);
-        Assert.Contains(request.Id.ToString(), okResult.Value);
+        Assert.Equal($"Task {request.Id} updated successfully.", okResult.Value);
     }
+    
+    [Fact]
+    public async Task UpdateTaskName_ReturnsNotFound_WhenTaskDoesNotExist()
+    {
+        // Arrange
+        var mockService = new Mock<IAccessorService>();
+        var mockLogger = new Mock<ILogger>();
+        var request = new UpdateTaskName { Id = 999, Name = "DoesNotExist" };
+
+        // Simulate task not found
+        mockService.Setup(s => s.UpdateTaskNameAsync(request.Id, request.Name)).ReturnsAsync(false);
+
+        // Act
+        var result = await AccessorEndpoints.UpdateTaskName(request, mockService.Object, mockLogger.Object);
+
+        // Assert
+        var statusResult = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
+        Assert.Equal(404, statusResult.StatusCode);
+
+        var valueResult = Assert.IsAssignableFrom<IValueHttpResult>(result);
+        var value = valueResult.Value;
+        Assert.Equal($"Task with ID {request.Id} not found.", value?.ToString());
+    }
+
     
     [Fact]
     public async Task DeleteTask_ReturnsOk_WhenDeleted()
