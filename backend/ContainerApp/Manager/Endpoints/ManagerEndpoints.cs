@@ -41,6 +41,7 @@ public static class ManagerEndpoints
         return app;
     }
 
+
     private static async Task<IResult> GetTaskAsync(
         [FromRoute] int id,
         [FromServices] IManagerService managerService,
@@ -65,6 +66,7 @@ public static class ManagerEndpoints
             return Results.Problem("An error occurred while retrieving the task.");
         }
     }
+
 
     private static async Task<IResult> CreateTaskAsync(
         [FromBody] TaskModel task,
@@ -91,6 +93,7 @@ public static class ManagerEndpoints
         }
     }
 
+
     private static async Task<IResult> UpdateTaskNameAsync(
         [FromRoute] int id,
         [FromRoute] string name,
@@ -110,6 +113,7 @@ public static class ManagerEndpoints
         }
     }
 
+
     private static async Task<IResult> DeleteTaskAsync(
         [FromRoute] int id,
         [FromServices] IManagerService managerService,
@@ -128,5 +132,5 @@ public static class ManagerEndpoints
         }
     }
 
-        
+ 
 }

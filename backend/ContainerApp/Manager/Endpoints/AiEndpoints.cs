@@ -29,6 +29,7 @@ public static class AiEndpoints
 
         #endregion
 
+
         return app;
     }
 
@@ -57,6 +58,7 @@ public static class AiEndpoints
         }
     }
 
+
     private static async Task<IResult> QuestionAsync(
         [FromBody] AiRequestModel dto,
         [FromServices] IAiGatewayService aiService,
@@ -75,6 +77,7 @@ public static class AiEndpoints
             return Results.Problem("AI question failed");
         }
     }
+
 
     private static async Task<IResult> PubSubAsync(
         [FromBody] AiResponseModel msg,
@@ -95,4 +98,5 @@ public static class AiEndpoints
         }
     }
         
+
 }

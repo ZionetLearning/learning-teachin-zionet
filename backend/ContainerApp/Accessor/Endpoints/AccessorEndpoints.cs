@@ -38,8 +38,7 @@ public static class AccessorEndpoints
     private static async Task<IResult> GetTaskAsync(
         [FromRoute] int id,
         [FromServices] IAccessorService accessorService,
-        [FromServices] ILogger<AccessorService> logger
-    )
+        [FromServices] ILogger<AccessorService> logger)
     {
         try
         {
@@ -62,10 +61,9 @@ public static class AccessorEndpoints
 
 
     private static async Task<IResult> SaveTaskAsync(
-    [FromBody] TaskModel task,
-    [FromServices] IAccessorService accessorService,
-    [FromServices] ILogger<AccessorService> logger
-    )
+        [FromBody] TaskModel task,
+        [FromServices] IAccessorService accessorService,
+        [FromServices] ILogger<AccessorService> logger)
     {
         try
         {
@@ -82,10 +80,9 @@ public static class AccessorEndpoints
 
 
     private static async Task<IResult> UpdateTaskAsync(
-    [FromBody] UpdateTaskName request,
-    [FromServices] IAccessorService accessorService,
-    [FromServices] ILogger<AccessorService> logger
-    )
+        [FromBody] UpdateTaskName request,
+        [FromServices] IAccessorService accessorService,
+        [FromServices] ILogger<AccessorService> logger)
     {
         logger.LogInformation($"[Accessor] Received request to update task. Id: {request.Id}, NewName: {request.Name}");
 
@@ -112,8 +109,7 @@ public static class AccessorEndpoints
     private static async Task<IResult> DeleteTaskAsync(
         [FromRoute] int taskId,
         [FromServices] IAccessorService accessorService,
-        [FromServices] ILogger<AccessorService> logger
-        )
+        [FromServices] ILogger<AccessorService> logger)
     {
         logger.LogInformation($"[Accessor] Received DELETE request for Task ID: {taskId}");
         try
