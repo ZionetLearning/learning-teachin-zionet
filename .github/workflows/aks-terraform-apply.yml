@@ -1,4 +1,4 @@
-name: Terraform Apply with Provisioning
+name: AKS - Terraform Apply with Provisioning
 
 on:
   workflow_call:
@@ -15,9 +15,21 @@ jobs:
       id-token: write      # Required for OIDC login
       contents: read       # For actions/checkout
 
+    env:
+      ARM_USE_OIDC: "true" # tell provider to use the OIDC token
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_USE_AZUREAD: "true" # matches `use_azuread_auth = true`
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
 
       - name: Azure Login via OIDC
         uses: azure/login@v2
