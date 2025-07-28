@@ -5,13 +5,14 @@ metadata:
     kompose.cmd: D:\Tool\kompose.exe convert -f .\docker-compose.yaml
     kompose.version: 1.36.0 (ae2a39403)
   labels:
-    io.kompose.service: placement
-  name: placement
+    io.kompose.service: manager
+  name: manager
   namespace: devops-model
 spec:
+  type: LoadBalancer
   ports:
-    - name: "50006"
-      port: 50006
-      targetPort: 50006
+    - name: "5001"
+      port: 5001
+      targetPort: 5001
   selector:
-    io.kompose.service: placement
+    io.kompose.service: manager

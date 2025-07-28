@@ -5,13 +5,13 @@ metadata:
     kompose.cmd: D:\Tool\kompose.exe convert -f .\docker-compose.yaml
     kompose.version: 1.36.0 (ae2a39403)
   labels:
-    io.kompose.service: placement
-  name: placement
+    io.kompose.service: sqledge
+  name: sqledge
   namespace: devops-model
 spec:
   ports:
-    - name: "50006"
-      port: 50006
-      targetPort: 50006
+    - name: "1433"
+      port: 1433
+      targetPort: 1433
   selector:
-    io.kompose.service: placement
+    io.kompose.service: sqledge

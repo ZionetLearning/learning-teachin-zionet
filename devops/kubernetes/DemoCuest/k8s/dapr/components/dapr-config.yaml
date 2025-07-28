@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dapr-config
+  namespace: devops-model
+data:
+  config.yaml: |
+    apiVersion: dapr.io/v1alpha1
+    kind: Configuration
+    metadata:
+      name: daprConfig
+    spec:
+      tracing:
+        samplingRate: "1"

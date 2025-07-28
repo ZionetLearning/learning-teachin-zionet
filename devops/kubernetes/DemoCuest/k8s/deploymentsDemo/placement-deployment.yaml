@@ -2,8 +2,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    kompose.cmd: D:\Tool\kompose.exe convert -f .\docker-compose.yaml
-    kompose.version: 1.36.0 (ae2a39403)
+    kompose.cmd: C:\Program Files\kompose\kompose.exe convert -f docker-compose.yml
+    kompose.version: 1.30.0 (9d8dcb518)
+  creationTimestamp: null
   labels:
     io.kompose.service: placement
   name: placement
@@ -13,12 +14,15 @@ spec:
   selector:
     matchLabels:
       io.kompose.service: placement
+  strategy: {}
   template:
     metadata:
       annotations:
-        kompose.cmd: D:\Tool\kompose.exe convert -f .\docker-compose.yaml
-        kompose.version: 1.36.0 (ae2a39403)
+        kompose.cmd: C:\Program Files\kompose\kompose.exe convert -f docker-compose.yml
+        kompose.version: 1.30.0 (9d8dcb518)
+      creationTimestamp: null
       labels:
+        io.kompose.network/democuest-democuest-dapr: "true"
         io.kompose.service: placement
     spec:
       containers:
@@ -26,9 +30,13 @@ spec:
             - ./placement
             - -port
             - "50006"
-          image: daprio/placement:latest
+            - --log-level
+            - debug
+          image: daprio/dapr:1.13.5
           name: placement
           ports:
             - containerPort: 50006
+              hostPort: 50006
               protocol: TCP
+          resources: {}
       restartPolicy: Always

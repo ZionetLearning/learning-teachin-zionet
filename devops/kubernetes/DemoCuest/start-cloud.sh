@@ -28,8 +28,12 @@ kubectl apply -f "$K8S_DIR/dapr/components" --recursive
 echo "Applying services..."
 kubectl apply -f "$K8S_DIR/services" --recursive
 
+# Step 5.5: Apply shared resources (PVCs, etc.)
+echo "Applying shared resources..."
+kubectl apply -f "$K8S_DIR/shared" --recursive
+
 # Step 6: Apply deployments
-export DOCKER_REGISTRY="benny902" # or read from env/.env file
+export DOCKER_REGISTRY="snir1551" # or read from env/.env file
 echo "Applying deployments with registry substitution..."
 find "$K8S_DIR/deployments" -type f -name '*.yaml' | while read file; do
   echo "Applying $file"
@@ -38,11 +42,11 @@ done
 
 echo "All resources applied successfully!"
 
-# Step 7: Wait for todomanager service to get an external IP
-echo "Waiting for external IP for todomanager service..."
+# Step 7: Wait for manager service to get an external IP
+echo "Waiting for external IP for manager service..."
 
 for i in {1..30}; do
-  EXTERNAL_IP=$(kubectl -n devops-model get svc todomanager -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+  EXTERNAL_IP=$(kubectl -n devops-model get svc manager -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
   
   if [[ -n "$EXTERNAL_IP" ]]; then
     echo "External IP is ready: $EXTERNAL_IP"
@@ -54,7 +58,7 @@ for i in {1..30}; do
 done
 
 if [[ -z "$EXTERNAL_IP" ]]; then
-  echo "Failed to get external IP after waiting. Check 'kubectl get svc todomanager'"
+  echo "Failed to get external IP after waiting. Check 'kubectl get svc manager'"
 else
   echo "You can now access the app at: http://$EXTERNAL_IP:5073"
 fi

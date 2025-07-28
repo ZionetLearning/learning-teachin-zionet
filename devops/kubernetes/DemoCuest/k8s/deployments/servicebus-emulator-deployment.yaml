@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: D:\Tool\kompose.exe convert -f .\docker-compose.yaml
+    kompose.version: 1.36.0 (ae2a39403)
+  labels:
+    io.kompose.service: servicebus-emulator
+  name: servicebus-emulator
+  namespace: devops-model
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: servicebus-emulator
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: D:\Tool\kompose.exe convert -f .\docker-compose.yaml
+        kompose.version: 1.36.0 (ae2a39403)
+      labels:
+        io.kompose.service: servicebus-emulator
+    spec:
+      containers:
+        - env:
+            - name: ACCEPT_EULA
+              value: "Y"
+            - name: MSSQL_SA_PASSWORD
+              value: YourStrongP@ssword123!
+            - name: SQL_SERVER
+              value: sqledge
+          image: mcr.microsoft.com/azure-messaging/servicebus-emulator:latest
+          livenessProbe:
+            exec:
+              command:
+                - /bin/bash
+                - -c
+                - nc -z localhost 5672
+            failureThreshold: 15
+            periodSeconds: 5
+            timeoutSeconds: 5
+          name: servicebus-emulator
+          ports:
+            - containerPort: 5672
+              protocol: TCP
+            - containerPort: 5300
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /ServiceBus_Emulator/ConfigFiles
+              name: servicebus-emulator-cm0
+      restartPolicy: Always
+      volumes:
+        - configMap:
+            name: servicebus-emulator-cm0
+          name: servicebus-emulator-cm0

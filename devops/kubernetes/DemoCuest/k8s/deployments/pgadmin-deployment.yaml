@@ -5,30 +5,31 @@ metadata:
     kompose.cmd: D:\Tool\kompose.exe convert -f .\docker-compose.yaml
     kompose.version: 1.36.0 (ae2a39403)
   labels:
-    io.kompose.service: placement
-  name: placement
+    io.kompose.service: pgadmin
+  name: pgadmin
   namespace: devops-model
 spec:
   replicas: 1
   selector:
     matchLabels:
-      io.kompose.service: placement
+      io.kompose.service: pgadmin
   template:
     metadata:
       annotations:
         kompose.cmd: D:\Tool\kompose.exe convert -f .\docker-compose.yaml
         kompose.version: 1.36.0 (ae2a39403)
       labels:
-        io.kompose.service: placement
+        io.kompose.service: pgadmin
     spec:
       containers:
-        - args:
-            - ./placement
-            - -port
-            - "50006"
-          image: daprio/placement:latest
-          name: placement
+        - env:
+            - name: PGADMIN_DEFAULT_EMAIL
+              value: admin@admin.com
+            - name: PGADMIN_DEFAULT_PASSWORD
+              value: admin
+          image: dpage/pgadmin4
+          name: pgadmin
           ports:
-            - containerPort: 50006
+            - containerPort: 80
               protocol: TCP
       restartPolicy: Always
