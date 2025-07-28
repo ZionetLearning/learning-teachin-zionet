@@ -43,8 +43,7 @@ jobs:
           echo "AKS_NAME=democuest-aks-dev" >> $GITHUB_ENV
 
       - name: Get AKS credentials
-        run: |
-          az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
+        run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
 
       - name: Set kubectl context
         run: kubectl config use-context $AKS_NAME
@@ -87,3 +86,182 @@ jobs:
         run: |
           echo "app_url=${{ steps.wait_for_ip.outputs.app_url }}" >> $GITHUB_OUTPUT
           echo "App URL: ${{ steps.wait_for_ip.outputs.app_url }}"
+
+  install-loki-grafana:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+
+      - name: Install Loki + Grafana
+        run: |
+          set -e
+          LOKI_NAMESPACE="devops-logs"
+          mkdir -p ./tmp-grafana
+
+          # === Step 1: Create values-loki.yaml ===
+          cat > ./tmp-grafana/values-loki.yaml <<EOF
+          grafana:
+            enabled: true
+            adminUser: admin
+            adminPassword: admin123
+            service:
+              type: LoadBalancer
+              port: 80
+            additionalDataSources:
+              - name: Loki
+                type: loki
+                url: http://loki:3100
+                access: proxy
+                isDefault: true
+            sidecar:
+              dashboards:
+                enabled: true
+                searchNamespace: $LOKI_NAMESPACE
+
+          loki:
+            enabled: true
+
+          promtail:
+            enabled: true
+            tolerations:
+              - key: "node-role.kubernetes.io/control-plane"
+                operator: "Exists"
+                effect: "NoSchedule"
+            extraVolumes:
+              - name: varlog
+                hostPath:
+                  path: /var/log
+            extraVolumeMounts:
+              - name: varlog
+                mountPath: /var/log
+                readOnly: true
+            config:
+              snippets:
+                pipelineStages:
+                  - cri: {}
+                extraScrapeConfigs: |
+                  - job_name: docker-containers
+                    static_configs:
+                      - targets:
+                          - localhost
+                        labels:
+                          job: varlogs
+                          __path__: /var/log/containers/*.log
+                    relabel_configs:
+                      - source_labels: [__path__]
+                        regex: ".*/(?P<container>[^_]+)_(?P<pod>[^_]+)_(?P<namespace>[^_]+)-.*\\.log"
+                        target_label: container
+                        replacement: "\$1"
+                      - source_labels: [__path__]
+                        regex: ".*/(?P<container>[^_]+)_(?P<pod>[^_]+)_(?P<namespace>[^_]+)-.*\\.log"
+                        target_label: pod
+                        replacement: "\$2"
+                      - source_labels: [__path__]
+                        regex: ".*/(?P<container>[^_]+)_(?P<pod>[^_]+)_(?P<namespace>[^_]+)-.*\\.log"
+                        target_label: namespace
+                        replacement: "\$3"
+          EOF
+
+          # === Step 2: Create dashboard configmap ===
+          cat > ./tmp-grafana/pod-logs-dashboard.yaml <<EOF
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: pod-logs-dashboard
+            namespace: $LOKI_NAMESPACE
+            labels:
+              grafana_dashboard: "1"
+          data:
+            pod-logs.json: |
+              {
+                "title": "Pod Logs",
+                "uid": "podlogs",
+                "schemaVersion": 16,
+                "version": 1,
+                "time": {
+                  "from": "now-1h",
+                  "to": "now"
+                },
+                "templating": {
+                  "list": [
+                    {
+                      "name": "pod",
+                      "label": "Pod",
+                      "type": "query",
+                      "datasource": "Loki",
+                      "refresh": 2,
+                      "query": "label_values(pod)",
+                      "definition": "label_values(pod)",
+                      "sort": 1,
+                      "hide": 0,
+                      "includeAll": false,
+                      "multi": false,
+                      "current": {
+                        "selected": false,
+                        "text": "All",
+                        "value": ""
+                      }
+                    }
+                  ]
+                },
+                "panels": [
+                  {
+                    "type": "logs",
+                    "title": "Logs by Pod",
+                    "targets": [
+                      {
+                        "expr": "{pod=\"\$pod\"}",
+                        "refId": "A"
+                      }
+                    ],
+                    "datasource": "Loki",
+                    "gridPos": { "x": 0, "y": 0, "w": 24, "h": 20 },
+                    "options": {
+                      "showLabels": true,
+                      "showTime": true,
+                      "wrapLogMessage": true,
+                      "dedupStrategy": "none"
+                    }
+                  }
+                ]
+              }
+          EOF
+
+          # === Step 3: Install Loki + Grafana ===
+          helm repo add grafana https://grafana.github.io/helm-charts
+          helm repo update
+
+          kubectl create namespace "$LOKI_NAMESPACE" || true
+          kubectl apply -f ./tmp-grafana/pod-logs-dashboard.yaml
+
+          helm upgrade --install loki-stack grafana/loki-stack \
+            --namespace "$LOKI_NAMESPACE" \
+            -f ./tmp-grafana/values-loki.yaml \
+            --set grafana.sidecar.dashboards.enabled=true \
+            --set grafana.sidecar.dashboards.searchNamespace="$LOKI_NAMESPACE" \
+            --wait
+
+          echo ""
+          echo "Logs setup complete!"
+          echo "Grafana will be available shortly via external LoadBalancer IP."
+          echo "Login: admin / admin123"
+          echo "Dashboard: Pod Logs → use dropdown to filter logs by pod"
+
+
+      - name: Get external Grafana IP
+        run: |
+          echo "Waiting for external Grafana LoadBalancer IP..."
+          for i in {1..30}; do
+            IP=$(kubectl -n devops-logs get svc loki-stack-grafana -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+            if [[ -n "$IP" ]]; then
+              echo "GRAFANA_URL=http://$IP" >> $GITHUB_ENV
+              echo "Grafana available at: http://$IP"
+              exit 0
+            fi
+            echo "Attempt $i: Not ready yet. Retrying in 10s..."
+            sleep 10
+          done
+          echo "❌ Timed out waiting for Grafana external IP"
+          exit 1
