@@ -22,9 +22,12 @@ export const useHebrewSentence = () => {
             setSentence(response);
             return response;
         }
-        catch (e: any) {
-            setError(e?.message ?? "failed");
-            return "";
+        catch (e: unknown) {
+            if (e instanceof Error) {
+                setError(e.message);
+            } else {
+                setError("An unknown error occurred");
+            }
         }
         finally {
             setLoading(false);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useStyles } from "./style";
 import { Speaker } from "../Speaker";
 import { playSentenceCached, clearSpeechCache } from "../../services/azureTTS";
@@ -6,20 +6,21 @@ import { useHebrewSentence } from "../../hooks";
 
 export const Game = () => {
     const classes = useStyles();
-    const [sentences, setSentences] = useState<string[]>([]);
     const [chosen, setChosen] = useState<string[]>([]);
     const [shuffledSentence, setShuffledSentence] = useState<string[]>([]);
     const { sentence, loading, error, fetchSentence, initOnce } = useHebrewSentence();
 
     useEffect(() => {
         initOnce();
-        setSentences(prev => [...prev, sentence]);
     }, [initOnce]);
 
     useEffect(() => {
-        if (!sentence) return;
-        setChosen([]);
-        setShuffledSentence(shuffleDistinct(sentence.replace(".", "").split(" ")));
+        const handleNewSentence = () => {
+            if (!sentence) return;
+            setChosen([]);
+            setShuffledSentence(shuffleDistinct(sentence.replace(/\./g, "").split(" ")));
+        }
+        handleNewSentence();
     }, [sentence]);
 
     const handlePlay = (mode?: "normal" | "slow") => {
@@ -34,39 +35,38 @@ export const Game = () => {
         clearSpeechCache();
         const s = await fetchSentence();
         if (!s) return;
-        setSentences(prev => [...prev, s]);
         setChosen([]);
-        setShuffledSentence(shuffleDistinct(s.replace(".", "").split(" ")));
+        setShuffledSentence(shuffleDistinct(s.replace(/\./g, "").split(" ")));
     }
 
-    const handleReset = useCallback(() => {
+    const handleReset = () => {
         if (!sentence) return;
         const clean = sentence.replace(/\./g, "");
         setChosen([]);
         setShuffledSentence(shuffleDistinct(clean.split(" ")));
-    }, [sentence]);
+    }
 
-    function choose(word: string) {
+    const handleChooseWord = (word: string) => {
         setShuffledSentence(prev => prev.filter(w => w !== word));
         setChosen(prev => [...prev, word]);
     }
 
-    const unchoose = useCallback((index: number, word: string) => {
+    const handleUnchooseWord = (index: number, word: string) => {
         setChosen((prev) => prev.filter((_, i) => i !== index));
         setShuffledSentence((prev) => [word, ...prev]);
-    }, []);
+    }
 
     const isCorrect = useMemo(
         () => chosen.join(" ") === sentence.replace(/\./g, ""),
         [chosen, sentence]
     );
 
-    const handleCheck = useCallback(() => {
+    const handleCheck = () => {
         alert(isCorrect ? "Correct!" : "Try again!");
         return isCorrect;
-    }, [isCorrect]);
+    }
 
-    function shuffleDistinct(words: string[]) {
+    const shuffleDistinct = (words: string[]) => {
         if (words.length < 2) return [...words];
 
         // try a few times to get an order different from the original
@@ -98,7 +98,7 @@ export const Game = () => {
                             <button
                                 key={`c-${w}-${i}`}
                                 className={classes.chosenWord}
-                                onClick={() => unchoose(i, w)}
+                                onClick={() => handleUnchooseWord(i, w)}
                             >
                                 {w}
                             </button>
@@ -113,7 +113,7 @@ export const Game = () => {
                         <button
                             key={`b-${w}-${i}`}
                             className={classes.bankWord}
-                            onClick={() => choose(w)}
+                            onClick={() => handleChooseWord(w)}
                         >
                             {w}
                         </button>

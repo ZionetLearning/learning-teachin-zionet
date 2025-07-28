@@ -6,7 +6,6 @@ export const useStyles = createUseStyles({
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "flex-start",
-        height: "100vh",
-        
+        height: "100%",
     }
 });

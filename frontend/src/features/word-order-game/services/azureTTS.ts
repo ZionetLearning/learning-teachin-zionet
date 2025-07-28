@@ -3,7 +3,7 @@ import * as sdk from "microsoft-cognitiveservices-speech-sdk";
 const VOICE_DEFAULT = "he-IL-HilaNeural";
 const cache = new Map<string, string>();
 
-function ssml(text: string, voice = VOICE_DEFAULT, ratePercent = 0) {
+const ssml = (text: string, voice = VOICE_DEFAULT, ratePercent = 0) => {
   return `
 <speak version="1.0" xml:lang="he-IL">
   <voice name="${voice}">
@@ -12,20 +12,20 @@ function ssml(text: string, voice = VOICE_DEFAULT, ratePercent = 0) {
 </speak>`.trim();
 }
 
-function arrayBufferToUrl(buf: ArrayBuffer, mime = "audio/mp3") {
+const arrayBufferToUrl = (buf: ArrayBuffer, mime = "audio/mp3") => {
   const blob = new Blob([buf], { type: mime });
   return URL.createObjectURL(blob);
-}
+};
 
 /*
   Plays a Hebrew sentence. On first play it uses the SDK (plays + caches).
   Next plays reuse the cached audio (no service call).
 */
-export async function playSentenceCached(
+export const playSentenceCached = async (
   text: string,
   voiceName?: string,
   ratePercent?: number
-): Promise<void> {
+): Promise<void> => {
   const sentence = text.trim();
   if (!sentence) throw new Error("Text cannot be empty");
 
@@ -73,7 +73,7 @@ export async function playSentenceCached(
 }
 
 // Clear all cached audio (call on "Next" or when leaving the page)
-export function clearSpeechCache() {
+export const clearSpeechCache = () => {
   for (const url of cache.values()) URL.revokeObjectURL(url);
   cache.clear();
 }
