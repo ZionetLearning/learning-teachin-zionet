@@ -147,7 +147,7 @@ public class AccessorEndpointsTests
 
         // Assert
         var okResult = Assert.IsType<Ok<string>>(result);
-        Assert.Equal("Task 15 deleted.", okResult.Value);
+        Assert.Equal($"Task {taskId} deleted.", okResult.Value);
     }
 
 
