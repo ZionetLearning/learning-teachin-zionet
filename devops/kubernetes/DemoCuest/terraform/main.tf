@@ -33,14 +33,40 @@ module "signalr" {
   sku_capacity        = var.signalr_sku_capacity
 }
 
-module "cosmosdb" {
-  source                = "./modules/cosmosdb"
-  resource_group_name   = azurerm_resource_group.main.name
-  location              = "North Europe" # over ride because it made error that 'full'
-  cosmosdb_account_name = var.cosmosdb_account_name
-  cosmosdb_sql_database_name = var.cosmosdb_sql_database_name
-  cosmosdb_sql_container_name = var.cosmosdb_sql_container_name
-  cosmosdb_partition_key_path = var.cosmosdb_partition_key_path
+# module "cosmosdb" {
+#   source                = "./modules/cosmosdb"
+#   resource_group_name   = azurerm_resource_group.main.name
+#   location              = "North Europe" # over ride because it made error that 'full'
+#   cosmosdb_account_name = var.cosmosdb_account_name
+#   cosmosdb_sql_database_name = var.cosmosdb_sql_database_name
+#   cosmosdb_sql_container_name = var.cosmosdb_sql_container_name
+#   cosmosdb_partition_key_path = var.cosmosdb_partition_key_path
+# }
+
+
+module "database" {
+  source              = "./modules/database"
+
+  server_name         = "pg-${var.resource_group_name}"
+  location            = var.location
+  resource_group_name = module.resource_group.name
+
+  admin_username      = var.admin_username
+  admin_password      = var.admin_password
+
+  db_version          = var.db_version
+  sku_name            = var.sku_name
+  storage_mb          = var.storage_mb
+
+  password_auth_enabled         = var.password_auth_enabled
+  active_directory_auth_enabled = var.active_directory_auth_enabled
+
+  backup_retention_days         = var.backup_retention_days
+  geo_redundant_backup_enabled  = var.geo_redundant_backup_enabled
+
+  delegated_subnet_id           = var.delegated_subnet_id
+
+  database_name       = var.database_name
 }
 
 ########################################
