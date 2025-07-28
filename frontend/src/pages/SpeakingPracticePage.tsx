@@ -1,9 +1,9 @@
-import { SpeakingPractice } from '../features';
+import { SpeakingPractice } from "../features";
 
 export const SpeakingPracticePage = () => {
-	return (
-		<div>
-			<SpeakingPractice />
-		</div>
-	);
+  return (
+    <div>
+      <SpeakingPractice />
+    </div>
+  );
 };

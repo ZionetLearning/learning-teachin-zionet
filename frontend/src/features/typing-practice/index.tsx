@@ -5,7 +5,7 @@ import { useTypingPractice } from "./hooks";
 
 export const TypingPractice = () => {
   const classes = useStyles();
-  
+
   const {
     exerciseState,
     handleLevelSelect,
