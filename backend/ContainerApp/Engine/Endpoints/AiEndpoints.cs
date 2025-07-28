@@ -1,6 +1,7 @@
 ﻿using Engine.Constants;
 using Engine.Models;
 using Engine.Services;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Engine.Endpoints;
 
@@ -8,24 +9,37 @@ public static class AiEndpoints
 {
     private sealed class ManagerToAiEndpoint { }
 
-    public static void MapAiEndpoints(this WebApplication app)
+    public static WebApplication MapAiEndpoints(this WebApplication app)
     {
-        app.MapPost($"/{TopicNames.ManagerToAi}",
-            async (AiRequestModel req,
-                   IChatAiService aiService,
-                   IAiReplyPublisher publisher,
-                   ILogger<ManagerToAiEndpoint> log,
-                   CancellationToken ct) =>
-            {
-                log.LogInformation("Received AI question {Id} from manager", req.Id);
+        #region HTTP POST
 
-                var response = await aiService.ProcessAsync(req, ct);
+        app.MapPost($"/{TopicNames.ManagerToAi}", ProcessQuestionAsync).WithTopic("pubsub", TopicNames.ManagerToAi);
 
-                await publisher.PublishAsync(response, req.ReplyToTopic, ct);
+        #endregion
 
-                return Results.Ok();
-            })
-            .WithTopic("pubsub", TopicNames.ManagerToAi);
-        
+        return app;
+    }
+
+    private static async Task<IResult> ProcessQuestionAsync(
+        [FromBody] AiRequestModel req,
+        [FromServices] IChatAiService aiService,
+        [FromServices] IAiReplyPublisher publisher,
+        [FromServices] ILogger<ManagerToAiEndpoint> log,
+        CancellationToken ct)
+    {
+        log.LogInformation("Received AI question {Id} from manager", req.Id);
+        try
+        {
+            var response = await aiService.ProcessAsync(req, ct);
+
+            await publisher.PublishAsync(response, req.ReplyToTopic, ct);
+
+            return Results.Ok();
+        }
+        catch (Exception ex)
+        {
+            log.LogError(ex, "Error processing AI question {Id}", req.Id);
+            return Results.Problem("An error occurred while processing the AI question.");
+        }
     }
 }

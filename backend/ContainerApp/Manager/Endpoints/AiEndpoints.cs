@@ -30,7 +30,6 @@ public static class AiEndpoints
         #endregion
 
         return app;
-
     }
 
 
@@ -77,7 +76,6 @@ public static class AiEndpoints
         }
     }
 
-
     private static async Task<IResult> PubSubAsync(
         [FromBody] AiResponseModel msg,
         [FromServices] IAiGatewayService aiService,
@@ -97,8 +95,4 @@ public static class AiEndpoints
         }
     }
         
-    
-
-    
-    
 }

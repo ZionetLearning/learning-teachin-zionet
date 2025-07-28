@@ -110,7 +110,7 @@ public static class ManagerEndpoints
         }
     }
 
-    public static async Task<IResult> DeleteTaskAsync(
+    private static async Task<IResult> DeleteTaskAsync(
         [FromRoute] int id,
         [FromServices] IManagerService managerService,
         [FromServices] ILogger<ManagerService> logger)
