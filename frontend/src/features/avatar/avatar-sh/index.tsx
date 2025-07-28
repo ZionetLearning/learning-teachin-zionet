@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";
 import avatar from "./assets/avatar.svg";
 
@@ -22,6 +22,11 @@ export const AvatarSh = () => {
   const classes = useStyles();
   const [currentViseme, setCurrentViseme] = useState<number>(0);
   const [text, setText] = useState("");
+
+ // forcing an error to test Error Boundary of Application Insights Azure
+  //  useEffect(() => {
+  //   throw new Error("AvatarSh Crashed! This is a test error for Application Insights.");
+  // }, []);
 
   const speakWithAzure = () => {
     if (!text.trim()) return;

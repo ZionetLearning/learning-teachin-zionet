@@ -1,7 +1,8 @@
 ﻿using Engine.Models;
 using Engine.Services;
-using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Text.RegularExpressions;
+using Xunit;
 
 namespace EngineComponentTests;
 
@@ -17,7 +18,6 @@ public class ChatAiServiceTests
     [SkippableFact(DisplayName = "ProcessAsync: answer contains 4 or four")]
     public async Task ProcessAsync_Returns_Number4()
     {
-        // Arrange
         var service = new ChatAiService(_fx.Kernel, NullLogger<ChatAiService>.Instance);
 
         var req = new AiRequestModel
@@ -29,15 +29,13 @@ public class ChatAiServiceTests
             ReplyToTopic = "ignored-in-test"
         };
 
-        // Act
         var resp = await service.ProcessAsync(req, CancellationToken.None);
 
-        // Assert
-        resp.Status.Should().Be("ok");
-        resp.Answer.Should().NotBeNullOrWhiteSpace();
+        Assert.Equal("ok", resp.Status);
+        Assert.False(string.IsNullOrWhiteSpace(resp.Answer));
 
         var answerLower = resp.Answer.ToLowerInvariant();
-        answerLower.Should().MatchRegex(@"\b4\b|four");
+        Assert.Matches(new Regex(@"\b4\b|four"), answerLower);
     }
 
     [CollectionDefinition("Kernel collection")]
