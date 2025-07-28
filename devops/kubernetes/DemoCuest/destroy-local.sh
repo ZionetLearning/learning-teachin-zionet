@@ -3,6 +3,7 @@
 set -e
 
 K8S_NAMESPACE="devops-model"
+LOKI_NAMESPACE="devops-logs"
 
 echo "WARNING: This will delete all resources in namespace '$K8S_NAMESPACE' and Dapr control plane. Continue? (y/N)"
 read -r confirm
@@ -21,6 +22,9 @@ kubectl delete pvc --all -n $K8S_NAMESPACE || true
 
 echo "Deleting the namespace $K8S_NAMESPACE..."
 kubectl delete namespace $K8S_NAMESPACE || true
+
+echo "Deleting the namespace $LOKI_NAMESPACE (Loki + Grafana)..."
+kubectl delete namespace $LOKI_NAMESPACE || true
 
 echo "Uninstalling Dapr from the cluster..."
 dapr uninstall -k --all
