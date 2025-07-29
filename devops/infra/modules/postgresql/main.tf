@@ -39,9 +39,9 @@ resource "azurerm_postgresql_flexible_server_database" "this" {
   collation = "en_US.utf8"
 
   # prevent the possibility of accidental data loss
-  lifecycle {
-    prevent_destroy = true
-  }
+  # lifecycle {
+  #    prevent_destroy = true
+  # }
 }
 
 resource "azurerm_postgresql_flexible_server_firewall_rule" "aks_integration" {
