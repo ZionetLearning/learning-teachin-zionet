@@ -39,7 +39,7 @@ jobs:
           echo "K8S_DIR=devops/kubernetes/" >> $GITHUB_ENV
           echo "NAMESPACE_FILE=devops/kubernetes/namespaces/namespace-dev.yaml" >> $GITHUB_ENV
           echo "DOCKER_REGISTRY=snir1551" >> $GITHUB_ENV
-          echo "AKS_RG=dev-zionet-learning" >> $GITHUB_ENV
+          echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
           echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
 
       - name: Get AKS credentials
@@ -71,7 +71,7 @@ jobs:
         run: |
           echo "Waiting for external IP for manager service..."
           for i in {1..30}; do
-            EXTERNAL_IP=$(kubectl -n devops-model get svc manager -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+            EXTERNAL_IP=$(kubectl -n dev get svc manager -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
             if [[ -n "$EXTERNAL_IP" ]]; then
               echo "External IP is ready: $EXTERNAL_IP"
               echo "app_url=http://$EXTERNAL_IP:5001" >> $GITHUB_OUTPUT
