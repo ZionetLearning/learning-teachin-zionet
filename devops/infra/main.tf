@@ -31,7 +31,7 @@ module "servicebus" {
 module "database" {
   source              = "./modules/postgresql"
 
-  server_name         = "pg-${var.resource_group_name}"
+  server_name         = var.database_server_name
   location            = var.db_location
   resource_group_name = azurerm_resource_group.main.name
 
