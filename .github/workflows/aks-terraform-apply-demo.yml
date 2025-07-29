@@ -1,4 +1,4 @@
-name: AKS - Terraform Apply with Provisioning
+name: AKS - Terraform Apply with Provisioning demo
 
 on:
   workflow_call:

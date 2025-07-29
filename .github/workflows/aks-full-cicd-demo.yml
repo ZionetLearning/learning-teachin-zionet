@@ -1,4 +1,4 @@
-name: AKS - Full CICD
+name: AKS - Full CICD Demo
 
 on:
   #push:
