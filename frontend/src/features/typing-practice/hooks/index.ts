@@ -1,1 +1,1 @@
-export * from './useTypingPractice'
+export * from "./useTypingPractice";

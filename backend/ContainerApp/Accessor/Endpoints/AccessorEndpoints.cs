@@ -10,40 +10,24 @@ public static class AccessorEndpoints
 {
     public static void MapAccessorEndpoints(this WebApplication app)
     {
+        app.MapGet("/task/{id:int}", GetTaskByIdAsync);
+        app.MapPost($"/{QueueNames.EngineToAccessor}-input", CreateTaskAsync);
+        app.MapPost($"/{QueueNames.TaskUpdateInput}", UpdateTaskNameAsync);
+        app.MapDelete("/task/{taskId}", DeleteTaskAsync);
 
-        #region HTTP GET
-
-        app.MapGet("/task/{id}", GetTaskAsync).WithName("GetTask");
-
-        #endregion
-
-
-        #region HTTP POST
-
-        app.MapPost($"/{QueueNames.EngineToAccessor}-input", SaveTaskAsync).WithName("SaveTask");
-
-        app.MapPost($"/{QueueNames.TaskUpdateInput}", UpdateTaskAsync).WithName("UpdateTask");
-
-        #endregion
-
-
-        #region HTTP DELETE
-
-        app.MapDelete("/task/{taskId}", DeleteTaskAsync).WithName("DeleteTask");
-
-        #endregion
     }
 
-
-    private static async Task<IResult> GetTaskAsync(
-        [FromRoute] int id,
+    #region HandlerMethods
+    public static async Task<IResult> GetTaskByIdAsync(
+        int id,
         [FromServices] IAccessorService accessorService,
-        [FromServices] ILogger<AccessorService> logger)
+        [FromServices] ILogger<AccessorService> logger
+    )
     {
         try
         {
             var task = await accessorService.GetTaskByIdAsync(id);
-            if (task is not null)
+            if (task != null)
             {
                 logger.LogInformation("Successfully retrieved task {Id}", task.Id);
                 return Results.Ok(task);
@@ -59,15 +43,14 @@ public static class AccessorEndpoints
         }
     }
 
-
-    private static async Task<IResult> SaveTaskAsync(
-        [FromBody] TaskModel task,
+    public static async Task<IResult> CreateTaskAsync(
+        TaskModel task,
         [FromServices] IAccessorService accessorService,
         [FromServices] ILogger<AccessorService> logger)
     {
         try
         {
-            await accessorService.SaveTaskAsync(task);
+            await accessorService.CreateTaskAsync(task);
             logger.LogInformation("Task {Id} saved successfully", task.Id);
             return Results.Ok(new { Status = "Saved", task.Id });
         }
@@ -78,58 +61,58 @@ public static class AccessorEndpoints
         }
     }
 
-
-    private static async Task<IResult> UpdateTaskAsync(
+    public static async Task<IResult> UpdateTaskNameAsync(
         [FromBody] UpdateTaskName request,
         [FromServices] IAccessorService accessorService,
         [FromServices] ILogger<AccessorService> logger)
     {
-        logger.LogInformation($"[Accessor] Received request to update task. Id: {request.Id}, NewName: {request.Name}");
+        logger.LogInformation("[Accessor] Received request to update task. Id: {Id}, NewName: {Name}", request.Id, request.Name);
 
         try
         {
             var success = await accessorService.UpdateTaskNameAsync(request.Id, request.Name);
             if (!success)
             {
-                logger.LogWarning($"[Accessor] Task with ID {request.Id} not found.");
+                logger.LogWarning("[Accessor] Task with ID {Id} not found.", request.Id);
                 return Results.NotFound($"Task with ID {request.Id} not found.");
             }
 
-            logger.LogInformation($"[Accessor] Task {request.Id} updated successfully.");
+            logger.LogInformation("[Accessor] Task {Id} updated successfully.", request.Id);
             return Results.Ok($"Task {request.Id} updated successfully.");
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, $"[Accessor] Failed to update task with ID {request.Id}");
+            logger.LogError(ex, "[Accessor] Failed to update task with ID {Id}", request.Id);
             return Results.Problem("Internal server error while updating task.");
         }
     }
 
-
-    private static async Task<IResult> DeleteTaskAsync(
-        [FromRoute] int taskId,
+    public static async Task<IResult> DeleteTaskAsync(
+        int taskId,
         [FromServices] IAccessorService accessorService,
         [FromServices] ILogger<AccessorService> logger)
     {
-        logger.LogInformation($"[Accessor] Received DELETE request for Task ID: {taskId}");
+        logger.LogInformation("[Accessor] Received DELETE request for Task ID: {TaskId}", taskId);
+
         try
         {
             var deleted = await accessorService.DeleteTaskAsync(taskId);
             if (!deleted)
             {
-                logger.LogWarning($"[Accessor] Task with ID {taskId} not found.");
+                logger.LogWarning("[Accessor] Task with ID {TaskId} not found.", taskId);
                 return Results.NotFound($"Task with ID {taskId} not found.");
             }
 
-            logger.LogInformation($"[Accessor] Task with ID {taskId} deleted successfully.");
+            logger.LogInformation("[Accessor] Task with ID {TaskId} deleted successfully.", taskId);
             return Results.Ok($"Task {taskId} deleted.");
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, $"[Accessor] Failed to delete task with ID {taskId}");
+            logger.LogError(ex, "[Accessor] Failed to delete task with ID {TaskId}", taskId);
             return Results.Problem("Internal server error while deleting task.");
         }
     }
 
+    #endregion
 
 }

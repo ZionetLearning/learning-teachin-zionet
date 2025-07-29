@@ -19,13 +19,12 @@ namespace Engine.Endpoints;
             return app;
         }
 
-
         private static async Task<IResult> ProcessTaskAsync(
             [FromBody] TaskModel task,
             [FromServices] IEngineService engineService,
             [FromServices] ILogger<EngineService> logger)
         {
-            logger.LogInformation($"Inside {nameof(ProcessTaskAsync)}");
+            logger.LogInformation("Inside {method}", nameof(ProcessTaskAsync));
             try
             {
                 logger.LogDebug("Received task from queue input: {Id} - {Name}", task.Id, task.Name);
@@ -40,5 +39,4 @@ namespace Engine.Endpoints;
             }
         }
     
-
 }
