@@ -15,16 +15,16 @@ resource "kubernetes_secret" "azure_service_bus" {
 ########################
 # Cosmos DB secret
 ########################
-resource "kubernetes_secret" "cosmosdb_connection" {
-  metadata {
-    name      = "cosmosdb-connection"                      # <── used by todoaccessor YAML
-    namespace = kubernetes_namespace.model.metadata[0].name
-  }
+# resource "kubernetes_secret" "cosmosdb_connection" {
+#   metadata {
+#     name      = "cosmosdb-connection"                      # <── used by todoaccessor YAML
+#     namespace = kubernetes_namespace.model.metadata[0].name
+#   }
 
-  data = {
-    CosmosDbConnectionString = module.cosmosdb.connection_string
-  }
-}
+#   data = {
+#     CosmosDbConnectionString = module.cosmosdb.connection_string
+#   }
+# }
 
 ########################
 # SignalR secret

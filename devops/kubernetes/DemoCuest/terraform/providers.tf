@@ -2,9 +2,9 @@ terraform {
   backend "azurerm" {
     resource_group_name  = "tfstate-rg"
     storage_account_name = "teachintfstate"
-    container_name       = "tfstate-demo-aks"
+    container_name       = "tfstate-aks123"
     key                  = "dev.terraform.tfstate"
-    use_azuread_auth     = true # added because of githubactions
+    #use_azuread_auth     = true # added because of githubactions
   }
 
   required_providers {
@@ -21,8 +21,8 @@ terraform {
 
 provider "azurerm" {
   features {}
-  #subscription_id = var.subscription_id # removed because of githubactions
-  #tenant_id       = var.tenant_id # removed because of githubactions
+  subscription_id = var.subscription_id # removed because of githubactions
+  tenant_id       = var.tenant_id # removed because of githubactions
 }
 
 provider "kubectl" {

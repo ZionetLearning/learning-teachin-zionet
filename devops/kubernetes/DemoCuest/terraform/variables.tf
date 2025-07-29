@@ -81,3 +81,27 @@ variable "signalr_sku_capacity" {
   type        = number
   default     = 1
 }
+
+variable "grafana_admin_user" {
+  description = "Grafana admin username"
+  type        = string
+  default     = "admin"
+}
+
+variable "grafana_admin_password" {
+  description = "Grafana admin password"
+  type        = string
+  default     = "admin123"
+}
+
+variable "grafana_namespace" {
+  description = "Namespace for Grafana"
+  type        = string
+  default     = "devops-logs"
+}
+
+variable "grafana_storage_class" {
+  description = "Storage class for Grafana PVC"
+  type        = string
+  default     = ""
+}

@@ -56,17 +56,17 @@ promtail:
                 __path__: /var/log/containers/*.log
           relabel_configs:
             - source_labels: [__path__]
-              regex: ".*/(?P<container>[^_]+)_(?P<pod>[^_]+)_(?P<namespace>[^_]+)-.*\\.log"
+              regex: '.*/(?P<container>[^_]+)_(?P<pod>[^_]+)_(?P<namespace>[^_]+)-.*\.log'
               target_label: container
-              replacement: "\$1"
+              replacement: "$$1"
             - source_labels: [__path__]
-              regex: ".*/(?P<container>[^_]+)_(?P<pod>[^_]+)_(?P<namespace>[^_]+)-.*\\.log"
+              regex: '.*/(?P<container>[^_]+)_(?P<pod>[^_]+)_(?P<namespace>[^_]+)-.*\.log'
               target_label: pod
-              replacement: "\$2"
+              replacement: "$$2"
             - source_labels: [__path__]
-              regex: ".*/(?P<container>[^_]+)_(?P<pod>[^_]+)_(?P<namespace>[^_]+)-.*\\.log"
+              regex: '.*/(?P<container>[^_]+)_(?P<pod>[^_]+)_(?P<namespace>[^_]+)-.*\.log'
               target_label: namespace
-              replacement: "\$3"
+              replacement: "$$3"
 EOF
 
 # === Step 2: Create dashboard configmap ===
@@ -101,12 +101,30 @@ data:
             "definition": "label_values(pod)",
             "sort": 1,
             "hide": 0,
-            "includeAll": false,
+            "includeAll": true,
             "multi": false,
             "current": {
-              "selected": false,
+              "selected": true,
               "text": "All",
-              "value": ""
+              "value": "$__all"
+            }
+          },
+          {
+            "name": "container",
+            "label": "Container",
+            "type": "query",
+            "datasource": "Loki",
+            "refresh": 2,
+            "query": "label_values(container)",
+            "definition": "label_values(container)",
+            "sort": 1,
+            "hide": 0,
+            "includeAll": true,
+            "multi": false,
+            "current": {
+              "selected": true,
+              "text": "All",
+              "value": "$__all"
             }
           }
         ]
@@ -114,10 +132,10 @@ data:
       "panels": [
         {
           "type": "logs",
-          "title": "Logs by Pod",
+          "title": "Logs by Pod and Container",
           "targets": [
             {
-              "expr": "{pod=\"\$pod\"}",
+              "expr": "{pod=\"\$pod\", container=\"\$container\"}",
               "refId": "A"
             }
           ],
@@ -134,6 +152,7 @@ data:
     }
 EOF
 
+
 # === Step 3: Install Loki + Grafana ===
 helm repo add grafana https://grafana.github.io/helm-charts
 helm repo update
@@ -149,7 +168,12 @@ helm upgrade --install loki-stack grafana/loki-stack \
   --wait
 
 echo ""
-echo "Logs setup complete!"
-echo "Grafana: http://localhost:32000"
-echo "Login: admin / admin123"
-echo "Dashboard: Pod Logs → use dropdown to filter logs by pod"
+echo "✅ Logs setup complete!"
+echo "🌍 Grafana: http://localhost:32000"
+echo "👤 Login: admin / admin123"
+echo "📊 Dashboard: Pod Logs → use dropdown to filter logs by pod"
+
+
+## Check on PVC storage
+
+## Check on building loki on existing 'Managed grafana' in azure on our aks

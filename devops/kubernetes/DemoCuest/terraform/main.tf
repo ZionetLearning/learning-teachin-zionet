@@ -33,14 +33,30 @@ module "signalr" {
   sku_capacity        = var.signalr_sku_capacity
 }
 
-module "cosmosdb" {
-  source                = "./modules/cosmosdb"
-  resource_group_name   = azurerm_resource_group.main.name
-  location              = "North Europe" # over ride because it made error that 'full'
-  cosmosdb_account_name = var.cosmosdb_account_name
-  cosmosdb_sql_database_name = var.cosmosdb_sql_database_name
-  cosmosdb_sql_container_name = var.cosmosdb_sql_container_name
-  cosmosdb_partition_key_path = var.cosmosdb_partition_key_path
+# module "cosmosdb" {
+#   source                = "./modules/cosmosdb"
+#   resource_group_name   = azurerm_resource_group.main.name
+#   location              = "North Europe" # over ride because it made error that 'full'
+#   cosmosdb_account_name = var.cosmosdb_account_name
+#   cosmosdb_sql_database_name = var.cosmosdb_sql_database_name
+#   cosmosdb_sql_container_name = var.cosmosdb_sql_container_name
+#   cosmosdb_partition_key_path = var.cosmosdb_partition_key_path
+# }
+
+module "grafana" {
+  source                    = "./modules/grafana"
+  namespace                 = var.grafana_namespace
+  admin_user                = var.grafana_admin_user
+  admin_password            = var.grafana_admin_password
+  service_type              = "LoadBalancer"
+  service_port              = 80
+  sidecar_dashboards        = true
+  persistence_enabled       = true
+  persistence_size          = "5Gi"
+  persistence_storage_class = var.grafana_storage_class
+  persistence_access_modes  = ["ReadWriteOnce"]
+  persistence_finalizers    = ["retain"]
+  grafana_chart_version     = "7.3.8"
 }
 
 ########################################

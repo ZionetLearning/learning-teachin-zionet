@@ -34,3 +34,13 @@ output "aks_cluster_ca_certificate" {
 output "namespace_model" {
   value = kubernetes_namespace.model.metadata[0].name
 }
+
+output "grafana_admin_password" {
+  description = "Grafana admin password"
+  value       = module.grafana.grafana_admin_password
+}
+
+output "grafana_namespace" {
+  description = "Grafana namespace"
+  value       = module.grafana.namespace
+}

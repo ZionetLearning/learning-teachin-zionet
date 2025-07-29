@@ -32,3 +32,7 @@ terraform destroy -var-file="terraform.tfvars.dev"
  - apply new/updated yaml `kubectl apply -f ./todoaccessor-deployment.yaml -n devops-model`
 
  - restart pod  `kubectl rollout restart deployment/todoaccessor -n devops-model`
+
+
+ - Tip: If you have other resources managed by Terraform that you do NOT want to destroy, you can target just a specific module, for example Grafana module:
+`terraform destroy -target=module.grafana`
