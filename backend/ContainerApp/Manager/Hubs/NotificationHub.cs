@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Logging;
+using Manager.Models;
 
 namespace Manager.Hubs;
 
@@ -17,7 +17,7 @@ public class NotificationHub : Hub
         try
         {
             _logger.LogInformation("Sending task update for TaskId: {TaskId}, Status: {Status}", taskId, status);
-            await Clients.All.SendAsync("TaskUpdated", taskId, status);
+            await Clients.All.SendAsync("TaskUpdated", new TaskUpdateMessage { TaskId = taskId, Status = status });
             _logger.LogInformation("Task update sent successfully for TaskId: {TaskId}", taskId);
         }
         catch (Exception ex)
@@ -31,7 +31,7 @@ public class NotificationHub : Hub
         try
         {
             _logger.LogInformation("Sending notification with message: {Message}", message);
-            await Clients.All.SendAsync("NotificationReceived", message);
+            await Clients.All.SendAsync("NotificationReceived", new NotificationMessage { Message = message });
             _logger.LogInformation("Notification sent successfully");
         }
         catch (Exception ex)
@@ -40,4 +40,3 @@ public class NotificationHub : Hub
         }
     }
 }
-

@@ -8,7 +8,7 @@ ENV PATH="$PATH:/root/.dotnet/tools"
 RUN mkdir /workspace
 WORKDIR /workspace
 
-COPY /settings.json /workspace/
+COPY settings.json .
 # init default settings.json
 RUN asrs-emulator upstream init
 
