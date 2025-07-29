@@ -1,0 +1,7 @@
+location               = "westeurope"
+resource_group_name    = "prod"
+aks_cluster_name       = ""
+servicebus_namespace   = "sb-prod"
+subscription_id        = ""
+tenant_id              = ""
+docker_registry        = ""
