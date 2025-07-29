@@ -10,6 +10,7 @@ metadata:
   namespace: dev
 spec:
   type: LoadBalancer
+  loadBalancerIP: ${AKS_PUBLIC_IP} # Use the public IP from the cluster
   ports:
     - name: "5001"
       port: 5001
