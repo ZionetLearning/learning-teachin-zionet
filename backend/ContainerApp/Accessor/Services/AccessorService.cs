@@ -1,18 +1,20 @@
 ﻿using Accessor.Models;
+using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
-
 
 namespace Accessor.Services;
     public class AccessorService : IAccessorService
     {
         private readonly ILogger<AccessorService> _logger;
         private readonly AccessorDbContext _dbContext;
+        private readonly IMapper _mapper;
         private readonly IMemoryCache _cache;
         private readonly MemoryCacheEntryOptions _cacheOptions;
 
-    public AccessorService(AccessorDbContext dbContext,
+    public AccessorService(AccessorDbContext dbContext, 
         ILogger<AccessorService> logger,
+        IMapper mapper,
         IMemoryCache cache,
         MemoryCacheEntryOptions cacheOptions)
         {
@@ -20,9 +22,11 @@ namespace Accessor.Services;
         _logger = logger;
         _cache = cache;
         _cacheOptions =  cacheOptions ?? throw new ArgumentNullException(nameof(cacheOptions));
+        _mapper = mapper;
+
     }
 
-    
+
     public async Task InitializeAsync()
         {
         _logger.LogInformation("Initializing DB...");

@@ -1,6 +1,8 @@
-﻿using Dapr.Client;
+﻿using AutoMapper;
+using Dapr.Client;
 using Manager.Constants;
 using Manager.Models;
+
 
 namespace Manager.Services;
 
@@ -9,12 +11,17 @@ public class ManagerService : IManagerService
     private readonly IConfiguration _configuration;
     private readonly ILogger<ManagerService> _logger;
     private readonly DaprClient _daprClient;
+    private readonly IMapper _mapper;
 
-    public ManagerService(IConfiguration configuration, ILogger<ManagerService> logger, DaprClient daprClient)
+    public ManagerService(IConfiguration configuration, 
+        ILogger<ManagerService> logger, 
+        DaprClient daprClient,
+        IMapper mapper)
     {
         _configuration = configuration;
         _logger = logger;
         _daprClient = daprClient;
+        _mapper = mapper;
     }
 
     public async Task<TaskModel?> GetTaskAsync(int id)
@@ -27,7 +34,12 @@ public class ManagerService : IManagerService
                 "accessor",
                 $"task/{id}"
             );
-
+            if (task is null)
+            {
+                _logger.LogWarning("Task with ID {TaskId} not found in Accessor service.", id);
+                return null;
+            }
+            _logger.LogInformation("Retrieved task with ID {TaskId} from Accessor service.", id);
             return task;
         }
         
@@ -38,6 +50,7 @@ public class ManagerService : IManagerService
         }
         
     }
+
 
     public async Task<(bool success, string message)> ProcessTaskAsync(TaskModel task)
     {
@@ -95,6 +108,7 @@ public class ManagerService : IManagerService
             return false;
         }
     }
+
 
     public async Task<bool> DeleteTask(int id)
     {
