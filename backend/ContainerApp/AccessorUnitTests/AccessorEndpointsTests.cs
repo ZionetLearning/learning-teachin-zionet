@@ -1,27 +1,21 @@
 ﻿using Accessor.Endpoints;
 using Microsoft.AspNetCore.Http;
 using Xunit.Abstractions;
-
-namespace AccessorUnitTests;
-
-using Xunit;
 using Moq;
 using Accessor.Models;
 using Accessor.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http.HttpResults;
 
+namespace AccessorUnitTests;
 
 public class AccessorEndpointsTests
 {
-    private readonly ITestOutputHelper _testOutputHelper;
     private readonly Mock<IAccessorService> _mockService;
     private readonly Mock<ILogger> _mockLogger;
 
-    public AccessorEndpointsTests(ITestOutputHelper testOutputHelper)
+    public AccessorEndpointsTests()
     {
-        _testOutputHelper = testOutputHelper;
-
         _mockService = new Mock<IAccessorService>();
         _mockLogger = new Mock<ILogger>();
     }
@@ -35,7 +29,7 @@ public class AccessorEndpointsTests
         _mockService.Setup(s => s.GetTaskByIdAsync(1)).ReturnsAsync(task);
 
         // Act
-        var result = await AccessorEndpoints.GetTaskById(1, _mockService.Object, _mockLogger.Object);
+        var result = await AccessorEndpoints.GetTaskByIdAsync(1, _mockService.Object, _mockLogger.Object);
 
         // Assert
         var okResult = Assert.IsType<Ok<TaskModel>>(result);
@@ -50,7 +44,7 @@ public class AccessorEndpointsTests
         _mockService.Setup(s => s.GetTaskByIdAsync(taskId)).ReturnsAsync((TaskModel?)null);
 
         // Act
-        var result = await AccessorEndpoints.GetTaskById(taskId, _mockService.Object, _mockLogger.Object);
+        var result = await AccessorEndpoints.GetTaskByIdAsync(taskId, _mockService.Object, _mockLogger.Object);
 
         // Assert
         var statusResult = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
@@ -72,7 +66,7 @@ public class AccessorEndpointsTests
         var task = new TaskModel { Id = 42, Name = "UnitTest Task" };
 
         // Act
-        var result = await AccessorEndpoints.CreateTask(task, _mockService.Object, _mockLogger.Object);
+        var result = await AccessorEndpoints.CreateTaskAsync(task, _mockService.Object, _mockLogger.Object);
         // Assert
         var okResult = Assert.IsType<IValueHttpResult>(result, exactMatch: false);
 
@@ -97,7 +91,7 @@ public class AccessorEndpointsTests
         _mockService.Setup(s => s.UpdateTaskNameAsync(99, "Updated Name")).ReturnsAsync(true);
 
         // Act
-        var result = await AccessorEndpoints.UpdateTaskName(request, _mockService.Object, _mockLogger.Object);
+        var result = await AccessorEndpoints.UpdateTaskNameAsync(request, _mockService.Object, _mockLogger.Object);
 
         // Assert
         var okResult = Assert.IsType<Ok<string>>(result);
@@ -114,7 +108,7 @@ public class AccessorEndpointsTests
         _mockService.Setup(s => s.UpdateTaskNameAsync(request.Id, request.Name)).ReturnsAsync(false);
 
         // Act
-        var result = await AccessorEndpoints.UpdateTaskName(request, _mockService.Object, _mockLogger.Object);
+        var result = await AccessorEndpoints.UpdateTaskNameAsync(request, _mockService.Object, _mockLogger.Object);
 
         // Assert
         var statusResult = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
@@ -135,7 +129,7 @@ public class AccessorEndpointsTests
         _mockService.Setup(s => s.DeleteTaskAsync(taskId)).ReturnsAsync(true);
 
         // Act
-        var result = await AccessorEndpoints.DeleteTask(taskId, _mockService.Object, _mockLogger.Object);
+        var result = await AccessorEndpoints.DeleteTaskAsync(taskId, _mockService.Object, _mockLogger.Object);
 
         // Assert
         var okResult = Assert.IsType<Ok<string>>(result);
