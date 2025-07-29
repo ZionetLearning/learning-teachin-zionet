@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "vitest": "vitest run"
   },
   "dependencies": {
     "@microsoft/applicationinsights-react-js": "^3.4.3",
