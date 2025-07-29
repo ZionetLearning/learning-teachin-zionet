@@ -25,7 +25,7 @@ module "servicebus" {
 }
 
 module "database" {
-  source              = "../../modules/postgresql"
+  source              = "./modules/postgresql"
 
   server_name         = "pg-${var.resource_group_name}"
   location            = var.db_location
