@@ -36,8 +36,8 @@ jobs:
 
       - name: Set up variables
         run: |
-          echo "K8S_DIR=devops/kubernetes/DemoCuest/k8s" >> $GITHUB_ENV
-          echo "NAMESPACE_FILE=devops/kubernetes/DemoCuest/k8s/namespace-model.yaml" >> $GITHUB_ENV
+          echo "K8S_DIR=devops/kubernetes/" >> $GITHUB_ENV
+          echo "NAMESPACE_FILE=devops/kubernetes/namespaces/namespace-dev.yaml" >> $GITHUB_ENV
           echo "DOCKER_REGISTRY=snir1551" >> $GITHUB_ENV
           echo "AKS_RG=democuest-aks-rg-dev" >> $GITHUB_ENV
           echo "AKS_NAME=democuest-aks-dev" >> $GITHUB_ENV
@@ -58,8 +58,6 @@ jobs:
       - name: Apply services
         run: kubectl apply -f "$K8S_DIR/services" --recursive
 
-      - name: Apply shared resources
-        run: kubectl apply -f "$K8S_DIR/shared" --recursive
 
       - name: Apply deployments (with registry substitution)
         run: |
