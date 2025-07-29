@@ -41,14 +41,22 @@ builder.Services.AddSingleton(sp =>
 builder.Services.AddSingleton(_ =>
     new ServiceBusClient(builder.Configuration["ServiceBus:ConnectionString"]));
 builder.Services.AddQueue<TaskModel, EngineQueueHandler>(
-    QueueNames.ManagerToEngine);
+    QueueNames.ManagerToEngine,
+    settings =>
+    {
+        settings.MaxConcurrentCalls = 5;
+        settings.PrefetchCount = 10;
+        settings.ProcessingDelayMs = 200;
+        settings.MaxRetryAttempts = 3;
+        settings.RetryDelaySeconds = 2;
+    });
 
 var app = builder.Build();
 
 app.UseCloudEvents();
 app.MapControllers();
 app.MapSubscribeHandler();
-app.MapEngineEndpoints();
+//app.MapEngineEndpoints();
 app.MapAiEndpoints();
 
 app.Run();
