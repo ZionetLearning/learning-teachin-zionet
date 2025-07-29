@@ -1,6 +1,10 @@
+using Azure.Messaging.ServiceBus;
+using Engine.Constants;
 using Engine.Endpoints;
+using Engine.Messaging;
 using Engine.Models;
 using Engine.Services;
+using Microsoft.Azure.Amqp.Sasl;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 
@@ -33,6 +37,11 @@ builder.Services.AddSingleton(sp =>
                      apiKey: cfg.ApiKey)
                  .Build();
 });
+
+builder.Services.AddSingleton(_ =>
+    new ServiceBusClient(builder.Configuration["ServiceBus:ConnectionString"]));
+builder.Services.AddQueue<TaskModel, EngineQueueHandler>(
+    QueueNames.ManagerToEngine);
 
 var app = builder.Build();
 
