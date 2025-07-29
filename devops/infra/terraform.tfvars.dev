@@ -1,7 +1,7 @@
 resource_group_name    = "dev"
 location               = "westeurope"
 aks_cluster_name       = "aks-cluster-dev"
-servicebus_namespace   = "sb-dev"
+servicebus_namespace   = "servicebus-dev"
 subscription_id        = "90ea4c2f-1eee-4ec9-927d-ed24c563003e"
 tenant_id              = "a814ee32-f813-4a36-9686-1b9268183e27"
 docker_registry        = "snir1551"

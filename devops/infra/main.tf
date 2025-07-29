@@ -13,6 +13,8 @@ module "aks" {
   cluster_name        = var.aks_cluster_name
   node_count          = var.node_count
   vm_size             = var.vm_size
+  
+  depends_on = [azurerm_resource_group.main]
 }
 
 module "servicebus" {
@@ -22,6 +24,8 @@ module "servicebus" {
   namespace_name      = var.servicebus_namespace
   sku                 = var.servicebus_sku
   queue_names         = var.queue_names
+  
+  depends_on = [azurerm_resource_group.main]
 }
 
 module "database" {
@@ -29,7 +33,7 @@ module "database" {
 
   server_name         = "pg-${var.resource_group_name}"
   location            = var.db_location
-  resource_group_name = var.resource_group_name
+  resource_group_name = azurerm_resource_group.main.name
 
   admin_username      = var.admin_username
   admin_password      = var.admin_password
@@ -47,6 +51,8 @@ module "database" {
   delegated_subnet_id           = var.delegated_subnet_id
 
   database_name       = var.database_name
+  
+  depends_on = [azurerm_resource_group.main]
 }
 
 
@@ -99,5 +105,5 @@ resource "helm_release" "dapr" {
 # 4. devops-model namespace for the workloads
 ########################################
 resource "kubernetes_namespace" "model" {
-  metadata { name = "devops-model" }
+  metadata { name = "dev" }
 }
