@@ -6,6 +6,16 @@ on:
       environment:
         required: true
         type: string
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Select environment'
+        required: true
+        default: 'Development'
+        type: choice
+        options:
+          - Development
+          - Production     
 
 jobs:
   aks-terraform:
