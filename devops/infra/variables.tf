@@ -84,7 +84,6 @@ variable "signalr_sku_capacity" {
 variable "database_server_name" {
   description = "Name of the PostgreSQL server (must be globally unique)"
   type        = string
-  default     = "pg-zionet-dev-2025" 
 }
 
 variable "db_location" {
