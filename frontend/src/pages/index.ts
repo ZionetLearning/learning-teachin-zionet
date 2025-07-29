@@ -7,3 +7,4 @@ export * from "./ChatOuPage";
 export * from "./HomePages";
 export * from "./ChatShPage";
 export * from "./TypingPracticePage";
+export * from "./SpeakingPracticePage";

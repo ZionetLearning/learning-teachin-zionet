@@ -74,6 +74,12 @@ export const HomePage = () => {
           >
             Typing Practice
           </button>
+          <button
+            className={classes.button}
+            onClick={() => handleNavigation("speaking")}
+          >
+            Speaking Practice
+          </button>
         </div>
       </div>
     </div>

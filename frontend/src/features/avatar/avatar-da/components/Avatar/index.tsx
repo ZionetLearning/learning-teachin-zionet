@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, type JSX } from "react";
 
 import { Html, useAnimations, useFBX, useGLTF } from "@react-three/drei";
-import { useFrame, useGraph } from "@react-three/fiber";
+import { useFrame, useGraph, type ThreeElements } from "@react-three/fiber";
 import { useControls } from "leva";
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";
 import * as THREE from "three";
@@ -10,6 +10,17 @@ import { SkeletonUtils, type GLTF } from "three-stdlib";
 import { IdleFbx, TalkingFbx, modelGlb } from "../../assets";
 
 import { useStyles } from "./style";
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace React {
+    // eslint-disable-next-line @typescript-eslint/no-namespace
+    namespace JSX {
+      // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+      interface IntrinsicElements extends ThreeElements {}
+    }
+  }
+}
 
 type ActionName = "Idle" | "Talking";
 

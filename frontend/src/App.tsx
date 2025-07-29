@@ -9,6 +9,7 @@ import {
   ChatShPage,
   AvatarDaPage,
   TypingPracticePage,
+  SpeakingPracticePage,
 } from "./pages";
 import { BackToMenuLayout } from "./components";
 
@@ -29,6 +30,7 @@ function App() {
           <Route path="/avatar/sh" element={<AvatarShPage />} />
           <Route path="/avatar/da" element={<AvatarDaPage />} />
           <Route path="/typing" element={<TypingPracticePage />} />
+          <Route path="/speaking" element={<SpeakingPracticePage />} />
         </Route>
       </Routes>
     </BrowserRouter>
