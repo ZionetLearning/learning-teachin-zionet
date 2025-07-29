@@ -6,6 +6,7 @@ cd terraform
 terraform init
 terraform plan -var-file="terraform.tfvars.dev"
 terraform apply -var-file="terraform.tfvars.dev"
+
 ```
 
 ### after apply is done, run the script to set up the yaml files
@@ -32,3 +33,12 @@ terraform destroy -var-file="terraform.tfvars.dev"
  - apply new/updated yaml `kubectl apply -f ./todoaccessor-deployment.yaml -n devops-model`
 
  - restart pod  `kubectl rollout restart deployment/todoaccessor -n devops-model`
+
+
+
+ curl -X POST http://9.163.145.18:5003/engine-to-accessor-input -H "Content-Type: application/json" -d '{"id":1,"name":"Test Task","description":"Test description"}'
+
+ curl http://9.163.145.18:5003/task/1
+
+
+ kubectl get pods -n devops-model

@@ -50,8 +50,12 @@ spec:
             - name: dapr-config
               mountPath: /dapr/config.yaml
               subPath: config.yaml
+            - name: dapr-components
+              mountPath: /dapr/components
       restartPolicy: Always
       volumes:
         - name: dapr-config
           configMap:
             name: dapr-config
+        - name: dapr-components
+          emptyDir: {}
