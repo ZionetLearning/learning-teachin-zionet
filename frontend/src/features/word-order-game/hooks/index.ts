@@ -1,0 +1,1 @@
+export { useHebrewSentence } from "./useHebrewSentence";
