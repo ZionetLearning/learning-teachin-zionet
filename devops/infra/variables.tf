@@ -78,3 +78,51 @@ variable "signalr_sku_capacity" {
   type        = number
   default     = 1
 }
+
+#------------- Postgres Variables -------------
+variable "db_location" {
+    description = "Location for the PostgreSQL database"
+    type        = string
+    default     = "Israel Central"
+}
+
+variable "admin_username" {
+  description = "Admin username for the PostgreSQL server"
+  type        = string
+}
+variable "admin_password" {
+  description = "Admin password for the PostgreSQL server"
+  type        = string
+  sensitive   = true
+}
+# db_version
+variable "db_version" {
+  type        = string
+  description = "PostgreSQL version"
+}
+
+# sku_name
+variable "sku_name" {
+  type        = string
+  description = "SKU name for the PostgreSQL server"
+}
+#storage_mb
+variable "storage_mb" {
+ 
+
+variable "db_username" {
+  description = "Username for the PostgreSQL database"
+  type        = string
+}
+
+variable "db_password" {
+  description = "Password for the PostgreSQL database"
+  type        = string
+  sensitive   = true
+}
+
+variable "db_name" {
+  description = "Name of the PostgreSQL database"
+  type        = string
+}
+

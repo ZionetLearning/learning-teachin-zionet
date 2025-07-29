@@ -1,5 +1,5 @@
-location               = "westeurope"
 resource_group_name    = "dev"
+location               = "westeurope"
 aks_cluster_name       = "aks-cluster-dev"
 servicebus_namespace   = "sb-dev"
 subscription_id        = "90ea4c2f-1eee-4ec9-927d-ed24c563003e"
