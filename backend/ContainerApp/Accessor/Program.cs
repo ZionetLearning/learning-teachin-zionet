@@ -28,6 +28,7 @@ builder.Services.AddSingleton<MemoryCacheEntryOptions>(_ =>
 builder.Services.AddDbContext<AccessorDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
 
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 var app = builder.Build();
 
