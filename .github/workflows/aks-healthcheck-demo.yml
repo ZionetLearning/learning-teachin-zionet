@@ -1,0 +1,21 @@
+name: AKS - Healthcheck App
+
+on:
+  workflow_call:
+    inputs:
+      app_url:
+        required: true
+        type: string
+      environment:
+        required: true
+        type: string
+
+jobs:
+  healthcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check app health
+        run: |
+          echo "Checking health at ${{ inputs.app_url }}"
+          curl -s -o /dev/null -w "%{http_code}" -L "${{ inputs.app_url }}" | grep -q "200" \
+            && echo "✅ UP" || (echo "❌ DOWN" && exit 1)

@@ -44,7 +44,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Set Terraform working directory
-        run: echo "TF_DIR=./devops/infra" >> $GITHUB_ENV
+        run: echo "TF_DIR=./devops/kubernetes/DemoCuest/terraform" >> $GITHUB_ENV
 
       - name: Extract environment variables
         id: extract_env
