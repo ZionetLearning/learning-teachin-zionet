@@ -40,7 +40,7 @@ namespace Accessor.Services;
             }
         }
         catch (Exception ex)
-            {
+        {
             _logger.LogError(ex, "Failed to connect to PostgreSQL during startup.");
             throw;
         }
@@ -162,20 +162,20 @@ namespace Accessor.Services;
         _logger.LogInformation("Inside:{Method}", nameof(DeleteTaskAsync));
         try
             {
-            var task = await _dbContext.Tasks.FindAsync(taskId);
-            if (task == null) return false;
+                var task = await _dbContext.Tasks.FindAsync(taskId);
+                if (task == null) return false;
 
             _dbContext.Tasks.Remove(task);
             await _dbContext.SaveChangesAsync();
             _cache.Remove(taskId);
             return true;
             }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to delete task.");
-            return false;
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to delete task.");
+                return false;
+            }
         }
-    }
 
 
     private static string GenerateEtag(TaskModel task)
