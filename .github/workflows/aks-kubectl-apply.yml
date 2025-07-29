@@ -39,8 +39,8 @@ jobs:
           echo "K8S_DIR=devops/kubernetes/" >> $GITHUB_ENV
           echo "NAMESPACE_FILE=devops/kubernetes/namespaces/namespace-dev.yaml" >> $GITHUB_ENV
           echo "DOCKER_REGISTRY=snir1551" >> $GITHUB_ENV
-          echo "AKS_RG=democuest-aks-rg-dev" >> $GITHUB_ENV
-          echo "AKS_NAME=democuest-aks-dev" >> $GITHUB_ENV
+          echo "AKS_RG=dev-zionet-learning" >> $GITHUB_ENV
+          echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
 
       - name: Get AKS credentials
         run: |
