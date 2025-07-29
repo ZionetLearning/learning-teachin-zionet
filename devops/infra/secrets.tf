@@ -27,6 +27,19 @@ resource "kubernetes_secret" "azure_service_bus" {
 # }
 
 ########################
+# PostgreSQL secret
+########################
+resource "kubernetes_secret" "postgres_connection" {
+  metadata {
+    name      = "postgres-connection"
+    namespace = kubernetes_namespace.model.metadata[0].name
+  }
+  data = {
+    PostgreSQLConnectionString = module.database.postgres_connection_string
+  }
+}
+
+########################
 # SignalR secret
 ########################
 resource "kubernetes_secret" "signalr_connection" {

@@ -34,3 +34,19 @@ output "aks_cluster_ca_certificate" {
 output "namespace_model" {
   value = kubernetes_namespace.model.metadata[0].name
 }
+
+# Connection strings for application deployment
+output "servicebus_connection_string" {
+  value     = module.servicebus.connection_string
+  sensitive = true
+}
+
+output "postgres_connection_string" {
+  value     = module.database.postgres_connection_string
+  sensitive = true
+}
+
+output "signalr_connection_string" {
+  value     = module.signalr.primary_connection_string
+  sensitive = true
+}

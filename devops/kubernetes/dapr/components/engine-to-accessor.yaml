@@ -1,7 +1,7 @@
 apiVersion: dapr.io/v1alpha1
 kind: Component
 metadata:
-  name: engine-to-accessor-input
+  name: engine-to-accessor
   namespace: dev
 spec:
   type: bindings.azure.servicebusqueues
@@ -14,8 +14,8 @@ spec:
     - name: queueName
       value: "engine-to-accessor"
     - name: direction
-      value: input
+      value: output
     - name: disableEntityManagement
       value: "true"
 scopes:
-  - accessor
+  - engine

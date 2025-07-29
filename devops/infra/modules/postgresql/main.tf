@@ -12,10 +12,22 @@ resource "azurerm_postgresql_flexible_server" "this" {
   backup_retention_days        = var.backup_retention_days
   geo_redundant_backup_enabled = var.geo_redundant_backup_enabled
 
+  # Explicitly set zone to null for Basic SKUs or remove zone entirely
+  zone = null
+
   authentication {
     password_auth_enabled         = var.password_auth_enabled
     active_directory_auth_enabled = var.active_directory_auth_enabled
   }
 
   delegated_subnet_id = var.delegated_subnet_id
+
+  # Add lifecycle rule to prevent zone changes
+  lifecycle {
+    ignore_changes = [
+      zone,
+      high_availability
+    ]
+  }
+
 }

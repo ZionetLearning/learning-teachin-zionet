@@ -1,21 +1,21 @@
 apiVersion: dapr.io/v1alpha1
 kind: Component
 metadata:
-  name: engine-to-accessor-input
+  name: pubsub
   namespace: dev
 spec:
-  type: bindings.azure.servicebusqueues
+  type: pubsub.azure.servicebus
   version: v1
   metadata:
     - name: connectionString
       secretKeyRef:
         name: azure-service-bus-secret
         key: AzureServiceBusConnectionString
-    - name: queueName
-      value: "engine-to-accessor"
-    - name: direction
-      value: input
+    - name: consumerID
+      value: "engine"
     - name: disableEntityManagement
       value: "true"
 scopes:
+  - manager
+  - engine
   - accessor
