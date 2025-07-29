@@ -22,7 +22,7 @@ spec:
       containers:
         - name: accessor
           image: accessor:latest
-          imagePullPolicy: IfNotPresent  # Changed from Never to IfNotPresent
+          # imagePullPolicy: IfNotPresent  # Changed from Never to IfNotPresent
           ports:
           - containerPort: 5003 # Port on which the application listens
           env:
