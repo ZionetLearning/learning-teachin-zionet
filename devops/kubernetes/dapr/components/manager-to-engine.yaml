@@ -19,3 +19,4 @@ spec:
       value: "true"
 scopes:
   - manager
+  - engine

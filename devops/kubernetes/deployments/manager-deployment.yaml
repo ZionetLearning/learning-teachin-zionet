@@ -16,6 +16,9 @@ spec:
   template:
     metadata:
       annotations:
+        dapr.io/enabled: "true" # Enable Dapr for this pod
+        dapr.io/app-id: "manager" # Dapr application ID
+        dapr.io/app-port: "5001"  # Dapr app port
         kompose.cmd: D:\Tool\kompose.exe convert -f .\docker-compose.yaml
         kompose.version: 1.36.0 (ae2a39403)
       labels:
@@ -30,32 +33,4 @@ spec:
           ports:
             - containerPort: 5001
               protocol: TCP
-        - args:
-            - ./daprd
-            - -app-id
-            - manager
-            - -app-port
-            - "5001"
-            - -placement-host-address
-            - placement:50006
-            - -dapr-http-port
-            - "3500"
-            - --resources-path
-            - /dapr/components
-            - -config
-            - /dapr/config.yaml
-          image: daprio/daprd:latest
-          name: manager-dapr
-          volumeMounts:
-            - name: dapr-config
-              mountPath: /dapr/config.yaml
-              subPath: config.yaml
-            - name: dapr-components
-              mountPath: /dapr/components
       restartPolicy: Always
-      volumes:
-        - name: dapr-config
-          configMap:
-            name: dapr-config
-        - name: dapr-components
-          emptyDir: {}

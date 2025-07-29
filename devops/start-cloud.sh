@@ -7,10 +7,10 @@ NAMESPACE_FILE="$K8S_DIR/namespaces/namespace-dev.yaml"
 export DOCKER_REGISTRY="snir1551" # or read from env/.env file
 
 # Step 1: Deploy infrastructure with Terraform
-echo "Deploying infrastructure with Terraform..."
-cd infra
-terraform apply -auto-approve
-cd ..
+# echo "Deploying infrastructure with Terraform..."
+# cd infra
+# terraform apply -auto-approve
+# cd ..
 
 # Step 2: Connect to Azure AKS
 az aks get-credentials --resource-group dev-zionet-learning-2025 --name aks-cluster-dev --overwrite-existing
