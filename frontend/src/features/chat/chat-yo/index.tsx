@@ -5,7 +5,6 @@ import { useStyles } from "./style";
 import avatar from "./assets/avatar1.png";
 import "react-chat-elements/dist/main.css";
 
-
 export const ChatYo = () => {
   const classes = useStyles();
   const [input, setInput] = useState("");
@@ -15,7 +14,6 @@ export const ChatYo = () => {
     sendMessage(input);
     setInput("");
   };
-
 
   return (
     <div className={classes.chatWrapper}>
@@ -44,7 +42,6 @@ export const ChatYo = () => {
             retracted={false}
             avatar={msg.position === "left" ? avatarUrl : undefined}
           />
-
         ))}
         {loading && (
           <MessageBox
@@ -70,7 +67,9 @@ export const ChatYo = () => {
         placeholder="Type a message..."
         className={classes.input}
         value={input}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+          setInput(e.target.value)
+        }
         maxHeight={100}
         onKeyDown={(e) => e.key === "Enter" && handleSend()}
         rightButtons={
@@ -81,5 +80,4 @@ export const ChatYo = () => {
       />
     </div>
   );
-}
-
+};
