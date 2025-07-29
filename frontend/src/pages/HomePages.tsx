@@ -80,6 +80,12 @@ export const HomePage = () => {
           >
             Word Order Game
           </button>
+          <button
+            className={classes.button}
+            onClick={() => handleNavigation("speaking")}
+          >
+            Speaking Practice
+          </button>
         </div>
       </div>
     </div>

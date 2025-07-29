@@ -1,0 +1,4 @@
+services:
+  azurefunctionsproject:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development

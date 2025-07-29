@@ -2,8 +2,7 @@
 using Accessor.Models;
 using Accessor.Services;
 using Microsoft.AspNetCore.Mvc;
-using System.Text.Json.Nodes;
-using Accessor.Models;
+
 
 namespace Accessor.Endpoints
 {
@@ -11,11 +10,16 @@ namespace Accessor.Endpoints
     {
         public static void MapAccessorEndpoints(this WebApplication app)
         {
-            app.MapGet("/task/{id:int}", async (int id, IAccessorService service, ILogger<AccessorService> logger) =>
+
+            #region HTTP GET
+
+            app.MapGet("/task/{id:int}", async (int id,
+                IAccessorService accessorService,
+                ILogger<AccessorService> logger) =>
             {
                 try
                 {
-                    var task = await service.GetTaskByIdAsync(id);
+                    var task = await accessorService.GetTaskByIdAsync(id);
                     if (task is not null)
                     {
                         logger.LogInformation("Successfully retrieved task {Id}", task.Id);
@@ -32,25 +36,26 @@ namespace Accessor.Endpoints
                 }
             });
 
+            #endregion
 
 
+            #region HTTP POST
 
-            app.MapPost($"/{QueueNames.EngineToAccessor}-input", async (TaskModel task, IAccessorService service, ILogger<AccessorService> logger) =>
-            {
-                try
+            app.MapPost($"/{QueueNames.EngineToAccessor}-input",
+                async (TaskModel task, IAccessorService accessorService, ILogger<AccessorService> logger) =>
                 {
-                    await service.SaveTaskAsync(task);
-                    logger.LogInformation("Task {Id} saved successfully", task.Id);
-                    return Results.Ok(new { Status = "Saved", task.Id });
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Failed to save task {Id}", task.Id);
-                    return Results.Problem("An error occurred while saving the task.");
-                }
-            });
-
-
+                    try
+                    {
+                        await accessorService.CreateTaskAsync(task);
+                        logger.LogInformation("Task {Id} saved successfully", task.Id);
+                        return Results.Ok(new { Status = "Saved", task.Id });
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Failed to save task {Id}", task.Id);
+                        return Results.Problem("An error occurred while saving the task.");
+                    }
+                });
 
 
             app.MapPost($"/{QueueNames.TaskUpdateInput}", async (
@@ -79,7 +84,10 @@ namespace Accessor.Endpoints
                 }
             });
 
+            #endregion
 
+
+            #region HTTP DELETE
 
             app.MapDelete("/task/{taskId}", async (int taskId,
                 IAccessorService accessorService,
@@ -106,14 +114,7 @@ namespace Accessor.Endpoints
 
             });
 
-
-
-
-
-
-
-
-
+            #endregion
 
         }
     }

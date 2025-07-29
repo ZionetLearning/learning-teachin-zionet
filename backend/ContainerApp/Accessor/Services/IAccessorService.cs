@@ -3,12 +3,11 @@
 namespace Accessor.Services
 {
     public interface IAccessorService
-    {
-        Task<TaskModel?> GetTaskByIdAsync(int id);
-        Task SaveTaskAsync(TaskModel task);
+    {        
         Task InitializeAsync();
+        Task<TaskModel?> GetTaskByIdAsync(int id);
+        Task CreateTaskAsync(TaskModel task);
         Task<bool> DeleteTaskAsync(int taskId);
         Task<bool> UpdateTaskNameAsync(int taskId, string newName);
-
     }
 }

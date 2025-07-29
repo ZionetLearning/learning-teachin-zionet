@@ -1,4 +1,4 @@
-name: Healthcheck App
+name: AKS - Healthcheck App
 
 on:
   workflow_call:
@@ -17,4 +17,5 @@ jobs:
       - name: Check app health
         run: |
           echo "Checking health at ${{ inputs.app_url }}"
-          curl -sSf ${{ inputs.app_url }} || exit 1
+          curl -s -o /dev/null -w "%{http_code}" -L "${{ inputs.app_url }}" | grep -q "200" \
+            && echo "✅ UP" || (echo "❌ DOWN" && exit 1)
