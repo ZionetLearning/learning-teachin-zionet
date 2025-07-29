@@ -1,4 +1,4 @@
-resource_group_name    = "dev-zionet-learning"
+resource_group_name    = "dev-zionet-learning-2025"
 location               = "westeurope"
 aks_cluster_name       = "aks-cluster-dev"
 servicebus_namespace   = "servicebus-dev-zionet-learning-2025"
