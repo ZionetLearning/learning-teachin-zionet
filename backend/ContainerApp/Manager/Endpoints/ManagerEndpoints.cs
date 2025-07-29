@@ -12,6 +12,8 @@ public static class ManagerEndpoints
 
         #region HTTP GET
 
+        app.MapGet("/", () => "Manager Service is running!");
+
         app.MapGet("/task/{id:int}", async (int id,
             IManagerService managerService,
             ILogger<ManagerService> logger) =>

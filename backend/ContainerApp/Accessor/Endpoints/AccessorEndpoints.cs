@@ -10,6 +10,10 @@ namespace Accessor.Endpoints
     {
         public static void MapAccessorEndpoints(this WebApplication app)
         {
+
+            app.MapGet("/", () => "Accessor Service is running!");
+
+
             app.MapGet("/task/{id:int}", async (int id, 
                 IAccessorService accessorService, 
                 ILogger<AccessorService> logger) =>
