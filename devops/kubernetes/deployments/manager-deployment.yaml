@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: D:\Tool\kompose.exe convert -f .\docker-compose.yaml
+    kompose.version: 1.36.0 (ae2a39403)
+  labels:
+    io.kompose.service: manager
+  name: manager
+  namespace: devops-model
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: manager
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: D:\Tool\kompose.exe convert -f .\docker-compose.yaml
+        kompose.version: 1.36.0 (ae2a39403)
+      labels:
+        io.kompose.service: manager
+    spec:
+      containers:
+        - env:
+            - name: ASPNETCORE_URLS
+              value: http://+:5001
+          image: ${DOCKER_REGISTRY}/manager:latest
+          name: manager
+          ports:
+            - containerPort: 5001
+              protocol: TCP
+        - args:
+            - ./daprd
+            - -app-id
+            - manager
+            - -app-port
+            - "5001"
+            - -placement-host-address
+            - placement:50006
+            - -dapr-http-port
+            - "3500"
+            - --resources-path
+            - /dapr/components
+            - -config
+            - /dapr/config.yaml
+          image: daprio/daprd:latest
+          name: manager-dapr
+          volumeMounts:
+            - name: dapr-config
+              mountPath: /dapr/config.yaml
+              subPath: config.yaml
+            - name: dapr-components
+              mountPath: /dapr/components
+      restartPolicy: Always
+      volumes:
+        - name: dapr-config
+          configMap:
+            name: dapr-config
+        - name: dapr-components
+          emptyDir: {}
