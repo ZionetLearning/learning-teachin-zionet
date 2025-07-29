@@ -1,7 +1,7 @@
 ﻿using Dapr.Client;
 using Manager.Constants;
 using Manager.Models;
-using Manager.Services.Clients;
+
 
 namespace Manager.Services;
 
@@ -11,13 +11,19 @@ public class ManagerService : IManagerService
     private readonly ILogger<ManagerService> _logger;
     private readonly IAccessorClient _accessorClient;
     private readonly IEngineClient _engineClient;
+    private readonly IMapper _mapper;
 
-    public ManagerService(IConfiguration configuration, ILogger<ManagerService> logger, IAccessorClient accessorClient, IEngineClient engineClient)
+    public ManagerService(IConfiguration configuration, 
+        ILogger<ManagerService> logger,
+        IAccessorClient accessorClient,
+        IEngineClient engineClient,
+        IMapper mapper)
     {
         _configuration = configuration;
         _logger = logger;
         _accessorClient = accessorClient;
         _engineClient = engineClient;
+        _mapper = mapper;
     }
 
     public async Task<TaskModel?> GetTaskAsync(int id)
