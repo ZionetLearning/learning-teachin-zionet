@@ -35,7 +35,7 @@ spec:
               value: "5432"
             - name: DB_USER
               value: postgres
-          image: snir1551/accessor:latest
+          image: ${DOCKER_REGISTRY}/accessor:latest
           name: accessor
           ports:
             - containerPort: 5003

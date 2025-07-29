@@ -25,7 +25,7 @@ spec:
         - env:
             - name: ASPNETCORE_URLS
               value: http://+:5001
-          image: snir1551/manager:latest
+          image: ${DOCKER_REGISTRY}/manager:latest
           name: manager
           ports:
             - containerPort: 5001

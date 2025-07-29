@@ -25,7 +25,7 @@ spec:
         - env:
             - name: ASPNETCORE_URLS
               value: http://+:5002
-          image: snir1551/engine:latest
+          image: ${DOCKER_REGISTRY}/engine:latest
           name: engine
           ports:
             - containerPort: 5002
