@@ -28,13 +28,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ComponentTests", "Component
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EngineComponentTests", "EngineComponentTests\EngineComponentTests.csproj", "{6A311F7E-C7E8-42D5-ABB5-BAEC78C6B9C4}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UnitTests", "UnitTests", "{CCE68049-BAEB-48AA-A291-5456FD33A27A}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AccessorUnitTests", "AccessorUnitTests\AccessorUnitTests.csproj", "{6BB9E23C-FC36-4D87-90CC-53991BC34682}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UnitTests", "UnitTests", "{CCE68049-BAEB-48AA-A291-5456FD33A27A}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AccessorUnitTests", "AccessorUnitTests\AccessorUnitTests.csproj", "{6BB9E23C-FC36-4D87-90CC-53991BC34682}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SignalREmulator", "SignalREmulator", "{8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}"
 	ProjectSection(SolutionItems) = preProject
