@@ -67,27 +67,43 @@ module "signalr" {
 ########################################
 # 2. AKS kube-config for providers
 ########################################
+# data "azurerm_kubernetes_cluster" "main" {
+#   name                = module.aks.cluster_name
+#   resource_group_name = azurerm_resource_group.main.name
+# }
+
+# provider "kubernetes" {
+#   host                   = module.aks.kube_config["host"]
+#   client_certificate     = base64decode(module.aks.kube_config["client_certificate"])
+#   client_key             = base64decode(module.aks.kube_config["client_key"])
+#   cluster_ca_certificate = base64decode(module.aks.kube_config["cluster_ca_certificate"])
+# }
+
+# provider "helm" {
+#   kubernetes {
+#     host                   = data.azurerm_kubernetes_cluster.main.kube_config[0].host
+#     client_certificate     = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].client_certificate)
+#     client_key             = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].client_key)
+#     cluster_ca_certificate = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].cluster_ca_certificate)
+#   }
+# }
 data "azurerm_kubernetes_cluster" "main" {
   name                = module.aks.cluster_name
   resource_group_name = azurerm_resource_group.main.name
 }
 
 provider "kubernetes" {
-  host                   = module.aks.kube_config["host"]
-  client_certificate     = base64decode(module.aks.kube_config["client_certificate"])
-  client_key             = base64decode(module.aks.kube_config["client_key"])
-  cluster_ca_certificate = base64decode(module.aks.kube_config["cluster_ca_certificate"])
+  host                   = data.azurerm_kubernetes_cluster.main.kube_config[0].host
+  client_certificate     = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].client_certificate)
+  client_key             = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].client_key)
+  cluster_ca_certificate = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].cluster_ca_certificate)
 }
 
 provider "helm" {
   kubernetes {
-    host                   = data.azurerm_kubernetes_cluster.main.kube_config[0].host
-    client_certificate     = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].client_certificate)
-    client_key             = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].client_key)
-    cluster_ca_certificate = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].cluster_ca_certificate)
+    config_path = "~/.kube/config" 
   }
 }
-
 ########################################
 # 3. Dapr control-plane
 ########################################
