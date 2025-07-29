@@ -21,13 +21,11 @@ public static class AccessorEndpoints
     public static async Task<IResult> GetTaskByIdAsync(
         int id,
         [FromServices] IAccessorService accessorService,
-        [FromServices] ILogger logger
+        [FromServices] ILogger<AccessorService> logger
     )
-    { 
-
+    {
         try
         {
-                
             var task = await accessorService.GetTaskByIdAsync(id);
             if (task != null)
             {
@@ -44,11 +42,11 @@ public static class AccessorEndpoints
             return Results.Problem("An error occurred while fetching the task.");
         }
     }
-        
+
     public static async Task<IResult> CreateTaskAsync(
         TaskModel task,
         [FromServices] IAccessorService accessorService,
-        [FromServices] ILogger logger)
+        [FromServices] ILogger<AccessorService> logger)
     {
         try
         {
@@ -62,11 +60,11 @@ public static class AccessorEndpoints
             return Results.Problem("An error occurred while saving the task.");
         }
     }
-        
+
     public static async Task<IResult> UpdateTaskNameAsync(
         [FromBody] UpdateTaskName request,
         [FromServices] IAccessorService accessorService,
-        [FromServices] ILogger logger)
+        [FromServices] ILogger<AccessorService> logger)
     {
         logger.LogInformation("[Accessor] Received request to update task. Id: {Id}, NewName: {Name}", request.Id, request.Name);
 
@@ -88,11 +86,11 @@ public static class AccessorEndpoints
             return Results.Problem("Internal server error while updating task.");
         }
     }
-        
+
     public static async Task<IResult> DeleteTaskAsync(
         int taskId,
         [FromServices] IAccessorService accessorService,
-        [FromServices] ILogger logger)
+        [FromServices] ILogger<AccessorService> logger)
     {
         logger.LogInformation("[Accessor] Received DELETE request for Task ID: {TaskId}", taskId);
 
@@ -114,7 +112,7 @@ public static class AccessorEndpoints
             return Results.Problem("Internal server error while deleting task.");
         }
     }
-        
+
     #endregion
-        
+
 }

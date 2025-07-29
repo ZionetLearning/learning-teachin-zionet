@@ -1,7 +1,8 @@
+using AutoMapper;
 using Dapr.Client;
 using Engine.Constants;
 using Engine.Models;
-using AutoMapper;
+using Microsoft.Extensions.Logging;
 
 namespace Engine.Services
 {
@@ -24,7 +25,7 @@ namespace Engine.Services
 
         public async Task ProcessTaskAsync(TaskModel task)
         {
-            _logger.LogInformation($"Inside: {nameof(ProcessTaskAsync)}");
+            _logger.LogInformation("Inside {method}", nameof(ProcessTaskAsync));
             if (task is null)
             {
                 _logger.LogWarning("Attempted to process a null task");

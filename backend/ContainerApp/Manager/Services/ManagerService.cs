@@ -26,7 +26,7 @@ public class ManagerService : IManagerService
 
     public async Task<TaskModel?> GetTaskAsync(int id)
     {
-        _logger.LogInformation($"Inside:{nameof(GetTaskAsync)}");
+        _logger.LogInformation("Inside:{method}", nameof(GetTaskAsync));
         try
         {
             var task = await _daprClient.InvokeMethodAsync<TaskModel>(
@@ -48,13 +48,11 @@ public class ManagerService : IManagerService
             _logger.LogError(ex, "Failed to get task with ID {TaskId} from Accessor service.", id);
             throw;
         }
-        
     }
-
 
     public async Task<(bool success, string message)> ProcessTaskAsync(TaskModel task)
     {
-        _logger.LogInformation($"Inside: {nameof(ProcessTaskAsync)}");
+        _logger.LogInformation("Inside: {method}", nameof(ProcessTaskAsync));
         if (task is null)
         {
             _logger.LogWarning("Null task received for processing");
@@ -78,10 +76,9 @@ public class ManagerService : IManagerService
         }
     }
 
-
     public async Task<bool> UpdateTaskName(int id, string newTaskName)
     {
-        _logger.LogInformation($"Inside {nameof(UpdateTaskName)}");
+        _logger.LogInformation("Inside {method}", nameof(UpdateTaskName));
         try
         {
             if (id <= 0 || string.IsNullOrEmpty(newTaskName))
@@ -109,10 +106,9 @@ public class ManagerService : IManagerService
         }
     }
 
-
     public async Task<bool> DeleteTask(int id)
     {
-        _logger.LogInformation($"Inside {nameof(DeleteTask)}");
+        _logger.LogInformation("Inside {method}", nameof(DeleteTask));
         try
         {
             if (id <= 0)
