@@ -21,8 +21,8 @@ spec:
     spec: # This spec defines the pod's containers and their configurations
       containers:
         - name: accessor
-          image: accessor:latest
-          # imagePullPolicy: IfNotPresent  # Changed from Never to IfNotPresent
+          image: ${DOCKER_REGISTRY}/accessor:latest
+          #imagePullPolicy: IfNotPresent  # Changed from Never to IfNotPresent
           ports:
           - containerPort: 5003 # Port on which the application listens
           env:
