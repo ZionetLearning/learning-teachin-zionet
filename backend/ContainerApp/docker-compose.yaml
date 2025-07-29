@@ -13,10 +13,6 @@ services:
       networks:
         - microservice-net
 
- 
-
-
-
   # -------------------- Azure SQL Edge --------------------
   sqledge:
     container_name: sqledge
@@ -31,7 +27,6 @@ services:
     networks:
       - sb-emulator
     restart: unless-stopped
-
 
   # -------------------- Azure Service Bus Emulator --------------------
   servicebus-emulator:
@@ -59,7 +54,6 @@ services:
       timeout: 5s
       retries: 15
 
-
 # ------------------------- PostgreSQL DB --------------------------
   postgres:
     image: postgres:15
@@ -75,7 +69,6 @@ services:
         - pgdata:/var/lib/postgresql/data
     networks:
         - microservice-net
- 
 
   # ---------------------- pgAdmin for PostgreSQL ----------------------
   pgadmin:
@@ -89,6 +82,16 @@ services:
       networks:
         - microservice-net
 
+  # ---------------------- Redis ----------------------
+  redis:
+    image: redis:6.2
+    container_name: redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - microservice-net
+
   # ------------------------ Manager Service ---------------------------
   manager:
     build:
@@ -100,6 +103,7 @@ services:
       - ASPNETCORE_URLS=http://+:5001
     depends_on:
       - servicebus-emulator
+      - redis
     networks:
       - microservice-net
       - sb-emulator
@@ -134,6 +138,7 @@ services:
       - ASPNETCORE_URLS=http://+:5002
     depends_on:
       - servicebus-emulator
+      - redis
     networks:
       - microservice-net
       - sb-emulator
@@ -174,6 +179,7 @@ services:
     depends_on:
       - servicebus-emulator
       - postgres
+      - redis
     networks:
       - microservice-net
       - sb-emulator
