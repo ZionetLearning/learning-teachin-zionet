@@ -39,3 +39,42 @@ obj/
 # Configuration files
 # ===============================
 *.env
+
+# ===============================
+# Terraform
+# ===============================
+# Terraform state files
+*.tfstate
+*.tfstate.*
+
+# Crash log files
+crash.log
+
+# Terraform plan files
+*.tfplan
+
+# Terraform variable overrides (optional, can contain secrets)
+# *.tfvars
+# *.tfvars.json
+
+# Sensitive or local configuration
+.terraformrc
+terraform.rc
+
+# Terraform working directory
+.terraform/
+
+# Local overrides (if used)
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Editor and OS-specific
+.DS_Store
+Thumbs.db
+*.swp
+*.bak
+*.tmp
+.idea/
+.vscode/
