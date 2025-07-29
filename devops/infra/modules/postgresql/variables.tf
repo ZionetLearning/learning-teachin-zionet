@@ -75,3 +75,8 @@ variable "database_name" {
   type        = string
   description = "Name of the PostgreSQL database"
 }
+
+variable "aks_public_ip" {
+  type        = string
+  description = "Public IP of the AKS cluster"
+}

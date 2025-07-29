@@ -31,3 +31,17 @@ resource "azurerm_postgresql_flexible_server" "this" {
   }
 
 }
+
+resource "azurerm_postgresql_flexible_database" "this" {
+  name      = var.database_name
+  server_id = azurerm_postgresql_flexible_server.this.id
+  charset   = "UTF8"
+  collation = "en_US.utf8"
+}
+
+resource "azurerm_postgresql_flexible_server_firewall_rule" "aks_integration" {
+  name                = "aks-integration"
+  server_id           = azurerm_postgresql_flexible_server.this.id
+  start_ip_address    = var.aks_public_ip
+  end_ip_address      = var.aks_public_ip
+}
