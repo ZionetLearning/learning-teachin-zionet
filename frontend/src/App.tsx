@@ -9,7 +9,7 @@ import {
   ChatShPage,
   AvatarDaPage,
   TypingPracticePage,
-  WordOrderGamePage
+  WordOrderGamePage,
 } from "./pages";
 import { BackToMenuLayout } from "./components";
 

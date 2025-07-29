@@ -10,7 +10,7 @@ const ssml = (text: string, voice = VOICE_DEFAULT, ratePercent = 0) => {
     <prosody rate="${ratePercent}%">${text}</prosody>
   </voice>
 </speak>`.trim();
-}
+};
 
 const arrayBufferToUrl = (buf: ArrayBuffer, mime = "audio/mp3") => {
   const blob = new Blob([buf], { type: mime });
@@ -24,7 +24,7 @@ const arrayBufferToUrl = (buf: ArrayBuffer, mime = "audio/mp3") => {
 export const playSentenceCached = async (
   text: string,
   voiceName?: string,
-  ratePercent?: number
+  ratePercent?: number,
 ): Promise<void> => {
   const sentence = text.trim();
   if (!sentence) throw new Error("Text cannot be empty");
@@ -43,7 +43,10 @@ export const playSentenceCached = async (
 
   const speechKey = import.meta.env.VITE_AZURE_SPEECH_KEY!;
   const speechRegion = import.meta.env.VITE_AZURE_REGION!;
-  const speechConfig = sdk.SpeechConfig.fromSubscription(speechKey, speechRegion);
+  const speechConfig = sdk.SpeechConfig.fromSubscription(
+    speechKey,
+    speechRegion,
+  );
   speechConfig.speechSynthesisVoiceName = voice;
 
   const synthesizer = new sdk.SpeechSynthesizer(speechConfig);
@@ -67,22 +70,22 @@ export const playSentenceCached = async (
       (err) => {
         synthesizer.close();
         reject(new Error(err));
-      }
+      },
     );
   });
-}
+};
 
 // Clear all cached audio (call on "Next" or when leaving the page)
 export const clearSpeechCache = () => {
   for (const url of cache.values()) URL.revokeObjectURL(url);
   cache.clear();
-}
+};
 
 // clear cache for a specific sentence/voice/rate.
 export const clearSentenceFromCache = (
   text: string,
   voiceName?: string,
-  ratePercent?: number
+  ratePercent?: number,
 ) => {
   const key = `${voiceName || VOICE_DEFAULT}|${ratePercent ?? 0}|${text.trim()}`;
   const url = cache.get(key);
@@ -90,4 +93,4 @@ export const clearSentenceFromCache = (
     URL.revokeObjectURL(url);
     cache.delete(key);
   }
-}
+};
