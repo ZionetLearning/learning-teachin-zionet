@@ -22,6 +22,7 @@ export const I18nTranslateProvider = ({ children }: Props) => {
           fallbackLng: "en",
           debug: false,
           interpolation: { escapeValue: false },
+          partialBundledLanguages: true,
           resources,
         });
       initialized.current = true;
