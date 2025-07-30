@@ -12,5 +12,5 @@ createRoot(document.getElementById("root")!).render(
     <AppInsightsErrorBoundary boundaryName="FrontendRootApp">
       <App />
     </AppInsightsErrorBoundary>
-  </StrictMode>
+  </StrictMode>,
 );
