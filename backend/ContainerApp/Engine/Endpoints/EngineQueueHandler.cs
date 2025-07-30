@@ -26,6 +26,7 @@ namespace Engine.Endpoints
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed processing task {Id}", message.Id);
+                throw;
             }
         }
     }

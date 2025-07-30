@@ -35,6 +35,12 @@ namespace Engine.Messaging
 
             _processor.ProcessMessageAsync += async args =>
             {
+                var now = DateTimeOffset.UtcNow;
+                var lockedUntil = args.Message.LockedUntil;
+                var lockTimeout = lockedUntil - now;
+
+                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                linkedCts.CancelAfter(lockTimeout);
                 try
                 {
                     var msg = JsonSerializer.Deserialize<T>(args.Message.Body);
@@ -47,10 +53,10 @@ namespace Engine.Messaging
 
                     await retryPolicy.ExecuteAsync(async () =>
                     {
-                        await handler(msg, ct);
+                        await handler(msg, linkedCts.Token);
 
                         if (_settings.ProcessingDelayMs > 0)
-                            await Task.Delay(_settings.ProcessingDelayMs, ct);
+                            await Task.Delay(_settings.ProcessingDelayMs, linkedCts.Token);
                     });
 
                     await args.CompleteMessageAsync(args.Message, ct);
@@ -64,6 +70,11 @@ namespace Engine.Messaging
                 {
                     _logger.LogWarning(nex, "Non-retryable error. Dead-lettering message.");
                     await args.DeadLetterMessageAsync(args.Message, cancellationToken: ct);
+                }
+                catch (OperationCanceledException) when (linkedCts.IsCancellationRequested)
+                {
+                    _logger.LogWarning("Handler exceeded lock duration. Abandoning message.");
+                    await args.AbandonMessageAsync(args.Message, cancellationToken: ct);
                 }
                 catch (Exception ex)
                 {
