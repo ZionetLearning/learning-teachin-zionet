@@ -1,0 +1,52 @@
+{
+  "Routes": [
+    {
+      "UpstreamPathTemplate": "/task/{id}",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "manager",
+          "Port": 5001
+        }
+      ],
+      "DownstreamPathTemplate": "/task/{id}"
+    },
+    {
+      "UpstreamPathTemplate": "/task",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "manager",
+          "Port": 5001
+        }
+      ],
+      "DownstreamPathTemplate": "/task"
+    },
+    {
+      "UpstreamPathTemplate": "/task/{id}/{name}",
+      "UpstreamHttpMethod": [ "PUT" ],
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "manager",
+          "Port": 5001
+        }
+      ],
+      "DownstreamPathTemplate": "/task/{id}/{name}"
+    },
+    {
+      "UpstreamPathTemplate": "/task/{id}",
+      "UpstreamHttpMethod": [ "DELETE" ],
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "manager",
+          "Port": 5001
+        }
+      ],
+      "DownstreamPathTemplate": "/task/{id}"
+    }
+  ]
+}
