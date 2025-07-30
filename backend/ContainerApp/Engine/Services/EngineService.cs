@@ -1,6 +1,8 @@
+using AutoMapper;
 using Dapr.Client;
 using Engine.Constants;
 using Engine.Models;
+using Microsoft.Extensions.Logging;
 
 namespace Engine.Services
 {
@@ -8,23 +10,22 @@ namespace Engine.Services
     {
         private readonly DaprClient _daprClient;
         private readonly ILogger<EngineService> _logger;
-        private static readonly List<TaskModel> _log = new();
+        private readonly IMapper _mapper;
 
-        public EngineService(DaprClient daprClient, ILogger<EngineService> logger)
+
+        public EngineService(DaprClient daprClient, 
+            ILogger<EngineService> logger,
+            IMapper mapper)
         {
             _daprClient = daprClient;
             _logger = logger;
+            _mapper = mapper;
         }
 
-        public Task<List<TaskModel>> GetAllTasksAsync()
-        {
-            _logger.LogDebug("Returning all {Count} tasks from log", _log.Count);
-            return Task.FromResult(_log);
-        }
 
         public async Task ProcessTaskAsync(TaskModel task)
         {
-            _logger.LogInformation($"Inside: {nameof(ProcessTaskAsync)}");
+            _logger.LogInformation("Inside {method}", nameof(ProcessTaskAsync));
             if (task is null)
             {
                 _logger.LogWarning("Attempted to process a null task");
