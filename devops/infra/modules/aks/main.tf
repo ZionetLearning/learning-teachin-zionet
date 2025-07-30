@@ -25,10 +25,10 @@ resource "azurerm_kubernetes_cluster" "main" {
   network_profile {
     network_plugin     = "azure"
     load_balancer_sku  = "standard"
-    outbound_type      = "userAssigned"
+    outbound_type      = "loadBalancer"
     load_balancer_profile {
-    outbound_ip_address_ids = [azurerm_public_ip.aks_outbound_ip.id]
-  }
+      outbound_ip_address_ids = [azurerm_public_ip.aks_outbound_ip.id]
+    }
   }
 
 }
