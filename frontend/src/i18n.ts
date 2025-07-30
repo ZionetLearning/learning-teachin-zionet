@@ -5,14 +5,14 @@ i18n.use(initReactI18next).init({
   resources: {
     en: {
       translation: {
-        "welcome": "Welcome",
-      }
+        welcome: "Welcome",
+      },
     },
     he: {
       translation: {
-        "welcome": "ברוך הבא",
-      }
-    }
+        welcome: "ברוך הבא",
+      },
+    },
   },
   lng: "en",
   fallbackLng: "en",

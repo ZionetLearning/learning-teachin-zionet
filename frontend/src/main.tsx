@@ -4,7 +4,7 @@ import "./index.css";
 import App from "./App.tsx";
 import { AppInsightsErrorBoundary } from "./components";
 import { appInsights } from "./appInsights";
-import { I18nTranslateProvider } from './providers/i18n-translate-provider';
+import { I18nTranslateProvider } from "./providers/i18n-translate-provider";
 
 appInsights.loadAppInsights();
 

@@ -1,10 +1,10 @@
-import { useEffect, useRef } from 'react';
-import type { ReactNode } from 'react';
-import { I18nextProvider } from 'react-i18next';
-import i18n from 'i18next';
-import { initReactI18next } from 'react-i18next';
-import LanguageDetector from 'i18next-browser-languagedetector';
-import { resources } from '../../i18n/locale';
+import { useEffect, useRef } from "react";
+import type { ReactNode } from "react";
+import { I18nextProvider } from "react-i18next";
+import i18n from "i18next";
+import { initReactI18next } from "react-i18next";
+import LanguageDetector from "i18next-browser-languagedetector";
+import { resources } from "../../i18n/locale";
 
 interface Props {
   children: ReactNode;
@@ -19,10 +19,10 @@ export const I18nTranslateProvider = ({ children }: Props) => {
         .use(LanguageDetector)
         .use(initReactI18next)
         .init({
-          fallbackLng: 'en',
+          fallbackLng: "en",
           debug: false,
           interpolation: { escapeValue: false },
-          resources
+          resources,
         });
       initialized.current = true;
     }
