@@ -1,6 +1,8 @@
-﻿using Dapr.Client;
+﻿using AutoMapper;
+using Dapr.Client;
 using Manager.Constants;
 using Manager.Models;
+
 
 namespace Manager.Services;
 
@@ -9,17 +11,22 @@ public class ManagerService : IManagerService
     private readonly IConfiguration _configuration;
     private readonly ILogger<ManagerService> _logger;
     private readonly DaprClient _daprClient;
+    private readonly IMapper _mapper;
 
-    public ManagerService(IConfiguration configuration, ILogger<ManagerService> logger, DaprClient daprClient)
+    public ManagerService(IConfiguration configuration, 
+        ILogger<ManagerService> logger, 
+        DaprClient daprClient,
+        IMapper mapper)
     {
         _configuration = configuration;
         _logger = logger;
         _daprClient = daprClient;
+        _mapper = mapper;
     }
 
     public async Task<TaskModel?> GetTaskAsync(int id)
     {
-        _logger.LogInformation($"Inside:{nameof(GetTaskAsync)}");
+        _logger.LogInformation("Inside:{method}", nameof(GetTaskAsync));
         try
         {
             var task = await _daprClient.InvokeMethodAsync<TaskModel>(
@@ -27,7 +34,12 @@ public class ManagerService : IManagerService
                 "accessor",
                 $"task/{id}"
             );
-
+            if (task is null)
+            {
+                _logger.LogWarning("Task with ID {TaskId} not found in Accessor service.", id);
+                return null;
+            }
+            _logger.LogInformation("Retrieved task with ID {TaskId} from Accessor service.", id);
             return task;
         }
         
@@ -36,12 +48,11 @@ public class ManagerService : IManagerService
             _logger.LogError(ex, "Failed to get task with ID {TaskId} from Accessor service.", id);
             throw;
         }
-        
     }
 
     public async Task<(bool success, string message)> ProcessTaskAsync(TaskModel task)
     {
-        _logger.LogInformation($"Inside: {nameof(ProcessTaskAsync)}");
+        _logger.LogInformation("Inside: {method}", nameof(ProcessTaskAsync));
         if (task is null)
         {
             _logger.LogWarning("Null task received for processing");
@@ -65,10 +76,9 @@ public class ManagerService : IManagerService
         }
     }
 
-
     public async Task<bool> UpdateTaskName(int id, string newTaskName)
     {
-        _logger.LogInformation($"Inside {nameof(UpdateTaskName)}");
+        _logger.LogInformation("Inside {method}", nameof(UpdateTaskName));
         try
         {
             if (id <= 0 || string.IsNullOrEmpty(newTaskName))
@@ -98,7 +108,7 @@ public class ManagerService : IManagerService
 
     public async Task<bool> DeleteTask(int id)
     {
-        _logger.LogInformation($"Inside {nameof(DeleteTask)}");
+        _logger.LogInformation("Inside {method}", nameof(DeleteTask));
         try
         {
             if (id <= 0)

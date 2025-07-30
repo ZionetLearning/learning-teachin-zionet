@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { ExerciseState, DifficultyLevel, Exercise } from "../types";
 import { getRandomExercise, compareTexts } from "../utils";
-import { speakHebrew } from "../../../services";
+import { speakHebrew } from "../../../../services";
 
 export const useTypingPractice = () => {
   const [exerciseState, setExerciseState] = useState<ExerciseState>({

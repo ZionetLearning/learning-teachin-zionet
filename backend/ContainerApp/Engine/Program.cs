@@ -50,6 +50,8 @@ builder.Services.AddQueue<TaskModel, EngineQueueHandler>(
         settings.MaxRetryAttempts = 3;
         settings.RetryDelaySeconds = 2;
     });
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
 
 var app = builder.Build();
 

@@ -8,3 +8,4 @@ export * from "./HomePages";
 export * from "./ChatShPage";
 export * from "./TypingPracticePage";
 export * from "./SpeakingPracticePage";
+export * from "./WordOrderGamePage";
