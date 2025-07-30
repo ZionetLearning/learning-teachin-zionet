@@ -12,15 +12,15 @@ vi.mock("../hooks", () => {
         {
           text: "Hello",
           position: "right",
-          date: new Date()
+          date: new Date(),
         },
         {
           text: "Hi there!",
           position: "left",
-          date: new Date()
-        }
-      ]
-    })
+          date: new Date(),
+        },
+      ],
+    }),
   };
 });
 

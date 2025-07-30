@@ -11,7 +11,7 @@
     "format": "prettier --write .",
     "vitest": "vitest run",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "@microsoft/applicationinsights-react-js": "^3.4.3",
