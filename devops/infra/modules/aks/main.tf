@@ -1,10 +1,10 @@
-# resource "azurerm_public_ip" "aks_public_ip" {
-#   name                = "${var.cluster_name}-public-ip"
-#   location            = var.location
-#   resource_group_name = var.resource_group_name
-#   allocation_method   = "Static"
-#   sku                 = "Standard"
-# }
+resource "azurerm_public_ip" "aks_outbound_ip" {
+  name                = "${var.cluster_name}-outbound-ip"
+  location            = var.location
+  resource_group_name = var.mc_resource_group_name # Pass this as a variable from root
+  allocation_method   = "Static"
+  sku                 = "Standard"
+}
 
 resource "azurerm_kubernetes_cluster" "main" {
   name                = var.cluster_name
@@ -22,16 +22,16 @@ resource "azurerm_kubernetes_cluster" "main" {
     type = "SystemAssigned"
   }
 
-  # network_profile {
-  #   network_plugin     = "kubenet"
-  #   load_balancer_sku  = "standard"
-  #   outbound_type      = "loadBalancer"
-  #   load_balancer_profile {
-  #     outbound_ip_address_ids = [azurerm_public_ip.aks_public_ip.id]
-  #   }
-  # }
+  network_profile {
+    network_plugin     = "azure"
+    load_balancer_sku  = "standard"
+    outbound_type      = "userAssigned"
+    load_balancer_profile {
+      outbound_ips {
+        public_ip_address_ids = [azurerm_public_ip.aks_outbound_ip.id]
+      }
+    }
+  }
 
-  # add other options as needed
 }
-
 
