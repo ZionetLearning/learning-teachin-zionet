@@ -62,13 +62,6 @@ jobs:
 
       - name: Apply services
         run: kubectl apply -f "$K8S_DIR/services" --recursive
-        # run: |
-        #   echo "DEBUG: AKS_PUBLIC_IP is $AKS_PUBLIC_IP"
-        #   find "$K8S_DIR/services" -type f -name '*.yaml' | while read file; do
-        #     echo "Applying $file"
-        #     AKS_PUBLIC_IP=$AKS_PUBLIC_IP envsubst < "$file" | kubectl apply -f -
-        #   done
-
 
       - name: Apply deployments (with registry substitution)
         run: |
@@ -85,7 +78,7 @@ jobs:
             EXTERNAL_IP=$(kubectl -n dev get svc manager -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
             if [[ -n "$EXTERNAL_IP" ]]; then
               echo "External IP is ready: $EXTERNAL_IP"
-              echo "app_url=http://$EXTERNAL_IP:5001" >> $GITHUB_OUTPUT
+              echo "app_url=http://$EXTERNAL_IP" >> $GITHUB_OUTPUT
               exit 0
             fi
             echo "Attempt $i: External IP not yet assigned. Waiting 10s..."
