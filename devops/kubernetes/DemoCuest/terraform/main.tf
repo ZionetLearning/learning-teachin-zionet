@@ -24,23 +24,58 @@ module "servicebus" {
   queue_names         = var.queue_names
 }
 
-module "signalr" {
-  source              = "./modules/signalr"
-  resource_group_name = azurerm_resource_group.main.name
-  location            = var.location
-  signalr_name        = var.signalr_name
-  sku_name            = var.signalr_sku_name
-  sku_capacity        = var.signalr_sku_capacity
+# module "signalr" {
+#   source              = "./modules/signalr"
+#   resource_group_name = azurerm_resource_group.main.name
+#   location            = var.location
+#   signalr_name        = var.signalr_name
+#   sku_name            = var.signalr_sku_name
+#   sku_capacity        = var.signalr_sku_capacity
+# }
+
+# module "cosmosdb" {
+#   source                = "./modules/cosmosdb"
+#   resource_group_name   = azurerm_resource_group.main.name
+#   location              = "North Europe" # over ride because it made error that 'full'
+#   cosmosdb_account_name = var.cosmosdb_account_name
+#   cosmosdb_sql_database_name = var.cosmosdb_sql_database_name
+#   cosmosdb_sql_container_name = var.cosmosdb_sql_container_name
+#   cosmosdb_partition_key_path = var.cosmosdb_partition_key_path
+# }
+
+module "grafana" {
+  source                    = "./modules/grafana"
+  namespace                 = var.grafana_namespace
+  admin_user                = var.grafana_admin_user
+  admin_password            = var.grafana_admin_password
+  service_type              = "LoadBalancer"
+  service_port              = 80
+  sidecar_dashboards        = true
+  persistence_enabled       = true
+  persistence_size          = "5Gi"
+  persistence_storage_class = var.grafana_storage_class
+  persistence_access_modes  = ["ReadWriteOnce"]
+  persistence_finalizers    = ["retain"]
+  grafana_chart_version     = "7.3.8"
 }
 
-module "cosmosdb" {
-  source                = "./modules/cosmosdb"
-  resource_group_name   = azurerm_resource_group.main.name
-  location              = "North Europe" # over ride because it made error that 'full'
-  cosmosdb_account_name = var.cosmosdb_account_name
-  cosmosdb_sql_database_name = var.cosmosdb_sql_database_name
-  cosmosdb_sql_container_name = var.cosmosdb_sql_container_name
-  cosmosdb_partition_key_path = var.cosmosdb_partition_key_path
+module "prometheus_stack" {
+  source    = "./modules/prometheus"
+  namespace = "monitoring"
+}
+
+resource "kubernetes_config_map" "grafana_datasource" {
+  metadata {
+    name      = "grafana-datasources"
+    namespace = module.grafana.namespace
+    labels = {
+      grafana_datasource = "1"
+    }
+  }
+
+  data = {
+    "datasources.yaml" = file("${path.module}/datasources.yaml")
+  }
 }
 
 ########################################

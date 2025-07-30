@@ -4,7 +4,8 @@ set -e
 
 
 K8S_DIR="./k8s"
-NAMESPACE_FILE="$K8S_DIR/namespace-model.yaml"
+NAMESPACE_MODEL="$K8S_DIR/namespace-model.yaml"
+NAMESPACE_MONITORING="$K8S_DIR/namespace-monitoring.yaml"
 
 # step 1: connect to azure
 az aks get-credentials   --resource-group democuest-aks-rg-dev   --name democuest-aks-dev   --overwrite-existing
@@ -12,9 +13,10 @@ az aks get-credentials   --resource-group democuest-aks-rg-dev   --name democues
 # set to cloud kubcetl context
 kubectl config use-context democuest-aks-dev
 
-# Step 2: Create namespace
-echo "Creating namespace..."
-kubectl apply -f "$NAMESPACE_FILE"
+# Step 2: Create namespaces
+echo "Creating namespaces..."
+kubectl apply -f "$NAMESPACE_MODEL"
+kubectl apply -f "$NAMESPACE_MONITORING"
 
 # Step 3: Apply secrets
 # echo "Applying secrets..."
