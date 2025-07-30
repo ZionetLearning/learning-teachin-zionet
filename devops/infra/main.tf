@@ -13,7 +13,7 @@ module "aks" {
   cluster_name        = var.aks_cluster_name
   node_count          = var.node_count
   vm_size             = var.vm_size
-  mc_resource_group_name = "MC_${var.resource_group_name}_${var.aks_cluster_name}_${var.location}"
+  # mc_resource_group_name = "MC_${var.resource_group_name}_${var.aks_cluster_name}_${var.location}"
   depends_on = [azurerm_resource_group.main]
 }
 
@@ -72,6 +72,7 @@ module "signalr" {
 data "azurerm_kubernetes_cluster" "main" {
   name                = module.aks.cluster_name
   resource_group_name = azurerm_resource_group.main.name
+  depends_on          = [module.aks]
 }
 
 provider "kubernetes" {

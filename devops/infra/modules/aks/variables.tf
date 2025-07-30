@@ -16,7 +16,7 @@ variable "vm_size" {
   default = "Standard_B2s"
 }
 
-variable "mc_resource_group_name" {
-  type = string
-  description = "The name of the resource group where the AKS managed cluster resources are created."
-}
+# variable "mc_resource_group_name" {
+#   type = string
+#   description = "The name of the resource group where the AKS managed cluster resources are created."
+# }
