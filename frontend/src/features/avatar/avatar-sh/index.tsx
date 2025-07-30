@@ -23,7 +23,7 @@ export const AvatarSh = () => {
   const [currentViseme, setCurrentViseme] = useState<number>(0);
   const [text, setText] = useState("");
 
- // forcing an error to test Error Boundary of Application Insights Azure
+  // forcing an error to test Error Boundary of Application Insights Azure
   //  useEffect(() => {
   //   throw new Error("AvatarSh Crashed! This is a test error for Application Insights.");
   // }, []);

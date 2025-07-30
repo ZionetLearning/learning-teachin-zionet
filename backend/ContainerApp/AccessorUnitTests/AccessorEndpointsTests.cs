@@ -12,12 +12,12 @@ namespace AccessorUnitTests;
 public class AccessorEndpointsTests
 {
     private readonly Mock<IAccessorService> _mockService;
-    private readonly Mock<ILogger> _mockLogger;
+    private readonly Mock<ILogger<AccessorService>> _mockLogger;
 
     public AccessorEndpointsTests()
     {
         _mockService = new Mock<IAccessorService>();
-        _mockLogger = new Mock<ILogger>();
+        _mockLogger = new Mock<ILogger<AccessorService>>();
     }
 
     [Fact]

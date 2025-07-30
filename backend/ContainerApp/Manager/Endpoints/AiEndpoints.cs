@@ -1,6 +1,7 @@
 ﻿using Manager.Constants;
 using Manager.Services;
 using Manager.Models;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Endpoints;
 
@@ -10,61 +11,92 @@ public static class AiEndpoints
     private sealed class AnswerEndpoint { }
     private sealed class PubSubEndpoint { }
 
-    public static void MapAiEndpoints(this WebApplication app)
+    public static WebApplication MapAiEndpoints(this WebApplication app)
     {
-        app.MapPost("/ai/question",
-            async (AiRequestModel dto, IAiGatewayService aiService, ILogger<QuestionEndpoint> log, CancellationToken ct) =>
-            {
-                try
-                {
-                    var id = await aiService.SendQuestionAsync(dto.Question, ct);
-                    log.LogInformation("Request {Id} accept", id);
-                    return Results.Accepted($"/ai/answer/{id}", new { questionId = id });
-                }
-                catch (Exception ex)
-                {
-                    log.LogError(ex, "Error sending question");
-                    return Results.Problem("AI question failed");
-                }
-            });
 
-        app.MapGet("/ai/answer/{id}",
-            async (string id, IAiGatewayService ai, ILogger<AnswerEndpoint> log, CancellationToken ct) =>
-            {
-                try
-                {
-                    var ans = await ai.GetAnswerAsync(id, ct);
-                    if (ans is null)
-                    {
-                        log.LogDebug("Answer for {Id} not ready", id);
-                        return Results.NotFound(new { error = "Answer not ready" });
-                    }
+        #region HTTP GET
 
-                    return Results.Ok(new { id, answer = ans });
-                }
-                catch (Exception ex)
-                {
-                    log.LogError(ex, "Error retrieving answer {Id}", id);
-                    return Results.Problem("AI answer retrieval failed");
-                }
-            });
+        app.MapGet("/ai/answer/{id}", AnswerAsync).WithName("Answer");
 
-        app.MapPost($"/ai/{TopicNames.AiToManager}",
-            async (AiResponseModel msg, IAiGatewayService ai, ILogger<PubSubEndpoint> log, CancellationToken ct) =>
-            {
-                try
-                {
-                    await ai.SaveAnswerAsync(msg, ct);
-                    log.LogInformation("Answer saved");
-                    return Results.Ok();
-                }
-                catch (Exception ex)
-                {
-                    log.LogError(ex, "Error saving answer");
-                    return Results.Problem("AI answer handling failed");
-                }
-            })
-            .WithTopic("pubsub", TopicNames.AiToManager);
-        
+        #endregion
+
+
+        #region HTTP POST
+
+        app.MapPost("/ai/question", QuestionAsync).WithName("Question");
+
+        app.MapPost($"/ai/{TopicNames.AiToManager}", PubSubAsync).WithTopic("pubsub", TopicNames.AiToManager);
+
+        #endregion
+
+
+        return app;
     }
+
+
+    private static async Task<IResult> AnswerAsync(
+        [FromRoute] string id,
+        [FromServices] IAiGatewayService aiService,
+        [FromServices] ILogger<AnswerEndpoint> log,
+        CancellationToken ct)
+    {
+        try
+        {
+            var ans = await aiService.GetAnswerAsync(id, ct);
+            if (ans is null)
+            {
+                log.LogDebug("Answer for {Id} not ready", id);
+                return Results.NotFound(new { error = "Answer not ready" });
+            }
+
+            return Results.Ok(new { id, answer = ans });
+        }
+        catch (Exception ex)
+        {
+            log.LogError(ex, "Error retrieving answer {Id}", id);
+            return Results.Problem("AI answer retrieval failed");
+        }
+    }
+
+
+    private static async Task<IResult> QuestionAsync(
+        [FromBody] AiRequestModel dto,
+        [FromServices] IAiGatewayService aiService,
+        [FromServices] ILogger<QuestionEndpoint> log,
+        CancellationToken ct)
+    {
+        try
+        {
+            var id = await aiService.SendQuestionAsync(dto.Question, ct);
+            log.LogInformation("Request {Id} accept", id);
+            return Results.Accepted($"/ai/answer/{id}", new { questionId = id });
+        }
+        catch (Exception ex)
+        {
+            log.LogError(ex, "Error sending question");
+            return Results.Problem("AI question failed");
+        }
+    }
+
+
+    private static async Task<IResult> PubSubAsync(
+        [FromBody] AiResponseModel msg,
+        [FromServices] IAiGatewayService aiService,
+        [FromServices] ILogger<PubSubEndpoint> log,
+        CancellationToken ct)
+    {
+        try
+        {
+            await aiService.SaveAnswerAsync(msg, ct);
+            log.LogInformation("Answer saved");
+            return Results.Ok();
+        }
+        catch (Exception ex)
+        {
+            log.LogError(ex, "Error saving answer");
+            return Results.Problem("AI answer handling failed");
+        }
+    }
+        
+
 }
