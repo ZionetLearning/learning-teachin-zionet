@@ -99,14 +99,13 @@ export const SpeakingPractice = () => {
 			stopSynthesis();
 			return;
 		}
+		setIsSpeaking(true);
+
 		const player = new sdk.SpeakerAudioDestination();
 		playerRef.current = player;
 
-		player.onAudioStart = () => setIsSpeaking(true);
 		player.onAudioEnd = () => {
-			setIsSpeaking(false);
-			player.close();
-			playerRef.current = null;
+			stopSynthesis();
 		};
 
 		const audioConfig = sdk.AudioConfig.fromSpeakerOutput(player);
@@ -121,8 +120,7 @@ export const SpeakingPractice = () => {
 			},
 			(err) => {
 				console.error('TTS error:', err);
-				synthesizer.close();
-				synthesizerRef.current = null;
+				stopSynthesis();
 			}
 		);
 	};
