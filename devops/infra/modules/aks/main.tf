@@ -1,7 +1,7 @@
 resource "azurerm_public_ip" "aks_outbound_ip" {
   name                = "${var.cluster_name}-outbound-ip"
   location            = var.location
-  resource_group_name = var.mc_resource_group_name # Pass this as a variable from root
+  resource_group_name = var.resource_group_name # Pass this as a variable from root
   allocation_method   = "Static"
   sku                 = "Standard"
 }
