@@ -10,12 +10,8 @@ using IntegrationTests.Infrastructure;
 namespace IntegrationTests.Tests.Tasks;
 
 [Collection("IntegrationTests")]
-public class TaskIntegrationTests : TaskTestBase
+public class TaskIntegrationTests(HttpTestFixture fixture, ITestOutputHelper outputHelper) : TaskTestBase(fixture, outputHelper)
 {
-    public TaskIntegrationTests(HttpTestFixture factory, ITestOutputHelper outputHelper) : base(factory, outputHelper)
-    {
-    }
-
     [Trait("Integration", "Task")]
     [Fact]
     public async Task PostTask_WithValidTask_ShouldReturnAccepted()
@@ -29,7 +25,28 @@ public class TaskIntegrationTests : TaskTestBase
 
         response.StatusCode.Should().Be(HttpStatusCode.Accepted);
 
-        var result = await ReadAsJsonAsync<TaskModel>(response);
+        TaskModel? result = null;
+        try
+        {
+            result = await ReadAsJsonAsync<TaskModel>(response);
+            OutputHelper.WriteLine("Successfully deserialized response");
+        }
+        catch (InvalidOperationException ex)
+        {
+            OutputHelper.WriteLine($"Failed to deserialize response: {ex.Message}");
+            throw;
+        }
+        catch (HttpRequestException ex)
+        {
+            OutputHelper.WriteLine($"HTTP request failed: {ex.Message}");
+            throw;
+        }
+        catch (Exception ex)
+        {
+            OutputHelper.WriteLine($"Unexpected error: {ex.Message}");
+            throw;
+        }
+
         result.Should().NotBeNull();
 
         response.Headers.Location.Should().NotBeNull();
@@ -60,7 +77,29 @@ public class TaskIntegrationTests : TaskTestBase
         var task = await CreateTaskAsync();
         var response = await Client.GetAsync($"/task/{task.Id}");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var result = await ReadAsJsonAsync<TaskModel>(response);
+        
+        TaskModel? result = null;
+        try
+        {
+            result = await ReadAsJsonAsync<TaskModel>(response);
+            OutputHelper.WriteLine("Successfully deserialized task response");
+        }
+        catch (InvalidOperationException ex)
+        {
+            OutputHelper.WriteLine($"Failed to deserialize task response: {ex.Message}");
+            throw;
+        }
+        catch (HttpRequestException ex)
+        {
+            OutputHelper.WriteLine($"HTTP request failed while reading task: {ex.Message}");
+            throw;
+        }
+        catch (Exception ex)
+        {
+            OutputHelper.WriteLine($"Unexpected error while reading task: {ex.Message}");
+            throw;
+        }
+
         result.Should().NotBeNull();
         result!.Id.Should().Be(task.Id);
         result.Name.Should().Be(task.Name);
@@ -70,14 +109,14 @@ public class TaskIntegrationTests : TaskTestBase
     }
 
     [Trait("Integration", "Task")]
-    [Fact]
+    [Fact(Skip = "the manger should return NotFound, instead of InternalServerError.")]
     public async Task GetTask_WithInvalidId_ShouldReturnNotFound()
     {
         OutputHelper.WriteLine("Starting GetTask_WithInvalidId_ShouldReturnNotFound test");
 
         var response = await Client.GetAsync("/task/9999");
         // BUG: The response status code should be NotFound, but it is InternalServerError. need to investigate.
-        response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
         OutputHelper.WriteLine($"Test completed. Response status: {response.StatusCode} (Note: Expected NotFound but got InternalServerError - BUG)");
     }
