@@ -84,13 +84,18 @@ services:
 
   # ---------------------- Redis ----------------------
   redis:
-    image: redis:6.2
-    container_name: redis
-    ports:
-      - "6379:6379"
-    restart: unless-stopped
-    networks:
-      - microservice-net
+      image: redis:6.2
+      container_name: redis
+      ports:
+        - "6379:6379"
+      restart: unless-stopped
+      networks:
+        - microservice-net
+      healthcheck:
+        test: ["CMD", "redis-cli", "ping"]
+        interval: 3s
+        timeout: 2s
+        retries: 10
 
   # ------------------------ Manager Service ---------------------------
   manager:
@@ -177,9 +182,12 @@ services:
       - DB_USER=postgres
       - DB_PASS=postgres
     depends_on:
-      - servicebus-emulator
-      - postgres
-      - redis
+        redis:
+          condition: service_healthy
+        postgres:
+          condition: service_started
+        servicebus-emulator:
+          condition: service_started
     networks:
       - microservice-net
       - sb-emulator
@@ -190,6 +198,8 @@ services:
     depends_on:
       accessor:
         condition: service_started
+      redis:
+        condition: service_healthy
     command: [
       "./daprd",
       "-app-id", "accessor",

@@ -1,6 +1,8 @@
-﻿using Accessor.Models;
+﻿using Accessor.Constants;
+using Accessor.Models;
 using Dapr.Client;
 using Microsoft.EntityFrameworkCore;
+
 
 namespace Accessor.Services;
     public class AccessorService : IAccessorService
@@ -8,17 +10,22 @@ namespace Accessor.Services;
         private readonly ILogger<AccessorService> _logger;
         private readonly AccessorDbContext _dbContext;
         private readonly DaprClient _daprClient;
-        private const string StateStoreName = "statestore";
+        private readonly IConfiguration _configuration;
+        private readonly int _ttl;
 
     public AccessorService(AccessorDbContext dbContext,
         ILogger<AccessorService> logger,
-        DaprClient daprClient)
+        DaprClient daprClient,
+        IConfiguration configuration)
         {
         _dbContext = dbContext;
         _logger = logger;
         _daprClient = daprClient;
+        _configuration = configuration;
+        _ttl = int.Parse(configuration["TaskCache:TTLInSeconds"] ??
+                                                  throw new KeyNotFoundException("TaskCache:TTLInSeconds is not configured"));
     }
-
+    
     public async Task InitializeAsync()
         {
         _logger.LogInformation("Initializing DB...");
@@ -43,12 +50,12 @@ namespace Accessor.Services;
         {
             var key = GetTaskCacheKey(id);
 
-            // Try to get from Redis via Dapr
-            var stateEntry = await _daprClient.GetStateEntryAsync<TaskModel>(StateStoreName, key);
+            // Try to get from Redis cache
+            var stateEntry = await _daprClient.GetStateEntryAsync<TaskModel>(ComponentNames.StateStore, key);
 
             if (stateEntry.Value != null)
             {
-                _logger.LogInformation("Task {Id} found in Redis cache (ETag: {ETag})", id, stateEntry.ETag);
+                _logger.LogInformation("Task {TaskId} found in Redis cache (ETag: {ETag})", id, stateEntry.ETag);
                 return stateEntry.Value;
             }
 
@@ -63,11 +70,20 @@ namespace Accessor.Services;
                 return null;
             }
 
-            // Save the task to Redis cache with ETag, in the future we need configuration for redis
+            // Save the task to Redis cache with ETag, if its not already cached
             stateEntry.Value = task;
-            await stateEntry.TrySaveAsync();
 
-            _logger.LogInformation("Fetched task {Id} from DB and cached", id);
+            await _daprClient.SaveStateAsync(
+                storeName: ComponentNames.StateStore,
+                key: key,
+                value: task,
+                metadata: new Dictionary<string, string>
+                {
+                    { "ttlInSeconds", _ttl.ToString() }
+                }
+            );
+            
+            _logger.LogInformation("Fetched task {TaskId} from DB and cached", id);
             return task;
         }
         catch (Exception ex)
@@ -82,31 +98,33 @@ namespace Accessor.Services;
         _logger.LogInformation("Inside:{Method}", nameof(CreateTaskAsync));
         try
         {
+            // Add task to the database
             _dbContext.Tasks.Add(task);
             await _dbContext.SaveChangesAsync();
 
-
             var key = GetTaskCacheKey(task.Id);
-            var stateEntry = await _daprClient.GetStateEntryAsync<TaskModel>(StateStoreName, key);
 
+            // Check if the task already exists in Redis cache
+            var stateEntry = await _daprClient.GetStateEntryAsync<TaskModel>(ComponentNames.StateStore, key);
+
+            // If it exists, log a warning and overwrite it
             if (stateEntry.Value != null)
             {
-                _logger.LogWarning("Task {TaskId} already exists in Redis cache. Overwriting...", task.Id);
+                _logger.LogWarning("Task {TaskId} already present in cache before creation. Overwriting.", task.Id);
             }
 
             // Store the newly created task in Redis cache
             stateEntry.Value = task;
 
-            var saveSuccess = await stateEntry.TrySaveAsync();
-
-            if (saveSuccess)
-            {
-                _logger.LogInformation("Task {TaskId} cached in Redis with ETag: {ETag}", task.Id, stateEntry.ETag);
-            }
-            else
-            {
-                _logger.LogWarning("ETag conflict while caching task {TaskId}. Cache may be stale.", task.Id);
-            }
+            await _daprClient.SaveStateAsync(
+               storeName: ComponentNames.StateStore,
+               key: key,
+               value: task,
+               metadata: new Dictionary<string, string>
+               {
+                    { "ttlInSeconds", _ttl.ToString() }
+               });
+            _logger.LogInformation("Successfully cached task {TaskId} with TTL {TTL}s", task.Id, _ttl);
         }
         catch (DbUpdateException dbEx)
         {
@@ -138,7 +156,7 @@ namespace Accessor.Services;
             var key = GetTaskCacheKey(taskId);
 
             // Load current state from Redis
-            var stateEntry = await _daprClient.GetStateEntryAsync<TaskModel>(StateStoreName, key);
+            var stateEntry = await _daprClient.GetStateEntryAsync<TaskModel>(ComponentNames.StateStore, key);
 
             if (stateEntry.Value == null)
             {
@@ -148,15 +166,15 @@ namespace Accessor.Services;
 
             stateEntry.Value.Name = newName;
 
-            var saveSuccess = await stateEntry.TrySaveAsync();
-            if (saveSuccess)
-            {
-                _logger.LogInformation("Updated task {TaskId} in Redis cache with new name: {NewName} and ETag: {ETag}", taskId, newName, stateEntry.ETag);
-            }
-            else
-            {
-                _logger.LogWarning("ETag conflict while updating task {TaskId} in Redis cache. Cache may be stale.", taskId);
-            }
+            await _daprClient.SaveStateAsync(
+               storeName: ComponentNames.StateStore,
+               key: key,
+               value: task,
+               metadata: new Dictionary<string, string>
+               {
+                    { "ttlInSeconds", _ttl.ToString() }
+               });
+            _logger.LogInformation("Successfully cached task {TaskId} with TTL {TTL}s", task.Id, _ttl);
             return true;
         }
         catch (Exception ex)
@@ -184,7 +202,7 @@ namespace Accessor.Services;
 
             // Remove task from Redis cache
             var key = GetTaskCacheKey(taskId);
-            var stateEntry = await _daprClient.GetStateEntryAsync<TaskModel>(StateStoreName, key);
+            var stateEntry = await _daprClient.GetStateEntryAsync<TaskModel>(ComponentNames.StateStore, key);
 
             if (stateEntry.Value == null)
             {

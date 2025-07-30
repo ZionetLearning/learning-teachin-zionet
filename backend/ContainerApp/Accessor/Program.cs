@@ -11,6 +11,9 @@ builder.Services.AddControllers().AddDapr();
 
 builder.Services.AddScoped<IAccessorService, AccessorService>();
 
+// Add internal configuration to the application
+builder.Configuration.AddInMemoryCollection(Accessor.InternalConfiguration.Default!);
+
 // Register Dapr client with custom JSON options
 builder.Services.AddDaprClient(client =>
 {
@@ -21,11 +24,9 @@ builder.Services.AddDaprClient(client =>
     });
 });
 
-
 // Configure PostgreSQL
 builder.Services.AddDbContext<AccessorDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
-
 
 var app = builder.Build();
 
