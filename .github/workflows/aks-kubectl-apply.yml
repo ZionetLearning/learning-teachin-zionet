@@ -43,9 +43,9 @@ jobs:
           echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
           AKS_RG=dev-zionet-learning-2025
           AKS_NAME=aks-cluster-dev
-          AKS_PUBLIC_IP=$(az network public-ip show --resource-group "$AKS_RG" --name "$AKS_NAME-public-ip" --query ipAddress -o tsv)
-          echo "AKS_PUBLIC_IP=$AKS_PUBLIC_IP" >> $GITHUB_ENV
-          echo "AKS_PUBLIC_IP=$AKS_PUBLIC_IP"
+          # AKS_PUBLIC_IP=$(az network public-ip show --resource-group "$AKS_RG" --name "$AKS_NAME-public-ip" --query ipAddress -o tsv)
+          # echo "AKS_PUBLIC_IP=$AKS_PUBLIC_IP" >> $GITHUB_ENV
+          # echo "AKS_PUBLIC_IP=$AKS_PUBLIC_IP"
 
       - name: Get AKS credentials
         run: |
@@ -61,12 +61,13 @@ jobs:
         run: kubectl apply -f "$K8S_DIR/dapr/components" --recursive
 
       - name: Apply services
-        run: |
-          echo "DEBUG: AKS_PUBLIC_IP is $AKS_PUBLIC_IP"
-          find "$K8S_DIR/services" -type f -name '*.yaml' | while read file; do
-            echo "Applying $file"
-            AKS_PUBLIC_IP=$AKS_PUBLIC_IP envsubst < "$file" | kubectl apply -f -
-          done
+        run: kubectl apply -f "$K8S_DIR/services" --recursive
+        # run: |
+        #   echo "DEBUG: AKS_PUBLIC_IP is $AKS_PUBLIC_IP"
+        #   find "$K8S_DIR/services" -type f -name '*.yaml' | while read file; do
+        #     echo "Applying $file"
+        #     AKS_PUBLIC_IP=$AKS_PUBLIC_IP envsubst < "$file" | kubectl apply -f -
+        #   done
 
 
       - name: Apply deployments (with registry substitution)
