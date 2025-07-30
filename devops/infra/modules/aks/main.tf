@@ -1,11 +1,3 @@
-resource "azurerm_public_ip" "aks_outbound_ip" {
-  name                = "${var.cluster_name}-outbound-ip"
-  location            = var.location
-  resource_group_name = var.resource_group_name # Pass this as a variable from root
-  allocation_method   = "Static"
-  sku                 = "Standard"
-}
-
 resource "azurerm_kubernetes_cluster" "main" {
   name                = var.cluster_name
   location            = var.location
@@ -22,14 +14,6 @@ resource "azurerm_kubernetes_cluster" "main" {
     type = "SystemAssigned"
   }
 
-  network_profile {
-    network_plugin     = "azure"
-    load_balancer_sku  = "standard"
-    outbound_type      = "loadBalancer"
-    load_balancer_profile {
-      outbound_ip_address_ids = [azurerm_public_ip.aks_outbound_ip.id]
-    }
-  }
 
 }
 
