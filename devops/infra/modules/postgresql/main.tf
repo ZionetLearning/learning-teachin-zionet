@@ -44,9 +44,9 @@ resource "azurerm_postgresql_flexible_server_database" "this" {
   # }
 }
 
-resource "azurerm_postgresql_flexible_server_firewall_rule" "aks_integration" {
-  name                = "aks-integration"
-  server_id           = azurerm_postgresql_flexible_server.this.id
-  start_ip_address    = var.aks_public_ip
-  end_ip_address      = var.aks_public_ip
-}
+# resource "azurerm_postgresql_flexible_server_firewall_rule" "aks_integration" {
+#   name                = "aks-integration"
+#   server_id           = azurerm_postgresql_flexible_server.this.id
+#   start_ip_address    = var.aks_public_ip
+#   end_ip_address      = var.aks_public_ip
+# }

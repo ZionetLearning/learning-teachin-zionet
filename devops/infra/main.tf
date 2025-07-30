@@ -51,8 +51,8 @@ module "database" {
   delegated_subnet_id           = var.delegated_subnet_id
 
   database_name       = var.database_name
-  aks_public_ip       = module.aks.public_ip_address
-  
+  # aks_public_ip       = module.aks.public_ip_address
+
   depends_on = [azurerm_resource_group.main]
 }
 
