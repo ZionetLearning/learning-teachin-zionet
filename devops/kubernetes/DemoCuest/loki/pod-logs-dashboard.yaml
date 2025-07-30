@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: pod-logs-dashboard
-  namespace: devops-logs   # Or use $LOKI_NAMESPACE if you template this file
+  namespace: devops-logs
   labels:
     grafana_dashboard: "1"
 data:
@@ -12,10 +12,7 @@ data:
       "uid": "podlogs",
       "schemaVersion": 16,
       "version": 1,
-      "time": {
-        "from": "now-1h",
-        "to": "now"
-      },
+      "time": { "from": "now-1h", "to": "now" },
       "templating": {
         "list": [
           {
@@ -26,15 +23,9 @@ data:
             "refresh": 2,
             "query": "label_values(pod)",
             "definition": "label_values(pod)",
-            "sort": 1,
-            "hide": 0,
+            "allValue": ".*",
             "includeAll": true,
-            "multi": false,
-            "current": {
-              "selected": true,
-              "text": "All",
-              "value": "$__all"
-            }
+            "current": { "selected": true, "text": "All", "value": "$__all" }
           },
           {
             "name": "container",
@@ -44,15 +35,9 @@ data:
             "refresh": 2,
             "query": "label_values(container)",
             "definition": "label_values(container)",
-            "sort": 1,
-            "hide": 0,
+            "allValue": ".*",
             "includeAll": true,
-            "multi": false,
-            "current": {
-              "selected": true,
-              "text": "All",
-              "value": "$__all"
-            }
+            "current": { "selected": true, "text": "All", "value": "$__all" }
           }
         ]
       },
@@ -60,20 +45,12 @@ data:
         {
           "type": "logs",
           "title": "Logs by Pod and Container",
-          "targets": [
-            {
-              "expr": "{pod=\"\$pod\", container=\"\$container\"}",
-              "refId": "A"
-            }
-          ],
           "datasource": "Loki",
+          "targets": [
+            { "expr": "{pod=~\"$pod\", container=~\"$container\"}", "refId": "A" }
+          ],
           "gridPos": { "x": 0, "y": 0, "w": 24, "h": 20 },
-          "options": {
-            "showLabels": true,
-            "showTime": true,
-            "wrapLogMessage": true,
-            "dedupStrategy": "none"
-          }
+          "options": { "showLabels": true, "showTime": true, "wrapLogMessage": true, "dedupStrategy": "none" }
         }
       ]
     }

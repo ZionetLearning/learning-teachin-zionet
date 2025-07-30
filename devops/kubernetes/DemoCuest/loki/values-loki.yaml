@@ -4,9 +4,9 @@ loki:
 promtail:
   enabled: true
   tolerations:
-    - key: "node-role.kubernetes.io/control-plane"
-      operator: "Exists"
-      effect: "NoSchedule"
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
   extraVolumes:
     - name: varlog
       hostPath:
@@ -19,24 +19,3 @@ promtail:
     snippets:
       pipelineStages:
         - cri: {}
-      extraScrapeConfigs: |
-        - job_name: docker-containers
-          static_configs:
-            - targets:
-                - localhost
-              labels:
-                job: varlogs
-                __path__: /var/log/containers/*.log
-          relabel_configs:
-            - source_labels: [__path__]
-              regex: '.*/(?P<container>[^_]+)_(?P<pod>[^_]+)_(?P<namespace>[^_]+)-.*\.log'
-              target_label: container
-              replacement: "$1"
-            - source_labels: [__path__]
-              regex: '.*/(?P<container>[^_]+)_(?P<pod>[^_]+)_(?P<namespace>[^_]+)-.*\.log'
-              target_label: pod
-              replacement: "$2"
-            - source_labels: [__path__]
-              regex: '.*/(?P<container>[^_]+)_(?P<pod>[^_]+)_(?P<namespace>[^_]+)-.*\.log'
-              target_label: namespace
-              replacement: "$3"
