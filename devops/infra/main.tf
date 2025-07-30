@@ -28,33 +28,6 @@ module "servicebus" {
   depends_on = [azurerm_resource_group.main]
 }
 
-# module "database" {
-#   source              = "./modules/postgresql"
-
-#   server_name         = var.database_server_name
-#   location            = var.db_location
-#   resource_group_name = azurerm_resource_group.main.name
-
-#   admin_username      = var.admin_username
-#   admin_password      = var.admin_password
-
-#   db_version          = var.db_version
-#   sku_name            = var.sku_name
-#   storage_mb          = var.storage_mb
-
-#   password_auth_enabled         = var.password_auth_enabled
-#   active_directory_auth_enabled = var.active_directory_auth_enabled
-
-#   backup_retention_days         = var.backup_retention_days
-#   geo_redundant_backup_enabled  = var.geo_redundant_backup_enabled
-
-#   delegated_subnet_id           = var.delegated_subnet_id
-
-#   database_name       = var.database_name
-#   aks_public_ip       = module.aks.public_ip_address
-  
-#   depends_on = [azurerm_resource_group.main]
-# }
 module "database" {
   source              = "./modules/postgresql"
 
@@ -78,10 +51,11 @@ module "database" {
   delegated_subnet_id           = var.delegated_subnet_id
 
   database_name       = var.database_name
-  aks_public_ip       = module.aks.loadbalancer_public_ip  # Now this works at plan time!
+  aks_public_ip       = module.aks.public_ip_address
   
-  depends_on = [azurerm_resource_group.main, module.aks]
+  depends_on = [azurerm_resource_group.main]
 }
+
 
 
 module "signalr" {
