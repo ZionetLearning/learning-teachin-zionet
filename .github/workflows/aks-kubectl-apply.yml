@@ -87,6 +87,20 @@ jobs:
           echo "Failed to get external IP after waiting. Check 'kubectl get svc manager'"
           exit 1
 
+      - name: Add manager external IP to PostgreSQL firewall
+        run: |
+          EXTERNAL_IP=$(kubectl -n dev get svc manager -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          az postgres flexible-server firewall-rule create \
+            --resource-group $AKS_RG \
+            --name pg-zionet-dev-2025 \
+            --rule-name allow-accessor-service \
+            --start-ip-address $EXTERNAL_IP \
+            --end-ip-address $EXTERNAL_IP
+        env:
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
       - name: Output external URL
         id: extract_url
         run: |
