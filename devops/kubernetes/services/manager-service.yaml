@@ -4,6 +4,7 @@ metadata:
   annotations:
     kompose.cmd: D:\Tool\kompose.exe convert -f .\docker-compose.yaml
     kompose.version: 1.36.0 (ae2a39403)
+    service.beta.kubernetes.io/azure-load-balancer-resource-group: dev-zionet-learning-2025
   labels:
     io.kompose.service: manager
   name: manager
