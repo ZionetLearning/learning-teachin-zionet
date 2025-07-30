@@ -11,8 +11,11 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
 
     public async Task<TaskModel?> GetTaskAsync(int id)
     {
-        _logger.LogDebug("Calling Accessor service to get task {TaskId}", id);
-
+        _logger.LogInformation(
+            "Inside: {method} in {class}",
+            nameof(GetTaskAsync),
+            nameof(AccessorClient)
+        );
         try
         {
             var task = await _daprClient.InvokeMethodAsync<TaskModel>(
@@ -20,7 +23,6 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
                 "accessor",
                 $"task/{id}"
             );
-
             _logger.LogDebug("Received task {TaskId} from Accessor service", id);
             return task;
         }
@@ -33,18 +35,18 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
 
     public async Task<bool> UpdateTaskName(int id, string newTaskName)
     {
-        _logger.LogDebug("Calling Accessor service to update task {TaskId} name", id);
-
+        _logger.LogInformation(
+            "Inside: {method} in {class}",
+            nameof(UpdateTaskName),
+            nameof(AccessorClient)
+        );
         try
         {
             await _daprClient.InvokeBindingAsync(
                 QueueNames.TaskUpdate,
                 "create",
-                new
-                {
-                    Id = id,
-                    Name = newTaskName
-                });
+                new TaskNameUpdateModel(id, newTaskName)
+            );
 
             _logger.LogDebug("Task name update request sent to queue for task {TaskId}", id);
             return true;
@@ -58,14 +60,14 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
 
     public async Task<bool> DeleteTask(int id)
     {
-        _logger.LogDebug("Calling Accessor service to delete task {TaskId}", id);
+        _logger.LogInformation(
+            "Inside: {method} in {class}",
+            nameof(DeleteTask),
+            nameof(AccessorClient)
+        );
         try
         {
-
-            await _daprClient.InvokeMethodAsync(
-                HttpMethod.Delete,
-                "accessor",
-                $"task/{id}");
+            await _daprClient.InvokeMethodAsync(HttpMethod.Delete, "accessor", $"task/{id}");
             _logger.LogDebug("Task {TaskId} deletion request sent to Accessor service", id);
 
             return true;

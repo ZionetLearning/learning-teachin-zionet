@@ -17,13 +17,21 @@ public class EngineClient : IEngineClient
 
     public async Task<(bool success, string message)> ProcessTaskAsync(TaskModel task)
     {
-        _logger.LogDebug("Sending task {TaskId} to Engine service", task.Id);
-        
+        _logger.LogInformation(
+            "Inside: {method} in {class}",
+            nameof(ProcessTaskAsync),
+            nameof(EngineClient)
+        );
+
         try
         {
             await _daprClient.InvokeBindingAsync(QueueNames.ManagerToEngine, "create", task);
-            
-            _logger.LogDebug("Task {TaskId} sent to Engine via binding '{Binding}'", task.Id, QueueNames.ManagerToEngine);
+
+            _logger.LogDebug(
+                "Task {TaskId} sent to Engine via binding '{Binding}'",
+                task.Id,
+                QueueNames.ManagerToEngine
+            );
             return (true, "sent to engine");
         }
         catch (Exception ex)
