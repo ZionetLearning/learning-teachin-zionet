@@ -1,17 +1,38 @@
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   annotations:
+#     kompose.cmd: D:\Tool\kompose.exe convert -f .\docker-compose.yaml
+#     kompose.version: 1.36.0 (ae2a39403)
+#     service.beta.kubernetes.io/azure-load-balancer-resource-group: dev-zionet-learning-2025
+#   labels:
+#     io.kompose.service: manager
+#   name: manager
+#   namespace: dev
+# spec:
+#   type: LoadBalancer
+#   loadBalancerIP: ${AKS_PUBLIC_IP} # Use the public IP from the cluster
+#   ports:
+#     - name: "5001"
+#       port: 5001
+#       targetPort: 5001
+#   selector:
+#     io.kompose.service: manager
+
+
+# devops/kubernetes/services/manager-service.yaml
 apiVersion: v1
 kind: Service
 metadata:
   annotations:
-    kompose.cmd: D:\Tool\kompose.exe convert -f .\docker-compose.yaml
-    kompose.version: 1.36.0 (ae2a39403)
-    service.beta.kubernetes.io/azure-load-balancer-resource-group: dev-zionet-learning-2025
+    service.beta.kubernetes.io/azure-load-balancer-resource-group: "MC_dev-zionet-learning-2025_aks-cluster-dev_eastus"  # Use the node RG
   labels:
     io.kompose.service: manager
   name: manager
   namespace: dev
 spec:
   type: LoadBalancer
-  loadBalancerIP: ${AKS_PUBLIC_IP} # Use the public IP from the cluster
+  loadBalancerIP: ${AKS_PUBLIC_IP}  # This will now work
   ports:
     - name: "5001"
       port: 5001
