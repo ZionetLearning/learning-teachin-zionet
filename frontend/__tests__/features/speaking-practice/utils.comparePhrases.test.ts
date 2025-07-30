@@ -1,4 +1,4 @@
-import { comparePhrases } from "@/features/speaking-practice/utils/comparePhrases";
+import { comparePhrases } from "@/features/practice/speaking-practice/utils/comparePhrases";
 
 describe("comparePhrases()", () => {
   it("returns true for exact match", () => {

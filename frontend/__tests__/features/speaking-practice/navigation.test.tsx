@@ -1,4 +1,4 @@
-import { SpeakingPractice } from "@/features/speaking-practice";
+import { SpeakingPractice } from "@/features/practice/speaking-practice";
 import { render, fireEvent } from "@testing-library/react";
 
 jest.mock("microsoft-cognitiveservices-speech-sdk");
