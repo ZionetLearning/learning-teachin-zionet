@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { useRef, useState } from "react";
 
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";

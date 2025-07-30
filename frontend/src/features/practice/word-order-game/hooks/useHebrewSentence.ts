@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from "react";
-import { askAzureOpenAI } from "../../chat/chat-yo/services";
+import { askAzureOpenAI } from "../../../chat/chat-yo/services";
 
 export const useHebrewSentence = () => {
   const [sentence, setSentence] = useState<string>("");
