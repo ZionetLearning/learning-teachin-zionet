@@ -1,0 +1,25 @@
+{
+  "profiles": {
+    "Docker Compose": {
+      "commandName": "DockerCompose",
+      "commandVersion": "1.0",
+      "composeLaunchAction": "LaunchBrowser",
+      "composeLaunchServiceName": "manager",
+      "composeLaunchUrl": "{Scheme}://localhost:{ServicePort}/scalar",
+      "serviceActions": {
+        "accessor": "StartDebugging",
+        "accessor-dapr": "StartWithoutDebugging",
+        "engine": "StartDebugging",
+        "engine-dapr": "StartWithoutDebugging",
+        "manager": "StartDebugging",
+        "manager-dapr": "StartWithoutDebugging",
+        "pgadmin": "StartWithoutDebugging",
+        "placement": "StartWithoutDebugging",
+        "postgres": "StartWithoutDebugging",
+        "servicebus-emulator": "StartWithoutDebugging",
+        "signalr-emulator": "StartWithoutDebugging",
+        "sqledge": "StartWithoutDebugging"
+      }
+    }
+  }
+}

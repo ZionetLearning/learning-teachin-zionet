@@ -2,13 +2,15 @@ using Manager.Endpoints;
 using Manager.Hubs;
 using Manager.Services;
 using Manager.Services.Clients;
+using Microsoft.AspNetCore.Authentication;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 var env = builder.Environment;
 
-builder.Configuration
-    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+builder
+    .Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
     .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
     .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
     .AddEnvironmentVariables();
@@ -22,13 +24,13 @@ builder.Services.AddSignalR();
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
-    {
-        policy
-            .AllowAnyOrigin()
-            .AllowAnyMethod()
-            .AllowAnyHeader();
-    });
+    options.AddPolicy(
+        "AllowAll",
+        policy =>
+        {
+            policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+        }
+    );
 });
 
 builder.Services.AddScoped<IManagerService, ManagerService>();
@@ -37,6 +39,14 @@ builder.Services.AddScoped<IAccessorClient, AccessorClient>();
 builder.Services.AddScoped<IEngineClient, EngineClient>();
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+// This is required for the Scalar UI to have an option to setup an authentication token
+builder.Services.AddOpenApi(
+    "v1",
+    options =>
+    {
+        options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+    }
+);
 
 var app = builder.Build();
 app.UseCors("AllowAll");
@@ -45,6 +55,17 @@ app.MapControllers();
 app.MapSubscribeHandler();
 app.MapManagerEndpoints();
 app.MapAiEndpoints();
+
+app.MapOpenApi();
+app.MapScalarApiReference(options =>
+{
+    options.Title = "Manager API";
+    options.Theme = ScalarTheme.Alternate;
+    options.DefaultHttpClient = new(ScalarTarget.CSharp, ScalarClient.HttpClient);
+    options.ShowSidebar = true;
+    options.PersistentAuthentication = true;
+    options.AddPreferredSecuritySchemes("Bearer");
+});
 
 app.MapHub<NotificationHub>("/notificationHub");
 
