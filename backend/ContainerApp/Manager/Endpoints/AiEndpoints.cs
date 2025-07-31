@@ -1,7 +1,10 @@
 ﻿using Manager.Constants;
-using Manager.Services;
 using Manager.Models;
+using Manager.Models.ModelValidation;
+using Manager.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
 
 namespace Manager.Endpoints;
 
@@ -65,6 +68,12 @@ public static class AiEndpoints
         [FromServices] ILogger<QuestionEndpoint> log,
         CancellationToken ct)
     {
+        log.LogInformation("Inside {method}", nameof(QuestionAsync));
+        if (!ValidationExtensions.TryValidate(dto, out var validationErrors))
+        {
+            return Results.BadRequest(new { errors = validationErrors });
+        }
+
         try
         {
             var id = await aiService.SendQuestionAsync(dto.Question, ct);
@@ -85,6 +94,12 @@ public static class AiEndpoints
         [FromServices] ILogger<PubSubEndpoint> log,
         CancellationToken ct)
     {
+        log.LogInformation("Inside {method}", nameof(PubSubAsync));
+        if (!ValidationExtensions.TryValidate(msg, out var validationErrors))
+        {
+            return Results.BadRequest(new { errors = validationErrors });
+        }
+
         try
         {
             await aiService.SaveAnswerAsync(msg, ct);

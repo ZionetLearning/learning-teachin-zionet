@@ -1,4 +1,5 @@
 ﻿using Manager.Models;
+using Manager.Models.ModelValidation;
 using Manager.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -71,6 +72,11 @@ public static class ManagerEndpoints
         [FromServices] ILogger<ManagerService> logger)
     {
         logger.LogInformation("Inside {method}", nameof(CreateTaskAsync));
+        if (!ValidationExtensions.TryValidate(task, out var validationErrors))
+        {
+            return Results.BadRequest(new { errors = validationErrors });
+        }
+
         try
         {
             var (success, message) = await managerService.ProcessTaskAsync(task);
