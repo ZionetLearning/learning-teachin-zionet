@@ -61,7 +61,7 @@ if (env.IsDevelopment())
     app.MapScalarApiReference(options =>
     {
         options.Title = "Manager API";
-        options.Theme = ScalarTheme.Alternate;
+        options.Theme = ScalarTheme.BluePlanet;
         options.DefaultHttpClient = new(ScalarTarget.CSharp, ScalarClient.HttpClient);
         options.ShowSidebar = true;
         options.PersistentAuthentication = true;

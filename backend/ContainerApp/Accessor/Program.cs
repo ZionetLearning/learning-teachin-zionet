@@ -68,8 +68,8 @@ if (env.IsDevelopment())
     app.MapOpenApi();
     app.MapScalarApiReference(options =>
     {
-        options.Title = "Manager API";
-        options.Theme = ScalarTheme.Alternate;
+        options.Title = "Accessor API";
+        options.Theme = ScalarTheme.DeepSpace;
         options.DefaultHttpClient = new(ScalarTarget.CSharp, ScalarClient.HttpClient);
         options.ShowSidebar = true;
         options.PersistentAuthentication = true;

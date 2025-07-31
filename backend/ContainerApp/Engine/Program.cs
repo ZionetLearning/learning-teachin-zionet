@@ -3,6 +3,7 @@ using Engine.Models;
 using Engine.Services;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,10 +44,39 @@ builder.Services.AddSingleton(sp =>
                  .Build();
 });
 
+// This is required for the Scalar UI to have an option to setup an authentication token
+builder.Services.AddOpenApi(
+    "v1",
+    options =>
+    {
+        options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+    }
+);
+
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 
 var app = builder.Build();
+
+if (env.IsDevelopment())
+{
+    app.MapOpenApi();
+    app.MapScalarApiReference(options =>
+    {
+        options.Title = "Engine API";
+        options.Theme = ScalarTheme.Laserwave;
+        options.DefaultHttpClient = new(ScalarTarget.CSharp, ScalarClient.HttpClient);
+        options.ShowSidebar = true;
+        options.PersistentAuthentication = true;
+        // here we can setup a default token
+        //options.AddPreferredSecuritySchemes("Bearer")
+        // .AddHttpAuthentication("Bearer", auth =>
+        // {
+        //     auth.Token = "Some Auth Token...";
+        // });
+
+    });
+}
 
 app.UseCloudEvents();
 app.MapControllers();
