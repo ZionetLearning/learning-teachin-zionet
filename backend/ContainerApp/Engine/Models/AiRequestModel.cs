@@ -5,6 +5,7 @@ namespace Engine.Models
     public sealed class AiRequestModel
     {
         public string Id { get; init; } = Guid.NewGuid().ToString("N");
+        public required string ThreadId { get; init; }
 
         public string Question { get; init; } = string.Empty;
 

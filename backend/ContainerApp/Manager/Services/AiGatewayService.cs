@@ -17,9 +17,9 @@ namespace Manager.Services
             _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
             _log = log ?? throw new ArgumentNullException(nameof(log));
         }
-        public async Task<string> SendQuestionAsync(string question, CancellationToken ct = default)
+        public async Task<string> SendQuestionAsync(string threadId, string question,  CancellationToken ct = default)
         {
-            var msg = AiRequestModel.Create(question, TopicNames.AiToManager);
+            var msg = AiRequestModel.Create(question, threadId, TopicNames.AiToManager);
 
             _log.LogInformation("Send question {Id} (TTL={Ttl})", msg.Id, msg.TtlSeconds);
 
@@ -37,7 +37,7 @@ namespace Manager.Services
 
         public Task SaveAnswerAsync(AiResponseModel msg, CancellationToken ct = default)
         {
-            _log.LogInformation("Start endpoint ${Name}.", nameof(SaveAnswerAsync));
+            _log.LogInformation("Start endpoint {Name} for threadId: {threadId} .", nameof(SaveAnswerAsync), msg.ThreadId);
 
             try
             {
@@ -47,14 +47,14 @@ namespace Manager.Services
             }
             catch (Exception ex)
             {
-                _log.LogError(ex, "Failed to cache answer for {CorrelationId}", msg.Id);
+                _log.LogError(ex, "Failed to cache answer for {CorrelationId}, for threadId: {threadId}", msg.Id, msg.ThreadId);
                 throw; 
             }
         }
 
         public Task<string?> GetAnswerAsync(string questionIdOrHash, CancellationToken ct = default)
         {
-            _log.LogInformation("Start endpoint ${Name}.", nameof(GetAnswerAsync));
+            _log.LogInformation("Start endpoint {Name}.", nameof(GetAnswerAsync));
 
             try
             {
