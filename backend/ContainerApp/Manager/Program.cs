@@ -65,7 +65,13 @@ if (env.IsDevelopment())
         options.DefaultHttpClient = new(ScalarTarget.CSharp, ScalarClient.HttpClient);
         options.ShowSidebar = true;
         options.PersistentAuthentication = true;
-        options.AddPreferredSecuritySchemes("Bearer");
+        // here we can setup a default token
+        //options.AddPreferredSecuritySchemes("Bearer")
+        // .AddHttpAuthentication("Bearer", auth =>
+        // {
+        //     auth.Token = "Some Auth Token...";
+        // });
+
     });
 }
 
