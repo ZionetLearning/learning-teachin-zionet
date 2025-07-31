@@ -39,3 +39,17 @@ obj/
 # Configuration files
 # ===============================
 *.env
+.DS_Store
+backend/ContainerApp/.idea/.idea.backend/.idea/.name
+backend/ContainerApp/.idea/.idea.backend/.idea/encodings.xml
+backend/ContainerApp/.idea/.idea.backend/.idea/indexLayout.xml
+backend/ContainerApp/.idea/.idea.backend/.idea/vcs.xml
+
+
+# ===============================
+# Terraform
+# ===============================
+*.tfstate
+*.tfstate.backup
+.terraform/
+# ===============================

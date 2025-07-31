@@ -32,6 +32,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ComponentTests", "Component
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EngineComponentTests", "EngineComponentTests\EngineComponentTests.csproj", "{6A311F7E-C7E8-42D5-ABB5-BAEC78C6B9C4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AccessorUnitTests", "AccessorUnitTests\AccessorUnitTests.csproj", "{6BB9E23C-FC36-4D87-90CC-53991BC34682}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UnitTests", "UnitTests", "{CCE68049-BAEB-48AA-A291-5456FD33A27A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SignalREmulator", "SignalREmulator", "{8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}"
+	ProjectSection(SolutionItems) = preProject
+		SignalREmulator\Dockerfile = SignalREmulator\Dockerfile
+		SignalREmulator\settings.json = SignalREmulator\settings.json
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -69,6 +79,12 @@ Global
 		{6A311F7E-C7E8-42D5-ABB5-BAEC78C6B9C4}.NoVariablesDefault|Any CPU.Build.0 = Release|Any CPU
 		{6A311F7E-C7E8-42D5-ABB5-BAEC78C6B9C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6A311F7E-C7E8-42D5-ABB5-BAEC78C6B9C4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6BB9E23C-FC36-4D87-90CC-53991BC34682}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6BB9E23C-FC36-4D87-90CC-53991BC34682}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6BB9E23C-FC36-4D87-90CC-53991BC34682}.NoVariablesDefault|Any CPU.ActiveCfg = Debug|Any CPU
+		{6BB9E23C-FC36-4D87-90CC-53991BC34682}.NoVariablesDefault|Any CPU.Build.0 = Debug|Any CPU
+		{6BB9E23C-FC36-4D87-90CC-53991BC34682}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6BB9E23C-FC36-4D87-90CC-53991BC34682}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -76,6 +92,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{F0FF105B-41F5-4E9B-B432-5CDE99DEE70E} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{6A311F7E-C7E8-42D5-ABB5-BAEC78C6B9C4} = {DF2F1EB2-307F-466A-A7AF-72E7C386066E}
+		{6BB9E23C-FC36-4D87-90CC-53991BC34682} = {CCE68049-BAEB-48AA-A291-5456FD33A27A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2C733277-52CE-4338-A414-EF30D2066690}

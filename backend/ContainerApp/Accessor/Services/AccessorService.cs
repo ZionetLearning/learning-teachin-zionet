@@ -1,8 +1,8 @@
 ﻿using Accessor.Constants;
 using Accessor.Models;
+using AutoMapper;
 using Dapr.Client;
 using Microsoft.EntityFrameworkCore;
-
 
 namespace Accessor.Services;
     public class AccessorService : IAccessorService
@@ -13,7 +13,7 @@ namespace Accessor.Services;
         private readonly IConfiguration _configuration;
         private readonly int _ttl;
 
-    public AccessorService(AccessorDbContext dbContext,
+    public AccessorService(AccessorDbContext dbContext, 
         ILogger<AccessorService> logger,
         DaprClient daprClient,
         IConfiguration configuration)
@@ -37,7 +37,7 @@ namespace Accessor.Services;
             _logger.LogInformation("Database migration completed.");
         }
         catch (Exception ex)
-            {
+        {
             _logger.LogError(ex, "Failed to connect to PostgreSQL during startup.");
             throw;
         }
@@ -98,6 +98,17 @@ namespace Accessor.Services;
         _logger.LogInformation("Inside:{Method}", nameof(CreateTaskAsync));
         try
         {
+            // Check if the id already exists in the DB
+            var checkId = await _dbContext.Tasks
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.Id == task.Id);
+
+            if (checkId != null)
+            {
+                _logger.LogWarning("Task with ID {TaskId} already exists in the DB.", task.Id);
+                return;
+            }
+
             // Add task to the database
             _dbContext.Tasks.Add(task);
             await _dbContext.SaveChangesAsync();

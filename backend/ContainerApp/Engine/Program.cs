@@ -5,6 +5,15 @@ using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var env = builder.Environment;
+
+builder.Configuration
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
+    .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
+    .AddEnvironmentVariables();
+
 builder.Services.AddDaprClient();
 builder.Services.AddControllers().AddDapr();
 
@@ -33,6 +42,9 @@ builder.Services.AddSingleton(sp =>
                      apiKey: cfg.ApiKey)
                  .Build();
 });
+
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
 
 var app = builder.Build();
 

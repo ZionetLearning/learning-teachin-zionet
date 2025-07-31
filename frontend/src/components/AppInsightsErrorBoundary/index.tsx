@@ -27,12 +27,12 @@ export class AppInsightsErrorBoundary extends React.Component<Props, State> {
     console.error(
       "AppInsightsErrorBoundary caught an error:",
       error,
-      errorInfo
+      errorInfo,
     );
 
     appInsights.trackException({
       exception: error, //the error object
-      severityLevel: 3,  //error level 
+      severityLevel: 3, //error level
       properties: {
         boundary: this.props.boundaryName ?? "AppInsightsErrorBoundary",
         componentStack: errorInfo.componentStack, //shows the component that threw the error

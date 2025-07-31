@@ -3,8 +3,16 @@ using Accessor.Services;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
-
 var builder = WebApplication.CreateBuilder(args);
+
+var env = builder.Environment;
+
+builder.Configuration
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
+    .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
+    .AddEnvironmentVariables();
+
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddControllers().AddDapr();
@@ -27,6 +35,8 @@ builder.Services.AddDaprClient(client =>
 // Configure PostgreSQL
 builder.Services.AddDbContext<AccessorDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
+
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 var app = builder.Build();
 

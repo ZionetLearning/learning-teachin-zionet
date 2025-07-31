@@ -1,6 +1,7 @@
-﻿using Dapr.Client;
-using Manager.Constants;
+﻿using AutoMapper;
 using Manager.Models;
+using Manager.Services.Clients;
+
 
 namespace Manager.Services;
 
@@ -8,118 +9,178 @@ public class ManagerService : IManagerService
 {
     private readonly IConfiguration _configuration;
     private readonly ILogger<ManagerService> _logger;
-    private readonly DaprClient _daprClient;
+    private readonly IAccessorClient _accessorClient;
+    private readonly IEngineClient _engineClient;
+    private readonly IMapper _mapper;
 
-    public ManagerService(IConfiguration configuration, ILogger<ManagerService> logger, DaprClient daprClient)
+    public ManagerService(IConfiguration configuration, 
+        ILogger<ManagerService> logger,
+        IAccessorClient accessorClient,
+        IEngineClient engineClient,
+        IMapper mapper)
     {
         _configuration = configuration;
         _logger = logger;
-        _daprClient = daprClient;
+        _accessorClient = accessorClient;
+        _engineClient = engineClient;
+        _mapper = mapper;
     }
 
     public async Task<TaskModel?> GetTaskAsync(int id)
     {
-        _logger.LogInformation($"Inside:{nameof(GetTaskAsync)}");
+        _logger.LogDebug("Inside: {MethodName}", nameof(GetTaskAsync));
+
+        if (id <= 0)
+        {
+            _logger.LogWarning("Invalid task ID provided: {TaskId}", id);
+            return null;
+        }
+
         try
         {
-            var task = await _daprClient.InvokeMethodAsync<TaskModel>(
-                HttpMethod.Get,
-                "accessor",
-                $"task/{id}"
-            );
+            var task = await _accessorClient.GetTaskAsync(id);
+            
+            if (task != null)
+            {
+                _logger.LogDebug("Successfully retrieved task {TaskId}", id);
+            }
+            else
+            {
+                _logger.LogDebug("Task {TaskId} not found", id);
+            }
 
             return task;
         }
-        
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to get task with ID {TaskId} from Accessor service.", id);
+            _logger.LogError(ex, "Error occurred while getting task {TaskId}", id);
             throw;
         }
-        
     }
 
     public async Task<(bool success, string message)> ProcessTaskAsync(TaskModel task)
     {
-        _logger.LogInformation($"Inside: {nameof(ProcessTaskAsync)}");
+        _logger.LogDebug("Inside: {MethodName}", nameof(ProcessTaskAsync));
+
         if (task is null)
         {
             _logger.LogWarning("Null task received for processing");
             return (false, "Task is null");
         }
 
+        if (string.IsNullOrWhiteSpace(task.Name))
+        {
+            _logger.LogWarning("Task {TaskId} has invalid name", task.Id);
+            return (false, "Task name is required");
+        }
+
+        if (string.IsNullOrWhiteSpace(task.Payload))
+        {
+            _logger.LogWarning("Task {TaskId} has invalid payload", task.Id);
+            return (false, "Task payload is required");
+        }
+
         try
         {
-            var payload = System.Text.Json.JsonSerializer.Serialize(task);
-            _logger.LogDebug("Serialized task payload: {Payload}", payload);
+            _logger.LogDebug("Processing task {TaskId} with name '{TaskName}'", task.Id, task.Name);
+            
+            var result = await _engineClient.ProcessTaskAsync(task);
+            
+            if (result.success)
+            {
+                _logger.LogDebug("Task {TaskId} successfully processed", task.Id);
+            }
+            else
+            {
+                _logger.LogDebug("Task {TaskId} processing failed: {Message}", task.Id, result.message);
+            }
 
-            await _daprClient.InvokeBindingAsync(QueueNames.ManagerToEngine, "create", task);
-            _logger.LogInformation("Task {Id} sent to Engine via binding '{Binding}'", task.Id, QueueNames.ManagerToEngine);
-
-            return (true, "sent to engine");
+            return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send task {Id} to Engine", task.Id);
+            _logger.LogError(ex, "Error occurred while processing task {TaskId}", task.Id);
             return (false, "Failed to send to Engine");
         }
     }
 
-
     public async Task<bool> UpdateTaskName(int id, string newTaskName)
     {
-        _logger.LogInformation($"Inside {nameof(UpdateTaskName)}");
+        _logger.LogDebug("Inside: {MethodName}", nameof(UpdateTaskName));
+
+        if (id <= 0)
+        {
+            _logger.LogWarning("Invalid task ID provided for update: {TaskId}", id);
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(newTaskName))
+        {
+            _logger.LogWarning("Invalid task name provided for update: '{TaskName}'", newTaskName);
+            return false;
+        }
+
+        if (newTaskName.Length > 100)
+        {
+            _logger.LogWarning("Task name too long for task {TaskId}: {Length} characters", id, newTaskName.Length);
+            return false;
+        }
+
         try
         {
-            if (id <= 0 || string.IsNullOrEmpty(newTaskName))
+            _logger.LogInformation("Updating task {TaskId} name to '{NewTaskName}'", id, newTaskName);
+            
+            var result = await _accessorClient.UpdateTaskName(id, newTaskName);
+            
+            if (result)
             {
-                _logger.LogError("Invalid input: id or task name is null or empty.");
-                return false;
+                _logger.LogInformation("Task {TaskId} name successfully updated", id);
+            }
+            else
+            {
+                _logger.LogWarning("Failed to update task {TaskId} name", id);
             }
 
-            await _daprClient.InvokeBindingAsync(
-                QueueNames.TaskUpdate,
-                "create",
-                new
-                {
-                    Id = id,
-                    Name = newTaskName
-                });
-
-            _logger.LogInformation("Task name update sent to queue.");
-            return true;
+            return result;
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            _logger.LogError(e, "Error inside the UpdateUserEmail");
+            _logger.LogError(ex, "Error occurred while updating task {TaskId} name", id);
             return false;
         }
     }
 
     public async Task<bool> DeleteTask(int id)
     {
-        _logger.LogInformation($"Inside {nameof(DeleteTask)}");
+        _logger.LogDebug("Inside: {MethodName}", nameof(DeleteTask));
+        
+        if (id <= 0)
+        {
+            _logger.LogWarning("Invalid task ID provided for deletion: {TaskId}", id);
+            return false;
+        }
+
         try
         {
-            if (id <= 0)
+            _logger.LogInformation("Attempting to delete task {TaskId}", id);
+            
+            var result = await _accessorClient.DeleteTask(id);
+            
+            if (result)
             {
-                _logger.LogError("Invalid input.");
-                return false;
+                _logger.LogInformation("Task {TaskId} successfully deleted", id);
+            }
+            else
+            {
+                _logger.LogWarning("Failed to delete task {TaskId}", id);
             }
 
-            await _daprClient.InvokeMethodAsync(
-                HttpMethod.Delete,
-                "accessor",
-                $"task/{id}");
-
-            _logger.LogInformation($"{nameof(DeleteTask)}: task with id: {id} has been deleted");
-            return true;
+            return result;
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            _logger.LogError(e, "Error inside the DeleteUser");
+            _logger.LogError(ex, "Error occurred while deleting task {TaskId}", id);
             return false;
         }
     }
-
 }
