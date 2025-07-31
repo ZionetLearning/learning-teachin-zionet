@@ -1,19 +1,22 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { I18nTranslateProvider } from "./providers/i18n-translate-provider";
+import { ReactQueryProvider } from "./providers";
 import "./index.css";
 import App from "./App.tsx";
 import { AppInsightsErrorBoundary } from "./components";
 import { appInsights } from "./appInsights";
-import { ReactQueryProvider } from "./providers";
 
 appInsights.loadAppInsights();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <AppInsightsErrorBoundary boundaryName="FrontendRootApp">
+    <I18nTranslateProvider>
       <ReactQueryProvider>
-        <App />
+        <AppInsightsErrorBoundary boundaryName="FrontendRootApp">
+          <App />
+        </AppInsightsErrorBoundary>
       </ReactQueryProvider>
-    </AppInsightsErrorBoundary>
-  </StrictMode>
+    </I18nTranslateProvider>
+  </StrictMode>,
 );
