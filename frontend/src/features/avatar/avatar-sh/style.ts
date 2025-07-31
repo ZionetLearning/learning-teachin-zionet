@@ -1,11 +1,42 @@
 import { createUseStyles } from "react-jss";
 
 export const useStyles = createUseStyles({
+
+  chatWrapper: {
+    maxWidth: "800px",
+    maxHeight: "550px",
+    margin: "auto",
+    border: "1px solid #ccc",
+    padding: 10,
+  },
   wrapper: {
     position: "relative",
     width: "300px",
     height: "300px",
     margin: "0 auto",
+  },
+  messagesList: {
+    height: "280px",
+    overflowX: "auto",
+    overflowY: "auto",
+    marginBottom: 10,
+  },
+  messageBox: {
+    "& .rce-mbox-right-notch": {
+      fill: "#11bbff !important",
+    },
+    "& .rce-container-mbox-right": {
+      flexDirection: "row-reverse",
+    },
+    "& .rce-mbox-right .rce-mbox-title": {
+      textAlign: "right",
+      justifyContent: "flex-end",
+    },
+  },
+  rightButtons: {
+    display: "flex",
+    flexDirection: "row",
+    gap: "5px"
   },
   button: {
     marginTop: "10px",
@@ -46,5 +77,18 @@ export const useStyles = createUseStyles({
   avatar: {
     width: "100%",
     height: "100%",
+  },
+  sendButton: {
+    backgroundColor: "#44bbff",
+    color: "#fff",
+    borderRadius: "50%",
+    width: "35px",
+    height: "30px",
+    fontSize: "22px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 0,
+    lineHeight: 1,
   },
 });
