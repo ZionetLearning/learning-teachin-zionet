@@ -20,6 +20,7 @@ builder.Services.AddControllers().AddDapr();
 builder.Services.AddScoped<IEngineService, EngineService>();
 builder.Services.AddScoped<IChatAiService, ChatAiService>();
 builder.Services.AddScoped<IAiReplyPublisher, AiReplyPublisher>();
+builder.Services.AddMemoryCache();
 
 builder.Services
     .AddOptions<AzureOpenAiSettings>()
@@ -42,6 +43,8 @@ builder.Services.AddSingleton(sp =>
                      apiKey: cfg.ApiKey)
                  .Build();
 });
+
+builder.Services.AddSingleton<ISystemPromptProvider, SystemPromptProvider>();
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
