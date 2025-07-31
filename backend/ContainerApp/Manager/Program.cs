@@ -55,17 +55,19 @@ app.MapControllers();
 app.MapSubscribeHandler();
 app.MapManagerEndpoints();
 app.MapAiEndpoints();
-
-app.MapOpenApi();
-app.MapScalarApiReference(options =>
+if (env.IsDevelopment())
 {
-    options.Title = "Manager API";
-    options.Theme = ScalarTheme.Alternate;
-    options.DefaultHttpClient = new(ScalarTarget.CSharp, ScalarClient.HttpClient);
-    options.ShowSidebar = true;
-    options.PersistentAuthentication = true;
-    options.AddPreferredSecuritySchemes("Bearer");
-});
+    app.MapOpenApi();
+    app.MapScalarApiReference(options =>
+    {
+        options.Title = "Manager API";
+        options.Theme = ScalarTheme.Alternate;
+        options.DefaultHttpClient = new(ScalarTarget.CSharp, ScalarClient.HttpClient);
+        options.ShowSidebar = true;
+        options.PersistentAuthentication = true;
+        options.AddPreferredSecuritySchemes("Bearer");
+    });
+}
 
 app.MapHub<NotificationHub>("/notificationHub");
 
