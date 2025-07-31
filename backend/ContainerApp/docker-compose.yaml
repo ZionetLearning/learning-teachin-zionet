@@ -106,7 +106,6 @@ services:
         - pgdata:/var/lib/postgresql/data
     networks:
         - microservice-net
- 
 
   # ---------------------- pgAdmin for PostgreSQL ----------------------
   pgadmin:
