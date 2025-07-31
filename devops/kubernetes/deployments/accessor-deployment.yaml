@@ -1,0 +1,35 @@
+apiVersion: apps/v1 
+kind: Deployment
+metadata: # This metadata section contains information about the deployment
+  name: accessor
+  namespace: dev # Specify the namespace where this deployment will be created
+  labels:
+    app: accessor
+spec:
+  replicas: 1 # Number of pod replicas
+  selector: # This selector is used to find which pods to manage
+    matchLabels: # This selector matches the labels of the pods managed by this deployment
+      app: accessor
+  template: # This template defines the pod that will be created
+    metadata:
+      labels:
+        app: accessor
+      annotations: # Annotations for the pod, useful for Dapr configuration
+        dapr.io/enabled: "true" # Enable Dapr for this pod
+        dapr.io/app-id: "accessor" # Dapr application ID
+        dapr.io/app-port: "5003"  # Dapr app port
+    spec: # This spec defines the pod's containers and their configurations
+      containers:
+        - name: accessor
+          image: ${DOCKER_REGISTRY}/accessor:latest
+          #imagePullPolicy: IfNotPresent  # Changed from Never to IfNotPresent
+          ports:
+          - containerPort: 5003 # Port on which the application listens
+          env:
+          - name: ASPNETCORE_URLS
+            value: "http://+:5003"
+          - name: ConnectionStrings__Postgres
+            valueFrom:
+              secretKeyRef:
+                name: postgres-connection
+                key: PostgreSQLConnectionString

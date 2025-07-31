@@ -1,0 +1,15 @@
+apiVersion: v1 
+kind: Service
+metadata:
+  name: accessor-service
+  namespace: dev
+  labels:
+    app: accessor
+spec:
+  selector:
+    app: accessor # This should match the label in the deployment
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5003 # This should match the port in the deployment
+  type: ClusterIP    

@@ -1,4 +1,4 @@
-name: AKS - Full CICD
+name: AKS - Full CICD Demo
 
 on:
   #push:
@@ -17,7 +17,7 @@ on:
 
 jobs:
   build-and-push-images:
-    uses: ./.github/workflows/build-and-push-images.yml
+    uses: ./.github/workflows/build-and-push-images-demo.yml
     permissions:
       id-token: write
       contents: read
@@ -26,7 +26,7 @@ jobs:
     secrets: inherit
 
   aks-terraform-apply:
-    uses: ./.github/workflows/aks-terraform-apply.yml
+    uses: ./.github/workflows/aks-terraform-apply-demo.yml
     permissions:
       id-token: write
       contents: read
@@ -36,7 +36,7 @@ jobs:
 
   aks-kubectl-apply:
     needs: [build-and-push-images, aks-terraform-apply]
-    uses: ./.github/workflows/aks-kubectl-apply.yml
+    uses: ./.github/workflows/aks-kubectl-apply-demo.yml
     permissions:
       id-token: write
       contents: read
@@ -44,10 +44,10 @@ jobs:
       environment: ${{ github.event.inputs.environment || 'Development' }}
     secrets: inherit
 
-  # healthcheck:
-  #   needs: [aks-kubectl-apply]
-  #   uses: ./.github/workflows/aks-healthcheck.yml
-  #   with:
-  #     app_url: ${{ needs.aks-kubectl-apply.outputs.app_url }}
-  #     environment: ${{ github.event.inputs.environment || 'Development' }}
-  #   secrets: inherit
+  healthcheck:
+    needs: [aks-kubectl-apply]
+    uses: ./.github/workflows/aks-healthcheck-demo.yml
+    with:
+      app_url: ${{ needs.aks-kubectl-apply.outputs.app_url }}
+      environment: ${{ github.event.inputs.environment || 'Development' }}
+    secrets: inherit
