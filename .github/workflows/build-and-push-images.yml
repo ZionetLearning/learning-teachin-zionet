@@ -50,8 +50,9 @@ jobs:
       - name: Build and Push Images
         run: |
           declare -A services=(
-            ["todoaccessor"]="Accessor"
-            ["todomanager"]="Manager"
+            ["accessor"]="Accessor"
+            ["manager"]="Manager"
+            ["engine"]="Engine"
           )
           ROOT_DIR="backend/ContainerApp"
           for name in "${!services[@]}"; do
