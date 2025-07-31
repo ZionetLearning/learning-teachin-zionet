@@ -12,6 +12,11 @@ services:
         - "50006"
       networks:
         - microservice-net
+      healthcheck:
+        test: ["CMD", "curl", "-f", "http://localhost:50006/health"]
+        interval: 10s
+        retries: 3
+
 
   # -------------------- Azure SQL Edge --------------------
   sqledge:
@@ -27,6 +32,10 @@ services:
     networks:
       - sb-emulator
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "/bin/bash", "-c", "nc -z localhost 1433"]
+      interval: 10s
+      retries: 3
 
 
   # -------------------- Azure Service Bus Emulator --------------------
@@ -87,6 +96,11 @@ services:
         - pgdata:/var/lib/postgresql/data
     networks:
         - microservice-net
+    healthcheck:
+        test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+        interval: 10s
+        retries: 5
+
  
 
   # ---------------------- pgAdmin for PostgreSQL ----------------------
@@ -100,6 +114,11 @@ services:
         - "8080:80"
       networks:
         - microservice-net
+      healthcheck:
+        test: ["CMD-SHELL", "curl -f http://localhost:80/"]
+        interval: 10s
+        retries: 3
+
 
   # ------------------------ Manager Service ---------------------------
   manager:
@@ -115,6 +134,11 @@ services:
     networks:
       - microservice-net
       - sb-emulator
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      interval: 10s
+      retries: 3
+
 
   manager-dapr:
     image: "daprio/daprd:latest"
@@ -134,6 +158,11 @@ services:
     volumes:
       - ./dapr:/dapr
     network_mode: "service:manager"
+    healthcheck:
+        test: ["CMD", "nc", "-z", "localhost", "3500"]
+        interval: 10s
+        retries: 3
+
 
       # ------------------------ ApiGateway Service ---------------------------
 
@@ -169,6 +198,11 @@ services:
     networks:
       - microservice-net
       - sb-emulator
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5002/health"]
+      interval: 10s
+      retries: 3
+
 
   engine-dapr:
     image: "daprio/daprd:latest"
@@ -188,6 +222,10 @@ services:
     volumes:
       - ./dapr:/dapr
     network_mode: "service:engine"
+    healthcheck:
+        test: ["CMD", "nc", "-z", "localhost", "3501"]
+        interval: 10s
+        retries: 3
 
   # ------------------------ Accessor Service ---------------------------
   accessor:
@@ -209,6 +247,11 @@ services:
     networks:
       - microservice-net
       - sb-emulator
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5003/health"]
+      interval: 10s
+      retries: 3
+
 
   accessor-dapr:
     image: "daprio/daprd:latest"
@@ -228,6 +271,10 @@ services:
     volumes:
       - ./dapr:/dapr
     network_mode: "service:accessor"
+    healthcheck:
+        test: ["CMD", "nc", "-z", "localhost", "3502"]
+        interval: 10s
+        retries: 3
 
 
 
