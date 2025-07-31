@@ -78,6 +78,62 @@ resource "kubernetes_config_map" "grafana_datasource" {
   }
 }
 
+resource "kubernetes_config_map" "grafana_dashboard_cluster" {
+  metadata {
+    name      = "dashboard-cluster"
+    namespace = module.grafana.namespace
+    labels = {
+      grafana_dashboard = "1"
+    }
+  }
+
+  data = {
+    "cluster-overview.json" = file("${path.module}/dashboards/cluster-overview.json")
+  }
+}
+
+resource "kubernetes_config_map" "grafana_dashboard_deployments" {
+  metadata {
+    name      = "dashboard-deployments"
+    namespace = module.grafana.namespace
+    labels = {
+      grafana_dashboard = "1"
+    }
+  }
+
+  data = {
+    "deployments.json" = file("${path.module}/dashboards/deployments.json")
+  }
+}
+
+resource "kubernetes_config_map" "grafana_dashboard_nodes" {
+  metadata {
+    name      = "dashboard-nodes"
+    namespace = module.grafana.namespace
+    labels = {
+      grafana_dashboard = "1"
+    }
+  }
+
+  data = {
+    "node-exporter.json" = file("${path.module}/dashboards/node-exporter.json")
+  }
+}
+
+resource "kubernetes_config_map" "grafana_dashboard_k8s" {
+  metadata {
+    name      = "dashboard-k8s"
+    namespace = module.grafana.namespace
+    labels = {
+      grafana_dashboard = "1"
+    }
+  }
+
+  data = {
+    "K8S-dashboard.json" = file("${path.module}/dashboards/K8S-dashboard.json")
+  }
+}
+
 ########################################
 # 2. AKS kube-config for providers
 ########################################

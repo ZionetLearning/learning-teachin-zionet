@@ -9,7 +9,7 @@ variable "cluster_name" {
 }
 variable "node_count" {
   type    = number
-  default = 2
+  default = 1
 }
 variable "vm_size" {
   type    = string
