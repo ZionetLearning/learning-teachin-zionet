@@ -50,15 +50,15 @@ jobs:
       - name: Build and Push Images
         run: |
           declare -A services=(
-            ["todoaccessor"]="Accessors/ToDoAccessor"
-            ["todomanager"]="Managers/TodoManager"
-            ["notificationmanager"]="Managers/NotificationManager"
+            ["accessor"]="Accessor"
+            ["manager"]="Manager"
+            ["engine"]="Engine"
           )
-          ROOT_DIR="devops/kubernetes/DemoCuest"
+          ROOT_DIR="backend/ContainerApp"
           for name in "${!services[@]}"; do
             relpath="${services[$name]}"
-            context="$ROOT_DIR"
-            dockerfile="$ROOT_DIR/$relpath/Dockerfile"
+            context="$ROOT_DIR/$relpath"
+            dockerfile="$context/Dockerfile" 
             image="$ACR_LOGIN_SERVER/$name:latest"
             echo "Building $image from $dockerfile (context $context)..."
             docker build -t "$image" -f "$dockerfile" "$context"
