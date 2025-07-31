@@ -74,6 +74,7 @@ public static class ManagerEndpoints
         logger.LogInformation("Inside {method}", nameof(CreateTaskAsync));
         if (!ValidationExtensions.TryValidate(task, out var validationErrors))
         {
+            logger.LogWarning("Validation failed for {Model}: {Errors}",nameof(TaskModel), validationErrors);
             return Results.BadRequest(new { errors = validationErrors });
         }
 

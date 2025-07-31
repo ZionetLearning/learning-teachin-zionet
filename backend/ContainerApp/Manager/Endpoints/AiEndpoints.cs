@@ -71,6 +71,7 @@ public static class AiEndpoints
         log.LogInformation("Inside {method}", nameof(QuestionAsync));
         if (!ValidationExtensions.TryValidate(dto, out var validationErrors))
         {
+            log.LogWarning("Validation failed for {Model}: {Errors}", nameof(AiRequestModel), validationErrors);
             return Results.BadRequest(new { errors = validationErrors });
         }
 
@@ -97,6 +98,7 @@ public static class AiEndpoints
         log.LogInformation("Inside {method}", nameof(PubSubAsync));
         if (!ValidationExtensions.TryValidate(msg, out var validationErrors))
         {
+            log.LogWarning("Validation failed for {Model}: {Errors}",nameof(AiResponseModel), validationErrors);
             return Results.BadRequest(new { errors = validationErrors });
         }
 
