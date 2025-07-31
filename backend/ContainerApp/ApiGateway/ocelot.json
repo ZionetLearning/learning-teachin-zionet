@@ -10,7 +10,15 @@
           "Port": 5001
         }
       ],
-      "DownstreamPathTemplate": "/task/{id}"
+      "DownstreamPathTemplate": "/task/{id}",
+      "RouteIsCaseSensitive": false,
+      "RateLimitOptions": {
+        "ClientIdHeader": "ClientId",
+        "EnableRateLimiting": true,
+        "Period": "1m",
+        "PeriodTimespan": 1,
+        "Limit": 100
+      }
     },
     {
       "UpstreamPathTemplate": "/task",
@@ -22,7 +30,8 @@
           "Port": 5001
         }
       ],
-      "DownstreamPathTemplate": "/task"
+      "DownstreamPathTemplate": "/task",
+      "RouteIsCaseSensitive": false
     },
     {
       "UpstreamPathTemplate": "/task/{id}/{name}",
@@ -34,7 +43,8 @@
           "Port": 5001
         }
       ],
-      "DownstreamPathTemplate": "/task/{id}/{name}"
+      "DownstreamPathTemplate": "/task/{id}/{name}",
+      "RouteIsCaseSensitive": false
     },
     {
       "UpstreamPathTemplate": "/task/{id}",
@@ -46,7 +56,18 @@
           "Port": 5001
         }
       ],
-      "DownstreamPathTemplate": "/task/{id}"
+      "DownstreamPathTemplate": "/task/{id}",
+      "RouteIsCaseSensitive": false
     }
-  ]
+  ],
+  "GlobalConfiguration": {
+    "RequestIdKey": "X-Request-Id",
+    "RateLimitOptions": {
+      "ClientIdHeader": "ClientId",
+      "EnableRateLimiting": true,
+      "Period": "1m",
+      "PeriodTimespan": 1,
+      "Limit": 1000
+    }
+  }
 }

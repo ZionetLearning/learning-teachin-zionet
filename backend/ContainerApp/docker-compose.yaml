@@ -149,6 +149,12 @@ services:
     networks:
       - microservice-net
 
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5280/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
   # ------------------------ Engine Service ---------------------------
   engine:
     build:
