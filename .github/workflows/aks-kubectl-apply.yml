@@ -98,7 +98,7 @@ jobs:
 
       - name: Restart all pods in dev namespace
         run: |
-          kubectl rollout restart deployment --all -n dev
+          kubectl delete pod --all -n dev
 
 
       - name: Output external URL
