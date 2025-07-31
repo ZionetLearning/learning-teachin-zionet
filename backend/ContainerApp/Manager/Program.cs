@@ -2,6 +2,7 @@ using Manager.Endpoints;
 using Manager.Hubs;
 using Manager.Services;
 using Manager.Services.Clients;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,6 +38,17 @@ builder.Services.AddScoped<IAccessorClient, AccessorClient>();
 builder.Services.AddScoped<IEngineClient, EngineClient>();
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+
+// For Log Scopes
+builder.Logging.ClearProviders();
+builder.Logging.AddSimpleConsole(options =>
+{
+    options.IncludeScopes = true;             // this shows your BeginScope
+    options.SingleLine = false;               //this gives you indentation and structure
+    options.TimestampFormat = "[HH:mm:ss] ";  // optional, for nice timestamps
+});
+
 
 var app = builder.Build();
 app.UseCors("AllowAll");

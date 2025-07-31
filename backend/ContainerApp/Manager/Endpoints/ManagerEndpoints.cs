@@ -46,6 +46,13 @@ public static class ManagerEndpoints
         [FromServices] ILogger<ManagerService> logger)
     {
         logger.LogInformation("Inside {method}", nameof(GetTaskAsync));
+
+        using (logger.BeginScope("Importing user data for {UserId}", id))
+        {
+            logger.LogInformation("Starting import");
+            // Do work
+            logger.LogInformation("Import complete");
+        }
         try
         {
             var task = await managerService.GetTaskAsync(id);
