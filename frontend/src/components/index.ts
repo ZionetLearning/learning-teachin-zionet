@@ -1,2 +1,2 @@
-export * from "./BackToMenuLayout";
-export * from "./AppInsightsErrorBoundary";
+export * from './BackToMenuLayout';
+export * from './AppInsightsErrorBoundary';
