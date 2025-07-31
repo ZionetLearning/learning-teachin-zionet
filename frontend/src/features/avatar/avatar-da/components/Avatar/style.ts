@@ -4,7 +4,7 @@ export const useStyles = createUseStyles({
   inputContainer: {
     display: "flex",
     position: "absolute",
-    bottom: 20,
+    bottom: 80,
     left: "50%",
     transform: "translateX(-50%)",
     background: "rgba(255,255,255,0.9)",

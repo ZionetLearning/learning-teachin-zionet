@@ -9,7 +9,7 @@ export const Scene = () => {
   const viewport = useThree((state) => state.viewport);
   return (
     <>
-      <Avatar position={[0, -3, 5]} scale={2} />
+      <Avatar position={[0, -2.8, 5]} scale={2} />
       <Environment preset="sunset" />
       <mesh>
         <planeGeometry args={[viewport.width, viewport.height]} />

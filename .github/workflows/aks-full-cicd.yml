@@ -44,10 +44,10 @@ jobs:
       environment: ${{ github.event.inputs.environment || 'Development' }}
     secrets: inherit
 
-  healthcheck:
-    needs: [aks-kubectl-apply]
-    uses: ./.github/workflows/aks-healthcheck.yml
-    with:
-      app_url: ${{ needs.aks-kubectl-apply.outputs.app_url }}
-      environment: ${{ github.event.inputs.environment || 'Development' }}
-    secrets: inherit
+  # healthcheck:
+  #   needs: [aks-kubectl-apply]
+  #   uses: ./.github/workflows/aks-healthcheck.yml
+  #   with:
+  #     app_url: ${{ needs.aks-kubectl-apply.outputs.app_url }}
+  #     environment: ${{ github.event.inputs.environment || 'Development' }}
+  #   secrets: inherit

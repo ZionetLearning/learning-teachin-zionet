@@ -3,7 +3,7 @@ import { useRef, useState } from "react";
 
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";
 
-import { phrases, phrasesWithNikud } from "./utils";
+import { comparePhrases, phrases, phrasesWithNikud } from "./utils";
 
 import { useStyles } from "./style";
 
@@ -38,16 +38,6 @@ export const SpeakingPractice = () => {
 
   speechConfig.speechSynthesisVoiceName = "he-IL-HilaNeural";
   speechConfig.speechRecognitionLanguage = "he-IL";
-
-  const comparePhrases = (
-    userPhrase: string,
-    targetPhrase: string,
-  ): boolean => {
-    const normalize = (str: string = "") =>
-      str.replace(/[^\p{L}\p{N}\s]/gu, "").trim();
-
-    return normalize(userPhrase) === normalize(targetPhrase);
-  };
 
   const stopSynthesis = () => {
     if (synthesizerRef.current) {
@@ -110,14 +100,13 @@ export const SpeakingPractice = () => {
       stopSynthesis();
       return;
     }
+    setIsSpeaking(true);
+
     const player = new sdk.SpeakerAudioDestination();
     playerRef.current = player;
 
-    player.onAudioStart = () => setIsSpeaking(true);
     player.onAudioEnd = () => {
-      setIsSpeaking(false);
-      player.close();
-      playerRef.current = null;
+      stopSynthesis();
     };
 
     const audioConfig = sdk.AudioConfig.fromSpeakerOutput(player);
@@ -132,8 +121,7 @@ export const SpeakingPractice = () => {
       },
       (err) => {
         console.error("TTS error:", err);
-        synthesizer.close();
-        synthesizerRef.current = null;
+        stopSynthesis();
       },
     );
   };

@@ -1,0 +1,89 @@
+name: AKS - Deploy App to AKS demo
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+    outputs:
+      app_url:
+        description: "Full URL of the deployed todomanager service"
+        value: ${{ jobs.deploy.outputs.app_url }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    permissions:
+      id-token: write
+      contents: read
+
+    outputs:
+      app_url: ${{ steps.extract_url.outputs.app_url }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Azure Login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set up variables
+        run: |
+          echo "K8S_DIR=devops/kubernetes/DemoCuest/k8s" >> $GITHUB_ENV
+          echo "NAMESPACE_FILE=devops/kubernetes/DemoCuest/k8s/namespace-model.yaml" >> $GITHUB_ENV
+          echo "DOCKER_REGISTRY=benny902" >> $GITHUB_ENV
+          echo "AKS_RG=democuest-aks-rg-dev" >> $GITHUB_ENV
+          echo "AKS_NAME=democuest-aks-dev" >> $GITHUB_ENV
+
+      - name: Get AKS credentials
+        run: |
+          az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
+
+      - name: Set kubectl context
+        run: kubectl config use-context $AKS_NAME
+
+      - name: Create namespace
+        run: kubectl apply -f $NAMESPACE_FILE
+
+      - name: Apply Dapr components
+        run: kubectl apply -f "$K8S_DIR/dapr/components" --recursive
+
+      - name: Apply services
+        run: kubectl apply -f "$K8S_DIR/services" --recursive
+
+      - name: Apply deployments (with registry substitution)
+        run: |
+          find "$K8S_DIR/deployments" -type f -name '*.yaml' | while read file; do
+            echo "Applying $file"
+            DOCKER_REGISTRY=$DOCKER_REGISTRY envsubst < "$file" | kubectl apply -f -
+          done
+
+      - name: Wait for external IP for todomanager service
+        id: wait_for_ip
+        run: |
+          echo "Waiting for external IP for todomanager service..."
+          for i in {1..30}; do
+            EXTERNAL_IP=$(kubectl -n devops-model get svc todomanager -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+            if [[ -n "$EXTERNAL_IP" ]]; then
+              echo "External IP is ready: $EXTERNAL_IP"
+              echo "app_url=http://$EXTERNAL_IP:5073/swagger" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+            echo "Attempt $i: External IP not yet assigned. Waiting 10s..."
+            sleep 10
+          done
+          echo "Failed to get external IP after waiting. Check 'kubectl get svc todomanager'"
+          exit 1
+
+      - name: Output external URL
+        id: extract_url
+        run: |
+          echo "app_url=${{ steps.wait_for_ip.outputs.app_url }}" >> $GITHUB_OUTPUT
+          echo "App URL: ${{ steps.wait_for_ip.outputs.app_url }}"

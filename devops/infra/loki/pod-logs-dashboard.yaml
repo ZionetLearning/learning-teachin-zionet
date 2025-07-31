@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pod-logs-dashboard
+  namespace: devops-logs
+  labels:
+    grafana_dashboard: "1"
+data:
+  pod-logs.json: |
+    {
+      "title": "Pod Logs",
+      "uid": "podlogs",
+      "schemaVersion": 16,
+      "version": 1,
+      "time": { "from": "now-1h", "to": "now" },
+      "templating": {
+        "list": [
+          {
+            "name": "pod",
+            "label": "Pod",
+            "type": "query",
+            "datasource": "Loki",
+            "refresh": 2,
+            "query": "label_values(pod)",
+            "definition": "label_values(pod)",
+            "allValue": ".*",
+            "includeAll": true,
+            "current": { "selected": true, "text": "All", "value": "$__all" }
+          },
+          {
+            "name": "container",
+            "label": "Container",
+            "type": "query",
+            "datasource": "Loki",
+            "refresh": 2,
+            "query": "label_values(container)",
+            "definition": "label_values(container)",
+            "allValue": ".*",
+            "includeAll": true,
+            "current": { "selected": true, "text": "All", "value": "$__all" }
+          }
+        ]
+      },
+      "panels": [
+        {
+          "type": "logs",
+          "title": "Logs by Pod and Container",
+          "datasource": "Loki",
+          "targets": [
+            { "expr": "{pod=~\"$pod\", container=~\"$container\"}", "refId": "A" }
+          ],
+          "gridPos": { "x": 0, "y": 0, "w": 24, "h": 20 },
+          "options": { "showLabels": true, "showTime": true, "wrapLogMessage": true, "dedupStrategy": "none" }
+        }
+      ]
+    }

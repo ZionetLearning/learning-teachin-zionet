@@ -36,11 +36,16 @@ jobs:
 
       - name: Set up variables
         run: |
-          echo "K8S_DIR=devops/kubernetes/DemoCuest/k8s" >> $GITHUB_ENV
-          echo "NAMESPACE_FILE=devops/kubernetes/DemoCuest/k8s/namespace-model.yaml" >> $GITHUB_ENV
-          echo "DOCKER_REGISTRY=benny902" >> $GITHUB_ENV
-          echo "AKS_RG=democuest-aks-rg-dev" >> $GITHUB_ENV
-          echo "AKS_NAME=democuest-aks-dev" >> $GITHUB_ENV
+          echo "K8S_DIR=devops/kubernetes/" >> $GITHUB_ENV
+          echo "NAMESPACE_FILE=devops/kubernetes/namespaces/namespace-dev.yaml" >> $GITHUB_ENV
+          echo "DOCKER_REGISTRY=snir1551" >> $GITHUB_ENV
+          echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
+          echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
+          AKS_RG=dev-zionet-learning-2025
+          AKS_NAME=aks-cluster-dev
+          # AKS_PUBLIC_IP=$(az network public-ip show --resource-group "$AKS_RG" --name "$AKS_NAME-public-ip" --query ipAddress -o tsv)
+          # echo "AKS_PUBLIC_IP=$AKS_PUBLIC_IP" >> $GITHUB_ENV
+          # echo "AKS_PUBLIC_IP=$AKS_PUBLIC_IP"
 
       - name: Get AKS credentials
         run: |
@@ -65,25 +70,49 @@ jobs:
             DOCKER_REGISTRY=$DOCKER_REGISTRY envsubst < "$file" | kubectl apply -f -
           done
 
-      - name: Wait for external IP for todomanager service
+      - name: Wait for external IP for manager service
         id: wait_for_ip
         run: |
-          echo "Waiting for external IP for todomanager service..."
+          echo "Waiting for external IP for manager service..."
           for i in {1..30}; do
-            EXTERNAL_IP=$(kubectl -n devops-model get svc todomanager -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+            EXTERNAL_IP=$(kubectl -n dev get svc manager -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
             if [[ -n "$EXTERNAL_IP" ]]; then
               echo "External IP is ready: $EXTERNAL_IP"
-              echo "app_url=http://$EXTERNAL_IP:5073/swagger" >> $GITHUB_OUTPUT
+              echo "app_url=http://$EXTERNAL_IP" >> $GITHUB_OUTPUT
               exit 0
             fi
             echo "Attempt $i: External IP not yet assigned. Waiting 10s..."
             sleep 10
           done
-          echo "Failed to get external IP after waiting. Check 'kubectl get svc todomanager'"
+          echo "Failed to get external IP after waiting. Check 'kubectl get svc manager'"
           exit 1
+
+      - name: Add external IP to PostgreSQL firewall
+        run: |
+          EXTERNAL_IP=$(az network public-ip list \
+            --resource-group MC_dev-zionet-learning-2025_aks-cluster-dev_westeurope \
+            --query "[?!(contains(name, 'kubernetes'))].{name:name, ip:ipAddress}" \
+            -o json | jq -r '.[0].ip')
+          az postgres flexible-server firewall-rule create \
+            --resource-group $AKS_RG \
+            --name pg-zionet-dev-2025 \
+            --rule-name allow-accessor-service \
+            --start-ip-address $EXTERNAL_IP \
+            --end-ip-address $EXTERNAL_IP
+        env:
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      
+      - name: Restart Accessor deployment
+        run: |
+          kubectl rollout restart deployment accessor -n dev     
+
 
       - name: Output external URL
         id: extract_url
         run: |
           echo "app_url=${{ steps.wait_for_ip.outputs.app_url }}" >> $GITHUB_OUTPUT
           echo "App URL: ${{ steps.wait_for_ip.outputs.app_url }}"
+
+   

@@ -1,0 +1,21 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: manager-to-engine-input
+  namespace: dev
+spec:
+  type: bindings.azure.servicebusqueues
+  version: v1
+  metadata:
+    - name: connectionString
+      secretKeyRef:
+        name: azure-service-bus-secret
+        key: AzureServiceBusConnectionString
+    - name: queueName
+      value: "manager-to-engine"
+    - name: direction
+      value: input
+    - name: disableEntityManagement
+      value: "true"
+scopes:
+  - engine

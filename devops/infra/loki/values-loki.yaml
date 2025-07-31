@@ -1,0 +1,21 @@
+loki:
+  enabled: true
+
+promtail:
+  enabled: true
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+  extraVolumes:
+    - name: varlog
+      hostPath:
+        path: /var/log
+  extraVolumeMounts:
+    - name: varlog
+      mountPath: /var/log
+      readOnly: true
+  config:
+    snippets:
+      pipelineStages:
+        - cri: {}
