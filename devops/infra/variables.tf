@@ -172,3 +172,27 @@ variable "database_name" {
   description = "Name of the PostgreSQL database to create"
   default     = "appdb-dev"
 }
+
+variable "grafana_admin_user" {
+  description = "Grafana admin username"
+  type        = string
+  default     = "admin"
+}
+
+variable "grafana_admin_password" {
+  description = "Grafana admin password"
+  type        = string
+  default     = "admin123"
+}
+
+variable "grafana_namespace" {
+  description = "Namespace for Grafana"
+  type        = string
+  default     = "devops-logs"
+}
+
+variable "grafana_storage_class" {
+  description = "Storage class for Grafana PVC"
+  type        = string
+  default     = ""
+}
