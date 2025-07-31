@@ -1,6 +1,7 @@
 using Accessor.Endpoints;
 using Accessor.Services;
 using Microsoft.EntityFrameworkCore;
+using Scalar.AspNetCore;
 using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,6 +19,15 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddControllers().AddDapr();
 
 builder.Services.AddScoped<IAccessorService, AccessorService>();
+
+// This is required for the Scalar UI to have an option to setup an authentication token
+builder.Services.AddOpenApi(
+    "v1",
+    options =>
+    {
+        options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+    }
+);
 
 // Add internal configuration to the application
 builder.Configuration.AddInMemoryCollection(Accessor.InternalConfiguration.Default!);
@@ -53,4 +63,23 @@ app.MapSubscribeHandler();
 // Map endpoints (routes)
 app.MapAccessorEndpoints();
 
+if (env.IsDevelopment())
+{
+    app.MapOpenApi();
+    app.MapScalarApiReference(options =>
+    {
+        options.Title = "Manager API";
+        options.Theme = ScalarTheme.Alternate;
+        options.DefaultHttpClient = new(ScalarTarget.CSharp, ScalarClient.HttpClient);
+        options.ShowSidebar = true;
+        options.PersistentAuthentication = true;
+        // here we can setup a default token
+        //options.AddPreferredSecuritySchemes("Bearer")
+        // .AddHttpAuthentication("Bearer", auth =>
+        // {
+        //     auth.Token = "Some Auth Token...";
+        // });
+
+    });
+}
 app.Run();
