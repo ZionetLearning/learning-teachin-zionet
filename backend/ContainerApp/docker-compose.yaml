@@ -17,6 +17,13 @@ services:
         interval: 10s
         retries: 3
 
+ 
+
+
+
+
+
+
   # -------------------- Azure SQL Edge --------------------
   sqledge:
     container_name: sqledge
@@ -31,6 +38,10 @@ services:
     networks:
       - sb-emulator
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "/bin/bash", "-c", "nc -z localhost 1433"]
+      interval: 10s
+      retries: 3
 
   # -------------------- Azure Service Bus Emulator --------------------
   servicebus-emulator:
@@ -95,6 +106,7 @@ services:
         - pgdata:/var/lib/postgresql/data
     networks:
         - microservice-net
+ 
 
   # ---------------------- pgAdmin for PostgreSQL ----------------------
   pgadmin:
@@ -111,21 +123,6 @@ services:
         test: ["CMD-SHELL", "curl -f http://localhost:80/"]
         interval: 10s
         retries: 3
-
-  # ---------------------- Redis ----------------------
-  redis:
-      image: redis:6.2
-      container_name: redis
-      ports:
-        - "6379:6379"
-      restart: unless-stopped
-      networks:
-        - microservice-net
-      healthcheck:
-        test: ["CMD", "redis-cli", "ping"]
-        interval: 3s
-        timeout: 2s
-        retries: 10
 
   # ---------------------- Redis ----------------------
   redis:
