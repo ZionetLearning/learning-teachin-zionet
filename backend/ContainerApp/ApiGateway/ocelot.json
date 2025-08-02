@@ -1,8 +1,8 @@
 {
   "Routes": [
     {
-      "UpstreamPathTemplate": "/task/{id}",
-      "UpstreamHttpMethod": [ "GET" ],
+      "UpstreamPathTemplate": "/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS" ],
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
@@ -10,7 +10,7 @@
           "Port": 5001
         }
       ],
-      "DownstreamPathTemplate": "/task/{id}",
+      "DownstreamPathTemplate": "/{everything}",
       "RouteIsCaseSensitive": false,
       "RateLimitOptions": {
         "ClientIdHeader": "ClientId",
@@ -19,45 +19,6 @@
         "PeriodTimespan": 1,
         "Limit": 100
       }
-    },
-    {
-      "UpstreamPathTemplate": "/task",
-      "UpstreamHttpMethod": [ "POST" ],
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "manager",
-          "Port": 5001
-        }
-      ],
-      "DownstreamPathTemplate": "/task",
-      "RouteIsCaseSensitive": false
-    },
-    {
-      "UpstreamPathTemplate": "/task/{id}/{name}",
-      "UpstreamHttpMethod": [ "PUT" ],
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "manager",
-          "Port": 5001
-        }
-      ],
-      "DownstreamPathTemplate": "/task/{id}/{name}",
-      "RouteIsCaseSensitive": false
-    },
-    {
-      "UpstreamPathTemplate": "/task/{id}",
-      "UpstreamHttpMethod": [ "DELETE" ],
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "manager",
-          "Port": 5001
-        }
-      ],
-      "DownstreamPathTemplate": "/task/{id}",
-      "RouteIsCaseSensitive": false
     }
   ],
   "GlobalConfiguration": {
