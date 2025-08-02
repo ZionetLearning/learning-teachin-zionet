@@ -9,7 +9,7 @@ services:
       container_name: placement
       command: ["./placement", "-port", "50006"]
       ports:
-        - "50006"
+        - "50006:50006"
       networks:
         - microservice-net
       healthcheck:
@@ -51,8 +51,8 @@ services:
     volumes:
        - ./servicebus-emulator:/ServiceBus_Emulator/ConfigFiles
     ports:
-      - "5672"
-      - "5300"
+      - "5672:5672"
+      - "5300:5300"
     environment:
       SQL_SERVER: sqledge
       MSSQL_SA_PASSWORD: "YourStrongP@ssword123!"
@@ -77,7 +77,7 @@ services:
       dockerfile: Dockerfile
     container_name: signalr-emulator
     ports:
-      - "8085"
+      - "8085:8085"
     environment:
       ASRS_EMULATOR_PORT: 8085
     networks:
