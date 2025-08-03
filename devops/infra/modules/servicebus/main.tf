@@ -1,6 +1,5 @@
 ############################################
-# Azure Service Bus Namespace + Queues
-# Author: 2025-07-22
+# Azure Service Bus Namespace + Queues + Topics
 ############################################
 
 resource "azurerm_servicebus_namespace" "this" {
@@ -22,7 +21,6 @@ resource "azurerm_servicebus_namespace_authorization_rule" "app" {
   manage  = true
 }
 
-# Optional – create queues from list
 resource "azurerm_servicebus_queue" "this" {
   for_each            = toset(var.queue_names)
 
@@ -32,23 +30,26 @@ resource "azurerm_servicebus_queue" "this" {
   max_size_in_megabytes = 1024
 }
 
-# Optional – create topics from list
 resource "azurerm_servicebus_topic" "this" {
   for_each            = toset(var.topic_names)
   name                = each.value
   namespace_id = azurerm_servicebus_namespace.this.id
 }
-
 resource "azurerm_servicebus_subscription" "this" {
-for_each = {
-for topic, subs in var.topic_subscriptions :
-topic => subs
-}
+  for_each = merge([
+    for topic, subs in var.topic_subscriptions :
+    {
+      for sub in subs :
+      "${topic}/${sub}" => {
+        topic = topic
+        name  = sub
+      }
+    }
+  ]...)
 
-count = length(each.value)
-name = each.value[count.index]
-topic_id = azurerm_servicebus_topic.this[each.key].id
-max_delivery_count = 1
+  name                = each.value.name
+  topic_id            = azurerm_servicebus_topic.this[each.value.topic].id
+  max_delivery_count  = 1
 }
 ############################################
 # END

@@ -29,12 +29,6 @@ variable "queue_names" {
   default     = []
 }
 
-variable "topic_names" {
-  description = "List of topics to create"
-  type        = list(string)
-  default     = []
-}
-
 variable "tags" {
   description = "Key/value map of tags applied to all resources"
   type        = map(string)
