@@ -1,6 +1,7 @@
 ﻿using Dapr.Client;
 using Manager.Constants;
 using Manager.Models;
+using Microsoft.Extensions.Options;
 using System.Collections.Concurrent;
 
 namespace Manager.Services;
@@ -9,17 +10,19 @@ public sealed class AiGatewayService : IAiGatewayService
 {
     private readonly DaprClient _dapr;
     private readonly ILogger<AiGatewayService> _log;
+    private readonly AiSettings _settings;
 
     // In‑memory cache → replace with a proper store later
     private static readonly ConcurrentDictionary<string, string> Answers = new();
-    public AiGatewayService(DaprClient dapr, ILogger<AiGatewayService> log)
+    public AiGatewayService(DaprClient dapr, ILogger<AiGatewayService> log, IOptions<AiSettings> options)
     {
         this._dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
         this._log = log ?? throw new ArgumentNullException(nameof(log));
+        this._settings = options?.Value ?? throw new ArgumentNullException(nameof(options));
     }
-    public async Task<string> SendQuestionAsync(string question, CancellationToken ct = default)
+    public async Task<string> SendQuestionAsync(string threadId, string question, CancellationToken ct = default)
     {
-        var msg = AiRequestModel.Create(question, TopicNames.AiToManager);
+        var msg = AiRequestModel.Create(question, threadId, TopicNames.AiToManager, ttlSeconds: this._settings.DefaultTtlSeconds);
 
         this._log.LogInformation("Send question {Id} (TTL={Ttl})", msg.Id, msg.TtlSeconds);
 
@@ -37,7 +40,7 @@ public sealed class AiGatewayService : IAiGatewayService
 
     public Task SaveAnswerAsync(AiResponseModel response, CancellationToken ct = default)
     {
-        this._log.LogInformation("Start endpoint ${Name}.", nameof(SaveAnswerAsync));
+        this._log.LogInformation("Start endpoint {Name} for threadId: {ThreadId} .", nameof(SaveAnswerAsync), response.ThreadId);
 
         try
         {
@@ -47,14 +50,14 @@ public sealed class AiGatewayService : IAiGatewayService
         }
         catch (Exception ex)
         {
-            this._log.LogError(ex, "Failed to cache answer for {CorrelationId}", response.Id);
+            this._log.LogError(ex, "Failed to cache answer for {CorrelationId}, for threadId: {ThreadId}", response.Id, response.ThreadId);
             throw;
         }
     }
 
     public Task<string?> GetAnswerAsync(string id, CancellationToken ct = default)
     {
-        this._log.LogInformation("Start endpoint ${Name}.", nameof(GetAnswerAsync));
+        this._log.LogInformation("Start endpoint {Name}.", nameof(GetAnswerAsync));
 
         try
         {

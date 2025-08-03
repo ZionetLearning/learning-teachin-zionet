@@ -6,6 +6,7 @@ namespace Manager.Models;
 public sealed class AiRequestModel
 {
     public string Id { get; init; } = Guid.NewGuid().ToString("N");
+    public required string ThreadId { get; init; }
 
     [Required(ErrorMessage = "Question is required.")]
     [MinLength(1, ErrorMessage = "Question must be at least 1 character.")]
@@ -20,13 +21,14 @@ public sealed class AiRequestModel
     [MinLength(1, ErrorMessage = "ReplyToTopic cannot be empty.")]
     public string ReplyToTopic { get; init; } = TopicNames.AiToManager;
 
-    public static AiRequestModel Create(string question, string replyToTopic, int ttlSeconds = 60)
+    public static AiRequestModel Create(string question, string threadId, string replyToTopic, int ttlSeconds)
     {
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var id = Guid.NewGuid().ToString("N");
         return new AiRequestModel
         {
             Id = id,
+            ThreadId = threadId,
             Question = question,
             TtlSeconds = ttlSeconds,
             ReplyToTopic = replyToTopic,

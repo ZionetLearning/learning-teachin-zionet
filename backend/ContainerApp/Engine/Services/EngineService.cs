@@ -2,44 +2,48 @@ using AutoMapper;
 using Dapr.Client;
 using Engine.Constants;
 using Engine.Models;
+using Microsoft.Extensions.Logging;
 
-namespace Engine.Services;
-
-public class EngineService : IEngineService
+namespace Engine.Services
 {
-    private readonly DaprClient _daprClient;
-    private readonly ILogger<EngineService> _logger;
-    private readonly IMapper _mapper;
-
-    public EngineService(DaprClient daprClient,
-        ILogger<EngineService> logger,
-        IMapper mapper)
+    public class EngineService : IEngineService
     {
-        this._daprClient = daprClient;
-        this._logger = logger;
-        this._mapper = mapper;
-    }
+        private readonly DaprClient _daprClient;
+        private readonly ILogger<EngineService> _logger;
+        private readonly IMapper _mapper;
 
-    public async Task ProcessTaskAsync(TaskModel task)
-    {
-        this._logger.LogInformation("Inside {Method}", nameof(ProcessTaskAsync));
-        if (task is null)
+
+        public EngineService(DaprClient daprClient, 
+            ILogger<EngineService> logger,
+            IMapper mapper)
         {
-            this._logger.LogWarning("Attempted to process a null task");
-            throw new ArgumentNullException(nameof(task), "Task cannot be null");
+            _daprClient = daprClient;
+            _logger = logger;
+            _mapper = mapper;
         }
 
-        this._logger.LogInformation("Logged task: {Id} - {Name}", task.Id, task.Name);
 
-        try
+        public async Task ProcessTaskAsync(TaskModel task, CancellationToken ct)
         {
-            await this._daprClient.InvokeBindingAsync(QueueNames.EngineToAccessor, "create", task);
-            this._logger.LogInformation("Task {Id} forwarded to binding '{Binding}'", task.Id, QueueNames.EngineToAccessor);
-        }
-        catch (Exception ex)
-        {
-            this._logger.LogError(ex, "Failed to send task {Id} to Accessor", task.Id);
-            throw;
+            _logger.LogInformation("Inside {method}", nameof(ProcessTaskAsync));
+            ct.ThrowIfCancellationRequested();
+            if (task is null)
+            {
+                _logger.LogWarning("Attempted to process a null task");
+                throw new ArgumentNullException(nameof(task), "Task cannot be null");
+            }
+            _logger.LogInformation("Logged task: {Id} - {Name}", task.Id, task.Name);
+
+            try
+            {
+                await _daprClient.InvokeBindingAsync(QueueNames.EngineToAccessor, "create", task);
+                _logger.LogInformation("Task {Id} forwarded to binding '{Binding}'", task.Id, QueueNames.EngineToAccessor);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send task {Id} to Accessor", task.Id);
+                throw;
+            }
         }
     }
 }

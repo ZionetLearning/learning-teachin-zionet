@@ -1,3 +1,4 @@
+using Manager.Constants;
 using Manager.Endpoints;
 using Manager.Hubs;
 using Manager.Services;
@@ -12,6 +13,8 @@ builder.Configuration
     .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
     .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
     .AddEnvironmentVariables();
+
+builder.Services.Configure<AiSettings>(builder.Configuration.GetSection("Ai"));
 
 // ---- Services ----
 builder.Services.AddControllers();

@@ -71,9 +71,11 @@ public static class AiEndpoints
 
         try
         {
-            var id = await aiService.SendQuestionAsync(dto.Question, ct);
-            log.LogInformation("Request {Id} accept", id);
-            return Results.Accepted($"/ai/answer/{id}", new { questionId = id });
+            var threadId = dto.ThreadId;
+
+            var id = await aiService.SendQuestionAsync(threadId, dto.Question, ct);
+            log.LogInformation("Request {Id} (thread {Thread}) accept", id, threadId);
+            return Results.Accepted($"/ai/answer/{id}", new { questionId = id, threadId });
         }
         catch (Exception ex)
         {

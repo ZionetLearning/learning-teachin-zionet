@@ -1,5 +1,9 @@
-﻿using Microsoft.SemanticKernel;
+﻿using Engine.Constants;
 using Engine.Models;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.ChatCompletion;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace Engine.Services;
 
@@ -7,53 +11,84 @@ public sealed class ChatAiService : IChatAiService
 {
     private readonly Kernel _kernel;
     private readonly ILogger<ChatAiService> _log;
+    private readonly IMemoryCache _cache;
+    private readonly MemoryCacheEntryOptions _cacheOptions;
+    private readonly IChatCompletionService _chat;
+    private readonly ISystemPromptProvider _prompt;
 
-    public ChatAiService(Kernel kernel, ILogger<ChatAiService> log)
+    public ChatAiService(
+        Kernel kernel,
+        ILogger<ChatAiService> log,
+        IMemoryCache cache,
+        MemoryCacheEntryOptions cacheOptions,
+        ISystemPromptProvider prompt)
     {
-        this._kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
-        this._log = log ?? throw new ArgumentNullException(nameof(log));
+        _kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
+        _log = log ?? throw new ArgumentNullException(nameof(log));
+        _cache = cache ?? throw new ArgumentNullException(nameof(cache));
+        _cacheOptions = cacheOptions;
+        _chat = _kernel.GetRequiredService<IChatCompletionService>();
+        _prompt = prompt ?? throw new ArgumentNullException(nameof(prompt));
     }
 
     public async Task<AiResponseModel> ProcessAsync(AiRequestModel request, CancellationToken ct = default)
     {
+        _log.LogInformation("AI processing request {Id}", request.Id);
+
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         if (now > request.SentAt + request.TtlSeconds)
         {
-            this._log.LogWarning("Request {Id} is expired. Skipping.", request.Id);
+            _log.LogWarning("Request {Id} is expired. Skipping.", request.Id);
             return new AiResponseModel
             {
                 Id = request.Id,
+                ThreadId = request.ThreadId,
                 Status = "expired",
                 Error = "TTL expired"
             };
         }
 
-        this._log.LogInformation("AI processing request {Id}", request.Id);
-
         try
         {
-            var func = this._kernel.CreateFunctionFromPrompt(
-                "Answer the question:\n{{$input}}");
+            var historyKey = CacheKeys.ChatHistory(request.ThreadId);
+            var history = _cache.GetOrCreate(historyKey, _ => new ChatHistory()) ?? new ChatHistory();
 
-            var args = new KernelArguments
+            if (history.Count == 0) history.AddSystemMessage(_prompt.Prompt);
+
+            history.AddUserMessage(request.Question);
+
+            var settings = new OpenAIPromptExecutionSettings
             {
-                ["input"] = request.Question
+                FunctionChoiceBehavior = FunctionChoiceBehavior.Auto()
             };
 
-            var answer = await this._kernel.InvokeAsync<string>(func, args, ct) ?? string.Empty;
+            var result = await _chat.GetChatMessageContentAsync(
+                history,
+                executionSettings: settings,
+                kernel: _kernel, //todo: add tools
+                cancellationToken: ct);
+
+            var answer = result.Content ?? string.Empty;
+
+            history.AddAssistantMessage(answer);
+
+            _cache.Set(historyKey, history, _cacheOptions);
 
             return new AiResponseModel
             {
                 Id = request.Id,
+                ThreadId = request.ThreadId,
                 Answer = answer
             };
+
         }
         catch (Exception ex)
         {
-            this._log.LogError(ex, "Error while processing AI request {Id}", request.Id);
+            _log.LogError(ex, "Error while processing AI request {Id}", request.Id);
             return new AiResponseModel
             {
                 Id = request.Id,
+                ThreadId = request.ThreadId,
                 Status = "error",
                 Error = ex.Message
             };
