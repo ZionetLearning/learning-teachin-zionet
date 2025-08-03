@@ -1,6 +1,7 @@
 ﻿using Dapr.Client;
 using Manager.Constants;
 using Manager.Models;
+using System.Net;
 
 namespace Manager.Services.Clients;
 
@@ -18,13 +19,18 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
         );
         try
         {
-            var task = await _daprClient.InvokeMethodAsync<TaskModel>(
+            var task = await _daprClient.InvokeMethodAsync<TaskModel?>(
                 HttpMethod.Get,
                 "accessor",
                 $"task/{id}"
             );
             _logger.LogDebug("Received task {TaskId} from Accessor service", id);
             return task;
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("Task with ID {TaskId} not found (404 from accessor)", id);
+            return null; // treat 404 as "not found", not exception
         }
         catch (Exception ex)
         {

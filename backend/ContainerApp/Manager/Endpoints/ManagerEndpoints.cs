@@ -45,30 +45,25 @@ public static class ManagerEndpoints
         [FromServices] IManagerService managerService,
         [FromServices] ILogger<ManagerService> logger)
     {
-        logger.LogInformation("Inside {method}", nameof(GetTaskAsync));
-
-        using (logger.BeginScope("Importing user data for {UserId}", id))
+        using (logger.BeginScope("Inside {MethodName}:", nameof(GetTaskAsync)))
         {
-            logger.LogInformation("Starting import");
-            // Do work
-            logger.LogInformation("Import complete");
-        }
-        try
-        {
-            var task = await managerService.GetTaskAsync(id);
-            if (task is not null)
+            try
             {
-                logger.LogInformation("Retrieved task with ID {Id}", id);
-                return Results.Ok(task);
-            }
+                var task = await managerService.GetTaskAsync(id);
+                if (task is not null)
+                {
+                    logger.LogInformation("Successfully retrieved task");
+                    return Results.Ok(task);
+                }
 
-            logger.LogWarning("Task with ID {Id} not found", id);
-            return Results.NotFound(new { error = $"Task with ID {id} not found." });
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error retrieving task with ID {Id}", id);
-            return Results.Problem("An error occurred while retrieving the task.");
+                logger.LogWarning("Task not found");
+                return Results.NotFound(new { error = $"Task with ID {id} not found." });
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error while retrieving task");
+                return Results.Problem("An error occurred while retrieving the task.");
+            }
         }
     }
 
@@ -77,26 +72,30 @@ public static class ManagerEndpoints
         [FromServices] IManagerService managerService,
         [FromServices] ILogger<ManagerService> logger)
     {
-        logger.LogInformation("Inside {method}", nameof(CreateTaskAsync));
-        try
+        using (logger.BeginScope("Method: {Method}", nameof(CreateTaskAsync)))
         {
-            var (success, message) = await managerService.ProcessTaskAsync(task);
-            if (success)
+            try
             {
-                logger.LogInformation("Task {Id} processed successfully", task.Id);
-                return Results.Accepted($"/task/{task.Id}", new { status = message, task.Id });
-            }
+                logger.LogInformation("Processing task creation for ID {TaskId}", task.Id);
 
-            logger.LogWarning("Processing task {Id} failed: {Message}", task.Id, message);
-            return Results.Problem("Failed to process the task.");
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error processing task {Id}", task.Id);
-            return Results.Problem("An error occurred while processing the task.");
+                var (success, message) = await managerService.ProcessTaskAsync(task);
+                if (success)
+                {
+                    logger.LogInformation("Task {TaskId} processed successfully", task.Id);
+                    return Results.Accepted($"/task/{task.Id}", new { status = message, task.Id });
+                }
+
+                logger.LogWarning("Processing task {TaskId} failed: {Message}", task.Id, message);
+                return Results.Problem("Failed to process the task.");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error processing task {TaskId}", task.Id);
+                return Results.Problem("An error occurred while processing the task.");
+            }
         }
     }
-
+    
     private static async Task<IResult> UpdateTaskNameAsync(
         [FromRoute] int id,
         [FromRoute] string name,
