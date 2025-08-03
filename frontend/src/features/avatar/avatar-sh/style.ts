@@ -18,11 +18,8 @@ export const useStyles = createUseStyles({
     width: "220px",
     height: "220px",
     margin: "0 auto",
-    //overflowY: "auto"
   },
   messagesList: {
-    //height: "180px",
-    //overflowX: "auto",
     flex: 1,
     overflowY: "auto",
     overflowX: "hidden",
@@ -81,21 +78,9 @@ export const useStyles = createUseStyles({
   },
 
   input: {
-    /*fontSize: "18px",
-    //padding: "10px",
-    width: "100% !important",
-    boxSizing: "border-box",
-    borderRadius: 5,
-    border: "1px solid #ccc",*/
-
-    /*border: "1px solid #ddd",
-    borderRadius: "0%",
-    paddingLeft: "6px",
-    boxSizing: "border-box"*/
-
     width: "100%!important",
     fontSize: "18px",
-    padding: "1px 6px 1px 6px", // room for buttons
+    padding: "1px 6px 1px 6px",
     border: "1px solid #ccc",
     borderRadius: 5,
     boxSizing: "border-box",
