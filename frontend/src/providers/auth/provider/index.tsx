@@ -4,23 +4,21 @@ import { AuthContext } from '../context';
 interface Credentials {
 	email: string;
 	password: string;
-	expiry: number;
+	sessionExpiry: number;
 }
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
 	const [credentials, setCredentials] = useState<Credentials | null>(() => {
-		const email = localStorage.getItem('email');
-		const password = localStorage.getItem('password');
-		const expiryStr = localStorage.getItem('tokenExpiry');
+		const { email, password, sessionExpiry } = JSON.parse(
+			localStorage.getItem('credentials') || '{}'
+		);
 
-		if (email && password && expiryStr) {
-			const expiry = parseInt(expiryStr, 10);
+		if (email && password && sessionExpiry) {
+			const expiry = parseInt(sessionExpiry, 10);
 			if (Date.now() < expiry) {
-				return { email, password, expiry };
+				return { email, password, sessionExpiry };
 			}
-			localStorage.removeItem('email');
-			localStorage.removeItem('password');
-			localStorage.removeItem('tokenExpiry');
+			localStorage.removeItem('credentials');
 		}
 		return null;
 	});
@@ -28,7 +26,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 	useEffect(
 		function checkAuth() {
 			if (!credentials) return;
-			const ms = credentials.expiry - Date.now();
+			const ms = credentials.sessionExpiry - Date.now();
 			if (ms <= 0) {
 				logout();
 				return;
@@ -40,17 +38,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 	);
 
 	const login = (email: string, password: string) => {
-		const expiry = Date.now() + 10 * 60 * 60 * 1000;
-		localStorage.setItem('email', email);
-		localStorage.setItem('password', password);
-		localStorage.setItem('tokenExpiry', expiry.toString());
-		setCredentials({ email, password, expiry });
+		const sessionExpiry = Date.now() + 10 * 60 * 60 * 1000;
+		localStorage.setItem(
+			'credentials',
+			JSON.stringify({ email, password, sessionExpiry })
+		);
+		setCredentials({ email, password, sessionExpiry });
 	};
 
 	const logout = () => {
-		localStorage.removeItem('email');
-		localStorage.removeItem('password');
-		localStorage.removeItem('tokenExpiry');
+		localStorage.removeItem('credentials');
 		setCredentials(null);
 	};
 

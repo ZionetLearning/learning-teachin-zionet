@@ -25,9 +25,8 @@ function App() {
 				<Route path="/signin" element={<AuthorizationPage />} />
 
 				<Route element={<RequireAuth />}>
-					<Route path="/" element={<HomePage />} />
-
 					<Route element={<BackToMenuLayout />}>
+						<Route path="/" element={<HomePage />} />
 						<Route path="/chat/yo" element={<ChatYoPage />} />
 						<Route path="/chat/da" element={<ChatDaPage />} />
 						<Route path="/chat/ou" element={<ChatOuPage />} />
