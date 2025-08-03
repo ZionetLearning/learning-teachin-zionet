@@ -1,6 +1,7 @@
 ﻿using Dapr.Client;
 using Manager.Constants;
 using Manager.Models;
+using Microsoft.Extensions.Options;
 using System.Collections.Concurrent;
 
 namespace Manager.Services
@@ -9,17 +10,19 @@ namespace Manager.Services
     {
         private readonly DaprClient _dapr;
         private readonly ILogger<AiGatewayService> _log;
+        private readonly AiSettings _settings;
 
         // In‑memory cache → replace with a proper store later
         private static readonly ConcurrentDictionary<string, string> _answers = new();
-        public AiGatewayService(DaprClient dapr, ILogger<AiGatewayService> log)
+        public AiGatewayService(DaprClient dapr, ILogger<AiGatewayService> log, IOptions<AiSettings> options)
         {
             _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
             _log = log ?? throw new ArgumentNullException(nameof(log));
+            _settings = options?.Value ?? throw new ArgumentNullException(nameof(options));
         }
         public async Task<string> SendQuestionAsync(string threadId, string question,  CancellationToken ct = default)
         {
-            var msg = AiRequestModel.Create(question, threadId, TopicNames.AiToManager);
+            var msg = AiRequestModel.Create(question, threadId, TopicNames.AiToManager, ttlSeconds: _settings.DefaultTtlSeconds);
 
             _log.LogInformation("Send question {Id} (TTL={Ttl})", msg.Id, msg.TtlSeconds);
 

@@ -1,4 +1,5 @@
-﻿using Engine.Models;
+﻿using Engine.Constants;
+using Engine.Models;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
@@ -49,7 +50,8 @@ public sealed class ChatAiService : IChatAiService
 
         try
         {
-            var history = _cache.GetOrCreate($"chat-history:{request.ThreadId}", _ => new ChatHistory()) ?? new ChatHistory();
+            var historyKey = CacheKeys.ChatHistory(request.ThreadId);
+            var history = _cache.GetOrCreate(historyKey, _ => new ChatHistory()) ?? new ChatHistory();
 
             if (history.Count == 0) history.AddSystemMessage(_prompt.Prompt);
 

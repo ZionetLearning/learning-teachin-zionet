@@ -21,7 +21,7 @@ namespace Manager.Models
         [MinLength(1, ErrorMessage = "ReplyToTopic cannot be empty.")]
         public string ReplyToTopic { get; init; } = TopicNames.AiToManager;
 
-        public static AiRequestModel Create(string question, string threadId, string replyToTopic, int ttlSeconds = 60)
+        public static AiRequestModel Create(string question, string threadId, string replyToTopic, int ttlSeconds)
         {
             var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             var id = Guid.NewGuid().ToString("N");
