@@ -49,38 +49,32 @@ public class AccessorEndpointsTests
         // Assert
         var statusResult = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
         Assert.Equal(404, statusResult.StatusCode);
-        
-        var notFoundResult = Assert.IsType<IValueHttpResult>(result, exactMatch: false);
-        var response = notFoundResult.Value;
 
-        Assert.NotNull(response);
-        var messageProp = response.GetType().GetProperty("Message")?.GetValue(response)?.ToString();
-        Assert.Equal($"Task with ID {taskId} not found", messageProp);
+        var valueResult = Assert.IsAssignableFrom<IValueHttpResult>(result);
+        var value = valueResult.Value;
+
+        Assert.NotNull(value);
+        Assert.Equal($"Task with ID {taskId} not found.", value?.ToString());
     }
 
     
     [Fact]
     public async Task CreateTask_ReturnsOk_WhenSuccessful()
     {
-        // Arrange
-        var task = new TaskModel { Id = 42, Name = "UnitTest Task" };
+    // Arrange
+    var task = new TaskModel { Id = 42, Name = "UnitTest Task" };
 
-        // Act
-        var result = await AccessorEndpoints.CreateTaskAsync(task, _mockService.Object, _mockLogger.Object);
-        // Assert
-        var okResult = Assert.IsType<IValueHttpResult>(result, exactMatch: false);
+    // Act
+    var result = await AccessorEndpoints.CreateTaskAsync(task, _mockService.Object, _mockLogger.Object);
 
-        var value = okResult.Value;
+    // Assert
+    var okResult = Assert.IsAssignableFrom<IValueHttpResult>(result);
+    var value = okResult.Value;
 
-        Assert.NotNull(value);
-
-        // Use reflection to inspect anonymous object properties
-        var idProp = value.GetType().GetProperty("Id")?.GetValue(value);
-        var statusProp = value.GetType().GetProperty("Status")?.GetValue(value);
-
-        Assert.Equal(42, idProp);
-        Assert.Equal("Saved", statusProp);
+    Assert.NotNull(value);
+    Assert.Equal("Task 42 Saved", value?.ToString());
     }
+
     
     [Fact]
     public async Task UpdateTaskName_ReturnsOk_WhenSuccessful()

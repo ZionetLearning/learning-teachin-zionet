@@ -53,7 +53,7 @@ public static class ManagerEndpoints
                 }
 
                 logger.LogWarning("Task not found");
-                return Results.NotFound($"Task with ID {id} not found.");
+                return Results.NotFound(new { Message = $"Task with ID {id} not found" });
             }
             catch (Exception ex)
             {
@@ -143,7 +143,7 @@ public static class ManagerEndpoints
                 }
 
                 logger.LogWarning("Task with ID {TaskId} not found for deletion", id);
-                return Results.NotFound("Task not found");
+return Results.NotFound(new { Message = $"Task with ID {id} not found" });
             }
             catch (Exception ex)
             {

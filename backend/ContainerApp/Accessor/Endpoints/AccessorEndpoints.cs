@@ -2,6 +2,7 @@
 using Accessor.Models;
 using Accessor.Services;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 
 
 namespace Accessor.Endpoints;
@@ -36,7 +37,8 @@ public static class AccessorEndpoints
                 }
 
                 logger.LogWarning("Task not found.");
-                return Results.NotFound();
+                return Results.NotFound($"Task with ID {id} not found.");
+
             }
             catch (Exception ex)
             {
@@ -57,7 +59,7 @@ public static class AccessorEndpoints
             {
                 await accessorService.CreateTaskAsync(task);
                 logger.LogInformation("Task saved successfully.");
-                return Results.Ok(new { Status = "Saved", task.Id });
+                return Results.Ok($"Task {task.Id} Saved");
             }
             catch (Exception ex)
             {
@@ -108,7 +110,7 @@ public static class AccessorEndpoints
                 if (!deleted)
                 {
                     logger.LogWarning("Task not found.");
-                    return Results.NotFound();
+                    return Results.NotFound($"Task with ID {taskId} not found.");
                 }
 
                 logger.LogInformation("Task deleted successfully.");
