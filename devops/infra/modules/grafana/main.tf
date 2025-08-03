@@ -22,6 +22,8 @@ resource "helm_release" "grafana" {
   version    = var.grafana_chart_version
   namespace  = kubernetes_namespace.grafana.metadata[0].name
 
+  timeout = 600
+
   values = [yamlencode({
     adminUser     = var.admin_user
     adminPassword = var.admin_password
