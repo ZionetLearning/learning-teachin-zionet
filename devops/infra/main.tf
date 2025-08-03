@@ -129,7 +129,7 @@ module "grafana" {
   persistence_storage_class = var.grafana_storage_class
   persistence_access_modes  = ["ReadWriteOnce"]
   persistence_finalizers    = ["retain"]
-  grafana_chart_version     = "7.3.8"
+  grafana_chart_version     = "9.3.0"
 }
 
 module "prometheus_stack" {
@@ -151,9 +151,9 @@ resource "kubernetes_config_map" "grafana_datasource" {
   }
 }
 
-resource "kubernetes_config_map" "grafana_dashboard_cluster" {
+resource "kubernetes_config_map" "grafana_dashboard_k8s_views_namespaces" {
   metadata {
-    name      = "dashboard-cluster"
+    name      = "dashboard-k8s-views-namespaces"
     namespace = module.grafana.namespace
     labels = {
       grafana_dashboard = "1"
@@ -161,13 +161,13 @@ resource "kubernetes_config_map" "grafana_dashboard_cluster" {
   }
 
   data = {
-    "cluster-overview.json" = file("${path.module}/dashboards/cluster-overview.json")
+    "k8s-views-namespaces.json" = file("${path.module}/dashboards/k8s-views-namespaces.json")
   }
 }
 
-resource "kubernetes_config_map" "grafana_dashboard_deployments" {
+resource "kubernetes_config_map" "grafana_dashboard_k8s_views_nodes" {
   metadata {
-    name      = "dashboard-deployments"
+    name      = "dashboard-k8s-views-nodes"
     namespace = module.grafana.namespace
     labels = {
       grafana_dashboard = "1"
@@ -175,7 +175,7 @@ resource "kubernetes_config_map" "grafana_dashboard_deployments" {
   }
 
   data = {
-    "deployments.json" = file("${path.module}/dashboards/deployments.json")
+    "k8s-views-nodes.json" = file("${path.module}/dashboards/k8s-views-nodes.json")
   }
 }
 
@@ -193,9 +193,9 @@ resource "kubernetes_config_map" "grafana_dashboard_nodes" {
   }
 }
 
-resource "kubernetes_config_map" "grafana_dashboard_k8s" {
+resource "kubernetes_config_map" "grafana_dashboard_k8s_views_pods" {
   metadata {
-    name      = "dashboard-k8s"
+    name      = "dashboard-k8s-views-pods"
     namespace = module.grafana.namespace
     labels = {
       grafana_dashboard = "1"
@@ -203,6 +203,34 @@ resource "kubernetes_config_map" "grafana_dashboard_k8s" {
   }
 
   data = {
-    "K8S-dashboard.json" = file("${path.module}/dashboards/K8S-dashboard.json")
+    "k8s-views-pods.json" = file("${path.module}/dashboards/k8s-views-pods.json")
+  }
+}
+
+resource "kubernetes_config_map" "grafana_dashboard_k8s_views_global" {
+  metadata {
+    name      = "dashboard-k8s-views-global.json"
+    namespace = module.grafana.namespace
+    labels = {
+      grafana_dashboard = "1"
+    }
+  }
+
+  data = {
+    "k8s-views-global.json" = file("${path.module}/dashboards/k8s-views-global.json")
+  }
+}
+
+resource "kubernetes_config_map" "grafana_dashboard_k8s" {
+  metadata {
+    name      = "dashboard-k8s.json"
+    namespace = module.grafana.namespace
+    labels = {
+      grafana_dashboard = "1"
+    }
+  }
+
+  data = {
+    "k8s.json" = file("${path.module}/dashboards/k8s.json")
   }
 }
