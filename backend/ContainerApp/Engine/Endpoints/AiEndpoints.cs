@@ -28,15 +28,20 @@ public static class AiEndpoints
         CancellationToken ct)
     {
         using (log.BeginScope("Method: {Method}, CorrelationId: {Id}, ReplyTo: {ReplyToTopic}",
-                                      nameof(ProcessQuestionAsync), req.Id, req.ReplyToTopic))
+                                              nameof(ProcessQuestionAsync), req.Id, req.ReplyToTopic))
         {
+            log.LogInformation("Received AI question {Id} from manager", req.Id);
+
             try
             {
-                log.LogInformation("Received AI question from Manager.");
+                if (string.IsNullOrWhiteSpace(req.ThreadId)) return Results.BadRequest("ThreadId is required.");
+
                 var response = await aiService.ProcessAsync(req, ct);
+
                 await publisher.PublishAsync(response, req.ReplyToTopic, ct);
                 log.LogInformation("Processed and published response.");
-                return Results.Ok();
+
+                return Results.Ok(response);
             }
             catch (Exception ex)
             {
@@ -45,4 +50,6 @@ public static class AiEndpoints
             }
         }
     }
+
+
 }

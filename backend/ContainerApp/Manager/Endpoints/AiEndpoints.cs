@@ -1,7 +1,10 @@
 ﻿using Manager.Constants;
-using Manager.Services;
 using Manager.Models;
+using Manager.Models.ModelValidation;
+using Manager.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
 
 namespace Manager.Endpoints;
 
@@ -64,13 +67,22 @@ public static class AiEndpoints
         [FromServices] ILogger<QuestionEndpoint> log,
         CancellationToken ct)
     {
-        using (log.BeginScope("Method: {Method}, Id: {Id}", nameof(QuestionAsync), dto.Id))
+        using (log.BeginScope("Method: {Method}, RequestId: {RequestId}, ThreadId: {ThreadId}",
+        nameof(QuestionAsync), dto.Id, dto.ThreadId))
         {
+            if (!ValidationExtensions.TryValidate(dto, out var validationErrors))
+            {
+                log.LogWarning("Validation failed for {Model}: {Errors}", nameof(AiRequestModel), validationErrors);
+                return Results.BadRequest(new { errors = validationErrors });
+            }
+
             try
             {
-                var id = await aiService.SendQuestionAsync(dto.Question, ct);
-                log.LogInformation("Question accepted and sent to processing");
-                return Results.Accepted($"/ai/answer/{id}", new { questionId = id });
+                var threadId = dto.ThreadId;
+
+                var id = await aiService.SendQuestionAsync(threadId, dto.Question, ct);
+                log.LogInformation("Request {Id} (thread {Thread}) accept", id, threadId);
+                return Results.Accepted($"/ai/answer/{id}", new { questionId = id, threadId });
             }
             catch (Exception ex)
             {
@@ -88,6 +100,12 @@ public static class AiEndpoints
     {
         using (log.BeginScope("Method: {Method}, QuestionId: {Id}", nameof(PubSubAsync), msg.Id))
         {
+            if (!ValidationExtensions.TryValidate(msg, out var validationErrors))
+            {
+                log.LogWarning("Validation failed for {Model}: {Errors}", nameof(AiResponseModel), validationErrors);
+                return Results.BadRequest(new { errors = validationErrors });
+            }
+
             try
             {
                 await aiService.SaveAnswerAsync(msg, ct);
@@ -101,4 +119,6 @@ public static class AiEndpoints
             }
         }
     }
+        
+
 }

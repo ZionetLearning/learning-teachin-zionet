@@ -69,7 +69,6 @@ public static class AccessorEndpoints
         }
     }
 
-    // Need to check if the task is not exists if we get OK or not found
     public static async Task<IResult> UpdateTaskNameAsync(
         [FromBody] UpdateTaskName request,
         [FromServices] IAccessorService accessorService,

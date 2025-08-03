@@ -1,4 +1,5 @@
 ﻿using Manager.Models;
+using Manager.Models.ModelValidation;
 using Manager.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -70,6 +71,12 @@ public static class ManagerEndpoints
     {
         using (logger.BeginScope("Method: {Method}", nameof(CreateTaskAsync)))
         {
+            if (!ValidationExtensions.TryValidate(task, out var validationErrors))
+            {
+                logger.LogWarning("Validation failed for {Model}: {Errors}", nameof(TaskModel), validationErrors);
+                return Results.BadRequest(new { errors = validationErrors });
+            }
+
             try
             {
                 logger.LogInformation("Processing task creation for ID {TaskId}", task.Id);
@@ -143,7 +150,7 @@ public static class ManagerEndpoints
                 }
 
                 logger.LogWarning("Task with ID {TaskId} not found for deletion", id);
-return Results.NotFound(new { Message = $"Task with ID {id} not found" });
+                return Results.NotFound(new { Message = $"Task with ID {id} not found" });
             }
             catch (Exception ex)
             {
