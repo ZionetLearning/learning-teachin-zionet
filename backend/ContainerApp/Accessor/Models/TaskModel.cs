@@ -9,13 +9,13 @@ namespace Accessor.Models
     public record TaskModel
     {
         [Key]
-        public int Id { get; init; }
+        public int Id { get; set; }
 
         [Required]
-        public string Name { get; init; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
 
         [Required]
-        public string Payload { get; init; } = string.Empty;
+        public string Payload { get; set; } = string.Empty;
 
     }
 
