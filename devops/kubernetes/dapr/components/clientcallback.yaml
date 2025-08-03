@@ -1,0 +1,17 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: clientcallback
+  namespace: dev
+spec:
+  type: bindings.azure.signalr
+  version: v1
+  metadata:
+  - name: connectionString
+    secretKeyRef:
+      name: signalr-connection
+      key: SignalRConnectionString
+  - name: hub 
+    value: todohub
+scopes:
+  - notificationmanager    

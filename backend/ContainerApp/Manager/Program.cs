@@ -1,6 +1,7 @@
 using Manager.Endpoints;
 using Manager.Hubs;
 using Manager.Services;
+using Manager.Services.Clients;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +33,8 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddScoped<IManagerService, ManagerService>();
 builder.Services.AddScoped<IAiGatewayService, AiGatewayService>();
+builder.Services.AddScoped<IAccessorClient, AccessorClient>();
+builder.Services.AddScoped<IEngineClient, EngineClient>();
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
