@@ -1,7 +1,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { AuthContext } from "../context";
 
-interface Credentials {
+export interface Credentials {
   email: string;
   password: string;
   sessionExpiry: number;
@@ -9,17 +9,22 @@ interface Credentials {
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [credentials, setCredentials] = useState<Credentials | null>(() => {
-    const { email, password, sessionExpiry } = JSON.parse(
-      localStorage.getItem("credentials") || "{}",
-    );
+    let stored: Credentials = {} as Credentials;
 
-    if (email && password && sessionExpiry) {
-      const expiry = parseInt(sessionExpiry, 10);
-      if (Date.now() < expiry) {
-        return { email, password, sessionExpiry };
-      }
-      localStorage.removeItem("credentials");
+    try {
+      stored = JSON.parse(localStorage.getItem("credentials") || "{}");
+    } catch (error) {
+      console.warn("Error parsing credentials:", error);
+      logout();
+      return null;
     }
+    const { email, password, sessionExpiry } = stored;
+    const expiry = Number(sessionExpiry);
+    if (email && password && expiry && Date.now() < expiry) {
+      return { email, password, sessionExpiry: expiry };
+    }
+
+    localStorage.removeItem("credentials");
     return null;
   });
 
