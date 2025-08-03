@@ -87,3 +87,9 @@ variable "domain_name_label" {
   type        = string
   default     = "grafana-demo"
 }
+
+# mc_resource_group
+variable "mc_resource_group" {
+  description = "Resource group for the managed cluster"
+  type        = string
+}

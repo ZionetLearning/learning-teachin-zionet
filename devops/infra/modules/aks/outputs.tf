@@ -28,6 +28,7 @@ output "cluster_ca_certificate" {
   sensitive = true
 }
 
+
 # output "public_ip_address" {
 #   value = azurerm_public_ip.aks_outbound_ip.ip_address
 # }

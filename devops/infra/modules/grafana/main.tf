@@ -8,7 +8,7 @@ resource "kubernetes_namespace" "grafana" {
 resource "azurerm_public_ip" "grafana" {
   name                = "grafana-public-ip"
   location            = var.location
-  resource_group_name = var.resource_group_name
+  resource_group_name = var.mc_resource_group
   allocation_method   = "Static"
   sku                 = "Standard"
   domain_name_label   = var.domain_name_label

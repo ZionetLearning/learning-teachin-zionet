@@ -133,6 +133,7 @@ module "grafana" {
   location                  = var.location
   resource_group_name       = azurerm_resource_group.main.name
   domain_name_label         = "grafana-demo-${var.resource_group_name}"
+  mc_resource_group         = var.mc_resource_group
 }
 
 module "prometheus_stack" {

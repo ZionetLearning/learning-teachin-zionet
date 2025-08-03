@@ -196,3 +196,10 @@ variable "grafana_storage_class" {
   type        = string
   default     = ""
 }
+
+# mc_resource_group
+variable "mc_resource_group" {
+  description = "Resource group for the managed cluster"
+  type        = string
+  default = "MC_dev-zionet-learning-2025_aks-cluster-dev_westeurope"
+}
