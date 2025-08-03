@@ -1,33 +1,31 @@
 ﻿using Engine.Messaging;
 using Engine.Models;
 using Engine.Services;
-using Microsoft.Azure.Amqp.Sasl;
 
-namespace Engine.Endpoints
+namespace Engine.Endpoints;
+
+public class EngineQueueHandler : IQueueHandler<TaskModel>
 {
-    public class EngineQueueHandler : IQueueHandler<TaskModel>
+    private readonly IEngineService _engine;
+    private readonly ILogger<EngineQueueHandler> _logger;
+    public EngineQueueHandler(IEngineService engine, ILogger<EngineQueueHandler> logger)
     {
-        private readonly IEngineService _engine;
-        private readonly ILogger<EngineQueueHandler> _logger;
-        public EngineQueueHandler(IEngineService engine, ILogger<EngineQueueHandler> logger)
-        {
-            _engine = engine;
-            _logger = logger;
-        }
+        this._engine = engine;
+        this._logger = logger;
+    }
 
-        public async Task HandleAsync(TaskModel message, CancellationToken ct)
+    public async Task HandleAsync(TaskModel message, CancellationToken cancellationToken)
+    {
+        try
         {
-            try
-            {
-                _logger.LogDebug("Processing task {Id}", message.Id);
-                await _engine.ProcessTaskAsync(message, ct);
-                _logger.LogInformation("Task {Id} processed", message.Id);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed processing task {Id}", message.Id);
-                throw;
-            }
+            this._logger.LogDebug("Processing task {Id}", message.Id);
+            await this._engine.ProcessTaskAsync(message, cancellationToken);
+            this._logger.LogInformation("Task {Id} processed", message.Id);
+        }
+        catch (Exception ex)
+        {
+            this._logger.LogError(ex, "Failed processing task {Id}", message.Id);
+            throw;
         }
     }
 }

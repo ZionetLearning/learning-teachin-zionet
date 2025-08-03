@@ -30,7 +30,10 @@ public static class AiEndpoints
         log.LogInformation("Received AI question {Id} from manager", req.Id);
         try
         {
-            if (string.IsNullOrWhiteSpace(req.ThreadId)) return Results.BadRequest("ThreadId is required.");
+            if (string.IsNullOrWhiteSpace(req.ThreadId))
+            {
+                return Results.BadRequest("ThreadId is required.");
+            }
 
             var response = await aiService.ProcessAsync(req, ct);
 

@@ -1,4 +1,4 @@
-﻿using Engine.Services;
+﻿namespace Engine.Services;
 
 public sealed class SystemPromptProvider : ISystemPromptProvider
 {
@@ -7,7 +7,7 @@ public sealed class SystemPromptProvider : ISystemPromptProvider
     public SystemPromptProvider(IConfiguration cfg)
     {
 
-        Prompt = cfg["SystemPrompt"]
+        this.Prompt = cfg["SystemPrompt"]
               ?? "You are a helpful assistant. Maintain context.";
     }
 }
