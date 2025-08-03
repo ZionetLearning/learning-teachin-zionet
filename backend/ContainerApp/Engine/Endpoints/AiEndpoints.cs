@@ -31,11 +31,13 @@ public static class AiEndpoints
         log.LogInformation("Received AI question {Id} from manager", req.Id);
         try
         {
+            if (string.IsNullOrWhiteSpace(req.ThreadId)) return Results.BadRequest("ThreadId is required.");
+
             var response = await aiService.ProcessAsync(req, ct);
 
             await publisher.PublishAsync(response, req.ReplyToTopic, ct);
 
-            return Results.Ok();
+            return Results.Ok(response);
         }
         catch (Exception ex)
         {
