@@ -31,9 +31,10 @@ namespace Engine.Services
         }
 
 
-        public async Task ProcessTaskAsync(TaskModel task)
+        public async Task ProcessTaskAsync(TaskModel task, CancellationToken ct)
         {
             _logger.LogInformation("Inside {method}", nameof(ProcessTaskAsync));
+            ct.ThrowIfCancellationRequested();
             if (task is null)
             {
                 _logger.LogWarning("Attempted to process a null task");

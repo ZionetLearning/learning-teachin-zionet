@@ -20,7 +20,7 @@ namespace Engine.Endpoints
             try
             {
                 _logger.LogDebug("Processing task {Id}", message.Id);
-                await _engine.ProcessTaskAsync(message);
+                await _engine.ProcessTaskAsync(message, ct);
                 _logger.LogInformation("Task {Id} processed", message.Id);
             }
             catch (Exception ex)
