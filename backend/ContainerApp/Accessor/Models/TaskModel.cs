@@ -6,16 +6,16 @@ namespace Accessor.Models
 // how the data is stored in the DB
 {
     [Table("Tasks")]
-    public class TaskModel
+    public record TaskModel
     {
         [Key]
-        public int Id { get; set; }
+        public int Id { get; init; }
 
         [Required]
-        public string Name { get; set; } = string.Empty;
+        public string Name { get; init; } = string.Empty;
 
         [Required]
-        public string Payload { get; set; } = string.Empty;
+        public string Payload { get; init; } = string.Empty;
 
     }
 

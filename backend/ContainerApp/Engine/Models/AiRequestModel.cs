@@ -2,7 +2,7 @@
 
 namespace Engine.Models
 {
-    public sealed class AiRequestModel
+    public sealed record AiRequestModel
     {
         public string Id { get; init; } = Guid.NewGuid().ToString("N");
 
