@@ -80,7 +80,6 @@ public class ChatAiServiceTests
     [SkippableFact(DisplayName = "ProcessAsync: history persists across calls")]
     public async Task ProcessAsync_Context_Persists()
     {
-        //var service = CreateService(new FakePromptProvider()); //ава
         var service = CreateService();
         var threadId = Guid.NewGuid().ToString("N");
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
