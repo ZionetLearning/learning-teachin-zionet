@@ -14,8 +14,8 @@ export const MessageBox = ({
   className,
 }: MessageBoxProps) => {
   {
-    !loading ? (
-      <Message
+    if (loading === false) {
+      return (<Message
         className={className}
         styles={{
           backgroundColor:
@@ -37,24 +37,23 @@ export const MessageBox = ({
         notch={true}
         focus={false}
         retracted={false}
-      ></Message>
-    ) : (
-      <Message
-        id="assistant"
-        position="left"
-        type="text"
-        text="Thinking..."
-        title="Assistant"
-        titleColor="none"
-        date={new Date()}
-        forwarded={false}
-        replyButton={false}
-        removeButton={false}
-        status="waiting"
-        notch={true}
-        focus={false}
-        retracted={false}
-      ></Message>
-    );
+      ></Message>);
+    }
+    return (<Message
+      id="assistant"
+      position="left"
+      type="text"
+      text="Thinking..."
+      title="Assistant"
+      titleColor="none"
+      date={new Date()}
+      forwarded={false}
+      replyButton={false}
+      removeButton={false}
+      status="waiting"
+      notch={true}
+      focus={false}
+      retracted={false}
+    ></Message>);
   }
-};
+}
