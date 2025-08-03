@@ -13,7 +13,7 @@ export const useChat = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
 
-  async function sendMessage(text: string) {
+  const sendMessage = async (text: string) => {
     if (!text.trim()) return;
 
     // Add user message immediately

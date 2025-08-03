@@ -1,9 +1,9 @@
 import { useEffect, useState, useRef } from "react";
-import { MessageBox, Input } from "react-chat-elements";
+import { Input } from "react-chat-elements";
 import { useChat } from "../../chat/chat-yo/hooks";
-import { useAvatarSpeech } from "./hooks/useAvatarSpeech";
+import { useAvatarSpeech } from "./hooks";
 import avatar from "./assets/avatar.svg";
-
+import { MessageBox } from "./components";
 import { useStyles } from "./style";
 
 type SvgModule = { default: string };
@@ -14,17 +14,9 @@ const lipsArray = Object.values(lips).map((mod) => (mod as SvgModule).default);
 
 export const AvatarSh = () => {
   const classes = useStyles();
-  //const [currentViseme, setCurrentViseme] = useState<number>(0);
   const { sendMessage, loading, messages } = useChat();
   const [text, setText] = useState("");
   const { currentVisemeSrc, speak } = useAvatarSpeech(lipsArray);
-
-
-  // forcing an error to test Error Boundary of Application Insights Azure
-  //  useEffect(() => {
-  //   throw new Error("AvatarSh Crashed! This is a test error for Application Insights.");
-  // }, []);
-
   const lastSpokenTextRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -57,97 +49,40 @@ export const AvatarSh = () => {
         {messages.map((msg, i) => (
           <MessageBox
             className={classes.messageBox}
-            styles={{
-              backgroundColor: msg.position === "right" ? "#11bbff" : "#FFFFFF",
-              color: "#000",
-            }}
             key={i}
-            id={i.toString()}
-            position={msg.position}
-            type="text"
-            text={msg.text}
-            title={msg.position === "right" ? "Me" : "Assistant"}
-            titleColor={msg.position === "right" ? "black" : "gray"}
-            date={msg.date}
-            forwarded={false}
-            replyButton={true}
-            removeButton={true}
-            status={"received"}
-            notch={true}
-            focus={false}
-            retracted={false}
-
+            message={msg}
           />
         ))}
 
         {loading && (
           <MessageBox
-            id="assistant"
-            position="left"
-            type="text"
-            text="Thinking..."
-            title="Assistant"
-            titleColor="none"
-            date={new Date()}
-            forwarded={false}
-            replyButton={false}
-            removeButton={false}
-            status={"waiting"}
-            notch={true}
-            focus={false}
-            retracted={false}
+          message={undefined}
+          loading
           />
         )}
       </div>
-
-      <Input
-        placeholder="כתוב הודעה..."
-        className={classes.input}
-        value={text}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-          setText(e.target.value)
-        }
-        maxHeight={100}
-        onKeyDown={(e) => e.key === "Enter" && handleSend()}
-        rightButtons={
-          <div className={classes.rightButtons}>
-            <button className={classes.sendButton} onClick={() => speak(text)}>
-              🗣
-            </button>
-            <button className={classes.sendButton} onClick={handleSend}>
-              {loading ? "..." : "↑"}
-            </button>
-          </div>
-        }
-      />
+      <div className={classes.inputContainer}>
+        <Input
+          placeholder="כתוב הודעה..."
+          className={classes.input}
+          value={text}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            setText(e.target.value)
+          }
+          maxHeight={100}
+          onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          rightButtons={
+            <div className={classes.rightButtons}>
+              <button className={classes.sendButton} onClick={() => speak(lastSpokenTextRef.current ?? "")}>
+                🗣
+              </button>
+              <button className={classes.sendButton} onClick={handleSend}>
+                {loading ? "..." : "↑"}
+              </button>
+            </div>
+          }
+        />
+      </div>
     </div>
   );
-
-
-  /*return (
-    <div>
-      <div className={classes.wrapper}>
-        <img src={avatar} alt="Avatar" className={classes.avatar} />
-        <img
-          src={currentVisemeSrc}
-          alt="Lips"
-          className={classes.lipsImage}
-        />
-      </div>
-      <div style={{ marginTop: "20px" }}>
-        <input
-          type="text"
-          placeholder="כתוב פה משהו בעברית"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          className={classes.input}
-          dir="rtl"
-        />
-        <br />
-        <button onClick={handleSend} className={classes.button}>
-          דברי
-        </button>
-      </div>
-    </div>
-  );*/
 };

@@ -6,19 +6,27 @@ export const useStyles = createUseStyles({
     maxWidth: "800px",
     maxHeight: "550px",
     margin: "auto",
+    marginTop: 0,
+    marginBottom: 0,
     border: "1px solid #ccc",
     padding: 10,
+    overflowY: "auto",
+    display: "flex",
+    flexDirection: "column"
   },
   wrapper: {
     position: "relative",
-    width: "300px",
-    height: "300px",
+    width: "220px",
+    height: "220px",
     margin: "0 auto",
+    //overflowY: "auto"
   },
   messagesList: {
-    height: "280px",
-    overflowX: "auto",
+    //height: "180px",
+    //overflowX: "auto",
+    flex: 1,
     overflowY: "auto",
+    overflowX: "hidden",
     marginBottom: 10,
   },
   messageBox: {
@@ -34,9 +42,11 @@ export const useStyles = createUseStyles({
     },
   },
   rightButtons: {
+
     display: "flex",
     flexDirection: "row",
     gap: "5px"
+
   },
   button: {
     marginTop: "10px",
@@ -67,12 +77,33 @@ export const useStyles = createUseStyles({
     height: "20%",
     pointerEvents: "none",
   },
+  inputContainer: {
+    position: "relative",
+    flexShrink: 0,
+    padding: 6,
+  },
+
   input: {
-    fontSize: "18px",
-    padding: "10px",
-    width: "300px",
+
+    /*fontSize: "18px",
+    //padding: "10px",
+    width: "100% !important",
+    boxSizing: "border-box",
     borderRadius: 5,
+    border: "1px solid #ccc",*/
+
+    /*border: "1px solid #ddd",
+    borderRadius: "0%",
+    paddingLeft: "6px",
+    boxSizing: "border-box"*/
+
+    width: "100%!important",
+    fontSize: "18px",
+    padding: "1px 6px 1px 6px", // room for buttons
     border: "1px solid #ccc",
+    borderRadius: 5,
+    boxSizing: "border-box",
+
   },
   avatar: {
     width: "100%",
