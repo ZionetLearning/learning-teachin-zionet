@@ -15,8 +15,9 @@ resource "helm_release" "grafana" {
     adminUser     = var.admin_user
     adminPassword = var.admin_password
     service = {
-      type = var.service_type
-      port = var.service_port
+      type            = var.service_type
+      port            = var.service_port
+      loadBalancerIP  = azurerm_public_ip.grafana.ip_address # for dns and public IP
     }
     sidecar = {
       dashboards = {
