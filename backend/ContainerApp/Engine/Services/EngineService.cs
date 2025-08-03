@@ -1,8 +1,11 @@
 using AutoMapper;
 using Dapr.Client;
 using Engine.Constants;
+using Engine.Messaging;
 using Engine.Models;
 using Microsoft.Extensions.Logging;
+using Polly;
+using System.Net;
 
 namespace Engine.Services
 {
@@ -11,15 +14,20 @@ namespace Engine.Services
         private readonly DaprClient _daprClient;
         private readonly ILogger<EngineService> _logger;
         private readonly IMapper _mapper;
+        private readonly IRetryPolicyProvider _retryPolicyProvider;
+        private readonly IAsyncPolicy<HttpResponseMessage> _httpRetryPolicy;
+
 
 
         public EngineService(DaprClient daprClient, 
             ILogger<EngineService> logger,
-            IMapper mapper)
+            IMapper mapper, IRetryPolicyProvider retryPolicyProvider)
         {
             _daprClient = daprClient;
             _logger = logger;
             _mapper = mapper;
+            _retryPolicyProvider = retryPolicyProvider;
+            _httpRetryPolicy = _retryPolicyProvider.CreateHttpPolicy(_logger);
         }
 
 
@@ -32,10 +40,14 @@ namespace Engine.Services
                 throw new ArgumentNullException(nameof(task), "Task cannot be null");
             }
             _logger.LogInformation("Logged task: {Id} - {Name}", task.Id, task.Name);
-
+            var retryPolicy = _retryPolicyProvider.CreateHttpPolicy(_logger);
             try
             {
-                await _daprClient.InvokeBindingAsync(QueueNames.EngineToAccessor, "create", task);
+                await _httpRetryPolicy.ExecuteAsync(async () =>
+                {
+                    await _daprClient.InvokeBindingAsync(QueueNames.EngineToAccessor, "create", task);
+                    return new HttpResponseMessage(HttpStatusCode.OK);
+                });
                 _logger.LogInformation("Task {Id} forwarded to binding '{Binding}'", task.Id, QueueNames.EngineToAccessor);
             }
             catch (Exception ex)
