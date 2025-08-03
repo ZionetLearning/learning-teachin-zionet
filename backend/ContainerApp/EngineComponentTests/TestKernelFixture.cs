@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.SemanticKernel;
 
+namespace EngineComponentTests;
 public sealed class TestKernelFixture : IAsyncLifetime
 {
     public Kernel Kernel { get; private set; } = default!;
@@ -23,7 +24,7 @@ public sealed class TestKernelFixture : IAsyncLifetime
             throw new SkipException("No Azure OpenAI config -> skip AI tests");
         }
 
-        Kernel = Kernel.CreateBuilder()
+        this.Kernel = Kernel.CreateBuilder()
                        .AddAzureOpenAIChatCompletion(deployment, endpoint, apiKey)
                        .Build();
 

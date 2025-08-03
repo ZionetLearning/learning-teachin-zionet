@@ -1,11 +1,9 @@
 ﻿using AutoMapper;
-using Engine.Models;
 
-
-    internal class AutoMapperProfile : Profile
+internal sealed class AutoMapperProfile : Profile
+{
+    public AutoMapperProfile()
     {
-        public AutoMapperProfile()
-        {
         // Currently there is nothing to map, but this is where you would configure mappings
     }
 }

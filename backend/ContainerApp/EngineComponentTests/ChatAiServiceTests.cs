@@ -2,7 +2,6 @@
 using Engine.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Text.RegularExpressions;
-using Xunit;
 
 namespace EngineComponentTests;
 
@@ -13,12 +12,12 @@ public class ChatAiServiceTests
 
     public ChatAiServiceTests(TestKernelFixture fx)
     {
-        _fx = fx;
+        this._fx = fx;
     }
     [SkippableFact(DisplayName = "ProcessAsync: answer contains 4 or four")]
     public async Task ProcessAsync_Returns_Number4()
     {
-        var service = new ChatAiService(_fx.Kernel, NullLogger<ChatAiService>.Instance);
+        var service = new ChatAiService(this._fx.Kernel, NullLogger<ChatAiService>.Instance);
 
         var req = new AiRequestModel
         {

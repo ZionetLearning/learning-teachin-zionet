@@ -10,8 +10,8 @@ public sealed class ChatAiService : IChatAiService
 
     public ChatAiService(Kernel kernel, ILogger<ChatAiService> log)
     {
-        _kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
-        _log = log ?? throw new ArgumentNullException(nameof(log));
+        this._kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
+        this._log = log ?? throw new ArgumentNullException(nameof(log));
     }
 
     public async Task<AiResponseModel> ProcessAsync(AiRequestModel request, CancellationToken ct = default)
@@ -19,7 +19,7 @@ public sealed class ChatAiService : IChatAiService
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         if (now > request.SentAt + request.TtlSeconds)
         {
-            _log.LogWarning("Request {Id} is expired. Skipping.", request.Id);
+            this._log.LogWarning("Request {Id} is expired. Skipping.", request.Id);
             return new AiResponseModel
             {
                 Id = request.Id,
@@ -28,11 +28,11 @@ public sealed class ChatAiService : IChatAiService
             };
         }
 
-        _log.LogInformation("AI processing request {Id}", request.Id);
+        this._log.LogInformation("AI processing request {Id}", request.Id);
 
         try
         {
-            var func = _kernel.CreateFunctionFromPrompt(
+            var func = this._kernel.CreateFunctionFromPrompt(
                 "Answer the question:\n{{$input}}");
 
             var args = new KernelArguments
@@ -40,7 +40,7 @@ public sealed class ChatAiService : IChatAiService
                 ["input"] = request.Question
             };
 
-            var answer = await _kernel.InvokeAsync<string>(func, args, ct) ?? string.Empty;
+            var answer = await this._kernel.InvokeAsync<string>(func, args, ct) ?? string.Empty;
 
             return new AiResponseModel
             {
@@ -50,7 +50,7 @@ public sealed class ChatAiService : IChatAiService
         }
         catch (Exception ex)
         {
-            _log.LogError(ex, "Error while processing AI request {Id}", request.Id);
+            this._log.LogError(ex, "Error while processing AI request {Id}", request.Id);
             return new AiResponseModel
             {
                 Id = request.Id,
