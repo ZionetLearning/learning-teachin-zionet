@@ -53,3 +53,4 @@ backend/ContainerApp/.idea/.idea.backend/.idea/vcs.xml
 *.tfstate.backup
 .terraform/
 # ===============================
+/backend/ContainerApp/.cr
