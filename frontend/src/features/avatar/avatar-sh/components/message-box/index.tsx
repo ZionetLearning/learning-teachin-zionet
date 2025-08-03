@@ -31,8 +31,8 @@ export const MessageBox = ({
         titleColor={message?.position === "right" ? "black" : "gray"}
         date={message?.date ?? new Date()}
         forwarded={false}
-        replyButton={true}
-        removeButton={true}
+        replyButton={false}
+        removeButton={false}
         status="received"
         notch={true}
         focus={false}

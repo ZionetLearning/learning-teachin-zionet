@@ -8,11 +8,17 @@ export const useStyles = createUseStyles({
     border: "1px solid #ccc",
     padding: 10,
   },
+  chatWrapperAvatar: {
+
+  },
   messagesList: {
     height: "500px",
     overflowX: "auto",
     overflowY: "auto",
     marginBottom: 10,
+  },
+  messageListAvatar: {
+
   },
   messageBox: {
     "& .rce-mbox-right-notch": {
@@ -26,12 +32,14 @@ export const useStyles = createUseStyles({
       justifyContent: "flex-end",
     },
   },
+  inputContainer: {
+
+  },
   input: {
     border: "1px solid #ddd",
     borderRadius: "0%",
     paddingLeft: "6px",
   },
-
   inputAvatar: {
     width: "100%!important",
     fontSize: "18px",
@@ -40,6 +48,9 @@ export const useStyles = createUseStyles({
     borderRadius: 5,
     boxSizing: "border-box",
   },
+  buttonsContainer: {
+
+  },  
   sendButton: {
     backgroundColor: "#44bbff",
     color: "#fff",
