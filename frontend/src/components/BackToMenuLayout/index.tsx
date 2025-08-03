@@ -1,6 +1,7 @@
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { useStyles } from './style';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+
 import { useAuth } from '@/providers/auth';
+import { useStyles } from './style';
 
 export const BackToMenuLayout = () => {
 	const navigate = useNavigate();

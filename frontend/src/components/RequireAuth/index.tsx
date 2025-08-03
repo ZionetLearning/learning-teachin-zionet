@@ -1,8 +1,9 @@
-import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/providers/auth';
-import { useEffect } from 'react';
+import { ReactNode, useEffect } from 'react';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 
-export const RequireAuth = () => {
+import { useAuth } from '@/providers/auth';
+
+export const RequireAuth = ({ children }: { children: ReactNode }) => {
 	const { isAuthorized } = useAuth();
 	const location = useLocation();
 	const navigate = useNavigate();
@@ -26,5 +27,5 @@ export const RequireAuth = () => {
 		return <Navigate to="/signin" replace />;
 	}
 
-	return <Outlet />;
+	return <>{children}</>;
 };

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 
+import { ErrorMessage, Field, Form, Formik, FormikHelpers } from 'formik';
 import { useNavigate } from 'react-router-dom';
 import * as Yup from 'yup';
-import { Formik, Form, Field, ErrorMessage, FormikHelpers } from 'formik';
 
 import { useAuth } from '@/providers/auth';
 import { useStyles } from './style';
