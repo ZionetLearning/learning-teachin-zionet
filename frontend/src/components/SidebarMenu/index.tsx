@@ -53,7 +53,6 @@ export const SidebarMenu = () => {
             },
             textTransform: "capitalize",
           }),
-
           label: {
             textAlign: "left",
           },
