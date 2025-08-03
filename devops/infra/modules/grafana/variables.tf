@@ -69,3 +69,21 @@ variable "grafana_chart_version" {
   type        = string
   default     = "7.3.8"
 }
+
+# Grafana outputs DNS and public IP
+
+variable "location" {
+  description = "Azure region"
+  type        = string
+}
+
+variable "resource_group_name" {
+  description = "Name of the resource group"
+  type        = string
+}
+
+variable "domain_name_label" {
+  description = "DNS label for Grafana public IP"
+  type        = string
+  default     = "grafana-demo"
+}

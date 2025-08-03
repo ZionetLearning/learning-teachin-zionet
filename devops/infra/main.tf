@@ -130,6 +130,9 @@ module "grafana" {
   persistence_access_modes  = ["ReadWriteOnce"]
   persistence_finalizers    = ["retain"]
   grafana_chart_version     = "7.3.8"
+  location                  = var.location
+  resource_group_name       = azurerm_resource_group.main.name
+  domain_name_label         = "grafana-demo-${var.resource_group_name}"
 }
 
 module "prometheus_stack" {

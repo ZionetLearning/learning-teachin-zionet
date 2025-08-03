@@ -60,3 +60,14 @@ output "grafana_namespace" {
   description = "Grafana namespace"
   value       = module.grafana.namespace
 }
+
+# Grafana outputs DNS and public IP
+
+output "grafana_dns_name" {
+  value       = module.grafana.dns_name
+  description = "Grafana DNS name"
+}
+output "grafana_public_ip" {
+  value       = module.grafana.public_ip_address
+  description = "Grafana Public IP address"
+}
