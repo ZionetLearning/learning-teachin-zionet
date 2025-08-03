@@ -78,6 +78,11 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
 
             return true;
         }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("Task with ID {TaskId} not found for deletion (404 from accessor)", id);
+            return false; // treat 404 as "not found", not exception
+        }
         catch (Exception e)
         {
             _logger.LogError(e, "Error inside the DeleteUser");

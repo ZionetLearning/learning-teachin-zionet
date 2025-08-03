@@ -9,13 +9,11 @@ public static class ManagerEndpoints
     public static WebApplication MapManagerEndpoints(this WebApplication app)
     {
 
-
         #region HTTP GET
 
         app.MapGet("/task/{id}", GetTaskAsync).WithName("GetTask");
 
         #endregion
-
 
         #region HTTP POST
 
@@ -23,13 +21,11 @@ public static class ManagerEndpoints
 
         #endregion
 
-
         #region HTTP PUT
 
         app.MapPut("/task/{id}/{name}", UpdateTaskNameAsync).WithName("UpdateTaskName");
 
         #endregion
-
 
         #region HTTP DELETE
 
@@ -57,7 +53,7 @@ public static class ManagerEndpoints
                 }
 
                 logger.LogWarning("Task not found");
-                return Results.NotFound(new { error = $"Task with ID {id} not found." });
+                return Results.NotFound($"Task with ID {id} not found.");
             }
             catch (Exception ex)
             {
@@ -95,23 +91,35 @@ public static class ManagerEndpoints
             }
         }
     }
-    
+
     private static async Task<IResult> UpdateTaskNameAsync(
         [FromRoute] int id,
         [FromRoute] string name,
         [FromServices] IManagerService managerService,
         [FromServices] ILogger<ManagerService> logger)
     {
-        logger.LogInformation("Inside {method}", nameof(UpdateTaskNameAsync));
-        try
+        using (logger.BeginScope("Method: {Method}", nameof(UpdateTaskNameAsync)))
         {
-            var success = await managerService.UpdateTaskName(id, name);
-            return success ? Results.Ok("Task name updated") : Results.NotFound("Task not found");
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error updating task name for ID {Id}", id);
-            return Results.Problem("An error occurred while updating the task name.");
+            try
+            {
+                logger.LogInformation("Attempting to update task name for ID {TaskId}", id);
+
+                var success = await managerService.UpdateTaskName(id, name);
+
+                if (success)
+                {
+                    logger.LogInformation("Successfully updated task name for ID {TaskId}", id);
+                    return Results.Ok("Task name updated");
+                }
+
+                logger.LogWarning("Task with ID {TaskId} not found for name update", id);
+                return Results.NotFound("Task not found");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error updating task name for ID {TaskId}", id);
+                return Results.Problem("An error occurred while updating the task name.");
+            }
         }
     }
 
@@ -120,17 +128,28 @@ public static class ManagerEndpoints
         [FromServices] IManagerService managerService,
         [FromServices] ILogger<ManagerService> logger)
     {
-        logger.LogInformation("Inside {method}", nameof(DeleteTaskAsync));
-        try
+        using (logger.BeginScope("Method: {Method}", nameof(DeleteTaskAsync)))
         {
-            var success = await managerService.DeleteTask(id);
-            return success ? Results.Ok("Task deleted") : Results.NotFound("Task not found");
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error deleting task with ID {Id}", id);
-            return Results.Problem("An error occurred while deleting the task.");
+            try
+            {
+                logger.LogInformation("Attempting to delete task with ID {TaskId}", id);
+
+                var success = await managerService.DeleteTask(id);
+
+                if (success)
+                {
+                    logger.LogInformation("Successfully deleted task with ID {TaskId}", id);
+                    return Results.Ok("Task deleted");
+                }
+
+                logger.LogWarning("Task with ID {TaskId} not found for deletion", id);
+                return Results.NotFound("Task not found");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error deleting task with ID {TaskId}", id);
+                return Results.Problem("An error occurred while deleting the task.");
+            }
         }
     }
-
 }

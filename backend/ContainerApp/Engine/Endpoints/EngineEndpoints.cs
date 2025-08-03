@@ -27,7 +27,7 @@ namespace Engine.Endpoints;
             logger.LogInformation("Inside {method}", nameof(ProcessTaskAsync));
             try
             {
-                logger.LogDebug("Received task from queue input: {Id} - {Name}", task.Id, task.Name);
+                logger.LogInformation("Received task from queue input: {Id} - {Name}", task.Id, task.Name);
                 await engineService.ProcessTaskAsync(task);
                 logger.LogInformation("Task {Id} processed successfully", task.Id);
                 return Results.Ok(new { Status = "Forwarded to accessor", task.Id });

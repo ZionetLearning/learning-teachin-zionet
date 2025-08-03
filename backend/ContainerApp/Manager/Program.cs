@@ -2,7 +2,6 @@ using Manager.Endpoints;
 using Manager.Hubs;
 using Manager.Services;
 using Manager.Services.Clients;
-using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 

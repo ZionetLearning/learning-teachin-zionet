@@ -20,7 +20,6 @@ public static class AiEndpoints
         return app;
     }
 
-
     private static async Task<IResult> ProcessQuestionAsync(
         [FromBody] AiRequestModel req,
         [FromServices] IChatAiService aiService,
@@ -28,21 +27,22 @@ public static class AiEndpoints
         [FromServices] ILogger<ManagerToAiEndpoint> log,
         CancellationToken ct)
     {
-        log.LogInformation("Received AI question {Id} from manager", req.Id);
-        try
+        using (log.BeginScope("Method: {Method}, CorrelationId: {Id}, ReplyTo: {ReplyToTopic}",
+                                      nameof(ProcessQuestionAsync), req.Id, req.ReplyToTopic))
         {
-            var response = await aiService.ProcessAsync(req, ct);
-
-            await publisher.PublishAsync(response, req.ReplyToTopic, ct);
-
-            return Results.Ok();
-        }
-        catch (Exception ex)
-        {
-            log.LogError(ex, "Error processing AI question {Id}", req.Id);
-            return Results.Problem("An error occurred while processing the AI question.");
+            try
+            {
+                log.LogInformation("Received AI question from Manager.");
+                var response = await aiService.ProcessAsync(req, ct);
+                await publisher.PublishAsync(response, req.ReplyToTopic, ct);
+                log.LogInformation("Processed and published response.");
+                return Results.Ok();
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, "Failed to process AI question.");
+                return Results.Problem("An error occurred while processing the AI question.");
+            }
         }
     }
-
-
 }

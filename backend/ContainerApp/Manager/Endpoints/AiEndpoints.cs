@@ -20,7 +20,6 @@ public static class AiEndpoints
 
         #endregion
 
-
         #region HTTP POST
 
         app.MapPost("/ai/question", QuestionAsync).WithName("Question");
@@ -29,10 +28,8 @@ public static class AiEndpoints
 
         #endregion
 
-
         return app;
     }
-
 
     private static async Task<IResult> AnswerAsync(
         [FromRoute] string id,
@@ -40,24 +37,26 @@ public static class AiEndpoints
         [FromServices] ILogger<AnswerEndpoint> log,
         CancellationToken ct)
     {
-        try
+        using (log.BeginScope("Method: {Method}, QuestionId: {Id}", nameof(AnswerAsync), id))
         {
-            var ans = await aiService.GetAnswerAsync(id, ct);
-            if (ans is null)
+            try
             {
-                log.LogDebug("Answer for {Id} not ready", id);
-                return Results.NotFound(new { error = "Answer not ready" });
+                var ans = await aiService.GetAnswerAsync(id, ct);
+                if (ans is null)
+                {
+                    log.LogInformation("Answer not ready");
+                    return Results.NotFound(new { error = "Answer not ready" });
+                }
+                log.LogInformation("Answer returned");
+                return Results.Ok(new { id, answer = ans });
             }
-
-            return Results.Ok(new { id, answer = ans });
-        }
-        catch (Exception ex)
-        {
-            log.LogError(ex, "Error retrieving answer {Id}", id);
-            return Results.Problem("AI answer retrieval failed");
+            catch (Exception ex)
+            {
+                log.LogError(ex, "Failed to retrieve answer");
+                return Results.Problem("AI answer retrieval failed");
+            }
         }
     }
-
 
     private static async Task<IResult> QuestionAsync(
         [FromBody] AiRequestModel dto,
@@ -65,19 +64,21 @@ public static class AiEndpoints
         [FromServices] ILogger<QuestionEndpoint> log,
         CancellationToken ct)
     {
-        try
+        using (log.BeginScope("Method: {Method}, Id: {Id}", nameof(QuestionAsync), dto.Id))
         {
-            var id = await aiService.SendQuestionAsync(dto.Question, ct);
-            log.LogInformation("Request {Id} accept", id);
-            return Results.Accepted($"/ai/answer/{id}", new { questionId = id });
-        }
-        catch (Exception ex)
-        {
-            log.LogError(ex, "Error sending question");
-            return Results.Problem("AI question failed");
+            try
+            {
+                var id = await aiService.SendQuestionAsync(dto.Question, ct);
+                log.LogInformation("Question accepted and sent to processing");
+                return Results.Accepted($"/ai/answer/{id}", new { questionId = id });
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, "Error sending question");
+                return Results.Problem("AI question failed");
+            }
         }
     }
-
 
     private static async Task<IResult> PubSubAsync(
         [FromBody] AiResponseModel msg,
@@ -85,18 +86,19 @@ public static class AiEndpoints
         [FromServices] ILogger<PubSubEndpoint> log,
         CancellationToken ct)
     {
-        try
+        using (log.BeginScope("Method: {Method}, QuestionId: {Id}", nameof(PubSubAsync), msg.Id))
         {
-            await aiService.SaveAnswerAsync(msg, ct);
-            log.LogInformation("Answer saved");
-            return Results.Ok();
-        }
-        catch (Exception ex)
-        {
-            log.LogError(ex, "Error saving answer");
-            return Results.Problem("AI answer handling failed");
+            try
+            {
+                await aiService.SaveAnswerAsync(msg, ct);
+                log.LogInformation("Answer saved");
+                return Results.Ok();
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, "Error saving answer");
+                return Results.Problem("AI answer handling failed");
+            }
         }
     }
-        
-
 }
