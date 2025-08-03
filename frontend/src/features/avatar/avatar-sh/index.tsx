@@ -5,6 +5,7 @@ import { useAvatarSpeech } from "./hooks";
 import avatar from "./assets/avatar.svg";
 import { MessageBox } from "./components";
 import { useStyles } from "./style";
+import { ChatUi } from "../../chat/chat-yo/components";
 
 type SvgModule = { default: string };
 
@@ -43,39 +44,11 @@ export const AvatarSh = () => {
         <img src={avatar} alt="Avatar" className={classes.avatar} />
         <img src={currentVisemeSrc} alt="Lips" className={classes.lipsImage} />
       </div>
-
-      <div className={classes.messagesList}>
-        {messages.map((msg, i) => (
-          <MessageBox className={classes.messageBox} key={i} message={msg} />
-        ))}
-
-        {loading && <MessageBox message={undefined} loading />}
-      </div>
-      <div className={classes.inputContainer}>
-        <Input
-          placeholder="כתוב הודעה..."
-          className={classes.input}
-          value={text}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setText(e.target.value)
-          }
-          maxHeight={100}
-          onKeyDown={(e) => e.key === "Enter" && handleSend()}
-          rightButtons={
-            <div className={classes.rightButtons}>
-              <button
-                className={classes.sendButton}
-                onClick={() => speak(lastSpokenTextRef.current ?? "")}
-              >
-                🗣
-              </button>
-              <button className={classes.sendButton} onClick={handleSend}>
-                {loading ? "..." : "↑"}
-              </button>
-            </div>
-          }
-        />
-      </div>
+      <ChatUi loading={loading} messages={messages} avatarMode
+        value={text}
+        onChange={setText}
+        handleSendMessage={handleSend} 
+        handlePlay={() => speak(lastSpokenTextRef.current ?? "")} />
     </div>
   );
 };

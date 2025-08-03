@@ -9,7 +9,16 @@ export const useStyles = createUseStyles({
     padding: 10,
   },
   chatWrapperAvatar: {
-
+    maxWidth: "800px",
+    maxHeight: "550px",
+    margin: "auto",
+    marginTop: 0,
+    marginBottom: 0,
+    border: "1px solid #ccc",
+    padding: 10,
+    overflowY: "auto",
+    display: "flex",
+    flexDirection: "column",
   },
   messagesList: {
     height: "500px",
@@ -17,8 +26,11 @@ export const useStyles = createUseStyles({
     overflowY: "auto",
     marginBottom: 10,
   },
-  messageListAvatar: {
-
+  messagesListAvatar: {
+    flex: 1,
+    overflowY: "auto",
+    overflowX: "hidden",
+    marginBottom: 10,
   },
   messageBox: {
     "& .rce-mbox-right-notch": {
@@ -33,7 +45,9 @@ export const useStyles = createUseStyles({
     },
   },
   inputContainer: {
-
+    position: "relative",
+    flexShrink: 0,
+    padding: 6,
   },
   input: {
     border: "1px solid #ddd",
@@ -41,15 +55,17 @@ export const useStyles = createUseStyles({
     paddingLeft: "6px",
   },
   inputAvatar: {
-    width: "100%!important",
+    width: "100% !important",
     fontSize: "18px",
     padding: "1px 6px 1px 6px",
     border: "1px solid #ccc",
     borderRadius: 5,
     boxSizing: "border-box",
   },
-  buttonsContainer: {
-
+  rightButtons: {
+    display: "flex",
+    flexDirection: "row",
+    gap: "5px",
   },  
   sendButton: {
     backgroundColor: "#44bbff",
