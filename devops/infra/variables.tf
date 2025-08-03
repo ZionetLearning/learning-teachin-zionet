@@ -55,7 +55,23 @@ variable "queue_names" {
               "taskupdate-input"
             ]
 }
+variable "topic_names" {
+  description = "List of Service Bus topics to create"
+  type        = list(string)
+  default     = [
+    "manager-to-ai",
+    "ai-to-manager"
+  ]
+}
 
+variable "topic_subscriptions" {
+  description = "Map of topic name to list of subscriptions"
+  type        = map(list(string))
+  default     = {
+    "manager-to-ai" = ["engine"]
+    "ai-to-manager" = ["manager"]
+  }
+}
 #------------- Docker Hub (or ACR) Variables --------------------
 variable "docker_registry" {
   description = "Container registry/org used in deployment YAMLs"

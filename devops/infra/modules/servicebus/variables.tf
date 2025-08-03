@@ -40,3 +40,14 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "topic_names" {
+  description = "List of Service Bus topics to create"
+  type        = list(string)
+  default     = []
+}
+variable "topic_subscriptions" {
+  description = "Map of topic name to list of subscriptions"
+  type        = map(list(string))
+  default     = {}
+}

@@ -35,11 +35,21 @@ resource "azurerm_servicebus_queue" "this" {
 # Optional – create topics from list
 resource "azurerm_servicebus_topic" "this" {
   for_each            = toset(var.topic_names)
-
   name                = each.value
   namespace_id = azurerm_servicebus_namespace.this.id
 }
 
+resource "azurerm_servicebus_subscription" "this" {
+for_each = {
+for topic, subs in var.topic_subscriptions :
+topic => subs
+}
+
+count = length(each.value)
+name = each.value[count.index]
+topic_id = azurerm_servicebus_topic.this[each.key].id
+max_delivery_count = 1
+}
 ############################################
 # END
 ############################################

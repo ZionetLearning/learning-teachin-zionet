@@ -24,7 +24,8 @@ module "servicebus" {
   namespace_name      = var.servicebus_namespace
   sku                 = var.servicebus_sku
   queue_names         = var.queue_names
-  
+  topic_names         = var.topic_names 
+  topic_subscriptions = var.topic_subscriptions  
   depends_on = [azurerm_resource_group.main]
 }
 
