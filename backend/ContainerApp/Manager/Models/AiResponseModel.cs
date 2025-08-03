@@ -7,9 +7,10 @@ namespace Manager.Models
         [Required(ErrorMessage = "Id is required.")]
         [MinLength(1, ErrorMessage = "Id cannot be empty.")]
         public string Id { get; init; } = string.Empty;
+        [Required(ErrorMessage = "ThreadId is required.")]
+        [MinLength(1, ErrorMessage = "ThreadId cannot be empty.")]
+        public required string ThreadId { get; init; }
 
-        [Required(ErrorMessage = "Answer is required.")]
-        [MinLength(1, ErrorMessage = "Answer cannot be empty.")]
         public string Answer { get; init; } = string.Empty;
 
         public long AnsweredAtUnix { get; init; } = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
