@@ -43,6 +43,9 @@ export const useStyles = createUseStyles({
       textAlign: "right",
       justifyContent: "flex-end",
     },
+    '& svg': {
+      display: 'none !important',
+    },
   },
   inputContainer: {
     position: "relative",

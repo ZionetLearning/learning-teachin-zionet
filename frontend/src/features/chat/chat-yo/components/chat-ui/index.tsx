@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { MessageBox, Input } from "react-chat-elements";
 import type { ChatMessage } from "../../hooks";
 import { useStyles } from "./style";
@@ -10,7 +10,7 @@ interface ChatUiProps {
     loading: boolean;
     avatarMode?: boolean;
     value: string;
-    onChange: (v: string) => void;
+    onChange: (value: string) => void;
     handleSendMessage: () => void;
     handlePlay?: () => void;
 }
@@ -25,87 +25,17 @@ export const ChatUi = ({
     handlePlay
 }: ChatUiProps) => {
     const classes = useStyles();
-    //const [input, setInput] = useState("");;
     const avatarUrl = avatar;
 
-    if (!avatarMode) {
-        return (
-            <div className={classes.chatWrapper}>
-                <div className={classes.messagesList}>
-                    {messages?.map((msg, i) => (
-                        <MessageBox
-                            className={classes.messageBox}
-                            styles={{
-                                backgroundColor: msg.position === "right" ? "#11bbff" : "#FFFFFF",
-                                color: "#000",
-                            }}
-                            key={i}
-                            id={i.toString()}
-                            position={msg.position}
-                            type="text"
-                            text={msg.text}
-                            title={msg.position === "right" ? "Me" : "Assistant"}
-                            titleColor={msg.position === "right" ? "black" : "gray"}
-                            date={msg.date}
-                            forwarded={false}
-                            replyButton={false}
-                            removeButton={false}
-                            status="received"
-                            focus={false}
-                            retracted={false}
-                            avatar={msg.position === "left" ? avatarUrl : undefined}
-                            notch
-                        />
-                    ))}
-                    {loading && (
-                        <MessageBox
-                            id="assistant"
-                            position="left"
-                            type="text"
-                            text="Thinking..."
-                            title="Assistant"
-                            titleColor="none"
-                            date={new Date()}
-                            forwarded={false}
-                            replyButton={false}
-                            removeButton={false}
-                            status={"waiting"}
-                            focus={false}
-                            retracted={false}
-                            notch
-                        />
-                    )}
-                </div>
-
-                <Input
-                    placeholder="Type a message..."
-                    className={classes.input}
-                    value={value}
-                    maxHeight={100}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                    rightButtons={
-                        <button className={classes.sendButton} onClick={handleSendMessage}>
-                            {loading ? "..." : "↑"}
-                        </button>
-                    }
-                />
-            </div>
-        );
-
-    }
     return (
         <>
-            <div className={classes.messagesListAvatar}>
+            <div className={avatarMode ? classes.messagesListAvatar : classes.messagesList}>
                 {messages?.map((msg, i) => (
                     <MessageBox
-                        className={classes.messageBox}
-                        styles={{
-                            backgroundColor: msg.position === "right" ? "#11bbff" : "#FFFFFF",
-                            color: "#000",
-                        }}
                         key={i}
-                        id={i.toString()}
+                        className={classes.messageBox}
+                        styles={{ backgroundColor: msg.position === "right" ? "#11bbff" : "#fff", color: "#000" }}
+                        id={String(i)}
                         position={msg.position}
                         type="text"
                         text={msg.text}
@@ -116,9 +46,10 @@ export const ChatUi = ({
                         replyButton={false}
                         removeButton={false}
                         status="received"
-                        notch={true}
-                        focus={false}
                         retracted={false}
+                        focus={false}
+                        avatar={msg.position === "left" ? avatarUrl : undefined}
+                        notch
                     />
                 ))}
                 {loading && (
@@ -126,45 +57,42 @@ export const ChatUi = ({
                         id="assistant"
                         position="left"
                         type="text"
-                        text="Thinking..."
+                        text="Thinking…"
                         title="Assistant"
                         titleColor="none"
                         date={new Date()}
                         forwarded={false}
                         replyButton={false}
                         removeButton={false}
-                        status={"waiting"}
-                        focus={false}
+                        status="waiting"
                         retracted={false}
+                        focus={false}
                         notch
-
                     />
                 )}
             </div>
 
-            <div className={classes.inputContainer}>
+            <div className={avatarMode ? classes.inputContainer : undefined}>
                 <Input
-                    placeholder="Type a message..."
-                    className={classes.input}
+                    placeholder="Type a message…"
+                    className={avatarMode ? classes.inputAvatar : classes.input}
                     value={value}
-                    maxHeight={100}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+                    onKeyDown={e => e.key === "Enter" && handleSendMessage()}
+                    maxHeight={100}
                     rightButtons={
-                        <div className={classes.rightButtons}>
-                            <button
-                                className={classes.sendButton}
-                                onClick={handlePlay}
-                            >
-                                {loading ? "..." : "🗣"}
-                            </button>
+                        avatarMode ? (
+                            <div className={classes.rightButtons}>
+                                <button className={classes.sendButton} title="Replay avatar" onClick={handlePlay}>🗣</button>
+                                <button className={classes.sendButton} title="Send" onClick={handleSendMessage}>{loading ? "…" : "↑"}</button>
+                            </div>
+                        ) : (
                             <button className={classes.sendButton} onClick={handleSendMessage}>
-                                {loading ? "..." : "↑"}
+                                {loading ? "…" : "↑"}
                             </button>
-                        </div>
+                        )
                     }
                 />
-
             </div>
         </>
     );

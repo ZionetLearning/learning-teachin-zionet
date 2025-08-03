@@ -1,9 +1,7 @@
 import { useEffect, useState, useRef } from "react";
-import { Input } from "react-chat-elements";
 import { useChat } from "../../chat/chat-yo/hooks";
 import { useAvatarSpeech } from "./hooks";
 import avatar from "./assets/avatar.svg";
-import { MessageBox } from "./components";
 import { useStyles } from "./style";
 import { ChatUi } from "../../chat/chat-yo/components";
 
