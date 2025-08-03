@@ -5,10 +5,13 @@ export const useAvatarSpeech = (lipsArray: string[]) => {
   const [currentViseme, setCurrentViseme] = useState<number>(0);
 
   const visemeMap = useMemo(() => {
-    return lipsArray.reduce((acc, path, index) => {
-      acc[index] = path;
-      return acc;
-    }, {} as Record<number, string>);
+    return lipsArray.reduce(
+      (acc, path, index) => {
+        acc[index] = path;
+        return acc;
+      },
+      {} as Record<number, string>,
+    );
   }, [lipsArray]);
 
   const speak = (text: string) => {
@@ -16,10 +19,16 @@ export const useAvatarSpeech = (lipsArray: string[]) => {
 
     const speechKey = import.meta.env.VITE_AZURE_SPEECH_KEY!;
     const speechRegion = import.meta.env.VITE_AZURE_REGION!;
-    const speechConfig = sdk.SpeechConfig.fromSubscription(speechKey, speechRegion);
+    const speechConfig = sdk.SpeechConfig.fromSubscription(
+      speechKey,
+      speechRegion,
+    );
 
     speechConfig.speechSynthesisVoiceName = "he-IL-HilaNeural";
-    speechConfig.setProperty("SpeechServiceConnection_SynthVoiceVisemeEvent", "true");
+    speechConfig.setProperty(
+      "SpeechServiceConnection_SynthVoiceVisemeEvent",
+      "true",
+    );
 
     const audioConfig = sdk.AudioConfig.fromDefaultSpeakerOutput();
     const synthesizer = new sdk.SpeechSynthesizer(speechConfig, audioConfig);
@@ -53,7 +62,7 @@ export const useAvatarSpeech = (lipsArray: string[]) => {
         console.error("Speech error:", err);
         setCurrentViseme(0);
         synthesizer.close();
-      }
+      },
     );
   };
 
@@ -62,7 +71,7 @@ export const useAvatarSpeech = (lipsArray: string[]) => {
     speak,
     currentVisemeSrc: visemeMap[currentViseme] ?? lipsArray[0], // fallback to neutral
   };
-}
+};
 
 /*
   const speakWithAzure = () => {

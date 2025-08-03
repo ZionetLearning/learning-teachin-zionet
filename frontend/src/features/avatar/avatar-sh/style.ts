@@ -1,7 +1,6 @@
 import { createUseStyles } from "react-jss";
 
 export const useStyles = createUseStyles({
-
   chatWrapper: {
     maxWidth: "800px",
     maxHeight: "550px",
@@ -12,7 +11,7 @@ export const useStyles = createUseStyles({
     padding: 10,
     overflowY: "auto",
     display: "flex",
-    flexDirection: "column"
+    flexDirection: "column",
   },
   wrapper: {
     position: "relative",
@@ -42,11 +41,9 @@ export const useStyles = createUseStyles({
     },
   },
   rightButtons: {
-
     display: "flex",
     flexDirection: "row",
-    gap: "5px"
-
+    gap: "5px",
   },
   button: {
     marginTop: "10px",
@@ -84,7 +81,6 @@ export const useStyles = createUseStyles({
   },
 
   input: {
-
     /*fontSize: "18px",
     //padding: "10px",
     width: "100% !important",
@@ -103,7 +99,6 @@ export const useStyles = createUseStyles({
     border: "1px solid #ccc",
     borderRadius: 5,
     boxSizing: "border-box",
-
   },
   avatar: {
     width: "100%",

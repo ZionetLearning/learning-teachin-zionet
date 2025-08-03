@@ -7,23 +7,26 @@ interface MessageBoxProps {
   loading?: boolean;
   className?: string;
 }
-export const MessageBox = ({ message, key = 0, loading = false, className }: MessageBoxProps) => {
-
+export const MessageBox = ({
+  message,
+  key = 0,
+  loading = false,
+  className,
+}: MessageBoxProps) => {
   {
-    !loading ?
+    !loading ? (
       <Message
         className={className}
         styles={{
-          backgroundColor: message?.position === "right" ? "#11bbff" : "#FFFFFF",
+          backgroundColor:
+            message?.position === "right" ? "#11bbff" : "#FFFFFF",
           color: "#000",
         }}
         key={key}
         id={key.toString()}
         position={message?.position ?? ""}
         type="text"
-        text={message?.text ??
-          ""
-        }
+        text={message?.text ?? ""}
         title={message?.position === "right" ? "Me" : "Assistant"}
         titleColor={message?.position === "right" ? "black" : "gray"}
         date={message?.date ?? new Date()}
@@ -35,9 +38,7 @@ export const MessageBox = ({ message, key = 0, loading = false, className }: Mes
         focus={false}
         retracted={false}
       ></Message>
-
-      :
-
+    ) : (
       <Message
         id="assistant"
         position="left"
@@ -53,9 +54,7 @@ export const MessageBox = ({ message, key = 0, loading = false, className }: Mes
         notch={true}
         focus={false}
         retracted={false}
-      >
-
-      </Message>
-
+      ></Message>
+    );
   }
-}
+};

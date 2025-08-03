@@ -41,7 +41,7 @@ export const useChat = () => {
 
     setMessages((prev) => [...prev, aiMsg]);
     setLoading(false);
-  }
+  };
 
   return { messages, loading, sendMessage };
 };

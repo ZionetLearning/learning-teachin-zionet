@@ -21,7 +21,11 @@ export const AvatarSh = () => {
 
   useEffect(() => {
     const last = messages[messages.length - 1];
-    if (last?.position === "left" && last.text && last.text !== lastSpokenTextRef.current) {
+    if (
+      last?.position === "left" &&
+      last.text &&
+      last.text !== lastSpokenTextRef.current
+    ) {
       speak(last.text);
       lastSpokenTextRef.current = last.text;
     }
@@ -33,33 +37,19 @@ export const AvatarSh = () => {
     setText("");
   };
 
-
   return (
     <div className={classes.chatWrapper}>
       <div className={classes.wrapper}>
         <img src={avatar} alt="Avatar" className={classes.avatar} />
-        <img
-          src={currentVisemeSrc}
-          alt="Lips"
-          className={classes.lipsImage}
-        />
+        <img src={currentVisemeSrc} alt="Lips" className={classes.lipsImage} />
       </div>
 
       <div className={classes.messagesList}>
         {messages.map((msg, i) => (
-          <MessageBox
-            className={classes.messageBox}
-            key={i}
-            message={msg}
-          />
+          <MessageBox className={classes.messageBox} key={i} message={msg} />
         ))}
 
-        {loading && (
-          <MessageBox
-          message={undefined}
-          loading
-          />
-        )}
+        {loading && <MessageBox message={undefined} loading />}
       </div>
       <div className={classes.inputContainer}>
         <Input
@@ -73,7 +63,10 @@ export const AvatarSh = () => {
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
           rightButtons={
             <div className={classes.rightButtons}>
-              <button className={classes.sendButton} onClick={() => speak(lastSpokenTextRef.current ?? "")}>
+              <button
+                className={classes.sendButton}
+                onClick={() => speak(lastSpokenTextRef.current ?? "")}
+              >
                 🗣
               </button>
               <button className={classes.sendButton} onClick={handleSend}>
