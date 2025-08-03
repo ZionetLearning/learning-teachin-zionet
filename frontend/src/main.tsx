@@ -1,11 +1,14 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import App from './App.tsx';
-import { appInsights } from './appInsights';
-import { AppInsightsErrorBoundary } from './components';
+import {
+	ReactQueryProvider,
+	I18nTranslateProvider,
+	AuthProvider,
+} from './providers';
 import './index.css';
-import { AuthProvider, ReactQueryProvider } from './providers';
-import { I18nTranslateProvider } from './providers/i18n-translate-provider';
+import App from './App.tsx';
+import { AppInsightsErrorBoundary } from './components';
+import { appInsights } from './appInsights';
 
 appInsights.loadAppInsights();
 
