@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Sidebar,
   Menu,
@@ -16,11 +16,14 @@ import HomeIcon from "@mui/icons-material/Home";
 
 export const SidebarMenu = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
 
   const handleNavigation = (path: string) => {
     navigate(path);
   };
+
+  const isActive = (path: string) => location.pathname === path;
 
   return (
     <Sidebar
@@ -33,7 +36,29 @@ export const SidebarMenu = () => {
         },
       }}
     >
-      <Menu>
+      <Menu
+        menuItemStyles={{
+          button: ({ active }) => ({
+            color: active ? "white" : "#333",
+            backgroundColor: active ? "#7c4dff" : "transparent",
+            borderRadius: "8px",
+            margin: "4px 8px",
+            padding: "10px",
+            "& .ps-menu-icon": {
+              color: active ? "#fff" : "#7c4dff",
+            },
+            "&:hover": {
+              backgroundColor: active ? "#6a40e6" : "#f0f0f0",
+              color: active ? "#fff" : "#000",
+            },
+            textTransform: "capitalize",
+          }),
+
+          label: {
+            textAlign: "left",
+          },
+        }}
+      >
         <MenuItem
           icon={<MenuIcon />}
           onClick={() => setCollapsed((prev) => !prev)}
@@ -41,45 +66,79 @@ export const SidebarMenu = () => {
           {!collapsed && "Toggle Sidebar"}
         </MenuItem>
 
-        <MenuItem icon={<HomeIcon />} onClick={() => handleNavigation("/")}>
+        <MenuItem
+          icon={<HomeIcon />}
+          onClick={() => handleNavigation("/")}
+          active={isActive("/")}
+        >
           Home
         </MenuItem>
 
         <SubMenu label="Chat Tools" icon={<ChatIcon />}>
-          <MenuItem onClick={() => handleNavigation("/chat/sh")}>
+          <MenuItem
+            onClick={() => handleNavigation("/chat/sh")}
+            active={isActive("/chat/sh")}
+          >
             Chat - Sh (Shirley)
           </MenuItem>
-          <MenuItem onClick={() => handleNavigation("/chat/yo")}>
+          <MenuItem
+            onClick={() => handleNavigation("/chat/yo")}
+            active={isActive("/chat/yo")}
+          >
             Chat - Yo (Yonatan)
           </MenuItem>
-          <MenuItem onClick={() => handleNavigation("/chat/da")}>
+          <MenuItem
+            onClick={() => handleNavigation("/chat/da")}
+            active={isActive("/chat/da")}
+          >
             Chat - Da (Daniel)
           </MenuItem>
-          <MenuItem onClick={() => handleNavigation("/chat/ou")}>
+          <MenuItem
+            onClick={() => handleNavigation("/chat/ou")}
+            active={isActive("/chat/ou")}
+          >
             Chat - Ou (Ouriel)
           </MenuItem>
         </SubMenu>
 
         <SubMenu label="Avatar Tools" icon={<FaceIcon />}>
-          <MenuItem onClick={() => handleNavigation("/avatar/ou")}>
+          <MenuItem
+            onClick={() => handleNavigation("/avatar/ou")}
+            active={isActive("/avatar/ou")}
+          >
             Avatar - Ou
           </MenuItem>
-          <MenuItem onClick={() => handleNavigation("/avatar/sh")}>
+          <MenuItem
+            onClick={() => handleNavigation("/avatar/sh")}
+            active={isActive("/avatar/sh")}
+          >
             Avatar - Sh
           </MenuItem>
-          <MenuItem onClick={() => handleNavigation("/avatar/da")}>
+          <MenuItem
+            onClick={() => handleNavigation("/avatar/da")}
+            active={isActive("/avatar/da")}
+          >
             Avatar - Da
           </MenuItem>
         </SubMenu>
 
         <SubMenu label="Practice Tools" icon={<KeyboardIcon />}>
-          <MenuItem onClick={() => handleNavigation("/typing")}>
+          <MenuItem
+            onClick={() => handleNavigation("/typing")}
+            active={isActive("/typing")}
+          >
             Typing Practice
           </MenuItem>
-          <MenuItem onClick={() => handleNavigation("/word-order-game")}>
+          <MenuItem
+            onClick={() => handleNavigation("/word-order-game")}
+            active={isActive("/word-order-game")}
+          >
             Word Order Game
           </MenuItem>
-          <MenuItem onClick={() => handleNavigation("/speaking")}>
+          <MenuItem
+            onClick={() => handleNavigation("/speaking")}
+            active={isActive("/speaking")}
+          >
             Speaking Practice
           </MenuItem>
         </SubMenu>
