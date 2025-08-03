@@ -4,6 +4,17 @@ resource "kubernetes_namespace" "grafana" {
   }
 }
 
+
+resource "azurerm_public_ip" "grafana" {
+  name                = "grafana-public-ip"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+  domain_name_label   = var.domain_name_label
+}
+
+
 resource "helm_release" "grafana" {
   name       = "grafana"
   repository = "https://grafana.github.io/helm-charts"
@@ -39,15 +50,10 @@ resource "helm_release" "grafana" {
       storageClassName = var.persistence_storage_class != "" ? var.persistence_storage_class : null
     }
   })]
+  depends_on = [
+    kubernetes_namespace.grafana,
+    azurerm_public_ip.grafana
+  ]
 }
 
-# Grafana outputs DNS and public IP
 
-resource "azurerm_public_ip" "grafana" {
-  name                = "grafana-public-ip"
-  location            = var.location
-  resource_group_name = var.resource_group_name
-  allocation_method   = "Static"
-  sku                 = "Standard"
-  domain_name_label   = var.domain_name_label
-}
