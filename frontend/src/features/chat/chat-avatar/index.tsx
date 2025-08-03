@@ -1,4 +1,1 @@
-
-export const chatAvatar = () => {
-    
-}
+export const chatAvatar = () => {};

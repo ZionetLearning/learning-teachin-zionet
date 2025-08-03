@@ -43,8 +43,8 @@ export const useStyles = createUseStyles({
       textAlign: "right",
       justifyContent: "flex-end",
     },
-    '& svg': {
-      display: 'none !important',
+    "& svg": {
+      display: "none !important",
     },
   },
   inputContainer: {
@@ -69,7 +69,7 @@ export const useStyles = createUseStyles({
     display: "flex",
     flexDirection: "row",
     gap: "5px",
-  },  
+  },
   sendButton: {
     backgroundColor: "#44bbff",
     color: "#fff",

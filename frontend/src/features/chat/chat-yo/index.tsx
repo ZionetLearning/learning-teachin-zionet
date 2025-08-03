@@ -15,7 +15,8 @@ export const ChatYo = () => {
 
   return (
     <div className={classes.chatWrapper}>
-      <ChatUi messages={messages}
+      <ChatUi
+        messages={messages}
         loading={loading}
         value={input}
         onChange={setInput}

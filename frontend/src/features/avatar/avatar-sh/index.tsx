@@ -42,11 +42,15 @@ export const AvatarSh = () => {
         <img src={avatar} alt="Avatar" className={classes.avatar} />
         <img src={currentVisemeSrc} alt="Lips" className={classes.lipsImage} />
       </div>
-      <ChatUi loading={loading} messages={messages} avatarMode
+      <ChatUi
+        loading={loading}
+        messages={messages}
+        avatarMode
         value={text}
         onChange={setText}
-        handleSendMessage={handleSend} 
-        handlePlay={() => speak(lastSpokenTextRef.current ?? "")} />
+        handleSendMessage={handleSend}
+        handlePlay={() => speak(lastSpokenTextRef.current ?? "")}
+      />
     </div>
   );
 };
