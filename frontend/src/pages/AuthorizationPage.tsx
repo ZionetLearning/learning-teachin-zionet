@@ -5,6 +5,7 @@ import * as Yup from 'yup';
 import { Formik, Form, Field, ErrorMessage, FormikHelpers } from 'formik';
 
 import { useAuth } from '@/providers/auth';
+import { useStyles } from './style';
 
 type LoginValues = {
 	email: string;
@@ -18,6 +19,13 @@ type SignupValues = {
 	password: string;
 	confirmPassword: string;
 };
+
+const authMode = {
+	login: 'login',
+	signup: 'signup',
+} as const;
+
+type AuthModeType = (typeof authMode)[keyof typeof authMode];
 
 const loginSchema = Yup.object<LoginValues>({
 	email: Yup.string().email('Invalid email').required('Email is required'),
@@ -37,9 +45,10 @@ const signupSchema = Yup.object<SignupValues>({
 });
 
 export const AuthorizationPage = () => {
+	const classes = useStyles();
 	const { login } = useAuth();
 	const navigate = useNavigate();
-	const [mode, setMode] = useState<'login' | 'signup'>('login');
+	const [mode, setMode] = useState<AuthModeType>(authMode.login);
 
 	const handleAuthSuccess = () => {
 		const to = sessionStorage.getItem('redirectAfterLogin') || '/';
@@ -48,36 +57,20 @@ export const AuthorizationPage = () => {
 	};
 
 	return (
-		<div
-			style={{
-				maxWidth: 400,
-				margin: '5vh auto',
-				padding: '2rem',
-				border: '1px solid #e0e0e0',
-				borderRadius: 8,
-				boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-			}}
-		>
-			<div style={{ display: 'flex', marginBottom: '1rem' }}>
-				{['login', 'signup'].map((tab) => (
+		<div className={classes.authPageContainer}>
+			<div className={classes.authPageTabs}>
+				{[authMode.login, authMode.signup].map((tab) => (
 					<button
 						key={tab}
-						onClick={() => setMode(tab as 'login' | 'signup')}
-						style={{
-							flex: 1,
-							padding: '0.5rem 0',
-							background: mode === tab ? '#1976d2' : 'white',
-							color: mode === tab ? 'white' : '#1976d2',
-							border: '1px solid #1976d2',
-							cursor: 'pointer',
-						}}
+						onClick={() => setMode(tab as AuthModeType)}
+						className={`${classes.authPageTab} ${mode === tab ? 'active' : ''}`}
 					>
-						{tab === 'login' ? 'Log In' : 'Sign Up'}
+						{tab === authMode.login ? 'Log In' : 'Sign Up'}
 					</button>
 				))}
 			</div>
 
-			{mode === 'login' ? (
+			{mode === authMode.login ? (
 				<Formik<LoginValues>
 					initialValues={{ email: '', password: '' }}
 					validationSchema={loginSchema}
@@ -88,21 +81,16 @@ export const AuthorizationPage = () => {
 					}}
 				>
 					{({ isSubmitting }) => (
-						<Form
-							style={{
-								display: 'flex',
-								flexDirection: 'column',
-								gap: '0.75rem',
-							}}
-						>
+						<Form className={classes.authPageForm}>
 							<div>
 								<Field
 									name="email"
 									type="email"
 									placeholder="Email"
-									style={{ width: '100%', padding: '0.5rem' }}
+									className={classes.authPageInput}
+									autoComplete="email"
 								/>
-								<div style={{ color: 'red', fontSize: '0.85rem' }}>
+								<div className={classes.authPageError}>
 									<ErrorMessage name="email" />
 								</div>
 							</div>
@@ -111,22 +99,17 @@ export const AuthorizationPage = () => {
 									name="password"
 									type="password"
 									placeholder="Password"
-									style={{ width: '100%', padding: '0.5rem' }}
+									className={classes.authPageInput}
+									autoComplete="current-password"
 								/>
-								<div style={{ color: 'red', fontSize: '0.85rem' }}>
+								<div className={classes.authPageError}>
 									<ErrorMessage name="password" />
 								</div>
 							</div>
 							<button
 								type="submit"
 								disabled={isSubmitting}
-								style={{
-									padding: '0.75rem',
-									background: '#1976d2',
-									color: 'white',
-									border: 'none',
-									cursor: 'pointer',
-								}}
+								className={classes.authPageSubmit}
 							>
 								{isSubmitting ? 'Logging in…' : 'Log In'}
 							</button>
@@ -153,20 +136,15 @@ export const AuthorizationPage = () => {
 					}}
 				>
 					{({ isSubmitting }) => (
-						<Form
-							style={{
-								display: 'flex',
-								flexDirection: 'column',
-								gap: '0.75rem',
-							}}
-						>
+						<Form className={classes.authPageForm}>
 							<div>
 								<Field
 									name="firstName"
 									placeholder="First Name"
-									style={{ width: '100%', padding: '0.5rem' }}
+									className={classes.authPageInput}
+									autoComplete="given-name"
 								/>
-								<div style={{ color: 'red', fontSize: '0.85rem' }}>
+								<div className={classes.authPageError}>
 									<ErrorMessage name="firstName" />
 								</div>
 							</div>
@@ -174,9 +152,10 @@ export const AuthorizationPage = () => {
 								<Field
 									name="lastName"
 									placeholder="Last Name"
-									style={{ width: '100%', padding: '0.5rem' }}
+									className={classes.authPageInput}
+									autoComplete="family-name"
 								/>
-								<div style={{ color: 'red', fontSize: '0.85rem' }}>
+								<div className={classes.authPageError}>
 									<ErrorMessage name="lastName" />
 								</div>
 							</div>
@@ -185,9 +164,10 @@ export const AuthorizationPage = () => {
 									name="email"
 									type="email"
 									placeholder="Email"
-									style={{ width: '100%', padding: '0.5rem' }}
+									className={classes.authPageInput}
+									autoComplete="email"
 								/>
-								<div style={{ color: 'red', fontSize: '0.85rem' }}>
+								<div className={classes.authPageError}>
 									<ErrorMessage name="email" />
 								</div>
 							</div>
@@ -196,9 +176,10 @@ export const AuthorizationPage = () => {
 									name="password"
 									type="password"
 									placeholder="Password"
-									style={{ width: '100%', padding: '0.5rem' }}
+									className={classes.authPageInput}
+									autoComplete="new-password"
 								/>
-								<div style={{ color: 'red', fontSize: '0.85rem' }}>
+								<div className={classes.authPageError}>
 									<ErrorMessage name="password" />
 								</div>
 							</div>
@@ -207,22 +188,17 @@ export const AuthorizationPage = () => {
 									name="confirmPassword"
 									type="password"
 									placeholder="Confirm Password"
-									style={{ width: '100%', padding: '0.5rem' }}
+									className={classes.authPageInput}
+									autoComplete="new-password"
 								/>
-								<div style={{ color: 'red', fontSize: '0.85rem' }}>
+								<div className={classes.authPageError}>
 									<ErrorMessage name="confirmPassword" />
 								</div>
 							</div>
 							<button
 								type="submit"
 								disabled={isSubmitting}
-								style={{
-									padding: '0.75rem',
-									background: '#1976d2',
-									color: 'white',
-									border: 'none',
-									cursor: 'pointer',
-								}}
+								className={classes.authPageSubmit}
 							>
 								{isSubmitting ? 'Creating account…' : 'Sign Up'}
 							</button>
