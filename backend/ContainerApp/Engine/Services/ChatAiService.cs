@@ -72,7 +72,7 @@ public sealed class ChatAiService : IChatAiService
 
             history.AddAssistantMessage(answer);
 
-            _cache.Set($"chat-history:{request.ThreadId}", history, _cacheOptions);
+            _cache.Set(historyKey, history, _cacheOptions);
 
             return new AiResponseModel
             {
