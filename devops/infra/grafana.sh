@@ -5,7 +5,7 @@ set -e
 NAMESPACE="devops-logs"
 ADMIN_USER="admin"
 ADMIN_PASS="admin123"
-GRAFANA_CHART_VERSION="7.3.8"
+GRAFANA_CHART_VERSION="9.3.0"
 MC_RG="MC_dev-zionet-learning-2025_aks-cluster-dev_westeurope"
 IP_NAME="grafana-public-ip"
 DNS_LABEL="grafana"
@@ -46,6 +46,7 @@ helm upgrade --install grafana grafana/grafana \
   --set service.annotations."service\.beta\.kubernetes\.io/azure-pip-name"="$IP_NAME" \
   --set sidecar.dashboards.enabled=true \
   --set sidecar.dashboards.searchNamespace="$NAMESPACE" \
+  --set sidecar.datasources.enabled=true \
   --wait
 
 echo "5. Wait for Grafana external IP assignment..."
