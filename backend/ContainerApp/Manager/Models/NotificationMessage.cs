@@ -1,6 +1,6 @@
 ﻿namespace Manager.Models;
 
-public class NotificationMessage
+public record NotificationMessage
 {
     public required string Message { get; set; }
 }
