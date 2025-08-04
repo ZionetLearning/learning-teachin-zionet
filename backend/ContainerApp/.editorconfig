@@ -18,3 +18,4 @@ dotnet_diagnostic.IDE0044.severity = none
 # Ignore unnecessary assignment of unused variable or value:
 dotnet_diagnostic.IDE0059.severity = none
 dotnet_diagnostic.CA1805.severity = none
+dotnet_diagnostic.SA1649.severity = none
