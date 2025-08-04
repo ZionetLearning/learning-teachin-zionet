@@ -98,6 +98,12 @@ export const SidebarMenu = () => {
           >
             Chat - Ou (Ouriel)
           </MenuItem>
+          <MenuItem
+            onClick={() => handleNavigation("/chat-avatar")}
+            active={isActive("/chat-avatar")}
+          >
+            Chat - Avatar
+          </MenuItem>
         </SubMenu>
 
         <SubMenu label="Avatar Tools" icon={<FaceIcon />}>

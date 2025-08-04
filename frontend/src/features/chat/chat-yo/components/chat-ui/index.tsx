@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useRef, useEffect } from "react";
 import { MessageBox, Input } from "react-chat-elements";
 import type { ChatMessage } from "../../hooks";
 import { useStyles } from "./style";
-import avatar from "../../assets/avatar1.png";
+//import avatar from "../../assets/avatar1.png";
+import avatar from "../../../../avatar/avatar-sh/assets/avatar.svg";
 import "react-chat-elements/dist/main.css";
 
 interface ChatUiProps {
@@ -26,6 +27,14 @@ export const ChatUi = ({
 }: ChatUiProps) => {
   const classes = useStyles();
   const avatarUrl = avatar;
+  const listRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+    // scroll to the bottom
+    el.scrollTop = el.scrollHeight;
+  }, [messages]);
 
   return (
     <>
@@ -33,6 +42,7 @@ export const ChatUi = ({
         className={
           avatarMode ? classes.messagesListAvatar : classes.messagesList
         }
+        ref={listRef}
       >
         {messages?.map((msg, i) => (
           <MessageBox

@@ -1,11 +1,20 @@
 import { createUseStyles } from "react-jss";
 
 export const useStyles = createUseStyles({
-
+  chatWrapper: {
+    maxWidth: "800px",
+    height: "550px",
+    margin: "0 auto",
+    border: "1px solid #ccc",
+    padding: 10,
+    overflowY: "auto",
+    display: "flex",
+    flexDirection: "column",
+  },
   wrapper: {
     position: "relative",
-    width: "300px",
-    height: "300px",
+    width: "220px",
+    height: "220px",
     margin: "0 auto",
   },
   button: {
@@ -36,13 +45,6 @@ export const useStyles = createUseStyles({
     width: "20%",
     height: "20%",
     pointerEvents: "none",
-  },
-  input: {
-    width: "300px",
-    fontSize: "18px",
-    padding: "10px",
-    borderRadius: 5,
-    border: "1px solid #ccc",
   },
   avatar: {
     width: "100%",

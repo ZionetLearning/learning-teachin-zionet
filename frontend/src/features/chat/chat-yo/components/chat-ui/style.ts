@@ -1,25 +1,6 @@
 import { createUseStyles } from "react-jss";
 
 export const useStyles = createUseStyles({
-  chatWrapper: {
-    maxWidth: "800px",
-    maxHeight: "800px",
-    margin: "auto",
-    border: "1px solid #ccc",
-    padding: 10,
-  },
-  chatWrapperAvatar: {
-    maxWidth: "800px",
-    maxHeight: "550px",
-    margin: "auto",
-    marginTop: 0,
-    marginBottom: 0,
-    border: "1px solid #ccc",
-    padding: 10,
-    overflowY: "auto",
-    display: "flex",
-    flexDirection: "column",
-  },
   messagesList: {
     height: "500px",
     overflowX: "auto",
