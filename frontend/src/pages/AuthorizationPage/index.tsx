@@ -2,23 +2,15 @@ import { useEffect, useState } from "react";
 
 import { ErrorMessage, Field, Form, Formik, FormikHelpers } from "formik";
 import { useNavigate } from "react-router-dom";
-import * as Yup from "yup";
 
 import { useAuth } from "@/providers/auth";
 import { useStyles } from "./style";
-
-type LoginValues = {
-  email: string;
-  password: string;
-};
-
-type SignupValues = {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-};
+import {
+  loginSchema,
+  LoginValues,
+  signupSchema,
+  SignupValues,
+} from "./validation";
 
 const authMode = {
   login: "login",
@@ -26,23 +18,6 @@ const authMode = {
 } as const;
 
 type AuthModeType = (typeof authMode)[keyof typeof authMode];
-
-const loginSchema = Yup.object<LoginValues>({
-  email: Yup.string().email("Invalid email").required("Email is required"),
-  password: Yup.string().required("Password is required"),
-});
-
-const signupSchema = Yup.object<SignupValues>({
-  firstName: Yup.string().required("First name is required"),
-  lastName: Yup.string().required("Last name is required"),
-  email: Yup.string().email("Invalid email").required("Email is required"),
-  password: Yup.string()
-    .min(8, "Password must be at least 8 characters")
-    .required("Password is required"),
-  confirmPassword: Yup.string()
-    .oneOf([Yup.ref("password")], "Passwords must match")
-    .required("Confirm password is required"),
-});
 
 export const AuthorizationPage = () => {
   const classes = useStyles();
@@ -86,6 +61,7 @@ export const AuthorizationPage = () => {
 
           {mode === authMode.login ? (
             <Formik<LoginValues>
+              key="login"
               initialValues={{ email: "", password: "" }}
               validationSchema={loginSchema}
               onSubmit={(
@@ -135,6 +111,7 @@ export const AuthorizationPage = () => {
             </Formik>
           ) : (
             <Formik<SignupValues>
+              key="signup"
               initialValues={{
                 firstName: "",
                 lastName: "",
