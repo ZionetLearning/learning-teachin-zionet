@@ -59,7 +59,6 @@ builder.Services.AddQueue<TaskModel, EngineQueueHandler>(
         settings.MaxRetryAttempts = 3;
         settings.RetryDelaySeconds = 2;
     });
-builder.Services.AddSingleton<ISystemPromptProvider, SystemPromptProvider>();
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
