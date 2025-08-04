@@ -17,5 +17,5 @@ createRoot(document.getElementById("root")!).render(
         </AppInsightsErrorBoundary>
       </ReactQueryProvider>
     </I18nTranslateProvider>
-  </StrictMode>
+  </StrictMode>,
 );
