@@ -44,7 +44,7 @@ public class ChatAiServiceTests
             NullLogger<ChatAiService>.Instance,
             _cache,
             _cacheOptions,
-            provider, 
+            provider,
             retryPolicyProvider);
     }
 

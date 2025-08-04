@@ -19,8 +19,6 @@ public sealed class ChatAiService : IChatAiService
     private readonly ISystemPromptProvider _prompt;
     private readonly IRetryPolicyProvider _retryPolicyProvider;
     private readonly IAsyncPolicy<ChatMessageContent> _kernelPolicy;
-
-
     public ChatAiService(
         Kernel kernel,
         ILogger<ChatAiService> log,
@@ -35,8 +33,7 @@ public sealed class ChatAiService : IChatAiService
         _chat = _kernel.GetRequiredService<IChatCompletionService>();
         _prompt = prompt ?? throw new ArgumentNullException(nameof(prompt));
         _retryPolicyProvider = retryPolicyProvider;
-        _kernelPolicy = _retryPolicyProvider.CreateKernelPolicy(_log)
-            ?? throw new ArgumentNullException(nameof(_retryPolicyProvider), "Retry policy cannot be null");
+        _kernelPolicy = _retryPolicyProvider.CreateKernelPolicy(_log);
     }
 
     public async Task<AiResponseModel> ProcessAsync(AiRequestModel request, CancellationToken ct = default)
@@ -73,7 +70,7 @@ public sealed class ChatAiService : IChatAiService
                 FunctionChoiceBehavior = FunctionChoiceBehavior.Auto()
             };
 
-            var result = await _retryPolicyProvider.CreateKernelPolicy(_log)
+            var result = await _kernelPolicy
                 .ExecuteAsync(async ct2 =>
                 {
                     return await _chat.GetChatMessageContentAsync(
