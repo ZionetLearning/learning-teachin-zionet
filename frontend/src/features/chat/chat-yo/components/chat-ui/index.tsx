@@ -2,7 +2,6 @@ import React, { useRef, useEffect } from "react";
 import { MessageBox, Input } from "react-chat-elements";
 import type { ChatMessage } from "../../hooks";
 import { useStyles } from "./style";
-//import avatar from "../../assets/avatar1.png";
 import avatar from "../../../../avatar/avatar-sh/assets/avatar.svg";
 import "react-chat-elements/dist/main.css";
 
