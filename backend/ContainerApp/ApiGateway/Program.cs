@@ -21,5 +21,4 @@ app.UseAuthorization();
 
 // 4) Hook Ocelot into the pipeline
 await app.UseOcelot();
-
-app.Run();
+await app.RunAsync();

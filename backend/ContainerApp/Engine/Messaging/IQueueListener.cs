@@ -1,7 +1,6 @@
-﻿namespace Engine.Messaging
+﻿namespace Engine.Messaging;
+
+public interface IQueueListener<T>
 {
-    public interface IQueueListener<T>
-    {
-        Task StartAsync(Func<T, CancellationToken, Task> handler, CancellationToken cancellationToken);
-    }
+    Task StartAsync(Func<T, CancellationToken, Task> handler, CancellationToken cancellationToken);
 }

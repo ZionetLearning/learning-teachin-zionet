@@ -1,4 +1,4 @@
-﻿using Engine.Services;
+﻿namespace Engine.Services;
 
 public sealed class SystemPromptProvider : ISystemPromptProvider
 {

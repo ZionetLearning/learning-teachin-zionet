@@ -5,7 +5,7 @@ namespace Accessor;
 public static class InternalConfiguration
 {
     public static readonly Dictionary<string, string> Default = new()
-    {        
+    {
         //Cache default configuration:
 
         // Cache expiration: 10 minutes

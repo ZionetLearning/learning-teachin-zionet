@@ -11,11 +11,7 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
 
     public async Task<TaskModel?> GetTaskAsync(int id)
     {
-        _logger.LogInformation(
-            "Inside: {method} in {class}",
-            nameof(GetTaskAsync),
-            nameof(AccessorClient)
-        );
+        _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetTaskAsync), nameof(AccessorClient));
         try
         {
             var task = await _daprClient.InvokeMethodAsync<TaskModel>(
@@ -35,11 +31,7 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
 
     public async Task<bool> UpdateTaskName(int id, string newTaskName)
     {
-        _logger.LogInformation(
-            "Inside: {method} in {class}",
-            nameof(UpdateTaskName),
-            nameof(AccessorClient)
-        );
+        _logger.LogInformation("Inside: {Method} in {Class}", nameof(UpdateTaskName), nameof(AccessorClient));
         try
         {
             await _daprClient.InvokeBindingAsync(
@@ -61,7 +53,7 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
     public async Task<bool> DeleteTask(int id)
     {
         _logger.LogInformation(
-            "Inside: {method} in {class}",
+            "Inside: {Method} in {Class}",
             nameof(DeleteTask),
             nameof(AccessorClient)
         );
