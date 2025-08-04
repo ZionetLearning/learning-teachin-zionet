@@ -18,7 +18,7 @@ public class EngineClient : IEngineClient
     public async Task<(bool success, string message)> ProcessTaskAsync(TaskModel task)
     {
         _logger.LogInformation(
-            "Inside: {method} in {class}",
+            "Inside: {Method} in {Class}",
             nameof(ProcessTaskAsync),
             nameof(EngineClient)
         );
