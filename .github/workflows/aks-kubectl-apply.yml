@@ -77,8 +77,9 @@ jobs:
 
       - name: Add Loki (logs stack)
         run: |
-          chmod +x devops/infra/loki/loki.sh
-          ./devops/infra/loki/loki.sh
+          cd devops/infra/loki
+          chmod +x loki.sh
+          ./loki.sh
 
       - name: Wait for external IP for manager service
         id: wait_for_ip
