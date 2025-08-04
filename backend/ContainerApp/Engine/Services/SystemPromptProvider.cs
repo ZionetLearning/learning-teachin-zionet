@@ -7,7 +7,7 @@ public sealed class SystemPromptProvider : ISystemPromptProvider
     public SystemPromptProvider(IConfiguration cfg)
     {
 
-        this.Prompt = cfg["SystemPrompt"]
+        Prompt = cfg["SystemPrompt"]
               ?? "You are a helpful assistant. Maintain context.";
     }
 }

@@ -23,22 +23,22 @@ public sealed class ChatAiService : IChatAiService
         MemoryCacheEntryOptions cacheOptions,
         ISystemPromptProvider prompt)
     {
-        this._kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
-        this._log = log ?? throw new ArgumentNullException(nameof(log));
-        this._cache = cache ?? throw new ArgumentNullException(nameof(cache));
-        this._cacheOptions = cacheOptions;
-        this._chat = this._kernel.GetRequiredService<IChatCompletionService>();
-        this._prompt = prompt ?? throw new ArgumentNullException(nameof(prompt));
+        _kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
+        _log = log ?? throw new ArgumentNullException(nameof(log));
+        _cache = cache ?? throw new ArgumentNullException(nameof(cache));
+        _cacheOptions = cacheOptions;
+        _chat = _kernel.GetRequiredService<IChatCompletionService>();
+        _prompt = prompt ?? throw new ArgumentNullException(nameof(prompt));
     }
 
     public async Task<AiResponseModel> ProcessAsync(AiRequestModel request, CancellationToken ct = default)
     {
-        this._log.LogInformation("AI processing request {Id}", request.Id);
+        _log.LogInformation("AI processing request {Id}", request.Id);
 
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         if (now > request.SentAt + request.TtlSeconds)
         {
-            this._log.LogWarning("Request {Id} is expired. Skipping.", request.Id);
+            _log.LogWarning("Request {Id} is expired. Skipping.", request.Id);
             return new AiResponseModel
             {
                 Id = request.Id,
@@ -51,11 +51,11 @@ public sealed class ChatAiService : IChatAiService
         try
         {
             var historyKey = CacheKeys.ChatHistory(request.ThreadId);
-            var history = this._cache.GetOrCreate(historyKey, _ => new ChatHistory()) ?? new ChatHistory();
+            var history = _cache.GetOrCreate(historyKey, _ => new ChatHistory()) ?? new ChatHistory();
 
             if (history.Count == 0)
             {
-                history.AddSystemMessage(this._prompt.Prompt);
+                history.AddSystemMessage(_prompt.Prompt);
             }
 
             history.AddUserMessage(request.Question);
@@ -65,17 +65,17 @@ public sealed class ChatAiService : IChatAiService
                 FunctionChoiceBehavior = FunctionChoiceBehavior.Auto()
             };
 
-            var result = await this._chat.GetChatMessageContentAsync(
+            var result = await _chat.GetChatMessageContentAsync(
                 history,
                 executionSettings: settings,
-                kernel: this._kernel, //todo: add tools
+                kernel: _kernel, //todo: add tools
                 cancellationToken: ct);
 
             var answer = result.Content ?? string.Empty;
 
             history.AddAssistantMessage(answer);
 
-            this._cache.Set(historyKey, history, this._cacheOptions);
+            _cache.Set(historyKey, history, _cacheOptions);
 
             return new AiResponseModel
             {
@@ -87,7 +87,7 @@ public sealed class ChatAiService : IChatAiService
         }
         catch (Exception ex)
         {
-            this._log.LogError(ex, "Error while processing AI request {Id}", request.Id);
+            _log.LogError(ex, "Error while processing AI request {Id}", request.Id);
             return new AiResponseModel
             {
                 Id = request.Id,

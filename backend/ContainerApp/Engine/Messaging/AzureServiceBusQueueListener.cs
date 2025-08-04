@@ -17,11 +17,11 @@ public class AzureServiceBusQueueListener<T> : IQueueListener<T>, IAsyncDisposab
         IRetryPolicyProvider retryPolicyProvider,
         ILogger<AzureServiceBusQueueListener<T>> logger)
     {
-        this._settings = settings;
-        this._retryPolicyProvider = retryPolicyProvider;
-        this._logger = logger;
+        _settings = settings;
+        _retryPolicyProvider = retryPolicyProvider;
+        _logger = logger;
 
-        this._processor = client.CreateProcessor(queueName, new ServiceBusProcessorOptions
+        _processor = client.CreateProcessor(queueName, new ServiceBusProcessorOptions
         {
             MaxConcurrentCalls = settings.MaxConcurrentCalls,
             PrefetchCount = settings.PrefetchCount,
@@ -31,9 +31,9 @@ public class AzureServiceBusQueueListener<T> : IQueueListener<T>, IAsyncDisposab
 
     public async Task StartAsync(Func<T, CancellationToken, Task> handler, CancellationToken cancellationToken)
     {
-        var retryPolicy = this._retryPolicyProvider.Create(this._settings, this._logger);
+        var retryPolicy = _retryPolicyProvider.Create(_settings, _logger);
 
-        this._processor.ProcessMessageAsync += async args =>
+        _processor.ProcessMessageAsync += async args =>
         {
             var now = DateTimeOffset.UtcNow;
             var lockedUntil = args.Message.LockedUntil;
@@ -46,7 +46,7 @@ public class AzureServiceBusQueueListener<T> : IQueueListener<T>, IAsyncDisposab
                 var msg = JsonSerializer.Deserialize<T>(args.Message.Body);
                 if (msg == null)
                 {
-                    this._logger.LogWarning("Failed to deserialize message.");
+                    _logger.LogWarning("Failed to deserialize message.");
                     await args.DeadLetterMessageAsync(args.Message, cancellationToken: cancellationToken);
                     return;
                 }
@@ -55,9 +55,9 @@ public class AzureServiceBusQueueListener<T> : IQueueListener<T>, IAsyncDisposab
                 {
                     await handler(msg, linkedCts.Token);
 
-                    if (this._settings.ProcessingDelayMs > 0)
+                    if (_settings.ProcessingDelayMs > 0)
                     {
-                        await Task.Delay(this._settings.ProcessingDelayMs, linkedCts.Token);
+                        await Task.Delay(_settings.ProcessingDelayMs, linkedCts.Token);
                     }
                 });
 
@@ -65,38 +65,38 @@ public class AzureServiceBusQueueListener<T> : IQueueListener<T>, IAsyncDisposab
             }
             catch (RetryableException rex)
             {
-                this._logger.LogWarning(rex, "Retryable error. Abandoning message.");
+                _logger.LogWarning(rex, "Retryable error. Abandoning message.");
                 await args.AbandonMessageAsync(args.Message, cancellationToken: cancellationToken);
             }
             catch (NonRetryableException nex)
             {
-                this._logger.LogWarning(nex, "Non-retryable error. Dead-lettering message.");
+                _logger.LogWarning(nex, "Non-retryable error. Dead-lettering message.");
                 await args.DeadLetterMessageAsync(args.Message, cancellationToken: cancellationToken);
             }
             catch (OperationCanceledException) when (linkedCts.IsCancellationRequested)
             {
-                this._logger.LogWarning("Handler exceeded lock duration. Abandoning message.");
+                _logger.LogWarning("Handler exceeded lock duration. Abandoning message.");
                 await args.AbandonMessageAsync(args.Message, cancellationToken: cancellationToken);
             }
             catch (Exception ex)
             {
-                this._logger.LogError(ex, "Unhandled error. Treating as retryable.");
+                _logger.LogError(ex, "Unhandled error. Treating as retryable.");
                 await args.AbandonMessageAsync(args.Message, cancellationToken: cancellationToken);
             }
         };
 
-        this._processor.ProcessErrorAsync += args =>
+        _processor.ProcessErrorAsync += args =>
         {
-            this._logger.LogError(args.Exception, "Message handler error");
+            _logger.LogError(args.Exception, "Message handler error");
             return Task.CompletedTask;
         };
 
-        await this._processor.StartProcessingAsync(cancellationToken);
+        await _processor.StartProcessingAsync(cancellationToken);
     }
 
     public async ValueTask DisposeAsync()
     {
-        await this._processor.DisposeAsync();
+        await _processor.DisposeAsync();
         GC.SuppressFinalize(this);
     }
 }

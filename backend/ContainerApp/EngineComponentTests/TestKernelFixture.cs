@@ -24,7 +24,7 @@ public sealed class TestKernelFixture : IAsyncLifetime
             throw new SkipException("No Azure OpenAI config -> skip AI tests");
         }
 
-        this.Kernel = Kernel.CreateBuilder()
+        Kernel = Kernel.CreateBuilder()
                        .AddAzureOpenAIChatCompletion(deployment, endpoint, apiKey)
                        .Build();
 

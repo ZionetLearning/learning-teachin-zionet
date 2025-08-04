@@ -9,20 +9,20 @@ public class NotificationHub : Hub
 
     public NotificationHub(ILogger<NotificationHub> logger)
     {
-        this._logger = logger;
+        _logger = logger;
     }
 
     public async Task SendTaskUpdate(int taskId, string status)
     {
         try
         {
-            this._logger.LogInformation("Sending task update for TaskId: {TaskId}, Status: {Status}", taskId, status);
-            await this.Clients.All.SendAsync("TaskUpdated", new TaskUpdateMessage { TaskId = taskId, Status = status });
-            this._logger.LogInformation("Task update sent successfully for TaskId: {TaskId}", taskId);
+            _logger.LogInformation("Sending task update for TaskId: {TaskId}, Status: {Status}", taskId, status);
+            await Clients.All.SendAsync("TaskUpdated", new TaskUpdateMessage { TaskId = taskId, Status = status });
+            _logger.LogInformation("Task update sent successfully for TaskId: {TaskId}", taskId);
         }
         catch (Exception ex)
         {
-            this._logger.LogError(ex, "Failed to send task update for TaskId: {TaskId}, Status: {Status}", taskId, status);
+            _logger.LogError(ex, "Failed to send task update for TaskId: {TaskId}, Status: {Status}", taskId, status);
         }
     }
 
@@ -30,13 +30,13 @@ public class NotificationHub : Hub
     {
         try
         {
-            this._logger.LogInformation("Sending notification with message: {Message}", message);
-            await this.Clients.All.SendAsync("NotificationReceived", new NotificationMessage { Message = message });
-            this._logger.LogInformation("Notification sent successfully");
+            _logger.LogInformation("Sending notification with message: {Message}", message);
+            await Clients.All.SendAsync("NotificationReceived", new NotificationMessage { Message = message });
+            _logger.LogInformation("Notification sent successfully");
         }
         catch (Exception ex)
         {
-            this._logger.LogError(ex, "Failed to send notification with message: {Message}", message);
+            _logger.LogError(ex, "Failed to send notification with message: {Message}", message);
         }
     }
 }

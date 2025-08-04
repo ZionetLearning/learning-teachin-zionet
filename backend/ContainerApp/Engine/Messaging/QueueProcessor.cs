@@ -6,9 +6,9 @@ public class QueueProcessor<T> : BackgroundService
     private readonly IQueueHandler<T> _handler;
     public QueueProcessor(IQueueListener<T> listener, IQueueHandler<T> handler)
     {
-        this._listener = listener;
-        this._handler = handler;
+        _listener = listener;
+        _handler = handler;
     }
     protected override Task ExecuteAsync(CancellationToken stoppingToken) =>
-        this._listener.StartAsync((msg, token) => this._handler.HandleAsync(msg, token), stoppingToken);
+        _listener.StartAsync((msg, token) => _handler.HandleAsync(msg, token), stoppingToken);
 }

@@ -12,7 +12,7 @@ public class RetryPolicyProvider : IRetryPolicyProvider
     public IAsyncPolicy Create(QueueSettings settings, ILogger logger)
     {
         return Policy
-            .Handle<Exception>(this.ShouldRetry)
+            .Handle<Exception>(ShouldRetry)
             .WaitAndRetryAsync(
                 retryCount: settings.MaxRetryAttempts,
                 sleepDurationProvider: attempt => TimeSpan.FromSeconds(settings.RetryDelaySeconds),

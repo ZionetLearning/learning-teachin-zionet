@@ -10,23 +10,23 @@ public sealed class AiReplyPublisher : IAiReplyPublisher
 
     public AiReplyPublisher(DaprClient dapr, ILogger<AiReplyPublisher> log)
     {
-        this._dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
-        this._log = log ?? throw new ArgumentNullException(nameof(log));
+        _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
+        _log = log ?? throw new ArgumentNullException(nameof(log));
     }
 
     public async Task PublishAsync(AiResponseModel response, string replyToTopic, CancellationToken ct = default)
     {
         try
         {
-            this._log.LogInformation("Publishing AI answer {Id} to topic {Topic}", response.Id, replyToTopic);
+            _log.LogInformation("Publishing AI answer {Id} to topic {Topic}", response.Id, replyToTopic);
 
-            await this._dapr.PublishEventAsync("pubsub", replyToTopic, response, ct);
+            await _dapr.PublishEventAsync("pubsub", replyToTopic, response, ct);
 
-            this._log.LogDebug("AI answer {Id} published successfully", response.Id);
+            _log.LogDebug("AI answer {Id} published successfully", response.Id);
         }
         catch (Exception ex)
         {
-            this._log.LogError(ex,
+            _log.LogError(ex,
                 "Failed to publish AI answer {Id} to topic {Topic}", response.Id, replyToTopic);
             throw;
         }

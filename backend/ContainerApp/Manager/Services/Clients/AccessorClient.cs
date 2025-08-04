@@ -11,62 +11,62 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
 
     public async Task<TaskModel?> GetTaskAsync(int id)
     {
-        this._logger.LogInformation("Inside: {Method} in {Class}", nameof(GetTaskAsync), nameof(AccessorClient));
+        _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetTaskAsync), nameof(AccessorClient));
         try
         {
-            var task = await this._daprClient.InvokeMethodAsync<TaskModel>(
+            var task = await _daprClient.InvokeMethodAsync<TaskModel>(
                 HttpMethod.Get,
                 "accessor",
                 $"task/{id}"
             );
-            this._logger.LogDebug("Received task {TaskId} from Accessor service", id);
+            _logger.LogDebug("Received task {TaskId} from Accessor service", id);
             return task;
         }
         catch (Exception ex)
         {
-            this._logger.LogError(ex, "Failed to get task {TaskId} from Accessor service", id);
+            _logger.LogError(ex, "Failed to get task {TaskId} from Accessor service", id);
             throw;
         }
     }
 
     public async Task<bool> UpdateTaskName(int id, string newTaskName)
     {
-        this._logger.LogInformation("Inside: {Method} in {Class}", nameof(UpdateTaskName), nameof(AccessorClient));
+        _logger.LogInformation("Inside: {Method} in {Class}", nameof(UpdateTaskName), nameof(AccessorClient));
         try
         {
-            await this._daprClient.InvokeBindingAsync(
+            await _daprClient.InvokeBindingAsync(
                 QueueNames.TaskUpdate,
                 "create",
                 new TaskNameUpdateModel(id, newTaskName)
             );
 
-            this._logger.LogDebug("Task name update request sent to queue for task {TaskId}", id);
+            _logger.LogDebug("Task name update request sent to queue for task {TaskId}", id);
             return true;
         }
         catch (Exception ex)
         {
-            this._logger.LogError(ex, "Failed to send task name update to queue for task {TaskId}", id);
+            _logger.LogError(ex, "Failed to send task name update to queue for task {TaskId}", id);
             throw;
         }
     }
 
     public async Task<bool> DeleteTask(int id)
     {
-        this._logger.LogInformation(
+        _logger.LogInformation(
             "Inside: {Method} in {Class}",
             nameof(DeleteTask),
             nameof(AccessorClient)
         );
         try
         {
-            await this._daprClient.InvokeMethodAsync(HttpMethod.Delete, "accessor", $"task/{id}");
-            this._logger.LogDebug("Task {TaskId} deletion request sent to Accessor service", id);
+            await _daprClient.InvokeMethodAsync(HttpMethod.Delete, "accessor", $"task/{id}");
+            _logger.LogDebug("Task {TaskId} deletion request sent to Accessor service", id);
 
             return true;
         }
         catch (Exception e)
         {
-            this._logger.LogError(e, "Error inside the DeleteUser");
+            _logger.LogError(e, "Error inside the DeleteUser");
             throw;
         }
     }
