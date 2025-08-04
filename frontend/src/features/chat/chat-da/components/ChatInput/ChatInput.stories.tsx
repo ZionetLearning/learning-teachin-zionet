@@ -1,6 +1,7 @@
 import { Meta, StoryObj } from "@storybook/react-vite";
-import { ChatInput } from ".";
 import { useArgs } from "storybook/internal/preview-api";
+
+import { ChatInput } from ".";
 
 const meta: Meta<typeof ChatInput> = {
   component: ChatInput,
@@ -15,9 +16,6 @@ const meta: Meta<typeof ChatInput> = {
     setInput: {
       action: "setInput",
     },
-    sendMessage: {
-      action: "sendMessage",
-    },
   },
 };
 
@@ -31,12 +29,8 @@ const Template: Story = {
       <ChatInput
         {...args}
         input={input}
-        setInput={(value) => {
-          updateArgs({ input: value });
-        }}
-        sendMessage={() => {
-          updateArgs({ input: "" });
-        }}
+        setInput={(value) => updateArgs({ input: value })}
+        sendMessage={() => updateArgs({ input: "" })}
       />
     );
   },
