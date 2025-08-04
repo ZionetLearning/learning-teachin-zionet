@@ -75,6 +75,18 @@ jobs:
             DOCKER_REGISTRY=$DOCKER_REGISTRY envsubst < "$file" | kubectl apply -f -
           done
 
+      - name: Add grafana
+        run: |
+          cd devops/infra
+          chmod +x grafana.sh
+          ./grafana.sh
+
+      - name: Add prometheus
+        run: |
+          cd devops/infra
+          chmod +x prometheus.sh
+          ./prometheus.sh
+
       - name: Add Loki (logs stack)
         run: |
           cd devops/infra/loki
