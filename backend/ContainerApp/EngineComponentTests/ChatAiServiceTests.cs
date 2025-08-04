@@ -1,4 +1,5 @@
-﻿using Engine.Models;
+﻿using Engine.Messaging;
+using Engine.Models;
 using Engine.Services;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
@@ -37,13 +38,14 @@ public class ChatAiServiceTests
             : new SystemPromptProvider(new ConfigurationBuilder()
                 .AddInMemoryCollection()
                 .Build());
-
+        var retryPolicyProvider = new RetryPolicyProvider();
         return new ChatAiService(
             _fx.Kernel,
             NullLogger<ChatAiService>.Instance,
             _cache,
             _cacheOptions,
-            provider);
+            provider,
+            retryPolicyProvider);
     }
 
     [SkippableFact(DisplayName = "ProcessAsync: answer contains 4 or four")]
