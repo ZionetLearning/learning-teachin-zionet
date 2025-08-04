@@ -1,9 +1,11 @@
 ﻿using Engine.Constants;
+using Engine.Messaging;
 using Engine.Models;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
+using Polly;
 
 namespace Engine.Services;
 
@@ -15,13 +17,16 @@ public sealed class ChatAiService : IChatAiService
     private readonly MemoryCacheEntryOptions _cacheOptions;
     private readonly IChatCompletionService _chat;
     private readonly ISystemPromptProvider _prompt;
+    private readonly IRetryPolicyProvider _retryPolicyProvider;
+    private readonly IAsyncPolicy<ChatMessageContent> _kernelPolicy;
+
 
     public ChatAiService(
         Kernel kernel,
         ILogger<ChatAiService> log,
         IMemoryCache cache,
         MemoryCacheEntryOptions cacheOptions,
-        ISystemPromptProvider prompt)
+        ISystemPromptProvider prompt, IRetryPolicyProvider retryPolicyProvider)
     {
         _kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
         _log = log ?? throw new ArgumentNullException(nameof(log));
@@ -29,6 +34,9 @@ public sealed class ChatAiService : IChatAiService
         _cacheOptions = cacheOptions;
         _chat = _kernel.GetRequiredService<IChatCompletionService>();
         _prompt = prompt ?? throw new ArgumentNullException(nameof(prompt));
+        _retryPolicyProvider = retryPolicyProvider;
+        _kernelPolicy = _retryPolicyProvider.CreateKernelPolicy(_log)
+            ?? throw new ArgumentNullException(nameof(_retryPolicyProvider), "Retry policy cannot be null");
     }
 
     public async Task<AiResponseModel> ProcessAsync(AiRequestModel request, CancellationToken ct = default)
@@ -62,11 +70,15 @@ public sealed class ChatAiService : IChatAiService
                 FunctionChoiceBehavior = FunctionChoiceBehavior.Auto()
             };
 
-            var result = await _chat.GetChatMessageContentAsync(
-                history,
-                executionSettings: settings,
-                kernel: _kernel, //todo: add tools
-                cancellationToken: ct);
+            var result = await _retryPolicyProvider.CreateKernelPolicy(_log)
+                .ExecuteAsync(async ct2 =>
+                {
+                    return await _chat.GetChatMessageContentAsync(
+                        history,
+                        executionSettings: settings,
+                        kernel: _kernel,
+                        cancellationToken: ct2);
+                }, ct);
 
             var answer = result.Content ?? string.Empty;
 

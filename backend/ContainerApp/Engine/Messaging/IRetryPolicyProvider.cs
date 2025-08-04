@@ -1,4 +1,5 @@
 ﻿using Polly;
+using Microsoft.SemanticKernel;
 
 namespace Engine.Messaging
 {
@@ -6,6 +7,7 @@ namespace Engine.Messaging
     {
         IAsyncPolicy Create(QueueSettings settings, ILogger logger);
         IAsyncPolicy<HttpResponseMessage> CreateHttpPolicy(ILogger logger);
+        IAsyncPolicy<ChatMessageContent> CreateKernelPolicy(ILogger logger);
     }
 
     public class RetryPolicyProvider : IRetryPolicyProvider
@@ -45,6 +47,35 @@ namespace Engine.Messaging
                         await Task.CompletedTask;
                     }
                 );
+        }
+        public IAsyncPolicy<ChatMessageContent> CreateKernelPolicy(ILogger logger)
+        {
+            return Policy<ChatMessageContent>
+                .Handle<HttpRequestException>()
+                .Or<TaskCanceledException>()
+                .Or<IOException>()
+                .Or<TimeoutException>()
+                .OrResult(result => result == null || string.IsNullOrWhiteSpace(result.Content))
+                .WaitAndRetryAsync(
+                    retryCount: 3,
+                    sleepDurationProvider: attempt =>
+                        TimeSpan.FromSeconds(Math.Pow(2, attempt)) +
+                        TimeSpan.FromMilliseconds(Random.Shared.Next(0, 500)),
+                    onRetryAsync: async (outcome, delay, attempt, _) =>
+                    {
+                        if (outcome.Exception is not null)
+                        {
+                            logger.LogWarning(outcome.Exception,
+                                "Kernel retry {Attempt} after {Delay}", attempt, delay);
+                        }
+                        else
+                        {
+                            logger.LogWarning("Kernel retry {Attempt} — empty or null content after {Delay}",
+                                attempt, delay);
+                        }
+
+                        await Task.CompletedTask;
+                    });
         }
 
         private bool ShouldRetry(Exception ex)
