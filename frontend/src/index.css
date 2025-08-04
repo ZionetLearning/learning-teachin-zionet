@@ -30,6 +30,18 @@ body {
   min-height: 100vh;
 }
 
+body.auth-fullscreen #root {
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100vw;
+  height: 100vh;
+}
+
+body.auth-fullscreen {
+  margin: 0;
+}
+
 h1 {
   font-size: 3.2em;
   line-height: 1.1;

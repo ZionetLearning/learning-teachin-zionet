@@ -29,4 +29,8 @@ export const useStyles = createUseStyles({
   main: {
     marginTop: 60,
   },
+  logoutButton: {
+    extend: "button",
+    marginLeft: "auto",
+  },
 });

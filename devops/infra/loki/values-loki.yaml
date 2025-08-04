@@ -1,6 +1,11 @@
 loki:
   enabled: true
-
+  deploymentMode: StatefulSet
+  persistence:
+    enabled: true
+    accessModes:
+      - ReadWriteOnce
+    size: 10Gi
 promtail:
   enabled: true
   tolerations:
