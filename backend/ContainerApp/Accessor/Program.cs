@@ -82,4 +82,5 @@ if (env.IsDevelopment())
 
     });
 }
+
 await app.RunAsync();
