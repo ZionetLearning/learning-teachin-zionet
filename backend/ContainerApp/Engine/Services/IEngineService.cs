@@ -4,6 +4,6 @@ namespace Engine.Services
 {
     public interface IEngineService
     {
-        Task ProcessTaskAsync(TaskModel task);
+        Task ProcessTaskAsync(TaskModel task, CancellationToken ct);
     }
 }

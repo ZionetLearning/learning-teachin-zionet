@@ -15,6 +15,8 @@ builder
     .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
     .AddEnvironmentVariables();
 
+builder.Services.Configure<AiSettings>(builder.Configuration.GetSection("Ai"));
+
 // ---- Services ----
 builder.Services.AddControllers();
 

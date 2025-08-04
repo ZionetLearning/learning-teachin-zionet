@@ -1,0 +1,34 @@
+{
+  "Routes": [
+    {
+      "UpstreamPathTemplate": "/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS" ],
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "manager",
+          "Port": 5001
+        }
+      ],
+      "DownstreamPathTemplate": "/{everything}",
+      "RouteIsCaseSensitive": false,
+      "RateLimitOptions": {
+        "ClientIdHeader": "ClientId",
+        "EnableRateLimiting": true,
+        "Period": "1m",
+        "PeriodTimespan": 1,
+        "Limit": 100
+      }
+    }
+  ],
+  "GlobalConfiguration": {
+    "RequestIdKey": "X-Request-Id",
+    "RateLimitOptions": {
+      "ClientIdHeader": "ClientId",
+      "EnableRateLimiting": true,
+      "Period": "1m",
+      "PeriodTimespan": 1,
+      "Limit": 1000
+    }
+  }
+}

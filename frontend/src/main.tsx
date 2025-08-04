@@ -1,7 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { I18nTranslateProvider } from "./providers/i18n-translate-provider";
-import { ReactQueryProvider } from "./providers";
+import { ReactQueryProvider, I18nTranslateProvider } from "./providers";
 import "./index.css";
 import App from "./App.tsx";
 import { AppInsightsErrorBoundary } from "./components";
@@ -18,5 +17,5 @@ createRoot(document.getElementById("root")!).render(
         </AppInsightsErrorBoundary>
       </ReactQueryProvider>
     </I18nTranslateProvider>
-  </StrictMode>,
+  </StrictMode>
 );

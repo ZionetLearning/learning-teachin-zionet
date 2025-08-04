@@ -12,17 +12,15 @@ import {
   WordOrderGamePage,
   SpeakingPracticePage,
 } from "./pages";
-import { BackToMenuLayout } from "./components";
-
+import { SidebarMenuLayout } from "./components";
 import "./App.css";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<HomePage />} />
-
-        <Route element={<BackToMenuLayout />}>
+        <Route element={<SidebarMenuLayout />}>
+          <Route path="/" element={<HomePage />} />
           <Route path="/chat/yo" element={<ChatYoPage />} />
           <Route path="/chat/da" element={<ChatDaPage />} />
           <Route path="/chat/ou" element={<ChatOuPage />} />

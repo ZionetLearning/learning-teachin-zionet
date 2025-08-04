@@ -1,6 +1,10 @@
+using Azure.Messaging.ServiceBus;
+using Engine.Constants;
 using Engine.Endpoints;
+using Engine.Messaging;
 using Engine.Models;
 using Engine.Services;
+using Microsoft.Azure.Amqp.Sasl;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Scalar.AspNetCore;
@@ -21,6 +25,7 @@ builder.Services.AddControllers().AddDapr();
 builder.Services.AddScoped<IEngineService, EngineService>();
 builder.Services.AddScoped<IChatAiService, ChatAiService>();
 builder.Services.AddScoped<IAiReplyPublisher, AiReplyPublisher>();
+builder.Services.AddMemoryCache();
 
 builder.Services
     .AddOptions<AzureOpenAiSettings>()
@@ -43,6 +48,20 @@ builder.Services.AddSingleton(sp =>
                      apiKey: cfg.ApiKey)
                  .Build();
 });
+
+builder.Services.AddSingleton(_ =>
+    new ServiceBusClient(builder.Configuration["ServiceBus:ConnectionString"]));
+builder.Services.AddQueue<TaskModel, EngineQueueHandler>(
+    QueueNames.ManagerToEngine,
+    settings =>
+    {
+        settings.MaxConcurrentCalls = 5;
+        settings.PrefetchCount = 10;
+        settings.ProcessingDelayMs = 200;
+        settings.MaxRetryAttempts = 3;
+        settings.RetryDelaySeconds = 2;
+    });
+builder.Services.AddSingleton<ISystemPromptProvider, SystemPromptProvider>();
 
 // This is required for the Scalar UI to have an option to setup an authentication token
 builder.Services.AddOpenApi(
@@ -81,7 +100,6 @@ if (env.IsDevelopment())
 app.UseCloudEvents();
 app.MapControllers();
 app.MapSubscribeHandler();
-app.MapEngineEndpoints();
 app.MapAiEndpoints();
 
 app.Run();
