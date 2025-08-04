@@ -9,3 +9,4 @@ export * from "./ChatShPage";
 export * from "./TypingPracticePage";
 export * from "./SpeakingPracticePage";
 export * from "./WordOrderGamePage";
+export * from "./AuthorizationPage";

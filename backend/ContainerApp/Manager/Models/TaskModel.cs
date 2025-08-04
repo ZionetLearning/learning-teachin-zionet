@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace Manager.Models
 {
-    public class TaskModel
+    public record TaskModel
     {
         [JsonPropertyName("id")]
         [Range(1, int.MaxValue, ErrorMessage = "Id must be a positive integer.")]
