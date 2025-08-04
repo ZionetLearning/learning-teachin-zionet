@@ -28,7 +28,9 @@ namespace Manager.Services
 
             try
             {
-                await _dapr.PublishEventAsync("pubsub", TopicNames.ManagerToAi, msg, ct);
+                //await _dapr.PublishEventAsync("pubsub", TopicNames.ManagerToAi, msg, ct);
+                await _dapr.InvokeBindingAsync(TopicNames.ManagerToAi, "create", msg);
+
                 return msg.Id;
             }
             catch (Exception ex)

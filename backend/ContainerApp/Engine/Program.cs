@@ -50,6 +50,7 @@ builder.Services.AddSingleton(sp =>
 
 builder.Services.AddSingleton(_ =>
     new ServiceBusClient(builder.Configuration["ServiceBus:ConnectionString"]));
+
 builder.Services.AddQueue<TaskModel, EngineQueueHandler>(
     QueueNames.ManagerToEngine,
     settings =>
@@ -60,9 +61,25 @@ builder.Services.AddQueue<TaskModel, EngineQueueHandler>(
         settings.MaxRetryAttempts = 3;
         settings.RetryDelaySeconds = 2;
     });
+
+// Queue listener for AI requests
+builder.Services.AddQueue<AiRequestModel, EngineAiQueueHandler>(
+    TopicNames.ManagerToAi,
+    settings =>
+    {
+        settings.MaxConcurrentCalls = 5;
+        settings.PrefetchCount = 10;
+        settings.ProcessingDelayMs = 200;
+        settings.MaxRetryAttempts = 3;
+        settings.RetryDelaySeconds = 2;
+    });
+
+
+
 builder.Services.AddSingleton<ISystemPromptProvider, SystemPromptProvider>();
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
 
 
 var app = builder.Build();

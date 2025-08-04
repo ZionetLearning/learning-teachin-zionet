@@ -13,7 +13,7 @@ public static class AiEndpoints
     {
         #region HTTP POST
 
-        app.MapPost($"/{TopicNames.ManagerToAi}", ProcessQuestionAsync).WithTopic("pubsub", TopicNames.ManagerToAi);
+        //app.MapPost($"/{TopicNames.ManagerToAi}", ProcessQuestionAsync).WithTopic("pubsub", TopicNames.ManagerToAi);
 
         #endregion
 
