@@ -37,9 +37,9 @@ export const useStyles = createUseStyles({
     pointerEvents: "none",
   },
   input: {
+    width: "300px",
     fontSize: "18px",
     padding: "10px",
-    width: "300px",
     borderRadius: 5,
     border: "1px solid #ccc",
   },

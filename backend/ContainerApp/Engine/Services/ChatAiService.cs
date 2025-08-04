@@ -14,21 +14,18 @@ public sealed class ChatAiService : IChatAiService
     private readonly IMemoryCache _cache;
     private readonly MemoryCacheEntryOptions _cacheOptions;
     private readonly IChatCompletionService _chat;
-    private readonly ISystemPromptProvider _prompt;
 
     public ChatAiService(
         Kernel kernel,
         ILogger<ChatAiService> log,
         IMemoryCache cache,
-        MemoryCacheEntryOptions cacheOptions,
-        ISystemPromptProvider prompt)
+        MemoryCacheEntryOptions cacheOptions)
     {
         _kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
         _log = log ?? throw new ArgumentNullException(nameof(log));
         _cache = cache ?? throw new ArgumentNullException(nameof(cache));
         _cacheOptions = cacheOptions;
         _chat = _kernel.GetRequiredService<IChatCompletionService>();
-        _prompt = prompt ?? throw new ArgumentNullException(nameof(prompt));
     }
 
     public async Task<AiResponseModel> ProcessAsync(AiRequestModel request, CancellationToken ct = default)
@@ -53,8 +50,16 @@ public sealed class ChatAiService : IChatAiService
             var historyKey = CacheKeys.ChatHistory(request.ThreadId);
             var history = _cache.GetOrCreate(historyKey, _ => new ChatHistory()) ?? new ChatHistory();
 
-            if (history.Count == 0) history.AddSystemMessage(_prompt.Prompt);
 
+            if (history.Count == 0)
+            {
+                string prompt = Prompts.Combine(
+                     Prompts.SystemDefault,
+                     Prompts.DetailedExplanation
+                     );
+
+                history.AddSystemMessage(prompt);
+            }
             history.AddUserMessage(request.Question);
 
             var settings = new OpenAIPromptExecutionSettings
