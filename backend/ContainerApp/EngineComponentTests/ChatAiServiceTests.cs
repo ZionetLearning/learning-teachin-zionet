@@ -14,7 +14,7 @@ public class ChatAiServiceTests
     private readonly IMemoryCache _cache;
     private readonly MemoryCacheEntryOptions _cacheOptions;
 
-    private class FakePromptProvider : ISystemPromptProvider
+    private sealed class FakePromptProvider : ISystemPromptProvider
     {
         public string Prompt => "Always add at the end - you need to learn English"; // Change it if you want to test the system prompt
     }
