@@ -7,7 +7,9 @@ import { ChatUi } from "../chat-yo/components";
 
 type SvgModule = { default: string };
 
-const lips = import.meta.glob("../../avatar/avatar-sh/assets/lips/*.svg", { eager: true });
+const lips = import.meta.glob("../../avatar/avatar-sh/assets/lips/*.svg", {
+  eager: true,
+});
 
 const lipsArray = Object.values(lips).map((mod) => (mod as SvgModule).default);
 

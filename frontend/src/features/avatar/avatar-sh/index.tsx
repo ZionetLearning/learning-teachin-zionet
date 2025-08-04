@@ -17,11 +17,7 @@ export const AvatarSh = () => {
       <div className={classes.wrapper}>
         <img src={avatar} alt="Avatar" className={classes.avatar} />
 
-        <img
-          src={currentVisemeSrc}
-          alt="Lips"
-          className={classes.lipsImage}
-        />
+        <img src={currentVisemeSrc} alt="Lips" className={classes.lipsImage} />
       </div>
       <div style={{ marginTop: "20px" }}>
         <input
@@ -33,10 +29,10 @@ export const AvatarSh = () => {
           dir="rtl"
         />
         <br />
-        <button onClick={()=>speak(text)} className={classes.button}>
+        <button onClick={() => speak(text)} className={classes.button}>
           דברי
         </button>
       </div>
     </div>
   );
-}
+};

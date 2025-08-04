@@ -1,7 +1,6 @@
 import { createUseStyles } from "react-jss";
 
 export const useStyles = createUseStyles({
-
   wrapper: {
     position: "relative",
     width: "300px",
