@@ -36,12 +36,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Engine\Engine.csproj" />
   </ItemGroup>
-
-	<ItemGroup>
-		<None Update="appsettings.Test.json">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-	</ItemGroup>
 	
   <ItemGroup>
     <Using Include="Xunit" />
