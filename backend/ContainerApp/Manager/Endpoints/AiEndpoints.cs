@@ -3,8 +3,6 @@ using Manager.Models;
 using Manager.Models.ModelValidation;
 using Manager.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using System.Threading.Tasks;
 
 namespace Manager.Endpoints;
 
@@ -23,7 +21,6 @@ public static class AiEndpoints
 
         #endregion
 
-
         #region HTTP POST
 
         app.MapPost("/ai/question", QuestionAsync).WithName("Question");
@@ -32,10 +29,8 @@ public static class AiEndpoints
 
         #endregion
 
-
         return app;
     }
-
 
     private static async Task<IResult> AnswerAsync(
         [FromRoute] string id,
@@ -61,14 +56,13 @@ public static class AiEndpoints
         }
     }
 
-
     private static async Task<IResult> QuestionAsync(
         [FromBody] AiRequestModel dto,
         [FromServices] IAiGatewayService aiService,
         [FromServices] ILogger<QuestionEndpoint> log,
         CancellationToken ct)
     {
-        log.LogInformation("Inside {method}", nameof(QuestionAsync));
+        log.LogInformation("Inside {Method}", nameof(QuestionAsync));
         if (!ValidationExtensions.TryValidate(dto, out var validationErrors))
         {
             log.LogWarning("Validation failed for {Model}: {Errors}", nameof(AiRequestModel), validationErrors);
@@ -90,17 +84,16 @@ public static class AiEndpoints
         }
     }
 
-
     private static async Task<IResult> PubSubAsync(
         [FromBody] AiResponseModel msg,
         [FromServices] IAiGatewayService aiService,
         [FromServices] ILogger<PubSubEndpoint> log,
         CancellationToken ct)
     {
-        log.LogInformation("Inside {method}", nameof(PubSubAsync));
+        log.LogInformation("Inside {Method}", nameof(PubSubAsync));
         if (!ValidationExtensions.TryValidate(msg, out var validationErrors))
         {
-            log.LogWarning("Validation failed for {Model}: {Errors}",nameof(AiResponseModel), validationErrors);
+            log.LogWarning("Validation failed for {Model}: {Errors}", nameof(AiResponseModel), validationErrors);
             return Results.BadRequest(new { errors = validationErrors });
         }
 
@@ -116,6 +109,4 @@ public static class AiEndpoints
             return Results.Problem("AI answer handling failed");
         }
     }
-        
-
 }

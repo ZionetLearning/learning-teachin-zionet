@@ -14,7 +14,7 @@ public class ChatAiServiceTests
     private readonly IMemoryCache _cache;
     private readonly MemoryCacheEntryOptions _cacheOptions;
 
-    private class FakePromptProvider : ISystemPromptProvider
+    private sealed class FakePromptProvider : ISystemPromptProvider
     {
         public string Prompt => "Always add at the end - you need to learn English"; // Change it if you want to test the system prompt
     }
@@ -32,7 +32,7 @@ public class ChatAiServiceTests
     private static bool UseTestPrompt = false; // false - prompt from original servise
     private ChatAiService CreateService()
     {
-        ISystemPromptProvider provider = UseTestPrompt        
+        ISystemPromptProvider provider = UseTestPrompt
             ? new FakePromptProvider()
             : new SystemPromptProvider(new ConfigurationBuilder()
                 .AddInMemoryCollection()
@@ -45,7 +45,6 @@ public class ChatAiServiceTests
             _cacheOptions,
             provider);
     }
-
 
     [SkippableFact(DisplayName = "ProcessAsync: answer contains 4 or four")]
     public async Task ProcessAsync_Returns_Number4()

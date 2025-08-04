@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Accessor.Models;
 
+namespace Accessor.DB;
 public class AccessorDbContext : DbContext
 {
     public AccessorDbContext(DbContextOptions<AccessorDbContext> options)
@@ -8,9 +9,7 @@ public class AccessorDbContext : DbContext
     {
     }
 
-
     // Define the DB  
     public DbSet<TaskModel> Tasks { get; set; }
-
 }
 // This class represents the database context for the Accessor service.

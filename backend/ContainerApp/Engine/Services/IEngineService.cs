@@ -1,9 +1,8 @@
 using Engine.Models;
 
-namespace Engine.Services
+namespace Engine.Services;
+
+public interface IEngineService
 {
-    public interface IEngineService
-    {
-        Task ProcessTaskAsync(TaskModel task, CancellationToken ct);
-    }
+    Task ProcessTaskAsync(TaskModel task, CancellationToken ct);
 }

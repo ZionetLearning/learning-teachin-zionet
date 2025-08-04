@@ -2,7 +2,6 @@
 using Manager.Models;
 using Manager.Services.Clients;
 
-
 namespace Manager.Services;
 
 public class ManagerService : IManagerService
@@ -13,7 +12,7 @@ public class ManagerService : IManagerService
     private readonly IEngineClient _engineClient;
     private readonly IMapper _mapper;
 
-    public ManagerService(IConfiguration configuration, 
+    public ManagerService(IConfiguration configuration,
         ILogger<ManagerService> logger,
         IAccessorClient accessorClient,
         IEngineClient engineClient,
@@ -39,7 +38,6 @@ public class ManagerService : IManagerService
         try
         {
             var task = await _accessorClient.GetTaskAsync(id);
-            
             if (task != null)
             {
                 _logger.LogDebug("Successfully retrieved task {TaskId}", id);
@@ -83,9 +81,7 @@ public class ManagerService : IManagerService
         try
         {
             _logger.LogDebug("Processing task {TaskId} with name '{TaskName}'", task.Id, task.Name);
-            
             var result = await _engineClient.ProcessTaskAsync(task);
-            
             if (result.success)
             {
                 _logger.LogDebug("Task {TaskId} successfully processed", task.Id);
@@ -129,9 +125,7 @@ public class ManagerService : IManagerService
         try
         {
             _logger.LogInformation("Updating task {TaskId} name to '{NewTaskName}'", id, newTaskName);
-            
             var result = await _accessorClient.UpdateTaskName(id, newTaskName);
-            
             if (result)
             {
                 _logger.LogInformation("Task {TaskId} name successfully updated", id);
@@ -153,7 +147,6 @@ public class ManagerService : IManagerService
     public async Task<bool> DeleteTask(int id)
     {
         _logger.LogDebug("Inside: {MethodName}", nameof(DeleteTask));
-        
         if (id <= 0)
         {
             _logger.LogWarning("Invalid task ID provided for deletion: {TaskId}", id);
@@ -163,9 +156,7 @@ public class ManagerService : IManagerService
         try
         {
             _logger.LogInformation("Attempting to delete task {TaskId}", id);
-            
             var result = await _accessorClient.DeleteTask(id);
-            
             if (result)
             {
                 _logger.LogInformation("Task {TaskId} successfully deleted", id);

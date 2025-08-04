@@ -3,7 +3,6 @@ using Accessor.Models;
 using Accessor.Services;
 using Microsoft.AspNetCore.Mvc;
 
-
 namespace Accessor.Endpoints;
 
 public static class AccessorEndpoints

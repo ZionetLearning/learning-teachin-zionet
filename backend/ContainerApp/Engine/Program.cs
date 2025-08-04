@@ -4,7 +4,6 @@ using Engine.Endpoints;
 using Engine.Messaging;
 using Engine.Models;
 using Engine.Services;
-using Microsoft.Azure.Amqp.Sasl;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Scalar.AspNetCore;
@@ -73,7 +72,6 @@ builder.Services.AddOpenApi(
 );
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
-
 
 var app = builder.Build();
 

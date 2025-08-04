@@ -1,23 +1,23 @@
 ﻿using Accessor.Constants;
+using Accessor.DB;
 using Accessor.Models;
-using AutoMapper;
 using Dapr.Client;
 using Microsoft.EntityFrameworkCore;
 
 namespace Accessor.Services;
-    public class AccessorService : IAccessorService
-    {
-        private readonly ILogger<AccessorService> _logger;
-        private readonly AccessorDbContext _dbContext;
-        private readonly DaprClient _daprClient;
-        private readonly IConfiguration _configuration;
-        private readonly int _ttl;
+public class AccessorService : IAccessorService
+{
+    private readonly ILogger<AccessorService> _logger;
+    private readonly AccessorDbContext _dbContext;
+    private readonly DaprClient _daprClient;
+    private readonly IConfiguration _configuration;
+    private readonly int _ttl;
 
-    public AccessorService(AccessorDbContext dbContext, 
+    public AccessorService(AccessorDbContext dbContext,
         ILogger<AccessorService> logger,
         DaprClient daprClient,
         IConfiguration configuration)
-        {
+    {
         _dbContext = dbContext;
         _logger = logger;
         _daprClient = daprClient;
@@ -25,9 +25,8 @@ namespace Accessor.Services;
         _ttl = int.Parse(configuration["TaskCache:TTLInSeconds"] ??
                                                   throw new KeyNotFoundException("TaskCache:TTLInSeconds is not configured"));
     }
-    
     public async Task InitializeAsync()
-        {
+    {
         _logger.LogInformation("Initializing DB...");
 
         try
@@ -41,7 +40,7 @@ namespace Accessor.Services;
             _logger.LogError(ex, "Failed to connect to PostgreSQL during startup.");
             throw;
         }
-            }
+    }
 
     public async Task<TaskModel?> GetTaskByIdAsync(int id)
     {
@@ -82,7 +81,7 @@ namespace Accessor.Services;
                     { "ttlInSeconds", _ttl.ToString() }
                 }
             );
-            
+
             _logger.LogInformation("Fetched task {TaskId} from DB and cached", id);
             return task;
         }
@@ -151,7 +150,7 @@ namespace Accessor.Services;
 
     public async Task<bool> UpdateTaskNameAsync(int taskId, string newName)
     {
-        _logger.LogInformation("Inside:{Method}",nameof(UpdateTaskNameAsync));
+        _logger.LogInformation("Inside:{Method}", nameof(UpdateTaskNameAsync));
         try
         {
             var task = await _dbContext.Tasks.FindAsync(taskId);
@@ -231,6 +230,7 @@ namespace Accessor.Services;
             {
                 _logger.LogWarning("ETag conflict — failed to remove task {TaskId} from Redis cache.", taskId);
             }
+
             return true;
         }
         catch (Exception ex)

@@ -10,13 +10,11 @@ public static class ManagerEndpoints
     public static WebApplication MapManagerEndpoints(this WebApplication app)
     {
 
-
         #region HTTP GET
 
         app.MapGet("/task/{id}", GetTaskAsync).WithName("GetTask");
 
         #endregion
-
 
         #region HTTP POST
 
@@ -24,13 +22,11 @@ public static class ManagerEndpoints
 
         #endregion
 
-
         #region HTTP PUT
 
         app.MapPut("/task/{id}/{name}", UpdateTaskNameAsync).WithName("UpdateTaskName");
 
         #endregion
-
 
         #region HTTP DELETE
 
@@ -46,7 +42,7 @@ public static class ManagerEndpoints
         [FromServices] IManagerService managerService,
         [FromServices] ILogger<ManagerService> logger)
     {
-        logger.LogInformation("Inside {method}", nameof(GetTaskAsync));
+        logger.LogInformation("Inside {Method}", nameof(GetTaskAsync));
         try
         {
             var task = await managerService.GetTaskAsync(id);
@@ -71,10 +67,10 @@ public static class ManagerEndpoints
         [FromServices] IManagerService managerService,
         [FromServices] ILogger<ManagerService> logger)
     {
-        logger.LogInformation("Inside {method}", nameof(CreateTaskAsync));
+        logger.LogInformation("Inside {Method}", nameof(CreateTaskAsync));
         if (!ValidationExtensions.TryValidate(task, out var validationErrors))
         {
-            logger.LogWarning("Validation failed for {Model}: {Errors}",nameof(TaskModel), validationErrors);
+            logger.LogWarning("Validation failed for {Model}: {Errors}", nameof(TaskModel), validationErrors);
             return Results.BadRequest(new { errors = validationErrors });
         }
 
@@ -103,7 +99,7 @@ public static class ManagerEndpoints
         [FromServices] IManagerService managerService,
         [FromServices] ILogger<ManagerService> logger)
     {
-        logger.LogInformation("Inside {method}", nameof(UpdateTaskNameAsync));
+        logger.LogInformation("Inside {Method}", nameof(UpdateTaskNameAsync));
         try
         {
             var success = await managerService.UpdateTaskName(id, name);
@@ -121,7 +117,7 @@ public static class ManagerEndpoints
         [FromServices] IManagerService managerService,
         [FromServices] ILogger<ManagerService> logger)
     {
-        logger.LogInformation("Inside {method}", nameof(DeleteTaskAsync));
+        logger.LogInformation("Inside {Method}", nameof(DeleteTaskAsync));
         try
         {
             var success = await managerService.DeleteTask(id);
@@ -133,5 +129,4 @@ public static class ManagerEndpoints
             return Results.Problem("An error occurred while deleting the task.");
         }
     }
-
 }
