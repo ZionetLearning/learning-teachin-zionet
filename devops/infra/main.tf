@@ -91,19 +91,6 @@ provider "helm" {
   }
 }
 
-
-########################################
-# 3. Dapr control-plane
-########################################
-resource "helm_release" "dapr" {
-  name             = "dapr"
-  repository       = "https://dapr.github.io/helm-charts"
-  chart            = "dapr"
-  namespace        = "dapr-system"
-  create_namespace = true
-  version          = "1.13.0"
-}
-
 ########################################
 # 4. devops-model namespace for the workloads
 ########################################
