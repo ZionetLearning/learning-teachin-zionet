@@ -2,7 +2,7 @@
 
 namespace Engine.Models;
 
-public sealed class AiRequestModel
+public sealed record AiRequestModel
 {
     public string Id { get; init; } = Guid.NewGuid().ToString("N");
     public required string ThreadId { get; init; }
@@ -14,6 +14,5 @@ public sealed class AiRequestModel
     public int TtlSeconds { get; init; } = 60;
 
     public string ReplyToTopic { get; init; } = TopicNames.AiToManager;
-
 }
 

@@ -1,6 +1,6 @@
 ﻿namespace Engine.Models;
 
-public sealed class AiResponseModel
+public sealed record AiResponseModel
 {
     public string Id { get; init; } = string.Empty;
     public required string ThreadId { get; init; }

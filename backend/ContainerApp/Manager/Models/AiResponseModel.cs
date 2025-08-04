@@ -2,7 +2,7 @@
 
 namespace Manager.Models;
 
-public sealed class AiResponseModel
+public sealed record AiResponseModel
 {
     [Required(ErrorMessage = "Id is required.")]
     [MinLength(1, ErrorMessage = "Id cannot be empty.")]

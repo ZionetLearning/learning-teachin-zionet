@@ -2,12 +2,12 @@ using System.Text.Json.Serialization;
 
 namespace Engine.Models;
 
-public class TaskModel
+public record TaskModel
 {
     [JsonPropertyName("id")]
-    public int Id { get; set; }
+    public int Id { get; init; }
     [JsonPropertyName("name")]
-    public required string Name { get; set; }
+    public required string Name { get; init; }
     [JsonPropertyName("payload")]
-    public required string Payload { get; set; }
+    public required string Payload { get; init; }
 }

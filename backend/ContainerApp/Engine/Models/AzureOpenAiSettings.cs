@@ -1,6 +1,6 @@
 ﻿namespace Engine.Models;
 
-public sealed class AzureOpenAiSettings
+public sealed record AzureOpenAiSettings
 {
     public required string Endpoint { get; init; }
     public required string ApiKey { get; init; }
