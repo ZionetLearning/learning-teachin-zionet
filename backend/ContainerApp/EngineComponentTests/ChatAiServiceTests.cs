@@ -77,7 +77,7 @@ public class ChatAiServiceTests
         Assert.Matches(new Regex(@"\b4\b|four"), answerLower);
     }
 
-    [SkippableFact(DisplayName = "ProcessAsync: history persists across calls")]
+    [SkippableFact(DisplayName = "ProcessAsync: history persists across calls")] 
     public async Task ProcessAsync_Context_Persists()
     {
         var service = CreateService();
