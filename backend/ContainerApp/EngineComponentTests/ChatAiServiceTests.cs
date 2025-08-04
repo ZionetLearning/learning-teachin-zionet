@@ -32,7 +32,7 @@ public class ChatAiServiceTests
     private static bool UseTestPrompt = false; // false - prompt from original servise
     private ChatAiService CreateService()
     {
-        ISystemPromptProvider provider = UseTestPrompt        
+        ISystemPromptProvider provider = UseTestPrompt
             ? new FakePromptProvider()
             : new SystemPromptProvider(new ConfigurationBuilder()
                 .AddInMemoryCollection()
@@ -45,7 +45,6 @@ public class ChatAiServiceTests
             _cacheOptions,
             provider);
     }
-
 
     [SkippableFact(DisplayName = "ProcessAsync: answer contains 4 or four")]
     public async Task ProcessAsync_Returns_Number4()

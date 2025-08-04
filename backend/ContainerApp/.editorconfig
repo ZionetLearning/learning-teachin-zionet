@@ -1,0 +1,20 @@
+root = true
+
+# This .editorconfig overrides Workleap's "add this." rule
+[*.cs]
+dotnet_style_qualification_for_field = false:none
+dotnet_style_qualification_for_property = false:none
+dotnet_style_qualification_for_method = false:none
+dotnet_style_qualification_for_event = false:none
+dotnet_diagnostic.CA1001.severity = none
+dotnet_diagnostic.CA2213.severity = none
+
+# Disable naming rules for prefix underscore:
+dotnet_diagnostic.IDE1006.severity = none  # IDE1006 covers naming style
+
+# Don't force readonly on private fields:
+dotnet_diagnostic.IDE0044.severity = none
+
+# Ignore unnecessary assignment of unused variable or value:
+dotnet_diagnostic.IDE0059.severity = none
+dotnet_diagnostic.CA1805.severity = none
