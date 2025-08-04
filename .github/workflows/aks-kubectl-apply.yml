@@ -9,7 +9,7 @@ on:
         type: string
     outputs:
       app_url:
-        description: "Full URL of the deployed todomanager service"
+        description: "Full URL of the deployed load balancer service"
         value: ${{ jobs.deploy.outputs.app_url }}
 
 jobs:
@@ -25,7 +25,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Azure Login via OIDC
         uses: azure/login@v2
@@ -38,21 +38,15 @@ jobs:
         run: |
           echo "K8S_DIR=devops/kubernetes/" >> $GITHUB_ENV
           echo "NAMESPACE_FILE=devops/kubernetes/namespaces/namespace-dev.yaml" >> $GITHUB_ENV
-          echo "DOCKER_REGISTRY=snir1551" >> $GITHUB_ENV
+          echo "DOCKER_REGISTRY=${{ secrets.DOCKER_USERNAME }}" >> $GITHUB_ENV
           echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
+          echo "MC_AKS_RG=MC_dev-zionet-learning-2025_aks-cluster-dev_westeurope" >> $GITHUB_ENV
+          echo "PG_DB=pg-zionet-dev-2025" >> $GITHUB_ENV
           echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
-          AKS_RG=dev-zionet-learning-2025
-          AKS_NAME=aks-cluster-dev
-          # AKS_PUBLIC_IP=$(az network public-ip show --resource-group "$AKS_RG" --name "$AKS_NAME-public-ip" --query ipAddress -o tsv)
-          # echo "AKS_PUBLIC_IP=$AKS_PUBLIC_IP" >> $GITHUB_ENV
-          # echo "AKS_PUBLIC_IP=$AKS_PUBLIC_IP"
 
       - name: Get AKS credentials
         run: |
           az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
-
-      - name: Set kubectl context
-        run: kubectl config use-context $AKS_NAME
 
       - name: Create namespace
         run: kubectl apply -f $NAMESPACE_FILE
@@ -70,10 +64,10 @@ jobs:
             DOCKER_REGISTRY=$DOCKER_REGISTRY envsubst < "$file" | kubectl apply -f -
           done
 
-      - name: Wait for external IP for manager service
+      - name: Wait for external IP for load balancer
         id: wait_for_ip
         run: |
-          echo "Waiting for external IP for manager service..."
+          echo "Waiting for external IP for load balancer..."
           for i in {1..30}; do
             EXTERNAL_IP=$(kubectl -n dev get svc manager -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
             if [[ -n "$EXTERNAL_IP" ]]; then
@@ -90,23 +84,21 @@ jobs:
       - name: Add external IP to PostgreSQL firewall
         run: |
           EXTERNAL_IP=$(az network public-ip list \
-            --resource-group MC_dev-zionet-learning-2025_aks-cluster-dev_westeurope \
+            --resource-group $MC_AKS_RG \
             --query "[?!(contains(name, 'kubernetes'))].{name:name, ip:ipAddress}" \
             -o json | jq -r '.[0].ip')
           az postgres flexible-server firewall-rule create \
             --resource-group $AKS_RG \
-            --name pg-zionet-dev-2025 \
+            --name $PG_DB \
             --rule-name allow-accessor-service \
             --start-ip-address $EXTERNAL_IP \
             --end-ip-address $EXTERNAL_IP
-        env:
-          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+            
       
-      - name: Restart Accessor deployment
+
+      - name: Restart all pods in dev namespace
         run: |
-          kubectl rollout restart deployment accessor -n dev     
+          kubectl delete pod --all -n dev
 
 
       - name: Output external URL
