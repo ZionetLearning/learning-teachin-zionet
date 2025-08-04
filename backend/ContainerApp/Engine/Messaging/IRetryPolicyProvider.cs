@@ -1,7 +1,9 @@
 ﻿using Polly;
 using Microsoft.SemanticKernel;
 
-namespace Engine.Messaging
+namespace Engine.Messaging;
+
+public interface IRetryPolicyProvider
 {
     public interface IRetryPolicyProvider
     {

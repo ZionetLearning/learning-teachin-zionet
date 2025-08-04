@@ -13,10 +13,14 @@ import ChatIcon from "@mui/icons-material/Chat";
 import FaceIcon from "@mui/icons-material/Face";
 import KeyboardIcon from "@mui/icons-material/Keyboard";
 import HomeIcon from "@mui/icons-material/Home";
+import ExitToAppIcon from "@mui/icons-material/ExitToApp";
+
+import { useAuth } from "@/providers/auth";
 
 export const SidebarMenu = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
 
   const handleNavigation = (path: string) => {
@@ -33,6 +37,9 @@ export const SidebarMenu = () => {
           backgroundColor: "#f4f4f4",
           borderRight: "1px solid #ddd",
           height: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
         },
       }}
     >
@@ -98,6 +105,12 @@ export const SidebarMenu = () => {
           >
             Chat - Ou (Ouriel)
           </MenuItem>
+          <MenuItem
+            onClick={() => handleNavigation("/chat-avatar")}
+            active={isActive("/chat-avatar")}
+          >
+            Chat - Avatar
+          </MenuItem>
         </SubMenu>
 
         <SubMenu label="Avatar Tools" icon={<FaceIcon />}>
@@ -141,6 +154,25 @@ export const SidebarMenu = () => {
             Speaking Practice
           </MenuItem>
         </SubMenu>
+      </Menu>
+      <Menu
+        menuItemStyles={{
+          button: {
+            color: "#333",
+            backgroundColor: "transparent",
+            borderRadius: "8px",
+            margin: "4px 8px",
+            padding: "10px",
+            "&:hover": {
+              backgroundColor: "#f0f0f0",
+            },
+            textTransform: "capitalize",
+          },
+        }}
+      >
+        <MenuItem icon={<ExitToAppIcon />} onClick={logout}>
+          Logout
+        </MenuItem>
       </Menu>
     </Sidebar>
   );

@@ -1,3 +1,4 @@
+using Accessor.DB;
 using Accessor.Endpoints;
 using Accessor.Services;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +13,6 @@ builder.Configuration
     .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
     .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
     .AddEnvironmentVariables();
-
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddControllers().AddDapr();
@@ -49,7 +49,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var startupService = scope.ServiceProvider.GetRequiredService<IAccessorService>();
-    await startupService.InitializeAsync(); 
+    await startupService.InitializeAsync();
 }
 
 // Configure middleware and Dapr
@@ -58,5 +58,4 @@ app.MapSubscribeHandler();
 
 // Map endpoints (routes)
 app.MapAccessorEndpoints();
-
-app.Run();
+await app.RunAsync();

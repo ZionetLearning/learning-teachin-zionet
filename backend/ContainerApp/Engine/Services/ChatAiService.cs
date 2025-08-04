@@ -61,7 +61,10 @@ public sealed class ChatAiService : IChatAiService
             var historyKey = CacheKeys.ChatHistory(request.ThreadId);
             var history = _cache.GetOrCreate(historyKey, _ => new ChatHistory()) ?? new ChatHistory();
 
-            if (history.Count == 0) history.AddSystemMessage(_prompt.Prompt);
+            if (history.Count == 0)
+            {
+                history.AddSystemMessage(_prompt.Prompt);
+            }
 
             history.AddUserMessage(request.Question);
 

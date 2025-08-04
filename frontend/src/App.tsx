@@ -1,30 +1,42 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+
+import { RequireAuth, SidebarMenuLayout } from "./components";
 import {
-  ChatYoPage,
-  ChatDaPage,
-  ChatOuPage,
+  AuthorizationPage,
+  AvatarDaPage,
   AvatarOuPage,
   AvatarShPage,
-  HomePage,
+  ChatDaPage,
+  ChatOuPage,
   ChatShPage,
-  AvatarDaPage,
+  ChatYoPage,
+  ChatAvatarPage,
+  HomePage,
+  SpeakingPracticePage,
   TypingPracticePage,
   WordOrderGamePage,
-  SpeakingPracticePage,
 } from "./pages";
-import { SidebarMenuLayout } from "./components";
+
 import "./App.css";
+
+const ProtectedLayout = () => (
+  <RequireAuth>
+    <SidebarMenuLayout />
+  </RequireAuth>
+);
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route element={<SidebarMenuLayout />}>
+        <Route path="/signin" element={<AuthorizationPage />} />
+        <Route element={<ProtectedLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/chat/yo" element={<ChatYoPage />} />
           <Route path="/chat/da" element={<ChatDaPage />} />
           <Route path="/chat/ou" element={<ChatOuPage />} />
           <Route path="/chat/sh" element={<ChatShPage />} />
+          <Route path="/chat-avatar" element={<ChatAvatarPage />} />
           <Route path="/avatar/ou" element={<AvatarOuPage />} />
           <Route path="/avatar/sh" element={<AvatarShPage />} />
           <Route path="/avatar/da" element={<AvatarDaPage />} />
