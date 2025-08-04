@@ -70,6 +70,11 @@ jobs:
             DOCKER_REGISTRY=$DOCKER_REGISTRY envsubst < "$file" | kubectl apply -f -
           done
 
+      - name: Add Loki (logs stack)
+        run: |
+          chmod +x devops/infra/loki/loki.sh
+          ./devops/infra/loki/loki.sh
+
       - name: Wait for external IP for manager service
         id: wait_for_ip
         run: |
@@ -115,4 +120,3 @@ jobs:
           echo "app_url=${{ steps.wait_for_ip.outputs.app_url }}" >> $GITHUB_OUTPUT
           echo "App URL: ${{ steps.wait_for_ip.outputs.app_url }}"
 
-   
