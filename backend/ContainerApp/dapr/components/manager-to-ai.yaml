@@ -1,4 +1,4 @@
-apiVersion: dapr.io/v1.0
+apiVersion: dapr.io/v1alpha1
 kind: Component
 metadata:
   name: manager-to-ai
@@ -15,4 +15,4 @@ spec:
     - name: disableEntityManagement
       value: "true"
 scopes:
-  - engine
+  - manager

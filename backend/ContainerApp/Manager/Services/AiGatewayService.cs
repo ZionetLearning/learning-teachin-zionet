@@ -28,14 +28,13 @@ namespace Manager.Services
 
             try
             {
-                //await _dapr.PublishEventAsync("pubsub", TopicNames.ManagerToAi, msg, ct);
-                await _dapr.InvokeBindingAsync(TopicNames.ManagerToAi, "create", msg);
+                await _dapr.InvokeBindingAsync(QueueNames.ManagerToAi, "create", msg, cancellationToken: ct);
 
                 return msg.Id;
             }
             catch (Exception ex)
             {
-                _log.LogError(ex, "Failed to publish question {Id} to topic {Topic}", msg.Id, TopicNames.ManagerToAi);
+                _log.LogError(ex, "Failed to publish question {Id} to topic {Topic}", msg.Id, QueueNames.ManagerToAi);
                 throw; // let the upper layer decide what to do
             }
         }

@@ -20,13 +20,17 @@ public sealed class ChatAiService : IChatAiService
         Kernel kernel,
         ILogger<ChatAiService> log,
         IMemoryCache cache,
-        MemoryCacheEntryOptions cacheOptions,
+        //MemoryCacheEntryOptions cacheOptions,
         ISystemPromptProvider prompt)
     {
         _kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
         _log = log ?? throw new ArgumentNullException(nameof(log));
         _cache = cache ?? throw new ArgumentNullException(nameof(cache));
-        _cacheOptions = cacheOptions;
+        //_cacheOptions = cacheOptions;
+        _cacheOptions = new MemoryCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
+        };
         _chat = _kernel.GetRequiredService<IChatCompletionService>();
         _prompt = prompt ?? throw new ArgumentNullException(nameof(prompt));
     }

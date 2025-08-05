@@ -24,15 +24,23 @@ public class EngineAiQueueHandler : IQueueHandler<AiRequestModel>
     {
         _logger.LogInformation("Received AI question {Id} from manager", message.Id);
 
-        if (string.IsNullOrWhiteSpace(message.ThreadId))
+        try
         {
-            _logger.LogWarning("ThreadId is required.");
-            return;
+            if (string.IsNullOrWhiteSpace(message.ThreadId))
+            {
+                _logger.LogWarning("ThreadId is required.");
+                return;
+            }
+
+            var response = await _aiService.ProcessAsync(message, ct);
+            await _publisher.PublishAsync(response, message.ReplyToTopic, ct);
+
+            _logger.LogInformation("AI question {Id} processed", message.Id);
         }
-
-        var response = await _aiService.ProcessAsync(message, ct);
-        await _publisher.PublishAsync(response, message.ReplyToTopic, ct);
-
-        _logger.LogInformation("AI question {Id} processed", message.Id);
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to process AI question {Id}", message.Id);
+            throw;
+        }
     }
 }

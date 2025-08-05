@@ -43,7 +43,17 @@ namespace Engine.Messaging
                 linkedCts.CancelAfter(lockTimeout);
                 try
                 {
-                    var msg = JsonSerializer.Deserialize<T>(args.Message.Body);
+                    //var msg = JsonSerializer.Deserialize<T>(args.Message.Body);
+
+
+                    var json = args.Message.Body.ToString();
+                    _logger.LogDebug("Raw message body: {Json}", json);
+
+                    var msg = JsonSerializer.Deserialize<T>(json, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
                     if (msg == null)
                     {
                         _logger.LogWarning("Failed to deserialize message.");

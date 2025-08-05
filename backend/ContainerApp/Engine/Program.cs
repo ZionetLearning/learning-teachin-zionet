@@ -64,7 +64,7 @@ builder.Services.AddQueue<TaskModel, EngineQueueHandler>(
 
 // Queue listener for AI requests
 builder.Services.AddQueue<AiRequestModel, EngineAiQueueHandler>(
-    TopicNames.ManagerToAi,
+    QueueNames.ManagerToAi,
     settings =>
     {
         settings.MaxConcurrentCalls = 5;
