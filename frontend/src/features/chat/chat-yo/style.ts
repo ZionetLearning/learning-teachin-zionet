@@ -26,18 +26,19 @@ export const useStyles = createUseStyles({
       justifyContent: "flex-end",
     },
   },
-
-  rightMessage: {
-    backgroundColor: "#11bbff",
-  },
-  leftMessage: {
-    backgroundColor: "#FFFFFF",
-  },
-
   input: {
     border: "1px solid #ddd",
     borderRadius: "0%",
     paddingLeft: "6px",
+  },
+
+  inputAvatar: {
+    width: "100%!important",
+    fontSize: "18px",
+    padding: "1px 6px 1px 6px",
+    border: "1px solid #ccc",
+    borderRadius: 5,
+    boxSizing: "border-box",
   },
   sendButton: {
     backgroundColor: "#44bbff",

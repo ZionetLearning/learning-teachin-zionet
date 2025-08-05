@@ -20,7 +20,6 @@ public static class AiEndpoints
         return app;
     }
 
-
     private static async Task<IResult> ProcessQuestionAsync(
         [FromBody] AiRequestModel req,
         [FromServices] IChatAiService aiService,
@@ -31,7 +30,10 @@ public static class AiEndpoints
         log.LogInformation("Received AI question {Id} from manager", req.Id);
         try
         {
-            if (string.IsNullOrWhiteSpace(req.ThreadId)) return Results.BadRequest("ThreadId is required.");
+            if (string.IsNullOrWhiteSpace(req.ThreadId))
+            {
+                return Results.BadRequest("ThreadId is required.");
+            }
 
             var response = await aiService.ProcessAsync(req, ct);
 
@@ -45,6 +47,4 @@ public static class AiEndpoints
             return Results.Problem("An error occurred while processing the AI question.");
         }
     }
-
-
 }
