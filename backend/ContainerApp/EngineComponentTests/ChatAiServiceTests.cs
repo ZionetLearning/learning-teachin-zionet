@@ -1,10 +1,12 @@
-﻿using Engine.Messaging;
+﻿using System.Text.RegularExpressions;
+using Engine.Messaging;
 using Engine.Models;
 using Engine.Services;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using System.Text.RegularExpressions;
+using Microsoft.SemanticKernel;
+using Polly;
 
 namespace EngineComponentTests;
 
@@ -14,10 +16,20 @@ public class ChatAiServiceTests
     private readonly TestKernelFixture _fx;
     private readonly IMemoryCache _cache;
     private readonly MemoryCacheEntryOptions _cacheOptions;
-
-    private sealed class FakePromptProvider : ISystemPromptProvider
+    private readonly ChatAiService _aiService;
+    private sealed class FakeRetryPolicyProvider : IRetryPolicyProvider
     {
-        public string Prompt => "Always add at the end - you need to learn English"; // Change it if you want to test the system prompt
+        private static readonly IAsyncPolicy _noOp = Policy.NoOpAsync();
+        private static readonly IAsyncPolicy<ChatMessageContent> _noOpKernel =
+            Policy.NoOpAsync<ChatMessageContent>();
+
+        public IAsyncPolicy Create(QueueSettings settings, ILogger logger) => _noOp;
+
+        public IAsyncPolicy<HttpResponseMessage> CreateHttpPolicy(ILogger logger) =>
+            Policy.NoOpAsync<HttpResponseMessage>();
+
+        public IAsyncPolicy<ChatMessageContent> CreateKernelPolicy(ILogger logger) =>
+            _noOpKernel;
     }
 
     public ChatAiServiceTests(TestKernelFixture fx)
@@ -29,23 +41,13 @@ public class ChatAiServiceTests
         {
             SlidingExpiration = TimeSpan.FromMinutes(30)
         };
-    }
-    private static bool UseTestPrompt = false; // false - prompt from original servise
-    private ChatAiService CreateService()
-    {
-        ISystemPromptProvider provider = UseTestPrompt
-            ? new FakePromptProvider()
-            : new SystemPromptProvider(new ConfigurationBuilder()
-                .AddInMemoryCollection()
-                .Build());
-        var retryPolicyProvider = new RetryPolicyProvider();
-        return new ChatAiService(
+
+        _aiService = new ChatAiService(
             _fx.Kernel,
             NullLogger<ChatAiService>.Instance,
             _cache,
             _cacheOptions,
-            provider,
-            retryPolicyProvider);
+            new FakeRetryPolicyProvider());
     }
 
     [SkippableFact(DisplayName = "ProcessAsync: answer contains 4 or four")]
@@ -57,8 +59,6 @@ public class ChatAiServiceTests
             SlidingExpiration = TimeSpan.FromMinutes(5)
         };
 
-        var service = CreateService();
-
         var request = new AiRequestModel
         {
             Id = Guid.NewGuid().ToString("N"),
@@ -69,7 +69,7 @@ public class ChatAiServiceTests
             ReplyToTopic = "ignored-in-test"
         };
 
-        var response = await service.ProcessAsync(request, CancellationToken.None);
+        var response = await _aiService.ProcessAsync(request, CancellationToken.None);
 
         Assert.True(string.IsNullOrEmpty(response.Status) || response.Status == "ok");
         Assert.False(string.IsNullOrWhiteSpace(response.Answer));
@@ -81,7 +81,6 @@ public class ChatAiServiceTests
     [SkippableFact(DisplayName = "ProcessAsync: history persists across calls")]
     public async Task ProcessAsync_Context_Persists()
     {
-        var service = CreateService();
         var threadId = Guid.NewGuid().ToString("N");
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
@@ -94,7 +93,7 @@ public class ChatAiServiceTests
             SentAt = now,
             ReplyToTopic = "ignored"
         };
-        var response1 = await service.ProcessAsync(request1, CancellationToken.None);
+        var response1 = await _aiService.ProcessAsync(request1, CancellationToken.None);
 
         Assert.True(string.IsNullOrEmpty(response1.Status) || response1.Status == "ok");
 
@@ -107,7 +106,7 @@ public class ChatAiServiceTests
             SentAt = now + 1,
             ReplyToTopic = "ignored"
         };
-        var response2 = await service.ProcessAsync(request2, CancellationToken.None);
+        var response2 = await _aiService.ProcessAsync(request2, CancellationToken.None);
 
         Assert.True(string.IsNullOrEmpty(response2.Status) || response2.Status == "ok");
         Assert.False(string.IsNullOrWhiteSpace(response2.Answer));
