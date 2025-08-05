@@ -73,8 +73,7 @@ jobs:
           find dist -name "*.LICENSE" -delete
           # Remove any large vendor files if they exist
           find dist -name "*vendor*" -size +1M -delete
-          # Compress large JS files if needed
-          find dist -name "*.js" -size +1M -exec gzip -f {} \; -exec mv {}.gz {} \;
+          # Note: Removed gzip compression as it was corrupting JS files
           echo "=== Size after aggressive cleanup ==="
           du -sh dist/
           echo "=== Final file count ==="
