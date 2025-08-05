@@ -12,6 +12,10 @@
       ],
       "DownstreamPathTemplate": "/{everything}",
       "RouteIsCaseSensitive": false,
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
       "RateLimitOptions": {
         "ClientIdHeader": "ClientId",
         "EnableRateLimiting": true,

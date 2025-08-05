@@ -45,6 +45,7 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
                 _logger.LogWarning("Task {TaskId} not found, cannot update name.", id);
                 return false;
             }
+
             await _daprClient.InvokeBindingAsync(
                 QueueNames.TaskUpdate,
                 "create",
