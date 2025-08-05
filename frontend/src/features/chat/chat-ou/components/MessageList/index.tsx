@@ -36,7 +36,7 @@ const MessageList: React.FC<MessageListProps> = ({
     [isUserScrolling, isNearBottom],
   );
 
-  const scrollTimeoutRef = useRef<number | null>(null);
+  const scrollTimeoutRef = useRef<number | NodeJS.Timeout | null>(null);
 
   const handleScroll = useCallback(() => {
     if (!containerRef.current) return;

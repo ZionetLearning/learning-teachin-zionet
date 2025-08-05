@@ -193,7 +193,7 @@ export class MockChatService implements MockAIService {
   ): GenerativeUIMessage {
     const randomLink =
       MOCK_LINKS[Math.floor(Math.random() * MOCK_LINKS.length)];
-
+      userMessage = userMessage || "Check this out";
     return {
       id: messageId,
       type: "generative-ui",
