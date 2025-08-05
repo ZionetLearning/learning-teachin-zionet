@@ -10,6 +10,7 @@ import {
   ChatOuPage,
   ChatShPage,
   ChatYoPage,
+  ChatAvatarPage,
   HomePage,
   SpeakingPracticePage,
   TypingPracticePage,
@@ -35,6 +36,7 @@ function App() {
           <Route path="/chat/da" element={<ChatDaPage />} />
           <Route path="/chat/ou" element={<ChatOuPage />} />
           <Route path="/chat/sh" element={<ChatShPage />} />
+          <Route path="/chat-avatar" element={<ChatAvatarPage />} />
           <Route path="/avatar/ou" element={<AvatarOuPage />} />
           <Route path="/avatar/sh" element={<AvatarShPage />} />
           <Route path="/avatar/da" element={<AvatarDaPage />} />

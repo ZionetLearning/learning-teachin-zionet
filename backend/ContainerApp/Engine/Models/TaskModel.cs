@@ -1,14 +1,13 @@
 using System.Text.Json.Serialization;
 
-namespace Engine.Models
+namespace Engine.Models;
+
+public record TaskModel
 {
-    public class TaskModel
-    {
-        [JsonPropertyName("id")]
-        public int Id { get; set; }
-        [JsonPropertyName("name")]
-        public required string Name { get; set; }
-        [JsonPropertyName("payload")]
-        public required string Payload { get; set; }
-    }
+    [JsonPropertyName("id")]
+    public int Id { get; init; }
+    [JsonPropertyName("name")]
+    public required string Name { get; init; }
+    [JsonPropertyName("payload")]
+    public required string Payload { get; init; }
 }

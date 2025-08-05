@@ -1,4 +1,5 @@
 using Accessor.Constants;
+using Accessor.DB;
 using Accessor.Endpoints;
 using Accessor.Messaging;
 using Accessor.Models;
@@ -32,7 +33,6 @@ builder.Configuration
     .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
     .AddEnvironmentVariables();
 
-
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddScoped<IAccessorService, AccessorService>();
@@ -52,7 +52,13 @@ builder.Services.AddDaprClient(client =>
 
 // Configure PostgreSQL
 builder.Services.AddDbContext<AccessorDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres"), npgsqlOptions =>
+    {
+        npgsqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(5),
+            errorCodesToAdd: null);
+    }));
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
@@ -61,10 +67,9 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var startupService = scope.ServiceProvider.GetRequiredService<IAccessorService>();
-    await startupService.InitializeAsync(); 
+    await startupService.InitializeAsync();
 }
 
 // Map endpoints (routes)
 app.MapAccessorEndpoints();
-
-app.Run();
+await app.RunAsync();

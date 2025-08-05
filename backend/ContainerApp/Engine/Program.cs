@@ -4,7 +4,6 @@ using Engine.Endpoints;
 using Engine.Messaging;
 using Engine.Models;
 using Engine.Services;
-using Microsoft.Azure.Amqp.Sasl;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 
@@ -60,10 +59,8 @@ builder.Services.AddQueue<TaskModel, EngineQueueHandler>(
         settings.MaxRetryAttempts = 3;
         settings.RetryDelaySeconds = 2;
     });
-builder.Services.AddSingleton<ISystemPromptProvider, SystemPromptProvider>();
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
-
 
 var app = builder.Build();
 
