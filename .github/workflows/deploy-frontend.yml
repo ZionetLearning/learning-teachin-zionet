@@ -31,6 +31,16 @@ jobs:
           cd frontend
           npm ci
           npm run build
+          # Check build size and contents
+          echo "=== Build folder size ==="
+          du -sh dist/
+          echo "=== Largest files ==="
+          find dist -type f -exec du -h {} + | sort -rh | head -20
+          # Remove unnecessary files to reduce size
+          find dist -name "*.map" -delete
+          find dist -name "*.md" -delete
+          echo "=== Size after cleanup ==="
+          du -sh dist/
         env:
           VITE_AZURE_SPEECH_KEY: ${{ secrets.VITE_AZURE_SPEECH_KEY }}
           VITE_AZURE_REGION: "eastus"
