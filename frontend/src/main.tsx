@@ -10,6 +10,13 @@ import App from "./App.tsx";
 import { AppInsightsErrorBoundary } from "./components";
 import { appInsights } from "./appInsights";
 
+console.log("🚀 App starting...");
+console.log("Environment check:", {
+  speechKey: import.meta.env.VITE_AZURE_SPEECH_KEY ? "✅ Present" : "❌ Missing",
+  openAiKey: import.meta.env.VITE_AZURE_OPENAI_KEY ? "✅ Present" : "❌ Missing",
+  endpoint: import.meta.env.VITE_AZURE_OPENAI_ENDPOINT,
+});
+
 appInsights.loadAppInsights();
 
 createRoot(document.getElementById("root")!).render(

@@ -51,6 +51,8 @@ jobs:
           echo "=== Build Output Debug ==="
           echo "Build completed, checking output..."
           ls -la dist/
+          echo "=== Checking built index.html ==="
+          cat dist/index.html
           echo "=== Build folder size ==="
           du -sh dist/
           echo "=== Largest files ==="
