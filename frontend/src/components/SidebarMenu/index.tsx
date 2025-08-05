@@ -154,6 +154,14 @@ export const SidebarMenu = () => {
             Speaking Practice
           </MenuItem>
         </SubMenu>
+
+        <MenuItem
+          icon={<HomeIcon />}
+          onClick={() => handleNavigation("/earthquake-map")}
+          active={isActive("/earthquake-map")}
+        >
+          Earthquake Map
+        </MenuItem>
       </Menu>
       <Menu
         menuItemStyles={{
