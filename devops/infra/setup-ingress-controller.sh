@@ -20,6 +20,7 @@ helm upgrade --install "$RELEASE_NAME" ingress-nginx/ingress-nginx \
   --set controller.replicaCount=1 \
   --set controller.nodeSelector."kubernetes\.io/os"=linux \
   --set defaultBackend.nodeSelector."kubernetes\.io/os"=linux \
+  --set controller.service.type=LoadBalancer \
   --wait
 
 echo "✅ Ingress Controller installed."
