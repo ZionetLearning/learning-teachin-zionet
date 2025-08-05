@@ -29,13 +29,29 @@ jobs:
       - name: Install and Build
         run: |
           cd frontend
+          echo "=== Environment Variables Debug ==="
+          echo "VITE_AZURE_SPEECH_KEY: ${VITE_AZURE_SPEECH_KEY:0:10}..." 
+          echo "VITE_AZURE_OPENAI_KEY: ${VITE_AZURE_OPENAI_KEY:0:10}..."
+          echo "VITE_AZURE_REGION: $VITE_AZURE_REGION"
+          echo "VITE_AZURE_OPENAI_ENDPOINT: $VITE_AZURE_OPENAI_ENDPOINT"
+          echo "VITE_APPINSIGHTS_CONNECTION_STRING: ${VITE_APPINSIGHTS_CONNECTION_STRING:0:20}..."
+          echo "VITE_SENTRY_DSN: ${VITE_SENTRY_DSN:0:20}..."
+          echo "================================"
+          
           npm ci
           npm run build
-          # Check build size and contents
+          
+          echo "=== Build Output Debug ==="
+          echo "Build completed, checking output..."
+          ls -la dist/
           echo "=== Build folder size ==="
           du -sh dist/
           echo "=== Largest files ==="
           find dist -type f -exec du -h {} + | sort -rh | head -20
+          
+          echo "=== Checking for environment variables in built files ==="
+          grep -r "VITE_" dist/ || echo "No VITE_ variables found in build output"
+          
           # Aggressive cleanup to reduce size
           find dist -name "*.map" -delete
           find dist -name "*.md" -delete
@@ -67,6 +83,21 @@ jobs:
           app_location: "frontend/dist"
           output_location: ""
           skip_app_build: true
+
+      - name: Debug Deployment
+        run: |
+          echo "=== Deployment completed ==="
+          echo "If you're seeing a black screen, check the browser console for errors:"
+          echo "1. Open browser dev tools (F12)"
+          echo "2. Go to Console tab"
+          echo "3. Look for red error messages"
+          echo "4. Check Network tab for failed requests"
+          echo ""
+          echo "Common issues to look for:"
+          echo "- 'Failed to fetch' errors (API connectivity)"
+          echo "- 'undefined' environment variables"
+          echo "- CORS errors"
+          echo "- 404 errors for missing assets"
 
 
 
