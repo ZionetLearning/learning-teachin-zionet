@@ -33,7 +33,9 @@ public class EngineAiQueueHandler : IQueueHandler<AiRequestModel>
             }
 
             var response = await _aiService.ProcessAsync(message, ct);
-            await _publisher.PublishAsync(response, message.ReplyToTopic, ct);
+
+            await _publisher.SendReplyAsync(response, message.ReplyToQueue, ct);
+
 
             _logger.LogInformation("AI question {Id} processed", message.Id);
         }

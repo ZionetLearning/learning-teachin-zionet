@@ -28,8 +28,6 @@ public static class AiEndpoints
 
         app.MapPost("/ai/question", QuestionAsync).WithName("Question");
 
-        //app.MapPost($"/ai/{QueueNames.AiToManager}", PubSubAsync).WithTopic("pubsub", QueueNames.AiToManager);
-
         #endregion
 
 
@@ -91,31 +89,5 @@ public static class AiEndpoints
     }
 
 
-    //private static async Task<IResult> PubSubAsync(
-    //    [FromBody] AiResponseModel msg,
-    //    [FromServices] IAiGatewayService aiService,
-    //    [FromServices] ILogger<PubSubEndpoint> log,
-    //    CancellationToken ct)
-    //{
-    //    log.LogInformation("Inside {method}", nameof(PubSubAsync));
-    //    if (!ValidationExtensions.TryValidate(msg, out var validationErrors))
-    //    {
-    //        log.LogWarning("Validation failed for {Model}: {Errors}",nameof(AiResponseModel), validationErrors);
-    //        return Results.BadRequest(new { errors = validationErrors });
-    //    }
-
-    //    try
-    //    {
-    //        await aiService.SaveAnswerAsync(msg, ct);
-    //        log.LogInformation("Answer saved");
-    //        return Results.Ok();
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        log.LogError(ex, "Error saving answer");
-    //        return Results.Problem("AI answer handling failed");
-    //    }
-    //}
-        
-
+       
 }
