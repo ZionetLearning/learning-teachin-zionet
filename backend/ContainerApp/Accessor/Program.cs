@@ -15,7 +15,8 @@ builder.Services.AddSingleton(sp =>
 
 builder.Services.AddQueue<TaskModel, AccessorCreateTaskHandler>(
     QueueNames.EngineToAccessor,
-    settings => {
+    settings =>
+    {
         settings.MaxConcurrentCalls = 4;
         settings.PrefetchCount = 8;
         settings.ProcessingDelayMs = 0;
