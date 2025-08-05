@@ -146,7 +146,7 @@ services:
       context: ./Manager
     container_name: manager
     ports:
-      - "5001"
+      - "5001:5001"
     environment:
       - ASPNETCORE_URLS=http://+:5001
       - ASPNETCORE_ENVIRONMENT=Development
@@ -212,7 +212,7 @@ services:
       context: ./Engine
     container_name: engine
     ports:
-      - "5002"
+      - "5002:5002"
     environment:
       - ASPNETCORE_URLS=http://+:5002
       - ASPNETCORE_ENVIRONMENT=Development
@@ -257,7 +257,7 @@ services:
       context: ./Accessor
     container_name: accessor
     ports:
-      - "5003"
+      - "5003:5003"
     environment:
       - ASPNETCORE_URLS=http://+:5003
       - ASPNETCORE_ENVIRONMENT=Development
