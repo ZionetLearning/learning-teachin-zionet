@@ -27,6 +27,9 @@ env:
 jobs:
   terraform:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     outputs:
       deployment_token: ${{ steps.terraform_output.outputs.deployment_token }}
       static_web_app_url: ${{ steps.terraform_output.outputs.static_web_app_url }}
