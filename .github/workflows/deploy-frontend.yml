@@ -39,6 +39,13 @@ jobs:
           echo "================================"
           
           npm ci
+          
+          echo "=== Vite Environment Variables Debug ==="
+          echo "Creating temporary debug file to test Vite env vars..."
+          echo "console.log('VITE_AZURE_SPEECH_KEY:', import.meta.env.VITE_AZURE_SPEECH_KEY);" > debug-env.js
+          echo "console.log('VITE_AZURE_OPENAI_KEY:', import.meta.env.VITE_AZURE_OPENAI_KEY);" >> debug-env.js
+          echo "console.log('All import.meta.env:', import.meta.env);" >> debug-env.js
+          
           npm run build
           
           echo "=== Build Output Debug ==="
@@ -50,7 +57,12 @@ jobs:
           find dist -type f -exec du -h {} + | sort -rh | head -20
           
           echo "=== Checking for environment variables in built files ==="
-          grep -r "VITE_" dist/ || echo "No VITE_ variables found in build output"
+          echo "Looking for actual API key values in built files..."
+          grep -r "BCyTfNEF3B" dist/ && echo "✅ Speech key found" || echo "❌ Speech key NOT found"
+          grep -r "GFNGoZY5e5" dist/ && echo "✅ OpenAI key found" || echo "❌ OpenAI key NOT found"
+          grep -r "france-teachin-open-ai" dist/ && echo "✅ OpenAI endpoint found" || echo "❌ OpenAI endpoint NOT found"
+          echo "Searching for undefined values..."
+          grep -r "undefined" dist/assets/*.js | head -5
           
           # Aggressive cleanup to reduce size
           find dist -name "*.map" -delete
