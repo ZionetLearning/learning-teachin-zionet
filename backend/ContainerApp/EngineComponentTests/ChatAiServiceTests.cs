@@ -42,7 +42,7 @@ public class ChatAiServiceTests
             _fx.Kernel,
             NullLogger<ChatAiService>.Instance,
             _cache,
-            _cacheOptions,
+            //_cacheOptions,
             provider);
     }
 
@@ -65,7 +65,7 @@ public class ChatAiServiceTests
             Question = "How much is 2 + 2?",
             TtlSeconds = 120,
             SentAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-            ReplyToTopic = "ignored-in-test"
+            ReplyToQueue = "ignored-in-test"
         };
 
         var response = await service.ProcessAsync(request, CancellationToken.None);
@@ -91,7 +91,7 @@ public class ChatAiServiceTests
             Question = "Remember the number forty-two.",
             TtlSeconds = 120,
             SentAt = now,
-            ReplyToTopic = "ignored"
+            ReplyToQueue = "ignored"
         };
         var response1 = await service.ProcessAsync(request1, CancellationToken.None);
 
@@ -104,7 +104,7 @@ public class ChatAiServiceTests
             Question = "What number did you remember?",
             TtlSeconds = 120,
             SentAt = now + 1,
-            ReplyToTopic = "ignored"
+            ReplyToQueue = "ignored"
         };
         var response2 = await service.ProcessAsync(request2, CancellationToken.None);
 
