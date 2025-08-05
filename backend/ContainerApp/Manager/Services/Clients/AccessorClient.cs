@@ -22,6 +22,11 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
             _logger.LogDebug("Received task {TaskId} from Accessor service", id);
             return task;
         }
+        catch (InvocationException ex) when (ex.Response.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("Accessor service returned 404 for task {TaskId}", id);
+            return null;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get task {TaskId} from Accessor service", id);
@@ -34,6 +39,12 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(UpdateTaskName), nameof(AccessorClient));
         try
         {
+            var task = await GetTaskAsync(id);
+            if (task == null)
+            {
+                _logger.LogWarning("Task {TaskId} not found, cannot update name.", id);
+                return false;
+            }
             await _daprClient.InvokeBindingAsync(
                 QueueNames.TaskUpdate,
                 "create",
