@@ -19,7 +19,7 @@ namespace Manager.Models
 
         [Required(ErrorMessage = "ReplyToTopic is required.")]
         [MinLength(1, ErrorMessage = "ReplyToTopic cannot be empty.")]
-        public string ReplyToTopic { get; init; } = TopicNames.AiToManager;
+        public string ReplyToQueue { get; init; } = QueueNames.AiToManager;
 
         public static AiRequestModel Create(string question, string threadId, string replyToTopic, int ttlSeconds)
         {
@@ -31,7 +31,7 @@ namespace Manager.Models
                 ThreadId = threadId,
                 Question = question,
                 TtlSeconds = ttlSeconds,
-                ReplyToTopic = replyToTopic,
+                ReplyToQueue = replyToTopic,
                 SentAt = now
             };
         }

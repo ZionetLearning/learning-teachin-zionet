@@ -22,7 +22,7 @@ namespace Manager.Services
         }
         public async Task<string> SendQuestionAsync(string threadId, string question,  CancellationToken ct = default)
         {
-            var msg = AiRequestModel.Create(question, threadId, TopicNames.AiToManager, ttlSeconds: _settings.DefaultTtlSeconds);
+            var msg = AiRequestModel.Create(question, threadId, QueueNames.AiToManager, ttlSeconds: _settings.DefaultTtlSeconds);
 
             _log.LogInformation("Send question {Id} (TTL={Ttl})", msg.Id, msg.TtlSeconds);
 
