@@ -21,6 +21,8 @@ helm upgrade --install "$RELEASE_NAME" ingress-nginx/ingress-nginx \
   --set controller.nodeSelector."kubernetes\.io/os"=linux \
   --set defaultBackend.nodeSelector."kubernetes\.io/os"=linux \
   --set controller.service.type=LoadBalancer \
+  --set controller.service.externalTrafficPolicy=Local \
+  --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"="/healthz" \
   --wait
 
 echo "✅ Ingress Controller installed."
