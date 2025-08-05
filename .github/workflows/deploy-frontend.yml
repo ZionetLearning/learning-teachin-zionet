@@ -33,11 +33,11 @@ jobs:
           npm run build
         env:
           VITE_AZURE_SPEECH_KEY: ${{ secrets.VITE_AZURE_SPEECH_KEY }}
-          VITE_AZURE_REGION: ${{ secrets.VITE_AZURE_REGION }}
+          VITE_AZURE_REGION: "eastus"
           VITE_AZURE_OPENAI_KEY: ${{ secrets.VITE_AZURE_OPENAI_KEY }}
-          VITE_AZURE_OPENAI_DEPLOYMENT_NAME: ${{ secrets.VITE_AZURE_OPENAI_DEPLOYMENT_NAME }}
-          VITE_AZURE_OPENAI_API_VERSION: ${{ secrets.VITE_AZURE_OPENAI_API_VERSION }}
-          VITE_AZURE_OPENAI_ENDPOINT: ${{ secrets.VITE_AZURE_OPENAI_ENDPOINT }}
+          VITE_AZURE_OPENAI_DEPLOYMENT_NAME: "gpt-4.1-mini"
+          VITE_AZURE_OPENAI_API_VERSION: "2024-04-01-preview"
+          VITE_AZURE_OPENAI_ENDPOINT: "https://france-teachin-open-ai.openai.azure.com/"
           VITE_APPINSIGHTS_CONNECTION_STRING: ${{ secrets.VITE_APPINSIGHTS_CONNECTION_STRING }}
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
 
