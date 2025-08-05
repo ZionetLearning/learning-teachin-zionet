@@ -11,8 +11,8 @@ public static class AccessorEndpoints
     public static void MapAccessorEndpoints(this WebApplication app)
     {
         app.MapGet("/task/{id:int}", GetTaskByIdAsync);
-        app.MapPost($"/{QueueNames.EngineToAccessor}-input", CreateTaskAsync);
-        app.MapPost($"/{QueueNames.TaskUpdateInput}", UpdateTaskNameAsync);
+     //   app.MapPost($"/{QueueNames.EngineToAccessor}-input", CreateTaskAsync);
+     //   app.MapPost($"/{QueueNames.TaskUpdateInput}", UpdateTaskNameAsync);
         app.MapDelete("/task/{taskId}", DeleteTaskAsync);
 
     }
