@@ -34,6 +34,8 @@ helm upgrade --install grafana grafana/grafana \
   --set sidecar.dashboards.enabled=true \
   --set sidecar.dashboards.searchNamespace="$NAMESPACE" \
   --set sidecar.datasources.enabled=true \
+  --set grafana.ini.server.root_url="http://48.222.217.4/grafana/" \
+  --set grafana.ini.server.serve_from_sub_path=true \
   --wait
 
 echo

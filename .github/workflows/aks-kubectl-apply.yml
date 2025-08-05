@@ -48,6 +48,17 @@ jobs:
         run: |
           az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
 
+      - name: Install/Upgrade Dapr control plane
+        run: |
+          helm repo add dapr https://dapr.github.io/helm-charts || true
+          helm repo update
+          kubectl get ns dapr-system >/dev/null 2>&1 || kubectl create ns dapr-system
+          helm upgrade --install dapr dapr/dapr \
+            --version "1.13.0" \
+            --namespace "dapr-system" \
+            --create-namespace \
+            --wait
+
       - name: Create namespace
         run: kubectl apply -f $NAMESPACE_FILE
 
@@ -64,10 +75,32 @@ jobs:
             DOCKER_REGISTRY=$DOCKER_REGISTRY envsubst < "$file" | kubectl apply -f -
           done
 
+      - name: Apply ingresses
+        run: kubectl apply -f "$K8S_DIR/ingress" --recursive
+
+      - name: setup-ingress-controller
+        run: |
+          cd devops/infra
+          chmod +x setup-ingress-controller.sh
+          ./setup-ingress-controller.sh
+
+      - name: Add grafana
+        run: |
+          cd devops/infra
+          chmod +x grafana.sh
+          ./grafana.sh
+
+      - name: Add prometheus
+        run: |
+          cd devops/infra
+          chmod +x prometheus.sh
+          ./prometheus.sh
+
       - name: Add Loki (logs stack)
         run: |
-          chmod +x devops/infra/loki/loki.sh
-          ./devops/infra/loki/loki.sh
+          cd devops/infra/loki
+          chmod +x loki.sh
+          ./loki.sh
 
       - name: Wait for external IP for manager service
         id: wait_for_ip
@@ -98,34 +131,8 @@ jobs:
             --rule-name allow-accessor-service \
             --start-ip-address $EXTERNAL_IP \
             --end-ip-address $EXTERNAL_IP
-
-      - name: Wait for external IP for ingress controller
-        id: wait_for_ingress_ip
-        run: |
-          echo "Waiting for external IP for ingress-nginx-controller..."
-          for i in {1..30}; do
-            INGRESS_IP=$(kubectl -n devops-ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-            if [[ -n "$INGRESS_IP" ]]; then
-              echo "Ingress IP is ready: $INGRESS_IP"
-              echo "ingress_url=http://$INGRESS_IP" >> $GITHUB_OUTPUT
-              exit 0
-            fi
-            echo "Attempt $i: Ingress IP not yet assigned. Waiting 10s..."
-            sleep 10
-          done
-          echo "Failed to get ingress IP after waiting. Check 'kubectl get svc ingress-nginx-controller -n devops-ingress-nginx'"
-          exit 1
+            
       
-
-      - name: Add ingress IP to PostgreSQL firewall
-        run: |
-          INGRESS_IP=$(kubectl -n devops-ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-          az postgres flexible-server firewall-rule create \
-            --resource-group $AKS_RG \
-            --name $PG_DB \
-            --rule-name allow-ingress-controller \
-            --start-ip-address $INGRESS_IP \
-            --end-ip-address $INGRESS_IP
 
       - name: Restart all pods in dev namespace
         run: |
@@ -137,4 +144,3 @@ jobs:
         run: |
           echo "app_url=${{ steps.wait_for_ip.outputs.app_url }}" >> $GITHUB_OUTPUT
           echo "App URL: ${{ steps.wait_for_ip.outputs.app_url }}"
-
