@@ -5,6 +5,7 @@ using Engine.Services;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Polly;
 
@@ -46,19 +47,13 @@ public class ChatAiServiceTests
             _fx.Kernel,
             NullLogger<ChatAiService>.Instance,
             _cache,
-            _cacheOptions,
+            Options.Create(_cacheOptions),
             new FakeRetryPolicyProvider());
     }
 
     [SkippableFact(DisplayName = "ProcessAsync: answer contains 4 or four")]
     public async Task ProcessAsync_Returns_Number4()
     {
-        var cache = new MemoryCache(new MemoryCacheOptions());
-        var cacheOptions = new MemoryCacheEntryOptions
-        {
-            SlidingExpiration = TimeSpan.FromMinutes(5)
-        };
-
         var request = new AiRequestModel
         {
             Id = Guid.NewGuid().ToString("N"),
