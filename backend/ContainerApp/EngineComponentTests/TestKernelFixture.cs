@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.SemanticKernel;
 
+namespace EngineComponentTests;
 public sealed class TestKernelFixture : IAsyncLifetime
 {
     public Kernel Kernel { get; private set; } = default!;
@@ -8,7 +9,7 @@ public sealed class TestKernelFixture : IAsyncLifetime
     public Task InitializeAsync()
     {
         var cfg = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.Test.json", optional: true)
+            .AddJsonFile("appsettings.json", optional: true)
             .AddEnvironmentVariables()
             .Build();
 
