@@ -1,7 +1,10 @@
 using AutoMapper;
 using Dapr.Client;
 using Engine.Constants;
+using Engine.Messaging;
 using Engine.Models;
+using Polly;
+using System.Net;
 
 namespace Engine.Services;
 
@@ -10,14 +13,19 @@ public class EngineService : IEngineService
     private readonly DaprClient _daprClient;
     private readonly ILogger<EngineService> _logger;
     private readonly IMapper _mapper;
+    private readonly IRetryPolicyProvider _retryPolicyProvider;
+    private readonly IAsyncPolicy<HttpResponseMessage> _httpRetryPolicy;
 
     public EngineService(DaprClient daprClient,
         ILogger<EngineService> logger,
-        IMapper mapper)
+        IMapper mapper,
+        IRetryPolicyProvider retryPolicyProvider)
     {
         _daprClient = daprClient;
         _logger = logger;
         _mapper = mapper;
+        _retryPolicyProvider = retryPolicyProvider;
+        _httpRetryPolicy = _retryPolicyProvider.CreateHttpPolicy(_logger);
     }
 
     public async Task ProcessTaskAsync(TaskModel task, CancellationToken ct)
@@ -34,7 +42,11 @@ public class EngineService : IEngineService
 
         try
         {
-            await _daprClient.InvokeBindingAsync(QueueNames.EngineToAccessor, "create", task, cancellationToken: ct);
+            await _httpRetryPolicy.ExecuteAsync(async () =>
+                {
+                    await _daprClient.InvokeBindingAsync(QueueNames.EngineToAccessor, "create", task);
+                    return new HttpResponseMessage(HttpStatusCode.OK);
+                });
             _logger.LogInformation("Task {Id} forwarded to binding '{Binding}'", task.Id, QueueNames.EngineToAccessor);
         }
         catch (Exception ex)

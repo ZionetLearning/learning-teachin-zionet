@@ -11,3 +11,7 @@ spec:
       value: redis:6379        
     - name: redisPassword
       value: ""                          
+    - name: maxRetries
+      value: "3"
+    - name: retryInterval
+      value: "100"
