@@ -1,6 +1,7 @@
+import axios, { AxiosInstance } from 'axios';
+
 import { initAxios } from '@/services';
 import { WeatherData } from '@/types';
-import { AxiosInstance } from 'axios';
 
 export class ApiService {
 	private axiosInstance: AxiosInstance;
@@ -19,6 +20,10 @@ export class ApiService {
 			);
 			return response.data;
 		} catch (error) {
+			if (axios.isAxiosError(error) && error.response) {
+				if (error.response.status === 404)
+					throw new Error('Location not found');
+			}
 			console.error('Error fetching weather data:', error);
 			throw error;
 		}
@@ -31,6 +36,9 @@ export class ApiService {
 			);
 			return response.data;
 		} catch (error) {
+			if (axios.isAxiosError(error) && error.response) {
+				if (error.response.status === 404) throw new Error('City not found');
+			}
 			console.error('Error fetching weather data:', error);
 			throw error;
 		}

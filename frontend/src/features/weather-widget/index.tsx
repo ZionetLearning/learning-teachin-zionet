@@ -1,27 +1,11 @@
+import { useState } from 'react';
+
 import { useGetWeather } from '@/hooks';
 import { WeatherParams } from '@/types';
-import { useState } from 'react';
+
 import { useStyles } from './style';
 
-const emojiMap: Record<string, string> = {
-	Clear: '☀️',
-	Clouds: '⛅',
-	Rain: '🌧️',
-	Drizzle: '🌦️',
-	Thunderstorm: '⚡',
-	Snow: '❄️',
-	Mist: '🌫️',
-	Smoke: '🌫️',
-	Haze: '🌫️',
-	Dust: '🌫️',
-	Fog: '🌫️',
-	Sand: '🌫️',
-	Ash: '🌋',
-	Squall: '💨',
-	Tornado: '🌪️',
-};
-
-const cities = [
+const presetCities = [
 	'New York',
 	'London',
 	'Tokyo',
@@ -36,12 +20,13 @@ const cities = [
 export const WeatherWidget = () => {
 	const classes = useStyles();
 	const [selected, setSelected] = useState<string | null>(null);
+	const [search, setSearch] = useState<string>('');
 	const [locating, setLocating] = useState(false);
 	const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(
 		null
 	);
 
-	const params =
+	const params: WeatherParams | null =
 		selected === 'location'
 			? coords
 				? { lat: coords.lat, lon: coords.lon }
@@ -72,6 +57,13 @@ export const WeatherWidget = () => {
 		}
 	};
 
+	const handleSearch = () => {
+		if (search.trim()) {
+			setSelected(search);
+			setSearch('');
+		}
+	};
+
 	const formatTime = (unix: number) =>
 		new Date(unix * 1000).toLocaleTimeString([], {
 			hour: '2-digit',
@@ -80,19 +72,34 @@ export const WeatherWidget = () => {
 
 	return (
 		<div className={classes.container}>
-			<select
-				className={classes.select}
-				value={selected || ''}
-				onChange={(e) => handleSelectLocation(e.target.value)}
-			>
-				<option value="">-- Select City or Use Location --</option>
-				<option value="location">Use My Location</option>
-				{cities.map((city) => (
-					<option key={city} value={city}>
-						{city}
-					</option>
-				))}
-			</select>
+			<div className={classes.inputGroup}>
+				<select
+					className={classes.select}
+					value={selected || ''}
+					onChange={(e) => handleSelectLocation(e.target.value)}
+				>
+					<option value="">-- Select City or Location --</option>
+					<option value="location">Use My Location</option>
+					{presetCities.map((city) => (
+						<option key={city} value={city}>
+							{city}
+						</option>
+					))}
+				</select>
+
+				<div className={classes.searchGroup}>
+					<input
+						className={classes.input}
+						placeholder="Search city..."
+						value={search}
+						onChange={(e) => setSearch(e.target.value)}
+						onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+					/>
+					<button className={classes.button} onClick={handleSearch}>
+						Search
+					</button>
+				</div>
+			</div>
 
 			{locating && selected === 'location' && (
 				<div className={classes.loading}>Locating...</div>
@@ -102,32 +109,32 @@ export const WeatherWidget = () => {
 			)}
 			{error && (
 				<div className={classes.error}>
-					Error fetching weather data: {error.message}
+					{error.message === 'City not found'
+						? 'City not found. Please try again.'
+						: `Error: ${error.message}`}
 				</div>
 			)}
 
 			{data && (
 				<>
 					<h3 className={classes.heading}>
-						{data.weather[0].main && (
-							<span className={classes.emoji}>
-								{emojiMap[data.weather[0].main] || '🌡️'}
-							</span>
-						)}
 						{selected === 'location' ? data.name : selected}
 					</h3>
 					<div className={classes.weatherContainer}>
-						<div>
+						<div className={classes.iconContainer}>
+							<img
+								className={classes.icon}
+								src={`https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`}
+								alt={data.weather[0].description}
+							/>
 							<p className={classes.temp}>{Math.round(data.main.temp)}°C</p>
-							<p className={classes.description}>
-								{data.weather[0].description}
-							</p>
 						</div>
+						<p className={classes.description}>{data.weather[0].description}</p>
 					</div>
 					<div className={classes.stats}>
 						Feels like: {Math.round(data.main.feels_like)}°C
 						<br />
-						Min: {Math.round(data.main.temp_min)}°C | Max:{' '}
+						Min: {Math.round(data.main.temp_min)}°C | Max:
 						{Math.round(data.main.temp_max)}°C
 						<br />
 						Humidity: {data.main.humidity}% | Pressure: {data.main.pressure} hPa
@@ -138,7 +145,7 @@ export const WeatherWidget = () => {
 						<br />
 						Visibility: {(data.visibility / 1000).toFixed(1)} km
 						<br />
-						Sunrise: {formatTime(data.sys.sunrise)} | Sunset:{' '}
+						Sunrise: {formatTime(data.sys.sunrise)} | Sunset:
 						{formatTime(data.sys.sunset)}
 					</div>
 				</>
