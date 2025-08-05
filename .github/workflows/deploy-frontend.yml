@@ -36,11 +36,19 @@ jobs:
           du -sh dist/
           echo "=== Largest files ==="
           find dist -type f -exec du -h {} + | sort -rh | head -20
-          # Remove unnecessary files to reduce size
+          # Aggressive cleanup to reduce size
           find dist -name "*.map" -delete
           find dist -name "*.md" -delete
-          echo "=== Size after cleanup ==="
+          find dist -name "*.txt" -delete
+          find dist -name "*.LICENSE" -delete
+          # Remove any large vendor files if they exist
+          find dist -name "*vendor*" -size +1M -delete
+          # Compress large JS files if needed
+          find dist -name "*.js" -size +1M -exec gzip -f {} \; -exec mv {}.gz {} \;
+          echo "=== Size after aggressive cleanup ==="
           du -sh dist/
+          echo "=== Final file count ==="
+          find dist -type f | wc -l
         env:
           VITE_AZURE_SPEECH_KEY: ${{ secrets.VITE_AZURE_SPEECH_KEY }}
           VITE_AZURE_REGION: "eastus"
@@ -56,8 +64,8 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ inputs.deployment_token || secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: "upload"
-          app_location: "frontend"
-          output_location: "dist"
+          app_location: "frontend/dist"
+          output_location: ""
           skip_app_build: true
 
 
