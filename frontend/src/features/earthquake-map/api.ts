@@ -6,7 +6,6 @@ const buildEarthquakeUrl = (hoursAgo: number) => {
   const end = new Date().toISOString();
   // hoursAgo * 60 * 60 * 1000 => calculating the hours in miliseconds
   const start = new Date(Date.now() - hoursAgo * 60 * 60 * 1000).toISOString();
-  console.log(`Fetching earthquakes from ${start} to ${end}`);
   return `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${start}&endtime=${end}&minmagnitude=3`;
 };
 
