@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useStyles } from "./style";
 
 interface QuizOption {
@@ -36,6 +37,7 @@ const QuizMessage: React.FC<QuizMessageProps> = ({
   explanation,
   allowMultiple = false,
 }) => {
+  const { t } = useTranslation();
   const classes = useStyles();
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [showResults, setShowResults] = useState(false);
@@ -137,7 +139,7 @@ const QuizMessage: React.FC<QuizMessageProps> = ({
             onClick={handleSubmit}
             disabled={selectedOptions.length === 0}
           >
-            Submit Answer
+            {t('pages.chatOu.submitAnswer')}
             {allowMultiple && selectedOptions.length > 1 ? "s" : ""}
           </button>
         </div>
@@ -146,19 +148,19 @@ const QuizMessage: React.FC<QuizMessageProps> = ({
       {showResults && (
         <div className={classes.results}>
           <div className={classes.score}>
-            Score: {getScore().correct}/{getScore().total} (
+            {t('pages.chatOu.score')} {getScore().correct}/{getScore().total} (
             {getScore().percentage}%)
           </div>
           {explanation && (
             <div className={classes.explanation}>
-              <strong>Explanation:</strong> {explanation}
+              <strong>{t('pages.chatOu.explanation')}</strong> {explanation}
             </div>
           )}
           <button
             className={`${classes.button} ${classes.resetButton}`}
             onClick={handleReset}
           >
-            Try Again
+            {t('pages.chatOu.tryAgain')}
           </button>
         </div>
       )}

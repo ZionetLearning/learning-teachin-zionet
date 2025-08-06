@@ -1,3 +1,168 @@
 {
-  "translation": {}
+  "translation": {
+    "pages": {
+      "auth": {
+        "welcomeToLearningTeachinZionet": "Welcome to Learning-Teachin-Zionet",
+        "login": "Log In",
+        "signup": "Sign Up",
+        "email": "Email",
+        "password": "Password",
+        "confirmPassword": "Confirm Password",
+        "loggingIn": "Logging in…",
+        "firstName": "First Name",
+        "lastName": "Last Name",
+        "creatingAccount": "Creating Account..."
+      },
+      "home": {
+        "title": "Welcome to our internal playground project",
+        "subtitle": "Select a tool from the sidebar to begin."
+      },
+      "chatSh": {
+        "chatShPageWithOpenAi": "Chat Sh Page - with OpenAI",
+        "azureOpenAiChat": "Azure OpenAI Chat",
+        "typeYourMessage": "Type your message..."
+      },
+      "chatYo": {
+        "chatYoPageOpenAI": "Chat Yo Page + OpenAI",
+        "typeMessage": "Type a message...",
+        "thinking": "Thinking...",
+        "send": "Send",
+        "replayAvatar": "Replay Avatar"
+      },
+      "chatDa": {
+        "learningTeachinChat": "Learning-teachin-chat",
+        "toggleView": "Toggle View",
+        "typeMessage": "Type a message..."
+      },
+      "chatOu": {
+        "smartChatDemo": "Smart Chat Demo",
+        "online": "Online",
+        "offline": "Offline",
+        "participants": "participants",
+        "today": "Today",
+        "aiAssistant": "AI Assistant",
+        "failedToLoadImage": "failed to load image",
+        "tryAgain": "Try Again",
+        "submitAnswer": "Submit Answer",
+        "typeYourMessage": "Type your message...",
+        "welcomeToSmarChatDemo": "Welcome to the Smart Chat Demo! Try typing messages like 'show me an image', 'create a quiz', or 'give me a link' to see different response types!",
+        "unsupportedComponent": "Unsupported component:",
+        "loadingImage": "Loading image...",
+        "aiIsTyping": "AI is typing...",
+        "startConversationBySendingTheMessageBelow": "Start a conversation by sending a message below",
+        "unsupportedMessageType": "Unsupported message type",
+        "page": "Page:",
+        "selected": "Selected:",
+        "context": "Context:",
+        "tryTheseDemoExamples": "Try these demo examples:",
+        "retry": "Retry",
+        "moreOptions": "More options",
+        "contextAttached": "Context attached",
+        "refreshContext": "Refresh context",
+        "removeContext": "Remove context",
+        "attachContext": "Attach page context",
+        "scrollToLatestMessages": "Scroll to lates messages",
+        "imageUnavailable": "Image unavailable",
+        "explanation": "Explanation:",
+        "score": "Score:"
+      },
+      "chatAvatar": {
+        "chatAvatarPage": "Chat Avatar Page",
+        "typeMessage": "Type a message...",
+        "avatar": "Avatar",
+        "lips": "Lips"
+      },
+      "avatarOu": {
+        "avatarOuPage": "Avatar Ou Page",
+        "ouAvatar": "Ou Avatar",
+        "avatarSpeaksHebrewWithAi": "Avatar speak hebrew with AI",
+        "typeTextInHebrew": "Type text in hebrew:",
+        "typeHereYourText": "Type here your text...",
+        "characters": "characters",
+        "examples": "Examples:",
+        "startSpeaking": "Start speaking",
+        "stopSpeaking": "Stop speaking",
+        "readyToSpeak": "Ready to speak",
+        "speakingNow": "Speaking now",
+        "webSpeachApi": "Web Speech API •",
+        "fullHebrewSupport": "Full hebrew support"
+      },
+      "avatarSh": {
+        "avatarShPage": "Avatar Sh Page",
+        "writeSomethingHereInHebrew": "Write something here in hebrew",
+        "speak": "Speak"
+      },
+      "avatarDa": {
+        "writeSomethingHereInHebrew": "Write something here in hebrew...",
+        "speak": "Speak"
+      },
+      "speakingPractice": {
+        "prev": "Prev",
+        "next": "Next",
+        "stop": "⏹ Stop",
+        "play": "▶ Play",
+        "record": "🎤 Record",
+        "hideNikud": "Hide Nikud",
+        "showNikud": "Show Nikud"
+      },
+      "typingPractice": {
+        "hebrewTypingPractice": "Hebrew Typing Practice",
+        "listenToHebrewAudio": "Listen to Hebrew audio and practice your typing skills",
+        "changeLevel": "← Change Level",
+        "chooseYourDifficultyLevel": "Choose Your Difficulty Level",
+        "selectDifficultyLevel": "Select a difficulty level to start practicing Hebrew typing.",
+        "youWillListenToHebrewAudio": "You'll listen to Hebrew audio and type what you hear.",
+        "typeHereWhatYouHeard": "Type here what you heard...",
+        "typeWhatYouHeard": "Type what you heard",
+        "playingAudio": "Playing audio...",
+        "clickPlayToHearTheHebrewText": "Click play to hear the hebrew text",
+        "submitAnswer": "✓ Submit Answer",
+        "yourResults": "Your Results",
+        "accuracy": "Accuracy",
+        "whatYouTyped": "What you typed:",
+        "empty": "(empty)",
+        "expectedText": "Expected text:",
+        "tryAgain": "Try Again",
+        "nextExercise": "➡️ Next Exercise",
+        "playing": "Playing...",
+        "playAudio": "▶️ Play Audio",
+        "replay": "🔄 Replay"
+      },
+      "wordOrderGame": {
+        "title": "Word Order Game",
+        "subTitle": "Arrange the words in the correct order",
+        "loading": "Loading...",
+        "reset": "Reset",
+        "check": "Check",
+        "next": "Next",
+        "playAudio": "Play audio",
+        "playAudioSlowly": "Play audio slowly (0.6x)"
+      }
+    },
+    "sidebar": {
+      "toggleSidebar": "Toggle Sidebar",
+      "home": "Home",
+      "chatTools": "Chat Tools",
+      "chatSh": "Chat - Sh (Shirley)",
+      "chatYo": "Chat - Yo (Yonatan)",
+      "chatDa": "Chat - Da (Daniel)",
+      "chatOu": "Chat - Ou (Ouriel)",
+      "chatAvatar": "Chat - Avatar",
+      "avatarTools": "Avatar Tools",
+      "avatarOu": "Avatar - Ou",
+      "avatarSh": "Avatar - Sh",
+      "avatarDa": "Avatar - Da",
+      "practiceTools": "Practice Tools",
+      "typingPractice": "Typing Practice",
+      "wordOrderGame": "Word Order Game",
+      "speakingPractice": "Speaking Practice",
+      "logout": "Logout",
+      "languages": "Languages",
+      "he": "HE",
+      "en": "EN"
+    }
+  },
+  "goBackToMenu": "Go back to Menu",
+  "logout": "Logout",
+  "somethingWentWrong": "Something went wrong..."
 }

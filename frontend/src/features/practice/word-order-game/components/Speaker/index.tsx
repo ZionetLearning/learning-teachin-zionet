@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useStyles } from "./style";
 
 interface SpeakerProps {
@@ -6,9 +7,10 @@ interface SpeakerProps {
 }
 
 export const Speaker = ({ mode = "normal", onClick }: SpeakerProps) => {
+  const { t } = useTranslation();
   const classes = useStyles();
   const emoji = mode === "normal" ? "🔊" : "🐢";
-  const label = mode === "normal" ? "Play audio" : "Play audio slowly (0.6x)";
+  const label = mode === "normal" ? t('pages.wordOrderGame.playAudio') : t('pages.wordOrderGame.playAudioSlowly');
 
   return (
     <button

@@ -1,5 +1,5 @@
+import { useTranslation } from "react-i18next";
 import { SendIcon } from "./icons";
-
 import useStyles from "./style";
 
 interface InputProps {
@@ -15,8 +15,8 @@ export const ChatInput = ({
   sendMessage,
   disabled,
 }: InputProps) => {
+  const { t } = useTranslation();
   const classes = useStyles();
-
   return (
     <footer className={classes.inputWrapper}>
       <input
@@ -31,7 +31,7 @@ export const ChatInput = ({
           }
         }}
         autoComplete="off"
-        placeholder="Type a message..."
+        placeholder={t('pages.chatDa.typeMessage')}
         disabled={disabled}
       />
       <SendIcon

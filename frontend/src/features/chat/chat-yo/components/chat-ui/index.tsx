@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import { MessageBox, Input } from "react-chat-elements";
+import { useTranslation } from "react-i18next";
 import type { ChatMessage } from "../../hooks";
 import { useStyles } from "./style";
 import avatar from "../../../../avatar/avatar-sh/assets/avatar.svg";
@@ -24,6 +25,7 @@ export const ChatUi = ({
   handleSendMessage,
   handlePlay,
 }: ChatUiProps) => {
+  const { t } = useTranslation();
   const classes = useStyles();
   const avatarUrl = avatar;
   const listRef = useRef<HTMLDivElement | null>(null);
@@ -73,7 +75,7 @@ export const ChatUi = ({
             id="assistant"
             position="left"
             type="text"
-            text="Thinking…"
+            text={t('pages.chatYo.thinking')}
             title="Assistant"
             titleColor="none"
             date={new Date()}
@@ -90,7 +92,7 @@ export const ChatUi = ({
 
       <div className={avatarMode ? classes.inputContainer : undefined}>
         <Input
-          placeholder="Type a message…"
+          placeholder={t('pages.chatYo.typeMessage')}
           className={avatarMode ? classes.inputAvatar : classes.input}
           value={value}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -103,14 +105,14 @@ export const ChatUi = ({
               <div className={classes.rightButtons}>
                 <button
                   className={classes.sendButton}
-                  title="Replay avatar"
+                  title={t('pages.chatYo.replayAvatar')}
                   onClick={handlePlay}
                 >
                   🗣
                 </button>
                 <button
                   className={classes.sendButton}
-                  title="Send"
+                  title={t('pages.chatYo.send')}
                   onClick={handleSendMessage}
                 >
                   {loading ? "…" : "↑"}

@@ -1,10 +1,12 @@
 import { useState, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useStyles } from "./style";
 import { Speaker } from "../Speaker";
 import { playSentenceCached, clearSpeechCache } from "../../services";
 import { useHebrewSentence } from "../../hooks";
 
 export const Game = () => {
+  const { t } = useTranslation();
   const classes = useStyles();
   const [chosen, setChosen] = useState<string[]>([]);
   const [shuffledSentence, setShuffledSentence] = useState<string[]>([]);
@@ -108,7 +110,7 @@ export const Game = () => {
         </div>
 
         <div className={classes.wordsBank} dir="rtl">
-          {loading && <div>Loading…</div>}
+          {loading && <div>{t('pages.wordOrderGame.loading')}</div>}
           {error && <div style={{ color: "red" }}>{error}</div>}
           {!loading &&
             !error &&
@@ -125,9 +127,9 @@ export const Game = () => {
       </div>
 
       <div className={classes.sideButtons}>
-        <button onClick={handleReset}>Reset</button>
-        <button onClick={handleCheck}>Check</button>
-        <button onClick={handleNextClick}>Next</button>
+        <button onClick={handleReset}>{t('pages.wordOrderGame.reset')}</button>
+        <button onClick={handleCheck}>{t('pages.wordOrderGame.check')}</button>
+        <button onClick={handleNextClick}>{t('pages.wordOrderGame.next')}</button>
       </div>
     </div>
   );

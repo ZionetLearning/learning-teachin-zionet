@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import type { Message } from "../../types/Message";
 import { useStyles } from "./style";
 import { MessageItem } from "../";
@@ -12,6 +13,7 @@ const MessageList: React.FC<MessageListProps> = ({
   messages,
   isLoading = false,
 }) => {
+  const { t } = useTranslation();
   const classes = useStyles();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -105,7 +107,7 @@ const MessageList: React.FC<MessageListProps> = ({
           <div className={classes.emptyState}>
             <div className={classes.emptyStateIcon}>💬</div>
             <div className={classes.emptyStateText}>
-              Start a conversation by sending a message below
+              {t('pages.chatOu.startConversationBySendingTheMessageBelow')}
             </div>
           </div>
         ) : (
@@ -143,7 +145,7 @@ const MessageList: React.FC<MessageListProps> = ({
               <span></span>
               <span></span>
             </div>
-            <span className={classes.typingText}>AI is typing...</span>
+            <span className={classes.typingText}>{t('pages.chatOu.aiIsTyping')}</span>
           </div>
         )}
 
@@ -156,7 +158,7 @@ const MessageList: React.FC<MessageListProps> = ({
           className={classes.scrollToBottomButton}
           onClick={() => scrollToBottom(true)}
           aria-label="Scroll to bottom"
-          title="Scroll to latest messages"
+          title={t('pages.chatOu.scrollToLatesMessages')}
         >
           ↓
         </button>

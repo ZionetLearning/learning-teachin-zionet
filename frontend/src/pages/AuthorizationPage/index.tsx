@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-
+import { useTranslation } from "react-i18next";
 import { ErrorMessage, Field, Form, Formik, FormikHelpers } from "formik";
 import { useNavigate } from "react-router-dom";
 
@@ -23,6 +23,7 @@ export const AuthorizationPage = () => {
   const classes = useStyles();
   const { login } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [mode, setMode] = useState<AuthModeType>(authMode.login);
 
   useEffect(function applyFullScreen() {
@@ -42,7 +43,7 @@ export const AuthorizationPage = () => {
     <main className={classes.authPageBackground}>
       <header className={classes.authPageHeader}>
         <h1 className={classes.authPageTitle}>
-          Welcome to Learning-Teachin-Zionet
+          {t('pages.auth.welcomeToLearningTeachinZionet')}
         </h1>
       </header>
       <div className={classes.authPageContent}>
@@ -54,7 +55,7 @@ export const AuthorizationPage = () => {
                 onClick={() => setMode(tab as AuthModeType)}
                 className={`${classes.authPageTab} ${mode === tab ? "active" : ""}`}
               >
-                {tab === authMode.login ? "Log In" : "Sign Up"}
+                {tab === authMode.login ? t('pages.auth.login') : t('pages.auth.signup')}
               </button>
             ))}
           </div>
@@ -79,7 +80,7 @@ export const AuthorizationPage = () => {
                     <Field
                       name="email"
                       type="email"
-                      placeholder="Email"
+                      placeholder={t('pages.auth.email')}
                       className={classes.authPageInput}
                       autoComplete="email"
                     />
@@ -91,7 +92,7 @@ export const AuthorizationPage = () => {
                     <Field
                       name="password"
                       type="password"
-                      placeholder="Password"
+                      placeholder={t('pages.auth.password')}
                       className={classes.authPageInput}
                       autoComplete="current-password"
                     />
@@ -104,7 +105,7 @@ export const AuthorizationPage = () => {
                     disabled={isSubmitting}
                     className={classes.authPageSubmit}
                   >
-                    {isSubmitting ? "Logging in…" : "Log In"}
+                    {isSubmitting ? t('pages.auth.loggingIn') : t('pages.auth.login')}
                   </button>
                 </Form>
               )}
@@ -134,7 +135,7 @@ export const AuthorizationPage = () => {
                   <div>
                     <Field
                       name="firstName"
-                      placeholder="First Name"
+                      placeholder={t('pages.auth.firstName')}
                       className={classes.authPageInput}
                       autoComplete="given-name"
                     />
@@ -145,7 +146,7 @@ export const AuthorizationPage = () => {
                   <div>
                     <Field
                       name="lastName"
-                      placeholder="Last Name"
+                      placeholder={t('pages.auth.lastName')}
                       className={classes.authPageInput}
                       autoComplete="family-name"
                     />
@@ -157,7 +158,7 @@ export const AuthorizationPage = () => {
                     <Field
                       name="email"
                       type="email"
-                      placeholder="Email"
+                      placeholder={t('pages.auth.email')}
                       className={classes.authPageInput}
                       autoComplete="email"
                     />
@@ -169,7 +170,7 @@ export const AuthorizationPage = () => {
                     <Field
                       name="password"
                       type="password"
-                      placeholder="Password"
+                      placeholder={t('pages.auth.password')}
                       className={classes.authPageInput}
                       autoComplete="new-password"
                     />
@@ -181,7 +182,7 @@ export const AuthorizationPage = () => {
                     <Field
                       name="confirmPassword"
                       type="password"
-                      placeholder="Confirm Password"
+                      placeholder={t('pages.auth.confirmPassword')}
                       className={classes.authPageInput}
                       autoComplete="new-password"
                     />
@@ -194,7 +195,7 @@ export const AuthorizationPage = () => {
                     disabled={isSubmitting}
                     className={classes.authPageSubmit}
                   >
-                    {isSubmitting ? "Creating account…" : "Sign Up"}
+                    {isSubmitting ? t('pages.auth.creatingAccount') : t('pages.auth.signup')}
                   </button>
                 </Form>
               )}

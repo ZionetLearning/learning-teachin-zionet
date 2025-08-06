@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useStyles } from "./style";
 
 interface AudioState {
@@ -19,6 +20,7 @@ export const AudioControls = ({
   onPlayAudio,
   onReplayAudio,
 }: AudioControlsProps) => {
+  const { t } = useTranslation();
   const classes = useStyles();
 
   return (
@@ -28,9 +30,9 @@ export const AudioControls = ({
           {audioState.isPlaying ? "🔊" : "🎧"}
         </div>
         <div className={classes.audioText}>
-          {phase === "ready" && "Click play to hear the Hebrew text"}
-          {phase === "playing" && "Playing audio..."}
-          {phase === "typing" && "Type what you heard"}
+          {phase === "ready" && t('pages.typingPractice.clickPlayToHearTheHebrewText')}
+          {phase === "playing" && t('pages.typingPractice.playingAudio')}
+          {phase === "typing" && t('pages.typingPractice.typeWhatYouHeard')}
         </div>
       </div>
 
@@ -44,10 +46,10 @@ export const AudioControls = ({
             {audioState.isPlaying ? (
               <>
                 <span className={classes.loadingSpinner} />
-                Playing...
+                {t('pages.typingPractice.playing')}
               </>
             ) : (
-              <>▶️ Play Audio</>
+              <>{t('pages.typingPractice.playingAudio')}</>
             )}
           </button>
         )}
@@ -61,10 +63,10 @@ export const AudioControls = ({
             {audioState.isPlaying ? (
               <>
                 <span className={classes.loadingSpinner} />
-                Playing...
+                {t('pages.typingPractice.playing')}
               </>
             ) : (
-              <>🔄 Replay</>
+              <>{t('pages.typingPractice.replay')}</>
             )}
           </button>
         )}
@@ -79,7 +81,7 @@ export const AudioControls = ({
             onClick={onPlayAudio}
             disabled={audioState.isPlaying}
           >
-            Try Again
+            {t('pages.typingPractice.tryAgain')}n
           </button>
         </div>
       )}

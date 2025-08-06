@@ -1,12 +1,14 @@
 import { useState } from "react";
 import Lottie from "react-lottie";
 import { Play, Square, Volume2, VolumeX } from "lucide-react";
+import { useTranslation } from "react-i18next"; 
 import { useTTS } from "./hooks";
 import { useStyles } from "./style";
 import speakingSantaAnimation from "./animations/speakingSantaAnimation.json";
 import idleSantaAnimation from "./animations/idleSantaAnimation.json";
 
 export const AvatarOu = () => {
+  const { t } = useTranslation();
   const classes = useStyles();
   const [text, setText] = useState("שלום, איך שלומך היום?");
   const { speak, stop, toggleMute, isPlaying, isMuted } = useTTS({
@@ -44,8 +46,8 @@ export const AvatarOu = () => {
       <div className={classes.wrapper}>
         {/* Header */}
         <div className={classes.header}>
-          <h1 className={classes.title}>Ou Avatar</h1>
-          <p className={classes.subtitle}>אווטר מדבר בעברית עם AI</p>
+          <h1 className={classes.title}>{t('pages.avatarOu.ouAvatar')}</h1>
+          <p className={classes.subtitle}>{t('pages.avatarOu.avatarSpeaksHebrewWithAi')}</p>
           <div className={classes.headerDivider}></div>
         </div>
 
@@ -74,7 +76,7 @@ export const AvatarOu = () => {
                 <div
                   className={`${classes.statusDot} ${isPlaying ? classes.statusDotPlaying : ""}`}
                 ></div>
-                {isPlaying ? "מדבר עכשיו" : "מוכן לדבר"}
+                {isPlaying ? t('pages.avatarOu.speakingNow') : t('pages.avatarOu.readyToSpeak')}
               </div>
             </div>
           </div>
@@ -84,7 +86,7 @@ export const AvatarOu = () => {
             {/* Text Input */}
             <div>
               <label className={classes.inputLabel}>
-                <span>הקלד טקסט בעברית:</span>
+                <span>{t('pages.avatarOu.typeTextInHebrew')}</span>
               </label>
               <div className={classes.textareaWrapper}>
                 <textarea
@@ -92,17 +94,17 @@ export const AvatarOu = () => {
                   onChange={(e) => setText(e.target.value)}
                   className={classes.textarea}
                   rows={3}
-                  placeholder="הקלד כאן את הטקסט שלך..."
+                  placeholder={t('pages.avatarOu.typeHereYourText')}
                   dir="rtl"
                 />
-                <div className={classes.charCounter}>{text.length} תווים</div>
+                <div className={classes.charCounter}>{text.length} {t('pages.avatarOu.characters')}</div>
               </div>
             </div>
 
             {/* Sample Texts */}
             <div>
               <label className={classes.inputLabel}>
-                <span>דוגמאות:</span>
+                <span>{t('pages.avatarOu.examples')}</span>
               </label>
               <div className={classes.samplesGrid}>
                 {sampleTexts.map((sample, index) => (
@@ -133,12 +135,12 @@ export const AvatarOu = () => {
                 {isPlaying ? (
                   <>
                     <Square size={20} />
-                    עצור דיבור
+                    {t('pages.avatarOu.stopSpeaking')}
                   </>
                 ) : (
                   <>
                     <Play size={20} />
-                    התחל דיבור
+                    {t('pages.avatarOu.startSpeaking')}
                   </>
                 )}
               </button>
@@ -156,7 +158,7 @@ export const AvatarOu = () => {
             {/* Footer */}
             <div className={classes.footer}>
               <p className={classes.footerText}>
-                Web Speech API • תמיכה מלאה בעברית
+               {t('pages.avatarOu.webSpeachApi')} {t('pages.avatarOu.fullHebrewSupport')}
               </p>
             </div>
           </div>

@@ -1,4 +1,5 @@
 import React, { useState, useRef, type KeyboardEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { useStyles } from "./style";
 import { useContext } from "../../hooks";
 import type { MessageContext } from "../../types";
@@ -23,6 +24,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   placeholder = "Type your message...",
   disabled = false,
 }) => {
+  const { t } = useTranslation();
   const classes = useStyles();
   const [inputValue, setInputValue] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -128,12 +130,12 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         <div className={classes.contextDisplay}>
           <div className={classes.contextHeader}>
             <span className={classes.contextIcon}>📎</span>
-            <span className={classes.contextLabel}>Context Attached</span>
+            <span className={classes.contextLabel}>{t('pages.chatOu.contextAttached')}</span>
             <div className={classes.contextActions}>
               <button
                 className={classes.contextActionButton}
                 onClick={handleRefreshContext}
-                title="Refresh context"
+                title={t('pages.chatOu.refreshContext')}
                 type="button"
               >
                 🔄
@@ -141,7 +143,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
               <button
                 className={classes.contextActionButton}
                 onClick={detachContext}
-                title="Remove context"
+                title={t('pages.chatOu.removeContext')}
                 type="button"
               >
                 ✕
@@ -161,9 +163,9 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           onClick={handleContextToggle}
           disabled={disabled || isLoading}
           type="button"
-          title={isContextAttached ? "Remove context" : "Attach page context"}
+          title={isContextAttached ? t('pages.chatOu.removeContext') : t('pages.chatOu.attachContext')}
           aria-label={
-            isContextAttached ? "Remove context" : "Attach page context"
+            isContextAttached ? t('pages.chatOu.removeContext') : t('pages.chatOu.attachContext')
           }
         >
           📎
@@ -200,7 +202,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
       {showSuggestions && !inputValue.trim() && (
         <div className={classes.suggestionsPanel}>
           <div className={classes.suggestionsHeader}>
-            💡 Try these demo examples:
+            💡 {t('pages.chatOu.tryTheseDemoExamples')}
           </div>
           <div className={classes.suggestionsList}>
             {DEMO_SUGGESTIONS.map((suggestion, index) => (
@@ -219,7 +221,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
 
       {inputValue.length > 1800 && (
         <div className={classes.characterCount}>
-          {inputValue.length}/2000 characters
+          {inputValue.length}/2000 {t('pages.chatOu.characters')}
         </div>
       )}
     </div>

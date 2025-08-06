@@ -1,8 +1,7 @@
 /// <reference types="vite/client" />
 import { useRef, useState } from "react";
-
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";
-
+import { useTranslation } from "react-i18next";
 import { comparePhrases, phrases, phrasesWithNikud } from "./utils";
 
 import { useStyles } from "./style";
@@ -18,7 +17,7 @@ type FeedbackType = (typeof Feedback)[keyof typeof Feedback];
 
 export const SpeakingPractice = () => {
   const classes = useStyles();
-
+  const { t } = useTranslation();
   const [showNikud, setShowNikud] = useState(false);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [feedback, setFeedback] = useState<FeedbackType>(Feedback.None);
@@ -145,11 +144,11 @@ export const SpeakingPractice = () => {
   return (
     <div className={classes.container}>
       <div className={classes.nav}>
-        <button onClick={goPrev}>&laquo; Prev</button>
+        <button onClick={goPrev}>&laquo; {t('pages.speakingPractice.prev')}</button>
         <span>
           {currentIdx + 1} / {phrases.length}
         </span>
-        <button onClick={goNext}>Next &raquo;</button>
+        <button onClick={goNext}>{t('pages.speakingPractice.next')} &raquo;</button>
       </div>
 
       <div className={classes.main}>
@@ -166,13 +165,13 @@ export const SpeakingPractice = () => {
 
       <div className={classes.controls}>
         <button onClick={handlePlay}>
-          {isSpeaking ? "⏹ Stop" : "▶ Play"}
+          {isSpeaking ? t('pages.speakingPractice.stop') : t('pages.speakingPractice.play')}
         </button>
         <button onClick={handleRecord}>
-          {isRecording ? "⏹ Stop" : "🎤 Record"}
+          {isRecording ? t('pages.speakingPractice.stop') : t('pages.speakingPractice.record')}
         </button>
         <button onClick={() => setShowNikud(!showNikud)}>
-          {showNikud ? "Hide Nikud" : "Show Nikud"}
+          {showNikud ? t('pages.speakingPractice.hideNikud') : t('pages.speakingPractice.showNikud')}
         </button>
       </div>
     </div>
