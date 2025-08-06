@@ -82,8 +82,6 @@ builder.Services.AddQueue<AiRequestModel, EngineAiQueueHandler>(
         settings.RetryDelaySeconds = 2;
     });
 
-//builder.Services.AddSingleton<ISystemPromptProvider, SystemPromptProvider>();
-
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 var app = builder.Build();
