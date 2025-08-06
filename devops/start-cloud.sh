@@ -40,10 +40,17 @@ find "$K8S_DIR/deployments" -type f -name '*.yaml' | while read file; do
   echo "Applying $file"
   envsubst < "$file" | kubectl apply -f -
 done
+
+# Step 7: Apply KEDA ScaledObjects
+echo "Applying KEDA ScaledObjects..."
+find "$K8S_DIR/keda" -type f -name '*.yaml' | while read file; do
+  echo "Applying $file"
+  envsubst < "$file" | kubectl apply -f -
+done
  
 echo "All resources applied successfully!"
  
-# Step 7: Wait for manager service to get an external IP
+# Step 8: Wait for manager service to get an external IP
 echo "Waiting for external IP for manager service..."
  
 for i in {1..30}; do

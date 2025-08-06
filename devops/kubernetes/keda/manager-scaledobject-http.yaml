@@ -1,0 +1,14 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: manager-scaledobject
+  namespace: dev # Specify the namespace where this ScaledObject will be created
+spec:
+  scaleTargetRef:
+    name: manager
+  minReplicaCount: 0
+  maxReplicaCount: 1
+  triggers:
+    - type: http
+      metadata:
+        host: manager.example.com
