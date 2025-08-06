@@ -51,6 +51,7 @@ export const WeatherWidget = () => {
 				},
 				() => {
 					setLocating(false);
+					setSelected(null);
 					console.warn('Location access denied or not supported');
 				}
 			);
@@ -64,11 +65,15 @@ export const WeatherWidget = () => {
 		}
 	};
 
-	const formatTime = (unix: number) =>
-		new Date(unix * 1000).toLocaleTimeString([], {
+	const formatTime = (unix: number) => {
+		if (!data) return '';
+		const local = new Date((unix + data.timezone) * 1000);
+		return local.toLocaleTimeString([], {
 			hour: '2-digit',
 			minute: '2-digit',
+			timeZone: 'UTC',
 		});
+	};
 
 	return (
 		<div className={classes.container}>

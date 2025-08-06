@@ -19,6 +19,7 @@ export interface WeatherData {
 		sunrise: number;
 		sunset: number;
 	};
+	timezone: number;
 }
 
 export type WeatherParams = { city: string } | { lat: number; lon: number };
