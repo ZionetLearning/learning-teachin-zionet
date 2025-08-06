@@ -54,3 +54,4 @@ backend/ContainerApp/.idea/.idea.backend/.idea/vcs.xml
 .terraform/
 # ===============================
 /backend/ContainerApp/.cr
+/backend/ContainerApp/.cr/personal
