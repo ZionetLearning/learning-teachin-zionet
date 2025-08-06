@@ -50,15 +50,15 @@ jobs:
           VITE_APPINSIGHTS_CONNECTION_STRING: ${{ inputs.app_insights_connection_string }}
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
 
-      - name: Optimize Build Size
-        working-directory: ${{ env.FE_DIR }}
-        run: |
-          # Remove unnecessary files to reduce deployment size
-          find dist -name "*.map" -delete
-          find dist -name "*.md" -delete
-          find dist -name "*.txt" -delete
-          find dist -name "*.LICENSE" -delete
-          echo "Build size: $(du -sh dist/ | cut -f1)"
+      # - name: Optimize Build Size
+      #   working-directory: ${{ env.FE_DIR }}
+      #   run: |
+      #     # Remove unnecessary files to reduce deployment size
+      #     find dist -name "*.map" -delete
+      #     find dist -name "*.md" -delete
+      #     find dist -name "*.txt" -delete
+      #     find dist -name "*.LICENSE" -delete
+      #     echo "Build size: $(du -sh dist/ | cut -f1)"
 
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
