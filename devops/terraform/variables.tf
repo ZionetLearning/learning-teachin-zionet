@@ -172,3 +172,33 @@ variable "database_name" {
   description = "Name of the PostgreSQL database to create"
   default     = "appdb-dev"
 }
+
+#------------- Frontend Variables -------------
+variable "static_web_app_name" {
+  description = "Name of the Azure Static Web App"
+  type        = string
+}
+
+variable "frontend_sku_tier" {
+  description = "SKU tier for the Static Web App (Free or Standard)"
+  type        = string
+  default     = "Free"
+}
+
+variable "frontend_sku_size" {
+  description = "SKU size for the Static Web App (Free or Standard)"
+  type        = string
+  default     = "Free"
+}
+
+variable "frontend_appinsights_retention_days" {
+  description = "Number of days to retain Application Insights data"
+  type        = number
+  default     = 30
+}
+
+variable "frontend_appinsights_sampling_percentage" {
+  description = "Sampling percentage for Application Insights"
+  type        = number
+  default     = 100
+}

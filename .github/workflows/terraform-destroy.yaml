@@ -1,4 +1,4 @@
-name: AKS - Terraform Destroy
+name: Terraform Destroy
 
 on:
   workflow_dispatch:
