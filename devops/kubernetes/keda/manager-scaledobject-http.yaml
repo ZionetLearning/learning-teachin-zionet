@@ -7,7 +7,7 @@ spec:
   scaleTargetRef:
     name: manager
   minReplicaCount: 0
-  maxReplicaCount: 1
+  maxReplicaCount: 3
   triggers:
     - type: http
       metadata:

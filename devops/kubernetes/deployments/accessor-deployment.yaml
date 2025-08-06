@@ -6,7 +6,7 @@ metadata: # This metadata section contains information about the deployment
   labels:
     app: accessor
 spec:
-  replicas: 1 # Number of pod replicas
+  replicas: 0 # Number of pod replicas
   selector: # This selector is used to find which pods to manage
     matchLabels: # This selector matches the labels of the pods managed by this deployment
       app: accessor

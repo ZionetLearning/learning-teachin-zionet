@@ -15,6 +15,6 @@ spec:
             pathType: ImplementationSpecific
             backend:
               service:
-                name: manager
+                name: keda-add-ons-http-interceptor-proxy
                 port:
                   number: 80 # Change this if your service listens on a different port

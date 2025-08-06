@@ -3,7 +3,7 @@ set -ex
 
 
 # Define variables
-KEDA_NAMESPACE="keda"
+KEDA_NAMESPACE="dev"
 KEDA_CORE_VERSION="2.17.2"
 KEDA_HTTP_VERSION="0.10.0"
 
