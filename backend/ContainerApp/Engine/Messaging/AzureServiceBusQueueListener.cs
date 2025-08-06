@@ -29,7 +29,7 @@ public class AzureServiceBusQueueListener<T> : IQueueListener<T>, IAsyncDisposab
         });
     }
 
-    public async Task StartAsync(Func<T, CancellationToken, Task> handler, CancellationToken cancellationToken)
+    public async Task StartAsync(Func<T, Func<Task>, CancellationToken, Task> handler, CancellationToken cancellationToken)
     {
         var retryPolicy = _retryPolicyProvider.Create(_settings, _logger);
 
@@ -41,6 +41,13 @@ public class AzureServiceBusQueueListener<T> : IQueueListener<T>, IAsyncDisposab
 
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             linkedCts.CancelAfter(lockTimeout);
+
+            var renewLock = async () =>
+            {
+                await args.RenewMessageLockAsync(args.Message, linkedCts.Token);
+                _logger.LogDebug("Lock renewed for message {MessageId}", args.Message.MessageId);
+            };
+
             try
             {
                 var json = args.Message.Body.ToString();
@@ -60,7 +67,7 @@ public class AzureServiceBusQueueListener<T> : IQueueListener<T>, IAsyncDisposab
 
                 await retryPolicy.ExecuteAsync(async () =>
                 {
-                    await handler(msg, linkedCts.Token);
+                    await handler(msg, renewLock, linkedCts.Token);
 
                     if (_settings.ProcessingDelayMs > 0)
                     {

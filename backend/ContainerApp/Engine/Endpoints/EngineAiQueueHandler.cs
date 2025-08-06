@@ -20,7 +20,7 @@ public class EngineAiQueueHandler : IQueueHandler<AiRequestModel>
         _logger = logger;
     }
 
-    public async Task HandleAsync(AiRequestModel message, CancellationToken cancellationToken)
+    public async Task HandleAsync(AiRequestModel message, Func<Task> renewLock, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Received AI question {Id} from manager", message.Id);
 

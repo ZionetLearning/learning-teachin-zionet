@@ -50,3 +50,11 @@ output "signalr_connection_string" {
   value     = module.signalr.primary_connection_string
   sensitive = true
 }
+
+output "redis_hostname" {
+  value = module.redis.hostname
+}
+output "redis_primary_access_key" {
+  value     = module.redis.primary_access_key
+  sensitive = true
+}

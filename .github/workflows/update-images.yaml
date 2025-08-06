@@ -1,0 +1,33 @@
+name: AKS - Updated Images
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Select environment'
+        required: true
+        default: 'Development'
+        type: choice
+        options:
+          - Development
+          - Production
+
+jobs:
+  build-and-push-images:
+    uses: ./.github/workflows/build-and-push-images.yml
+    permissions:
+      id-token: write
+      contents: read
+    with:
+      environment: ${{ github.event.inputs.environment }}
+    secrets: inherit
+
+  restart-pods:
+    needs: [build-and-push-images]
+    uses: ./.github/workflows/restart-pods.yml
+    permissions:
+      id-token: write
+      contents: read
+    with:
+      environment: ${{ github.event.inputs.environment }}
+    secrets: inherit

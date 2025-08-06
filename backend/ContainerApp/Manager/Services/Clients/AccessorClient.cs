@@ -1,6 +1,7 @@
 ﻿using Dapr.Client;
 using Manager.Constants;
 using Manager.Models;
+using System.Net;
 
 namespace Manager.Services.Clients;
 
@@ -14,7 +15,7 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetTaskAsync), nameof(AccessorClient));
         try
         {
-            var task = await _daprClient.InvokeMethodAsync<TaskModel>(
+            var task = await _daprClient.InvokeMethodAsync<TaskModel?>(
                 HttpMethod.Get,
                 "accessor",
                 $"task/{id}"
@@ -22,10 +23,10 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
             _logger.LogDebug("Received task {TaskId} from Accessor service", id);
             return task;
         }
-        catch (InvocationException ex) when (ex.Response.StatusCode == System.Net.HttpStatusCode.NotFound)
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
         {
-            _logger.LogWarning("Accessor service returned 404 for task {TaskId}", id);
-            return null;
+            _logger.LogWarning("Task with ID {TaskId} not found (404 from accessor)", id);
+            return null; // treat 404 as "not found", not exception
         }
         catch (Exception ex)
         {
@@ -75,6 +76,11 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
             _logger.LogDebug("Task {TaskId} deletion request sent to Accessor service", id);
 
             return true;
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("Task with ID {TaskId} not found for deletion (404 from accessor)", id);
+            return false; // treat 404 as "not found", not exception
         }
         catch (Exception e)
         {

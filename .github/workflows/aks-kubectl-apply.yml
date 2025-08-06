@@ -50,14 +50,9 @@ jobs:
 
       - name: Install/Upgrade Dapr control plane
         run: |
-          helm repo add dapr https://dapr.github.io/helm-charts || true
-          helm repo update
-          kubectl get ns dapr-system >/dev/null 2>&1 || kubectl create ns dapr-system
-          helm upgrade --install dapr dapr/dapr \
-            --version "1.13.0" \
-            --namespace "dapr-system" \
-            --create-namespace \
-            --wait
+          cd devops/helm-tools
+          chmod +x dapr-control-plane.sh
+          ./dapr-control-plane.sh
 
       - name: Create namespace
         run: kubectl apply -f $NAMESPACE_FILE
@@ -75,53 +70,62 @@ jobs:
             DOCKER_REGISTRY=$DOCKER_REGISTRY envsubst < "$file" | kubectl apply -f -
           done
 
+
+      - name: setup-ingress-controller
+        run: |
+          cd devops/helm-tools
+          chmod +x setup-ingress-controller.sh
+          ./setup-ingress-controller.sh
+
       - name: Add grafana
         run: |
-          cd devops/infra
+          cd devops/helm-tools
           chmod +x grafana.sh
           ./grafana.sh
 
+      - name: Apply ingresses
+        run: kubectl apply -f "$K8S_DIR/ingress" --recursive
+
       - name: Add prometheus
         run: |
-          cd devops/infra
+          cd devops/helm-tools/prometheus
           chmod +x prometheus.sh
           ./prometheus.sh
 
       - name: Add Loki (logs stack)
         run: |
-          cd devops/infra/loki
+          cd devops/helm-tools/loki
           chmod +x loki.sh
           ./loki.sh
+          
 
-      - name: Wait for external IP for manager service
-        id: wait_for_ip
+      - name: Wait for external IP for ingress controller
+        id: wait_for_ingress_ip
         run: |
-          echo "Waiting for external IP for load balancer..."
+          echo "Waiting for external IP for ingress-nginx-controller..."
           for i in {1..30}; do
-            EXTERNAL_IP=$(kubectl -n dev get svc manager -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-            if [[ -n "$EXTERNAL_IP" ]]; then
-              echo "External IP is ready: $EXTERNAL_IP"
-              echo "app_url=http://$EXTERNAL_IP" >> $GITHUB_OUTPUT
+            INGRESS_IP=$(kubectl -n devops-ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+            if [[ -n "$INGRESS_IP" ]]; then
+              echo "Ingress IP is ready: $INGRESS_IP"
+              echo "ingress_url=http://$INGRESS_IP" >> $GITHUB_OUTPUT
               exit 0
             fi
-            echo "Attempt $i: External IP not yet assigned. Waiting 10s..."
+            echo "Attempt $i: Ingress IP not yet assigned. Waiting 10s..."
             sleep 10
           done
-          echo "Failed to get external IP after waiting. Check 'kubectl get svc manager'"
+          echo "Failed to get ingress IP after waiting. Check 'kubectl get svc ingress-nginx-controller -n devops-ingress-nginx'"
           exit 1
+      
 
-      - name: Add external IP to PostgreSQL firewall
+      - name: Add ingress IP to PostgreSQL firewall
         run: |
-          EXTERNAL_IP=$(az network public-ip list \
-            --resource-group $MC_AKS_RG \
-            --query "[?!(contains(name, 'kubernetes'))].{name:name, ip:ipAddress}" \
-            -o json | jq -r '.[0].ip')
+          INGRESS_IP=$(kubectl -n devops-ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
           az postgres flexible-server firewall-rule create \
             --resource-group $AKS_RG \
             --name $PG_DB \
-            --rule-name allow-accessor-service \
-            --start-ip-address $EXTERNAL_IP \
-            --end-ip-address $EXTERNAL_IP
+            --rule-name allow-ingress-controller \
+            --start-ip-address $INGRESS_IP \
+            --end-ip-address $INGRESS_IP
             
       
 
@@ -135,4 +139,3 @@ jobs:
         run: |
           echo "app_url=${{ steps.wait_for_ip.outputs.app_url }}" >> $GITHUB_OUTPUT
           echo "App URL: ${{ steps.wait_for_ip.outputs.app_url }}"
-
