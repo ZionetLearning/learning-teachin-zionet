@@ -4,6 +4,7 @@ using Engine.Endpoints;
 using Engine.Messaging;
 using Engine.Models;
 using Engine.Services;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 
@@ -23,7 +24,15 @@ builder.Services.AddControllers().AddDapr();
 builder.Services.AddScoped<IEngineService, EngineService>();
 builder.Services.AddScoped<IChatAiService, ChatAiService>();
 builder.Services.AddScoped<IAiReplyPublisher, AiReplyPublisher>();
+builder.Services.AddSingleton<IRetryPolicyProvider, RetryPolicyProvider>();
+
 builder.Services.AddMemoryCache();
+builder.Services
+       .AddOptions<MemoryCacheEntryOptions>()
+       .Configure<IConfiguration>((opt, cfg) =>
+       {
+           var section = cfg.GetSection("CacheOptions");
+       });
 
 builder.Services
     .AddOptions<AzureOpenAiSettings>()

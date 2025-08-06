@@ -14,6 +14,7 @@ import FaceIcon from '@mui/icons-material/Face';
 import KeyboardIcon from '@mui/icons-material/Keyboard';
 import HomeIcon from '@mui/icons-material/Home';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
+import PublicIcon from '@mui/icons-material/Public';
 import WeatherWidgetIcon from '@mui/icons-material/Cloud';
 
 import { useAuth } from '@/providers/auth';
@@ -155,6 +156,14 @@ export const SidebarMenu = () => {
 						Speaking Practice
 					</MenuItem>
 				</SubMenu>
+
+				<MenuItem
+					icon={<PublicIcon />}
+					onClick={() => handleNavigation('/earthquake-map')}
+					active={isActive('/earthquake-map')}
+				>
+					Earthquake Map
+				</MenuItem>
 				<MenuItem
 					onClick={() => handleNavigation('/weather')}
 					icon={<WeatherWidgetIcon />}

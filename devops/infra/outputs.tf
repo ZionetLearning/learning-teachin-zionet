@@ -50,13 +50,3 @@ output "signalr_connection_string" {
   value     = module.signalr.primary_connection_string
   sensitive = true
 }
-
-output "grafana_admin_password" {
-  description = "Grafana admin password"
-  value       = module.grafana.grafana_admin_password
-}
-
-output "grafana_namespace" {
-  description = "Grafana namespace"
-  value       = module.grafana.namespace
-}

@@ -15,6 +15,7 @@ import {
 	SpeakingPracticePage,
 	TypingPracticePage,
 	WordOrderGamePage,
+	EarthquakeMapPage,
 	WeatherWidgetPage,
 } from './pages';
 
@@ -44,6 +45,7 @@ function App() {
 					<Route path="/typing" element={<TypingPracticePage />} />
 					<Route path="/word-order-game" element={<WordOrderGamePage />} />
 					<Route path="/speaking" element={<SpeakingPracticePage />} />
+					<Route path="/earthquake-map" element={<EarthquakeMapPage />} />
 					<Route path="/weather" element={<WeatherWidgetPage />} />
 				</Route>
 			</Routes>
