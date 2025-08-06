@@ -2,6 +2,7 @@
 using Engine.Messaging;
 using Engine.Models;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
@@ -23,15 +24,15 @@ public sealed class ChatAiService : IChatAiService
         Kernel kernel,
         ILogger<ChatAiService> log,
         IMemoryCache cache,
-        MemoryCacheEntryOptions cacheOptions,
+        IOptions<MemoryCacheEntryOptions> cacheOptions,
         IRetryPolicyProvider retryPolicyProvider)
     {
         _kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
         _log = log ?? throw new ArgumentNullException(nameof(log));
         _cache = cache ?? throw new ArgumentNullException(nameof(cache));
-        _cacheOptions = cacheOptions;
+        _cacheOptions = cacheOptions?.Value ?? throw new ArgumentNullException(nameof(cacheOptions));
+        _retryPolicyProvider = retryPolicyProvider ?? throw new ArgumentNullException(nameof(retryPolicyProvider));
         _chat = _kernel.GetRequiredService<IChatCompletionService>();
-        _retryPolicyProvider = retryPolicyProvider;
         _kernelPolicy = _retryPolicyProvider.CreateKernelPolicy(_log);
     }
 

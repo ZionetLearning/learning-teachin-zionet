@@ -48,6 +48,12 @@ jobs:
         run: |
           az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
 
+      - name: Install/Upgrade Dapr control plane
+        run: |
+          cd devops/helm-tools
+          chmod +x dapr-control-plane.sh
+          ./dapr-control-plane.sh
+
       - name: Create namespace
         run: kubectl apply -f $NAMESPACE_FILE
 
@@ -64,10 +70,23 @@ jobs:
             DOCKER_REGISTRY=$DOCKER_REGISTRY envsubst < "$file" | kubectl apply -f -
           done
 
+      - name: Add grafana
+        run: |
+          cd devops/helm-tools
+          chmod +x grafana.sh
+          ./grafana.sh
+
+      - name: Add prometheus
+        run: |
+          cd devops/helm-tools/prometheus
+          chmod +x prometheus.sh
+          ./prometheus.sh
+
       - name: Add Loki (logs stack)
         run: |
-          chmod +x devops/infra/loki/loki.sh
-          ./devops/infra/loki/loki.sh
+          cd devops/helm-tools/loki
+          chmod +x loki.sh
+          ./loki.sh
 
       - name: Wait for external IP for manager service
         id: wait_for_ip

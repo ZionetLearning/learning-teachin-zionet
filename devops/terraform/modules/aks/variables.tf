@@ -11,6 +11,14 @@ variable "node_count" {
   type    = number
   default = 2
 }
+variable "max_node_count" {
+  type    = number
+  default = 2
+}
+variable "min_node_count" {
+  type    = number
+  default = 1
+}
 variable "vm_size" {
   type    = string
   default = "Standard_B2s"

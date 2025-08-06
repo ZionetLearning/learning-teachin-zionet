@@ -146,9 +146,10 @@ services:
       context: ./Manager
     container_name: manager
     ports:
-      - "5001"
+      - "5001:5001"
     environment:
       - ASPNETCORE_URLS=http://+:5001
+      - ASPNETCORE_ENVIRONMENT=Development
     depends_on:
       - servicebus-emulator
       - redis
@@ -255,9 +256,10 @@ services:
       context: ./Accessor
     container_name: accessor
     ports:
-      - "5003"
+      - "5003:5003"
     environment:
       - ASPNETCORE_URLS=http://+:5003
+      - ASPNETCORE_ENVIRONMENT=Development
       - DB_HOST=postgres-db
       - DB_PORT=5432
       - DB_NAME=postgres_db
