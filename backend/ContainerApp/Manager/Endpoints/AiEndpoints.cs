@@ -1,10 +1,7 @@
-﻿using Manager.Constants;
-using Manager.Models;
+﻿using Manager.Models;
 using Manager.Models.ModelValidation;
 using Manager.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using System.Threading.Tasks;
 
 namespace Manager.Endpoints;
 
@@ -23,17 +20,14 @@ public static class AiEndpoints
 
         #endregion
 
-
         #region HTTP POST
 
         app.MapPost("/ai/question", QuestionAsync).WithName("Question");
 
         #endregion
 
-
         return app;
     }
-
 
     private static async Task<IResult> AnswerAsync(
         [FromRoute] string id,
@@ -59,14 +53,13 @@ public static class AiEndpoints
         }
     }
 
-
     private static async Task<IResult> QuestionAsync(
         [FromBody] AiRequestModel dto,
         [FromServices] IAiGatewayService aiService,
         [FromServices] ILogger<QuestionEndpoint> log,
         CancellationToken ct)
     {
-        log.LogInformation("Inside {method}", nameof(QuestionAsync));
+        log.LogInformation("Inside {Method}", nameof(QuestionAsync));
         if (!ValidationExtensions.TryValidate(dto, out var validationErrors))
         {
             log.LogWarning("Validation failed for {Model}: {Errors}", nameof(AiRequestModel), validationErrors);
@@ -87,7 +80,4 @@ public static class AiEndpoints
             return Results.Problem("AI question failed");
         }
     }
-
-
-       
 }

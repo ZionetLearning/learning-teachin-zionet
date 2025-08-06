@@ -3,9 +3,10 @@ using Manager.Constants;
 using Manager.Endpoints;
 using Manager.Hubs;
 using Manager.Messaging;
-using Manager.Models;   
+using Manager.Models;
 using Manager.Services;
 using Manager.Services.Clients;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -58,6 +59,14 @@ builder.Services.AddQueue<AiResponseModel, ManagerAiResponseHandler>(
         settings.RetryDelaySeconds = 2;
     });
 
+// This is required for the Scalar UI to have an option to setup an authentication token
+builder.Services.AddOpenApi(
+    "v1",
+    options =>
+    {
+        options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+    }
+);
 
 var app = builder.Build();
 app.UseCors("AllowAll");
@@ -66,6 +75,26 @@ app.MapControllers();
 app.MapSubscribeHandler();
 app.MapManagerEndpoints();
 app.MapAiEndpoints();
+
+if (env.IsDevelopment())
+{
+    app.MapOpenApi();
+    app.MapScalarApiReference(options =>
+    {
+        options.Title = "Manager API";
+        options.Theme = ScalarTheme.BluePlanet;
+        options.DefaultHttpClient = new(ScalarTarget.CSharp, ScalarClient.HttpClient);
+        options.ShowSidebar = true;
+        options.PersistentAuthentication = true;
+        // here we can setup a default token
+        //options.AddPreferredSecuritySchemes("Bearer")
+        // .AddHttpAuthentication("Bearer", auth =>
+        // {
+        //     auth.Token = "Some Auth Token...";
+        // });
+
+    });
+}
 
 app.MapHub<NotificationHub>("/notificationHub");
 

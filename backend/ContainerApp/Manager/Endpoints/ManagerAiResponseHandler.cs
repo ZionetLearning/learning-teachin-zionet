@@ -3,7 +3,7 @@ using Manager.Models.ModelValidation;
 using Manager.Services;
 using Manager.Messaging;
 
-namespace Manager.Endpoints; 
+namespace Manager.Endpoints;
 public class ManagerAiResponseHandler : IQueueHandler<AiResponseModel>
 {
     private readonly IAiGatewayService _aiService;
@@ -17,7 +17,7 @@ public class ManagerAiResponseHandler : IQueueHandler<AiResponseModel>
         _logger = logger;
     }
 
-    public async Task HandleAsync(AiResponseModel message, CancellationToken ct)
+    public async Task HandleAsync(AiResponseModel message, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Received AI answer {Id} from engine", message.Id);
 
@@ -30,7 +30,7 @@ public class ManagerAiResponseHandler : IQueueHandler<AiResponseModel>
 
         try
         {
-            await _aiService.SaveAnswerAsync(message, ct);
+            await _aiService.SaveAnswerAsync(message, cancellationToken);
             _logger.LogInformation("Answer {Id} saved", message.Id);
         }
         catch (Exception ex)

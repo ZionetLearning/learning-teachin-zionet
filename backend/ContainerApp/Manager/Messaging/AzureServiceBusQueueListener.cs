@@ -29,7 +29,7 @@ public class AzureServiceBusQueueListener<T> : IQueueListener<T>, IAsyncDisposab
         });
     }
 
-    public async Task StartAsync(Func<T, CancellationToken, Task> handler, CancellationToken ct)
+    public async Task StartAsync(Func<T, CancellationToken, Task> handler, CancellationToken cancellationToken)
     {
         var retryPolicy = _retryPolicyProvider.Create(_settings, _logger);
 
@@ -39,25 +39,22 @@ public class AzureServiceBusQueueListener<T> : IQueueListener<T>, IAsyncDisposab
             var lockedUntil = args.Message.LockedUntil;
             var lockTimeout = lockedUntil - now;
 
-            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             linkedCts.CancelAfter(lockTimeout);
             try
             {
-                //var msg = JsonSerializer.Deserialize<T>(args.Message.Body);
-
-
                 var json = args.Message.Body.ToString();
                 _logger.LogDebug("Raw message body: {Json}", json);
-
-                var msg = JsonSerializer.Deserialize<T>(json, new JsonSerializerOptions
+                var jsonOptions = new JsonSerializerOptions
                 {
-                    PropertyNameCaseInsensitive = true
-                });
+                    PropertyNameCaseInsensitive = true,
+                };
+                var msg = JsonSerializer.Deserialize<T>(json, jsonOptions);
 
                 if (msg == null)
                 {
                     _logger.LogWarning("Failed to deserialize message.");
-                    await args.DeadLetterMessageAsync(args.Message, cancellationToken: ct);
+                    await args.DeadLetterMessageAsync(args.Message, cancellationToken: cancellationToken);
                     return;
                 }
 
@@ -66,30 +63,32 @@ public class AzureServiceBusQueueListener<T> : IQueueListener<T>, IAsyncDisposab
                     await handler(msg, linkedCts.Token);
 
                     if (_settings.ProcessingDelayMs > 0)
+                    {
                         await Task.Delay(_settings.ProcessingDelayMs, linkedCts.Token);
+                    }
                 });
 
-                await args.CompleteMessageAsync(args.Message, ct);
+                await args.CompleteMessageAsync(args.Message, cancellationToken);
             }
             catch (RetryableException rex)
             {
                 _logger.LogWarning(rex, "Retryable error. Abandoning message.");
-                await args.AbandonMessageAsync(args.Message, cancellationToken: ct);
+                await args.AbandonMessageAsync(args.Message, cancellationToken: cancellationToken);
             }
             catch (NonRetryableException nex)
             {
                 _logger.LogWarning(nex, "Non-retryable error. Dead-lettering message.");
-                await args.DeadLetterMessageAsync(args.Message, cancellationToken: ct);
+                await args.DeadLetterMessageAsync(args.Message, cancellationToken: cancellationToken);
             }
             catch (OperationCanceledException) when (linkedCts.IsCancellationRequested)
             {
                 _logger.LogWarning("Handler exceeded lock duration. Abandoning message.");
-                await args.AbandonMessageAsync(args.Message, cancellationToken: ct);
+                await args.AbandonMessageAsync(args.Message, cancellationToken: cancellationToken);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unhandled error. Treating as retryable.");
-                await args.AbandonMessageAsync(args.Message, cancellationToken: ct);
+                await args.AbandonMessageAsync(args.Message, cancellationToken: cancellationToken);
             }
         };
 
@@ -99,9 +98,13 @@ public class AzureServiceBusQueueListener<T> : IQueueListener<T>, IAsyncDisposab
             return Task.CompletedTask;
         };
 
-        await _processor.StartProcessingAsync(ct);
+        await _processor.StartProcessingAsync(cancellationToken);
     }
 
-    public async ValueTask DisposeAsync() => await _processor.DisposeAsync();
+    public async ValueTask DisposeAsync()
+    {
+        await _processor.DisposeAsync();
+        GC.SuppressFinalize(this);
+    }
 }
 

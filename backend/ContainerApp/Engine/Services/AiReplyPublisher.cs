@@ -1,6 +1,6 @@
 ﻿using Dapr.Client;
-using Engine.Constants;
 using Engine.Models;
+using Engine.Constants;
 
 namespace Engine.Services;
 
@@ -24,17 +24,19 @@ public sealed class AiReplyPublisher : IAiReplyPublisher
                 _log.LogWarning("replyToQueue is required.");
                 return;
             }
+
             if (response == null)
             {
                 _log.LogWarning("Response cannot be null.");
                 return;
             }
+
             if (string.IsNullOrWhiteSpace(response.Id))
             {
                 _log.LogWarning("Response Id is required.");
                 return;
             }
-            
+
             _log.LogInformation("Publishing AI answer {Id} to topic {Topic}", response.Id, replyToQueue);
 
             await _dapr.InvokeBindingAsync(QueueNames.AiToManager, "create", response, cancellationToken: ct);

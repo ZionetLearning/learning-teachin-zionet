@@ -20,7 +20,7 @@ public class EngineAiQueueHandler : IQueueHandler<AiRequestModel>
         _logger = logger;
     }
 
-    public async Task HandleAsync(AiRequestModel message, CancellationToken ct)
+    public async Task HandleAsync(AiRequestModel message, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Received AI question {Id} from manager", message.Id);
 
@@ -32,10 +32,9 @@ public class EngineAiQueueHandler : IQueueHandler<AiRequestModel>
                 return;
             }
 
-            var response = await _aiService.ProcessAsync(message, ct);
+            var response = await _aiService.ProcessAsync(message, cancellationToken);
 
-            await _publisher.SendReplyAsync(response, message.ReplyToQueue, ct);
-
+            await _publisher.SendReplyAsync(response, message.ReplyToQueue, cancellationToken);
 
             _logger.LogInformation("AI question {Id} processed", message.Id);
         }
