@@ -107,7 +107,7 @@ public class TaskIntegrationTests(HttpTestFixture fixture, ITestOutputHelper out
     }
 
     [Theory(DisplayName = "GET /task/{id} - Invalid ID should return 404 Not Found")]
-    [InlineData(9999)]
+    [InlineData(-1)]
     public async Task Get_Task_By_Invalid_Id_Should_Return_NotFound(int invalidId)
     {
         OutputHelper.WriteLine($"Running: Get_Task_By_Invalid_Id_Should_Return_NotFound for ID {invalidId}");
@@ -145,7 +145,7 @@ public class TaskIntegrationTests(HttpTestFixture fixture, ITestOutputHelper out
     {
         OutputHelper.WriteLine("Running: Put_TaskName_With_Invalid_Id_Should_Return_NotFound");
 
-        var response = await UpdateTaskNameAsync(999999, "DoesNotMatter");
+        var response = await UpdateTaskNameAsync(-1, "DoesNotMatter");
         response.ShouldBeNotFound();
     }
 
@@ -170,7 +170,7 @@ public class TaskIntegrationTests(HttpTestFixture fixture, ITestOutputHelper out
     {
         OutputHelper.WriteLine("Running: Delete_Task_With_Invalid_Id_Should_Return_NotFound");
 
-        var response = await Client.DeleteAsync(ApiRoutes.TaskById(9999));
+        var response = await Client.DeleteAsync(ApiRoutes.TaskById(-1));
         response.ShouldBeNotFound();
     }
 }
