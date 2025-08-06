@@ -48,6 +48,11 @@ export const useStyles = createUseStyles({
     fontSize: "1rem",
     color: "#333",
     "&:hover": { transform: "scale(1.02)", transition: "0.2s" },
+    "&:-webkit-autofill, &:-webkit-autofill:hover, &:-webkit-autofill:focus": {
+      WebkitTextFillColor: "#000 !important",
+      WebkitBoxShadow: "0 0 0px 1000px #f7f9fa inset !important",
+      boxShadow: "0 0 0px 1000px #f7f9fa inset !important",
+    },
   },
   button: {
     padding: "12px 20px",
