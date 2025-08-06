@@ -8,9 +8,7 @@ ADMIN_PASS="admin123"
 GRAFANA_CHART_VERSION="9.3.0"
 MC_RG="MC_dev-zionet-learning-2025_aks-cluster-dev_westeurope"
 # The following will fetch the static public IP from Azure
-IP_NAME="grafana-public-ip"
-DNS_LABEL="grafana"
-CONTROLLER_IP=$(az network public-ip show --resource-group "$MC_RG" --name "$IP_NAME" --query ipAddress -o tsv)
+CONTROLLER_IP="teaching-zionet.westeurope.cloudapp.azure.com"
 # -----------------------------
 
 echo "0. Uninstalling existing Grafana Helm release (if present)..."
