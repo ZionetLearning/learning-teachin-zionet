@@ -42,15 +42,6 @@ builder.Services.AddScoped<IEngineClient, EngineClient>();
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
-// This is required for the Scalar UI to have an option to setup an authentication token
-builder.Services.AddOpenApi(
-    "v1",
-    options =>
-    {
-        options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
-    }
-);
-
 var app = builder.Build();
 app.UseCors("AllowAll");
 app.UseCloudEvents();
