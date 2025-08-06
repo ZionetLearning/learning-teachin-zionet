@@ -1,0 +1,144 @@
+name: AKS - Toggle Cluster
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Select action to perform'
+        required: true
+        type: choice
+        options:
+          - START
+          - STOP
+      confirm:
+        description: 'Type the action name to confirm (START or STOP)'
+        required: true
+        type: string
+
+jobs:
+  toggle-aks:
+    runs-on: ubuntu-latest
+    environment: Development
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Validate inputs
+        run: |
+          ACTION="${{ github.event.inputs.action }}"
+          CONFIRM="${{ github.event.inputs.confirm }}"
+          
+          echo "Selected action: $ACTION"
+          echo "Confirmation text: $CONFIRM"
+          
+          if [[ "$ACTION" != "$CONFIRM" ]]; then
+            echo "❌ Confirmation failed. You must type '$ACTION' to confirm the $ACTION action."
+            exit 1
+          fi
+          echo "✅ Action confirmed: $ACTION"
+
+      - name: Azure Login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set up variables
+        run: |
+          echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
+          echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
+
+      - name: Check current cluster status
+        id: status_check
+        run: |
+          STATUS=$(az aks show --resource-group $AKS_RG --name $AKS_NAME --query "powerState.code" -o tsv)
+          echo "Current AKS cluster status: $STATUS"
+          echo "current_status=$STATUS" >> $GITHUB_OUTPUT
+          
+          ACTION="${{ github.event.inputs.action }}"
+          
+          if [[ "$ACTION" == "START" && "$STATUS" == "Running" ]]; then
+            echo "⚠️ Cluster is already running"
+          elif [[ "$ACTION" == "STOP" && "$STATUS" == "Stopped" ]]; then
+            echo "⚠️ Cluster is already stopped"
+          fi
+
+      - name: Start AKS cluster
+        if: github.event.inputs.action == 'START'
+        run: |
+          echo "🚀 Starting AKS cluster: $AKS_NAME in resource group: $AKS_RG"
+          START_TIME=$(date +%s)
+          az aks start --resource-group $AKS_RG --name $AKS_NAME
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          echo "✅ AKS cluster start command completed in ${DURATION} seconds"
+
+      - name: Stop AKS cluster
+        if: github.event.inputs.action == 'STOP'
+        run: |
+          echo "🛑 Stopping AKS cluster: $AKS_NAME in resource group: $AKS_RG"
+          START_TIME=$(date +%s)
+          az aks stop --resource-group $AKS_RG --name $AKS_NAME
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          echo "✅ AKS cluster stopped successfully in ${DURATION} seconds"
+
+      - name: Wait for cluster to be ready (START only)
+        if: github.event.inputs.action == 'START'
+        run: |
+          echo "⏳ Waiting for cluster to be fully ready..."
+          WAIT_START=$(date +%s)
+          for i in {1..30}; do
+            STATUS=$(az aks show --resource-group $AKS_RG --name $AKS_NAME --query "powerState.code" -o tsv)
+            if [[ "$STATUS" == "Running" ]]; then
+              WAIT_END=$(date +%s)
+              WAIT_DURATION=$((WAIT_END - WAIT_START))
+              echo "✅ Cluster is running and ready after ${WAIT_DURATION} seconds"
+              break
+            fi
+            echo "Attempt $i: Cluster status is $STATUS, waiting 30s..."
+            sleep 30
+          done
+
+      - name: Verify final status
+        run: |
+          FINAL_STATUS=$(az aks show --resource-group $AKS_RG --name $AKS_NAME --query "powerState.code" -o tsv)
+          ACTION="${{ github.event.inputs.action }}"
+          INITIAL_STATUS="${{ steps.status_check.outputs.current_status }}"
+          
+          echo "Initial status: $INITIAL_STATUS"
+          echo "Final status: $FINAL_STATUS"
+          echo "Requested action: $ACTION"
+          
+          if [[ "$ACTION" == "START" && "$FINAL_STATUS" == "Running" ]]; then
+            echo "✅ Cluster successfully started and running"
+          elif [[ "$ACTION" == "STOP" && "$FINAL_STATUS" == "Stopped" ]]; then
+            echo "✅ Cluster successfully stopped"
+          elif [[ "$INITIAL_STATUS" == "$FINAL_STATUS" ]]; then
+            echo "⚠️ Cluster was already in the desired state"
+          else
+            echo "❌ Unexpected final status: $FINAL_STATUS"
+            exit 1
+          fi
+
+      - name: Show cluster info (START only)
+        if: github.event.inputs.action == 'START'
+        run: |
+          echo "📊 Cluster information:"
+          az aks show --resource-group $AKS_RG --name $AKS_NAME --query "{name:name, location:location, kubernetesVersion:kubernetesVersion, nodeResourceGroup:nodeResourceGroup}" -o table
+
+      - name: Show operation summary
+        run: |
+          ACTION="${{ github.event.inputs.action }}"
+          echo "🎯 Operation Summary:"
+          echo "Action performed: $ACTION"
+          echo "Cluster: $AKS_NAME"
+          echo "Resource Group: $AKS_RG"
+          
+          if [[ "$ACTION" == "START" ]]; then
+            echo "💡 Next steps: You can now deploy applications or run other workflows"
+          else
+            echo "💰 Cost optimization: Cluster is now stopped and not incurring compute charges"
+          fi
