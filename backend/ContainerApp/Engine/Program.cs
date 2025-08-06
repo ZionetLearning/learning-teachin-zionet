@@ -7,6 +7,7 @@ using Engine.Services;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
+using Engine.Plugins;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +26,8 @@ builder.Services.AddScoped<IEngineService, EngineService>();
 builder.Services.AddScoped<IChatAiService, ChatAiService>();
 builder.Services.AddScoped<IAiReplyPublisher, AiReplyPublisher>();
 builder.Services.AddSingleton<IRetryPolicyProvider, RetryPolicyProvider>();
+builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
+builder.Services.AddSingleton<ISemanticKernelPlugin, TimePlugin>();
 
 builder.Services.AddMemoryCache();
 builder.Services
@@ -48,12 +51,19 @@ builder.Services.AddSingleton(sp =>
 {
     var cfg = sp.GetRequiredService<IOptions<AzureOpenAiSettings>>().Value;
 
-    return Kernel.CreateBuilder()
+    var kernel = Kernel.CreateBuilder()
                  .AddAzureOpenAIChatCompletion(
                      deploymentName: cfg.DeploymentName,
                      endpoint: cfg.Endpoint,
                      apiKey: cfg.ApiKey)
                  .Build();
+    foreach (var plugin in sp.GetServices<ISemanticKernelPlugin>())
+    {
+        kernel.Plugins.AddFromObject(plugin, plugin.GetType().Name.Replace("Plugin", string.Empty));
+    }
+
+    return kernel;
+
 });
 
 builder.Services.AddSingleton(_ =>
