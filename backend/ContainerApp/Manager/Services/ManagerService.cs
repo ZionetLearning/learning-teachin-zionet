@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Manager.Models;
 using Manager.Services.Clients;
+using Dapr.Client;
 
 namespace Manager.Services;
 
@@ -11,18 +12,22 @@ public class ManagerService : IManagerService
     private readonly IAccessorClient _accessorClient;
     private readonly IEngineClient _engineClient;
     private readonly IMapper _mapper;
+    private readonly DaprClient _dapr;
+    private const string IdempotencyStore = "statestore";
 
     public ManagerService(IConfiguration configuration,
         ILogger<ManagerService> logger,
         IAccessorClient accessorClient,
         IEngineClient engineClient,
-        IMapper mapper)
+        IMapper mapper,
+        DaprClient dapr)
     {
         _configuration = configuration;
         _logger = logger;
         _accessorClient = accessorClient;
         _engineClient = engineClient;
         _mapper = mapper;
+        _dapr = dapr;
     }
 
     public async Task<TaskModel?> GetTaskAsync(int id)
@@ -40,6 +45,7 @@ public class ManagerService : IManagerService
             var task = await _accessorClient.GetTaskAsync(id);
             if (task != null)
             {
+
                 _logger.LogDebug("Successfully retrieved task {TaskId}", id);
             }
             else
@@ -98,6 +104,44 @@ public class ManagerService : IManagerService
             _logger.LogError(ex, "Error occurred while processing task {TaskId}", task.Id);
             return (false, "Failed to send to Engine");
         }
+    }
+
+    public async Task<(bool success, string message, bool isDuplicate)> ProcessTaskWithIdempotencyAsync(TaskModel task, string requestId)
+    {
+        var key = $"idempotency:{requestId}";
+
+        // Check if this requestId has already been processed
+        var existing = await _dapr.GetStateAsync<IdempotencyRecord>(IdempotencyStore, key);
+        if (existing != null)
+        {
+            _logger.LogInformation("Idempotency hit for {RequestId}", requestId);
+            return (true, existing.Status, true);
+        }
+
+        // Otherwise, process the task
+        var (success, message) = await ProcessTaskAsync(task);
+
+        if (success)
+        {
+            var record = new IdempotencyRecord
+            {
+                TaskId = task.Id,
+                Status = message,
+                Timestamp = DateTime.UtcNow
+            };
+
+            await _dapr.SaveStateAsync(
+                IdempotencyStore,
+                key,
+                record,
+                null, // StateOptions (optional), can be null
+                new Dictionary<string, string>
+                {
+                    { "ttlInSeconds", "300" } // auto-expire after 5 minutes
+                });
+        }
+
+        return (success, message, false);
     }
 
     public async Task<bool> UpdateTaskName(int id, string newTaskName)

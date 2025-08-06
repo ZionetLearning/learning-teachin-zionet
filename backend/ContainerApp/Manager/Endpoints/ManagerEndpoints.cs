@@ -64,19 +64,37 @@ public static class ManagerEndpoints
 
     private static async Task<IResult> CreateTaskAsync(
         [FromBody] TaskModel task,
+        HttpRequest request,
         [FromServices] IManagerService managerService,
         [FromServices] ILogger<ManagerService> logger)
     {
         logger.LogInformation("Inside {Method}", nameof(CreateTaskAsync));
+
+        // 1. Validate task model
         if (!ValidationExtensions.TryValidate(task, out var validationErrors))
         {
             logger.LogWarning("Validation failed for {Model}: {Errors}", nameof(TaskModel), validationErrors);
             return Results.BadRequest(new { errors = validationErrors });
         }
 
+        // 2. Check idempotency key in headers
+        if (!request.Headers.TryGetValue("X-Request-ID", out var requestId) || string.IsNullOrWhiteSpace(requestId))
+        {
+            logger.LogWarning("Missing or invalid X-Request-ID header");
+            return Results.BadRequest(new { error = "Missing X-Request-ID header" });
+        }
+
+        // 3. Call manager service with idempotency
         try
         {
-            var (success, message) = await managerService.ProcessTaskAsync(task);
+            var (success, message, isDuplicate) = await managerService.ProcessTaskWithIdempotencyAsync(task, requestId!);
+
+            if (isDuplicate)
+            {
+                logger.LogInformation("Duplicate request detected for {RequestId}", requestId.ToString());
+                return Results.Accepted($"/task/{task.Id}", new { status = "AlreadyProcessed", task.Id });
+            }
+
             if (success)
             {
                 logger.LogInformation("Task {Id} processed successfully", task.Id);

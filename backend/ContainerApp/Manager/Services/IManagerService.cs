@@ -8,4 +8,6 @@ public interface IManagerService
     Task<bool> DeleteTask(int id);
     Task<TaskModel?> GetTaskAsync(int id);
     Task<(bool success, string message)> ProcessTaskAsync(TaskModel task);
+    Task<(bool success, string message, bool isDuplicate)> ProcessTaskWithIdempotencyAsync(TaskModel task, string requestId);
+
 }
