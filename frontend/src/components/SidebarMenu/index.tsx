@@ -14,7 +14,7 @@ import FaceIcon from "@mui/icons-material/Face";
 import KeyboardIcon from "@mui/icons-material/Keyboard";
 import HomeIcon from "@mui/icons-material/Home";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
-import PublicIcon from '@mui/icons-material/Public';
+import PublicIcon from "@mui/icons-material/Public";
 
 import { useAuth } from "@/providers/auth";
 
