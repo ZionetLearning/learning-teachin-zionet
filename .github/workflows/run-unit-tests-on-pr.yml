@@ -22,7 +22,7 @@ jobs:
 
     - name: Restore dependencies
       run: dotnet restore
-      working-directory: backend/ContainerApp
+      working-directory: backend/ContainerApp/backend.sln
 
     - name: Build
       run: dotnet build --no-restore
