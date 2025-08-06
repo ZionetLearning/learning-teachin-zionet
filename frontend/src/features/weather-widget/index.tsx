@@ -79,6 +79,7 @@ export const WeatherWidget = () => {
     <div className={classes.container}>
       <div className={classes.inputGroup}>
         <select
+          name="select-city"
           className={classes.select}
           value={selected || ""}
           onChange={(e) => handleSelectLocation(e.target.value)}
@@ -94,6 +95,7 @@ export const WeatherWidget = () => {
 
         <div className={classes.searchGroup}>
           <input
+            name="search-city"
             className={classes.input}
             placeholder="Search city..."
             value={search}
