@@ -1,5 +1,5 @@
 ########################################
-# 1. Azure infra: RG, AKS, Service Bus, Postgres and SignalR
+# 1. Azure infra: RG, AKS, Service Bus, Postgres and SignalR, Redis
 ########################################
 resource "azurerm_resource_group" "main" {
   name     = var.resource_group_name
@@ -65,6 +65,18 @@ module "signalr" {
   sku_name            = var.signalr_sku_name
   sku_capacity        = var.signalr_sku_capacity
 }
+
+module "redis" {
+  source              = "./modules/redis"
+  name                = "teachin-redis"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  sku_name            = "Basic"
+  family              = "C"
+  capacity            = 0
+  shard_count         = 0
+}
+
 ########################################
 # 2. AKS kube-config for providers
 ########################################

@@ -50,14 +50,9 @@ jobs:
 
       - name: Install/Upgrade Dapr control plane
         run: |
-          helm repo add dapr https://dapr.github.io/helm-charts || true
-          helm repo update
-          kubectl get ns dapr-system >/dev/null 2>&1 || kubectl create ns dapr-system
-          helm upgrade --install dapr dapr/dapr \
-            --version "1.13.0" \
-            --namespace "dapr-system" \
-            --create-namespace \
-            --wait
+          cd devops/helm-tools
+          chmod +x dapr-control-plane.sh
+          ./dapr-control-plane.sh
 
       - name: Create namespace
         run: kubectl apply -f $NAMESPACE_FILE
@@ -77,19 +72,19 @@ jobs:
 
       - name: Add grafana
         run: |
-          cd devops/infra
+          cd devops/helm-tools
           chmod +x grafana.sh
           ./grafana.sh
 
       - name: Add prometheus
         run: |
-          cd devops/infra
+          cd devops/helm-tools/prometheus
           chmod +x prometheus.sh
           ./prometheus.sh
 
       - name: Add Loki (logs stack)
         run: |
-          cd devops/infra/loki
+          cd devops/helm-tools/loki
           chmod +x loki.sh
           ./loki.sh
 
