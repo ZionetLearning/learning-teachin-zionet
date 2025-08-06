@@ -1,0 +1,66 @@
+name: AKS - Manual Stop
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "STOP" to confirm cluster shutdown'
+        required: true
+        type: string
+
+jobs:
+  manual-stop:
+    runs-on: ubuntu-latest
+    environment: Development
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Validate confirmation
+        run: |
+          if [[ "${{ github.event.inputs.confirm }}" != "STOP" ]]; then
+            echo "❌ Confirmation failed. You must type 'STOP' to proceed."
+            exit 1
+          fi
+          echo "✅ Confirmation validated"
+
+      - name: Azure Login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set up variables
+        run: |
+          echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
+          echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
+
+      - name: Check current cluster status
+        run: |
+          STATUS=$(az aks show --resource-group $AKS_RG --name $AKS_NAME --query "powerState.code" -o tsv)
+          echo "Current AKS cluster status: $STATUS"
+          if [[ "$STATUS" == "Stopped" ]]; then
+            echo "⚠️ Cluster is already stopped"
+          fi
+
+      - name: Stop AKS cluster
+        run: |
+          echo "🛑 Stopping AKS cluster: $AKS_NAME in resource group: $AKS_RG"
+          START_TIME=$(date +%s)
+          az aks stop --resource-group $AKS_RG --name $AKS_NAME
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          echo "✅ AKS cluster stopped successfully in ${DURATION} seconds"
+
+      - name: Verify cluster is stopped
+        run: |
+          STATUS=$(az aks show --resource-group $AKS_RG --name $AKS_NAME --query "powerState.code" -o tsv)
+          echo "Final AKS cluster status: $STATUS"
+          if [[ "$STATUS" == "Stopped" ]]; then
+            echo "✅ Cluster successfully stopped"
+          else
+            echo "❌ Unexpected status: $STATUS"
+            exit 1
+          fi
