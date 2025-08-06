@@ -10,5 +10,5 @@ public class QueueProcessor<T> : BackgroundService
         _handler = handler;
     }
     protected override Task ExecuteAsync(CancellationToken stoppingToken) =>
-        _listener.StartAsync((msg, token) => _handler.HandleAsync(msg, token), stoppingToken);
+        _listener.StartAsync((msg, renewLock, token) => _handler.HandleAsync(msg, renewLock, token), stoppingToken);
 }
