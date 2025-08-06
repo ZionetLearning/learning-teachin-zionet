@@ -1,3 +1,7 @@
+#!/bin/bash
+set -e
+
+
 helm repo add dapr https://dapr.github.io/helm-charts || true
 helm repo update
 kubectl get ns dapr-system >/dev/null 2>&1 || kubectl create ns dapr-system
