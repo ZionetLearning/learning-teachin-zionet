@@ -47,9 +47,7 @@ data:
         editable: true
 EOF
 
-echo "7. Restart Grafana deployment to pick up new datasource"
-kubectl rollout restart deployment/grafana -n $NAMESPACE
-kubectl rollout status deployment/grafana -n $NAMESPACE --timeout=120s
+
 
 echo -e "\n✅ All done — Loki datasource configured via ConfigMap"
 echo "Browse your Grafana → Data Sources to see Loki datasource"
