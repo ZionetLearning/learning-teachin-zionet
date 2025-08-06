@@ -3,6 +3,7 @@ using Manager.Endpoints;
 using Manager.Hubs;
 using Manager.Services;
 using Manager.Services.Clients;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -48,6 +49,26 @@ app.MapControllers();
 app.MapSubscribeHandler();
 app.MapManagerEndpoints();
 app.MapAiEndpoints();
+
+if (env.IsDevelopment())
+{
+    app.MapOpenApi();
+    app.MapScalarApiReference(options =>
+    {
+        options.Title = "Manager API";
+        options.Theme = ScalarTheme.BluePlanet;
+        options.DefaultHttpClient = new(ScalarTarget.CSharp, ScalarClient.HttpClient);
+        options.ShowSidebar = true;
+        options.PersistentAuthentication = true;
+        // here we can setup a default token
+        //options.AddPreferredSecuritySchemes("Bearer")
+        // .AddHttpAuthentication("Bearer", auth =>
+        // {
+        //     auth.Token = "Some Auth Token...";
+        // });
+
+    });
+}
 
 app.MapHub<NotificationHub>("/notificationHub");
 

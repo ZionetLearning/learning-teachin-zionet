@@ -16,6 +16,8 @@ import KeyboardIcon from "@mui/icons-material/Keyboard";
 import TranslateIcon from "@mui/icons-material/Translate";
 import HomeIcon from "@mui/icons-material/Home";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
+import PublicIcon from "@mui/icons-material/Public";
+import WeatherWidgetIcon from "@mui/icons-material/Cloud";
 import GBFlag from "country-flag-icons/react/3x2/GB";
 import ILFlag from "country-flag-icons/react/3x2/IL";
 import { useAuth } from "@/providers/auth";
@@ -181,6 +183,21 @@ export const SidebarMenu = () => {
             {t("sidebar.en")}
           </MenuItem>
         </SubMenu>
+
+        <MenuItem
+          icon={<PublicIcon />}
+          onClick={() => handleNavigation("/earthquake-map")}
+          active={isActive("/earthquake-map")}
+        >
+          Earthquake Map
+        </MenuItem>
+        <MenuItem
+          onClick={() => handleNavigation("/weather")}
+          icon={<WeatherWidgetIcon />}
+          active={isActive("/weather")}
+        >
+          Weather
+        </MenuItem>
       </Menu>
       <Menu
         menuItemStyles={{
