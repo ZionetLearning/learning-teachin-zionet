@@ -11,4 +11,4 @@ spec:
   triggers:
     - type: http
       metadata:
-        host: manager.example.com
+        host: http://teaching-zionet.westeurope.cloudapp.azure.com/manager # The host URL for the HTTP trigger

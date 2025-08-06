@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -ex
 
 
 # Define variables
@@ -38,7 +38,7 @@ if [ $? -eq 0 ]; then
   helm upgrade keda-http kedacore/keda-add-ons-http \
     --version "$KEDA_HTTP_VERSION" \
     --namespace "$KEDA_NAMESPACE" \
-    --set operator.keda.enabled=false \  # Prevents conflict; KEDA Core already installed
+    --set operator.keda.enabled=false \
     --wait
 else
   echo "Installing KEDA HTTP Add-on"
