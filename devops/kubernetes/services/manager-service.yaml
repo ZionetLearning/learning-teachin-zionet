@@ -4,14 +4,11 @@ metadata:
   annotations:
     kompose.cmd: D:\Tool\kompose.exe convert -f .\docker-compose.yaml
     kompose.version: 1.36.0 (ae2a39403)
-    # service.beta.kubernetes.io/azure-load-balancer-resource-group: MC_dev-zionet-learning-2025-ingress_aks-cluster-dev_westeurope
   labels:
     io.kompose.service: manager
   name: manager
   namespace: dev
 spec:
-  type: LoadBalancer
-  # loadBalancerIP: "74.178.221.58" # Use the public IP from the cluster
   ports:
     - protocol: TCP
       port: 80

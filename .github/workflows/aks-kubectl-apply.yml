@@ -102,36 +102,7 @@ jobs:
           cd devops/infra/loki
           chmod +x loki.sh
           ./loki.sh
-
-      - name: Wait for external IP for manager service
-        id: wait_for_ip
-        run: |
-          echo "Waiting for external IP for load balancer..."
-          for i in {1..30}; do
-            EXTERNAL_IP=$(kubectl -n dev get svc manager -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-            if [[ -n "$EXTERNAL_IP" ]]; then
-              echo "External IP is ready: $EXTERNAL_IP"
-              echo "app_url=http://$EXTERNAL_IP" >> $GITHUB_OUTPUT
-              exit 0
-            fi
-            echo "Attempt $i: External IP not yet assigned. Waiting 10s..."
-            sleep 10
-          done
-          echo "Failed to get external IP after waiting. Check 'kubectl get svc manager'"
-          exit 1
-
-      - name: Add external IP to PostgreSQL firewall
-        run: |
-          EXTERNAL_IP=$(az network public-ip list \
-            --resource-group $MC_AKS_RG \
-            --query "[?!(contains(name, 'kubernetes'))].{name:name, ip:ipAddress}" \
-            -o json | jq -r '.[0].ip')
-          az postgres flexible-server firewall-rule create \
-            --resource-group $AKS_RG \
-            --name $PG_DB \
-            --rule-name allow-accessor-service \
-            --start-ip-address $EXTERNAL_IP \
-            --end-ip-address $EXTERNAL_IP
+          
 
       - name: Wait for external IP for ingress controller
         id: wait_for_ingress_ip
