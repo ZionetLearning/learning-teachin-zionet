@@ -11,7 +11,6 @@ module "aks" {
   resource_group_name = azurerm_resource_group.main.name
   location            = var.location
   cluster_name        = var.aks_cluster_name
-  node_count          = var.node_count
   vm_size             = var.vm_size
   # mc_resource_group_name = "MC_${var.resource_group_name}_${var.aks_cluster_name}_${var.location}"
   depends_on = [azurerm_resource_group.main]
