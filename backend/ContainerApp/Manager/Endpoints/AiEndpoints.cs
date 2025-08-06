@@ -38,21 +38,25 @@ public static class AiEndpoints
         [FromServices] ILogger<AnswerEndpoint> log,
         CancellationToken ct)
     {
-        try
+        using (log.BeginScope("Method: {Method}, QuestionId: {Id}", nameof(AnswerAsync), id))
         {
-            var ans = await aiService.GetAnswerAsync(id, ct);
-            if (ans is null)
+            try
             {
-                log.LogDebug("Answer for {Id} not ready", id);
-                return Results.NotFound(new { error = "Answer not ready" });
-            }
+                var ans = await aiService.GetAnswerAsync(id, ct);
+                if (ans is null)
+                {
+                    log.LogInformation("Answer not ready");
+                    return Results.NotFound(new { error = "Answer not ready" });
+                }
 
-            return Results.Ok(new { id, answer = ans });
-        }
-        catch (Exception ex)
-        {
-            log.LogError(ex, "Error retrieving answer {Id}", id);
-            return Results.Problem("AI answer retrieval failed");
+                log.LogInformation("Answer returned");
+                return Results.Ok(new { id, answer = ans });
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, "Failed to retrieve answer");
+                return Results.Problem("AI answer retrieval failed");
+            }
         }
     }
 
@@ -62,25 +66,28 @@ public static class AiEndpoints
         [FromServices] ILogger<QuestionEndpoint> log,
         CancellationToken ct)
     {
-        log.LogInformation("Inside {Method}", nameof(QuestionAsync));
-        if (!ValidationExtensions.TryValidate(dto, out var validationErrors))
+        using (log.BeginScope("Method: {Method}, RequestId: {RequestId}, ThreadId: {ThreadId}",
+        nameof(QuestionAsync), dto.Id, dto.ThreadId))
         {
-            log.LogWarning("Validation failed for {Model}: {Errors}", nameof(AiRequestModel), validationErrors);
-            return Results.BadRequest(new { errors = validationErrors });
-        }
+            if (!ValidationExtensions.TryValidate(dto, out var validationErrors))
+            {
+                log.LogWarning("Validation failed for {Model}: {Errors}", nameof(AiRequestModel), validationErrors);
+                return Results.BadRequest(new { errors = validationErrors });
+            }
 
-        try
-        {
-            var threadId = dto.ThreadId;
+            try
+            {
+                var threadId = dto.ThreadId;
 
-            var id = await aiService.SendQuestionAsync(threadId, dto.Question, ct);
-            log.LogInformation("Request {Id} (thread {Thread}) accept", id, threadId);
-            return Results.Accepted($"/ai/answer/{id}", new { questionId = id, threadId });
-        }
-        catch (Exception ex)
-        {
-            log.LogError(ex, "Error sending question");
-            return Results.Problem("AI question failed");
+                var id = await aiService.SendQuestionAsync(threadId, dto.Question, ct);
+                log.LogInformation("Request {Id} (thread {Thread}) accept", id, threadId);
+                return Results.Accepted($"/ai/answer/{id}", new { questionId = id, threadId });
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, "Error sending question");
+                return Results.Problem("AI question failed");
+            }
         }
     }
 
@@ -90,23 +97,25 @@ public static class AiEndpoints
         [FromServices] ILogger<PubSubEndpoint> log,
         CancellationToken ct)
     {
-        log.LogInformation("Inside {Method}", nameof(PubSubAsync));
-        if (!ValidationExtensions.TryValidate(msg, out var validationErrors))
+        using (log.BeginScope("Method: {Method}, QuestionId: {Id}", nameof(PubSubAsync), msg.Id))
         {
-            log.LogWarning("Validation failed for {Model}: {Errors}", nameof(AiResponseModel), validationErrors);
-            return Results.BadRequest(new { errors = validationErrors });
-        }
+            if (!ValidationExtensions.TryValidate(msg, out var validationErrors))
+            {
+                log.LogWarning("Validation failed for {Model}: {Errors}", nameof(AiResponseModel), validationErrors);
+                return Results.BadRequest(new { errors = validationErrors });
+            }
 
-        try
-        {
-            await aiService.SaveAnswerAsync(msg, ct);
-            log.LogInformation("Answer saved");
-            return Results.Ok();
-        }
-        catch (Exception ex)
-        {
-            log.LogError(ex, "Error saving answer");
-            return Results.Problem("AI answer handling failed");
+            try
+            {
+                await aiService.SaveAnswerAsync(msg, ct);
+                log.LogInformation("Answer saved");
+                return Results.Ok();
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, "Error saving answer");
+                return Results.Problem("AI answer handling failed");
+            }
         }
     }
 }

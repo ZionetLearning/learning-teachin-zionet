@@ -27,24 +27,30 @@ public static class AiEndpoints
         [FromServices] ILogger<ManagerToAiEndpoint> log,
         CancellationToken ct)
     {
-        log.LogInformation("Received AI question {Id} from manager", req.Id);
-        try
+        using (log.BeginScope("Method: {Method}, CorrelationId: {Id}, ReplyTo: {ReplyToTopic}",
+                                              nameof(ProcessQuestionAsync), req.Id, req.ReplyToTopic))
         {
-            if (string.IsNullOrWhiteSpace(req.ThreadId))
+            log.LogInformation("Received AI question {Id} from manager", req.Id);
+
+            try
             {
-                return Results.BadRequest("ThreadId is required.");
+                if (string.IsNullOrWhiteSpace(req.ThreadId))
+                {
+                    return Results.BadRequest("ThreadId is required.");
+                }
+
+                var response = await aiService.ProcessAsync(req, ct);
+
+                await publisher.PublishAsync(response, req.ReplyToTopic, ct);
+                log.LogInformation("Processed and published response.");
+
+                return Results.Ok(response);
             }
-
-            var response = await aiService.ProcessAsync(req, ct);
-
-            await publisher.PublishAsync(response, req.ReplyToTopic, ct);
-
-            return Results.Ok(response);
-        }
-        catch (Exception ex)
-        {
-            log.LogError(ex, "Error processing AI question {Id}", req.Id);
-            return Results.Problem("An error occurred while processing the AI question.");
+            catch (Exception ex)
+            {
+                log.LogError(ex, "Failed to process AI question.");
+                return Results.Problem("An error occurred while processing the AI question.");
+            }
         }
     }
 }
