@@ -25,7 +25,7 @@ jobs:
       working-directory: backend/ContainerApp
 
     - name: Build
-      run: dotnet build --no-restore
+      run: dotnet build backend.sln --no-restore
       working-directory: backend/ContainerApp
 
     - name: Run tests
