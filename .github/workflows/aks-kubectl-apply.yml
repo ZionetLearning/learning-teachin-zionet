@@ -75,8 +75,6 @@ jobs:
             DOCKER_REGISTRY=$DOCKER_REGISTRY envsubst < "$file" | kubectl apply -f -
           done
 
-      - name: Apply ingresses
-        run: kubectl apply -f "$K8S_DIR/ingress" --recursive
 
       - name: setup-ingress-controller
         run: |
@@ -89,6 +87,9 @@ jobs:
           cd devops/infra
           chmod +x grafana.sh
           ./grafana.sh
+
+      - name: Apply ingresses
+        run: kubectl apply -f "$K8S_DIR/ingress" --recursive
 
       - name: Add prometheus
         run: |
