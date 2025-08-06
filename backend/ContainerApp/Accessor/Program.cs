@@ -7,6 +7,7 @@ using Accessor.Services;
 using Azure.Messaging.ServiceBus;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +26,9 @@ builder.Services.AddQueue<TaskModel, AccessorCreateTaskHandler>(
     });
 builder.Services.AddQueue<UpdateTaskName, AccessorUpdateTaskNameHandler>(
     QueueNames.TaskUpdateInput);
+
+builder.Services.AddSingleton<IQueueHandler<TaskModel>, AccessorCreateTaskHandler>();
+builder.Services.AddSingleton<IQueueHandler<UpdateTaskName>, AccessorUpdateTaskNameHandler>();
 
 var env = builder.Environment;
 
@@ -60,6 +64,14 @@ builder.Services.AddDbContext<AccessorDbContext>(options =>
             maxRetryDelay: TimeSpan.FromSeconds(5),
             errorCodesToAdd: null);
     }));
+// This is required for the Scalar UI to have an option to setup an authentication token
+builder.Services.AddOpenApi(
+    "v1",
+    options =>
+    {
+        options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+    }
+);
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
@@ -71,6 +83,28 @@ using (var scope = app.Services.CreateScope())
     await startupService.InitializeAsync();
 }
 
+// Configure middleware and Dapr
+app.UseCloudEvents();
+app.MapSubscribeHandler();
+if (env.IsDevelopment())
+{
+    app.MapOpenApi();
+    app.MapScalarApiReference(options =>
+    {
+        options.Title = "Accessor API";
+        options.Theme = ScalarTheme.DeepSpace;
+        options.DefaultHttpClient = new(ScalarTarget.CSharp, ScalarClient.HttpClient);
+        options.ShowSidebar = true;
+        options.PersistentAuthentication = true;
+        // here we can setup a default token
+        //options.AddPreferredSecuritySchemes("Bearer")
+        // .AddHttpAuthentication("Bearer", auth =>
+        // {
+        //     auth.Token = "Some Auth Token...";
+        // });
+
+    });
+}
 // Map endpoints (routes)
 app.MapAccessorEndpoints();
 await app.RunAsync();

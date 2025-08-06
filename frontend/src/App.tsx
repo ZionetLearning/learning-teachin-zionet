@@ -15,6 +15,7 @@ import {
   SpeakingPracticePage,
   TypingPracticePage,
   WordOrderGamePage,
+  EarthquakeMapPage,
 } from "./pages";
 
 import "./App.css";
@@ -43,6 +44,7 @@ function App() {
           <Route path="/typing" element={<TypingPracticePage />} />
           <Route path="/word-order-game" element={<WordOrderGamePage />} />
           <Route path="/speaking" element={<SpeakingPracticePage />} />
+          <Route path="/earthquake-map" element={<EarthquakeMapPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

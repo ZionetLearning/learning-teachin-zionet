@@ -2,36 +2,29 @@
 using Accessor.Services;
 
 namespace Accessor.Messaging;
+
 public class AccessorCreateTaskHandler : IQueueHandler<TaskModel>
 {
-    private readonly IAccessorService _svc;
-    private readonly ILogger<AccessorCreateTaskHandler> _log;
-    public AccessorCreateTaskHandler(IAccessorService svc, ILogger<AccessorCreateTaskHandler> log)
+    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ILogger<AccessorCreateTaskHandler> _logger;
+
+    public AccessorCreateTaskHandler(
+        IServiceScopeFactory scopeFactory,
+        ILogger<AccessorCreateTaskHandler> logger)
     {
-        _svc = svc;
-        _log = log;
+        _scopeFactory = scopeFactory;
+        _logger = logger;
     }
+
     public async Task HandleAsync(TaskModel msg, CancellationToken cancellationToken)
     {
-        _log.LogDebug("Queue→CreateTask {Id}", msg.Id);
-        await _svc.CreateTaskAsync(msg);
-        _log.LogInformation("Created Task {Id}", msg.Id);
-    }
-}
+        _logger.LogDebug("Queue→CreateTask {Id}", msg.Id);
 
-public class AccessorUpdateTaskNameHandler : IQueueHandler<UpdateTaskName>
-{
-    private readonly IAccessorService _svc;
-    private readonly ILogger<AccessorUpdateTaskNameHandler> _log;
-    public AccessorUpdateTaskNameHandler(IAccessorService svc, ILogger<AccessorUpdateTaskNameHandler> log)
-    {
-        _svc = svc;
-        _log = log;
-    }
-    public async Task HandleAsync(UpdateTaskName msg, CancellationToken cancellationToken)
-    {
-        _log.LogDebug("Queue→UpdateName {Id}", msg.Id);
-        await _svc.UpdateTaskNameAsync(msg.Id, msg.Name);
-        _log.LogInformation("Updated Task {Id} name to {Name}", msg.Id, msg.Name);
+        using var scope = _scopeFactory.CreateScope();
+        var svc = scope.ServiceProvider.GetRequiredService<IAccessorService>();
+
+        await svc.CreateTaskAsync(msg);
+
+        _logger.LogInformation("Created Task {Id}", msg.Id);
     }
 }

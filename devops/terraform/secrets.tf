@@ -38,3 +38,17 @@ resource "kubernetes_secret" "signalr_connection" {
     SignalRConnectionString = module.signalr.primary_connection_string
   }
 }
+
+########################
+# Redis secret
+########################
+resource "kubernetes_secret" "redis_connection" {
+  metadata {
+    name      = "redis-connection"
+    namespace = kubernetes_namespace.model.metadata[0].name
+  }
+  data = {
+    redis-hostport = "${module.redis.hostname}:6380"
+    redis-password = module.redis.primary_access_key
+  }
+}
