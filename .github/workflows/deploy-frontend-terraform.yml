@@ -15,7 +15,7 @@ on:
         options:
         - apply
         - destroy
-        - plan
+    
 
 env:
       ARM_USE_OIDC: "true" # tell provider to use the OIDC token
