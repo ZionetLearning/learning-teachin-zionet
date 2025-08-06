@@ -4,16 +4,26 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <PreserveCompilationContext>true</PreserveCompilationContext>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
     <PackageReference Include="Dapr.Actors.AspNetCore" Version="1.15.4" />
     <PackageReference Include="Dapr.Client" Version="1.15.4" />
+	<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.7" />
+	<PackageReference Include="Scalar.AspNetCore" Version="2.6.5" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.3" />
 	<PackageReference Include="Dapr.AspNetCore">
 	  <Version>1.15.4</Version>
 	</PackageReference>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(Configuration)' == 'Debug'">
+	  <PackageReference Include="Workleap.DotNet.CodingStandards" Version="1.1.21">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+	  </PackageReference>
   </ItemGroup>
 
 </Project>
