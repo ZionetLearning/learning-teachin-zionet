@@ -2,6 +2,7 @@
 using Manager.Models;
 using Manager.Models.ModelValidation;
 using Manager.Services;
+using Manager.Services.Clients;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Endpoints;
@@ -11,6 +12,7 @@ public static class AiEndpoints
     private sealed class QuestionEndpoint { }
     private sealed class AnswerEndpoint { }
     private sealed class PubSubEndpoint { }
+    private sealed class ChatPostEndpoint { }
 
     public static WebApplication MapAiEndpoints(this WebApplication app)
     {
@@ -26,6 +28,8 @@ public static class AiEndpoints
         app.MapPost("/ai/question", QuestionAsync).WithName("Question");
 
         app.MapPost($"/ai/{TopicNames.AiToManager}", PubSubAsync).WithTopic("pubsub", TopicNames.AiToManager);
+
+        app.MapPost("/chat", ChatAsync).WithName("Chat");
 
         #endregion
 
@@ -116,6 +120,28 @@ public static class AiEndpoints
                 log.LogError(ex, "Error saving answer");
                 return Results.Problem("AI answer handling failed");
             }
+        }
+    }
+    private static async Task<IResult> ChatAsync(
+      [FromBody] ChatRequestDto dto,
+      [FromServices] IEngineClient engine,
+      [FromServices] ILogger<ChatPostEndpoint> log,
+      CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(dto.UserMessage))
+        {
+            return Results.BadRequest(new { error = "userMessage is required" });
+        }
+
+        try
+        {
+            var response = await engine.ChatAsync(dto, ct);
+            return Results.Ok(response);
+        }
+        catch (Exception ex)
+        {
+            log.LogError(ex, "Engine invocation failed");
+            return Results.Problem("Unable to contact AI engine");
         }
     }
 }

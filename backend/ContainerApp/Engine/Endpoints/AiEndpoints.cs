@@ -8,12 +8,14 @@ namespace Engine.Endpoints;
 public static class AiEndpoints
 {
     private sealed class ManagerToAiEndpoint { }
+    private sealed class ChatEndpoint { }
 
     public static WebApplication MapAiEndpoints(this WebApplication app)
     {
         #region HTTP POST
 
         app.MapPost($"/{TopicNames.ManagerToAi}", ProcessQuestionAsync).WithTopic("pubsub", TopicNames.ManagerToAi);
+        app.MapPost("/chat", ChatAsync).WithName("ChatSync");
 
         #endregion
 
@@ -52,5 +54,38 @@ public static class AiEndpoints
                 return Results.Problem("An error occurred while processing the AI question.");
             }
         }
+    }
+
+    private static async Task<IResult> ChatAsync(
+      [FromBody] ChatRequestDto dto,
+      [FromServices] IChatAiService ai,
+      [FromServices] ILogger<ChatEndpoint> log,
+      CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(dto.UserMessage))
+        {
+            return Results.BadRequest(new { error = "userMessage is required" });
+        }
+
+        var aiReq = new AiRequestModel
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            ThreadId = string.IsNullOrWhiteSpace(dto.ThreadId)
+                            ? Guid.NewGuid().ToString("N")
+                            : dto.ThreadId,
+            Question = dto.UserMessage,
+            ReplyToTopic = string.Empty
+        };
+
+        var aiResp = await ai.ProcessAsync(aiReq, ct);
+
+        if (aiResp.Status == "error")
+        {
+            return Results.Problem(aiResp.Error);
+        }
+
+        var result = new ChatResponseDto(aiResp.Answer ?? "", aiResp.ThreadId);
+        log.LogInformation("Answered thread {Thread}", result.ThreadId);
+        return Results.Ok(result);
     }
 }
