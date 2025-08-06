@@ -49,6 +49,11 @@ resource "azurerm_application_insights" "frontend" {
   retention_in_days   = 30  # Minimum retention
   sampling_percentage = 100 # Full sampling (can reduce to save costs)
   
+  # Ignore workspace_id changes to avoid conflicts with existing resource
+  lifecycle {
+    ignore_changes = [workspace_id]
+  }
+  
   tags = {
     Environment = "Development"
     Project     = "Frontend"
