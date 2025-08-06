@@ -1,6 +1,7 @@
 ﻿using Manager.Models;
 using Manager.Models.ModelValidation;
 using Manager.Services;
+using Manager.Services.Clients;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Endpoints;
@@ -10,6 +11,7 @@ public static class AiEndpoints
     private sealed class QuestionEndpoint { }
     private sealed class AnswerEndpoint { }
     private sealed class PubSubEndpoint { }
+    private sealed class ChatPostEndpoint { }
 
     public static WebApplication MapAiEndpoints(this WebApplication app)
     {
@@ -23,6 +25,9 @@ public static class AiEndpoints
         #region HTTP POST
 
         app.MapPost("/ai/question", QuestionAsync).WithName("Question");
+
+        app.MapPost("/chat", ChatAsync).WithName("Chat");
+
 
         #endregion
 
