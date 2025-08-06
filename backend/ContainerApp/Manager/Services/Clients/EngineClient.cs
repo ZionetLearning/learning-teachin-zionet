@@ -40,4 +40,16 @@ public class EngineClient : IEngineClient
             throw;
         }
     }
+
+    public async Task<ChatResponseDto> ChatAsync(ChatRequestDto dto, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Invoke Engine /chat synchronously (thread {Thread})", dto.ThreadId);
+
+        // «engine» — это app-id, с которым запускается сервис Engine (dapr run --app-id engine …)
+        return await _daprClient.InvokeMethodAsync<ChatRequestDto, ChatResponseDto>(
+            appId: "engine",
+            methodName: "chat",
+            data: dto,
+            cancellationToken: ct);
+    }
 }
