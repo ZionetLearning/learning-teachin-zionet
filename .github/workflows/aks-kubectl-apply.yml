@@ -39,9 +39,9 @@ jobs:
           echo "K8S_DIR=devops/kubernetes/" >> $GITHUB_ENV
           echo "NAMESPACE_FILE=devops/kubernetes/namespaces/namespace-dev.yaml" >> $GITHUB_ENV
           echo "DOCKER_REGISTRY=${{ secrets.DOCKER_USERNAME }}" >> $GITHUB_ENV
-          echo "AKS_RG=dev-zionet-learning-2025-ingress" >> $GITHUB_ENV
-          echo "MC_AKS_RG=MC_dev-zionet-learning-2025-ingress_aks-cluster-dev_westeurope" >> $GITHUB_ENV
-          echo "PG_DB=pg-zionet-dev-2025-ingress" >> $GITHUB_ENV
+          echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
+          echo "MC_AKS_RG=MC_dev-zionet-learning-2025_aks-cluster-dev_westeurope" >> $GITHUB_ENV
+          echo "PG_DB=pg-zionet-dev-2025" >> $GITHUB_ENV
           echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
 
       - name: Get AKS credentials
@@ -73,7 +73,7 @@ jobs:
 
       - name: setup-ingress-controller
         run: |
-          cd devops/infra
+          cd devops/helm-tools
           chmod +x setup-ingress-controller.sh
           ./setup-ingress-controller.sh
 

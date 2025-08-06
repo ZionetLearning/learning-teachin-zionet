@@ -2,7 +2,7 @@ terraform {
   backend "azurerm" {
     resource_group_name  = "tfstate-rg"
     storage_account_name = "teachintfstate"
-    container_name       = "tfstate-aks-ingress"
+    container_name       = "tfstate-aks"
     key                  = "development.terraform.tfstate"
     use_azuread_auth     = true # added because of githubactions
   }
