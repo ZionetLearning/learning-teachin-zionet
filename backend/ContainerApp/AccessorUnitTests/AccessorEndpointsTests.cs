@@ -64,17 +64,15 @@ public class AccessorEndpointsTests
 
         // Act
         var result = await AccessorEndpoints.CreateTaskAsync(task, _mockService.Object, _mockLogger.Object);
+
         // Assert
         var okResult = Assert.IsType<IValueHttpResult>(result, exactMatch: false);
-
         var value = okResult.Value;
-
         Assert.NotNull(value);
 
         // Use reflection to inspect anonymous object properties
         var idProp = value.GetType().GetProperty("Id")?.GetValue(value);
         var statusProp = value.GetType().GetProperty("Status")?.GetValue(value);
-
         Assert.Equal(42, idProp);
         Assert.Equal("Saved", statusProp);
     }
