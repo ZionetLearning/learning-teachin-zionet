@@ -1,5 +1,4 @@
-﻿using Manager.Constants;
-using Manager.Models;
+﻿using Manager.Models;
 using Manager.Models.ModelValidation;
 using Manager.Services;
 using Manager.Services.Clients;
@@ -26,8 +25,6 @@ public static class AiEndpoints
         #region HTTP POST
 
         app.MapPost("/ai/question", QuestionAsync).WithName("Question");
-
-        app.MapPost($"/ai/{TopicNames.AiToManager}", PubSubAsync).WithTopic("pubsub", TopicNames.AiToManager);
 
         app.MapPost("/chat", ChatAsync).WithName("Chat");
 
@@ -95,33 +92,6 @@ public static class AiEndpoints
         }
     }
 
-    private static async Task<IResult> PubSubAsync(
-        [FromBody] AiResponseModel msg,
-        [FromServices] IAiGatewayService aiService,
-        [FromServices] ILogger<PubSubEndpoint> log,
-        CancellationToken ct)
-    {
-        using (log.BeginScope("Method: {Method}, QuestionId: {Id}", nameof(PubSubAsync), msg.Id))
-        {
-            if (!ValidationExtensions.TryValidate(msg, out var validationErrors))
-            {
-                log.LogWarning("Validation failed for {Model}: {Errors}", nameof(AiResponseModel), validationErrors);
-                return Results.BadRequest(new { errors = validationErrors });
-            }
-
-            try
-            {
-                await aiService.SaveAnswerAsync(msg, ct);
-                log.LogInformation("Answer saved");
-                return Results.Ok();
-            }
-            catch (Exception ex)
-            {
-                log.LogError(ex, "Error saving answer");
-                return Results.Problem("AI answer handling failed");
-            }
-        }
-    }
     private static async Task<IResult> ChatAsync(
       [FromBody] ChatRequestDto dto,
       [FromServices] IEngineClient engine,
