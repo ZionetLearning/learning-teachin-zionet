@@ -5,12 +5,17 @@ metadata:
   namespace: devops-logs
   annotations:
     kubernetes.io/ingress.class: nginx
-    nginx.ingress.kubernetes.io/ssl-redirect: "false"
-    # Remove the rewrite and regex annotations
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
   ingressClassName: nginx
+  tls:
+    - hosts:
+        - teaching-zionet.westeurope.cloudapp.azure.com
+      secretName: teaching-zionet-tls
   rules:
-  - http:
+  - host: teaching-zionet.westeurope.cloudapp.azure.com
+    http:
       paths:
       - path: /grafana
         pathType: Prefix
