@@ -1,9 +1,9 @@
 name: Full CICD
 
 on:
-  #push:
-   # branches:
-    #  - main
+  push:
+   branches:
+     - yosef/deploy-FE
   workflow_dispatch:
     inputs:
       environment:
