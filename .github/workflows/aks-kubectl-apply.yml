@@ -51,8 +51,8 @@ jobs:
       - name: Install/Upgrade Dapr control plane
         run: |
           cd devops/helm-tools
-          chmod +x dapr-cotrol-plane.sh
-          ./dapr-cotrol-plane.sh
+          chmod +x dapr-control-plane.sh
+          ./dapr-control-plane.sh
 
       - name: Create namespace
         run: kubectl apply -f $NAMESPACE_FILE
