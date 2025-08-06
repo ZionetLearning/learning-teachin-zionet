@@ -101,25 +101,33 @@ export const WeatherWidget = () => {
 				</div>
 			</div>
 
-			{locating && selected === 'location' && (
-				<div className={classes.loading}>Locating...</div>
-			)}
-			{isLoading && !locating && (
-				<div className={classes.loading}>Loading weather...</div>
-			)}
-			{error && (
-				<div className={classes.error}>
-					{error.message === 'City not found'
-						? 'City not found. Please try again.'
-						: `Error: ${error.message}`}
+			{(locating ||
+				(isLoading && !locating) ||
+				error ||
+				(!locating && !isLoading && !error && !data)) && (
+				<div className={classes.messageContainer}>
+					{locating && <div className={classes.loading}>Locating...</div>}
+					{!locating && isLoading && (
+						<div className={classes.loading}>Loading weather...</div>
+					)}
+					{error && (
+						<div className={classes.error}>
+							{error.message === 'City not found'
+								? 'City not found. Please try again.'
+								: `Error: ${error.message}`}
+						</div>
+					)}
+					{!locating && !isLoading && !error && !data && (
+						<div className={classes.loading}>
+							Select or search a city or use your location to see the weather.
+						</div>
+					)}
 				</div>
 			)}
 
 			{data && (
 				<>
-					<h3 className={classes.heading}>
-						{selected === 'location' ? data.name : selected}
-					</h3>
+					<h3 className={classes.heading}>{data.name}</h3>
 					<div className={classes.weatherContainer}>
 						<div className={classes.iconContainer}>
 							<img

@@ -86,6 +86,12 @@ export const useStyles = createUseStyles({
 		color: '#4a5568',
 		lineHeight: 1.4,
 	},
+	messageContainer: {
+		flex: 1,
+		display: 'flex',
+		justifyContent: 'center',
+		alignItems: 'center',
+	},
 	loading: {
 		fontStyle: 'italic',
 		color: '#000',
