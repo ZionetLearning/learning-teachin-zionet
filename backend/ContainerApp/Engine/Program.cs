@@ -3,11 +3,11 @@ using Engine.Constants;
 using Engine.Endpoints;
 using Engine.Messaging;
 using Engine.Models;
+using Engine.Plugins;
 using Engine.Services;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
-using Engine.Plugins;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -57,9 +57,22 @@ builder.Services.AddSingleton(sp =>
                      endpoint: cfg.Endpoint,
                      apiKey: cfg.ApiKey)
                  .Build();
+    var logger = sp.GetRequiredService<ILoggerFactory>()
+    .CreateLogger("KernelPluginRegistration");
     foreach (var plugin in sp.GetServices<ISemanticKernelPlugin>())
     {
-        kernel.Plugins.AddFromObject(plugin, plugin.GetType().Name.Replace("Plugin", string.Empty));
+        try
+        {
+            var pluginName = plugin.GetType().ToPluginName();
+            kernel.Plugins.AddFromObject(plugin, pluginName);
+            logger.LogInformation("Plugin {Name} registered.", pluginName);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex,
+                "Failed to register plugin {PluginType}", plugin.GetType().FullName);
+
+        }
     }
 
     return kernel;
