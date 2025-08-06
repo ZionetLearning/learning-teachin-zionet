@@ -15,7 +15,7 @@
       },
       "home": {
         "title": "Welcome to our internal playground project",
-        "subtitle": "Select a tool from the sidebar to begin."
+        "subTitle": "Select a tool from the sidebar to begin."
       },
       "chatSh": {
         "chatShPageWithOpenAi": "Chat Sh Page - with OpenAI",

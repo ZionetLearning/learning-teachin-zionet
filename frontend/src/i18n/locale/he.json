@@ -15,7 +15,7 @@
       },
       "home": {
         "title": "ברוכים הבאים למגרש המשחקים הפנימי שלנו",
-        "subtitle": "בחר כלי מסרגל הצד כדי להתחיל"
+        "subTitle": "בחר כלי מסרגל הצד כדי להתחיל"
       },
       "chatSh": {
         "chatShPageWithOpenAi": "Chat Sh Page - with OpenAI",
