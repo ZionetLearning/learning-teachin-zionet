@@ -28,7 +28,6 @@ public static class AiEndpoints
 
         app.MapPost("/chat", ChatAsync).WithName("Chat");
 
-
         #endregion
 
         return app;
@@ -90,6 +89,29 @@ public static class AiEndpoints
                 log.LogError(ex, "Error sending question");
                 return Results.Problem("AI question failed");
             }
+        }
+    }
+
+    private static async Task<IResult> ChatAsync(
+      [FromBody] ChatRequestDto dto,
+      [FromServices] IEngineClient engine,
+      [FromServices] ILogger<ChatPostEndpoint> log,
+      CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(dto.UserMessage))
+        {
+            return Results.BadRequest(new { error = "userMessage is required" });
+        }
+
+        try
+        {
+            var response = await engine.ChatAsync(dto, ct);
+            return Results.Ok(response);
+        }
+        catch (Exception ex)
+        {
+            log.LogError(ex, "Engine invocation failed");
+            return Results.Problem("Unable to contact AI engine");
         }
     }
 }
