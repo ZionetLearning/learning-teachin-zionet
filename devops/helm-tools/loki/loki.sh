@@ -1,8 +1,7 @@
 #!/bin/bash
 set -e
+
 NAMESPACE="devops-logs"
-ADMIN_USER="admin"
-ADMIN_PASS="admin123"
 
 echo "1. Helm repo"
 helm repo add grafana https://grafana.github.io/helm-charts || true
@@ -21,36 +20,36 @@ helm upgrade --install loki-stack grafana/loki-stack \
   --set grafana.enabled=false \
   --wait
 
-echo "5. Waiting for Grafana LoadBalancer IP …"
-for i in {1..30}; do
-  GRAFANA_IP=$(kubectl -n $NAMESPACE get svc grafana -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null)
-  [[ -n "$GRAFANA_IP" ]] && break
-  sleep 5
-done
-[[ -z "$GRAFANA_IP" ]] && { echo "Grafana IP not ready"; exit 1; }
-echo "Grafana IP = $GRAFANA_IP"
+echo "5. Wait for Grafana service to be ready"
+kubectl wait --namespace "$NAMESPACE" \
+  --for=condition=Ready pod \
+  --selector=app.kubernetes.io/name=grafana \
+  --timeout=120s
 
-echo "6. Waiting for Grafana API …"
-for i in {1..30}; do
-  code=$(curl -s -o /dev/null -w '%{http_code}' "http://$GRAFANA_IP/api/health" || true)
-  [[ "$code" == "200" ]] && break
-  sleep 5
-done
-[[ "$code" != "200" ]] && { echo "Grafana API not ready"; exit 1; }
+echo "6. Create Loki datasource ConfigMap"
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources-loki
+  namespace: $NAMESPACE
+  labels:
+    grafana_datasource: "1"
+data:
+  loki-datasource.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Loki
+        type: loki
+        url: http://loki-stack:3100
+        access: proxy
+        isDefault: false
+        editable: true
+EOF
 
-echo "7. Provision Loki datasource"
-curl -s -u "$ADMIN_USER:$ADMIN_PASS" -H "Content-Type: application/json" \
-     -X POST "http://$GRAFANA_IP/api/datasources" \
-     -d '{
-           "name":"Loki",
-           "type":"loki",
-           "url":"http://loki-stack:3100",
-           "access":"proxy",
-           "isDefault":true
-         }' >/dev/null
+echo "7. Restart Grafana deployment to pick up new datasource"
+kubectl rollout restart deployment/grafana -n $NAMESPACE
+kubectl rollout status deployment/grafana -n $NAMESPACE --timeout=120s
 
-echo "🔄 8. Force dashboard reload"
-curl -s -u "$ADMIN_USER:$ADMIN_PASS" \
-     -X POST "http://$GRAFANA_IP/api/admin/provisioning/dashboards/reload" >/dev/null
-
-echo -e "\nAll done — browse  http://$GRAFANA_IP  →  Dashboards ▸ Pod Logs"
+echo -e "\n✅ All done — Loki datasource configured via ConfigMap"
+echo "Browse your Grafana → Data Sources to see Loki datasource"
