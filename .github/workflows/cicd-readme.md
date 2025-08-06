@@ -7,11 +7,9 @@ This document provides an overview of all GitHub Actions workflows in this repos
 | Workflow | Purpose | Trigger | Duration |
 |----------|---------|---------|----------|
 | [AKS - Full CICD](#aks---full-cicd) | Complete infrastructure + app deployment | Manual | ~15-20 min |
-| [AKS - Update Images](#aks---update-images) | Updates backend images into the cloud aks | Manual | ~5-8 min |
-| [AKS - Start Cluster (at 8:00)](#aks---start-cluster-morning) | Automated morning startup | Scheduled | ~5-15 min |
-| [AKS - Stop Cluster (at 19:30)](#aks---stop-cluster-evening) | Automated evening shutdown | Scheduled | ~2-5 min |
-| [AKS - Manual Start](#aks---manual-start) | Start AKS cluster | Manual | ~5-15 min |
-| [AKS - Manual Stop](#aks---manual-stop) | Stop AKS cluster | Manual | ~2-5 min |
+| [AKS - Update Images](#aks---update-images) | Quick app updates only | Manual | ~5-8 min |
+| [AKS - Toggle Cluster](#aks---toggle-cluster) | Manual start/stop cluster | Manual | ~2-15 min |
+| [AKS - Scheduled Start/Stop](#aks---scheduled-startstop) | Automated daily start/stop | Scheduled | ~2-15 min |
 
 ---
 
@@ -56,65 +54,46 @@ This document provides an overview of all GitHub Actions workflows in this repos
 
 ## 🕒 Automated Scheduling Workflows
 
-### AKS - Start Cluster (Morning)
-**File:** `aks-start-schedule.yml`
+### AKS - Scheduled Start/Stop
+**File:** `aks-schedule.yml`
 
-**Purpose:** Automatically start AKS cluster each morning to save costs.
+**Purpose:** Automatically start/stop AKS cluster daily to save costs.
 
-**Schedule:** 
-- **Time:** 8:00 AM Israel Time (5:00 UTC)
-- **Days:** Sunday-Thursday (skips Friday & Saturday)
-
-**What it does:**
-1. Checks current Israel time and day
-2. Starts AKS cluster
-3. Waits for cluster to be fully ready
-4. Verifies cluster status
-
-**Cost Savings:** Cluster runs only during work hours
-
----
-
-### AKS - Stop Cluster (Evening)
-**File:** `aks-stop-schedule.yml`
-
-**Purpose:** Automatically stop AKS cluster each evening to save costs.
-
-**Schedule:**
-- **Time:** 7:30 PM Israel Time (16:30 UTC)  
-- **Days:** Sunday-Thursday + Saturday (skips Friday evening)
+**Schedules:** 
+- **START:** 8:00 AM Israel Time (5:00 UTC) - Sunday-Thursday
+- **STOP:** 7:30 PM Israel Time (16:30 UTC) - Sunday-Thursday + Saturday (skips Friday evening)
 
 **What it does:**
-1. Checks current Israel time and day
-2. Stops AKS cluster
-3. Verifies cluster is stopped
-
-**Cost Savings:** ~11 hours downtime per weekday + full weekends
+1. Determines if it's morning (START) or evening (STOP) schedule
+2. Checks current Israel time and day
+3. Starts or stops AKS cluster accordingly
+4. Waits for operation to complete
+5. Verifies final status
 
 ---
 
 ## 🔧 Manual Control Workflows
 
-### AKS - Manual Start
-**File:** `aks-manual-start.yml`
+### AKS - Toggle Cluster
+**File:** `toggle-aks.yml`
 
-**Purpose:** Manually start AKS cluster with safety confirmation.
+**Purpose:** Manually start or stop AKS cluster with safety confirmation.
 
 **When to use:**
 - Weekend work
 - Outside scheduled hours
-- Emergency access
+- Emergency access/shutdown
 - Testing
 
+**Features:**
+- Dropdown selection: START or STOP
+- Double confirmation: Must type action name to confirm
+- Shows current cluster status
+- Times the operation
+- Provides next steps guidance
+
 **Safety Features:**
-- Requires typing "START" to confirm
+- Requires typing "START" or "STOP" to confirm
 - Shows timing information
-- Waits for full cluster readiness
-
----
-
-### AKS - Manual Stop
-**File:** `aks-manual-stop.yml`
-
-**Purpose:** Manually stop AKS cluster with safety confirmation.
-- Requires typing "STOP" to confirm
+- Detects if cluster already in desired state
+- Clear operation summary
