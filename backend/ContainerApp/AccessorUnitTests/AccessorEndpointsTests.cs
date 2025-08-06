@@ -1,6 +1,5 @@
 ﻿using Accessor.Endpoints;
 using Microsoft.AspNetCore.Http;
-using Xunit.Abstractions;
 using Moq;
 using Accessor.Models;
 using Accessor.Services;
@@ -35,12 +34,12 @@ public class AccessorEndpointsTests
         var okResult = Assert.IsType<Ok<TaskModel>>(result);
         Assert.Equal(1, okResult.Value?.Id);
     }
-    
+
     [Fact]
     public async Task GetTaskById_ReturnsNotFound_WhenTaskDoesNotExist()
     {
         // Arrange
-        int taskId = 999; // non-existing task ID
+        var taskId = 999; // non-existing task ID
         _mockService.Setup(s => s.GetTaskByIdAsync(taskId)).ReturnsAsync((TaskModel?)null);
 
         // Act
@@ -57,7 +56,6 @@ public class AccessorEndpointsTests
         Assert.Equal($"Task with ID {taskId} not found.", value?.ToString());
     }
 
-    
     [Fact]
     public async Task CreateTask_ReturnsOk_WhenSuccessful()
     {
@@ -91,7 +89,7 @@ public class AccessorEndpointsTests
         var okResult = Assert.IsType<Ok<string>>(result);
         Assert.Equal($"Task {request.Id} updated successfully.", okResult.Value);
     }
-    
+
     [Fact]
     public async Task UpdateTaskName_ReturnsNotFound_WhenTaskDoesNotExist()
     {
@@ -113,12 +111,11 @@ public class AccessorEndpointsTests
         Assert.Equal($"Task with ID {request.Id} not found.", value?.ToString());
     }
 
-    
     [Fact]
     public async Task DeleteTask_ReturnsOk_WhenDeleted()
     {
         // Arrange
-        int taskId = 15;
+        var taskId = 15;
 
         _mockService.Setup(s => s.DeleteTaskAsync(taskId)).ReturnsAsync(true);
 
@@ -129,7 +126,4 @@ public class AccessorEndpointsTests
         var okResult = Assert.IsType<Ok<string>>(result);
         Assert.Equal($"Task {taskId} deleted.", okResult.Value);
     }
-
-
-
 }

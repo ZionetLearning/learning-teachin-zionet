@@ -42,7 +42,7 @@ public static class ManagerEndpoints
         [FromServices] IManagerService managerService,
         [FromServices] ILogger<ManagerService> logger)
     {
-        using (logger.BeginScope("Inside {MethodName}:", nameof(GetTaskAsync)))
+        using (logger.BeginScope("Method {MethodName}:", nameof(GetTaskAsync)))
         {
             try
             {

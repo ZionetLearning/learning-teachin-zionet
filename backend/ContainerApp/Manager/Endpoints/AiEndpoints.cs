@@ -3,8 +3,6 @@ using Manager.Models;
 using Manager.Models.ModelValidation;
 using Manager.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using System.Threading.Tasks;
 
 namespace Manager.Endpoints;
 
@@ -50,6 +48,7 @@ public static class AiEndpoints
                     log.LogInformation("Answer not ready");
                     return Results.NotFound(new { error = "Answer not ready" });
                 }
+
                 log.LogInformation("Answer returned");
                 return Results.Ok(new { id, answer = ans });
             }
@@ -119,6 +118,4 @@ public static class AiEndpoints
             }
         }
     }
-        
-
 }

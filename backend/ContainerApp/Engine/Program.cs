@@ -4,7 +4,7 @@ using Engine.Endpoints;
 using Engine.Messaging;
 using Engine.Models;
 using Engine.Services;
-using Microsoft.Azure.Amqp.Sasl;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 
@@ -24,7 +24,15 @@ builder.Services.AddControllers().AddDapr();
 builder.Services.AddScoped<IEngineService, EngineService>();
 builder.Services.AddScoped<IChatAiService, ChatAiService>();
 builder.Services.AddScoped<IAiReplyPublisher, AiReplyPublisher>();
+builder.Services.AddSingleton<IRetryPolicyProvider, RetryPolicyProvider>();
+
 builder.Services.AddMemoryCache();
+builder.Services
+       .AddOptions<MemoryCacheEntryOptions>()
+       .Configure<IConfiguration>((opt, cfg) =>
+       {
+           var section = cfg.GetSection("CacheOptions");
+       });
 
 builder.Services
     .AddOptions<AzureOpenAiSettings>()
@@ -60,7 +68,6 @@ builder.Services.AddQueue<TaskModel, EngineQueueHandler>(
         settings.MaxRetryAttempts = 3;
         settings.RetryDelaySeconds = 2;
     });
-builder.Services.AddSingleton<ISystemPromptProvider, SystemPromptProvider>();
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
@@ -69,10 +76,9 @@ builder.Logging.ClearProviders();
 builder.Logging.AddSimpleConsole(options =>
 {
     options.IncludeScopes = true;             // this shows your BeginScope
-    options.SingleLine = true;               //this gives you indentation and structure
+    options.SingleLine = true;               // this gives you indentation and structure
     options.TimestampFormat = "[HH:mm:ss] ";  // optional, for nice timestamps
 });
-
 
 var app = builder.Build();
 

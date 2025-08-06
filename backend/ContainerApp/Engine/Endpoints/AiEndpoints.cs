@@ -34,7 +34,10 @@ public static class AiEndpoints
 
             try
             {
-                if (string.IsNullOrWhiteSpace(req.ThreadId)) return Results.BadRequest("ThreadId is required.");
+                if (string.IsNullOrWhiteSpace(req.ThreadId))
+                {
+                    return Results.BadRequest("ThreadId is required.");
+                }
 
                 var response = await aiService.ProcessAsync(req, ct);
 
@@ -50,6 +53,4 @@ public static class AiEndpoints
             }
         }
     }
-
-
 }
