@@ -51,12 +51,10 @@ output "signalr_connection_string" {
   sensitive = true
 }
 
-output "grafana_admin_password" {
-  description = "Grafana admin password"
-  value       = module.grafana.grafana_admin_password
+output "redis_hostname" {
+  value = module.redis.hostname
 }
-
-output "grafana_namespace" {
-  description = "Grafana namespace"
-  value       = module.grafana.namespace
+output "redis_primary_access_key" {
+  value     = module.redis.primary_access_key
+  sensitive = true
 }
