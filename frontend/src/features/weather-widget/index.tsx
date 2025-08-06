@@ -1,7 +1,7 @@
 import { useState } from "react";
 
-import { useGetWeather } from "@/hooks";
 import { WeatherParams } from "@/types";
+import { useGetWeather } from "./api";
 
 import { useStyles } from "./style";
 
@@ -119,7 +119,7 @@ export const WeatherWidget = () => {
           )}
           {error && (
             <div className={classes.error}>
-              {error.message === "City not found"
+              {error.message === "city not found"
                 ? "City not found. Please try again."
                 : `Error: ${error.message}`}
             </div>
