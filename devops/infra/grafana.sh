@@ -9,6 +9,7 @@ GRAFANA_CHART_VERSION="9.3.0"
 MC_RG="MC_dev-zionet-learning-2025-ingress_aks-cluster-dev_westeurope"
 IP_NAME="grafana-public-ip"
 DNS_LABEL="grafana"
+CONTROLLER_IP="50.85.170.89"
 # -----------------------------
 
 echo "0. Uninstalling existing Grafana Helm release (if present)..."
@@ -22,7 +23,7 @@ helm repo update
 echo "3. Create namespace if not exists..."
 kubectl get ns "$NAMESPACE" >/dev/null 2>&1 || kubectl create ns "$NAMESPACE"
 
-echo "4. Install/upgrade Grafana with static public IP, DNS annotation, and dashboard sidecar enabled..."
+echo "4. Install/upgrade Grafana with subpath configuration..."
 helm upgrade --install grafana grafana/grafana \
   --version "$GRAFANA_CHART_VERSION" \
   --namespace "$NAMESPACE" \
@@ -34,13 +35,14 @@ helm upgrade --install grafana grafana/grafana \
   --set sidecar.dashboards.enabled=true \
   --set sidecar.dashboards.searchNamespace="$NAMESPACE" \
   --set sidecar.datasources.enabled=true \
-  --set grafana.ini.server.root_url="http://48.222.217.4/grafana/" \
-  --set grafana.ini.server.serve_from_sub_path=true \
+  --set env.GF_SERVER_ROOT_URL="http://$CONTROLLER_IP/grafana/" \
+  --set env.GF_SERVER_SERVE_FROM_SUB_PATH="true" \
+  --set env.GF_SERVER_DOMAIN="$CONTROLLER_IP" \
   --wait
 
 echo
-echo "✅ Grafana is available at:"
-echo "   → http://grafana.westeurope.cloudapp.azure.com"
+echo "✅ Grafana should be available at:"
+echo "   → http://$CONTROLLER_IP/grafana/"
 echo
 echo "Login:"
 echo "   Username: $ADMIN_USER"
