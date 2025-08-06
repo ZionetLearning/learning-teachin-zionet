@@ -2,6 +2,7 @@
 using Engine.Messaging;
 using Engine.Models;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
@@ -16,23 +17,22 @@ public sealed class ChatAiService : IChatAiService
     private readonly IMemoryCache _cache;
     private readonly MemoryCacheEntryOptions _cacheOptions;
     private readonly IChatCompletionService _chat;
-    private readonly ISystemPromptProvider _prompt;
     private readonly IRetryPolicyProvider _retryPolicyProvider;
     private readonly IAsyncPolicy<ChatMessageContent> _kernelPolicy;
+
     public ChatAiService(
         Kernel kernel,
         ILogger<ChatAiService> log,
         IMemoryCache cache,
-        MemoryCacheEntryOptions cacheOptions,
-        ISystemPromptProvider prompt, IRetryPolicyProvider retryPolicyProvider)
+        IOptions<MemoryCacheEntryOptions> cacheOptions,
+        IRetryPolicyProvider retryPolicyProvider)
     {
         _kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
         _log = log ?? throw new ArgumentNullException(nameof(log));
         _cache = cache ?? throw new ArgumentNullException(nameof(cache));
-        _cacheOptions = cacheOptions;
+        _cacheOptions = cacheOptions?.Value ?? throw new ArgumentNullException(nameof(cacheOptions));
+        _retryPolicyProvider = retryPolicyProvider ?? throw new ArgumentNullException(nameof(retryPolicyProvider));
         _chat = _kernel.GetRequiredService<IChatCompletionService>();
-        _prompt = prompt ?? throw new ArgumentNullException(nameof(prompt));
-        _retryPolicyProvider = retryPolicyProvider;
         _kernelPolicy = _retryPolicyProvider.CreateKernelPolicy(_log);
     }
 
@@ -60,7 +60,12 @@ public sealed class ChatAiService : IChatAiService
 
             if (history.Count == 0)
             {
-                history.AddSystemMessage(_prompt.Prompt);
+                var prompt = Prompts.Combine(
+                     Prompts.SystemDefault,
+                     Prompts.DetailedExplanation
+                     );
+
+                history.AddSystemMessage(prompt);
             }
 
             history.AddUserMessage(request.Question);
