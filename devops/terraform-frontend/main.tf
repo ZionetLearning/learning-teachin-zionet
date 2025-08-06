@@ -37,3 +37,20 @@ resource "azurerm_static_web_app" "frontend" {
   sku_tier            = "Free"
   sku_size            = "Free"
 }
+
+# Create Application Insights (basic/cheapest plan)
+resource "azurerm_application_insights" "frontend" {
+  name                = "${var.static_web_app_name}-appinsights"
+  location            = azurerm_resource_group.frontend.location
+  resource_group_name = azurerm_resource_group.frontend.name
+  application_type    = "web"
+  
+  # Use the most basic/cheapest settings
+  retention_in_days   = 30  # Minimum retention
+  sampling_percentage = 100 # Full sampling (can reduce to save costs)
+  
+  tags = {
+    Environment = "Development"
+    Project     = "Frontend"
+  }
+}

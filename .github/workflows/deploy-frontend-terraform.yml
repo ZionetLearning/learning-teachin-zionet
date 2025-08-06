@@ -34,6 +34,7 @@ jobs:
     outputs:
       deployment_token: ${{ steps.terraform_output.outputs.deployment_token }}
       static_web_app_url: ${{ steps.terraform_output.outputs.static_web_app_url }}
+      app_insights_connection_string: ${{ steps.terraform_output.outputs.app_insights_connection_string }}
     
     steps:
       - uses: actions/checkout@v4
@@ -77,6 +78,7 @@ jobs:
         run: |
           echo "deployment_token=$(terraform output -raw deployment_token)" >> $GITHUB_OUTPUT
           echo "static_web_app_url=$(terraform output -raw static_web_app_url)" >> $GITHUB_OUTPUT
+          echo "app_insights_connection_string=$(terraform output -raw application_insights_connection_string)" >> $GITHUB_OUTPUT
         working-directory: ${{ env.TF_DIR }}
 
   deploy:
@@ -88,6 +90,7 @@ jobs:
       contents: read
     with:
       deployment_token: ${{ needs.terraform.outputs.deployment_token }}
+      app_insights_connection_string: ${{ needs.terraform.outputs.app_insights_connection_string }}
     secrets: inherit
     
     

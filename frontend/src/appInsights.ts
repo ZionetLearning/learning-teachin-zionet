@@ -10,24 +10,28 @@ const reactPlugin = new ReactPlugin();
 
 // Debug logging for Application Insights
 const connectionString = import.meta.env.VITE_APPINSIGHTS_CONNECTION_STRING;
-console.log(" Application Insights Debug:", {
+console.log("📊 Application Insights Debug:", {
   hasConnectionString: !!connectionString,
   connectionStringLength: connectionString?.length || 0,
   connectionStringStart: connectionString?.substring(0, 30) + "..." || "undefined",
+  status: connectionString ? "✅ ENABLED - Using Terraform-provided connection string" : "⚠️ DISABLED - No connection string"
 });
 
+// Enable Application Insights with proper configuration
 const appInsights = new ApplicationInsights({
   config: {
     connectionString: connectionString,
     enableAutoRouteTracking: true,
-    enableRequestHeaderTracking: true,
-    enableResponseHeaderTracking: true,
-    enableAjaxErrorStatusText: true,
-    enableAjaxPerfTracking: true,
-    enableCorsCorrelation: true,
+    enableRequestHeaderTracking: false,
+    enableResponseHeaderTracking: false,
+    enableAjaxErrorStatusText: false,
+    enableAjaxPerfTracking: false,
+    enableCorsCorrelation: false,
     enableUnhandledPromiseRejectionTracking: true,
-    loggingLevelTelemetry: 2, // Verbose logging
-    loggingLevelConsole: 2, // Verbose console logging
+    loggingLevelTelemetry: 0,
+    loggingLevelConsole: 1,
+    disableExceptionTracking: false,
+    disableAjaxTracking: false, // Re-enable with correct workspace
     extensions: [reactPlugin as unknown as ITelemetryPlugin],
     extensionConfig: {
       [reactPlugin.identifier]: {
@@ -37,10 +41,15 @@ const appInsights = new ApplicationInsights({
   },
 });
 
-// Add error tracking
-appInsights.addTelemetryInitializer((envelope) => {
-  console.log(" Sending telemetry:", envelope);
-  return true;
-});
+// Override telemetry to prevent invalid workspace errors
+const originalLoadAppInsights = appInsights.loadAppInsights.bind(appInsights);
+(appInsights as any).loadAppInsights = function(...args: any[]) {
+  try {
+    return originalLoadAppInsights(...args);
+  } catch (error) {
+    console.warn("⚠️ Application Insights failed to load, continuing without telemetry:", error);
+    return appInsights; // Return the instance to satisfy the return type
+  }
+};
 
 export { appInsights, reactPlugin };

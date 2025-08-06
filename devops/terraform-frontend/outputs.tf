@@ -29,3 +29,21 @@ output "static_web_app_id" {
   description = "ID of the created static web app"
   value       = azurerm_static_web_app.frontend.id
 }
+
+# Application Insights outputs
+output "application_insights_connection_string" {
+  description = "Connection string for Application Insights"
+  value       = azurerm_application_insights.frontend.connection_string
+  sensitive   = true
+}
+
+output "application_insights_instrumentation_key" {
+  description = "Instrumentation key for Application Insights"
+  value       = azurerm_application_insights.frontend.instrumentation_key
+  sensitive   = true
+}
+
+output "application_insights_name" {
+  description = "Name of the Application Insights resource"
+  value       = azurerm_application_insights.frontend.name
+}
