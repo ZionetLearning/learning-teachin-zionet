@@ -71,15 +71,6 @@ builder.Services.AddQueue<TaskModel, EngineQueueHandler>(
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
-// For Log Scopes
-builder.Logging.ClearProviders();
-builder.Logging.AddSimpleConsole(options =>
-{
-    options.IncludeScopes = true;             // this shows your BeginScope
-    options.SingleLine = true;               // this gives you indentation and structure
-    options.TimestampFormat = "[HH:mm:ss] ";  // optional, for nice timestamps
-});
-
 var app = builder.Build();
 
 app.UseCloudEvents();
