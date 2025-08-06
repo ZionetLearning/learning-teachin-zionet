@@ -1,5 +1,5 @@
-import { WeatherWidget } from '@/features';
+import { WeatherWidget } from "@/features";
 
 export const WeatherWidgetPage = () => {
-	return <WeatherWidget />;
+  return <WeatherWidget />;
 };

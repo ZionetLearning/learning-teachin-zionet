@@ -1,5 +1,5 @@
-import { createContext } from 'react';
+import { createContext } from "react";
 
-import { ApiService } from '@/api';
+import { ApiService } from "@/api";
 
 export const ReactQueryContext = createContext<ApiService | null>(null);
