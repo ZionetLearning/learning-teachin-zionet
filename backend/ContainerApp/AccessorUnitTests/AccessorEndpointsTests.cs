@@ -59,21 +59,20 @@ public class AccessorEndpointsTests
     [Fact]
     public async Task CreateTask_ReturnsOk_WhenSuccessful()
     {
-    // Arrange
-    var task = new TaskModel { Id = 42, Name = "UnitTest Task" };
+        // Arrange
+        var task = new TaskModel { Id = 42, Name = "UnitTest Task" };
 
-    // Act
-    var result = await AccessorEndpoints.CreateTaskAsync(task, _mockService.Object, _mockLogger.Object);
+        // Act
+        var result = await AccessorEndpoints.CreateTaskAsync(task, _mockService.Object, _mockLogger.Object);
 
-    // Assert
-    var okResult = Assert.IsAssignableFrom<IValueHttpResult>(result);
-    var value = okResult.Value;
+        // Assert
+        var okResult = Assert.IsAssignableFrom<IValueHttpResult>(result);
+        var value = okResult.Value;
 
-    Assert.NotNull(value);
-    Assert.Equal("Task 42 Saved", value?.ToString());
+        Assert.NotNull(value);
+        Assert.Equal("Task 42 Saved", value?.ToString());
     }
 
-    
     [Fact]
     public async Task UpdateTaskName_ReturnsOk_WhenSuccessful()
     {
