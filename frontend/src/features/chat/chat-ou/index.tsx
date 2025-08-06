@@ -80,7 +80,7 @@ export const ChatOu: React.FC = () => {
               aria-label="Retry action"
               style={{ marginRight: "8px" }}
             >
-              {t('pages.chatOu.retry')}
+              {t("pages.chatOu.retry")}
             </button>
             <button
               className={classes.errorDismiss}
@@ -96,7 +96,7 @@ export const ChatOu: React.FC = () => {
       {/* Chat Header */}
       <div className={classes.header}>
         <ChatHeader
-          title={t('pages.chatOu.smartChatDemo')}
+          title={t("pages.chatOu.smartChatDemo")}
           isOnline={!error}
           isTyping={isLoading}
           participantCount={2}
@@ -113,7 +113,7 @@ export const ChatOu: React.FC = () => {
           <MessageInput
             onSendMessage={handleSendMessage}
             isLoading={isLoading}
-            placeholder={t('pages.chatOu.typeYourMessage')}
+            placeholder={t("pages.chatOu.typeYourMessage")}
             disabled={!!error}
           />
         </div>

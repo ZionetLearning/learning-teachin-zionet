@@ -16,7 +16,7 @@ export const BackToMenuLayout = () => {
       <header className={classes.header}>
         {showBackButton && (
           <button className={classes.button} onClick={() => navigate("/")}>
-            {t('goBackToMenu')}
+            {t("goBackToMenu")}
           </button>
         )}
         <button
@@ -26,7 +26,7 @@ export const BackToMenuLayout = () => {
             navigate("/signin", { replace: true });
           }}
         >
-          {t('logout')}
+          {t("logout")}
         </button>
       </header>
 

@@ -43,8 +43,16 @@ export const ChatAvatar = () => {
   return (
     <div className={classes.chatWrapper}>
       <div className={classes.wrapper}>
-        <img src={avatar} alt={t('pages.chatAvatar.avatar')} className={classes.avatar} />
-        <img src={currentVisemeSrc} alt={t('pages.chatAvatar.lips')} className={classes.lipsImage} />
+        <img
+          src={avatar}
+          alt={t("pages.chatAvatar.avatar")}
+          className={classes.avatar}
+        />
+        <img
+          src={currentVisemeSrc}
+          alt={t("pages.chatAvatar.lips")}
+          className={classes.lipsImage}
+        />
       </div>
       <ChatUi
         loading={loading}

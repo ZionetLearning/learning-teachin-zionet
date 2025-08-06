@@ -30,9 +30,10 @@ export const AudioControls = ({
           {audioState.isPlaying ? "🔊" : "🎧"}
         </div>
         <div className={classes.audioText}>
-          {phase === "ready" && t('pages.typingPractice.clickPlayToHearTheHebrewText')}
-          {phase === "playing" && t('pages.typingPractice.playingAudio')}
-          {phase === "typing" && t('pages.typingPractice.typeWhatYouHeard')}
+          {phase === "ready" &&
+            t("pages.typingPractice.clickPlayToHearTheHebrewText")}
+          {phase === "playing" && t("pages.typingPractice.playingAudio")}
+          {phase === "typing" && t("pages.typingPractice.typeWhatYouHeard")}
         </div>
       </div>
 
@@ -46,10 +47,10 @@ export const AudioControls = ({
             {audioState.isPlaying ? (
               <>
                 <span className={classes.loadingSpinner} />
-                {t('pages.typingPractice.playing')}
+                {t("pages.typingPractice.playing")}
               </>
             ) : (
-              <>{t('pages.typingPractice.playingAudio')}</>
+              <>{t("pages.typingPractice.playingAudio")}</>
             )}
           </button>
         )}
@@ -63,10 +64,10 @@ export const AudioControls = ({
             {audioState.isPlaying ? (
               <>
                 <span className={classes.loadingSpinner} />
-                {t('pages.typingPractice.playing')}
+                {t("pages.typingPractice.playing")}
               </>
             ) : (
-              <>{t('pages.typingPractice.replay')}</>
+              <>{t("pages.typingPractice.replay")}</>
             )}
           </button>
         )}
@@ -81,7 +82,7 @@ export const AudioControls = ({
             onClick={onPlayAudio}
             disabled={audioState.isPlaying}
           >
-            {t('pages.typingPractice.tryAgain')}n
+            {t("pages.typingPractice.tryAgain")}n
           </button>
         </div>
       )}

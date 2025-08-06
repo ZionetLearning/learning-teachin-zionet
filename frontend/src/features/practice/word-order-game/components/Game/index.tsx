@@ -110,7 +110,7 @@ export const Game = () => {
         </div>
 
         <div className={classes.wordsBank} dir="rtl">
-          {loading && <div>{t('pages.wordOrderGame.loading')}</div>}
+          {loading && <div>{t("pages.wordOrderGame.loading")}</div>}
           {error && <div style={{ color: "red" }}>{error}</div>}
           {!loading &&
             !error &&
@@ -127,9 +127,11 @@ export const Game = () => {
       </div>
 
       <div className={classes.sideButtons}>
-        <button onClick={handleReset}>{t('pages.wordOrderGame.reset')}</button>
-        <button onClick={handleCheck}>{t('pages.wordOrderGame.check')}</button>
-        <button onClick={handleNextClick}>{t('pages.wordOrderGame.next')}</button>
+        <button onClick={handleReset}>{t("pages.wordOrderGame.reset")}</button>
+        <button onClick={handleCheck}>{t("pages.wordOrderGame.check")}</button>
+        <button onClick={handleNextClick}>
+          {t("pages.wordOrderGame.next")}
+        </button>
       </div>
     </div>
   );

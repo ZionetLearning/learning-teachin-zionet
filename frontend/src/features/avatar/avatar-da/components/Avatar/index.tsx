@@ -287,7 +287,7 @@ export const Avatar = (props: JSX.IntrinsicElements["group"]) => {
             name="speechInput"
             type="text"
             dir="rtl"
-            placeholder={t('pages.avatarDa.writeSomethingHereInHebrew')}
+            placeholder={t("pages.avatarDa.writeSomethingHereInHebrew")}
             defaultValue=""
             onChange={(e) => {
               textRef.current = e.currentTarget.value;
@@ -300,7 +300,7 @@ export const Avatar = (props: JSX.IntrinsicElements["group"]) => {
             onClick={speak}
             className={classes.inputButton}
           >
-            {t('pages.avatarDa.speak')}
+            {t("pages.avatarDa.speak")}
           </button>
         </div>
       </Html>

@@ -32,7 +32,11 @@ const MessageItem: React.FC<MessageItemProps> = ({ message }) => {
       case "generative-ui":
         return <GenerativeUIMessage message={message} />;
       default:
-        return <div className={classes.fallback}>{t('pages.chatOu.unsupportedMessageType')}</div>;
+        return (
+          <div className={classes.fallback}>
+            {t("pages.chatOu.unsupportedMessageType")}
+          </div>
+        );
     }
   };
 
@@ -58,15 +62,18 @@ const MessageItem: React.FC<MessageItemProps> = ({ message }) => {
 
       {message.context && (
         <div className={classes.contextInfo}>
-          <span className={classes.contextLabel}>{t('pages.chatOu.context')}</span>
+          <span className={classes.contextLabel}>
+            {t("pages.chatOu.context")}
+          </span>
           {message.context.pageTitle && (
             <span className={classes.contextItem}>
-              {t('pages.chatOu.page')} {message.context.pageTitle}
+              {t("pages.chatOu.page")} {message.context.pageTitle}
             </span>
           )}
           {message.context.selectedText && (
             <span className={classes.contextItem}>
-              {t('pages.chatOu.selected')} "{message.context.selectedText.substring(0, 50)}..."
+              {t("pages.chatOu.selected")} "
+              {message.context.selectedText.substring(0, 50)}..."
             </span>
           )}
         </div>

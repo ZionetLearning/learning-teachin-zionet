@@ -1,5 +1,5 @@
 import { StrictMode } from "react";
-import './i18n'; 
+import "./i18n";
 import { createRoot } from "react-dom/client";
 import {
   ReactQueryProvider,

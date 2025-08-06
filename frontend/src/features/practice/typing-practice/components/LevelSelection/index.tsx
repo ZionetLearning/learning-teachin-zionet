@@ -46,11 +46,13 @@ export const LevelSelection = ({
   return (
     <div className={classes.levelSelection}>
       <div>
-        <h3 className={classes.levelTitle}>{t('pages.typingPractice.chooseYourDifficultyLevel')}</h3>
+        <h3 className={classes.levelTitle}>
+          {t("pages.typingPractice.chooseYourDifficultyLevel")}
+        </h3>
         <p className={classes.levelDescription}>
-          {t('pages.typingPractice.selectDifficultyLevel')}
+          {t("pages.typingPractice.selectDifficultyLevel")}
           <br />
-          {t('pages.typingPractice.youWillListenToHebrewAudio')}
+          {t("pages.typingPractice.youWillListenToHebrewAudio")}
         </p>
       </div>
 

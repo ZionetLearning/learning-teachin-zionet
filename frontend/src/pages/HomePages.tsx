@@ -5,9 +5,9 @@ export const HomePage = () => {
   return (
     <>
       <Typography variant="h4" gutterBottom>
-        {t('pages.home.title')}
+        {t("pages.home.title")}
       </Typography>
-      <Typography>{t('pages.home.subTitle')}</Typography>
+      <Typography>{t("pages.home.subTitle")}</Typography>
     </>
   );
 };

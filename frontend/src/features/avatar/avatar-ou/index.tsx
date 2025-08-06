@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Lottie from "react-lottie";
 import { Play, Square, Volume2, VolumeX } from "lucide-react";
-import { useTranslation } from "react-i18next"; 
+import { useTranslation } from "react-i18next";
 import { useTTS } from "./hooks";
 import { useStyles } from "./style";
 import speakingSantaAnimation from "./animations/speakingSantaAnimation.json";
@@ -46,8 +46,10 @@ export const AvatarOu = () => {
       <div className={classes.wrapper}>
         {/* Header */}
         <div className={classes.header}>
-          <h1 className={classes.title}>{t('pages.avatarOu.ouAvatar')}</h1>
-          <p className={classes.subtitle}>{t('pages.avatarOu.avatarSpeaksHebrewWithAi')}</p>
+          <h1 className={classes.title}>{t("pages.avatarOu.ouAvatar")}</h1>
+          <p className={classes.subtitle}>
+            {t("pages.avatarOu.avatarSpeaksHebrewWithAi")}
+          </p>
           <div className={classes.headerDivider}></div>
         </div>
 
@@ -76,7 +78,9 @@ export const AvatarOu = () => {
                 <div
                   className={`${classes.statusDot} ${isPlaying ? classes.statusDotPlaying : ""}`}
                 ></div>
-                {isPlaying ? t('pages.avatarOu.speakingNow') : t('pages.avatarOu.readyToSpeak')}
+                {isPlaying
+                  ? t("pages.avatarOu.speakingNow")
+                  : t("pages.avatarOu.readyToSpeak")}
               </div>
             </div>
           </div>
@@ -86,7 +90,7 @@ export const AvatarOu = () => {
             {/* Text Input */}
             <div>
               <label className={classes.inputLabel}>
-                <span>{t('pages.avatarOu.typeTextInHebrew')}</span>
+                <span>{t("pages.avatarOu.typeTextInHebrew")}</span>
               </label>
               <div className={classes.textareaWrapper}>
                 <textarea
@@ -94,17 +98,19 @@ export const AvatarOu = () => {
                   onChange={(e) => setText(e.target.value)}
                   className={classes.textarea}
                   rows={3}
-                  placeholder={t('pages.avatarOu.typeHereYourText')}
+                  placeholder={t("pages.avatarOu.typeHereYourText")}
                   dir="rtl"
                 />
-                <div className={classes.charCounter}>{text.length} {t('pages.avatarOu.characters')}</div>
+                <div className={classes.charCounter}>
+                  {text.length} {t("pages.avatarOu.characters")}
+                </div>
               </div>
             </div>
 
             {/* Sample Texts */}
             <div>
               <label className={classes.inputLabel}>
-                <span>{t('pages.avatarOu.examples')}</span>
+                <span>{t("pages.avatarOu.examples")}</span>
               </label>
               <div className={classes.samplesGrid}>
                 {sampleTexts.map((sample, index) => (
@@ -135,12 +141,12 @@ export const AvatarOu = () => {
                 {isPlaying ? (
                   <>
                     <Square size={20} />
-                    {t('pages.avatarOu.stopSpeaking')}
+                    {t("pages.avatarOu.stopSpeaking")}
                   </>
                 ) : (
                   <>
                     <Play size={20} />
-                    {t('pages.avatarOu.startSpeaking')}
+                    {t("pages.avatarOu.startSpeaking")}
                   </>
                 )}
               </button>
@@ -158,7 +164,8 @@ export const AvatarOu = () => {
             {/* Footer */}
             <div className={classes.footer}>
               <p className={classes.footerText}>
-               {t('pages.avatarOu.webSpeachApi')} {t('pages.avatarOu.fullHebrewSupport')}
+                {t("pages.avatarOu.webSpeachApi")}{" "}
+                {t("pages.avatarOu.fullHebrewSupport")}
               </p>
             </div>
           </div>

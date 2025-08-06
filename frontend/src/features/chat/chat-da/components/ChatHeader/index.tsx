@@ -8,7 +8,9 @@ export const ChatHeader = () => {
 
   return (
     <header className={classes.header}>
-      <span className={classes.title}>{t('pages.chatDa.learningTeachinChat')}</span>
+      <span className={classes.title}>
+        {t("pages.chatDa.learningTeachinChat")}
+      </span>
       <ChatIcon width={24} height={24} />
     </header>
   );

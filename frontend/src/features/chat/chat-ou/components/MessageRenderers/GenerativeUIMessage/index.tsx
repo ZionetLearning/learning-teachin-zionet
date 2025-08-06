@@ -102,7 +102,7 @@ const GenerativeUIMessage: React.FC<GenerativeUIMessageProps> = ({
       <div className={classes.container}>
         <div className={classes.fallbackText}>{fallbackText}</div>
         <div className={classes.componentInfo}>
-          {t('pages.chatOu.unsupportedComponent')} {componentType}
+          {t("pages.chatOu.unsupportedComponent")} {componentType}
         </div>
       </div>
     );

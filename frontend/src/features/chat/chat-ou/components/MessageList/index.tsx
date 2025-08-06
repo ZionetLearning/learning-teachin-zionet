@@ -107,7 +107,7 @@ const MessageList: React.FC<MessageListProps> = ({
           <div className={classes.emptyState}>
             <div className={classes.emptyStateIcon}>💬</div>
             <div className={classes.emptyStateText}>
-              {t('pages.chatOu.startConversationBySendingTheMessageBelow')}
+              {t("pages.chatOu.startConversationBySendingTheMessageBelow")}
             </div>
           </div>
         ) : (
@@ -145,7 +145,9 @@ const MessageList: React.FC<MessageListProps> = ({
               <span></span>
               <span></span>
             </div>
-            <span className={classes.typingText}>{t('pages.chatOu.aiIsTyping')}</span>
+            <span className={classes.typingText}>
+              {t("pages.chatOu.aiIsTyping")}
+            </span>
           </div>
         )}
 
@@ -158,7 +160,7 @@ const MessageList: React.FC<MessageListProps> = ({
           className={classes.scrollToBottomButton}
           onClick={() => scrollToBottom(true)}
           aria-label="Scroll to bottom"
-          title={t('pages.chatOu.scrollToLatesMessages')}
+          title={t("pages.chatOu.scrollToLatesMessages")}
         >
           ↓
         </button>

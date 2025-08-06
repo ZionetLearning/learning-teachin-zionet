@@ -6,7 +6,7 @@ export const Description = () => {
   const classes = useStyles();
   return (
     <div className={classes.description}>
-      {t('pages.wordOrderGame.subTitle')}
+      {t("pages.wordOrderGame.subTitle")}
     </div>
   );
 };

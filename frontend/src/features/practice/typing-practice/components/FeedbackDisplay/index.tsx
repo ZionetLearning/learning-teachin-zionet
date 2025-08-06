@@ -27,24 +27,30 @@ export const FeedbackDisplay = ({
   return (
     <div className={classes.feedbackSection}>
       <div className={classes.feedbackHeader}>
-        <h4 className={classes.feedbackTitle}>{t('pages.typingPractice.yourResults')}</h4>
+        <h4 className={classes.feedbackTitle}>
+          {t("pages.typingPractice.yourResults")}
+        </h4>
         <div
           className={`${classes.accuracyBadge} ${getAccuracyClass(feedbackResult.accuracy)}`}
         >
-          {feedbackResult.accuracy}% {t('pages.typingPractice.accuracy')}
+          {feedbackResult.accuracy}% {t("pages.typingPractice.accuracy")}
         </div>
       </div>
 
       <div className={classes.textComparison}>
         <div>
-          <div className={classes.comparisonLabel}>{t('pages.typingPractice.whatYouTyped')}</div>
+          <div className={classes.comparisonLabel}>
+            {t("pages.typingPractice.whatYouTyped")}
+          </div>
           <div className={classes.comparisonText}>
-            {feedbackResult.userInput || t('pages.typingPractice.empty')}
+            {feedbackResult.userInput || t("pages.typingPractice.empty")}
           </div>
         </div>
 
         <div>
-          <div className={classes.comparisonLabel}>{t('pages.typingPractice.expectedText')}</div>
+          <div className={classes.comparisonLabel}>
+            {t("pages.typingPractice.expectedText")}
+          </div>
           <div className={classes.expectedText}>
             {feedbackResult.characterComparison.map((char, index) => (
               <span
@@ -64,16 +70,16 @@ export const FeedbackDisplay = ({
 
       <div className={classes.exerciseControls}>
         <button className={classes.controlButton} onClick={onTryAgain}>
-          {t('pages.typingPractice.tryAgain')}
+          {t("pages.typingPractice.tryAgain")}
         </button>
         <button
           className={`${classes.controlButton} ${classes.primaryControlButton}`}
           onClick={onNextExercise}
         >
-          {t('pages.typingPractice.nextExercise')}
+          {t("pages.typingPractice.nextExercise")}
         </button>
         <button className={classes.controlButton} onClick={onChangeLevel}>
-          {t('pages.typingPractice.changeLevel')}
+          {t("pages.typingPractice.changeLevel")}
         </button>
       </div>
     </div>

@@ -139,7 +139,7 @@ const QuizMessage: React.FC<QuizMessageProps> = ({
             onClick={handleSubmit}
             disabled={selectedOptions.length === 0}
           >
-            {t('pages.chatOu.submitAnswer')}
+            {t("pages.chatOu.submitAnswer")}
             {allowMultiple && selectedOptions.length > 1 ? "s" : ""}
           </button>
         </div>
@@ -148,19 +148,19 @@ const QuizMessage: React.FC<QuizMessageProps> = ({
       {showResults && (
         <div className={classes.results}>
           <div className={classes.score}>
-            {t('pages.chatOu.score')} {getScore().correct}/{getScore().total} (
+            {t("pages.chatOu.score")} {getScore().correct}/{getScore().total} (
             {getScore().percentage}%)
           </div>
           {explanation && (
             <div className={classes.explanation}>
-              <strong>{t('pages.chatOu.explanation')}</strong> {explanation}
+              <strong>{t("pages.chatOu.explanation")}</strong> {explanation}
             </div>
           )}
           <button
             className={`${classes.button} ${classes.resetButton}`}
             onClick={handleReset}
           >
-            {t('pages.chatOu.tryAgain')}
+            {t("pages.chatOu.tryAgain")}
           </button>
         </div>
       )}

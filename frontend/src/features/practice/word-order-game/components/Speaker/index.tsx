@@ -10,7 +10,10 @@ export const Speaker = ({ mode = "normal", onClick }: SpeakerProps) => {
   const { t } = useTranslation();
   const classes = useStyles();
   const emoji = mode === "normal" ? "🔊" : "🐢";
-  const label = mode === "normal" ? t('pages.wordOrderGame.playAudio') : t('pages.wordOrderGame.playAudioSlowly');
+  const label =
+    mode === "normal"
+      ? t("pages.wordOrderGame.playAudio")
+      : t("pages.wordOrderGame.playAudioSlowly");
 
   return (
     <button

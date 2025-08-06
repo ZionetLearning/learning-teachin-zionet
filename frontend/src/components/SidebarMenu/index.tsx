@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from "react-i18next";
 import {
   Sidebar,
   Menu,
@@ -16,8 +16,8 @@ import KeyboardIcon from "@mui/icons-material/Keyboard";
 import TranslateIcon from "@mui/icons-material/Translate";
 import HomeIcon from "@mui/icons-material/Home";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
-import GBFlag from 'country-flag-icons/react/3x2/GB';
-import ILFlag from 'country-flag-icons/react/3x2/IL';
+import GBFlag from "country-flag-icons/react/3x2/GB";
+import ILFlag from "country-flag-icons/react/3x2/IL";
 import { useAuth } from "@/providers/auth";
 
 export const SidebarMenu = () => {
@@ -26,18 +26,18 @@ export const SidebarMenu = () => {
   const { logout } = useAuth();
   const { t, i18n } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
-  const [langActive, setLangActive] = useState<'he'|'en'|null>('en');
+  const [langActive, setLangActive] = useState<"he" | "en" | null>("en");
   const flagSize = { width: 22, height: 16 };
   const handleNavigation = (path: string) => {
     navigate(path);
   };
 
   const isActive = (path: string) => location.pathname === path;
-  
-  const changeLang = (lng: 'en' | 'he') => () => {
+
+  const changeLang = (lng: "en" | "he") => () => {
     i18n.changeLanguage(lng);
-    setLangActive(lng); 
-  }
+    setLangActive(lng);
+  };
   return (
     <Sidebar
       collapsed={collapsed}
@@ -78,7 +78,7 @@ export const SidebarMenu = () => {
           icon={<MenuIcon />}
           onClick={() => setCollapsed((prev) => !prev)}
         >
-          {!collapsed && t('sidebar.toggleSidebar')}
+          {!collapsed && t("sidebar.toggleSidebar")}
         </MenuItem>
 
         <MenuItem
@@ -86,99 +86,99 @@ export const SidebarMenu = () => {
           onClick={() => handleNavigation("/")}
           active={isActive("/")}
         >
-          {t('sidebar.home')}
+          {t("sidebar.home")}
         </MenuItem>
 
-        <SubMenu label={t('sidebar.chatTools')} icon={<ChatIcon />}>
+        <SubMenu label={t("sidebar.chatTools")} icon={<ChatIcon />}>
           <MenuItem
             onClick={() => handleNavigation("/chat/sh")}
             active={isActive("/chat/sh")}
           >
-            {t('sidebar.chatSh')}
+            {t("sidebar.chatSh")}
           </MenuItem>
           <MenuItem
             onClick={() => handleNavigation("/chat/yo")}
             active={isActive("/chat/yo")}
           >
-            {t('sidebar.chatYo')}
+            {t("sidebar.chatYo")}
           </MenuItem>
           <MenuItem
             onClick={() => handleNavigation("/chat/da")}
             active={isActive("/chat/da")}
           >
-            {t('sidebar.chatDa')}
+            {t("sidebar.chatDa")}
           </MenuItem>
           <MenuItem
             onClick={() => handleNavigation("/chat/ou")}
             active={isActive("/chat/ou")}
           >
-            {t('sidebar.chatOu')}
+            {t("sidebar.chatOu")}
           </MenuItem>
           <MenuItem
             onClick={() => handleNavigation("/chat-avatar")}
             active={isActive("/chat-avatar")}
           >
-            {t('sidebar.chatAvatar')}
+            {t("sidebar.chatAvatar")}
           </MenuItem>
         </SubMenu>
 
-        <SubMenu label={t('sidebar.avatarTools')} icon={<FaceIcon />}>
+        <SubMenu label={t("sidebar.avatarTools")} icon={<FaceIcon />}>
           <MenuItem
             onClick={() => handleNavigation("/avatar/ou")}
             active={isActive("/avatar/ou")}
           >
-            {t('sidebar.avatarOu')}
+            {t("sidebar.avatarOu")}
           </MenuItem>
           <MenuItem
             onClick={() => handleNavigation("/avatar/sh")}
             active={isActive("/avatar/sh")}
           >
-            {t('sidebar.avatarSh')}
+            {t("sidebar.avatarSh")}
           </MenuItem>
           <MenuItem
             onClick={() => handleNavigation("/avatar/da")}
             active={isActive("/avatar/da")}
           >
-            {t('sidebar.avatarDa')}
+            {t("sidebar.avatarDa")}
           </MenuItem>
         </SubMenu>
 
-        <SubMenu label={t('sidebar.practiceTools')} icon={<KeyboardIcon />}>
+        <SubMenu label={t("sidebar.practiceTools")} icon={<KeyboardIcon />}>
           <MenuItem
             onClick={() => handleNavigation("/typing")}
             active={isActive("/typing")}
           >
-            {t('sidebar.typingPractice')}
+            {t("sidebar.typingPractice")}
           </MenuItem>
           <MenuItem
             onClick={() => handleNavigation("/word-order-game")}
             active={isActive("/word-order-game")}
           >
-            {t('sidebar.wordOrderGame')}
+            {t("sidebar.wordOrderGame")}
           </MenuItem>
           <MenuItem
             onClick={() => handleNavigation("/speaking")}
             active={isActive("/speaking")}
           >
-            {t('sidebar.speakingPractice')}
+            {t("sidebar.speakingPractice")}
           </MenuItem>
         </SubMenu>
 
-        <SubMenu label={t('sidebar.languages')} icon={<TranslateIcon />}>
+        <SubMenu label={t("sidebar.languages")} icon={<TranslateIcon />}>
           <MenuItem
             icon={<ILFlag style={flagSize} />}
-            onClick={changeLang('he')}
-            active={langActive === 'he'}
+            onClick={changeLang("he")}
+            active={langActive === "he"}
           >
-            {t('sidebar.he')}
+            {t("sidebar.he")}
           </MenuItem>
 
           <MenuItem
             icon={<GBFlag style={flagSize} />}
-            onClick={changeLang('en')}
-            active={langActive === 'en'}
+            onClick={changeLang("en")}
+            active={langActive === "en"}
           >
-            {t('sidebar.en')}
+            {t("sidebar.en")}
           </MenuItem>
         </SubMenu>
       </Menu>
@@ -198,7 +198,7 @@ export const SidebarMenu = () => {
         }}
       >
         <MenuItem icon={<ExitToAppIcon />} onClick={logout}>
-          {t('sidebar.logout')}
+          {t("sidebar.logout")}
         </MenuItem>
       </Menu>
     </Sidebar>

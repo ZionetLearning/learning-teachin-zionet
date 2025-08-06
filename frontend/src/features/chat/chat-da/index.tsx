@@ -17,7 +17,7 @@ export const ChatDa = () => {
           setView((view) => (view === "sidebar" ? "full" : "sidebar"))
         }
       >
-        {t('pages.chatDa.toggleView')}
+        {t("pages.chatDa.toggleView")}
       </button>
       {view === "sidebar" ? <SidebarChat /> : <FullScreenChat />}
     </ChatProvider>

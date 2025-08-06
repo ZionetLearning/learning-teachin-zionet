@@ -31,7 +31,7 @@ export const ChatInput = ({
           }
         }}
         autoComplete="off"
-        placeholder={t('pages.chatDa.typeMessage')}
+        placeholder={t("pages.chatDa.typeMessage")}
         disabled={disabled}
       />
       <SendIcon

@@ -15,25 +15,25 @@
 
 //   });
 
-import i18n from 'i18next';
-import { initReactI18next } from 'react-i18next';
-import LanguageDetector from 'i18next-browser-languagedetector';
-import { resources } from './locale';
+import i18n from "i18next";
+import { initReactI18next } from "react-i18next";
+import LanguageDetector from "i18next-browser-languagedetector";
+import { resources } from "./locale";
 
-const firstLng = localStorage.getItem('i18nextLng') || 'en';
+const firstLng = localStorage.getItem("i18nextLng") || "en";
 
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     resources,
-    lng: firstLng,        
-    fallbackLng: 'en',
-    defaultNS: 'translation',
+    lng: firstLng,
+    fallbackLng: "en",
+    defaultNS: "translation",
 
     detection: {
-      order: ['localStorage', 'sessionStorage', 'navigator'],
-      caches: ['localStorage'],   // remember the choice
+      order: ["localStorage", "sessionStorage", "navigator"],
+      caches: ["localStorage"], // remember the choice
     },
 
     interpolation: { escapeValue: false },

@@ -75,7 +75,7 @@ export const ChatUi = ({
             id="assistant"
             position="left"
             type="text"
-            text={t('pages.chatYo.thinking')}
+            text={t("pages.chatYo.thinking")}
             title="Assistant"
             titleColor="none"
             date={new Date()}
@@ -92,7 +92,7 @@ export const ChatUi = ({
 
       <div className={avatarMode ? classes.inputContainer : undefined}>
         <Input
-          placeholder={t('pages.chatYo.typeMessage')}
+          placeholder={t("pages.chatYo.typeMessage")}
           className={avatarMode ? classes.inputAvatar : classes.input}
           value={value}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -105,14 +105,14 @@ export const ChatUi = ({
               <div className={classes.rightButtons}>
                 <button
                   className={classes.sendButton}
-                  title={t('pages.chatYo.replayAvatar')}
+                  title={t("pages.chatYo.replayAvatar")}
                   onClick={handlePlay}
                 >
                   🗣
                 </button>
                 <button
                   className={classes.sendButton}
-                  title={t('pages.chatYo.send')}
+                  title={t("pages.chatYo.send")}
                   onClick={handleSendMessage}
                 >
                   {loading ? "…" : "↑"}

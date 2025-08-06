@@ -36,7 +36,9 @@ export const TypingPractice = () => {
   const renderExerciseArea = () => (
     <div className={classes.exerciseArea}>
       <div className={classes.exerciseHeader}>
-        <h3 className={classes.exerciseTitle}>{t('pages.typingPractice.hebrewTypingPractice')}</h3>
+        <h3 className={classes.exerciseTitle}>
+          {t("pages.typingPractice.hebrewTypingPractice")}
+        </h3>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           {exerciseState.selectedLevel && (
             <span
@@ -49,7 +51,7 @@ export const TypingPractice = () => {
             className={classes.backButton}
             onClick={handleBackToLevelSelection}
           >
-            {t('pages.typingPractice.changeLevel')}
+            {t("pages.typingPractice.changeLevel")}
           </button>
         </div>
       </div>
@@ -71,7 +73,7 @@ export const TypingPractice = () => {
               className={classes.typingInputField}
               value={exerciseState.userInput}
               onChange={handleInputChange}
-              placeholder={t('pages.typingPractice.typeHereWhatYouHeard')}
+              placeholder={t("pages.typingPractice.typeHereWhatYouHeard")}
               autoFocus
             />
             <button
@@ -79,7 +81,7 @@ export const TypingPractice = () => {
               onClick={handleSubmitAnswer}
               disabled={!exerciseState.userInput.trim()}
             >
-              {t('pages.typingPractice.submitAnswer')}
+              {t("pages.typingPractice.submitAnswer")}
             </button>
           </div>
         )}
@@ -99,9 +101,11 @@ export const TypingPractice = () => {
   return (
     <div className={classes.container}>
       <div className={classes.header}>
-        <h1 className={classes.title}>{t('pages.typingPractice.hebrewTypingPractice')}</h1>
+        <h1 className={classes.title}>
+          {t("pages.typingPractice.hebrewTypingPractice")}
+        </h1>
         <p className={classes.subtitle}>
-          {t('pages.typingPractice.listenToHebrewAudio')}
+          {t("pages.typingPractice.listenToHebrewAudio")}
         </p>
       </div>
 

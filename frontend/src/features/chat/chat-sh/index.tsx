@@ -55,7 +55,9 @@ export const ChatSh = () => {
 
   return (
     <div className={classes.chatWrapper}>
-      <div className={classes.chatTitle}>{t('pages.chatSh.azureOpenAiChat')}</div>
+      <div className={classes.chatTitle}>
+        {t("pages.chatSh.azureOpenAiChat")}
+      </div>
       <div ref={chatContainerRef} className={classes.chatContainer}>
         {messages.map((msg, idx) => (
           <div
@@ -92,7 +94,7 @@ export const ChatSh = () => {
           className={classes.input}
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder={t('pages.chatSh.typeYourMessage')}
+          placeholder={t("pages.chatSh.typeYourMessage")}
           disabled={isLoading}
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
         />

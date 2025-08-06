@@ -24,7 +24,7 @@ export const AvatarSh = () => {
       <div style={{ marginTop: "20px" }}>
         <input
           type="text"
-          placeholder={t('pages.avatarSh.writeSomethingHereInHebrew')}
+          placeholder={t("pages.avatarSh.writeSomethingHereInHebrew")}
           value={text}
           onChange={(e) => setText(e.target.value)}
           className={classes.input}
@@ -32,7 +32,7 @@ export const AvatarSh = () => {
         />
         <br />
         <button onClick={() => speak(text)} className={classes.button}>
-          {t('pages.avatarSh.speak')}
+          {t("pages.avatarSh.speak")}
         </button>
       </div>
     </div>

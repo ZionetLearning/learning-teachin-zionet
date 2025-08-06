@@ -144,11 +144,15 @@ export const SpeakingPractice = () => {
   return (
     <div className={classes.container}>
       <div className={classes.nav}>
-        <button onClick={goPrev}>&laquo; {t('pages.speakingPractice.prev')}</button>
+        <button onClick={goPrev}>
+          &laquo; {t("pages.speakingPractice.prev")}
+        </button>
         <span>
           {currentIdx + 1} / {phrases.length}
         </span>
-        <button onClick={goNext}>{t('pages.speakingPractice.next')} &raquo;</button>
+        <button onClick={goNext}>
+          {t("pages.speakingPractice.next")} &raquo;
+        </button>
       </div>
 
       <div className={classes.main}>
@@ -165,13 +169,19 @@ export const SpeakingPractice = () => {
 
       <div className={classes.controls}>
         <button onClick={handlePlay}>
-          {isSpeaking ? t('pages.speakingPractice.stop') : t('pages.speakingPractice.play')}
+          {isSpeaking
+            ? t("pages.speakingPractice.stop")
+            : t("pages.speakingPractice.play")}
         </button>
         <button onClick={handleRecord}>
-          {isRecording ? t('pages.speakingPractice.stop') : t('pages.speakingPractice.record')}
+          {isRecording
+            ? t("pages.speakingPractice.stop")
+            : t("pages.speakingPractice.record")}
         </button>
         <button onClick={() => setShowNikud(!showNikud)}>
-          {showNikud ? t('pages.speakingPractice.hideNikud') : t('pages.speakingPractice.showNikud')}
+          {showNikud
+            ? t("pages.speakingPractice.hideNikud")
+            : t("pages.speakingPractice.showNikud")}
         </button>
       </div>
     </div>

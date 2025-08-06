@@ -130,12 +130,14 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         <div className={classes.contextDisplay}>
           <div className={classes.contextHeader}>
             <span className={classes.contextIcon}>📎</span>
-            <span className={classes.contextLabel}>{t('pages.chatOu.contextAttached')}</span>
+            <span className={classes.contextLabel}>
+              {t("pages.chatOu.contextAttached")}
+            </span>
             <div className={classes.contextActions}>
               <button
                 className={classes.contextActionButton}
                 onClick={handleRefreshContext}
-                title={t('pages.chatOu.refreshContext')}
+                title={t("pages.chatOu.refreshContext")}
                 type="button"
               >
                 🔄
@@ -143,7 +145,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
               <button
                 className={classes.contextActionButton}
                 onClick={detachContext}
-                title={t('pages.chatOu.removeContext')}
+                title={t("pages.chatOu.removeContext")}
                 type="button"
               >
                 ✕
@@ -163,9 +165,15 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           onClick={handleContextToggle}
           disabled={disabled || isLoading}
           type="button"
-          title={isContextAttached ? t('pages.chatOu.removeContext') : t('pages.chatOu.attachContext')}
+          title={
+            isContextAttached
+              ? t("pages.chatOu.removeContext")
+              : t("pages.chatOu.attachContext")
+          }
           aria-label={
-            isContextAttached ? t('pages.chatOu.removeContext') : t('pages.chatOu.attachContext')
+            isContextAttached
+              ? t("pages.chatOu.removeContext")
+              : t("pages.chatOu.attachContext")
           }
         >
           📎
@@ -202,7 +210,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
       {showSuggestions && !inputValue.trim() && (
         <div className={classes.suggestionsPanel}>
           <div className={classes.suggestionsHeader}>
-            💡 {t('pages.chatOu.tryTheseDemoExamples')}
+            💡 {t("pages.chatOu.tryTheseDemoExamples")}
           </div>
           <div className={classes.suggestionsList}>
             {DEMO_SUGGESTIONS.map((suggestion, index) => (
@@ -221,7 +229,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
 
       {inputValue.length > 1800 && (
         <div className={classes.characterCount}>
-          {inputValue.length}/2000 {t('pages.chatOu.characters')}
+          {inputValue.length}/2000 {t("pages.chatOu.characters")}
         </div>
       )}
     </div>
