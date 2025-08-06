@@ -4,7 +4,7 @@ metadata:
   name: manager-ingress
   namespace: dev
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
     nginx.ingress.kubernetes.io/use-regex: "true"
 spec:
   ingressClassName: nginx
@@ -17,4 +17,4 @@ spec:
               service:
                 name: manager
                 port:
-                  number: 80
+                  number: 80 # Change this if your service listens on a different port
