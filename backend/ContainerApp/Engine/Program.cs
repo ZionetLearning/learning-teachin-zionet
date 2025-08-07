@@ -117,5 +117,6 @@ var app = builder.Build();
 app.UseCloudEvents();
 app.MapControllers();
 app.MapSubscribeHandler();
+app.MapAiEndpoints();
 
 app.Run();
