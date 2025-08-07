@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: teaching-ingress
+  name: teachin-ingress
   namespace: devops-logs
   annotations:
     kubernetes.io/ingress.class: nginx
@@ -11,10 +11,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - teaching-zionet.westeurope.cloudapp.azure.com
-      secretName: teaching-zionet-tls
+        - teachin-zionet.westeurope.cloudapp.azure.com
+      secretName: teachin-zionet-tls
   rules:
-  - host: teaching-zionet.westeurope.cloudapp.azure.com
+  - host: teachin-zionet.westeurope.cloudapp.azure.com
     http:
       paths:
       - path: /grafana
