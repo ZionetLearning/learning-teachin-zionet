@@ -34,6 +34,7 @@ export const SidebarMenu = () => {
     navigate(path);
   };
 
+  const isHebrew = i18n.language === "he";
   const isActive = (path: string) => location.pathname === path;
 
   const changeLang = (lng: "en" | "he") => () => {
@@ -43,6 +44,7 @@ export const SidebarMenu = () => {
   return (
     <Sidebar
       collapsed={collapsed}
+      dir={isHebrew ? "rtl" : "ltr"}
       rootStyles={{
         [`.${sidebarClasses.container}`]: {
           backgroundColor: "#f4f4f4",
@@ -51,6 +53,7 @@ export const SidebarMenu = () => {
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
+          direction: isHebrew ? "rtl" : "ltr",
         },
       }}
     >
@@ -72,7 +75,7 @@ export const SidebarMenu = () => {
             textTransform: "capitalize",
           }),
           label: {
-            textAlign: "left",
+            textAlign: isHebrew ? "right" : "left",
           },
         }}
       >
@@ -189,14 +192,14 @@ export const SidebarMenu = () => {
           onClick={() => handleNavigation("/earthquake-map")}
           active={isActive("/earthquake-map")}
         >
-          Earthquake Map
+          {t("sidebar.earthquakeMap")}
         </MenuItem>
         <MenuItem
           onClick={() => handleNavigation("/weather")}
           icon={<WeatherWidgetIcon />}
           active={isActive("/weather")}
         >
-          Weather
+          {t("sidebar.weather")}
         </MenuItem>
       </Menu>
       <Menu

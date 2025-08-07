@@ -171,7 +171,9 @@
       "logout": "Logout",
       "languages": "Languages",
       "he": "HE",
-      "en": "EN"
+      "en": "EN",
+      "earthquakeMap": "Earthquake Map",
+      "weather": "Weather"
     }
   },
   "goBackToMenu": "Go back to Menu",
