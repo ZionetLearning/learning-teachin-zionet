@@ -117,12 +117,8 @@ The existing `/chat` endpoint will be updated to handle the new request format a
    - Do not proceed with OpenAI call or message processing
 
 3. **OpenAI API Failures** (500 Internal Server Error)
-   - Return structured error response
-   - Log detailed error information
-
-4. **Storage Failures** (Non-blocking)
-   - Return successful response to user
-   - Log storage error for monitoring
+   - Return internal server error response when any error is caught in the endpoint
+   - Log detailed error information for debugging and monitoring
 
 ### Error Response Format
 
@@ -136,43 +132,7 @@ The existing `/chat` endpoint will be updated to handle the new request format a
 
 ## Testing Strategy
 
-### Unit Tests
-
-1. **ChatAiService Tests**
-   - Test new ProcessSyncChatAsync method
-   - Mock Accessor client interactions
-   - Verify cache behavior with history loading
-   - Test error handling scenarios
-
-2. **AccessorClient Tests**
-   - Test HTTP communication with Accessor
-   - Verify request/response serialization
-   - Test error handling and retries
-
-3. **AiEndpoints Tests**
-   - Test request validation
-   - Test successful flow integration
-   - Test error response formatting
-
-### Integration Tests
-
-1. **End-to-End Chat Flow**
-   - Test complete request/response cycle
-   - Verify message persistence
-   - Test chat history retrieval and context
-
-2. **Error Scenarios**
-   - Test Accessor service unavailability
-   - Test OpenAI API failures
-   - Test malformed requests
-
-### Component Tests
-
-1. **Accessor Service Extensions**
-   - Test new chat endpoints
-   - Test database operations
-   - Test data model serialization
-
+*Testing will be implemented after the complete solution is in place*
 ## Implementation Notes
 
 ### Reuse of Existing Code
@@ -192,7 +152,4 @@ No new configuration required - the solution uses existing:
 
 ### Performance Considerations
 
-- **Cache First**: Always check cache before calling Accessor
-- **Non-blocking Storage**: Message storage failures don't block response
-- **Existing Retry Policies**: Leverage existing retry mechanisms for OpenAI calls
-- **Connection Pooling**: Reuse existing Dapr client connections
+*Performance considerations will be implemented after the complete solution is in place*
