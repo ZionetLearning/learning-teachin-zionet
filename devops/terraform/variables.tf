@@ -52,7 +52,9 @@ variable "queue_names" {
               "manager-to-engine",
               "taskupdate",
               "engine-to-accessor",
-              "taskupdate-input"
+              "taskupdate-input",
+              "manager-to-ai",
+              "ai-to-manager",
             ]
 }
 
