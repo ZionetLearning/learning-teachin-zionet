@@ -31,13 +31,13 @@ public class AccessorService : IAccessorService
 
         try
         {
-            _logger.LogInformation("Applying EF Core migrations...");
-            await _dbContext.Database.MigrateAsync();
-            _logger.LogInformation("Database migration completed.");
+            _logger.LogInformation("Ensuring database & tables exist...");
+            await _dbContext.Database.EnsureCreatedAsync();
+            _logger.LogInformation("Database creation ensured.");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to connect to PostgreSQL during startup.");
+            _logger.LogError(ex, "Failed to initialize PostgreSQL during startup.");
             throw;
         }
     }
@@ -242,4 +242,44 @@ public class AccessorService : IAccessorService
 
     private static string GetTaskCacheKey(int taskId) => $"task:{taskId}";
 
+    public async Task<ChatThread?> GetThreadByIdAsync(Guid threadId)
+    {
+        return await _dbContext.ChatThreads.FindAsync(threadId);
+    }
+
+    public async Task CreateThreadAsync(ChatThread thread)
+    {
+        _dbContext.ChatThreads.Add(thread);
+        await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task<IEnumerable<ChatThread>> GetThreadsByUserAsync(string userId)
+    {
+        return await _dbContext.ChatThreads
+            .Where(t => t.UserId == userId)
+            .OrderByDescending(t => t.UpdatedAt)
+            .ToListAsync();
+    }
+
+    public async Task AddMessageAsync(ChatMessage message)
+    {
+        _dbContext.ChatMessages.Add(message);
+
+        // bump the parent thread's UpdatedAt
+        var thread = await _dbContext.ChatThreads.FindAsync(message.ThreadId);
+        if (thread is not null)
+        {
+            thread.UpdatedAt = message.Timestamp;
+        }
+
+        await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task<IEnumerable<ChatMessage>> GetMessagesByThreadAsync(Guid threadId)
+    {
+        return await _dbContext.ChatMessages
+            .Where(m => m.ThreadId == threadId)
+            .OrderBy(m => m.Timestamp)
+            .ToListAsync();
+    }
 }

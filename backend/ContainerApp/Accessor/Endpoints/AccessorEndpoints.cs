@@ -10,7 +10,9 @@ public static class AccessorEndpoints
     {
         app.MapGet("/task/{id:int}", GetTaskByIdAsync);
         app.MapDelete("/task/{taskId}", DeleteTaskAsync);
-
+        app.MapPost("/chat-history/message", StoreMessageAsync);
+        app.MapGet("/chat-history/{threadId:guid}", GetChatHistoryAsync);
+        app.MapGet("/chat-history/threads/{userId}", GetThreadsForUserAsync);
     }
 
     #region HandlerMethods
@@ -116,6 +118,62 @@ public static class AccessorEndpoints
                 return Results.Problem("Internal server error while deleting task.");
             }
         }
+    }
+
+    #endregion
+
+    #region Chat-History Handlers
+
+    private static async Task<IResult> StoreMessageAsync(
+        [FromBody] ChatMessage msg,
+        [FromServices] IAccessorService svc,
+        [FromServices] ILogger<AccessorService> logger)
+    {
+        logger.LogInformation("Storing message in thread {ThreadId}", msg.ThreadId);
+
+        // Generate IDs and timestamps server-side
+        msg.Id = Guid.NewGuid();
+        msg.Timestamp = DateTime.UtcNow;
+
+        await svc.AddMessageAsync(msg);
+        return Results.Created($"/chat-history/{msg.ThreadId}", msg);
+    }
+
+    private static async Task<IResult> GetChatHistoryAsync(
+        Guid threadId,
+        [FromServices] IAccessorService svc,
+        [FromServices] ILogger<AccessorService> logger)
+    {
+        logger.LogInformation("Fetching history for thread {ThreadId}", threadId);
+
+        var thread = await svc.GetThreadByIdAsync(threadId);
+        if (thread is null)
+        {
+            // auto-create empty thread if not exists
+            thread = new ChatThread
+            {
+                ThreadId = threadId,
+                UserId = string.Empty,
+                ChatType = "default",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            await svc.CreateThreadAsync(thread);
+            return Results.Ok(Array.Empty<ChatMessage>());
+        }
+
+        var messages = await svc.GetMessagesByThreadAsync(threadId);
+        return Results.Ok(messages);
+    }
+
+    private static async Task<IResult> GetThreadsForUserAsync(
+        string userId,
+        [FromServices] IAccessorService svc,
+        [FromServices] ILogger<AccessorService> logger)
+    {
+        logger.LogInformation("Listing threads for user {UserId}", userId);
+        var threads = await svc.GetThreadsByUserAsync(userId);
+        return Results.Ok(threads);
     }
 
     #endregion

@@ -11,5 +11,7 @@ public class AccessorDbContext : DbContext
 
     // Define the DB  
     public DbSet<TaskModel> Tasks { get; set; }
+    public DbSet<ChatThread> ChatThreads { get; set; }
+    public DbSet<ChatMessage> ChatMessages { get; set; }
 }
 // This class represents the database context for the Accessor service.
