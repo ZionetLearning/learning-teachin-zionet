@@ -83,7 +83,7 @@ builder.Services.AddSingleton(_ =>
     new ServiceBusClient(builder.Configuration["ServiceBus:ConnectionString"]));
 
 builder.Services.AddQueue<TaskModel, EngineQueueHandler>(
-    QueueNames.ManagerToEngine,
+    QueueNames.EngineQueue,
     settings =>
     {
         settings.MaxConcurrentCalls = 5;

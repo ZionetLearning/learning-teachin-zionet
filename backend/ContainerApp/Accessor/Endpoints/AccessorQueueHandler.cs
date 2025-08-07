@@ -16,7 +16,8 @@ public class AccessorQueueHandler : IQueueHandler<AccessorPayload>
         _logger = logger;
     }
 
-    public async Task HandleAsync(AccessorPayload msg, CancellationToken cancellationToken)
+    // add error throw
+    public async Task HandleAsync(AccessorPayload msg, Func<Task> renewLock, CancellationToken cancellationToken)
     {
         // now we need to get the payload, check the action, and call the appropriate service method
         // switch-case

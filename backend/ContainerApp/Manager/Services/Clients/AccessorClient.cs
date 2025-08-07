@@ -40,12 +40,12 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(UpdateTaskName), nameof(AccessorClient));
         try
         {
-            //var task = await GetTaskAsync(id);
-            //if (task == null)
-            //{
-            //    _logger.LogWarning("Task {TaskId} not found, cannot update name.", id);
-            //    return false;
-            //}
+            var task = await GetTaskAsync(id);
+            if (task == null)
+            {
+                _logger.LogWarning("Task {TaskId} not found, cannot update name.", id);
+                return false;
+            }
 
             var payload = new AccessorPayload
             {

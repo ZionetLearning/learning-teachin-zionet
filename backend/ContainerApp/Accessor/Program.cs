@@ -7,6 +7,7 @@ using Azure.Messaging.ServiceBus;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using Scalar.AspNetCore;
+using Accessor.Constants;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,7 +15,7 @@ builder.Services.AddSingleton(sp =>
   new ServiceBusClient(builder.Configuration["ServiceBus:ConnectionString"]));
 
 builder.Services.AddQueue<AccessorPayload, AccessorQueueHandler>(
-    "accessor-queue",
+    QueueNames.AccessorQueue,
     settings =>
     {
         settings.MaxConcurrentCalls = 4;
@@ -23,12 +24,7 @@ builder.Services.AddQueue<AccessorPayload, AccessorQueueHandler>(
         settings.MaxRetryAttempts = 3;
         settings.RetryDelaySeconds = 5;
     });
-
-//builder.Services.AddQueue<UpdateTaskName, AccessorUpdateTaskNameHandler>(
-//    QueueNames.TaskUpdateInput);
-
-//builder.Services.AddSingleton<IQueueHandler<TaskModel>, AccessorCreateTaskHandler>();
-//builder.Services.AddSingleton<IQueueHandler<UpdateTaskName>, AccessorUpdateTaskNameHandler>();
+builder.Services.AddScoped<IAccessorService, AccessorService>();
 
 var env = builder.Environment;
 
@@ -39,8 +35,6 @@ builder.Configuration
     .AddEnvironmentVariables();
 
 builder.Services.AddEndpointsApiExplorer();
-
-builder.Services.AddScoped<IAccessorService, AccessorService>();
 
 // Add internal configuration to the application
 builder.Configuration.AddInMemoryCollection(Accessor.InternalConfiguration.Default!);

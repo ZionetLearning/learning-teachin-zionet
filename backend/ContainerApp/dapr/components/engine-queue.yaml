@@ -11,7 +11,7 @@ spec:
     - name: queueName
       value: "engine-queue"
     - name: direction
-      value: input
+      value: input,output
     - name: disableEntityManagement
       value: "true"
 scopes:

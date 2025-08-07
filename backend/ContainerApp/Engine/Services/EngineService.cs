@@ -38,17 +38,23 @@ public class EngineService : IEngineService
         }
 
         _logger.LogInformation("Logged task: {Id} - {Name}", task.Id, task.Name);
-
         try
         {
-            await _daprClient.InvokeBindingAsync<TaskModel>(
-                QueueNames.EngineToAccessor,
+            var payload = new AccessorPayload
+            {
+                Id = task.Id,
+                Name = task.Name,
+                Payload = task.Payload,
+                ActionName = "CreateTask"
+            };
+            await _daprClient.InvokeBindingAsync(
+                QueueNames.AccessorQueue,
                 "create",
-                task,
+                payload,
                 cancellationToken: ct
             );
 
-            _logger.LogInformation("Task {Id} forwarded to binding '{Binding}'", task.Id, QueueNames.EngineToAccessor);
+            _logger.LogInformation("Task {Id} forwarded to binding '{Binding}'", task.Id, QueueNames.AccessorQueue);
         }
         catch (Exception ex)
         {

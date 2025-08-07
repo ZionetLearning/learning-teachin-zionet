@@ -22,15 +22,14 @@ public class EngineClient : IEngineClient
             nameof(ProcessTaskAsync),
             nameof(EngineClient)
         );
-
         try
         {
-            await _daprClient.InvokeBindingAsync(QueueNames.ManagerToEngine, "create", task);
+            await _daprClient.InvokeBindingAsync(QueueNames.EngineQueue, "create", task);
 
             _logger.LogDebug(
                 "Task {TaskId} sent to Engine via binding '{Binding}'",
                 task.Id,
-                QueueNames.ManagerToEngine
+                QueueNames.EngineQueue
             );
             return (true, "sent to engine");
         }
