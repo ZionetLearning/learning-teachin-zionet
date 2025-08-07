@@ -42,6 +42,7 @@ jobs:
         run: |
           ACR_NAME=teachindevacr
           echo "ACR_NAME=$ACR_NAME" >> $GITHUB_ENV
+          echo "ACR_LOGIN_SERVER=$ACR_NAME.azurecr.io" >> $GITHUB_ENV
 
       - name: Log in to Azure Container Registry
         run: az acr login --name $ACR_NAME
@@ -52,4 +53,4 @@ jobs:
           context: ${{ matrix.service.context }}
           file: ${{ matrix.service.dockerfile }}
           push: true
-          tags: $ACR_NAME.azurecr.io/${{ matrix.service.name }}:latest
+          tags: ${{ env.ACR_LOGIN_SERVER }}/${{ matrix.service.name }}:latest
