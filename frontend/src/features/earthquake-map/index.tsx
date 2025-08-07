@@ -1,6 +1,8 @@
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import { useGetEarthquakes } from "./api";
+import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+
+import { useGetEarthquakes } from "./api";
 import { useState } from "react";
 import { useStyles } from "./style";
 
@@ -13,6 +15,11 @@ import {
   Typography,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
+
+const customMarkerIcon = new L.Icon({
+  iconUrl: "/map-marker.png",
+  iconSize: [38, 38],
+});
 
 export const EarthquakeMap = () => {
   const classes = useStyles();
@@ -33,10 +40,18 @@ export const EarthquakeMap = () => {
         </Typography>
         <FormControl className={classes.formControl} size="small">
           <Select value={hoursAgo.toString()} onChange={handleChange}>
-            <MenuItem value={24}>{t("pages.earthquakeMap.last24Hours")}</MenuItem>
-            <MenuItem value={48}>{t("pages.earthquakeMap.last48Hours")}</MenuItem>
-            <MenuItem value={72}>{t("pages.earthquakeMap.last72Hours")}</MenuItem>
-            <MenuItem value={168}>{t("pages.earthquakeMap.last7days")}</MenuItem>
+            <MenuItem value={24}>
+              {t("pages.earthquakeMap.last24Hours")}
+            </MenuItem>
+            <MenuItem value={48}>
+              {t("pages.earthquakeMap.last48Hours")}
+            </MenuItem>
+            <MenuItem value={72}>
+              {t("pages.earthquakeMap.last72Hours")}
+            </MenuItem>
+            <MenuItem value={168}>
+              {t("pages.earthquakeMap.last7days")}
+            </MenuItem>
           </Select>
         </FormControl>
       </Box>
@@ -57,7 +72,7 @@ export const EarthquakeMap = () => {
         {quakes?.map((eq) => {
           const [lng, lat] = eq.geometry.coordinates;
           return (
-            <Marker key={eq.id} position={[lat, lng]}>
+            <Marker key={eq.id} position={[lat, lng]} icon={customMarkerIcon}>
               <Popup>
                 <strong>{eq.properties.place}</strong>
                 <br />
