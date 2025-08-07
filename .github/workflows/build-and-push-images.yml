@@ -38,18 +38,9 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Ensure resource group and ACR exist
+      - name: Set ACR environment
         run: |
-          RG_NAME=dev-zionet-learning-2025
-          LOCATION=westeurope
-          ACR_NAME=aksdemocuest12345
-
-          az group create --name $RG_NAME --location $LOCATION
-
-          if ! az acr show --name $ACR_NAME --resource-group $RG_NAME &>/dev/null; then
-            az acr create --resource-group $RG_NAME --name $ACR_NAME --sku Basic --location $LOCATION
-          fi
-
+          ACR_NAME=teachindevacr
           echo "ACR_NAME=$ACR_NAME" >> $GITHUB_ENV
 
       - name: Log in to Azure Container Registry
