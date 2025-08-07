@@ -1,7 +1,7 @@
 ﻿using Azure.Messaging.ServiceBus;
 using System.Text.Json;
 
-namespace Engine.Messaging;
+namespace Accessor.Messaging;
 
 public class AzureServiceBusQueueListener<T> : IQueueListener<T>, IAsyncDisposable
 {
@@ -29,7 +29,7 @@ public class AzureServiceBusQueueListener<T> : IQueueListener<T>, IAsyncDisposab
         });
     }
 
-    public async Task StartAsync(Func<T, Func<Task>, CancellationToken, Task> handler, CancellationToken cancellationToken)
+    public async Task StartAsync(Func<T, CancellationToken, Task> handler, CancellationToken cancellationToken)
     {
         var retryPolicy = _retryPolicyProvider.Create(_settings, _logger);
 
@@ -41,23 +41,9 @@ public class AzureServiceBusQueueListener<T> : IQueueListener<T>, IAsyncDisposab
 
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             linkedCts.CancelAfter(lockTimeout);
-
-            var renewLock = async () =>
-            {
-                await args.RenewMessageLockAsync(args.Message, linkedCts.Token);
-                _logger.LogDebug("Lock renewed for message {MessageId}", args.Message.MessageId);
-            };
-
             try
             {
-                var json = args.Message.Body.ToString();
-                _logger.LogDebug("Raw message body: {Json}", json);
-                var jsonOptions = new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true,
-                };
-                var msg = JsonSerializer.Deserialize<T>(json, jsonOptions);
-
+                var msg = JsonSerializer.Deserialize<T>(args.Message.Body);
                 if (msg == null)
                 {
                     _logger.LogWarning("Failed to deserialize message.");
@@ -67,7 +53,7 @@ public class AzureServiceBusQueueListener<T> : IQueueListener<T>, IAsyncDisposab
 
                 await retryPolicy.ExecuteAsync(async () =>
                 {
-                    await handler(msg, renewLock, linkedCts.Token);
+                    await handler(msg, linkedCts.Token);
 
                     if (_settings.ProcessingDelayMs > 0)
                     {
@@ -110,8 +96,13 @@ public class AzureServiceBusQueueListener<T> : IQueueListener<T>, IAsyncDisposab
 
     public async ValueTask DisposeAsync()
     {
-        await _processor.DisposeAsync();
-        GC.SuppressFinalize(this);
+        try
+        {
+            await _processor.DisposeAsync();
+        }
+        finally
+        {
+            GC.SuppressFinalize(this);
+        }
     }
 }
-

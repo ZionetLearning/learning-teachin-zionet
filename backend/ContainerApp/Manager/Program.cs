@@ -1,6 +1,9 @@
+using Azure.Messaging.ServiceBus;
 using Manager.Constants;
 using Manager.Endpoints;
 using Manager.Hubs;
+using Manager.Messaging;
+using Manager.Models;
 using Manager.Services;
 using Manager.Services.Clients;
 using Scalar.AspNetCore;
@@ -41,6 +44,29 @@ builder.Services.AddScoped<IAccessorClient, AccessorClient>();
 builder.Services.AddScoped<IEngineClient, EngineClient>();
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+builder.Services.AddSingleton(_ =>
+    new ServiceBusClient(builder.Configuration["ServiceBus:ConnectionString"]));
+
+builder.Services.AddQueue<AiResponseModel, ManagerAiResponseHandler>(
+    QueueNames.AiToManager,
+    settings =>
+    {
+        settings.MaxConcurrentCalls = 5;
+        settings.PrefetchCount = 10;
+        settings.ProcessingDelayMs = 200;
+        settings.MaxRetryAttempts = 3;
+        settings.RetryDelaySeconds = 2;
+    });
+
+// This is required for the Scalar UI to have an option to setup an authentication token
+builder.Services.AddOpenApi(
+    "v1",
+    options =>
+    {
+        options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+    }
+);
 
 var app = builder.Build();
 app.UseCors("AllowAll");

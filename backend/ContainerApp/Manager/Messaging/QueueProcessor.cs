@@ -1,5 +1,5 @@
 ﻿
-namespace Engine.Messaging;
+namespace Manager.Messaging;
 
 public class QueueProcessor<T> : BackgroundService
 {

@@ -1,7 +1,7 @@
 ﻿using Azure.Messaging.ServiceBus;
 using System.Text.Json;
 
-namespace Engine.Messaging;
+namespace Manager.Messaging;
 
 public class AzureServiceBusQueueListener<T> : IQueueListener<T>, IAsyncDisposable
 {
