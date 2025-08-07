@@ -126,54 +126,89 @@ public static class AccessorEndpoints
 
     private static async Task<IResult> StoreMessageAsync(
         [FromBody] ChatMessage msg,
-        [FromServices] IAccessorService svc,
+        [FromServices] IAccessorService accessorService,
         [FromServices] ILogger<AccessorService> logger)
     {
-        logger.LogInformation("Storing message in thread {ThreadId}", msg.ThreadId);
+        using var scope = logger.BeginScope("Handler: {Handler}, ThreadId: {ThreadId}", nameof(StoreMessageAsync), msg.ThreadId);
+        try
+        {
+            // Validate incoming payload
+            if (string.IsNullOrWhiteSpace(msg.Content) || string.IsNullOrWhiteSpace(msg.Role))
+            {
+                logger.LogWarning("Validation failed for message");
+                return Results.BadRequest("Role and Content are required.");
+            }
 
-        // Generate IDs and timestamps server-side
-        msg.Id = Guid.NewGuid();
-        msg.Timestamp = DateTime.UtcNow;
+            // Generate server-side IDs/timestamps
+            msg.Id = Guid.NewGuid();
+            msg.Timestamp = DateTimeOffset.UtcNow;
 
-        await svc.AddMessageAsync(msg);
-        return Results.Created($"/chat-history/{msg.ThreadId}", msg);
+            await accessorService.AddMessageAsync(msg);
+            logger.LogInformation("Message stored successfully");
+
+            // Return 201 Created with location header
+            return Results.Created($"/chat-history/{msg.ThreadId}", msg);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error storing message in thread {ThreadId}", msg.ThreadId);
+            return Results.Problem("An error occurred while storing the message.");
+        }
     }
 
     private static async Task<IResult> GetChatHistoryAsync(
         Guid threadId,
-        [FromServices] IAccessorService svc,
+        [FromServices] IAccessorService accessorService,
         [FromServices] ILogger<AccessorService> logger)
     {
-        logger.LogInformation("Fetching history for thread {ThreadId}", threadId);
-
-        var thread = await svc.GetThreadByIdAsync(threadId);
-        if (thread is null)
+        using var scope = logger.BeginScope("Handler: {Handler}, ThreadId: {ThreadId}", nameof(GetChatHistoryAsync), threadId);
+        try
         {
-            // auto-create empty thread if not exists
-            thread = new ChatThread
+            var thread = await accessorService.GetThreadByIdAsync(threadId);
+            if (thread is null)
             {
-                ThreadId = threadId,
-                UserId = string.Empty,
-                ChatType = "default",
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
-            await svc.CreateThreadAsync(thread);
-            return Results.Ok(Array.Empty<ChatMessage>());
-        }
+                // Auto-create thread if missing
+                thread = new ChatThread
+                {
+                    ThreadId = threadId,
+                    UserId = string.Empty,
+                    ChatType = "default",
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    UpdatedAt = DateTimeOffset.UtcNow
+                };
+                await accessorService.CreateThreadAsync(thread);
+                logger.LogInformation("Created new thread {ThreadId}", threadId);
+                return Results.Ok(Array.Empty<ChatMessage>());
+            }
 
-        var messages = await svc.GetMessagesByThreadAsync(threadId);
-        return Results.Ok(messages);
+            var messages = await accessorService.GetMessagesByThreadAsync(threadId);
+            logger.LogInformation("Fetched messages for thread {ThreadId}", threadId);
+            return Results.Ok(messages);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error fetching history for thread {ThreadId}", threadId);
+            return Results.Problem("An error occurred while retrieving chat history.");
+        }
     }
 
     private static async Task<IResult> GetThreadsForUserAsync(
         string userId,
-        [FromServices] IAccessorService svc,
+        [FromServices] IAccessorService accessorService,
         [FromServices] ILogger<AccessorService> logger)
     {
-        logger.LogInformation("Listing threads for user {UserId}", userId);
-        var threads = await svc.GetThreadsByUserAsync(userId);
-        return Results.Ok(threads);
+        using var scope = logger.BeginScope("Handler: {Handler}, UserId: {UserId}", nameof(GetThreadsForUserAsync), userId);
+        try
+        {
+            var threads = await accessorService.GetThreadsByUserAsync(userId);
+            logger.LogInformation("Retrieved threads for user");
+            return Results.Ok(threads);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error listing threads for user {UserId}", userId);
+            return Results.Problem("An error occurred while listing chat threads.");
+        }
     }
 
     #endregion

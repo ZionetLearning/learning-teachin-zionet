@@ -33,7 +33,7 @@ public class ChatMessage
 
     [Required]
     [JsonPropertyName("timestamp")]
-    public DateTime Timestamp { get; set; }
+    public DateTimeOffset Timestamp { get; set; }
 }
 
 public static class MessageRole
