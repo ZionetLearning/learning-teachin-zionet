@@ -100,6 +100,13 @@ public class ManagerService : IManagerService
         }
     }
 
+    public async Task<(bool success, string message)> ProcessTaskLongAsync(TaskModel task)
+    {
+        _logger.LogDebug("Inside: {MethodName}", nameof(ProcessTaskAsync));
+        var result = await _engineClient.ProcessTaskLongAsync(task);
+        return (result.success, result.message);
+    }
+
     public async Task<bool> UpdateTaskName(int id, string newTaskName)
     {
         _logger.LogDebug("Inside: {MethodName}", nameof(UpdateTaskName));

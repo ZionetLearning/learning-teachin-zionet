@@ -82,7 +82,7 @@ builder.Services.AddSingleton(sp =>
 builder.Services.AddSingleton(_ =>
     new ServiceBusClient(builder.Configuration["ServiceBus:ConnectionString"]));
 
-builder.Services.AddQueue<TaskModel, EngineQueueHandler>(
+builder.Services.AddQueue<Message, EngineQueueHandler>(
     QueueNames.ManagerToEngine,
     settings =>
     {
