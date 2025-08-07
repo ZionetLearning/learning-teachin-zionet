@@ -1,4 +1,4 @@
-name: AKS - Terraform Apply with Provisioning
+name: Terraform Apply with Provisioning
 
 on:
   workflow_call:
@@ -6,6 +6,13 @@ on:
       environment:
         required: true
         type: string
+    outputs:
+      static_web_app_api_token:
+        description: "Azure Static Web Apps deployment token"
+        value: ${{ jobs.aks-terraform.outputs.static_web_app_api_token }}
+      app_insights_connection_string:
+        description: "Application Insights connection string"
+        value: ${{ jobs.aks-terraform.outputs.app_insights_connection_string }}
   workflow_dispatch:
     inputs:
       environment:
@@ -24,6 +31,10 @@ jobs:
     permissions:
       id-token: write      # Required for OIDC login
       contents: read       # For actions/checkout
+    
+    outputs:
+      static_web_app_api_token: ${{ steps.terraform_outputs.outputs.static_web_app_api_token }}
+      app_insights_connection_string: ${{ steps.terraform_outputs.outputs.app_insights_connection_string }}
 
     env:
       ARM_USE_OIDC: "true" # tell provider to use the OIDC token
@@ -74,4 +85,12 @@ jobs:
 
       - name: Terraform Apply
         run: terraform apply -auto-approve -var-file="terraform.tfvars.${{ env.short_env }}"
+        working-directory: ${{ env.TF_DIR }}
+
+      - name: Extract Terraform Outputs
+        id: terraform_outputs
+        run: |
+          # Extract outputs for frontend deployment
+          echo "static_web_app_api_token=$(terraform output -raw static_web_app_api_key)" >> $GITHUB_OUTPUT
+          echo "app_insights_connection_string=$(terraform output -raw application_insights_connection_string)" >> $GITHUB_OUTPUT
         working-directory: ${{ env.TF_DIR }}

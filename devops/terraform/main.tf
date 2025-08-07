@@ -77,6 +77,24 @@ module "redis" {
   shard_count         = 0
 }
 
+module "frontend" {
+  source              = "./modules/frontend"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+  static_web_app_name = var.static_web_app_name
+  sku_tier            = var.frontend_sku_tier
+  sku_size            = var.frontend_sku_size
+  appinsights_retention_days = var.frontend_appinsights_retention_days
+  appinsights_sampling_percentage = var.frontend_appinsights_sampling_percentage
+  
+  tags = {
+    Environment = "Development"
+    Project     = "Frontend"
+  }
+  
+  depends_on = [azurerm_resource_group.main]
+}
+
 ########################################
 # 2. AKS kube-config for providers
 ########################################
