@@ -34,7 +34,7 @@ spec:
                   name: azure-service-bus-secret
                   key: AzureServiceBusConnectionString
 
-          image: ${DOCKER_REGISTRY}/manager:latest
+          image: ${ACR_NAME}.azurecr.io/manager:latest
           name: manager
           ports:
             - containerPort: 5001

@@ -78,7 +78,7 @@ jobs:
           export OPENAI_KEY="$OPENAI_KEY"
           find "$K8S_DIR/deployments" -type f -name '*.yaml' | while read file; do
             echo "Applying $file"
-            DOCKER_REGISTRY=$DOCKER_REGISTRY OPENAI_KEY=$OPENAI_KEY envsubst < "$file" | kubectl apply -f -
+            ACR_NAME=$ACR_NAME OPENAI_KEY=$OPENAI_KEY envsubst < "$file" | kubectl apply -f -
           done
 
       - name: setup-ingress-controller

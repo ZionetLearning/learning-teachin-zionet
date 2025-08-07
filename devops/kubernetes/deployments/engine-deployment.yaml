@@ -41,7 +41,7 @@ spec:
               value: "gpt-4.1-mini"
             - name: AzureOpenAI__ModelId
               value: "gpt-4o-mini"
-          image: ${DOCKER_REGISTRY}/engine:latest
+          image: ${ACR_NAME}.azurecr.io/engine:latest
           name: engine
           ports:
             - containerPort: 5002
