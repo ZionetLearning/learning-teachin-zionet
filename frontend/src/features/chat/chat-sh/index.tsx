@@ -1,17 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { sendChatMessage } from "./services";
+// import { sendChatMessage } from "./services";
+import { useChat } from "@/hooks";
+
 import aiAvatar from "./assets/ai-avatar.svg";
 import { useStyles } from "./style";
 
 export const ChatSh = () => {
   const { t } = useTranslation();
   const classes = useStyles();
-  const [messages, setMessages] = useState<{ role: string; content: string }[]>(
-    [],
-  );
+  const { sendMessage, messages, loading, setMessages } = useChat();
+
   const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [displayedAIMessage, setDisplayedAIMessage] = useState("");
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -23,34 +23,32 @@ export const ChatSh = () => {
     }
   }, [messages, displayedAIMessage]);
 
-  const handleSend = async () => {
+  const handleSend = () => {
     if (!input.trim()) return;
-    const userMessage = { role: "user", content: input };
-    setMessages((prev) => [...prev, userMessage]);
-    setInput("");
-    setIsLoading(true);
 
-    try {
-      const response = await sendChatMessage(input);
+    const animateAssistantMessage = (text: string) => {
       setDisplayedAIMessage("");
       let index = 0;
+
       const interval = setInterval(() => {
-        setDisplayedAIMessage((prev) => prev + response[index]);
+        setDisplayedAIMessage((prev) => prev + text[index]);
         index++;
-        if (index >= response.length) {
+
+        if (index >= text.length) {
           clearInterval(interval);
+          setDisplayedAIMessage("");
+
+          // ✅ add assistant message to full messages list
           setMessages((prev) => [
             ...prev,
-            { role: "assistant", content: response },
+            { role: "assistant", text }, // internal format
           ]);
-          setDisplayedAIMessage("");
-          setIsLoading(false);
         }
       }, 25);
-    } catch (error) {
-      alert("Error: " + error);
-      setIsLoading(false);
-    }
+    };
+
+    sendMessage(input, animateAssistantMessage); // hook handles user message
+    setInput("");
   };
 
   return (
@@ -58,6 +56,7 @@ export const ChatSh = () => {
       <div className={classes.chatTitle}>
         {t("pages.chatSh.azureOpenAiChat")}
       </div>
+
       <div ref={chatContainerRef} className={classes.chatContainer}>
         {messages.map((msg, idx) => (
           <div
@@ -95,26 +94,21 @@ export const ChatSh = () => {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder={t("pages.chatSh.typeYourMessage")}
-          disabled={isLoading}
+          disabled={loading}
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
         />
         <button
           onClick={handleSend}
-          disabled={isLoading}
+          disabled={loading}
           className={classes.sendBtn}
           style={{
-            background: isLoading ? "#aaa" : "#4A90E2",
-            cursor: isLoading ? "not-allowed" : "pointer",
+            background: loading ? "#aaa" : "#4A90E2",
+            cursor: loading ? "not-allowed" : "pointer",
           }}
         >
-          {isLoading ? "..." : "➤"}
+          {loading ? "..." : "➤"}
         </button>
       </div>
     </div>
   );
 };
-/*
-        "chatShPageWithOpenAi": "Chat Sh Page - with OpenAI",
-        "azureOpenAiChat": "Chat Azure OpenAI",
-        "typeYourMessage": "הקלד את ההודעה…"
-*/
