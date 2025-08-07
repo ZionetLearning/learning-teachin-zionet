@@ -16,13 +16,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dapr", "dapr", "{02EA681E-C
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "components", "components", "{F0FF105B-41F5-4E9B-B432-5CDE99DEE70E}"
 	ProjectSection(SolutionItems) = preProject
-		dapr\components\accessor-queue.yaml = dapr\components\accessor-queue.yaml
-		dapr\components\ai-to-manager.yaml = dapr\components\ai-to-manager.yaml
-		dapr\components\engine-queue.yaml = dapr\components\engine-queue.yaml
 		dapr\components\engine-to-accessor-input.yaml = dapr\components\engine-to-accessor-input.yaml
 		dapr\components\engine-to-accessor.yaml = dapr\components\engine-to-accessor.yaml
 		dapr\components\manager-callback-queue.yaml = dapr\components\manager-callback-queue.yaml
-		dapr\components\manager-to-ai.yaml = dapr\components\manager-to-ai.yaml
 		dapr\components\manager-to-engine-input.yaml = dapr\components\manager-to-engine-input.yaml
 		dapr\components\manager-to-engine.yaml = dapr\components\manager-to-engine.yaml
 		dapr\components\pubsub.yaml = dapr\components\pubsub.yaml

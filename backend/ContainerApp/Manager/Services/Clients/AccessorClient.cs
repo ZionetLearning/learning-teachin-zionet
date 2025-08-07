@@ -47,10 +47,12 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
                 return false;
             }
 
+            var payload = new TaskNameUpdateModel(id, newTaskName, "updateTask");
+
             await _daprClient.InvokeBindingAsync(
-                QueueNames.TaskUpdate,
+                QueueNames.AccessorQueue,
                 "create",
-                new TaskNameUpdateModel(id, newTaskName)
+                payload
             );
 
             _logger.LogDebug("Task name update request sent to queue for task {TaskId}", id);
