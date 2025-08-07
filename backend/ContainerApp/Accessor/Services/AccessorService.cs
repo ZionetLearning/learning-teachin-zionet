@@ -31,9 +31,9 @@ public class AccessorService : IAccessorService
 
         try
         {
-            _logger.LogInformation("Ensuring database & tables exist...");
+            _logger.LogInformation("Applying EF Core migrations...");
             await _dbContext.Database.EnsureCreatedAsync();
-            _logger.LogInformation("Database creation ensured.");
+            _logger.LogInformation("Database migration completed.");
         }
         catch (Exception ex)
         {
