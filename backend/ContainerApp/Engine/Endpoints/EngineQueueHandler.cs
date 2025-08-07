@@ -14,7 +14,7 @@ public class EngineQueueHandler : IQueueHandler<TaskModel>
         _logger = logger;
     }
 
-    public async Task HandleAsync(TaskModel message, CancellationToken cancellationToken)
+    public async Task HandleAsync(TaskModel message, Func<Task> renewLock, CancellationToken cancellationToken)
     {
         try
         {

@@ -1,4 +1,4 @@
-name: AKS - Deploy App to AKS
+name: AKS - Deploy Services to AKS
 
 on:
   workflow_dispatch:
