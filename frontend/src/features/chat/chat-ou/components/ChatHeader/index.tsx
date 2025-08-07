@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { useStyles } from "./style";
 
 interface ChatHeaderProps {
@@ -14,12 +15,13 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
   isTyping = false,
   participantCount = 2,
 }) => {
+  const { t } = useTranslation();
   const classes = useStyles();
 
   const getStatusText = () => {
-    if (isTyping) return "AI is typing...";
-    if (isOnline) return "Online";
-    return "Offline";
+    if (isTyping) return t("pages.chatOu.aiIsTyping");
+    if (isOnline) return t("pages.chatOu.online");
+    return t("pages.chatOu.offline");
   };
 
   const getStatusIcon = () => {
@@ -32,7 +34,9 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
     <div className={classes.container}>
       <div className={classes.titleSection}>
         <h2 className={classes.title}>{title}</h2>
-        <div className={classes.subtitle}>{participantCount} participants</div>
+        <div className={classes.subtitle}>
+          {participantCount} {t("pages.chatOu.participants")}
+        </div>
       </div>
 
       <div className={classes.statusSection}>
@@ -55,7 +59,10 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
       </div>
 
       <div className={classes.actions}>
-        <button className={classes.actionButton} title="More options">
+        <button
+          className={classes.actionButton}
+          title={t("pages.chatOu.moreOptions")}
+        >
           ⋯
         </button>
       </div>
