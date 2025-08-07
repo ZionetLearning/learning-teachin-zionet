@@ -28,6 +28,11 @@ spec:
           env:
           - name: ASPNETCORE_URLS
             value: "http://+:5003"
+          - name: ServiceBus__ConnectionString
+            valueFrom:
+              secretKeyRef:
+                name: azure-service-bus-secret
+                key: AzureServiceBusConnectionString
           - name: ConnectionStrings__Postgres
             valueFrom:
               secretKeyRef:

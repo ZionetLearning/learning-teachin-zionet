@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import type { Message } from "../../types";
 import { useStyles } from "./style";
 import {
@@ -12,6 +13,7 @@ interface MessageItemProps {
 }
 
 const MessageItem: React.FC<MessageItemProps> = ({ message }) => {
+  const { t } = useTranslation();
   const classes = useStyles();
 
   const formatTimestamp = (timestamp: Date) => {
@@ -30,7 +32,11 @@ const MessageItem: React.FC<MessageItemProps> = ({ message }) => {
       case "generative-ui":
         return <GenerativeUIMessage message={message} />;
       default:
-        return <div className={classes.fallback}>Unsupported message type</div>;
+        return (
+          <div className={classes.fallback}>
+            {t("pages.chatOu.unsupportedMessageType")}
+          </div>
+        );
     }
   };
 
@@ -56,15 +62,18 @@ const MessageItem: React.FC<MessageItemProps> = ({ message }) => {
 
       {message.context && (
         <div className={classes.contextInfo}>
-          <span className={classes.contextLabel}>Context:</span>
+          <span className={classes.contextLabel}>
+            {t("pages.chatOu.context")}
+          </span>
           {message.context.pageTitle && (
             <span className={classes.contextItem}>
-              Page: {message.context.pageTitle}
+              {t("pages.chatOu.page")} {message.context.pageTitle}
             </span>
           )}
           {message.context.selectedText && (
             <span className={classes.contextItem}>
-              Selected: "{message.context.selectedText.substring(0, 50)}..."
+              {t("pages.chatOu.selected")} "
+              {message.context.selectedText.substring(0, 50)}..."
             </span>
           )}
         </div>

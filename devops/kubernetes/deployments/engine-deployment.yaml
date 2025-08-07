@@ -28,6 +28,19 @@ spec:
         - env:
             - name: ASPNETCORE_URLS
               value: http://+:5002
+            - name: ServiceBus__ConnectionString
+              valueFrom:
+                secretKeyRef:
+                  name: azure-service-bus-secret
+                  key: AzureServiceBusConnectionString
+            - name: AzureOpenAI__Endpoint
+              value: "https://france-teachin-open-ai.openai.azure.com/"
+            - name: AzureOpenAI__ApiKey
+              value: "${OPENAI_KEY}"
+            - name: AzureOpenAI__DeploymentName
+              value: "gpt-4.1-mini"
+            - name: AzureOpenAI__ModelId
+              value: "gpt-4o-mini"
           image: ${DOCKER_REGISTRY}/engine:latest
           name: engine
           ports:

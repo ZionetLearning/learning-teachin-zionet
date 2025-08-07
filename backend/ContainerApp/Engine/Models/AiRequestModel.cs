@@ -13,6 +13,7 @@ public sealed record AiRequestModel
 
     public int TtlSeconds { get; init; } = 60;
 
-    public string ReplyToTopic { get; init; } = TopicNames.AiToManager;
+    public string ReplyToQueue { get; init; } = QueueNames.AiToManager;
+
 }
 

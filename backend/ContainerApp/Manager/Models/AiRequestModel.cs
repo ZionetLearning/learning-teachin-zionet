@@ -17,11 +17,11 @@ public sealed record AiRequestModel
     [Range(1, 172800, ErrorMessage = "TtlSeconds must be between 1 and 172800 (max two day).")]
     public int TtlSeconds { get; init; } = 60;
 
-    [Required(ErrorMessage = "ReplyToTopic is required.")]
-    [MinLength(1, ErrorMessage = "ReplyToTopic cannot be empty.")]
-    public string ReplyToTopic { get; init; } = TopicNames.AiToManager;
+    [Required(ErrorMessage = "ReplyToQueue is required.")]
+    [MinLength(1, ErrorMessage = "ReplyToQueue cannot be empty.")]
+    public string ReplyToQueue { get; init; } = QueueNames.AiToManager;
 
-    public static AiRequestModel Create(string question, string threadId, string replyToTopic, int ttlSeconds)
+    public static AiRequestModel Create(string question, string threadId, string replyToQueue, int ttlSeconds)
     {
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var id = Guid.NewGuid().ToString("N");
@@ -31,7 +31,7 @@ public sealed record AiRequestModel
             ThreadId = threadId,
             Question = question,
             TtlSeconds = ttlSeconds,
-            ReplyToTopic = replyToTopic,
+            ReplyToQueue = replyToQueue,
             SentAt = now
         };
     }

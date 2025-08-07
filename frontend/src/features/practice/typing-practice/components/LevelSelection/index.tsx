@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useStyles } from "./style";
 import type { DifficultyLevel } from "../../types";
 
@@ -10,6 +11,7 @@ export const LevelSelection = ({
   onLevelSelect,
   isLoading,
 }: LevelSelectionProps) => {
+  const { t } = useTranslation();
   const classes = useStyles();
 
   const getLevelInfo = (level: DifficultyLevel) => {
@@ -44,11 +46,13 @@ export const LevelSelection = ({
   return (
     <div className={classes.levelSelection}>
       <div>
-        <h3 className={classes.levelTitle}>Choose Your Difficulty Level</h3>
+        <h3 className={classes.levelTitle}>
+          {t("pages.typingPractice.chooseYourDifficultyLevel")}
+        </h3>
         <p className={classes.levelDescription}>
-          Select a difficulty level to start practicing Hebrew typing.
+          {t("pages.typingPractice.selectDifficultyLevel")}
           <br />
-          You'll listen to Hebrew audio and type what you hear.
+          {t("pages.typingPractice.youWillListenToHebrewAudio")}
         </p>
       </div>
 

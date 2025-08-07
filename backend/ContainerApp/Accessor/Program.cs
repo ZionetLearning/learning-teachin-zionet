@@ -1,11 +1,34 @@
+using Accessor.Constants;
 using Accessor.DB;
 using Accessor.Endpoints;
+using Accessor.Messaging;
+using Accessor.Models;
 using Accessor.Services;
+using Azure.Messaging.ServiceBus;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddSingleton(sp =>
+  new ServiceBusClient(builder.Configuration["ServiceBus:ConnectionString"]));
+
+builder.Services.AddQueue<TaskModel, AccessorCreateTaskHandler>(
+    QueueNames.EngineToAccessor,
+    settings =>
+    {
+        settings.MaxConcurrentCalls = 4;
+        settings.PrefetchCount = 8;
+        settings.ProcessingDelayMs = 0;
+        settings.MaxRetryAttempts = 3;
+        settings.RetryDelaySeconds = 5;
+    });
+builder.Services.AddQueue<UpdateTaskName, AccessorUpdateTaskNameHandler>(
+    QueueNames.TaskUpdateInput);
+
+builder.Services.AddSingleton<IQueueHandler<TaskModel>, AccessorCreateTaskHandler>();
+builder.Services.AddSingleton<IQueueHandler<UpdateTaskName>, AccessorUpdateTaskNameHandler>();
 
 var env = builder.Environment;
 
@@ -16,7 +39,6 @@ builder.Configuration
     .AddEnvironmentVariables();
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddControllers().AddDapr();
 
 builder.Services.AddScoped<IAccessorService, AccessorService>();
 

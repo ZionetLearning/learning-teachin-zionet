@@ -58,3 +58,21 @@ output "redis_primary_access_key" {
   value     = module.redis.primary_access_key
   sensitive = true
 }
+
+# Frontend outputs
+output "static_web_app_url" {
+  description = "URL of the Azure Static Web App"
+  value       = module.frontend.static_web_app_url
+}
+
+output "static_web_app_api_key" {
+  description = "API key for the Azure Static Web App"
+  value       = module.frontend.static_web_app_api_key
+  sensitive   = true
+}
+
+output "application_insights_connection_string" {
+  description = "Connection string for Application Insights"
+  value       = module.frontend.application_insights_connection_string
+  sensitive   = true
+}
