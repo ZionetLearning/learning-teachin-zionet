@@ -13,7 +13,6 @@ public class ManagerService : IManagerService
     private readonly IEngineClient _engineClient;
     private readonly IMapper _mapper;
     private readonly DaprClient _dapr;
-    private const string IdempotencyStore = "statestore";
 
     public ManagerService(IConfiguration configuration,
         ILogger<ManagerService> logger,
@@ -62,86 +61,44 @@ public class ManagerService : IManagerService
         }
     }
 
-    public async Task<(bool success, string message)> ProcessTaskAsync(TaskModel task)
+    public async Task<(bool success, string message, int? taskId)> ProcessTaskAsync(TaskModel task, string idempotencyKey)
     {
         _logger.LogDebug("Inside: {MethodName}", nameof(ProcessTaskAsync));
 
-        if (task is null)
+        if (task == null)
         {
-            _logger.LogWarning("Null task received for processing");
-            return (false, "Task is null");
+            return (false, "Task is null", null);
         }
 
         if (string.IsNullOrWhiteSpace(task.Name))
         {
-            _logger.LogWarning("Task {TaskId} has invalid name", task.Id);
-            return (false, "Task name is required");
+            return (false, "Task name is required", task.Id);
         }
 
         if (string.IsNullOrWhiteSpace(task.Payload))
         {
-            _logger.LogWarning("Task {TaskId} has invalid payload", task.Id);
-            return (false, "Task payload is required");
+            return (false, "Task payload is required", task.Id);
         }
 
         try
         {
             _logger.LogDebug("Processing task {TaskId} with name '{TaskName}'", task.Id, task.Name);
-            var result = await _engineClient.ProcessTaskAsync(task);
-            if (result.success)
+
+            var (success, message, taskId) = await _engineClient.ProcessTaskAsync(task, idempotencyKey);
+
+            //If the Accessor already processed this task, reflect that back to the caller
+            if (!success && message == "AlreadyProcessed")
             {
-                _logger.LogDebug("Task {TaskId} successfully processed", task.Id);
-            }
-            else
-            {
-                _logger.LogDebug("Task {TaskId} processing failed: {Message}", task.Id, result.message);
+                return (false, "AlreadyProcessed", taskId);
             }
 
-            return result;
+            return (true, message, taskId);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error occurred while processing task {TaskId}", task.Id);
-            return (false, "Failed to send to Engine");
+            return (false, "Failed to send to Engine", task.Id);
         }
-    }
-
-    public async Task<(bool success, string message, bool isDuplicate)> ProcessTaskWithIdempotencyAsync(TaskModel task, string requestId)
-    {
-        var key = $"idempotency:{requestId}";
-
-        // Check if this requestId has already been processed
-        var existing = await _dapr.GetStateAsync<IdempotencyRecord>(IdempotencyStore, key);
-        if (existing != null)
-        {
-            _logger.LogInformation("Idempotency hit for {RequestId}", requestId);
-            return (true, existing.Status, true);
-        }
-
-        // Otherwise, process the task
-        var (success, message) = await ProcessTaskAsync(task);
-
-        if (success)
-        {
-            var record = new IdempotencyRecord
-            {
-                TaskId = task.Id,
-                Status = message,
-                Timestamp = DateTime.UtcNow
-            };
-
-            await _dapr.SaveStateAsync(
-                IdempotencyStore,
-                key,
-                record,
-                null, // StateOptions (optional), can be null
-                new Dictionary<string, string>
-                {
-                    { "ttlInSeconds", "300" } // auto-expire after 5 minutes
-                });
-        }
-
-        return (success, message, false);
     }
 
     public async Task<bool> UpdateTaskName(int id, string newTaskName)

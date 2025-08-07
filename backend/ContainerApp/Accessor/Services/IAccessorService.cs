@@ -6,7 +6,7 @@ public interface IAccessorService
 {
     Task InitializeAsync();
     Task<TaskModel?> GetTaskByIdAsync(int id);
-    Task CreateTaskAsync(TaskModel task);
+    Task<(bool success, string message, int? taskId)> CreateTaskAsync(TaskModel task, string idempotencyKey);
     Task<bool> DeleteTaskAsync(int taskId);
     Task<bool> UpdateTaskNameAsync(int taskId, string newName);
 }

@@ -92,12 +92,21 @@ public class AccessorService : IAccessorService
         }
     }
 
-    public async Task CreateTaskAsync(TaskModel task)
+    public async Task<(bool success, string message, int? taskId)> CreateTaskAsync(TaskModel task, string idempotencyKey)
     {
-        _logger.LogInformation("Inside:{Method}", nameof(CreateTaskAsync));
+        _logger.LogInformation("Inside: {Method}", nameof(CreateTaskAsync));
+
         try
         {
-            // Check if the id already exists in the DB
+            // Check if the request with the same idempotency key was already processed
+            var existing = await _daprClient.GetStateAsync<TaskModel>(ComponentNames.StateStore, idempotencyKey);
+            if (existing != null)
+            {
+                _logger.LogWarning("Duplicate request detected for Idempotency-Key: {Key}. Task ID: {TaskId}", idempotencyKey, existing.Id);
+                return (false, "AlreadyProcessed", existing.Id);
+            }
+
+            // Check if task with same ID already exists in DB (extra guard)
             var checkId = await _dbContext.Tasks
                 .AsNoTracking()
                 .FirstOrDefaultAsync(t => t.Id == task.Id);
@@ -105,36 +114,39 @@ public class AccessorService : IAccessorService
             if (checkId != null)
             {
                 _logger.LogWarning("Task with ID {TaskId} already exists in the DB.", task.Id);
-                return;
+                return (false, "AlreadyProcessed", task.Id);
             }
 
-            // Add task to the database
+            // Add task to database
             _dbContext.Tasks.Add(task);
             await _dbContext.SaveChangesAsync();
 
-            var key = GetTaskCacheKey(task.Id);
-
-            // Check if the task already exists in Redis cache
-            var stateEntry = await _daprClient.GetStateEntryAsync<TaskModel>(ComponentNames.StateStore, key);
-
-            // If it exists, log a warning and overwrite it
-            if (stateEntry.Value != null)
-            {
-                _logger.LogWarning("Task {TaskId} already present in cache before creation. Overwriting.", task.Id);
-            }
-
-            // Store the newly created task in Redis cache
-            stateEntry.Value = task;
-
+            // Save idempotency key → task in Dapr
             await _daprClient.SaveStateAsync(
-               storeName: ComponentNames.StateStore,
-               key: key,
-               value: task,
-               metadata: new Dictionary<string, string>
-               {
+                storeName: ComponentNames.StateStore,
+                key: idempotencyKey,
+                value: task,
+                metadata: new Dictionary<string, string>
+                {
                     { "ttlInSeconds", _ttl.ToString() }
-               });
+                });
+
+            _logger.LogInformation("Stored idempotency record for key {Key}", idempotencyKey);
+
+            // Cache task for faster future retrieval (optional)
+            var taskCacheKey = GetTaskCacheKey(task.Id);
+            await _daprClient.SaveStateAsync(
+                storeName: ComponentNames.StateStore,
+                key: taskCacheKey,
+                value: task,
+                metadata: new Dictionary<string, string>
+                {
+                    { "ttlInSeconds", _ttl.ToString() }
+                });
+
             _logger.LogInformation("Successfully cached task {TaskId} with TTL {TTL}s", task.Id, _ttl);
+
+            return (true, "Saved", task.Id);
         }
         catch (DbUpdateException dbEx)
         {

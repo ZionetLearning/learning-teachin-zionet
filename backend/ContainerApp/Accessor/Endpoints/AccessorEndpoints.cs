@@ -47,23 +47,39 @@ public static class AccessorEndpoints
     }
 
     public static async Task<IResult> CreateTaskAsync(
-        TaskModel task,
+        BindingRequest<TaskModel> bindingRequest,
         [FromServices] IAccessorService accessorService,
         [FromServices] ILogger<AccessorService> logger)
     {
+        if (bindingRequest?.Data == null)
+        {
+            logger.LogWarning("Missing task data in binding request.");
+            return Results.BadRequest(new { error = "Missing task data" });
+        }
+
+        var task = bindingRequest.Data;
+        var metadata = bindingRequest.Metadata;
+
+        var idempotencyKey = metadata != null && metadata.TryGetValue("Idempotency-Key", out var key)
+            ? key
+            : null;
+
         using (logger.BeginScope("Method: {Method}, TaskId: {TaskId}", nameof(CreateTaskAsync), task.Id))
         {
-            try
+            if (string.IsNullOrWhiteSpace(idempotencyKey))
             {
-                await accessorService.CreateTaskAsync(task);
-                logger.LogInformation("Task saved successfully.");
-                return Results.Ok($"Task {task.Id} Saved");
+                logger.LogWarning("Missing Idempotency-Key in metadata");
+                return Results.BadRequest(new { error = "Missing Idempotency-Key" });
             }
-            catch (Exception ex)
+
+            var (success, message, taskId) = await accessorService.CreateTaskAsync(task, idempotencyKey);
+
+            if (!success)
             {
-                logger.LogError(ex, "Failed to save task.");
-                return Results.Problem("An error occurred while saving the task.");
+                return Results.Conflict(new { status = message, id = taskId });
             }
+
+            return Results.Accepted($"/task/{task.Id}", new { status = message, task.Id });
         }
     }
 
