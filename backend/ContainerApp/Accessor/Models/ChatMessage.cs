@@ -19,6 +19,10 @@ public class ChatMessage
     public ChatThread Thread { get; set; } = null!;
 
     [Required]
+    [JsonPropertyName("userId")]
+    public string UserId { get; set; } = string.Empty;
+
+    [Required]
     [JsonPropertyName("role")]
     [EnumDataType(typeof(MessageRole))]
     public string Role { get; set; } = MessageRole.User;

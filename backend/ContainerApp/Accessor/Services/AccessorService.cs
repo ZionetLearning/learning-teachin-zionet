@@ -263,15 +263,32 @@ public class AccessorService : IAccessorService
 
     public async Task AddMessageAsync(ChatMessage message)
     {
-        _dbContext.ChatMessages.Add(message);
-
-        // bump the parent thread's UpdatedAt
+        // 1) Look up the parent thread
         var thread = await _dbContext.ChatThreads.FindAsync(message.ThreadId);
-        if (thread is not null)
+
+        // 2) If missing, insert it first
+        if (thread is null)
         {
+            thread = new ChatThread
+            {
+                ThreadId = message.ThreadId,
+                UserId = message.UserId,
+                ChatType = "default",
+                CreatedAt = message.Timestamp,
+                UpdatedAt = message.Timestamp
+            };
+            _dbContext.ChatThreads.Add(thread);
+        }
+        else
+        {
+            // 3) If it exists, just bump the timestamp
             thread.UpdatedAt = message.Timestamp;
         }
 
+        // 4) Now it's safe to add the child message
+        _dbContext.ChatMessages.Add(message);
+
+        // 5) Commit both inserts/updates in one SaveChanges
         await _dbContext.SaveChangesAsync();
     }
 
