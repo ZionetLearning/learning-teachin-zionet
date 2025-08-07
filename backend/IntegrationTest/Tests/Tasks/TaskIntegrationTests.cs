@@ -22,14 +22,14 @@ public class TaskIntegrationTests(HttpTestFixture fixture, ITestOutputHelper out
 
         var task = TestDataHelper.CreateRandomTask();
         var requestId = Guid.NewGuid().ToString();
-        OutputHelper.WriteLine($"Using X-Request-ID: {requestId}");
+        OutputHelper.WriteLine($"Using Idempotency-Key: {requestId}");
 
         //First request
         var request1 = new HttpRequestMessage(HttpMethod.Post, "/task")
         {
             Content = JsonContent.Create(task)
         };
-        request1.Headers.Add("X-Request-ID", requestId);
+        request1.Headers.Add("Idempotency-Key", requestId);
 
         var response1 = await Client.SendAsync(request1);
         response1.StatusCode.Should().Be(HttpStatusCode.Accepted);
@@ -44,7 +44,7 @@ public class TaskIntegrationTests(HttpTestFixture fixture, ITestOutputHelper out
         {
             Content = JsonContent.Create(task)
         };
-        request2.Headers.Add("X-Request-ID", requestId);
+        request2.Headers.Add("Idempotency-Key", requestId);
 
         var response2 = await Client.SendAsync(request2);
         response2.StatusCode.Should().Be(HttpStatusCode.Accepted);
@@ -69,7 +69,8 @@ public class TaskIntegrationTests(HttpTestFixture fixture, ITestOutputHelper out
         var task = TestDataHelper.CreateRandomTask();
         OutputHelper.WriteLine($"Creating task with ID {task.Id} and name {task.Name}");
 
-        var response = await PostAsJsonAsync(ApiRoutes.Task, task);
+        var headers = new Dictionary<string, string> { { "Idempotency-Key", Guid.NewGuid().ToString() } };
+        var response = await PostAsJsonAsync(ApiRoutes.Task, task, headers);    
         response.ShouldBeAccepted();
 
         var result = await ReadAsJsonAsync<TaskModel>(response);
