@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useStyles } from "./style";
 import type { FeedbackResult } from "../../types";
 
@@ -14,6 +15,7 @@ export const FeedbackDisplay = ({
   onNextExercise,
   onChangeLevel,
 }: FeedbackDisplayProps) => {
+  const { t } = useTranslation();
   const classes = useStyles();
 
   const getAccuracyClass = (accuracy: number) => {
@@ -25,24 +27,30 @@ export const FeedbackDisplay = ({
   return (
     <div className={classes.feedbackSection}>
       <div className={classes.feedbackHeader}>
-        <h4 className={classes.feedbackTitle}>Your Results</h4>
+        <h4 className={classes.feedbackTitle}>
+          {t("pages.typingPractice.yourResults")}
+        </h4>
         <div
           className={`${classes.accuracyBadge} ${getAccuracyClass(feedbackResult.accuracy)}`}
         >
-          {feedbackResult.accuracy}% Accuracy
+          {feedbackResult.accuracy}% {t("pages.typingPractice.accuracy")}
         </div>
       </div>
 
       <div className={classes.textComparison}>
         <div>
-          <div className={classes.comparisonLabel}>What you typed:</div>
+          <div className={classes.comparisonLabel}>
+            {t("pages.typingPractice.whatYouTyped")}
+          </div>
           <div className={classes.comparisonText}>
-            {feedbackResult.userInput || "(empty)"}
+            {feedbackResult.userInput || t("pages.typingPractice.empty")}
           </div>
         </div>
 
         <div>
-          <div className={classes.comparisonLabel}>Expected text:</div>
+          <div className={classes.comparisonLabel}>
+            {t("pages.typingPractice.expectedText")}
+          </div>
           <div className={classes.expectedText}>
             {feedbackResult.characterComparison.map((char, index) => (
               <span
@@ -62,16 +70,16 @@ export const FeedbackDisplay = ({
 
       <div className={classes.exerciseControls}>
         <button className={classes.controlButton} onClick={onTryAgain}>
-          🔄 Try Again
+          {t("pages.typingPractice.tryAgain")}
         </button>
         <button
           className={`${classes.controlButton} ${classes.primaryControlButton}`}
           onClick={onNextExercise}
         >
-          ➡️ Next Exercise
+          {t("pages.typingPractice.nextExercise")}
         </button>
         <button className={classes.controlButton} onClick={onChangeLevel}>
-          📊 Change Level
+          {t("pages.typingPractice.changeLevel")}
         </button>
       </div>
     </div>

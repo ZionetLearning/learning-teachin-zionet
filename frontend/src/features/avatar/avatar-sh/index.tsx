@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useAvatarSpeech } from "./hooks";
 import avatar from "./assets/avatar.svg";
 import { useStyles } from "./style";
@@ -8,6 +9,7 @@ const lips = import.meta.glob("./assets/lips/*.svg", { eager: true });
 const lipsArray = Object.values(lips).map((mod) => (mod as SvgModule).default);
 
 export const AvatarSh = () => {
+  const { t } = useTranslation();
   const classes = useStyles();
   const { currentVisemeSrc, speak } = useAvatarSpeech(lipsArray);
   const [text, setText] = useState("");
@@ -22,7 +24,7 @@ export const AvatarSh = () => {
       <div style={{ marginTop: "20px" }}>
         <input
           type="text"
-          placeholder="כתוב פה משהו בעברית"
+          placeholder={t("pages.avatarSh.writeSomethingHereInHebrew")}
           value={text}
           onChange={(e) => setText(e.target.value)}
           className={classes.input}
@@ -30,7 +32,7 @@ export const AvatarSh = () => {
         />
         <br />
         <button onClick={() => speak(text)} className={classes.button}>
-          דברי
+          {t("pages.avatarSh.speak")}
         </button>
       </div>
     </div>

@@ -1,9 +1,11 @@
+import { useTranslation } from "react-i18next";
 import { useStyles } from "./style";
 import type { DifficultyLevel } from "./types";
 import { LevelSelection, FeedbackDisplay, AudioControls } from "./components";
 import { useTypingPractice } from "./hooks";
 
 export const TypingPractice = () => {
+  const { t } = useTranslation();
   const classes = useStyles();
 
   const {
@@ -34,7 +36,9 @@ export const TypingPractice = () => {
   const renderExerciseArea = () => (
     <div className={classes.exerciseArea}>
       <div className={classes.exerciseHeader}>
-        <h3 className={classes.exerciseTitle}>Hebrew Typing Practice</h3>
+        <h3 className={classes.exerciseTitle}>
+          {t("pages.typingPractice.hebrewTypingPractice")}
+        </h3>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           {exerciseState.selectedLevel && (
             <span
@@ -47,7 +51,7 @@ export const TypingPractice = () => {
             className={classes.backButton}
             onClick={handleBackToLevelSelection}
           >
-            ← Change Level
+            {t("pages.typingPractice.changeLevel")}
           </button>
         </div>
       </div>
@@ -69,7 +73,7 @@ export const TypingPractice = () => {
               className={classes.typingInputField}
               value={exerciseState.userInput}
               onChange={handleInputChange}
-              placeholder="הקלד כאן את מה ששמעת..."
+              placeholder={t("pages.typingPractice.typeHereWhatYouHeard")}
               autoFocus
             />
             <button
@@ -77,7 +81,7 @@ export const TypingPractice = () => {
               onClick={handleSubmitAnswer}
               disabled={!exerciseState.userInput.trim()}
             >
-              ✓ Submit Answer
+              {t("pages.typingPractice.submitAnswer")}
             </button>
           </div>
         )}
@@ -97,9 +101,11 @@ export const TypingPractice = () => {
   return (
     <div className={classes.container}>
       <div className={classes.header}>
-        <h1 className={classes.title}>Hebrew Typing Practice</h1>
+        <h1 className={classes.title}>
+          {t("pages.typingPractice.hebrewTypingPractice")}
+        </h1>
         <p className={classes.subtitle}>
-          Listen to Hebrew audio and practice your typing skills
+          {t("pages.typingPractice.listenToHebrewAudio")}
         </p>
       </div>
 

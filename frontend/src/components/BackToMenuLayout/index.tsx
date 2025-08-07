@@ -1,5 +1,5 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/providers/auth";
 import { useStyles } from "./style";
 
@@ -8,7 +8,7 @@ export const BackToMenuLayout = () => {
   const location = useLocation();
   const classes = useStyles();
   const { logout } = useAuth();
-
+  const { t } = useTranslation();
   const showBackButton = location.pathname !== "/";
 
   return (
@@ -16,7 +16,7 @@ export const BackToMenuLayout = () => {
       <header className={classes.header}>
         {showBackButton && (
           <button className={classes.button} onClick={() => navigate("/")}>
-            Go back to menu
+            {t("goBackToMenu")}
           </button>
         )}
         <button
@@ -26,7 +26,7 @@ export const BackToMenuLayout = () => {
             navigate("/signin", { replace: true });
           }}
         >
-          Logout
+          {t("logout")}
         </button>
       </header>
 

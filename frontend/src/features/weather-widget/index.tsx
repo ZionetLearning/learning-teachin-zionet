@@ -4,27 +4,29 @@ import { WeatherParams } from "@/types";
 import { useGetWeather } from "./api";
 
 import { useStyles } from "./style";
-
-const presetCities = [
-  "New York",
-  "London",
-  "Tokyo",
-  "Paris",
-  "Berlin",
-  "Sydney",
-  "Rio de Janeiro",
-  "Cape Town",
-  "Mumbai",
-];
+import { useTranslation } from "react-i18next";
 
 export const WeatherWidget = () => {
   const classes = useStyles();
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<string | null>(null);
   const [search, setSearch] = useState<string>("");
   const [locating, setLocating] = useState(false);
   const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(
-    null,
+    null
   );
+
+  const presetCities = [
+    t("pages.weather.cities.newYork"),
+    t("pages.weather.cities.london"),
+    t("pages.weather.cities.tokyo"),
+    t("pages.weather.cities.paris"),
+    t("pages.weather.cities.berlin"),
+    t("pages.weather.cities.sydney"),
+    t("pages.weather.cities.rioDeJaneiro"),
+    t("pages.weather.cities.capeTown"),
+    t("pages.weather.cities.mumbai"),
+  ];
 
   const params: WeatherParams | null =
     selected === "location"
@@ -53,7 +55,7 @@ export const WeatherWidget = () => {
           setLocating(false);
           setSelected(null);
           console.warn("Location access denied or not supported");
-        },
+        }
       );
     }
   };
@@ -84,8 +86,8 @@ export const WeatherWidget = () => {
           value={selected || ""}
           onChange={(e) => handleSelectLocation(e.target.value)}
         >
-          <option value="">-- Select City or Location --</option>
-          <option value="location">Use My Location</option>
+          <option value="">{t("pages.weather.selectCityOrLoation")}</option>
+          <option value="location">{t("pages.weather.useMyLocation")}</option>
           {presetCities.map((city) => (
             <option key={city} value={city}>
               {city}
@@ -97,13 +99,13 @@ export const WeatherWidget = () => {
           <input
             name="search-city"
             className={classes.input}
-            placeholder="Search city..."
+            placeholder={t("pages.weather.searchCity")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
           />
           <button className={classes.button} onClick={handleSearch}>
-            Search
+            {t("pages.weather.search")}
           </button>
         </div>
       </div>
@@ -113,9 +115,13 @@ export const WeatherWidget = () => {
         error ||
         (!locating && !isLoading && !error && !data)) && (
         <div className={classes.messageContainer}>
-          {locating && <div className={classes.loading}>Locating...</div>}
+          {locating && (
+            <div className={classes.loading}>{t("pages.weather.locating")}</div>
+          )}
           {!locating && isLoading && (
-            <div className={classes.loading}>Loading weather...</div>
+            <div className={classes.loading}>
+              {t("pages.weather.loadingWeather")}
+            </div>
           )}
           {error && (
             <div className={classes.error}>
@@ -126,7 +132,7 @@ export const WeatherWidget = () => {
           )}
           {!locating && !isLoading && !error && !data && (
             <div className={classes.loading}>
-              Select or search a city or use your location to see the weather.
+              {t("pages.weather.selectOrSearchCity")}
             </div>
           )}
         </div>
@@ -147,20 +153,24 @@ export const WeatherWidget = () => {
             <p className={classes.description}>{data.weather[0].description}</p>
           </div>
           <div className={classes.stats}>
-            Feels like: {Math.round(data.main.feels_like)}°C
+            {t("pages.weather.feelsLike")} {Math.round(data.main.feels_like)}°C
             <br />
-            Min: {Math.round(data.main.temp_min)}°C | Max:
+            {t("pages.weather.min")} {Math.round(data.main.temp_min)}°C |{" "}
+            {t("pages.weather.max")}
             {Math.round(data.main.temp_max)}°C
             <br />
-            Humidity: {data.main.humidity}% | Pressure: {data.main.pressure} hPa
+            {t("pages.weather.humidity")} {data.main.humidity}% |{" "}
+            {t("pages.weather.pressure")} {data.main.pressure} hPa
             <br />
-            Wind: {data.wind.speed} m/s
+            {t("pages.weather.wind")} {data.wind.speed} m/s
             {data.wind.deg ? ` at ${data.wind.deg}°` : ""}
             {data.wind.gust ? ` (gusts ${data.wind.gust} m/s)` : ""}
             <br />
-            Visibility: {(data.visibility / 1000).toFixed(1)} km
+            {t("pages.weather.visibility")}{" "}
+            {(data.visibility / 1000).toFixed(1)} {t("pages.weather.km")}
             <br />
-            Sunrise: {formatTime(data.sys.sunrise)} | Sunset:
+            {t("pages.weather.sunrise")} {formatTime(data.sys.sunrise)} |{" "}
+            {t("pages.weather.sunset")}
             {formatTime(data.sys.sunset)}
           </div>
         </>

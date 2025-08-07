@@ -1,6 +1,8 @@
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import { useGetEarthquakes } from "./api";
+import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+
+import { useGetEarthquakes } from "./api";
 import { useState } from "react";
 import { useStyles } from "./style";
 
@@ -12,9 +14,17 @@ import {
   SelectChangeEvent,
   Typography,
 } from "@mui/material";
+import { useTranslation } from "react-i18next";
+
+const customMarkerIcon = new L.Icon({
+  iconUrl: "/map-marker.png",
+  iconSize: [38, 38],
+});
 
 export const EarthquakeMap = () => {
   const classes = useStyles();
+  const { t } = useTranslation();
+
   const [hoursAgo, setHoursAgo] = useState(24);
   const { data: quakes, isLoading, error } = useGetEarthquakes(hoursAgo);
 
@@ -26,20 +36,28 @@ export const EarthquakeMap = () => {
     <>
       <Box className={classes.dropdownWrapper}>
         <Typography className={classes.dropdownTitle}>
-          Show earthquakes from:
+          {t("pages.earthquakeMap.dropdownLabel")}
         </Typography>
         <FormControl className={classes.formControl} size="small">
           <Select value={hoursAgo.toString()} onChange={handleChange}>
-            <MenuItem value={24}>Last 24 hours</MenuItem>
-            <MenuItem value={48}>Last 48 hours</MenuItem>
-            <MenuItem value={72}>Last 72 hours</MenuItem>
-            <MenuItem value={168}>Last 7 days</MenuItem>
+            <MenuItem value={24}>
+              {t("pages.earthquakeMap.last24Hours")}
+            </MenuItem>
+            <MenuItem value={48}>
+              {t("pages.earthquakeMap.last48Hours")}
+            </MenuItem>
+            <MenuItem value={72}>
+              {t("pages.earthquakeMap.last72Hours")}
+            </MenuItem>
+            <MenuItem value={168}>
+              {t("pages.earthquakeMap.last7days")}
+            </MenuItem>
           </Select>
         </FormControl>
       </Box>
 
-      {isLoading && <p>Loading map...</p>}
-      {error && <p>Error fetching data</p>}
+      {isLoading && <p>{t("pages.earthquakeMap.loadingMap")}</p>}
+      {error && <p>{t("pages.earthquakeMap.error")}</p>}
 
       <MapContainer
         center={[20, 0]}
@@ -54,11 +72,11 @@ export const EarthquakeMap = () => {
         {quakes?.map((eq) => {
           const [lng, lat] = eq.geometry.coordinates;
           return (
-            <Marker key={eq.id} position={[lat, lng]}>
+            <Marker key={eq.id} position={[lat, lng]} icon={customMarkerIcon}>
               <Popup>
                 <strong>{eq.properties.place}</strong>
                 <br />
-                Magnitude: {eq.properties.mag}
+                {t("pages.earthquakeMap.magnitude")} {eq.properties.mag}
                 <br />
                 {new Date(eq.properties.time).toLocaleString()}
               </Popup>
