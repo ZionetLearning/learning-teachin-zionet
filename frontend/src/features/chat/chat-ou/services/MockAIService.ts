@@ -93,7 +93,6 @@ export class MockChatService implements MockAIService {
       return this.createLinkResponse(
         messageId,
         timestamp,
-        userMessage,
         context,
       );
     }
@@ -188,7 +187,6 @@ export class MockChatService implements MockAIService {
   private createLinkResponse(
     messageId: string,
     timestamp: Date,
-    userMessage: string,
     context?: MessageContext,
   ): GenerativeUIMessage {
     const randomLink =

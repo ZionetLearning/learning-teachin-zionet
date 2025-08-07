@@ -37,6 +37,9 @@ export const useStyles = createUseStyles({
     border: "1px solid #ddd",
     borderRadius: "0%",
     paddingLeft: "6px",
+    "& input": {
+      color: "#fff",
+    },
   },
   inputAvatar: {
     width: "100% !important",
@@ -45,6 +48,9 @@ export const useStyles = createUseStyles({
     border: "1px solid #ccc",
     borderRadius: 5,
     boxSizing: "border-box",
+    "& input": {
+      color: "#fff",
+    },
   },
   rightButtons: {
     display: "flex",

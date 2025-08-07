@@ -4,7 +4,6 @@ using Engine.Constants;
 using Engine.Messaging;
 using Engine.Models;
 using Polly;
-using System.Net;
 
 namespace Engine.Services;
 
@@ -42,11 +41,13 @@ public class EngineService : IEngineService
 
         try
         {
-            await _httpRetryPolicy.ExecuteAsync(async () =>
-                {
-                    await _daprClient.InvokeBindingAsync(QueueNames.EngineToAccessor, "create", task);
-                    return new HttpResponseMessage(HttpStatusCode.OK);
-                });
+            await _daprClient.InvokeBindingAsync<TaskModel>(
+                QueueNames.EngineToAccessor,
+                "create",
+                task,
+                cancellationToken: ct
+            );
+
             _logger.LogInformation("Task {Id} forwarded to binding '{Binding}'", task.Id, QueueNames.EngineToAccessor);
         }
         catch (Exception ex)

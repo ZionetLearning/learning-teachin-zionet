@@ -61,7 +61,7 @@ public class ChatAiServiceTests
             Question = "How much is 2 + 2?",
             TtlSeconds = 120,
             SentAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-            ReplyToTopic = "ignored-in-test"
+            ReplyToQueue = "ignored-in-test"
         };
 
         var response = await _aiService.ProcessAsync(request, CancellationToken.None);
@@ -86,7 +86,7 @@ public class ChatAiServiceTests
             Question = "Remember the number forty-two.",
             TtlSeconds = 120,
             SentAt = now,
-            ReplyToTopic = "ignored"
+            ReplyToQueue = "ignored"
         };
         var response1 = await _aiService.ProcessAsync(request1, CancellationToken.None);
 
@@ -99,7 +99,7 @@ public class ChatAiServiceTests
             Question = "What number did you remember?",
             TtlSeconds = 120,
             SentAt = now + 1,
-            ReplyToTopic = "ignored"
+            ReplyToQueue = "ignored"
         };
         var response2 = await _aiService.ProcessAsync(request2, CancellationToken.None);
 
