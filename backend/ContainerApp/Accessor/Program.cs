@@ -7,7 +7,6 @@ using Accessor.Models;
 using Accessor.Services;
 using Azure.Messaging.ServiceBus;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -58,21 +57,13 @@ builder.Services.AddDaprClient(client =>
 
 // Configure PostgreSQL
 builder.Services.AddDbContext<AccessorDbContext>(options =>
-    options.UseNpgsql(
-        builder.Configuration.GetConnectionString("Postgres"),
-        npgsqlOptions =>
-        {
-            npgsqlOptions.EnableRetryOnFailure(
-                maxRetryCount: 5,
-                maxRetryDelay: TimeSpan.FromSeconds(5),
-                errorCodesToAdd: null);
-        }
-    )
-    .ConfigureWarnings(w =>
-        w.Default(WarningBehavior.Log)
-         .Ignore(RelationalEventId.PendingModelChangesWarning)
-    )
-);
+    options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres"), npgsqlOptions =>
+    {
+        npgsqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(5),
+            errorCodesToAdd: null);
+    }));
 
 // This is required for the Scalar UI to have an option to setup an authentication token
 builder.Services.AddOpenApi(
