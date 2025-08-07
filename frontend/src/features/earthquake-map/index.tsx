@@ -12,9 +12,12 @@ import {
   SelectChangeEvent,
   Typography,
 } from "@mui/material";
+// import { useTranslation } from "react-i18next";
 
 export const EarthquakeMap = () => {
   const classes = useStyles();
+  // const { t } = useTranslation();
+
   const [hoursAgo, setHoursAgo] = useState(24);
   const { data: quakes, isLoading, error } = useGetEarthquakes(hoursAgo);
 

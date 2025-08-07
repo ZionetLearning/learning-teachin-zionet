@@ -137,7 +137,16 @@
         "next": "Next",
         "playAudio": "Play audio",
         "playAudioSlowly": "Play audio slowly (0.6x)"
-      }
+      },
+      "earthquakeMap":{
+        "title": "Earthquake Map",
+        "dropdownLabel": "Show earthquakes from:",
+        "last24Hours": "Last 24 hours",
+        "last48Hours": "Last 48 hours",
+        "last72Hours": "Last 72 hours",
+        "last7Days": "Last 7 days"
+      },
+      "weather":{}
     },
     "sidebar": {
       "toggleSidebar": "Toggle Sidebar",
