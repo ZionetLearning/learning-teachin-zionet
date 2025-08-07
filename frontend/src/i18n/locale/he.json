@@ -137,7 +137,19 @@
         "next": "הבא",
         "playAudio": "הפעל קטע אודיו",
         "playAudioSlowly": "הפעל קטע אודיו במהירות איטית (0.6x)"
-      }
+      },
+      "earthquakeMap": {
+        "title": "מפת רעידות אדמה",
+        "dropdownLabel": "הצג רעידות אדמה מ:",
+        "last24Hours": "24 השעות האחרונות",
+        "last48Hours": "48 השעות האחרונות",
+        "last72Hours": "72 השעות האחרונות",
+        "last7Days": "7 הימים האחרונים",
+        "loadingMap": "טוען מפה...",
+        "error": "שגיאה בקבלת הנתונים",
+        "magnitude": "עוצמה:"
+      },
+       "weather": {}
     },
     "sidebar": {
       "toggleSidebar": "החלף סרגל",
