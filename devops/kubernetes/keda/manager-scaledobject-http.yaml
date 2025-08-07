@@ -1,14 +1,18 @@
-apiVersion: keda.sh/v1alpha1
-kind: ScaledObject
+apiVersion: http.keda.sh/v1alpha1
+kind: HTTPScaledObject
 metadata:
-  name: manager-scaledobject
-  namespace: dev # Specify the namespace where this ScaledObject will be created
+  name: manager-http-scaledobject
+  namespace: dev
 spec:
+  hosts:
+  - teachin-zionet.westeurope.cloudapp.azure.com
+  pathPrefixes:
+  - /
   scaleTargetRef:
-    name: manager
-  minReplicaCount: 0
-  maxReplicaCount: 3
-  triggers:
-    - type: http
-      metadata:
-        host: http://teaching-zionet.westeurope.cloudapp.azure.com/manager # The host URL for the HTTP trigger
+    name: manager          # Your deployment name
+    port: 5001            # Your container port
+    service: manager       # Use 'manager' (your actual service name)
+  replicas:
+    min: 1               # Scale to zero when unused
+    max: 3               # Maximum replicas
+  scaledownPeriod: 60    # How long to wait before scaling down (seconds)
