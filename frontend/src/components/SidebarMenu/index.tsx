@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
 	Sidebar,
 	Menu,
@@ -12,29 +13,39 @@ import MenuIcon from '@mui/icons-material/Menu';
 import ChatIcon from '@mui/icons-material/Chat';
 import FaceIcon from '@mui/icons-material/Face';
 import KeyboardIcon from '@mui/icons-material/Keyboard';
+import TranslateIcon from '@mui/icons-material/Translate';
 import HomeIcon from '@mui/icons-material/Home';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import PublicIcon from '@mui/icons-material/Public';
 import WeatherWidgetIcon from '@mui/icons-material/Cloud';
 import LiveTvIcon from '@mui/icons-material/LiveTv';
-
+import GBFlag from 'country-flag-icons/react/3x2/GB';
+import ILFlag from 'country-flag-icons/react/3x2/IL';
 import { useAuth } from '@/providers/auth';
 
 export const SidebarMenu = () => {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const { logout } = useAuth();
+	const { t, i18n } = useTranslation();
 	const [collapsed, setCollapsed] = useState(false);
-
+	const [langActive, setLangActive] = useState<'he' | 'en' | null>('en');
+	const flagSize = { width: 22, height: 16 };
 	const handleNavigation = (path: string) => {
 		navigate(path);
 	};
 
+	const isHebrew = i18n.language === 'he';
 	const isActive = (path: string) => location.pathname === path;
 
+	const changeLang = (lng: 'en' | 'he') => () => {
+		i18n.changeLanguage(lng);
+		setLangActive(lng);
+	};
 	return (
 		<Sidebar
 			collapsed={collapsed}
+			dir={isHebrew ? 'rtl' : 'ltr'}
 			rootStyles={{
 				[`.${sidebarClasses.container}`]: {
 					backgroundColor: '#f4f4f4',
@@ -43,6 +54,7 @@ export const SidebarMenu = () => {
 					display: 'flex',
 					flexDirection: 'column',
 					justifyContent: 'space-between',
+					direction: isHebrew ? 'rtl' : 'ltr',
 				},
 			}}
 		>
@@ -64,7 +76,7 @@ export const SidebarMenu = () => {
 						textTransform: 'capitalize',
 					}),
 					label: {
-						textAlign: 'left',
+						textAlign: isHebrew ? 'right' : 'left',
 					},
 				}}
 			>
@@ -72,89 +84,107 @@ export const SidebarMenu = () => {
 					icon={<MenuIcon />}
 					onClick={() => setCollapsed((prev) => !prev)}
 				>
-					{!collapsed && 'Toggle Sidebar'}
+					{!collapsed && t('sidebar.toggleSidebar')}
 				</MenuItem>
+
+				<SubMenu label={t('sidebar.languages')} icon={<TranslateIcon />}>
+					<MenuItem
+						icon={<ILFlag style={flagSize} />}
+						onClick={changeLang('he')}
+						active={langActive === 'he'}
+					>
+						{t('sidebar.he')}
+					</MenuItem>
+
+					<MenuItem
+						icon={<GBFlag style={flagSize} />}
+						onClick={changeLang('en')}
+						active={langActive === 'en'}
+					>
+						{t('sidebar.en')}
+					</MenuItem>
+				</SubMenu>
 
 				<MenuItem
 					icon={<HomeIcon />}
 					onClick={() => handleNavigation('/')}
 					active={isActive('/')}
 				>
-					Home
+					{t('sidebar.home')}
 				</MenuItem>
 
-				<SubMenu label="Chat Tools" icon={<ChatIcon />}>
+				<SubMenu label={t('sidebar.chatTools')} icon={<ChatIcon />}>
 					<MenuItem
 						onClick={() => handleNavigation('/chat/sh')}
 						active={isActive('/chat/sh')}
 					>
-						Chat - Sh (Shirley)
+						{t('sidebar.chatSh')}
 					</MenuItem>
 					<MenuItem
 						onClick={() => handleNavigation('/chat/yo')}
 						active={isActive('/chat/yo')}
 					>
-						Chat - Yo (Yonatan)
+						{t('sidebar.chatYo')}
 					</MenuItem>
 					<MenuItem
 						onClick={() => handleNavigation('/chat/da')}
 						active={isActive('/chat/da')}
 					>
-						Chat - Da (Daniel)
+						{t('sidebar.chatDa')}
 					</MenuItem>
 					<MenuItem
 						onClick={() => handleNavigation('/chat/ou')}
 						active={isActive('/chat/ou')}
 					>
-						Chat - Ou (Ouriel)
+						{t('sidebar.chatOu')}
 					</MenuItem>
 					<MenuItem
 						onClick={() => handleNavigation('/chat-avatar')}
 						active={isActive('/chat-avatar')}
 					>
-						Chat - Avatar
+						{t('sidebar.chatAvatar')}
 					</MenuItem>
 				</SubMenu>
 
-				<SubMenu label="Avatar Tools" icon={<FaceIcon />}>
+				<SubMenu label={t('sidebar.avatarTools')} icon={<FaceIcon />}>
 					<MenuItem
 						onClick={() => handleNavigation('/avatar/ou')}
 						active={isActive('/avatar/ou')}
 					>
-						Avatar - Ou
+						{t('sidebar.avatarOu')}
 					</MenuItem>
 					<MenuItem
 						onClick={() => handleNavigation('/avatar/sh')}
 						active={isActive('/avatar/sh')}
 					>
-						Avatar - Sh
+						{t('sidebar.avatarSh')}
 					</MenuItem>
 					<MenuItem
 						onClick={() => handleNavigation('/avatar/da')}
 						active={isActive('/avatar/da')}
 					>
-						Avatar - Da
+						{t('sidebar.avatarDa')}
 					</MenuItem>
 				</SubMenu>
 
-				<SubMenu label="Practice Tools" icon={<KeyboardIcon />}>
+				<SubMenu label={t('sidebar.practiceTools')} icon={<KeyboardIcon />}>
 					<MenuItem
 						onClick={() => handleNavigation('/typing')}
 						active={isActive('/typing')}
 					>
-						Typing Practice
+						{t('sidebar.typingPractice')}
 					</MenuItem>
 					<MenuItem
 						onClick={() => handleNavigation('/word-order-game')}
 						active={isActive('/word-order-game')}
 					>
-						Word Order Game
+						{t('sidebar.wordOrderGame')}
 					</MenuItem>
 					<MenuItem
 						onClick={() => handleNavigation('/speaking')}
 						active={isActive('/speaking')}
 					>
-						Speaking Practice
+						{t('sidebar.speakingPractice')}
 					</MenuItem>
 				</SubMenu>
 
@@ -163,14 +193,14 @@ export const SidebarMenu = () => {
 					onClick={() => handleNavigation('/earthquake-map')}
 					active={isActive('/earthquake-map')}
 				>
-					Earthquake Map
+					{t('sidebar.earthquakeMap')}
 				</MenuItem>
 				<MenuItem
 					onClick={() => handleNavigation('/weather')}
 					icon={<WeatherWidgetIcon />}
 					active={isActive('/weather')}
 				>
-					Weather
+					{t('sidebar.weather')}
 				</MenuItem>
 				<MenuItem
 					onClick={() => handleNavigation('/anime-explorer')}
@@ -196,7 +226,7 @@ export const SidebarMenu = () => {
 				}}
 			>
 				<MenuItem icon={<ExitToAppIcon />} onClick={logout}>
-					Logout
+					{t('sidebar.logout')}
 				</MenuItem>
 			</Menu>
 		</Sidebar>
