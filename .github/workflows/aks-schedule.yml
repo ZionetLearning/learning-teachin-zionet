@@ -30,7 +30,7 @@ jobs:
           echo "Day of week: $DAY_OF_WEEK ($DAY_NAME)"
           
           # Determine if this is morning or evening schedule based on hour
-          if [[ $ISRAEL_HOUR -ge 5 && $ISRAEL_HOUR -le 10 ]]; then
+          if [[ $ISRAEL_HOUR -ge 4 && $ISRAEL_HOUR -le 12 ]]; then
             # Morning schedule (around 8:30 AM Israel time)
             echo "Morning schedule detected - START action"
             echo "action=START" >> $GITHUB_OUTPUT
