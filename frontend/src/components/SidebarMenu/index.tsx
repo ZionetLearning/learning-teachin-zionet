@@ -83,6 +83,24 @@ export const SidebarMenu = () => {
           {!collapsed && t("sidebar.toggleSidebar")}
         </MenuItem>
 
+        <SubMenu label={t("sidebar.languages")} icon={<TranslateIcon />}>
+          <MenuItem
+            icon={<ILFlag style={flagSize} />}
+            onClick={changeLang("he")}
+            active={langActive === "he"}
+          >
+            {t("sidebar.he")}
+          </MenuItem>
+
+          <MenuItem
+            icon={<GBFlag style={flagSize} />}
+            onClick={changeLang("en")}
+            active={langActive === "en"}
+          >
+            {t("sidebar.en")}
+          </MenuItem>
+        </SubMenu>
+
         <MenuItem
           icon={<HomeIcon />}
           onClick={() => handleNavigation("/")}
@@ -163,24 +181,6 @@ export const SidebarMenu = () => {
             active={isActive("/speaking")}
           >
             {t("sidebar.speakingPractice")}
-          </MenuItem>
-        </SubMenu>
-
-        <SubMenu label={t("sidebar.languages")} icon={<TranslateIcon />}>
-          <MenuItem
-            icon={<ILFlag style={flagSize} />}
-            onClick={changeLang("he")}
-            active={langActive === "he"}
-          >
-            {t("sidebar.he")}
-          </MenuItem>
-
-          <MenuItem
-            icon={<GBFlag style={flagSize} />}
-            onClick={changeLang("en")}
-            active={langActive === "en"}
-          >
-            {t("sidebar.en")}
           </MenuItem>
         </SubMenu>
 
