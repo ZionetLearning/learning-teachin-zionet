@@ -74,6 +74,7 @@ export const useStyles = createUseStyles({
     borderRadius: "8px",
     border: "1px solid #ccc",
     background: "#ffffff",
+    color: "#333",
   },
   sendBtn: {
     color: "white",

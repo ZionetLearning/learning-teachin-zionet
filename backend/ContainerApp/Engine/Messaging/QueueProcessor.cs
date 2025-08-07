@@ -1,14 +1,22 @@
-﻿namespace Engine.Messaging;
+﻿
+namespace Engine.Messaging;
 
 public class QueueProcessor<T> : BackgroundService
 {
     private readonly IQueueListener<T> _listener;
-    private readonly IQueueHandler<T> _handler;
-    public QueueProcessor(IQueueListener<T> listener, IQueueHandler<T> handler)
+    private readonly IServiceScopeFactory _scopeFactory;
+
+    public QueueProcessor(IQueueListener<T> listener, IServiceScopeFactory scopeFactory)
     {
         _listener = listener;
-        _handler = handler;
+        _scopeFactory = scopeFactory;
     }
+
     protected override Task ExecuteAsync(CancellationToken stoppingToken) =>
-        _listener.StartAsync((msg, token) => _handler.HandleAsync(msg, token), stoppingToken);
+        _listener.StartAsync(async (msg, renewLock, token) =>
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var handler = scope.ServiceProvider.GetRequiredService<IQueueHandler<T>>();
+            await handler.HandleAsync(msg, renewLock, token);
+        }, stoppingToken);
 }

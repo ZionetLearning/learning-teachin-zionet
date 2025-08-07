@@ -1,5 +1,6 @@
 ﻿using Dapr.Client;
 using Engine.Models;
+using Engine.Constants;
 
 namespace Engine.Services;
 
@@ -14,20 +15,38 @@ public sealed class AiReplyPublisher : IAiReplyPublisher
         _log = log ?? throw new ArgumentNullException(nameof(log));
     }
 
-    public async Task PublishAsync(AiResponseModel response, string replyToTopic, CancellationToken ct = default)
+    public async Task SendReplyAsync(AiResponseModel response, string replyToQueue, CancellationToken ct = default)
     {
         try
         {
-            _log.LogInformation("Publishing AI answer {Id} to topic {Topic}", response.Id, replyToTopic);
+            if (string.IsNullOrWhiteSpace(replyToQueue))
+            {
+                _log.LogWarning("replyToQueue is required.");
+                return;
+            }
 
-            await _dapr.PublishEventAsync("pubsub", replyToTopic, response, ct);
+            if (response == null)
+            {
+                _log.LogWarning("Response cannot be null.");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(response.Id))
+            {
+                _log.LogWarning("Response Id is required.");
+                return;
+            }
+
+            _log.LogInformation("Publishing AI answer {Id} to topic {Topic}", response.Id, replyToQueue);
+
+            await _dapr.InvokeBindingAsync(QueueNames.AiToManager, "create", response, cancellationToken: ct);
 
             _log.LogDebug("AI answer {Id} published successfully", response.Id);
         }
         catch (Exception ex)
         {
             _log.LogError(ex,
-                "Failed to publish AI answer {Id} to topic {Topic}", response.Id, replyToTopic);
+                "Failed to publish AI answer {Id} to topic {Topic}", response.Id, replyToQueue);
             throw;
         }
     }
