@@ -1,22 +1,24 @@
 ﻿using Engine.Models.Speech;
 using Microsoft.Extensions.Options;
+using Microsoft.CognitiveServices.Speech;
+using Microsoft.CognitiveServices.Speech.Audio;
 
 namespace Engine.Services;
 
 public class AzureSpeechSynthesisService : ISpeechSynthesisService
 {
-    private readonly AzureSpeechOptions _options;
+    private readonly AzureSpeechSettings _options;
     private readonly ILogger<AzureSpeechSynthesisService> _logger;
 
     public AzureSpeechSynthesisService(
-        IOptions<AzureSpeechOptions> options,
+        IOptions<AzureSpeechSettings> options,
         ILogger<AzureSpeechSynthesisService> logger)
     {
         _options = options.Value;
         _logger = logger;
     }
 
-    public async Task<SpeechResponse> SynthesizeAsync(SpeechRequest request, CancellationToken cancellationToken = default)
+    public async Task<SpeechResponse> SynthesizeAsync(SpeechRequestDto request, CancellationToken cancellationToken = default)
     {
         var startTime = DateTime.UtcNow;
 
@@ -58,7 +60,6 @@ public class AzureSpeechSynthesisService : ISpeechSynthesisService
                     Metadata = new SpeechMetadata
                     {
                         AudioLength = result.AudioData?.Length ?? 0,
-                        ProcessedAt = DateTime.UtcNow,
                         ProcessingDuration = processingDuration
                     }
                 };

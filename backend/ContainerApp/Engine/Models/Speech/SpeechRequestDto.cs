@@ -1,6 +1,6 @@
 ﻿namespace Engine.Models.Speech;
 
-public record SpeechRequest
+public record SpeechRequestDto
 {
     public string Text { get; set; } = string.Empty;
 

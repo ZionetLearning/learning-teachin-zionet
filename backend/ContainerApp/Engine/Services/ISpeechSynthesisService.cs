@@ -4,6 +4,6 @@ namespace Engine.Services;
 
 public interface ISpeechSynthesisService
 {
-    Task<SpeechResponse> SynthesizeAsync(SpeechRequest request, CancellationToken cancellationToken = default);
+    Task<SpeechResponse> SynthesizeAsync(SpeechRequestDto request, CancellationToken cancellationToken = default);
 
 }
