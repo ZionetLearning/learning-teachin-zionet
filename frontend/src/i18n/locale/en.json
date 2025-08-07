@@ -149,7 +149,36 @@
         "error": "Error fetching data",
         "magnitude": "Magnitude:"
       },
-      "weather": {}
+      "weather": {
+        "selectOrSearchCity": "Select or search a city or use your location to see the weather.",
+        "search": "Search",
+        "selectCityOrLoation": "-- Select a city or location --",
+        "searchCity": "Search city",
+        "useMyLocation": "Use my location",
+        "feelsLike": "Feels like",
+        "min": "Min: ",
+        "max": "Max: ",
+        "humidity": "Humidity: ",
+        "wind": "Wind: ",
+        "pressure": "Pressure: ",
+        "visibility": "Visibility: ",
+        "km": "km",
+        "sunrise": "Sunrise: ",
+        "sunset": "Sunset: ",
+        "locating": "Locating...",
+        "loadingWeather": "Loading weather...",
+        "cities": {
+          "newYork": "New York",
+          "london": "London",
+          "tokyo": "Tokyo",
+          "paris": "Paris",
+          "berlin": "Berlin",
+          "sydney": "Sydney",
+          "rioDeJaneiro": "Rio de Janeiro",
+          "capeTown": "Cape Town",
+          "mumbai": "Mumbai"
+        }
+      }
     },
     "sidebar": {
       "toggleSidebar": "Toggle Sidebar",

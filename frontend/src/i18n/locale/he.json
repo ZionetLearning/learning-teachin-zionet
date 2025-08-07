@@ -149,7 +149,36 @@
         "error": "שגיאה בקבלת הנתונים",
         "magnitude": "עוצמה:"
       },
-       "weather": {}
+      "weather": {
+        "selectOrSearchCity": "בחר או חפש עיר, או השתמש במיקום שלך כדי לראות את מזג האוויר.",
+        "search": "חיפוש",
+        "selectCityOrLoation": "-- בחר עיר או מיקום --",
+        "searchCity": "חפש עיר",
+        "useMyLocation": "השתמש במיקומי",
+        "feelsLike": "מרגיש כמו",
+        "min": "מינימום: ",
+        "max": "מקסימום: ",
+        "humidity": "לחות: ",
+        "wind": "רוח: ",
+        "pressure": "לחץ: ",
+        "visibility": "ראות: ",
+        "km": "ק\"מ",
+        "sunrise": "זריחה: ",
+        "sunset": "שקיעה: ",
+        "locating": "מאתר מיקום...",
+        "loadingWeather": "טוען מזג אוויר...",
+        "cities": {
+          "newYork": "ניו יורק",
+          "london": "לונדון",
+          "tokyo": "טוקיו",
+          "paris": "פריז",
+          "berlin": "ברלין",
+          "sydney": "סידני",
+          "rioDeJaneiro": "ריו דה ז'ניירו",
+          "capeTown": "קייפטאון",
+          "mumbai": "מומבאי"
+        }
+      }
     },
     "sidebar": {
       "toggleSidebar": "החלף סרגל",
