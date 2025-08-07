@@ -6,7 +6,7 @@ RELEASE_NAME="ingress-nginx"
 STATIC_IP_NAME="ingress-controller-ip"
 MC_RG="MC_dev-zionet-learning-2025_aks-cluster-dev_westeurope"
 LOCATION="westeurope"
-DNS_LABEL="teaching-zionet"
+DNS_LABEL="teachin-zionet"
 
 
 echo "0. Uninstalling existing ingress-nginx Helm release (if present)..."

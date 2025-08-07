@@ -96,6 +96,7 @@ jobs:
       - name: Apply ingresses
         run: kubectl apply -f "$K8S_DIR/ingress" --recursive
 
+
       - name: Add prometheus
         run: |
           cd devops/helm-tools/prometheus
@@ -107,8 +108,13 @@ jobs:
           cd devops/helm-tools/loki
           chmod +x loki.sh
           ./loki.sh
-          
-
+    
+      - name: Setup HTTPS certificates
+        run: |
+          cd devops/helm-tools
+          chmod +x setup-https.sh
+          ./setup-https.sh   
+    
       - name: Wait for external IP for ingress controller
         id: wait_for_ingress_ip
         run: |
