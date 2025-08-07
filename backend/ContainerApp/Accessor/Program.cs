@@ -1,4 +1,3 @@
-using Accessor.Constants;
 using Accessor.DB;
 using Accessor.Endpoints;
 using Accessor.Messaging;
@@ -14,8 +13,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton(sp =>
   new ServiceBusClient(builder.Configuration["ServiceBus:ConnectionString"]));
 
-builder.Services.AddQueue<TaskModel, AccessorCreateTaskHandler>(
-    QueueNames.EngineToAccessor,
+builder.Services.AddQueue<AccessorPayload, AccessorQueueHandler>(
+    "accessor-queue",
     settings =>
     {
         settings.MaxConcurrentCalls = 4;
@@ -24,11 +23,12 @@ builder.Services.AddQueue<TaskModel, AccessorCreateTaskHandler>(
         settings.MaxRetryAttempts = 3;
         settings.RetryDelaySeconds = 5;
     });
-builder.Services.AddQueue<UpdateTaskName, AccessorUpdateTaskNameHandler>(
-    QueueNames.TaskUpdateInput);
 
-builder.Services.AddSingleton<IQueueHandler<TaskModel>, AccessorCreateTaskHandler>();
-builder.Services.AddSingleton<IQueueHandler<UpdateTaskName>, AccessorUpdateTaskNameHandler>();
+//builder.Services.AddQueue<UpdateTaskName, AccessorUpdateTaskNameHandler>(
+//    QueueNames.TaskUpdateInput);
+
+//builder.Services.AddSingleton<IQueueHandler<TaskModel>, AccessorCreateTaskHandler>();
+//builder.Services.AddSingleton<IQueueHandler<UpdateTaskName>, AccessorUpdateTaskNameHandler>();
 
 var env = builder.Environment;
 

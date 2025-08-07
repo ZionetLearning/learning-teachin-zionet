@@ -40,14 +40,19 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(UpdateTaskName), nameof(AccessorClient));
         try
         {
-            var task = await GetTaskAsync(id);
-            if (task == null)
-            {
-                _logger.LogWarning("Task {TaskId} not found, cannot update name.", id);
-                return false;
-            }
+            //var task = await GetTaskAsync(id);
+            //if (task == null)
+            //{
+            //    _logger.LogWarning("Task {TaskId} not found, cannot update name.", id);
+            //    return false;
+            //}
 
-            var payload = new TaskNameUpdateModel(id, newTaskName, "updateTask");
+            var payload = new AccessorPayload
+            {
+                Id = id,
+                Name = newTaskName,
+                ActionName = "UpdateTask"
+            };
 
             await _daprClient.InvokeBindingAsync(
                 QueueNames.AccessorQueue,
@@ -55,7 +60,6 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
                 payload
             );
 
-            _logger.LogDebug("Task name update request sent to queue for task {TaskId}", id);
             return true;
         }
         catch (Exception ex)

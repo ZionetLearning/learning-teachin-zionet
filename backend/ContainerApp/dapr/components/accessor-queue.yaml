@@ -11,7 +11,7 @@ spec:
     - name: queueName
       value: "accessor-queue"
     - name: direction
-      value: input
+      value: output
     - name: disableEntityManagement
       value: "true"
 scopes:

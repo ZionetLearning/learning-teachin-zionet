@@ -43,7 +43,17 @@ public class AzureServiceBusQueueListener<T> : IQueueListener<T>, IAsyncDisposab
             linkedCts.CancelAfter(lockTimeout);
             try
             {
-                var msg = JsonSerializer.Deserialize<T>(args.Message.Body);
+                //var msg = JsonSerializer.Deserialize<T>(args.Message.Body);
+                //if (msg == null)
+                //{
+                //    _logger.LogWarning("Failed to deserialize message.");
+                //    await args.DeadLetterMessageAsync(args.Message, cancellationToken: cancellationToken);
+                //    return;
+                //}
+
+                using var stream = args.Message.Body.ToStream();
+                var msg = await JsonSerializer.DeserializeAsync<T>(stream, cancellationToken: cancellationToken);
+
                 if (msg == null)
                 {
                     _logger.LogWarning("Failed to deserialize message.");
