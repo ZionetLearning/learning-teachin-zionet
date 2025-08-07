@@ -18,12 +18,12 @@
         "subTitle": "בחר כלי מסרגל הצד כדי להתחיל"
       },
       "chatSh": {
-        "chatShPageWithOpenAi": "Chat Sh Page - with OpenAI",
+        "chatShPageWithOpenAi": "OpenAI צ'אט - שירלי ",
         "azureOpenAiChat": "Chat Azure OpenAI",
         "typeYourMessage": "הקלד את ההודעה…"
       },
       "chatYo": {
-        "chatYoPageOpenAI": "Chat Yo Page + OpenAI",
+        "chatYoPageOpenAI": "צ'אט - יונתן - OpenAI",
         "typeMessage": "הקלד הודעה…",
         "thinking": "טוען...",
         "send": "שלח",
@@ -73,7 +73,7 @@
         "lips": "שפתיים"
       },
       "avatarOu": {
-        "avatarOuPage": "Avatar Ou Page",
+        "avatarOuPage": "אווטאר - אוריאל",
         "ouAvatar": "Ou Avatar",
         "avatarSpeaksHebrewWithAi": "אווטאר מדבר עברית עם AI",
         "typeTextInHebrew": "הקלד טקסט בעברית:",
@@ -88,7 +88,7 @@
         "fullHebrewSupport": "תמיכה מלאה בעברית"
       },
       "avatarSh": {
-        "avatarShPage": "Avatar Sh Page",
+        "avatarShPage": "אווטאר - שירלי",
         "writeSomethingHereInHebrew": "כתוב פה משהו בעברית",
         "speak": "דברי"
       },
