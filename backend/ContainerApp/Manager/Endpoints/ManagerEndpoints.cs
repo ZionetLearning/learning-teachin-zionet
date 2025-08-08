@@ -20,6 +20,8 @@ public static class ManagerEndpoints
 
         app.MapPost("/task", CreateTaskAsync).WithName("CreateTask");
 
+        app.MapPost("/tasklong", CreateTaskLongAsync).WithName("CreateTaskLongTest");
+
         #endregion
 
         #region HTTP PUT
@@ -96,6 +98,19 @@ public static class ManagerEndpoints
                 logger.LogError(ex, "Error processing task {TaskId}", task.Id);
                 return Results.Problem("An error occurred while processing the task.");
             }
+        }
+    }
+
+    private static async Task<IResult> CreateTaskLongAsync(
+        [FromBody] TaskModel task,
+        [FromServices] IManagerService managerService,
+        [FromServices] ILogger<ManagerService> logger)
+    {
+        using (logger.BeginScope("Method: {Method}", nameof(CreateTaskAsync)))
+        {
+            logger.LogInformation("Long running flow test");
+            await managerService.ProcessTaskLongAsync(task);
+            return Results.Accepted("Long running task accepted");
         }
     }
 
