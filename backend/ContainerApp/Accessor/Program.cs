@@ -14,7 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton(sp =>
   new ServiceBusClient(builder.Configuration["ServiceBus:ConnectionString"]));
 
-builder.Services.AddQueue<AccessorPayload, AccessorQueueHandler>(
+builder.Services.AddQueue<Message, AccessorQueueHandler>(
     QueueNames.AccessorQueue,
     settings =>
     {

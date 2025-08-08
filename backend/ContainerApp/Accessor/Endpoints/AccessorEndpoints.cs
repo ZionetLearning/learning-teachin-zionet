@@ -8,9 +8,17 @@ public static class AccessorEndpoints
 {
     public static void MapAccessorEndpoints(this WebApplication app)
     {
+        #region HTTP GET
         app.MapGet("/task/{id:int}", GetTaskByIdAsync);
-        app.MapDelete("/task/{taskId}", DeleteTaskAsync);
+        #endregion
 
+        #region HTTP POST
+        app.MapPost("/task", CreateTaskAsync);
+        #endregion
+
+        #region HTTP DELETE
+        app.MapDelete("/task/{taskId}", DeleteTaskAsync);
+        #endregion
     }
 
     #region HandlerMethods
@@ -44,9 +52,10 @@ public static class AccessorEndpoints
     }
 
     public static async Task<IResult> CreateTaskAsync(
-        TaskModel task,
+        [FromBody] TaskModel task,
         [FromServices] IAccessorService accessorService,
-        [FromServices] ILogger<AccessorService> logger)
+        [FromServices] ILogger<AccessorService> logger,
+        CancellationToken ct)
     {
         using (logger.BeginScope("Method: {Method}, TaskId: {TaskId}", nameof(CreateTaskAsync), task.Id))
         {

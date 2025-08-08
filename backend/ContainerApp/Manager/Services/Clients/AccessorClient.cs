@@ -2,6 +2,7 @@
 using Manager.Constants;
 using Manager.Models;
 using System.Net;
+using System.Text.Json;
 
 namespace Manager.Services.Clients;
 
@@ -47,17 +48,23 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
                 return false;
             }
 
-            var payload = new AccessorPayload
+            var payload = JsonSerializer.SerializeToElement(new
             {
                 Id = id,
                 Name = newTaskName,
-                ActionName = "UpdateTask"
+                Payload = ""
+            });
+
+            var message = new Message
+            {
+                ActionName = MessageAction.UpdateTask,
+                Payload = payload
             };
 
             await _daprClient.InvokeBindingAsync(
                 QueueNames.AccessorQueue,
                 "create",
-                payload
+                message
             );
 
             return true;

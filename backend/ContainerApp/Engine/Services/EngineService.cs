@@ -1,6 +1,5 @@
 using AutoMapper;
 using Dapr.Client;
-using Engine.Constants;
 using Engine.Messaging;
 using Engine.Models;
 using Polly;
@@ -40,21 +39,15 @@ public class EngineService : IEngineService
         _logger.LogInformation("Logged task: {Id} - {Name}", task.Id, task.Name);
         try
         {
-            var payload = new AccessorPayload
-            {
-                Id = task.Id,
-                Name = task.Name,
-                Payload = task.Payload,
-                ActionName = "CreateTask"
-            };
-            await _daprClient.InvokeBindingAsync(
-                QueueNames.AccessorQueue,
-                "create",
-                payload,
-                cancellationToken: ct
+            await _daprClient.InvokeMethodAsync(
+                HttpMethod.Post,
+                "accessor",
+                "task",
+                task,
+                ct
             );
 
-            _logger.LogInformation("Task {Id} forwarded to binding '{Binding}'", task.Id, QueueNames.AccessorQueue);
+            _logger.LogInformation("Task {Id} forwarded to the Accessor service", task.Id);
         }
         catch (Exception ex)
         {

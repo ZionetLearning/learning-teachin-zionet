@@ -1,4 +1,5 @@
-﻿using Dapr.Client;
+﻿using System.Text.Json;
+using Dapr.Client;
 using Manager.Constants;
 using Manager.Models;
 
@@ -22,9 +23,16 @@ public class EngineClient : IEngineClient
             nameof(ProcessTaskAsync),
             nameof(EngineClient)
         );
+
         try
         {
-            await _daprClient.InvokeBindingAsync(QueueNames.EngineQueue, "create", task);
+            var payload = JsonSerializer.SerializeToElement(task);
+            var message = new Message
+            {
+                ActionName = MessageAction.CreateTask,
+                Payload = payload
+            };
+            await _daprClient.InvokeBindingAsync(QueueNames.EngineQueue, "create", message);
 
             _logger.LogDebug(
                 "Task {TaskId} sent to Engine via binding '{Binding}'",

@@ -28,13 +28,13 @@ public sealed class AiGatewayService : IAiGatewayService
 
         try
         {
-            await _dapr.InvokeBindingAsync(QueueNames.ManagerToAi, "create", msg, cancellationToken: ct);
+            await _dapr.InvokeBindingAsync(QueueNames.EngineQueue, "create", msg, cancellationToken: ct);
 
             return msg.Id;
         }
         catch (Exception ex)
         {
-            _log.LogError(ex, "Failed to publish question {Id} to topic {Topic}", msg.Id, QueueNames.ManagerToAi);
+            _log.LogError(ex, "Failed to publish question {Id} to topic {Topic}", msg.Id, QueueNames.EngineQueue);
             throw; // let the upper layer decide what to do
         }
     }

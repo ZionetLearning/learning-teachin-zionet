@@ -1,61 +1,50 @@
-﻿using Accessor.Messaging;
+﻿using System.Text.Json;
+using Accessor.Messaging;
 using Accessor.Models;
 using Accessor.Services;
 
 namespace Accessor.Endpoints;
-public class AccessorQueueHandler : IQueueHandler<AccessorPayload>
+
+public class AccessorQueueHandler : IQueueHandler<Message>
 {
     private readonly IAccessorService _accessorService;
     private readonly ILogger<AccessorQueueHandler> _logger;
+    private readonly Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>> _handlers;
 
-    public AccessorQueueHandler(
-        IAccessorService accessorService,
-        ILogger<AccessorQueueHandler> logger)
+    public AccessorQueueHandler(IAccessorService accessorService, ILogger<AccessorQueueHandler> logger)
     {
         _accessorService = accessorService;
         _logger = logger;
+        _handlers = new Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>>
+        {
+            [MessageAction.UpdateTask] = HandleUpdateTaskAsync,
+        };
     }
 
-    // add error throw
-    public async Task HandleAsync(AccessorPayload msg, Func<Task> renewLock, CancellationToken cancellationToken)
+    // add erros to retry or not retry that the queue listener will catch
+    public async Task HandleAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
     {
-        // now we need to get the payload, check the action, and call the appropriate service method
-        // switch-case
-        try
+        if (_handlers.TryGetValue(message.ActionName, out var handler))
         {
-            if (msg == null)
-            {
-                _logger.LogWarning("Received null message");
-                return;
-            }
-
-            _logger.LogDebug("Queue→CreateTask {Id}", msg.Id);
-            var model = new TaskModel
-            {
-                Id = msg.Id,
-                Name = msg.Name,
-                Payload = msg.Payload,
-            };
-
-            switch (msg.ActionName)
-            {
-                case "CreateTask":
-                    await _accessorService.CreateTaskAsync(model);
-                    break;
-
-                case "UpdateTask":
-                    await _accessorService.UpdateTaskNameAsync(model.Id, model.Name);
-                    break;
-
-                default:
-                    _logger.LogWarning("Unknown action {ActionName} for Task {Id}", msg.ActionName, msg.Id);
-                    return;
-            }
+            await handler(message, renewLock, cancellationToken);
         }
-        catch (Exception ex)
+        else
         {
-            _logger.LogError(ex, "Failed to process message {Id}", msg.Id);
-            throw;
+            _logger.LogWarning("No handler for action {Action}", message.ActionName);
         }
+    }
+
+    private async Task HandleUpdateTaskAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
+    {
+        var payload = message.Payload.Deserialize<TaskModel>();
+        if (payload is null)
+        {
+            _logger.LogWarning("Invalid payload for CreateTask");
+            return;
+        }
+
+        _logger.LogDebug("Processing task {Id}", payload.Id);
+        await _accessorService.UpdateTaskNameAsync(payload.Id, payload.Name);
+        _logger.LogInformation("Task {Id} processed", payload.Id);
     }
 }
