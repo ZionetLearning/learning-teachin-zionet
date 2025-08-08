@@ -92,7 +92,7 @@ public class AccessorService : IAccessorService
         }
     }
 
-    public async Task<(bool success, string message, int? taskId)> CreateTaskAsync(TaskModel task, string idempotencyKey)
+    public async Task<(bool success, string message, int? taskId)> CreateTaskAsync(TaskModel task, string idempotencyKey = "")
     {
         _logger.LogInformation("Inside: {Method}", nameof(CreateTaskAsync));
 

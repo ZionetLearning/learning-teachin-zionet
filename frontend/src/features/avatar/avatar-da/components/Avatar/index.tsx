@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, type JSX } from "react";
-
+import { useTranslation } from "react-i18next";
 import { Html, useAnimations, useFBX, useGLTF } from "@react-three/drei";
 import { useFrame, useGraph, type ThreeElements } from "@react-three/fiber";
 import { useControls } from "leva";
@@ -91,7 +91,7 @@ const azureVisemeToMorph: Record<number, string> = {
  */
 export const Avatar = (props: JSX.IntrinsicElements["group"]) => {
   const classes = useStyles();
-
+  const { t } = useTranslation();
   const group = useRef<THREE.Group>(null); // reference to the group containing the avatar for animations
   const visemeRef = useRef<number>(0); // holds the current viseme ID for speech animation
   const textRef = useRef<string>(""); // stores the text input for speech synthesis
@@ -287,7 +287,7 @@ export const Avatar = (props: JSX.IntrinsicElements["group"]) => {
             name="speechInput"
             type="text"
             dir="rtl"
-            placeholder="כתוב פה משהו בעברית…"
+            placeholder={t("pages.avatarDa.writeSomethingHereInHebrew")}
             defaultValue=""
             onChange={(e) => {
               textRef.current = e.currentTarget.value;
@@ -300,7 +300,7 @@ export const Avatar = (props: JSX.IntrinsicElements["group"]) => {
             onClick={speak}
             className={classes.inputButton}
           >
-            דברי
+            {t("pages.avatarDa.speak")}
           </button>
         </div>
       </Html>

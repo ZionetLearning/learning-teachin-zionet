@@ -43,4 +43,15 @@ public class EngineClient : IEngineClient
             return (false, "Engine communication failed", task.Id);
         }
     }
+
+    public async Task<ChatResponseDto> ChatAsync(ChatRequestDto dto, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Invoke Engine /chat synchronously (thread {Thread})", dto.ThreadId);
+
+        return await _daprClient.InvokeMethodAsync<ChatRequestDto, ChatResponseDto>(
+            appId: AppIds.Engine,
+            methodName: "chat",
+            data: dto,
+            cancellationToken: ct);
+    }
 }

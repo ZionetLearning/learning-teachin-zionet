@@ -1,10 +1,12 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { ChatHeader, MessageList, MessageInput } from "./components";
 import { useChat } from "./hooks";
 import { useStyles } from "./style";
 import type { MessageContext } from "./types";
 
 export const ChatOu: React.FC = () => {
+  const { t } = useTranslation();
   const classes = useStyles();
   const {
     messages,
@@ -78,7 +80,7 @@ export const ChatOu: React.FC = () => {
               aria-label="Retry action"
               style={{ marginRight: "8px" }}
             >
-              Retry
+              {t("pages.chatOu.retry")}
             </button>
             <button
               className={classes.errorDismiss}
@@ -94,7 +96,7 @@ export const ChatOu: React.FC = () => {
       {/* Chat Header */}
       <div className={classes.header}>
         <ChatHeader
-          title="Smart Chat Demo"
+          title={t("pages.chatOu.smartChatDemo")}
           isOnline={!error}
           isTyping={isLoading}
           participantCount={2}
@@ -111,7 +113,7 @@ export const ChatOu: React.FC = () => {
           <MessageInput
             onSendMessage={handleSendMessage}
             isLoading={isLoading}
-            placeholder="Type your message..."
+            placeholder={t("pages.chatOu.typeYourMessage")}
             disabled={!!error}
           />
         </div>

@@ -1,3 +1,211 @@
 {
-  "translation": {}
+  "translation": {
+    "pages": {
+      "auth": {
+        "welcomeToLearningTeachinZionet": "Learning-Teachin-Zionet-ברוכים הבאים ל",
+        "login": "התחברות",
+        "signup": "הרשמה",
+        "email": "דואר אלקטרוני",
+        "password": "סיסמה",
+        "confirmPassword": "אשר סיסמה",
+        "loggingIn": "מתחבר...",
+        "firstName": "שם פרטי",
+        "lastName": "שם משפחה",
+        "creatingAccount": "יוצר חשבון..."
+      },
+      "home": {
+        "title": "ברוכים הבאים למגרש המשחקים הפנימי שלנו",
+        "subTitle": "בחר כלי מסרגל הצד כדי להתחיל"
+      },
+      "chatSh": {
+        "chatShPageWithOpenAi": "OpenAI צ'אט - שירלי ",
+        "azureOpenAiChat": "Chat Azure OpenAI",
+        "typeYourMessage": "הקלד את ההודעה…"
+      },
+      "chatYo": {
+        "chatYoPageOpenAI": "צ'אט - יונתן - OpenAI",
+        "typeMessage": "הקלד הודעה…",
+        "thinking": "טוען...",
+        "send": "שלח",
+        "replayAvatar": "הפעל שוב אווטאר"
+      },
+      "chatDa": {
+        "learningTeachinChat": "Learning-Teachin-Chat",
+        "toggleView": "שנה תצוגה",
+        "typeMessage": "הקלד הודעה…"
+      },
+      "chatOu": {
+        "smartChatDemo": "Smart Chat Demo",
+        "online": "מחובר",
+        "offline": "לא מחובר",
+        "participants": "משתתפים",
+        "today": "היום",
+        "aiAssistant": "עוזר בינה מלאכותית",
+        "failedToLoadImage": "טעינת התמונה נכשלה",
+        "tryAgain": "נסה שוב",
+        "submitAnswer": "שלח תשובה",
+        "typeYourMessage": "הקלד את ההודעה…",
+        "welcomeToSmartChatDemo": "ברוכים הבאים לדמו Smart Chat! נסו לכתוב \"show me an image\", \"create a quiz\" או \"give me a link\" כדי לראות תגובות שונות.",
+        "unsupportedComponent": "רכיב לא נתמך:",
+        "loadingImage": "טוען תמונה…",
+        "aiIsTyping": "הבינה המלאכותית מקלידה...",
+        "startConversationBySendingTheMessageBelow": "התחל שיחה על-ידי שליחת הודעה למטה",
+        "unsupportedMessageType": "סוג הודעה לא נתמך",
+        "page": "דף:",
+        "selected": "נבחר:",
+        "context": "הקשר:",
+        "tryTheseDemoExamples": "נסה את הדוגמאות הבאות:",
+        "retry": "נסה שוב",
+        "moreOptions": "אפשרויות נוספות",
+        "contextAttached": "הקשר צורף",
+        "refreshContext": "רענן הקשר",
+        "removeContext": "הסר הקשר",
+        "attachContext": "צרף הקשר דף",
+        "scrollToLatestMessages": "גלול לקריאת ההודעות האחרונות",
+        "imageUnavailable": "תמונה לא זמינה",
+        "explanation": "הסבר:",
+        "score": "תוצאה:"
+      },
+      "chatAvatar": {
+        "chatAvatarPage": "דף צ'אט אווטאר",
+        "typeMessage": "הקלד הודעה…",
+        "avatar": "אווטאר",
+        "lips": "שפתיים"
+      },
+      "avatarOu": {
+        "avatarOuPage": "אווטאר - אוריאל",
+        "ouAvatar": "Ou Avatar",
+        "avatarSpeaksHebrewWithAi": "אווטאר מדבר עברית עם AI",
+        "typeTextInHebrew": "הקלד טקסט בעברית:",
+        "typeHereYourText": "הקלד כאן את הטקסט שלך...",
+        "characters": "תווים",
+        "examples": "דוגמאות:",
+        "startSpeaking": "התחל דיבור",
+        "stopSpeaking": "עצור דיבור",
+        "readyToSpeak": "מוכן לדבר",
+        "speakingNow": "מדבר כעת",
+        "webSpeachApi": "Web Speech API •",
+        "fullHebrewSupport": "תמיכה מלאה בעברית"
+      },
+      "avatarSh": {
+        "avatarShPage": "אווטאר - שירלי",
+        "writeSomethingHereInHebrew": "כתוב פה משהו בעברית",
+        "speak": "דברי"
+      },
+      "avatarDa": {
+        "writeSomethingHereInHebrew": "כתוב פה משהו בעברית…",
+        "speak": "דברי"
+      },
+      "speakingPractice": {
+        "prev": "הקודם",
+        "next": "הבא",
+        "stop": "⏹ עצור",
+        "play": "▶ הפעל",
+        "record": "🎤 הקלט",
+        "hideNikud": "הסתר ניקוד",
+        "showNikud": "הצג ניקוד"
+      },
+      "typingPractice": {
+        "hebrewTypingPractice": "תרגול הקלדה בעברית",
+        "listenToHebrewAudio": "האזן לאודיו בעברית ותרגל הקלדה",
+        "changeLevel": "← החלף רמה",
+        "chooseYourDifficultyLevel": "בחר רמת קושי",
+        "selectDifficultyLevel": "בחר רמת קושי כדי להתחיל לתרגל הקלדה בעברית.",
+        "youWillListenToHebrewAudio": "תאזין לאודיו בעברית ותקליד את מה ששמעת",
+        "typeHereWhatYouHeard": "הקלד את מה ששמעת כאן",
+        "typeWhatYouHeard": "הקלד מה ששמעת",
+        "playingAudio": "מנגן קטע אודיו...",
+        "clickPlayToHearTheHebrewText": "לחץ על 'נגן' כדי לשמוע את הטקסט",
+        "submitAnswer": "✓ שלח תשובה",
+        "yourResults": "התוצאות שלך",
+        "accuracy": "דיוק",
+        "whatYouTyped": "מה שהקלדת:",
+        "empty": "(ריק)",
+        "expectedText": "הטקסט הצפוי:",
+        "tryAgain": "נסה שוב",
+        "nextExercise": "➡️ תרגיל הבא",
+        "playing": "מנגן…",
+        "playAudio": "▶️ נגן אודיו",
+        "replay": "🔄 נגן שוב"
+      },
+      "wordOrderGame": {
+        "title": "משחק סידור מילים",
+        "subTitle": "סדר את המילים בסדר הנכון",
+        "loading": "טוען…",
+        "reset": "איפוס",
+        "check": "בדיקה",
+        "next": "הבא",
+        "playAudio": "הפעל קטע אודיו",
+        "playAudioSlowly": "הפעל קטע אודיו במהירות איטית (0.6x)"
+      },
+      "earthquakeMap": {
+        "title": "מפת רעידות אדמה",
+        "dropdownLabel": "הצג רעידות אדמה מ:",
+        "last24Hours": "24 השעות האחרונות",
+        "last48Hours": "48 השעות האחרונות",
+        "last72Hours": "72 השעות האחרונות",
+        "last7Days": "7 הימים האחרונים",
+        "loadingMap": "טוען מפה...",
+        "error": "שגיאה בקבלת הנתונים",
+        "magnitude": "עוצמה:"
+      },
+      "weather": {
+        "selectOrSearchCity": "בחר או חפש עיר, או השתמש במיקום שלך כדי לראות את מזג האוויר.",
+        "search": "חיפוש",
+        "selectCityOrLoation": "-- בחר עיר או מיקום --",
+        "searchCity": "חפש עיר",
+        "useMyLocation": "השתמש במיקומי",
+        "feelsLike": "מרגיש כמו",
+        "min": "מינימום: ",
+        "max": "מקסימום: ",
+        "humidity": "לחות: ",
+        "wind": "רוח: ",
+        "pressure": "לחץ: ",
+        "visibility": "ראות: ",
+        "km": "ק\"מ",
+        "sunrise": "זריחה: ",
+        "sunset": "שקיעה: ",
+        "locating": "מאתר מיקום...",
+        "loadingWeather": "טוען מזג אוויר...",
+        "cities": {
+          "newYork": "ניו יורק",
+          "london": "לונדון",
+          "tokyo": "טוקיו",
+          "paris": "פריז",
+          "berlin": "ברלין",
+          "sydney": "סידני",
+          "rioDeJaneiro": "ריו דה ז'ניירו",
+          "capeTown": "קייפטאון",
+          "mumbai": "מומבאי"
+        }
+      }
+    },
+    "sidebar": {
+      "toggleSidebar": "החלף סרגל",
+      "home": "דף הבית",
+      "chatTools": "כלי צ'אט",
+      "chatSh": "צ'אט - שירלי",
+      "chatYo": "צ'אט - יונתן",
+      "chatDa": "צ'אט - דניאל",
+      "chatOu": "צ'אט - אוריאל",
+      "chatAvatar": "צ'אט - אווטאר",
+      "avatarTools": "כלי אווטאר",
+      "avatarOu": "אווטאר - אוריאל",
+      "avatarSh": "אווטאר - שירלי",
+      "avatarDa": "אווטאר - דניאל",
+      "practiceTools": "כלי תרגול",
+      "typingPractice": "תרגול הקלדה",
+      "wordOrderGame": "משחק סידור מילים",
+      "speakingPractice": "תרגול דיבור",
+      "logout": "התנתק",
+      "languages": "שפות",
+      "he": "עברית",
+      "en": "אנגלית",
+      "earthquakeMap": "מפת רעידות אדמה",
+      "weather": "מזג האוויר"
+    }
+  },
+  "goBackToMenu": "חזור לתפריט",
+  "logout": "התנתק",
+  "somethingWentWrong": "משהו השתבש..."
 }

@@ -1,7 +1,7 @@
-﻿using Manager.Constants;
-using Manager.Models;
+﻿using Manager.Models;
 using Manager.Models.ModelValidation;
 using Manager.Services;
+using Manager.Services.Clients;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Endpoints;
@@ -11,6 +11,7 @@ public static class AiEndpoints
     private sealed class QuestionEndpoint { }
     private sealed class AnswerEndpoint { }
     private sealed class PubSubEndpoint { }
+    private sealed class ChatPostEndpoint { }
 
     public static WebApplication MapAiEndpoints(this WebApplication app)
     {
@@ -25,7 +26,7 @@ public static class AiEndpoints
 
         app.MapPost("/ai/question", QuestionAsync).WithName("Question");
 
-        app.MapPost($"/ai/{TopicNames.AiToManager}", PubSubAsync).WithTopic("pubsub", TopicNames.AiToManager);
+        app.MapPost("/chat", ChatAsync).WithName("Chat");
 
         #endregion
 
@@ -91,31 +92,26 @@ public static class AiEndpoints
         }
     }
 
-    private static async Task<IResult> PubSubAsync(
-        [FromBody] AiResponseModel msg,
-        [FromServices] IAiGatewayService aiService,
-        [FromServices] ILogger<PubSubEndpoint> log,
-        CancellationToken ct)
+    private static async Task<IResult> ChatAsync(
+      [FromBody] ChatRequestDto dto,
+      [FromServices] IEngineClient engine,
+      [FromServices] ILogger<ChatPostEndpoint> log,
+      CancellationToken ct)
     {
-        using (log.BeginScope("Method: {Method}, QuestionId: {Id}", nameof(PubSubAsync), msg.Id))
+        if (string.IsNullOrWhiteSpace(dto.UserMessage))
         {
-            if (!ValidationExtensions.TryValidate(msg, out var validationErrors))
-            {
-                log.LogWarning("Validation failed for {Model}: {Errors}", nameof(AiResponseModel), validationErrors);
-                return Results.BadRequest(new { errors = validationErrors });
-            }
+            return Results.BadRequest(new { error = "userMessage is required" });
+        }
 
-            try
-            {
-                await aiService.SaveAnswerAsync(msg, ct);
-                log.LogInformation("Answer saved");
-                return Results.Ok();
-            }
-            catch (Exception ex)
-            {
-                log.LogError(ex, "Error saving answer");
-                return Results.Problem("AI answer handling failed");
-            }
+        try
+        {
+            var response = await engine.ChatAsync(dto, ct);
+            return Results.Ok(response);
+        }
+        catch (Exception ex)
+        {
+            log.LogError(ex, "Engine invocation failed");
+            return Results.Problem("Unable to contact AI engine");
         }
     }
 }
