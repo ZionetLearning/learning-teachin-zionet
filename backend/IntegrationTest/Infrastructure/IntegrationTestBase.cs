@@ -17,6 +17,24 @@ public abstract class IntegrationTestBase : IClassFixture<HttpTestFixture>
         return await Client.PostAsJsonAsync(requestUri, value);
     }
 
+    protected async Task<HttpResponseMessage> PostAsJsonAsync<T>(
+    string requestUri,
+    T value,
+    IDictionary<string, string> headers)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, requestUri)
+        {
+            Content = JsonContent.Create(value)
+        };
+
+        foreach (var header in headers)
+        {
+            request.Headers.Add(header.Key, header.Value);
+        }
+
+        return await Client.SendAsync(request);
+    }
+
     protected async Task<T?> ReadAsJsonAsync<T>(HttpResponseMessage response)
     {
         var content = await response.Content.ReadAsStringAsync();

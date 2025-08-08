@@ -62,15 +62,28 @@ public class AccessorEndpointsTests
         // Arrange
         var task = new TaskModel { Id = 42, Name = "UnitTest Task" };
 
+        var bindingRequest = new BindingRequest<TaskModel>
+        {
+            Data = task,
+            Metadata = new Dictionary<string, string>
+            {
+                { "Idempotency-Key", "test-key" }
+            }
+        };
+
+        _mockService
+            .Setup(s => s.CreateTaskAsync(task, "test-key"))
+            .ReturnsAsync((true, "Saved", task.Id));
+
         // Act
-        var result = await AccessorEndpoints.CreateTaskAsync(task, _mockService.Object, _mockLogger.Object);
+        var result = await AccessorEndpoints.CreateTaskAsync(bindingRequest, _mockService.Object, _mockLogger.Object);
 
         // Assert
-        var okResult = Assert.IsAssignableFrom<IValueHttpResult>(result);
-        var value = okResult.Value;
+        var acceptedResult = Assert.IsAssignableFrom<Accepted<object>>(result);
+        var value = acceptedResult.Value;
 
         Assert.NotNull(value);
-        Assert.Equal("Task 42 Saved", value?.ToString());
+        Assert.Contains($"Task {task.Id}", value?.ToString());
     }
 
     [Fact]

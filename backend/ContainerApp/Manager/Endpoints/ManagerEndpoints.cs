@@ -65,9 +65,10 @@ public static class ManagerEndpoints
     }
 
     private static async Task<IResult> CreateTaskAsync(
-        [FromBody] TaskModel task,
-        [FromServices] IManagerService managerService,
-        [FromServices] ILogger<ManagerService> logger)
+    [FromBody] TaskModel task,
+    HttpRequest request,
+    [FromServices] IManagerService managerService,
+    [FromServices] ILogger<ManagerService> logger)
     {
         using (logger.BeginScope("Method: {Method}", nameof(CreateTaskAsync)))
         {
@@ -77,19 +78,27 @@ public static class ManagerEndpoints
                 return Results.BadRequest(new { errors = validationErrors });
             }
 
+            // Extract Idempotency-Key from headers
+            if (!request.Headers.TryGetValue("Idempotency-Key", out var requestId) || string.IsNullOrWhiteSpace(requestId))
+            {
+                logger.LogWarning("Missing or invalid Idempotency-Key header");
+                return Results.BadRequest(new { error = "Missing Idempotency-Key header" });
+            }
+
             try
             {
                 logger.LogInformation("Processing task creation for ID {TaskId}", task.Id);
 
-                var (success, message) = await managerService.ProcessTaskAsync(task);
+                var (success, message, taskId) = await managerService.ProcessTaskAsync(task, requestId!);
+
                 if (success)
                 {
                     logger.LogInformation("Task {TaskId} processed successfully", task.Id);
                     return Results.Accepted($"/task/{task.Id}", new { status = message, task.Id });
                 }
 
-                logger.LogWarning("Processing task {TaskId} failed: {Message}", task.Id, message);
-                return Results.Problem("Failed to process the task.");
+                logger.LogWarning("Task {TaskId} was already processed", task.Id);
+                return Results.Conflict(new { status = message, id = taskId });
             }
             catch (Exception ex)
             {

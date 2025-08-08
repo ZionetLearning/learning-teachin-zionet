@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Manager.Models;
 using Manager.Services.Clients;
+using Dapr.Client;
 
 namespace Manager.Services;
 
@@ -11,18 +12,21 @@ public class ManagerService : IManagerService
     private readonly IAccessorClient _accessorClient;
     private readonly IEngineClient _engineClient;
     private readonly IMapper _mapper;
+    private readonly DaprClient _dapr;
 
     public ManagerService(IConfiguration configuration,
         ILogger<ManagerService> logger,
         IAccessorClient accessorClient,
         IEngineClient engineClient,
-        IMapper mapper)
+        IMapper mapper,
+        DaprClient dapr)
     {
         _configuration = configuration;
         _logger = logger;
         _accessorClient = accessorClient;
         _engineClient = engineClient;
         _mapper = mapper;
+        _dapr = dapr;
     }
 
     public async Task<TaskModel?> GetTaskAsync(int id)
@@ -40,6 +44,7 @@ public class ManagerService : IManagerService
             var task = await _accessorClient.GetTaskAsync(id);
             if (task != null)
             {
+
                 _logger.LogDebug("Successfully retrieved task {TaskId}", id);
             }
             else
@@ -56,47 +61,43 @@ public class ManagerService : IManagerService
         }
     }
 
-    public async Task<(bool success, string message)> ProcessTaskAsync(TaskModel task)
+    public async Task<(bool success, string message, int? taskId)> ProcessTaskAsync(TaskModel task, string idempotencyKey)
     {
         _logger.LogDebug("Inside: {MethodName}", nameof(ProcessTaskAsync));
 
-        if (task is null)
+        if (task == null)
         {
-            _logger.LogWarning("Null task received for processing");
-            return (false, "Task is null");
+            return (false, "Task is null", null);
         }
 
         if (string.IsNullOrWhiteSpace(task.Name))
         {
-            _logger.LogWarning("Task {TaskId} has invalid name", task.Id);
-            return (false, "Task name is required");
+            return (false, "Task name is required", task.Id);
         }
 
         if (string.IsNullOrWhiteSpace(task.Payload))
         {
-            _logger.LogWarning("Task {TaskId} has invalid payload", task.Id);
-            return (false, "Task payload is required");
+            return (false, "Task payload is required", task.Id);
         }
 
         try
         {
             _logger.LogDebug("Processing task {TaskId} with name '{TaskName}'", task.Id, task.Name);
-            var result = await _engineClient.ProcessTaskAsync(task);
-            if (result.success)
+
+            var (success, message, taskId) = await _engineClient.ProcessTaskAsync(task, idempotencyKey);
+
+            //If the Accessor already processed this task, reflect that back to the caller
+            if (!success && message == "AlreadyProcessed")
             {
-                _logger.LogDebug("Task {TaskId} successfully processed", task.Id);
-            }
-            else
-            {
-                _logger.LogDebug("Task {TaskId} processing failed: {Message}", task.Id, result.message);
+                return (false, "AlreadyProcessed", taskId);
             }
 
-            return result;
+            return (true, message, taskId);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error occurred while processing task {TaskId}", task.Id);
-            return (false, "Failed to send to Engine");
+            return (false, "Failed to send to Engine", task.Id);
         }
     }
 
