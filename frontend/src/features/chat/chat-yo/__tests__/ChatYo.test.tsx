@@ -5,6 +5,10 @@ import { ChatYo } from "../";
 // spy-able sendMessage
 const sendMessageMock = vi.fn();
 
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({ t: (k: string) => k }),
+}));
+
 // hook mock
 vi.mock("../hooks", () => ({
   useChat: () => ({
@@ -62,7 +66,7 @@ describe("ChatYo", () => {
     expect(screen.getByText("Hi there!")).toBeInTheDocument();
 
     const input = screen.getByPlaceholderText(
-      "Type a message...",
+      "Type a message..."
     ) as HTMLInputElement;
 
     fireEvent.change(input, { target: { value: "Test message" } });

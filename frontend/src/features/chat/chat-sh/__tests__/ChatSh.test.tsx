@@ -9,6 +9,10 @@ vi.mock("../services", () => ({
   sendChatMessage: (...args: unknown[]) => sendChatMessageMock(...args),
 }));
 
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({ t: (k: string) => k }),
+}));
+
 describe("<ChatSh />", () => {
   beforeEach(() => {
     sendChatMessageMock.mockReset();
