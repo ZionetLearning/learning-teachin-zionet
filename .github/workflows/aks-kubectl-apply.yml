@@ -125,15 +125,17 @@ jobs:
           # Render check
           helm template app "$CHART_DIR" -f "$VALUES_FILE" \
             --set namespace.name="$TARGET_NAMESPACE" \
+            --set namespace.create=false \
             --set global.namePrefix="$TARGET_NAMESPACE" \
             --set global.dockerRegistry="$DOCKER_REGISTRY" \
             --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" >/dev/null
 
           # Deploy
           helm upgrade --install app "$CHART_DIR" \
-            --namespace "$TARGET_NAMESPACE" --create-namespace \
+            --namespace "$TARGET_NAMESPACE" \
             -f "$VALUES_FILE" \
             --set namespace.name="$TARGET_NAMESPACE" \
+            --set namespace.create=false \
             --set global.namePrefix="$TARGET_NAMESPACE" \
             --set global.dockerRegistry="$DOCKER_REGISTRY" \
             --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" \
