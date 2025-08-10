@@ -154,5 +154,5 @@ jobs:
       - name: Output external URL
         id: extract_url
         run: |
-          echo "app_url=${{ steps.wait_for_ip.outputs.app_url }}" >> $GITHUB_OUTPUT
-          echo "App URL: ${{ steps.wait_for_ip.outputs.app_url }}"
+          echo "app_url=${{ steps.wait_for_ingress_ip.outputs.ingress_url }}" >> $GITHUB_OUTPUT
+          echo "App URL: ${{ steps.wait_for_ingress_ip.outputs.ingress_url }}"
