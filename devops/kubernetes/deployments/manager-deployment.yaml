@@ -28,6 +28,12 @@ spec:
         - env:
             - name: ASPNETCORE_URLS
               value: http://+:5001
+            - name: ServiceBus__ConnectionString
+              valueFrom:
+                secretKeyRef:
+                  name: azure-service-bus-secret
+                  key: AzureServiceBusConnectionString
+
           image: ${DOCKER_REGISTRY}/manager:latest
           name: manager
           ports:

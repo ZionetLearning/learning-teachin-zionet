@@ -48,6 +48,37 @@ public class EngineClient : IEngineClient
         }
     }
 
+    public async Task<(bool success, string message)> ProcessTaskLongAsync(TaskModel task)
+    {
+        _logger.LogInformation(
+            "Inside: {Method} in {Class}",
+            nameof(ProcessTaskLongAsync),
+            nameof(EngineClient)
+        );
+        try
+        {
+            var payload = JsonSerializer.SerializeToElement(task);
+            var message = new Message
+            {
+                ActionName = MessageAction.TestLongTask,
+                Payload = payload
+            };
+            await _daprClient.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message);
+
+            _logger.LogDebug(
+                "Task {TaskId} sent to Engine via binding '{Binding}'",
+                task.Id,
+                QueueNames.EngineQueue
+            );
+            return (true, "sent to engine");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send task {TaskId} to Engine", task.Id);
+            throw;
+        }
+    }
+
     public async Task<ChatResponseDto> ChatAsync(ChatRequestDto dto, CancellationToken ct = default)
     {
         _logger.LogInformation("Invoke Engine /chat synchronously (thread {Thread})", dto.ThreadId);

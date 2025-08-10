@@ -4,17 +4,25 @@ metadata:
   name: manager-ingress
   namespace: dev
   annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
     nginx.ingress.kubernetes.io/rewrite-target: /$2
     nginx.ingress.kubernetes.io/use-regex: "true"
 spec:
   ingressClassName: nginx
+  tls:
+    - hosts:
+        - teachin-zionet.westeurope.cloudapp.azure.com
+      secretName: teachin-zionet-tls
   rules:
-    - http:
-        paths:
-          - path: /manager(/|$)(.*)
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: manager
-                port:
-                  number: 80 # Change this if your service listens on a different port
+  - host: teachin-zionet.westeurope.cloudapp.azure.com
+    http:
+      paths:
+        - path: /manager(/|$)(.*)
+          pathType: ImplementationSpecific
+          backend:
+            service:
+              name: manager
+              port:
+                number: 80
