@@ -15,7 +15,7 @@ on:
         value: ${{ jobs.aks-terraform.outputs.app_insights_connection_string }}
   workflow_dispatch:
     inputs:
-      environment:
+     environment:
         description: 'Enter environment name'
         required: true
         default: 'Development'
