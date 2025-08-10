@@ -29,7 +29,7 @@ export interface AnimeItem {
 	episodes: number;
 	status: string;
 	duration: string;
-	raiting: string;
+	rating: string;
 	score: number;
 	synopsis: string;
 	studios: Array<{

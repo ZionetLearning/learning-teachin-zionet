@@ -1,55 +1,48 @@
 import { useState } from 'react';
 
-import { Box, Card, CardMedia, Collapse, Typography } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { Box, Card, CardMedia, Typography } from '@mui/material';
+import StarIcon from '@mui/icons-material/Star';
 
 import { AnimeItem } from '@/types';
-import { ExpandMore } from '../ExpandMore';
+import { useStyles } from './style';
 
 export const AnimeCard = ({ anime }: { anime: AnimeItem }) => {
-	const [expanded, setExpanded] = useState(false);
+	const [hovered, setHovered] = useState(false);
+	const classes = useStyles({ hovered });
+
 	return (
 		<Card
-			sx={{
-				width: 220,
-				display: 'flex',
-				flexDirection: 'column',
-				alignItems: 'center',
-				gap: '10px',
-				border: '1px solid #ccc',
-				padding: '10px',
-				borderRadius: '8px',
-			}}
+			className={classes.card}
+			onMouseEnter={() => setHovered(true)}
+			onMouseLeave={() => setHovered(false)}
 		>
 			<CardMedia
 				component="img"
 				image={anime.images.jpg.large_image_url}
 				alt={anime.title}
-				sx={{ width: '150px', height: 'auto', borderRadius: '8px' }}
+				className={classes.media}
 			/>
 			<Typography variant="h6">{anime.title}</Typography>
-			<Typography variant="h6">{`(${anime.title_japanese})`}</Typography>
-			<Typography variant="body2">{`Type: ${anime.type}`}</Typography>
-			<Typography variant="body2">{`Episodes: ${anime.episodes}`}</Typography>
-			<ExpandMore
-				expand={expanded}
-				onClick={() => setExpanded(!expanded)}
-				aria-expanded={expanded}
-				aria-label="show more"
-			>
-				<ExpandMoreIcon />
-			</ExpandMore>
-			<Collapse in={expanded} timeout="auto" unmountOnExit>
-				<Box
-					sx={{
-						wordBreak: 'break-word',
-						textAlign: 'center',
-						mt: 1,
-					}}
-				>
-					<Typography variant="body2">{anime.synopsis}</Typography>
-				</Box>
-			</Collapse>
+			<Typography className={classes.rating}>
+				<StarIcon className={classes.starIcon} />
+				{anime.score}
+			</Typography>
+			<Typography className={classes.meta}>
+				{anime.genres.map((genre) => genre.name).join(', ')}
+			</Typography>
+			<Typography
+				variant="h6"
+				className={classes.subtitle}
+			>{`(${anime.title_japanese})`}</Typography>
+			<Typography
+				variant="body2"
+				className={classes.meta}
+			>{`Type: ${anime.type}`}</Typography>
+			<Typography
+				variant="body2"
+				className={classes.meta}
+			>{`Episodes: ${anime.episodes}`}</Typography>
+			<Box className={classes.overlay}>{anime.synopsis}</Box>
 		</Card>
 	);
 };

@@ -7,12 +7,20 @@ import {
 
 const getAnimeSearch = async ({
 	page = 1,
+	search = '',
 }: {
 	page?: number;
+	search?: string;
 }): Promise<AnimeResponse> => {
+	const params = new URLSearchParams({
+		page: String(page),
+		limit: '20',
+	});
+	if (search.trim()) params.set('q', search.trim());
+
 	try {
 		const response = await fetch(
-			`https://api.jikan.moe/v4/anime?page=${page}&limit=20`
+			`https://api.jikan.moe/v4/anime?${params.toString()}`
 		);
 		const payload = await response.json();
 		if (!response.ok) {
@@ -25,10 +33,11 @@ const getAnimeSearch = async ({
 	}
 };
 
-export function useGetAnimeSearch(): UseInfiniteQueryResult<
-	InfiniteData<AnimeResponse>,
-	Error
-> {
+export function useGetAnimeSearch({
+	search,
+}: {
+	search: string;
+}): UseInfiniteQueryResult<InfiniteData<AnimeResponse>, Error> {
 	return useInfiniteQuery<
 		AnimeResponse,
 		Error,
@@ -36,8 +45,8 @@ export function useGetAnimeSearch(): UseInfiniteQueryResult<
 		string[],
 		number
 	>({
-		queryKey: ['animeSearch'],
-		queryFn: ({ pageParam }) => getAnimeSearch({ page: pageParam }),
+		queryKey: ['animeSearch', search],
+		queryFn: ({ pageParam }) => getAnimeSearch({ page: pageParam, search }),
 		getNextPageParam: (lastPage) =>
 			lastPage.pagination.has_next_page
 				? lastPage.pagination.current_page + 1
