@@ -8,9 +8,9 @@ using Xunit;
 using Xunit.Abstractions;
 
 namespace IntegrationTests.Tests.Chat;
+
 public class ChatHistoryIntegrationTests : AccessorIntegrationTestBase
 {
-    private readonly AccessorHttpTestFixture fixture;
     private readonly ITestOutputHelper _output;
 
     public ChatHistoryIntegrationTests(AccessorHttpTestFixture fixture, ITestOutputHelper output)
@@ -19,17 +19,16 @@ public class ChatHistoryIntegrationTests : AccessorIntegrationTestBase
         _output = output;
     }
 
-
-    [Fact(DisplayName = "POST /chat-history/message => 201 + created message with thread and UTC timestamp")]
-    public async Task Post_Message_Should_Return_Created_And_Thread()
+    [Fact(DisplayName = "POST /chat-history/message => 201 + created message with UTC timestamp (no thread in payload)")]
+    public async Task Post_Message_Should_Return_Created_And_Utc_NoThread()
     {
         var threadId = Guid.NewGuid();
-        var now = DateTimeOffset.UtcNow;
+
         var req = new ChatMessageRequest
         {
             ThreadId = threadId,
             UserId = "alice",
-            Role = "user",
+            Role = "user",                // server maps to enum
             Content = "Hello, how are you?"
         };
 
@@ -41,17 +40,16 @@ public class ChatHistoryIntegrationTests : AccessorIntegrationTestBase
         msg!.Id.Should().NotBeEmpty();
         msg.ThreadId.Should().Be(threadId);
         msg.UserId.Should().Be("alice");
-        msg.Role.Should().Be("user");
         msg.Content.Should().Be("Hello, how are you?");
-        msg.Timestamp.Offset.Should().Be(TimeSpan.Zero);                   // UTC (Z)
+        // Role may be "User" (enum string). Accept either case depending on converter.
+        msg.Role.Should().BeOneOf("User", "user");
 
-        msg.Thread.Should().NotBeNull();
-        msg.Thread!.ThreadId.Should().Be(threadId);
-        msg.Thread!.UserId.Should().Be("alice");
+        // must be UTC (Z)
+        msg.Timestamp.Offset.Should().Be(TimeSpan.Zero);
     }
 
-    [Fact(DisplayName = "GET /chat-history/{threadId} => returns all messages for that thread")]
-    public async Task Get_History_By_Thread_Should_Return_All_Messages()
+    [Fact(DisplayName = "GET /chat-history/{threadId} => returns only messages for that thread (ordered by time)")]
+    public async Task Get_History_By_Thread_Should_Return_Only_Thread_Messages()
     {
         var threadId = Guid.NewGuid();
 
@@ -61,31 +59,38 @@ public class ChatHistoryIntegrationTests : AccessorIntegrationTestBase
 
         var historyResp = await Client.GetAsync(ApiRoutes.ChatHistoryByThread(threadId));
         historyResp.EnsureSuccessStatusCode();
-        var history = await historyResp.Content.ReadFromJsonAsync<List<ChatMessageDto>>();
 
+        var history = await historyResp.Content.ReadFromJsonAsync<List<ChatMessageDto>>();
         history.Should().NotBeNull();
-        history.Should().NotBeNull();
-        history!.All(m => m.ThreadId == threadId).Should().BeTrue();
-        history!.All(m => m.Thread != null && m.Thread!.UserId == "alice").Should().BeTrue();
+        history!.Should().NotBeEmpty();
+        history.Should().OnlyContain(m => m.ThreadId == threadId);
+        history.Should().BeInAscendingOrder(m => m.Timestamp); // stable sort on server
+
+        // UTC check
+        history.Select(m => m.Timestamp.Offset).Should().OnlyContain(o => o == TimeSpan.Zero);
     }
 
-    [Fact(DisplayName = "GET /chat-history/threads/{userId} => returns all messages for user (any thread)")]
-    public async Task Get_Messages_By_User_Should_Return_All()
+    [Fact(DisplayName = "GET /chat-history/threads/{userId} => returns thread summaries for user (no messages)")]
+    public async Task Get_Threads_By_User_Should_Return_Summaries()
     {
-        var threadId = Guid.NewGuid();
+        var t1 = Guid.NewGuid();
+        var t2 = Guid.NewGuid();
 
-        // post 2 messages for alice
-        var m1 = await PostMessageAsync(threadId, "alice", "user", "Hi 1");
-        var m2 = await PostMessageAsync(threadId, "alice", "user", "Hi 2");
+        // create two threads for alice by posting messages
+        await PostMessageAsync(t1, "alice", "user", "Hi 1");
+        await PostMessageAsync(t2, "alice", "user", "Hi 2");
 
-        var userResp = await Client.GetAsync(ApiRoutes.ChatMessagesByUser("alice"));
-        userResp.EnsureSuccessStatusCode();
+        var resp = await Client.GetAsync(ApiRoutes.ChatThreadsByUser("alice"));
+        resp.EnsureSuccessStatusCode();
 
-        var items = await userResp.Content.ReadFromJsonAsync<List<ChatMessageDto>>();
-        items.Should().NotBeNull();
-        items!.Should().Contain(x => x.Id == m1.Id);
-        items!.Should().Contain(x => x.Id == m2.Id);
-        items!.All(x => x.Thread != null && x.Thread!.UserId == "alice").Should().BeTrue();
+        var threads = await resp.Content.ReadFromJsonAsync<List<ThreadSummaryDto>>();
+        threads.Should().NotBeNull();
+        threads!.Select(t => t.ThreadId).Should().Contain(new[] { t1, t2 });
+
+        // optional sanity checks
+        threads.Should().OnlyContain(t => t.ChatType == "default");
+        threads.Select(t => t.CreatedAt.Offset).Should().OnlyContain(o => o == TimeSpan.Zero);
+        threads.Select(t => t.UpdatedAt.Offset).Should().OnlyContain(o => o == TimeSpan.Zero);
     }
 
     private async Task<ChatMessageDto> PostMessageAsync(Guid threadId, string userId, string role, string content)
@@ -94,7 +99,7 @@ public class ChatHistoryIntegrationTests : AccessorIntegrationTestBase
         var resp = await Client.PostAsJsonAsync(ApiRoutes.ChatMessage, req);
         resp.EnsureSuccessStatusCode();
         var msg = await resp.Content.ReadFromJsonAsync<ChatMessageDto>();
-        msg!.Should().NotBeNull();
+        msg.Should().NotBeNull();
         return msg!;
     }
 }

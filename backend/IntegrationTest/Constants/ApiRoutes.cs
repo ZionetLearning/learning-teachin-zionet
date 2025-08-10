@@ -8,7 +8,6 @@ public static class ApiRoutes
 
     public const string ChatMessage = "/chat-history/message";
     public static string ChatHistoryByThread(Guid threadId) => $"/chat-history/{threadId}";
-    public static string ChatMessagesByUser(string userId) => $"/chat-history/threads/{userId}";
-
+    public static string ChatThreadsByUser(string userId) => $"/chat-history/threads/{userId}";
 
 }
