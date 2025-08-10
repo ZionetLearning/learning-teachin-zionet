@@ -4,7 +4,7 @@ using IntegrationTests.Constants;
 using IntegrationTests.Helpers;
 using IntegrationTests.Infrastructure;
 using IntegrationTests.Models;
-using Xunit.Abstractions;
+using Xunit.Abstractions; 
 
 namespace IntegrationTests.Tests.Tasks;
 
@@ -12,6 +12,31 @@ namespace IntegrationTests.Tests.Tasks;
 public class TaskIntegrationTests(HttpTestFixture fixture, ITestOutputHelper outputHelper)
     : TaskTestBase(fixture, outputHelper)
 {
+
+    [Fact(DisplayName = "POST /task - Same ID twice is idempotent (second POST is a no-op)")]
+    public async Task Post_Same_Id_Twice_Is_Idempotent()
+    {
+        var first  = TestDataHelper.CreateFixedIdTask(); // Id = 888
+        var second = TestDataHelper.CreateFixedIdTask(); // same Id, different data
+
+        // 1) POST first
+        var r1 = await Client.PostAsJsonAsync(ApiRoutes.Task, first);
+        r1.ShouldBeAccepted();
+
+        // 2) Wait until it's visible
+        var before = await TaskUpdateHelper.WaitForTaskByIdAsync(Client, first.Id, timeoutSeconds: 20);
+        before.Name.Should().Be(first.Name);
+        before.Payload.Should().Be(first.Payload);
+
+        // 3) POST duplicate (same Id)
+        var r2 = await Client.PostAsJsonAsync(ApiRoutes.Task, second);
+        r2.ShouldBeAccepted();
+
+        // 4) Confirm it did NOT change
+        var after = await TaskUpdateHelper.WaitForTaskByIdAsync(Client, first.Id, timeoutSeconds: 10);
+        after.Name.Should().Be(first.Name);
+        after.Payload.Should().Be(first.Payload);
+    }
 
     [Fact(DisplayName = "POST /task - With valid task should return 202 Accepted")]
     public async Task Post_Valid_Task_Should_Return_Accepted()
@@ -60,7 +85,7 @@ public class TaskIntegrationTests(HttpTestFixture fixture, ITestOutputHelper out
 
 
     [Theory(DisplayName = "GET /task/{id} - Invalid ID should return 404 Not Found")]
-    [InlineData(9999)]
+    [InlineData(-1)]
     public async Task Get_Task_By_Invalid_Id_Should_Return_NotFound(int invalidId)
     {
         OutputHelper.WriteLine($"Running: Get_Task_By_Invalid_Id_Should_Return_NotFound for ID {invalidId}");
@@ -99,7 +124,7 @@ public class TaskIntegrationTests(HttpTestFixture fixture, ITestOutputHelper out
     {
         OutputHelper.WriteLine("Running: Put_TaskName_With_Invalid_Id_Should_Return_NotFound");
 
-        var response = await UpdateTaskNameAsync(999999, "DoesNotMatter");
+        var response = await UpdateTaskNameAsync(-1, "DoesNotMatter");
         response.ShouldBeNotFound();
     }
 
@@ -125,7 +150,7 @@ public class TaskIntegrationTests(HttpTestFixture fixture, ITestOutputHelper out
     {
         OutputHelper.WriteLine("Running: Delete_Task_With_Invalid_Id_Should_Return_NotFound");
 
-        var response = await Client.DeleteAsync(ApiRoutes.TaskById(9999));
+        var response = await Client.DeleteAsync(ApiRoutes.TaskById(-1));
         response.ShouldBeNotFound();
     }
 }
