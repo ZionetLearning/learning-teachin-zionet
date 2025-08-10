@@ -17,8 +17,8 @@ spec:
       annotations:
         {{ include "app.dapr.annotations" (dict
               "enabled" .Values.global.dapr.enabled
-              "appId" (include "app.appIdFor" (list $ .Values.accessor.name))
-              "appPort" .Values.accessor.dapr.appPort) | indent 8 }}
+              "appId" (.Values.accessor.dapr.appId | default .Values.accessor.name)
+              "appPort" .Values.accessor.dapr.appPort) | nindent 8 }}
     spec:
       containers:
         - name: {{ .Values.accessor.name }}

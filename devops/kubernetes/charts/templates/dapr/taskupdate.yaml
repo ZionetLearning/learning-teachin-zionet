@@ -18,4 +18,4 @@ spec:
     - name: disableEntityManagement
       value: "true"
 scopes:
-  - {{ include "app.appIdFor" (list $ "manager") }}
+  - {{ .Values.manager.dapr.appId  | default .Values.manager.name  | quote }}
