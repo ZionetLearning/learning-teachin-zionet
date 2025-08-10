@@ -253,11 +253,13 @@ public class AccessorService : IAccessorService
         await _dbContext.SaveChangesAsync();
     }
 
-    public async Task<IEnumerable<ChatThread>> GetThreadsByUserAsync(string userId)
+    public async Task<IEnumerable<ChatMessage>> GetMessagesByUserAsync(string userId)
     {
-        return await _dbContext.ChatThreads
-            .Where(t => t.UserId == userId)
-            .OrderByDescending(t => t.UpdatedAt)
+        return await _dbContext.ChatMessages
+            .Include(m => m.Thread)
+            .Where(m => m.Thread.UserId == userId)
+            .OrderBy(m => m.ThreadId)
+            .ThenBy(m => m.Timestamp)
             .ToListAsync();
     }
 
@@ -266,6 +268,7 @@ public class AccessorService : IAccessorService
         // 1) Look up the parent thread
         var thread = await _dbContext.ChatThreads.FindAsync(message.ThreadId);
 
+        message.Timestamp = message.Timestamp.ToUniversalTime();
         // 2) If missing, insert it first
         if (thread is null)
         {

@@ -200,13 +200,13 @@ public static class AccessorEndpoints
         using var scope = logger.BeginScope("Handler: {Handler}, UserId: {UserId}", nameof(GetThreadsForUserAsync), userId);
         try
         {
-            var threads = await accessorService.GetThreadsByUserAsync(userId);
-            logger.LogInformation("Retrieved threads for user");
-            return Results.Ok(threads);
+            var messages = await accessorService.GetMessagesByUserAsync(userId);
+            logger.LogInformation("Retrieved messages for user");
+            return Results.Ok(messages);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error listing threads for user {UserId}", userId);
+            logger.LogError(ex, "Error listing messages for user {UserId}", userId);
             return Results.Problem("An error occurred while listing chat threads.");
         }
     }

@@ -51,7 +51,8 @@ builder.Services.AddDaprClient(client =>
     client.UseJsonSerializationOptions(new JsonSerializerOptions
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        PropertyNameCaseInsensitive = true
+        PropertyNameCaseInsensitive = true,
+        Converters = { new UtcDateTimeOffsetConverter() }
     });
 });
 
@@ -75,6 +76,11 @@ builder.Services.AddOpenApi(
 );
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new UtcDateTimeOffsetConverter());
+});
 
 var app = builder.Build();
 
