@@ -10,7 +10,9 @@ public static class AccessorEndpoints
     {
         app.MapGet("/task/{id:int}", GetTaskByIdAsync);
         app.MapDelete("/task/{taskId}", DeleteTaskAsync);
-
+        app.MapPost("/chat-history/message", StoreMessageAsync);
+        app.MapGet("/chat-history/{threadId:guid}", GetChatHistoryAsync);
+        app.MapGet("/chat-history/threads/{userId}", GetThreadsForUserAsync);
     }
 
     #region HandlerMethods
@@ -115,6 +117,97 @@ public static class AccessorEndpoints
                 logger.LogError(ex, "Failed to delete task.");
                 return Results.Problem("Internal server error while deleting task.");
             }
+        }
+    }
+
+    #endregion
+
+    #region Chat-History Handlers
+
+    private static async Task<IResult> StoreMessageAsync(
+        [FromBody] ChatMessage msg,
+        [FromServices] IAccessorService accessorService,
+        [FromServices] ILogger<AccessorService> logger)
+    {
+        using var scope = logger.BeginScope("Handler: {Handler}, ThreadId: {ThreadId}", nameof(StoreMessageAsync), msg.ThreadId);
+        try
+        {
+            // Validate incoming payload
+            if (string.IsNullOrWhiteSpace(msg.Content) || string.IsNullOrWhiteSpace(msg.Role))
+            {
+                logger.LogWarning("Validation failed for message");
+                return Results.BadRequest("Role and Content are required.");
+            }
+
+            // Generate server-side IDs/timestamps
+            msg.Id = Guid.NewGuid();
+            msg.Timestamp = DateTimeOffset.UtcNow;
+
+            await accessorService.AddMessageAsync(msg);
+            logger.LogInformation("Message stored successfully");
+
+            // Return 201 Created with location header
+            return Results.Created($"/chat-history/{msg.ThreadId}", msg);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error storing message in thread {ThreadId}", msg.ThreadId);
+            return Results.Problem("An error occurred while storing the message.");
+        }
+    }
+
+    private static async Task<IResult> GetChatHistoryAsync(
+        Guid threadId,
+        [FromServices] IAccessorService accessorService,
+        [FromServices] ILogger<AccessorService> logger)
+    {
+        using var scope = logger.BeginScope("Handler: {Handler}, ThreadId: {ThreadId}", nameof(GetChatHistoryAsync), threadId);
+        try
+        {
+            var thread = await accessorService.GetThreadByIdAsync(threadId);
+            if (thread is null)
+            {
+                // Auto-create thread if missing
+                thread = new ChatThread
+                {
+                    ThreadId = threadId,
+                    UserId = string.Empty,
+                    ChatType = "default",
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    UpdatedAt = DateTimeOffset.UtcNow
+                };
+                await accessorService.CreateThreadAsync(thread);
+                logger.LogInformation("Created new thread {ThreadId}", threadId);
+                return Results.Ok(Array.Empty<ChatMessage>());
+            }
+
+            var messages = await accessorService.GetMessagesByThreadAsync(threadId);
+            logger.LogInformation("Fetched messages for thread {ThreadId}", threadId);
+            return Results.Ok(messages);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error fetching history for thread {ThreadId}", threadId);
+            return Results.Problem("An error occurred while retrieving chat history.");
+        }
+    }
+
+    private static async Task<IResult> GetThreadsForUserAsync(
+        string userId,
+        [FromServices] IAccessorService accessorService,
+        [FromServices] ILogger<AccessorService> logger)
+    {
+        using var scope = logger.BeginScope("Handler: {Handler}, UserId: {UserId}", nameof(GetThreadsForUserAsync), userId);
+        try
+        {
+            var threads = await accessorService.GetThreadsByUserAsync(userId);
+            logger.LogInformation("Retrieved threads for user");
+            return Results.Ok(threads);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error listing threads for user {UserId}", userId);
+            return Results.Problem("An error occurred while listing chat threads.");
         }
     }
 
