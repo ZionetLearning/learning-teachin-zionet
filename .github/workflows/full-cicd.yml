@@ -6,15 +6,11 @@ on:
   #    - main
   workflow_dispatch:
     inputs:
-      environment:
-        description: 'Select environment'
+     environment:
+        description: 'Enter environment name'
         required: true
         default: 'Development'
-        type: choice
-        options:
-          - Development
-          - Production
-
+        type: string
 jobs:
   build-and-push-images:
     uses: ./.github/workflows/build-and-push-images.yml
@@ -31,7 +27,7 @@ jobs:
       id-token: write
       contents: read
     with:
-      environment: ${{ github.event.inputs.environment || 'Development' }}
+      environment: ${{ github.event.inputs.environment }}
     secrets: inherit
 
   aks-kubectl-apply:
@@ -41,7 +37,7 @@ jobs:
       id-token: write
       contents: read
     with:
-      environment: ${{ github.event.inputs.environment || 'Development' }}
+      environment: ${{ github.event.inputs.environment }}
     secrets: inherit
 
   deploy-frontend:

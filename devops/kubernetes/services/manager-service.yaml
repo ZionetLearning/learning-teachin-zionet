@@ -6,8 +6,9 @@ metadata:
     kompose.version: 1.36.0 (ae2a39403)
   labels:
     io.kompose.service: manager
+    environment: ${ENVIRONMENT_NAME}
   name: manager
-  namespace: dev
+  namespace: ${ENVIRONMENT_NAME}
 spec:
   ports:
     - protocol: TCP
@@ -15,5 +16,6 @@ spec:
       targetPort: 5001
   selector:
     io.kompose.service: manager
+    environment: ${ENVIRONMENT_NAME}
 
 

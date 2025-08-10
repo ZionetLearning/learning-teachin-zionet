@@ -1,4 +1,4 @@
-name: Terraform Apply with Provisioning
+name: Terraform Apply (Dynamic Environment)
 
 on:
   workflow_call:
@@ -16,16 +16,14 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Select environment'
+        description: 'Enter environment name'
         required: true
         default: 'Development'
-        type: choice
-        options:
-          - Development
-          - Production     
+        type: string
+
 
 jobs:
-  aks-terraform:
+  terraform:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     permissions:
@@ -62,29 +60,59 @@ jobs:
       - name: Set Terraform working directory
         run: echo "TF_DIR=./devops/terraform" >> $GITHUB_ENV
 
-      - name: Terraform Init
-        run: terraform init
-        working-directory: ${{ env.TF_DIR }}
-
-      - name: Extract environment variables
+      - name: Extract and validate environment variables
         id: extract_env
         run: |
-          if [ "${{ inputs.environment }}" == "Development" ]; then
-            SHORT_ENV="dev"
-          elif [ "${{ inputs.environment }}" == "Production" ]; then
-            SHORT_ENV="prod"
-          else
-            echo "Unknown environment: ${{ inputs.environment }}"
-            exit 1
-          fi
-          echo "short_env=$SHORT_ENV" >> $GITHUB_ENV
+          case "${{ inputs.environment }}" in
+            "Development")
+              SHORT_ENV="dev"
+              ENVIRONMENT_NAME="dev"
+              TFVARS_FILE="terraform.tfvars.dev"
+              ;;
+            "Production")
+              SHORT_ENV="prod"
+              ENVIRONMENT_NAME="prod"
+              TFVARS_FILE="terraform.tfvars.prod"
+              ;;
+            *)
+              # Support custom environments (feature branches || testing)
+              SHORT_ENV="${{ inputs.environment }}"
+              ENVIRONMENT_NAME="${{ inputs.environment }}"
+              TFVARS_FILE="terraform.tfvars.template"
+              ;;
+          esac
           
+          echo "short_env=$SHORT_ENV" >> $GITHUB_ENV
+          echo "environment_name=$ENVIRONMENT_NAME" >> $GITHUB_ENV
+          echo "TFVARS_FILE=$TFVARS_FILE" >> $GITHUB_ENV
+
+      - name: Generate dynamic backend key
+        run: |
+          BACKEND_KEY="${{ env.environment_name }}.terraform.tfstate"
+          echo "backend_key=$BACKEND_KEY" >> $GITHUB_ENV
+
+      - name: Terraform Init with dynamic backend
+        run: |
+          terraform init \
+            -backend-config="key=${{ env.backend_key }}" \
+            -reconfigure
+        working-directory: ${{ env.TF_DIR }}
+      
+      - name: Terraform vars file
+        run: |
+          if [ -f "${{ env.TFVARS_FILE }}" ] && [ "${{ env.TFVARS_FILE }}" == "terraform.tfvars.template" ]; then
+          cat <<EOF > terraform.tfvars.template
+          environment_name = "${{ env.environment_name }}"
+          kubernetes_namespace = "${{ env.environment_name }}"
+          EOF
+        working-directory: ${{ env.TF_DIR }}
+ 
       - name: Terraform Plan
-        run: terraform plan -var-file="terraform.tfvars.${{ env.short_env }}"
+        run: terraform plan -var-file=${{ env.TFVARS_FILE }}
         working-directory: ${{ env.TF_DIR }}
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve -var-file="terraform.tfvars.${{ env.short_env }}"
+        run: terraform apply -auto-approve -var-file=${{ env.TFVARS_FILE }}
         working-directory: ${{ env.TF_DIR }}
 
       - name: Extract Terraform Outputs

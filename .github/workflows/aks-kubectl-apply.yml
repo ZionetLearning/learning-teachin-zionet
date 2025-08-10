@@ -2,15 +2,12 @@ name: AKS - Deploy Services to AKS
 
 on:
   workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Select environment'
+   inputs:
+     environment:
+        description: 'Enter environment name'
         required: true
         default: 'Development'
-        type: choice
-        options:
-          - Development
-          - Production
+        type: string
   workflow_call:
     inputs:
       environment:
@@ -45,14 +42,34 @@ jobs:
 
       - name: Set up variables
         run: |
+          INPUT_ENV="${{ inputs.environment || github.event.inputs.environment }}"
+          case "$INPUT_ENV" in
+            "Development")
+              ENVIRONMENT_NAME="dev"
+              ;;
+            "Production")
+              ENVIRONMENT_NAME="prod"
+              ;;
+            *)
+              # Support custom environments (feature branches, testing, etc.)
+              ENVIRONMENT_NAME="$INPUT_ENV"
+              ;;
+          esac
+          
+          echo "ENVIRONMENT_NAME=$ENVIRONMENT_NAME" >> $GITHUB_ENV
           echo "K8S_DIR=devops/kubernetes/" >> $GITHUB_ENV
-          echo "NAMESPACE_FILE=devops/kubernetes/namespaces/namespace-dev.yaml" >> $GITHUB_ENV
           echo "DOCKER_REGISTRY=${{ secrets.DOCKER_USERNAME }}" >> $GITHUB_ENV
           echo "OPENAI_KEY=${{ secrets.AZURE_OPENAI_API_KEY }}" >> $GITHUB_ENV
+          echo "PG_DB=${{env.ENVIRONMENT_NAME}}-pg-zionet-learning" >> $GITHUB_ENV
+          echo "PG_RG=${{env.ENVIRONMENT_NAME}}-zionet-learning-2025" >> $GITHUB_ENV
+
+          
+          # Now we use only dev as the shared AKS cluster
           echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
           echo "MC_AKS_RG=MC_dev-zionet-learning-2025_aks-cluster-dev_westeurope" >> $GITHUB_ENV
-          echo "PG_DB=pg-zionet-dev-2025" >> $GITHUB_ENV
           echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
+
+          
 
       - name: Get AKS credentials
         run: |
@@ -64,21 +81,37 @@ jobs:
           chmod +x dapr-control-plane.sh
           ./dapr-control-plane.sh
 
-      - name: Create namespace
-        run: kubectl apply -f $NAMESPACE_FILE
+      - name: Create namespace dynamically
+        run: |
+          cat <<EOF | kubectl apply -f -
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: ${{env.ENVIRONMENT_NAME}}
+            labels:
+              name: ${{env.ENVIRONMENT_NAME}}
+              environment: ${{env.ENVIRONMENT_NAME}}
+              managed-by: github-actions
+              created-by: aks-kubectl-apply-workflow
+          EOF
 
       - name: Apply Dapr components
         run: kubectl apply -f "$K8S_DIR/dapr/components" --recursive
 
       - name: Apply services
-        run: kubectl apply -f "$K8S_DIR/services" --recursive
-
+        run: |
+          find "$K8S_DIR/services" -type f -name '*.yaml' | while read file; do
+            echo "Applying $file"
+            ENVIRONMENT_NAME=$ENVIRONMENT_NAME 
+            envsubst < "$file" | kubectl apply -f -
+          done
+  
       - name: Apply deployments (with registry and OpenAI key substitution)
         run: |
           export OPENAI_KEY="$OPENAI_KEY"
           find "$K8S_DIR/deployments" -type f -name '*.yaml' | while read file; do
             echo "Applying $file"
-            DOCKER_REGISTRY=$DOCKER_REGISTRY OPENAI_KEY=$OPENAI_KEY envsubst < "$file" | kubectl apply -f -
+            ENVIRONMENT_NAME=$ENVIRONMENT_NAME DOCKER_REGISTRY=$DOCKER_REGISTRY OPENAI_KEY=$OPENAI_KEY envsubst < "$file" | kubectl apply -f -
           done
 
       - name: setup-ingress-controller
@@ -94,8 +127,12 @@ jobs:
           ./grafana.sh
 
       - name: Apply ingresses
-        run: kubectl apply -f "$K8S_DIR/ingress" --recursive
-
+        run: |
+          find "$K8S_DIR/ingress" -type f -name '*.yaml' | while read file; do
+              echo "Applying ingress: $file"
+              ENVIRONMENT_NAME=$ENVIRONMENT_NAME \
+              envsubst < "$file" | kubectl apply -f -
+            done
 
       - name: Add prometheus
         run: |
@@ -137,17 +174,16 @@ jobs:
         run: |
           INGRESS_IP=$(kubectl -n devops-ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
           az postgres flexible-server firewall-rule create \
-            --resource-group $AKS_RG \
+            --resource-group $PG_RG \
             --name $PG_DB \
             --rule-name allow-ingress-controller \
             --start-ip-address $INGRESS_IP \
             --end-ip-address $INGRESS_IP
             
-      
-
-      - name: Restart all pods in dev namespace
+    
+      - name: Restart all pods in the namespace
         run: |
-          kubectl delete pod --all -n dev
+          kubectl delete pod --all -n ${{env.ENVIRONMENT_NAME}}
 
 
       - name: Output external URL

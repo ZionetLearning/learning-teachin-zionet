@@ -8,7 +8,7 @@ metadata:
     io.kompose.service: manager
     environment: ${ENVIRONMENT_NAME}
   name: manager-${ENVIRONMENT_NAME}
-  namespace: ${KUBERNETES_NAMESPACE} 
+  namespace: ${ENVIRONMENT_NAME} 
 spec:
   replicas: 1
   selector:

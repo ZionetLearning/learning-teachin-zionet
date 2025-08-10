@@ -6,8 +6,9 @@ metadata:
     kompose.version: 1.36.0 (ae2a39403)
   labels:
     io.kompose.service: engine
+    environment: ${ENVIRONMENT_NAME}
   name: engine
-  namespace: dev
+  namespace: ${ENVIRONMENT_NAME}
 spec:
   ports:
     - name: "5002"
@@ -15,3 +16,4 @@ spec:
       targetPort: 5002
   selector:
     io.kompose.service: engine
+    environment: ${ENVIRONMENT_NAME}
