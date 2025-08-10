@@ -6,12 +6,12 @@ metadata:
 spec:
   scaleTargetRef:
     name: accessor
-  minReplicaCount: 0
-  maxReplicaCount: 1
+  minReplicaCount: 1
+  maxReplicaCount: 4
   triggers:
     - type: azure-servicebus
       metadata:
-        namespace: servicebus-dev-zionet-learning-2025-keda
+        namespace: servicebus-dev-zionet-learning-2025
         queueName: engine-to-accessor
         messageCount: "1" # scale when 1+ messages
-        #connectionFromEnv: SERVICEBUS_CONNECTION
+        connectionFromEnv: ServiceBus__ConnectionString

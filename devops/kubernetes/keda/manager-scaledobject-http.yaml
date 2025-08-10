@@ -6,13 +6,11 @@ metadata:
 spec:
   hosts:
   - teachin-zionet.westeurope.cloudapp.azure.com
-  pathPrefixes:
-  - /
   scaleTargetRef:
     name: manager          # Your deployment name
     port: 5001            # Your container port
-    service: manager       # Use 'manager' (your actual service name)
+    service: manager
   replicas:
-    min: 1               # Scale to zero when unused
+    min: 0               # Scale to zero when unused
     max: 3               # Maximum replicas
-  scaledownPeriod: 60    # How long to wait before scaling down (seconds)
+  scaledownPeriod: 200    # How long to wait before scaling down (seconds)
