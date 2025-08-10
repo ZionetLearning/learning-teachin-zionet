@@ -93,18 +93,6 @@ builder.Services.AddQueue<Message, EngineQueueHandler>(
         settings.RetryDelaySeconds = 2;
     });
 
-// Queue listener for AI requests
-//builder.Services.AddQueue<AiRequestModel, EngineAiQueueHandler>(
-//    QueueNames.ManagerToAi,
-//    settings =>
-//    {
-//        settings.MaxConcurrentCalls = 5;
-//        settings.PrefetchCount = 10;
-//        settings.ProcessingDelayMs = 200;
-//        settings.MaxRetryAttempts = 3;
-//        settings.RetryDelaySeconds = 2;
-//    });
-
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 var app = builder.Build();

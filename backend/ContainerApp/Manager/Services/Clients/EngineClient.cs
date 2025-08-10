@@ -32,7 +32,7 @@ public class EngineClient : IEngineClient
                 ActionName = MessageAction.CreateTask,
                 Payload = payload
             };
-            await _daprClient.InvokeBindingAsync(QueueNames.EngineQueue, "create", message);
+            await _daprClient.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message);
 
             _logger.LogDebug(
                 "Task {TaskId} sent to Engine via binding '{Binding}'",

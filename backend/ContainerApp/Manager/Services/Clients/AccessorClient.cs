@@ -1,5 +1,7 @@
 ﻿using Dapr.Client;
 using Manager.Constants;
+
+//using Manager.Constants;
 using Manager.Models;
 using System.Net;
 using System.Text.Json;
@@ -50,9 +52,9 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
 
             var payload = JsonSerializer.SerializeToElement(new
             {
-                Id = id,
-                Name = newTaskName,
-                Payload = ""
+                id = id,
+                name = newTaskName,
+                payload = ""
             });
 
             var message = new Message
@@ -62,7 +64,7 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
             };
 
             await _daprClient.InvokeBindingAsync(
-                QueueNames.AccessorQueue,
+                $"{QueueNames.AccessorQueue}-out",
                 "create",
                 message
             );

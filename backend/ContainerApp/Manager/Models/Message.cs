@@ -14,5 +14,7 @@ public enum MessageAction
 {
     CreateTask,
     UpdateTask,
-    TestLongTask
+    TestLongTask,
+    ProcessingQuestionAi,
+    AnswerAi
 }
