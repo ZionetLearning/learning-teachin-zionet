@@ -1,9 +1,8 @@
 ﻿using Microsoft.AspNetCore.SignalR;
-using Manager.Models;
 
 namespace Manager.Hubs;
 
-public class NotificationHub : Hub
+public class NotificationHub : Hub<INotificationClient>
 {
     private readonly ILogger<NotificationHub> _logger;
 
@@ -12,31 +11,15 @@ public class NotificationHub : Hub
         _logger = logger;
     }
 
-    public async Task SendTaskUpdate(int taskId, string status)
+    public override async Task OnConnectedAsync()
     {
-        try
-        {
-            _logger.LogInformation("Sending task update for TaskId: {TaskId}, Status: {Status}", taskId, status);
-            await Clients.All.SendAsync("TaskUpdated", new TaskUpdateMessage { TaskId = taskId, Status = status });
-            _logger.LogInformation("Task update sent successfully for TaskId: {TaskId}", taskId);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to send task update for TaskId: {TaskId}, Status: {Status}", taskId, status);
-        }
+        _logger.LogInformation("Client connected: {ConnectionId}", Context.ConnectionId);
+        await base.OnConnectedAsync();
     }
 
-    public async Task SendNotification(string message)
+    public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        try
-        {
-            _logger.LogInformation("Sending notification with message: {Message}", message);
-            await Clients.All.SendAsync("NotificationReceived", new NotificationMessage { Message = message });
-            _logger.LogInformation("Notification sent successfully");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to send notification with message: {Message}", message);
-        }
+        _logger.LogInformation("Client disconnected: {ConnectionId}", Context.ConnectionId);
+        await base.OnDisconnectedAsync(exception);
     }
 }
