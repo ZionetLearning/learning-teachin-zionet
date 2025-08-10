@@ -1,9 +1,11 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
+using Microsoft.EntityFrameworkCore;
 
 namespace Accessor.Models;
 
+[Index(nameof(ThreadId), nameof(Timestamp))]
 [Table("ChatMessages")]
 public class ChatMessage
 {
@@ -26,8 +28,8 @@ public class ChatMessage
 
     [Required]
     [JsonPropertyName("role")]
-    [EnumDataType(typeof(MessageRole))]
-    public string Role { get; set; } = MessageRole.User;
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public MessageRole Role { get; set; } = MessageRole.User;
 
     [Required]
     [JsonPropertyName("content")]

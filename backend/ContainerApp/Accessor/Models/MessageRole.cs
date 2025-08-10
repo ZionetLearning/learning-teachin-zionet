@@ -1,10 +1,14 @@
-﻿namespace Accessor.Models;
+﻿using System.Text.Json.Serialization;
 
-public static class MessageRole
+namespace Accessor.Models;
+
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum MessageRole
 {
-    public const string User = "user";
-    public const string Assistant = "assistant";
-    public const string System = "system";
-    public const string Developer = "developer";
-    public const string Tool = "tool";
+    User,
+    Assistant,
+    System,
+    Developer,
+    Tool
 }
+

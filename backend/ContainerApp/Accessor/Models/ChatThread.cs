@@ -14,6 +14,9 @@ public class ChatThread
     [Required]
     [JsonPropertyName("userId")]
     public string UserId { get; set; } = string.Empty;
+    [Required]
+    [JsonPropertyName("chatName")]
+    public string ChatName { get; set; } = string.Empty;
 
     [Required]
     [JsonPropertyName("chatType")]

@@ -133,10 +133,10 @@ public static class AccessorEndpoints
         try
         {
             // Validate incoming payload
-            if (string.IsNullOrWhiteSpace(msg.Content) || string.IsNullOrWhiteSpace(msg.Role))
+            if (string.IsNullOrWhiteSpace(msg.Content) || !Enum.IsDefined(typeof(MessageRole), msg.Role))
             {
                 logger.LogWarning("Validation failed for message");
-                return Results.BadRequest("Role and Content are required.");
+                return Results.BadRequest("Role and valid Content are required.");
             }
 
             // Generate server-side IDs/timestamps
