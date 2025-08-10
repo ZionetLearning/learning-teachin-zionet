@@ -2,6 +2,7 @@
 using Engine.Messaging;
 using Engine.Models;
 using Engine.Services;
+using Engine.Services.Clients;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -32,6 +33,19 @@ public class ChatAiServiceTests
         public IAsyncPolicy<ChatMessageContent> CreateKernelPolicy(ILogger logger) =>
             _noOpKernel;
     }
+    //make a fake AccessorClient that does nothing
+    private sealed class FakeAccessorClient : IAccessorClient
+    {
+        public Task<ChatHistoryResponse?> GetChatHistoryAsync(string threadId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<bool> StoreChatMessagesAsync(StoreChatMessagesRequest request)
+        {
+            throw new NotImplementedException();
+        }
+    }
 
     public ChatAiServiceTests(TestKernelFixture fx)
     {
@@ -48,7 +62,7 @@ public class ChatAiServiceTests
             NullLogger<ChatAiService>.Instance,
             _cache,
             Options.Create(_cacheOptions),
-            new FakeRetryPolicyProvider());
+            new FakeRetryPolicyProvider(), new FakeAccessorClient());
     }
 
     [SkippableFact(DisplayName = "ProcessAsync: answer contains 4 or four")]

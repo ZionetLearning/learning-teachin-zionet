@@ -1,6 +1,7 @@
 ﻿using Engine.Constants;
 using Engine.Messaging;
 using Engine.Models;
+using Engine.Services.Clients;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
@@ -19,13 +20,15 @@ public sealed class ChatAiService : IChatAiService
     private readonly IChatCompletionService _chat;
     private readonly IRetryPolicyProvider _retryPolicyProvider;
     private readonly IAsyncPolicy<ChatMessageContent> _kernelPolicy;
+    private readonly IAccessorClient _accessorClient;
 
     public ChatAiService(
         Kernel kernel,
         ILogger<ChatAiService> log,
         IMemoryCache cache,
         IOptions<MemoryCacheEntryOptions> cacheOptions,
-        IRetryPolicyProvider retryPolicyProvider)
+        IRetryPolicyProvider retryPolicyProvider,
+        IAccessorClient accessorClient)
     {
         _kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
         _log = log ?? throw new ArgumentNullException(nameof(log));
@@ -34,6 +37,7 @@ public sealed class ChatAiService : IChatAiService
         _retryPolicyProvider = retryPolicyProvider ?? throw new ArgumentNullException(nameof(retryPolicyProvider));
         _chat = _kernel.GetRequiredService<IChatCompletionService>();
         _kernelPolicy = _retryPolicyProvider.CreateKernelPolicy(_log);
+        _accessorClient = accessorClient ?? throw new ArgumentNullException(nameof(accessorClient));
     }
 
     public async Task<AiResponseModel> ProcessAsync(AiRequestModel request, CancellationToken ct = default)
@@ -56,19 +60,35 @@ public sealed class ChatAiService : IChatAiService
         try
         {
             var historyKey = CacheKeys.ChatHistory(request.ThreadId);
-            var history = _cache.GetOrCreate(historyKey, _ => new ChatHistory()) ?? new ChatHistory();
-
-            if (history.Count == 0)
+            var cachedHistory = _cache.GetOrCreate(historyKey, _ => new ChatHistory()) ?? new ChatHistory();
+            if (cachedHistory.Count == 0)
             {
                 var prompt = Prompts.Combine(
-                     Prompts.SystemDefault,
-                     Prompts.DetailedExplanation
-                     );
+                    Prompts.SystemDefault,
+                    Prompts.DetailedExplanation
+                );
+                cachedHistory.AddSystemMessage(prompt);
+                var dbHistory = await _accessorClient.GetChatHistoryAsync(request.ThreadId);
 
-                history.AddSystemMessage(prompt);
+                if (dbHistory?.Messages != null)
+                {
+                    foreach (var message in dbHistory.Messages)
+                    {
+                        switch (message.Role)
+                        {
+                            case "user":
+                                cachedHistory.AddUserMessage(message.Message);
+                                break;
+                            case "assistant":
+                                cachedHistory.AddAssistantMessage(message.Message);
+                                break;
+
+                        }
+                    }
+                }
             }
 
-            history.AddUserMessage(request.Question);
+            cachedHistory.AddUserMessage(request.Question);
 
             var settings = new OpenAIPromptExecutionSettings
             {
@@ -79,7 +99,7 @@ public sealed class ChatAiService : IChatAiService
                 .ExecuteAsync(async ct2 =>
                 {
                     return await _chat.GetChatMessageContentAsync(
-                        history,
+                        cachedHistory,
                         executionSettings: settings,
                         kernel: _kernel,
                         cancellationToken: ct2);
@@ -87,9 +107,9 @@ public sealed class ChatAiService : IChatAiService
 
             var answer = result.Content ?? string.Empty;
 
-            history.AddAssistantMessage(answer);
+            cachedHistory.AddAssistantMessage(answer);
 
-            _cache.Set(historyKey, history, _cacheOptions);
+            _cache.Set(historyKey, cachedHistory, _cacheOptions);
 
             return new AiResponseModel
             {
