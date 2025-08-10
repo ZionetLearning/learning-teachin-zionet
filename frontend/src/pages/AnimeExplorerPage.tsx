@@ -1,5 +1,5 @@
-import { AnimeExplorer } from '@/features';
+import { AnimeExplorer } from "@/features";
 
 export const AnimeExplorerPage = () => {
-	return <AnimeExplorer />;
+  return <AnimeExplorer />;
 };
