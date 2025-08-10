@@ -7,7 +7,7 @@ metadata:
   labels:
     io.kompose.service: manager
   name: manager
-  namespace: dev
+  namespace: newdev
 spec:
   ports:
     - protocol: TCP
