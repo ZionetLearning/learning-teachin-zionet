@@ -100,6 +100,21 @@ public class ManagerService : IManagerService
         }
     }
 
+    public async Task<(bool success, string message)> ProcessTaskLongAsync(TaskModel task)
+    {
+        try
+        {
+            _logger.LogDebug("Inside: {MethodName}", nameof(ProcessTaskAsync));
+            var result = await _engineClient.ProcessTaskLongAsync(task);
+            return (result.success, result.message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while processing task {TaskId}", task.Id);
+            return (false, "Failed to send to Engine");
+        }
+    }
+
     public async Task<bool> UpdateTaskName(int id, string newTaskName)
     {
         _logger.LogDebug("Inside: {MethodName}", nameof(UpdateTaskName));
