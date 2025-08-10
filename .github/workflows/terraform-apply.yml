@@ -102,10 +102,10 @@ jobs:
         working-directory: ${{ env.TF_DIR }}
         run: |
           if [ -f "${{ env.TFVARS_FILE }}" ] && [ "${{ env.TFVARS_FILE }}" == "terraform.tfvars.template" ]; then
-            cat <<EOF > terraform.tfvars.template
-          environment_name = "${{ env.environment_name }}"
-          kubernetes_namespace = "${{ env.environment_name }}"
-          EOF
+            echo "" >> terraform.tfvars.template
+            echo "#------------- Dynamic Environment Configuration -------------" >> terraform.tfvars.template
+            echo "environment_name = \"${{ env.environment_name }}\"" >> terraform.tfvars.template
+            echo "kubernetes_namespace = \"${{ env.environment_name }}\"" >> terraform.tfvars.template
           fi
 
           cat ${{ env.TFVARS_FILE }}
