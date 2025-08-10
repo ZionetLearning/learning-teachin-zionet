@@ -1,13 +1,17 @@
 global:
-  namespace: dev
-  dockerRegistry: "" # e.g. myacr.azurecr.io
+  namePrefix: ""
+  dockerRegistry: ""
   imagePullPolicy: IfNotPresent
   dapr:
     enabled: true
+  imagePullSecret:
+    enabled: false
+    name: ""
 
+# If empty, namespace becomes <namePrefix>
 namespace:
   create: true
-  name: dev
+  name: ""
 
 manager:
   name: manager
@@ -84,3 +88,39 @@ accessor:
     postgres:
       name: postgres-connection
       key: PostgreSQLConnectionString
+
+dapr:
+  # Shared connection for Service Bus components
+  connection:
+    secretName: azure-service-bus-secret
+    secretKey:  AzureServiceBusConnectionString
+
+  # Prefix queue names with global.namePrefix (e.g., test123-queue)
+  prefixEntityNames: false
+
+  # PubSub (optional)
+  pubsub:
+    enabled: false
+    name: servicebus-pubsub
+    disableEntityManagement: "true"
+    scopes: [manager, engine, accessor]
+
+  # Redis state store (optional)
+  stateStore:
+    enabled: false
+    name: statestore
+    redis:
+      host: "teachin-redis.redis.cache.windows.net:6380"
+      # Either provide password directly or via secret:
+      password: ""                       # leave empty if using secret
+      passwordSecretName: ""             # e.g., redis-secret
+      passwordSecretKey: ""              # e.g., password
+      enableTLS: "true"
+      options:
+        dialTimeout: "30s"
+        readTimeout: "30s"
+        writeTimeout: "30s"
+        poolTimeout: "30s"
+        idleTimeout: "300s"
+        maxConnAge: "30m"
+    scopes: [manager, engine, accessor]

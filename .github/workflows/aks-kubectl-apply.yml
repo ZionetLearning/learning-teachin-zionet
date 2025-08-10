@@ -4,17 +4,36 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Select environment'
+        description: 'Select environment (GitHub Environment)'
         required: true
         default: 'Development'
         type: choice
         options:
           - Development
           - Production
+      target:
+        description: 'Select target namespace/prefix'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - prod
+          - custom
+      custom_prefix:
+        description: 'Used only when target=custom (lowercase letters and digits)'
+        required: false
+        default: ''
   workflow_call:
     inputs:
       environment:
         required: true
+        type: string
+      target:
+        required: false
+        type: string
+      custom_prefix:
+        required: false
         type: string
     outputs:
       app_url:
@@ -47,20 +66,42 @@ jobs:
         run: |
           echo "K8S_DIR=devops/kubernetes/" >> $GITHUB_ENV
           echo "CHART_DIR=devops/kubernetes/charts" >> $GITHUB_ENV
-          echo "NAMESPACE_FILE=devops/kubernetes/namespaces/namespace-dev.yaml" >> $GITHUB_ENV
           echo "DOCKER_REGISTRY=${{ secrets.DOCKER_USERNAME }}" >> $GITHUB_ENV
           echo "OPENAI_KEY=${{ secrets.AZURE_OPENAI_API_KEY }}" >> $GITHUB_ENV
           echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
           echo "MC_AKS_RG=MC_dev-zionet-learning-2025_aks-cluster-dev_westeurope" >> $GITHUB_ENV
           echo "PG_DB=pg-zionet-dev-2025" >> $GITHUB_ENV
           echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
-          if [ "${{ inputs.environment || github.event.inputs.environment }}" = "Production" ]; then
-            echo "VALUES_FILE=kubernetes/charts/values.prod.yaml" >> $GITHUB_ENV
-            echo "TARGET_NAMESPACE=prod" >> $GITHUB_ENV
-          else
-            echo "VALUES_FILE=kubernetes/charts/values.dev.yaml" >> $GITHUB_ENV
-            echo "TARGET_NAMESPACE=dev" >> $GITHUB_ENV
-          fi
+
+          # Resolve target and custom prefix from either workflow_call or workflow_dispatch
+          TARGET_INPUT="${{ inputs.target || github.event.inputs.target }}"
+          CUSTOM_PREFIX_INPUT="${{ inputs.custom_prefix || github.event.inputs.custom_prefix }}"
+          if [ -z "$TARGET_INPUT" ]; then TARGET_INPUT="dev"; fi
+
+          case "$TARGET_INPUT" in
+            prod|Prod|PROD)
+              echo "TARGET_NAMESPACE=prod" >> $GITHUB_ENV
+              echo "VALUES_FILE=$CHART_DIR/values.prod.yaml" >> $GITHUB_ENV
+              ;;
+            dev|Dev|DEV)
+              echo "TARGET_NAMESPACE=dev" >> $GITHUB_ENV
+              echo "VALUES_FILE=$CHART_DIR/values.dev.yaml" >> $GITHUB_ENV
+              ;;
+            custom)
+              if [ -z "$CUSTOM_PREFIX_INPUT" ]; then
+                echo "custom_prefix is required when target=custom"; exit 1
+              fi
+              if [[ ! "$CUSTOM_PREFIX_INPUT" =~ ^[a-z0-9]+$ ]]; then
+                echo "custom_prefix must be lowercase letters and digits only (^[a-z0-9]+$)"; exit 1
+              fi
+              echo "TARGET_NAMESPACE=$CUSTOM_PREFIX_INPUT" >> $GITHUB_ENV
+              # For custom we reuse dev values by default; change to values.prod.yaml if you want
+              echo "VALUES_FILE=$CHART_DIR/values.dev.yaml" >> $GITHUB_ENV
+              ;;
+            *)
+              echo "Invalid target: $TARGET_INPUT (use dev, prod, or custom)"; exit 1
+              ;;
+          esac
 
       - name: Get AKS credentials
         run: |
@@ -72,34 +113,29 @@ jobs:
           chmod +x dapr-control-plane.sh
           ./dapr-control-plane.sh
 
-      - name: Create namespace
-        run: kubectl apply -f $NAMESPACE_FILE
+      - name: Ensure target namespace exists
+        run: |
+          kubectl create namespace "$TARGET_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 
-      - name: Apply Dapr components
-        run: kubectl apply -f "$K8S_DIR/dapr/components" --recursive
-
-      # - name: Apply services
-      #   run: kubectl apply -f "$K8S_DIR/services" --recursive
-
-      # - name: Apply deployments (with registry and OpenAI key substitution)
-      #   run: |
-      #     export OPENAI_KEY="$OPENAI_KEY"
-      #     find "$K8S_DIR/deployments" -type f -name '*.yaml' | while read file; do
-      #       echo "Applying $file"
-      #       DOCKER_REGISTRY=$DOCKER_REGISTRY OPENAI_KEY=$OPENAI_KEY envsubst < "$file" | kubectl apply -f -
-      #     done
+      # Dapr components are now rendered by Helm (templates/dapr/*), so no direct apply is needed
+      # - name: Apply Dapr components
+      #   run: kubectl apply -f "$K8S_DIR/dapr/components" --recursive
 
       - name: Helm upgrade/install services
         run: |
-          # Optional: render check
+          # Render check
           helm template app "$CHART_DIR" -f "$VALUES_FILE" \
+            --set namespace.name="$TARGET_NAMESPACE" \
+            --set global.namePrefix="$TARGET_NAMESPACE" \
             --set global.dockerRegistry="$DOCKER_REGISTRY" \
             --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" >/dev/null
-          
+
           # Deploy
           helm upgrade --install app "$CHART_DIR" \
             --namespace "$TARGET_NAMESPACE" --create-namespace \
             -f "$VALUES_FILE" \
+            --set namespace.name="$TARGET_NAMESPACE" \
+            --set global.namePrefix="$TARGET_NAMESPACE" \
             --set global.dockerRegistry="$DOCKER_REGISTRY" \
             --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" \
             --atomic --timeout 10m
@@ -119,7 +155,6 @@ jobs:
       - name: Apply ingresses
         run: kubectl apply -f "$K8S_DIR/ingress" --recursive
 
-
       - name: Add prometheus
         run: |
           cd devops/helm-tools/prometheus
@@ -131,13 +166,13 @@ jobs:
           cd devops/helm-tools/loki
           chmod +x loki.sh
           ./loki.sh
-    
+
       - name: Setup HTTPS certificates
         run: |
           cd devops/helm-tools
           chmod +x setup-https.sh
-          ./setup-https.sh   
-    
+          ./setup-https.sh
+
       - name: Wait for external IP for ingress controller
         id: wait_for_ingress_ip
         run: |
@@ -154,7 +189,6 @@ jobs:
           done
           echo "Failed to get ingress IP after waiting. Check 'kubectl get svc ingress-nginx-controller -n devops-ingress-nginx'"
           exit 1
-      
 
       - name: Add ingress IP to PostgreSQL firewall
         run: |
@@ -165,16 +199,13 @@ jobs:
             --rule-name allow-ingress-controller \
             --start-ip-address $INGRESS_IP \
             --end-ip-address $INGRESS_IP
-            
-      
 
-      - name: Restart all pods in dev namespace
+      - name: Restart all pods in TARGET_NAMESPACE namespace
         run: |
-          kubectl delete pod --all -n dev
-
+          kubectl delete pod --all -n "$TARGET_NAMESPACE"
 
       - name: Output external URL
         id: extract_url
         run: |
-          echo "app_url=${{ steps.wait_for_ip.outputs.app_url }}" >> $GITHUB_OUTPUT
-          echo "App URL: ${{ steps.wait_for_ip.outputs.app_url }}"
+          echo "app_url=${{ steps.wait_for_ingress_ip.outputs.ingress_url }}" >> $GITHUB_OUTPUT
+          echo "App URL: ${{ steps.wait_for_ingress_ip.outputs.ingress_url }}"
