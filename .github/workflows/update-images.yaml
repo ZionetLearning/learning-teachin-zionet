@@ -40,7 +40,7 @@ jobs:
 
       - name: Set up variables
         run: |
-          echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
+          echo "AKS_RG=dev-zionet-learning-2025-keda" >> $GITHUB_ENV
           echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
 
       - name: Get AKS credentials

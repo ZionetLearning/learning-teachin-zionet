@@ -1,13 +1,13 @@
-resource_group_name    = "dev-zionet-learning-2025"
+resource_group_name    = "dev-zionet-learning-2025-keda"
 location               = "westeurope"
 aks_cluster_name       = "aks-cluster-dev"
-servicebus_namespace   = "servicebus-dev-zionet-learning-2025"
-database_server_name   = "pg-zionet-dev-2025"
+servicebus_namespace   = "servicebus-dev-zionet-learning-2025-keda"
+database_server_name   = "pg-zionet-dev-2025-keda"
 subscription_id        = "90ea4c2f-1eee-4ec9-927d-ed24c563003e"
 tenant_id              = "a814ee32-f813-4a36-9686-1b9268183e27"
 docker_registry        = "snir1551"
 
 # Frontend variables
-static_web_app_name    = "zionet-learning-frontend-dev"
+static_web_app_name    = "zionet-learning-frontend-dev-keda"
 frontend_sku_tier      = "Free"
 frontend_sku_size      = "Free"

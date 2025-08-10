@@ -49,9 +49,9 @@ jobs:
           echo "NAMESPACE_FILE=devops/kubernetes/namespaces/namespace-dev.yaml" >> $GITHUB_ENV
           echo "DOCKER_REGISTRY=${{ secrets.DOCKER_USERNAME }}" >> $GITHUB_ENV
           echo "OPENAI_KEY=${{ secrets.AZURE_OPENAI_API_KEY }}" >> $GITHUB_ENV
-          echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
-          echo "MC_AKS_RG=MC_dev-zionet-learning-2025_aks-cluster-dev_westeurope" >> $GITHUB_ENV
-          echo "PG_DB=pg-zionet-dev-2025" >> $GITHUB_ENV
+          echo "AKS_RG=dev-zionet-learning-2025-keda" >> $GITHUB_ENV
+          echo "MC_AKS_RG=MC_dev-zionet-learning-2025_aks-cluster-dev_westeurope-keda" >> $GITHUB_ENV
+          echo "PG_DB=pg-zionet-dev-2025-keda" >> $GITHUB_ENV
           echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
 
       - name: Get AKS credentials
@@ -80,7 +80,7 @@ jobs:
             echo "Applying $file"
             DOCKER_REGISTRY=$DOCKER_REGISTRY OPENAI_KEY=$OPENAI_KEY envsubst < "$file" | kubectl apply -f -
           done
-
+      
       - name: setup-ingress-controller
         run: |
           cd devops/helm-tools
@@ -92,6 +92,12 @@ jobs:
           cd devops/helm-tools
           chmod +x grafana.sh
           ./grafana.sh
+
+      - name: Setup HTTPS certificates
+        run: |
+          cd devops/helm-tools
+          chmod +x setup-https.sh
+          ./setup-https.sh   
 
       - name: Apply ingresses
         run: kubectl apply -f "$K8S_DIR/ingress" --recursive
@@ -109,11 +115,7 @@ jobs:
           chmod +x loki.sh
           ./loki.sh
     
-      - name: Setup HTTPS certificates
-        run: |
-          cd devops/helm-tools
-          chmod +x setup-https.sh
-          ./setup-https.sh   
+   
     
       - name: Wait for external IP for ingress controller
         id: wait_for_ingress_ip

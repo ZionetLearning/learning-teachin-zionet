@@ -19,7 +19,7 @@ spec:
   - host: teachin-zionet.westeurope.cloudapp.azure.com
     http:
       paths:
-        - path: /manager(/|$)(.*)
+        - path: /kedamanager(/|$)(.*)
           pathType: ImplementationSpecific
           backend:
             service:
