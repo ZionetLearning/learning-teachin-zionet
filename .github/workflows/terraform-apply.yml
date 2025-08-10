@@ -99,18 +99,16 @@ jobs:
         working-directory: ${{ env.TF_DIR }}
       
       - name: Terraform vars file
+        working-directory: ${{ env.TF_DIR }}
         run: |
           if [ -f "${{ env.TFVARS_FILE }}" ] && [ "${{ env.TFVARS_FILE }}" == "terraform.tfvars.template" ]; then
-            # Add a blank line, then append the vars
-            echo "" >> terraform.tfvars.template
-            cat <<EOF >> terraform.tfvars.template
-            environment_name     = "${{ env.environment_name }}"
-            kubernetes_namespace = "${{ env.environment_name }}"
-            EOF
+            cat <<EOF > terraform.tfvars.template
+          environment_name = "${{ env.environment_name }}"
+          kubernetes_namespace = "${{ env.environment_name }}"
+          EOF
           fi
 
           cat ${{ env.TFVARS_FILE }}
-        working-directory: ${{ env.TF_DIR }}
  
       - name: Terraform Plan
         run: terraform plan -var-file=${{ env.TFVARS_FILE }}
