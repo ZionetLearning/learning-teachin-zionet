@@ -26,7 +26,6 @@ module "aks" {
   location            = var.location
   cluster_name        = var.aks_cluster_name
   vm_size             = var.vm_size
-  # mc_resource_group_name = "MC_${var.resource_group_name}_${var.aks_cluster_name}_${var.location}"
   depends_on = [azurerm_resource_group.main]
 }
 
@@ -42,7 +41,7 @@ module "servicebus" {
   source              = "./modules/servicebus"
   resource_group_name = azurerm_resource_group.main.name
   location            = var.location
-  namespace_name      = "${var.environment_name}-${var.var.servicebus_namespace}"
+  namespace_name      = "${var.environment_name}-${var.servicebus_namespace}"
   sku                 = var.servicebus_sku
   queue_names         = var.queue_names
   depends_on = [azurerm_resource_group.main]
@@ -116,18 +115,36 @@ module "frontend" {
 ########################################
 # 2. AKS kube-config for providers
 ########################################
+
+resource "null_resource" "aks_ready" {
+  # This resource completes when the AKS cluster (shared or new) is ready
+  count = 1
+  
+  # Use triggers to ensure this runs after the appropriate AKS resource is ready
+  triggers = {
+    cluster_name = local.aks_cluster_name
+    cluster_rg   = local.aks_resource_group
+  }
+  
+  # Implicit dependency on the AKS module when not using shared AKS
+  depends_on = [
+    module.aks,
+    data.azurerm_kubernetes_cluster.shared
+  ]
+}
+
 # Data source for the cluster to be used (either shared or new)
 data "azurerm_kubernetes_cluster" "main" {
   name                = local.aks_cluster_name
   resource_group_name = local.aks_resource_group
-  depends_on          = var.use_shared_aks ? [] : [module.aks[0]]
+  
+  depends_on = [null_resource.aks_ready]
 }
-
-
 
 ########################################
 # 4. Environment-specific namespace and resources for the workloads
 ########################################
+
 # Create namespace for the environment
 resource "kubernetes_namespace" "environment" {
   metadata {
@@ -135,6 +152,13 @@ resource "kubernetes_namespace" "environment" {
     labels = {
       environment = var.environment_name
       managed-by  = "terraform"
+      created-by  = "terraform"
+      purpose     = "application-deployment"
+    }
+    
+    annotations = {
+      "kubernetes.io/managed-by" = "terraform"
+      "terraform.io/environment" = var.environment_name
     }
   }
   
@@ -146,17 +170,31 @@ resource "kubernetes_service_account" "environment" {
   metadata {
     name      = "${var.environment_name}-serviceaccount"
     namespace = kubernetes_namespace.environment.metadata[0].name
+    
+    labels = {
+      environment = var.environment_name
+      managed-by  = "terraform"
+    }
+    
+    annotations = {
+      "kubernetes.io/managed-by" = "terraform"
+    }
   }
   
   depends_on = [kubernetes_namespace.environment]
 }
 
-# Resource quotas for the namespace
 resource "kubernetes_resource_quota" "environment" {
   metadata {
     name      = "${var.environment_name}-quota"
     namespace = kubernetes_namespace.environment.metadata[0].name
+    
+    labels = {
+      environment = var.environment_name
+      managed-by  = "terraform"
+    }
   }
+  
   spec {
     hard = {
       "requests.cpu"    = "2"
