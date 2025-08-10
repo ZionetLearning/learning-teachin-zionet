@@ -1,7 +1,6 @@
 # DEV overrides for the Helm chart
 global:
-  namespace: dev
-  dockerRegistry: "teachindevacr.azurecr.io"
+  dockerRegistry: ""   # CI sets: docker.io/<org> or <acr>.azurecr.io
   imagePullPolicy: IfNotPresent
   dapr:
     enabled: true
