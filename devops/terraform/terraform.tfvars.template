@@ -4,7 +4,6 @@ shared_aks_cluster_name     = "aks-cluster-dev"
 shared_aks_resource_group   = "dev-zionet-learning-2025"
 #------------- Resource Configuration -------------
 location               = "westeurope"
-aks_cluster_name       = ""  # Not used when using shared AKS
 
 # Azure Configuration
 subscription_id        = "90ea4c2f-1eee-4ec9-927d-ed24c563003e"
