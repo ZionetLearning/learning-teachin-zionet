@@ -78,4 +78,9 @@ describe("ChatYo", () => {
     expect(sendMessageMock).toHaveBeenCalledWith("Test message");
     expect(input.value).toBe(""); // cleared by ChatYo after send
   });
+
+  it("matches snapshot", () => {
+    const { asFragment } = render(<ChatYo />);
+    expect(asFragment()).toMatchSnapshot();
+  });
 });

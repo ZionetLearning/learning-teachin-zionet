@@ -5,201 +5,24 @@ exports[`ChatYo > matches snapshot 1`] = `
   <div
     class="chatWrapper-0-2-1"
   >
-    <div
-      class="messagesList-0-2-7"
-    >
-      <div
-        class="rce-container-mbox messageBox-0-2-9"
-      >
-        <div
-          class="rce-mbox rce-mbox-right"
-          style="background-color: rgb(17, 187, 255); color: rgb(0, 0, 0);"
-        >
-          <div
-            class="rce-mbox-body"
-          >
-            <div
-              class="rce-mbox-title rce-mbox-title--clear"
-              style="color: black;"
-            >
-              <span>
-                Me
-              </span>
-            </div>
-            <div
-              class="rce-mbox-text right"
-            >
-              Hello
-            </div>
-            <div
-              class="rce-mbox-time non-copiable"
-              data-text="just now"
-            >
-              <span
-                class="rce-mbox-status"
-              >
-                <svg
-                  class=""
-                  color="currentColor"
-                  fill="none"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  width="14"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M2.5 13.8333L6 17.5L7.02402 16.4272M16.5 6.5L10.437 12.8517"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="1.5"
-                  />
-                  <path
-                    d="M7.5 13.8333L11 17.5L21.5 6.5"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="1.5"
-                  />
-                </svg>
-              </span>
-            </div>
-          </div>
-          <svg
-            class="rce-mbox-right-notch"
-            viewBox="0 0 20 20"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M0 0v20L20 0"
-            />
-          </svg>
-        </div>
-      </div>
-      <div
-        class="rce-container-mbox messageBox-0-2-9"
-      >
-        <div
-          class="rce-mbox"
-          style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);"
-        >
-          <div
-            class="rce-mbox-body"
-          >
-            <div
-              class="rce-mbox-title rce-mbox-title--clear"
-              style="color: gray;"
-            >
-              <div
-                class="rce-avatar-container default default"
-              >
-                <img
-                  class="rce-avatar"
-                  src="/src/features/avatar/avatar-sh/assets/avatar.svg"
-                />
-              </div>
-              <span>
-                Assistant
-              </span>
-            </div>
-            <div
-              class="rce-mbox-text left"
-            >
-              Hi there!
-            </div>
-            <div
-              class="rce-mbox-time non-copiable"
-              data-text="just now"
-            >
-              <span
-                class="rce-mbox-status"
-              >
-                <svg
-                  class=""
-                  color="currentColor"
-                  fill="none"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  width="14"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M2.5 13.8333L6 17.5L7.02402 16.4272M16.5 6.5L10.437 12.8517"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="1.5"
-                  />
-                  <path
-                    d="M7.5 13.8333L11 17.5L21.5 6.5"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="1.5"
-                  />
-                </svg>
-              </span>
-            </div>
-          </div>
-          <div>
-            <svg
-              class="rce-mbox-left-notch"
-              viewBox="0 0 20 20"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <defs>
-                <filter
-                  id="filter1"
-                  x="0"
-                  y="0"
-                >
-                  <feoffset
-                    dx="-2"
-                    dy="-5"
-                    in="SourceAlpha"
-                    result="offOut"
-                  />
-                  <fegaussianblur
-                    in="offOut"
-                    result="blurOut"
-                    stdDeviation="3"
-                  />
-                  <feblend
-                    in="SourceGraphic"
-                    in2="blurOut"
-                    mode="normal"
-                  />
-                </filter>
-              </defs>
-              <path
-                d="M20 0v20L0 0"
-                filter="url(#filter1)"
-              />
-            </svg>
-          </div>
-        </div>
-      </div>
-    </div>
     <div>
-      <div
-        class="rce-container-input input-0-2-11"
+      <ul>
+        <li>
+          Hello
+        </li>
+        <li>
+          Hi there!
+        </li>
+      </ul>
+      <input
+        placeholder="Type a message..."
+        value=""
+      />
+      <button
+        type="button"
       >
-        <input
-          class="rce-input"
-          placeholder="pages.chatYo.typeMessage"
-          type="text"
-          value=""
-        />
-        <div
-          class="rce-input-buttons"
-        >
-          <button
-            class="sendButton-0-2-14"
-          >
-            ↑
-          </button>
-        </div>
-      </div>
+        ↑
+      </button>
     </div>
   </div>
 </DocumentFragment>
