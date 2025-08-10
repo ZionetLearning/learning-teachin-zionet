@@ -1,12 +1,26 @@
 ########################################
-# 1. Azure infra: RG, AKS, Service Bus, Postgres and SignalR, Redis
+# 1. Azure infra: RG, AKS (conditional), Service Bus, Postgres and SignalR, Redis
 ########################################
 resource "azurerm_resource_group" "main" {
-  name     = var.resource_group_name
+  name     = "${var.environment_name}-${var.resource_group_name}"
   location = var.location
+  
+  tags = {
+    Environment = var.environment_name
+    ManagedBy   = "terraform"
+  }
 }
 
+# Data source to reference existing shared AKS cluster
+data "azurerm_kubernetes_cluster" "shared" {
+  count               = var.use_shared_aks ? 1 : 0
+  name                = var.shared_aks_cluster_name
+  resource_group_name = var.shared_aks_resource_group
+}
+
+# Create new AKS cluster only if not using shared
 module "aks" {
+  count               = var.use_shared_aks ? 0 : 1
   source              = "./modules/aks"
   resource_group_name = azurerm_resource_group.main.name
   location            = var.location
@@ -16,21 +30,28 @@ module "aks" {
   depends_on = [azurerm_resource_group.main]
 }
 
+# Local values to determine which cluster to use
+locals {
+  aks_cluster_name = var.use_shared_aks ? data.azurerm_kubernetes_cluster.shared[0].name : module.aks[0].cluster_name
+  aks_resource_group = var.use_shared_aks ? var.shared_aks_resource_group : azurerm_resource_group.main.name
+  kubernetes_namespace = var.kubernetes_namespace != "" ? var.kubernetes_namespace : var.environment_name
+  aks_kube_config = var.use_shared_aks ? data.azurerm_kubernetes_cluster.shared[0].kube_config[0] : module.aks[0].kube_config
+}
+
 module "servicebus" {
   source              = "./modules/servicebus"
   resource_group_name = azurerm_resource_group.main.name
   location            = var.location
-  namespace_name      = var.servicebus_namespace
+  namespace_name      = "${var.environment_name}-${var.var.servicebus_namespace}"
   sku                 = var.servicebus_sku
   queue_names         = var.queue_names
-  
   depends_on = [azurerm_resource_group.main]
 }
 
 module "database" {
   source              = "./modules/postgresql"
 
-  server_name         = var.database_server_name
+  server_name         = "${var.environment_name}-${var.database_server_name}"
   location            = var.db_location
   resource_group_name = azurerm_resource_group.main.name
 
@@ -50,12 +71,9 @@ module "database" {
   delegated_subnet_id           = var.delegated_subnet_id
 
   database_name       = var.database_name
-  # aks_public_ip       = module.aks.public_ip_address
 
   depends_on = [azurerm_resource_group.main]
 }
-
-
 
 module "signalr" {
   source              = "./modules/signalr"
@@ -68,7 +86,7 @@ module "signalr" {
 
 module "redis" {
   source              = "./modules/redis"
-  name                = "teachin-redis"
+  name                = var.redis_name
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
   sku_name            = "Basic"
@@ -88,7 +106,7 @@ module "frontend" {
   appinsights_sampling_percentage = var.frontend_appinsights_sampling_percentage
   
   tags = {
-    Environment = "Development"
+    Environment = var.environment_name
     Project     = "Frontend"
   }
   
@@ -98,31 +116,57 @@ module "frontend" {
 ########################################
 # 2. AKS kube-config for providers
 ########################################
+# Data source for the cluster to be used (either shared or new)
 data "azurerm_kubernetes_cluster" "main" {
-  name                = module.aks.cluster_name
-  resource_group_name = azurerm_resource_group.main.name
-  depends_on          = [module.aks]
+  name                = local.aks_cluster_name
+  resource_group_name = local.aks_resource_group
+  depends_on          = var.use_shared_aks ? [] : [module.aks[0]]
 }
 
-provider "kubernetes" {
-  host                   = module.aks.kube_config["host"]
-  client_certificate     = base64decode(module.aks.kube_config["client_certificate"])
-  client_key             = base64decode(module.aks.kube_config["client_key"])
-  cluster_ca_certificate = base64decode(module.aks.kube_config["cluster_ca_certificate"])
-}
 
-provider "helm" {
-  kubernetes = {
-    host                   = data.azurerm_kubernetes_cluster.main.kube_config[0].host
-    client_certificate     = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].client_certificate)
-    client_key             = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].client_key)
-    cluster_ca_certificate = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].cluster_ca_certificate)
+
+########################################
+# 4. Environment-specific namespace and resources for the workloads
+########################################
+# Create namespace for the environment
+resource "kubernetes_namespace" "environment" {
+  metadata {
+    name = local.kubernetes_namespace
+    labels = {
+      environment = var.environment_name
+      managed-by  = "terraform"
+    }
   }
+  
+  depends_on = [data.azurerm_kubernetes_cluster.main]
 }
 
-########################################
-# 4. devops-model namespace for the workloads
-########################################
-resource "kubernetes_namespace" "model" {
-  metadata { name = "dev" }
+# Create service account for the environment
+resource "kubernetes_service_account" "environment" {
+  metadata {
+    name      = "${var.environment_name}-serviceaccount"
+    namespace = kubernetes_namespace.environment.metadata[0].name
+  }
+  
+  depends_on = [kubernetes_namespace.environment]
+}
+
+# Resource quotas for the namespace
+resource "kubernetes_resource_quota" "environment" {
+  metadata {
+    name      = "${var.environment_name}-quota"
+    namespace = kubernetes_namespace.environment.metadata[0].name
+  }
+  spec {
+    hard = {
+      "requests.cpu"    = "2"
+      "requests.memory" = "4Gi"
+      "limits.cpu"      = "4"
+      "limits.memory"   = "8Gi"
+      "pods"            = "10"
+      "services"        = "5"
+    }
+  }
+  
+  depends_on = [kubernetes_namespace.environment]
 }

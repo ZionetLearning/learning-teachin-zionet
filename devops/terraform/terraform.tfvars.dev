@@ -1,4 +1,10 @@
-resource_group_name    = "dev-zionet-learning-2025"
+# Environment Configuration
+environment_name       = "dev"
+use_shared_aks         = false  # dev still uses its own cluster
+kubernetes_namespace   = "dev"
+
+# Resource Configuration  
+resource_group_name    = "zionet-learning-2025"
 location               = "westeurope"
 aks_cluster_name       = "aks-cluster-dev"
 servicebus_namespace   = "servicebus-dev-zionet-learning-2025"

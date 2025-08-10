@@ -6,23 +6,26 @@ metadata:
     kompose.version: 1.36.0 (ae2a39403)
   labels:
     io.kompose.service: engine
-  name: engine
-  namespace: dev
+    environment: ${ENVIRONMENT_NAME}
+  name: engine-${ENVIRONMENT_NAME}
+  namespace: ${KUBERNETES_NAMESPACE}
 spec:
   replicas: 1
   selector:
     matchLabels:
       io.kompose.service: engine
+      environment: ${ENVIRONMENT_NAME}
   template:
     metadata:
       annotations:
         kompose.cmd: D:\Tool\kompose.exe convert -f .\docker-compose.yaml
         kompose.version: 1.36.0 (ae2a39403)
-        dapr.io/enabled: "true" # Enable Dapr for this pod
-        dapr.io/app-id: "engine" # Dapr application ID
-        dapr.io/app-port: "5002"  # Dapr app port
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "engine-${ENVIRONMENT_NAME}"
+        dapr.io/app-port: "5002"
       labels:
         io.kompose.service: engine
+        environment: ${ENVIRONMENT_NAME}
     spec:
       containers:
         - env:
@@ -31,7 +34,7 @@ spec:
             - name: ServiceBus__ConnectionString
               valueFrom:
                 secretKeyRef:
-                  name: azure-service-bus-secret
+                  name: azure-service-bus-secret-${ENVIRONMENT_NAME}
                   key: AzureServiceBusConnectionString
             - name: AzureOpenAI__Endpoint
               value: "https://france-teachin-open-ai.openai.azure.com/"
@@ -46,4 +49,12 @@ spec:
           ports:
             - containerPort: 5002
               protocol: TCP
+          resources:
+            requests:
+              memory: "256Mi"  
+              cpu: "250m"      
+            limits:
+              memory: "512Mi"  
+              cpu: "500m"      
       restartPolicy: Always
+      serviceAccountName: ${ENVIRONMENT_NAME}-serviceaccount

@@ -1,38 +1,46 @@
 output "aks_cluster_name" {
-  value = module.aks.cluster_name
+  value = local.aks_cluster_name
 }
 
 output "aks_resource_group" {
-  value = module.aks.resource_group_name
+  value = local.aks_resource_group
 }
 
 output "aks_kube_config" {
-  value     = module.aks.kube_config
+  value     = local.aks_kube_config
   sensitive = true
 }
 
 # Optionally output host/certs for use in providers or scripts
 output "aks_host" {
-  value     = module.aks.kube_config.host
+  value     = local.aks_kube_config.host
   sensitive = true
 }
 
 output "aks_client_certificate" {
-  value     = module.aks.client_certificate
+  value     = local.aks_kube_config.client_certificate
   sensitive = true
 }
 output "aks_client_key" {
-  value     = module.aks.client_key
+  value     = local.aks_kube_config.client_key
   sensitive = true
 }
 output "aks_cluster_ca_certificate" {
-  value     = module.aks.cluster_ca_certificate
+  value     = local.aks_kube_config.cluster_ca_certificate
   sensitive = true
 }
 
-# Example: output namespace for reference
-output "namespace_model" {
-  value = kubernetes_namespace.model.metadata[0].name
+# Environment-specific namespace outputs
+output "kubernetes_namespace" {
+  value = kubernetes_namespace.environment.metadata[0].name
+}
+
+output "environment_name" {
+  value = var.environment_name
+}
+
+output "use_shared_aks" {
+  value = var.use_shared_aks
 }
 
 # Connection strings for application deployment

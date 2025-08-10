@@ -1,0 +1,32 @@
+# Template for dynamic environment deployment with shared AKS cluster
+
+#------------- Environment Configuration -------------
+environment_name       = "REPLACE_WITH_ENV_NAME"
+use_shared_aks         = true   # Use shared dev cluster to save costs
+kubernetes_namespace   = "REPLACE_WITH_K8S_NAMESPACE"
+
+#------------- Shared AKS Configuration -------------
+# Using existing dev cluster to save costs
+shared_aks_cluster_name     = "aks-cluster-dev"
+shared_aks_resource_group   = "dev-zionet-learning-2025"
+
+#------------- Resource Configuration -------------
+location               = "westeurope"
+aks_cluster_name       = ""  # Not used when using shared AKS
+
+# Azure Configuration
+subscription_id        = "90ea4c2f-1eee-4ec9-927d-ed24c563003e"
+tenant_id              = "a814ee32-f813-4a36-9686-1b9268183e27"
+docker_registry        = "snir1551"
+
+#------------- Frontend Configuration -------------
+frontend_sku_tier      = "Free"    
+frontend_sku_size      = "Free"    
+
+#------------- Optional Overrides -------------
+# Uncomment and modify if needed
+# vm_size                = "Standard_B2s"
+# node_count            = 2
+# servicebus_sku        = "Standard"
+# frontend_appinsights_retention_days = 30
+# frontend_appinsights_sampling_percentage = 100

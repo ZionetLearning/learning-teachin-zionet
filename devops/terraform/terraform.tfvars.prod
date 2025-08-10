@@ -1,10 +1,20 @@
+# Environment Configuration
+environment_name       = "prod"
+use_shared_aks         = true   # prod uses shared dev cluster
+kubernetes_namespace   = "prod"
+
+# Shared AKS Configuration
+shared_aks_cluster_name     = "aks-cluster-dev"
+shared_aks_resource_group   = "dev-zionet-learning-2025"
+
+# Resource Configuration
 location               = "westeurope"
 resource_group_name    = "prod"
-aks_cluster_name       = ""
-servicebus_namespace   = "sb-prod"
-subscription_id        = ""
-tenant_id              = ""
-docker_registry        = ""
+aks_cluster_name       = ""  # Not used when using shared AKS
+
+subscription_id        = "90ea4c2f-1eee-4ec9-927d-ed24c563003e"
+tenant_id              = "a814ee32-f813-4a36-9686-1b9268183e27"
+docker_registry        = "snir1551"
 
 # Frontend variables
 static_web_app_name    = "zionet-learning-frontend-prod"
