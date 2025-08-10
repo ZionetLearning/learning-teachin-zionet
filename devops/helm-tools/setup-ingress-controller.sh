@@ -52,8 +52,6 @@ helm upgrade --install "$RELEASE_NAME" ingress-nginx/ingress-nginx \
   --set-string controller.service.annotations."service\.beta\.kubernetes\.io/azure-pip-name"="$STATIC_IP_NAME" \
   --set controller.config.enable-cors=true \
   --set controller.config.cors-allow-origin="*" \
-  --set controller.config.cors-allow-methods="GET, POST, PUT, DELETE, PATCH, OPTIONS" \
-  --set controller.config.cors-allow-headers="DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization" \
   --set controller.config.cors-allow-credentials="true" \
   --wait
 
