@@ -6,3 +6,8 @@ database_server_name   = "pg-zionet-dev-2025"
 subscription_id        = "90ea4c2f-1eee-4ec9-927d-ed24c563003e"
 tenant_id              = "a814ee32-f813-4a36-9686-1b9268183e27"
 docker_registry        = "snir1551"
+
+# Frontend variables
+static_web_app_name    = "zionet-learning-frontend-dev"
+frontend_sku_tier      = "Free"
+frontend_sku_size      = "Free"

@@ -1,9 +1,9 @@
-name: AKS - Full CICD
+name: Full CICD
 
 on:
-  #push:
-   # branches:
-    #  - main
+  # push:
+  #  branches:
+  #    - main
   workflow_dispatch:
     inputs:
       environment:
@@ -25,8 +25,8 @@ jobs:
       environment: ${{ github.event.inputs.environment }}
     secrets: inherit
 
-  aks-terraform-apply:
-    uses: ./.github/workflows/aks-terraform-apply.yml
+  terraform-apply:
+    uses: ./.github/workflows/terraform-apply.yml
     permissions:
       id-token: write
       contents: read
@@ -35,7 +35,7 @@ jobs:
     secrets: inherit
 
   aks-kubectl-apply:
-    needs: [build-and-push-images, aks-terraform-apply]
+    needs: [build-and-push-images, terraform-apply]
     uses: ./.github/workflows/aks-kubectl-apply.yml
     permissions:
       id-token: write
@@ -43,3 +43,14 @@ jobs:
     with:
       environment: ${{ github.event.inputs.environment || 'Development' }}
     secrets: inherit
+
+  deploy-frontend:
+    needs: [terraform-apply]
+    uses: ./.github/workflows/deploy-frontend.yml
+    permissions:
+      contents: read
+    with:
+      deployment_token: ${{ needs.terraform-apply.outputs.static_web_app_api_token }}
+      app_insights_connection_string: ${{ needs.terraform-apply.outputs.app_insights_connection_string }}
+    secrets: inherit
+

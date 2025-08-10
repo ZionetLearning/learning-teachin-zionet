@@ -5,3 +5,8 @@ servicebus_namespace   = "sb-prod"
 subscription_id        = ""
 tenant_id              = ""
 docker_registry        = ""
+
+# Frontend variables
+static_web_app_name    = "zionet-learning-frontend-prod"
+frontend_sku_tier      = "Standard"
+frontend_sku_size      = "Standard"

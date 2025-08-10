@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { sendChatMessage } from "./services";
 import aiAvatar from "./assets/ai-avatar.svg";
 import { useStyles } from "./style";
 
 export const ChatSh = () => {
+  const { t } = useTranslation();
   const classes = useStyles();
   const [messages, setMessages] = useState<{ role: string; content: string }[]>(
     [],
@@ -53,7 +55,9 @@ export const ChatSh = () => {
 
   return (
     <div className={classes.chatWrapper}>
-      <div className={classes.chatTitle}>Azure OpenAI Chat</div>
+      <div className={classes.chatTitle}>
+        {t("pages.chatSh.azureOpenAiChat")}
+      </div>
       <div ref={chatContainerRef} className={classes.chatContainer}>
         {messages.map((msg, idx) => (
           <div
@@ -90,7 +94,7 @@ export const ChatSh = () => {
           className={classes.input}
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Type your message..."
+          placeholder={t("pages.chatSh.typeYourMessage")}
           disabled={isLoading}
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
         />
@@ -109,3 +113,8 @@ export const ChatSh = () => {
     </div>
   );
 };
+/*
+        "chatShPageWithOpenAi": "Chat Sh Page - with OpenAI",
+        "azureOpenAiChat": "Chat Azure OpenAI",
+        "typeYourMessage": "הקלד את ההודעה…"
+*/

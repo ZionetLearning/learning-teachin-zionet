@@ -34,14 +34,14 @@ helm upgrade --install grafana grafana/grafana \
   --set sidecar.dashboards.enabled=true \
   --set sidecar.dashboards.searchNamespace="$NAMESPACE" \
   --set sidecar.datasources.enabled=true \
-  --set env.GF_SERVER_ROOT_URL="http://$CONTROLLER_IP/grafana/" \
+  --set env.GF_SERVER_ROOT_URL="https://$CONTROLLER_IP/grafana/" \
   --set env.GF_SERVER_SERVE_FROM_SUB_PATH="true" \
   --set env.GF_SERVER_DOMAIN="$CONTROLLER_IP" \
   --wait
 
 echo
 echo "✅ Grafana should be available at:"
-echo "   → http://$CONTROLLER_IP/grafana/"
+echo "   → https://$CONTROLLER_IP/grafana/"
 echo
 echo "Login:"
 echo "   Username: $ADMIN_USER"
