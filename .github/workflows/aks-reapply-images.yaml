@@ -1,0 +1,81 @@
+name: AKS - ReApply images only
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Select environment'
+        required: true
+        default: 'Development'
+        type: choice
+        options:
+          - Development
+          - Production
+
+jobs:
+  reapply-images:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure Login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set variables
+        run: |
+          echo "K8S_DIR=devops/kubernetes/" >> $GITHUB_ENV
+          echo "DOCKER_REGISTRY=${{ secrets.DOCKER_USERNAME }}" >> $GITHUB_ENV
+          echo "OPENAI_KEY=${{ secrets.AZURE_OPENAI_API_KEY }}" >> $GITHUB_ENV
+
+          if [ "${{ github.event.inputs.environment }}" = "Production" ]; then
+            echo "AKS_RG=prod-zionet-learning-2025" >> $GITHUB_ENV
+            echo "AKS_NAME=aks-cluster-prod" >> $GITHUB_ENV
+            echo "TARGET_NAMESPACE=prod" >> $GITHUB_ENV
+          else
+            echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
+            echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
+            echo "TARGET_NAMESPACE=dev" >> $GITHUB_ENV
+          fi
+
+      - name: Get AKS credentials
+        run: |
+          az aks get-credentials --resource-group "$AKS_RG" --name "$AKS_NAME" --overwrite-existing
+
+      - name: Create namespace
+        run: kubectl apply -f $NAMESPACE_FILE
+
+      - name: Apply Dapr components
+        run: kubectl apply -f "$K8S_DIR/dapr/components" --recursive
+
+      - name: Apply services
+        run: kubectl apply -f "$K8S_DIR/services" --recursive
+
+      - name: Apply deployments (with registry and OpenAI key substitution)
+        run: |
+          export OPENAI_KEY="$OPENAI_KEY"
+          find "$K8S_DIR/deployments" -type f -name '*.yaml' | while read file; do
+            echo "Applying $file"
+            DOCKER_REGISTRY=$DOCKER_REGISTRY OPENAI_KEY=$OPENAI_KEY envsubst < "$file" | kubectl apply -f -
+          done
+
+      # Rollout restart to force pods to pull (works best if imagePullPolicy: Always)
+      - name: Rollout restart all deployments
+        run: |
+          kubectl -n "$TARGET_NAMESPACE" get deploy -o name | xargs -r kubectl -n "$TARGET_NAMESPACE" rollout restart
+
+      - name: Wait for rollouts to complete
+        run: |
+          for d in $(kubectl -n "$TARGET_NAMESPACE" get deploy -o name); do
+            echo "Waiting for $d ..."
+            kubectl -n "$TARGET_NAMESPACE" rollout status "$d" --timeout=5m
+          done
