@@ -26,4 +26,8 @@ public class ChatThread
     [Required]
     [JsonPropertyName("updatedAt")]
     public DateTimeOffset UpdatedAt { get; set; }
+
+    [JsonIgnore]
+    public ICollection<ChatMessage> Messages { get; set; } = new List<ChatMessage>();
+
 }

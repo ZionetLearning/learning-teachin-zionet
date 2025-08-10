@@ -16,6 +16,8 @@ public class ChatMessage
     public Guid ThreadId { get; set; }
 
     [ForeignKey(nameof(ThreadId))]
+
+    [JsonIgnore]
     public ChatThread Thread { get; set; } = null!;
 
     [Required]
