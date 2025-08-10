@@ -32,6 +32,11 @@ public class ChatMessage
     public string Content { get; set; } = string.Empty;
 
     [Required]
+    [Column("created_at_ts")]
+    [JsonIgnore]
+    public long CreatedAtTs { get; set; }
+
+    [Required]
     [JsonPropertyName("timestamp")]
     public DateTimeOffset Timestamp { get; set; }
 }
