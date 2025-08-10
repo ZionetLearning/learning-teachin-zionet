@@ -75,14 +75,14 @@ jobs:
           
           # Wait for pods to be in Running state
           for i in {1..20}; do
-            READY_PODS=$(kubectl get pods -n newdev --field-selector=status.phase=Running --no-headers 2>/newdev/null | wc -l)
-            TOTAL_PODS=$(kubectl get pods -n newdev --no-headers 2>/newdev/null | wc -l)
+            READY_PODS=$(kubectl get pods -n newdev --field-selector=status.phase=Running --no-headers 2>/dev/null | wc -l)
+            TOTAL_PODS=$(kubectl get pods -n newdev --no-headers 2>/dev/null | wc -l)
             
             echo "Attempt $i: $READY_PODS/$TOTAL_PODS pods are running"
             
             if [[ $TOTAL_PODS -gt 0 ]]; then
               # Check if all pods are ready
-              NOT_READY=$(kubectl get pods -n newdev --no-headers 2>/newdev/null | grep -v "Running\|Completed" | wc -l)
+              NOT_READY=$(kubectl get pods -n newdev --no-headers 2>/dev/null | grep -v "Running\|Completed" | wc -l)
               if [[ $NOT_READY -eq 0 ]]; then
                 echo "✅ All pods are running successfully"
                 break
