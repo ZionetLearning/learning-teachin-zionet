@@ -1,7 +1,7 @@
-﻿using System.Text.Json;
-using Engine.Messaging;
+﻿using Engine.Messaging;
 using Engine.Models;
 using Engine.Services;
+using System.Text.Json;
 
 namespace Engine.Endpoints;
 
@@ -34,26 +34,27 @@ public class EngineQueueHandler : IQueueHandler<Message>
     }
     private async Task HandleCreateTaskAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
     {
-        var payload = message.Payload.Deserialize<TaskModel>();
-        if (payload is null)
+        try
         {
-            _logger.LogWarning("Invalid payload for CreateTask");
-            return;
-        }
+            var payload = message.Payload.Deserialize<TaskModel>();
+            if (payload is null)
+            {
+                _logger.LogWarning("Invalid payload for CreateTask");
+                return;
+            }
 
-        _logger.LogDebug("Processing task {Id}", payload.Id);
-        await _engine.ProcessTaskAsync(payload, cancellationToken);
-        _logger.LogInformation("Task {Id} processed", payload.Id);
+            _logger.LogDebug("Processing task {Id}", payload.Id);
+            await _engine.ProcessTaskAsync(payload, cancellationToken);
+            _logger.LogInformation("Task {Id} processed", payload.Id);
+        }
+        catch (Exception)
+        {
+            _logger.LogError("Error while {Action}", message.ActionName);
+            throw;
+        }
     }
     private async Task HandleTestLongTaskAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
     {
-        var payload = message.Payload.Deserialize<TaskModel>();
-        if (payload is null)
-        {
-            _logger.LogWarning("Invalid payload for CreateTask");
-            return;
-        }
-
         using var renewalCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         var renewalTask = Task.Run(async () =>
         {
@@ -72,13 +73,24 @@ public class EngineQueueHandler : IQueueHandler<Message>
                 // expected
             }
         }, renewalCts.Token);
-
         try
         {
+            var payload = message.Payload.Deserialize<TaskModel>();
+            if (payload is null)
+            {
+                _logger.LogWarning("Invalid payload for CreateTask");
+                return;
+            }
+
             _logger.LogInformation("Inside handler");
 
-            await Task.Delay(TimeSpan.FromSeconds(80), cancellationToken); // симуляция долгой работы
-            await _engine.ProcessTaskAsync(payload, cancellationToken);    // бизнес-логика
+            await Task.Delay(TimeSpan.FromSeconds(80), cancellationToken);
+            await _engine.ProcessTaskAsync(payload, cancellationToken);
+        }
+        catch
+        {
+            _logger.LogError("Error while {Action}", message.ActionName);
+            throw;
         }
         finally
         {

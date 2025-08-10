@@ -108,9 +108,17 @@ public static class ManagerEndpoints
     {
         using (logger.BeginScope("Method: {Method}", nameof(CreateTaskAsync)))
         {
-            logger.LogInformation("Long running flow test");
-            await managerService.ProcessTaskLongAsync(task);
-            return Results.Accepted("Long running task accepted");
+            try
+            {
+                logger.LogInformation("Long running flow test");
+                await managerService.ProcessTaskLongAsync(task);
+                return Results.Accepted("Long running task accepted");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error processing task {TaskId}", task.Id);
+                return Results.Problem("An error occurred while processing the task.");
+            }
         }
     }
 
