@@ -128,7 +128,9 @@ jobs:
             --set namespace.create=false \
             --set global.namePrefix="$TARGET_NAMESPACE" \
             --set global.dockerRegistry="$DOCKER_REGISTRY" \
-            --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" >/dev/null
+            --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" \
+          | grep -n '^kind: Namespace' && { echo "Namespace still rendered"; exit 1; } || echo "OK: no Namespace in chart"
+
 
           # Deploy
           helm upgrade --install app "$CHART_DIR" \
