@@ -68,7 +68,7 @@ variable "docker_registry" {
 variable "signalr_name" {
   type        = string
   description = "SignalR service name (must be globally unique)"
-  default     = "signalRdemoCuest"
+  default     = "signalRdemoCuestKeda"
 }
 
 variable "signalr_sku_name" {
