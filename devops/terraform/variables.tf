@@ -21,6 +21,7 @@ variable "tenant_id" {
 variable "aks_cluster_name" {
   description = "Name of the AKS cluster"
   type = string
+  default = "aks-cluster-dev"
 }
 variable "node_count" {
   description = "Number of nodes in the AKS cluster"
