@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import type { GenerativeUIMessage as GenerativeUIMessageType } from "../../../types/Message";
 import { useStyles } from "./style";
 import { LinkMessage, QuizMessage } from "../";
@@ -90,6 +91,7 @@ const componentFactory = (
 const GenerativeUIMessage: React.FC<GenerativeUIMessageProps> = ({
   message,
 }) => {
+  const { t } = useTranslation();
   const classes = useStyles();
   const { componentType, props, fallbackText } = message.content;
 
@@ -100,7 +102,7 @@ const GenerativeUIMessage: React.FC<GenerativeUIMessageProps> = ({
       <div className={classes.container}>
         <div className={classes.fallbackText}>{fallbackText}</div>
         <div className={classes.componentInfo}>
-          Unsupported component: {componentType}
+          {t("pages.chatOu.unsupportedComponent")} {componentType}
         </div>
       </div>
     );
