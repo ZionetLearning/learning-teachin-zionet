@@ -67,7 +67,7 @@ variable "docker_registry" {
 variable "signalr_name" {
   type        = string
   description = "SignalR service name (must be globally unique)"
-  default     = "signalR-${var.environment_name}"
+  default     = "signalr"
 }
 
 variable "signalr_sku_name" {
@@ -157,14 +157,14 @@ variable "delegated_subnet_id" {
 variable "database_name" {
   type        = string
   description = "Name of the PostgreSQL database to create"
-  default     = "appdb-${var.environment_name}"
+  default     = "appdb"
 }
 
 #------------- Frontend Variables -------------
 variable "static_web_app_name" {
   description = "Name of the Azure Static Web App"
   type        = string
-  default     = "static-web-app-${var.environment_name}"
+  default     = "static-web-app"
 }
 
 variable "frontend_sku_tier" {
@@ -194,7 +194,7 @@ variable "frontend_appinsights_sampling_percentage" {
 variable "redis_name" {
   description = "Name of the Redis cache instance"
   type        = string
-  default     = "redis-${var.environment_name}"
+  default     = "redis"
 }
 
 

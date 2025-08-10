@@ -79,14 +79,14 @@ module "signalr" {
   source              = "./modules/signalr"
   resource_group_name = azurerm_resource_group.main.name
   location            = var.location
-  signalr_name        = var.signalr_name
+  signalr_name        = "${var.signalr_name}-${var.environment_name}"
   sku_name            = var.signalr_sku_name
   sku_capacity        = var.signalr_sku_capacity
 }
 
 module "redis" {
   source              = "./modules/redis"
-  name                = var.redis_name
+  name                = "${var.redis_name}-${var.environment_name}"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
   sku_name            = "Basic"
@@ -99,7 +99,7 @@ module "frontend" {
   source              = "./modules/frontend"
   resource_group_name = azurerm_resource_group.main.name
   location            = azurerm_resource_group.main.location
-  static_web_app_name = var.static_web_app_name
+  static_web_app_name = "${var.static_web_app_name}-${var.environment_name}"
   sku_tier            = var.frontend_sku_tier
   sku_size            = var.frontend_sku_size
   appinsights_retention_days = var.frontend_appinsights_retention_days
