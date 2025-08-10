@@ -5,7 +5,7 @@ metadata:
   namespace: dev
 spec:
   hosts:
-  - teachin-zionet.westeurope.cloudapp.azure.com
+  - teachin-zionet-keda.westeurope.cloudapp.azure.com
   scaleTargetRef:
     name: manager          # Your deployment name
     port: 5001            # Your container port

@@ -87,6 +87,15 @@ jobs:
           chmod +x setup-ingress-controller.sh
           ./setup-ingress-controller.sh
 
+      - name: Add KEDA
+        run: |
+          cd devops/helm-tools
+          chmod +x keda.sh
+          ./keda.sh
+
+      - name: Apply KEDA components
+        run: kubectl apply -f "$K8S_DIR/keda" --recursive
+
       - name: Add grafana
         run: |
           cd devops/helm-tools
@@ -114,9 +123,7 @@ jobs:
           cd devops/helm-tools/loki
           chmod +x loki.sh
           ./loki.sh
-    
-   
-    
+        
       - name: Wait for external IP for ingress controller
         id: wait_for_ingress_ip
         run: |
@@ -155,5 +162,5 @@ jobs:
       - name: Output external URL
         id: extract_url
         run: |
-          echo "app_url=${{ steps.wait_for_ip.outputs.app_url }}" >> $GITHUB_OUTPUT
-          echo "App URL: ${{ steps.wait_for_ip.outputs.app_url }}"
+          echo "app_url=${{ steps.wait_for_ingress_ip.outputs.ingress_url }}" >> $GITHUB_OUTPUT
+          echo "App URL: ${{ steps.wait_for_ingress_ip.outputs.ingress_url }}"
