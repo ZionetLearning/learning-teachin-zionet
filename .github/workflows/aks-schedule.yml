@@ -2,8 +2,8 @@ name: AKS - Scheduled Start/Stop
 
 on:
   schedule:
-    # 8:00 Israel time = 5:00 UTC (START: Sunday-Thursday)
-    - cron: '0 5 * * 0-4'
+    # 7:00 Israel time = 4:00 UTC (START: Sunday-Thursday)
+    - cron: '0 4 * * 0-4'
     # 19:30 Israel time = 16:30 UTC (STOP: Sunday-Saturday)
     - cron: '30 16 * * 0-6'
   workflow_dispatch:  # Allow manual testing
@@ -30,7 +30,7 @@ jobs:
           echo "Day of week: $DAY_OF_WEEK ($DAY_NAME)"
           
           # Determine if this is morning or evening schedule based on hour
-          if [[ $ISRAEL_HOUR -ge 5 && $ISRAEL_HOUR -le 10 ]]; then
+          if [[ $ISRAEL_HOUR -ge 3 && $ISRAEL_HOUR -le 12 ]]; then
             # Morning schedule (around 8:30 AM Israel time)
             echo "Morning schedule detected - START action"
             echo "action=START" >> $GITHUB_OUTPUT
@@ -74,7 +74,7 @@ jobs:
       - name: Start AKS cluster (Morning Schedule)
         if: steps.determine_action.outputs.action == 'START'
         run: |
-          echo "🚀 Starting AKS cluster: $AKS_NAME (morning schedule - 8:30 AM Israel time)"
+          echo "🚀 Starting AKS cluster: $AKS_NAME (morning schedule - 7:00 AM Israel time)"
           START_TIME=$(date +%s)
           az aks start --resource-group $AKS_RG --name $AKS_NAME
           END_TIME=$(date +%s)
