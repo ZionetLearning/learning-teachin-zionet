@@ -1,12 +1,12 @@
 # Implementation Plan
 
-- [ ] 1. Create new data models and DTOs for chat functionality
+- [x] 1. Create new data models and DTOs for chat functionality
   - Create ChatMessage, ChatHistoryResponse, and StoreChatMessagesRequest DTOs in Engine/Models
   - Update ChatRequestDto to include UserId field
   - Write unit tests for new data models
   - _Requirements: 1.2, 2.1, 4.2_
 
-- [ ] 2. Implement Accessor client for Engine service
+- [x] 2. Implement Accessor client for Engine service
   - Create IAccessorClient interface in Engine/Services/Clients directory
   - Implement AccessorClient class with GetChatHistoryAsync and StoreChatMessagesAsync methods
   - Add Dapr client integration for HTTP method invocation
