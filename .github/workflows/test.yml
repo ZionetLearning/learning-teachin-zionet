@@ -1,28 +1,13 @@
 name: test CICD ddddddd
 
 on:
-  push:
-      branches:
-        - yosef/Create-a-ready-made-terraform-for-different-environments
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Select environment'
+        description: 'Enter environment name'
         required: true
         default: 'Development'
-        type: choice
-        options:
-          - Development
-          - Production
-      environment_type:
-        description: 'Select environment type'
-        required: true
-        default: 'Shared'
-        type: choice
-        options:
-          - Shared
-          - Dedicated
-          - Ephemeral
+        type: string
 
 jobs:
   demo-job:
@@ -34,7 +19,6 @@ jobs:
       - name: Print environment details
         run: |
           echo "Environment: ${{ github.event.inputs.environment }}"
-          echo "Environment Type: ${{ github.event.inputs.environment_type }}"
 
       - name: Run a demo command
         run: echo "This is a demo job for the CICD workflow."
