@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata: # This metadata section contains information about the deployment
   name: accessor
-  namespace: dev # Specify the namespace where this deployment will be created
+  namespace: newdev # Specify the namespace where this deployment will be created
   labels:
     app: accessor
 spec:
