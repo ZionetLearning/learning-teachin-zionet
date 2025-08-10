@@ -105,6 +105,7 @@ jobs:
           environment_name = "${{ env.environment_name }}"
           kubernetes_namespace = "${{ env.environment_name }}"
           EOF
+          fi
         working-directory: ${{ env.TF_DIR }}
  
       - name: Terraform Plan
