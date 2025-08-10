@@ -7,3 +7,6 @@
 
 Storybook:
 npm run storybook
+
+Vitest tests:
+npm run vitest
