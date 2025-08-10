@@ -13,5 +13,5 @@ public interface IAccessorService
     Task CreateThreadAsync(ChatThread thread);
     Task AddMessageAsync(ChatMessage message);
     Task<IEnumerable<ChatMessage>> GetMessagesByThreadAsync(Guid threadId);
-    Task<IEnumerable<ChatMessage>> GetMessagesByUserAsync(string userId);
+    Task<List<ThreadSummaryDto>> GetThreadsForUserAsync(string userId);
 }

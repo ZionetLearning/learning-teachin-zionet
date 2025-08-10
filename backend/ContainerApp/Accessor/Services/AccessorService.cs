@@ -253,13 +253,13 @@ public class AccessorService : IAccessorService
         await _dbContext.SaveChangesAsync();
     }
 
-    public async Task<IEnumerable<ChatMessage>> GetMessagesByUserAsync(string userId)
+    public async Task<List<ThreadSummaryDto>> GetThreadsForUserAsync(string userId)
     {
-        return await _dbContext.ChatMessages
-            .Include(m => m.Thread)
-            .Where(m => m.Thread.UserId == userId)
-            .OrderBy(m => m.ThreadId)
-            .ThenBy(m => m.Timestamp)
+        return await _dbContext.ChatThreads
+            .AsNoTracking() // read-only path
+            .Where(t => t.UserId == userId)
+            .OrderByDescending(t => t.UpdatedAt)
+            .Select(t => new ThreadSummaryDto(t.ThreadId, t.ChatName, t.ChatType, t.CreatedAt, t.UpdatedAt))
             .ToListAsync();
     }
 

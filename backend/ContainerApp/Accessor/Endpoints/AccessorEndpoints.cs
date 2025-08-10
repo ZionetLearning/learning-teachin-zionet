@@ -200,7 +200,7 @@ public static class AccessorEndpoints
         using var scope = logger.BeginScope("Handler: {Handler}, UserId: {UserId}", nameof(GetThreadsForUserAsync), userId);
         try
         {
-            var messages = await accessorService.GetMessagesByUserAsync(userId);
+            var messages = await accessorService.GetThreadsForUserAsync(userId);
             logger.LogInformation("Retrieved messages for user");
             return Results.Ok(messages);
         }
