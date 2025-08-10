@@ -1,14 +1,21 @@
 import { useState } from 'react';
 
-import { Box, Card, CardMedia, Typography } from '@mui/material';
 import StarIcon from '@mui/icons-material/Star';
+import { Box, Card, Typography } from '@mui/material';
 
 import { AnimeItem } from '@/types';
+
 import { useStyles } from './style';
 
 export const AnimeCard = ({ anime }: { anime: AnimeItem }) => {
 	const [hovered, setHovered] = useState(false);
 	const classes = useStyles({ hovered });
+
+	const genres = anime.genres?.map((g) => g.name).join(', ') || '—';
+	const type = anime.type || '—';
+	const episodes =
+		typeof anime.episodes === 'number' ? String(anime.episodes) : '—';
+	const score = typeof anime.score === 'number' ? anime.score : '—';
 
 	return (
 		<Card
@@ -16,33 +23,32 @@ export const AnimeCard = ({ anime }: { anime: AnimeItem }) => {
 			onMouseEnter={() => setHovered(true)}
 			onMouseLeave={() => setHovered(false)}
 		>
-			<CardMedia
-				component="img"
-				image={anime.images.jpg.large_image_url}
+			<img
+				src={anime.images.jpg.large_image_url}
 				alt={anime.title}
 				className={classes.media}
+				loading="lazy"
 			/>
-			<Typography variant="h6">{anime.title}</Typography>
-			<Typography className={classes.rating}>
+			<Typography variant="h6" className={classes.titleClamp}>
+				{anime.title}
+			</Typography>
+			<Box className={classes.rating}>
 				<StarIcon className={classes.starIcon} />
-				{anime.score}
+				{score}
+			</Box>
+			<Typography className={classes.genresClamp}>{genres}</Typography>
+			<Box className={classes.spacer} aria-hidden />
+			<Typography variant="body2" className={classes.meta}>
+				{`Type: ${type}`}
 			</Typography>
-			<Typography className={classes.meta}>
-				{anime.genres.map((genre) => genre.name).join(', ')}
+			<Typography variant="body2" className={classes.meta}>
+				{`Episodes: ${episodes}`}
 			</Typography>
-			<Typography
-				variant="h6"
-				className={classes.subtitle}
-			>{`(${anime.title_japanese})`}</Typography>
-			<Typography
-				variant="body2"
-				className={classes.meta}
-			>{`Type: ${anime.type}`}</Typography>
-			<Typography
-				variant="body2"
-				className={classes.meta}
-			>{`Episodes: ${anime.episodes}`}</Typography>
-			<Box className={classes.overlay}>{anime.synopsis}</Box>
+			<Box className={classes.overlay}>
+				<Typography className={classes.synopsisClamp}>
+					{anime.synopsis}
+				</Typography>
+			</Box>
 		</Card>
 	);
 };

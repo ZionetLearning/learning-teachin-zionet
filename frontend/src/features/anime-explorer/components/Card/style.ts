@@ -1,12 +1,9 @@
 import { createUseStyles } from 'react-jss';
 
-type StyleProps = {
-	hovered: boolean;
-};
+type StyleProps = { hovered: boolean };
 
 export const useStyles = createUseStyles<string, StyleProps>({
 	card: {
-		width: 220,
 		display: 'flex',
 		flexDirection: 'column',
 		alignItems: 'center',
@@ -17,46 +14,71 @@ export const useStyles = createUseStyles<string, StyleProps>({
 		position: 'relative',
 		cursor: 'pointer',
 		background: '#fff',
+		boxShadow: '0 6px 22px rgba(2,6,23,0.10)',
+		transition:
+			'transform .2s ease, box-shadow .2s ease, border-color .2s ease',
+		height: 460,
+		boxSizing: 'border-box',
+		'&:hover': {
+			transform: 'translateY(-2px)',
+			boxShadow: '0 14px 40px rgba(2,6,23,0.18)',
+			borderColor: 'transparent',
+		},
 	},
 	media: {
 		width: 150,
-		height: 'auto',
+		height: 200,
+		objectFit: 'cover',
 		borderRadius: 8,
+		display: 'block',
 	},
-	title: {
+	titleClamp: {
 		textAlign: 'center',
+		display: '-webkit-box',
+		WebkitBoxOrient: 'vertical',
+		WebkitLineClamp: 2,
+		overflow: 'hidden',
+	},
+	genresClamp: {
+		fontSize: 14,
+		textAlign: 'center',
+		display: '-webkit-box',
+		WebkitBoxOrient: 'vertical',
+		WebkitLineClamp: 2,
+		overflow: 'hidden',
 	},
 	rating: {
-		display: 'flex',
+		display: 'inline-flex',
 		alignItems: 'center',
 		gap: 4,
+		padding: '2px 8px',
+		borderRadius: 999,
+		background: 'rgba(2,6,23,0.06)',
+		fontWeight: 600,
+		minHeight: 24,
 	},
-	starIcon: {
-		width: 20,
-		height: 20,
-	},
-	subtitle: {
-		textAlign: 'center',
-	},
-	meta: {
-		fontSize: 14,
-	},
-	overlay: (props) => ({
+	starIcon: { width: 20, height: 20, color: '#fbbf24' },
+	meta: { fontSize: 14 },
+	spacer: { flex: 1 },
+	overlay: (p) => ({
 		position: 'absolute',
-		top: 0,
-		right: 0,
-		bottom: 0,
-		left: 0,
-		backgroundColor: 'rgba(0, 0, 0, 0.5)',
+		inset: 0,
+		backgroundColor: 'rgba(15, 23, 42, 0.84)',
 		color: '#fff',
-		display: 'flex',
-		alignItems: 'center',
-		justifyContent: 'center',
-		textAlign: 'center',
+		display: 'block',
 		padding: 10,
-		fontSize: '0.85rem',
-		wordBreak: 'break-word',
-		opacity: props.hovered ? 1 : 0,
+		opacity: p.hovered ? 1 : 0,
 		transition: 'opacity 0.3s ease',
+		overflow: 'hidden',
 	}),
+	synopsisClamp: {
+		display: '-webkit-box',
+		WebkitBoxOrient: 'vertical',
+		WebkitLineClamp: 17,
+		overflow: 'hidden',
+		textOverflow: 'ellipsis',
+		whiteSpace: 'normal',
+		fontSize: 16,
+		lineHeight: 1.45,
+	},
 });

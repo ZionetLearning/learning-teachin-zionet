@@ -1,69 +1,68 @@
 import { createUseStyles } from 'react-jss';
 
-type StyleProps = {
+type PageStyleProps = {
 	isFetchingNextPage: boolean;
+	showBackToTop: boolean;
 };
 
-export const useStyles = createUseStyles<string, StyleProps>({
+export const useStyles = createUseStyles<string, PageStyleProps>({
 	root: {
 		height: '100%',
 		display: 'flex',
 		flexDirection: 'column',
-		boxSizing: 'border-box',
-		backgroundColor: '#f0f0f0',
+		background: 'linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%)',
 	},
-	searchBar: {
-		padding: '12px 20px',
-		backgroundColor: '#fff',
-		borderBottom: '1px solid #e5e5e5',
-		display: 'flex',
-		gap: '10px',
-	},
-	searchInput: {
+	listWrap: {
 		flex: 1,
-		padding: '10px 12px',
-		borderRadius: 8,
-		border: '1px solid #ccc',
-		fontSize: '16px',
-		backgroundColor: '#fafafa',
-		color: '#333',
-		outline: 'none',
-		'&:focus': {
-			borderColor: '#999',
-			backgroundColor: '#fff',
-		},
+		overflow: 'auto',
 	},
-	clearButton: {
-		padding: '10px 12px',
-		borderRadius: 8,
-		border: '1px solid #ccc',
-		backgroundColor: '#fafafa',
-		cursor: 'pointer',
-		color: '#333',
-		transition: 'background-color 0.15s ease',
-		'&:hover': {
-			backgroundColor: '#e0e0e0',
-		},
+	listInner: {
+		maxWidth: 1200,
+		margin: '0 auto',
+		padding: 20,
 	},
-	list: {
-		flex: 1,
-		overflowY: 'auto',
-		padding: '20px',
-		boxSizing: 'border-box',
-		display: 'flex',
-		flexWrap: 'wrap',
+	grid: {
+		display: 'grid',
+		gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
 		gap: '20px',
-		justifyContent: 'center',
+		alignContent: 'start',
+		justifyItems: 'stretch',
 	},
-	sentinel: {
-		height: 1,
-		width: '100%',
-	},
-	loadingMore: {
-		color: '#000',
+	sentinel: { height: 1, width: '100%' },
+	loading: {
+		color: '#111827',
 		width: '100%',
 		textAlign: 'center',
-		visibility: (props: { isFetchingNextPage: boolean }) =>
-			props.isFetchingNextPage ? 'visible' : 'hidden',
+		marginTop: 12,
+	},
+	loadingMore: (p) => ({
+		extend: 'loading',
+		visibility: p.isFetchingNextPage ? 'visible' : 'hidden',
+	}),
+	backToTop: (p) => ({
+		position: 'fixed',
+		right: 20,
+		bottom: 20,
+		opacity: p.showBackToTop ? 1 : 0,
+		pointerEvents: p.showBackToTop ? 'auto' : 'none',
+		transition: 'opacity 200ms ease',
+		background: '#0ea5e9',
+		color: '#fff',
+		border: 'none',
+		borderRadius: 999,
+		padding: '10px 14px',
+		boxShadow: '0 8px 24px rgba(2,132,199,0.35)',
+		cursor: 'pointer',
+	}),
+	srOnly: {
+		position: 'absolute',
+		width: 1,
+		height: 1,
+		padding: 0,
+		margin: -1,
+		overflow: 'hidden',
+		clip: 'rect(0,0,0,0)',
+		whiteSpace: 'nowrap',
+		border: 0,
 	},
 });

@@ -1,17 +1,20 @@
-import { AnimeResponse } from '@/types';
 import {
 	InfiniteData,
 	useInfiniteQuery,
 	UseInfiniteQueryResult,
 } from '@tanstack/react-query';
 
+import { AnimeResponse } from '@/types';
+
+interface GetAnimeSearchParams {
+	page?: number;
+	search?: string;
+}
+
 const getAnimeSearch = async ({
 	page = 1,
 	search = '',
-}: {
-	page?: number;
-	search?: string;
-}): Promise<AnimeResponse> => {
+}: GetAnimeSearchParams): Promise<AnimeResponse> => {
 	const params = new URLSearchParams({
 		page: String(page),
 		limit: '20',
@@ -33,11 +36,11 @@ const getAnimeSearch = async ({
 	}
 };
 
-export function useGetAnimeSearch({
+export const useGetAnimeSearch = ({
 	search,
 }: {
 	search: string;
-}): UseInfiniteQueryResult<InfiniteData<AnimeResponse>, Error> {
+}): UseInfiniteQueryResult<InfiniteData<AnimeResponse>, Error> => {
 	return useInfiniteQuery<
 		AnimeResponse,
 		Error,
@@ -55,4 +58,4 @@ export function useGetAnimeSearch({
 		staleTime: 1000 * 60 * 5,
 		retry: 1,
 	});
-}
+};
