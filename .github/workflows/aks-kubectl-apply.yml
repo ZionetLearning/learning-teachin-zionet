@@ -49,6 +49,7 @@ jobs:
           echo "NAMESPACE_FILE=devops/kubernetes/namespaces/namespace-dev.yaml" >> $GITHUB_ENV
           echo "DOCKER_REGISTRY=${{ secrets.DOCKER_USERNAME }}" >> $GITHUB_ENV
           echo "OPENAI_KEY=${{ secrets.AZURE_OPENAI_API_KEY }}" >> $GITHUB_ENV
+          echo "ACR_NAME=teachindevacr" >> $GITHUB_ENV
           echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
           echo "MC_AKS_RG=MC_dev-zionet-learning-2025_aks-cluster-dev_westeurope" >> $GITHUB_ENV
           echo "PG_DB=pg-zionet-dev-2025" >> $GITHUB_ENV
@@ -154,5 +155,5 @@ jobs:
       - name: Output external URL
         id: extract_url
         run: |
-          echo "app_url=${{ steps.wait_for_ip.outputs.app_url }}" >> $GITHUB_OUTPUT
-          echo "App URL: ${{ steps.wait_for_ip.outputs.app_url }}"
+          echo "app_url=${{ steps.wait_for_ingress_ip.outputs.ingress_url }}" >> $GITHUB_OUTPUT
+          echo "App URL: ${{ steps.wait_for_ingress_ip.outputs.ingress_url }}"
