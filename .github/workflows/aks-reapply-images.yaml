@@ -1,4 +1,4 @@
-name: AKS - ReApply images only
+name: AKS - ReApply images from current ACR (without new build and push)
 
 on:
   workflow_dispatch:
