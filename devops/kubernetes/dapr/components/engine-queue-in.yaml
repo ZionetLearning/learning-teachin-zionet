@@ -1,7 +1,7 @@
 apiVersion: dapr.io/v1alpha1
 kind: Component
 metadata:
-  name: manager-to-ai
+  name: engine-queue-in
   namespace: dev
 spec:
   type: bindings.azure.servicebusqueues
@@ -12,11 +12,10 @@ spec:
         name: azure-service-bus-secret
         key: AzureServiceBusConnectionString
     - name: queueName
-      value: "manager-to-ai"
+      value: engine-queue
     - name: direction
-      value: output
+      value: input
     - name: disableEntityManagement
       value: "true"
 scopes:
-  - manager
   - engine

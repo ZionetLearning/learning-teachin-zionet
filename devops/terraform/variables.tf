@@ -49,12 +49,9 @@ variable "queue_names" {
   description = "List of Service Bus queues to create"
   type = list(string)
   default = [
-              "manager-to-engine",
-              "taskupdate",
-              "engine-to-accessor",
-              "taskupdate-input",
-              "manager-to-ai",
-              "ai-to-manager",
+              "manager-callback-queue",
+              "engine-queue",
+              "accessor-queue",
             ]
 }
 

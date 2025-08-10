@@ -1,7 +1,7 @@
 apiVersion: dapr.io/v1alpha1
 kind: Component
 metadata:
-  name: manager-to-engine
+  name: accessor-queue-in
   namespace: dev
 spec:
   type: bindings.azure.servicebusqueues
@@ -10,13 +10,14 @@ spec:
     - name: connectionString
       secretKeyRef:
         name: azure-service-bus-secret
-        key: AzureServiceBusConnectionString
+        key: AzureServiceBusConnectionString    
     - name: queueName
-      value: "manager-to-engine"
+      value: accessor-queue
     - name: direction
-      value: output
+      value: input
     - name: disableEntityManagement
       value: "true"
 scopes:
-  - manager
-  - engine
+  - accessor
+
+

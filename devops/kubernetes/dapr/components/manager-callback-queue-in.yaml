@@ -1,7 +1,7 @@
 apiVersion: dapr.io/v1alpha1
 kind: Component
 metadata:
-  name: engine-to-accessor
+  name: manager-callback-queue-in
   namespace: dev
 spec:
   type: bindings.azure.servicebusqueues
@@ -12,10 +12,10 @@ spec:
         name: azure-service-bus-secret
         key: AzureServiceBusConnectionString
     - name: queueName
-      value: "engine-to-accessor"
+      value: manager-callback-queue
     - name: direction
-      value: output
+      value: input
     - name: disableEntityManagement
       value: "true"
 scopes:
-  - engine
+  - manager
