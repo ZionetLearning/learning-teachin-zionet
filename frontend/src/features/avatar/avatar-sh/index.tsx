@@ -1,12 +1,9 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useAvatarSpeech } from "./hooks";
-import avatar from "./assets/avatar.svg";
+import { useAvatarSpeech } from "@/hooks";
+import avatar from "@/assets/avatar.svg";
+import { lipsArray } from "@/assets/lips";
 import { useStyles } from "./style";
-
-type SvgModule = { default: string };
-const lips = import.meta.glob("./assets/lips/*.svg", { eager: true });
-const lipsArray = Object.values(lips).map((mod) => (mod as SvgModule).default);
 
 export const AvatarSh = () => {
   const { t } = useTranslation();

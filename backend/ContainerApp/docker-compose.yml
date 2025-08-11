@@ -238,7 +238,7 @@ services:
       "-app-id", "engine",
       "-app-port", "5002",
       "-placement-host-address", "placement:50006",
-      "-dapr-http-port", "3501",
+      "-dapr-http-port", "3500",
       "--resources-path", "/dapr/components",
       "-config", "/dapr/config.yaml"
     ]
@@ -246,7 +246,7 @@ services:
       - ./dapr:/dapr
     network_mode: "service:engine"
     healthcheck:
-        test: ["CMD", "nc", "-z", "localhost", "3501"]
+        test: ["CMD", "nc", "-z", "localhost", "3500"]
         interval: 10s
         retries: 3
 
@@ -294,7 +294,7 @@ services:
       "-app-id", "accessor",
       "-app-port", "5003",
       "-placement-host-address", "placement:50006",
-      "-dapr-http-port", "3502",
+      "-dapr-http-port", "3500",
       "--resources-path", "/dapr/components",
       "-config", "/dapr/config.yaml"
     ]
@@ -302,7 +302,7 @@ services:
       - ./dapr:/dapr
     network_mode: "service:accessor"
     healthcheck:
-        test: ["CMD", "nc", "-z", "localhost", "3502"]
+        test: ["CMD", "nc", "-z", "localhost", "3500"]
         interval: 10s
         retries: 3
 

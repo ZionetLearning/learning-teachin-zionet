@@ -18,6 +18,8 @@ import HomeIcon from "@mui/icons-material/Home";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import PublicIcon from "@mui/icons-material/Public";
 import WeatherWidgetIcon from "@mui/icons-material/Cloud";
+import ThreePIcon from "@mui/icons-material/ThreeP";
+import LiveTvIcon from "@mui/icons-material/LiveTv";
 import GBFlag from "country-flag-icons/react/3x2/GB";
 import ILFlag from "country-flag-icons/react/3x2/IL";
 import { useAuth } from "@/providers/auth";
@@ -112,13 +114,15 @@ export const SidebarMenu = () => {
           {t("sidebar.home")}
         </MenuItem>
 
+        <MenuItem
+          icon={<ThreePIcon />}
+          onClick={() => handleNavigation("/chat-with-avatar")}
+          active={isActive("/chat-with-avatar")}
+        >
+          {t("sidebar.chatAvatar")}
+        </MenuItem>
+
         <SubMenu label={t("sidebar.chatTools")} icon={<ChatIcon />}>
-          <MenuItem
-            onClick={() => handleNavigation("/chat/sh")}
-            active={isActive("/chat/sh")}
-          >
-            {t("sidebar.chatSh")}
-          </MenuItem>
           <MenuItem
             onClick={() => handleNavigation("/chat/yo")}
             active={isActive("/chat/yo")}
@@ -136,12 +140,6 @@ export const SidebarMenu = () => {
             active={isActive("/chat/ou")}
           >
             {t("sidebar.chatOu")}
-          </MenuItem>
-          <MenuItem
-            onClick={() => handleNavigation("/chat-avatar")}
-            active={isActive("/chat-avatar")}
-          >
-            {t("sidebar.chatAvatar")}
           </MenuItem>
         </SubMenu>
 
@@ -200,6 +198,13 @@ export const SidebarMenu = () => {
           active={isActive("/weather")}
         >
           {t("sidebar.weather")}
+        </MenuItem>
+        <MenuItem
+          onClick={() => handleNavigation("/anime-explorer")}
+          icon={<LiveTvIcon />}
+          active={isActive("/anime-explorer")}
+        >
+          Anime Explorer
         </MenuItem>
       </Menu>
       <Menu

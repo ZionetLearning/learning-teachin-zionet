@@ -19,7 +19,7 @@ public sealed record AiRequestModel
 
     [Required(ErrorMessage = "ReplyToQueue is required.")]
     [MinLength(1, ErrorMessage = "ReplyToQueue cannot be empty.")]
-    public string ReplyToQueue { get; init; } = QueueNames.AiToManager;
+    public string ReplyToQueue { get; init; } = QueueNames.ManagerCallbackQueue;
 
     public static AiRequestModel Create(string question, string threadId, string replyToQueue, int ttlSeconds)
     {

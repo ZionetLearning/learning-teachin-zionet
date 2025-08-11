@@ -32,12 +32,12 @@ public class AccessorService : IAccessorService
         try
         {
             _logger.LogInformation("Applying EF Core migrations...");
-            await _dbContext.Database.MigrateAsync();
+            await _dbContext.Database.EnsureCreatedAsync();
             _logger.LogInformation("Database migration completed.");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to connect to PostgreSQL during startup.");
+            _logger.LogError(ex, "Failed to initialize PostgreSQL during startup.");
             throw;
         }
     }
@@ -242,4 +242,65 @@ public class AccessorService : IAccessorService
 
     private static string GetTaskCacheKey(int taskId) => $"task:{taskId}";
 
+    public async Task<ChatThread?> GetThreadByIdAsync(Guid threadId)
+    {
+        return await _dbContext.ChatThreads.FindAsync(threadId);
+    }
+
+    public async Task CreateThreadAsync(ChatThread thread)
+    {
+        _dbContext.ChatThreads.Add(thread);
+        await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task<List<ThreadSummaryDto>> GetThreadsForUserAsync(string userId)
+    {
+        return await _dbContext.ChatThreads
+            .AsNoTracking() // read-only path
+            .Where(t => t.UserId == userId)
+            .OrderByDescending(t => t.UpdatedAt)
+            .Select(t => new ThreadSummaryDto(t.ThreadId, t.ChatName, t.ChatType, t.CreatedAt, t.UpdatedAt))
+            .ToListAsync();
+    }
+
+    public async Task AddMessageAsync(ChatMessage message)
+    {
+        // 1) Look up the parent thread
+        var thread = await _dbContext.ChatThreads.FindAsync(message.ThreadId);
+
+        message.Timestamp = message.Timestamp.ToUniversalTime();
+        // 2) If missing, insert it first
+        if (thread is null)
+        {
+            thread = new ChatThread
+            {
+                ThreadId = message.ThreadId,
+                UserId = message.UserId,
+                ChatType = "default",
+                CreatedAt = message.Timestamp,
+                UpdatedAt = message.Timestamp
+            };
+            _dbContext.ChatThreads.Add(thread);
+        }
+        else
+        {
+            // 3) If it exists, just bump the timestamp
+            thread.UpdatedAt = message.Timestamp;
+        }
+
+        // 4) Now it's safe to add the child message
+        _dbContext.ChatMessages.Add(message);
+
+        // 5) Commit both inserts/updates in one SaveChanges
+        await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task<IEnumerable<ChatMessage>> GetMessagesByThreadAsync(Guid threadId)
+    {
+        return await _dbContext.ChatMessages
+            .AsNoTracking()
+            .Where(m => m.ThreadId == threadId)
+            .OrderBy(m => m.Timestamp)
+            .ToListAsync();
+    }
 }

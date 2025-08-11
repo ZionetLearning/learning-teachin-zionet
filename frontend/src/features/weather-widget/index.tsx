@@ -13,7 +13,7 @@ export const WeatherWidget = () => {
   const [search, setSearch] = useState<string>("");
   const [locating, setLocating] = useState(false);
   const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(
-    null
+    null,
   );
 
   const presetCities = [
@@ -55,7 +55,7 @@ export const WeatherWidget = () => {
           setLocating(false);
           setSelected(null);
           console.warn("Location access denied or not supported");
-        }
+        },
       );
     }
   };
