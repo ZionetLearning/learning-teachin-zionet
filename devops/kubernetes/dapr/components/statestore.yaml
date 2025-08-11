@@ -11,11 +11,11 @@ spec:
   metadata:
     - name: redisHost
       secretKeyRef:
-        name: redis-connection
+        name: redis-connection-${ENVIRONMENT_NAME}
         key: redis-hostport
     - name: redisPassword
       secretKeyRef:
-        name: redis-connection
+        name: redis-connection-${ENVIRONMENT_NAME}
         key: redis-password
     - name: redisTlsEnabled
       value: "true"

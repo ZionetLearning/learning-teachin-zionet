@@ -9,7 +9,7 @@ spec:
   metadata:
     - name: connectionString
       secretKeyRef:
-        name: azure-service-bus-secret
+        name: azure-service-bus-secret-${ENVIRONMENT_NAME}
         key: AzureServiceBusConnectionString
     - name: queueName
       value: "engine-to-accessor"

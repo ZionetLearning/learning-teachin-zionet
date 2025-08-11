@@ -23,6 +23,10 @@ spec:
         dapr.io/enabled: "true"
         dapr.io/app-id: "engine-${ENVIRONMENT_NAME}"
         dapr.io/app-port: "5002"
+        dapr.io/sidecar-cpu-request: "100m"
+        dapr.io/sidecar-memory-request: "128Mi"
+        dapr.io/sidecar-cpu-limit: "200m"
+        dapr.io/sidecar-memory-limit: "256Mi"
       labels:
         io.kompose.service: engine
         environment: ${ENVIRONMENT_NAME}

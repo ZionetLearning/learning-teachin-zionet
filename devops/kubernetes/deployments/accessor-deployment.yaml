@@ -21,6 +21,10 @@ spec:
         dapr.io/enabled: "true" # Enable Dapr for this pod
         dapr.io/app-id: "accessor-${ENVIRONMENT_NAME}" # Dapr application ID
         dapr.io/app-port: "5003"  # Dapr app port
+        dapr.io/sidecar-cpu-request: "100m"
+        dapr.io/sidecar-memory-request: "128Mi"
+        dapr.io/sidecar-cpu-limit: "200m"
+        dapr.io/sidecar-memory-limit: "256Mi"
     spec: # This spec defines the pod's containers and their configurations
       containers:
         - name: accessor

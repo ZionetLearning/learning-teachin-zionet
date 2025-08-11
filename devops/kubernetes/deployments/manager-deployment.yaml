@@ -21,6 +21,10 @@ spec:
         dapr.io/enabled: "true"
         dapr.io/app-id: "manager-${ENVIRONMENT_NAME}"
         dapr.io/app-port: "5001"
+        dapr.io/sidecar-cpu-request: "100m"
+        dapr.io/sidecar-memory-request: "128Mi"
+        dapr.io/sidecar-cpu-limit: "200m"
+        dapr.io/sidecar-memory-limit: "256Mi"
         kompose.cmd: D:\Tool\kompose.exe convert -f .\docker-compose.yaml
         kompose.version: 1.36.0 (ae2a39403)
       labels:
