@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 NAMESPACE="devops-logs"
 EMAIL="snir1552@gmail.com"
@@ -8,11 +8,22 @@ DOMAIN="teachin-zionet.westeurope.cloudapp.azure.com"
 echo "1. Installing cert-manager..."
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.0/cert-manager.yaml
 
-echo "2. Waiting for cert-manager to be ready..."
-kubectl wait --for=condition=ready pod -l app=cert-manager -n cert-manager --timeout=120s
+echo "2) Wait for cert-manager deployments to be Available"
+kubectl -n cert-manager rollout status deploy/cert-manager --timeout=3m
+kubectl -n cert-manager rollout status deploy/cert-manager-cainjector --timeout=3m
+kubectl -n cert-manager rollout status deploy/cert-manager-webhook --timeout=3m
 
-echo "3. Creating Let's Encrypt ClusterIssuer..."
-kubectl apply -f ../kubernetes/ingress/letsencrypt-clusterissuer.yaml
+echo "2.1) Ensure webhook service has endpoints"
+kubectl -n cert-manager wait --for=jsonpath='{.subsets[0].addresses[0].ip}' endpoints/cert-manager-webhook --timeout=120s
+
+echo "3) Create/Update Let's Encrypt ClusterIssuer (retry until webhook is up)"
+for i in {1..5}; do
+  if kubectl apply -f ../kubernetes/ingress/letsencrypt-clusterissuer.yaml; then
+    break
+  fi
+  echo "ClusterIssuer apply failed (try $i). Waiting 10s and retrying…"
+  sleep 10
+done
 
 echo "4. Applying the HTTPS-enabled grafana ingress..."
 kubectl apply -f ../kubernetes/ingress/grafana-ingress.yaml

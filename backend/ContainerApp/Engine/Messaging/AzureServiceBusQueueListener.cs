@@ -44,8 +44,10 @@ public class AzureServiceBusQueueListener<T> : IQueueListener<T>, IAsyncDisposab
 
             var renewLock = async () =>
             {
+                _logger.LogInformation("Lock till: {Time}", args.Message.LockedUntil);
                 await args.RenewMessageLockAsync(args.Message, linkedCts.Token);
                 _logger.LogDebug("Lock renewed for message {MessageId}", args.Message.MessageId);
+                _logger.LogInformation("Lock till: {Time}", args.Message.LockedUntil);
             };
 
             try
