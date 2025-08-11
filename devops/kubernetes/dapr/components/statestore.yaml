@@ -2,7 +2,7 @@ apiVersion: dapr.io/v1alpha1
 kind: Component
 metadata:
   name: statestore
-  namespace: dev
+  namespace: ${ENVIRONMENT_NAME}
   annotations:
     dapr.io/component-init-timeout: "120s"
 spec:

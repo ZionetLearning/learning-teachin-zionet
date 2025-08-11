@@ -96,7 +96,11 @@ jobs:
           EOF
 
       - name: Apply Dapr components
-        run: kubectl apply -f "$K8S_DIR/dapr/components" --recursive
+        run: |
+          find "$K8S_DIR/dapr/components" -type f -name '*.yaml' | while read file; do
+            echo "Applying Dapr component: $file"
+            ENVIRONMENT_NAME=$ENVIRONMENT_NAME envsubst < "$file" | kubectl apply -f -
+          done
 
       - name: Apply services
         run: |

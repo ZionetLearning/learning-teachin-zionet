@@ -2,7 +2,7 @@ apiVersion: dapr.io/v1alpha1
 kind: Component
 metadata:
   name: pubsub
-  namespace: dev
+  namespace: ${ENVIRONMENT_NAME}
 spec:
   type: pubsub.azure.servicebus
   version: v1
