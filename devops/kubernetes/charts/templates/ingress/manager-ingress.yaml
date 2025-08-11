@@ -27,7 +27,7 @@ spec:
             pathType: ImplementationSpecific
             backend:
               service:
-                name: "{{ printf "%s-manager" .Values.global.namePrefix }}"
+                name: "{{ .Values.manager.name }}"
                 port:
-                  number: 80
+                  number: {{ .Values.manager.ports.service }}
 {{- end }}
