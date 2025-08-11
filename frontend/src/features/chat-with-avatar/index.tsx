@@ -7,7 +7,7 @@ import avatar from "@/assets/avatar.svg";
 import { lipsArray } from "@/assets/lips";
 import { useStyles } from "./style";
 
-export const ChatAvatar = () => {
+export const ChatWithAvatar = () => {
   const classes = useStyles();
   const { t } = useTranslation();
   const { sendMessage, loading, messages } = useChat();

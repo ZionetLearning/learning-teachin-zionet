@@ -4,7 +4,7 @@ export * from "./AvatarDaPage";
 export * from "./ChatDaPage";
 export * from "./ChatYoPage";
 export * from "./ChatOuPage";
-export * from "./ChatAvatarPage";
+export * from "./ChatWithAvatarPage";
 export * from "./HomePages";
 export * from "./TypingPracticePage";
 export * from "./SpeakingPracticePage";
