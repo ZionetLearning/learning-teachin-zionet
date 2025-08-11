@@ -6,7 +6,7 @@ using Accessor.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http.HttpResults;
 
-namespace AccessorUnitTests;
+namespace Accessor.UnitTests;
 
 public class AccessorEndpointsTests
 {
