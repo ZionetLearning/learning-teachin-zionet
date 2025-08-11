@@ -4,7 +4,7 @@ set -e
 NAMESPACE="devops-ingress-nginx"
 RELEASE_NAME="ingress-nginx"
 STATIC_IP_NAME="ingress-controller-ip"
-MC_RG="MC_dev-zionet-learning-2025_aks-cluster-dev_westeurope-keda"
+MC_RG="MC_dev-zionet-learning-2025-keda_aks-cluster-dev_westeurope"
 LOCATION="westeurope"
 DNS_LABEL="teachin-zionet-keda"
 
