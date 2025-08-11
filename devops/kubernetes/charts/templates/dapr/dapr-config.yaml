@@ -1,14 +1,8 @@
-apiVersion: v1
-kind: ConfigMap
+apiVersion: dapr.io/v1alpha1
+kind: Configuration
 metadata:
-  name: dapr-config
+  name: {{ .Values.global.dapr.configName | default "daprConfig" }}
   namespace: {{ include "app.namespace" . }}
-data:
-  config.yaml: |
-    apiVersion: dapr.io/v1alpha1
-    kind: Configuration
-    metadata:
-      name: daprConfig
-    spec:
-      tracing:
-        samplingRate: "1"
+spec:
+  tracing:
+    samplingRate: "1"

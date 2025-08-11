@@ -16,6 +16,9 @@
 dapr.io/enabled: "true"
 dapr.io/app-id: "{{ .appId }}"
 dapr.io/app-port: "{{ .appPort }}"
+{{- if .config }}
+dapr.io/config: "{{ .config }}"
+{{- end }}
 {{- end }}
 {{- end -}}
 
