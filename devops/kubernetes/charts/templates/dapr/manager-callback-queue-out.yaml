@@ -1,7 +1,7 @@
 apiVersion: dapr.io/v1alpha1
 kind: Component
 metadata:
-  name: {{ include "app.join" (list (include "app.prefix" .) "taskupdate-input") }}
+  name: {{ include "app.join" (list (include "app.prefix" .) "manager-callback-queue-out") }}
   namespace: {{ include "app.namespace" . }}
 spec:
   type: bindings.azure.servicebusqueues
@@ -12,10 +12,10 @@ spec:
         name: azure-service-bus-secret
         key: AzureServiceBusConnectionString
     - name: queueName
-      value: {{ include "app.sbName" (list $ "taskupdate") | quote }}
+      value: {{ include "app.sbName" (list $ "manager-callback-queue") | quote }}
     - name: direction
-      value: input
+      value: output
     - name: disableEntityManagement
       value: "true"
 scopes:
-  - {{ .Values.accessor.dapr.appId  | default .Values.accessor.name  | quote }}
+  - {{ .Values.engine.dapr.appId  | default .Values.engine.name  | quote }}
