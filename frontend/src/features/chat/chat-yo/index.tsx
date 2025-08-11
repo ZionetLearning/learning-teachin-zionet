@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useChat } from "./hooks";
+import { useChat } from "@/hooks";
 import { useStyles } from "./style";
-import { ChatUi } from "./components";
+import { ReactChatElements } from "@/components";
 import "react-chat-elements/dist/main.css";
 
 export const ChatYo = () => {
@@ -15,7 +15,7 @@ export const ChatYo = () => {
 
   return (
     <div className={classes.chatWrapper}>
-      <ChatUi
+      <ReactChatElements
         messages={messages}
         loading={loading}
         value={input}

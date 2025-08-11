@@ -67,7 +67,7 @@
         "score": "Score:"
       },
       "chatAvatar": {
-        "chatAvatarPage": "Chat Avatar Page",
+        "chatAvatarPage": "Chat with Avatar - Connected to backend",
         "typeMessage": "Type a message...",
         "avatar": "Avatar",
         "lips": "Lips"
@@ -198,7 +198,7 @@
       "chatYo": "Chat - Yo (Yonatan)",
       "chatDa": "Chat - Da (Daniel)",
       "chatOu": "Chat - Ou (Ouriel)",
-      "chatAvatar": "Chat - Avatar",
+      "chatAvatar": "Chat with Avatar",
       "avatarTools": "Avatar Tools",
       "avatarOu": "Avatar - Ou",
       "avatarSh": "Avatar - Sh",

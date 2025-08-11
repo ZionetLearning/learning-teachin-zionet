@@ -38,7 +38,10 @@ export const useStyles = createUseStyles({
     borderRadius: "0%",
     paddingLeft: "6px",
     "& input": {
-      color: "#fff",
+      color: "black",
+      "@media (prefers-color-scheme: dark)": {
+        color: "white",
+      },
     },
   },
   inputAvatar: {
@@ -49,7 +52,10 @@ export const useStyles = createUseStyles({
     borderRadius: 5,
     boxSizing: "border-box",
     "& input": {
-      color: "#fff",
+      color: "black",
+      "@media (prefers-color-scheme: dark)": {
+        color: "white",
+      },
     },
   },
   rightButtons: {
