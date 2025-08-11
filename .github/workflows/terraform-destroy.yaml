@@ -43,6 +43,9 @@ jobs:
       ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      TF_DIR: terraform
+      TF_IN_AUTOMATION: true
+      TF_LOG: INFO
       ARM_USE_AZUREAD: "true" # matches `use_azuread_auth = true`
 
     steps:
@@ -67,45 +70,34 @@ jobs:
       - name: Extract and validate environment variables
         id: extract_env
         run: |
-          # Determine which environment_name to use (custom or predefined)
+          # Determine environment name to use
           if [ -n "${{ inputs.environment_name }}" ]; then
-            CUSTOM_ENV="${{ inputs.environment_name }}"
+            ENVIRONMENT_NAME="${{ inputs.environment_name }}"
           elif [ -n "${{ github.event.inputs.environment_name }}" ]; then
-            CUSTOM_ENV="${{ github.event.inputs.environment_name }}"
+            ENVIRONMENT_NAME="${{ github.event.inputs.environment_name }}"
+       
+          
+          # Choose tfvars file based on environment name
+          if [ "$ENVIRONMENT_NAME" = "dev" ]; then
+            TFVARS_FILE="terraform.tfvars.dev"
+          elif [ "$ENVIRONMENT_NAME" = "prod" ]; then
+            TFVARS_FILE="terraform.tfvars.prod"
           else
-            CUSTOM_ENV=""
+            # Custom environments use template
+            TFVARS_FILE="terraform.tfvars.template"
           fi
           
-          # Set environment variables based on input
-          if [ -n "$CUSTOM_ENV" ]; then
-            # Custom environment
-            ENVIRONMENT_NAME="$CUSTOM_ENV"
-            TFVARS_FILE="terraform.tfvars.template"
-          else
-            # Predefined environments
-            case "${{ inputs.environment || github.event.inputs.environment }}" in
-              "Development")
-                ENVIRONMENT_NAME="dev"
-                TFVARS_FILE="terraform.tfvars.dev"
-                ;;
-              "Production")
-                ENVIRONMENT_NAME="prod"
-                TFVARS_FILE="terraform.tfvars.prod"
-                ;;
-              *)
-                echo "Unknown environment: ${{ inputs.environment || github.event.inputs.environment }}"
-                exit 1
-                ;;
-            esac
+          # Validate environment name (lowercase letters and digits only)
+          if [[ ! "$ENVIRONMENT_NAME" =~ ^[a-z0-9]+$ ]]; then
+            echo "Error: Environment name '$ENVIRONMENT_NAME' must contain only lowercase letters and digits"
+            exit 1
           fi
+          
+          echo "📄 Using tfvars file: $TFVARS_FILE"
           
           echo "environment_name=$ENVIRONMENT_NAME" >> $GITHUB_ENV
           echo "TFVARS_FILE=$TFVARS_FILE" >> $GITHUB_ENV
-
-      - name: Generate dynamic backend key
-        run: |
-          BACKEND_KEY="${{ env.environment_name }}.terraform.tfstate"
-          echo "backend_key=$BACKEND_KEY" >> $GITHUB_ENV
+          echo "backend_key=${ENVIRONMENT_NAME}.terraform.tfstate" >> $GITHUB_ENV
 
       - name: Terraform Init with dynamic backend
         run: |
@@ -114,14 +106,19 @@ jobs:
             -reconfigure
         working-directory: ${{ env.TF_DIR }}
 
-      - name: Terraform vars file (for custom environments)
+      - name: Terraform vars file
         working-directory: ${{ env.TF_DIR }}
         run: |
-          if [ -f "${{ env.TFVARS_FILE }}" ] && [ "${{ env.TFVARS_FILE }}" == "terraform.tfvars.template" ]; then
+          # Only generate template configuration for custom environments
+          if [ "${{ env.TFVARS_FILE }}" = "terraform.tfvars.template" ]; then
             echo "" >> terraform.tfvars.template
             echo "#------------- Dynamic Environment Configuration -------------" >> terraform.tfvars.template
             echo "environment_name = \"${{ env.environment_name }}\"" >> terraform.tfvars.template
             echo "kubernetes_namespace = \"${{ env.environment_name }}\"" >> terraform.tfvars.template
+            
+            echo "✅ Generated terraform.tfvars.template with environment: ${{ env.environment_name }}"
+          else
+            echo "✅ Using pre-configured tfvars file: ${{ env.TFVARS_FILE }}"
           fi
 
       - name: Terraform Plan (Destroy)
