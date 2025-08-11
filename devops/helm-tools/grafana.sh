@@ -6,7 +6,7 @@ NAMESPACE="devops-logs"
 ADMIN_USER="admin"
 ADMIN_PASS="admin123"
 GRAFANA_CHART_VERSION="9.3.0"
-MC_RG="MC_dev-zionet-learning-2025_aks-cluster-dev_westeurope"
+MC_RG="MC_dev-zionet-learning-2025_aks-cluster-dev_westeurope-keda"
 # The following will fetch the static public IP from Azure
 CONTROLLER_IP="teaching-zionet.westeurope.cloudapp.azure.com"
 # -----------------------------
