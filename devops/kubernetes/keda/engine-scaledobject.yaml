@@ -1,0 +1,16 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: engine-scaledobject
+  namespace: dev
+spec:
+  scaleTargetRef:
+    name: engine
+  minReplicaCount: 0
+  maxReplicaCount: 3
+  pollingInterval: 1
+  triggers:
+    - type: kubernetes-workload
+      metadata:
+        podSelector: 'io.kompose.service=manager'
+        value: "1"
