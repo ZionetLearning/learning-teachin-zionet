@@ -6,9 +6,9 @@ export type ChatPosition = "left" | "right";
 export type ChatSender = "user" | "system";
 
 export interface ChatMessage {
-  position: ChatPosition; 
-  type: "text"; 
-  sender: ChatSender; 
+  position: ChatPosition;
+  type: "text";
+  sender: ChatSender;
   text: string;
   date: Date;
 }
@@ -23,7 +23,7 @@ export const useChat = () => {
 
   const sendMessage = (
     userText: string,
-    onAssistantMessage?: OnAssistantMessage
+    onAssistantMessage?: OnAssistantMessage,
   ) => {
     if (!userText.trim()) return;
 
@@ -71,6 +71,6 @@ export const useChat = () => {
     sendMessage,
     loading: isPending,
     threadId,
-    setMessages, 
+    setMessages,
   };
 };

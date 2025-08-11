@@ -17,7 +17,7 @@ export const useHebrewSentence = () => {
     try {
       const response = await askAzureOpenAI(
         "צור משפט אחד קצר בעברית, ללא ניקוד.",
-        "צור משפטים קצרים וברורים בעברית ללומדי מתחילים."
+        "צור משפטים קצרים וברורים בעברית ללומדי מתחילים.",
       );
       setSentence(response);
       return response;
