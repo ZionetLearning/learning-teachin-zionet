@@ -3,7 +3,7 @@ run-name: >
   Deploy to ${{
     inputs.custom_prefix != '' && format('custom:{0}', inputs.custom_prefix) ||
     github.event.inputs.custom_prefix != '' && format('custom:{0}', github.event.inputs.custom_prefix) ||
-    (inputs.target || github.event.inputs.target || 'dev')
+    'dev'
   }} [${{ inputs.environment || github.event.inputs.environment }}]
 
 on:
@@ -15,23 +15,14 @@ on:
         default: 'Development'
         type: choice
         options: [Development, Production]
-      target:
-        description: 'Select target namespace/prefix'
-        required: true
-        default: 'dev'
-        type: choice
-        options: [dev, prod, custom]
       custom_prefix:
-        description: 'Used only when target=custom (lowercase letters and digits)'
+        description: 'Optional namespace (lowercase letters & digits). Empty -> dev'
         required: false
         default: ''
   workflow_call:
     inputs:
       environment:
         required: true
-        type: string
-      target:
-        required: false
         type: string
       custom_prefix:
         required: false
@@ -74,10 +65,8 @@ jobs:
           echo "PG_DB=pg-zionet-dev-2025" >> $GITHUB_ENV
           echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
 
-          TARGET_INPUT="${{ inputs.target || github.event.inputs.target }}"
           CUSTOM_PREFIX_INPUT="${{ inputs.custom_prefix || github.event.inputs.custom_prefix }}"
 
-          # Precedence: if custom_prefix is provided, always use it
           if [ -n "$CUSTOM_PREFIX_INPUT" ]; then
             if [[ ! "$CUSTOM_PREFIX_INPUT" =~ ^[a-z0-9]+$ ]]; then
               echo "custom_prefix must be lowercase letters and digits only (^[a-z0-9]+$)"; exit 1
@@ -85,29 +74,11 @@ jobs:
             echo "TARGET_NAMESPACE=$CUSTOM_PREFIX_INPUT" >> $GITHUB_ENV
             echo "VALUES_FILE=devops/kubernetes/charts/values.dev.yaml" >> $GITHUB_ENV
             echo "RESOLVED_TARGET=custom($CUSTOM_PREFIX_INPUT)" >> $GITHUB_ENV
-            exit 0
+          else
+            echo "TARGET_NAMESPACE=dev" >> $GITHUB_ENV
+            echo "VALUES_FILE=devops/kubernetes/charts/values.dev.yaml" >> $GITHUB_ENV
+            echo "RESOLVED_TARGET=dev" >> $GITHUB_ENV
           fi
-
-          # Fallback to dropdown if no custom prefix was given
-          if [ -z "$TARGET_INPUT" ]; then TARGET_INPUT="dev"; fi
-          case "$TARGET_INPUT" in
-            prod|Prod|PROD)
-              echo "TARGET_NAMESPACE=prod" >> $GITHUB_ENV
-              echo "VALUES_FILE=devops/kubernetes/charts/values.prod.yaml" >> $GITHUB_ENV
-              echo "RESOLVED_TARGET=prod" >> $GITHUB_ENV
-              ;;
-            dev|Dev|DEV)
-              echo "TARGET_NAMESPACE=dev" >> $GITHUB_ENV
-              echo "VALUES_FILE=devops/kubernetes/charts/values.dev.yaml" >> $GITHUB_ENV
-              echo "RESOLVED_TARGET=dev" >> $GITHUB_ENV
-              ;;
-            custom)
-              echo "custom_prefix is required when target=custom"; exit 1
-              ;;
-            *)
-              echo "Invalid target: $TARGET_INPUT (use dev, prod, or custom)"; exit 1
-              ;;
-          esac
 
       - name: Get AKS credentials
         run: |
@@ -122,10 +93,6 @@ jobs:
       - name: Ensure target namespace exists
         run: |
           kubectl create namespace "$TARGET_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
-
-      # Dapr components are now rendered by Helm (templates/dapr/*), so no direct apply is needed
-      # - name: Apply Dapr components
-      #   run: kubectl apply -f "$K8S_DIR/dapr/components" --recursive
 
 
       - name: Ensure baseline secrets exist in target namespace
@@ -164,7 +131,7 @@ jobs:
 
       - name: Helm upgrade/install services
         run: |
-          # Render check
+          # Render check (no Namespace object should be created)
           helm template app "$CHART_DIR" -f "$VALUES_FILE" \
             --set namespace.name="$TARGET_NAMESPACE" \
             --set namespace.create=false \
@@ -172,7 +139,6 @@ jobs:
             --set global.dockerRegistry="$DOCKER_REGISTRY" \
             --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" \
           | grep -n '^kind: Namespace' && { echo "Namespace still rendered"; exit 1; } || echo "OK: no Namespace in chart"
-
 
           # Deploy
           helm upgrade --install app "$CHART_DIR" \
@@ -184,7 +150,6 @@ jobs:
             --set global.dockerRegistry="$DOCKER_REGISTRY" \
             --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" \
             --atomic --timeout 10m
-
 
       - name: Diagnostics (on failure)
         if: failure()
