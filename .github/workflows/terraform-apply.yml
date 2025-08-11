@@ -32,7 +32,7 @@ on:
         type: choice
         options: [Development, Production]
       environment_name:
-        description: 'Enter custom prefix (lowercase letters & digits only).\nThis will be used as the Kubernetes namespace and environment identifier.'
+        description: 'Enter custom prefix (lowercase letters & digits only). This will be used as the Kubernetes namespace and environment identifier.'
         required: true
         type: string
 
