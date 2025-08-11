@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.accessor.name }}
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{ .Values.accessor.labels.selectorKey }}: {{ .Values.accessor.labels.selectorValue }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{ .Values.accessor.labels.selectorKey }}: {{ .Values.accessor.labels.selectorValue }}
+  template:
+    metadata:
+      labels:
+        {{ .Values.accessor.labels.selectorKey }}: {{ .Values.accessor.labels.selectorValue }}
+      annotations:
+        {{ include "app.dapr.annotations" (dict
+              "enabled" .Values.global.dapr.enabled
+              "appId" (.Values.accessor.dapr.appId | default .Values.accessor.name)
+              "appPort" .Values.accessor.dapr.appPort) | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Values.accessor.name }}
+          image: {{ include "app.image" (dict "name" .Values.accessor.image.name "tag" .Values.accessor.image.tag "Values" .Values) }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - containerPort: {{ .Values.accessor.ports.container }}
+              protocol: TCP
+          env:
+            - name: ASPNETCORE_URLS
+              value: "{{ .Values.accessor.env.ASPNETCORE_URLS }}"
+            - name: ServiceBus__ConnectionString
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.accessor.secrets.serviceBus.name }}
+                  key: {{ .Values.accessor.secrets.serviceBus.key }}
+            - name: ConnectionStrings__Postgres
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.accessor.secrets.postgres.name }}
+                  key: {{ .Values.accessor.secrets.postgres.key }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.accessor.name }}
+  namespace: {{ include "app.namespace" . }}
+spec:
+  type: {{ .Values.accessor.service.type }}
+  selector:
+    {{ .Values.accessor.labels.selectorKey }}: {{ .Values.accessor.labels.selectorValue }}
+  ports:
+    - port: {{ .Values.accessor.ports.service }}
+      targetPort: {{ .Values.accessor.ports.container }}

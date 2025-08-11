@@ -1,0 +1,42 @@
+# DEV overrides for the Helm chart
+global:
+  dockerRegistry: ""   # CI sets: docker.io/<org> or <acr>.azurecr.io
+  imagePullPolicy: IfNotPresent
+  dapr:
+    enabled: true
+
+namespace:
+  create: true
+  name: dev
+
+manager:
+  image:
+    tag: latest                 # dev tag (or a short SHA)
+  # service, ports, labels inherit from base values.yaml
+  env:
+    ASPNETCORE_URLS: "http://+:5001"
+  # secrets inherit from base values.yaml
+  ingress:
+    enabled: true
+    host: teachin-zionet.westeurope.cloudapp.azure.com
+    basePath: /api
+    tls:
+      enabled: true
+      clusterIssuer: letsencrypt-prod
+      secretName: teachin-zionet-tls
+      
+engine:
+  image:
+    tag: latest
+  env:
+    ASPNETCORE_URLS: "http://+:5002"
+    AzureOpenAI__Endpoint: "https://france-teachin-open-ai.openai.azure.com/"
+    AzureOpenAI__ApiKey: ""     # injecting via secret/CI
+    AzureOpenAI__DeploymentName: "gpt-4.1-mini"
+    AzureOpenAI__ModelId: "gpt-4o-mini"
+
+accessor:
+  image:
+    tag: latest
+  env:
+    ASPNETCORE_URLS: "http://+:5003"
