@@ -1,8 +1,10 @@
-﻿using System.Text.Json;
+﻿using System.Linq.Expressions;
+using System.Text.Json;
 using Engine.Constants;
 using Engine.Messaging;
 using Engine.Models;
 using Engine.Services;
+using Engine.Helpers;
 
 namespace Engine.Endpoints;
 
@@ -40,21 +42,38 @@ public class EngineQueueHandler : IQueueHandler<Message>
         else
         {
             _logger.LogWarning("No handler for action {Action}", message.ActionName);
+            throw new NonRetryableException($"No handler for action {message.ActionName}");
         }
     }
 
     private async Task HandleCreateTaskAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
     {
-        var payload = message.Payload.Deserialize<TaskModel>();
-        if (payload is null)
+        try
         {
-            _logger.LogWarning("Invalid payload for CreateTask");
-            return;
-        }
+            var payload = PayloadValidation.DeserializeOrThrow<TaskModel>(message, _logger);
 
-        _logger.LogDebug("Processing task {Id}", payload.Id);
-        await _engine.ProcessTaskAsync(payload, cancellationToken);
-        _logger.LogInformation("Task {Id} processed", payload.Id);
+            PayloadValidation.ValidateTask(payload, _logger);
+
+            _logger.LogDebug("Processing task {Id}", payload.Id);
+            await _engine.ProcessTaskAsync(payload, cancellationToken);
+            _logger.LogInformation("Task {Id} processed", payload.Id);
+        }
+        catch (NonRetryableException ex)
+        {
+            _logger.LogError(ex, "Non-retryable error processing message {Action}", message.ActionName);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning(ex, "Operation cancelled while processing message {Action}", message.ActionName);
+                throw new OperationCanceledException("Operation was cancelled.", ex, cancellationToken);
+            }
+
+            _logger.LogError(ex, "Transient error while processing task for action {Action}", message.ActionName);
+            throw new RetryableException("Transient error while processing task.", ex);
+        }
     }
 
     private async Task HandleTestLongTaskAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
@@ -78,22 +97,32 @@ public class EngineQueueHandler : IQueueHandler<Message>
         }, renewalCts.Token);
         try
         {
-            var payload = message.Payload.Deserialize<TaskModel>();
-            if (payload is null)
-            {
-                _logger.LogWarning("Invalid payload for CreateTask");
-                return;
-            }
+            var payload = PayloadValidation.DeserializeOrThrow<TaskModel>(message, _logger);
 
-            _logger.LogInformation("Inside handler");
+            PayloadValidation.ValidateTask(payload, _logger);
+
+            _logger.LogInformation("Starting long task handler for Task {Id}", payload.Id);
 
             await Task.Delay(TimeSpan.FromSeconds(80), cancellationToken);
             await _engine.ProcessTaskAsync(payload, cancellationToken);
+            _logger.LogInformation("Task {Id} processed", payload.Id);
+
         }
-        catch
+        catch (NonRetryableException ex)
         {
-            _logger.LogError("Error while {Action}", message.ActionName);
+            _logger.LogError(ex, "Non-retryable error processing message {Action}", message.ActionName);
             throw;
+        }
+        catch (Exception ex)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning(ex, "Operation cancelled while processing {Action}", message.ActionName);
+                throw new OperationCanceledException("Operation was cancelled.", ex, cancellationToken);
+            }
+
+            _logger.LogError(ex, "Transient error while processing long task for action {Action}", message.ActionName);
+            throw new RetryableException("Transient error while processing long task.", ex);
         }
         finally
         {
@@ -104,22 +133,13 @@ public class EngineQueueHandler : IQueueHandler<Message>
 
     private async Task HandleProcessingQuestionAiAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
     {
-        var payload = message.Payload.Deserialize<AiRequestModel>();
-        if (payload is null)
-        {
-            _logger.LogWarning("Invalid payload for CreateTask");
-            return;
-        }
-
-        _logger.LogInformation("Received AI question {Id} from manager", payload.Id);
-
         try
         {
-            if (string.IsNullOrWhiteSpace(payload.ThreadId))
-            {
-                _logger.LogWarning("ThreadId is required.");
-                return;
-            }
+            var payload = PayloadValidation.DeserializeOrThrow<AiRequestModel>(message, _logger);
+
+            PayloadValidation.ValidateAiRequest(payload, _logger);
+
+            _logger.LogInformation("Received AI question {Id} from manager", payload.Id);
 
             var response = await _aiService.ProcessAsync(payload, cancellationToken);
 
@@ -127,10 +147,22 @@ public class EngineQueueHandler : IQueueHandler<Message>
 
             _logger.LogInformation("AI question {Id} processed", payload.Id);
         }
+
+        catch (NonRetryableException ex)
+        {
+            _logger.LogError(ex, "Non-retryable error processing message {Action}", message.ActionName);
+            throw;
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to process AI question {Id}", payload.Id);
-            throw;
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning(ex, "Operation cancelled while processing {Action}", message.ActionName);
+                throw new OperationCanceledException("Operation was cancelled.", ex, cancellationToken);
+            }
+
+            _logger.LogError(ex, "Transient error while processing/publishing AI question {Action}", message.ActionName);
+            throw new RetryableException("Transient error while processing AI question.", ex);
         }
     }
 }
