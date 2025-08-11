@@ -37,9 +37,9 @@ public class ChatAiServiceTests
     private sealed class FakeAccessorClient : IAccessorClient
     {
         public Task<ChatHistoryResponse?> GetChatHistoryAsync(string threadId)
-        {
-            throw new NotImplementedException();
-        }
+            => Task.FromResult<ChatHistoryResponse?>(
+                new ChatHistoryResponse(threadId, new List<ChatMessage>())
+            );
 
         public Task<bool> StoreChatMessagesAsync(StoreChatMessagesRequest request)
         {
