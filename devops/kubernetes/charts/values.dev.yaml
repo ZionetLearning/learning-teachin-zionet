@@ -4,6 +4,7 @@ global:
   imagePullPolicy: IfNotPresent
   dapr:
     enabled: true
+    configName: dapr-config
 
 namespace:
   create: true
@@ -34,6 +35,10 @@ engine:
     AzureOpenAI__ApiKey: ""     # injecting via secret/CI
     AzureOpenAI__DeploymentName: "gpt-4.1-mini"
     AzureOpenAI__ModelId: "gpt-4o-mini"
+    AzureSpeech__SubscriptionKey: ""
+    AzureSpeech__Region: "eastus"
+    AzureSpeech__DefaultVoice: "he-IL-HilaNeural"
+    AzureSpeech__TimeoutSeconds: "70"
 
 accessor:
   image:

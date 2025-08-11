@@ -1,17 +1,31 @@
 name: AKS - Deploy Services to AKS
+run-name: >
+  Deploy to ${{
+    inputs.environment_name != '' && format('custom:{0}', inputs.environment_name) ||
+    github.event.inputs.environment_name != '' && format('custom:{0}', github.event.inputs.environment_name) ||
+    'dev'
+  }} [${{ inputs.environment || github.event.inputs.environment }}]
 
 on:
   workflow_dispatch:
-   inputs:
-     environment:
-        description: 'Enter environment name'
+    inputs:
+      environment:
+        description: 'Select environment (GitHub Environment)'
         required: true
         default: 'Development'
-        type: string
+        type: choice
+        options: [Development, Production]
+      environment_name:
+        description: 'Optional namespace (lowercase letters & digits). Empty -> dev'
+        required: false
+        default: ''
   workflow_call:
     inputs:
       environment:
         required: true
+        type: string
+      environment_name:
+        required: false
         type: string
     outputs:
       app_url:
@@ -21,7 +35,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: 'Development'
+    environment: ${{ inputs.environment || github.event.inputs.environment }}
     permissions:
       id-token: write
       contents: read
@@ -41,25 +55,27 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Set up variables
-        run: |
-          INPUT_ENV="${{ inputs.environment || github.event.inputs.environment }}"
-          case "$INPUT_ENV" in
-            "Development")
-              ENVIRONMENT_NAME="dev"
-              ;;
-            "Production")
-              ENVIRONMENT_NAME="prod"
-              ;;
-            *)
-              # Support custom environments (feature branches, testing, etc.)
-              ENVIRONMENT_NAME="$INPUT_ENV"
-              ;;
-          esac
+        run: |    
+          ENVIRONMENT_NAME="${{ inputs.environment_name || github.event.inputs.environment_name }}"
           
-          echo "ENVIRONMENT_NAME=$ENVIRONMENT_NAME" >> $GITHUB_ENV
+          if [ -n "$ENVIRONMENT_NAME" ]; then
+            if [[ ! "$ENVIRONMENT_NAME" =~ ^[a-z0-9]+$ ]]; then
+              echo "environment_name must be lowercase letters and digits only (^[a-z0-9]+$)"; exit 1
+            fi
+            echo "TARGET_NAMESPACE=$ENVIRONMENT_NAME" >> $GITHUB_ENV
+            echo "VALUES_FILE=devops/kubernetes/charts/values.dev.yaml" >> $GITHUB_ENV
+            echo "RESOLVED_TARGET=custom($ENVIRONMENT_NAME)" >> $GITHUB_ENV
+          else
+            echo "TARGET_NAMESPACE=dev" >> $GITHUB_ENV
+            echo "VALUES_FILE=devops/kubernetes/charts/values.dev.yaml" >> $GITHUB_ENV
+            echo "RESOLVED_TARGET=dev" >> $GITHUB_ENV
+          fi
+          
           echo "K8S_DIR=devops/kubernetes/" >> $GITHUB_ENV
+          echo "CHART_DIR=devops/kubernetes/charts" >> $GITHUB_ENV
           echo "DOCKER_REGISTRY=${{ secrets.DOCKER_USERNAME }}" >> $GITHUB_ENV
           echo "OPENAI_KEY=${{ secrets.AZURE_OPENAI_API_KEY }}" >> $GITHUB_ENV
+          echo "AZURE_SPEECH_KEY=${{ secrets.AZURE_SPEECH_KEY }}" >> $GITHUB_ENV
           echo "PG_DB=${ENVIRONMENT_NAME}-pg-zionet-learning" >> $GITHUB_ENV
           echo "PG_RG=${ENVIRONMENT_NAME}-zionet-learning-2025" >> $GITHUB_ENV
 
@@ -68,8 +84,6 @@ jobs:
           echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
           echo "MC_AKS_RG=MC_dev-zionet-learning-2025_aks-cluster-dev_westeurope" >> $GITHUB_ENV
           echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
-
-          
 
       - name: Get AKS credentials
         run: |
@@ -81,42 +95,88 @@ jobs:
           chmod +x dapr-control-plane.sh
           ./dapr-control-plane.sh
 
-      - name: Create namespace dynamically
+      - name: Ensure target namespace exists
         run: |
-          cat <<EOF | kubectl apply -f -
-          apiVersion: v1
-          kind: Namespace
-          metadata:
-            name: ${{env.ENVIRONMENT_NAME}}
-            labels:
-              name: ${{env.ENVIRONMENT_NAME}}
-              environment: ${{env.ENVIRONMENT_NAME}}
-              managed-by: github-actions
-              created-by: aks-kubectl-apply-workflow
-          EOF
+          kubectl create namespace "$TARGET_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 
-      - name: Apply Dapr components
-        run: |
-          find "$K8S_DIR/dapr/components" -type f -name '*.yaml' | while read file; do
-            echo "Applying Dapr component: $file"
-            ENVIRONMENT_NAME=$ENVIRONMENT_NAME envsubst < "$file" | kubectl apply -f -
-          done
+      # - name: Ensure baseline secrets exist in target namespace
+      #   run: |
+      #     set -e
+      #     sudo apt-get update -y >/dev/null
+      #     sudo apt-get install -y jq >/dev/null
+      #     ns="$TARGET_NAMESPACE"
 
-      - name: Apply services
+      #     copy_secret () {
+      #       local name="$1"
+      #       if kubectl -n "$ns" get secret "$name" >/dev/null 2>&1; then
+      #         echo "✓ $name already exists in $ns"
+      #       elif kubectl -n dev get secret "$name" >/dev/null 2>&1; then
+      #         echo "Copying $name from dev -> $ns"
+      #         kubectl -n dev get secret "$name" -o json \
+      #         | jq 'del(.metadata.uid,.metadata.resourceVersion,.metadata.creationTimestamp,.metadata.managedFields,.metadata.annotations) 
+      #               | .metadata.namespace="'$ns'"' \
+      #         | kubectl apply -f -
+      #         echo "✓ Copied $name"
+      #       else
+      #         echo "✗ Missing secret $name in both $ns and dev. Create it or add repo secrets."
+      #         MISSING=1
+      #       fi
+      #     }
+
+      #     MISSING=0
+      #     copy_secret azure-service-bus-secret-$TARGET_NAMESPACE
+      #     copy_secret signalr-connection-$TARGET_NAMESPACE
+      #     copy_secret postgres-connection-$TARGET_NAMESPACE
+      #     copy_secret redis-connection-$TARGET_NAMESPACE
+
+      #     if [ "$MISSING" -ne 0 ]; then
+      #       echo "Required secrets are missing. Aborting."; exit 1
+      #     fi
+
+      - name: Helm upgrade/install services
         run: |
-          find "$K8S_DIR/services" -type f -name '*.yaml' | while read file; do
-            echo "Applying $file"
-            ENVIRONMENT_NAME=$ENVIRONMENT_NAME 
-            envsubst < "$file" | kubectl apply -f -
-          done
-  
-      - name: Apply deployments (with registry and OpenAI key substitution)
-        run: |
-          export OPENAI_KEY="$OPENAI_KEY"
-          find "$K8S_DIR/deployments" -type f -name '*.yaml' | while read file; do
-            echo "Applying $file"
-            ENVIRONMENT_NAME=$ENVIRONMENT_NAME DOCKER_REGISTRY=$DOCKER_REGISTRY OPENAI_KEY=$OPENAI_KEY envsubst < "$file" | kubectl apply -f -
-          done
+          # Render check (no Namespace object should be created)
+          helm template app "$CHART_DIR" -f "$VALUES_FILE" \
+            --set namespace.name="$TARGET_NAMESPACE" \
+            --set namespace.create=false \
+            --set global.namePrefix="$TARGET_NAMESPACE" \
+            --set global.dockerRegistry="$DOCKER_REGISTRY" \
+            --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" \
+            --set-string engine.env.AzureSpeech__SubscriptionKey="$AZURE_SPEECH_KEY" \
+            --set dapr.installComponents=false \
+          | grep -n '^kind: Namespace' && { echo "Namespace still rendered"; exit 1; } || echo "OK: no Namespace in chart"
+
+          # Deploy
+          helm upgrade --install app "$CHART_DIR" \
+            --namespace "$TARGET_NAMESPACE" \
+            -f "$VALUES_FILE" \
+            --set namespace.name="$TARGET_NAMESPACE" \
+            --set namespace.create=false \
+            --set global.namePrefix="$TARGET_NAMESPACE" \
+            --set global.dockerRegistry="$DOCKER_REGISTRY" \
+            --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" \
+            --set-string engine.env.AzureSpeech="$AZURE_SPEECH_KEY" \
+            --set dapr.installComponents=false \
+            --atomic --timeout 10m
+
+      # - name: Diagnostics (on failure)
+      #   if: failure()
+      #   run: |
+      #     ns="$TARGET_NAMESPACE"
+      #     echo "---- Objects ----"
+      #     kubectl -n "$ns" get all
+      #     echo
+      #     echo "---- Events (recent) ----"
+      #     kubectl -n "$ns" get events --sort-by=.lastTimestamp | tail -n 200 || true
+      #     echo
+      #     echo "---- Pod details ----"
+      #     for p in $(kubectl -n "$ns" get pods -o name); do
+      #       echo "## $p"
+      #       kubectl -n "$ns" describe "$p" || true
+      #       echo "-- logs (last 200 lines, all containers) --"
+      #       kubectl -n "$ns" logs "$p" --all-containers --tail=200 || true
+      #       echo
+      #     done
           
       - name: setup-ingress-controller
         run: |
@@ -136,13 +196,8 @@ jobs:
           chmod +x setup-https.sh
           ./setup-https.sh   
 
-      - name: Apply ingresses
-        run: |
-          find "$K8S_DIR/ingress" -type f -name '*.yaml' | while read file; do
-              echo "Applying ingress: $file"
-              ENVIRONMENT_NAME=$ENVIRONMENT_NAME \
-              envsubst < "$file" | kubectl apply -f -
-            done
+      - name: Apply Grafana ingress (only)
+        run: kubectl apply -f "$K8S_DIR/ingress/grafana-ingress.yaml"
 
       - name: Add prometheus
         run: |
@@ -188,7 +243,7 @@ jobs:
     
       - name: Restart all pods in the namespace
         run: |
-          kubectl delete pod --all -n $ENVIRONMENT_NAME
+          kubectl delete pod --all -n "$TARGET_NAMESPACE"
 
 
       - name: Output external URL

@@ -4,6 +4,7 @@ global:
   imagePullPolicy: IfNotPresent   # or Always if you rely on :latest
   dapr:
     enabled: true
+    configName: dapr-config
 
 namespace:
   create: true

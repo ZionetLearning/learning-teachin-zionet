@@ -16,9 +16,11 @@ spec:
         {{ .Values.engine.labels.selectorKey }}: {{ .Values.engine.labels.selectorValue }}
       annotations:
         {{ include "app.dapr.annotations" (dict
-              "enabled" .Values.global.dapr.enabled
-              "appId" (.Values.engine.dapr.appId | default .Values.engine.name)
-              "appPort" .Values.engine.dapr.appPort) | nindent 8 }}
+            "enabled" .Values.global.dapr.enabled
+            "appId"   (.Values.engine.dapr.appId | default .Values.engine.name)
+            "appPort" .Values.engine.dapr.appPort
+            "config"  (.Values.global.dapr.configName | default "dapr-config")
+        ) | nindent 8 }}
     spec:
       containers:
         - name: {{ .Values.engine.name }}
@@ -43,6 +45,14 @@ spec:
               value: "{{ .Values.engine.env.AzureOpenAI__DeploymentName }}"
             - name: AzureOpenAI__ModelId
               value: "{{ .Values.engine.env.AzureOpenAI__ModelId }}"
+            - name: AzureSpeech__SubscriptionKey
+              value: "{{ .Values.engine.env.AzureSpeech__SubscriptionKey }}"
+            - name: AzureSpeech__Region
+              value: "{{ .Values.engine.env.AzureSpeech__Region }}"
+            - name: AzureSpeech__DefaultVoice
+              value: "{{ .Values.engine.env.AzureSpeech__DefaultVoice }}"
+            - name: AzureSpeech__TimeoutSeconds
+              value: "{{ .Values.engine.env.AzureSpeech__TimeoutSeconds }}"
 ---
 apiVersion: v1
 kind: Service
