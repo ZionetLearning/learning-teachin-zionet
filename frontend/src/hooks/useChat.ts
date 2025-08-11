@@ -2,10 +2,18 @@ import { useState } from "react";
 import { useSendChatMessage } from "@/api/chat";
 import type { ChatRequest, ChatResponse } from "@/api/chat";
 
-type ChatMessage = {
-  role: "user" | "assistant";
+export type ChatPosition = "left" | "right";
+export type ChatSender = "user" | "system";
+
+export interface ChatMessage {
+  position: ChatPosition; // "left" | "right"
+  type: "text"; // fixed for now
+  sender: ChatSender; // "user" | "system"
   text: string;
-};
+  date: Date;
+}
+
+type OnAssistantMessage = (text: string) => void;
 
 export const useChat = () => {
   const [threadId, setThreadId] = useState<string | undefined>(undefined);
@@ -15,41 +23,55 @@ export const useChat = () => {
 
   const sendMessage = (
     userText: string,
-    onAssistantMessage?: (text: string) => void
+    onAssistantMessage?: OnAssistantMessage
   ) => {
+    if (!userText.trim()) return;
+
     const payload: ChatRequest = {
       userMessage: userText,
       threadId: threadId || "123456789",
       chatType: "default",
     };
 
-    setMessages((prev) => [...prev, { role: "user", text: userText }]);
+    // push user message
+    const userMsg: ChatMessage = {
+      position: "right",
+      type: "text",
+      sender: "user",
+      text: userText,
+      date: new Date(),
+    };
+    setMessages((prev) => [...prev, userMsg]);
 
+    // call API
     sendChatMessage(payload, {
       onSuccess: (data: ChatResponse) => {
         setThreadId(data.threadId);
 
+        const aiText = data.assistantMessage;
+
         if (onAssistantMessage) {
-          // Don't add to messages yet — let animation handle it
-          onAssistantMessage(data.assistantMessage);
+          // let caller handle UI (loader/animation/speech) and when to append
+          onAssistantMessage(aiText);
         } else {
-          setMessages((prev) => [
-            ...prev,
-            { role: "assistant", text: data.assistantMessage },
-          ]);
+          const aiMsg: ChatMessage = {
+            position: "left",
+            type: "text",
+            sender: "system",
+            text: aiText,
+            date: new Date(),
+          };
+          setMessages((prev) => [...prev, aiMsg]);
         }
       },
     });
   };
 
   return {
-    messages: messages.map((m) => ({
-      role: m.role,
-      content: m.text, // shape it to { role, content } for ChatSh
-    })),
+    messages,
     sendMessage,
     loading: isPending,
     threadId,
-    setMessages, // Expose this so you can manually add messages from animation
+    setMessages, 
   };
 };

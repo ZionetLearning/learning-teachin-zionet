@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { useChat } from "../chat-yo/hooks";
+import { useChat } from "@/hooks/useChat";
 import { useAvatarSpeech } from "@/hooks";
 import avatar from "@/assets/avatar.svg";
 import { useStyles } from "./style";
