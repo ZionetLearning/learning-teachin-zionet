@@ -1,8 +1,8 @@
 apiVersion: dapr.io/v1alpha1
 kind: Component
 metadata:
-  name: {{ include "app.join" (list (include "app.prefix" .) "statestore") }}
-  namespace: {{ include "app.namespace" . }}
+  name: {{ .Values.dapr.stateStore.name | default "statestore" | quote }}
+  namespace: {{ include "app.namespace" . | quote }}
   annotations:
     dapr.io/component-init-timeout: "120s"
 spec:
@@ -11,23 +11,27 @@ spec:
   metadata:
     - name: redisHost
       secretKeyRef:
-        name: redis-connection
-        key: redis-hostport
+        name: '{{ default "redis-connection" .Values.dapr.stateStore.redis.secretName }}'
+        key: '{{ default "redis-hostport" .Values.dapr.stateStore.redis.hostKey }}'
     - name: redisPassword
       secretKeyRef:
-        name: redis-connection
-        key: redis-password
+        name: '{{ default "redis-connection" .Values.dapr.stateStore.redis.secretName }}'
+        key: '{{ default "redis-password" .Values.dapr.stateStore.redis.passwordKey }}'
     - name: enableTLS
-      value: "true"
+      value: '{{ default "true" .Values.dapr.stateStore.redis.enableTLS }}'
     - name: dialTimeout
-      value: "30s"
+      value: '{{ default "30s" .Values.dapr.stateStore.redis.options.dialTimeout }}'
     - name: readTimeout
-      value: "30s"
+      value: '{{ default "30s" .Values.dapr.stateStore.redis.options.readTimeout }}'
     - name: writeTimeout
-      value: "30s"
+      value: '{{ default "30s" .Values.dapr.stateStore.redis.options.writeTimeout }}'
     - name: poolTimeout
-      value: "30s"
+      value: '{{ default "30s" .Values.dapr.stateStore.redis.options.poolTimeout }}'
     - name: idleTimeout
-      value: "300s"
+      value: '{{ default "300s" .Values.dapr.stateStore.redis.options.idleTimeout }}'
     - name: maxConnAge
-      value: "30m"
+      value: '{{ default "30m" .Values.dapr.stateStore.redis.options.maxConnAge }}'
+scopes:
+  - {{ include "app.appIdFor" (list $ .Values.accessor.name) | quote }}
+  - {{ include "app.appIdFor" (list $ .Values.manager.name)  | quote }}
+  - {{ include "app.appIdFor" (list $ .Values.engine.name)   | quote }}

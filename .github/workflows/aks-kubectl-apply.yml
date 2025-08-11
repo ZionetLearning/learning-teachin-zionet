@@ -217,8 +217,14 @@ jobs:
           chmod +x grafana.sh
           ./grafana.sh
 
-      - name: Apply ingresses
-        run: kubectl apply -f "$K8S_DIR/ingress" --recursive
+      - name: Setup HTTPS certificates
+        run: |
+          cd devops/helm-tools
+          chmod +x setup-https.sh
+          ./setup-https.sh
+
+      - name: Apply Grafana ingress (only)
+        run: kubectl apply -f "$K8S_DIR/ingress/grafana-ingress.yaml"
 
       - name: Add prometheus
         run: |
@@ -231,12 +237,6 @@ jobs:
           cd devops/helm-tools/loki
           chmod +x loki.sh
           ./loki.sh
-
-      - name: Setup HTTPS certificates
-        run: |
-          cd devops/helm-tools
-          chmod +x setup-https.sh
-          ./setup-https.sh
 
       - name: Wait for external IP for ingress controller
         id: wait_for_ingress_ip

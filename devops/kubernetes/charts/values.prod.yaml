@@ -15,6 +15,14 @@ manager:
   env:
     ASPNETCORE_URLS: "http://+:5001"
   # Consider adding resource limits here if you introduce them in templates
+  ingress:
+    enabled: true
+    host: teachin-zionet.westeurope.cloudapp.azure.com
+    basePath: /api
+    tls:
+      enabled: true
+      clusterIssuer: letsencrypt-prod
+      secretName: teachin-zionet-tls
 
 engine:
   image:

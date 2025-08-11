@@ -107,14 +107,12 @@ dapr:
 
   # Redis state store (optional)
   stateStore:
-    enabled: false
+    enabled: true
     name: statestore
     redis:
-      host: "teachin-redis.redis.cache.windows.net:6380"
-      # Either provide password directly or via secret:
-      password: ""                       # leave empty if using secret
-      passwordSecretName: ""             # e.g., redis-secret
-      passwordSecretKey: ""              # e.g., password
+      secretName: "redis-connection"
+      hostKey: "redis-hostport"
+      passwordKey: "redis-password"
       enableTLS: "true"
       options:
         dialTimeout: "30s"
@@ -123,4 +121,3 @@ dapr:
         poolTimeout: "30s"
         idleTimeout: "300s"
         maxConnAge: "30m"
-    scopes: [manager, engine, accessor]
