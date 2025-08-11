@@ -117,7 +117,7 @@ jobs:
             echo "Applying $file"
             ENVIRONMENT_NAME=$ENVIRONMENT_NAME DOCKER_REGISTRY=$DOCKER_REGISTRY OPENAI_KEY=$OPENAI_KEY envsubst < "$file" | kubectl apply -f -
           done
-
+          
       - name: setup-ingress-controller
         run: |
           cd devops/helm-tools
@@ -129,6 +129,12 @@ jobs:
           cd devops/helm-tools
           chmod +x grafana.sh
           ./grafana.sh
+
+      - name: Setup HTTPS certificates
+        run: |
+          cd devops/helm-tools
+          chmod +x setup-https.sh
+          ./setup-https.sh   
 
       - name: Apply ingresses
         run: |
@@ -150,11 +156,6 @@ jobs:
           chmod +x loki.sh
           ./loki.sh
     
-      - name: Setup HTTPS certificates
-        run: |
-          cd devops/helm-tools
-          chmod +x setup-https.sh
-          ./setup-https.sh   
     
       - name: Wait for external IP for ingress controller
         id: wait_for_ingress_ip
