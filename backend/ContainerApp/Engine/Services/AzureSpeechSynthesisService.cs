@@ -24,10 +24,14 @@ public class AzureSpeechSynthesisService : ISpeechSynthesisService
 
         try
         {
+            var voice = string.IsNullOrWhiteSpace(request.VoiceName)
+                ? _options.DefaultVoice
+                : request.VoiceName;
+
             _logger.LogInformation("Starting speech synthesis for text length: {Length}", request.Text.Length);
 
             var speechConfig = SpeechConfig.FromSubscription(_options.SubscriptionKey, _options.Region);
-            speechConfig.SpeechSynthesisVoiceName = request.VoiceName;
+            speechConfig.SpeechSynthesisVoiceName = voice;
             speechConfig.SetProperty("SpeechServiceConnection_SynthVoiceVisemeEvent", "true");
 
             var visemes = new List<VisemeData>();

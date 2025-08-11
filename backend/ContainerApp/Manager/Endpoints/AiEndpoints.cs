@@ -124,9 +124,7 @@ public static class AiEndpoints
        [FromServices] ILogger<SpeechEndpoints> logger,
        CancellationToken ct)
     {
-        logger.LogInformation("Received speech synthesis request for text length: {Length}", dto.Text.Length);
-
-        if (string.IsNullOrWhiteSpace(dto.Text))
+        if (dto is null || string.IsNullOrWhiteSpace(dto.Text))
         {
             return Results.BadRequest(new { error = "Text is required" });
         }
@@ -135,6 +133,8 @@ public static class AiEndpoints
         {
             return Results.BadRequest(new { error = "Text length cannot exceed 1000 characters" });
         }
+
+        logger.LogInformation("Received speech synthesis request for text length: {Length}", dto.Text.Length);
 
         try
         {
