@@ -159,24 +159,24 @@ jobs:
             --set dapr.installComponents=false \
             --atomic --timeout 10m
 
-      # - name: Diagnostics (on failure)
-      #   if: failure()
-      #   run: |
-      #     ns="$TARGET_NAMESPACE"
-      #     echo "---- Objects ----"
-      #     kubectl -n "$ns" get all
-      #     echo
-      #     echo "---- Events (recent) ----"
-      #     kubectl -n "$ns" get events --sort-by=.lastTimestamp | tail -n 200 || true
-      #     echo
-      #     echo "---- Pod details ----"
-      #     for p in $(kubectl -n "$ns" get pods -o name); do
-      #       echo "## $p"
-      #       kubectl -n "$ns" describe "$p" || true
-      #       echo "-- logs (last 200 lines, all containers) --"
-      #       kubectl -n "$ns" logs "$p" --all-containers --tail=200 || true
-      #       echo
-      #     done
+      - name: Diagnostics (on failure)
+        if: failure()
+        run: |
+          ns="$TARGET_NAMESPACE"
+          echo "---- Objects ----"
+          kubectl -n "$ns" get all
+          echo
+          echo "---- Events (recent) ----"
+          kubectl -n "$ns" get events --sort-by=.lastTimestamp | tail -n 200 || true
+          echo
+          echo "---- Pod details ----"
+          for p in $(kubectl -n "$ns" get pods -o name); do
+            echo "## $p"
+            kubectl -n "$ns" describe "$p" || true
+            echo "-- logs (last 200 lines, all containers) --"
+            kubectl -n "$ns" logs "$p" --all-containers --tail=200 || true
+            echo
+          done
           
       - name: setup-ingress-controller
         run: |
