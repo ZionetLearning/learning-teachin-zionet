@@ -1,0 +1,123 @@
+global:
+  namePrefix: ""
+  dockerRegistry: ""
+  imagePullPolicy: IfNotPresent
+  dapr:
+    enabled: true
+  imagePullSecret:
+    enabled: false
+    name: ""
+
+# If empty, namespace becomes <namePrefix>
+namespace:
+  create: true
+  name: ""
+
+manager:
+  name: manager
+  labels:
+    selectorKey: io.kompose.service
+    selectorValue: manager
+  image:
+    name: manager
+    tag: latest
+  ports:
+    container: 5001
+    service: 80
+  service:
+    type: ClusterIP
+  dapr:
+    appId: manager
+    appPort: 5001
+  env:
+    ASPNETCORE_URLS: "http://+:5001"
+  secrets:
+    serviceBus:
+      name: azure-service-bus-secret
+      key: AzureServiceBusConnectionString
+
+engine:
+  name: engine
+  labels:
+    selectorKey: io.kompose.service
+    selectorValue: engine
+  image:
+    name: engine
+    tag: latest
+  ports:
+    container: 5002
+    service: 5002
+  service:
+    type: ClusterIP
+  dapr:
+    appId: engine
+    appPort: 5002
+  env:
+    ASPNETCORE_URLS: "http://+:5002"
+    AzureOpenAI__Endpoint: "https://france-teachin-open-ai.openai.azure.com/"
+    AzureOpenAI__ApiKey: ""
+    AzureOpenAI__DeploymentName: "gpt-4.1-mini"
+    AzureOpenAI__ModelId: "gpt-4o-mini"
+  secrets:
+    serviceBus:
+      name: azure-service-bus-secret
+      key: AzureServiceBusConnectionString
+
+accessor:
+  name: accessor
+  labels:
+    selectorKey: app
+    selectorValue: accessor
+  image:
+    name: accessor
+    tag: latest
+  ports:
+    container: 5003
+    service: 80
+  service:
+    type: ClusterIP
+  dapr:
+    appId: accessor
+    appPort: 5003
+  env:
+    ASPNETCORE_URLS: "http://+:5003"
+  secrets:
+    serviceBus:
+      name: azure-service-bus-secret
+      key: AzureServiceBusConnectionString
+    postgres:
+      name: postgres-connection
+      key: PostgreSQLConnectionString
+
+dapr:
+  # Shared connection for Service Bus components
+  connection:
+    secretName: azure-service-bus-secret
+    secretKey:  AzureServiceBusConnectionString
+
+  # Prefix queue names with global.namePrefix (e.g., test123-queue)
+  prefixEntityNames: false
+
+  # PubSub (optional)
+  pubsub:
+    enabled: false
+    name: servicebus-pubsub
+    disableEntityManagement: "true"
+    scopes: [manager, engine, accessor]
+
+  # Redis state store (optional)
+  stateStore:
+    enabled: true
+    name: statestore
+    redis:
+      secretName: "redis-connection"
+      hostKey: "redis-hostport"
+      passwordKey: "redis-password"
+      enableTLS: "true"
+      options:
+        dialTimeout: "30s"
+        readTimeout: "30s"
+        writeTimeout: "30s"
+        poolTimeout: "30s"
+        idleTimeout: "300s"
+        maxConnAge: "30m"

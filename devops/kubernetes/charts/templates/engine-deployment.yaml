@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.engine.name }}
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{ .Values.engine.labels.selectorKey }}: {{ .Values.engine.labels.selectorValue }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{ .Values.engine.labels.selectorKey }}: {{ .Values.engine.labels.selectorValue }}
+  template:
+    metadata:
+      labels:
+        {{ .Values.engine.labels.selectorKey }}: {{ .Values.engine.labels.selectorValue }}
+      annotations:
+        {{ include "app.dapr.annotations" (dict
+              "enabled" .Values.global.dapr.enabled
+              "appId" (.Values.engine.dapr.appId | default .Values.engine.name)
+              "appPort" .Values.engine.dapr.appPort) | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Values.engine.name }}
+          image: {{ include "app.image" (dict "name" .Values.engine.image.name "tag" .Values.engine.image.tag "Values" .Values) }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - containerPort: {{ .Values.engine.ports.container }}
+              protocol: TCP
+          env:
+            - name: ASPNETCORE_URLS
+              value: "{{ .Values.engine.env.ASPNETCORE_URLS }}"
+            - name: ServiceBus__ConnectionString
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.engine.secrets.serviceBus.name }}
+                  key: {{ .Values.engine.secrets.serviceBus.key }}
+            - name: AzureOpenAI__Endpoint
+              value: "{{ .Values.engine.env.AzureOpenAI__Endpoint }}"
+            - name: AzureOpenAI__ApiKey
+              value: "{{ .Values.engine.env.AzureOpenAI__ApiKey }}"
+            - name: AzureOpenAI__DeploymentName
+              value: "{{ .Values.engine.env.AzureOpenAI__DeploymentName }}"
+            - name: AzureOpenAI__ModelId
+              value: "{{ .Values.engine.env.AzureOpenAI__ModelId }}"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.engine.name }}
+  namespace: {{ include "app.namespace" . }}
+spec:
+  type: {{ .Values.engine.service.type }}
+  selector:
+    {{ .Values.engine.labels.selectorKey }}: {{ .Values.engine.labels.selectorValue }}
+  ports:
+    - port: {{ .Values.engine.ports.service }}
+      targetPort: {{ .Values.engine.ports.container }}

@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.manager.name }}
+  namespace: {{ include "app.namespace" . }}
+  labels:
+    {{ .Values.manager.labels.selectorKey }}: {{ .Values.manager.labels.selectorValue }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{ .Values.manager.labels.selectorKey }}: {{ .Values.manager.labels.selectorValue }}
+  template:
+    metadata:
+      labels:
+        {{ .Values.manager.labels.selectorKey }}: {{ .Values.manager.labels.selectorValue }}
+      annotations:
+        {{ include "app.dapr.annotations" (dict
+              "enabled" .Values.global.dapr.enabled
+              "appId" (.Values.manager.dapr.appId | default .Values.manager.name)
+              "appPort" .Values.manager.dapr.appPort) | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Values.manager.name }}
+          image: {{ include "app.image" (dict "name" .Values.manager.image.name "tag" .Values.manager.image.tag "Values" .Values) }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - containerPort: {{ .Values.manager.ports.container }}
+          env:
+            - name: ASPNETCORE_URLS
+              value: "{{ .Values.manager.env.ASPNETCORE_URLS }}"
+            - name: ServiceBus__ConnectionString
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.manager.secrets.serviceBus.name }}
+                  key: {{ .Values.manager.secrets.serviceBus.key }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.manager.name }}
+  namespace: {{ include "app.namespace" . }}
+spec:
+  type: {{ .Values.manager.service.type }}
+  selector:
+    {{ .Values.manager.labels.selectorKey }}: {{ .Values.manager.labels.selectorValue }}
+  ports:
+    - port: {{ .Values.manager.ports.service }}
+      targetPort: {{ .Values.manager.ports.container }}

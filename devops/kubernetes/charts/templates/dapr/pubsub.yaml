@@ -1,0 +1,21 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: {{ include "app.join" (list (include "app.prefix" .) "pubsub") }}
+  namespace: {{ include "app.namespace" . }}
+spec:
+  type: pubsub.azure.servicebus
+  version: v1
+  metadata:
+    - name: connectionString
+      secretKeyRef:
+        name: azure-service-bus-secret
+        key: AzureServiceBusConnectionString
+    - name: consumerID
+      value: {{ include "app.join" (list (include "app.prefix" .) "engine") }}
+    - name: disableEntityManagement
+      value: "true"
+scopes:
+  - {{ .Values.manager.dapr.appId  | default .Values.manager.name  | quote }}
+  - {{ .Values.engine.dapr.appId  | default .Values.engine.name  | quote }}
+  - {{ .Values.accessor.dapr.appId  | default .Values.accessor.name  | quote }}

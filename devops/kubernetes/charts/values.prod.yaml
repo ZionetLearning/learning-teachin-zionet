@@ -1,0 +1,41 @@
+# PROD overrides for the Helm chart
+global:
+  dockerRegistry: ""   # CI sets: docker.io/<org> or <acr>.azurecr.io
+  imagePullPolicy: IfNotPresent   # or Always if you rely on :latest
+  dapr:
+    enabled: true
+
+namespace:
+  create: true
+  name: prod
+
+manager:
+  image:
+    tag: "1.0.0"                  # pin a version
+  env:
+    ASPNETCORE_URLS: "http://+:5001"
+  # Consider adding resource limits here if you introduce them in templates
+  ingress:
+    enabled: true
+    host: teachin-zionet.westeurope.cloudapp.azure.com
+    basePath: /api
+    tls:
+      enabled: true
+      clusterIssuer: letsencrypt-prod
+      secretName: teachin-zionet-tls
+
+engine:
+  image:
+    tag: "1.0.0"
+  env:
+    ASPNETCORE_URLS: "http://+:5002"
+    AzureOpenAI__Endpoint: "https://france-teachin-open-ai.openai.azure.com/"
+    AzureOpenAI__ApiKey: ""       # Prefer secret/KeyVault/CI variable
+    AzureOpenAI__DeploymentName: "gpt-4.1-mini"
+    AzureOpenAI__ModelId: "gpt-4o-mini"
+
+accessor:
+  image:
+    tag: "1.0.0"
+  env:
+    ASPNETCORE_URLS: "http://+:5003"
