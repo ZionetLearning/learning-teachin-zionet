@@ -19,10 +19,10 @@ on:
     outputs:
       static_web_app_api_token:
         description: "Azure Static Web Apps deployment token"
-        value: ${{ jobs.aks-terraform.outputs.static_web_app_api_token }}
+        value: ${{ jobs.terraform.outputs.static_web_app_api_token }}
       app_insights_connection_string:
         description: "Application Insights connection string"
-        value: ${{ jobs.aks-terraform.outputs.app_insights_connection_string }}
+        value: ${{ jobs.terraform.outputs.app_insights_connection_string }}
   workflow_dispatch:
     inputs:
       environment:
@@ -39,7 +39,7 @@ on:
 jobs:
   terraform:
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment | github.event.inputs.environment}}
+    environment: ${{ inputs.environment || github.event.inputs.environment }}
     permissions:
       id-token: write      # Required for OIDC login
       contents: read       # For actions/checkout
@@ -77,26 +77,38 @@ jobs:
       - name: Extract and validate environment variables
         id: extract_env
         run: |
-          case "${{ inputs.environment }}" in
-            "Development")
-              SHORT_ENV="dev"
-              ENVIRONMENT_NAME="dev"
-              TFVARS_FILE="terraform.tfvars.dev"
-              ;;
-            "Production")
-              SHORT_ENV="prod"
-              ENVIRONMENT_NAME="prod"
-              TFVARS_FILE="terraform.tfvars.prod"
-              ;;
-            *)
-              # Support custom environments (feature branches || testing)
-              SHORT_ENV="${{ inputs.environment }}"
-              ENVIRONMENT_NAME="${{ inputs.environment }}"
-              TFVARS_FILE="terraform.tfvars.template"
-              ;;
-          esac
+          # Determine which environment_name to use (custom or predefined)
+          if [ -n "${{ inputs.environment_name }}" ]; then
+            CUSTOM_ENV="${{ inputs.environment_name }}"
+          elif [ -n "${{ github.event.inputs.environment_name }}" ]; then
+            CUSTOM_ENV="${{ github.event.inputs.environment_name }}"
+          else
+            CUSTOM_ENV=""
+          fi
           
-          echo "short_env=$SHORT_ENV" >> $GITHUB_ENV
+          # Set environment variables based on input
+          if [ -n "$CUSTOM_ENV" ]; then
+            # Custom environment
+            ENVIRONMENT_NAME="$CUSTOM_ENV"
+            TFVARS_FILE="terraform.tfvars.template"
+          else
+            # Predefined environments
+            case "${{ inputs.environment || github.event.inputs.environment }}" in
+              "Development")
+                ENVIRONMENT_NAME="dev"
+                TFVARS_FILE="terraform.tfvars.dev"
+                ;;
+              "Production")
+                ENVIRONMENT_NAME="prod"
+                TFVARS_FILE="terraform.tfvars.prod"
+                ;;
+              *)
+                echo "Unknown environment: ${{ inputs.environment || github.event.inputs.environment }}"
+                exit 1
+                ;;
+            esac
+          fi
+          
           echo "environment_name=$ENVIRONMENT_NAME" >> $GITHUB_ENV
           echo "TFVARS_FILE=$TFVARS_FILE" >> $GITHUB_ENV
 

@@ -8,7 +8,14 @@ run-name: >
   }} environment [${{ inputs.environment || github.event.inputs.environment }}]
 
 on:
-
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      environment_name:
+        required: false
+        type: string
   workflow_dispatch:
     inputs:
       environment:
