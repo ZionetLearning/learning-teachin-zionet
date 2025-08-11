@@ -7,8 +7,8 @@ ADMIN_USER="admin"
 ADMIN_PASS="admin123"
 GRAFANA_CHART_VERSION="9.3.0"
 MC_RG="MC_dev-zionet-learning-2025-prom_aks-cluster-dev_westeurope"
-# The following will fetch the static public IP from Azure
-CONTROLLER_IP="teaching-zionet.westeurope.cloudapp.azure.com"
+# Public FQDN for ingress controller (must match ingress/grafana-ingress.yaml)
+CONTROLLER_IP="teachin-zionet-prom.westeurope.cloudapp.azure.com"
 # -----------------------------
 
 echo "0. Uninstalling existing Grafana Helm release (if present)..."
