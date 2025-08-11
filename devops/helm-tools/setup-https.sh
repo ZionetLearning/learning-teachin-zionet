@@ -8,7 +8,7 @@ DOMAIN="teachin-zionet-keda.westeurope.cloudapp.azure.com"
 echo "1. Installing cert-manager..."
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.0/cert-manager.yaml
 
-cho "2) Wait for cert-manager deployments to be Available"
+echo "2) Wait for cert-manager deployments to be Available"
 kubectl -n cert-manager rollout status deploy/cert-manager --timeout=3m
 kubectl -n cert-manager rollout status deploy/cert-manager-cainjector --timeout=3m
 kubectl -n cert-manager rollout status deploy/cert-manager-webhook --timeout=3m
