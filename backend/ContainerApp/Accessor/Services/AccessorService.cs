@@ -298,6 +298,7 @@ public class AccessorService : IAccessorService
     public async Task<IEnumerable<ChatMessage>> GetMessagesByThreadAsync(Guid threadId)
     {
         return await _dbContext.ChatMessages
+            .AsNoTracking()
             .Where(m => m.ThreadId == threadId)
             .OrderBy(m => m.Timestamp)
             .ToListAsync();

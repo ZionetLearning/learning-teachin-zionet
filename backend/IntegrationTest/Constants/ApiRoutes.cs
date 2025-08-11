@@ -6,8 +6,8 @@ public static class ApiRoutes
     public static string TaskById(int id) => $"/task/{id}";
     public static string UpdateTaskName(int id, string name) => $"/task/{id}/{name}";
 
-    public const string ChatMessage = "/chat-history/message";
-    public static string ChatHistoryByThread(Guid threadId) => $"/chat-history/{threadId}";
-    public static string ChatThreadsByUser(string userId) => $"/chat-history/threads/{userId}";
+    public const string ChatMessage = "/threads/message";
+    public static string ChatHistoryByThread(Guid threadId) => $"/threads/{threadId}/messages";
+    public static string ChatThreadsByUser(string userId) => $"/threads/{userId}";
 
 }

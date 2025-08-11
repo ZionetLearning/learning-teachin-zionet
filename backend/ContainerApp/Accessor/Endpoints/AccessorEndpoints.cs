@@ -9,10 +9,11 @@ public static class AccessorEndpoints
     public static void MapAccessorEndpoints(this WebApplication app)
     {
         app.MapGet("/task/{id:int}", GetTaskByIdAsync);
+        app.MapGet("/threads/{threadId:guid}/messages", GetChatHistoryAsync)
+           .WithName("GetChatHistory");
+        app.MapGet("/threads/{userId}", GetThreadsForUserAsync);
         app.MapDelete("/task/{taskId}", DeleteTaskAsync);
-        app.MapPost("/chat-history/message", StoreMessageAsync);
-        app.MapGet("/chat-history/{threadId:guid}", GetChatHistoryAsync);
-        app.MapGet("/chat-history/threads/{userId}", GetThreadsForUserAsync);
+        app.MapPost("/threads/message", StoreMessageAsync);
     }
 
     #region HandlerMethods
@@ -147,7 +148,11 @@ public static class AccessorEndpoints
             logger.LogInformation("Message stored successfully");
 
             // Return 201 Created with location header
-            return Results.Created($"/chat-history/{msg.ThreadId}", msg);
+            return Results.CreatedAtRoute(
+                routeName: "GetChatHistory",
+                routeValues: new { threadId = msg.ThreadId },
+                value: msg
+            );
         }
         catch (Exception ex)
         {
@@ -200,13 +205,13 @@ public static class AccessorEndpoints
         using var scope = logger.BeginScope("Handler: {Handler}, UserId: {UserId}", nameof(GetThreadsForUserAsync), userId);
         try
         {
-            var messages = await accessorService.GetThreadsForUserAsync(userId);
-            logger.LogInformation("Retrieved messages for user");
-            return Results.Ok(messages);
+            var threads = await accessorService.GetThreadsForUserAsync(userId);
+            logger.LogInformation("Retrieved threads for user");
+            return Results.Ok(threads);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error listing messages for user {UserId}", userId);
+            logger.LogError(ex, "Error listing threads for user {UserId}", userId);
             return Results.Problem("An error occurred while listing chat threads.");
         }
     }

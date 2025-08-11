@@ -70,7 +70,7 @@ public class ChatHistoryIntegrationTests : AccessorIntegrationTestBase
         history.Select(m => m.Timestamp.Offset).Should().OnlyContain(o => o == TimeSpan.Zero);
     }
 
-    [Fact(DisplayName = "GET /chat-history/threads/{userId} => returns thread summaries for user (no messages)")]
+    [Fact(DisplayName = "GET /threads/{userId} => returns thread summaries for user (no messages)")]
     public async Task Get_Threads_By_User_Should_Return_Summaries()
     {
         var t1 = Guid.NewGuid();
