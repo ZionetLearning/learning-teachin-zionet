@@ -1,7 +1,14 @@
+{{- $global      := .Values.global           | default dict -}}
+{{- $globalDapr  := $global.dapr             | default dict -}}
+{{- $globalName  := $globalDapr.configName   | default ""   -}}
+{{- $dapr        := .Values.dapr             | default dict -}}
+{{- $conf        := $dapr.configuration      | default dict -}}
+{{- $name        := (or $conf.name $globalName "dapr-config") -}}
+
 apiVersion: dapr.io/v1alpha1
 kind: Configuration
 metadata:
-  name: {{ default "dapr-config" .Values.dapr.configuration.name | lower | quote }}
+  name: {{ $name | lower | quote }}
   namespace: {{ include "app.namespace" . }}
 spec:
   tracing:

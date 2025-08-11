@@ -103,6 +103,9 @@ dapr:
   # Prefix queue names with global.namePrefix (e.g., test123-queue)
   prefixEntityNames: false
 
+  configuration:
+    name: dapr-config
+
   # PubSub (optional)
   pubsub:
     enabled: false
