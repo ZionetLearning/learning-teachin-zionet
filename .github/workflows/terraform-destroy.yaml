@@ -1,31 +1,42 @@
-name: Terraform Destroy
+name: Terraform Destroy (Dynamic Environment)
+run-name: >
+  🗑️ Destroy Infrastructure in ${{
+    inputs.environment_name || github.event.inputs.environment_name || 
+    (inputs.environment == 'Development' && 'dev') ||
+    (inputs.environment == 'Production' && 'prod') ||
+    'custom'
+  }} environment [${{ inputs.environment || github.event.inputs.environment }}]
 
 on:
+
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Select environment to destroy'
+        description: 'Select environment (GitHub Environment)'
         required: true
         default: 'Development'
         type: choice
-        options:
-          - Development
-          - Production
+        options: [Development, Production]
+      environment_name:
+        description: 'Enter custom prefix (lowercase letters & digits only).\nThis will be used as the Kubernetes namespace and environment identifier.'
+        required: true
+        type: string
+
 
 jobs:
-  aks-terraform-destroy:
+  terraform-destroy:
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment }}
+    environment: ${{ inputs.environment || github.event.inputs.environment }}
     permissions:
-      id-token: write
-      contents: read
+      id-token: write      # Required for OIDC login
+      contents: read       # For actions/checkout
 
     env:
-      ARM_USE_OIDC: "true"
+      ARM_USE_OIDC: "true" # tell provider to use the OIDC token
       ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      ARM_USE_AZUREAD: "true"
+      ARM_USE_AZUREAD: "true" # matches `use_azuread_auth = true`
 
     steps:
       - name: Checkout repository
@@ -46,23 +57,78 @@ jobs:
       - name: Set Terraform working directory
         run: echo "TF_DIR=./devops/terraform" >> $GITHUB_ENV
 
-      - name: Extract environment variables
+      - name: Extract and validate environment variables
         id: extract_env
         run: |
-          if [ "${{ github.event.inputs.environment }}" == "Development" ]; then
-            SHORT_ENV="dev"
-          elif [ "${{ github.event.inputs.environment }}" == "Production" ]; then
-            SHORT_ENV="prod"
+          # Determine which environment_name to use (custom or predefined)
+          if [ -n "${{ inputs.environment_name }}" ]; then
+            CUSTOM_ENV="${{ inputs.environment_name }}"
+          elif [ -n "${{ github.event.inputs.environment_name }}" ]; then
+            CUSTOM_ENV="${{ github.event.inputs.environment_name }}"
           else
-            echo "Unknown environment: ${{ github.event.inputs.environment }}"
-            exit 1
+            CUSTOM_ENV=""
           fi
-          echo "short_env=$SHORT_ENV" >> $GITHUB_ENV
+          
+          # Set environment variables based on input
+          if [ -n "$CUSTOM_ENV" ]; then
+            # Custom environment
+            ENVIRONMENT_NAME="$CUSTOM_ENV"
+            TFVARS_FILE="terraform.tfvars.template"
+          else
+            # Predefined environments
+            case "${{ inputs.environment || github.event.inputs.environment }}" in
+              "Development")
+                ENVIRONMENT_NAME="dev"
+                TFVARS_FILE="terraform.tfvars.dev"
+                ;;
+              "Production")
+                ENVIRONMENT_NAME="prod"
+                TFVARS_FILE="terraform.tfvars.prod"
+                ;;
+              *)
+                echo "Unknown environment: ${{ inputs.environment || github.event.inputs.environment }}"
+                exit 1
+                ;;
+            esac
+          fi
+          
+          echo "environment_name=$ENVIRONMENT_NAME" >> $GITHUB_ENV
+          echo "TFVARS_FILE=$TFVARS_FILE" >> $GITHUB_ENV
 
-      - name: Terraform Init
-        run: terraform init
+      - name: Generate dynamic backend key
+        run: |
+          BACKEND_KEY="${{ env.environment_name }}.terraform.tfstate"
+          echo "backend_key=$BACKEND_KEY" >> $GITHUB_ENV
+
+      - name: Terraform Init with dynamic backend
+        run: |
+          terraform init \
+            -backend-config="key=${{ env.backend_key }}" \
+            -reconfigure
         working-directory: ${{ env.TF_DIR }}
 
+      - name: Terraform vars file (for custom environments)
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          if [ -f "${{ env.TFVARS_FILE }}" ] && [ "${{ env.TFVARS_FILE }}" == "terraform.tfvars.template" ]; then
+            echo "" >> terraform.tfvars.template
+            echo "#------------- Dynamic Environment Configuration -------------" >> terraform.tfvars.template
+            echo "environment_name = \"${{ env.environment_name }}\"" >> terraform.tfvars.template
+            echo "kubernetes_namespace = \"${{ env.environment_name }}\"" >> terraform.tfvars.template
+          fi
+
+      - name: Terraform Plan (Destroy)
+        run: terraform plan -destroy -var-file=${{ env.TFVARS_FILE }}
+        working-directory: ${{ env.TF_DIR }}
+
+      - name: Confirm Destroy
+        run: |
+          echo "⚠️  WARNING: This will destroy all resources in the '${{ env.environment_name }}' environment!"
+          echo "Resources to be destroyed:"
+          echo "- Resource Group: ${{ env.environment_name }}-*"
+          echo "- Kubernetes Namespace: ${{ env.environment_name }}"
+          echo "- All associated Azure resources"
+
       - name: Terraform Destroy
-        run: terraform destroy -auto-approve -var-file="terraform.tfvars.${{ env.short_env }}"
+        run: terraform destroy -auto-approve -var-file=${{ env.TFVARS_FILE }}
         working-directory: ${{ env.TF_DIR }}
