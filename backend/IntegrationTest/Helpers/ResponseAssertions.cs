@@ -16,4 +16,7 @@ public static class ResponseAssertions
 
     public static void ShouldBeNotFound(this HttpResponseMessage response) =>
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    public static void ShouldBeCreated(this HttpResponseMessage response) =>
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
 }

@@ -1,4 +1,5 @@
-﻿using Dapr.Client;
+﻿using System.Text.Json;
+using Dapr.Client;
 using Manager.Constants;
 using Manager.Models;
 using Manager.Models.Speech;
@@ -26,7 +27,43 @@ public class EngineClient : IEngineClient
 
         try
         {
-            await _daprClient.InvokeBindingAsync(QueueNames.ManagerToEngine, "create", task);
+            var payload = JsonSerializer.SerializeToElement(task);
+            var message = new Message
+            {
+                ActionName = MessageAction.CreateTask,
+                Payload = payload
+            };
+            await _daprClient.InvokeBindingAsync(QueueNames.ManagerToEngine, "create", message);
+
+            _logger.LogDebug(
+                "Task {TaskId} sent to Engine via binding '{Binding}'",
+                task.Id,
+                QueueNames.ManagerToEngine
+            );
+            return (true, "sent to engine");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send task {TaskId} to Engine", task.Id);
+            throw;
+        }
+    }
+    public async Task<(bool success, string message)> ProcessTaskLongAsync(TaskModel task)
+    {
+        _logger.LogInformation(
+            "Inside: {Method} in {Class}",
+            nameof(ProcessTaskLongAsync),
+            nameof(EngineClient)
+        );
+        try
+        {
+            var payload = JsonSerializer.SerializeToElement(task);
+            var message = new Message
+            {
+                ActionName = MessageAction.TestLongTask,
+                Payload = payload
+            };
+            await _daprClient.InvokeBindingAsync(QueueNames.ManagerToEngine, "create", message);
 
             _logger.LogDebug(
                 "Task {TaskId} sent to Engine via binding '{Binding}'",
