@@ -19,8 +19,8 @@ spec:
               "enabled" .Values.global.dapr.enabled
               "appId" (.Values.accessor.dapr.appId | default .Values.accessor.name)
               "appPort" .Values.accessor.dapr.appPort) 
-              "config"  (.Values.global.dapr.configName | default "daprConfig")
-              ) | nindent 8 }}
+            "config"  (.Values.global.dapr.configName | default "daprConfig")
+        ) | nindent 8 }}
     spec:
       containers:
         - name: {{ .Values.accessor.name }}
