@@ -3,6 +3,7 @@ using Engine.Constants;
 using Engine.Endpoints;
 using Engine.Messaging;
 using Engine.Models;
+using Engine.Models.Speech;
 using Engine.Plugins;
 using Engine.Services;
 using Engine.Services.Clients;
@@ -30,6 +31,7 @@ builder.Services.AddScoped<IAccessorClient, AccessorClient>();
 builder.Services.AddSingleton<IRetryPolicyProvider, RetryPolicyProvider>();
 builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
 builder.Services.AddSingleton<ISemanticKernelPlugin, TimePlugin>();
+builder.Services.AddSingleton<ISpeechSynthesisService, AzureSpeechSynthesisService>();
 
 builder.Services.AddMemoryCache();
 builder.Services
@@ -48,6 +50,9 @@ builder.Services
         !string.IsNullOrWhiteSpace(s.Endpoint) &&
         !string.IsNullOrWhiteSpace(s.DeploymentName),
         "Azure OpenAI settings are incomplete");
+
+builder.Services.Configure<AzureSpeechSettings>(
+    builder.Configuration.GetSection(AzureSpeechSettings.SectionName));
 
 builder.Services.AddSingleton(sp =>
 {
@@ -84,20 +89,8 @@ builder.Services.AddSingleton(sp =>
 builder.Services.AddSingleton(_ =>
     new ServiceBusClient(builder.Configuration["ServiceBus:ConnectionString"]));
 
-builder.Services.AddQueue<TaskModel, EngineQueueHandler>(
-    QueueNames.ManagerToEngine,
-    settings =>
-    {
-        settings.MaxConcurrentCalls = 5;
-        settings.PrefetchCount = 10;
-        settings.ProcessingDelayMs = 200;
-        settings.MaxRetryAttempts = 3;
-        settings.RetryDelaySeconds = 2;
-    });
-
-// Queue listener for AI requests
-builder.Services.AddQueue<AiRequestModel, EngineAiQueueHandler>(
-    QueueNames.ManagerToAi,
+builder.Services.AddQueue<Message, EngineQueueHandler>(
+    QueueNames.EngineQueue,
     settings =>
     {
         settings.MaxConcurrentCalls = 5;

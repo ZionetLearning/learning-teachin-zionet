@@ -1,0 +1,52 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`<SpeakingPractice /> snapshot renders initial UI correctly 1`] = `
+<div>
+  <div
+    class="container-0-2-1"
+  >
+    <div
+      class="nav-0-2-3"
+    >
+      <button>
+        « 
+        pages.speakingPractice.prev
+      </button>
+      <span>
+        1
+         / 
+        12
+      </span>
+      <button>
+        pages.speakingPractice.next
+         »
+      </button>
+    </div>
+    <div
+      class="main-0-2-2"
+    >
+      <h2
+        class="phrase-0-2-4"
+      >
+        שלום
+      </h2>
+      <p
+        class="feedback-0-2-6 incorrect"
+      />
+    </div>
+    <div
+      class="controls-0-2-5"
+    >
+      <button>
+        pages.speakingPractice.play
+      </button>
+      <button>
+        pages.speakingPractice.record
+      </button>
+      <button>
+        pages.speakingPractice.showNikud
+      </button>
+    </div>
+  </div>
+</div>
+`;

@@ -1,6 +1,6 @@
-﻿using Dapr.Client;
+﻿using System.Text.Json;
+using Dapr.Client;
 using Engine.Models;
-using Engine.Constants;
 
 namespace Engine.Services;
 
@@ -37,9 +37,16 @@ public sealed class AiReplyPublisher : IAiReplyPublisher
                 return;
             }
 
-            _log.LogInformation("Publishing AI answer {Id} to topic {Topic}", response.Id, replyToQueue);
+            var payload = JsonSerializer.SerializeToElement(response);
+            var message = new Message
+            {
+                ActionName = MessageAction.AnswerAi,
+                Payload = payload
+            };
 
-            await _dapr.InvokeBindingAsync(QueueNames.AiToManager, "create", response, cancellationToken: ct);
+            _log.LogInformation("Publishing AI answer {Id} to the queue {Topic}", response.Id, replyToQueue);
+
+            await _dapr.InvokeBindingAsync(replyToQueue, "create", message, cancellationToken: ct);
 
             _log.LogDebug("AI answer {Id} published successfully", response.Id);
         }
