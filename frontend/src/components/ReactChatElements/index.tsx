@@ -6,7 +6,7 @@ import { useStyles } from "./style";
 import avatar from "@/assets/avatar.svg";
 import "react-chat-elements/dist/main.css";
 
-interface ChatUiProps {
+interface ReactChatElementsProps {
   messages: ChatMessage[] | undefined;
   loading: boolean;
   avatarMode?: boolean;
@@ -16,7 +16,7 @@ interface ChatUiProps {
   handlePlay?: () => void;
 }
 
-export const ChatUi = ({
+export const ReactChatElements = ({
   messages,
   loading,
   avatarMode = false,
@@ -24,7 +24,7 @@ export const ChatUi = ({
   onChange,
   handleSendMessage,
   handlePlay,
-}: ChatUiProps) => {
+}: ReactChatElementsProps) => {
   const { t } = useTranslation();
   const classes = useStyles();
   const avatarUrl = avatar;

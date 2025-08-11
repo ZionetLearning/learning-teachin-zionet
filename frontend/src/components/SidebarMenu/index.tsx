@@ -112,13 +112,15 @@ export const SidebarMenu = () => {
           {t("sidebar.home")}
         </MenuItem>
 
+        <MenuItem
+          icon={<HomeIcon />}
+          onClick={() => handleNavigation("/chat-with-avatar")}
+          active={isActive("/chat-with-avatar")}
+        >
+          {t("sidebar.chatAvatar")}
+        </MenuItem>
+
         <SubMenu label={t("sidebar.chatTools")} icon={<ChatIcon />}>
-          <MenuItem
-            onClick={() => handleNavigation("/chat/sh")}
-            active={isActive("/chat/sh")}
-          >
-            {t("sidebar.chatSh")}
-          </MenuItem>
           <MenuItem
             onClick={() => handleNavigation("/chat/yo")}
             active={isActive("/chat/yo")}
@@ -136,12 +138,6 @@ export const SidebarMenu = () => {
             active={isActive("/chat/ou")}
           >
             {t("sidebar.chatOu")}
-          </MenuItem>
-          <MenuItem
-            onClick={() => handleNavigation("/chat-avatar")}
-            active={isActive("/chat-avatar")}
-          >
-            {t("sidebar.chatAvatar")}
           </MenuItem>
         </SubMenu>
 

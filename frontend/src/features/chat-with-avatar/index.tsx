@@ -2,10 +2,10 @@ import { useEffect, useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useChat } from "@/hooks/useChat";
 import { useAvatarSpeech } from "@/hooks";
+import { ReactChatElements } from "@/components";
 import avatar from "@/assets/avatar.svg";
-import { useStyles } from "./style";
-import { ChatUi } from "../chat-yo/components";
 import { lipsArray } from "@/assets/lips";
+import { useStyles } from "./style";
 
 export const ChatAvatar = () => {
   const classes = useStyles();
@@ -47,7 +47,7 @@ export const ChatAvatar = () => {
           className={classes.lipsImage}
         />
       </div>
-      <ChatUi
+      <ReactChatElements
         loading={loading}
         messages={messages}
         avatarMode
