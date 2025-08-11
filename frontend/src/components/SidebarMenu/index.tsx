@@ -112,6 +112,14 @@ export const SidebarMenu = () => {
           {t("sidebar.home")}
         </MenuItem>
 
+         <MenuItem
+          icon={<HomeIcon />}
+          onClick={() => handleNavigation("/chat-with-avatar")}
+          active={isActive("/")}
+        >
+          {t("sidebar.chatWithAvatar")}
+        </MenuItem>
+
         <SubMenu label={t("sidebar.chatTools")} icon={<ChatIcon />}>
           <MenuItem
             onClick={() => handleNavigation("/chat/sh")}

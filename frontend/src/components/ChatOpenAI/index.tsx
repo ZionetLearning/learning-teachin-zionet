@@ -1,16 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-// import { sendChatMessage } from "./services";
 import { useChat } from "@/hooks";
-
-import aiAvatar from "./assets/ai-avatar.svg";
+import aiAvatar from "@/assets/avatar.svg";
 import { useStyles } from "./style";
 
-type ChatShProps = {
-  onAssistantText?: (text: string) => void; // NEW
+type ChatOpenAIProps = {
+  onAssistantText?: (text: string) => void;
 };
 
-export const ChatSh = ({ onAssistantText }: ChatShProps) => {
+export const ChatOpenAI = ({ onAssistantText }: ChatOpenAIProps) => {
   const { t } = useTranslation();
   const classes = useStyles();
   const { sendMessage, messages, loading, setMessages } = useChat();

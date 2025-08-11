@@ -1,18 +1,11 @@
 import { useEffect, useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useChat } from "../chat-yo/hooks";
-import { useAvatarSpeech } from "../../avatar/avatar-sh/hooks";
-import avatar from "../../avatar/avatar-sh/assets/avatar.svg";
+import { useAvatarSpeech } from "@/hooks";
+import avatar from "@/assets/avatar.svg";
 import { useStyles } from "./style";
 import { ChatUi } from "../chat-yo/components";
-
-type SvgModule = { default: string };
-
-const lips = import.meta.glob("../../avatar/avatar-sh/assets/lips/*.svg", {
-  eager: true,
-});
-
-const lipsArray = Object.values(lips).map((mod) => (mod as SvgModule).default);
+import { lipsArray } from "@/assets/lips";
 
 export const ChatAvatar = () => {
   const classes = useStyles();
