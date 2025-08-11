@@ -16,9 +16,9 @@ spec:
         {{ .Values.accessor.labels.selectorKey }}: {{ .Values.accessor.labels.selectorValue }}
       annotations:
         {{ include "app.dapr.annotations" (dict
-              "enabled" .Values.global.dapr.enabled
-              "appId" (.Values.accessor.dapr.appId | default .Values.accessor.name)
-              "appPort" .Values.accessor.dapr.appPort) 
+            "enabled" .Values.global.dapr.enabled
+            "appId" (.Values.accessor.dapr.appId | default .Values.accessor.name)
+            "appPort" .Values.accessor.dapr.appPort) 
             "config"  (.Values.global.dapr.configName | default "daprConfig")
         ) | nindent 8 }}
     spec:
