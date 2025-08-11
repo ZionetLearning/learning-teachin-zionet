@@ -68,6 +68,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
             }
             catch (OperationCanceledException)
             {
+                _logger.LogError("Renew Lock loop error");
                 throw;
             }
         }, renewalCts.Token);
