@@ -32,12 +32,12 @@ public class EngineClient : IEngineClient
                 ActionName = MessageAction.CreateTask,
                 Payload = payload
             };
-            await _daprClient.InvokeBindingAsync(QueueNames.ManagerToEngine, "create", message);
+            await _daprClient.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message);
 
             _logger.LogDebug(
                 "Task {TaskId} sent to Engine via binding '{Binding}'",
                 task.Id,
-                QueueNames.ManagerToEngine
+                QueueNames.EngineQueue
             );
             return (true, "sent to engine");
         }
@@ -47,6 +47,7 @@ public class EngineClient : IEngineClient
             throw;
         }
     }
+
     public async Task<(bool success, string message)> ProcessTaskLongAsync(TaskModel task)
     {
         _logger.LogInformation(
@@ -62,12 +63,12 @@ public class EngineClient : IEngineClient
                 ActionName = MessageAction.TestLongTask,
                 Payload = payload
             };
-            await _daprClient.InvokeBindingAsync(QueueNames.ManagerToEngine, "create", message);
+            await _daprClient.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message);
 
             _logger.LogDebug(
                 "Task {TaskId} sent to Engine via binding '{Binding}'",
                 task.Id,
-                QueueNames.ManagerToEngine
+                QueueNames.EngineQueue
             );
             return (true, "sent to engine");
         }

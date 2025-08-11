@@ -1,18 +1,21 @@
 apiVersion: dapr.io/v1alpha1
 kind: Component
 metadata:
-  name: engine-to-accessor
+  name: manager-callback-queue-in
+  namespace: dev
 spec:
   type: bindings.azure.servicebusqueues
   version: v1
   metadata:
     - name: connectionString
-      value: "Endpoint=sb://sbemulatorns/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=localSecret;UseDevelopmentEmulator=true"
+      secretKeyRef:
+        name: azure-service-bus-secret
+        key: AzureServiceBusConnectionString
     - name: queueName
-      value: "engine-to-accessor"
+      value: manager-callback-queue
     - name: direction
-      value: output
+      value: input
     - name: disableEntityManagement
       value: "true"
 scopes:
-  - engine
+  - manager

@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Manager.Models;
+namespace Accessor.Models;
 
 public record Message
 {
@@ -12,9 +12,5 @@ public record Message
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum MessageAction
 {
-    CreateTask,
-    UpdateTask,
-    TestLongTask,
-    ProcessingQuestionAi,
-    AnswerAi
+    UpdateTask
 }
