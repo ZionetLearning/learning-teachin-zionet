@@ -22,7 +22,7 @@ spec:
   - host: teachin-zionet.westeurope.cloudapp.azure.com
     http:
       paths:
-        - path: /manager(/|$)(.*)
+        - path: /${ENVIRONMENT_NAME}/manager(/|$)(.*)
           pathType: ImplementationSpecific
           backend:
             service:
