@@ -48,11 +48,10 @@ dapr.io/app-port: "{{ .appPort }}"
 {{- end -}}
 {{- end -}}
 
-{{/* AppId = <prefix>-<serviceName> */}}
+{{/* AppId = serviceName (no prefix) */}}
 {{- define "app.appIdFor" -}}
-{{- $root := index . 0 -}}
-{{- $svcName := index . 1 -}}
-{{- include "app.join" (list (include "app.prefix" $root) $svcName) -}}
+{{- /* keep call signature, ignore the first arg */ -}}
+{{- index . 1 -}}
 {{- end -}}
 
 {{/* Optional: Service Bus name = <prefix>-<suffix> */}}
