@@ -75,7 +75,7 @@ jobs:
             ENVIRONMENT_NAME="${{ inputs.environment_name }}"
           elif [ -n "${{ github.event.inputs.environment_name }}" ]; then
             ENVIRONMENT_NAME="${{ github.event.inputs.environment_name }}"
-       
+          fi       
           
           # Choose tfvars file based on environment name
           if [ "$ENVIRONMENT_NAME" = "dev" ]; then
