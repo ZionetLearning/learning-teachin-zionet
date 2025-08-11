@@ -4,7 +4,7 @@ global:
   imagePullPolicy: IfNotPresent
   dapr:
     enabled: true
-    configName: daprConfig
+    configName: dapr-config
   imagePullSecret:
     enabled: false
     name: ""

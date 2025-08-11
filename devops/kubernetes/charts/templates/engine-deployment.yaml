@@ -19,7 +19,7 @@ spec:
             "enabled" .Values.global.dapr.enabled
             "appId"   (.Values.engine.dapr.appId | default .Values.engine.name)
             "appPort" .Values.engine.dapr.appPort
-            "config"  (.Values.global.dapr.configName | default "daprConfig")
+            "config"  (.Values.global.dapr.configName | default "dapr-config")
         ) | nindent 8 }}
     spec:
       containers:

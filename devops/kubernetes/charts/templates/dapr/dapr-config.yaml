@@ -1,7 +1,7 @@
 apiVersion: dapr.io/v1alpha1
 kind: Configuration
 metadata:
-  name: {{ .Values.global.dapr.configName | default "daprConfig" }}
+  name: {{ default "dapr-config" .Values.dapr.configuration.name | lower | quote }}
   namespace: {{ include "app.namespace" . }}
 spec:
   tracing:
