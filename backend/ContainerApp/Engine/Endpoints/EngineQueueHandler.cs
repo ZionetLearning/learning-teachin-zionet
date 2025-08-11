@@ -63,14 +63,13 @@ public class EngineQueueHandler : IQueueHandler<Message>
                 while (!renewalCts.Token.IsCancellationRequested)
                 {
                     await Task.Delay(TimeSpan.FromSeconds(20), renewalCts.Token);
-                    _logger.LogDebug("Renewing lock at {Now}", DateTime.UtcNow);
                     await renewLock();
-                    _logger.LogDebug("Lock renewed at {Now}", DateTime.UtcNow);
                 }
             }
             catch (OperationCanceledException)
             {
-                // expected
+                _logger.LogError("Renew Lock loop error");
+                throw;
             }
         }, renewalCts.Token);
         try
@@ -97,16 +96,6 @@ public class EngineQueueHandler : IQueueHandler<Message>
             await renewalCts.CancelAsync();
             await renewalTask;
         }
-        //That is simple example of how to use renewLock to prevent exciding message lock time 
-        //_logger.LogInformation("Inside handler");
-        //await renewLock();
-        //await Task.Delay(TimeSpan.FromSeconds(50), cancellationToken);
-        //_logger.LogInformation("After first pause");
-        //await renewLock();
-        //await Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);
-        //_logger.LogInformation("Processing task {Id}", payload.Id);
-        //await _engine.ProcessTaskAsync(payload, cancellationToken);
-        //_logger.LogInformation("Task {Id} processed", payload.Id);
     }
 }
 
