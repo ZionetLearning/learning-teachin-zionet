@@ -43,6 +43,14 @@ spec:
               value: "{{ .Values.engine.env.AzureOpenAI__DeploymentName }}"
             - name: AzureOpenAI__ModelId
               value: "{{ .Values.engine.env.AzureOpenAI__ModelId }}"
+            - name: AzureSpeech__SubscriptionKey
+              value: "{{ .Values.engine.env.AzureSpeech__SubscriptionKey }}"
+            - name: AzureSpeech__Region
+              value: "{{ .Values.engine.env.AzureSpeech__Region }}"
+            - name: AzureSpeech__DefaultVoice
+              value: "{{ .Values.engine.env.AzureSpeech__DefaultVoice }}"
+            - name: AzureSpeech__TimeoutSeconds
+              value: "{{ .Values.engine.env.AzureSpeech__TimeoutSeconds }}"
 ---
 apiVersion: v1
 kind: Service
