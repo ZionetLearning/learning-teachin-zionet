@@ -6,9 +6,9 @@ export type ChatPosition = "left" | "right";
 export type ChatSender = "user" | "system";
 
 export interface ChatMessage {
-  position: ChatPosition; // "left" | "right"
-  type: "text"; // fixed for now
-  sender: ChatSender; // "user" | "system"
+  position: ChatPosition; 
+  type: "text"; 
+  sender: ChatSender; 
   text: string;
   date: Date;
 }
@@ -51,7 +51,6 @@ export const useChat = () => {
         const aiText = data.assistantMessage;
 
         if (onAssistantMessage) {
-          // let caller handle UI (loader/animation/speech) and when to append
           onAssistantMessage(aiText);
         } else {
           const aiMsg: ChatMessage = {
