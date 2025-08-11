@@ -130,6 +130,17 @@ jobs:
             echo "Required secrets are missing. Aborting."; exit 1
           fi
 
+      - name: Override Dapr config in target namespace
+        run: |
+          set -e
+          ns="$TARGET_NAMESPACE"
+
+          # Optional: delete if you want a clean replace
+          # kubectl -n "$ns" delete configmap dapr-config --ignore-not-found
+
+          # Apply your override (ConfigMap or Dapr Configuration CRD)
+          kubectl -n "$ns" apply -f devops/kubernetes/dapr/dapr-config.yaml
+
       - name: Helm upgrade/install services
         run: |
           # Render check (no Namespace object should be created)
@@ -140,6 +151,7 @@ jobs:
             --set global.dockerRegistry="$DOCKER_REGISTRY" \
             --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" \
             --set-string engine.env.AzureSpeech__SubscriptionKey="$AZURE_SPEECH_KEY" \
+            --set dapr.installComponents=false \
           | grep -n '^kind: Namespace' && { echo "Namespace still rendered"; exit 1; } || echo "OK: no Namespace in chart"
 
           # Deploy
@@ -152,6 +164,7 @@ jobs:
             --set global.dockerRegistry="$DOCKER_REGISTRY" \
             --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" \
             --set-string engine.env.AzureSpeech="$AZURE_SPEECH_KEY" \
+            --set dapr.installComponents=false \
             --atomic --timeout 10m
 
       - name: Diagnostics (on failure)
