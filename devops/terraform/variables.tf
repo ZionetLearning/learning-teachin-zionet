@@ -65,7 +65,7 @@ variable "docker_registry" {
 variable "signalr_name" {
   type        = string
   description = "SignalR service name (must be globally unique)"
-  default     = "signalr"
+  default     = "signalr-teachin"
 }
 
 variable "signalr_sku_name" {
@@ -192,7 +192,7 @@ variable "frontend_appinsights_sampling_percentage" {
 variable "redis_name" {
   description = "Name of the Redis cache instance"
   type        = string
-  default     = "redis"
+  default     = "redis-teachin"
 }
 
 
