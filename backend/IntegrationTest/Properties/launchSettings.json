@@ -5,6 +5,12 @@
       "environmentVariables": {
         "API_BASE_URL": "http://localhost:5001"
       }
+    },
+    "AccessorIntegration": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ACCESSOR_API_BASE_URL": "http://localhost:5003"
+      }
     }
   }
 }

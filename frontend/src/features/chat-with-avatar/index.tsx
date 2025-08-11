@@ -1,20 +1,13 @@
 import { useEffect, useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { useChat } from "../chat-yo/hooks";
-import { useAvatarSpeech } from "../../avatar/avatar-sh/hooks";
-import avatar from "../../avatar/avatar-sh/assets/avatar.svg";
+import { useChat } from "@/hooks/useChat";
+import { useAvatarSpeech } from "@/hooks";
+import { ReactChatElements } from "@/components";
+import avatar from "@/assets/avatar.svg";
+import { lipsArray } from "@/assets/lips";
 import { useStyles } from "./style";
-import { ChatUi } from "../chat-yo/components";
 
-type SvgModule = { default: string };
-
-const lips = import.meta.glob("../../avatar/avatar-sh/assets/lips/*.svg", {
-  eager: true,
-});
-
-const lipsArray = Object.values(lips).map((mod) => (mod as SvgModule).default);
-
-export const ChatAvatar = () => {
+export const ChatWithAvatar = () => {
   const classes = useStyles();
   const { t } = useTranslation();
   const { sendMessage, loading, messages } = useChat();
@@ -54,7 +47,7 @@ export const ChatAvatar = () => {
           className={classes.lipsImage}
         />
       </div>
-      <ChatUi
+      <ReactChatElements
         loading={loading}
         messages={messages}
         avatarMode
