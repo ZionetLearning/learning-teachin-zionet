@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Accessor.Constants;
 using Accessor.DB;
 using Accessor.Endpoints;
@@ -6,7 +7,6 @@ using Accessor.Models;
 using Accessor.Services;
 using Azure.Messaging.ServiceBus;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -51,7 +51,8 @@ builder.Services.AddDaprClient(client =>
     client.UseJsonSerializationOptions(new JsonSerializerOptions
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        PropertyNameCaseInsensitive = true
+        PropertyNameCaseInsensitive = true,
+        Converters = { new UtcDateTimeOffsetConverter() }
     });
 });
 
@@ -64,6 +65,7 @@ builder.Services.AddDbContext<AccessorDbContext>(options =>
             maxRetryDelay: TimeSpan.FromSeconds(5),
             errorCodesToAdd: null);
     }));
+
 // This is required for the Scalar UI to have an option to setup an authentication token
 builder.Services.AddOpenApi(
     "v1",
@@ -74,6 +76,11 @@ builder.Services.AddOpenApi(
 );
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new UtcDateTimeOffsetConverter());
+});
 
 var app = builder.Build();
 
