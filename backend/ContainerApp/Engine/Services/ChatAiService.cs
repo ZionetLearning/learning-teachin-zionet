@@ -111,6 +111,17 @@ public sealed class ChatAiService : IChatAiService
 
             _cache.Set(historyKey, cachedHistory, _cacheOptions);
 
+            //call the accessor client to store the chat messages
+            var storeRequest = new StoreChatMessagesRequest
+            (
+                ThreadId: request.ThreadId,
+                UserMessage: request.Question,
+                AssistantMessage: answer,
+                UserId: "123" // This should be replaced with the actual user ID
+            );
+
+            var storeResult = await _accessorClient.StoreChatMessagesAsync(storeRequest);
+            _log.LogDebug("Stored chat messages for thread {ThreadId}: {Success}", request.ThreadId, storeResult);
             return new AiResponseModel
             {
                 Id = request.Id,
