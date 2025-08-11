@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Values.engine.name }}
-  namespace: {{ .Values.namespace.name }}
+  namespace: {{ include "app.namespace" . }}
   labels:
     {{ .Values.engine.labels.selectorKey }}: {{ .Values.engine.labels.selectorValue }}
 spec:
@@ -21,7 +21,15 @@ spec:
             "appPort" .Values.engine.dapr.appPort
             "config"  (.Values.global.dapr.configName | default "dapr-config")
         ) | nindent 8 }}
+        dapr.io/sidecar-cpu-request:  "{{ .Values.global.dapr.sidecar.requests.cpu }}"
+        dapr.io/sidecar-memory-request: "{{ .Values.global.dapr.sidecar.requests.memory }}"
+        dapr.io/sidecar-cpu-limit:    "{{ .Values.global.dapr.sidecar.limits.cpu }}"
+        dapr.io/sidecar-memory-limit: "{{ .Values.global.dapr.sidecar.limits.memory }}"
     spec:
+      {{- if .Values.global.imagePullSecret.enabled }}
+      imagePullSecrets:
+        - name: {{ .Values.global.imagePullSecret.name }}
+      {{- end }}
       containers:
         - name: {{ .Values.engine.name }}
           image: {{ include "app.image" (dict "name" .Values.engine.image.name "tag" .Values.engine.image.tag "Values" .Values) }}
@@ -53,6 +61,8 @@ spec:
               value: "{{ .Values.engine.env.AzureSpeech__DefaultVoice }}"
             - name: AzureSpeech__TimeoutSeconds
               value: "{{ .Values.engine.env.AzureSpeech__TimeoutSeconds }}"
+          resources:
+            {{- toYaml .Values.engine.resources | nindent 12 }}
 ---
 apiVersion: v1
 kind: Service
