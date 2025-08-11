@@ -51,7 +51,7 @@ jobs:
           echo "OPENAI_KEY=${{ secrets.AZURE_OPENAI_API_KEY }}" >> $GITHUB_ENV
           echo "AKS_RG=dev-zionet-learning-2025-prom" >> $GITHUB_ENV
           echo "MC_AKS_RG=MC_dev-zionet-learning-2025-prom_aks-cluster-dev_westeurope" >> $GITHUB_ENV
-          echo "PG_DB=pg-zionet-dev-2025" >> $GITHUB_ENV
+          echo "PG_DB=pg-zionet-dev-2025-prom" >> $GITHUB_ENV
           echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
 
       - name: Get AKS credentials
