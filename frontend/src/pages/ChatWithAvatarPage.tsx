@@ -1,12 +1,12 @@
 import { useTranslation } from "react-i18next";
-import { ChatAvatar } from "../features";
+import { ChatWithAvatar } from "../features";
 
-export const ChatAvatarPage = () => {
+export const ChatWithAvatarPage = () => {
   const { t } = useTranslation();
   return (
     <div>
       <h1>{t("pages.chatAvatar.chatAvatarPage")}</h1>
-      <ChatAvatar />
+      <ChatWithAvatar />
     </div>
   );
 };
