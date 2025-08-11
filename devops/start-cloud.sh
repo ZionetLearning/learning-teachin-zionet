@@ -13,7 +13,7 @@ export DOCKER_REGISTRY="snir1551" # or read from env/.env file
 # cd ..
  
 # Step 2: Connect to Azure AKS
-az aks get-credentials --resource-group dev-zionet-learning-2025 --name aks-cluster-dev --overwrite-existing
+az aks get-credentials --resource-group dev-zionet-learning-2025-prom --name aks-cluster-dev --overwrite-existing
  
 # Set to cloud kubectl context
 kubectl config use-context aks-cluster-dev
