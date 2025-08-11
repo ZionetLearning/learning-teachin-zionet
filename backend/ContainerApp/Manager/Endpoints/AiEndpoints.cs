@@ -129,11 +129,6 @@ public static class AiEndpoints
             return Results.BadRequest(new { error = "Text is required" });
         }
 
-        if (dto.Text.Length > 1000)
-        {
-            return Results.BadRequest(new { error = "Text length cannot exceed 1000 characters" });
-        }
-
         logger.LogInformation("Received speech synthesis request for text length: {Length}", dto.Text.Length);
 
         try
@@ -146,7 +141,8 @@ public static class AiEndpoints
                 var response = new SpeechResponse
                 {
                     AudioData = engineResult.AudioData,
-                    Visemes = engineResult.Visemes
+                    Visemes = engineResult.Visemes,
+                    Metadata = engineResult.Metadata,
                 };
 
                 logger.LogInformation("Speech synthesis completed successfully");

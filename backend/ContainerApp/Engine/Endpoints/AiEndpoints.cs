@@ -9,6 +9,7 @@ public static class AiEndpoints
 {
     private sealed class ManagerToAiEndpoint { }
     private sealed class ChatEndpoint { }
+    private sealed class SpeechEndpoint { }
 
     public static WebApplication MapAiEndpoints(this WebApplication app)
     {
@@ -59,7 +60,7 @@ public static class AiEndpoints
     private static async Task<IResult> SynthesizeAsync(
     [FromBody] SpeechRequestDto dto,
     [FromServices] ISpeechSynthesisService speechService,
-    [FromServices] ILogger<ChatEndpoint> logger,
+    [FromServices] ILogger<SpeechEndpoint> logger,
     CancellationToken ct)
     {
         logger.LogInformation("Processing speech synthesis request for text length: {Length}", dto.Text.Length);
