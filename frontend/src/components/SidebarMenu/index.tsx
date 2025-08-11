@@ -18,6 +18,7 @@ import HomeIcon from "@mui/icons-material/Home";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import PublicIcon from "@mui/icons-material/Public";
 import WeatherWidgetIcon from "@mui/icons-material/Cloud";
+import ThreePIcon from '@mui/icons-material/ThreeP';
 import GBFlag from "country-flag-icons/react/3x2/GB";
 import ILFlag from "country-flag-icons/react/3x2/IL";
 import { useAuth } from "@/providers/auth";
@@ -113,7 +114,7 @@ export const SidebarMenu = () => {
         </MenuItem>
 
         <MenuItem
-          icon={<HomeIcon />}
+          icon={<ThreePIcon />}
           onClick={() => handleNavigation("/chat-with-avatar")}
           active={isActive("/chat-with-avatar")}
         >
