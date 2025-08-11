@@ -1,8 +1,9 @@
-﻿using Dapr.Client;
+﻿using System.Collections.Concurrent;
+using System.Text.Json;
+using Dapr.Client;
 using Manager.Constants;
 using Manager.Models;
 using Microsoft.Extensions.Options;
-using System.Collections.Concurrent;
 
 namespace Manager.Services;
 
@@ -22,19 +23,25 @@ public sealed class AiGatewayService : IAiGatewayService
     }
     public async Task<string> SendQuestionAsync(string threadId, string question, CancellationToken ct = default)
     {
-        var msg = AiRequestModel.Create(question, threadId, QueueNames.AiToManager, ttlSeconds: _settings.DefaultTtlSeconds);
+        var msg = AiRequestModel.Create(question, threadId, QueueNames.ManagerCallbackQueue, ttlSeconds: _settings.DefaultTtlSeconds);
 
         _log.LogInformation("Send question {Id} (TTL={Ttl})", msg.Id, msg.TtlSeconds);
 
+        var message = new Message
+        {
+            ActionName = MessageAction.ProcessingQuestionAi,
+            Payload = JsonSerializer.SerializeToElement(msg)
+        };
+
         try
         {
-            await _dapr.InvokeBindingAsync(QueueNames.ManagerToAi, "create", msg, cancellationToken: ct);
+            await _dapr.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message, cancellationToken: ct);
 
             return msg.Id;
         }
         catch (Exception ex)
         {
-            _log.LogError(ex, "Failed to publish question {Id} to topic {Topic}", msg.Id, QueueNames.ManagerToAi);
+            _log.LogError(ex, "Failed to publish question {Id} to topic {Topic}", msg.Id, QueueNames.EngineQueue);
             throw; // let the upper layer decide what to do
         }
     }

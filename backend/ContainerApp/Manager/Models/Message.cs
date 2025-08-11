@@ -13,5 +13,8 @@ public record Message
 public enum MessageAction
 {
     CreateTask,
-    TestLongTask
+    UpdateTask,
+    TestLongTask,
+    ProcessingQuestionAi,
+    AnswerAi
 }
