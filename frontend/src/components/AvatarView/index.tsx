@@ -7,7 +7,6 @@ export const AvatarView = ({
   currentVisemeSrc: string;
 }) => {
   const classes = useStyles();
-  console.log("AvatarView currentVisemeSrc:", currentVisemeSrc);
   return (
     <div className={classes.wrapper}>
       <img src={avatar} alt="Avatar" className={classes.avatar} />
