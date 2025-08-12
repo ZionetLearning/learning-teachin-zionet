@@ -8,9 +8,9 @@ run-name: >
   }} environment [${{ inputs.environment || github.event.inputs.environment }}]
    
 on:
-  push:
-   branches:
-     - yosef-benny/combine-tasks
+  # push:
+  #  branches:
+  #    - yosef-benny/combine-tasks
   workflow_call:
     inputs:
       environment:
