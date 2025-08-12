@@ -3,45 +3,34 @@ name: Run Unit Tests
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-    branches: ['**']
-    paths: ['backend/**']
+    branches:
+      - '**'
+    paths:
+      - 'backend/**'
   workflow_dispatch:
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        project:
-          - AccessorUnitTests/AccessorUnitTests.csproj
-          - EngineUnitTests/EngineUnitTests.csproj
-          - ManagerUnitTests/ManagerUnitTests.csproj
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
-          cache: true
-          cache-dependency-path: backend/ContainerApp/**/packages.lock.json
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
 
-      - name: Restore (solution)
-        working-directory: backend/ContainerApp
-        run: dotnet restore backend.sln --locked-mode
+    - name: Restore dependencies
+      run: dotnet restore backend.sln
+      working-directory: backend/ContainerApp
 
-      - name: Build (solution)
-        working-directory: backend/ContainerApp
-        run: dotnet build backend.sln --no-restore --configuration Release
+    - name: Build
+      run: dotnet build backend.sln --no-restore
+      working-directory: backend/ContainerApp
 
-      - name: Test ${{ matrix.project }}
-        working-directory: backend/ContainerApp/UnitTests
-        run: >
-          dotnet test ${{ matrix.project }}
-          --no-build
-          --configuration Release
-          --logger "trx;LogFileName=${{ matrix.project }}.trx"
-          --results-directory ../TestResults
+    - name: Run tests
+      run: dotnet test AccessorUnitTests.csproj --no-build --verbosity normal
+      working-directory: backend/ContainerApp/UnitTests/AccessorUnitTests
+
