@@ -1,0 +1,138 @@
+name: AKS - App Helm Deploy
+
+run-name: >
+  App -> ${{
+    inputs.environment_name != '' && format('custom:{0}', inputs.environment_name) ||
+    github.event.inputs.environment_name != '' && format('custom:{0}', github.event.inputs.environment_name) ||
+    'dev'
+  }} [${{ inputs.environment || github.event.inputs.environment }}]
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Select environment (GitHub Environment)'
+        required: true
+        default: 'Development'
+        type: choice
+        options: [Development, Production]
+      environment_name:
+        description: 'Optional namespace/prefix (lowercase letters & digits). Empty -> dev'
+        required: false
+        default: ''
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      environment_name:
+        required: false
+        type: string
+    outputs:
+      app_url:
+        description: "Ingress URL (if already created by platform setup)"
+        value: ${{ jobs.deploy.outputs.app_url }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment || github.event.inputs.environment }}
+    permissions:
+      id-token: write
+      contents: read
+
+    outputs:
+      app_url: ${{ steps.extract_url.outputs.app_url }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure Login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set up variables
+        run: |
+          ENVIRONMENT_NAME="${{ inputs.environment_name || github.event.inputs.environment_name }}"
+          if [ -n "$ENVIRONMENT_NAME" ]; then
+            [[ "$ENVIRONMENT_NAME" =~ ^[a-z0-9]+$ ]] || { echo "environment_name must be ^[a-z0-9]+$"; exit 1; }
+            echo "TARGET_NAMESPACE=$ENVIRONMENT_NAME" >> $GITHUB_ENV
+            echo "RESOLVED_TARGET=custom($ENVIRONMENT_NAME)" >> $GITHUB_ENV
+          else
+            echo "TARGET_NAMESPACE=dev" >> $GITHUB_ENV
+            echo "RESOLVED_TARGET=dev" >> $GITHUB_ENV
+          fi
+
+          echo "K8S_DIR=devops/kubernetes/" >> $GITHUB_ENV
+          echo "CHART_DIR=devops/kubernetes/charts" >> $GITHUB_ENV
+          echo "VALUES_FILE=devops/kubernetes/charts/values.dev.yaml" >> $GITHUB_ENV
+          echo "DOCKER_REGISTRY=${{ secrets.DOCKER_USERNAME }}" >> $GITHUB_ENV
+          echo "OPENAI_KEY=${{ secrets.AZURE_OPENAI_API_KEY }}" >> $GITHUB_ENV
+          echo "AZURE_SPEECH_KEY=${{ secrets.AZURE_SPEECH_KEY }}" >> $GITHUB_ENV
+
+          # Shared AKS
+          echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
+          echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
+
+      - name: Get AKS credentials
+        run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
+
+      - name: Ensure target namespace exists
+        run: |
+          kubectl create namespace "$TARGET_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Helm template sanity (no Namespace objects)
+        run: |
+          helm template app "$CHART_DIR" -f "$VALUES_FILE" \
+            --set namespace.name="$TARGET_NAMESPACE" \
+            --set namespace.create=false \
+            --set global.namePrefix="$TARGET_NAMESPACE" \
+            --set global.dockerRegistry="$DOCKER_REGISTRY" \
+            --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" \
+            --set-string engine.env.AzureSpeech__SubscriptionKey="$AZURE_SPEECH_KEY" \
+            --set dapr.installComponents=false \
+          | grep -n '^kind: Namespace' && { echo "Namespace still rendered"; exit 1; } || echo "OK: no Namespace in chart"
+
+      - name: Helm upgrade/install app
+        run: |
+          helm upgrade --install app "$CHART_DIR" \
+            --namespace "$TARGET_NAMESPACE" \
+            -f "$VALUES_FILE" \
+            --set namespace.name="$TARGET_NAMESPACE" \
+            --set namespace.create=false \
+            --set global.namePrefix="$TARGET_NAMESPACE" \
+            --set global.dockerRegistry="$DOCKER_REGISTRY" \
+            --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" \
+            --set-string engine.env.AzureSpeech__SubscriptionKey="$AZURE_SPEECH_KEY" \
+            --set dapr.installComponents=false
+
+      - name: Diagnostics (on failure)
+        if: failure()
+        run: |
+          ns="$TARGET_NAMESPACE"
+          kubectl -n "$ns" get all
+          kubectl -n "$ns" get events --sort-by=.lastTimestamp | tail -n 200 || true
+          for p in $(kubectl -n "$ns" get pods -o name); do
+            echo "## $p"
+            kubectl -n "$ns" describe "$p" || true
+            kubectl -n "$ns" logs "$p" --all-containers --tail=200 || true
+          done
+
+      - name: Restart all pods in target namespace (optional)
+        run: kubectl delete pod --all -n "$TARGET_NAMESPACE" || true
+
+      - name: Output external URL (if ingress exists)
+        id: extract_url
+        run: |
+          INGRESS_IP=$(kubectl -n devops-ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
+          if [ -n "$INGRESS_IP" ]; then
+            echo "app_url=http://$INGRESS_IP" >> $GITHUB_OUTPUT
+            echo "App URL: http://$INGRESS_IP"
+          else
+            echo "app_url=" >> $GITHUB_OUTPUT
+            echo "Ingress not found (run platform setup first if needed)."
+          fi

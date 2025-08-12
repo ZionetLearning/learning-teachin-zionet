@@ -40,6 +40,16 @@ jobs:
       environment: ${{ github.event.inputs.environment }}
     secrets: inherit
 
+  helmcharts-setup:
+    needs: [terraform-apply]
+    uses: ./.github/workflows/aks-helmcharts.yml
+    permissions:
+      id-token: write
+      contents: read
+    with:
+      environment: ${{ github.event.inputs.environment }}
+    secrets: inherit
+
   deploy-frontend:
     needs: [terraform-apply]
     uses: ./.github/workflows/deploy-frontend.yml
@@ -49,4 +59,3 @@ jobs:
       deployment_token: ${{ needs.terraform-apply.outputs.static_web_app_api_token }}
       app_insights_connection_string: ${{ needs.terraform-apply.outputs.app_insights_connection_string }}
     secrets: inherit
-
