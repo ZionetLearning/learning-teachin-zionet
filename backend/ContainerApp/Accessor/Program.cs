@@ -8,11 +8,9 @@ using Accessor.Services;
 using Azure.Messaging.ServiceBus;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
+using Azure.Messaging.ServiceBus.Administration;
 
 var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddSingleton(sp =>
-  new ServiceBusClient(builder.Configuration["ServiceBus:ConnectionString"]));
 
 builder.Services.AddQueue<Message, AccessorQueueHandler>(
     QueueNames.AccessorQueue,
@@ -48,6 +46,18 @@ builder.Services.AddDaprClient(client =>
         PropertyNameCaseInsensitive = true,
         Converters = { new UtcDateTimeOffsetConverter() }
     });
+});
+
+// --- Service Bus clients ---
+builder.Services.AddSingleton(sp =>
+  new ServiceBusClient(builder.Configuration["ServiceBus:ConnectionString"]));
+
+//admin client used only to *wait* for the queue to exist
+builder.Services.AddSingleton(sp =>
+{
+    var cfg = sp.GetRequiredService<IConfiguration>();
+    var cs = cfg["ServiceBus:ConnectionString"] ?? cfg.GetConnectionString("ServiceBus");
+    return new ServiceBusAdministrationClient(cs!);
 });
 
 // Configure PostgreSQL

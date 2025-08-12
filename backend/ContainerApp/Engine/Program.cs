@@ -9,6 +9,7 @@ using Engine.Services;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
+using Azure.Messaging.ServiceBus.Administration;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -84,8 +85,17 @@ builder.Services.AddSingleton(sp =>
 
 });
 
-builder.Services.AddSingleton(_ =>
-    new ServiceBusClient(builder.Configuration["ServiceBus:ConnectionString"]));
+// --- Service Bus clients ---
+builder.Services.AddSingleton(sp =>
+  new ServiceBusClient(builder.Configuration["ServiceBus:ConnectionString"]));
+
+//admin client used only to *wait* for the queue to exist
+builder.Services.AddSingleton(sp =>
+{
+    var cfg = sp.GetRequiredService<IConfiguration>();
+    var cs = cfg["ServiceBus:ConnectionString"] ?? cfg.GetConnectionString("ServiceBus");
+    return new ServiceBusAdministrationClient(cs!);
+});
 
 builder.Services.AddQueue<Message, EngineQueueHandler>(
     QueueNames.EngineQueue,

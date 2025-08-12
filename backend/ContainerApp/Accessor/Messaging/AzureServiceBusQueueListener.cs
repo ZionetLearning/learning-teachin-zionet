@@ -1,22 +1,33 @@
 ﻿using Azure.Messaging.ServiceBus;
+using Azure.Messaging.ServiceBus.Administration;
 using System.Text.Json;
 
 namespace Accessor.Messaging;
 
 public class AzureServiceBusQueueListener<T> : IQueueListener<T>, IAsyncDisposable
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
     private readonly ServiceBusProcessor _processor;
+    private readonly ServiceBusAdministrationClient _admin;
+    private readonly string _queueName;
     private readonly IRetryPolicyProvider _retryPolicyProvider;
     private readonly QueueSettings _settings;
     private readonly ILogger<AzureServiceBusQueueListener<T>> _logger;
 
     public AzureServiceBusQueueListener(
         ServiceBusClient client,
+        ServiceBusAdministrationClient admin,
         string queueName,
         QueueSettings settings,
         IRetryPolicyProvider retryPolicyProvider,
         ILogger<AzureServiceBusQueueListener<T>> logger)
     {
+        _admin = admin;
+        _queueName = queueName;
         _settings = settings;
         _retryPolicyProvider = retryPolicyProvider;
         _logger = logger;
@@ -31,16 +42,46 @@ public class AzureServiceBusQueueListener<T> : IQueueListener<T>, IAsyncDisposab
 
     public async Task StartAsync(Func<T, Func<Task>, CancellationToken, Task> handler, CancellationToken cancellationToken)
     {
+        // Wait for the queue to exist (emulator may still be creating it)
+        var deadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(60);
+        var delay = TimeSpan.FromMilliseconds(500);
+
+        while (DateTimeOffset.UtcNow < deadline && !cancellationToken.IsCancellationRequested)
+        {
+            try
+            {
+                if (await _admin.QueueExistsAsync(_queueName, cancellationToken))
+                {
+                    _logger.LogInformation("Queue '{Queue}' is available.", _queueName);
+                    break;
+                }
+
+                _logger.LogInformation("Queue '{Queue}' not ready yet. Waiting...", _queueName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Queue existence check failed; retrying.");
+            }
+
+            await Task.Delay(delay, cancellationToken);
+            if (delay < TimeSpan.FromSeconds(5))
+            {
+                delay += delay;
+            }
+        }
+
         var retryPolicy = _retryPolicyProvider.Create(_settings, _logger);
 
         _processor.ProcessMessageAsync += async args =>
         {
             var now = DateTimeOffset.UtcNow;
-            var lockedUntil = args.Message.LockedUntil;
-            var lockTimeout = lockedUntil - now;
+            var lockTimeout = args.Message.LockedUntil - now;
 
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            linkedCts.CancelAfter(lockTimeout);
+            if (lockTimeout > TimeSpan.Zero)
+            {
+                linkedCts.CancelAfter(lockTimeout);
+            }
 
             var renewLock = async () =>
             {
@@ -52,15 +93,11 @@ public class AzureServiceBusQueueListener<T> : IQueueListener<T>, IAsyncDisposab
             {
                 var json = args.Message.Body.ToString();
                 _logger.LogDebug("Raw message body: {Json}", json);
-                var jsonOptions = new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true,
-                };
-                var msg = JsonSerializer.Deserialize<T>(json, jsonOptions);
 
+                var msg = JsonSerializer.Deserialize<T>(json, JsonOptions);
                 if (msg == null)
                 {
-                    _logger.LogWarning("Failed to deserialize message.");
+                    _logger.LogWarning("Failed to deserialize message, dead-lettering.");
                     await args.DeadLetterMessageAsync(args.Message, cancellationToken: cancellationToken);
                     return;
                 }
@@ -114,4 +151,3 @@ public class AzureServiceBusQueueListener<T> : IQueueListener<T>, IAsyncDisposab
         GC.SuppressFinalize(this);
     }
 }
-

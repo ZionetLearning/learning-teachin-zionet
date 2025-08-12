@@ -1,4 +1,5 @@
 ﻿using Azure.Messaging.ServiceBus;
+using Azure.Messaging.ServiceBus.Administration;
 
 namespace Accessor.Messaging;
 
@@ -20,6 +21,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IQueueListener<T>>(sp =>
             new AzureServiceBusQueueListener<T>(
                 sp.GetRequiredService<ServiceBusClient>(),
+                sp.GetRequiredService<ServiceBusAdministrationClient>(),
                 queueName,
                 settings,
                 sp.GetRequiredService<IRetryPolicyProvider>(),

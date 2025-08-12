@@ -10,20 +10,19 @@ public class EngineQueueHandler : IQueueHandler<Message>
 {
     private readonly IEngineService _engine;
     private readonly ILogger<EngineQueueHandler> _logger;
+    private readonly IServiceProvider _sp; // lazy resolution container
     private readonly Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>> _handlers;
-    private readonly IChatAiService _aiService;
-    private readonly IAiReplyPublisher _publisher;
 
-    public EngineQueueHandler(IEngineService engine,
-        IChatAiService aiService,
-        IAiReplyPublisher publisher,
+    public EngineQueueHandler(
+        IEngineService engine,
+        IServiceProvider sp,
         ILogger<EngineQueueHandler> logger)
     {
         _engine = engine;
-        _aiService = aiService;
-        _publisher = publisher;
+        _sp = sp;
         _logger = logger;
-        _handlers = new Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>>
+
+        _handlers = new()
         {
             [MessageAction.CreateTask] = HandleCreateTaskAsync,
             [MessageAction.TestLongTask] = HandleTestLongTaskAsync,
@@ -43,7 +42,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
         }
     }
 
-    private async Task HandleCreateTaskAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
+    private async Task HandleCreateTaskAsync(Message message, Func<Task> _, CancellationToken ct)
     {
         var payload = message.Payload.Deserialize<TaskModel>();
         if (payload is null)
@@ -53,13 +52,13 @@ public class EngineQueueHandler : IQueueHandler<Message>
         }
 
         _logger.LogDebug("Processing task {Id}", payload.Id);
-        await _engine.ProcessTaskAsync(payload, cancellationToken);
+        await _engine.ProcessTaskAsync(payload, ct);
         _logger.LogInformation("Task {Id} processed", payload.Id);
     }
 
-    private async Task HandleTestLongTaskAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
+    private async Task HandleTestLongTaskAsync(Message message, Func<Task> renewLock, CancellationToken ct)
     {
-        using var renewalCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        using var renewalCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
         var renewalTask = Task.Run(async () =>
         {
             try
@@ -70,30 +69,21 @@ public class EngineQueueHandler : IQueueHandler<Message>
                     await renewLock();
                 }
             }
-            catch (OperationCanceledException)
-            {
-                _logger.LogError("Renew Lock loop error");
-                throw;
-            }
+            catch (OperationCanceledException) { /* normal on shutdown */ }
         }, renewalCts.Token);
+
         try
         {
             var payload = message.Payload.Deserialize<TaskModel>();
             if (payload is null)
             {
-                _logger.LogWarning("Invalid payload for CreateTask");
+                _logger.LogWarning("Invalid payload for TestLongTask");
                 return;
             }
 
             _logger.LogInformation("Inside handler");
-
-            await Task.Delay(TimeSpan.FromSeconds(80), cancellationToken);
-            await _engine.ProcessTaskAsync(payload, cancellationToken);
-        }
-        catch
-        {
-            _logger.LogError("Error while {Action}", message.ActionName);
-            throw;
+            await Task.Delay(TimeSpan.FromSeconds(80), ct);
+            await _engine.ProcessTaskAsync(payload, ct);
         }
         finally
         {
@@ -102,36 +92,30 @@ public class EngineQueueHandler : IQueueHandler<Message>
         }
     }
 
-    private async Task HandleProcessingQuestionAiAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
+    private async Task HandleProcessingQuestionAiAsync(Message message, Func<Task> _, CancellationToken ct)
     {
         var payload = message.Payload.Deserialize<AiRequestModel>();
         if (payload is null)
         {
-            _logger.LogWarning("Invalid payload for CreateTask");
+            _logger.LogWarning("Invalid payload for ProcessingQuestionAi");
             return;
         }
 
+        if (string.IsNullOrWhiteSpace(payload.ThreadId))
+        {
+            _logger.LogWarning("ThreadId is required.");
+            return;
+        }
+
+        // Lazily resolve AI services only when needed
+        var aiService = _sp.GetRequiredService<IChatAiService>();
+        var publisher = _sp.GetRequiredService<IAiReplyPublisher>();
+
         _logger.LogInformation("Received AI question {Id} from manager", payload.Id);
 
-        try
-        {
-            if (string.IsNullOrWhiteSpace(payload.ThreadId))
-            {
-                _logger.LogWarning("ThreadId is required.");
-                return;
-            }
+        var response = await aiService.ProcessAsync(payload, ct);
+        await publisher.SendReplyAsync(response, $"{QueueNames.ManagerCallbackQueue}-out", ct);
 
-            var response = await _aiService.ProcessAsync(payload, cancellationToken);
-
-            await _publisher.SendReplyAsync(response, $"{QueueNames.ManagerCallbackQueue}-out", cancellationToken);
-
-            _logger.LogInformation("AI question {Id} processed", payload.Id);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to process AI question {Id}", payload.Id);
-            throw;
-        }
+        _logger.LogInformation("AI question {Id} processed", payload.Id);
     }
 }
-

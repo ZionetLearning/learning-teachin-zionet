@@ -7,6 +7,7 @@ using Manager.Models;
 using Manager.Services;
 using Manager.Services.Clients;
 using Scalar.AspNetCore;
+using Azure.Messaging.ServiceBus.Administration;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,8 +46,17 @@ builder.Services.AddScoped<IEngineClient, EngineClient>();
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
-builder.Services.AddSingleton(_ =>
-    new ServiceBusClient(builder.Configuration["ServiceBus:ConnectionString"]));
+// --- Service Bus clients ---
+builder.Services.AddSingleton(sp =>
+  new ServiceBusClient(builder.Configuration["ServiceBus:ConnectionString"]));
+
+//admin client used only to *wait* for the queue to exist
+builder.Services.AddSingleton(sp =>
+{
+    var cfg = sp.GetRequiredService<IConfiguration>();
+    var cs = cfg["ServiceBus:ConnectionString"] ?? cfg.GetConnectionString("ServiceBus");
+    return new ServiceBusAdministrationClient(cs!);
+});
 
 builder.Services.AddQueue<Message, ManagerQueueHandler>(
     QueueNames.ManagerCallbackQueue,
