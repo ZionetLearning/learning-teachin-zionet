@@ -37,6 +37,8 @@ helm upgrade --install grafana grafana/grafana \
   --set env.GF_SERVER_ROOT_URL="https://$CONTROLLER_IP/grafana/" \
   --set env.GF_SERVER_SERVE_FROM_SUB_PATH="true" \
   --set env.GF_SERVER_DOMAIN="$CONTROLLER_IP" \
+  --set resources.requests.memory="128Mi" \
+  --set resources.limits.memory="256Mi" \
   --wait
 
 echo
