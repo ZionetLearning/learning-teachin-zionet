@@ -3,7 +3,7 @@ terraform {
     resource_group_name  = "tfstate-rg"
     storage_account_name = "teachintfstate"
     container_name       = "tfstate-aks"
-    key                  = "developmentprom.terraform.tfstate"
+    key                  = "development.terraform.tfstate"
     use_azuread_auth     = true # added because of githubactions
   }
 

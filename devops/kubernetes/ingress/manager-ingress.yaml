@@ -13,10 +13,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - teachin-zionet-prom.westeurope.cloudapp.azure.com
+        - teachin-zionet.westeurope.cloudapp.azure.com
       secretName: teachin-zionet-tls
   rules:
-  - host: teachin-zionet-prom.westeurope.cloudapp.azure.com
+  - host: teachin-zionet.westeurope.cloudapp.azure.com
     http:
       paths:
         - path: /manager(/|$)(.*)
