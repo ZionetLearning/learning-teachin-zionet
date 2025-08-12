@@ -116,17 +116,29 @@ jobs:
 
       - name: Add AKS outbound IP to PostgreSQL firewall
         run: |
-          # Get AKS outbound public IP address
-          AKS_EGRESS_IP=$(az aks show \
+          # Try NAT Gateway first, else fallback to Load Balancer
+          OUTBOUND_IP_ID=$(az aks show \
             --resource-group $AKS_RG \
             --name $AKS_NAME \
-            --query "networkProfile.natGatewayProfile.effectiveOutboundIPs[0].id" -o tsv | \
-            xargs -n1 az resource show --ids | \
-            jq -r '.properties.ipAddress')
+            --query "networkProfile.natGatewayProfile.effectiveOutboundIPs[0].id" -o tsv 2>/dev/null || true)
+
+          if [ -z "$OUTBOUND_IP_ID" ] || [ "$OUTBOUND_IP_ID" = "null" ]; then
+            echo "No NAT Gateway found, checking Load Balancer outbound IP..."
+            OUTBOUND_IP_ID=$(az aks show \
+              --resource-group $AKS_RG \
+              --name $AKS_NAME \
+              --query "networkProfile.loadBalancerProfile.effectiveOutboundIPs[0].id" -o tsv)
+          fi
+
+          if [ -z "$OUTBOUND_IP_ID" ] || [ "$OUTBOUND_IP_ID" = "null" ]; then
+            echo "❌ Could not detect outbound IP ID for AKS cluster."
+            exit 1
+          fi
+
+          AKS_EGRESS_IP=$(az resource show --ids $OUTBOUND_IP_ID --query "properties.ipAddress" -o tsv)
 
           echo "AKS outbound IP: $AKS_EGRESS_IP"
 
-          # Add firewall rule for AKS outbound IP
           az postgres flexible-server firewall-rule create \
             --resource-group $PG_RG \
             --name $PG_DB \
