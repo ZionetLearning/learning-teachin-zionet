@@ -3,10 +3,8 @@ name: Run Unit Tests
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-    branches:
-      - '**'
-    paths:
-      - 'backend/**'
+    branches: ['**']
+    paths: ['backend/**']
   workflow_dispatch:
 
 jobs:
@@ -14,23 +12,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '9.0.x'
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+          cache: true   # enables NuGet cache
 
-    - name: Restore dependencies
-      run: dotnet restore backend.sln
-      working-directory: backend/ContainerApp
+      - name: Restore
+        working-directory: backend/ContainerApp
+        run: dotnet restore backend.sln
 
-    - name: Build
-      run: dotnet build backend.sln --no-restore
-      working-directory: backend/ContainerApp
+      - name: Build
+        working-directory: backend/ContainerApp
+        run: dotnet build backend.sln --no-restore --configuration Release
 
-    - name: Run tests
-      run: dotnet test AccessorUnitTests.csproj --no-build --verbosity normal
-      working-directory: backend/ContainerApp/AccessorUnitTests
-
+      - name: Test (all UnitTests in solution)
+        working-directory: backend/ContainerApp
+        run: >
+          dotnet test backend.sln
+          --no-build
+          --configuration Release
+          --logger "trx;LogFileName=test_results.trx"
+          --results-directory ./TestResults
