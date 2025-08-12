@@ -22,7 +22,7 @@ We are working with React & TypeScript, and you should always use the relevant b
 - **Memoization:** use `React.useMemo` or `React.useCallback` when needed to memoize values or functions.
 - **DRY:** do not repeat yourself. If you find yourself writing the same code in multiple places, consider creating a function or a hook.
 - **Semantics:** Use semantic HTML elements appropriately — `button` for buttons, input for inputs, `form` for forms, `a` for links, etc.
-You can also use the equivalent *MUI components* (Button, TextField, Box, etc.) when it improves readability, styling consistency, or integration with the design system.
+  You can also use the equivalent _MUI components_ (Button, TextField, Box, etc.) when it improves readability, styling consistency, or integration with the design system.
 - **CSS**: We are using JSS for styling. You should optimize your style rules and avoid adding unnecessary rules that have no effect on the UI.
 
 ### Naming conventions
@@ -44,12 +44,12 @@ useEffect(() => {
 useEffect(function handleEffect() {
   // ...
 }, []);
-
 ```
 
 ### Organize your imports
 
 - Group your imports in this order:
+
 1. React imports (react, react-dom, hooks, etc.)
 2. Third-party libraries (@mui/material, react-query, etc.)
 3. Local imports (components, hooks, services, utils, styles)
@@ -59,8 +59,8 @@ Each folder should have its own index.ts or index.tsx file that re-exports all p
 This allows cleaner and more maintainable imports.
 For example:
 // services/tts/index.ts
-export * from "./ttsService";
-export * from "./ttsUtils";
+export _ from "./ttsService";
+export _ from "./ttsUtils";
 
 Instead of:
 import ttsService from "./services/tts/ttsService";
@@ -68,7 +68,6 @@ You can write:
 import { ttsService } from "./services";
 
 Use absolute imports (e.g., "@/components/Button") instead of long relative paths ("../../../Button") when possible.
-
 
 ### Writing components
 
@@ -81,17 +80,16 @@ Always use functional components. you should order your hooks in the following o
 5. Queries — (useQuery, useMutation)
 6. Effects — (useEffect, useLayoutEffect)
 7. Event handlers (const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
-  setSearchTerm(e.target.value);
-};)
+   setSearchTerm(e.target.value);
+   };)
 8. Memoized values
 9. Render JSX
 
 ```tsx
 import { useEffect, useMemo, useRef, useState, ChangeEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { useAuth, useGetItems } from "@/hooks"; 
+import { useAuth, useGetItems } from "@/hooks";
 import { useStyles } from "./styles";
-
 
 export function SimpleExample() {
   // 1) Custom hooks
@@ -121,7 +119,7 @@ export function SimpleExample() {
   // 7) Memoized values
   const title = useMemo(
     () => (userId ? t("Your Items") : t("Items")),
-    [userId, t]
+    [userId, t],
   );
 
   // 8) Render JSX
