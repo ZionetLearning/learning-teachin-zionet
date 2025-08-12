@@ -1,11 +1,9 @@
 name: AKS - App Helm Deploy
 
 run-name: >
-  App -> ${{
-    inputs.environment_name != '' && format('custom:{0}', inputs.environment_name) ||
-    github.event.inputs.environment_name != '' && format('custom:{0}', github.event.inputs.environment_name) ||
-    'dev'
-  }} [${{ inputs.environment || github.event.inputs.environment }}]
+  🚢 Helm Deploy | Environment: ${{ 
+    inputs.environment_name || github.event.inputs.environment_name || 'dev'
+  }} | GitHub Env: ${{ inputs.environment || github.event.inputs.environment }}
 
 on:
   workflow_dispatch:

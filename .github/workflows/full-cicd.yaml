@@ -1,5 +1,10 @@
 name: Full CICD
- 
+
+run-name: >
+  🔄 Full CICD | Environment: ${{ 
+    github.event.inputs.environment_name || 'custom' 
+  }} | GitHub Env: ${{ github.event.inputs.environment }}
+
 on:
   # push:
   #  branches:
