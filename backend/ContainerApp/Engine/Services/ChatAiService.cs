@@ -60,9 +60,16 @@ public sealed class ChatAiService : IChatAiService
         try
         {
             var historyKey = CacheKeys.ChatHistory(request.ThreadId);
+            //log the history key for debugging
+            _log.LogDebug("Using chat history key: {HistoryKey}", historyKey);
             var cachedHistory = _cache.GetOrCreate(historyKey, _ => new ChatHistory()) ?? new ChatHistory();
+            //log the cached history count for debugging
+            _log.LogDebug("Cached history count: {Count}", cachedHistory.Count);
+            //log the history messages for debugging
+            _log.LogDebug("Cached history messages: {Messages}", cachedHistory);
             if (cachedHistory.Count == 0)
             {
+                _log.LogInformation("No cached history found for thread {ThreadId}. Fetching from accessor.", request.ThreadId);
                 var prompt = Prompts.Combine(
                     Prompts.SystemDefault,
                     Prompts.DetailedExplanation
@@ -88,6 +95,7 @@ public sealed class ChatAiService : IChatAiService
                 }
             }
 
+            _log.LogDebug("Updated cached history after accessor fetch: {Messages}", cachedHistory);
             cachedHistory.AddUserMessage(request.Question);
 
             var settings = new OpenAIPromptExecutionSettings
@@ -96,17 +104,15 @@ public sealed class ChatAiService : IChatAiService
             };
 
             var result = await _kernelPolicy
-                .ExecuteAsync(async ct2 =>
-                {
-                    return await _chat.GetChatMessageContentAsync(
-                        cachedHistory,
-                        executionSettings: settings,
-                        kernel: _kernel,
-                        cancellationToken: ct2);
-                }, ct);
+                .ExecuteAsync(async ct2 => await _chat.GetChatMessageContentAsync(
+                    cachedHistory,
+                    executionSettings: settings,
+                    kernel: _kernel,
+                    cancellationToken: ct2), ct);
 
             var answer = result.Content ?? string.Empty;
 
+            _log.LogDebug("AI response generated: {Answer}", answer);
             cachedHistory.AddAssistantMessage(answer);
 
             _cache.Set(historyKey, cachedHistory, _cacheOptions);
@@ -116,8 +122,7 @@ public sealed class ChatAiService : IChatAiService
             (
                 ThreadId: request.ThreadId,
                 UserMessage: request.Question,
-                AssistantMessage: answer,
-                UserId: "123" // This should be replaced with the actual user ID
+                AssistantMessage: answer
             );
 
             var storeResult = await _accessorClient.StoreChatMessagesAsync(storeRequest);

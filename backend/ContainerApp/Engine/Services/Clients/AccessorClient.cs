@@ -1,6 +1,7 @@
 using Dapr.Client;
 using Engine.Models;
 using System.Net;
+using Engine.Constants;
 
 namespace Engine.Services.Clients;
 
@@ -8,7 +9,6 @@ public class AccessorClient : IAccessorClient
 {
     private readonly DaprClient _daprClient;
     private readonly ILogger<AccessorClient> _logger;
-    private const string AccessorAppId = "accessor";
 
     public AccessorClient(DaprClient daprClient, ILogger<AccessorClient> logger)
     {
@@ -24,8 +24,8 @@ public class AccessorClient : IAccessorClient
 
             var response = await _daprClient.InvokeMethodAsync<ChatHistoryResponse?>(
                 HttpMethod.Get,
-                AccessorAppId,
-                $"chat/history/{threadId}");
+                AppIds.Accessor,
+                $"/threads/{threadId}/messages");
 
             _logger.LogInformation("Successfully retrieved chat history for threadId: {ThreadId} with {MessageCount} messages",
                 threadId, response?.Messages?.Count ?? 0);
@@ -48,13 +48,13 @@ public class AccessorClient : IAccessorClient
     {
         try
         {
-            _logger.LogInformation("Storing chat messages for threadId: {ThreadId}, userId: {UserId}",
-                request.ThreadId, request.UserId);
+            _logger.LogInformation("Storing chat messages for threadId: {ThreadId}}",
+                request.ThreadId);
 
             await _daprClient.InvokeMethodAsync(
                 HttpMethod.Post,
-                AccessorAppId,
-                "chat-history/message",
+                AppIds.Accessor,
+                "/threads/message",
                 request);
 
             _logger.LogInformation("Successfully stored chat messages for threadId: {ThreadId}", request.ThreadId);
