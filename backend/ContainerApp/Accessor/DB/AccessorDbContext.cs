@@ -16,8 +16,6 @@ public class AccessorDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(modelBuilder);
-
         // TaskModel – ensure Id is unique/PK
         modelBuilder.Entity<TaskModel>(e =>
         {
@@ -45,5 +43,7 @@ public class AccessorDbContext : DbContext
             e.Property(i => i.CreatedAtUtc).IsRequired();
             // ExpiresAtUtc optional
         });
+
+        base.OnModelCreating(modelBuilder);
     }
 }
