@@ -37,6 +37,7 @@ jobs:
     secrets: inherit
 
   aks-kubectl-apply:
+    if: ${{ github.event.inputs.environment_name == 'dev' || github.event.inputs.environment_name == 'prod' }}
     needs: [build-and-push-images, terraform-apply]
     uses: ./.github/workflows/aks-kubectl-apply.yaml
     permissions:
@@ -48,7 +49,7 @@ jobs:
     secrets: inherit
     
   helmcharts-setup:
-    needs: [terraform-apply]
+    needs: [build-and-push-images, terraform-apply]
     uses: ./.github/workflows/aks-helmcharts.yaml
     permissions:
       id-token: write
@@ -58,14 +59,14 @@ jobs:
       environment: ${{ github.event.inputs.environment }}
     secrets: inherit
 
-  # deploy-frontend:
-  #   needs: [terraform-apply]
-  #   uses: ./.github/workflows/deploy-frontend.yaml
-  #   permissions:
-  #     contents: read
-  #   with:
-  #     environment: ${{ github.event.inputs.environment }}
-  #     environment_name: ${{ needs.terraform-apply.outputs.environment_name }}
-  #     deployment_token: ${{ needs.terraform-apply.outputs.static_web_app_api_token }}
-  #     app_insights_connection_string: ${{ needs.terraform-apply.outputs.app_insights_connection_string }}
-  #   secrets: inherit
+  deploy-frontend:
+    needs: [terraform-apply]
+    uses: ./.github/workflows/deploy-frontend.yaml
+    permissions:
+      contents: read
+    with:
+      environment: ${{ github.event.inputs.environment }}
+      environment_name: ${{ needs.terraform-apply.outputs.environment_name }}
+      deployment_token: ${{ needs.terraform-apply.outputs.static_web_app_api_token }}
+      app_insights_connection_string: ${{ needs.terraform-apply.outputs.app_insights_connection_string }}
+    secrets: inherit
