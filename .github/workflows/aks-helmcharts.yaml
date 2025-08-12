@@ -81,6 +81,7 @@ jobs:
           # PG (per env name)
           echo "PG_DB=${ENVIRONMENT_NAME}-pg-zionet-learning" >> $GITHUB_ENV
           echo "PG_RG=${ENVIRONMENT_NAME}-zionet-learning-2025" >> $GITHUB_ENV
+
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
 
@@ -112,6 +113,26 @@ jobs:
             --rule-name allow-ingress-controller \
             --start-ip-address $INGRESS_IP \
             --end-ip-address $INGRESS_IP
+
+      - name: Add AKS outbound IP to PostgreSQL firewall
+        run: |
+          # Get AKS outbound public IP address
+          AKS_EGRESS_IP=$(az aks show \
+            --resource-group $AKS_RG \
+            --name $AKS_NAME \
+            --query "networkProfile.natGatewayProfile.effectiveOutboundIPs[0].id" -o tsv | \
+            xargs -n1 az resource show --ids | \
+            jq -r '.properties.ipAddress')
+
+          echo "AKS outbound IP: $AKS_EGRESS_IP"
+
+          # Add firewall rule for AKS outbound IP
+          az postgres flexible-server firewall-rule create \
+            --resource-group $PG_RG \
+            --name $PG_DB \
+            --rule-name allow-aks-egress \
+            --start-ip-address $AKS_EGRESS_IP \
+            --end-ip-address $AKS_EGRESS_IP
 
       - name: Helm template sanity (no Namespace objects)
         run: |
