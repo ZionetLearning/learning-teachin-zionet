@@ -202,7 +202,7 @@ resource "kubernetes_resource_quota" "environment" {
       "limits.cpu"      = "4"
       "limits.memory"   = "8Gi"
       "pods"            = "10"
-      "services"        = "5"
+      "services"        = "8"
     }
   }
   

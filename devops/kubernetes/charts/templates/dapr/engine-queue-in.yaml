@@ -18,4 +18,4 @@ spec:
     - name: disableEntityManagement
       value: "true"
 scopes:
-  - {{ .Values.accessor.dapr.appId  | default .Values.accessor.name  | quote }}
+  - {{ .Values.manager.dapr.appId  | default .Values.manager.name  | quote }}
