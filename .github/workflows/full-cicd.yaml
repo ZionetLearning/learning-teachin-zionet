@@ -68,6 +68,7 @@ jobs:
     needs: [terraform-apply]
     uses: ./.github/workflows/deploy-frontend.yaml
     permissions:
+      id-token: write
       contents: read
     with:
       environment: ${{ github.event.inputs.environment }}
