@@ -16,12 +16,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dapr", "dapr", "{02EA681E-C
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "components", "components", "{F0FF105B-41F5-4E9B-B432-5CDE99DEE70E}"
 	ProjectSection(SolutionItems) = preProject
-		accessor-queue-in.yaml = accessor-queue-in.yaml
-		accessor-queue-out.yaml = accessor-queue-out.yaml
-		engine-queue-in.yaml = engine-queue-in.yaml
-		engine-queue-out.yaml = engine-queue-out.yaml
-		manager-callback-queue-in.yaml = manager-callback-queue-in.yaml
-		manager-callback-queue-out.yaml = manager-callback-queue-out.yaml
+		dapr\components\accessor-queue-in.yaml = dapr\components\accessor-queue-in.yaml
+		dapr\components\accessor-queue-out.yaml = dapr\components\accessor-queue-out.yaml
+		dapr\components\engine-queue-in.yaml = dapr\components\engine-queue-in.yaml
+		dapr\components\engine-queue-out.yaml = dapr\components\engine-queue-out.yaml
+		dapr\components\manager-callback-queue-in.yaml = dapr\components\manager-callback-queue-in.yaml
+		dapr\components\manager-callback-queue-out.yaml = dapr\components\manager-callback-queue-out.yaml
 		dapr\components\statestore.yaml = dapr\components\statestore.yaml
 	EndProjectSection
 EndProject
