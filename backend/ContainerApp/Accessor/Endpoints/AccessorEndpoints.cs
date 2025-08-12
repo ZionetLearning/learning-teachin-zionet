@@ -8,12 +8,29 @@ public static class AccessorEndpoints
 {
     public static void MapAccessorEndpoints(this WebApplication app)
     {
+        #region HTTP GET
+
         app.MapGet("/task/{id:int}", GetTaskByIdAsync);
-        app.MapGet("/threads/{threadId:guid}/messages", GetChatHistoryAsync)
-           .WithName("GetChatHistory");
+
+        app.MapGet("/threads/{threadId:guid}/messages", GetChatHistoryAsync).WithName("GetChatHistory");
+
         app.MapGet("/threads/{userId}", GetThreadsForUserAsync);
-        app.MapDelete("/task/{taskId}", DeleteTaskAsync);
+
+        #endregion
+
+        #region HTTP POST
+
+        app.MapPost("/task", CreateTaskAsync);
+
         app.MapPost("/threads/message", StoreMessageAsync);
+
+        #endregion
+
+        #region HTTP DELETE
+
+        app.MapDelete("/task/{taskId}", DeleteTaskAsync);
+
+        #endregion
     }
 
     #region HandlerMethods
@@ -47,9 +64,10 @@ public static class AccessorEndpoints
     }
 
     public static async Task<IResult> CreateTaskAsync(
-        TaskModel task,
+        [FromBody] TaskModel task,
         [FromServices] IAccessorService accessorService,
-        [FromServices] ILogger<AccessorService> logger)
+        [FromServices] ILogger<AccessorService> logger,
+        CancellationToken ct)
     {
         using (logger.BeginScope("Method: {Method}, TaskId: {TaskId}", nameof(CreateTaskAsync), task.Id))
         {

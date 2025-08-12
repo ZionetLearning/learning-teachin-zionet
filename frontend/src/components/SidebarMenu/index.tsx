@@ -18,7 +18,8 @@ import HomeIcon from "@mui/icons-material/Home";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import PublicIcon from "@mui/icons-material/Public";
 import WeatherWidgetIcon from "@mui/icons-material/Cloud";
-import ThreePIcon from '@mui/icons-material/ThreeP';
+import ThreePIcon from "@mui/icons-material/ThreeP";
+import LiveTvIcon from "@mui/icons-material/LiveTv";
 import GBFlag from "country-flag-icons/react/3x2/GB";
 import ILFlag from "country-flag-icons/react/3x2/IL";
 import { useAuth } from "@/providers/auth";
@@ -29,7 +30,6 @@ export const SidebarMenu = () => {
   const { logout } = useAuth();
   const { t, i18n } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
-  const [langActive, setLangActive] = useState<"he" | "en" | null>("en");
   const flagSize = { width: 22, height: 16 };
   const handleNavigation = (path: string) => {
     navigate(path);
@@ -38,9 +38,8 @@ export const SidebarMenu = () => {
   const isHebrew = i18n.language === "he";
   const isActive = (path: string) => location.pathname === path;
 
-  const changeLang = (lng: "en" | "he") => () => {
+  const handleChangeLanguage = (lng: "en" | "he") => () => {
     i18n.changeLanguage(lng);
-    setLangActive(lng);
   };
   return (
     <Sidebar
@@ -90,16 +89,16 @@ export const SidebarMenu = () => {
         <SubMenu label={t("sidebar.languages")} icon={<TranslateIcon />}>
           <MenuItem
             icon={<ILFlag style={flagSize} />}
-            onClick={changeLang("he")}
-            active={langActive === "he"}
+            onClick={handleChangeLanguage("he")}
+            active={i18n.language === "he"}
           >
             {t("sidebar.he")}
           </MenuItem>
 
           <MenuItem
             icon={<GBFlag style={flagSize} />}
-            onClick={changeLang("en")}
-            active={langActive === "en"}
+            onClick={handleChangeLanguage("en")}
+            active={i18n.language === "en"}
           >
             {t("sidebar.en")}
           </MenuItem>
@@ -197,6 +196,13 @@ export const SidebarMenu = () => {
           active={isActive("/weather")}
         >
           {t("sidebar.weather")}
+        </MenuItem>
+        <MenuItem
+          onClick={() => handleNavigation("/anime-explorer")}
+          icon={<LiveTvIcon />}
+          active={isActive("/anime-explorer")}
+        >
+          Anime Explorer
         </MenuItem>
       </Menu>
       <Menu

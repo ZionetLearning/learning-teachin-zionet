@@ -16,6 +16,7 @@ import {
   WordOrderGamePage,
   EarthquakeMapPage,
   WeatherWidgetPage,
+  AnimeExplorerPage,
 } from "./pages";
 
 import "./App.css";
@@ -53,6 +54,7 @@ function App() {
           <Route path="/speaking" element={<SpeakingPracticePage />} />
           <Route path="/earthquake-map" element={<EarthquakeMapPage />} />
           <Route path="/weather" element={<WeatherWidgetPage />} />
+          <Route path="/anime-explorer" element={<AnimeExplorerPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

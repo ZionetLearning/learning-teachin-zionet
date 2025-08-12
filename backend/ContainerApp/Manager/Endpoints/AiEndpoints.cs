@@ -1,4 +1,5 @@
 ﻿using Manager.Models;
+using Manager.Models.Speech;
 using Manager.Models.ModelValidation;
 using Manager.Services;
 using Manager.Services.Clients;
@@ -12,6 +13,7 @@ public static class AiEndpoints
     private sealed class AnswerEndpoint { }
     private sealed class PubSubEndpoint { }
     private sealed class ChatPostEndpoint { }
+    private sealed class SpeechEndpoints { }
 
     public static WebApplication MapAiEndpoints(this WebApplication app)
     {
@@ -27,6 +29,7 @@ public static class AiEndpoints
         app.MapPost("/ai/question", QuestionAsync).WithName("Question");
 
         app.MapPost("/chat", ChatAsync).WithName("Chat");
+        app.MapPost("/speech/synthesize", SynthesizeAsync).WithName("SynthesizeText");
 
         #endregion
 
@@ -112,6 +115,49 @@ public static class AiEndpoints
         {
             log.LogError(ex, "Engine invocation failed");
             return Results.Problem("Unable to contact AI engine");
+        }
+    }
+
+    private static async Task<IResult> SynthesizeAsync(
+       [FromBody] SpeechRequest dto,
+       [FromServices] IEngineClient engineClient,
+       [FromServices] ILogger<SpeechEndpoints> logger,
+       CancellationToken ct)
+    {
+        if (dto is null || string.IsNullOrWhiteSpace(dto.Text))
+        {
+            return Results.BadRequest(new { error = "Text is required" });
+        }
+
+        logger.LogInformation("Received speech synthesis request for text length: {Length}", dto.Text.Length);
+
+        try
+        {
+            var engineResult = await engineClient.SynthesizeAsync(dto, ct);
+
+            if (engineResult != null)
+            {
+                // Transform engine response to match frontend expectations
+                var response = new SpeechResponse
+                {
+                    AudioData = engineResult.AudioData,
+                    Visemes = engineResult.Visemes,
+                    Metadata = engineResult.Metadata,
+                };
+
+                logger.LogInformation("Speech synthesis completed successfully");
+                return Results.Ok(response);
+            }
+            else
+            {
+                logger.LogError("Engine synthesis failed - service returned null");
+                return Results.Problem("Speech synthesis failed.");
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error in speech synthesis manager");
+            return Results.Problem("An error occurred during speech synthesis.");
         }
     }
 }

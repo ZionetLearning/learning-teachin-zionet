@@ -12,3 +12,4 @@ export * from "./WordOrderGamePage";
 export * from "./AuthorizationPage";
 export * from "./EarthquakeMapPage";
 export * from "./WeatherWidgetPage";
+export * from "./AnimeExplorerPage";

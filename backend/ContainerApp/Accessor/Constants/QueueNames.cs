@@ -2,7 +2,8 @@ namespace Accessor.Constants;
 
 public static class QueueNames
 {
-    public const string EngineToAccessor = "engine-to-accessor";
-    public const string TaskUpdateInput = "taskupdate";
+    public const string ManagerCallbackQueue = "manager-callback-queue";
+    public const string EngineQueue = "engine-queue";
+    public const string AccessorQueue = "accessor-queue";
 
 }
