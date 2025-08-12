@@ -1,0 +1,65 @@
+name: Engine Component Tests
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'Engine/**'
+      - 'EngineComponentTests/**'
+      - 'Directory.Build.props'
+      - 'backend.sln'
+      - '.github/workflows/**'
+  push:
+    branches: [main]
+    paths:
+      - 'Engine/**'
+      - 'EngineComponentTests/**'
+      - 'Directory.Build.props'
+      - 'backend.sln'
+      - '.github/workflows/**'
+
+  # optional manual trigger
+  workflow_dispatch:
+
+concurrency:
+  group: engine-component-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-engine:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/ContainerApp
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Cache NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      - name: Restore
+        run: dotnet restore backend.sln
+
+      - name: Build (Engine + tests)
+        run: |
+          dotnet build Engine/Engine.csproj --no-restore -c Release
+          dotnet build EngineComponentTests/EngineComponentTests.csproj --no-restore -c Release
+
+      - name: Run only ChatAiServiceTests
+        run: |
+          # Prefer FullyQualifiedName; adjust namespace if different
+          dotnet test EngineComponentTests/EngineComponentTests.csproj \
+            --no-build -c Release \
+            --filter "FullyQualifiedName~EngineComponentTests.ChatAiServiceTests"
