@@ -54,7 +54,7 @@ jobs:
     secrets: inherit
    
   helmcharts-setup:
-    needs: [build-and-push-images, terraform-apply, aks-kubectl-apply]
+    needs: [build-and-push-images, terraform-apply]
     uses: ./.github/workflows/aks-helmcharts.yaml
     permissions:
       id-token: write
