@@ -19,7 +19,7 @@ jobs:
           - ManagerUnitTests/ManagerUnitTests.csproj
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup .NET
@@ -27,10 +27,11 @@ jobs:
         with:
           dotnet-version: '9.0.x'
           cache: true
+          cache-dependency-path: backend/ContainerApp/**/packages.lock.json
 
       - name: Restore (solution)
         working-directory: backend/ContainerApp
-        run: dotnet restore backend.sln
+        run: dotnet restore backend.sln --locked-mode
 
       - name: Build (solution)
         working-directory: backend/ContainerApp
@@ -43,4 +44,4 @@ jobs:
           --no-build
           --configuration Release
           --logger "trx;LogFileName=${{ matrix.project }}.trx"
-          --results-directory ./TestResults
+          --results-directory ../TestResults
