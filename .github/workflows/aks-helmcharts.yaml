@@ -77,7 +77,7 @@ jobs:
           echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
 
           # PG (per env name)
-          echo "PG_DB=${ENVIRONMENT_NAME}-pg-zionet-learning" >> $GITHUB_ENV
+          echo "PG_DB=${ENVIRONMENT_NAME}-pg-zionet-dev-2025" >> $GITHUB_ENV
           echo "PG_RG=${ENVIRONMENT_NAME}-zionet-learning-2025" >> $GITHUB_ENV
 
       - name: Get AKS credentials
