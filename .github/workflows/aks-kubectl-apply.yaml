@@ -8,9 +8,9 @@ run-name: >
   }} [${{ inputs.environment || github.event.inputs.environment }}]
 
 on:
-  push:
-   branches:
-     - yosef-benny/combine-tasks
+  # push:
+  #  branches:
+  #    - yosef-benny/combine-tasks
   workflow_dispatch:
     inputs:
       environment:
@@ -44,9 +44,6 @@ jobs:
       id-token: write
       contents: read
 
-    outputs:
-      ingress_url: ${{ steps.wait_for_ingress_ip.outputs.ingress_url }}
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -77,10 +74,6 @@ jobs:
           echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
           echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
           echo "MC_AKS_RG=MC_dev-zionet-learning-2025_aks-cluster-dev_westeurope" >> $GITHUB_ENV
-
-          # PG (per env name)
-          echo "PG_DB=${ENVIRONMENT_NAME}-pg-zionet-learning" >> $GITHUB_ENV
-          echo "PG_RG=${ENVIRONMENT_NAME}-zionet-learning-2025" >> $GITHUB_ENV
 
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
@@ -123,44 +116,5 @@ jobs:
           cd devops/helm-tools/loki
           chmod +x loki.sh
           ./loki.sh
-
-      - name: Wait for external IP for ingress controller
-        id: wait_for_ingress_ip
-        run: |
-          echo "Waiting for external IP for ingress-nginx-controller..."
-          for i in {1..30}; do
-            INGRESS_IP=$(kubectl -n devops-ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-            if [[ -n "$INGRESS_IP" ]]; then
-              echo "Ingress IP is ready: $INGRESS_IP"
-              echo "ingress_url=http://$INGRESS_IP" >> $GITHUB_OUTPUT
-              exit 0
-            fi
-            echo "Attempt $i: not ready. Sleeping 10s..."
-            sleep 10
-          done
-          echo "Failed to get ingress IP."; exit 1
-
-      - name: Add ingress IP to PostgreSQL firewall
-        run: |
-          INGRESS_IP=$(kubectl -n devops-ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-          az postgres flexible-server firewall-rule create \
-            --resource-group $PG_RG \
-            --name $PG_DB \
-            --rule-name allow-ingress-controller \
-            --start-ip-address $INGRESS_IP \
-            --end-ip-address $INGRESS_IP
-
       - name: Restart logging stack pods (optional)
         run: kubectl delete pod --all -n devops-logs || true
-
-      - name: Output external URL (if ingress exists)
-        id: extract_url
-        run: |
-          INGRESS_IP=$(kubectl -n devops-ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
-          if [ -n "$INGRESS_IP" ]; then
-            echo "app_url=http://$INGRESS_IP" >> $GITHUB_OUTPUT
-            echo "App URL: http://$INGRESS_IP"
-          else
-            echo "app_url=" >> $GITHUB_OUTPUT
-            echo "Ingress not found (run platform setup first if needed)."
-          fi
