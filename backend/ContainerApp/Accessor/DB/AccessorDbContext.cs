@@ -8,7 +8,10 @@ public class AccessorDbContext : DbContext
     public AccessorDbContext(DbContextOptions<AccessorDbContext> options)
         : base(options) { }
 
+    // DbSets
     public DbSet<TaskModel> Tasks { get; set; } = default!;
+    public DbSet<ChatThread> ChatThreads { get; set; } = default!;
+    public DbSet<ChatMessage> ChatMessages { get; set; } = default!;
     public DbSet<IdempotencyRecord> Idempotency { get; set; } = default!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -19,8 +22,18 @@ public class AccessorDbContext : DbContext
         modelBuilder.Entity<TaskModel>(e =>
         {
             e.HasKey(t => t.Id);
-            // configure other properties if needed
         });
+
+        // ChatThread -> ChatMessage relationship with cascade delete
+        modelBuilder.Entity<ChatThread>()
+            .HasMany(t => t.Messages)
+            .WithOne(m => m.Thread)
+            .HasForeignKey(m => m.ThreadId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Index on ChatMessage.ThreadId
+        modelBuilder.Entity<ChatMessage>()
+            .HasIndex(m => m.ThreadId);
 
         // Idempotency table
         modelBuilder.Entity<IdempotencyRecord>(e =>
@@ -30,7 +43,7 @@ public class AccessorDbContext : DbContext
             e.Property(i => i.IdempotencyKey).HasMaxLength(200).IsRequired();
             e.Property(i => i.Status).IsRequired();
             e.Property(i => i.CreatedAtUtc).IsRequired();
-            // ExpiresAtUtc is optional
+            // ExpiresAtUtc optional
         });
     }
 }

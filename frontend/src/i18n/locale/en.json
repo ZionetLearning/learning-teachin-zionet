@@ -67,7 +67,7 @@
         "score": "Score:"
       },
       "chatAvatar": {
-        "chatAvatarPage": "Chat Avatar Page",
+        "chatAvatarPage": "Chat with Avatar - Connected to backend",
         "typeMessage": "Type a message...",
         "avatar": "Avatar",
         "lips": "Lips"
@@ -178,6 +178,16 @@
           "capeTown": "Cape Town",
           "mumbai": "Mumbai"
         }
+      },
+      "animeExplorer": {
+        "loading": "Loading...",
+        "loadingMore": "Loading more...",
+        "loadingMoreResults": "Loading more results",
+        "reachEnd": "You’ve reached the end.",
+        "top": "Top",
+        "exploreAnime": "Explore Anime",
+        "searchByTitle": "Search by title",
+        "clear": "Clear"
       }
     },
     "sidebar": {
@@ -188,7 +198,7 @@
       "chatYo": "Chat - Yo (Yonatan)",
       "chatDa": "Chat - Da (Daniel)",
       "chatOu": "Chat - Ou (Ouriel)",
-      "chatAvatar": "Chat - Avatar",
+      "chatAvatar": "Chat with Avatar",
       "avatarTools": "Avatar Tools",
       "avatarOu": "Avatar - Ou",
       "avatarSh": "Avatar - Sh",

@@ -1,7 +1,10 @@
 ﻿using Dapr.Client;
 using Manager.Constants;
+
+//using Manager.Constants;
 using Manager.Models;
 using System.Net;
+using System.Text.Json;
 
 namespace Manager.Services.Clients;
 
@@ -47,13 +50,25 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
                 return false;
             }
 
+            var payload = JsonSerializer.SerializeToElement(new
+            {
+                id = id,
+                name = newTaskName,
+                payload = ""
+            });
+
+            var message = new Message
+            {
+                ActionName = MessageAction.UpdateTask,
+                Payload = payload
+            };
+
             await _daprClient.InvokeBindingAsync(
-                QueueNames.TaskUpdate,
+                $"{QueueNames.AccessorQueue}-out",
                 "create",
-                new TaskNameUpdateModel(id, newTaskName)
+                message
             );
 
-            _logger.LogDebug("Task name update request sent to queue for task {TaskId}", id);
             return true;
         }
         catch (Exception ex)

@@ -1,0 +1,18 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: manager-callback-queue-out
+spec:
+  type: bindings.azure.servicebusqueues
+  version: v1
+  metadata:
+    - name: connectionString
+      value: "Endpoint=sb://sbemulatorns/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=localSecret;UseDevelopmentEmulator=true"
+    - name: queueName
+      value: manager-callback-queue
+    - name: direction
+      value: output
+    - name: disableEntityManagement
+      value: "true"
+scopes:
+  - engine

@@ -35,17 +35,31 @@ public class AzureServiceBusQueueListener<T> : IQueueListener<T>, IAsyncDisposab
 
         _processor.ProcessMessageAsync += async args =>
         {
-            var now = DateTimeOffset.UtcNow;
-            var lockedUntil = args.Message.LockedUntil;
-            var lockTimeout = lockedUntil - now;
-
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            linkedCts.CancelAfter(lockTimeout);
+
+            void ArmCancelAfterFromLockedUntil()
+            {
+                var now = DateTimeOffset.UtcNow;
+                var timeout = args.Message.LockedUntil - now - TimeSpan.FromSeconds(2);
+                if (timeout <= TimeSpan.Zero)
+                {
+                    linkedCts.Cancel();
+                }
+                else
+                {
+                    linkedCts.CancelAfter(timeout);
+                }
+            }
+
+            ArmCancelAfterFromLockedUntil();
 
             var renewLock = async () =>
             {
                 await args.RenewMessageLockAsync(args.Message, linkedCts.Token);
                 _logger.LogDebug("Lock renewed for message {MessageId}", args.Message.MessageId);
+                _logger.LogDebug("Lock till: {Time}", args.Message.LockedUntil);
+
+                ArmCancelAfterFromLockedUntil();
             };
 
             try
