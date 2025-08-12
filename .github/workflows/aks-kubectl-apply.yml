@@ -101,48 +101,63 @@ jobs:
 
       - name: Ensure baseline secrets exist in target namespace
         run: |
-          set -e
+          set -euo pipefail
           sudo apt-get update -y >/dev/null
           sudo apt-get install -y jq >/dev/null
           ns="$TARGET_NAMESPACE"
 
+          # helper: create/copy secret; "$@" are --from-literal args
           make_secret () {
             local name="$1"; shift
             if kubectl -n "$ns" get secret "$name" >/dev/null 2>&1; then
-              echo "✓ $name already exists in $ns"; return
+              echo "✓ $name already exists in $ns" >&2; return
             fi
             if kubectl -n dev get secret "$name" >/dev/null 2>&1; then
-              echo "Copying $name from dev -> $ns"
+              echo "Copying $name from dev -> $ns" >&2
               kubectl -n dev get secret "$name" -o json \
-              | jq 'del(.metadata.uid,.metadata.resourceVersion,.metadata.creationTimestamp,.metadata.managedFields,.metadata.annotations)
-                    | .metadata.namespace="'$ns'"' \
-              | kubectl apply -f -
-              echo "✓ Copied $name"; return
+                | jq 'del(.metadata.uid,.metadata.resourceVersion,.metadata.creationTimestamp,.metadata.managedFields,.metadata.annotations)
+                      | .metadata.namespace="'"$ns"'"' \
+                | kubectl apply -f -
+              echo "✓ Copied $name" >&2; return
             fi
-            echo "Creating $name in $ns from repo secrets"
-            "$@"
+            echo "Creating $name in $ns from repo secrets" >&2
+            # Build YAML and apply INSIDE the function (no extra echo in the pipe)
+            kubectl -n "$ns" create secret generic "$name" "$@" \
+              --dry-run=client -o yaml | kubectl apply -f -
           }
 
+          require_nonempty () { v="$1"; n="$2"; if [ -z "$v" ]; then echo "✗ Missing secret: $n" >&2; exit 1; fi; }
+
+          SB='${{ secrets.AZURE_SERVICEBUS_CONNECTION_STRING }}'
+          PG='${{ secrets.POSTGRES_CONNECTION_STRING }}'
+          RH='${{ secrets.REDIS_HOSTPORT }}'
+          RP='${{ secrets.REDIS_PASSWORD }}'
+          SR='${{ secrets.AZURE_SIGNALR_CONNECTION_STRING }}'
+
+          require_nonempty "$SB" "AZURE_SERVICEBUS_CONNECTION_STRING"
+          require_nonempty "$PG" "POSTGRES_CONNECTION_STRING"
+          require_nonempty "$RH" "REDIS_HOSTPORT"
+          require_nonempty "$RP" "REDIS_PASSWORD"
+          # SignalR optional? If required, uncomment next line
+          # require_nonempty "$SR" "AZURE_SIGNALR_CONNECTION_STRING"
+
           make_secret azure-service-bus-secret \
-            kubectl -n "$ns" create secret generic azure-service-bus-secret \
-              --from-literal=AzureServiceBusConnectionString='${{ secrets.AZURE_SERVICEBUS_CONNECTION_STRING }}' \
-              --dry-run=client -o yaml | kubectl apply -f -
+            --from-literal=AzureServiceBusConnectionString="$SB"
 
           make_secret postgres-connection \
-            kubectl -n "$ns" create secret generic postgres-connection \
-              --from-literal=PostgreSQLConnectionString='${{ secrets.POSTGRES_CONNECTION_STRING }}' \
-              --dry-run=client -o yaml | kubectl apply -f -
+            --from-literal=PostgreSQLConnectionString="$PG"
 
           make_secret redis-connection \
-            kubectl -n "$ns" create secret generic redis-connection \
-              --from-literal=redis-hostport='${{ secrets.REDIS_HOSTPORT }}' \
-              --from-literal=redis-password='${{ secrets.REDIS_PASSWORD }}' \
-              --dry-run=client -o yaml | kubectl apply -f -
+            --from-literal=redis-hostport="$RH" \
+            --from-literal=redis-password="$RP"
 
-          make_secret signalr-connection \
-            kubectl -n "$ns" create secret generic signalr-connection \
-              --from-literal=AzureSignalRConnectionString='${{ secrets.AZURE_SIGNALR_CONNECTION_STRING }}' \
-              --dry-run=client -o yaml | kubectl apply -f -
+          # Create only if provided
+          if [ -n "$SR" ]; then
+            make_secret signalr-connection \
+              --from-literal=AzureSignalRConnectionString="$SR"
+          else
+            echo "⚠ signalr-connection skipped (no AZURE_SIGNALR_CONNECTION_STRING)" >&2
+          fi
 
       - name: Helm upgrade/install services
         run: |
