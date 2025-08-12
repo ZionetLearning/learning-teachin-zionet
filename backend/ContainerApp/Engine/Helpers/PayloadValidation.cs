@@ -71,6 +71,5 @@ public static class PayloadValidation
             logger.LogWarning("Question is required.");
             throw new NonRetryableException("Question is required.");
         }
-
-
     }
+}
