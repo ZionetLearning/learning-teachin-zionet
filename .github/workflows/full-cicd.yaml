@@ -1,9 +1,9 @@
 name: Full CICD
 
 on:
-  # push:
-  #  branches:
-  #    - main
+  push:
+   branches:
+     - yosef-benny/combine-tasks
   workflow_dispatch:
     inputs:
       environment:
