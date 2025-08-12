@@ -17,7 +17,7 @@ public class TaskIntegrationTests(HttpTestFixture fixture, ITestOutputHelper out
     public async Task Post_Same_Id_Twice_Is_Idempotent()
     {
         var first  = TestDataHelper.CreateFixedIdTask(); // Id = 888
-        var second = TestDataHelper.CreateFixedIdTask(); // same Id, different data
+        var second = TestDataHelper.CreateFixedIdTask(); // same Id
 
         // 1) POST first
         var r1 = await Client.PostAsJsonAsync(ApiRoutes.Task, first);

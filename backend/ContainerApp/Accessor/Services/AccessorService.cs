@@ -112,7 +112,7 @@ public class AccessorService : IAccessorService
                 {
                     IdempotencyKey = key,
                     Status = IdempotencyStatus.InProgress,
-                    CreatedAtUtc = DateTime.UtcNow,
+                    CreatedAtUtc = DateTimeOffset.UtcNow,
                     ExpiresAtUtc = expires
                 };
 
