@@ -112,7 +112,7 @@ jobs:
             if kubectl -n "$ns" get secret "$name" >/dev/null 2>&1; then
               echo "✓ $name already exists in $ns" >&2; return
             fi
-            if kubectl -n dev get secret "$name" >/dev/null 2>&1; then
+            if [ "$ns" != "dev" ] && kubectl -n dev get secret "$name" >/dev/null 2>&1; then
               echo "Copying $name from dev -> $ns" >&2
               kubectl -n dev get secret "$name" -o json \
                 | jq 'del(.metadata.uid,.metadata.resourceVersion,.metadata.creationTimestamp,.metadata.managedFields,.metadata.annotations)
@@ -121,25 +121,31 @@ jobs:
               echo "✓ Copied $name" >&2; return
             fi
             echo "Creating $name in $ns from repo secrets" >&2
-            # Build YAML and apply INSIDE the function (no extra echo in the pipe)
+
+            # validate only when creating
+            for arg in "$@"; do
+              case "$arg" in
+                --from-literal=*)
+                  kv="${arg#--from-literal=}"; key="${kv%%=*}"; val="${kv#*=}"
+                  if [ -z "$val" ]; then
+                    echo "✗ Missing value for $key when creating $name. Add the repo secret or pre-create in dev." >&2
+                    exit 1
+                  fi
+                ;;
+              esac
+            done
+
             kubectl -n "$ns" create secret generic "$name" "$@" \
               --dry-run=client -o yaml | kubectl apply -f -
+            echo "✓ Created $name" >&2
           }
 
-          require_nonempty () { v="$1"; n="$2"; if [ -z "$v" ]; then echo "✗ Missing secret: $n" >&2; exit 1; fi; }
-
+          # pull from repo secrets (used only if creation is needed)
           SB='${{ secrets.AZURE_SERVICEBUS_CONNECTION_STRING }}'
           PG='${{ secrets.POSTGRES_CONNECTION_STRING }}'
           RH='${{ secrets.REDIS_HOSTPORT }}'
           RP='${{ secrets.REDIS_PASSWORD }}'
-          SR='${{ secrets.AZURE_SIGNALR_CONNECTION_STRING }}'
-
-          require_nonempty "$SB" "AZURE_SERVICEBUS_CONNECTION_STRING"
-          require_nonempty "$PG" "POSTGRES_CONNECTION_STRING"
-          require_nonempty "$RH" "REDIS_HOSTPORT"
-          require_nonempty "$RP" "REDIS_PASSWORD"
-          # SignalR optional? If required, uncomment next line
-          # require_nonempty "$SR" "AZURE_SIGNALR_CONNECTION_STRING"
+          SR='${{ secrets.AZURE_SIGNALR_CONNECTION_STRING }}'  # optional
 
           make_secret azure-service-bus-secret \
             --from-literal=AzureServiceBusConnectionString="$SB"
@@ -151,7 +157,6 @@ jobs:
             --from-literal=redis-hostport="$RH" \
             --from-literal=redis-password="$RP"
 
-          # Create only if provided
           if [ -n "$SR" ]; then
             make_secret signalr-connection \
               --from-literal=AzureSignalRConnectionString="$SR"
