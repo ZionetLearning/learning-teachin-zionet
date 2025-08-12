@@ -99,73 +99,43 @@ jobs:
         run: |
           kubectl create namespace "$TARGET_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 
-      - name: Ensure baseline secrets exist in target namespace
-        run: |
-          set -euo pipefail
-          sudo apt-get update -y >/dev/null
-          sudo apt-get install -y jq >/dev/null
-          ns="$TARGET_NAMESPACE"
+      # - name: Ensure baseline secrets exist in target namespace
+      #   run: |
+      #     set -e
+      #     sudo apt-get update -y >/dev/null
+      #     sudo apt-get install -y jq >/dev/null
+      #     ns="$TARGET_NAMESPACE"
 
-          # helper: create/copy secret; "$@" are --from-literal args
-          make_secret () {
-            local name="$1"; shift
-            if kubectl -n "$ns" get secret "$name" >/dev/null 2>&1; then
-              echo "✓ $name already exists in $ns" >&2; return
-            fi
-            if [ "$ns" != "dev" ] && kubectl -n dev get secret "$name" >/dev/null 2>&1; then
-              echo "Copying $name from dev -> $ns" >&2
-              kubectl -n dev get secret "$name" -o json \
-                | jq 'del(.metadata.uid,.metadata.resourceVersion,.metadata.creationTimestamp,.metadata.managedFields,.metadata.annotations)
-                      | .metadata.namespace="'"$ns"'"' \
-                | kubectl apply -f -
-              echo "✓ Copied $name" >&2; return
-            fi
-            echo "Creating $name in $ns from repo secrets" >&2
+      #     copy_secret () {
+      #       local name="$1"
+      #       if kubectl -n "$ns" get secret "$name" >/dev/null 2>&1; then
+      #         echo "✓ $name already exists in $ns"
+      #       elif kubectl -n dev get secret "$name" >/dev/null 2>&1; then
+      #         echo "Copying $name from dev -> $ns"
+      #         kubectl -n dev get secret "$name" -o json \
+      #         | jq 'del(.metadata.uid,.metadata.resourceVersion,.metadata.creationTimestamp,.metadata.managedFields,.metadata.annotations) 
+      #               | .metadata.namespace="'$ns'"' \
+      #         | kubectl apply -f -
+      #         echo "✓ Copied $name"
+      #       else
+      #         echo "✗ Missing secret $name in both $ns and dev. Create it or add repo secrets."
+      #         MISSING=1
+      #       fi
+      #     }
 
-            # validate only when creating
-            for arg in "$@"; do
-              case "$arg" in
-                --from-literal=*)
-                  kv="${arg#--from-literal=}"; key="${kv%%=*}"; val="${kv#*=}"
-                  if [ -z "$val" ]; then
-                    echo "✗ Missing value for $key when creating $name. Add the repo secret or pre-create in dev." >&2
-                    exit 1
-                  fi
-                ;;
-              esac
-            done
+      #     MISSING=0
+      #     copy_secret azure-service-bus-secret-$TARGET_NAMESPACE
+      #     copy_secret signalr-connection-$TARGET_NAMESPACE
+      #     copy_secret postgres-connection-$TARGET_NAMESPACE
+      #     copy_secret redis-connection-$TARGET_NAMESPACE
 
-            kubectl -n "$ns" create secret generic "$name" "$@" \
-              --dry-run=client -o yaml | kubectl apply -f -
-            echo "✓ Created $name" >&2
-          }
-
-          # pull from repo secrets (used only if creation is needed)
-          SB='${{ secrets.AZURE_SERVICEBUS_CONNECTION_STRING }}'
-          PG='${{ secrets.POSTGRES_CONNECTION_STRING }}'
-          RH='${{ secrets.REDIS_HOSTPORT }}'
-          RP='${{ secrets.REDIS_PASSWORD }}'
-          SR='${{ secrets.AZURE_SIGNALR_CONNECTION_STRING }}'  # optional
-
-          make_secret azure-service-bus-secret \
-            --from-literal=AzureServiceBusConnectionString="$SB"
-
-          make_secret postgres-connection \
-            --from-literal=PostgreSQLConnectionString="$PG"
-
-          make_secret redis-connection \
-            --from-literal=redis-hostport="$RH" \
-            --from-literal=redis-password="$RP"
-
-          if [ -n "$SR" ]; then
-            make_secret signalr-connection \
-              --from-literal=AzureSignalRConnectionString="$SR"
-          else
-            echo "⚠ signalr-connection skipped (no AZURE_SIGNALR_CONNECTION_STRING)" >&2
-          fi
+      #     if [ "$MISSING" -ne 0 ]; then
+      #       echo "Required secrets are missing. Aborting."; exit 1
+      #     fi
 
       - name: Helm upgrade/install services
         run: |
+          # Render check (no Namespace object should be created)
           helm template app "$CHART_DIR" -f "$VALUES_FILE" \
             --set namespace.name="$TARGET_NAMESPACE" \
             --set namespace.create=false \
@@ -176,6 +146,7 @@ jobs:
             --set dapr.installComponents=false \
           | grep -n '^kind: Namespace' && { echo "Namespace still rendered"; exit 1; } || echo "OK: no Namespace in chart"
 
+          # Deploy
           helm upgrade --install app "$CHART_DIR" \
             --namespace "$TARGET_NAMESPACE" \
             -f "$VALUES_FILE" \
@@ -186,14 +157,6 @@ jobs:
             --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" \
             --set-string engine.env.AzureSpeech__SubscriptionKey="$AZURE_SPEECH_KEY" \
             --set dapr.installComponents=false \
-            --atomic --timeout 10m
-
-      - name: Wait for deployments ready
-        run: |
-          ns="$TARGET_NAMESPACE"
-          kubectl -n "$ns" rollout status deploy/manager --timeout=5m
-          kubectl -n "$ns" rollout status deploy/engine  --timeout=5m
-          kubectl -n "$ns" rollout status deploy/accessor --timeout=5m
 
       - name: Diagnostics (on failure)
         if: failure()
