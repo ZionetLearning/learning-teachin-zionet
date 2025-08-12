@@ -1,9 +1,10 @@
-import { vi } from 'vitest';
-import { WeatherWidget } from '..';
-import { useGetWeather } from '../api';
-import { WeatherData, WeatherParams } from '@/types';
 import type { UseQueryResult } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { vi } from 'vitest';
+
+import { WeatherData, WeatherParams } from '@/types';
+import { WeatherWidget } from '..';
+import { useGetWeather } from '../api';
 
 vi.mock('react-i18next', () => ({
 	useTranslation: () => ({ t: (k: string) => k }),

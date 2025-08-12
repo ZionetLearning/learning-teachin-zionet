@@ -2,8 +2,8 @@ import './__mocks__';
 
 import { vi } from 'vitest';
 
-import { fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
 
 vi.stubEnv('VITE_AZURE_SPEECH_KEY', 'mock-speech-key');
 vi.stubEnv('VITE_AZURE_REGION', 'mock-region');

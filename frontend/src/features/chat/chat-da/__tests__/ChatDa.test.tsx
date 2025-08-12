@@ -1,11 +1,11 @@
-import { describe, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, vi } from 'vitest';
 
 import { ChatDa } from '..';
 import { useChatContext } from '../context/chat-context';
-import { ChatProvider } from '../providers/chat-provider';
 import { useChat } from '../hooks';
+import { ChatProvider } from '../providers/chat-provider';
 
 vi.mock('react-i18next', () => ({
 	useTranslation: () => ({ t: (k: string) => k }),
