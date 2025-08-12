@@ -115,6 +115,25 @@ jobs:
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
         run: npm run build
 
+      - name: Optimize Build Size
+        working-directory: ${{ env.FE_DIR }}
+        run: |
+          # Show original build size
+          ORIGINAL_SIZE=$(du -sh dist/ | cut -f1)
+          echo "📦 Original build size: $ORIGINAL_SIZE"
+          
+          # Remove unnecessary files to reduce deployment size
+          echo "🧹 Removing unnecessary files..."
+          find dist -name "*.map" -delete
+          find dist -name "*.md" -delete
+          find dist -name "*.txt" -delete
+          find dist -name "*.LICENSE" -delete
+          
+          # Show optimized build size and savings
+          OPTIMIZED_SIZE=$(du -sh dist/ | cut -f1)
+          echo "✨ Optimized build size: $OPTIMIZED_SIZE"
+          echo "💾 Space saved by removing: source maps, docs, and license files"
+
       - name: Get SWA deployment token
         if: ${{ !inputs.deployment_token }}
         id: swatoken
