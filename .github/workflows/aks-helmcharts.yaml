@@ -93,7 +93,7 @@ jobs:
         run: |
           echo "Waiting for external IP for ingress-nginx-controller..."
           for i in {1..30}; do
-            INGRESS_IP=$(kubectl -n devops-ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+            INGRESS_IP=$(kubectl -n temp-devops-ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
             if [[ -n "$INGRESS_IP" ]]; then
               echo "Ingress IP is ready: $INGRESS_IP"
               echo "ingress_url=http://$INGRESS_IP" >> $GITHUB_OUTPUT
