@@ -1,5 +1,9 @@
 name: Deploy Frontend to Azure Static Web Apps
-
+run-name: >
+  🚀 Deploy Frontend to environment_name: ${{
+    inputs.environment_name || github.event.inputs.environment_name || 
+    'custom'
+  }} | GitHub Environment: ${{ inputs.environment || github.event.inputs.environment }}
 on:
 
   workflow_dispatch:
