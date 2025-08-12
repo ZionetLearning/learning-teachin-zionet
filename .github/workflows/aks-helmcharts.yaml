@@ -106,7 +106,7 @@ jobs:
 
       - name: Add ingress IP to PostgreSQL firewall
         run: |
-          INGRESS_IP=$(kubectl -n devops-ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          INGRESS_IP=$(kubectl -n temp-devops-ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
           az postgres flexible-server firewall-rule create \
             --resource-group $PG_RG \
             --name $PG_DB \
