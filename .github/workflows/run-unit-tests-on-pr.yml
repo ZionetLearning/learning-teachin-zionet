@@ -10,6 +10,13 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - AccessorUnitTests/AccessorUnitTests.csproj
+          - EngineUnitTests/EngineUnitTests.csproj
+          - ManagerUnitTests/ManagerUnitTests.csproj
 
     steps:
       - name: Checkout code
@@ -19,21 +26,21 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.x'
-          cache: true   # enables NuGet cache
+          cache: true
 
-      - name: Restore
+      - name: Restore (solution)
         working-directory: backend/ContainerApp
         run: dotnet restore backend.sln
 
-      - name: Build
+      - name: Build (solution)
         working-directory: backend/ContainerApp
         run: dotnet build backend.sln --no-restore --configuration Release
 
-      - name: Test (all UnitTests in solution)
-        working-directory: backend/ContainerApp
+      - name: Test ${{ matrix.project }}
+        working-directory: backend/ContainerApp/UnitTests
         run: >
-          dotnet test backend.sln
+          dotnet test ${{ matrix.project }}
           --no-build
           --configuration Release
-          --logger "trx;LogFileName=test_results.trx"
+          --logger "trx;LogFileName=${{ matrix.project }}.trx"
           --results-directory ./TestResults
