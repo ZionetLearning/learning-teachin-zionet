@@ -32,13 +32,11 @@ const sampleData: WeatherData = {
 	sys: { sunrise: 1672531199, sunset: 1672574399 },
 };
 
-type QR = UseQueryResult<WeatherData, Error>;
-
-const emptyResult: QR = {
+const emptyResult = {
 	data: undefined,
 	error: null,
 	isLoading: false,
-} as QR;
+} as UseQueryResult<WeatherData, Error>;
 
 describe('<WeatherWidget />', () => {
 	beforeEach(() => {
@@ -69,6 +67,11 @@ describe('<WeatherWidget />', () => {
 			}
 			return emptyResult;
 		});
+	});
+
+	it('matches snapshot', () => {
+		const { asFragment } = render(<WeatherWidget />);
+		expect(asFragment()).toMatchSnapshot();
 	});
 
 	it('shows the initial prompt before a city is selected/searched', () => {
@@ -112,6 +115,7 @@ describe('<WeatherWidget />', () => {
 			POSITION_UNAVAILABLE: 2,
 			TIMEOUT: 3,
 		};
+		const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 		const getCurrentPosition = vi.fn(
 			(_ok: PositionCallback, err?: PositionErrorCallback) => {
 				err?.(error);
@@ -129,6 +133,7 @@ describe('<WeatherWidget />', () => {
 		expect(getCurrentPosition).toHaveBeenCalled();
 
 		await screen.findByText('pages.weather.selectCityOrLocation');
+		warnSpy.mockRestore();
 	});
 
 	it('shows a message for "city not found" error', async () => {
