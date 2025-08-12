@@ -19,12 +19,12 @@ manager:
   # secrets inherit from base values.yaml
   ingress:
     enabled: true
-    host: teachin-zionet.westeurope.cloudapp.azure.com
+    host: temp-teachin-zionet.westeurope.cloudapp.azure.com
     basePath: /api
     tls:
       enabled: true
-      clusterIssuer: letsencrypt-prod
-      secretName: teachin-zionet-tls
+      clusterIssuer: temp-letsencrypt-prod
+      secretName: temp-teachin-zionet-tls
       
 engine:
   image:

@@ -1,12 +1,12 @@
 #!/bin/bash
 set -e
 
-NAMESPACE="devops-ingress-nginx"
+NAMESPACE="temp-devops-ingress-nginx"
 RELEASE_NAME="ingress-nginx"
-STATIC_IP_NAME="ingress-controller-ip"
+STATIC_IP_NAME="temp-ingress-controller-ip"
 MC_RG="MC_dev-zionet-learning-2025_aks-cluster-dev_westeurope"
 LOCATION="westeurope"
-DNS_LABEL="teachin-zionet"
+DNS_LABEL="temp-teachin-zionet"
 
 
 echo "0. Uninstalling existing ingress-nginx Helm release (if present)..."

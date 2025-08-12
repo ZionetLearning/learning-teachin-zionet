@@ -3,7 +3,7 @@ set -euo pipefail
 
 NAMESPACE="devops-logs"
 EMAIL="snir1552@gmail.com"
-DOMAIN="teachin-zionet.westeurope.cloudapp.azure.com"
+DOMAIN="temp-teachin-zionet.westeurope.cloudapp.azure.com"
 
 echo "1. Installing cert-manager..."
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.0/cert-manager.yaml
@@ -30,11 +30,11 @@ kubectl apply -f ../kubernetes/ingress/grafana-ingress.yaml
 
 echo "5. Waiting for certificate to be issued..."
 echo "This may take 1-2 minutes..."
-kubectl wait --for=condition=ready certificate teachin-zionet-tls -n $NAMESPACE --timeout=300s
+kubectl wait --for=condition=ready certificate temp-teachin-zionet-tls -n $NAMESPACE --timeout=300s
 
 echo "HTTPS setup complete!"
 echo "Your secure Grafana URL: https://$DOMAIN/grafana/"
 echo ""
 echo "Check certificate status with:"
 echo "kubectl get certificate -n $NAMESPACE"
-echo "kubectl describe certificate teachin-zionet-tls -n $NAMESPACE"
+echo "kubectl describe certificate temp-teachin-zionet-tls -n $NAMESPACE"
