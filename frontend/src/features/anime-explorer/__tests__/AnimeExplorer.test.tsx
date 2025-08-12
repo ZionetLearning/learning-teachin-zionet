@@ -1,53 +1,17 @@
-import { InfiniteData, UseInfiniteQueryResult } from '@tanstack/react-query';
+import {
+	useGetAnimeSearch,
+	lastObserver,
+	lastIO,
+	resetIO,
+	rq,
+} from './__mocks__/index.ts';
+
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { vi } from 'vitest';
 
 import { AnimeResponse } from '@/types';
 import { AnimeExplorer } from '..';
 import { useDebounceValue } from '../utils';
-
-vi.mock('react-i18next', () => ({
-	useTranslation: () => ({ t: (k: string) => k }),
-}));
-
-type UseGetAnimeSearchFn = (args: {
-	search: string;
-}) => UseInfiniteQueryResult<InfiniteData<AnimeResponse>, Error>;
-
-const useGetAnimeSearch = vi.fn();
-vi.mock('../api', () => ({
-	useGetAnimeSearch: (args: Parameters<UseGetAnimeSearchFn>[0]) =>
-		useGetAnimeSearch(args),
-}));
-
-let lastObserver: {
-	cb: IntersectionObserverCallback;
-	observe: (element: Element) => void;
-	disconnect: () => void;
-	el?: Element;
-} | null;
-
-class IOStub {
-	cb: IntersectionObserverCallback;
-	constructor(cb: IntersectionObserverCallback) {
-		this.cb = cb;
-		lastObserver = {
-			cb,
-			observe: (el) => (lastObserver!.el = el),
-			disconnect: () => {},
-			el: undefined,
-		};
-	}
-	observe(el: Element) {
-		lastObserver!.observe(el);
-	}
-	disconnect() {
-		lastObserver!.disconnect();
-	}
-}
-(
-	globalThis as unknown as { IntersectionObserver: typeof IntersectionObserver }
-).IntersectionObserver = IOStub as unknown as typeof IntersectionObserver;
 
 beforeAll(() => {
 	if (!HTMLElement.prototype.scrollTo) {
@@ -98,15 +62,17 @@ const page = (
 
 beforeEach(() => {
 	vi.clearAllMocks();
-	lastObserver = null;
-	useGetAnimeSearch.mockReturnValue({
-		data: { pages: [page([])], pageParams: [1] },
-		isLoading: false,
-		error: null,
-		hasNextPage: false,
-		isFetchingNextPage: false,
-		fetchNextPage: vi.fn(),
-	});
+	resetIO();
+	useGetAnimeSearch.mockReturnValue(
+		rq({
+			data: { pages: [page([])], pageParams: [1] },
+			isLoading: false,
+			error: null,
+			hasNextPage: false,
+			isFetchingNextPage: false,
+			fetchNextPage: vi.fn(),
+		})
+	);
 });
 
 describe('<AnimeExplorer />', () => {
@@ -116,14 +82,16 @@ describe('<AnimeExplorer />', () => {
 	});
 
 	it('shows loading state', () => {
-		useGetAnimeSearch.mockReturnValue({
-			data: undefined,
-			isLoading: true,
-			error: null,
-			hasNextPage: false,
-			isFetchingNextPage: false,
-			fetchNextPage: vi.fn(),
-		});
+		useGetAnimeSearch.mockReturnValue(
+			rq({
+				data: undefined,
+				isLoading: true,
+				error: null,
+				hasNextPage: false,
+				isFetchingNextPage: false,
+				fetchNextPage: vi.fn(),
+			})
+		);
 
 		render(<AnimeExplorer />);
 		expect(screen.getByText('pages.animeExplorer.loading')).toBeInTheDocument();
@@ -133,14 +101,16 @@ describe('<AnimeExplorer />', () => {
 		const anime1 = makeAnime({ mal_id: 1, title: 'Naruto' });
 		const anime2 = makeAnime({ mal_id: 2, title: 'One Piece' });
 
-		useGetAnimeSearch.mockReturnValue({
-			data: { pages: [page([anime1, anime2])], pageParams: [1] },
-			isLoading: false,
-			error: null,
-			hasNextPage: true,
-			isFetchingNextPage: false,
-			fetchNextPage: vi.fn(),
-		});
+		useGetAnimeSearch.mockReturnValue(
+			rq({
+				data: { pages: [page([anime1, anime2])], pageParams: [1] },
+				isLoading: false,
+				error: null,
+				hasNextPage: true,
+				isFetchingNextPage: false,
+				fetchNextPage: vi.fn(),
+			})
+		);
 
 		render(<AnimeExplorer />);
 
@@ -157,14 +127,16 @@ describe('<AnimeExplorer />', () => {
 		const anime = makeAnime({ title: 'Jujutsu Kaisen' });
 		const fetchNextPage = vi.fn();
 
-		useGetAnimeSearch.mockReturnValue({
-			data: { pages: [page([anime])], pageParams: [1] },
-			isLoading: false,
-			error: null,
-			hasNextPage: true,
-			isFetchingNextPage: false,
-			fetchNextPage,
-		});
+		useGetAnimeSearch.mockReturnValue(
+			rq({
+				data: { pages: [page([anime])], pageParams: [1] },
+				isLoading: false,
+				error: null,
+				hasNextPage: true,
+				isFetchingNextPage: false,
+				fetchNextPage,
+			})
+		);
 
 		render(<AnimeExplorer />);
 
@@ -176,7 +148,7 @@ describe('<AnimeExplorer />', () => {
 					target: lastObserver!.el!,
 				} as IntersectionObserverEntry,
 			],
-			{} as IntersectionObserver
+			lastIO!
 		);
 		expect(fetchNextPage).toHaveBeenCalled();
 	});
@@ -184,17 +156,19 @@ describe('<AnimeExplorer />', () => {
 	it('shows reach-end message when no more pages', () => {
 		const anime = makeAnime({ title: 'Attack on Titan' });
 
-		useGetAnimeSearch.mockReturnValue({
-			data: {
-				pages: [page([anime], { has_next_page: false })],
-				pageParams: [1],
-			},
-			isLoading: false,
-			error: null,
-			hasNextPage: false,
-			isFetchingNextPage: false,
-			fetchNextPage: vi.fn(),
-		});
+		useGetAnimeSearch.mockReturnValue(
+			rq({
+				data: {
+					pages: [page([anime], { has_next_page: false })],
+					pageParams: [1],
+				},
+				isLoading: false,
+				error: null,
+				hasNextPage: false,
+				isFetchingNextPage: false,
+				fetchNextPage: vi.fn(),
+			})
+		);
 
 		render(<AnimeExplorer />);
 
