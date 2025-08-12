@@ -106,36 +106,46 @@ jobs:
           sudo apt-get install -y jq >/dev/null
           ns="$TARGET_NAMESPACE"
 
-          copy_secret () {
-            local name="$1"
+          make_secret () {
+            local name="$1"; shift
             if kubectl -n "$ns" get secret "$name" >/dev/null 2>&1; then
-              echo "✓ $name already exists in $ns"
-            elif kubectl -n dev get secret "$name" >/dev/null 2>&1; then
+              echo "✓ $name already exists in $ns"; return
+            fi
+            if kubectl -n dev get secret "$name" >/dev/null 2>&1; then
               echo "Copying $name from dev -> $ns"
               kubectl -n dev get secret "$name" -o json \
-              | jq 'del(.metadata.uid,.metadata.resourceVersion,.metadata.creationTimestamp,.metadata.managedFields,.metadata.annotations) 
+              | jq 'del(.metadata.uid,.metadata.resourceVersion,.metadata.creationTimestamp,.metadata.managedFields,.metadata.annotations)
                     | .metadata.namespace="'$ns'"' \
               | kubectl apply -f -
-              echo "✓ Copied $name"
-            else
-              echo "✗ Missing secret $name in both $ns and dev. Create it or add repo secrets."
-              MISSING=1
+              echo "✓ Copied $name"; return
             fi
+            echo "Creating $name in $ns from repo secrets"
+            "$@"
           }
 
-          MISSING=0
-          copy_secret azure-service-bus-secret
-          copy_secret signalr-connection
-          copy_secret postgres-connection
-          copy_secret redis-connection
+          make_secret azure-service-bus-secret \
+            kubectl -n "$ns" create secret generic azure-service-bus-secret \
+              --from-literal=AzureServiceBusConnectionString='${{ secrets.AZURE_SERVICEBUS_CONNECTION_STRING }}' \
+              --dry-run=client -o yaml | kubectl apply -f -
 
-          if [ "$MISSING" -ne 0 ]; then
-            echo "Required secrets are missing. Aborting."; exit 1
-          fi
+          make_secret postgres-connection \
+            kubectl -n "$ns" create secret generic postgres-connection \
+              --from-literal=PostgreSQLConnectionString='${{ secrets.POSTGRES_CONNECTION_STRING }}' \
+              --dry-run=client -o yaml | kubectl apply -f -
+
+          make_secret redis-connection \
+            kubectl -n "$ns" create secret generic redis-connection \
+              --from-literal=redis-hostport='${{ secrets.REDIS_HOSTPORT }}' \
+              --from-literal=redis-password='${{ secrets.REDIS_PASSWORD }}' \
+              --dry-run=client -o yaml | kubectl apply -f -
+
+          make_secret signalr-connection \
+            kubectl -n "$ns" create secret generic signalr-connection \
+              --from-literal=AzureSignalRConnectionString='${{ secrets.AZURE_SIGNALR_CONNECTION_STRING }}' \
+              --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Helm upgrade/install services
         run: |
-          # Render check (no Namespace object should be created)
           helm template app "$CHART_DIR" -f "$VALUES_FILE" \
             --set namespace.name="$TARGET_NAMESPACE" \
             --set namespace.create=false \
@@ -146,7 +156,6 @@ jobs:
             --set dapr.installComponents=false \
           | grep -n '^kind: Namespace' && { echo "Namespace still rendered"; exit 1; } || echo "OK: no Namespace in chart"
 
-          # Deploy
           helm upgrade --install app "$CHART_DIR" \
             --namespace "$TARGET_NAMESPACE" \
             -f "$VALUES_FILE" \
@@ -157,7 +166,14 @@ jobs:
             --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" \
             --set-string engine.env.AzureSpeech__SubscriptionKey="$AZURE_SPEECH_KEY" \
             --set dapr.installComponents=false \
-            --atomic --timeout 5m
+            --atomic --timeout 10m
+
+      - name: Wait for deployments ready
+        run: |
+          ns="$TARGET_NAMESPACE"
+          kubectl -n "$ns" rollout status deploy/manager --timeout=5m
+          kubectl -n "$ns" rollout status deploy/engine  --timeout=5m
+          kubectl -n "$ns" rollout status deploy/accessor --timeout=5m
 
       - name: Diagnostics (on failure)
         if: failure()
