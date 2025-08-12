@@ -125,14 +125,3 @@ jobs:
       - name: Restart all pods in target namespace (optional)
         run: kubectl delete pod --all -n "$TARGET_NAMESPACE" || true
 
-      - name: Output external URL (if ingress exists)
-        id: extract_url
-        run: |
-          INGRESS_IP=$(kubectl -n devops-ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
-          if [ -n "$INGRESS_IP" ]; then
-            echo "app_url=http://$INGRESS_IP" >> $GITHUB_OUTPUT
-            echo "App URL: http://$INGRESS_IP"
-          else
-            echo "app_url=" >> $GITHUB_OUTPUT
-            echo "Ingress not found (run platform setup first if needed)."
-          fi
