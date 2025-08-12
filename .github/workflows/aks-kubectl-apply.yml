@@ -99,39 +99,39 @@ jobs:
         run: |
           kubectl create namespace "$TARGET_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 
-      # - name: Ensure baseline secrets exist in target namespace
-      #   run: |
-      #     set -e
-      #     sudo apt-get update -y >/dev/null
-      #     sudo apt-get install -y jq >/dev/null
-      #     ns="$TARGET_NAMESPACE"
+      - name: Ensure baseline secrets exist in target namespace
+        run: |
+          set -e
+          sudo apt-get update -y >/dev/null
+          sudo apt-get install -y jq >/dev/null
+          ns="$TARGET_NAMESPACE"
 
-      #     copy_secret () {
-      #       local name="$1"
-      #       if kubectl -n "$ns" get secret "$name" >/dev/null 2>&1; then
-      #         echo "✓ $name already exists in $ns"
-      #       elif kubectl -n dev get secret "$name" >/dev/null 2>&1; then
-      #         echo "Copying $name from dev -> $ns"
-      #         kubectl -n dev get secret "$name" -o json \
-      #         | jq 'del(.metadata.uid,.metadata.resourceVersion,.metadata.creationTimestamp,.metadata.managedFields,.metadata.annotations) 
-      #               | .metadata.namespace="'$ns'"' \
-      #         | kubectl apply -f -
-      #         echo "✓ Copied $name"
-      #       else
-      #         echo "✗ Missing secret $name in both $ns and dev. Create it or add repo secrets."
-      #         MISSING=1
-      #       fi
-      #     }
+          copy_secret () {
+            local name="$1"
+            if kubectl -n "$ns" get secret "$name" >/dev/null 2>&1; then
+              echo "✓ $name already exists in $ns"
+            elif kubectl -n dev get secret "$name" >/dev/null 2>&1; then
+              echo "Copying $name from dev -> $ns"
+              kubectl -n dev get secret "$name" -o json \
+              | jq 'del(.metadata.uid,.metadata.resourceVersion,.metadata.creationTimestamp,.metadata.managedFields,.metadata.annotations) 
+                    | .metadata.namespace="'$ns'"' \
+              | kubectl apply -f -
+              echo "✓ Copied $name"
+            else
+              echo "✗ Missing secret $name in both $ns and dev. Create it or add repo secrets."
+              MISSING=1
+            fi
+          }
 
-      #     MISSING=0
-      #     copy_secret azure-service-bus-secret-$TARGET_NAMESPACE
-      #     copy_secret signalr-connection-$TARGET_NAMESPACE
-      #     copy_secret postgres-connection-$TARGET_NAMESPACE
-      #     copy_secret redis-connection-$TARGET_NAMESPACE
+          MISSING=0
+          copy_secret azure-service-bus-secret
+          copy_secret signalr-connection
+          copy_secret postgres-connection
+          copy_secret redis-connection
 
-      #     if [ "$MISSING" -ne 0 ]; then
-      #       echo "Required secrets are missing. Aborting."; exit 1
-      #     fi
+          if [ "$MISSING" -ne 0 ]; then
+            echo "Required secrets are missing. Aborting."; exit 1
+          fi
 
       - name: Helm upgrade/install services
         run: |
