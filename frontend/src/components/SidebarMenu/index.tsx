@@ -30,7 +30,6 @@ export const SidebarMenu = () => {
   const { logout } = useAuth();
   const { t, i18n } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
-  const [langActive, setLangActive] = useState<"he" | "en" | null>("en");
   const flagSize = { width: 22, height: 16 };
   const handleNavigation = (path: string) => {
     navigate(path);
@@ -39,9 +38,8 @@ export const SidebarMenu = () => {
   const isHebrew = i18n.language === "he";
   const isActive = (path: string) => location.pathname === path;
 
-  const changeLang = (lng: "en" | "he") => () => {
+  const handleChangeLanguage = (lng: "en" | "he") => () => {
     i18n.changeLanguage(lng);
-    setLangActive(lng);
   };
   return (
     <Sidebar
@@ -91,16 +89,16 @@ export const SidebarMenu = () => {
         <SubMenu label={t("sidebar.languages")} icon={<TranslateIcon />}>
           <MenuItem
             icon={<ILFlag style={flagSize} />}
-            onClick={changeLang("he")}
-            active={langActive === "he"}
+            onClick={handleChangeLanguage("he")}
+            active={i18n.language === "he"}
           >
             {t("sidebar.he")}
           </MenuItem>
 
           <MenuItem
             icon={<GBFlag style={flagSize} />}
-            onClick={changeLang("en")}
-            active={langActive === "en"}
+            onClick={handleChangeLanguage("en")}
+            active={i18n.language === "en"}
           >
             {t("sidebar.en")}
           </MenuItem>
