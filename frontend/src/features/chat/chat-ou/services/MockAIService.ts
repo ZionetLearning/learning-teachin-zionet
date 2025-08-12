@@ -90,11 +90,7 @@ export class MockChatService implements MockAIService {
     if (
       MESSAGE_PATTERNS.link.some((keyword) => lowerMessage.includes(keyword))
     ) {
-      return this.createLinkResponse(
-        messageId,
-        timestamp,
-        context,
-      );
+      return this.createLinkResponse(messageId, timestamp, context);
     }
 
     return this.createTextResponse(messageId, timestamp, userMessage, context);

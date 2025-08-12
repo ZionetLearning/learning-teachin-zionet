@@ -80,7 +80,7 @@ jobs:
             echo "Applying $file"
             DOCKER_REGISTRY=$DOCKER_REGISTRY OPENAI_KEY=$OPENAI_KEY envsubst < "$file" | kubectl apply -f -
           done
-      
+          
       - name: setup-ingress-controller
         run: |
           cd devops/helm-tools
@@ -123,7 +123,8 @@ jobs:
           cd devops/helm-tools/loki
           chmod +x loki.sh
           ./loki.sh
-        
+    
+    
       - name: Wait for external IP for ingress controller
         id: wait_for_ingress_ip
         run: |
