@@ -118,6 +118,12 @@ jobs:
       - name: Optimize Build Size
         working-directory: ${{ env.FE_DIR }}
         run: |
+          # Show directory sizes for comparison
+          echo "📂 Full frontend directory size (includes node_modules):"
+          du -sh . | cut -f1
+          echo "📦 Build output directory size (what gets deployed):"
+          du -sh dist/ | cut -f1
+          
           # Show original build size
           ORIGINAL_SIZE=$(du -sh dist/ | cut -f1)
           echo "📦 Original build size: $ORIGINAL_SIZE"
@@ -156,6 +162,7 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ inputs.deployment_token || env.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: "upload"
-          app_location: "${{ env.FE_DIR }}"   
-          output_location: "dist"            
+          app_location: ""
+          app_artifact_location: "frontend/dist"   
+          # output_location: "dist"            
           skip_app_build: true                
