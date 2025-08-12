@@ -14,7 +14,7 @@ on:
         required: true
         type: string
       environment_name:
-        required: false
+        required: true
         type: string  
     outputs:
       static_web_app_api_token:
