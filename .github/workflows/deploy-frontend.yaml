@@ -1,6 +1,9 @@
 name: Deploy Frontend to Azure Static Web Apps
 
 on:
+  push:
+    branches:
+      - yosef-benny/combine-tasks
   workflow_dispatch:
     inputs:
       environment:
@@ -46,7 +49,7 @@ jobs:
 
       # Login only if we actually need az (missing AI conn string or SWA token)
       - name: Azure Login (OIDC)
-        if: ${{ !inputs.app_insights_connection_string || (!inputs.deployment_token && !secrets.AZURE_STATIC_WEB_APPS_API_TOKEN) }}
+        if: ${{ !inputs.app_insights_connection_string || !inputs.deployment_token }}
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -111,7 +114,7 @@ jobs:
         run: npm run build
 
       - name: Get SWA deployment token
-        if: ${{ !inputs.deployment_token && !secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+        if: ${{ !inputs.deployment_token }}
         id: swatoken
         shell: bash
         run: |
@@ -130,7 +133,7 @@ jobs:
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ inputs.deployment_token || secrets.AZURE_STATIC_WEB_APPS_API_TOKEN || env.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          azure_static_web_apps_api_token: ${{ inputs.deployment_token || env.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: "upload"
           app_location: "${{ env.FE_DIR }}"   
           output_location: "dist"            
