@@ -105,3 +105,4 @@ jobs:
               --set ${SERVICE}.image.tag="$HASH" \
               --set ${SERVICE}.image.altTag="$NAMESPACE"
           fi
+        working-directory: ${{ github.workspace }}/devops/kubernetes/charts
