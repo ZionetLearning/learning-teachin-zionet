@@ -87,7 +87,7 @@ services:
           - signalr-emulator
 
 
-# ------------------------- PostgreSQL DB ---------------------------
+# ------------------------- PostgreSQL DB --------------------------
   postgres:
     image: postgres:17.5
     container_name: postgres-db
