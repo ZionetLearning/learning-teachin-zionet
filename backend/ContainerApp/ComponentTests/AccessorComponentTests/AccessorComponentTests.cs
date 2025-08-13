@@ -53,6 +53,17 @@ internal sealed class TestChatService : IAccessorService
         _db.ChatMessages.Add(message);
         await _db.SaveChangesAsync();
     }
+    public async Task<ChatThread?> GetThreadByIdAsync(Guid threadId)
+    {
+        // Single lookup; matches production semantics
+        return await _db.ChatThreads.FindAsync(threadId);
+    }
+
+    public async Task CreateThreadAsync(ChatThread thread)
+    {
+        _db.ChatThreads.Add(thread);
+        await _db.SaveChangesAsync();
+    }
 
     public async Task<IEnumerable<ChatMessage>> GetMessagesByThreadAsync(Guid threadId)
     {
@@ -80,8 +91,6 @@ internal sealed class TestChatService : IAccessorService
     public Task CreateTaskAsync(TaskModel task) => throw new NotImplementedException();
     public Task<bool> UpdateTaskNameAsync(int taskId, string newName) => throw new NotImplementedException();
     public Task<bool> DeleteTaskAsync(int taskId) => throw new NotImplementedException();
-    public Task<ChatThread?> GetThreadByIdAsync(Guid threadId) => throw new NotImplementedException();
-    public Task CreateThreadAsync(ChatThread thread) => throw new NotImplementedException();
 }
 
 // ------------ Minimal factory that maps your real endpoints ------------
