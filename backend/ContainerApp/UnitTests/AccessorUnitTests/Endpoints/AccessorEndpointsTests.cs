@@ -99,33 +99,21 @@ public class AccessorEndpointsTests
 
     #region UpdateTaskNameAsync
 
-    [Fact]
-    public async Task UpdateTaskNameAsync_Found_ReturnsOk()
+    [Theory]
+    [InlineData(5, "new", true, typeof(Ok<string>))]
+    [InlineData(99, "new", false, typeof(NotFound<string>))]
+    public async Task UpdateTaskNameAsync_ReturnsExpectedResult(
+        int id, string name, bool found, Type expectedType)
     {
         var svc = Svc();
         var log = Log();
 
-        var req = new UpdateTaskName { Id = 5, Name = "new" };
-        svc.Setup(s => s.UpdateTaskNameAsync(5, "new")).ReturnsAsync(true);
+        var req = new UpdateTaskName { Id = id, Name = name };
+        svc.Setup(s => s.UpdateTaskNameAsync(id, name)).ReturnsAsync(found);
 
         var result = await AccessorEndpoints.UpdateTaskNameAsync(req, svc.Object, log.Object);
 
-        result.Should().BeOfType<Ok<string>>();
-        svc.VerifyAll();
-    }
-
-    [Fact]
-    public async Task UpdateTaskNameAsync_NotFound_Returns404()
-    {
-        var svc = Svc();
-        var log = Log();
-
-        var req = new UpdateTaskName { Id = 5, Name = "new" };
-        svc.Setup(s => s.UpdateTaskNameAsync(5, "new")).ReturnsAsync(false);
-
-        var result = await AccessorEndpoints.UpdateTaskNameAsync(req, svc.Object, log.Object);
-
-        result.Should().BeOfType<NotFound<string>>();
+        result.Should().BeOfType(expectedType);
         svc.VerifyAll();
     }
 
@@ -148,31 +136,19 @@ public class AccessorEndpointsTests
 
     #region DeleteTaskAsync
 
-    [Fact]
-    public async Task DeleteTaskAsync_Found_ReturnsOk()
+    [Theory]
+    [InlineData(3, true, typeof(Ok<string>))]
+    [InlineData(3, false, typeof(NotFound<string>))]
+    public async Task DeleteTaskAsync_ReturnsExpectedResult(int id, bool found, Type expectedType)
     {
         var svc = Svc();
         var log = Log();
 
-        svc.Setup(s => s.DeleteTaskAsync(3)).ReturnsAsync(true);
+        svc.Setup(s => s.DeleteTaskAsync(id)).ReturnsAsync(found);
 
-        var result = await AccessorEndpoints.DeleteTaskAsync(3, svc.Object, log.Object);
+        var result = await AccessorEndpoints.DeleteTaskAsync(id, svc.Object, log.Object);
 
-        result.Should().BeOfType<Ok<string>>();
-        svc.VerifyAll();
-    }
-
-    [Fact]
-    public async Task DeleteTaskAsync_NotFound_Returns404()
-    {
-        var svc = Svc();
-        var log = Log();
-
-        svc.Setup(s => s.DeleteTaskAsync(3)).ReturnsAsync(false);
-
-        var result = await AccessorEndpoints.DeleteTaskAsync(3, svc.Object, log.Object);
-
-        result.Should().BeOfType<NotFound<string>>();
+        result.Should().BeOfType(expectedType);
         svc.VerifyAll();
     }
 
