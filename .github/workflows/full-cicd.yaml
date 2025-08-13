@@ -21,11 +21,6 @@ on:
           description: 'Enter custom prefix (lowercase letters & digits only). This will be used as the Kubernetes namespace and environment identifier.'
           required: true
           type: string
-        run_aks:
-          description: 'Run AKS deployment?'
-          required: true
-          default: false
-          type: boolean
 jobs:
   build-and-push-images:
     uses: ./.github/workflows/build-and-push-images.yaml
