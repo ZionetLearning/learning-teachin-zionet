@@ -63,15 +63,15 @@ public class AccessorServiceTests
     public async Task CreateTaskAsync_IdExists_NoOp()
     {
         var db = NewDb(Guid.NewGuid().ToString());
-        db.Tasks.Add(new TaskModel { Id = 5, Name = "exists" });
+        db.Tasks.Add(new TaskModel { Id = 100, Name = "exists" });
         await db.SaveChangesAsync();
 
         var dapr = new Mock<DaprClient>(MockBehavior.Loose);
         var svc = NewService(db, dapr);
 
-        await svc.CreateTaskAsync(new TaskModel { Id = 5, Name = "new" });
+        await svc.CreateTaskAsync(new TaskModel { Id = 100, Name = "new" });
 
-        (await db.Tasks.AsNoTracking().FirstAsync(t => t.Id == 5)).Name.Should().Be("exists");
+        (await db.Tasks.AsNoTracking().FirstAsync(t => t.Id == 100)).Name.Should().Be("exists");
     }
 
     // ---------- UpdateTaskNameAsync ----------
