@@ -17,8 +17,6 @@ on:
       - 'Directory.Build.props'
       - 'backend.sln'
       - '.github/workflows/**'
-
-  # optional manual trigger
   workflow_dispatch:
 
 concurrency:
@@ -31,6 +29,11 @@ jobs:
     defaults:
       run:
         working-directory: backend/ContainerApp
+
+    env:
+      AzureOpenAI__Endpoint: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+      AzureOpenAI__ApiKey: ${{ secrets.AZURE_OPENAI_API_KEY }}
+      AzureOpenAI__DeploymentName: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
 
     steps:
       - name: Checkout
@@ -59,7 +62,6 @@ jobs:
 
       - name: Run only ChatAiServiceTests
         run: |
-          # Prefer FullyQualifiedName; adjust namespace if different
           dotnet test EngineComponentTests/EngineComponentTests.csproj \
             --no-build -c Release \
             --filter "FullyQualifiedName~EngineComponentTests.ChatAiServiceTests"
