@@ -9,23 +9,23 @@ on:
   # push:
   #  branches:
   #    - main
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Select environment (GitHub Environment)'
-        required: true
-        default: 'Development'
-        type: choice
-        options: [Development, Production]
-      environment_name:
-        description: 'Enter custom prefix (lowercase letters & digits only). This will be used as the Kubernetes namespace and environment identifier.'
-        required: true
-        type: string
-      run_aks:
-        description: 'Run AKS deployment?'
-        required: true
-        default: false
-        type: boolean
+    workflow_dispatch:
+      inputs:
+        environment:
+          description: 'Select environment (GitHub Environment)'
+          required: true
+          default: 'Development'
+          type: choice
+          options: [Development, Production]
+        environment_name:
+          description: 'Enter custom prefix (lowercase letters & digits only). This will be used as the Kubernetes namespace and environment identifier.'
+          required: true
+          type: string
+        run_aks:
+          description: 'Run AKS deployment?'
+          required: true
+          default: false
+          type: boolean
 jobs:
   build-and-push-images:
     uses: ./.github/workflows/build-and-push-images.yaml
@@ -47,7 +47,7 @@ jobs:
     secrets: inherit
  
   aks-kubectl-apply:
-    if: ${{ github.event.inputs.run_aks == true }}
+    if: ${{ github.event.inputs.environment_name == 'dev' || github.event.inputs.environment_name == 'prod' }}
     needs: [build-and-push-images, terraform-apply]
     uses: ./.github/workflows/aks-kubectl-apply.yaml
     permissions:
@@ -60,6 +60,7 @@ jobs:
    
   helmcharts-setup:
     needs: [build-and-push-images, terraform-apply, aks-kubectl-apply]
+    if: ${{ always() && contains(fromJson('["success","skipped"]'), needs.aks-kubectl-apply.result) }}
     uses: ./.github/workflows/aks-helmcharts.yaml
     permissions:
       id-token: write
