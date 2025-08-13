@@ -86,7 +86,7 @@ jobs:
               fi
 
               echo "Updating $SERVICE to $HASH in namespace $NAMESPACE"
-              helm upgrade $SERVICE ./chart \
+              helm upgrade $SERVICE ./devops/kubernetes/charts/chart \ # <-- Corrected path here
                 --install \
                 --namespace "$NAMESPACE" \
                 --set ${SERVICE}.image.name=${{ secrets.DOCKER_USERNAME }}/$SERVICE \
@@ -98,11 +98,10 @@ jobs:
             HASH="${HASHES[0]// /}"
 
             echo "Updating $SERVICE to $HASH in namespace $NAMESPACE"
-            helm upgrade $SERVICE ./chart \
+            helm upgrade $SERVICE ./devops/kubernetes/charts/chart \ # <-- Corrected path here
               --install \
               --namespace "$NAMESPACE" \
               --set ${SERVICE}.image.name=${{ secrets.DOCKER_USERNAME }}/$SERVICE \
               --set ${SERVICE}.image.tag="$HASH" \
               --set ${SERVICE}.image.altTag="$NAMESPACE"
           fi
-        working-directory: ${{ github.workspace }}/devops/kubernetes/charts
