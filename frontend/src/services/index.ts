@@ -1,2 +1,2 @@
 export * from "./azureTTS";
-export * from "./sentry";
+export * from "../sentry";
