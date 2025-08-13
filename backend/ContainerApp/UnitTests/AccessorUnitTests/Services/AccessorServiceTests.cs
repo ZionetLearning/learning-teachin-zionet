@@ -7,6 +7,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace AccessorUnitTests;
 
@@ -16,7 +17,8 @@ public class AccessorServiceTests
     private static AccessorDbContext NewDb(string name)
     {
         var options = new DbContextOptionsBuilder<AccessorDbContext>()
-            .UseInMemoryDatabase(name) // works once the package is referenced
+            .UseInMemoryDatabase(name)
+             .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .EnableSensitiveDataLogging()
             .Options;
 
