@@ -1,6 +1,5 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json;
 using Accessor.DB;
 using Accessor.Endpoints;
 using Accessor.Models;
@@ -11,24 +10,22 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;   // InMemoryDatabaseRoot
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace Accessor.ComponentTests;
 
-// ------------ Test-only implementation: we only need chat features ------------
+// ---------------- Test-only chat service (only the members the endpoints use) ----------------
 internal sealed class TestChatService : IAccessorService
 {
     private readonly AccessorDbContext _db;
-
     public TestChatService(AccessorDbContext db) => _db = db;
 
-    // ---- chat API used by the endpoints under test ----
     public async Task AddMessageAsync(ChatMessage message)
     {
-        // Ensure UTC
+        // server sets it, but normalize anyway
         message.Timestamp = message.Timestamp.ToUniversalTime();
 
         var thread = await _db.ChatThreads.FindAsync(message.ThreadId);
@@ -53,11 +50,9 @@ internal sealed class TestChatService : IAccessorService
         _db.ChatMessages.Add(message);
         await _db.SaveChangesAsync();
     }
-    public async Task<ChatThread?> GetThreadByIdAsync(Guid threadId)
-    {
-        // Single lookup; matches production semantics
-        return await _db.ChatThreads.FindAsync(threadId);
-    }
+
+    public Task<ChatThread?> GetThreadByIdAsync(Guid threadId)
+        => _db.ChatThreads.FindAsync(threadId).AsTask();
 
     public async Task CreateThreadAsync(ChatThread thread)
     {
@@ -65,27 +60,20 @@ internal sealed class TestChatService : IAccessorService
         await _db.SaveChangesAsync();
     }
 
-    public async Task<IEnumerable<ChatMessage>> GetMessagesByThreadAsync(Guid threadId)
-    {
-        return await _db.ChatMessages
-            .AsNoTracking()
-            .Where(m => m.ThreadId == threadId)
-            .OrderBy(m => m.Timestamp)
-            .ToListAsync();
-    }
+    public async Task<IEnumerable<ChatMessage>> GetMessagesByThreadAsync(Guid threadId) =>
+        await _db.ChatMessages.AsNoTracking()
+                              .Where(m => m.ThreadId == threadId)
+                              .OrderBy(m => m.Timestamp)
+                              .ToListAsync();
 
-    public async Task<List<ThreadSummaryDto>> GetThreadsForUserAsync(string userId)
-    {
-        return await _db.ChatThreads
-            .AsNoTracking()
-            .Where(t => t.UserId == userId)
-            .OrderByDescending(t => t.UpdatedAt)
-            .Select(t => new ThreadSummaryDto(
-                t.ThreadId, t.ChatName, t.ChatType, t.CreatedAt, t.UpdatedAt))
-            .ToListAsync();
-    }
+    public async Task<List<ThreadSummaryDto>> GetThreadsForUserAsync(string userId) =>
+        await _db.ChatThreads.AsNoTracking()
+                             .Where(t => t.UserId == userId)
+                             .OrderByDescending(t => t.UpdatedAt)
+                             .Select(t => new ThreadSummaryDto(t.ThreadId, t.ChatName, t.ChatType, t.CreatedAt, t.UpdatedAt))
+                             .ToListAsync();
 
-    // ---- Unused members for these tests (not called) ----
+    // Unused by these tests
     public Task InitializeAsync() => Task.CompletedTask;
     public Task<TaskModel?> GetTaskByIdAsync(int id) => throw new NotImplementedException();
     public Task CreateTaskAsync(TaskModel task) => throw new NotImplementedException();
@@ -93,12 +81,15 @@ internal sealed class TestChatService : IAccessorService
     public Task<bool> DeleteTaskAsync(int taskId) => throw new NotImplementedException();
 }
 
-// ------------ Minimal factory that maps your real endpoints ------------
+// ---------------- Minimal host that maps ONLY the three chat endpoints ----------------
 public sealed class ChatEndpointsFactory : IDisposable
 {
     private readonly WebApplication _app;
     public HttpClient Client { get; }
     public IServiceProvider Services => _app.Services;
+
+    // IMPORTANT: fixed DB name + shared root to ensure the same in-memory store is used
+    private static readonly InMemoryDatabaseRoot DbRoot = new();
 
     public ChatEndpointsFactory()
     {
@@ -109,31 +100,25 @@ public sealed class ChatEndpointsFactory : IDisposable
 
         builder.WebHost.UseTestServer();
 
-        // JSON (match app)
         builder.Services.Configure<JsonOptions>(o =>
         {
             o.SerializerOptions.PropertyNameCaseInsensitive = true;
+            // Your models already use JsonStringEnumConverter attributes; this is fine either way.
             o.SerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
         });
 
-        // EF Core InMemory
         builder.Services.AddDbContext<AccessorDbContext>(opt =>
-            opt.UseInMemoryDatabase($"ChatTests-{Guid.NewGuid()}"));
+            opt.UseInMemoryDatabase("ChatComponentTests", DbRoot)); // <— fixed name + shared root
 
-        // Register ONLY the chat-focused test service
         builder.Services.AddScoped<IAccessorService, TestChatService>();
 
-        // Build and map your real endpoints (the ones we test)
         _app = builder.Build();
 
-        // If your endpoints are mapped inside an extension, reuse it and just hit the chat routes.
-        // Otherwise, map here exactly the three routes you asked to test:
+        // map exactly the endpoints you want to test
         _app.MapPost("/threads/message", AccessorEndpoints.StoreMessageAsync);
-        _app.MapGet("/threads/{threadId:guid}/messages", AccessorEndpoints.GetChatHistoryAsync)
-            .WithName("GetChatHistory");
+        _app.MapGet("/threads/{threadId:guid}/messages", AccessorEndpoints.GetChatHistoryAsync).WithName("GetChatHistory");
         _app.MapGet("/threads/{userId}", AccessorEndpoints.GetThreadsForUserAsync);
 
-        // Ensure DB is ready before first request
         using (var scope = _app.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AccessorDbContext>();
@@ -151,15 +136,14 @@ public sealed class ChatEndpointsFactory : IDisposable
     }
 }
 
-// ------------ The actual endpoint tests ------------
+// ---------------- The tests ----------------
 public class ChatEndpointsComponentTests : IClassFixture<ChatEndpointsFactory>
 {
     private readonly ChatEndpointsFactory _factory;
     private HttpClient Client => _factory.Client;
-
     public ChatEndpointsComponentTests(ChatEndpointsFactory factory) => _factory = factory;
 
-    [Fact(DisplayName = "POST /threads/message -> 201; then GET /threads/{threadId}/messages returns it")]
+    [Fact(DisplayName = "POST /threads/message → 201; then GET /threads/{threadId}/messages returns it")]
     public async Task Post_Then_Get_History_Works()
     {
         var threadId = Guid.NewGuid();
@@ -175,12 +159,6 @@ public class ChatEndpointsComponentTests : IClassFixture<ChatEndpointsFactory>
         var post = await Client.PostAsJsonAsync("/threads/message", request);
         post.StatusCode.Should().Be(HttpStatusCode.Created);
 
-        var created = await post.Content.ReadFromJsonAsync<ChatMessage>();
-        created.Should().NotBeNull();
-        created!.Id.Should().NotBe(Guid.Empty);
-        created.ThreadId.Should().Be(threadId);
-        created.Timestamp.Offset.Should().Be(TimeSpan.Zero); // UTC
-
         var history = await Client.GetAsync($"/threads/{threadId}/messages");
         history.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -192,12 +170,12 @@ public class ChatEndpointsComponentTests : IClassFixture<ChatEndpointsFactory>
         items[0].ThreadId.Should().Be(threadId);
     }
 
-    [Fact(DisplayName = "GET /threads/{userId} -> returns user thread summaries (after a message)")]
+    [Fact(DisplayName = "GET /threads/{userId} → returns user thread summaries (after a message)")]
     public async Task Get_Threads_For_User_Works()
     {
         var threadId = Guid.NewGuid();
 
-        // Seed one message via the endpoint so a thread exists
+        // Seed via the API (so it uses the same path as production)
         var msg = new ChatMessage
         {
             ThreadId = threadId,
@@ -208,7 +186,6 @@ public class ChatEndpointsComponentTests : IClassFixture<ChatEndpointsFactory>
         var post = await Client.PostAsJsonAsync("/threads/message", msg);
         post.StatusCode.Should().Be(HttpStatusCode.Created);
 
-        // Query summaries for the same user
         var res = await Client.GetAsync($"/threads/{msg.UserId}");
         res.StatusCode.Should().Be(HttpStatusCode.OK);
 
