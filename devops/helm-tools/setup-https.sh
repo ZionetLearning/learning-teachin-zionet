@@ -16,6 +16,8 @@ kubectl -n cert-manager rollout status deploy/cert-manager-webhook --timeout=3m
 echo "2.1) Ensure webhook service has endpoints"
 kubectl -n cert-manager wait --for=jsonpath='{.subsets[0].addresses[0].ip}' endpoints/cert-manager-webhook --timeout=120s
 
+sleep 30
+
 echo "3) Create/Update Let's Encrypt ClusterIssuer (retry until webhook is up)"
 for i in {1..5}; do
   if kubectl apply -f ../kubernetes/ingress/letsencrypt-clusterissuer.yaml; then

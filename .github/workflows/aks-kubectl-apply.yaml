@@ -94,11 +94,12 @@ jobs:
           chmod +x grafana.sh
           ./grafana.sh
 
-      - name: Setup HTTPS certificates
-        run: |
-          cd devops/helm-tools
-          chmod +x setup-https.sh
-          ./setup-https.sh
+      ###### This is one time only!! Never use unless the whole RG is wiped out
+      # - name: Setup HTTPS certificates
+      #   run: |
+      #     cd devops/helm-tools
+      #     chmod +x setup-https.sh
+      #     ./setup-https.sh
 
       - name: Apply Grafana ingress (only)
         run: kubectl apply -f "$K8S_DIR/ingress/grafana-ingress.yaml"
