@@ -1,27 +1,76 @@
-name: Engine Component Tests
+name: Component Tests
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
-    paths:
-      - 'backend/ContainerApp/Engine/**'
-      - 'backend/ContainerApp/EngineComponentTests/**'
-      - 'backend/ContainerApp/Directory.Build.props'
-      - 'backend/ContainerApp/backend.sln'
+  # Manual runs only (no PR trigger)
   workflow_dispatch:
+    inputs:
+      services:
+        description: "Comma-separated services to test (e.g., Engine,NewService)"
+        required: true
+        default: "Engine"   # Only Engine exists now; add names when new services are created
+      testFilter:
+        description: "Optional dotnet test --filter (e.g., FullyQualifiedName~EngineComponentTests.ChatAiServiceTests)"
+        required: false
+        default: ""
 
+# Cancel prior runs for the same ref (branch/tag)
 concurrency:
-  group: engine-component-tests-${{ github.ref }}
+  group: component-tests-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
-  test-engine:
+  prepare:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      services_json: ${{ steps.parse.outputs.services_json }}
+      test_filter: ${{ steps.parse.outputs.test_filter }}
+    steps:
+      - name: Parse inputs
+        id: parse
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Use provided services input; default to only Engine today
+          SVC_IN="${{ github.event.inputs.services }}"
+          if [ -z "${SVC_IN}" ]; then
+            SVC_IN="Engine"
+          fi
+
+          # Normalize -> JSON array for matrix
+          SVC_IN="$(echo "${SVC_IN}" | tr -d ' ')"
+          IFS=',' read -ra ARR <<< "${SVC_IN}"
+          JSON="["
+          SEP=""
+          for s in "${ARR[@]}"; do
+            JSON="${JSON}${SEP}\"${s}\""
+            SEP=",";
+          done
+          JSON="${JSON}]"
+          echo "services_json=${JSON}" >> "$GITHUB_OUTPUT"
+
+          TFILT="${{ github.event.inputs.testFilter }}"
+          echo "test_filter=${TFILT}" >> "$GITHUB_OUTPUT"
+
+  test-component:
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: backend/ContainerApp
 
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.prepare.outputs.services_json) }}
+
     env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      DOTNET_NOLOGO: 1
       AzureOpenAI__Endpoint: "https://france-teachin-open-ai.openai.azure.com/"
       AzureOpenAI__ApiKey: ${{ secrets.AZURE_OPENAI_API_KEY }}
       AzureOpenAI__DeploymentName: "gpt-4.1-mini"
@@ -43,19 +92,73 @@ jobs:
           restore-keys: |
             nuget-${{ runner.os }}-
 
-      - name: Restore Engine
-        run: dotnet restore Engine/Engine.csproj
-
-      - name: Restore Engine Component Tests
-        run: dotnet restore EngineComponentTests/EngineComponentTests.csproj
-
-      - name: Build (Engine + tests)
+      - name: Compute paths for ${{ matrix.service }}
+        id: paths
+        shell: bash
         run: |
-          dotnet build Engine/Engine.csproj --no-restore -c Release
-          dotnet build EngineComponentTests/EngineComponentTests.csproj --no-restore -c Release
+          set -euo pipefail
+          SVC="${{ matrix.service }}"
 
-      - name: Run only ChatAiServiceTests
+          # === Convention mapping ===
+          # Service project:             <Service>/<Service>.csproj
+          # Component tests project:     <Service>ComponentTests/<Service>ComponentTests.csproj
+          # If a service deviates, add a case here.
+          case "${SVC}" in
+            # Example of an explicit mapping if you ever need it:
+            # CustomService)
+            #   ENGINE_CSProj="CustomService/src/Service.csproj"
+            #   TEST_CSProj="CustomServiceTests/ServiceTests.csproj"
+            #   ;;
+            *)
+              ENGINE_CSProj="${SVC}/${SVC}.csproj"
+              TEST_CSProj="${SVC}ComponentTests/${SVC}ComponentTests.csproj"
+              ;;
+          esac
+
+          # Validate existence to fail fast with a clear message
+          [ -f "${ENGINE_CSProj}" ] || { echo "Service project not found: ${ENGINE_CSProj}"; exit 1; }
+          [ -f "${TEST_CSProj}" ]   || { echo "Test project not found: ${TEST_CSProj}"; exit 1; }
+
+          echo "engine_csproj=${ENGINE_CSProj}" >> "$GITHUB_OUTPUT"
+          echo "test_csproj=${TEST_CSProj}"   >> "$GITHUB_OUTPUT"
+
+      - name: Restore ${{ matrix.service }}
+        run: dotnet restore "${{ steps.paths.outputs.engine_csproj }}"
+
+      - name: Restore ${{ matrix.service }} Component Tests
+        run: dotnet restore "${{ steps.paths.outputs.test_csproj }}"
+
+      - name: Build (service + tests) - ${{ matrix.service }}
         run: |
-          dotnet test EngineComponentTests/EngineComponentTests.csproj \
+          dotnet build "${{ steps.paths.outputs.engine_csproj }}" --no-restore -c Release
+          dotnet build "${{ steps.paths.outputs.test_csproj }}" --no-restore -c Release
+
+      - name: Run tests (${{ matrix.service }})
+        shell: bash
+        run: |
+          set -euo pipefail
+          TFILT='${{ needs.prepare.outputs.test_filter }}'
+          if [ -z "${TFILT}" ]; then
+            # Default: run all tests for the service's test root namespace
+            TFILT="FullyQualifiedName~${{ matrix.service }}ComponentTests"
+          fi
+
+          echo "Using filter: ${TFILT}"
+          dotnet test "${{ steps.paths.outputs.test_csproj }}" \
             --no-build -c Release \
-            --filter "FullyQualifiedName~EngineComponentTests.ChatAiServiceTests"
+            --filter "${TFILT}" \
+            --logger 'trx;LogFileName=${{ matrix.service }}.trx'
+
+      - name: Upload test results (${{ matrix.service }})
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TestResults-${{ matrix.service }}
+          path: |
+            backend/ContainerApp/**/${{ matrix.service }}.trx
+          if-no-files-found: warn
+
+# === How to add another service later ===
+# 1) Keep the same folder convention or add a case in the "Compute paths" step.
+# 2) At run time, set the input Services to include it (e.g., Engine,NewService).
+#    No workflow changes needed if convention is kept.
