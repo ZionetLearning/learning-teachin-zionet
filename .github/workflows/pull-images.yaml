@@ -1,11 +1,16 @@
 name: Manual Deploy Existing Images
 
 on:
-  push:
-    branches:
-      - avichai/pull-images-workflow
   workflow_dispatch:
     inputs:
+      environment:
+        description: 'Select environment'
+        required: true
+        default: 'Development'
+        type: choice
+        options:
+          - Development
+          - Production
       environment_name:
         description: 'Namespace/environment name (e.g., dev, prod)'
         required: true
