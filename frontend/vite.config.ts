@@ -1,11 +1,21 @@
 /// <reference types="vitest/config" />
 import { defineConfig } from "vite";
+import { sentryVitePlugin } from "@sentry/vite-plugin";
 import react from "@vitejs/plugin-react";
 import path from "path";
 
 export default defineConfig({
-  plugins: [react()],
-
+  build: {
+    sourcemap: true, // Source map generation is turned on
+  },
+  plugins: [
+    react(),
+    sentryVitePlugin({
+      org: "zionet",
+      project: "teach-in",
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+    }),
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
