@@ -1,4 +1,4 @@
-name: Run Unit Tests
+name: Run Unit Tests (All)
 
 on:
   pull_request:
@@ -12,25 +12,50 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - name: EngineUnitTests
+            path: backend/ContainerApp/UnitTests/EngineUnitTests/EngineUnitTests.csproj
+          - name: AccessorUnitTests
+            path: backend/ContainerApp/UnitTests/AccessorUnitTests/AccessorUnitTests.csproj
+          - name: ManagerUnitTests
+            path: backend/ContainerApp/UnitTests/ManagerUnitTests/ManagerUnitTests.csproj
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+        # fetch-depth: 0 if you later need full history (e.g., for analyzers)
+        # with:
+        #   fetch-depth: 0
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '9.0.x'
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+          cache: true
+          # Optional but recommended if you commit lock files
+          cache-dependency-path: '**/packages.lock.json'
 
-    - name: Restore dependencies
-      run: dotnet restore backend.sln
-      working-directory: backend/ContainerApp
+      - name: Restore (solution)
+        working-directory: backend/ContainerApp
+        run: dotnet restore backend.sln
 
-    - name: Build
-      run: dotnet build backend.sln --no-restore
-      working-directory: backend/ContainerApp
+      - name: Build (solution)
+        working-directory: backend/ContainerApp
+        run: dotnet build backend.sln --no-restore -c Release
 
-    - name: Run tests
-      run: dotnet test EngineUnitTests.csproj --no-build --verbosity normal
-      working-directory: backend/ContainerApp/UnitTests/EngineUnitTests
-
+      - name: Test – ${{ matrix.project.name }}
+        run: |
+          dotnet test "${{ matrix.project.path }}" \
+            --no-build -c Release \
+            --logger "trx;LogFileName=${{ matrix.project.name }}.trx" \
+            --results-directory "TestResults/${{ matrix.project.name }}"
+      
+      - name: Upload test results – ${{ matrix.project.name }}
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TestResults-${{ matrix.project.name }}
+          path: TestResults/${{ matrix.project.name }}/*.trx
