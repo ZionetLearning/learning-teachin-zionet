@@ -7,19 +7,35 @@ using Engine.Services;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Xunit;
+
 public class EngineQueueHandlerTests
 {
     private static JsonElement ToJsonElement<T>(T obj) =>
         JsonSerializer.SerializeToElement(obj);
 
-    [Fact]
-    public async Task HandleAsync_CreateTask_Processes_TaskModel()
+    // Centralized SUT + mocks factory to reduce boilerplate
+    private static (
+        Mock<IEngineService> engine,
+        Mock<IChatAiService> ai,
+        Mock<IAiReplyPublisher> pub,
+        Mock<ILogger<EngineQueueHandler>> log,
+        EngineQueueHandler sut
+    ) CreateSut()
     {
-        // Arrange
         var engine = new Mock<IEngineService>(MockBehavior.Strict);
         var ai = new Mock<IChatAiService>(MockBehavior.Strict);
         var pub = new Mock<IAiReplyPublisher>(MockBehavior.Strict);
         var log = new Mock<ILogger<EngineQueueHandler>>();
+        var sut = new EngineQueueHandler(engine.Object, ai.Object, pub.Object, log.Object);
+        return (engine, ai, pub, log, sut);
+    }
+
+    [Fact]
+    public async Task HandleAsync_CreateTask_Processes_TaskModel()
+    {
+        // Arrange
+        var (engine, ai, pub, log, sut) = CreateSut();
 
         var task = new TaskModel
         {
@@ -31,8 +47,6 @@ public class EngineQueueHandlerTests
         engine.Setup(e => e.ProcessTaskAsync(task, It.IsAny<CancellationToken>()))
               .Returns(Task.CompletedTask);
 
-        var sut = new EngineQueueHandler(engine.Object, ai.Object, pub.Object, log.Object);
-
         var msg = new Message
         {
             ActionName = MessageAction.CreateTask,
@@ -43,7 +57,8 @@ public class EngineQueueHandlerTests
         await sut.HandleAsync(msg, renewLock: () => Task.CompletedTask, CancellationToken.None);
 
         // Assert
-        engine.VerifyAll();
+        engine.Verify(e => e.ProcessTaskAsync(task, It.IsAny<CancellationToken>()), Times.Once);
+        engine.VerifyNoOtherCalls();
         ai.VerifyNoOtherCalls();
         pub.VerifyNoOtherCalls();
     }
@@ -51,12 +66,7 @@ public class EngineQueueHandlerTests
     [Fact]
     public async Task HandleAsync_CreateTask_InvalidPayload_DoesNotCall_Engine()
     {
-        var engine = new Mock<IEngineService>(MockBehavior.Strict);
-        var ai = new Mock<IChatAiService>(MockBehavior.Strict);
-        var pub = new Mock<IAiReplyPublisher>(MockBehavior.Strict);
-        var log = new Mock<ILogger<EngineQueueHandler>>();
-
-        var sut = new EngineQueueHandler(engine.Object, ai.Object, pub.Object, log.Object);
+        var (engine, ai, pub, log, sut) = CreateSut();
 
         // payload = "null"
         var msg = new Message
@@ -79,10 +89,7 @@ public class EngineQueueHandlerTests
     public async Task HandleAsync_ProcessingQuestionAi_HappyPath_Calls_Ai_And_Publishes()
     {
         // Arrange
-        var engine = new Mock<IEngineService>(MockBehavior.Strict);
-        var ai = new Mock<IChatAiService>(MockBehavior.Strict);
-        var pub = new Mock<IAiReplyPublisher>(MockBehavior.Strict);
-        var log = new Mock<ILogger<EngineQueueHandler>>();
+        var (engine, ai, pub, log, sut) = CreateSut();
 
         var req = new AiRequestModel
         {
@@ -107,8 +114,6 @@ public class EngineQueueHandlerTests
         pub.Setup(p => p.SendReplyAsync(aiResponse, $"{QueueNames.ManagerCallbackQueue}-out", It.IsAny<CancellationToken>()))
            .Returns(Task.CompletedTask);
 
-        var sut = new EngineQueueHandler(engine.Object, ai.Object, pub.Object, log.Object);
-
         var msg = new Message
         {
             ActionName = MessageAction.ProcessingQuestionAi,
@@ -119,18 +124,17 @@ public class EngineQueueHandlerTests
         await sut.HandleAsync(msg, () => Task.CompletedTask, CancellationToken.None);
 
         // Assert
-        ai.VerifyAll();
-        pub.VerifyAll();
+        ai.Verify(a => a.ProcessAsync(req, It.IsAny<CancellationToken>()), Times.Once);
+        ai.VerifyNoOtherCalls();
+        pub.Verify(p => p.SendReplyAsync(aiResponse, $"{QueueNames.ManagerCallbackQueue}-out", It.IsAny<CancellationToken>()), Times.Once);
+        pub.VerifyNoOtherCalls();
         engine.VerifyNoOtherCalls();
     }
 
     [Fact]
     public async Task HandleAsync_ProcessingQuestionAi_MissingThreadId_ThrowsNonRetryable_AndSkipsWork()
     {
-        var engine = new Mock<IEngineService>(MockBehavior.Strict);
-        var ai = new Mock<IChatAiService>(MockBehavior.Strict);
-        var pub = new Mock<IAiReplyPublisher>(MockBehavior.Strict);
-        var log = new Mock<ILogger<EngineQueueHandler>>();
+        var (engine, ai, pub, log, sut) = CreateSut();
 
         var req = new AiRequestModel
         {
@@ -139,8 +143,6 @@ public class EngineQueueHandlerTests
             Question = "hello",
             ReplyToQueue = ""
         };
-
-        var sut = new EngineQueueHandler(engine.Object, ai.Object, pub.Object, log.Object);
 
         var msg = new Message
         {
@@ -162,10 +164,7 @@ public class EngineQueueHandlerTests
     [Fact]
     public async Task HandleAsync_ProcessingQuestionAi_AiThrows_WrappedInRetryable()
     {
-        var engine = new Mock<IEngineService>(MockBehavior.Strict);
-        var ai = new Mock<IChatAiService>(MockBehavior.Strict);
-        var pub = new Mock<IAiReplyPublisher>(MockBehavior.Strict);
-        var log = new Mock<ILogger<EngineQueueHandler>>();
+        var (engine, ai, pub, log, sut) = CreateSut();
 
         var req = new AiRequestModel
         {
@@ -177,8 +176,6 @@ public class EngineQueueHandlerTests
 
         ai.Setup(a => a.ProcessAsync(req, It.IsAny<CancellationToken>()))
           .ThrowsAsync(new InvalidOperationException("AI failed"));
-
-        var sut = new EngineQueueHandler(engine.Object, ai.Object, pub.Object, log.Object);
 
         var msg = new Message
         {
@@ -201,14 +198,9 @@ public class EngineQueueHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_UnknownAction_LogsWarning_NoThrow()
+    public async Task HandleAsync_UnknownAction_ThrowsNonRetryable_AndSkipsWork()
     {
-        var engine = new Mock<IEngineService>(MockBehavior.Strict);
-        var ai = new Mock<IChatAiService>(MockBehavior.Strict);
-        var pub = new Mock<IAiReplyPublisher>(MockBehavior.Strict);
-        var log = new Mock<ILogger<EngineQueueHandler>>();
-
-        var sut = new EngineQueueHandler(engine.Object, ai.Object, pub.Object, log.Object);
+        var (engine, ai, pub, log, sut) = CreateSut();
 
         var msg = new Message
         {

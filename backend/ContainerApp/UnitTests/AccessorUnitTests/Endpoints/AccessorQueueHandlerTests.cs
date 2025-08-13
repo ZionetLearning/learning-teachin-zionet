@@ -82,7 +82,6 @@ public class AccessorQueueHandlerTests
         };
     }
 
-    // invalid payload => production currently throws NonRetryableException from DeserializeOrThrow<T>
     [Fact]
     public async Task HandleAsync_UpdateTask_InvalidPayload_Throws_NonRetryable_And_NoServiceCalls()
     {
