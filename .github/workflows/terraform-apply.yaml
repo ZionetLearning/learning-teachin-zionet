@@ -1,12 +1,9 @@
 name: Terraform Apply (Dynamic Environment)
 run-name: >
-  🚀 Deploy Infrastructure to ${{
+  🚀 Deploy Infrastructure to environment_name: ${{
     inputs.environment_name || github.event.inputs.environment_name || 
-    (inputs.environment == 'Development' && 'dev') ||
-    (inputs.environment == 'Production' && 'prod') ||
     'custom'
-  }} environment [${{ inputs.environment || github.event.inputs.environment }}]
-   
+  }} | GitHub Environment: ${{ inputs.environment || github.event.inputs.environment }}
 on:
   # push:
   #  branches:

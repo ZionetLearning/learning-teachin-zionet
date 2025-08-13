@@ -1,5 +1,10 @@
 name: Full CICD
 
+run-name: >
+  🔄 Full CICD | Environment: ${{ 
+    github.event.inputs.environment_name || 'custom' 
+  }} | GitHub Env: ${{ github.event.inputs.environment }}
+
 on:
   # push:
   #  branches:
@@ -25,7 +30,7 @@ jobs:
     with:
       environment: ${{ github.event.inputs.environment }}
     secrets: inherit
-
+ 
   terraform-apply:
     uses: ./.github/workflows/terraform-apply.yaml
     permissions:
@@ -35,7 +40,7 @@ jobs:
       environment_name: ${{ github.event.inputs.environment_name }}
       environment: ${{ github.event.inputs.environment }}
     secrets: inherit
-
+ 
   aks-kubectl-apply:
     if: ${{ github.event.inputs.environment_name == 'dev' || github.event.inputs.environment_name == 'prod' }}
     needs: [build-and-push-images, terraform-apply]
@@ -47,7 +52,7 @@ jobs:
       environment_name: ${{ github.event.inputs.environment_name }}
       environment: ${{ github.event.inputs.environment }}
     secrets: inherit
-    
+   
   helmcharts-setup:
     needs: [build-and-push-images, terraform-apply]
     uses: ./.github/workflows/aks-helmcharts.yaml
@@ -58,11 +63,12 @@ jobs:
       environment_name: ${{ github.event.inputs.environment_name }}
       environment: ${{ github.event.inputs.environment }}
     secrets: inherit
-
+ 
   deploy-frontend:
     needs: [terraform-apply]
     uses: ./.github/workflows/deploy-frontend.yaml
     permissions:
+      id-token: write
       contents: read
     with:
       environment: ${{ github.event.inputs.environment }}
@@ -70,3 +76,5 @@ jobs:
       deployment_token: ${{ needs.terraform-apply.outputs.static_web_app_api_token }}
       app_insights_connection_string: ${{ needs.terraform-apply.outputs.app_insights_connection_string }}
     secrets: inherit
+ 
+ 

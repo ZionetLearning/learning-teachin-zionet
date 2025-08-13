@@ -1,9 +1,11 @@
 name: Deploy Frontend to Azure Static Web Apps
-
+run-name: >
+  🚀 Deploy Frontend to environment_name: ${{
+    inputs.environment_name || github.event.inputs.environment_name || 
+    'custom'
+  }} | GitHub Environment: ${{ inputs.environment || github.event.inputs.environment }}
 on:
-  push:
-    branches:
-      - yosef-benny/combine-tasks
+
   workflow_dispatch:
     inputs:
       environment:
@@ -113,6 +115,31 @@ jobs:
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
         run: npm run build
 
+      - name: Optimize Build Size
+        working-directory: ${{ env.FE_DIR }}
+        run: |
+          # Show directory sizes for comparison
+          echo "📂 Full frontend directory size (includes node_modules):"
+          du -sh . | cut -f1
+          echo "📦 Build output directory size (what gets deployed):"
+          du -sh dist/ | cut -f1
+          
+          # Show original build size
+          ORIGINAL_SIZE=$(du -sh dist/ | cut -f1)
+          echo "📦 Original build size: $ORIGINAL_SIZE"
+          
+          # Remove unnecessary files to reduce deployment size
+          echo "🧹 Removing unnecessary files..."
+          find dist -name "*.map" -delete
+          find dist -name "*.md" -delete
+          find dist -name "*.txt" -delete
+          find dist -name "*.LICENSE" -delete
+          
+          # Show optimized build size and savings
+          OPTIMIZED_SIZE=$(du -sh dist/ | cut -f1)
+          echo "✨ Optimized build size: $OPTIMIZED_SIZE"
+          echo "💾 Space saved by removing: source maps, docs, and license files"
+
       - name: Get SWA deployment token
         if: ${{ !inputs.deployment_token }}
         id: swatoken
@@ -135,6 +162,5 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ inputs.deployment_token || env.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: "upload"
-          app_location: "${{ env.FE_DIR }}"   
-          output_location: "dist"            
+          app_location: "${{ env.FE_DIR }}/dist"
           skip_app_build: true                
