@@ -3,6 +3,12 @@ name: Manual Deploy Existing Images
 on:
   workflow_dispatch:
     inputs:
+      environment:
+        description: 'Select GitHub Environment (Development/Production)'
+        required: true
+        default: 'Development'
+        type: choice
+        options: [Development, Production]
       environment_name:
         description: 'Namespace/environment name (e.g., dev, prod)'
         required: true
