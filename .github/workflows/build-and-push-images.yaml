@@ -9,6 +9,10 @@ on:
       environment_name:
         required: true
         type: string
+      list_services_names:
+        description: "Optional comma-separated list of services to build (e.g., accessor,manager). Leave empty for all."
+        required: false
+        type: string
   workflow_dispatch:
     inputs:
       environment:
@@ -18,6 +22,10 @@ on:
       environment_name:
         description: "environment_name passthrough"
         required: true
+        type: string
+      list_services_names:
+        description: "Optional comma-separated list of services to build (e.g., accessor,manager). Leave empty for all."
+        required: false
         type: string
 
 jobs:
@@ -57,6 +65,7 @@ jobs:
           password: ${{ secrets.DOCKER_TOKEN }}
 
       - name: Build and push ${{ matrix.service.name }} image
+        if: ${{ !inputs.list_services_names || inputs.list_services_names == '' || inputs.list_services_names == 'all' || contains(format(',{0},', inputs.list_services_names), format(',{0},', matrix.service.name)) }}
         uses: docker/build-push-action@v5
         with:
           context: ${{ matrix.service.context }}
