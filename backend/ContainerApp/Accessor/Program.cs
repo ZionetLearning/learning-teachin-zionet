@@ -109,3 +109,4 @@ if (env.IsDevelopment())
 // Map endpoints (routes)
 app.MapAccessorEndpoints();
 await app.RunAsync();
+public partial class Program { }

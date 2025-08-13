@@ -8,11 +8,11 @@ public abstract class AccessorIntegrationTestBase : IClassFixture<AccessorHttpTe
 
     protected AccessorIntegrationTestBase(AccessorHttpTestFixture httpFixture)
     {
-        Client = httpFixture.Client;
+        Client = httpFixture.Client; // now from WebApplicationFactory
     }
 
-    protected async Task<HttpResponseMessage> PostAsJsonAsync<T>(string uri, T value)
-        => await Client.PostAsJsonAsync(uri, value);
+    protected Task<HttpResponseMessage> PostAsJsonAsync<T>(string uri, T value)
+        => Client.PostAsJsonAsync(uri, value);
 
     protected async Task<T?> ReadAsJsonAsync<T>(HttpResponseMessage response)
     {
@@ -22,8 +22,7 @@ public abstract class AccessorIntegrationTestBase : IClassFixture<AccessorHttpTe
         if (string.IsNullOrWhiteSpace(content))
             throw new InvalidOperationException("Empty response content");
 
-        return System.Text.Json.JsonSerializer.Deserialize<T>(
-            content,
+        return System.Text.Json.JsonSerializer.Deserialize<T>(content,
             new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
     }
 }
