@@ -1,4 +1,5 @@
-﻿using Manager.Hubs;
+﻿using System.Reflection;
+using Manager.Hubs;
 using Manager.Models;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
@@ -8,45 +9,48 @@ namespace Manager.UnitTests.Hubs;
 
 public class NotificationHubTests
 {
-    [Fact]
-    public async Task SendTaskUpdate_Broadcasts()
+    private static (
+        Mock<IClientProxy> proxy,
+        NotificationHub hub
+    ) CreateHub(string signalMethod, Type expectedPayloadType)
     {
         var logger = new Mock<ILogger<NotificationHub>>();
         var clients = new Mock<IHubCallerClients>();
-        var proxy = new Mock<IClientProxy>();
+        var proxy = new Mock<IClientProxy>(MockBehavior.Strict);
 
         clients.Setup(c => c.All).Returns(proxy.Object);
+
         proxy.Setup(p => p.SendCoreAsync(
-                "TaskUpdated",
-                It.Is<object[]>(args => args.Length == 1 && args[0] is TaskUpdateMessage),
+                signalMethod,
+                It.Is<object[]>(args => args.Length == 1 && expectedPayloadType.IsInstanceOfType(args[0])),
                 default))
             .Returns(Task.CompletedTask);
 
         var hub = new NotificationHub(logger.Object) { Clients = clients.Object };
-
-        await hub.SendTaskUpdate(7, "RUNNING");
-
-        proxy.VerifyAll();
+        return (proxy, hub);
     }
 
-    [Fact]
-    public async Task SendNotification_Broadcasts()
+    [Theory]
+    [InlineData("TaskUpdated", typeof(TaskUpdateMessage), "SendTaskUpdate", 7, "RUNNING")]
+    [InlineData("NotificationReceived", typeof(NotificationMessage), "SendNotification", "hi")]
+    public async Task Broadcasts_To_All(string signalMethod, Type payloadType, string hubMethod, params object[] args)
     {
-        var logger = new Mock<ILogger<NotificationHub>>();
-        var clients = new Mock<IHubCallerClients>();
-        var proxy = new Mock<IClientProxy>();
+        var (proxy, hub) = CreateHub(signalMethod, payloadType);
 
-        clients.Setup(c => c.All).Returns(proxy.Object);
-        proxy.Setup(p => p.SendCoreAsync(
-                "NotificationReceived",
-                It.Is<object[]>(args => args.Length == 1 && args[0] is NotificationMessage),
-                default))
-            .Returns(Task.CompletedTask);
+        var mi = typeof(NotificationHub).GetMethod(hubMethod, BindingFlags.Instance | BindingFlags.Public);
+        Assert.NotNull(mi);
 
-        var hub = new NotificationHub(logger.Object) { Clients = clients.Object };
+        var result = mi!.Invoke(hub, args);
+        if (result is Task task)
+        {
+            await task;
+        }
+        else
+        {
+            Assert.Fail($"Method {hubMethod} did not return a Task.");
+        }
 
-        await hub.SendNotification("hi");
-
+        // Assert
         proxy.VerifyAll();
     }
 }
