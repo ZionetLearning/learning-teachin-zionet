@@ -1,5 +1,4 @@
 ﻿using Engine.Constants;
-using Engine.Messaging;
 using Engine.Models;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
@@ -17,7 +16,7 @@ public sealed class ChatAiService : IChatAiService
     private readonly IMemoryCache _cache;
     private readonly MemoryCacheEntryOptions _cacheOptions;
     private readonly IChatCompletionService _chat;
-    private readonly IRetryPolicyProvider _retryPolicyProvider;
+    private readonly IRetryPolicy _retryPolicy;
     private readonly IAsyncPolicy<ChatMessageContent> _kernelPolicy;
 
     public ChatAiService(
@@ -25,15 +24,15 @@ public sealed class ChatAiService : IChatAiService
         ILogger<ChatAiService> log,
         IMemoryCache cache,
         IOptions<MemoryCacheEntryOptions> cacheOptions,
-        IRetryPolicyProvider retryPolicyProvider)
+        IRetryPolicy retryPolicy)
     {
         _kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
         _log = log ?? throw new ArgumentNullException(nameof(log));
         _cache = cache ?? throw new ArgumentNullException(nameof(cache));
         _cacheOptions = cacheOptions?.Value ?? throw new ArgumentNullException(nameof(cacheOptions));
-        _retryPolicyProvider = retryPolicyProvider ?? throw new ArgumentNullException(nameof(retryPolicyProvider));
+        _retryPolicy = retryPolicy ?? throw new ArgumentNullException(nameof(retryPolicy));
         _chat = _kernel.GetRequiredService<IChatCompletionService>();
-        _kernelPolicy = _retryPolicyProvider.CreateKernelPolicy(_log);
+        _kernelPolicy = _retryPolicy.CreateKernelPolicy(_log);
     }
 
     public async Task<AiResponseModel> ProcessAsync(AiRequestModel request, CancellationToken ct = default)

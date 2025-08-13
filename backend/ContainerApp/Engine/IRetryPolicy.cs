@@ -1,30 +1,16 @@
 ﻿using Microsoft.SemanticKernel;
 using Polly;
 
-namespace Engine.Messaging;
+namespace Engine;
 
-public interface IRetryPolicyProvider
+public interface IRetryPolicy
 {
-    IAsyncPolicy Create(QueueSettings settings, ILogger logger);
     IAsyncPolicy<HttpResponseMessage> CreateHttpPolicy(ILogger logger);
     IAsyncPolicy<ChatMessageContent> CreateKernelPolicy(ILogger logger);
 }
 
-public class RetryPolicyProvider : IRetryPolicyProvider
+public class RetryPolicy : IRetryPolicy
 {
-    public IAsyncPolicy Create(QueueSettings settings, ILogger logger)
-    {
-        return Policy
-            .Handle<Exception>(ShouldRetry)
-            .WaitAndRetryAsync(
-                retryCount: settings.MaxRetryAttempts,
-                sleepDurationProvider: attempt => TimeSpan.FromSeconds(settings.RetryDelaySeconds),
-                onRetry: (exception, delay, retryAttempt, _) =>
-                {
-                    logger.LogWarning(exception, "Retry {RetryAttempt} in {Delay}", retryAttempt, delay);
-                });
-    }
-
     public IAsyncPolicy<HttpResponseMessage> CreateHttpPolicy(ILogger logger)
     {
         return Policy<HttpResponseMessage>
@@ -81,15 +67,5 @@ public class RetryPolicyProvider : IRetryPolicyProvider
 
                     await Task.CompletedTask;
                 });
-    }
-
-    private bool ShouldRetry(Exception ex)
-    {
-        return ex switch
-        {
-            RetryableException => true,
-            NonRetryableException => false,
-            _ => false
-        };
     }
 }
