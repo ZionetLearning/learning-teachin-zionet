@@ -31,6 +31,6 @@ jobs:
       working-directory: backend/ContainerApp
 
     - name: Run tests
-      run: dotnet test AccessorUnitTests.csproj --no-build --verbosity normal
-      working-directory: backend/ContainerApp/UnitTests/AccessorUnitTests
+      run: dotnet test EngineUnitTests.csproj --no-build --verbosity normal
+      working-directory: backend/ContainerApp/UnitTests/EngineUnitTests
 
