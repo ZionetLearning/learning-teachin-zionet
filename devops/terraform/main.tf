@@ -1,36 +1,56 @@
 ########################################
-# 1. Azure infra: RG, AKS, Service Bus, Postgres and SignalR, Redis
+# 1. Azure infra: RG, AKS (conditional), Service Bus, Postgres and SignalR, Redis
 ########################################
 resource "azurerm_resource_group" "main" {
-  name     = var.resource_group_name
+  name     = "${var.environment_name}-${var.resource_group_name}"
   location = var.location
+  
+  tags = {
+    Environment = var.environment_name
+    ManagedBy   = "terraform"
+  }
 }
 
+# Data source to reference existing shared AKS cluster
+data "azurerm_kubernetes_cluster" "shared" {
+  count               = var.use_shared_aks ? 1 : 0
+  name                = var.shared_aks_cluster_name
+  resource_group_name = var.shared_aks_resource_group
+}
+
+# Create new AKS cluster only if not using shared
 module "aks" {
+  count               = var.use_shared_aks ? 0 : 1
   source              = "./modules/aks"
   resource_group_name = azurerm_resource_group.main.name
   location            = var.location
   cluster_name        = var.aks_cluster_name
   vm_size             = var.vm_size
-  # mc_resource_group_name = "MC_${var.resource_group_name}_${var.aks_cluster_name}_${var.location}"
   depends_on = [azurerm_resource_group.main]
+}
+
+# Local values to determine which cluster to use
+locals {
+  aks_cluster_name = var.use_shared_aks ? data.azurerm_kubernetes_cluster.shared[0].name : module.aks[0].cluster_name
+  aks_resource_group = var.use_shared_aks ? var.shared_aks_resource_group : azurerm_resource_group.main.name
+  kubernetes_namespace = var.kubernetes_namespace != "" ? var.kubernetes_namespace : var.environment_name
+  aks_kube_config = var.use_shared_aks ? data.azurerm_kubernetes_cluster.shared[0].kube_config[0] : module.aks[0].kube_config
 }
 
 module "servicebus" {
   source              = "./modules/servicebus"
   resource_group_name = azurerm_resource_group.main.name
   location            = var.location
-  namespace_name      = var.servicebus_namespace
+  namespace_name      = "${var.environment_name}-${var.servicebus_namespace}"
   sku                 = var.servicebus_sku
   queue_names         = var.queue_names
-  
   depends_on = [azurerm_resource_group.main]
 }
 
 module "database" {
   source              = "./modules/postgresql"
 
-  server_name         = var.database_server_name
+  server_name         = "${var.environment_name}-${var.database_server_name}"
   location            = var.db_location
   resource_group_name = azurerm_resource_group.main.name
 
@@ -50,25 +70,22 @@ module "database" {
   delegated_subnet_id           = var.delegated_subnet_id
 
   database_name       = var.database_name
-  # aks_public_ip       = module.aks.public_ip_address
 
   depends_on = [azurerm_resource_group.main]
 }
-
-
 
 module "signalr" {
   source              = "./modules/signalr"
   resource_group_name = azurerm_resource_group.main.name
   location            = var.location
-  signalr_name        = var.signalr_name
+  signalr_name        = "${var.signalr_name}-${var.environment_name}"
   sku_name            = var.signalr_sku_name
   sku_capacity        = var.signalr_sku_capacity
 }
 
 module "redis" {
   source              = "./modules/redis"
-  name                = "teachin-redis"
+  name                = "${var.redis_name}-${var.environment_name}"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
   sku_name            = "Basic"
@@ -81,14 +98,14 @@ module "frontend" {
   source              = "./modules/frontend"
   resource_group_name = azurerm_resource_group.main.name
   location            = azurerm_resource_group.main.location
-  static_web_app_name = var.static_web_app_name
+  static_web_app_name = "${var.static_web_app_name}-${var.environment_name}"
   sku_tier            = var.frontend_sku_tier
   sku_size            = var.frontend_sku_size
   appinsights_retention_days = var.frontend_appinsights_retention_days
   appinsights_sampling_percentage = var.frontend_appinsights_sampling_percentage
   
   tags = {
-    Environment = "Development"
+    Environment = var.environment_name
     Project     = "Frontend"
   }
   
@@ -98,31 +115,96 @@ module "frontend" {
 ########################################
 # 2. AKS kube-config for providers
 ########################################
-data "azurerm_kubernetes_cluster" "main" {
-  name                = module.aks.cluster_name
-  resource_group_name = azurerm_resource_group.main.name
-  depends_on          = [module.aks]
-}
 
-provider "kubernetes" {
-  host                   = module.aks.kube_config["host"]
-  client_certificate     = base64decode(module.aks.kube_config["client_certificate"])
-  client_key             = base64decode(module.aks.kube_config["client_key"])
-  cluster_ca_certificate = base64decode(module.aks.kube_config["cluster_ca_certificate"])
-}
-
-provider "helm" {
-  kubernetes = {
-    host                   = data.azurerm_kubernetes_cluster.main.kube_config[0].host
-    client_certificate     = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].client_certificate)
-    client_key             = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].client_key)
-    cluster_ca_certificate = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].cluster_ca_certificate)
+resource "null_resource" "aks_ready" {
+  # This resource completes when the AKS cluster (shared or new) is ready
+  count = 1
+  
+  # Use triggers to ensure this runs after the appropriate AKS resource is ready
+  triggers = {
+    cluster_name = local.aks_cluster_name
+    cluster_rg   = local.aks_resource_group
   }
+  
+  # Implicit dependency on the AKS module when not using shared AKS
+  depends_on = [
+    module.aks,
+    data.azurerm_kubernetes_cluster.shared
+  ]
+}
+
+# Data source for the cluster to be used (either shared or new)
+data "azurerm_kubernetes_cluster" "main" {
+  name                = local.aks_cluster_name
+  resource_group_name = local.aks_resource_group
+  
+  depends_on = [null_resource.aks_ready]
 }
 
 ########################################
-# 4. devops-model namespace for the workloads
+# 4. Environment-specific namespace and resources for the workloads
 ########################################
-resource "kubernetes_namespace" "model" {
-  metadata { name = "dev" }
+
+# Create namespace for the environment
+resource "kubernetes_namespace" "environment" {
+  metadata {
+    name = local.kubernetes_namespace
+    labels = {
+      environment = var.environment_name
+      managed-by  = "terraform"
+      created-by  = "terraform"
+      purpose     = "application-deployment"
+    }
+    
+    annotations = {
+      "kubernetes.io/managed-by" = "terraform"
+      "terraform.io/environment" = var.environment_name
+    }
+  }
+  
+  depends_on = [data.azurerm_kubernetes_cluster.main]
+}
+
+# Create service account for the environment
+resource "kubernetes_service_account" "environment" {
+  metadata {
+    name      = "${var.environment_name}-serviceaccount"
+    namespace = kubernetes_namespace.environment.metadata[0].name
+    
+    labels = {
+      environment = var.environment_name
+      managed-by  = "terraform"
+    }
+    
+    annotations = {
+      "kubernetes.io/managed-by" = "terraform"
+    }
+  }
+  
+  depends_on = [kubernetes_namespace.environment]
+}
+
+resource "kubernetes_resource_quota" "environment" {
+  metadata {
+    name      = "${var.environment_name}-quota"
+    namespace = kubernetes_namespace.environment.metadata[0].name
+    
+    labels = {
+      environment = var.environment_name
+      managed-by  = "terraform"
+    }
+  }
+  
+  spec {
+    hard = {
+      "requests.cpu"    = "2"
+      "requests.memory" = "4Gi"
+      "limits.cpu"      = "4"
+      "limits.memory"   = "8Gi"
+      "pods"            = "10"
+      "services"        = "8"
+    }
+  }
+  
+  depends_on = [kubernetes_namespace.environment]
 }

@@ -1,8 +1,8 @@
 #------------- Shared AKS Configuration -------------
-environment_name       = "dev"
-use_shared_aks         = false  # dev still uses its own cluster
-kubernetes_namespace   = "dev"
-aks_cluster_name       = "aks-cluster-dev"
+# Using existing dev cluster to save costs
+use_shared_aks         = true   # Use shared dev cluster to save costs
+shared_aks_cluster_name     = "aks-cluster-dev"
+shared_aks_resource_group   = "dev-zionet-learning-2025"
 #------------- Resource Configuration -------------
 location               = "westeurope"
 
@@ -14,5 +14,6 @@ tenant_id              = "a814ee32-f813-4a36-9686-1b9268183e27"
 docker_registry        = "snir1551"
 
 #------------- Frontend Configuration -------------
-frontend_sku_tier      = "Free"
-frontend_sku_size      = "Free"
+frontend_sku_tier      = "Free"    
+frontend_sku_size      = "Free"    
+
