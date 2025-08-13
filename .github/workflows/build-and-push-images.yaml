@@ -6,17 +6,10 @@ on:
       environment:
         required: true
         type: string
-      namespace:
-        required: true
-        type: string
   workflow_dispatch:
     inputs:
       environment:
         description: "Environment name (e.g., Development)"
-        required: true
-        type: string
-      namespace:
-        description: "Kubernetes namespace to tag images with (e.g., dev, newdev)"
         required: true
         type: string
 
@@ -45,7 +38,10 @@ jobs:
 
       - name: Set short commit SHA
         id: vars
-        run: echo "short_sha=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+        shell: bash
+        run: |
+          echo "short_sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          echo "env_tag=${{ inputs.environment }}" >> "$GITHUB_OUTPUT"
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -61,4 +57,4 @@ jobs:
           push: true
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/${{ matrix.service.name }}:${{ steps.vars.outputs.short_sha }}
-            ${{ secrets.DOCKER_USERNAME }}/${{ matrix.service.name }}:${{ inputs.namespace }}
+            ${{ secrets.DOCKER_USERNAME }}/${{ matrix.service.name }}:${{ steps.vars.outputs.env_tag }}
