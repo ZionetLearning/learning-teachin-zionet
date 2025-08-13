@@ -31,9 +31,9 @@ jobs:
         working-directory: backend/ContainerApp
 
     env:
-      AzureOpenAI__Endpoint: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+      AzureOpenAI__Endpoint: "https://france-teachin-open-ai.openai.azure.com/"
       AzureOpenAI__ApiKey: ${{ secrets.AZURE_OPENAI_API_KEY }}
-      AzureOpenAI__DeploymentName: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
+      AzureOpenAI__DeploymentName: "gpt-4.1-mini"
 
     steps:
       - name: Checkout
