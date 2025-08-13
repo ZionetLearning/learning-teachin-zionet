@@ -1,15 +1,18 @@
 name: Component Tests
 
 on:
-  # Manual runs only (no PR trigger)
   workflow_dispatch:
     inputs:
       services:
-        description: "Comma-separated services to test (e.g., Engine,NewService)"
+        description: "Select service to test"
         required: true
-        default: "Engine"   # Only Engine exists now; add names when new services are created
+        type: choice
+        options:
+          - Engine
+          # When adding a new service, just add another line here:
+          # - NewService
       testFilter:
-        description: "Optional dotnet test --filter (e.g., FullyQualifiedName~EngineComponentTests.ChatAiServiceTests)"
+        description: "Optional dotnet test --filter"
         required: false
         default: ""
 
