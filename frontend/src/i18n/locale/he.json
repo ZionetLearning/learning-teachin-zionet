@@ -185,7 +185,7 @@
         "loadingMoreResults": "טוען עוד תוצאות",
         "reachEnd": "הגעת לסוף",
         "top": "חזור לראש",
-        "exploreAnime": "חקר אנימה",
+        "exploreAnime": "ספריית אנימה",
         "searchByTitle": "חפש לפי כותרת",
         "clear": "נקה חיפוש"
       }
@@ -212,7 +212,8 @@
       "he": "עברית",
       "en": "אנגלית",
       "earthquakeMap": "מפת רעידות אדמה",
-      "weather": "מזג האוויר"
+      "weather": "מזג האוויר",
+      "anime": "ספריית אנימה"
     }
   },
   "goBackToMenu": "חזור לתפריט",
