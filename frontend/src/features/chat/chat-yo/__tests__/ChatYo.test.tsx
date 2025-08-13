@@ -10,7 +10,7 @@ vi.mock("react-i18next", () => ({
 }));
 
 // hook mock
-vi.mock("../hooks", () => ({
+vi.mock("@/hooks", () => ({
   useChat: () => ({
     sendMessage: sendMessageMock,
     loading: false,
@@ -22,8 +22,8 @@ vi.mock("../hooks", () => ({
 }));
 
 // mock ChatUi to render a minimal input and button that call the passed props
-vi.mock("../components", () => ({
-  ChatUi: ({
+vi.mock("@/components", () => ({
+  ReactChatElements: ({
     messages,
     loading,
     value,

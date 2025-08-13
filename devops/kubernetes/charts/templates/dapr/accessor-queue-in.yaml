@@ -1,0 +1,21 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: {{ include "app.join" (list (include "app.prefix" .) "accessor-queue-in") }}
+  namespace: {{ include "app.namespace" . }}
+spec:
+  type: bindings.azure.servicebusqueues
+  version: v1
+  metadata:
+    - name: connectionString
+      secretKeyRef:
+        name: azure-service-bus-secret
+        key: AzureServiceBusConnectionString
+    - name: queueName
+      value: {{ include "app.sbName" (list $ "accessor-queue") | quote }}
+    - name: direction
+      value: input
+    - name: disableEntityManagement
+      value: "true"
+scopes:
+  - {{ .Values.accessor.dapr.appId  | default .Values.accessor.name  | quote }}

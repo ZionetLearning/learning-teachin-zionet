@@ -1,0 +1,166 @@
+name: Deploy Frontend to Azure Static Web Apps
+run-name: >
+  🚀 Deploy Frontend to environment_name: ${{
+    inputs.environment_name || github.event.inputs.environment_name || 
+    'custom'
+  }} | GitHub Environment: ${{ inputs.environment || github.event.inputs.environment }}
+on:
+
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Select environment (GitHub Environment)'
+        required: true
+        default: 'Development'
+        type: choice
+        options: [Development, Production]
+      environment_name:
+        description: 'lowercase letters & digits only (env identifier)'
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      environment_name:
+        required: true
+        type: string
+      app_insights_connection_string:
+        required: false
+        type: string
+      deployment_token:
+        required: false
+        type: string
+    secrets:
+      AZURE_STATIC_WEB_APPS_API_TOKEN:
+        required: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}     
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      FE_DIR: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Login only if we actually need az (missing AI conn string or SWA token)
+      - name: Azure Login (OIDC)
+        if: ${{ !inputs.app_insights_connection_string || !inputs.deployment_token }}
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Compute resource names
+        id: names
+        shell: bash
+        run: |
+          set -euo pipefail
+          ENV="${{ inputs.environment_name }}"
+          RG="${ENV}-zionet-learning-2025"
+
+          SWA_NAME="static-web-app-${ENV}"
+          AI_NAME="${SWA_NAME}-appinsights"
+
+          echo "rg=$RG" >> $GITHUB_OUTPUT
+          echo "swa=$SWA_NAME" >> $GITHUB_OUTPUT
+          echo "ai=$AI_NAME" >> $GITHUB_OUTPUT
+
+      - name: Get App Insights connection string
+        if: ${{ !inputs.app_insights_connection_string }}
+        id: ai
+        shell: bash
+        run: |
+          set -euo pipefail
+          CONN=$(az resource show \
+            -g "${{ steps.names.outputs.rg }}" \
+            -n "${{ steps.names.outputs.ai }}" \
+            --resource-type "Microsoft.Insights/components" \
+            --query "properties.ConnectionString" -o tsv)
+          if [ -z "$CONN" ]; then
+            echo "❌ Could not resolve Application Insights connection string."
+            exit 1
+          fi
+          echo "::add-mask::$CONN"
+          echo "APPINSIGHTS_CONNECTION_STRING=$CONN" >> "$GITHUB_ENV"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: '${{ env.FE_DIR }}/package-lock.json'
+
+      - name: Install Dependencies
+        working-directory: ${{ env.FE_DIR }}
+        run: npm ci
+
+      - name: Build Application
+        working-directory: ${{ env.FE_DIR }}
+        env:
+          VITE_AZURE_SPEECH_KEY: ""
+          VITE_AZURE_REGION: "eastus"
+          VITE_AZURE_OPENAI_KEY: ""
+          VITE_AZURE_OPENAI_DEPLOYMENT_NAME: "gpt-4.1-mini"
+          VITE_AZURE_OPENAI_API_VERSION: "2024-04-01-preview"
+          VITE_AZURE_OPENAI_ENDPOINT: "https://france-teachin-open-ai.openai.azure.com/"
+          VITE_APPINSIGHTS_CONNECTION_STRING: ${{ inputs.app_insights_connection_string || env.APPINSIGHTS_CONNECTION_STRING }}
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+        run: npm run build
+
+      - name: Optimize Build Size
+        working-directory: ${{ env.FE_DIR }}
+        run: |
+          # Show directory sizes for comparison
+          echo "📂 Full frontend directory size (includes node_modules):"
+          du -sh . | cut -f1
+          echo "📦 Build output directory size (what gets deployed):"
+          du -sh dist/ | cut -f1
+          
+          # Show original build size
+          ORIGINAL_SIZE=$(du -sh dist/ | cut -f1)
+          echo "📦 Original build size: $ORIGINAL_SIZE"
+          
+          # Remove unnecessary files to reduce deployment size
+          echo "🧹 Removing unnecessary files..."
+          find dist -name "*.map" -delete
+          find dist -name "*.md" -delete
+          find dist -name "*.txt" -delete
+          find dist -name "*.LICENSE" -delete
+          
+          # Show optimized build size and savings
+          OPTIMIZED_SIZE=$(du -sh dist/ | cut -f1)
+          echo "✨ Optimized build size: $OPTIMIZED_SIZE"
+          echo "💾 Space saved by removing: source maps, docs, and license files"
+
+      - name: Get SWA deployment token
+        if: ${{ !inputs.deployment_token }}
+        id: swatoken
+        shell: bash
+        run: |
+          set -euo pipefail
+          TOKEN=$(az staticwebapp secrets list \
+            --name "${{ steps.names.outputs.swa }}" \
+            --resource-group "${{ steps.names.outputs.rg }}" \
+            --query "properties.apiKey" -o tsv)
+          if [ -z "$TOKEN" ]; then
+            echo "❌ Could not fetch Static Web Apps deployment token."
+            exit 1
+          fi
+          echo "::add-mask::$TOKEN"
+          echo "AZURE_STATIC_WEB_APPS_API_TOKEN=$TOKEN" >> "$GITHUB_ENV"
+
+      - name: Deploy to Azure Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ inputs.deployment_token || env.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          action: "upload"
+          app_location: "${{ env.FE_DIR }}/dist"
+          skip_app_build: true                

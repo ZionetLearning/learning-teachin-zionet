@@ -1,9 +1,0 @@
-{
-  "profiles": {
-    "Accessor": {
-      "commandName": "Project",
-      "commandLineArgs": "--port 7295",
-      "launchBrowser": false
-    }
-  }
-}

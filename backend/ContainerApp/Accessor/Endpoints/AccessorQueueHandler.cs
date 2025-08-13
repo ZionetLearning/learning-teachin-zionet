@@ -21,7 +21,6 @@ public class AccessorQueueHandler : IQueueHandler<Message>
         };
     }
 
-    // add erros to retry or not retry that the queue listener will catch
     public async Task HandleAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
     {
         if (_handlers.TryGetValue(message.ActionName, out var handler))
@@ -31,20 +30,57 @@ public class AccessorQueueHandler : IQueueHandler<Message>
         else
         {
             _logger.LogWarning("No handler for action {Action}", message.ActionName);
+            throw new NonRetryableException($"No handler for action {message.ActionName}");
         }
     }
 
     private async Task HandleUpdateTaskAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
     {
-        var payload = message.Payload.Deserialize<TaskModel>();
-        if (payload is null)
+        try
         {
-            _logger.LogWarning("Invalid payload for CreateTask");
-            return;
-        }
+            var payload = message.Payload.Deserialize<TaskModel>();
+            if (payload is null)
+            {
+                _logger.LogWarning("Invalid payload for UpdateTask");
+                throw new NonRetryableException("Payload deserialization returned null for TaskModel.");
+            }
 
-        _logger.LogDebug("Processing task {Id}", payload.Id);
-        await _accessorService.UpdateTaskNameAsync(payload.Id, payload.Name);
-        _logger.LogInformation("Task {Id} processed", payload.Id);
+            if (payload.Id <= 0)
+            {
+                _logger.LogWarning("Task Id must be a positive integer. Actual: {Id}", payload.Id);
+                throw new NonRetryableException("Task Id must be a positive integer.");
+            }
+
+            if (string.IsNullOrWhiteSpace(payload.Name))
+            {
+                _logger.LogWarning("Task Name is required.");
+                throw new NonRetryableException("Task Name is required.");
+            }
+
+            _logger.LogDebug("Processing task {Id}", payload.Id);
+            await _accessorService.UpdateTaskNameAsync(payload.Id, payload.Name);
+            _logger.LogInformation("Task {Id} processed", payload.Id);
+        }
+        catch (NonRetryableException ex)
+        {
+            _logger.LogError(ex, "Non-retryable error processing message {Action}", message.ActionName);
+            throw;
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "Invalid JSON payload for {Action}", message.ActionName);
+            throw new NonRetryableException("Invalid JSON payload.", ex);
+        }
+        catch (Exception ex)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning(ex, "Operation cancelled while processing {Action}", message.ActionName);
+                throw new OperationCanceledException("Operation was cancelled.", ex, cancellationToken);
+            }
+
+            _logger.LogError(ex, "Transient error while updating task for action {Action}", message.ActionName);
+            throw new RetryableException("Transient error while updating task.", ex);
+        }
     }
 }
