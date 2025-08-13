@@ -9,14 +9,6 @@ on:
       - 'Directory.Build.props'
       - 'backend.sln'
       - '.github/workflows/**'
-  push:
-    branches: [main]
-    paths:
-      - 'Engine/**'
-      - 'EngineComponentTests/**'
-      - 'Directory.Build.props'
-      - 'backend.sln'
-      - '.github/workflows/**'
   workflow_dispatch:
 
 concurrency:
