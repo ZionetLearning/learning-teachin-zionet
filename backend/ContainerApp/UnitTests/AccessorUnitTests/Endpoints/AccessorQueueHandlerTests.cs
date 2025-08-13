@@ -41,22 +41,45 @@ public class AccessorQueueHandlerTests
         renewed.Should().BeFalse(); // current handler doesn't use renew; assert we didn't accidentally call it
         svc.VerifyAll();
     }
-    [Fact]
-    public async Task HandleAsync_UnknownAction_Throws_NonRetryable_And_NoServiceCalls()
+    [Theory]
+    [MemberData(nameof(InvalidMessages))]
+    public async Task HandleAsync_InvalidMessage_Throws_And_NoServiceCalls(Message msg, string expectedMessagePart)
     {
+        // Arrange
         var svc = Svc();
         var log = Log();
         var handler = new AccessorQueueHandler(svc.Object, log.Object);
 
-        var msg = MakeMessage((MessageAction)9999, new { foo = "bar" });
-
+        // Act
         Func<Task> act = () => handler.HandleAsync(msg, () => Task.CompletedTask, CancellationToken.None);
 
+        // Assert
         await act.Should().ThrowAsync<NonRetryableException>()
-                 .WithMessage("*No handler for action*9999*"); // wildcard for stability
+                 .WithMessage($"*{expectedMessagePart}*");
 
-        // ensure handler didn’t touch the service layer
         svc.VerifyNoOtherCalls();
+    }
+
+    public static IEnumerable<object[]> InvalidMessages()
+    {
+        yield return new object[]
+        {
+            new Message
+            {
+                ActionName = (MessageAction)9999,
+                Payload = JsonDocument.Parse("{}").RootElement
+            },
+            "No handler for action"
+        };
+        yield return new object[]
+        {
+            new Message
+            {
+                ActionName = MessageAction.UpdateTask,
+                Payload = JsonDocument.Parse("null").RootElement
+            },
+            "deserialization returned null"
+        };
     }
 
     // invalid payload => production currently throws NonRetryableException from DeserializeOrThrow<T>
