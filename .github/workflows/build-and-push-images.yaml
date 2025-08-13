@@ -51,6 +51,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Prepare service filter
+        id: filter
+        shell: bash
+        run: |
+          raw="${{ inputs.list_services_names || github.event.inputs.list_services_names || '' }}"
+          # remove spaces to make contains() reliable for CSV lists
+          filter="${raw// /}"
+          echo "filter=${filter}" >> "$GITHUB_OUTPUT"
+
       - name: Set short commit SHA
         id: vars
         shell: bash
@@ -65,7 +74,7 @@ jobs:
           password: ${{ secrets.DOCKER_TOKEN }}
 
       - name: Build and push ${{ matrix.service.name }} image
-        if: ${{ !inputs.list_services_names || inputs.list_services_names == '' || inputs.list_services_names == 'all' || contains(format(',{0},', inputs.list_services_names), format(',{0},', matrix.service.name)) }}
+        if: ${{ steps.filter.outputs.filter == '' || steps.filter.outputs.filter == 'all' || contains(format(',{0},', steps.filter.outputs.filter), format(',{0},', matrix.service.name)) }}
         uses: docker/build-push-action@v5
         with:
           context: ${{ matrix.service.context }}
