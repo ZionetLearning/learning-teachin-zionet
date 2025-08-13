@@ -152,7 +152,7 @@
       "weather": {
         "selectOrSearchCity": "Select or search a city or use your location to see the weather.",
         "search": "Search",
-        "selectCityOrLoation": "-- Select a city or location --",
+        "selectCityOrLocation": "-- Select a city or location --",
         "searchCity": "Search city",
         "useMyLocation": "Use my location",
         "feelsLike": "Feels like",
@@ -212,7 +212,8 @@
       "he": "HE",
       "en": "EN",
       "earthquakeMap": "Earthquake Map",
-      "weather": "Weather"
+      "weather": "Weather",
+      "anime": "Anime Explorer"
     }
   },
   "goBackToMenu": "Go back to Menu",

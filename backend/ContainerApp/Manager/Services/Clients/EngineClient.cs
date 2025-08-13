@@ -2,6 +2,7 @@
 using Dapr.Client;
 using Manager.Constants;
 using Manager.Models;
+using Manager.Models.Speech;
 
 namespace Manager.Services.Clients;
 
@@ -88,5 +89,26 @@ public class EngineClient : IEngineClient
             methodName: "chat",
             data: dto,
             cancellationToken: ct);
+    }
+
+    public async Task<SpeechEngineResponse?> SynthesizeAsync(SpeechRequest request, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation("Forwarding speech synthesis request to engine");
+
+            var result = await _daprClient.InvokeMethodAsync<SpeechRequest, SpeechEngineResponse>(
+                appId: AppIds.Engine,
+                methodName: "speech/synthesize",
+                data: request,
+                cancellationToken: cancellationToken);
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error communicating with speech engine");
+            return null;
+        }
     }
 }
