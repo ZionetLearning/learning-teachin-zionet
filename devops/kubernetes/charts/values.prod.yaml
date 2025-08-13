@@ -18,12 +18,12 @@ manager:
   # Consider adding resource limits here if you introduce them in templates
   ingress:
     enabled: true
-    host: teachin-zionet.westeurope.cloudapp.azure.com
+    host: teachin.westeurope.cloudapp.azure.com
     basePath: /api
     tls:
       enabled: true
       clusterIssuer: letsencrypt-prod
-      secretName: teachin-zionet-tls
+      secretName: teachin-tls
 
 engine:
   image:
