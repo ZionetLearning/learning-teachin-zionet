@@ -1,9 +1,6 @@
 name: Manual Deploy Existing Images
 
 on:
-  push:
-    branches:
-      - avichai/pull-images-workflow
   workflow_dispatch:
     inputs:
       environment_name:
