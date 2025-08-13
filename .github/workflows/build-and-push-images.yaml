@@ -6,10 +6,17 @@ on:
       environment:
         required: true
         type: string
+      environment_name:
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       environment:
         description: "Environment name (e.g., Development)"
+        required: true
+        type: string
+      environment_name:
+        description: "environment_name passthrough"
         required: true
         type: string
 
@@ -41,7 +48,7 @@ jobs:
         shell: bash
         run: |
           echo "short_sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
-          echo "env_tag=${{ inputs.environment }}" >> "$GITHUB_OUTPUT"
+          echo "env_tag=${{ inputs.environment_name }}" >> "$GITHUB_OUTPUT"
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3

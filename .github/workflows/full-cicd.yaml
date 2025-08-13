@@ -29,6 +29,7 @@ jobs:
       contents: read
     with:
       environment: ${{ github.event.inputs.environment }}
+      environment_name: ${{ github.event.inputs.environment_name }}
     secrets: inherit
  
   terraform-apply:
