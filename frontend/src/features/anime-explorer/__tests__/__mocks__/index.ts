@@ -31,24 +31,19 @@ class IOStub implements IntersectionObserver {
   readonly root: Element | null = null;
   readonly rootMargin = "";
   readonly thresholds: ReadonlyArray<number> = [];
-  private _cb: IntersectionObserverCallback;
 
   constructor(cb: IntersectionObserverCallback) {
-    this._cb = cb;
     lastObserver = {
       cb,
       observe: (el) => (lastObserver!.el = el),
       disconnect: () => {},
       el: undefined,
     };
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
-    lastIO = this;
   }
   observe(el: Element) {
     lastObserver!.observe(el);
   }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  unobserve(_el: Element) {}
+  unobserve() {}
   disconnect() {
     lastObserver!.disconnect();
   }
