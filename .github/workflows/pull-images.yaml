@@ -29,6 +29,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }} # This is the crucial line you need to add or update
     permissions:
       id-token: write
       contents: read
