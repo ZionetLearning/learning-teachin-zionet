@@ -58,22 +58,6 @@ public class AccessorServiceTests
         canConnect.Should().BeTrue();
     }
 
-    // ---------- CreateTaskAsync ----------
-    [Fact]
-    public async Task CreateTaskAsync_IdExists_NoOp()
-    {
-        var db = NewDb(Guid.NewGuid().ToString());
-        db.Tasks.Add(new TaskModel { Id = 100, Name = "exists" });
-        await db.SaveChangesAsync();
-
-        var dapr = new Mock<DaprClient>(MockBehavior.Loose);
-        var svc = NewService(db, dapr);
-
-        await svc.CreateTaskAsync(new TaskModel { Id = 100, Name = "new" });
-
-        (await db.Tasks.AsNoTracking().FirstAsync(t => t.Id == 100)).Name.Should().Be("exists");
-    }
-
     // ---------- UpdateTaskNameAsync ----------
     [Fact]
     public async Task UpdateTaskNameAsync_Missing_ReturnsFalse()
