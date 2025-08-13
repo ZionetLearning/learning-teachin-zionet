@@ -24,12 +24,19 @@ export const useSendChatMessage = () => {
       chatType = "default",
     }) => {
       const response = await axios.post<ChatResponse>(
-        "https://teachin-zionet.westeurope.cloudapp.azure.com/manager/chat",
+        //local server endpoint URL:
+        "http://localhost:5280/chat",
+
+        // temp url, for some reason also not working
+        // "http://temp-teachin-zionet.westeurope.cloudapp.azure.com/api/dev/chat",
+
+        // the new endpoint URL that doesnt work for now
+        // "http://teachin-zionet.westeurope.cloudapp.azure.com/api/dev/chat",
         {
           userMessage,
           threadId,
           chatType,
-        },
+        }
       );
 
       return response.data;
