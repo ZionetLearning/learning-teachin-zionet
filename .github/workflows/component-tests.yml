@@ -4,11 +4,11 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
     paths:
-      - 'Engine/**'
-      - 'EngineComponentTests/**'
-      - 'Directory.Build.props'
-      - 'backend.sln'
-      - '.github/workflows/**'
+      - 'backend/ContainerApp/Engine/**'
+      - 'backend/ContainerApp/EngineComponentTests/**'
+      - 'backend/ContainerApp/Directory.Build.props'
+      - 'backend/ContainerApp/backend.sln'
+      - 'backend/ContainerApp/.github/workflows/**'
   workflow_dispatch:
 
 concurrency:
@@ -44,8 +44,11 @@ jobs:
           restore-keys: |
             nuget-${{ runner.os }}-
 
-      - name: Restore
-        run: dotnet restore backend.sln
+      - name: Restore Engine
+        run: dotnet restore Engine/Engine.csproj
+
+      - name: Restore Engine Component Tests
+        run: dotnet restore EngineComponentTests/EngineComponentTests.csproj
 
       - name: Build (Engine + tests)
         run: |
