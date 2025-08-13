@@ -21,6 +21,10 @@ on:
           description: 'Enter custom prefix (lowercase letters & digits only). This will be used as the Kubernetes namespace and environment identifier.'
           required: true
           type: string
+        list_services_names:
+          description: 'Optional comma-separated list of services to build (e.g., accessor,manager). Leave empty for all.'
+          required: true
+          type: string
 jobs:
   build-and-push-images:
     uses: ./.github/workflows/build-and-push-images.yaml
@@ -30,6 +34,7 @@ jobs:
     with:
       environment: ${{ github.event.inputs.environment }}
       environment_name: ${{ github.event.inputs.environment_name }}
+      list_services_names: ${{ github.event.inputs.list_services_names }}
     secrets: inherit
  
   terraform-apply:
