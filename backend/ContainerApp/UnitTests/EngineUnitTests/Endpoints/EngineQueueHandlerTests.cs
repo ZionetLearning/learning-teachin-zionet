@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using Engine.Constants;
 using Engine.Endpoints;
+using Engine.Messaging;
 using Engine.Models;
 using Engine.Services;
 using FluentAssertions;
@@ -64,7 +65,10 @@ public class EngineQueueHandlerTests
             Payload = JsonSerializer.Deserialize<JsonElement>("null")
         };
 
-        await sut.HandleAsync(msg, () => Task.CompletedTask, CancellationToken.None);
+        var act = () => sut.HandleAsync(msg, () => Task.CompletedTask, CancellationToken.None);
+
+        await act.Should().ThrowAsync<NonRetryableException>()
+                 .WithMessage("*Payload deserialization returned null*");
 
         engine.VerifyNoOtherCalls();
         ai.VerifyNoOtherCalls();
@@ -121,7 +125,7 @@ public class EngineQueueHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_ProcessingQuestionAi_MissingThreadId_Skips_Work()
+    public async Task HandleAsync_ProcessingQuestionAi_MissingThreadId_ThrowsNonRetryable_AndSkipsWork()
     {
         var engine = new Mock<IEngineService>(MockBehavior.Strict);
         var ai = new Mock<IChatAiService>(MockBehavior.Strict);
@@ -131,7 +135,7 @@ public class EngineQueueHandlerTests
         var req = new AiRequestModel
         {
             Id = "id-1",
-            ThreadId = "",
+            ThreadId = "", // invalid
             Question = "hello",
             ReplyToQueue = ""
         };
@@ -144,15 +148,19 @@ public class EngineQueueHandlerTests
             Payload = ToJsonElement(req)
         };
 
-        await sut.HandleAsync(msg, () => Task.CompletedTask, CancellationToken.None);
+        var act = () => sut.HandleAsync(msg, () => Task.CompletedTask, CancellationToken.None);
 
-        ai.VerifyNoOtherCalls();
-        pub.VerifyNoOtherCalls();
+        await act.Should().ThrowAsync<NonRetryableException>()
+                 .WithMessage("*ThreadId is required*");
+
+        // no dependencies were invoked
+        ai.Verify(a => a.ProcessAsync(It.IsAny<AiRequestModel>(), It.IsAny<CancellationToken>()), Times.Never);
         engine.VerifyNoOtherCalls();
+        pub.VerifyNoOtherCalls();
     }
 
     [Fact]
-    public async Task HandleAsync_ProcessingQuestionAi_AiThrows_Rethrows()
+    public async Task HandleAsync_ProcessingQuestionAi_AiThrows_WrappedInRetryable()
     {
         var engine = new Mock<IEngineService>(MockBehavior.Strict);
         var ai = new Mock<IChatAiService>(MockBehavior.Strict);
@@ -180,11 +188,16 @@ public class EngineQueueHandlerTests
 
         var act = () => sut.HandleAsync(msg, () => Task.CompletedTask, CancellationToken.None);
 
-        await act.Should().ThrowAsync<InvalidOperationException>()
-                 .WithMessage("*AI failed*");
+        var ex = (await act.Should().ThrowAsync<RetryableException>()
+                           .WithMessage("*Transient error while processing AI question*"))
+                 .Which;
+
+        ex.InnerException.Should().BeOfType<InvalidOperationException>();
+        ex.InnerException!.Message.Should().Contain("AI failed");
 
         pub.VerifyNoOtherCalls();
         engine.VerifyNoOtherCalls();
+        ai.Verify(a => a.ProcessAsync(req, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -203,7 +216,10 @@ public class EngineQueueHandlerTests
             Payload = JsonSerializer.Deserialize<JsonElement>("{}")
         };
 
-        await sut.HandleAsync(msg, () => Task.CompletedTask, CancellationToken.None);
+        var act = () => sut.HandleAsync(msg, () => Task.CompletedTask, CancellationToken.None);
+
+        await act.Should().ThrowAsync<NonRetryableException>()
+                 .WithMessage("*No handler for action 9999*");
 
         engine.VerifyNoOtherCalls();
         ai.VerifyNoOtherCalls();
