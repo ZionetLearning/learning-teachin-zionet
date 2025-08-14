@@ -35,16 +35,7 @@ spec:
                 echo "Waiting for accessor...";
                 sleep 2;
               done
-        - name: wait-for-engine
-          image: curlimages/curl:8.5.0
-          command:
-            - sh
-            - -c
-            - |
-              until curl -s -o /dev/null -w "%{http_code}" -X POST -H "Content-Type: application/json" -d '{"UserMessage":"ping"}' http://engine:5002/chat | grep -q "200"; do
-                echo "Waiting for engine...";
-                sleep 2;
-              done
+        
       containers:
         - env:
             - name: ASPNETCORE_URLS
