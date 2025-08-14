@@ -4,8 +4,13 @@ run-name: >
     inputs.environment_name || github.event.inputs.environment_name || 
     'custom'
   }} | GitHub Environment: ${{ inputs.environment || github.event.inputs.environment }}
-on:
 
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/**'
   workflow_dispatch:
     inputs:
       environment:
@@ -39,7 +44,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}     
+    environment: ${{ inputs.environment || 'Development' }}
     permissions:
       id-token: write
       contents: read
@@ -48,6 +53,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      # If triggered by push, set default environment_name to dev
+      - name: Set default environment_name for push
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          echo "environment_name=dev" >> $GITHUB_ENV
 
       # Login only if we actually need az (missing AI conn string or SWA token)
       - name: Azure Login (OIDC)
@@ -63,7 +74,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ENV="${{ inputs.environment_name }}"
+          ENV="${{ inputs.environment_name || env.environment_name }}"
           RG="${ENV}-zionet-learning-2025"
 
           SWA_NAME="static-web-app-${ENV}"
@@ -102,7 +113,6 @@ jobs:
         working-directory: ${{ env.FE_DIR }}
         run: npm ci
 
-      # Create release name with date + short SHA for Sentry
       - name: Create release name for Sentry (UTC + short SHA)
         run: |
           ts=$(date -u "+Release-%d-%m-%Y_%H-%M")
@@ -126,27 +136,19 @@ jobs:
       - name: Optimize Build Size
         working-directory: ${{ env.FE_DIR }}
         run: |
-          # Show directory sizes for comparison
           echo "📂 Full frontend directory size (includes node_modules):"
           du -sh . | cut -f1
           echo "📦 Build output directory size (what gets deployed):"
           du -sh dist/ | cut -f1
-          
-          # Show original build size
           ORIGINAL_SIZE=$(du -sh dist/ | cut -f1)
           echo "📦 Original build size: $ORIGINAL_SIZE"
-          
-          # Remove unnecessary files to reduce deployment size
           echo "🧹 Removing unnecessary files..."
           find dist -name "*.map" -delete
           find dist -name "*.md" -delete
           find dist -name "*.txt" -delete
           find dist -name "*.LICENSE" -delete
-          
-          # Show optimized build size and savings
           OPTIMIZED_SIZE=$(du -sh dist/ | cut -f1)
           echo "✨ Optimized build size: $OPTIMIZED_SIZE"
-          echo "💾 Space saved by removing: source maps, docs, and license files"
 
       - name: Get SWA deployment token
         if: ${{ !inputs.deployment_token }}
@@ -171,4 +173,4 @@ jobs:
           azure_static_web_apps_api_token: ${{ inputs.deployment_token || env.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: "upload"
           app_location: "${{ env.FE_DIR }}/dist"
-          skip_app_build: true                
+          skip_app_build: true
