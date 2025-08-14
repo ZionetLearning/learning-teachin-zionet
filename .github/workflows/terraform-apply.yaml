@@ -1,0 +1,146 @@
+name: Terraform Apply (Dynamic Environment)
+run-name: >
+  🚀 Deploy Infrastructure to environment_name: ${{
+    inputs.environment_name || github.event.inputs.environment_name || 
+    'custom'
+  }} | GitHub Environment: ${{ inputs.environment || github.event.inputs.environment }}
+on:
+  # push:
+  #  branches:
+  #    - yosef-benny/combine-tasks
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      environment_name:
+        required: true
+        type: string  
+    outputs:
+      static_web_app_api_token:
+        description: "Azure Static Web Apps deployment token"
+        value: ${{ jobs.terraform.outputs.static_web_app_api_token }}
+      app_insights_connection_string:
+        description: "Application Insights connection string"
+        value: ${{ jobs.terraform.outputs.app_insights_connection_string }}
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Select environment (GitHub Environment)'
+        required: true
+        default: 'Development'
+        type: choice
+        options: [Development, Production]
+      environment_name:
+        description: 'Enter custom prefix (lowercase letters & digits only). This will be used as the Kubernetes namespace and environment identifier.'
+        required: true
+        type: string
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment || github.event.inputs.environment }}
+    permissions:
+      id-token: write      # Required for OIDC login
+      contents: read       # For actions/checkout
+    
+    outputs:
+      static_web_app_api_token: ${{ steps.terraform_outputs.outputs.static_web_app_api_token }}
+      app_insights_connection_string: ${{ steps.terraform_outputs.outputs.app_insights_connection_string }}
+
+    env:
+      ARM_USE_OIDC: "true" # tell provider to use the OIDC token
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_USE_AZUREAD: "true" # matches `use_azuread_auth = true`
+      TF_DIR: ./devops/terraform
+      TF_IN_AUTOMATION: true
+      TF_LOG: INFO
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+
+      - name: Azure Login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Extract and validate environment variables
+        id: extract_env
+        run: |
+          # Determine environment name to use
+          if [ -n "${{ inputs.environment_name }}" ]; then
+            ENVIRONMENT_NAME="${{ inputs.environment_name }}"
+          elif [ -n "${{ github.event.inputs.environment_name }}" ]; then
+            ENVIRONMENT_NAME="${{ github.event.inputs.environment_name }}"
+          fi
+          
+          # Choose tfvars file based on environment name
+          if [ "$ENVIRONMENT_NAME" = "dev" ]; then
+            TFVARS_FILE="terraform.tfvars.dev"
+          elif [ "$ENVIRONMENT_NAME" = "prod" ]; then
+            TFVARS_FILE="terraform.tfvars.prod"
+          else
+            # Custom environments use template
+            TFVARS_FILE="terraform.tfvars.template"
+          fi
+          
+          # Validate environment name (lowercase letters and digits only)
+          if [[ ! "$ENVIRONMENT_NAME" =~ ^[a-z0-9]+$ ]]; then
+            echo "❌ Error: Environment name '$ENVIRONMENT_NAME' must contain only lowercase letters and digits"
+            exit 1
+          fi
+          
+          echo "📄 Using tfvars file: $TFVARS_FILE"
+          
+          echo "environment_name=$ENVIRONMENT_NAME" >> $GITHUB_ENV
+          echo "TFVARS_FILE=$TFVARS_FILE" >> $GITHUB_ENV
+          echo "backend_key=${ENVIRONMENT_NAME}.terraform.tfstate" >> $GITHUB_ENV
+
+      - name: Terraform Init with dynamic backend
+        run: |
+          terraform init \
+            -backend-config="key=${{ env.backend_key }}" \
+            -reconfigure
+        working-directory: ${{ env.TF_DIR }}
+      
+      - name: Terraform vars file
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          # Only generate template configuration for custom environments
+          if [ "${{ env.TFVARS_FILE }}" = "terraform.tfvars.template" ]; then
+            echo "" >> terraform.tfvars.template
+            echo "#------------- Dynamic Environment Configuration -------------" >> terraform.tfvars.template
+            echo "environment_name = \"${{ env.environment_name }}\"" >> terraform.tfvars.template
+            echo "kubernetes_namespace = \"${{ env.environment_name }}\"" >> terraform.tfvars.template
+            echo "✅ Generated terraform.tfvars.template with environment: ${{ env.environment_name }}"
+          else
+            echo "✅ Using existing tfvars file: ${{ env.TFVARS_FILE }}"
+          fi
+
+          
+ 
+      - name: Terraform Plan
+        run: terraform plan -var-file=${{ env.TFVARS_FILE }}
+        working-directory: ${{ env.TF_DIR }}
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve -var-file=${{ env.TFVARS_FILE }}
+        working-directory: ${{ env.TF_DIR }}
+
+      - name: Extract Terraform Outputs
+        id: terraform_outputs
+        run: |
+          # Extract outputs for frontend deployment
+          echo "static_web_app_api_token=$(terraform output -raw static_web_app_api_key)" >> $GITHUB_OUTPUT
+          echo "app_insights_connection_string=$(terraform output -raw application_insights_connection_string)" >> $GITHUB_OUTPUT
+        working-directory: ${{ env.TF_DIR }}
