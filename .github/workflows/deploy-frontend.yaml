@@ -6,9 +6,10 @@ run-name: >
   }} | GitHub Environment: ${{ inputs.environment || github.event.inputs.environment }}
 
 on:
-  push:
+  pull_request:
     branches:
       - main
+    types: [closed]
     paths:
       - 'frontend/**'
   workflow_dispatch:
@@ -20,7 +21,7 @@ on:
         type: choice
         options: [Development, Production]
       environment_name:
-        description: 'lowercase letters & digits only (env identifier)'
+        description: 'lowercase letters & digits only (env identifier) where the application is deployed'
         required: true
         type: string
   workflow_call:
@@ -54,9 +55,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # If triggered by push, set default environment_name to dev
-      - name: Set default environment_name for push
-        if: ${{ github.event_name == 'push' }}
+      # If triggered by PR merge, set default environment_name to dev
+      - name: Set default environment_name for PR merge
+        if: ${{ github.event_name == 'pull_request' }}
         run: |
           echo "environment_name=dev" >> $GITHUB_ENV
 
