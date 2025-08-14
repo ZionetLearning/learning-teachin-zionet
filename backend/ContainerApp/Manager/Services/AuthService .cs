@@ -56,7 +56,7 @@ public class AuthService : IAuthService
             //    IP = ip
             //});
 
-            // For now i just call unrelated method in the accessor
+            // For now just call unrelated method in the accessor
             try
             {
                 var task = await _dapr.InvokeMethodAsync<TaskModel?>(
@@ -108,7 +108,7 @@ public class AuthService : IAuthService
             //    throw new UnauthorizedAccessException("Invalid or mismatched session.");
             //}
 
-            // All good → rotate tokens
+            // All good -> generate tokens
             //var newAccessToken = GenerateJwtToken(session.Email);
             var newAccessToken = GenerateJwtToken("some email");
             var newRefreshToken = Guid.NewGuid().ToString("N");
