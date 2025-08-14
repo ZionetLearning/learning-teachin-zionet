@@ -11,6 +11,14 @@ on:
         options:
           - Development
           - Production
+      environment_name:
+        description: 'Enter custom prefix (used for Kubernetes namespace, etc.)'
+        required: true
+        type: string
+      list_services_names:
+        description: 'Optional comma-separated list of services to build (e.g., accessor,manager). Leave empty for all.'
+        required: false
+        type: string
 
 jobs:
   build-and-push-images:
@@ -20,6 +28,8 @@ jobs:
       contents: read
     with:
       environment: ${{ github.event.inputs.environment }}
+      environment_name: ${{ github.event.inputs.environment_name }}
+      list_services_names: ${{ github.event.inputs.list_services_names }}
     secrets: inherit
 
   restart-pods:
