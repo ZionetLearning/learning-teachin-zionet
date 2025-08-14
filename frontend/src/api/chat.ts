@@ -27,12 +27,12 @@ export const useSendChatMessage = () => {
         //local server endpoint URL:
         // "http://localhost:5280/chat",
         //cloud server endpoint URL:
-        "http://teachin-zionet.westeurope.cloudapp.azure.com/api/dev/chat",
+        "https://teachin.westeurope.cloudapp.azure.com/api/dev/chat",
         {
           userMessage,
           threadId,
           chatType,
-        },
+        }
       );
 
       return response.data;
