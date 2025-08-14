@@ -4,5 +4,5 @@ namespace Engine.Services;
 
 public interface IChatAiService
 {
-    Task<AiServiceResponse> ChatHandlerAsync(ChatAiServiseRequest request, CancellationToken ct = default);
+    Task<ChatAiServiceResponse> ChatHandlerAsync(ChatAiServiseRequest request, CancellationToken ct = default);
 }

@@ -1,5 +1,4 @@
 ﻿using Engine.Constants;
-using Engine.Messaging;
 using Engine.Models.Chat;
 using Engine.Services.Clients.AccessorClient.Models;
 using Microsoft.Extensions.Caching.Memory;
@@ -16,7 +15,7 @@ public sealed class ChatAiService : IChatAiService
     private readonly Kernel _kernel;
     private readonly ILogger<ChatAiService> _log;
     private readonly IChatCompletionService _chat;
-    private readonly IRetryPolicyProvider _retryPolicyProvider;
+    private readonly IRetryPolicy _retryPolicy;
     private readonly IAsyncPolicy<ChatMessageContent> _kernelPolicy;
 
     public ChatAiService(
@@ -24,20 +23,20 @@ public sealed class ChatAiService : IChatAiService
         ILogger<ChatAiService> log,
         IMemoryCache cache,
         IOptions<MemoryCacheEntryOptions> cacheOptions,
-        IRetryPolicyProvider retryPolicyProvider)
+        IRetryPolicy retryPolicy)
     {
         _kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
         _log = log ?? throw new ArgumentNullException(nameof(log));
-        _retryPolicyProvider = retryPolicyProvider ?? throw new ArgumentNullException(nameof(retryPolicyProvider));
+        _retryPolicy = retryPolicy ?? throw new ArgumentNullException(nameof(retryPolicy));
         _chat = _kernel.GetRequiredService<IChatCompletionService>();
-        _kernelPolicy = _retryPolicyProvider.CreateKernelPolicy(_log);
+        _kernelPolicy = _retryPolicy.CreateKernelPolicy(_log);
     }
 
-    public async Task<AiServiceResponse> ChatHandlerAsync(ChatAiServiseRequest request, CancellationToken ct = default)
+    public async Task<ChatAiServiceResponse> ChatHandlerAsync(ChatAiServiseRequest request, CancellationToken ct = default)
     {
         _log.LogInformation("AI processing thread {ThreadId}", request.ThreadId);
 
-        var response = new AiServiceResponse
+        var response = new ChatAiServiceResponse
         {
             RequestId = request.RequestId,
             ThreadId = request.ThreadId

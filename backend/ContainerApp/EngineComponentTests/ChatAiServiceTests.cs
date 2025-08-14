@@ -1,6 +1,6 @@
 ﻿using System.Text.RegularExpressions;
-using Engine.Messaging;
 using Engine.Models.Chat;
+using Engine;
 using Engine.Services;
 using Engine.Services.Clients.AccessorClient.Models;
 using Microsoft.Extensions.Caching.Memory;
@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Polly;
+using DotQueue;
 
 namespace EngineComponentTests;
 
@@ -19,7 +20,7 @@ public class ChatAiServiceTests
     private readonly IMemoryCache _cache;
     private readonly MemoryCacheEntryOptions _cacheOptions;
     private readonly ChatAiService _aiService;
-    private sealed class FakeRetryPolicyProvider : IRetryPolicyProvider
+    private sealed class FakeRetryPolicyProvider : IRetryPolicy
     {
         private static readonly IAsyncPolicy _noOp = Policy.NoOpAsync();
         private static readonly IAsyncPolicy<ChatMessageContent> _noOpKernel =
@@ -59,7 +60,7 @@ public class ChatAiServiceTests
         {
             History = Array.Empty<ChatMessage>(),
             UserMessage = "How much is 2 + 2?",
-            Type = ChatType.Default,
+            ChatType = ChatType.Default,
             UserId = "TestUserId",
             RequestId = Guid.NewGuid().ToString("N"),
             ThreadId = Guid.NewGuid(),
@@ -87,7 +88,7 @@ public class ChatAiServiceTests
         {
             History = Array.Empty<ChatMessage>(),
             UserMessage = userMesaage,
-            Type = ChatType.Default,
+            ChatType = ChatType.Default,
             UserId = userId,
             RequestId = Guid.NewGuid().ToString("N"),
             ThreadId = threadId,
@@ -115,7 +116,7 @@ public class ChatAiServiceTests
         {
             History = history,
             UserMessage = "What number did you remember?",
-            Type = ChatType.Default,
+            ChatType = ChatType.Default,
             UserId = "TestUserId",
             RequestId = Guid.NewGuid().ToString("N"),
             ThreadId = threadId,

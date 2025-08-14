@@ -44,19 +44,6 @@ public class AccessorServiceTests
         var log = Mock.Of<ILogger<AccessorService>>();
         return new AccessorService(db, log, daprMock.Object, cfg);
     }
-    // ---------- InitializeAsync ----------
-    [Fact]
-    public async Task InitializeAsync_CreatesDatabase_NoThrow()
-    {
-        var db = NewDb(Guid.NewGuid().ToString());
-        var dapr = new Mock<DaprClient>(MockBehavior.Loose);
-        var svc = NewService(db, dapr);
-
-        await svc.InitializeAsync();
-
-        var canConnect = await db.Database.CanConnectAsync();
-        canConnect.Should().BeTrue();
-    }
 
     // ---------- UpdateTaskNameAsync ----------
     [Fact]

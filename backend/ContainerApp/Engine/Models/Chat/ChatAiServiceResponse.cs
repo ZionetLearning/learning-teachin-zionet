@@ -2,7 +2,7 @@
 
 namespace Engine.Models.Chat;
 
-public record AiServiceResponse
+public record ChatAiServiceResponse
 {
     public required string RequestId { get; init; }
     public required Guid ThreadId { get; init; }

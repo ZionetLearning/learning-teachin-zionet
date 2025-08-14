@@ -45,7 +45,7 @@ public static class AiEndpoints
         {
             History = history,
             UserMessage = request.UserMessage,
-            Type = request.ChatType,
+            ChatType = request.ChatType,
             ThreadId = request.ThreadId,
             UserId = request.UserId,
             RequestId = request.RequestId,

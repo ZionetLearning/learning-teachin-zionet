@@ -1,7 +1,7 @@
 using System.Text.Json;
-using Engine.Messaging;
 using Engine.Models;
 using Engine.Models.Chat;
+using DotQueue;
 
 namespace Engine.Helpers;
 public static class PayloadValidation
@@ -47,12 +47,12 @@ public static class PayloadValidation
         }
     }
 
-    public static void ValidateAiRequest(ChatAiServiseRequest req, ILogger logger)
+    public static void ValidateEngineChatRequest(EngineChatRequest req, ILogger logger)
     {
         if (req is null)
         {
-            logger.LogWarning("ChatAiServiseRequest cannot be null.");
-            throw new NonRetryableException("ChatAiServiseRequest cannot be null.");
+            logger.LogWarning("EngineChatRequest cannot be null.");
+            throw new NonRetryableException("EngineChatRequest cannot be null.");
         }
 
         using var _ = logger.BeginScope(new
@@ -96,12 +96,6 @@ public static class PayloadValidation
         if (string.IsNullOrWhiteSpace(req.UserMessage))
         {
             Fail(logger, "UserMessage is required.", nameof(req.UserMessage));
-
-        }
-
-        if (req.History is null)
-        {
-            Fail(logger, "History cannot be null.", nameof(req.History));
 
         }
 
