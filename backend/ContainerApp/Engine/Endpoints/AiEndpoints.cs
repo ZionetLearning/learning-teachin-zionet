@@ -1,6 +1,8 @@
-﻿using Engine.Models;
+﻿using Engine.Models.Chat;
 using Engine.Models.Speech;
 using Engine.Services;
+using Engine.Services.Clients.AccessorClient;
+using Engine.Services.Clients.AccessorClient.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Engine.Endpoints;
@@ -15,7 +17,7 @@ public static class AiEndpoints
     {
         #region HTTP POST
 
-        app.MapPost("/chat", ChatAsync).WithName("ChatSync");
+        app.MapPost("/chat", ChatProcessAsync).WithName("ChatSync");
 
         app.MapPost("/speech/synthesize", SynthesizeAsync).WithName("SynthesizeText");
 
@@ -24,37 +26,66 @@ public static class AiEndpoints
         return app;
     }
 
-    private static async Task<IResult> ChatAsync(
-      [FromBody] ChatRequestDto dto,
-      [FromServices] IChatAiService ai,
-      [FromServices] ILogger<ChatEndpoint> log,
-      CancellationToken ct)
+    private static async Task<IResult> ChatProcessAsync(
+    [FromBody] EngineChatRequest request,
+    [FromServices] IChatAiService ai,
+    [FromServices] IAccessorClient accessorClient,
+    [FromServices] ILogger<ChatEndpoint> log,
+    CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(dto.UserMessage))
+        if (string.IsNullOrWhiteSpace(request.UserMessage))
         {
             return Results.BadRequest(new { error = "userMessage is required" });
         }
 
-        var aiReq = new AiRequestModel
+        //todo: Improve explicit handling of ThreadId = null
+
+        var history = await accessorClient.GetChatHistoryAsync(request.ThreadId, ct);
+        var serviceRequest = new ChatAiServiseRequest
         {
-            Id = Guid.NewGuid().ToString("N"),
-            ThreadId = string.IsNullOrWhiteSpace(dto.ThreadId)
-                            ? Guid.NewGuid().ToString("N")
-                            : dto.ThreadId,
-            Question = dto.UserMessage,
-            ReplyToQueue = string.Empty
+            History = history,
+            UserMessage = request.UserMessage,
+            Type = request.ChatType,
+            ThreadId = request.ThreadId,
+            UserId = request.UserId,
+            RequestId = request.RequestId,
+            SentAt = request.SentAt,
+            TtlSeconds = request.TtlSeconds,
         };
 
-        var aiResp = await ai.ProcessAsync(aiReq, ct);
+        var aiResponse = await ai.ChatHandlerAsync(serviceRequest, ct);
 
-        if (aiResp.Status == "error")
+        if (aiResponse.Status == "error")
         {
-            return Results.Problem(aiResp.Error);
+            return Results.Problem(aiResponse.Error);
         }
 
-        var result = new ChatResponseDto(aiResp.Answer ?? "", aiResp.ThreadId);
-        log.LogInformation("Answered thread {Thread}", result.ThreadId);
-        return Results.Ok(result);
+        if (aiResponse.Answer == null)
+        {
+            return Results.Problem(aiResponse.Error);
+        }
+
+        var questionMessage = new ChatMessage
+        {
+            ThreadId = request.ThreadId,
+            UserId = request.UserId,
+            Role = MessageRole.User,
+            Content = request.UserMessage
+        };
+        await accessorClient.StoreMessageAsync(questionMessage, ct);
+
+        await accessorClient.StoreMessageAsync(aiResponse.Answer, ct);
+
+        var responseToManager = new EngineChatResponse
+        {
+            AssistantMessage = aiResponse.Answer.Content,
+            RequestId = request.RequestId,
+            Status = aiResponse.Status,
+            ThreadId = aiResponse.ThreadId
+        };
+
+        log.LogInformation("Answered thread {Thread}", responseToManager.ThreadId);
+        return Results.Ok(responseToManager);
     }
 
     private static async Task<IResult> SynthesizeAsync(

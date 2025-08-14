@@ -1,6 +1,7 @@
 ﻿using Engine.Constants;
 using Engine.Messaging;
-using Engine.Models;
+using Engine.Models.Chat;
+using Engine.Services.Clients.AccessorClient.Models;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
@@ -14,8 +15,6 @@ public sealed class ChatAiService : IChatAiService
 {
     private readonly Kernel _kernel;
     private readonly ILogger<ChatAiService> _log;
-    private readonly IMemoryCache _cache;
-    private readonly MemoryCacheEntryOptions _cacheOptions;
     private readonly IChatCompletionService _chat;
     private readonly IRetryPolicyProvider _retryPolicyProvider;
     private readonly IAsyncPolicy<ChatMessageContent> _kernelPolicy;
@@ -29,34 +28,36 @@ public sealed class ChatAiService : IChatAiService
     {
         _kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
         _log = log ?? throw new ArgumentNullException(nameof(log));
-        _cache = cache ?? throw new ArgumentNullException(nameof(cache));
-        _cacheOptions = cacheOptions?.Value ?? throw new ArgumentNullException(nameof(cacheOptions));
         _retryPolicyProvider = retryPolicyProvider ?? throw new ArgumentNullException(nameof(retryPolicyProvider));
         _chat = _kernel.GetRequiredService<IChatCompletionService>();
         _kernelPolicy = _retryPolicyProvider.CreateKernelPolicy(_log);
     }
 
-    public async Task<AiResponseModel> ProcessAsync(AiRequestModel request, CancellationToken ct = default)
+    public async Task<AiServiceResponse> ChatHandlerAsync(ChatAiServiseRequest request, CancellationToken ct = default)
     {
-        _log.LogInformation("AI processing request {Id}", request.Id);
+        _log.LogInformation("AI processing thread {ThreadId}", request.ThreadId);
+
+        var response = new AiServiceResponse
+        {
+            RequestId = request.RequestId,
+            ThreadId = request.ThreadId
+
+        };
 
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         if (now > request.SentAt + request.TtlSeconds)
         {
-            _log.LogWarning("Request {Id} is expired. Skipping.", request.Id);
-            return new AiResponseModel
-            {
-                Id = request.Id,
-                ThreadId = request.ThreadId,
-                Status = "expired",
-                Error = "TTL expired"
-            };
+            _log.LogWarning("Request: {RequestId} is expired Skipping.", request.RequestId);
+
+            response.Status = "expired";
+            response.Error = "TTL expired";
+
+            return response;
         }
 
         try
         {
-            var historyKey = CacheKeys.ChatHistory(request.ThreadId);
-            var history = _cache.GetOrCreate(historyKey, _ => new ChatHistory()) ?? new ChatHistory();
+            var history = BuildSkHistory(request.History);
 
             if (history.Count == 0)
             {
@@ -68,7 +69,7 @@ public sealed class ChatAiService : IChatAiService
                 history.AddSystemMessage(prompt);
             }
 
-            history.AddUserMessage(request.Question);
+            history.AddUserMessage(request.UserMessage.Trim());
 
             var settings = new OpenAIPromptExecutionSettings
             {
@@ -85,30 +86,67 @@ public sealed class ChatAiService : IChatAiService
                         cancellationToken: ct2);
                 }, ct);
 
-            var answer = result.Content ?? string.Empty;
-
-            history.AddAssistantMessage(answer);
-
-            _cache.Set(historyKey, history, _cacheOptions);
-
-            return new AiResponseModel
+            if (result?.Content == null)
             {
-                Id = request.Id,
+                response.Status = "error during answer"; //todo add enum for reason error
+                return response;
+
+            }
+
+            history.Add(result);
+            var answer = new ChatMessage
+            {
                 ThreadId = request.ThreadId,
-                Answer = answer
+                UserId = request.UserId,
+                Role = MessageRole.Assistant,
+                Content = result.Content
             };
+
+            response.Status = "ok";
+            response.Answer = answer;
+            return response;
 
         }
         catch (Exception ex)
         {
-            _log.LogError(ex, "Error while processing AI request {Id}", request.Id);
-            return new AiResponseModel
-            {
-                Id = request.Id,
-                ThreadId = request.ThreadId,
-                Status = "error",
-                Error = ex.Message
-            };
+            _log.LogError(ex, "Error while processing request: {RequestId}", request.RequestId);
+            response.Status = "error during answer";
+
+            response.Error = ex.Message;
+
+            return response;
         }
+    }
+
+    private static ChatHistory BuildSkHistory(IEnumerable<ChatMessage> db)
+    {
+        var history = new ChatHistory();
+
+        var systemPrompt = Prompts.Combine(
+            Prompts.SystemDefault,
+            Prompts.DetailedExplanation
+        );
+        history.AddSystemMessage(systemPrompt);
+
+        foreach (var m in db)
+        {
+            switch (m.Role)
+            {
+                case MessageRole.User:
+                    history.AddUserMessage(m.Content);
+                    break;
+                case MessageRole.Assistant:
+                    history.AddAssistantMessage(m.Content);
+                    break;
+                case MessageRole.System:
+                    history.AddSystemMessage(m.Content);
+                    break;
+                default:
+                    history.AddUserMessage(m.Content);
+                    break;
+            }
+        }
+
+        return history;
     }
 }
