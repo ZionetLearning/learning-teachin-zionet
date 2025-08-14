@@ -6,5 +6,9 @@ export const initializeSentry = () => {
     sendDefaultPii: false,
     integrations: [],
     release: import.meta.env.VITE_RELEASE, //tells Sentry to tag all events with that same release name so uploaded sourcemaps match our errors
+    allowUrls: [
+      /https?:\/\/teachin\.westeurope\.cloudapp\.azure\.com/,
+      /https?:\/\/[a-z0-9-]+\.1\.azurestaticapps\.net/,
+    ],
   });
 };
