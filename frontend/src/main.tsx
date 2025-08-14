@@ -2,14 +2,16 @@ import { StrictMode } from "react";
 import "./i18n";
 import { createRoot } from "react-dom/client";
 import * as Sentry from "@sentry/react";
+import { initializeSentry } from "./sentry";
 import {
   ReactQueryProvider,
   I18nTranslateProvider,
   AuthProvider,
 } from "./providers";
 import "./index.css";
-import "./sentry";
 import App from "./App.tsx";
+
+initializeSentry();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
