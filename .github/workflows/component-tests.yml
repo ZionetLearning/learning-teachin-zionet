@@ -5,7 +5,7 @@ on:
     types: [opened, synchronize, reopened]
     paths:
       - 'backend/ContainerApp/Engine/**'
-      - 'backend/ContainerApp/EngineComponentTests/**'
+      - 'backend/ContainerApp/ComponentTests/EngineComponentTests/**'
       - 'backend/ContainerApp/Directory.Build.props'
       - 'backend/ContainerApp/backend.sln'
   workflow_dispatch:
@@ -47,15 +47,15 @@ jobs:
         run: dotnet restore Engine/Engine.csproj
 
       - name: Restore Engine Component Tests
-        run: dotnet restore EngineComponentTests/EngineComponentTests.csproj
+        run: dotnet restore ComponentTests/EngineComponentTests/EngineComponentTests.csproj
 
       - name: Build (Engine + tests)
         run: |
           dotnet build Engine/Engine.csproj --no-restore -c Release
-          dotnet build EngineComponentTests/EngineComponentTests.csproj --no-restore -c Release
+          dotnet build ComponentTests/EngineComponentTests/EngineComponentTests.csproj --no-restore -c Release
 
       - name: Run only ChatAiServiceTests
         run: |
-          dotnet test EngineComponentTests/EngineComponentTests.csproj \
+          dotnet test ComponentTests/EngineComponentTests/EngineComponentTests.csproj \
             --no-build -c Release \
             --filter "FullyQualifiedName~EngineComponentTests.ChatAiServiceTests"
