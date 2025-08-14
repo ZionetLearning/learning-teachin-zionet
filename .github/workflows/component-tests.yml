@@ -67,6 +67,11 @@ jobs:
       matrix:
         service: ${{ fromJson(needs.prepare.outputs.services_json) }}
 
+    # NOTE: If a NEW service's component tests require extra env vars,
+    # add them here in 'env:' (global for the job) or on specific steps.
+    # Example (when NewService is added):
+    #   FOO__ApiKey: ${{ secrets.FOO_API_KEY }}
+    # For service-specific env, you can use a case block in steps to export vars before 'dotnet test'.
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: 1
       DOTNET_NOLOGO: 1
@@ -146,18 +151,19 @@ jobs:
           dotnet test "${{ steps.paths.outputs.test_csproj }}" \
             --no-build -c Release \
             --filter "${TFILT}" \
-            --logger 'trx;LogFileName=${{ matrix.service }}.trx'
+            --logger "trx;LogFileName=${{ matrix.service }}.trx" \
+            --logger "console;verbosity=detailed"
 
       - name: Upload test results (${{ matrix.service }})
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: TestResults-${{ matrix.service }}
-          path: |
-            backend/ContainerApp/**/${{ matrix.service }}.trx
+          path: backend/ContainerApp/**/${{ matrix.service }}.trx
           if-no-files-found: warn
 
 # === How to add another service later ===
 # 1) Keep the same folder convention or add a case in the "Compute paths" step.
-# 2) At run time, set the input Services to include it (e.g., Engine,NewService).
+# 2) If the new service needs special env vars, add them under the job-level 'env:' (or on specific steps).
+# 3) At run time, set the input 'services' to include it (e.g., Engine,NewService).
 #    No workflow changes needed if convention is kept.
