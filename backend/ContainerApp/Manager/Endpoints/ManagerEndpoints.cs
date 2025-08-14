@@ -48,7 +48,7 @@ public static class ManagerEndpoints
         app.MapPost("/api/auth/logout", LogoutAsync).WithName("Logout");
 
         app.MapGet("/api/protected", testAuth)
-        .RequireAuthorization();s
+        .RequireAuthorization();
 
         #endregion
 
