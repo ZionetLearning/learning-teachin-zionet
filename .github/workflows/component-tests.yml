@@ -32,28 +32,30 @@ jobs:
         id: parse
         shell: bash
         run: |
-          set -euo pipefail
-          # Use provided services input; default to only Engine today
-          SVC_IN="${{ github.event.inputs.services }}"
-          if [ -z "${SVC_IN}" ]; then
-            SVC_IN="Engine"
-          fi
-
-          # Normalize -> JSON array for matrix
-          SVC_IN="$(echo "${SVC_IN}" | tr -d ' ')"
-          IFS=',' read -ra ARR <<< "${SVC_IN}"
-          JSON="["
-          SEP=""
-          for s in "${ARR[@]}"; do
-            [ -n "$s" ] || continue
-            JSON="${JSON}${SEP}\"${s}\""
-            SEP=","
-          done
-          JSON="${JSON}]"
-          echo "services_json=${JSON}" >> "$GITHUB_OUTPUT"
-
-          TFILT="${{ github.event.inputs.testFilter }}"
-          echo "test_filter=${TFILT}" >> "$GITHUB_OUTPUT"
+            set -euo pipefail
+            SVC_IN="${{ github.event.inputs.services }}"
+            TFILT="${{ github.event.inputs.testFilter }}"
+        
+            [ -n "${SVC_IN}" ] || SVC_IN="Engine"
+        
+            # Normalize -> JSON array
+            SVC_IN="$(echo "${SVC_IN}" | tr -d ' ')"
+            IFS=',' read -ra ARR <<< "${SVC_IN}"
+            JSON="["
+            SEP=""
+            for s in "${ARR[@]}"; do
+              [ -n "$s" ] || continue
+              JSON="${JSON}${SEP}\"${s}\""
+              SEP=","
+            done
+            JSON="${JSON}]"
+        
+            echo "services (raw): ${SVC_IN}"
+            echo "matrix JSON   : ${JSON}"
+            echo "testFilter    : ${TFILT}"
+        
+            echo "services_json=${JSON}" >> "$GITHUB_OUTPUT"
+            echo "test_filter=${TFILT}" >> "$GITHUB_OUTPUT"
 
   test-component:
     needs: prepare
