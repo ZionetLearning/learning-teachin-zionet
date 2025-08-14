@@ -1,0 +1,83 @@
+name: Unit tests (selective)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      accessor: ${{ steps.filter.outputs.accessor }}
+      engine:   ${{ steps.filter.outputs.engine }}
+      manager:  ${{ steps.filter.outputs.manager }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - name: Detect changed areas
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          filters: |
+            accessor:
+              - 'backend/ContainerApp/Accessor/**'
+              - 'backend/ContainerApp/UnitTests/AccessorUnitTests/**'
+            engine:
+              - 'backend/ContainerApp/Engine/**'
+              - 'backend/ContainerApp/UnitTests/EngineUnitTests/**'
+            manager:
+              - 'backend/ContainerApp/Manager/**'
+              - 'backend/ContainerApp/UnitTests/ManagerUnitTests/**'
+
+  test-accessor:
+    needs: detect
+    if: ${{ needs.detect.outputs.accessor == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '9.0.x' }
+      - name: Restore (solution)
+        run: dotnet restore backend/ContainerApp/backend.sln
+      - name: Build (solution)
+        run: dotnet build backend/ContainerApp/backend.sln --no-restore -c Release
+      - name: Test – AccessorUnitTests
+        working-directory: backend/ContainerApp/UnitTests/AccessorUnitTests
+        run: dotnet test --no-build -c Release --verbosity normal
+
+  test-engine:
+    needs: detect
+    if: ${{ needs.detect.outputs.engine == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '9.0.x' }
+      - name: Restore (solution)
+        run: dotnet restore backend/ContainerApp/backend.sln
+      - name: Build (solution)
+        run: dotnet build backend/ContainerApp/backend.sln --no-restore -c Release
+      - name: Test – EngineUnitTests
+        working-directory: backend/ContainerApp/UnitTests/EngineUnitTests
+        run: dotnet test --no-build -c Release --verbosity normal
+
+  test-manager:
+    needs: detect
+    if: ${{ needs.detect.outputs.manager == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '9.0.x' }
+      - name: Restore (solution)
+        run: dotnet restore backend/ContainerApp/backend.sln
+      - name: Build (solution)
+        run: dotnet build backend/ContainerApp/backend.sln --no-restore -c Release
+      - name: Test – ManagerUnitTests
+        working-directory: backend/ContainerApp/UnitTests/ManagerUnitTests
+        run: dotnet test --no-build -c Release --verbosity normal
