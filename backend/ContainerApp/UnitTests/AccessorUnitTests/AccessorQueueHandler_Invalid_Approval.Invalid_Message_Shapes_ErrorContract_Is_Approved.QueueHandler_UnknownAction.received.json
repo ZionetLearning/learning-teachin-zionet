@@ -1,0 +1,9 @@
+﻿{
+    
+  "caseTag":  "UnknownAction",
+    
+  "exceptionType":  "Accessor.Messaging.NonRetryableException",
+    
+  "message":  "No handler for action 9999"
+
+}

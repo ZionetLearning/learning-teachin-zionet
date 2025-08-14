@@ -1,0 +1,9 @@
+﻿{
+    
+  "caseTag":  "MissingName",
+    
+  "exceptionType":  "Accessor.Messaging.NonRetryableException",
+    
+  "message":  "Task Name is required."
+
+}
