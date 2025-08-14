@@ -1,0 +1,33 @@
+{{- if .Values.manager.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: "{{ printf "%s-manager-ingress" (default .Release.Namespace .Values.namespace.name) }}"
+  namespace: "{{ .Release.Namespace }}"
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: "/$2"
+    {{- if and .Values.manager.ingress.tls.enabled .Values.manager.ingress.tls.clusterIssuer }}
+    cert-manager.io/cluster-issuer: "{{ .Values.manager.ingress.tls.clusterIssuer }}"
+    {{- end }}
+spec:
+  ingressClassName: "nginx"
+  {{- if .Values.manager.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - "{{ .Values.manager.ingress.host }}"
+      secretName: "{{ .Values.manager.ingress.tls.secretName }}"
+  {{- end }}
+  rules:
+    - host: "{{ .Values.manager.ingress.host }}"
+      http:
+        paths:
+          - path: "{{ printf "%s/%s(/|$)(.*)" .Values.manager.ingress.basePath .Release.Namespace }}"
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: "{{ .Values.manager.name }}"
+                port:
+                  number: {{ .Values.manager.ports.service }}
+{{- end }}

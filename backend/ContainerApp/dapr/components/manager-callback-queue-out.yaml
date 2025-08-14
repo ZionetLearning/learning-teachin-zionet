@@ -15,4 +15,4 @@ spec:
     - name: disableEntityManagement
       value: "true"
 scopes:
-  - engine
+  - engine-${ENVIRONMENT_NAME}

@@ -14,7 +14,7 @@ on:
 
 jobs:
   build-and-push-images:
-    uses: ./.github/workflows/build-and-push-images.yml
+    uses: ./.github/workflows/build-and-push-images.yaml
     permissions:
       id-token: write
       contents: read

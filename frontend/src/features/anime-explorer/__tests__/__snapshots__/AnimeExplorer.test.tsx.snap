@@ -1,0 +1,70 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`<AnimeExplorer /> > matches snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="root-0-2-1"
+  >
+    <div
+      class="header-0-2-12"
+    >
+      <div
+        class="headerInner-0-2-13"
+      >
+        <div
+          class="title-0-2-14"
+        >
+          pages.animeExplorer.exploreAnime
+        </div>
+        <div
+          class="controls-0-2-15"
+        >
+          <input
+            aria-label="Search anime"
+            class="searchInput-0-2-16"
+            name="search"
+            placeholder="pages.animeExplorer.searchByTitle"
+            type="text"
+            value=""
+          />
+          <button
+            aria-label="Clear search"
+            class="clearButton-0-2-17"
+            style="visibility: hidden;"
+          >
+            pages.animeExplorer.clear
+          </button>
+        </div>
+      </div>
+    </div>
+    <div
+      class="listWrap-0-2-2"
+    >
+      <div
+        class="listInner-0-2-3"
+      >
+        <div
+          class="grid-0-2-4"
+        />
+        <p
+          aria-atomic="true"
+          aria-live="polite"
+          class="loadingMore-0-2-7 loadingMore-d0-0-2-10"
+        >
+          pages.animeExplorer.loadingMore
+        </p>
+        <span
+          class="srOnly-0-2-9"
+          role="status"
+        />
+      </div>
+    </div>
+    <button
+      aria-label="Back to top"
+      class="backToTop-0-2-8 backToTop-d1-0-2-11"
+    >
+      ↑ pages.animeExplorer.top
+    </button>
+  </div>
+</DocumentFragment>
+`;
