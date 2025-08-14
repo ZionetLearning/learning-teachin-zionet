@@ -15,6 +15,7 @@ export default defineConfig({
       project: "teach-in",
       authToken: process.env.SENTRY_AUTH_TOKEN,
       release: { name: process.env.RELEASE || "local" },
+      debug: true,
     }),
   ],
   resolve: {
