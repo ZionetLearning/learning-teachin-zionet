@@ -12,6 +12,7 @@
     <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.20.1" />
     <PackageReference Include="Dapr.Actors.AspNetCore" Version="1.15.4" />
     <PackageReference Include="Dapr.Client" Version="1.15.4" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.7" />
 	<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.7" />
 	<PackageReference Include="Microsoft.SemanticKernel" Version="1.61.0" />
 	<PackageReference Include="Scalar.AspNetCore" Version="2.6.5" />
@@ -20,6 +21,7 @@
 	<PackageReference Include="Dapr.AspNetCore">
 		<Version>1.15.4</Version>
 	</PackageReference>
+	<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.0.2" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(Configuration)' == 'Debug'">

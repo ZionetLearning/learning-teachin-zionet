@@ -1,12 +1,19 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.Text;
 using Azure.Messaging.ServiceBus;
 using Manager.Constants;
 using Manager.Endpoints;
 using Manager.Hubs;
 using Manager.Messaging;
 using Manager.Models;
+using Manager.Models.Auth;
 using Manager.Services;
 using Manager.Services.Clients;
 using Scalar.AspNetCore;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
+//using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +26,34 @@ builder.Configuration
     .AddEnvironmentVariables();
 
 builder.Services.Configure<AiSettings>(builder.Configuration.GetSection("Ai"));
+
+builder.Services.Configure<JwtSettings>(
+    builder.Configuration.GetSection("Jwt"));
+
+var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>()!;
+var key = Encoding.UTF8.GetBytes(jwtSettings.Secret);
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = jwtSettings.Issuer,
+
+            ValidateAudience = true,
+            ValidAudience = jwtSettings.Audience,
+
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero,
+
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+
+            RoleClaimType = ClaimTypes.Role,
+            NameClaimType = ClaimTypes.Name
+        };
+    });
 
 // ---- Services ----
 builder.Services.AddControllers();
@@ -42,6 +77,7 @@ builder.Services.AddScoped<IManagerService, ManagerService>();
 builder.Services.AddScoped<IAiGatewayService, AiGatewayService>();
 builder.Services.AddScoped<IAccessorClient, AccessorClient>();
 builder.Services.AddScoped<IEngineClient, EngineClient>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
@@ -71,6 +107,10 @@ builder.Services.AddOpenApi(
 var app = builder.Build();
 app.UseCors("AllowAll");
 app.UseCloudEvents();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapControllers();
 app.MapSubscribeHandler();
 app.MapManagerEndpoints();
