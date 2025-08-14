@@ -20,7 +20,7 @@ on:
         required: true
         type: string
       environment_name:
-        description: "environment_name passthrough"
+        description: "environment_name namespace/prefix (lowercase letters & digits). Empty -> dev"
         required: true
         type: string
       list_services_names:
