@@ -41,14 +41,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
-        with: { dotnet-version: '9.0.x' }
-      - name: Restore (solution)
-        run: dotnet restore backend/ContainerApp/backend.sln
-      - name: Build (solution)
-        run: dotnet build backend/ContainerApp/backend.sln --no-restore -c Release
+        with:
+          dotnet-version: '9.0.x'
+      - name: Restore (AccessorUnitTests)
+        run: dotnet restore backend/ContainerApp/UnitTests/AccessorUnitTests/AccessorUnitTests.csproj
+      - name: Build (AccessorUnitTests + deps)
+        run: dotnet build backend/ContainerApp/UnitTests/AccessorUnitTests/AccessorUnitTests.csproj -c Release --no-restore
       - name: Test – AccessorUnitTests
-        working-directory: backend/ContainerApp/UnitTests/AccessorUnitTests
-        run: dotnet test --no-build -c Release --verbosity normal
+        run: dotnet test backend/ContainerApp/UnitTests/AccessorUnitTests/AccessorUnitTests.csproj -c Release --no-build --verbosity normal
 
   test-engine:
     needs: detect
@@ -57,14 +57,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
-        with: { dotnet-version: '9.0.x' }
-      - name: Restore (solution)
-        run: dotnet restore backend/ContainerApp/backend.sln
-      - name: Build (solution)
-        run: dotnet build backend/ContainerApp/backend.sln --no-restore -c Release
+        with:
+          dotnet-version: '9.0.x'
+      - name: Restore (EngineUnitTests)
+        run: dotnet restore backend/ContainerApp/UnitTests/EngineUnitTests/EngineUnitTests.csproj
+      - name: Build (EngineUnitTests + deps)
+        run: dotnet build backend/ContainerApp/UnitTests/EngineUnitTests/EngineUnitTests.csproj -c Release --no-restore
       - name: Test – EngineUnitTests
-        working-directory: backend/ContainerApp/UnitTests/EngineUnitTests
-        run: dotnet test --no-build -c Release --verbosity normal
+        run: dotnet test backend/ContainerApp/UnitTests/EngineUnitTests/EngineUnitTests.csproj -c Release --no-build --verbosity normal
 
   test-manager:
     needs: detect
@@ -73,11 +73,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
-        with: { dotnet-version: '9.0.x' }
-      - name: Restore (solution)
-        run: dotnet restore backend/ContainerApp/backend.sln
-      - name: Build (solution)
-        run: dotnet build backend/ContainerApp/backend.sln --no-restore -c Release
+        with:
+          dotnet-version: '9.0.x'
+      - name: Restore (ManagerUnitTests)
+        run: dotnet restore backend/ContainerApp/UnitTests/ManagerUnitTests/ManagerUnitTests.csproj
+      - name: Build (ManagerUnitTests + deps)
+        run: dotnet build backend/ContainerApp/UnitTests/ManagerUnitTests/ManagerUnitTests.csproj -c Release --no-restore
       - name: Test – ManagerUnitTests
-        working-directory: backend/ContainerApp/UnitTests/ManagerUnitTests
-        run: dotnet test --no-build -c Release --verbosity normal
+        run: dotnet test backend/ContainerApp/UnitTests/ManagerUnitTests/ManagerUnitTests.csproj -c Release --no-build --verbosity normal

@@ -47,7 +47,7 @@ public static class AccessorEndpoints
                 var task = await accessorService.GetTaskByIdAsync(id);
                 if (task != null)
                 {
-               //     logger.LogInformation("Successfully retrieved task.");
+                    logger.LogInformation("Successfully retrieved task.");
                     return Results.Ok(task);
                 }
 
