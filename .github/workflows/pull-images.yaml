@@ -82,7 +82,7 @@ jobs:
                 --install \
                 --namespace "$NAMESPACE" \
                 --set ${SERVICE}.image.name=${{ secrets.DOCKER_USERNAME }}/$SERVICE \
-                --set ${SERVICE}.image.tag="$HASH" \
+                --set ${SERVICE}.image.tag="$HASH"
             done
           else
             SERVICE="$SELECTED"
