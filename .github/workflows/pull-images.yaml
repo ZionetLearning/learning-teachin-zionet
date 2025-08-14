@@ -46,7 +46,6 @@ jobs:
       - name: Log in to Azure Container Registry
         run: az acr login --name $ACR_NAME
 
-
       - name: Set up variables
         run: |
           NAMESPACE_NAME="${{ inputs.namespace_name || github.event.inputs.namespace_name }}"
@@ -68,6 +67,7 @@ jobs:
 
       - name: Validate namespace
         run: |
+          NAMESPACE="$TARGET_NAMESPACE"
           if ! kubectl get namespace "$NAMESPACE" > /dev/null 2>&1; then
               echo "Error: namespace $NAMESPACE does not exist"
               exit 1
@@ -78,7 +78,7 @@ jobs:
           # Split hashes into array
           SERVICES=("manager" "accessor" "engine")
           IFS=',' read -ra HASHES <<< "${{ github.event.inputs.image_hashes }}"
-          NAMESPACE="${{ github.event.inputs.namespace_name }}"
+          NAMESPACE="$TARGET_NAMESPACE"
           SELECTED="${{ github.event.inputs.service }}"
 
           if [[ "$SELECTED" == "all" ]]; then
