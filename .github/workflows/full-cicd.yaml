@@ -23,7 +23,7 @@ on:
           type: string
         list_services_names:
           description: 'Optional comma-separated list of services to build (e.g., accessor,manager). Leave empty for all.'
-          required: true
+          required: false
           type: string
 jobs:
   build-and-push-images:
