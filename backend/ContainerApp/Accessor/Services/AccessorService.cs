@@ -44,6 +44,12 @@ public class AccessorService : IAccessorService
             await _dbContext.Database.MigrateAsync();
             _logger.LogInformation("Database migration completed.");
         }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to initialize PostgreSQL during startup.");
+            throw;
+        }
+
         finally
         {
             await using var unlock = conn.CreateCommand();
