@@ -1,9 +1,0 @@
-{
-  "profiles": {
-    "TriggerCheck": {
-      "commandName": "Project",
-      "commandLineArgs": "--port 7240",
-      "launchBrowser": false
-    }
-  }
-}
