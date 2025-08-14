@@ -81,6 +81,7 @@ jobs:
               helm upgrade $SERVICE ./devops/kubernetes/charts \
                 --install \
                 --namespace "$NAMESPACE" \
+                --set namespace.name="$NAMESPACE" 
                 --set ${SERVICE}.image.name=${{ secrets.DOCKER_USERNAME }}/$SERVICE \
                 --set ${SERVICE}.image.tag="$HASH"
             done
@@ -92,6 +93,7 @@ jobs:
             helm upgrade $SERVICE ./devops/kubernetes/charts \
               --install \
               --namespace "$NAMESPACE" \
+              --set namespace.name="$NAMESPACE" 
               --set ${SERVICE}.image.name=${{ secrets.DOCKER_USERNAME }}/$SERVICE \
               --set ${SERVICE}.image.tag="$HASH" \
               --set ${SERVICE}.image.altTag="$NAMESPACE"
