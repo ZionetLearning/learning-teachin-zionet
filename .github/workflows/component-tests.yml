@@ -17,17 +17,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test-components:
+  # -------------------- Engine Component Tests --------------------
+  engine-component-tests:
+    name: Engine Component Tests
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: backend/ContainerApp
-
     env:
       AzureOpenAI__Endpoint: "https://france-teachin-open-ai.openai.azure.com/"
       AzureOpenAI__ApiKey: ${{ secrets.AZURE_OPENAI_API_KEY }}
       AzureOpenAI__DeploymentName: "gpt-4.1-mini"
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -45,40 +45,59 @@ jobs:
           restore-keys: |
             nuget-${{ runner.os }}-
 
-      # ---------- Restore ----------
-      - name: Restore Engine
-        run: dotnet restore Engine/Engine.csproj
+      - name: Restore (Engine + Tests)
+        run: |
+          dotnet restore Engine/Engine.csproj
+          dotnet restore ComponentTests/EngineComponentTests/EngineComponentTests.csproj
 
-      - name: Restore Accessor
-        run: dotnet restore Accessor/Accessor.csproj
+      - name: Build (Engine + Tests)
+        run: |
+          dotnet build Engine/Engine.csproj --no-restore -c Release
+          dotnet build ComponentTests/EngineComponentTests/EngineComponentTests.csproj --no-restore -c Release
 
-      - name: Restore Engine Component Tests
-        run: dotnet restore ComponentTests/EngineComponentTests/EngineComponentTests.csproj
-
-      - name: Restore Accessor Component Tests
-        run: dotnet restore ComponentTests/AccessorComponentTests/AccessorComponentTests.csproj
-
-      # ---------- Build ----------
-      - name: Build (Engine)
-        run: dotnet build Engine/Engine.csproj --no-restore -c Release
-
-      - name: Build (Accessor)
-        run: dotnet build Accessor/Accessor.csproj --no-restore -c Release
-
-      - name: Build (Engine Component Tests)
-        run: dotnet build ComponentTests/EngineComponentTests/EngineComponentTests.csproj --no-restore -c Release
-
-      - name: Build (Accessor Component Tests)
-        run: dotnet build ComponentTests/AccessorComponentTests/AccessorComponentTests.csproj --no-restore -c Release
-
-      # ---------- Test ----------
-      - name: Run Engine component tests (filtered)
+      # If you still want to filter to a specific test class, keep the filter line.
+      # Otherwise, remove the --filter line to run all tests in the project.
+      - name: Test (Engine component)
         run: |
           dotnet test ComponentTests/EngineComponentTests/EngineComponentTests.csproj \
             --no-build -c Release \
             --filter "FullyQualifiedName~EngineComponentTests.ChatAiServiceTests"
 
-      - name: Run Accessor component tests
+  # -------------------- Accessor Component Tests --------------------
+  accessor-component-tests:
+    name: Accessor Component Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/ContainerApp
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Cache NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      - name: Restore (Accessor + Tests)
+        run: |
+          dotnet restore Accessor/Accessor.csproj
+          dotnet restore ComponentTests/AccessorComponentTests/AccessorComponentTests.csproj
+
+      - name: Build (Accessor + Tests)
+        run: |
+          dotnet build Accessor/Accessor.csproj --no-restore -c Release
+          dotnet build ComponentTests/AccessorComponentTests/AccessorComponentTests.csproj --no-restore -c Release
+
+      - name: Test (Accessor component)
         run: |
           dotnet test ComponentTests/AccessorComponentTests/AccessorComponentTests.csproj \
             --no-build -c Release
