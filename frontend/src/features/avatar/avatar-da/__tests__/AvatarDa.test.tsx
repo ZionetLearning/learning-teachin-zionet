@@ -7,9 +7,6 @@ import { fireEvent, render, screen } from "@testing-library/react";
 
 import { mockSpeak } from "./__mocks__";
 
-vi.stubEnv("VITE_AZURE_SPEECH_KEY", "mock-speech-key");
-vi.stubEnv("VITE_AZURE_REGION", "mock-region");
-
 import { AvatarDa } from "..";
 
 describe("<AvatarDa />", () => {
