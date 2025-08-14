@@ -152,7 +152,8 @@ jobs:
             --no-build -c Release \
             --filter "${TFILT}" \
             --logger "trx;LogFileName=${{ matrix.service }}.trx" \
-            --logger "console;verbosity=detailed;consoleLoggerParameters=ansi"
+            --logger "console;verbosity=detailed;consoleLoggerParameters=ansi" \
+            --logger "GitHubActions;summary=always;report-warnings=false"
 
       - name: Upload test results (${{ matrix.service }})
         if: always()
