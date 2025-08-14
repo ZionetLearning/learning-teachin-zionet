@@ -8,7 +8,7 @@ import { useStyles } from "./style";
 export const AvatarSh = () => {
   const { t } = useTranslation();
   const classes = useStyles();
-  const { currentVisemeSrc, speak } = useAvatarSpeech(lipsArray);
+  const { currentVisemeSrc, speak } = useAvatarSpeech({ lipsArray });
   const [text, setText] = useState("");
 
   return (

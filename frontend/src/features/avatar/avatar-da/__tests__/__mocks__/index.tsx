@@ -7,11 +7,8 @@ const IGNORE = [
   /The tag <.*> is unrecognized in this browser/i,
   /React does not recognize the .* prop on a DOM element/i,
 ];
-
 const origError = console.error;
 const origWarn = console.warn;
-
-// suppress specific warnings that are not relevant to tests
 console.error = (...args: unknown[]) => {
   const msg = String(args[0] ?? "");
   if (IGNORE.some((re) => re.test(msg))) return;
@@ -23,44 +20,7 @@ console.warn = (...args: unknown[]) => {
   origWarn(...args);
 };
 
-type Viewport = { width: number; height: number };
-type ThreeState = { viewport: Viewport };
-type UseThreeSelector<T> = (s: ThreeState) => T;
-
-type AnimationAction = {
-  setLoop: (mode: number, repetitions: number) => AnimationAction;
-  fadeIn: (t: number) => AnimationAction;
-  play: () => AnimationAction;
-  crossFadeTo: (
-    other: AnimationAction,
-    duration: number,
-    warp: boolean,
-  ) => void;
-  reset: () => AnimationAction;
-};
-
-type UseAnimationsReturn = {
-  actions: Record<"Idle" | "Talking", AnimationAction>;
-};
-
-type SpeakerDestination = {
-  onAudioStart?: () => void;
-  onAudioEnd?: () => void;
-};
-type AudioCfg = { _dest?: SpeakerDestination };
-
-type VisemeEvent = { audioOffset: number; visemeId: number };
-type SpeechSynth = {
-  visemeReceived?: (sender: unknown, e: VisemeEvent) => void;
-  speakTextAsync: (
-    text: string,
-    onSuccess: () => void,
-    onError?: (err: unknown) => void,
-  ) => void;
-  close: () => void;
-};
-
-/* ========================= i18n ========================= */
+/* ========= i18n ========= */
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
     t: (k: string) =>
@@ -72,7 +32,7 @@ vi.mock("react-i18next", () => ({
   }),
 }));
 
-/* ==================== feature assets ==================== */
+/* ===== avatar assets ===== */
 vi.mock("@features/avatar/avatar-da/assets", () => ({
   backgroundJpg: "mock-bg.jpg",
   IdleFbx: "mock-idle.fbx",
@@ -80,19 +40,21 @@ vi.mock("@features/avatar/avatar-da/assets", () => ({
   modelGlb: "mock-model.glb",
 }));
 
-/* ====================== three-stdlib ===================== */
+/* ===== three-stdlib ===== */
 vi.mock("three-stdlib", () => ({
   SkeletonUtils: { clone: (x: unknown) => x },
 }));
 
-/* =================== @react-three/fiber ================== */
+/* === @react-three/fiber === */
+type Viewport = { width: number; height: number };
+type ThreeState = { viewport: Viewport };
+type UseThreeSelector<T> = (s: ThreeState) => T;
+
 vi.mock("@react-three/fiber", () => {
   const useThree = <T,>(sel: UseThreeSelector<T>): T =>
     sel({ viewport: { width: 10, height: 5 } });
-
   const useFrame = vi.fn<(cb: () => void) => void>(() => {});
-
-  const useGraph = vi.fn<(obj: unknown) => unknown>(() => {
+  const useGraph = vi.fn(() => {
     const names = [
       "viseme_sil",
       "viseme_PP",
@@ -162,9 +124,9 @@ vi.mock("@react-three/fiber", () => {
   return { Canvas, useThree, useFrame, useGraph };
 });
 
-/* =================== @react-three/drei =================== */
+/* ==== @react-three/drei ==== */
 vi.mock("@react-three/drei", () => {
-  const mkAction = (): AnimationAction => ({
+  const mkAction = () => ({
     setLoop: vi.fn().mockReturnThis(),
     fadeIn: vi.fn().mockReturnThis(),
     play: vi.fn().mockReturnThis(),
@@ -172,88 +134,48 @@ vi.mock("@react-three/drei", () => {
     reset: vi.fn().mockReturnThis(),
   });
 
-  type UseGLTFFn = ((src: string) => { scene: object }) & {
-    preload: (src: string) => void;
-  };
-  const useGLTF: UseGLTFFn = Object.assign(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    vi.fn((_: string) => ({ scene: {} })),
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    { preload: vi.fn((_: string) => undefined) },
+  const useGLTF: ((path: string) => { scene: object }) & {
+    preload: (path: string) => void;
+  } = Object.assign(
+    vi.fn(() => ({ scene: {} })),
+    {
+      preload: vi.fn(() => undefined),
+    },
   );
+  const useFBX = vi.fn(() => ({ animations: [{}, {}] as unknown[] }));
+  const useAnimations = vi.fn(() => ({
+    actions: { Idle: mkAction(), Talking: mkAction() },
+  }));
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const useFBX = vi.fn((_: string) => ({ animations: [{}, {}] as unknown[] }));
-
-  const useAnimations = vi.fn(
-    () =>
-      ({
-        actions: { Idle: mkAction(), Talking: mkAction() },
-      }) as UseAnimationsReturn,
-  );
-
-  const Leva = () => null;
-  const Environment = () => <div data-testid="environment" />;
   const Html = ({ children }: { children: ReactNode }) => (
     <div data-testid="html">{children}</div>
   );
+  const Environment = () => <div data-testid="environment" />;
   const useTexture = vi.fn(() => ({}));
 
-  return {
-    Leva,
-    Environment,
-    Html,
-    useTexture,
-    useGLTF,
-    useFBX,
-    useAnimations,
-  };
+  return { Html, Environment, useTexture, useGLTF, useFBX, useAnimations };
 });
 
-/* ========== azure cognitive services speech sdk ========== */
-vi.mock("microsoft-cognitiveservices-speech-sdk", () => {
-  const SpeechConfig = {
-    fromSubscription: vi.fn(
-      (): {
-        setProperty: (k: string, v: string) => void;
-        speechSynthesisVoiceName: string;
-      } => ({
-        setProperty: vi.fn(),
-        speechSynthesisVoiceName: "",
-      }),
-    ),
-  };
+/* ========= leva ========= */
+vi.mock("leva", () => ({
+  useControls: vi.fn(() => ({
+    smoothMorphTarget: true,
+    morphTargetSmoothing: 0.5,
+  })),
+  Leva: () => <div data-testid="leva" />,
+}));
 
-  const AudioConfig = {
-    fromSpeakerOutput: vi.fn(
-      (dest: SpeakerDestination): AudioCfg => ({ _dest: dest }),
-    ),
-  };
-
-  const SpeakerAudioDestination = vi.fn(function (this: SpeakerDestination) {
-    this.onAudioStart = undefined;
-    this.onAudioEnd = undefined;
-  });
-
-  const SpeechSynthesizer = vi.fn(function (
-    this: SpeechSynth,
-    _cfg: unknown,
-    audioCfg?: AudioCfg,
-  ) {
-    const dest = audioCfg?._dest;
-    this.visemeReceived = undefined;
-    this.speakTextAsync = (_txt: string, ok: () => void) => {
-      dest?.onAudioStart?.();
-      this.visemeReceived?.(null, { audioOffset: 10_000_000, visemeId: 10 });
-      ok();
-    };
-    this.close = () => {};
-  });
-
-  return {
-    SpeechConfig,
-    AudioConfig,
-    SpeakerAudioDestination,
-    SpeechSynthesizer,
-  };
-});
+/* ====== hook under test: we only need speak ====== */
+export const mockSpeak = vi.fn();
+vi.mock("@/hooks/useAvatarSpeech", () => ({
+  useAvatarSpeech: vi.fn(() => ({
+    currentViseme: 0,
+    speak: mockSpeak,
+    isPlaying: false,
+    isLoading: false,
+    stop: vi.fn(),
+    toggleMute: vi.fn(),
+    isMuted: false,
+    error: null,
+  })),
+}));
