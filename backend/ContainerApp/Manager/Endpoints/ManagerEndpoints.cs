@@ -298,7 +298,7 @@ public static class ManagerEndpoints
         {
             try
             {
-                logger.LogInformation("YOu secceude!!");
+                logger.LogInformation("You are authenticated!");
                 return Task.FromResult(Results.Ok(new { message = "You are authenticated!" }));
             }
             catch (Exception ex)

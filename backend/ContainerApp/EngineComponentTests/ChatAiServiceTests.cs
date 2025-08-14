@@ -1,5 +1,5 @@
 ﻿using System.Text.RegularExpressions;
-using Engine.Messaging;
+using Engine;
 using Engine.Models;
 using Engine.Services;
 using Microsoft.Extensions.Caching.Memory;
@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Polly;
+using DotQueue;
 
 namespace EngineComponentTests;
 
@@ -18,7 +19,7 @@ public class ChatAiServiceTests
     private readonly IMemoryCache _cache;
     private readonly MemoryCacheEntryOptions _cacheOptions;
     private readonly ChatAiService _aiService;
-    private sealed class FakeRetryPolicyProvider : IRetryPolicyProvider
+    private sealed class FakeRetryPolicyProvider : IRetryPolicy
     {
         private static readonly IAsyncPolicy _noOp = Policy.NoOpAsync();
         private static readonly IAsyncPolicy<ChatMessageContent> _noOpKernel =
