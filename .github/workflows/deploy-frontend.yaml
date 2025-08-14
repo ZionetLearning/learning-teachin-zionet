@@ -102,6 +102,12 @@ jobs:
         working-directory: ${{ env.FE_DIR }}
         run: npm ci
 
+      # Create release name with date + short SHA for Sentry
+      - name: Create release name for Sentry (UTC + short SHA)
+        run: |
+          ts=$(date -u "+Release-%d-%m-%Y_%H-%M")
+          echo "RELEASE_NAME=${ts}-${GITHUB_SHA::7}" >> $GITHUB_ENV
+
       - name: Build Application
         working-directory: ${{ env.FE_DIR }}
         env:
@@ -113,6 +119,8 @@ jobs:
           VITE_AZURE_OPENAI_ENDPOINT: "https://france-teachin-open-ai.openai.azure.com/"
           VITE_APPINSIGHTS_CONNECTION_STRING: ${{ inputs.app_insights_connection_string || env.APPINSIGHTS_CONNECTION_STRING }}
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          RELEASE: ${{ env.RELEASE_NAME }}
         run: npm run build
 
       - name: Optimize Build Size

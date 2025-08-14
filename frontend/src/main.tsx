@@ -1,6 +1,8 @@
 import { StrictMode } from "react";
 import "./i18n";
 import { createRoot } from "react-dom/client";
+import * as Sentry from "@sentry/react";
+import { initializeSentry } from "./sentry";
 import {
   ReactQueryProvider,
   I18nTranslateProvider,
@@ -8,19 +10,17 @@ import {
 } from "./providers";
 import "./index.css";
 import App from "./App.tsx";
-import { AppInsightsErrorBoundary } from "./components";
-import { appInsights } from "./appInsights";
 
-appInsights.loadAppInsights();
+initializeSentry();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <I18nTranslateProvider>
       <ReactQueryProvider>
         <AuthProvider>
-          <AppInsightsErrorBoundary boundaryName="FrontendRootApp">
+          <Sentry.ErrorBoundary fallback={<div>Something went wrong</div>}>
             <App />
-          </AppInsightsErrorBoundary>
+          </Sentry.ErrorBoundary>{" "}
         </AuthProvider>
       </ReactQueryProvider>
     </I18nTranslateProvider>
