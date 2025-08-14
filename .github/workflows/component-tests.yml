@@ -139,8 +139,7 @@ jobs:
 
       - name: Verify logger availability (${{ matrix.service }})
         run: |
-          dotnet test "${{ steps.paths.outputs.test_csproj }}" \
-            --no-build -c Release --list-loggers
+            dotnet test --no-build -c Release "${{ steps.paths.outputs.test_csproj }}" -- --list-loggers
 
       - name: Run tests (${{ matrix.service }})
         shell: bash
