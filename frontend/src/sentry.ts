@@ -15,8 +15,8 @@ export const initializeSentry = () => {
     replaysOnErrorSampleRate: 1.0, // record all error sessions (1.0 => 100%)
     integrations: [
       Sentry.replayIntegration({
-        maskAllText: true,
-        blockAllMedia: true,
+        maskAllText: false,
+        blockAllMedia: false,
       }),
       Sentry.thirdPartyErrorFilterIntegration({
         filterKeys: ["teach-in-app"],
