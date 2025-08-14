@@ -152,7 +152,7 @@ jobs:
             --no-build -c Release \
             --filter "${TFILT}" \
             --logger "trx;LogFileName=${{ matrix.service }}.trx" \
-            --logger "console;verbosity=detailed"
+            --logger "console;verbosity=detailed;consoleLoggerParameters=ansi"
 
       - name: Upload test results (${{ matrix.service }})
         if: always()
