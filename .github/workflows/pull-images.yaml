@@ -62,14 +62,21 @@ jobs:
 
       - name: Deploy selected images
         run: |
+          # Split hashes into array
           SERVICES=("accessor" "manager" "engine")
           IFS=',' read -ra HASHES <<< "${{ github.event.inputs.image_hashes }}"
           NAMESPACE="${{ github.event.inputs.environment_name }}"
           SELECTED="${{ github.event.inputs.service }}"
 
           if [[ "$SELECTED" == "all" ]]; then
-            for i in "${!SERVICES[@]}"; do
-              SERVICE="${SERVICES[$i]}"
+            SELECTED_SERVICES=("accessor" "manager" "engine")
+          else
+              IFS=',' read -ra SELECTED_SERVICES <<< "${{ github.event.inputs.service }}"
+          fi
+
+          # Update each selected service
+          for i in "${!SELECTED_SERVICES[@]}"; do
+              SERVICE="${SELECTED_SERVICES[$i]}"
               HASH="${HASHES[$i]// /}"  # Remove spaces
 
               if [ -z "$HASH" ]; then
@@ -79,13 +86,9 @@ jobs:
 
               echo "Updating $SERVICE to $HASH in namespace $NAMESPACE"
               kubectl -n "$NAMESPACE" set image deployment/$SERVICE \
-                $SERVICE=${{ secrets.DOCKER_USERNAME }}/$SERVICE:$HASH
-            done
-          else
-            SERVICE="$SELECTED"
-            HASH="${HASHES[0]// /}"
+                  $SERVICE=${{ secrets.DOCKER_USERNAME }}/$SERVICE:$HASH
 
-            echo "Updating $SERVICE to $HASH in namespace $NAMESPACE"
-            kubectl -n "$NAMESPACE" set image deployment/$SERVICE \
-              $SERVICE=${{ secrets.DOCKER_USERNAME }}/$SERVICE:$HASH
-          fi
+              # Restart pods to ensure rollout
+              kubectl -n "$NAMESPACE" rollout restart deployment/$SERVICE
+              kubectl -n "$NAMESPACE" rollout status deployment/$SERVICE
+          done
