@@ -3,16 +3,8 @@ name: Manual Deploy Existing Images
 on:
   workflow_dispatch:
     inputs:
-      environment:
-        description: 'Select environment'
-        required: true
-        default: 'Development'
-        type: choice
-        options:
-          - Development
-          - Production
       environment_name:
-        description: 'Namespace/environment name (e.g., dev, prod)'
+        description: 'Namespace/environment name (e.g., dev, dev2)'
         required: true
         type: string
       service:
@@ -29,7 +21,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment }} # This is the crucial line you need to add or update
+    environment: Development # This is the crucial line you need to add or update
     permissions:
       id-token: write
       contents: read
@@ -91,7 +83,6 @@ jobs:
                 --namespace "$NAMESPACE" \
                 --set ${SERVICE}.image.name=${{ secrets.DOCKER_USERNAME }}/$SERVICE \
                 --set ${SERVICE}.image.tag="$HASH" \
-                --set ${SERVICE}.image.altTag="$NAMESPACE"
             done
           else
             SERVICE="$SELECTED"
