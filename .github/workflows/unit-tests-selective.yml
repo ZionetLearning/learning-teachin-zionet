@@ -3,6 +3,8 @@ name: Unit tests (selective)
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+    paths:
+      - 'backend/**'
 
 permissions:
   contents: read
