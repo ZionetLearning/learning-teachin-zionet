@@ -53,7 +53,7 @@ public static class AiEndpoints
         }
 
         var result = new ChatResponseDto(aiResp.Answer ?? "", aiResp.ThreadId);
-        log.LogInformation("A nswered thread {Thread}", result.ThreadId);
+        log.LogInformation("Answered thread {Thread}", result.ThreadId);
         return Results.Ok(result);
     }
 
