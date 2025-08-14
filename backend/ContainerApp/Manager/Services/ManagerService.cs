@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
 using Manager.Models;
 using Manager.Services.Clients;
+using Common.Callbacks;
+using Common.Models;
 
 namespace Manager.Services;
 
@@ -10,18 +12,21 @@ public class ManagerService : IManagerService
     private readonly ILogger<ManagerService> _logger;
     private readonly IAccessorClient _accessorClient;
     private readonly IEngineClient _engineClient;
+    private readonly ICallbackContextManager _callbackManager;
     private readonly IMapper _mapper;
 
     public ManagerService(IConfiguration configuration,
         ILogger<ManagerService> logger,
         IAccessorClient accessorClient,
         IEngineClient engineClient,
+        ICallbackContextManager callbackManager,
         IMapper mapper)
     {
         _configuration = configuration;
         _logger = logger;
         _accessorClient = accessorClient;
         _engineClient = engineClient;
+        _callbackManager = callbackManager;
         _mapper = mapper;
     }
 
@@ -81,14 +86,26 @@ public class ManagerService : IManagerService
         try
         {
             _logger.LogDebug("Processing task {TaskId} with name '{TaskName}'", task.Id, task.Name);
-            var result = await _engineClient.ProcessTaskAsync(task);
+
+            // Create callback context
+            var callbackContext = new CallbackContext(
+                typeof(ManagerService).FullName!,   // TargetTypeName
+                nameof(OnTaskProcessedAsync),       // MethodName
+                "manager-callback-queue"            // QueueName
+            );
+
+            var metadata = _callbackManager.ToHeaders(callbackContext);
+
+            // Send to Engine or Accessor with callback headers
+            var result = await _engineClient.ProcessTaskAsync(task, metadata);
+
             if (result.success)
             {
-                _logger.LogDebug("Task {TaskId} successfully processed", task.Id);
+                _logger.LogDebug("Task {TaskId} successfully sent", task.Id);
             }
             else
             {
-                _logger.LogDebug("Task {TaskId} processing failed: {Message}", task.Id, result.message);
+                _logger.LogDebug("Task {TaskId} sending failed: {Message}", task.Id, result.message);
             }
 
             return result;
@@ -98,6 +115,13 @@ public class ManagerService : IManagerService
             _logger.LogError(ex, "Error occurred while processing task {TaskId}", task.Id);
             return (false, "Failed to send to Engine");
         }
+    }
+
+    // This will be called automatically by CallbackDispatcher
+    public Task OnTaskProcessedAsync(TaskResult result)
+    {
+        _logger.LogInformation("[CALLBACK] Task {TaskId} finished with status: {Status}", result.Id, result.Status);
+        return Task.CompletedTask;
     }
 
     public async Task<(bool success, string message)> ProcessTaskLongAsync(TaskModel task)

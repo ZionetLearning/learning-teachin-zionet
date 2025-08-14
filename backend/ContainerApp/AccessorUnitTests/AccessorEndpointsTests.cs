@@ -61,9 +61,16 @@ public class AccessorEndpointsTests
     {
         // Arrange
         var task = new TaskModel { Id = 42, Name = "UnitTest Task" };
+        var context = new DefaultHttpContext();
+        var request = context.Request; // fake HttpRequest
 
         // Act
-        var result = await AccessorEndpoints.CreateTaskAsync(task, _mockService.Object, _mockLogger.Object, CancellationToken.None);
+        var result = await AccessorEndpoints.CreateTaskAsync(
+            task,
+            request,
+            _mockService.Object,
+            _mockLogger.Object,
+            CancellationToken.None);
 
         // Assert
         var okResult = Assert.IsAssignableFrom<IValueHttpResult>(result);

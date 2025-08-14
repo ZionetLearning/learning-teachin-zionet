@@ -3,6 +3,8 @@ using Accessor.DB;
 using Accessor.Models;
 using Dapr.Client;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.ObjectModel;
+using Common.Models;
 
 namespace Accessor.Services;
 public class AccessorService : IAccessorService
@@ -92,7 +94,7 @@ public class AccessorService : IAccessorService
         }
     }
 
-    public async Task CreateTaskAsync(TaskModel task)
+    public async Task CreateTaskAsync(TaskModel task, IDictionary<string, string>? callbackHeaders = null)
     {
         _logger.LogInformation("Inside:{Method}", nameof(CreateTaskAsync));
 
@@ -184,6 +186,23 @@ public class AccessorService : IAccessorService
                     metadata: new Dictionary<string, string> { { "ttlInSeconds", _ttl.ToString() } });
 
                 _logger.LogInformation("Cached task {TaskId} with TTL {TTL}s", task.Id, _ttl);
+
+                // --- Send callback if requested
+                if (callbackHeaders != null &&
+                    callbackHeaders.TryGetValue("x-callback-queue", out var callbackQueue) &&
+                    !string.IsNullOrWhiteSpace(callbackQueue))
+                {
+                    var result = new TaskResult(task.Id, "Completed");
+
+                    await _daprClient.InvokeBindingAsync(
+                        $"{callbackQueue}-out",
+                        "create",
+                        result,
+                        new ReadOnlyDictionary<string, string>(callbackHeaders) // so Manager knows which method to call
+                    );
+
+                    _logger.LogInformation("Sent TaskResult for Task {Id} to callback queue {Queue}", task.Id, callbackQueue);
+                }
             }
             catch (Exception ex)
             {

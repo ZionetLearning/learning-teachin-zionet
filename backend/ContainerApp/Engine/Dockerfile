@@ -5,10 +5,15 @@ EXPOSE 5002
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
-COPY *.csproj ./
-RUN dotnet restore
+COPY Common/Common.csproj Common/
+COPY Engine/Engine.csproj Engine/
 
-COPY . ./
+RUN dotnet restore Engine/Engine.csproj
+
+COPY Common/ Common/
+COPY Engine/ Engine/
+
+WORKDIR /src/Engine
 RUN dotnet publish -c Release -o /app/publish
 
 FROM base AS final

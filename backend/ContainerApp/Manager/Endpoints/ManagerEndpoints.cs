@@ -2,6 +2,8 @@
 using Manager.Models.ModelValidation;
 using Manager.Services;
 using Microsoft.AspNetCore.Mvc;
+using Common.Callbacks;
+using System.Text.Json;
 
 namespace Manager.Endpoints;
 
@@ -33,6 +35,25 @@ public static class ManagerEndpoints
         #region HTTP DELETE
 
         app.MapDelete("/task/{id}", DeleteTaskAsync).WithName("DeleteTask");
+
+        #endregion
+
+        #region CALLBACK ENDPOINT
+
+        app.MapPost("/manager-callback-queue", async (
+            HttpRequest request,
+            JsonElement payload,
+            CallbackDispatcher dispatcher,
+            ILogger<Program> logger) =>
+        {
+            logger.LogInformation(
+                "Received callback request with headers: {Headers}",
+                string.Join(", ", request.Headers.Select(h => $"{h.Key}={h.Value}")));
+            var headers = request.Headers.ToDictionary(h => h.Key, h => h.Value.ToString());
+            await dispatcher.DispatchAsync(payload, headers);
+            return Results.Ok();
+        })
+        .WithName("ManagerCallback");
 
         #endregion
 

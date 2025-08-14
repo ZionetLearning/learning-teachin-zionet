@@ -3,6 +3,8 @@ using Dapr.Client;
 using Engine.Messaging;
 using Engine.Models;
 using Polly;
+using System.Text;
+using System.Text.Json;
 
 namespace Engine.Services;
 
@@ -26,10 +28,11 @@ public class EngineService : IEngineService
         _httpRetryPolicy = _retryPolicyProvider.CreateHttpPolicy(_logger);
     }
 
-    public async Task ProcessTaskAsync(TaskModel task, CancellationToken ct)
+    public async Task ProcessTaskAsync(TaskModel task, IDictionary<string, string>? callbackHeaders, CancellationToken ct)
     {
         _logger.LogInformation("Inside {Method}", nameof(ProcessTaskAsync));
         ct.ThrowIfCancellationRequested();
+
         if (task is null)
         {
             _logger.LogWarning("Attempted to process a null task");
@@ -37,15 +40,31 @@ public class EngineService : IEngineService
         }
 
         _logger.LogInformation("Logged task: {Id} - {Name}", task.Id, task.Name);
+
         try
         {
-            await _daprClient.InvokeMethodAsync(
+            // Create the request (no payload yet)
+            var request = _daprClient.CreateInvokeMethodRequest(
                 HttpMethod.Post,
                 "accessor",
-                "task",
-                task,
-                ct
+                "task"
             );
+
+            // Serialize the task into JSON
+            var json = JsonSerializer.Serialize(task);
+            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            // Add headers if provided
+            if (callbackHeaders != null)
+            {
+                foreach (var header in callbackHeaders)
+                {
+                    request.Headers.TryAddWithoutValidation(header.Key, header.Value);
+                }
+            }
+
+            // Send request with cancellation
+            await _daprClient.InvokeMethodAsync(request, ct);
 
             _logger.LogInformation("Task {Id} forwarded to the Accessor service", task.Id);
         }

@@ -65,6 +65,7 @@ public static class AccessorEndpoints
 
     public static async Task<IResult> CreateTaskAsync(
         [FromBody] TaskModel task,
+        HttpRequest request,
         [FromServices] IAccessorService accessorService,
         [FromServices] ILogger<AccessorService> logger,
         CancellationToken ct)
@@ -73,7 +74,12 @@ public static class AccessorEndpoints
         {
             try
             {
-                await accessorService.CreateTaskAsync(task);
+                var callbackHeaders = new Dictionary<string, string>
+                {
+                    { "x-callback-method", request.Headers["x-callback-method"].ToString() },
+                    { "x-callback-queue", request.Headers["x-callback-queue"].ToString() }
+                };
+                await accessorService.CreateTaskAsync(task, callbackHeaders);
                 logger.LogInformation("Task saved successfully.");
                 return Results.Ok($"Task {task.Id} Saved");
             }

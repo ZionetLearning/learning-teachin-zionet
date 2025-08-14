@@ -53,7 +53,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
             PayloadValidation.ValidateTask(payload, _logger);
 
             _logger.LogDebug("Processing task {Id}", payload.Id);
-            await _engine.ProcessTaskAsync(payload, cancellationToken);
+            await _engine.ProcessTaskAsync(payload, null, cancellationToken);
             _logger.LogInformation("Task {Id} processed", payload.Id);
         }
         catch (NonRetryableException ex)
@@ -102,7 +102,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
             _logger.LogInformation("Starting long task handler for Task {Id}", payload.Id);
 
             await Task.Delay(TimeSpan.FromSeconds(80), cancellationToken);
-            await _engine.ProcessTaskAsync(payload, cancellationToken);
+            await _engine.ProcessTaskAsync(payload, null, cancellationToken);
             _logger.LogInformation("Task {Id} processed", payload.Id);
 
         }

@@ -142,7 +142,8 @@ services:
   # ------------------------ Manager Service ---------------------------
   manager:
     build:
-      context: ./Manager
+      context: .
+      dockerfile: Manager/Dockerfile
     container_name: manager
     ports:
       - "5001:5001"
@@ -208,7 +209,8 @@ services:
   # ------------------------ Engine Service ---------------------------
   engine:
     build:
-      context: ./Engine
+      context: .
+      dockerfile: Engine/Dockerfile
     container_name: engine
     ports:
       - "5002"
@@ -252,7 +254,8 @@ services:
   # ------------------------ Accessor Service ---------------------------
   accessor:
     build:
-      context: ./Accessor
+      context: .
+      dockerfile: Accessor/Dockerfile
     container_name: accessor
     ports:
       - "5003:5003"

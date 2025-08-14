@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using System.Collections.ObjectModel;
 using Dapr.Client;
 using Manager.Constants;
 using Manager.Models;
@@ -17,13 +18,9 @@ public class EngineClient : IEngineClient
         _daprClient = daprClient;
     }
 
-    public async Task<(bool success, string message)> ProcessTaskAsync(TaskModel task)
+    public async Task<(bool success, string message)> ProcessTaskAsync(TaskModel task, IDictionary<string, string>? metadata = null)
     {
-        _logger.LogInformation(
-            "Inside: {Method} in {Class}",
-            nameof(ProcessTaskAsync),
-            nameof(EngineClient)
-        );
+        _logger.LogInformation("Inside: {Method} in {Class}", nameof(ProcessTaskAsync), nameof(EngineClient));
 
         try
         {
@@ -33,19 +30,33 @@ public class EngineClient : IEngineClient
                 ActionName = MessageAction.CreateTask,
                 Payload = payload
             };
-            await _daprClient.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message);
 
-            _logger.LogDebug(
-                "Task {TaskId} sent to Engine via binding '{Binding}'",
-                task.Id,
-                QueueNames.EngineQueue
-            );
+            // Pass metadata if provided
+            if (metadata is not null && metadata.Count > 0)
+            {
+                await _daprClient.InvokeBindingAsync(
+                    $"{QueueNames.EngineQueue}-out",
+                    "create",
+                    message,
+                    new ReadOnlyDictionary<string, string>(metadata)
+                );
+            }
+            else
+            {
+                await _daprClient.InvokeBindingAsync(
+                    $"{QueueNames.EngineQueue}-out",
+                    "create",
+                    message
+                );
+            }
+
+            _logger.LogDebug("Task {TaskId} sent to Engine via binding '{Binding}'", task.Id, QueueNames.EngineQueue);
             return (true, "sent to engine");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to send task {TaskId} to Engine", task.Id);
-            throw;
+            return (false, ex.Message);
         }
     }
 
@@ -56,6 +67,7 @@ public class EngineClient : IEngineClient
             nameof(ProcessTaskLongAsync),
             nameof(EngineClient)
         );
+
         try
         {
             var payload = JsonSerializer.SerializeToElement(task);
@@ -64,6 +76,7 @@ public class EngineClient : IEngineClient
                 ActionName = MessageAction.TestLongTask,
                 Payload = payload
             };
+
             await _daprClient.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message);
 
             _logger.LogDebug(
@@ -71,6 +84,7 @@ public class EngineClient : IEngineClient
                 task.Id,
                 QueueNames.EngineQueue
             );
+
             return (true, "sent to engine");
         }
         catch (Exception ex)
@@ -88,7 +102,8 @@ public class EngineClient : IEngineClient
             appId: AppIds.Engine,
             methodName: "chat",
             data: dto,
-            cancellationToken: ct);
+            cancellationToken: ct
+        );
     }
 
     public async Task<SpeechEngineResponse?> SynthesizeAsync(SpeechRequest request, CancellationToken cancellationToken = default)
@@ -101,7 +116,8 @@ public class EngineClient : IEngineClient
                 appId: AppIds.Engine,
                 methodName: "speech/synthesize",
                 data: request,
-                cancellationToken: cancellationToken);
+                cancellationToken: cancellationToken
+            );
 
             return result;
         }
