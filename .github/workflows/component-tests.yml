@@ -137,6 +137,11 @@ jobs:
           dotnet build "${{ steps.paths.outputs.engine_csproj }}" --no-restore -c Release
           dotnet build "${{ steps.paths.outputs.test_csproj }}" --no-restore -c Release
 
+      - name: Verify logger availability (${{ matrix.service }})
+        run: |
+          dotnet test "${{ steps.paths.outputs.test_csproj }}" \
+            --no-build -c Release --list-loggers
+
       - name: Run tests (${{ matrix.service }})
         shell: bash
         run: |
@@ -152,7 +157,7 @@ jobs:
             --no-build -c Release \
             --filter "${TFILT}" \
             --logger "trx;LogFileName=${{ matrix.service }}.trx" \
-            --logger "console;verbosity=detailed;consoleLoggerParameters=ansi" \
+            --logger "console;verbosity=detailed" \
             --logger "GitHubActions;summary=always;report-warnings=false"
 
       - name: Upload test results (${{ matrix.service }})
