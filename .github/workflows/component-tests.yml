@@ -4,15 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       services:
-        description: "Select service to test"
+        description: "Comma-separated services to test (e.g., Engine,NewService)"
         required: true
-        type: choice
-        options:
-          - Engine
-          # When adding a new service, just add another line here:
-          # - NewService
+        default: "Engine"
       testFilter:
-        description: "Optional dotnet test --filter"
+        description: "Optional dotnet test --filter e.g., FullyQualifiedName~EngineComponentTests.ChatAiServiceTests)"
         required: false
         default: ""
 
