@@ -15,6 +15,7 @@ export default defineConfig({
       project: "teach-in",
       authToken: process.env.SENTRY_AUTH_TOKEN,
       release: { name: process.env.RELEASE || "local" },
+      applicationKey: "teach-in-app", // for thirdPartyErrorFilterIntegration
       debug: true,
     }),
   ],

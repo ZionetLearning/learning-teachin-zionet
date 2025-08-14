@@ -1,14 +1,27 @@
 import * as Sentry from "@sentry/react";
 
 export const initializeSentry = () => {
+  const allowedOrigins = [
+    /https?:\/\/teachin\.westeurope\.cloudapp\.azure\.com/,
+    /https?:\/\/[a-z0-9-]+\.1\.azurestaticapps\.net/,
+  ];
+
   Sentry.init({
     dsn: import.meta.env.VITE_SENTRY_DSN,
     sendDefaultPii: false,
-    integrations: [],
     release: import.meta.env.VITE_RELEASE, //tells Sentry to tag all events with that same release name so uploaded sourcemaps match our errors
-    allowUrls: [
-      /https?:\/\/teachin\.westeurope\.cloudapp\.azure\.com/,
-      /https?:\/\/[a-z0-9-]+\.1\.azurestaticapps\.net/,
+    allowUrls: allowedOrigins,
+    replaysSessionSampleRate: 0, // to not record any normal sessions (without errors)
+    replaysOnErrorSampleRate: 1.0, // record all error sessions (1.0 => 100%)
+    integrations: [
+      Sentry.replayIntegration({
+        maskAllText: true,
+        blockAllMedia: true,
+      }),
+      Sentry.thirdPartyErrorFilterIntegration({
+        filterKeys: ["teach-in-app"],
+        behaviour: "drop-error-if-contains-third-party-frames", //for example chrome extensions
+      }),
     ],
   });
 };
