@@ -77,11 +77,13 @@ jobs:
         id: imgtag
         shell: bash
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_call" ]]; then
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_call" ]]; then
             echo "tags=${{ secrets.DOCKER_USERNAME }}/${{ matrix.service.name }}:latest" >> "$GITHUB_OUTPUT"
           else
             echo "tags=${{ secrets.DOCKER_USERNAME }}/${{ matrix.service.name }}:${{ steps.vars.outputs.short_sha }}" >> "$GITHUB_OUTPUT"
             echo "tags=${{ secrets.DOCKER_USERNAME }}/${{ matrix.service.name }}:${{ steps.vars.outputs.env_tag }}" >> "$GITHUB_OUTPUT"
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
 
       - name: Build and push ${{ matrix.service.name }} image
         if: ${{ steps.filter.outputs.filter == '' || steps.filter.outputs.filter == 'all' || contains(format(',{0},', steps.filter.outputs.filter), format(',{0},', matrix.service.name)) }}
