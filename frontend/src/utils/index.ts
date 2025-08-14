@@ -1,1 +1,1 @@
-export * from './base64ToBlob';
+export * from "./base64ToBlob";
