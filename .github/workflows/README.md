@@ -16,7 +16,7 @@ This document provides an overview of all GitHub Actions workflows in this repos
 ## 🚀 Main Deployment Workflows
 
 ### AKS - Full CICD
-**File:** `aks-full-cicd.yml`
+**File:** `aks-full-cicd.yaml`
 
 **Purpose:** Complete CI/CD pipeline that builds, deploys infrastructure, and deploys applications.
 
@@ -31,7 +31,7 @@ This document provides an overview of all GitHub Actions workflows in this repos
 ---
 
 ### AKS - Update Images
-**File:** `update-images.yml`
+**File:** `update-images.yaml`
 
 **Purpose:** Fast deployment for application code changes only.
 
@@ -55,7 +55,7 @@ This document provides an overview of all GitHub Actions workflows in this repos
 ## 🕒 Automated Scheduling Workflows
 
 ### AKS - Scheduled Start/Stop
-**File:** `aks-schedule.yml`
+**File:** `aks-schedule.yaml`
 
 **Purpose:** Automatically start/stop AKS cluster daily to save costs.
 
@@ -75,7 +75,7 @@ This document provides an overview of all GitHub Actions workflows in this repos
 ## 🔧 Manual Control Workflows
 
 ### AKS - Toggle Cluster
-**File:** `toggle-aks.yml`
+**File:** `toggle-aks.yaml`
 
 **Purpose:** Manually start or stop AKS cluster with safety confirmation.
 

@@ -2,14 +2,14 @@ apiVersion: dapr.io/v1alpha1
 kind: Component
 metadata:
   name: engine-queue-in
-  namespace: dev
+  namespace: ${ENVIRONMENT_NAME}
 spec:
   type: bindings.azure.servicebusqueues
   version: v1
   metadata:
     - name: connectionString
       secretKeyRef:
-        name: azure-service-bus-secret
+        name: azure-service-bus-secret-${ENVIRONMENT_NAME}
         key: AzureServiceBusConnectionString
     - name: queueName
       value: engine-queue
@@ -18,4 +18,4 @@ spec:
     - name: disableEntityManagement
       value: "true"
 scopes:
-  - engine
+  - accessor-${ENVIRONMENT_NAME}

@@ -24,6 +24,9 @@ export const useSendChatMessage = () => {
 			chatType = 'default',
 		}) => {
 			const response = await axios.post<ChatResponse>(
+				//local server endpoint URL:
+				// "http://localhost:5280/chat",
+				//cloud server endpoint URL:
 				'https://teachin.westeurope.cloudapp.azure.com/api/dev/chat',
 				{
 					userMessage,

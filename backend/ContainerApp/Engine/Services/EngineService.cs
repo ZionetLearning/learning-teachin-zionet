@@ -1,6 +1,5 @@
 using AutoMapper;
 using Dapr.Client;
-using Engine.Messaging;
 using Engine.Models;
 using Polly;
 
@@ -11,19 +10,19 @@ public class EngineService : IEngineService
     private readonly DaprClient _daprClient;
     private readonly ILogger<EngineService> _logger;
     private readonly IMapper _mapper;
-    private readonly IRetryPolicyProvider _retryPolicyProvider;
+    private readonly IRetryPolicy _retryPolicy;
     private readonly IAsyncPolicy<HttpResponseMessage> _httpRetryPolicy;
 
     public EngineService(DaprClient daprClient,
         ILogger<EngineService> logger,
         IMapper mapper,
-        IRetryPolicyProvider retryPolicyProvider)
+        IRetryPolicy retryPolicy)
     {
         _daprClient = daprClient;
         _logger = logger;
         _mapper = mapper;
-        _retryPolicyProvider = retryPolicyProvider;
-        _httpRetryPolicy = _retryPolicyProvider.CreateHttpPolicy(_logger);
+        _retryPolicy = retryPolicy;
+        _httpRetryPolicy = _retryPolicy.CreateHttpPolicy(_logger);
     }
 
     public async Task ProcessTaskAsync(TaskModel task, CancellationToken ct)

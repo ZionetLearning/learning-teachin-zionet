@@ -1,7 +1,6 @@
 using Azure.Messaging.ServiceBus;
 using Engine.Constants;
 using Engine.Endpoints;
-using Engine.Messaging;
 using Engine.Models;
 using Engine.Models.Speech;
 using Engine.Plugins;
@@ -9,7 +8,8 @@ using Engine.Services;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
-
+using DotQueue;
+using Engine;
 var builder = WebApplication.CreateBuilder(args);
 
 var env = builder.Environment;
@@ -26,7 +26,7 @@ builder.Services.AddControllers().AddDapr();
 builder.Services.AddScoped<IEngineService, EngineService>();
 builder.Services.AddScoped<IChatAiService, ChatAiService>();
 builder.Services.AddScoped<IAiReplyPublisher, AiReplyPublisher>();
-builder.Services.AddSingleton<IRetryPolicyProvider, RetryPolicyProvider>();
+builder.Services.AddSingleton<IRetryPolicy, RetryPolicy>();
 builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
 builder.Services.AddSingleton<ISemanticKernelPlugin, TimePlugin>();
 builder.Services.AddSingleton<ISpeechSynthesisService, AzureSpeechSynthesisService>();
