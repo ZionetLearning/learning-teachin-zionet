@@ -73,7 +73,7 @@ jobs:
           if [[ "${GITHUB_EVENT_NAME}" == "workflow_call" ]]; then
             echo "tags=${IMAGE_NAME}:latest" >> "$GITHUB_OUTPUT"
           else
-            SHORT_SHA="${GITHUB_SHA:0:7}"
+            SHORT_SHA="${GITHUB_SHA::7}"
             ENV_TAG="${{ inputs.environment_name }}"
             {
               echo "tags<<EOF"
