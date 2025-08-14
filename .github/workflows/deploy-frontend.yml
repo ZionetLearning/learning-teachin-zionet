@@ -52,6 +52,7 @@ jobs:
           VITE_AZURE_OPENAI_ENDPOINT: "https://france-teachin-open-ai.openai.azure.com/"
           VITE_APPINSIGHTS_CONNECTION_STRING: ${{ inputs.app_insights_connection_string || secrets.APPINSIGHTS_CONNECTION_STRING }}
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
       # - name: Optimize Build Size
       #   working-directory: ${{ env.FE_DIR }}
