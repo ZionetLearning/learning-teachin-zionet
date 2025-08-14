@@ -85,16 +85,16 @@ jobs:
               fi
 
               echo "Updating $SERVICE to $HASH in namespace $NAMESPACE"
-              # Set new image
+              # Scale down to 0
+              kubectl -n "$NAMESPACE" scale deployment/$SERVICE --replicas=0
+
+              # Set the new image
               kubectl -n "$NAMESPACE" set image deployment/$SERVICE \
                   $SERVICE=${{ secrets.DOCKER_USERNAME }}/$SERVICE:$HASH
 
-              # Delete existing pods manually to free resources
-              kubectl -n "$NAMESPACE" delete pod -l app=$SERVICE --wait=true --timeout=120s
+              # Scale up to 1
+              kubectl -n "$NAMESPACE" scale deployment/$SERVICE --replicas=1
 
-              # Optional: wait a few seconds to let new pod start
-              sleep 5
-
-              # Wait until deployment is ready
-              kubectl -n "$NAMESPACE" rollout status deployment/$SERVICE --timeout=180s
+              # Wait for rollout to finish
+              kubectl -n "$NAMESPACE" rollout status deployment/$SERVICE
           done
