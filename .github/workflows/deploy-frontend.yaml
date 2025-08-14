@@ -4,7 +4,6 @@ run-name: >
     inputs.environment_name || github.event.inputs.environment_name || 
     'custom'
   }} | GitHub Environment: ${{ inputs.environment || github.event.inputs.environment }}
-
 on:
   pull_request:
     branches:
