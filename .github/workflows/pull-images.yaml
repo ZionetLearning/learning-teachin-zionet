@@ -78,23 +78,14 @@ jobs:
               fi
 
               echo "Updating $SERVICE to $HASH in namespace $NAMESPACE"
-              helm upgrade $SERVICE ./devops/kubernetes/charts \
-                --install \
-                --namespace "$NAMESPACE" \
-                --set namespace.name="$NAMESPACE" 
-                --set ${SERVICE}.image.name=${{ secrets.DOCKER_USERNAME }}/$SERVICE \
-                --set ${SERVICE}.image.tag="$HASH"
+              kubectl -n "$NAMESPACE" set image deployment/$SERVICE \
+                $SERVICE=${{ secrets.DOCKER_USERNAME }}/$SERVICE:$HASH
             done
           else
             SERVICE="$SELECTED"
             HASH="${HASHES[0]// /}"
 
             echo "Updating $SERVICE to $HASH in namespace $NAMESPACE"
-            helm upgrade $SERVICE ./devops/kubernetes/charts \
-              --install \
-              --namespace "$NAMESPACE" \
-              --set namespace.name="$NAMESPACE" 
-              --set ${SERVICE}.image.name=${{ secrets.DOCKER_USERNAME }}/$SERVICE \
-              --set ${SERVICE}.image.tag="$HASH" \
-              --set ${SERVICE}.image.altTag="$NAMESPACE"
+            kubectl -n "$NAMESPACE" set image deployment/$SERVICE \
+              $SERVICE=${{ secrets.DOCKER_USERNAME }}/$SERVICE:$HASH
           fi
