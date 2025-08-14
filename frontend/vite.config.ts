@@ -14,12 +14,16 @@ export default defineConfig({
       org: "zionet",
       project: "teach-in",
       authToken: process.env.SENTRY_AUTH_TOKEN,
+      release: { name: process.env.RELEASE },
     }),
   ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
     },
+  },
+  define: {
+    "import.meta.env.VITE_RELEASE": JSON.stringify(process.env.RELEASE || ""), //take the RELEASE value from the build environment and inject it into frontend code
   },
   test: {
     globals: true,

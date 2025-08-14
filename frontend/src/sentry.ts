@@ -5,5 +5,6 @@ export const initializeSentry = () => {
     dsn: import.meta.env.VITE_SENTRY_DSN,
     sendDefaultPii: false,
     integrations: [],
+    release: import.meta.env.VITE_RELEASE, //tells Sentry to tag all events with that same release name so uploaded sourcemaps match our errors
   });
 };
