@@ -202,7 +202,7 @@ export const SidebarMenu = () => {
           icon={<LiveTvIcon />}
           active={isActive("/anime-explorer")}
         >
-          Anime Explorer
+          {t("sidebar.anime")}
         </MenuItem>
       </Menu>
       <Menu

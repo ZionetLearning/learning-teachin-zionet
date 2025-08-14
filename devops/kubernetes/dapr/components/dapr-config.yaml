@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: dapr-config
-  namespace: dev
+  namespace: ${ENVIRONMENT_NAME}
 data:
   config.yaml: |
     apiVersion: dapr.io/v1alpha1

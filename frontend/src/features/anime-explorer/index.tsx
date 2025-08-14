@@ -4,14 +4,12 @@ import { useTranslation } from "react-i18next";
 
 import { useGetAnimeSearch } from "./api";
 import { AnimeCard, Header } from "./components";
-import { useDebounceValue } from "./utils";
 
 import { useStyles } from "./style";
 
 export const AnimeExplorer = () => {
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
-  const debouncedSearch = useDebounceValue(search, 600);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -23,7 +21,7 @@ export const AnimeExplorer = () => {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useGetAnimeSearch({ search: debouncedSearch });
+  } = useGetAnimeSearch({ search });
 
   const classes = useStyles({ isFetchingNextPage, showBackToTop });
 
@@ -44,7 +42,7 @@ export const AnimeExplorer = () => {
     function scrollToTopOnSearch() {
       listRef.current?.scrollTo({ top: 0, behavior: "smooth" });
     },
-    [debouncedSearch],
+    [search],
   );
 
   const handleListScroll = () => {

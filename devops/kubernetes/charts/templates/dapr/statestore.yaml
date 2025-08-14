@@ -1,0 +1,37 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: {{ .Values.dapr.stateStore.name | default "statestore" | quote }}
+  namespace: {{ include "app.namespace" . | quote }}
+  annotations:
+    dapr.io/component-init-timeout: "120s"
+spec:
+  type: state.redis
+  version: v1
+  metadata:
+    - name: redisHost
+      secretKeyRef:
+        name: '{{ default "redis-connection" .Values.dapr.stateStore.redis.secretName }}'
+        key: '{{ default "redis-hostport" .Values.dapr.stateStore.redis.hostKey }}'
+    - name: redisPassword
+      secretKeyRef:
+        name: '{{ default "redis-connection" .Values.dapr.stateStore.redis.secretName }}'
+        key: '{{ default "redis-password" .Values.dapr.stateStore.redis.passwordKey }}'
+    - name: enableTLS
+      value: '{{ default "true" .Values.dapr.stateStore.redis.enableTLS }}'
+    - name: dialTimeout
+      value: '{{ default "30s" .Values.dapr.stateStore.redis.options.dialTimeout }}'
+    - name: readTimeout
+      value: '{{ default "30s" .Values.dapr.stateStore.redis.options.readTimeout }}'
+    - name: writeTimeout
+      value: '{{ default "30s" .Values.dapr.stateStore.redis.options.writeTimeout }}'
+    - name: poolTimeout
+      value: '{{ default "30s" .Values.dapr.stateStore.redis.options.poolTimeout }}'
+    - name: idleTimeout
+      value: '{{ default "300s" .Values.dapr.stateStore.redis.options.idleTimeout }}'
+    - name: maxConnAge
+      value: '{{ default "30m" .Values.dapr.stateStore.redis.options.maxConnAge }}'
+scopes:
+  - {{ include "app.appIdFor" (list $ .Values.accessor.name) | quote }}
+  - {{ include "app.appIdFor" (list $ .Values.manager.name)  | quote }}
+  - {{ include "app.appIdFor" (list $ .Values.engine.name)   | quote }}
