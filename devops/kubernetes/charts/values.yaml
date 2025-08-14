@@ -39,14 +39,6 @@ manager:
     appPort: 5001
   env:
     ASPNETCORE_URLS: "http://+:5001"
-  ingress:
-    enabled: false
-    host: ""
-    basePath: ""
-    tls:
-      enabled: false
-      clusterIssuer: ""
-      secretName: ""
   secrets:
     serviceBus:
       name: azure-service-bus-secret

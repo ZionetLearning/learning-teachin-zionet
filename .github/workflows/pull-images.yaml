@@ -3,8 +3,8 @@ name: Manual Deploy Existing Images
 on:
   workflow_dispatch:
     inputs:
-      environment_name:
-        description: 'Namespace/environment name (e.g., dev, dev2)'
+      namespace_name:
+        description: 'Namespace name (e.g., dev, dev2)'
         required: true
         type: string
       service:
@@ -12,7 +12,7 @@ on:
         required: true
         default: 'all'
         type: choice
-        options: [all, accessor, manager, engine]
+        options: [all, manager, accessor, engine]
       image_hashes:
         description: 'Comma-separated short hashes (e.g., abc1234,def5678,ghi9012 for all)'
         required: true
@@ -59,13 +59,9 @@ jobs:
             echo "RESOLVED_TARGET=dev" >> $GITHUB_ENV
           fi
 
-          echo "K8S_DIR=devops/kubernetes/" >> $GITHUB_ENV
-          echo "CHART_DIR=devops/kubernetes/charts" >> $GITHUB_ENV
-
           # Shared AKS
           echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
           echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
-          echo "MC_AKS_RG=MC_dev-zionet-learning-2025_aks-cluster-dev_westeurope" >> $GITHUB_ENV
 
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
@@ -73,13 +69,13 @@ jobs:
       - name: Deploy selected images
         run: |
           # Split hashes into array
-          SERVICES=("accessor" "manager" "engine")
+          SERVICES=("manager" "accessor" "engine")
           IFS=',' read -ra HASHES <<< "${{ github.event.inputs.image_hashes }}"
           NAMESPACE="${{ github.event.inputs.environment_name }}"
           SELECTED="${{ github.event.inputs.service }}"
 
           if [[ "$SELECTED" == "all" ]]; then
-            SELECTED_SERVICES=("accessor" "manager" "engine")
+            SELECTED_SERVICES=("manager" "accessor" "engine")
           else
               IFS=',' read -ra SELECTED_SERVICES <<< "${{ github.event.inputs.service }}"
           fi
