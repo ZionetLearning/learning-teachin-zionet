@@ -6,16 +6,21 @@ import { base64ToBlob } from '@/utils';
 interface useAvatarSpeechOptions {
 	lipsArray?: string[];
 	volume?: number;
+	onAudioStart?: () => void;
+	onAudioEnd?: () => void;
 }
 
-export const useAvatarSpeech = (options: useAvatarSpeechOptions) => {
-	const { lipsArray = [], volume = 1 } = options;
+export const useAvatarSpeech = ({
+	lipsArray = [],
+	volume = 1,
+	onAudioStart,
+	onAudioEnd,
+}: useAvatarSpeechOptions) => {
 	const audioRef = useRef<HTMLAudioElement | null>(null);
 	const timeoutsRef = useRef<NodeJS.Timeout[]>([]);
 	const [currentViseme, setCurrentViseme] = useState<number>(0);
 	const [isPlaying, setIsPlaying] = useState<boolean>(false);
 	const [isMuted, setIsMuted] = useState<boolean>(false);
-	const onAudioStartRef = useRef<(() => void) | null>(null);
 
 	const {
 		mutateAsync: synthesizeSpeech,
@@ -46,7 +51,8 @@ export const useAvatarSpeech = (options: useAvatarSpeechOptions) => {
 		clearTimeouts();
 		setCurrentViseme(0);
 		setIsPlaying(false);
-	}, [clearTimeouts]);
+		onAudioEnd?.();
+	}, [clearTimeouts, onAudioEnd]);
 
 	const toggleMute = useCallback(() => {
 		setIsMuted((prev) => {
@@ -85,7 +91,7 @@ export const useAvatarSpeech = (options: useAvatarSpeechOptions) => {
 				audioRef.current = audio;
 
 				audio.oncanplaythrough = () => {
-					onAudioStartRef.current?.();
+					onAudioStart?.();
 					setIsPlaying(true);
 				};
 
@@ -110,6 +116,7 @@ export const useAvatarSpeech = (options: useAvatarSpeechOptions) => {
 					URL.revokeObjectURL(audioUrl);
 					setCurrentViseme(0);
 					setIsPlaying(false);
+					onAudioEnd?.();
 				};
 
 				audio.onerror = (err) => {
@@ -117,6 +124,7 @@ export const useAvatarSpeech = (options: useAvatarSpeechOptions) => {
 					URL.revokeObjectURL(audioUrl);
 					setCurrentViseme(0);
 					setIsPlaying(false);
+					onAudioEnd?.();
 				};
 
 				await audio.play();
@@ -124,9 +132,19 @@ export const useAvatarSpeech = (options: useAvatarSpeechOptions) => {
 				console.error('Speech synthesis error:', error);
 				setCurrentViseme(0);
 				setIsPlaying(false);
+				onAudioEnd?.();
 			}
 		},
-		[synthesizeSpeech, clearTimeouts, isPlaying, stop, volume, isMuted]
+		[
+			synthesizeSpeech,
+			clearTimeouts,
+			isPlaying,
+			stop,
+			volume,
+			isMuted,
+			onAudioStart,
+			onAudioEnd,
+		]
 	);
 
 	return {
