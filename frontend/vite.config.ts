@@ -14,7 +14,7 @@ export default defineConfig({
       org: "zionet",
       project: "teach-in",
       authToken: process.env.SENTRY_AUTH_TOKEN,
-      release: { name: process.env.RELEASE },
+      release: { name: process.env.RELEASE || "local" },
     }),
   ],
   resolve: {
