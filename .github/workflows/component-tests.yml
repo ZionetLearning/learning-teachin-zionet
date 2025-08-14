@@ -1,21 +1,23 @@
-name: Engine Component Tests
+name: Component Tests
 
 on:
   pull_request:
     types: [opened, synchronize, reopened]
     paths:
       - 'backend/ContainerApp/Engine/**'
+      - 'backend/ContainerApp/Accessor/**'
       - 'backend/ContainerApp/ComponentTests/EngineComponentTests/**'
+      - 'backend/ContainerApp/ComponentTests/AccessorComponentTests/**'
       - 'backend/ContainerApp/Directory.Build.props'
       - 'backend/ContainerApp/backend.sln'
   workflow_dispatch:
 
 concurrency:
-  group: engine-component-tests-${{ github.ref }}
+  group: component-tests-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  test-engine:
+  test-components:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -43,19 +45,40 @@ jobs:
           restore-keys: |
             nuget-${{ runner.os }}-
 
+      # ---------- Restore ----------
       - name: Restore Engine
         run: dotnet restore Engine/Engine.csproj
+
+      - name: Restore Accessor
+        run: dotnet restore Accessor/Accessor.csproj
 
       - name: Restore Engine Component Tests
         run: dotnet restore ComponentTests/EngineComponentTests/EngineComponentTests.csproj
 
-      - name: Build (Engine + tests)
-        run: |
-          dotnet build Engine/Engine.csproj --no-restore -c Release
-          dotnet build ComponentTests/EngineComponentTests/EngineComponentTests.csproj --no-restore -c Release
+      - name: Restore Accessor Component Tests
+        run: dotnet restore ComponentTests/AccessorComponentTests/AccessorComponentTests.csproj
 
-      - name: Run only ChatAiServiceTests
+      # ---------- Build ----------
+      - name: Build (Engine)
+        run: dotnet build Engine/Engine.csproj --no-restore -c Release
+
+      - name: Build (Accessor)
+        run: dotnet build Accessor/Accessor.csproj --no-restore -c Release
+
+      - name: Build (Engine Component Tests)
+        run: dotnet build ComponentTests/EngineComponentTests/EngineComponentTests.csproj --no-restore -c Release
+
+      - name: Build (Accessor Component Tests)
+        run: dotnet build ComponentTests/AccessorComponentTests/AccessorComponentTests.csproj --no-restore -c Release
+
+      # ---------- Test ----------
+      - name: Run Engine component tests (filtered)
         run: |
           dotnet test ComponentTests/EngineComponentTests/EngineComponentTests.csproj \
             --no-build -c Release \
             --filter "FullyQualifiedName~EngineComponentTests.ChatAiServiceTests"
+
+      - name: Run Accessor component tests
+        run: |
+          dotnet test ComponentTests/AccessorComponentTests/AccessorComponentTests.csproj \
+            --no-build -c Release
