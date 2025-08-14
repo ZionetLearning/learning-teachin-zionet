@@ -40,6 +40,12 @@ jobs:
         working-directory: ${{ env.FE_DIR }}
         run: npm ci
 
+      # Create release name with date + short SHA for Sentry
+      - name: Create release name for Sentry (UTC + short SHA)
+        run: |
+          ts=$(date -u "+Release-%d-%m-%Y_%H-%M")
+          echo "RELEASE_NAME=${ts}-${GITHUB_SHA::7}" >> $GITHUB_ENV
+
       - name: Build Application
         working-directory: ${{ env.FE_DIR }}
         run: npm run build
@@ -53,7 +59,7 @@ jobs:
           VITE_APPINSIGHTS_CONNECTION_STRING: ${{ inputs.app_insights_connection_string || secrets.APPINSIGHTS_CONNECTION_STRING }}
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          RELEASE: ${{ github.sha }}
+          RELEASE: ${{ env.RELEASE_NAME }}
 
       # - name: Optimize Build Size
       #   working-directory: ${{ env.FE_DIR }}
