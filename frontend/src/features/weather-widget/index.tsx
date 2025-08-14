@@ -13,7 +13,7 @@ export const WeatherWidget = () => {
   const [search, setSearch] = useState<string>("");
   const [locating, setLocating] = useState(false);
   const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(
-    null
+    null,
   );
 
   const presetCities = [
@@ -55,7 +55,7 @@ export const WeatherWidget = () => {
           setLocating(false);
           setSelected(null);
           console.warn("Location access denied or not supported");
-        }
+        },
       );
     }
   };
@@ -86,7 +86,7 @@ export const WeatherWidget = () => {
           value={selected || ""}
           onChange={(e) => handleSelectLocation(e.target.value)}
         >
-          <option value="">{t("pages.weather.selectCityOrLoation")}</option>
+          <option value="">{t("pages.weather.selectCityOrLocation")}</option>
           <option value="location">{t("pages.weather.useMyLocation")}</option>
           {presetCities.map((city) => (
             <option key={city} value={city}>
@@ -170,8 +170,7 @@ export const WeatherWidget = () => {
             {(data.visibility / 1000).toFixed(1)} {t("pages.weather.km")}
             <br />
             {t("pages.weather.sunrise")} {formatTime(data.sys.sunrise)} |{" "}
-            {t("pages.weather.sunset")}
-            {formatTime(data.sys.sunset)}
+            {t("pages.weather.sunset")} {formatTime(data.sys.sunset)}
           </div>
         </>
       )}

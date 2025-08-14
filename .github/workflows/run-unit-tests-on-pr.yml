@@ -1,4 +1,4 @@
-name: Run Unit Tests
+name: Run Unit Tests (All)
 
 on:
   pull_request:
@@ -12,25 +12,32 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - name: EngineUnitTests
+            path: backend/ContainerApp/UnitTests/EngineUnitTests/EngineUnitTests.csproj
+          - name: AccessorUnitTests
+            path: backend/ContainerApp/UnitTests/AccessorUnitTests/AccessorUnitTests.csproj
+          - name: ManagerUnitTests
+            path: backend/ContainerApp/UnitTests/ManagerUnitTests/ManagerUnitTests.csproj
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '9.0.x'
+      - name: Setup .NET 9 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+          # no caching — keeps it simple and avoids the lockfile error
 
-    - name: Restore dependencies
-      run: dotnet restore backend.sln
-      working-directory: backend/ContainerApp
+      - name: Restore (solution)
+        run: dotnet restore backend/ContainerApp/backend.sln
 
-    - name: Build
-      run: dotnet build backend.sln --no-restore
-      working-directory: backend/ContainerApp
+      - name: Build (solution)
+        run: dotnet build backend/ContainerApp/backend.sln --no-restore -c Release
 
-    - name: Run tests
-      run: dotnet test AccessorUnitTests.csproj --no-build --verbosity normal
-      working-directory: backend/ContainerApp/AccessorUnitTests
-
+      - name: Test – ${{ matrix.project.name }}
+        run: dotnet test "${{ matrix.project.path }}" --no-build -c Release --verbosity normal

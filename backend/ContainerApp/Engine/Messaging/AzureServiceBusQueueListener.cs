@@ -35,19 +35,31 @@ public class AzureServiceBusQueueListener<T> : IQueueListener<T>, IAsyncDisposab
 
         _processor.ProcessMessageAsync += async args =>
         {
-            var now = DateTimeOffset.UtcNow;
-            var lockedUntil = args.Message.LockedUntil;
-            var lockTimeout = lockedUntil - now;
-
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            linkedCts.CancelAfter(lockTimeout);
+
+            void ArmCancelAfterFromLockedUntil()
+            {
+                var now = DateTimeOffset.UtcNow;
+                var timeout = args.Message.LockedUntil - now - TimeSpan.FromSeconds(2);
+                if (timeout <= TimeSpan.Zero)
+                {
+                    linkedCts.Cancel();
+                }
+                else
+                {
+                    linkedCts.CancelAfter(timeout);
+                }
+            }
+
+            ArmCancelAfterFromLockedUntil();
 
             var renewLock = async () =>
             {
-                _logger.LogInformation("Lock till: {Time}", args.Message.LockedUntil);
                 await args.RenewMessageLockAsync(args.Message, linkedCts.Token);
                 _logger.LogDebug("Lock renewed for message {MessageId}", args.Message.MessageId);
-                _logger.LogInformation("Lock till: {Time}", args.Message.LockedUntil);
+                _logger.LogDebug("Lock till: {Time}", args.Message.LockedUntil);
+
+                ArmCancelAfterFromLockedUntil();
             };
 
             try
@@ -103,7 +115,26 @@ public class AzureServiceBusQueueListener<T> : IQueueListener<T>, IAsyncDisposab
 
         _processor.ProcessErrorAsync += args =>
         {
-            _logger.LogError(args.Exception, "Message handler error");
+            if (args.Exception is ServiceBusException sbex)
+            {
+                if (sbex.Reason == ServiceBusFailureReason.MessagingEntityNotFound)
+                {
+                    _logger.LogWarning("Entity not found while processing.");
+                }
+                else if (sbex.Reason == ServiceBusFailureReason.ServiceCommunicationProblem)
+                {
+                    _logger.LogWarning("Service communication problem - emulator not ready.");
+                }
+                else
+                {
+                    _logger.LogWarning("Service Bus error: {Reason}", sbex.Reason);
+                }
+            }
+            else
+            {
+                _logger.LogError(args.Exception, "Message handler error");
+            }
+
             return Task.CompletedTask;
         };
 

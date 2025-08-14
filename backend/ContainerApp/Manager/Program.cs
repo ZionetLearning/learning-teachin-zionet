@@ -49,8 +49,8 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddSingleton(_ =>
     new ServiceBusClient(builder.Configuration["ServiceBus:ConnectionString"]));
 
-builder.Services.AddQueue<AiResponseModel, ManagerAiResponseHandler>(
-    QueueNames.AiToManager,
+builder.Services.AddQueue<Message, ManagerQueueHandler>(
+    QueueNames.ManagerCallbackQueue,
     settings =>
     {
         settings.MaxConcurrentCalls = 5;

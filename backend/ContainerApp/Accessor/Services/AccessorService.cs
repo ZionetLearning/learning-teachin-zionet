@@ -32,12 +32,12 @@ public class AccessorService : IAccessorService
         try
         {
             _logger.LogInformation("Applying EF Core migrations...");
-            await _dbContext.Database.MigrateAsync();
+            await _dbContext.Database.EnsureCreatedAsync();
             _logger.LogInformation("Database migration completed.");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to connect to PostgreSQL during startup.");
+            _logger.LogError(ex, "Failed to initialize PostgreSQL during startup.");
             throw;
         }
     }
@@ -95,57 +95,112 @@ public class AccessorService : IAccessorService
     public async Task CreateTaskAsync(TaskModel task)
     {
         _logger.LogInformation("Inside:{Method}", nameof(CreateTaskAsync));
-        try
-        {
-            // Check if the id already exists in the DB
-            var checkId = await _dbContext.Tasks
-                .AsNoTracking()
-                .FirstOrDefaultAsync(t => t.Id == task.Id);
 
-            if (checkId != null)
+        var key = task.Id.ToString();
+        var expires = DateTime.UtcNow.AddHours(24);
+
+        var strategy = _dbContext.Database.CreateExecutionStrategy();
+
+        await strategy.ExecuteAsync(async () =>
+        {
+            await using var tx = await _dbContext.Database.BeginTransactionAsync();
+
+            try
             {
-                _logger.LogWarning("Task with ID {TaskId} already exists in the DB.", task.Id);
-                return;
+                // --- Idempotency gate (first writer wins)
+                var record = new IdempotencyRecord
+                {
+                    IdempotencyKey = key,
+                    Status = IdempotencyStatus.InProgress,
+                    CreatedAtUtc = DateTimeOffset.UtcNow,
+                    ExpiresAtUtc = expires
+                };
+
+                _dbContext.Idempotency.Add(record);
+
+                try
+                {
+                    await _dbContext.SaveChangesAsync();
+                    _logger.LogDebug("Idempotency gate created for key {Key}", key);
+                }
+                catch (DbUpdateException ex)
+                {
+                    _logger.LogDebug(ex, "Idempotency key {Key} already exists", key);
+
+                    var existing = await _dbContext.Idempotency
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(i => i.IdempotencyKey == key);
+
+                    if (existing is null)
+                    {
+                        _logger.LogWarning("Idempotency record vanished for {Key}, treating as processed", key);
+                        return;
+                    }
+
+                    if (existing.Status == IdempotencyStatus.Completed)
+                    {
+                        _logger.LogInformation("Duplicate request for {Key} — already completed. No-op.", key);
+                        return;
+                    }
+
+                    var notExpired = existing.ExpiresAtUtc == null || existing.ExpiresAtUtc > DateTime.UtcNow;
+                    if (notExpired)
+                    {
+                        _logger.LogInformation("Duplicate request for {Key} while in-progress. No-op.", key);
+                        return;
+                    }
+
+                    _logger.LogWarning("Stale in-progress idempotency for {Key}; proceeding.", key);
+                }
+
+                // --- Persist Task (unique PK/constraint on Task.Id enforces exactly-once)
+                _dbContext.Tasks.Add(task);
+
+                try
+                {
+                    await _dbContext.SaveChangesAsync();
+                    _logger.LogInformation("Task {TaskId} persisted", task.Id);
+                }
+                catch (DbUpdateException ex)
+                {
+                    _logger.LogWarning(ex, "Duplicate Task insert for {TaskId}; treating as success", task.Id);
+                }
+
+                // --- Mark idempotency as completed
+                var gate = await _dbContext.Idempotency.FirstOrDefaultAsync(i => i.IdempotencyKey == key);
+                if (gate != null)
+                {
+                    gate.Status = IdempotencyStatus.Completed;
+                    await _dbContext.SaveChangesAsync();
+                }
+
+                await tx.CommitAsync();
+
+                // --- Optional cache
+                await _daprClient.SaveStateAsync(
+                    storeName: ComponentNames.StateStore,
+                    key: GetTaskCacheKey(task.Id),
+                    value: task,
+                    metadata: new Dictionary<string, string> { { "ttlInSeconds", _ttl.ToString() } });
+
+                _logger.LogInformation("Cached task {TaskId} with TTL {TTL}s", task.Id, _ttl);
             }
-
-            // Add task to the database
-            _dbContext.Tasks.Add(task);
-            await _dbContext.SaveChangesAsync();
-
-            var key = GetTaskCacheKey(task.Id);
-
-            // Check if the task already exists in Redis cache
-            var stateEntry = await _daprClient.GetStateEntryAsync<TaskModel>(ComponentNames.StateStore, key);
-
-            // If it exists, log a warning and overwrite it
-            if (stateEntry.Value != null)
+            catch (Exception ex)
             {
-                _logger.LogWarning("Task {TaskId} already present in cache before creation. Overwriting.", task.Id);
+                _logger.LogError(ex, "Unexpected error saving task {TaskId}", task.Id);
+
+                try
+                {
+                    await tx.RollbackAsync();
+                }
+                catch
+                {
+                    // ignored
+                }
+
+                throw;
             }
-
-            // Store the newly created task in Redis cache
-            stateEntry.Value = task;
-
-            await _daprClient.SaveStateAsync(
-               storeName: ComponentNames.StateStore,
-               key: key,
-               value: task,
-               metadata: new Dictionary<string, string>
-               {
-                    { "ttlInSeconds", _ttl.ToString() }
-               });
-            _logger.LogInformation("Successfully cached task {TaskId} with TTL {TTL}s", task.Id, _ttl);
-        }
-        catch (DbUpdateException dbEx)
-        {
-            _logger.LogError(dbEx, "Failed to save task {TaskId} to the database due to DB error.", task.Id);
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Unexpected error occurred while saving task {TaskId}", task.Id);
-            throw;
-        }
+        });
     }
 
     public async Task<bool> UpdateTaskNameAsync(int taskId, string newName)
@@ -242,4 +297,65 @@ public class AccessorService : IAccessorService
 
     private static string GetTaskCacheKey(int taskId) => $"task:{taskId}";
 
+    public async Task<ChatThread?> GetThreadByIdAsync(Guid threadId)
+    {
+        return await _dbContext.ChatThreads.FindAsync(threadId);
+    }
+
+    public async Task CreateThreadAsync(ChatThread thread)
+    {
+        _dbContext.ChatThreads.Add(thread);
+        await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task<List<ThreadSummaryDto>> GetThreadsForUserAsync(string userId)
+    {
+        return await _dbContext.ChatThreads
+            .AsNoTracking() // read-only path
+            .Where(t => t.UserId == userId)
+            .OrderByDescending(t => t.UpdatedAt)
+            .Select(t => new ThreadSummaryDto(t.ThreadId, t.ChatName, t.ChatType, t.CreatedAt, t.UpdatedAt))
+            .ToListAsync();
+    }
+
+    public async Task AddMessageAsync(ChatMessage message)
+    {
+        // 1) Look up the parent thread
+        var thread = await _dbContext.ChatThreads.FindAsync(message.ThreadId);
+
+        message.Timestamp = message.Timestamp.ToUniversalTime();
+        // 2) If missing, insert it first
+        if (thread is null)
+        {
+            thread = new ChatThread
+            {
+                ThreadId = message.ThreadId,
+                UserId = message.UserId,
+                ChatType = "default",
+                CreatedAt = message.Timestamp,
+                UpdatedAt = message.Timestamp
+            };
+            _dbContext.ChatThreads.Add(thread);
+        }
+        else
+        {
+            // 3) If it exists, just bump the timestamp
+            thread.UpdatedAt = message.Timestamp;
+        }
+
+        // 4) Now it's safe to add the child message
+        _dbContext.ChatMessages.Add(message);
+
+        // 5) Commit both inserts/updates in one SaveChanges
+        await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task<IEnumerable<ChatMessage>> GetMessagesByThreadAsync(Guid threadId)
+    {
+        return await _dbContext.ChatMessages
+            .AsNoTracking()
+            .Where(m => m.ThreadId == threadId)
+            .OrderBy(m => m.Timestamp)
+            .ToListAsync();
+    }
 }

@@ -1,7 +1,8 @@
-﻿using Engine.Messaging;
+﻿using Engine.Constants;
+using Engine.Messaging;
 using Engine.Models;
 using Engine.Services;
-using System.Text.Json;
+using Engine.Helpers;
 
 namespace Engine.Endpoints;
 
@@ -10,14 +11,23 @@ public class EngineQueueHandler : IQueueHandler<Message>
     private readonly IEngineService _engine;
     private readonly ILogger<EngineQueueHandler> _logger;
     private readonly Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>> _handlers;
-    public EngineQueueHandler(IEngineService engine, ILogger<EngineQueueHandler> logger)
+    private readonly IChatAiService _aiService;
+    private readonly IAiReplyPublisher _publisher;
+
+    public EngineQueueHandler(IEngineService engine,
+        IChatAiService aiService,
+        IAiReplyPublisher publisher,
+        ILogger<EngineQueueHandler> logger)
     {
         _engine = engine;
+        _aiService = aiService;
+        _publisher = publisher;
         _logger = logger;
         _handlers = new Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>>
         {
             [MessageAction.CreateTask] = HandleCreateTaskAsync,
-            [MessageAction.TestLongTask] = HandleTestLongTaskAsync
+            [MessageAction.TestLongTask] = HandleTestLongTaskAsync,
+            [MessageAction.ProcessingQuestionAi] = HandleProcessingQuestionAiAsync
         };
     }
 
@@ -30,29 +40,40 @@ public class EngineQueueHandler : IQueueHandler<Message>
         else
         {
             _logger.LogWarning("No handler for action {Action}", message.ActionName);
+            throw new NonRetryableException($"No handler for action {message.ActionName}");
         }
     }
+
     private async Task HandleCreateTaskAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
     {
         try
         {
-            var payload = message.Payload.Deserialize<TaskModel>();
-            if (payload is null)
-            {
-                _logger.LogWarning("Invalid payload for CreateTask");
-                return;
-            }
+            var payload = PayloadValidation.DeserializeOrThrow<TaskModel>(message, _logger);
+
+            PayloadValidation.ValidateTask(payload, _logger);
 
             _logger.LogDebug("Processing task {Id}", payload.Id);
             await _engine.ProcessTaskAsync(payload, cancellationToken);
             _logger.LogInformation("Task {Id} processed", payload.Id);
         }
-        catch (Exception)
+        catch (NonRetryableException ex)
         {
-            _logger.LogError("Error while {Action}", message.ActionName);
+            _logger.LogError(ex, "Non-retryable error processing message {Action}", message.ActionName);
             throw;
         }
+        catch (Exception ex)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning(ex, "Operation cancelled while processing message {Action}", message.ActionName);
+                throw new OperationCanceledException("Operation was cancelled.", ex, cancellationToken);
+            }
+
+            _logger.LogError(ex, "Transient error while processing task for action {Action}", message.ActionName);
+            throw new RetryableException("Transient error while processing task.", ex);
+        }
     }
+
     private async Task HandleTestLongTaskAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
     {
         using var renewalCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -63,50 +84,84 @@ public class EngineQueueHandler : IQueueHandler<Message>
                 while (!renewalCts.Token.IsCancellationRequested)
                 {
                     await Task.Delay(TimeSpan.FromSeconds(20), renewalCts.Token);
-                    _logger.LogDebug("Renewing lock at {Now}", DateTime.UtcNow);
                     await renewLock();
-                    _logger.LogDebug("Lock renewed at {Now}", DateTime.UtcNow);
                 }
             }
             catch (OperationCanceledException)
             {
-                // expected
+                _logger.LogError("Renew Lock loop error");
+                throw;
             }
         }, renewalCts.Token);
         try
         {
-            var payload = message.Payload.Deserialize<TaskModel>();
-            if (payload is null)
-            {
-                _logger.LogWarning("Invalid payload for CreateTask");
-                return;
-            }
+            var payload = PayloadValidation.DeserializeOrThrow<TaskModel>(message, _logger);
 
-            _logger.LogInformation("Inside handler");
+            PayloadValidation.ValidateTask(payload, _logger);
+
+            _logger.LogInformation("Starting long task handler for Task {Id}", payload.Id);
 
             await Task.Delay(TimeSpan.FromSeconds(80), cancellationToken);
             await _engine.ProcessTaskAsync(payload, cancellationToken);
+            _logger.LogInformation("Task {Id} processed", payload.Id);
+
         }
-        catch
+        catch (NonRetryableException ex)
         {
-            _logger.LogError("Error while {Action}", message.ActionName);
+            _logger.LogError(ex, "Non-retryable error processing message {Action}", message.ActionName);
             throw;
+        }
+        catch (Exception ex)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning(ex, "Operation cancelled while processing {Action}", message.ActionName);
+                throw new OperationCanceledException("Operation was cancelled.", ex, cancellationToken);
+            }
+
+            _logger.LogError(ex, "Transient error while processing long task for action {Action}", message.ActionName);
+            throw new RetryableException("Transient error while processing long task.", ex);
         }
         finally
         {
             await renewalCts.CancelAsync();
             await renewalTask;
         }
-        //That is simple example of how to use renewLock to prevent exciding message lock time 
-        //_logger.LogInformation("Inside handler");
-        //await renewLock();
-        //await Task.Delay(TimeSpan.FromSeconds(50), cancellationToken);
-        //_logger.LogInformation("After first pause");
-        //await renewLock();
-        //await Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);
-        //_logger.LogInformation("Processing task {Id}", payload.Id);
-        //await _engine.ProcessTaskAsync(payload, cancellationToken);
-        //_logger.LogInformation("Task {Id} processed", payload.Id);
+    }
+
+    private async Task HandleProcessingQuestionAiAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var payload = PayloadValidation.DeserializeOrThrow<AiRequestModel>(message, _logger);
+
+            PayloadValidation.ValidateAiRequest(payload, _logger);
+
+            _logger.LogInformation("Received AI question {Id} from manager", payload.Id);
+
+            var response = await _aiService.ProcessAsync(payload, cancellationToken);
+
+            await _publisher.SendReplyAsync(response, $"{QueueNames.ManagerCallbackQueue}-out", cancellationToken);
+
+            _logger.LogInformation("AI question {Id} processed", payload.Id);
+        }
+
+        catch (NonRetryableException ex)
+        {
+            _logger.LogError(ex, "Non-retryable error processing message {Action}", message.ActionName);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning(ex, "Operation cancelled while processing {Action}", message.ActionName);
+                throw new OperationCanceledException("Operation was cancelled.", ex, cancellationToken);
+            }
+
+            _logger.LogError(ex, "Transient error while processing/publishing AI question {Action}", message.ActionName);
+            throw new RetryableException("Transient error while processing AI question.", ex);
+        }
     }
 }
 

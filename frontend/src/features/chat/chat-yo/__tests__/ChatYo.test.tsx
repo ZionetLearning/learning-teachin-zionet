@@ -10,7 +10,7 @@ vi.mock("react-i18next", () => ({
 }));
 
 // hook mock
-vi.mock("../hooks", () => ({
+vi.mock("@/hooks", () => ({
   useChat: () => ({
     sendMessage: sendMessageMock,
     loading: false,
@@ -22,8 +22,8 @@ vi.mock("../hooks", () => ({
 }));
 
 // mock ChatUi to render a minimal input and button that call the passed props
-vi.mock("../components", () => ({
-  ChatUi: ({
+vi.mock("@/components", () => ({
+  ReactChatElements: ({
     messages,
     loading,
     value,
@@ -66,7 +66,7 @@ describe("ChatYo", () => {
     expect(screen.getByText("Hi there!")).toBeInTheDocument();
 
     const input = screen.getByPlaceholderText(
-      "Type a message..."
+      "Type a message...",
     ) as HTMLInputElement;
 
     fireEvent.change(input, { target: { value: "Test message" } });
