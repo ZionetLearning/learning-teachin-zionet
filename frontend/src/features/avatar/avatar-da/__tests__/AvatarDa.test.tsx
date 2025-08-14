@@ -18,21 +18,27 @@ describe("<AvatarDa />", () => {
     render(<AvatarDa />);
     expect(screen.getByTestId("canvas")).toBeInTheDocument();
     expect(
-      screen.getByPlaceholderText("Write something here in Hebrew"),
+      screen.getByPlaceholderText("pages.avatarDa.writeSomethingHereInHebrew"),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Speak" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "pages.avatarDa.speak" }),
+    ).toBeInTheDocument();
   });
 
   it("does nothing when Speak is clicked with empty input", () => {
     render(<AvatarDa />);
-    fireEvent.click(screen.getByRole("button", { name: "Speak" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "pages.avatarDa.speak" }),
+    );
     expect(mockSpeak).not.toHaveBeenCalled();
   });
 
   it("calls speak function when button is clicked with text input", () => {
     render(<AvatarDa />);
-    const input = screen.getByPlaceholderText("Write something here in Hebrew");
-    const btn = screen.getByRole("button", { name: "Speak" });
+    const input = screen.getByPlaceholderText(
+      "pages.avatarDa.writeSomethingHereInHebrew",
+    );
+    const btn = screen.getByRole("button", { name: "pages.avatarDa.speak" });
 
     fireEvent.change(input, { target: { value: "שלום" } });
     fireEvent.click(btn);

@@ -22,14 +22,7 @@ console.warn = (...args: unknown[]) => {
 
 /* ========= i18n ========= */
 vi.mock("react-i18next", () => ({
-  useTranslation: () => ({
-    t: (k: string) =>
-      k === "pages.avatarDa.writeSomethingHereInHebrew"
-        ? "Write something here in Hebrew"
-        : k === "pages.avatarDa.speak"
-          ? "Speak"
-          : k,
-  }),
+  useTranslation: () => ({ t: (k: string) => k }),
 }));
 
 /* ===== avatar assets ===== */
