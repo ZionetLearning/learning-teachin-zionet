@@ -27,18 +27,28 @@ public class AccessorService : IAccessorService
     }
     public async Task InitializeAsync()
     {
-        _logger.LogInformation("Initializing DB...");
+        _logger.LogInformation("Applying EF Core migrations...");
+
+        var conn = _dbContext.Database.GetDbConnection();
+        await conn.OpenAsync();
+
+        // Take a cluster-wide advisory lock (pick any constant bigint key)
+        await using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = "SELECT pg_advisory_lock(727274);";
+            await cmd.ExecuteNonQueryAsync();
+        }
 
         try
         {
-            _logger.LogInformation("Applying EF Core migrations...");
-            await _dbContext.Database.EnsureCreatedAsync();
+            await _dbContext.Database.MigrateAsync();
             _logger.LogInformation("Database migration completed.");
         }
-        catch (Exception ex)
+        finally
         {
-            _logger.LogError(ex, "Failed to initialize PostgreSQL during startup.");
-            throw;
+            await using var unlock = conn.CreateCommand();
+            unlock.CommandText = "SELECT pg_advisory_unlock(727274);";
+            await unlock.ExecuteNonQueryAsync();
         }
     }
 
