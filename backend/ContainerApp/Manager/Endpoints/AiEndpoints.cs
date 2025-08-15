@@ -2,8 +2,10 @@
 using Manager.Models.Speech;
 using Manager.Models.ModelValidation;
 using Manager.Services;
-using Manager.Services.Clients;
 using Microsoft.AspNetCore.Mvc;
+using Manager.Models.Chat;
+using Manager.Services.Clients.Engine;
+using Manager.Services.Clients.Engine.Models;
 
 namespace Manager.Endpoints;
 
@@ -96,20 +98,46 @@ public static class AiEndpoints
     }
 
     private static async Task<IResult> ChatAsync(
-      [FromBody] ChatRequestDto dto,
+      [FromBody] ChatRequest request,
       [FromServices] IEngineClient engine,
       [FromServices] ILogger<ChatPostEndpoint> log,
       CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(dto.UserMessage))
+        if (string.IsNullOrWhiteSpace(request.UserMessage))
         {
             return Results.BadRequest(new { error = "userMessage is required" });
         }
 
+        var requestId = Guid.NewGuid().ToString("N");
+        //todo: takeUserId from token.
+        const string userId = "dev-user-001";
+
+        var threadId = string.IsNullOrWhiteSpace(request.ThreadId)
+       ? Guid.NewGuid()
+       : Guid.TryParse(request.ThreadId, out var giud) ? giud
+       : throw new ArgumentException("threadId must be a valid UUID");
+
+        var engineRequest = new EngineChatRequest
+        {
+            RequestId = requestId,
+            ThreadId = threadId,
+            UserId = userId,
+            UserMessage = request.UserMessage.Trim(),
+            ChatType = request.ChatType
+        };
+
         try
         {
-            var response = await engine.ChatAsync(dto, ct);
-            return Results.Ok(response);
+            var engineResponse = await engine.ChatAsync(engineRequest, ct);
+
+            var frontResponse = new
+            {
+                Answer = engineResponse.AssistantMessage,
+                Status = engineResponse.Status,
+                ThreadId = threadId
+            };
+
+            return Results.Ok(frontResponse);
         }
         catch (Exception ex)
         {

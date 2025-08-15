@@ -6,6 +6,7 @@ using Manager.Messaging;
 using Manager.Models;
 using Manager.Services;
 using Manager.Services.Clients;
+using Manager.Services.Clients.Engine;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);

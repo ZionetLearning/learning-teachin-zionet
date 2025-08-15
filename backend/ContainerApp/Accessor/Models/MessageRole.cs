@@ -5,10 +5,10 @@ namespace Accessor.Models;
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum MessageRole
 {
-    User,
-    Assistant,
-    System,
-    Developer,
-    Tool
+    User = 0,
+    Assistant = 1,
+    System = 2,
+    Developer = 3,
+    Tool = 4
 }
 
