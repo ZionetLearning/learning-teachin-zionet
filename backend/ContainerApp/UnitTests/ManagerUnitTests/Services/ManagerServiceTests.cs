@@ -16,10 +16,10 @@ public class ManagerServiceTests
     private readonly Mock<IMapper> _mapper = new();
     private readonly IConfiguration _cfg = new ConfigurationBuilder().Build();
     private readonly Mock<ILogger<ManagerService>> _log = new();
+    private readonly Mock<INotificationService> _notification = new();
 
     private ManagerService Create() =>
-        new(_cfg, _log.Object, _accessor.Object, _engine.Object, _mapper.Object);
-
+        new(_cfg, _log.Object, _accessor.Object, _engine.Object, _mapper.Object, _notification.Object);
     // ---------- GetTaskAsync ----------
 
     [Fact]

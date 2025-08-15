@@ -10,24 +10,30 @@ namespace Manager.UnitTests.Hubs;
 public class NotificationHubTests
 {
     private static (
-        Mock<IClientProxy> proxy,
+        Mock<INotificationClient> clientMock,
         NotificationHub hub
     ) CreateHub(string signalMethod, Type expectedPayloadType)
     {
         var logger = new Mock<ILogger<NotificationHub>>();
-        var clients = new Mock<IHubCallerClients>();
-        var proxy = new Mock<IClientProxy>(MockBehavior.Strict);
+        var clients = new Mock<IHubCallerClients<INotificationClient>>();
+        var clientMock = new Mock<INotificationClient>(MockBehavior.Strict);
 
-        clients.Setup(c => c.All).Returns(proxy.Object);
+        clients.Setup(c => c.All).Returns(clientMock.Object);
 
-        proxy.Setup(p => p.SendCoreAsync(
-                signalMethod,
-                It.Is<object[]>(args => args.Length == 1 && expectedPayloadType.IsInstanceOfType(args[0])),
-                default))
+        // Setup the expected method call on INotificationClient
+        if (signalMethod == "NotificationReceived")
+        {
+            clientMock.Setup(c => c.NotificationMessage(It.IsAny<UserNotification>()))
+                .Returns(Task.CompletedTask);
+        }
+        else if (signalMethod == "TaskUpdated")
+        {
+            clientMock.Setup(c => c.ReceiveEvent(It.IsAny<UserEvent<TaskUpdateMessage>>()))
             .Returns(Task.CompletedTask);
+        }
 
         var hub = new NotificationHub(logger.Object) { Clients = clients.Object };
-        return (proxy, hub);
+        return (clientMock, hub);
     }
 
     [Theory]
@@ -35,7 +41,7 @@ public class NotificationHubTests
     [InlineData("NotificationReceived", typeof(NotificationMessage), "SendNotification", "hi")]
     public async Task Broadcasts_To_All(string signalMethod, Type payloadType, string hubMethod, params object[] args)
     {
-        var (proxy, hub) = CreateHub(signalMethod, payloadType);
+        var (clientMock, hub) = CreateHub(signalMethod, payloadType);
 
         var mi = typeof(NotificationHub).GetMethod(hubMethod, BindingFlags.Instance | BindingFlags.Public);
         Assert.NotNull(mi);
@@ -51,6 +57,6 @@ public class NotificationHubTests
         }
 
         // Assert
-        proxy.VerifyAll();
+        clientMock.VerifyAll();
     }
 }
