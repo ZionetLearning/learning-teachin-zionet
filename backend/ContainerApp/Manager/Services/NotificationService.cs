@@ -18,23 +18,23 @@ public class NotificationService : INotificationService
         _logger = logger;
     }
 
-    public async Task SendNotificationAsync(string userId, string message)
+    public async Task SendNotificationAsync(string userId, UserNotification notification)
     {
-        await _hubContext.Clients.User(userId).NotificationMessage(userId, message);
+        await _hubContext.Clients.User(userId).NotificationMessage(notification);
     }
 
-    public async Task SendEventAsync<TPayload>(string eventType, TPayload payload)
+    public async Task SendEventAsync<TPayload>(EventType eventType, string userId, TPayload payload)
     {
         try
         {
-            // now frontend that listen to "ReceiveEvent" method in signal r will receive this event and can see in event type what the paylod is of
-            var evt = new Event<TPayload>
+            // now frontend that listen to "ReceiveEvent" method in signal r will receive this event and can see in event type what the payload contains
+            var evt = new UserEvent<TPayload>
             {
-                Type = eventType, // Type of the event, e.g., "ChatMessage", "UserJoined", etc.
+                eventType = eventType, // Type of the event, e.g., "ChatMessage", "UserJoined", etc.
                 Payload = payload // The actual data being sent with the event (e.g., chat message class, user info class, etc.)
             };
 
-            await _hubContext.Clients.All.ReceiveEvent(evt);
+            await _hubContext.Clients.User(userId).ReceiveEvent(evt);
             _logger.LogInformation("Event '{EventType}' sent successfully", eventType);
         }
         catch (Exception ex)
@@ -42,28 +42,5 @@ public class NotificationService : INotificationService
             _logger.LogError(ex, "Error sending event '{EventType}'", eventType);
             throw;
         }
-
-        /* example of usage:
-         * 
-        public class ChatManager
-        {
-            private readonly INotificationService _notifications;
-
-            public ChatManager(INotificationService notifications)
-            {
-                _notifications = notifications;
-            }
-
-            public async Task SendChatMessageAsync(string sender, string message)
-            {
-                await _notifications.SendEventAsync("chatMessage", new ChatMessagePayload
-                {
-                    Sender = sender,
-                    Message = message
-                });
-            }
-        
-        }
-        */
     }
 }

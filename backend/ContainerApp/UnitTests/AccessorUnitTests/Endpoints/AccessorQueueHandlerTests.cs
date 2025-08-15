@@ -2,6 +2,7 @@
 using Accessor.Endpoints;
 using Accessor.Messaging;
 using Accessor.Models;
+using Accessor.Models.QueueMessages;
 using Accessor.Services;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;

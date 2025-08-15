@@ -1,23 +1,31 @@
 ﻿using System.Text.Json;
 using Accessor.Messaging;
 using Accessor.Models;
+using Accessor.Models.QueueMessages;
 using Accessor.Services;
+using Accessor.Constants;
 
 namespace Accessor.Endpoints;
 
 public class AccessorQueueHandler : IQueueHandler<Message>
 {
     private readonly IAccessorService _accessorService;
+    private readonly IQueuePublisher _queuePublisher;
     private readonly ILogger<AccessorQueueHandler> _logger;
     private readonly Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>> _handlers;
 
-    public AccessorQueueHandler(IAccessorService accessorService, ILogger<AccessorQueueHandler> logger)
+    public AccessorQueueHandler(
+        IAccessorService accessorService,
+        IQueuePublisher queuePublisher,
+        ILogger<AccessorQueueHandler> logger)
     {
         _accessorService = accessorService;
+        _queuePublisher = queuePublisher;
         _logger = logger;
         _handlers = new Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>>
         {
             [MessageAction.UpdateTask] = HandleUpdateTaskAsync,
+            [MessageAction.CreateTask] = HandleCreateTaskAsync
         };
     }
 
@@ -41,7 +49,7 @@ public class AccessorQueueHandler : IQueueHandler<Message>
             var payload = message.Payload.Deserialize<TaskModel>();
             if (payload is null)
             {
-                _logger.LogWarning("Invalid payload for UpdateTask");
+                _logger.LogWarning("Invalid taskModel for UpdateTask");
                 throw new NonRetryableException("Payload deserialization returned null for TaskModel.");
             }
 
@@ -81,6 +89,78 @@ public class AccessorQueueHandler : IQueueHandler<Message>
 
             _logger.LogError(ex, "Transient error while updating task for action {Action}", message.ActionName);
             throw new RetryableException("Transient error while updating task.", ex);
+        }
+    }
+
+    private async Task HandleCreateTaskAsync(Message message, Func<Task> func, CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (message is not UserContextMessage userContextMessage)
+            {
+                throw new NonRetryableException("UpdateTask requires user context");
+            }
+
+            var taskModel = message.Payload.Deserialize<TaskModel>();
+            if (taskModel is null)
+            {
+                _logger.LogWarning("Invalid taskModel for CreateTask");
+                throw new NonRetryableException("Payload deserialization returned null for TaskModel.");
+            }
+
+            if (taskModel.Id <= 0)
+            {
+                _logger.LogWarning("Task Id must be a positive integer. Actual: {Id}", taskModel.Id);
+                throw new NonRetryableException("Task Id must be a positive integer.");
+            }
+
+            if (string.IsNullOrWhiteSpace(taskModel.Name))
+            {
+                _logger.LogWarning("Task Name is required.");
+                throw new NonRetryableException("Task Name is required.");
+            }
+
+            _logger.LogDebug("Creating task {Id}", taskModel.Id);
+            await _accessorService.CreateTaskAsync(taskModel);
+
+            var notification = new Notification
+            {
+                Message = $"Task {taskModel.Name} created successfully.",
+                Type = NotificationType.Success
+            };
+
+            var messageToManger = new UserContextMessage
+            {
+                ActionName = MessageAction.NotifyUser,
+                Payload = JsonSerializer.SerializeToElement(notification),
+                UserId = userContextMessage.UserId,
+                MessageId = userContextMessage.MessageId
+            };
+
+            await _queuePublisher.PublishAsync($"{QueueNames.ManagerCallbackQueue}-out", notification, cancellationToken);
+
+            _logger.LogInformation("Task {Id} created", taskModel.Id);
+        }
+        catch (NonRetryableException ex)
+        {
+            _logger.LogError(ex, "Non-retryable error processing message {Action}", message.ActionName);
+            throw;
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "Invalid JSON taskModel for {Action}", message.ActionName);
+            throw new NonRetryableException("Invalid JSON taskModel.", ex);
+        }
+        catch (Exception ex)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning(ex, "Operation cancelled while processing {Action}", message.ActionName);
+                throw new OperationCanceledException("Operation was cancelled.", ex, cancellationToken);
+            }
+
+            _logger.LogError(ex, "Transient error while creating task for action {Action}", message.ActionName);
+            throw new RetryableException("Transient error while creating task.", ex);
         }
     }
 }

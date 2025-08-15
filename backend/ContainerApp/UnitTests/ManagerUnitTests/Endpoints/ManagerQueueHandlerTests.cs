@@ -2,6 +2,7 @@
 using Manager.Endpoints;
 using Manager.Messaging;
 using Manager.Models;
+using Manager.Models.QueueMessages;
 using Manager.Services;
 using Microsoft.Extensions.Logging;
 using Moq;

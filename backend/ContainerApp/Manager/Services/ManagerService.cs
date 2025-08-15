@@ -11,18 +11,21 @@ public class ManagerService : IManagerService
     private readonly IAccessorClient _accessorClient;
     private readonly IEngineClient _engineClient;
     private readonly IMapper _mapper;
+    private readonly INotificationService _notificationService;
 
     public ManagerService(IConfiguration configuration,
         ILogger<ManagerService> logger,
         IAccessorClient accessorClient,
         IEngineClient engineClient,
-        IMapper mapper)
+        IMapper mapper,
+        INotificationService notificationService)
     {
         _configuration = configuration;
         _logger = logger;
         _accessorClient = accessorClient;
         _engineClient = engineClient;
         _mapper = mapper;
+        _notificationService = notificationService;
     }
 
     public async Task<TaskModel?> GetTaskAsync(int id)
@@ -56,9 +59,9 @@ public class ManagerService : IManagerService
         }
     }
 
-    public async Task<(bool success, string message)> ProcessTaskAsync(TaskModel task)
+    public async Task<(bool success, string message)> CreateTaskAsync(TaskModel task)
     {
-        _logger.LogDebug("Inside: {MethodName}", nameof(ProcessTaskAsync));
+        _logger.LogDebug("Inside: {MethodName}", nameof(CreateTaskAsync));
 
         if (task is null)
         {
@@ -80,11 +83,11 @@ public class ManagerService : IManagerService
 
         try
         {
-            _logger.LogDebug("Processing task {TaskId} with name '{TaskName}'", task.Id, task.Name);
-            var result = await _engineClient.ProcessTaskAsync(task);
+            _logger.LogDebug("Posting task {TaskId} with name '{TaskName}'", task.Id, task.Name);
+            var result = await _accessorClient.PostTaskAsync(task);
             if (result.success)
             {
-                _logger.LogDebug("Task {TaskId} successfully processed", task.Id);
+                _logger.LogDebug("Task {TaskId} successfully posted to queue", task.Id);
             }
             else
             {
@@ -104,7 +107,7 @@ public class ManagerService : IManagerService
     {
         try
         {
-            _logger.LogDebug("Inside: {MethodName}", nameof(ProcessTaskAsync));
+            _logger.LogDebug("Inside: {MethodName}", nameof(CreateTaskAsync));
             var result = await _engineClient.ProcessTaskLongAsync(task);
             return (result.success, result.message);
         }
@@ -187,6 +190,35 @@ public class ManagerService : IManagerService
         {
             _logger.LogError(ex, "Error occurred while deleting task {TaskId}", id);
             return false;
+        }
+    }
+
+    public async Task SendUserNotificationAsync(string userId, UserNotification notification)
+    {
+        _logger.LogDebug("Inside: {MethodName}", nameof(SendUserNotificationAsync));
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            _logger.LogWarning("Invalid user ID provided for notification");
+            throw new ArgumentException("User ID is required", nameof(userId));
+        }
+
+        if (notification is null)
+        {
+            _logger.LogWarning("Null notification received for user {UserId}", userId);
+            throw new ArgumentNullException(nameof(notification));
+        }
+
+        try
+        {
+            _logger.LogInformation("Sending notification to user {UserId} with message: {Message}", userId, notification.Message);
+            await _notificationService.SendNotificationAsync(userId, notification);
+            _logger.LogInformation("Notification sent successfully to user {UserId}", userId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while sending notification to user {UserId}", userId);
+            throw;
         }
     }
 }

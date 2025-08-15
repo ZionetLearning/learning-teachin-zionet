@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Manager.Models;
+namespace Manager.Models.QueueMessages;
 
 public record Message
 {
@@ -16,5 +16,6 @@ public enum MessageAction
     UpdateTask,
     TestLongTask,
     ProcessingQuestionAi,
-    AnswerAi
+    AnswerAi,
+    NotifyUser
 }

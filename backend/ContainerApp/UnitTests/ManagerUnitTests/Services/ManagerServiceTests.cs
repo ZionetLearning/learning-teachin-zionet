@@ -63,7 +63,7 @@ public class ManagerServiceTests
     {
         var sut = Create();
 
-        var (ok, msg) = await sut.ProcessTaskAsync(null!);
+        var (ok, msg) = await sut.CreateTaskAsync(null!);
 
         ok.Should().BeFalse();
         msg.Should().Be("Task is null");
@@ -79,7 +79,7 @@ public class ManagerServiceTests
         var sut = Create();
         var task = new TaskModel { Id = 5, Name = name, Payload = payload };
 
-        var (ok, msg) = await sut.ProcessTaskAsync(task);
+        var (ok, msg) = await sut.CreateTaskAsync(task);
 
         ok.Should().BeFalse();
         msg.Should().Be(expectedMsg);
@@ -93,7 +93,7 @@ public class ManagerServiceTests
         var t = new TaskModel { Id = 2, Name = "ok", Payload = "p" };
         _engine.Setup(e => e.ProcessTaskAsync(t)).ReturnsAsync((true, "sent"));
 
-        var (ok, msg) = await sut.ProcessTaskAsync(t);
+        var (ok, msg) = await sut.CreateTaskAsync(t);
 
         ok.Should().BeTrue();
         msg.Should().Be("sent");
@@ -107,7 +107,7 @@ public class ManagerServiceTests
         var t = new TaskModel { Id = 3, Name = "ok", Payload = "p" };
         _engine.Setup(e => e.ProcessTaskAsync(t)).ReturnsAsync((false, "bad"));
 
-        var (ok, msg) = await sut.ProcessTaskAsync(t);
+        var (ok, msg) = await sut.CreateTaskAsync(t);
 
         ok.Should().BeFalse();
         msg.Should().Be("bad");
@@ -121,7 +121,7 @@ public class ManagerServiceTests
         var t = new TaskModel { Id = 4, Name = "ok", Payload = "p" };
         _engine.Setup(e => e.ProcessTaskAsync(t)).ThrowsAsync(new Exception("boom"));
 
-        var (ok, msg) = await sut.ProcessTaskAsync(t);
+        var (ok, msg) = await sut.CreateTaskAsync(t);
 
         ok.Should().BeFalse();
         msg.Should().Be("Failed to send to Engine");

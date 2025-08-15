@@ -1,8 +1,7 @@
 ﻿using Dapr.Client;
 using Manager.Constants;
-
-//using Manager.Constants;
 using Manager.Models;
+using Manager.Models.QueueMessages;
 using System.Net;
 using System.Text.Json;
 
@@ -100,6 +99,38 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
         catch (Exception e)
         {
             _logger.LogError(e, "Error inside the DeleteUser");
+            throw;
+        }
+    }
+
+    public async Task<(bool success, string message)> PostTaskAsync(TaskModel task)
+    {
+        _logger.LogInformation(
+           "Inside: {Method} in {Class}",
+           nameof(PostTaskAsync),
+           nameof(EngineClient)
+       );
+
+        try
+        {
+            var payload = JsonSerializer.SerializeToElement(task);
+            var message = new Message
+            {
+                ActionName = MessageAction.CreateTask,
+                Payload = payload
+            };
+            await _daprClient.InvokeBindingAsync($"{QueueNames.AccessorQueue}-out", "create", message);
+
+            _logger.LogDebug(
+                "Task {TaskId} sent to Accessor via binding '{Binding}'",
+                task.Id,
+                QueueNames.AccessorQueue
+            );
+            return (true, "sent to queue");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send task {TaskId} to Accessor", task.Id);
             throw;
         }
     }

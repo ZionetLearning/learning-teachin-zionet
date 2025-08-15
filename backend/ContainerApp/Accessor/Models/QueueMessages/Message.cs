@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Accessor.Models;
+namespace Accessor.Models.QueueMessages;
 
 public record Message
 {
@@ -9,8 +9,11 @@ public record Message
     public MessageAction ActionName { get; set; }
     public JsonElement Payload { get; set; }
 }
+
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum MessageAction
 {
-    UpdateTask
+    UpdateTask,
+    CreateTask,
+    NotifyUser
 }

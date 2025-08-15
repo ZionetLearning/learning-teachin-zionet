@@ -2,6 +2,7 @@
 using Dapr.Client;
 using Manager.Constants;
 using Manager.Models;
+using Manager.Models.QueueMessages;
 using Manager.Models.Speech;
 
 namespace Manager.Services.Clients;

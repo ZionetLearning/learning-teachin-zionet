@@ -3,9 +3,10 @@ using Manager.Constants;
 using Manager.Endpoints;
 using Manager.Hubs;
 using Manager.Messaging;
-using Manager.Models;
+using Manager.Models.QueueMessages;
 using Manager.Services;
 using Manager.Services.Clients;
+using Microsoft.AspNetCore.SignalR;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -48,7 +49,7 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 builder.Services.AddSingleton(_ =>
     new ServiceBusClient(builder.Configuration["ServiceBus:ConnectionString"]));
-
+builder.Services.AddSingleton<IUserIdProvider, QueryStringUserIdProvider>();
 builder.Services.AddQueue<Message, ManagerQueueHandler>(
     QueueNames.ManagerCallbackQueue,
     settings =>

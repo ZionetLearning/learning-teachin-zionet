@@ -18,7 +18,7 @@ public static class ManagerEndpoints
 
         #region HTTP POST
 
-        app.MapPost("/task", CreateTaskAsync).WithName("CreateTask");
+        app.MapPost("/task", CreateTaskAsync).WithName("CreateTaskAsync");
 
         app.MapPost("/tasklong", CreateTaskLongAsync).WithName("CreateTaskLongTest");
 
@@ -83,10 +83,10 @@ public static class ManagerEndpoints
             {
                 logger.LogInformation("Processing task creation for ID {TaskId}", task.Id);
 
-                var (success, message) = await managerService.ProcessTaskAsync(task);
+                var (success, message) = await managerService.CreateTaskAsync(task);
                 if (success)
                 {
-                    logger.LogInformation("Task {TaskId} processed successfully", task.Id);
+                    logger.LogInformation("Task {TaskId} sent to queue successfully", task.Id);
                     return Results.Accepted($"/task/{task.Id}", new { status = message, task.Id });
                 }
 
