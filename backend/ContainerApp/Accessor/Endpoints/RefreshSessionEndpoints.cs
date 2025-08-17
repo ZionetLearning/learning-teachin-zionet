@@ -1,5 +1,157 @@
-﻿namespace Accessor.Endpoints;
+﻿using Accessor.Services;
+using Accessor.Models.RefreshSessions;
+using Microsoft.AspNetCore.Mvc;
+//using Accessor.Models;
 
-public class RefreshSessionEndpoints
+namespace Accessor.Endpoints;
+
+public static class RefreshSessionEndpoints
 {
+    public static void MapRefreshSessionEndpoints(this WebApplication app)
+    {
+        #region HTTP GET
+
+        app.MapGet("/api/refresh-sessions/by-token-hash/{hash}", FindByRefreshHashAsync).WithName("FindRefreshSessionByHash");
+
+        #endregion
+
+        #region HTTP POST
+
+        app.MapPost("/api/refresh-sessions", CreateSessionAsync).WithName("CreateRefreshSession");
+
+        #endregion
+
+        #region HTTP PUT
+
+        app.MapPut("/api/refresh-sessions/{sessionId}/rotate", RotateSessionAsync).WithName("RotateRefreshSession");
+
+        #endregion
+
+        #region HTTP DELETE
+
+        app.MapDelete("/api/refresh-sessions/{sessionId}", DeleteSessionAsync).WithName("DeleteRefreshSession");
+
+        app.MapDelete("/api/refresh-sessions/by-user/{userId}", DeleteAllUserSessionsAsync).WithName("DeleteAllUserRefreshSessions");
+
+        #endregion
+    }
+    #region Handlers
+
+    private static async Task<IResult> CreateSessionAsync(
+        [FromBody] RefreshSessionRequest request,
+        [FromServices] IRefreshSessionService refreshSessionService,
+        [FromServices] ILogger<RefreshSessionService> logger,
+        CancellationToken cancellationToken)
+    {
+        using (logger.BeginScope("Method: {Method}", nameof(CreateSessionAsync)))
+        {
+            try
+            {
+                await refreshSessionService.CreateSessionAsync(request, cancellationToken);
+                logger.LogInformation("Refresh session created for user {UserId}", request.UserId);
+                return Results.Ok();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error creating refresh session");
+                return Results.Problem("Failed to create refresh session.");
+            }
+        }
+    }
+
+    private static async Task<IResult> FindByRefreshHashAsync(
+        [FromRoute] string hash,
+        [FromServices] IRefreshSessionService refreshSessionService,
+        [FromServices] ILogger<RefreshSessionService> logger,
+        CancellationToken cancellationToken)
+    {
+        using (logger.BeginScope("Method: {Method}", nameof(FindByRefreshHashAsync)))
+        {
+            try
+            {
+                var session = await refreshSessionService.FindByRefreshHashAsync(hash, cancellationToken);
+                if (session is null)
+                {
+                    logger.LogWarning("Refresh session not found for hash: {Hash}", hash);
+                    return Results.NotFound();
+                }
+
+                return Results.Ok(session);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error finding refresh session by hash");
+                return Results.Problem("Failed to find refresh session.");
+            }
+        }
+    }
+
+    private static async Task<IResult> RotateSessionAsync(
+        [FromRoute] Guid sessionId,
+        [FromBody] RotateRefreshSessionRequest request,
+        [FromServices] IRefreshSessionService refreshSessionService,
+        [FromServices] ILogger<RefreshSessionService> logger,
+        CancellationToken cancellationToken)
+    {
+        using (logger.BeginScope("Method: {Method}", nameof(RotateSessionAsync)))
+        {
+            try
+            {
+                await refreshSessionService.RotateSessionAsync(sessionId, request, cancellationToken);
+                logger.LogInformation("Refresh session {SessionId} rotated", sessionId);
+                return Results.Ok();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error rotating refresh session");
+                return Results.Problem("Failed to rotate refresh session.");
+            }
+        }
+    }
+
+    private static async Task<IResult> DeleteSessionAsync(
+        [FromRoute] Guid sessionId,
+        [FromServices] IRefreshSessionService refreshSessionService,
+        [FromServices] ILogger<RefreshSessionService> logger,
+        CancellationToken cancellationToken)
+    {
+        using (logger.BeginScope("Method: {Method}", nameof(DeleteSessionAsync)))
+        {
+            try
+            {
+                await refreshSessionService.DeleteSessionAsync(sessionId, cancellationToken);
+                logger.LogInformation("Refresh session {SessionId} deleted", sessionId);
+                return Results.Ok();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error deleting refresh session");
+                return Results.Problem("Failed to delete refresh session.");
+            }
+        }
+    }
+
+    private static async Task<IResult> DeleteAllUserSessionsAsync(
+        [FromRoute] Guid userId,
+        [FromServices] IRefreshSessionService refreshSessionService,
+        [FromServices] ILogger<RefreshSessionService> logger,
+        CancellationToken cancellationToken)
+    {
+        using (logger.BeginScope("Method: {Method}", nameof(DeleteAllUserSessionsAsync)))
+        {
+            try
+            {
+                await refreshSessionService.DeleteAllUserSessionsAsync(userId, cancellationToken);
+                logger.LogInformation("All refresh sessions deleted for user {UserId}", userId);
+                return Results.Ok();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error deleting all user refresh sessions");
+                return Results.Problem("Failed to delete user sessions.");
+            }
+        }
+    }
+
+    #endregion
 }
