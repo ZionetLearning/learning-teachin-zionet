@@ -1,16 +1,21 @@
-﻿using Dapr.Client;
+﻿using System.Net;
+using System.Text.Json;
+using Dapr.Client;
 using Manager.Constants;
 using Manager.Models;
 using Manager.Models.QueueMessages;
-using System.Net;
-using System.Text.Json;
 
 namespace Manager.Services.Clients;
 
-public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClient) : IAccessorClient
+public class AccessorClient(
+    ILogger<AccessorClient> logger,
+    DaprClient daprClient,
+    IHttpContextAccessor httpContextAccessor
+    ) : IAccessorClient
 {
     private readonly ILogger<AccessorClient> _logger = logger;
     private readonly DaprClient _daprClient = daprClient;
+    private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
 
     public async Task<TaskModel?> GetTaskAsync(int id)
     {
@@ -113,11 +118,13 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
 
         try
         {
+            var userId = _httpContextAccessor.HttpContext?.Request.Headers["X-User-Id"].FirstOrDefault() ?? "anonymous";
+
             var payload = JsonSerializer.SerializeToElement(task);
             var userContextMetadata = JsonSerializer.SerializeToElement(
                 new UserContextMetadata
                 {
-                    UserId = "1234567", // Replace with actual user ID logic
+                    UserId = userId,
                     MessageId = Guid.NewGuid().ToString()
                 }
             );

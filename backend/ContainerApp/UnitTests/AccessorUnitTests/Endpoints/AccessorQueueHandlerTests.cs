@@ -24,7 +24,7 @@ public class AccessorQueueHandlerTests
 
     // Update all instantiations of AccessorQueueHandler to include a mock IQueuePublisher as the second argument.
 
-    private static Mock<IQueuePublisher> Publisher() => new(MockBehavior.Strict);
+    private static Mock<IManagerCallbackQueueService> Publisher() => new(MockBehavior.Strict);
 
     [Fact]
     public async Task HandleAsync_UpdateTask_Calls_Service()

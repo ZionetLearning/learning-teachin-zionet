@@ -3,20 +3,19 @@ using Accessor.Messaging;
 using Accessor.Models;
 using Accessor.Models.QueueMessages;
 using Accessor.Services;
-using Accessor.Constants;
 
 namespace Accessor.Endpoints;
 
 public class AccessorQueueHandler : IQueueHandler<Message>
 {
     private readonly IAccessorService _accessorService;
-    private readonly IQueuePublisher _queuePublisher;
+    private readonly IManagerCallbackQueueService _queuePublisher;
     private readonly ILogger<AccessorQueueHandler> _logger;
     private readonly Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>> _handlers;
 
     public AccessorQueueHandler(
         IAccessorService accessorService,
-        IQueuePublisher queuePublisher,
+        IManagerCallbackQueueService queuePublisher,
         ILogger<AccessorQueueHandler> logger)
     {
         _accessorService = accessorService;
@@ -143,7 +142,7 @@ public class AccessorQueueHandler : IQueueHandler<Message>
                 Metadata = message.Metadata
             };
 
-            await _queuePublisher.PublishAsync($"{QueueNames.ManagerCallbackQueue}-out", messageToManger, cancellationToken);
+            await _queuePublisher.PublishToManagerCallbackAsync(messageToManger, cancellationToken);
 
             _logger.LogInformation("Task {Id} created", taskModel.Id);
         }

@@ -25,7 +25,7 @@ builder.Services.AddQueue<Message, AccessorQueueHandler>(
         settings.RetryDelaySeconds = 5;
     });
 builder.Services.AddScoped<IAccessorService, AccessorService>();
-builder.Services.AddScoped<IQueuePublisher, QueuePublisher>();
+builder.Services.AddScoped<IManagerCallbackQueueService, ManagerCallbackQueueService>();
 
 var env = builder.Environment;
 

@@ -69,6 +69,7 @@ builder.Services.AddOpenApi(
         options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
     }
 );
+builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 app.UseCors("AllowAll");
