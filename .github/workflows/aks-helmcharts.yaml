@@ -68,7 +68,8 @@ jobs:
           echo "K8S_DIR=devops/kubernetes/" >> $GITHUB_ENV
           echo "CHART_DIR=devops/kubernetes/charts" >> $GITHUB_ENV
           echo "VALUES_FILE=devops/kubernetes/charts/values.dev.yaml" >> $GITHUB_ENV
-          echo "DOCKER_REGISTRY=${{ secrets.DOCKER_USERNAME }}" >> $GITHUB_ENV
+          echo "ACR_NAME=teachindevacr" >> $GITHUB_ENV
+          echo "ACR_LOGIN_SERVER=teachindevacr.azurecr.io" >> $GITHUB_ENV
           echo "OPENAI_KEY=${{ secrets.AZURE_OPENAI_API_KEY }}" >> $GITHUB_ENV
           echo "AZURE_SPEECH_KEY=${{ secrets.AZURE_SPEECH_KEY }}" >> $GITHUB_ENV
 
@@ -150,7 +151,7 @@ jobs:
             --set namespace.name="$TARGET_NAMESPACE" \
             --set namespace.create=false \
             --set global.namePrefix="$TARGET_NAMESPACE" \
-            --set global.dockerRegistry="$DOCKER_REGISTRY" \
+            --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
             --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" \
             --set-string engine.env.AzureSpeech__SubscriptionKey="$AZURE_SPEECH_KEY" \
             --set dapr.installComponents=false \
@@ -164,7 +165,7 @@ jobs:
             --set namespace.name="$TARGET_NAMESPACE" \
             --set namespace.create=false \
             --set global.namePrefix="$TARGET_NAMESPACE" \
-            --set global.dockerRegistry="$DOCKER_REGISTRY" \
+            --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
             --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" \
             --set-string engine.env.AzureSpeech__SubscriptionKey="$AZURE_SPEECH_KEY" \
             --set dapr.installComponents=false

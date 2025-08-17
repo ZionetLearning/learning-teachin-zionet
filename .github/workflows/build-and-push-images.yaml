@@ -12,25 +12,25 @@ on:
       list_services_names:
         required: true
         type: string
-  # workflow_dispatch:
-  #   inputs:
-  #     environment:
-  #       description: 'Select environment (GitHub Environment)'
-  #       required: true
-  #       type: choice
-  #       options:
-  #         - Development
-  #         - Production
-  #       default: Development
-  #     environment_name:
-  #       description: 'Enter custom prefix (lowercase letters & digits only). This will be used as the Kubernetes namespace and environment identifier.'
-  #       required: true
-  #       type: string
-  #     list_services_names:
-  #       description: 'Optional comma-separated list of services to build (e.g., accessor,manager). Leave empty for all.'
-  #       required: false
-  #       type: string
-  #       default: ''
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Select environment (GitHub Environment)'
+        required: true
+        type: choice
+        options:
+          - Development
+          - Production
+        default: Development
+      environment_name:
+        description: 'Enter custom prefix (lowercase letters & digits only). This will be used as the Kubernetes namespace and environment identifier.'
+        required: true
+        type: string
+      list_services_names:
+        description: 'Optional comma-separated list of services to build (e.g., accessor,manager). Leave empty for all.'
+        required: false
+        type: string
+        default: ''
 
 jobs:
   build-and-push:

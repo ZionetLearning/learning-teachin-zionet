@@ -1,6 +1,11 @@
 name: AKS - Deploy Current Backend Images to Cloud
 # Builds and pushs current backend images (from current main) into dockerhub(later to be changed to acr) and deploys to AKS in cloud
 on:
+  # push:
+  #   branches: [ main ]
+  #   paths:
+  #     - 'backend/**'  # Only trigger for Azure backend changes
+  #     # - '.github/workflows/build-and-push-images.yaml'  # Trigger on workflow changes
   workflow_dispatch:
     inputs:
       environment:
