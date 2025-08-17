@@ -9,6 +9,7 @@ using Manager.Models;
 using Manager.Models.Auth;
 using Manager.Services;
 using Manager.Services.Clients;
+using Manager.Services.Clients.Engine;
 using Scalar.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.IdentityModel.Tokens;
