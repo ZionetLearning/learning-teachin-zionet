@@ -48,7 +48,7 @@ public class AccessorQueueHandler : IQueueHandler<Message>
             var payload = message.Payload.Deserialize<TaskModel>();
             if (payload is null)
             {
-                _logger.LogWarning("Invalid taskModel for UpdateTask");
+                _logger.LogWarning("Invalid payload for UpdateTask");
                 throw new NonRetryableException("Payload deserialization returned null for TaskModel.");
             }
 
@@ -168,4 +168,4 @@ public class AccessorQueueHandler : IQueueHandler<Message>
             throw new RetryableException("Transient error while creating task.", ex);
         }
     }
-}
+    }
