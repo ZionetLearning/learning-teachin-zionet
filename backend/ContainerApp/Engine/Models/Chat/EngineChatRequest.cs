@@ -9,7 +9,7 @@ public sealed record EngineChatRequest
 
     public required string UserId { get; init; }
 
-    public required string UserMessage { get; init; } = string.Empty;
+    public required string UserMessage { get; init; }
 
     public required ChatType ChatType { get; init; } = ChatType.Default;
 

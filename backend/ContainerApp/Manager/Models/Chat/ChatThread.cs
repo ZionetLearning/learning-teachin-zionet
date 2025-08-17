@@ -8,7 +8,7 @@ public sealed class ChatThread
     public Guid ThreadId { get; set; }
 
     [JsonPropertyName("userId")]
-    public string UserId { get; set; } = string.Empty;
+    public required string UserId { get; set; }
 
     [JsonPropertyName("chatName")]
     public string ChatName { get; set; } = string.Empty;

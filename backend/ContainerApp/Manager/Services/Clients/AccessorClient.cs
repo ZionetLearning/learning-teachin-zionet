@@ -155,6 +155,12 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
     public async Task<IReadOnlyList<ChatThread>> GetThreadsForUserAsync(string userId, CancellationToken ct = default)
     {
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetThreadsForUserAsync), nameof(AccessorClient));
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            throw new ArgumentException("userId cannot be null or whitespace.", nameof(userId));
+        }
+
         try
         {
             var threads = await _daprClient.InvokeMethodAsync<List<ChatThread>>(
@@ -170,6 +176,11 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
         {
             _logger.LogWarning("No threads found for user {UserId}", userId);
             return Array.Empty<ChatThread>();
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            _logger.LogInformation("{Metod} cancelled for user {UserId}", nameof(GetThreadsForUserAsync), userId);
+            throw;
         }
         catch (Exception ex)
         {
