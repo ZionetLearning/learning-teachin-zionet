@@ -143,7 +143,7 @@ public static class AccessorEndpoints
 
     #region Chat-History Handlers
 
-    public static async Task<IResult> StoreMessageAsync(
+    private static async Task<IResult> StoreMessageAsync(
         [FromBody] ChatMessage msg,
         [FromServices] IAccessorService accessorService,
         [FromServices] ILogger<AccessorService> logger)
@@ -179,7 +179,7 @@ public static class AccessorEndpoints
         }
     }
 
-    public static async Task<IResult> GetChatHistoryAsync(
+    private static async Task<IResult> GetChatHistoryAsync(
         Guid threadId,
         [FromServices] IAccessorService accessorService,
         [FromServices] ILogger<AccessorService> logger)
@@ -215,7 +215,7 @@ public static class AccessorEndpoints
         }
     }
 
-    public static async Task<IResult> GetThreadsForUserAsync(
+    private static async Task<IResult> GetThreadsForUserAsync(
         string userId,
         [FromServices] IAccessorService accessorService,
         [FromServices] ILogger<AccessorService> logger)
