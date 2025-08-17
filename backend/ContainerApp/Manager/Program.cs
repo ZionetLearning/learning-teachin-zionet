@@ -2,7 +2,7 @@ using Azure.Messaging.ServiceBus;
 using Manager.Constants;
 using Manager.Endpoints;
 using Manager.Hubs;
-using Manager.Messaging;
+using DotQueue;
 using Manager.Models;
 using Manager.Services;
 using Manager.Services.Clients;

@@ -1,7 +1,7 @@
-﻿using Manager.Models;
+﻿using DotQueue;
+using Manager.Models;
 using Manager.Models.ModelValidation;
 using Manager.Services;
-using Manager.Messaging;
 using System.Text.Json;
 
 namespace Manager.Endpoints;

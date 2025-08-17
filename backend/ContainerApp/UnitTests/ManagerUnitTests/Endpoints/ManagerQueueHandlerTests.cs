@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 using Manager.Endpoints;
-using Manager.Messaging;
+using DotQueue;
 using Manager.Models;
 using Manager.Services;
 using Microsoft.Extensions.Logging;
