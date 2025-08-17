@@ -12,11 +12,6 @@ public abstract class IntegrationTestBase : IClassFixture<HttpTestFixture>
         Client = httpFixture.Client;
     }
 
-    protected IntegrationTestBase(AccessorHttpTestFixture fixture)
-    {
-        Client = fixture.Client;
-    }
-
     protected async Task<HttpResponseMessage> PostAsJsonAsync<T>(string requestUri, T value)
     {
         return await Client.PostAsJsonAsync(requestUri, value);
