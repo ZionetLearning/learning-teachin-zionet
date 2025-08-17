@@ -42,7 +42,7 @@ public static class AiEndpoints
         [FromServices] ILogger<AnswerEndpoint> log,
         CancellationToken ct)
     {
-        using (log.BeginScope("Method: {Method}, QuestionId: {Id}", nameof(AnswerAsync), id))
+        using var scope = log.BeginScope("QuestionId: {Id}", id);
         {
             try
             {
@@ -70,8 +70,7 @@ public static class AiEndpoints
         [FromServices] ILogger<QuestionEndpoint> log,
         CancellationToken ct)
     {
-        using (log.BeginScope("Method: {Method}, RequestId: {RequestId}, ThreadId: {ThreadId}",
-        nameof(QuestionAsync), dto.Id, dto.ThreadId))
+        using var scope = log.BeginScope("RequestId: {RequestId}, ThreadId: {ThreadId}", dto.Id, dto.ThreadId);
         {
             if (!ValidationExtensions.TryValidate(dto, out var validationErrors))
             {
@@ -101,20 +100,23 @@ public static class AiEndpoints
       [FromServices] ILogger<ChatPostEndpoint> log,
       CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(dto.UserMessage))
+        using var scope = log.BeginScope("ThreadId: {ThreadId}", dto.ThreadId);
         {
-            return Results.BadRequest(new { error = "userMessage is required" });
-        }
+            if (string.IsNullOrWhiteSpace(dto.UserMessage))
+            {
+                return Results.BadRequest(new { error = "userMessage is required" });
+            }
 
-        try
-        {
-            var response = await engine.ChatAsync(dto, ct);
-            return Results.Ok(response);
-        }
-        catch (Exception ex)
-        {
-            log.LogError(ex, "Engine invocation failed");
-            return Results.Problem("Unable to contact AI engine");
+            try
+            {
+                var response = await engine.ChatAsync(dto, ct);
+                return Results.Ok(response);
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, "Engine invocation failed");
+                return Results.Problem("Unable to contact AI engine");
+            }
         }
     }
 
