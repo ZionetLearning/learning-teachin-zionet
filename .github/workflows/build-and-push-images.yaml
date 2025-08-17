@@ -17,7 +17,11 @@ on:
       environment:
         description: 'Select environment (GitHub Environment)'
         required: true
-        type: string
+        type: choice
+        options:
+          - Development
+          - Production
+        default: Development
       environment_name:
         description: 'Enter custom prefix (lowercase letters & digits only). This will be used as the Kubernetes namespace and environment identifier.'
         required: true
@@ -26,6 +30,7 @@ on:
         description: 'Optional comma-separated list of services to build (e.g., accessor,manager). Leave empty for all.'
         required: false
         type: string
+        default: ''
 
 jobs:
   build-and-push:

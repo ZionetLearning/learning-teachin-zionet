@@ -25,6 +25,8 @@ on:
           description: 'Optional comma-separated list of services to build (e.g., accessor,manager). Leave empty for all.'
           required: false
           type: string
+          default: ''
+          
 jobs:
   build-and-push-images:
     uses: ./.github/workflows/build-and-push-images.yaml
