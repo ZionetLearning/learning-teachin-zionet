@@ -57,10 +57,10 @@ public class ManagerServiceTests
             .Should().ThrowAsync<InvalidOperationException>();
     }
 
-    // ---------- ProcessTaskAsync ----------
+    // ---------- CreateTaskAsync ----------
 
     [Fact]
-    public async Task ProcessTaskAsync_NullTask_ReturnsFalse_WithMessage()
+    public async Task CreateTaskAsync_NullTask_ReturnsFalse_WithMessage()
     {
         var sut = Create();
 
@@ -75,7 +75,7 @@ public class ManagerServiceTests
     [InlineData("n", "", "Task payload is required")]
     [InlineData("   ", "p", "Task name is required")]
     [InlineData("n", "   ", "Task payload is required")]
-    public async Task ProcessTaskAsync_InvalidFields_ReturnsFalse_WithMessage(string name, string payload, string expectedMsg)
+    public async Task CreateTaskAsync_InvalidFields_ReturnsFalse_WithMessage(string name, string payload, string expectedMsg)
     {
         var sut = Create();
         var task = new TaskModel { Id = 5, Name = name, Payload = payload };
@@ -84,43 +84,43 @@ public class ManagerServiceTests
 
         ok.Should().BeFalse();
         msg.Should().Be(expectedMsg);
-        _engine.Verify(e => e.ProcessTaskAsync(It.IsAny<TaskModel>()), Times.Never);
+        _accessor.Verify(a => a.PostTaskAsync(It.IsAny<TaskModel>()), Times.Never);
     }
 
     [Fact]
-    public async Task ProcessTaskAsync_EngineSuccess_PassesThroughResult()
+    public async Task CreateTaskAsync_AccessorSuccess_PassesThroughResult()
     {
         var sut = Create();
         var t = new TaskModel { Id = 2, Name = "ok", Payload = "p" };
-        _engine.Setup(e => e.ProcessTaskAsync(t)).ReturnsAsync((true, "sent"));
+        _accessor.Setup(a => a.PostTaskAsync(t)).ReturnsAsync((true, "sent"));
 
         var (ok, msg) = await sut.CreateTaskAsync(t);
 
         ok.Should().BeTrue();
         msg.Should().Be("sent");
-        _engine.VerifyAll();
+        _accessor.VerifyAll();
     }
 
     [Fact]
-    public async Task ProcessTaskAsync_EngineFailure_PassesThroughFalseAndMessage()
+    public async Task CreateTaskAsync_AccessorFailure_PassesThroughFalseAndMessage()
     {
         var sut = Create();
         var t = new TaskModel { Id = 3, Name = "ok", Payload = "p" };
-        _engine.Setup(e => e.ProcessTaskAsync(t)).ReturnsAsync((false, "bad"));
+        _accessor.Setup(a => a.PostTaskAsync(t)).ReturnsAsync((false, "bad"));
 
         var (ok, msg) = await sut.CreateTaskAsync(t);
 
         ok.Should().BeFalse();
         msg.Should().Be("bad");
-        _engine.VerifyAll();
+        _accessor.VerifyAll();
     }
 
     [Fact]
-    public async Task ProcessTaskAsync_EngineThrows_ReturnsFriendlyFailure()
+    public async Task CreateTaskAsync_AccessorThrows_ReturnsFriendlyFailure()
     {
         var sut = Create();
         var t = new TaskModel { Id = 4, Name = "ok", Payload = "p" };
-        _engine.Setup(e => e.ProcessTaskAsync(t)).ThrowsAsync(new Exception("boom"));
+        _accessor.Setup(a => a.PostTaskAsync(t)).ThrowsAsync(new Exception("boom"));
 
         var (ok, msg) = await sut.CreateTaskAsync(t);
 
