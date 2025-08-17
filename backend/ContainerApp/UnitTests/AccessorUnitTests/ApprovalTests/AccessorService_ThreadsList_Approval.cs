@@ -1,7 +1,4 @@
-﻿// File: AccessorService_ThreadsList_Approval.cs
-using Newtonsoft.Json;
-using ApprovalTests;
-using ApprovalTests.Namers;
+﻿using Newtonsoft.Json;
 using Accessor.DB;
 using Accessor.Models;
 using Accessor.Services;

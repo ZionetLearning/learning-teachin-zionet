@@ -1,6 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 using ApprovalTests;
-using ApprovalTests.Namers;   // 👈 add this
+using ApprovalTests.Namers;
 
 namespace AccessorUnitTests;
 
