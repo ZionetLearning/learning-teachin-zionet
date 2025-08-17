@@ -102,9 +102,9 @@ public static class AiEndpoints
       [FromServices] ILogger<ChatPostEndpoint> log,
       CancellationToken ct)
     {
-        using var scope = log.BeginScope("ThreadId: {ThreadId}", dto.ThreadId);
+        using var scope = log.BeginScope("ThreadId: {ThreadId}", request.ThreadId);
         {
-            if (string.IsNullOrWhiteSpace(dto.UserMessage))
+            if (string.IsNullOrWhiteSpace(request.UserMessage))
             {
                 return Results.BadRequest(new { error = "userMessage is required" });
             }
