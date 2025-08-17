@@ -75,7 +75,6 @@ jobs:
         id: imgtag
         shell: bash
         env:
-          GITHUB_EVENT_NAME: ${{ github.event_name }}
           IMAGE_NAME: ${{ env.ACR_LOGIN_SERVER }}/${{ matrix.service.name }}
           GITHUB_SHA: ${{ github.sha }}
           ENV_TAG: ${{ inputs.environment_name }}
@@ -87,7 +86,7 @@ jobs:
           {
             echo "tags<<EOF"
             # Add latest tag only for workflow_call
-            if [[ "${GITHUB_EVENT_NAME}" == "workflow_call" ]]; then
+            if [[ "${{ github.event_name }}" == "workflow_call" ]]; then
               echo "${IMAGE_NAME}:latest"
             fi
             # Always add these two tags
