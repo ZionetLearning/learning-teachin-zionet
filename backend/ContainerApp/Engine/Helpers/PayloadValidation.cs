@@ -1,6 +1,7 @@
 using System.Text.Json;
-using Engine.Messaging;
 using Engine.Models;
+using Engine.Models.Chat;
+using DotQueue;
 
 namespace Engine.Helpers;
 public static class PayloadValidation
@@ -46,30 +47,75 @@ public static class PayloadValidation
         }
     }
 
-    public static void ValidateAiRequest(AiRequestModel req, ILogger logger)
+    public static void ValidateEngineChatRequest(EngineChatRequest req, ILogger logger)
     {
         if (req is null)
         {
-            logger.LogWarning("AiRequestModel cannot be null.");
-            throw new NonRetryableException("AiRequestModel cannot be null.");
+            logger.LogWarning("EngineChatRequest cannot be null.");
+            throw new NonRetryableException("EngineChatRequest cannot be null.");
         }
 
-        if (string.IsNullOrWhiteSpace(req.Id))
+        using var _ = logger.BeginScope(new
         {
-            logger.LogWarning("Request Id is required.");
-            throw new NonRetryableException("Request Id is required.");
+            req.RequestId,
+        });
+
+        static void Fail(ILogger log, string message, string param = "")
+        {
+            if (!string.IsNullOrEmpty(param))
+            {
+                log.LogWarning("Validation failed for {Param}: {Message}", param, message);
+            }
+            else
+            {
+                log.LogWarning("{Message}", message);
+
+            }
+
+            throw new NonRetryableException(message);
         }
 
-        if (string.IsNullOrWhiteSpace(req.ThreadId))
+        if (string.IsNullOrWhiteSpace(req.RequestId))
         {
-            logger.LogWarning("ThreadId is required.");
-            throw new NonRetryableException("ThreadId is required.");
+            Fail(logger, "RequestId is required.", nameof(req.RequestId));
+
         }
 
-        if (string.IsNullOrWhiteSpace(req.Question))
+        if (string.IsNullOrWhiteSpace(req.UserId))
         {
-            logger.LogWarning("Question is required.");
-            throw new NonRetryableException("Question is required.");
+            Fail(logger, "UserId is required.", nameof(req.UserId));
+
         }
+
+        if (req.ThreadId == Guid.Empty)
+        {
+            Fail(logger, "ThreadId is required.", nameof(req.ThreadId));
+
+        }
+
+        if (string.IsNullOrWhiteSpace(req.UserMessage))
+        {
+            Fail(logger, "UserMessage is required.", nameof(req.UserMessage));
+
+        }
+
+        if (req.TtlSeconds <= 0)
+        {
+            Fail(logger, "TtlSeconds must be greater than 0.", nameof(req.TtlSeconds));
+
+        }
+
+        if (req.SentAt <= 0)
+        {
+            Fail(logger, "SentAt must be a valid Unix timestamp.", nameof(req.SentAt));
+        }
+
+        var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        if (now > req.SentAt + req.TtlSeconds)
+        {
+            Fail(logger, "Request TTL expired.", "TTL");
+        }
+
+        logger.LogDebug("ChatAiServiseRequest validation passed.");
     }
 }
