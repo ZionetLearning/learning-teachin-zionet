@@ -1,223 +1,226 @@
-import { useState } from "react";
-import type { ExerciseState, DifficultyLevel, Exercise } from "../types";
-import { getRandomExercise, compareTexts } from "../utils";
-import { speakHebrew } from "../../../../services";
+import { useEffect, useState } from 'react';
+import type { ExerciseState, DifficultyLevel, Exercise } from '../types';
+import { getRandomExercise, compareTexts } from '../utils';
+import { useAvatarSpeech } from '@/hooks';
 
 export const useTypingPractice = () => {
-  const [exerciseState, setExerciseState] = useState<ExerciseState>({
-    phase: "level-selection",
-    selectedLevel: null,
-    isLoading: false,
-    error: null,
-    audioState: {
-      isPlaying: false,
-      hasPlayed: false,
-      error: null,
-    },
-    userInput: "",
-    feedbackResult: null,
-  });
+	const [exerciseState, setExerciseState] = useState<ExerciseState>({
+		phase: 'level-selection',
+		selectedLevel: null,
+		isLoading: false,
+		error: null,
+		audioState: {
+			isPlaying: false,
+			hasPlayed: false,
+			error: null,
+		},
+		userInput: '',
+		feedbackResult: null,
+	});
 
-  const [currentExercise, setCurrentExercise] = useState<Exercise | null>(null);
+	const [currentExercise, setCurrentExercise] = useState<Exercise | null>(null);
 
-  const handleLevelSelect = (level: DifficultyLevel) => {
-    try {
-      setExerciseState((prev) => ({ ...prev, isLoading: true, error: null }));
+	const { speak, stop, isPlaying, error } = useAvatarSpeech({
+		volume: 1,
+		onAudioStart: () => {
+			setExerciseState((prev) => ({
+				...prev,
+				phase: 'playing',
+				audioState: {
+					...prev.audioState,
+					isPlaying: true,
+					error: null,
+				},
+			}));
+		},
+		onAudioEnd: () => {
+			setExerciseState((prev) => ({
+				...prev,
+				phase: 'typing',
+				audioState: {
+					...prev.audioState,
+					isPlaying: false,
+					hasPlayed: true,
+					error: null,
+				},
+			}));
+		},
+	});
 
-      const exercise = getRandomExercise(level);
-      setCurrentExercise(exercise);
+	useEffect(
+		function handleError() {
+			if (error) {
+				setExerciseState((prev) => ({
+					...prev,
+					phase: prev.phase === 'playing' ? 'ready' : prev.phase,
+					audioState: {
+						...prev.audioState,
+						isPlaying: false,
+						error: error instanceof Error ? error.message : 'TTS error',
+					},
+				}));
+			}
+		},
+		[error]
+	);
 
-      setExerciseState({
-        phase: "ready",
-        selectedLevel: level,
-        isLoading: false,
-        error: null,
-        audioState: {
-          isPlaying: false,
-          hasPlayed: false,
-          error: null,
-        },
-        userInput: "",
-        feedbackResult: null,
-      });
-    } catch (error) {
-      setExerciseState((prev) => ({
-        ...prev,
-        isLoading: false,
-        error:
-          error instanceof Error ? error.message : "Failed to load exercise",
-      }));
-    }
-  };
+	const handleLevelSelect = (level: DifficultyLevel) => {
+		try {
+			setExerciseState((prev) => ({ ...prev, isLoading: true, error: null }));
 
-  const handleBackToLevelSelection = () => {
-    setExerciseState({
-      phase: "level-selection",
-      selectedLevel: null,
-      isLoading: false,
-      error: null,
-      audioState: {
-        isPlaying: false,
-        hasPlayed: false,
-        error: null,
-      },
-      userInput: "",
-      feedbackResult: null,
-    });
-    setCurrentExercise(null);
-  };
+			const exercise = getRandomExercise(level);
+			setCurrentExercise(exercise);
 
-  const handlePlayAudio = async () => {
-    if (!currentExercise) return;
+			setExerciseState({
+				phase: 'ready',
+				selectedLevel: level,
+				isLoading: false,
+				error: null,
+				audioState: {
+					isPlaying: false,
+					hasPlayed: false,
+					error: null,
+				},
+				userInput: '',
+				feedbackResult: null,
+			});
+		} catch (error) {
+			setExerciseState((prev) => ({
+				...prev,
+				isLoading: false,
+				error:
+					error instanceof Error ? error.message : 'Failed to load exercise',
+			}));
+		}
+	};
 
-    setExerciseState((prev) => ({
-      ...prev,
-      phase: "playing",
-      audioState: {
-        ...prev.audioState,
-        isPlaying: true,
-        error: null,
-      },
-    }));
+	const handleBackToLevelSelection = () => {
+		if (isPlaying) stop();
+		setExerciseState({
+			phase: 'level-selection',
+			selectedLevel: null,
+			isLoading: false,
+			error: null,
+			audioState: {
+				isPlaying: false,
+				hasPlayed: false,
+				error: null,
+			},
+			userInput: '',
+			feedbackResult: null,
+		});
+		setCurrentExercise(null);
+	};
 
-    try {
-      await speakHebrew(currentExercise.hebrewText);
+	const handlePlayAudio = async () => {
+		if (!currentExercise) return;
 
-      setExerciseState((prev) => ({
-        ...prev,
-        phase: "typing",
-        audioState: {
-          ...prev.audioState,
-          isPlaying: false,
-          hasPlayed: true,
-        },
-      }));
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to play audio";
+		if (isPlaying) {
+			stop();
+			return;
+		}
 
-      setExerciseState((prev) => ({
-        ...prev,
-        phase: "ready",
-        audioState: {
-          ...prev.audioState,
-          isPlaying: false,
-          error: errorMessage,
-        },
-      }));
-    }
-  };
+		setExerciseState((prev) => ({
+			...prev,
+			error: null,
+			audioState: {
+				...prev.audioState,
+				error: null,
+			},
+		}));
+		speak(currentExercise.hebrewText);
+	};
 
-  const handleReplayAudio = async () => {
-    if (!currentExercise) return;
+	const handleReplayAudio = async () => {
+		if (!currentExercise) return;
 
-    setExerciseState((prev) => ({
-      ...prev,
-      phase: "playing",
-      audioState: {
-        ...prev.audioState,
-        isPlaying: true,
-        error: null,
-      },
-    }));
+		if (isPlaying) {
+			stop();
+			return;
+		}
 
-    try {
-      await speakHebrew(currentExercise.hebrewText);
+		setExerciseState((prev) => ({
+			...prev,
+			error: null,
+			audioState: {
+				...prev.audioState,
+				error: null,
+			},
+		}));
+		speak(currentExercise.hebrewText);
+	};
 
-      setExerciseState((prev) => ({
-        ...prev,
-        phase: "typing",
-        audioState: {
-          ...prev.audioState,
-          isPlaying: false,
-        },
-      }));
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to replay audio";
+	const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		setExerciseState((prev) => ({
+			...prev,
+			userInput: event.target.value,
+		}));
+	};
 
-      setExerciseState((prev) => ({
-        ...prev,
-        phase: "typing",
-        audioState: {
-          ...prev.audioState,
-          isPlaying: false,
-          error: errorMessage,
-        },
-      }));
-    }
-  };
+	const handleSubmitAnswer = () => {
+		if (!currentExercise || !exerciseState.userInput.trim()) return;
 
-  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setExerciseState((prev) => ({
-      ...prev,
-      userInput: event.target.value,
-    }));
-  };
+		const feedbackResult = compareTexts(
+			exerciseState.userInput,
+			currentExercise.hebrewText
+		);
 
-  const handleSubmitAnswer = () => {
-    if (!currentExercise || !exerciseState.userInput.trim()) return;
+		setExerciseState((prev) => ({
+			...prev,
+			phase: 'feedback',
+			feedbackResult,
+		}));
+	};
 
-    const feedbackResult = compareTexts(
-      exerciseState.userInput,
-      currentExercise.hebrewText,
-    );
+	const handleTryAgain = () => {
+		setExerciseState((prev) => ({
+			...prev,
+			phase: 'typing',
+			userInput: '',
+			feedbackResult: null,
+		}));
+	};
 
-    setExerciseState((prev) => ({
-      ...prev,
-      phase: "feedback",
-      feedbackResult,
-    }));
-  };
+	const handleNextExercise = () => {
+		if (!exerciseState.selectedLevel) return;
 
-  const handleTryAgain = () => {
-    setExerciseState((prev) => ({
-      ...prev,
-      phase: "typing",
-      userInput: "",
-      feedbackResult: null,
-    }));
-  };
+		try {
+			if (isPlaying) stop();
+			const exercise = getRandomExercise(exerciseState.selectedLevel);
+			setCurrentExercise(exercise);
 
-  const handleNextExercise = () => {
-    if (!exerciseState.selectedLevel) return;
+			setExerciseState((prev) => ({
+				...prev,
+				phase: 'ready',
+				userInput: '',
+				feedbackResult: null,
+				audioState: {
+					isPlaying: false,
+					hasPlayed: false,
+					error: null,
+				},
+			}));
+		} catch (error) {
+			setExerciseState((prev) => ({
+				...prev,
+				error:
+					error instanceof Error
+						? error.message
+						: 'Failed to load next exercise',
+			}));
+		}
+	};
 
-    try {
-      const exercise = getRandomExercise(exerciseState.selectedLevel);
-      setCurrentExercise(exercise);
-
-      setExerciseState((prev) => ({
-        ...prev,
-        phase: "ready",
-        userInput: "",
-        feedbackResult: null,
-        audioState: {
-          isPlaying: false,
-          hasPlayed: false,
-          error: null,
-        },
-      }));
-    } catch (error) {
-      setExerciseState((prev) => ({
-        ...prev,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to load next exercise",
-      }));
-    }
-  };
-
-  return {
-    exerciseState,
-    currentExercise,
-    handleLevelSelect,
-    handleBackToLevelSelection,
-    handlePlayAudio,
-    handleReplayAudio,
-    handleInputChange,
-    handleSubmitAnswer,
-    handleTryAgain,
-    handleNextExercise,
-  };
+	return {
+		exerciseState,
+		currentExercise,
+		handleLevelSelect,
+		handleBackToLevelSelection,
+		handlePlayAudio,
+		handleReplayAudio,
+		handleInputChange,
+		handleSubmitAnswer,
+		handleTryAgain,
+		handleNextExercise,
+	};
 };
