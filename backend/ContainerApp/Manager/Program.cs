@@ -107,6 +107,7 @@ app.MapControllers();
 app.MapSubscribeHandler();
 app.MapManagerEndpoints();
 app.MapAiEndpoints();
+app.MapAuthEndpoints();
 if (env.IsDevelopment())
 {
     app.MapOpenApi();
