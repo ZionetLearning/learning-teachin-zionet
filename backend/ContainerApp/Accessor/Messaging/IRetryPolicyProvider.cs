@@ -1,4 +1,5 @@
-﻿using Polly;
+﻿using DotQueue;
+using Polly;
 
 namespace Accessor.Messaging;
 

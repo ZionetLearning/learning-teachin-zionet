@@ -1,8 +1,8 @@
 ﻿using System.Text.Json;
 using Accessor.Endpoints;
-using Accessor.Messaging;
 using Accessor.Models;
 using Accessor.Services;
+using DotQueue;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
