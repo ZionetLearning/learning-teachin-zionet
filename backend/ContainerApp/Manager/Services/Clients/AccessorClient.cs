@@ -108,16 +108,25 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
         _logger.LogInformation(
            "Inside: {Method} in {Class}",
            nameof(PostTaskAsync),
-           nameof(EngineClient)
+           nameof(AccessorClient)
        );
 
         try
         {
             var payload = JsonSerializer.SerializeToElement(task);
+            var userContextMetadata = JsonSerializer.SerializeToElement(
+                new UserContextMetadata
+                {
+                    UserId = "1234567", // Replace with actual user ID logic
+                    MessageId = Guid.NewGuid().ToString()
+                }
+            );
+
             var message = new Message
             {
                 ActionName = MessageAction.CreateTask,
-                Payload = payload
+                Payload = payload,
+                Metadata = userContextMetadata
             };
             await _daprClient.InvokeBindingAsync($"{QueueNames.AccessorQueue}-out", "create", message);
 

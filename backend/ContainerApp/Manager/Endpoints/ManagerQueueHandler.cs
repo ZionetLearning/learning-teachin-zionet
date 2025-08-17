@@ -92,16 +92,23 @@ public class ManagerQueueHandler : IQueueHandler<Message>
     {
         try
         {
-            if (message is not UserContextMessage userContextMessage)
-            {
-                throw new NonRetryableException("NotifyUser requires user context");
-            }
-
             var notification = message.Payload.Deserialize<UserNotification>();
             if (notification is null)
             {
                 _logger.LogError("Payload deserialization returned null for UserNotification.");
                 throw new NonRetryableException("Payload deserialization returned null for UserNotification.");
+            }
+
+            UserContextMetadata? metadata = null;
+            if (message.Metadata.HasValue)
+            {
+                metadata = JsonSerializer.Deserialize<UserContextMetadata>(message.Metadata.Value);
+            }
+
+            if (metadata is null)
+            {
+                _logger.LogWarning("Metadata is null for NotifyUser action");
+                throw new NonRetryableException("User Metadata is required for NotifyUser action.");
             }
 
             if (!ValidationExtensions.TryValidate(notification, out var validationErrors))
@@ -112,9 +119,9 @@ public class ManagerQueueHandler : IQueueHandler<Message>
                     $"Validation failed for {nameof(UserNotification)}: {string.Join("; ", validationErrors)}");
             }
 
-            _logger.LogInformation("Processing notification for user {UserId}", userContextMessage.UserId);
-            await _managerService.SendUserNotificationAsync(userContextMessage.UserId, notification);
-            _logger.LogInformation("Notification processed for user {UserId}", userContextMessage.UserId);
+            _logger.LogInformation("Processing notification {MessageId} for user {UserId}", metadata.MessageId, metadata.UserId);
+            await _managerService.SendUserNotificationAsync(metadata.UserId, notification);
+            _logger.LogInformation("Notification processed for user {UserId}", metadata.UserId);
         }
         catch (NonRetryableException ex)
         {

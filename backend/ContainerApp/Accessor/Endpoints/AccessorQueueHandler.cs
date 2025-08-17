@@ -96,16 +96,23 @@ public class AccessorQueueHandler : IQueueHandler<Message>
     {
         try
         {
-            if (message is not UserContextMessage userContextMessage)
-            {
-                throw new NonRetryableException("UpdateTask requires user context");
-            }
-
             var taskModel = message.Payload.Deserialize<TaskModel>();
             if (taskModel is null)
             {
                 _logger.LogWarning("Invalid taskModel for CreateTask");
                 throw new NonRetryableException("Payload deserialization returned null for TaskModel.");
+            }
+
+            UserContextMetadata? metadata = null;
+            if (message.Metadata.HasValue)
+            {
+                metadata = JsonSerializer.Deserialize<UserContextMetadata>(message.Metadata.Value);
+            }
+
+            if (metadata is null)
+            {
+                _logger.LogWarning("Metadata is null for CreateTask action");
+                throw new NonRetryableException("User Metadata is required for CreateTask action.");
             }
 
             if (taskModel.Id <= 0)
@@ -129,15 +136,14 @@ public class AccessorQueueHandler : IQueueHandler<Message>
                 Type = NotificationType.Success
             };
 
-            var messageToManger = new UserContextMessage
+            var messageToManger = new Message
             {
                 ActionName = MessageAction.NotifyUser,
                 Payload = JsonSerializer.SerializeToElement(notification),
-                UserId = userContextMessage.UserId,
-                MessageId = userContextMessage.MessageId
+                Metadata = message.Metadata
             };
 
-            await _queuePublisher.PublishAsync($"{QueueNames.ManagerCallbackQueue}-out", notification, cancellationToken);
+            await _queuePublisher.PublishAsync($"{QueueNames.ManagerCallbackQueue}-out", messageToManger, cancellationToken);
 
             _logger.LogInformation("Task {Id} created", taskModel.Id);
         }
