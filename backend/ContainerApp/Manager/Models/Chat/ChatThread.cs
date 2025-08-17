@@ -1,14 +1,17 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace IntegrationTests.Models;
+namespace Manager.Models.Chat;
 
-public class ChatThreadDto
+public sealed class ChatThread
 {
     [JsonPropertyName("threadId")]
     public Guid ThreadId { get; set; }
 
     [JsonPropertyName("userId")]
-    public string UserId { get; set; } = "";
+    public required string UserId { get; set; }
+
+    [JsonPropertyName("chatName")]
+    public string ChatName { get; set; } = string.Empty;
 
     [JsonPropertyName("chatType")]
     public string ChatType { get; set; } = "default";

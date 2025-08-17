@@ -173,6 +173,7 @@ Once you're done with your changes, or you want to get feedback on your work, yo
 #### Creating a pull request
 
 - Ensure you have run **npm run format**
+- If you have been working on a new feature, please create a Vitest test for that
 - Make sure your branch is up to date with the latest changes from the origin.
 - Mark as `Draft` if you're still working on it or if it's not ready for review.
 - Write a descriptive title.
