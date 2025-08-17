@@ -48,7 +48,7 @@ public sealed class ChatAiService : IChatAiService
         {
             _log.LogWarning("Request: {RequestId} is expired Skipping.", request.RequestId);
 
-            response.Status = "expired";
+            response.Status = ChatAnswerStatus.Expired;
             response.Error = "TTL expired";
 
             return response;
@@ -87,7 +87,7 @@ public sealed class ChatAiService : IChatAiService
 
             if (result?.Content == null)
             {
-                response.Status = "error during answer"; //todo add enum for reason error
+                response.Status = ChatAnswerStatus.Fail; //todo add enum for reason error
                 return response;
 
             }
@@ -101,7 +101,7 @@ public sealed class ChatAiService : IChatAiService
                 Content = result.Content
             };
 
-            response.Status = "ok";
+            response.Status = ChatAnswerStatus.Ok;
             response.Answer = answer;
             return response;
 
@@ -109,7 +109,7 @@ public sealed class ChatAiService : IChatAiService
         catch (Exception ex)
         {
             _log.LogError(ex, "Error while processing request: {RequestId}", request.RequestId);
-            response.Status = "error during answer";
+            response.Status = ChatAnswerStatus.Fail;
 
             response.Error = ex.Message;
 

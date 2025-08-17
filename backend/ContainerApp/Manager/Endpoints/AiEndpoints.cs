@@ -130,14 +130,7 @@ public static class AiEndpoints
         {
             var engineResponse = await engine.ChatAsync(engineRequest, ct);
 
-            var frontResponse = new
-            {
-                Answer = engineResponse.AssistantMessage,
-                Status = engineResponse.Status,
-                ThreadId = threadId
-            };
-
-            return Results.Ok(frontResponse);
+            return Results.Ok(engineResponse);
         }
         catch (Exception ex)
         {

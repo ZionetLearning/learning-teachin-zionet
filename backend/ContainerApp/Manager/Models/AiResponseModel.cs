@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Manager.Services.Clients.Engine.Models;
 
 namespace Manager.Models;
 
@@ -17,6 +18,6 @@ public sealed record AiResponseModel
 
     [Required(ErrorMessage = "Status is required.")]
     [MinLength(1, ErrorMessage = "Status cannot be empty.")]
-    public string Status { get; init; } = "ok";
+    public ChatAnswerStatus Status { get; init; } = ChatAnswerStatus.Ok;
     public string? Error { get; init; }
 }

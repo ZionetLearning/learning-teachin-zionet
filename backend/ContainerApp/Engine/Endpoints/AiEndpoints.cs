@@ -55,7 +55,7 @@ public static class AiEndpoints
 
         var aiResponse = await ai.ChatHandlerAsync(serviceRequest, ct);
 
-        if (aiResponse.Status == "error")
+        if (aiResponse.Status != ChatAnswerStatus.Ok)
         {
             return Results.Problem(aiResponse.Error);
         }
