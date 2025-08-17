@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.Security.Claims;
 using System.Text;
 using Azure.Messaging.ServiceBus;
 using Manager.Constants;
@@ -10,10 +10,11 @@ using Manager.Models.Auth;
 using Manager.Services;
 using Manager.Services.Clients;
 using Manager.Services.Clients.Engine;
-using Scalar.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
-using System.Security.Claims;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,6 +36,8 @@ var key = Encoding.UTF8.GetBytes(jwtSettings.Secret);
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        IdentityModelEventSource.ShowPII = true;
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -49,8 +52,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(key),
 
-            RoleClaimType = ClaimTypes.Role,
-            NameClaimType = ClaimTypes.Name
+            NameClaimType = ClaimTypes.Name,
+            RoleClaimType = ClaimTypes.Role
+
         };
     });
 

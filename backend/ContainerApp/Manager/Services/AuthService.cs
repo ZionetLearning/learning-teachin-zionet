@@ -1,9 +1,11 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+﻿//using System;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Dapr.Client;
 using Manager.Models;
 using Manager.Models.Auth;
+//using Microsoft.Azure.Amqp.Framing;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -174,6 +176,6 @@ public class AuthService : IAuthService
             expires: DateTime.UtcNow.AddMinutes(15),
             signingCredentials: creds);
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        return new JwtSecurityTokenHandler().WriteToken(token).Trim();
     }
 }
