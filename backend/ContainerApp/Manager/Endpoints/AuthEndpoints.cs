@@ -17,7 +17,7 @@ public static class AuthEndpoints
 
         app.MapPost("/api/auth/logout", LogoutAsync).WithName("Logout");
 
-        app.MapGet("/api/protected", testAuth)
+        app.MapGet("/api/protected", TestAuthAsync)
         .RequireAuthorization();
 
         #endregion
@@ -28,7 +28,8 @@ public static class AuthEndpoints
        [FromServices] IAuthService authService,
        [FromServices] ILogger<ManagerService> logger,
        HttpRequest httpRequest,
-       HttpResponse response)
+       HttpResponse response,
+       CancellationToken cancellationToken)
     {
         using (logger.BeginScope("Method: {Method}", nameof(LoginAsync)))
         {
@@ -36,7 +37,7 @@ public static class AuthEndpoints
             {
                 logger.LogInformation("Attempting login for {Email}", loginRequest.Email);
 
-                var (accessToken, refreshToken) = await authService.LoginAsync(loginRequest, httpRequest);
+                var (accessToken, refreshToken) = await authService.LoginAsync(loginRequest, httpRequest, cancellationToken);
 
                 CookieHelper.SetRefreshTokenCookie(response, refreshToken);
 
@@ -60,13 +61,14 @@ public static class AuthEndpoints
         [FromServices] IAuthService authService,
         [FromServices] ILogger<ManagerService> logger,
         HttpRequest request,
-        HttpResponse response)
+        HttpResponse response,
+        CancellationToken cancellationToken)
     {
         using (logger.BeginScope("Method: {Method}", nameof(RefreshTokensAsync)))
         {
             try
             {
-                var (accessToken, newRefreshToken) = await authService.RefreshTokensAsync(request);
+                var (accessToken, newRefreshToken) = await authService.RefreshTokensAsync(request, cancellationToken);
 
                 CookieHelper.SetRefreshTokenCookie(response, newRefreshToken);
 
@@ -90,13 +92,14 @@ public static class AuthEndpoints
         [FromServices] IAuthService authService,
         [FromServices] ILogger<ManagerService> logger,
         HttpRequest request,
-        HttpResponse response)
+        HttpResponse response,
+        CancellationToken cancellationToken)
     {
         using (logger.BeginScope("Method: {Method}", nameof(LogoutAsync)))
         {
             try
             {
-                await authService.LogoutAsync(request);
+                await authService.LogoutAsync(request, cancellationToken);
 
                 // Clear the refresh token cookie
                 CookieHelper.ClearRefreshTokenCookie(response);
@@ -112,13 +115,14 @@ public static class AuthEndpoints
         }
     }
 
-    private static Task<IResult> testAuth(
+    private static Task<IResult> TestAuthAsync(
         [FromServices] IAuthService authService,
         [FromServices] ILogger<ManagerService> logger,
         HttpRequest request,
-        HttpResponse response)
+        HttpResponse response,
+        CancellationToken cancellationToken)
     {
-        using (logger.BeginScope("Method: {Method}", nameof(LogoutAsync)))
+        using (logger.BeginScope("Method: {Method}", nameof(TestAuthAsync)))
         {
             try
             {
@@ -128,7 +132,7 @@ public static class AuthEndpoints
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error during logout");
-                return Task.FromResult(Results.Problem());
+                return Task.FromResult(Results.Problem("Auth test failed!"));
             }
         }
     }

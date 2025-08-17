@@ -1,8 +1,12 @@
 ﻿
+using System.ComponentModel.DataAnnotations;
+
 namespace Manager.Models.Auth;
 
 public class LoginRequest
 {
-    public required string Email { get; set; }
-    public required string Password { get; set; }
+    [EmailAddress, StringLength(256)]
+    public required string Email { get; init; }
+    [StringLength(128, MinimumLength = 8)]
+    public required string Password { get; init; }
 }

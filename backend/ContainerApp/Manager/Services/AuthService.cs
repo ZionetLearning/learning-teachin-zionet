@@ -26,7 +26,7 @@ public class AuthService : IAuthService
         _jwt = jwtOptions?.Value ?? throw new ArgumentNullException(nameof(jwtOptions));
     }
 
-    public async Task<(string, string)> LoginAsync(LoginRequest loginRequest, HttpRequest httpRequest)
+    public async Task<(string, string)> LoginAsync(LoginRequest loginRequest, HttpRequest httpRequest, CancellationToken cancellationToken)
     {
         try
         {
@@ -59,11 +59,8 @@ public class AuthService : IAuthService
             // For now just call unrelated method in the accessor
             try
             {
-                var task = await _dapr.InvokeMethodAsync<TaskModel?>(
-                                HttpMethod.Get,
-                                "accessor",
-                                $"task/2"
-                            );
+                var task = await _dapr.InvokeMethodAsync<TaskModel?>(HttpMethod.Get, "accessor", $"task/2"
+, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -79,7 +76,7 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task<(string accessToken, string refreshToken)> RefreshTokensAsync(HttpRequest request)
+    public async Task<(string accessToken, string refreshToken)> RefreshTokensAsync(HttpRequest request, CancellationToken cancellationToken)
     {
         try
         {
@@ -100,7 +97,8 @@ public class AuthService : IAuthService
             var session = await _dapr.InvokeMethodAsync<TaskModel?>(
                                 HttpMethod.Get,
                                 "accessor",
-                                $"task/2"
+                                $"task/2",
+                                cancellationToken
                             );
 
             //if (session == null || session.Fingerprint != fingerprint || session.IP != ip || session.UserAgent != userAgent)
@@ -135,7 +133,7 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task LogoutAsync(HttpRequest request)
+    public async Task LogoutAsync(HttpRequest request, CancellationToken cancellationToken)
     {
         try
         {
@@ -150,7 +148,8 @@ public class AuthService : IAuthService
                 var session = await _dapr.InvokeMethodAsync<TaskModel?>(
                                     HttpMethod.Get,
                                     "accessor",
-                                    $"task/2"
+                                    $"task/2",
+                                    cancellationToken
                                 );
             }
 
