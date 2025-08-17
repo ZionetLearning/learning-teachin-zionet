@@ -1,7 +1,8 @@
+import { useCallback, useEffect, useMemo, useRef, type JSX } from "react";
+
 import { Html, useAnimations, useFBX, useGLTF } from "@react-three/drei";
 import { useFrame, useGraph, type ThreeElements } from "@react-three/fiber";
 import { useControls } from "leva";
-import { useCallback, useEffect, useMemo, useRef, type JSX } from "react";
 import { useTranslation } from "react-i18next";
 import * as THREE from "three";
 import { SkeletonUtils, type GLTF } from "three-stdlib";
