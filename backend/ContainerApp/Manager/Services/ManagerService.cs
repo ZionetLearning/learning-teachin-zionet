@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Manager.Models;
 using Manager.Services.Clients;
+using Manager.Services.Clients.Engine;
 
 namespace Manager.Services;
 
