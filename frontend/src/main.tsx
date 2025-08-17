@@ -24,5 +24,5 @@ createRoot(document.getElementById("root")!).render(
         </AuthProvider>
       </ReactQueryProvider>
     </I18nTranslateProvider>
-  </StrictMode>
+  </StrictMode>,
 );

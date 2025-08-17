@@ -13,18 +13,13 @@ export interface ChatMessage {
   date: Date;
 }
 
-type OnAssistantMessage = (text: string) => void;
-
 export const useChat = () => {
   const [threadId, setThreadId] = useState<string | undefined>(undefined);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
   const { mutate: sendChatMessage, isPending } = useSendChatMessage();
 
-  const sendMessage = (
-    userText: string,
-    onAssistantMessage?: OnAssistantMessage,
-  ) => {
+  const sendMessage = (userText: string) => {
     if (!userText.trim()) return;
 
     const payload: ChatRequest = {
@@ -50,18 +45,14 @@ export const useChat = () => {
 
         const aiText = data.assistantMessage;
 
-        if (onAssistantMessage) {
-          onAssistantMessage(aiText);
-        } else {
-          const aiMsg: ChatMessage = {
-            position: "left",
-            type: "text",
-            sender: "system",
-            text: aiText,
-            date: new Date(),
-          };
-          setMessages((prev) => [...prev, aiMsg]);
-        }
+        const aiMsg: ChatMessage = {
+          position: "left",
+          type: "text",
+          sender: "system",
+          text: aiText,
+          date: new Date(),
+        };
+        setMessages((prev) => [...prev, aiMsg]);
       },
     });
   };

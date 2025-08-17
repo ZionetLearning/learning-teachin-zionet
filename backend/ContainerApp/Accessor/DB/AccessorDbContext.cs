@@ -1,5 +1,6 @@
-using Microsoft.EntityFrameworkCore;
+using Accessor.DB.Configurations;
 using Accessor.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Accessor.DB;
 
@@ -13,9 +14,13 @@ public class AccessorDbContext : DbContext
     public DbSet<ChatThread> ChatThreads { get; set; } = default!;
     public DbSet<ChatMessage> ChatMessages { get; set; } = default!;
     public DbSet<IdempotencyRecord> Idempotency { get; set; } = default!;
+    public DbSet<RefreshSessionsRecord> RefreshSessions { get; set; } = default!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // Refresh Sessions table
+        modelBuilder.ApplyConfiguration(new RefreshSessionConfiguration());
+
         // TaskModel – ensure Id is unique/PK
         modelBuilder.Entity<TaskModel>(e =>
         {
