@@ -17,7 +17,6 @@ public sealed record AiResponseModel
     public long AnsweredAtUnix { get; init; } = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
     [Required(ErrorMessage = "Status is required.")]
-    [MinLength(1, ErrorMessage = "Status cannot be empty.")]
     public ChatAnswerStatus Status { get; init; } = ChatAnswerStatus.Ok;
     public string? Error { get; init; }
 }
