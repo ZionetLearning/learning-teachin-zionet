@@ -2,7 +2,7 @@
 {{- define "app.image" -}}
 {{- $registry := $.Values.global.dockerRegistry | default "" -}}
 {{- $name := .name -}}
-{{- $tag := .tag | default "latest" -}}
+{{- $tag := .tag | default "dev" -}}
 {{- if $registry -}}
 {{ printf "%s/%s:%s" $registry $name $tag }}
 {{- else -}}
