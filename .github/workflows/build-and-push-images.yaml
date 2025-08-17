@@ -81,12 +81,14 @@ jobs:
         run: |
           # Extract first 7 characters of commit SHA
           SHORT_SHA="${GITHUB_SHA:0:7}"
+
+          echo "DEBUG: event name is $GITHUB_EVENT_NAME"
           
           # Start building tags output
           {
             echo "tags<<EOF"
             # Add latest tag only for workflow_call
-            if [[ "${{ github.event_name }}" == "workflow_call" ]]; then
+            if [[ "$GITHUB_EVENT_NAME" == "workflow_call" ]]; then
               echo "${IMAGE_NAME}:latest"
             fi
             # Always add these two tags
