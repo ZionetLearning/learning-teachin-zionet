@@ -88,6 +88,25 @@ jobs:
         run: |
           kubectl create namespace "$TARGET_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 
+      - name: Copy secrets to target namespace
+        run: |
+          if [ "$TARGET_NAMESPACE" != "dev" ]; then
+            echo "Copying secrets from dev namespace to $TARGET_NAMESPACE..."
+            
+            # Copy required secrets
+            for secret in azure-service-bus-secret postgres-connection redis-connection signalr-connection teachin-tls; do
+              if kubectl get secret "$secret" -n dev >/dev/null 2>&1; then
+                kubectl get secret "$secret" -n dev -o yaml | \
+                  sed 's/namespace: dev/namespace: '"$TARGET_NAMESPACE"'/' | \
+                  sed '/resourceVersion:/d' | \
+                  sed '/uid:/d' | \
+                  sed '/creationTimestamp:/d' | \
+                  kubectl apply -f -
+                echo "Copied secret: $secret"
+              fi
+            done
+          fi
+
       - name: Wait for external IP for ingress controller
         run: |
           echo "Waiting for external IP for ingress-nginx-controller..."
@@ -107,11 +126,11 @@ jobs:
         run: |
           INGRESS_IP=$(kubectl -n devops-ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
           az postgres flexible-server firewall-rule create \
-            --resource-group $AKS_RG \
+            --resource-group $PG_RG \
             --name $PG_DB \
-            --rule-name allow-ingress-controller \
+            --rule-name allow-ingress-controller-$TARGET_NAMESPACE \
             --start-ip-address $INGRESS_IP \
-            --end-ip-address $INGRESS_IP
+            --end-ip-address $INGRESS_IP || echo "Firewall rule may already exist"
 
       - name: Add AKS outbound IP to PostgreSQL firewall
         run: |
@@ -139,11 +158,11 @@ jobs:
           echo "AKS outbound IP: $AKS_EGRESS_IP"
 
           az postgres flexible-server firewall-rule create \
-            --resource-group $AKS_RG \
+            --resource-group $PG_RG \
             --name $PG_DB \
-            --rule-name allow-aks-egress \
+            --rule-name allow-aks-egress-$TARGET_NAMESPACE \
             --start-ip-address $AKS_EGRESS_IP \
-            --end-ip-address $AKS_EGRESS_IP
+            --end-ip-address $AKS_EGRESS_IP || echo "Firewall rule may already exist"
 
       - name: Helm template sanity (no Namespace objects)
         run: |
