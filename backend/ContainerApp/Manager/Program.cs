@@ -6,6 +6,7 @@ using Manager.Messaging;
 using Manager.Models.QueueMessages;
 using Manager.Services;
 using Manager.Services.Clients;
+using Manager.Services.Clients.Engine;
 using Microsoft.AspNetCore.SignalR;
 using Scalar.AspNetCore;
 

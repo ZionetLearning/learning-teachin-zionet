@@ -1,15 +1,11 @@
-﻿using Manager.Models;
-using Manager.Models.Chat;
+﻿using Engine.Services.Clients.AccessorClient.Models;
 
-namespace Manager.Services.Clients;
+namespace Engine.Services.Clients.AccessorClient;
 
 public interface IAccessorClient
 {
-    Task<bool> UpdateTaskName(int id, string newTaskName);
-    Task<bool> DeleteTask(int id);
-    Task<(bool success, string message)> PostTaskAsync(TaskModel task);
-    Task<TaskModel?> GetTaskAsync(int id);
     Task<IReadOnlyList<ChatMessage>> GetChatHistoryAsync(Guid threadId, CancellationToken ct = default);
     Task<ChatMessage?> StoreMessageAsync(ChatMessage msg, CancellationToken ct = default);
     Task<IReadOnlyList<ChatThread>> GetThreadsForUserAsync(string userId, CancellationToken ct = default);
 }
+
