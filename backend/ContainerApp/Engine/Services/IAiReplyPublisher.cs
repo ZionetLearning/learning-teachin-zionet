@@ -1,8 +1,8 @@
-﻿using Engine.Models;
+﻿using Engine.Models.Chat;
 
 namespace Engine.Services;
 
 public interface IAiReplyPublisher
 {
-    Task SendReplyAsync(AiResponseModel response, string replyToQueue, CancellationToken ct = default);
+    Task SendReplyAsync(EngineChatResponse response, string replyToQueue, CancellationToken ct = default);
 }

@@ -3,8 +3,9 @@ using Dapr.Client;
 using Manager.Constants;
 using Manager.Models;
 using Manager.Models.Speech;
+using Manager.Services.Clients.Engine.Models;
 
-namespace Manager.Services.Clients;
+namespace Manager.Services.Clients.Engine;
 
 public class EngineClient : IEngineClient
 {
@@ -80,15 +81,15 @@ public class EngineClient : IEngineClient
         }
     }
 
-    public async Task<ChatResponseDto> ChatAsync(ChatRequestDto dto, CancellationToken ct = default)
+    public async Task<EngineChatResponse> ChatAsync(EngineChatRequest request, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Invoke Engine /chat synchronously (thread {Thread})", dto.ThreadId);
+        _logger.LogInformation("Invoke Engine /chat synchronously (thread {Thread})", request.ThreadId);
 
-        return await _daprClient.InvokeMethodAsync<ChatRequestDto, ChatResponseDto>(
+        return await _daprClient.InvokeMethodAsync<EngineChatRequest, EngineChatResponse>(
             appId: AppIds.Engine,
             methodName: "chat",
-            data: dto,
-            cancellationToken: ct);
+            data: request,
+            cancellationToken: cancellationToken);
     }
 
     public async Task<SpeechEngineResponse?> SynthesizeAsync(SpeechRequest request, CancellationToken cancellationToken = default)
