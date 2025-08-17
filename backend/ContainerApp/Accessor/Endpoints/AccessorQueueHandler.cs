@@ -9,17 +9,17 @@ namespace Accessor.Endpoints;
 public class AccessorQueueHandler : IQueueHandler<Message>
 {
     private readonly IAccessorService _accessorService;
-    private readonly IManagerCallbackQueueService _queuePublisher;
+    private readonly IManagerCallbackQueueService _managerCallbackService;
     private readonly ILogger<AccessorQueueHandler> _logger;
     private readonly Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>> _handlers;
 
     public AccessorQueueHandler(
         IAccessorService accessorService,
-        IManagerCallbackQueueService queuePublisher,
+        IManagerCallbackQueueService managerCallbackService,
         ILogger<AccessorQueueHandler> logger)
     {
         _accessorService = accessorService;
-        _queuePublisher = queuePublisher;
+        _managerCallbackService = managerCallbackService;
         _logger = logger;
         _handlers = new Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>>
         {
@@ -142,7 +142,7 @@ public class AccessorQueueHandler : IQueueHandler<Message>
                 Metadata = message.Metadata
             };
 
-            await _queuePublisher.PublishToManagerCallbackAsync(messageToManger, cancellationToken);
+            await _managerCallbackService.PublishToManagerCallbackAsync(messageToManger, cancellationToken);
 
             _logger.LogInformation("Task {Id} created", taskModel.Id);
         }
