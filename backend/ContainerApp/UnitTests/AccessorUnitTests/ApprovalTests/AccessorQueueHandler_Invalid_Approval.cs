@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using Accessor.Endpoints;
 using Accessor.Models;
+using Accessor.Models.QueueMessages;
 using Accessor.Services;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -16,7 +17,9 @@ public class AccessorQueueHandler_Invalid_Approval
     {
         var svc = new Mock<IAccessorService>(MockBehavior.Strict);
         var log = new Mock<ILogger<AccessorQueueHandler>>();
-        var handler = new AccessorQueueHandler(svc.Object, log.Object);
+        var managerCallbackSvc = new Mock<IManagerCallbackQueueService>(MockBehavior.Strict); // Add this line
+
+        var handler = new AccessorQueueHandler(svc.Object, managerCallbackSvc.Object, log.Object);
 
         Exception? ex = null;
         try
