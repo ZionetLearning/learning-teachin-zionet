@@ -107,7 +107,7 @@ jobs:
         run: |
           INGRESS_IP=$(kubectl -n devops-ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
           az postgres flexible-server firewall-rule create \
-            --resource-group $PG_RG \
+            --resource-group $AKS_RG \
             --name $PG_DB \
             --rule-name allow-ingress-controller \
             --start-ip-address $INGRESS_IP \
@@ -139,7 +139,7 @@ jobs:
           echo "AKS outbound IP: $AKS_EGRESS_IP"
 
           az postgres flexible-server firewall-rule create \
-            --resource-group $PG_RG \
+            --resource-group $AKS_RG \
             --name $PG_DB \
             --rule-name allow-aks-egress \
             --start-ip-address $AKS_EGRESS_IP \
