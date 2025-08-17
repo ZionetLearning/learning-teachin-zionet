@@ -117,6 +117,10 @@ jobs:
         working-directory: ${{ env.FE_DIR }}
         run: npm ci
 
+      - name: Lint Code
+        working-directory: ${{ env.FE_DIR }}
+        run: npm run lint
+
       - name: Create release name for Sentry (UTC + short SHA)
         run: |
           ts=$(date -u "+Release-%d-%m-%Y_%H-%M")
