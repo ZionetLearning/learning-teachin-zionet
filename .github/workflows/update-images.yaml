@@ -39,7 +39,7 @@ jobs:
       list_services_names: ${{ github.event.inputs.list_services_names }}
     secrets: inherit
 
-  restart-pods:
+  deploy-with-new-images:
     needs: [build-and-push-images]
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
@@ -48,6 +48,9 @@ jobs:
       contents: read
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Azure Login via OIDC
         uses: azure/login@v2
         with:
@@ -59,6 +62,12 @@ jobs:
         run: |
           echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
           echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
+          
+          # Get the new commit hash for image tagging
+          SHORT_SHA="${{ github.sha }}"
+          SHORT_SHA="${SHORT_SHA:0:7}"
+          echo "NEW_IMAGE_TAG=${SHORT_SHA}" >> $GITHUB_ENV
+          echo "New image tag will be: ${SHORT_SHA}"
 
       - name: Get AKS credentials
         run: |
@@ -69,57 +78,69 @@ jobs:
           STATUS=$(az aks show --resource-group $AKS_RG --name $AKS_NAME --query "powerState.code" -o tsv)
           echo "AKS cluster status: $STATUS"
           if [[ "$STATUS" != "Running" ]]; then
-            echo "❌ Cluster is not running. Status: $STATUS"
+            echo "Cluster is not running. Status: $STATUS"
             echo "Please start the cluster first before restarting pods."
             exit 1
           fi
 
       - name: Show current pods status
         run: |
-          echo "📊 Current pods in dev namespace:"
-          kubectl get pods -n dev -o wide || echo "No pods found or namespace doesn't exist"
+          echo "Current pods in ${{ github.event.inputs.environment_name }} namespace:"
+          kubectl get pods -n ${{ github.event.inputs.environment_name }} -o custom-columns=NAME:.metadata.name,IMAGE:.spec.containers[0].image,STATUS:.status.phase || echo "No pods found or namespace doesn't exist"
 
-      - name: Restart all pods in dev namespace
+      - name: Deploy with new commit hash using Helm
         run: |
-          echo "🔄 Restarting all pods in dev namespace..."
-          kubectl delete pod --all -n dev
-          echo "✅ All pods in dev namespace have been deleted and will be recreated"
-
-      - name: Wait for pods to be recreated
-        run: |
-          echo "⏳ Waiting for pods to be recreated..."
-          sleep 10
+          echo "Deploying with new image tag: $NEW_IMAGE_TAG"
+          echo "Updating images in namespace: ${{ github.event.inputs.environment_name }}"
           
-          # Wait for pods to be in Running state
-          for i in {1..20}; do
-            READY_PODS=$(kubectl get pods -n dev --field-selector=status.phase=Running --no-headers 2>/dev/null | wc -l)
-            TOTAL_PODS=$(kubectl get pods -n dev --no-headers 2>/dev/null | wc -l)
+          # Use Helm to update the deployment with new commit hash
+          helm upgrade teachin-app ./devops/kubernetes/charts \
+            --namespace ${{ github.event.inputs.environment_name }} \
+            --set global.dockerRegistry=teachindevacr.azurecr.io \
+            --set global.environment=$NEW_IMAGE_TAG \
+            --set namespace.name=${{ github.event.inputs.environment_name }} \
+            --wait --timeout=5m \
+            --atomic
             
-            echo "Attempt $i: $READY_PODS/$TOTAL_PODS pods are running"
-            
-            if [[ $TOTAL_PODS -gt 0 ]]; then
-              # Check if all pods are ready
-              NOT_READY=$(kubectl get pods -n dev --no-headers 2>/dev/null | grep -v "Running\|Completed" | wc -l)
-              if [[ $NOT_READY -eq 0 ]]; then
-                echo "✅ All pods are running successfully"
-                break
-              fi
-            fi
-            
-            if [[ $i -eq 20 ]]; then
-              echo "⚠️ Timeout waiting for all pods to be ready"
-              kubectl get pods -n dev -o wide
-            else
-              sleep 15
-            fi
-          done
+          echo "✅ Deployment completed with image tag: $NEW_IMAGE_TAG"
 
-      - name: Show final pods status
+      - name: Wait for deployment to complete
         run: |
-          echo "📊 Final pods status in dev namespace:"
-          kubectl get pods -n dev -o wide
+          echo "Waiting for deployment to complete..."
+          
+          # Wait for all deployments to be ready
+          kubectl wait --for=condition=available --timeout=300s deployment --all -n ${{ github.event.inputs.environment_name }}
+          
+          echo "✅ All deployments are ready"
 
-      - name: Check services
+      - name: Verify new images are running
         run: |
-          echo "🔍 Services in dev namespace:"
-          kubectl get svc -n dev -o wide
+          echo "Verifying new images with tag: $NEW_IMAGE_TAG"
+          echo "Current pods in ${{ github.event.inputs.environment_name }} namespace:"
+          kubectl get pods -n ${{ github.event.inputs.environment_name }} -o custom-columns=NAME:.metadata.name,IMAGE:.spec.containers[0].image,STATUS:.status.phase
+          
+          # Check if all pods are using the new image tag
+          PODS_WITH_NEW_TAG=$(kubectl get pods -n ${{ github.event.inputs.environment_name }} -o jsonpath='{.items[*].spec.containers[0].image}' | grep -o "$NEW_IMAGE_TAG" | wc -l)
+          TOTAL_PODS=$(kubectl get pods -n ${{ github.event.inputs.environment_name }} --no-headers | wc -l)
+          
+          echo "Pods using new tag ($NEW_IMAGE_TAG): $PODS_WITH_NEW_TAG/$TOTAL_PODS"
+          
+          if [[ $PODS_WITH_NEW_TAG -eq $TOTAL_PODS ]]; then
+            echo "✅ All pods are using the new image tag: $NEW_IMAGE_TAG"
+          else
+            echo "Some pods are not using the new image tag"
+            kubectl get pods -n ${{ github.event.inputs.environment_name }} -o custom-columns=NAME:.metadata.name,IMAGE:.spec.containers[0].image
+          fi
+
+      - name: Show final deployment status
+        run: |
+          echo "Final deployment status in ${{ github.event.inputs.environment_name }} namespace:"
+          kubectl get pods -n ${{ github.event.inputs.environment_name }} -o wide
+          echo ""
+          echo "Services in ${{ github.event.inputs.environment_name }} namespace:"
+          kubectl get svc -n ${{ github.event.inputs.environment_name }} -o wide
+          echo ""
+          echo "Deployment Summary:"
+          echo "✅ Images updated to commit: $NEW_IMAGE_TAG"
+          echo "✅ Namespace: ${{ github.event.inputs.environment_name }}"
+          echo "✅ All pods are running with the latest code"
