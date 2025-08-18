@@ -144,7 +144,7 @@ jobs:
 
       - name: Force delete old pods (to handle resource constraints)
         run: |
-          echo "🔄 Deleting old pods to free resources for new image tags..."
+          echo "Deleting old pods to free resources for new image tags..."
           
           # Alternative simpler approach: delete all pods, let them recreate with new image
           echo "Current pods before deletion:"
@@ -153,7 +153,7 @@ jobs:
           # Delete all pods - they will recreate with new image tags from the updated deployment
           kubectl delete pods --all -n ${{ github.event.inputs.environment_name }} --wait=false
           
-          echo "✅ All pods deleted - will recreate with new image tags"
+          echo "All pods deleted - will recreate with new image tags"
 
       - name: Check deployment status
         run: |
@@ -168,49 +168,49 @@ jobs:
 
       - name: Wait for new pods to be ready
         run: |
-          echo "⏳ Waiting for new pods to be ready..."
+          echo "Waiting for new pods to be ready..."
           
           # Wait for all deployments to be ready with longer timeout
           kubectl wait --for=condition=available --timeout=600s deployment --all -n ${{ github.event.inputs.environment_name }} || {
-            echo "❌ Deployment timeout. Checking status..."
+            echo "Deployment timeout. Checking status..."
             kubectl get deployments -n ${{ github.event.inputs.environment_name }}
             kubectl get pods -n ${{ github.event.inputs.environment_name }} -o wide
             
-            echo "🔍 Describing pending/failed pods:"
+            echo "Describing pending/failed pods:"
             kubectl get pods -n ${{ github.event.inputs.environment_name }} --field-selector=status.phase!=Running -o name | while read pod; do
               echo "--- $pod ---"
               kubectl describe -n ${{ github.event.inputs.environment_name }} $pod
             done
             
-            echo "🔍 Recent events:"
+            echo "Recent events:"
             kubectl get events -n ${{ github.event.inputs.environment_name }} --sort-by=.lastTimestamp | tail -20
             exit 1
           }
           
-          echo "✅ All deployments are ready"
+          echo "All deployments are ready"
 
       - name: Verify new images are running
         run: |
-          echo "🔍 Verifying new images with tag: $NEW_IMAGE_TAG"
-          echo "📊 Current pods in ${{ github.event.inputs.environment_name }} namespace:"
+          echo "Verifying new images with tag: $NEW_IMAGE_TAG"
+          echo "Current pods in ${{ github.event.inputs.environment_name }} namespace:"
           kubectl get pods -n ${{ github.event.inputs.environment_name }} -o custom-columns=NAME:.metadata.name,IMAGE:.spec.containers[0].image,STATUS:.status.phase
           
           # Check if all pods are using the new image tag
           PODS_WITH_NEW_TAG=$(kubectl get pods -n ${{ github.event.inputs.environment_name }} -o jsonpath='{.items[*].spec.containers[0].image}' | tr ' ' '\n' | grep -c "$NEW_IMAGE_TAG" || echo "0")
           TOTAL_PODS=$(kubectl get pods -n ${{ github.event.inputs.environment_name }} --no-headers | wc -l)
           
-          echo "📈 Pods using new tag ($NEW_IMAGE_TAG): $PODS_WITH_NEW_TAG/$TOTAL_PODS"
+          echo "Pods using new tag ($NEW_IMAGE_TAG): $PODS_WITH_NEW_TAG/$TOTAL_PODS"
           
           if [[ $PODS_WITH_NEW_TAG -eq $TOTAL_PODS ]] && [[ $TOTAL_PODS -gt 0 ]]; then
-            echo "✅ SUCCESS: All pods are using the new image tag: $NEW_IMAGE_TAG"
+            echo "SUCCESS: All pods are using the new image tag: $NEW_IMAGE_TAG"
           else
-            echo "⚠️ WARNING: Some pods may not be using the new image tag"
-            echo "📋 Detailed pod images:"
+            echo "WARNING: Some pods may not be using the new image tag"
+            echo "Detailed pod images:"
             kubectl get pods -n ${{ github.event.inputs.environment_name }} -o custom-columns=NAME:.metadata.name,IMAGE:.spec.containers[0].image
           fi
           
           if [[ $PODS_WITH_NEW_TAG -eq $TOTAL_PODS ]]; then
-            echo "✅ All pods are using the new image tag: $NEW_IMAGE_TAG"
+            echo "All pods are using the new image tag: $NEW_IMAGE_TAG"
           else
             echo "Some pods are not using the new image tag"
             kubectl get pods -n ${{ github.event.inputs.environment_name }} -o custom-columns=NAME:.metadata.name,IMAGE:.spec.containers[0].image
@@ -225,6 +225,6 @@ jobs:
           kubectl get svc -n ${{ github.event.inputs.environment_name }} -o wide
           echo ""
           echo "Deployment Summary:"
-          echo "✅ Images updated to commit: $NEW_IMAGE_TAG"
-          echo "✅ Namespace: ${{ github.event.inputs.environment_name }}"
-          echo "✅ All pods are running with the latest code"
+          echo "Images updated to commit: $NEW_IMAGE_TAG"
+          echo "Namespace: ${{ github.event.inputs.environment_name }}"
+          echo "All pods are running with the latest code"
