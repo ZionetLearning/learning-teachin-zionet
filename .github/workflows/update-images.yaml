@@ -120,7 +120,7 @@ jobs:
             --set namespace.create=false \
             --set global.namePrefix=${{ github.event.inputs.environment_name }} \
             --set global.dockerRegistry=teachindevacr.azurecr.io \
-            --set global.environment=$NEW_IMAGE_TAG \
+            --set-string global.environment="$NEW_IMAGE_TAG" \
             --set-string engine.env.AzureOpenAI__ApiKey="${{ secrets.AZURE_OPENAI_API_KEY }}" \
             --set-string engine.env.AzureSpeech__SubscriptionKey="${{ secrets.AZURE_SPEECH_KEY }}" \
             --set dapr.installComponents=false
