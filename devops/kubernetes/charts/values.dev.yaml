@@ -2,6 +2,7 @@
 global:
   dockerRegistry: ""   # CI sets: docker.io/<org> or <acr>.azurecr.io
   imagePullPolicy: IfNotPresent
+  environment: ""      # Will be set by CI/CD to TARGET_NAMESPACE (e.g., "devacr2")
   dapr:
     enabled: true
     configName: dapr-config
@@ -12,6 +13,7 @@ namespace:
 
 manager:
   image:
+    name: manager  # Required: image name for the container
     # tag will be set dynamically via global.environment by CI/CD
   # service, ports, labels inherit from base values.yaml
   env:
@@ -28,6 +30,7 @@ manager:
       
 engine:
   image:
+    name: engine  # Required: image name for the container
     # tag will be set dynamically via global.environment by CI/CD
   env:
     ASPNETCORE_URLS: "http://+:5002"
@@ -42,6 +45,7 @@ engine:
 
 accessor:
   image:
+    name: accessor  # Required: image name for the container
     # tag will be set dynamically via global.environment by CI/CD
   env:
     ASPNETCORE_URLS: "http://+:5003"
