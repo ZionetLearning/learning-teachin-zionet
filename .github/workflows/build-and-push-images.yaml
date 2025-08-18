@@ -12,6 +12,10 @@ on:
       list_services_names:
         required: true
         type: string
+    outputs:
+      image_tag:
+        description: "The generated image tag (commit hash)"
+        value: ${{ jobs.generate_tag.outputs.image_tag }}
   workflow_dispatch:
     inputs:
       environment:
@@ -33,7 +37,20 @@ on:
         default: ''
 
 jobs:
-  build-and-push:
+  generate_tag:
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.set-tag.outputs.image_tag }}
+    steps:
+      - name: Set image tag
+        id: set-tag
+        run: |
+          SHORT_SHA="${{ github.sha }}"
+          SHORT_SHA="${SHORT_SHA:0:7}"
+          echo "image_tag=${SHORT_SHA}" >> $GITHUB_OUTPUT
+
+  build_and_push:
+    needs: generate_tag
     environment: ${{ inputs.environment }}
     runs-on: ubuntu-latest
     permissions:
@@ -76,10 +93,12 @@ jobs:
         shell: bash
         env:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
-          IMAGE_NAME: ${{ env.ACR_LOGIN_SERVER }}/${{ matrix.service.name }}
           GITHUB_SHA: ${{ github.sha }}
           ENV_TAG: ${{ inputs.environment_name }}
         run: |
+          ACR_LOGIN_SERVER="teachindevacr.azurecr.io"
+          IMAGE_NAME="${ACR_LOGIN_SERVER}/${{ matrix.service.name }}"
+          
           # Extract first 7 characters of commit SHA
           SHORT_SHA="${GITHUB_SHA:0:7}"
           

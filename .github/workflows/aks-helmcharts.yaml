@@ -18,6 +18,10 @@ on:
         description: 'Optional namespace/prefix (lowercase letters & digits). Empty -> dev'
         required: false
         default: ''
+      image_tag:
+        description: 'Optional image tag (e.g., commit hash). Empty -> uses environment_name'
+        required: false
+        default: ''
   workflow_call:
     inputs:
       environment:
@@ -26,6 +30,10 @@ on:
       environment_name:
         required: false
         type: string
+      image_tag:
+        required: false
+        type: string
+        description: 'Docker image tag to deploy (e.g., commit hash)'
     outputs:
       app_url:
         description: "Ingress URL (if already created by platform setup)"
@@ -147,12 +155,18 @@ jobs:
 
       - name: Helm template sanity (no Namespace objects)
         run: |
+          # Use image_tag if provided, otherwise fall back to TARGET_NAMESPACE
+          IMAGE_TAG="${{ inputs.image_tag || github.event.inputs.image_tag }}"
+          if [ -z "$IMAGE_TAG" ]; then
+            IMAGE_TAG="$TARGET_NAMESPACE"
+          fi
+          
           helm template app "$CHART_DIR" -f "$VALUES_FILE" \
             --set namespace.name="$TARGET_NAMESPACE" \
             --set namespace.create=false \
             --set global.namePrefix="$TARGET_NAMESPACE" \
             --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
-            --set global.environment="$TARGET_NAMESPACE" \
+            --set global.environment="$IMAGE_TAG" \
             --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" \
             --set-string engine.env.AzureSpeech__SubscriptionKey="$AZURE_SPEECH_KEY" \
             --set dapr.installComponents=false \
@@ -160,6 +174,12 @@ jobs:
 
       - name: Helm upgrade/install app
         run: |
+          # Use image_tag if provided, otherwise fall back to TARGET_NAMESPACE
+          IMAGE_TAG="${{ inputs.image_tag || github.event.inputs.image_tag }}"
+          if [ -z "$IMAGE_TAG" ]; then
+            IMAGE_TAG="$TARGET_NAMESPACE"
+          fi
+          
           helm upgrade --install app "$CHART_DIR" \
             --namespace "$TARGET_NAMESPACE" \
             -f "$VALUES_FILE" \
@@ -167,7 +187,7 @@ jobs:
             --set namespace.create=false \
             --set global.namePrefix="$TARGET_NAMESPACE" \
             --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
-            --set global.environment="$TARGET_NAMESPACE" \
+            --set global.environment="$IMAGE_TAG" \
             --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" \
             --set-string engine.env.AzureSpeech__SubscriptionKey="$AZURE_SPEECH_KEY" \
             --set dapr.installComponents=false

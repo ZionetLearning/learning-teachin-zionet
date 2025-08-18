@@ -71,6 +71,7 @@ jobs:
     with:
       environment_name: ${{ github.event.inputs.environment_name }}
       environment: ${{ github.event.inputs.environment }}
+      image_tag: ${{ needs.build-and-push-images.outputs.image_tag }}
     secrets: inherit
  
   deploy-frontend:
