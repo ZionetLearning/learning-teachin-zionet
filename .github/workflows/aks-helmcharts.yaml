@@ -78,8 +78,8 @@ jobs:
           echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
 
           # PG (per env name)
-          echo "PG_DB=dev-pg-zionet-learning" >> $GITHUB_ENV
-          echo "PG_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
+          echo "PG_DB=${ENVIRONMENT_NAME}-pg-zionet-learning" >> $GITHUB_ENV
+          echo "PG_RG=${ENVIRONMENT_NAME}-zionet-learning-2025" >> $GITHUB_ENV
 
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
@@ -87,25 +87,6 @@ jobs:
       - name: Ensure target namespace exists
         run: |
           kubectl create namespace "$TARGET_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
-
-      - name: Copy secrets to target namespace
-        run: |
-          if [ "$TARGET_NAMESPACE" != "dev" ]; then
-            echo "Copying secrets from dev namespace to $TARGET_NAMESPACE..."
-            
-            # Copy required secrets
-            for secret in azure-service-bus-secret postgres-connection redis-connection signalr-connection teachin-tls; do
-              if kubectl get secret "$secret" -n dev >/dev/null 2>&1; then
-                kubectl get secret "$secret" -n dev -o yaml | \
-                  sed 's/namespace: dev/namespace: '"$TARGET_NAMESPACE"'/' | \
-                  sed '/resourceVersion:/d' | \
-                  sed '/uid:/d' | \
-                  sed '/creationTimestamp:/d' | \
-                  kubectl apply -f -
-                echo "Copied secret: $secret"
-              fi
-            done
-          fi
 
       - name: Wait for external IP for ingress controller
         run: |
@@ -128,9 +109,9 @@ jobs:
           az postgres flexible-server firewall-rule create \
             --resource-group $PG_RG \
             --name $PG_DB \
-            --rule-name allow-ingress-controller-$TARGET_NAMESPACE \
+            --rule-name allow-ingress-controller \
             --start-ip-address $INGRESS_IP \
-            --end-ip-address $INGRESS_IP || echo "Firewall rule may already exist"
+            --end-ip-address $INGRESS_IP
 
       - name: Add AKS outbound IP to PostgreSQL firewall
         run: |
@@ -160,9 +141,9 @@ jobs:
           az postgres flexible-server firewall-rule create \
             --resource-group $PG_RG \
             --name $PG_DB \
-            --rule-name allow-aks-egress-$TARGET_NAMESPACE \
+            --rule-name allow-aks-egress \
             --start-ip-address $AKS_EGRESS_IP \
-            --end-ip-address $AKS_EGRESS_IP || echo "Firewall rule may already exist"
+            --end-ip-address $AKS_EGRESS_IP
 
       - name: Helm template sanity (no Namespace objects)
         run: |
@@ -203,4 +184,3 @@ jobs:
 
       - name: Restart all pods in target namespace (optional)
         run: kubectl delete pod --all -n "$TARGET_NAMESPACE" || true
-
