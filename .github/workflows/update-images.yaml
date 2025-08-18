@@ -1,5 +1,14 @@
 name: AKS - Deploy Current Backend Images to Cloud
-# Builds and pushs current backend images (from current main) into dockerhub(later to be changed to acr) and deploys to AKS in cloud
+# Builds and pushs current backen      - name: Show current pods status
+        run: |
+          echo "📊 Current pods in ${{ github.event.inputs.environment_name }} namespace:"
+          kubectl get pods -n ${{ github.event.inputs.environment_name }} -o custom-columns=NAME:.metadata.name,IMAGE:.spec.containers[0].image,STATUS:.status.phase || echo "No pods found or namespace doesn't exist"
+
+      - name: Ensure target namespace exists
+        run: |
+          kubectl create namespace "${{ github.event.inputs.environment_name }}" --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy with new commit hash using Helmes (from current main) into dockerhub(later to be changed to acr) and deploys to AKS in cloud
 on:
   # push:
   #   branches: [ main ]
@@ -93,27 +102,20 @@ jobs:
           echo "Deploying with new image tag: $NEW_IMAGE_TAG"
           echo "Updating images in namespace: ${{ github.event.inputs.environment_name }}"
           
-          # Check if release exists, if not install, otherwise upgrade
-          if helm list -n ${{ github.event.inputs.environment_name }} | grep -q "teachin-app"; then
-            echo "📦 Upgrading existing release..."
-            helm upgrade teachin-app ./devops/kubernetes/charts \
-              --namespace ${{ github.event.inputs.environment_name }} \
-              --set global.dockerRegistry=teachindevacr.azurecr.io \
-              --set global.environment=$NEW_IMAGE_TAG \
-              --set namespace.name=${{ github.event.inputs.environment_name }} \
-              --wait --timeout=5m \
-              --atomic
-          else
-            echo "🚀 Installing new release..."
-            helm install teachin-app ./devops/kubernetes/charts \
-              --namespace ${{ github.event.inputs.environment_name }} \
-              --create-namespace \
-              --set global.dockerRegistry=teachindevacr.azurecr.io \
-              --set global.environment=$NEW_IMAGE_TAG \
-              --set namespace.name=${{ github.event.inputs.environment_name }} \
-              --wait --timeout=5m \
-              --atomic
-          fi
+          # Use the same approach as aks-helmcharts.yaml
+          helm upgrade --install teachin-app ./devops/kubernetes/charts \
+            --namespace ${{ github.event.inputs.environment_name }} \
+            -f ./devops/kubernetes/charts/values.dev.yaml \
+            --set namespace.name=${{ github.event.inputs.environment_name }} \
+            --set namespace.create=false \
+            --set global.namePrefix=${{ github.event.inputs.environment_name }} \
+            --set global.dockerRegistry=teachindevacr.azurecr.io \
+            --set global.environment=$NEW_IMAGE_TAG \
+            --set-string engine.env.AzureOpenAI__ApiKey="${{ secrets.AZURE_OPENAI_API_KEY }}" \
+            --set-string engine.env.AzureSpeech__SubscriptionKey="${{ secrets.AZURE_SPEECH_KEY }}" \
+            --set dapr.installComponents=false \
+            --wait --timeout=5m \
+            --atomic
             
           echo "✅ Deployment completed with image tag: $NEW_IMAGE_TAG"
 
