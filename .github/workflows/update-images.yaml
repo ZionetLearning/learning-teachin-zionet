@@ -127,15 +127,16 @@ jobs:
           
           echo "Helm deployment configuration updated with image tag: $NEW_IMAGE_TAG"
 
-      - name: Force delete old pods (to handle resource constraints)
+      - name: Force delete all pods (to handle resource constraints)
         run: |
-          echo "Deleting old pods to free resources for new image tags..."
+          echo "Deleting all pods to free resources for new image tags..."
           
-          # Alternative simpler approach: delete all pods, let them recreate with new image
+          # Show current pods before deletion
           echo "Current pods before deletion:"
-          kubectl get pods -n ${{ github.event.inputs.environment_name }} -o custom-columns=NAME:.metadata.name,IMAGE:.spec.containers[0].image,STATUS:.status.phase
+          kubectl get pods -n ${{ github.event.inputs.environment_name }} -o custom-columns=NAME:.metadata.name,IMAGE:.spec.containers[0].image,STATUS:.status.phase || echo "No pods found"
           
           # Delete all pods - they will recreate with new image tags from the updated deployment
+          # This approach avoids resource constraints during rolling updates
           kubectl delete pods --all -n ${{ github.event.inputs.environment_name }} --wait=false
           
           echo "All pods deleted - will recreate with new image tags"
