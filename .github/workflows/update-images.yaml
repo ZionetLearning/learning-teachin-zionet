@@ -88,26 +88,59 @@ jobs:
           echo "Current pods in ${{ github.event.inputs.environment_name }} namespace:"
           kubectl get pods -n ${{ github.event.inputs.environment_name }} -o custom-columns=NAME:.metadata.name,IMAGE:.spec.containers[0].image,STATUS:.status.phase || echo "No pods found or namespace doesn't exist"
 
+      - name: Check and fix Helm release status
+        run: |
+          echo "Checking Helm release status..."
+          
+          # Check if there's a pending operation
+          RELEASE_STATUS=$(helm status app -n ${{ github.event.inputs.environment_name }} -o json 2>/dev/null | jq -r '.info.status' || echo "not-found")
+          echo "Current release status: $RELEASE_STATUS"
+          
+          if [[ "$RELEASE_STATUS" == "pending-install" ]] || [[ "$RELEASE_STATUS" == "pending-upgrade" ]] || [[ "$RELEASE_STATUS" == "pending-rollback" ]]; then
+            echo "Found pending operation. Rolling back to clear the lock..."
+            helm rollback app -n ${{ github.event.inputs.environment_name }} || echo "Rollback failed, trying to delete release history..."
+            
+            # If rollback fails, try to delete the release
+            helm delete app -n ${{ github.event.inputs.environment_name }} --wait || echo "Delete failed, continuing anyway..."
+            sleep 5
+          fi
+          
+          echo "Helm release status checked"
+
       - name: Deploy with new commit hash using Helm
         run: |
-          echo "🚀 Deploying with new image tag: $NEW_IMAGE_TAG"
-          echo "📦 Updating images in namespace: ${{ github.event.inputs.environment_name }}"
+          echo "Deploying with new image tag: $NEW_IMAGE_TAG"
+          echo "Updating images in namespace: ${{ github.event.inputs.environment_name }}"
           
-          # Use the same approach as aks-helmcharts.yaml (same release name)
-          # Remove atomic for better debugging and increase timeout
-          helm upgrade --install app ./devops/kubernetes/charts \
-            --namespace ${{ github.event.inputs.environment_name }} \
-            -f ./devops/kubernetes/charts/values.dev.yaml \
-            --set namespace.name=${{ github.event.inputs.environment_name }} \
-            --set namespace.create=false \
-            --set global.namePrefix=${{ github.event.inputs.environment_name }} \
-            --set global.dockerRegistry=teachindevacr.azurecr.io \
-            --set global.environment=$NEW_IMAGE_TAG \
-            --set-string engine.env.AzureOpenAI__ApiKey="${{ secrets.AZURE_OPENAI_API_KEY }}" \
-            --set-string engine.env.AzureSpeech__SubscriptionKey="${{ secrets.AZURE_SPEECH_KEY }}" \
-            --set dapr.installComponents=false \
+          # Retry logic for Helm upgrade in case of conflicts
+          for attempt in 1 2 3; do
+            echo "Attempt $attempt: Running Helm upgrade..."
             
-          echo "✅ Helm deployment completed with image tag: $NEW_IMAGE_TAG"
+            if helm upgrade --install app ./devops/kubernetes/charts \
+              --namespace ${{ github.event.inputs.environment_name }} \
+              -f ./devops/kubernetes/charts/values.dev.yaml \
+              --set namespace.name=${{ github.event.inputs.environment_name }} \
+              --set namespace.create=false \
+              --set global.namePrefix=${{ github.event.inputs.environment_name }} \
+              --set global.dockerRegistry=teachindevacr.azurecr.io \
+              --set global.environment=$NEW_IMAGE_TAG \
+              --set-string engine.env.AzureOpenAI__ApiKey="${{ secrets.AZURE_OPENAI_API_KEY }}" \
+              --set-string engine.env.AzureSpeech__SubscriptionKey="${{ secrets.AZURE_SPEECH_KEY }}" \
+              --set dapr.installComponents=false \
+              --wait --timeout=10m; then
+              
+              echo "Helm deployment completed with image tag: $NEW_IMAGE_TAG"
+              break
+            else
+              echo "Attempt $attempt failed"
+              if [[ $attempt -eq 3 ]]; then
+                echo "All attempts failed"
+                exit 1
+              fi
+              echo "Waiting 30 seconds before retry..."
+              sleep 30
+            fi
+          done
 
       - name: Force delete old pods (to handle resource constraints)
         run: |
