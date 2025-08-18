@@ -30,7 +30,7 @@ public static class RefreshSessionEndpoints
 
         app.MapDelete("/api/refresh-sessions/{sessionId}", DeleteSessionAsync).WithName("DeleteRefreshSession");
 
-        app.MapDelete("/api/refresh-sessions/by-user/{userId}", DeleteAllUserSessionsAsync).WithName("DeleteAllUserRefreshSessions");
+        //app.MapDelete("/api/refresh-sessions/by-user/{userId}", DeleteAllUserSessionsAsync).WithName("DeleteAllUserRefreshSessions");
 
         #endregion
     }
@@ -128,27 +128,27 @@ public static class RefreshSessionEndpoints
         }
     }
 
-    private static async Task<IResult> DeleteAllUserSessionsAsync(
-        [FromRoute] Guid userId,
-        [FromServices] IRefreshSessionService refreshSessionService,
-        [FromServices] ILogger<RefreshSessionService> logger,
-        CancellationToken cancellationToken)
-    {
-        using (logger.BeginScope("Method: {Method}", nameof(DeleteAllUserSessionsAsync)))
-        {
-            try
-            {
-                await refreshSessionService.DeleteAllUserSessionsAsync(userId, cancellationToken);
-                logger.LogInformation("All refresh sessions deleted for user {UserId}", userId);
-                return Results.Ok();
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error deleting all user refresh sessions");
-                return Results.Problem("Failed to delete user sessions.");
-            }
-        }
-    }
+    //private static async Task<IResult> DeleteAllUserSessionsAsync(
+    //    [FromRoute] Guid userId,
+    //    [FromServices] IRefreshSessionService refreshSessionService,
+    //    [FromServices] ILogger<RefreshSessionService> logger,
+    //    CancellationToken cancellationToken)
+    //{
+    //    using (logger.BeginScope("Method: {Method}", nameof(DeleteAllUserSessionsAsync)))
+    //    {
+    //        try
+    //        {
+    //            await refreshSessionService.DeleteAllUserSessionsAsync(userId, cancellationToken);
+    //            logger.LogInformation("All refresh sessions deleted for user {UserId}", userId);
+    //            return Results.Ok();
+    //        }
+    //        catch (Exception ex)
+    //        {
+    //            logger.LogError(ex, "Error deleting all user refresh sessions");
+    //            return Results.Problem("Failed to delete user sessions.");
+    //        }
+    //    }
+    //}
 
     #endregion
 }

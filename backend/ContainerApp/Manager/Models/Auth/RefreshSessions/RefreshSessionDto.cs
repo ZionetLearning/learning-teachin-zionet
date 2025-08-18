@@ -4,9 +4,7 @@ public class RefreshSessionDto
 {
     public Guid Id { get; set; }
     public Guid UserId { get; set; }
-    public DateTimeOffset IssuedAt { get; set; }
     public DateTimeOffset ExpiresAt { get; set; }
-    public DateTimeOffset LastSeenAt { get; set; }
     public string IP { get; set; } = null!;
     public string UserAgent { get; set; } = null!;
     public string? DeviceFingerprintHash { get; set; }

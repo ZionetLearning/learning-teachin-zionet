@@ -32,17 +32,12 @@ public class RefreshSessionService : IRefreshSessionService
                 throw new ArgumentException("Invalid IP address", nameof(request));
             }
 
-            var now = DateTimeOffset.UtcNow;
-
             var session = new RefreshSessionsRecord
             {
                 Id = Guid.NewGuid(),
                 UserId = request.UserId,
                 RefreshTokenHash = request.RefreshTokenHash,
                 DeviceFingerprintHash = request.DeviceFingerprintHash,
-                IssuedAt = now,
-                ExpiresAt = request.ExpiresAt,
-                LastSeenAt = now,
                 IP = ipAddress,
                 UserAgent = request.UserAgent
             };
@@ -60,78 +55,110 @@ public class RefreshSessionService : IRefreshSessionService
 
     public async Task<RefreshSessionDto?> FindByRefreshHashAsync(string refreshTokenHash, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Looking up refresh session by token hash");
-
-        var session = await _dbContext.RefreshSessions
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.RefreshTokenHash == refreshTokenHash, cancellationToken);
-
-        if (session == null)
+        try
         {
-            _logger.LogWarning("No session found for given refresh token hash");
-            return null;
+            _logger.LogInformation("Looking up refresh session by token hash");
+
+            var session = await _dbContext.RefreshSessions
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.RefreshTokenHash == refreshTokenHash, cancellationToken);
+
+            if (session == null)
+            {
+                _logger.LogWarning("No session found for given refresh token hash");
+                return null;
+            }
+
+            return new RefreshSessionDto
+            {
+                Id = session.Id,
+                UserId = session.UserId,
+                ExpiresAt = session.ExpiresAt,
+                IP = session.IP.ToString(),
+                UserAgent = session.UserAgent
+            };
         }
-
-        return new RefreshSessionDto
+        catch (Exception ex)
         {
-            Id = session.Id,
-            UserId = session.UserId,
-            IssuedAt = session.IssuedAt,
-            ExpiresAt = session.ExpiresAt,
-            LastSeenAt = session.LastSeenAt,
-            IP = session.IP.ToString(),
-            UserAgent = session.UserAgent
-        };
+            _logger.LogError(ex, "Error finding refresh session by token hash");
+            throw new InvalidOperationException("Could not find refresh session", ex);
+        }
     }
 
     public async Task RotateSessionAsync(Guid sessionId, RotateRefreshSessionRequest request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Rotating refresh session {SessionId}", sessionId);
-
-        var session = await _dbContext.RefreshSessions.FindAsync(new object[] { sessionId }, cancellationToken);
-        if (session == null)
+        try
         {
-            _logger.LogWarning("Session {SessionId} not found", sessionId);
-            return;
+            _logger.LogInformation("Rotating refresh session {SessionId}", sessionId);
+
+            var session = await _dbContext.RefreshSessions.FindAsync(new object[] { sessionId }, cancellationToken);
+            if (session == null)
+            {
+                _logger.LogWarning("Session {SessionId} not found", sessionId);
+                return;
+            }
+
+            session.RefreshTokenHash = request.NewRefreshTokenHash;
+            session.ExpiresAt = request.NewExpiresAt;
+            session.LastSeenAt = request.LastSeenAt;
+            session.IssuedAt = request.IssuedAt;
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
         }
-
-        session.RefreshTokenHash = request.NewRefreshTokenHash;
-        session.ExpiresAt = request.NewExpiresAt;
-        session.LastSeenAt = DateTimeOffset.UtcNow;
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to rotate refresh session {SessionId}", sessionId);
+            throw new InvalidOperationException("Could not rotate refresh session", ex);
+        }
     }
 
     public async Task DeleteSessionAsync(Guid sessionId, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Deleting refresh session {SessionId}", sessionId);
-
-        var session = await _dbContext.RefreshSessions.FindAsync(new object[] { sessionId }, cancellationToken);
-        if (session == null)
+        try
         {
-            _logger.LogWarning("Session {SessionId} not found", sessionId);
-            return;
-        }
+            _logger.LogInformation("Deleting refresh session {SessionId}", sessionId);
 
-        _dbContext.RefreshSessions.Remove(session);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+            var session = await _dbContext.RefreshSessions.FindAsync(new object[] { sessionId }, cancellationToken);
+            if (session == null)
+            {
+                _logger.LogWarning("Session {SessionId} not found", sessionId);
+                return;
+            }
+
+            _dbContext.RefreshSessions.Remove(session);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to delete refresh session {SessionId}", sessionId);
+            throw new InvalidOperationException("Could not delete refresh session", ex);
+        }
     }
 
+    // for now, we dont use it , maybe in the future
     public async Task DeleteAllUserSessionsAsync(Guid userId, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Deleting all refresh sessions for user {UserId}", userId);
-
-        var sessions = await _dbContext.RefreshSessions
-            .Where(s => s.UserId == userId)
-            .ToListAsync(cancellationToken);
-
-        if (sessions.Count == 0)
+        try
         {
-            _logger.LogInformation("No sessions found for user {UserId}", userId);
-            return;
-        }
+            _logger.LogInformation("Deleting all refresh sessions for user {UserId}", userId);
 
-        _dbContext.RefreshSessions.RemoveRange(sessions);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+            var sessions = await _dbContext.RefreshSessions
+                .Where(s => s.UserId == userId)
+                .ToListAsync(cancellationToken);
+
+            if (sessions.Count == 0)
+            {
+                _logger.LogInformation("No sessions found for user {UserId}", userId);
+                return;
+            }
+
+            _dbContext.RefreshSessions.RemoveRange(sessions);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to delete all refresh sessions for user {UserId}", userId);
+            throw new InvalidOperationException("Could not delete user refresh sessions", ex);
+        }
     }
 }

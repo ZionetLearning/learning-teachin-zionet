@@ -12,7 +12,6 @@ public class RefreshSessionRequest
 
     public string? DeviceFingerprintHash { get; set; }
 
-    [Required]
     public DateTimeOffset ExpiresAt { get; set; }
 
     [Required]

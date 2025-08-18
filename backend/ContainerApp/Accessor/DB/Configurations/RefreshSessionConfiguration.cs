@@ -25,6 +25,8 @@ public class RefreshSessionConfiguration : IEntityTypeConfiguration<RefreshSessi
         builder.Property(r => r.ExpiresAt)
             .HasColumnName("expires_at")
             .HasColumnType("timestamptz")
+            .HasDefaultValueSql("NOW() + INTERVAL '60 days'")
+            .ValueGeneratedOnAdd()
             .IsRequired();
         builder.Property(r => r.LastSeenAt)
             .HasColumnName("last_seen_at")

@@ -1,13 +1,9 @@
-﻿//using System.ComponentModel.DataAnnotations;
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-//using System.Text.Json.Serialization;
 using Dapr.Client;
-//using Manager.Models;
 using Manager.Models.Auth;
 using Manager.Models.Auth.RefreshSessions;
-//using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -58,7 +54,7 @@ public class AuthService : IAuthService
                 ua = "unknown";
             }
 
-            var ip = httpRequest.HttpContext.Connection.RemoteIpAddress?.ToString()!;
+            var ip = httpRequest.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
             // The user Id is taken from the DB, with the credantials of email and password
             var session = new RefreshSessionRequest
@@ -66,7 +62,6 @@ public class AuthService : IAuthService
                 UserId = Guid.NewGuid(),
                 RefreshTokenHash = refreshHash,
                 DeviceFingerprintHash = fingerprintHash,
-                ExpiresAt = DateTimeOffset.UtcNow.AddDays(60),
                 IP = ip,
                 UserAgent = ua,
             };
@@ -124,7 +119,7 @@ public class AuthService : IAuthService
                 }
             }
 
-            // IP & UA checks (loose). Normalize IPv6-mapped IPv4 and compare.
+            // IP & UA checks
             if (!IpRoughMatch(session.IP, ip))
             {
                 _log.LogWarning("IP mismatch for session {SessionId}. Saved={Saved} Current={Current}",
@@ -143,10 +138,14 @@ public class AuthService : IAuthService
             var newRefreshToken = Guid.NewGuid().ToString("N");
             var newRefreshHash = HashRefreshToken(newRefreshToken, _jwt.RefreshTokenHashKey);
 
+            var now = DateTimeOffset.UtcNow;
+
             var rotatePayload = new RotateRefreshSessionRequest
             {
                 NewRefreshTokenHash = newRefreshHash,
-                NewExpiresAt = DateTimeOffset.UtcNow.AddDays(_jwt.RefreshTokenTTL)
+                NewExpiresAt = now.AddDays(_jwt.RefreshTokenTTL),
+                LastSeenAt = now,
+                IssuedAt = now
             };
 
             // Save new session
@@ -212,7 +211,7 @@ public class AuthService : IAuthService
             issuer: _jwt.Issuer,
             audience: _jwt.Audience,
             claims: new[] { new Claim(ClaimTypes.Name, userId) },
-            expires: DateTime.UtcNow.AddMinutes(15),
+            expires: DateTime.UtcNow.AddMinutes(_jwt.AccessTokenTTL),
             signingCredentials: creds);
 
         return new JwtSecurityTokenHandler().WriteToken(token).Trim();
@@ -237,7 +236,7 @@ public class AuthService : IAuthService
             return true;
         }
 
-        return saved == current; // consider /24 or /64 matching if you need tolerance
+        return saved == current;
     }
 
     private static bool UserAgentRoughMatch(string a, string b)
@@ -249,7 +248,7 @@ public class AuthService : IAuthService
 
         a = a.ToLowerInvariant();
         b = b.ToLowerInvariant();
-        // very light check; you can use UAParser later
+        // very light check
         return a.Contains("chrome") == b.Contains("chrome")
             && a.Contains("safari") == b.Contains("safari")
             && a.Contains("mobile") == b.Contains("mobile");
