@@ -106,7 +106,6 @@ jobs:
             --set-string engine.env.AzureOpenAI__ApiKey="${{ secrets.AZURE_OPENAI_API_KEY }}" \
             --set-string engine.env.AzureSpeech__SubscriptionKey="${{ secrets.AZURE_SPEECH_KEY }}" \
             --set dapr.installComponents=false \
-            --wait --timeout=10m
             
           echo "✅ Helm deployment completed with image tag: $NEW_IMAGE_TAG"
 
