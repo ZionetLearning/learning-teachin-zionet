@@ -4,6 +4,7 @@ using Manager.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Endpoints;
+
 public static class ManagerEndpoints
 {
     public static WebApplication MapManagerEndpoints(this WebApplication app)
@@ -15,7 +16,9 @@ public static class ManagerEndpoints
         #endregion
 
         #region HTTP POST
-        app.MapPost("/task", CreateTaskAsync).WithName("CreateTask");
+
+        app.MapPost("/task", CreateTaskAsync).WithName("CreateTaskAsync");
+
         app.MapPost("/tasklong", CreateTaskLongAsync).WithName("CreateTaskLongTest");
         #endregion
 
@@ -74,10 +77,11 @@ public static class ManagerEndpoints
             try
             {
                 logger.LogInformation("Processing task creation for ID {TaskId}", task.Id);
-                var (success, message) = await managerService.ProcessTaskAsync(task);
+
+                var (success, message) = await managerService.CreateTaskAsync(task);
                 if (success)
                 {
-                    logger.LogInformation("Task {TaskId} processed successfully", task.Id);
+                    logger.LogInformation("Task {TaskId} sent to queue successfully", task.Id);
                     return Results.Accepted($"/task/{task.Id}", new { status = message, task.Id });
                 }
 
@@ -125,6 +129,7 @@ public static class ManagerEndpoints
             {
                 logger.LogInformation("Attempting to update task name for ID {TaskId}", id);
                 var success = await managerService.UpdateTaskName(id, name);
+
                 if (success)
                 {
                     logger.LogInformation("Successfully updated task name for ID {TaskId}", id);
@@ -153,6 +158,7 @@ public static class ManagerEndpoints
             {
                 logger.LogInformation("Attempting to delete task with ID {TaskId}", id);
                 var success = await managerService.DeleteTask(id);
+
                 if (success)
                 {
                     logger.LogInformation("Successfully deleted task with ID {TaskId}", id);

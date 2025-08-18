@@ -19,6 +19,8 @@ var app = builder.Build();
 // 3) Standard middleware
 app.UseAuthorization();
 
+app.UseWebSockets();
+
 // 4) Hook Ocelot into the pipeline
 await app.UseOcelot();
 await app.RunAsync();
