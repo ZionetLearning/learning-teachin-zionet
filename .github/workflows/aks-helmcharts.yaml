@@ -152,6 +152,7 @@ jobs:
             --set namespace.create=false \
             --set global.namePrefix="$TARGET_NAMESPACE" \
             --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
+            --set global.environment="$TARGET_NAMESPACE" \
             --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" \
             --set-string engine.env.AzureSpeech__SubscriptionKey="$AZURE_SPEECH_KEY" \
             --set dapr.installComponents=false \
@@ -166,6 +167,7 @@ jobs:
             --set namespace.create=false \
             --set global.namePrefix="$TARGET_NAMESPACE" \
             --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
+            --set global.environment="$TARGET_NAMESPACE" \
             --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" \
             --set-string engine.env.AzureSpeech__SubscriptionKey="$AZURE_SPEECH_KEY" \
             --set dapr.installComponents=false

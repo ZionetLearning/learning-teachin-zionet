@@ -12,7 +12,7 @@ namespace:
 
 manager:
   image:
-    tag: dev               # dev tag (or a short SHA)
+    # tag will be set dynamically via global.environment by CI/CD
   # service, ports, labels inherit from base values.yaml
   env:
     ASPNETCORE_URLS: "http://+:5001"
@@ -28,7 +28,7 @@ manager:
       
 engine:
   image:
-    tag: dev
+    # tag will be set dynamically via global.environment by CI/CD
   env:
     ASPNETCORE_URLS: "http://+:5002"
     AzureOpenAI__Endpoint: "https://france-teachin-open-ai.openai.azure.com/"
@@ -42,6 +42,6 @@ engine:
 
 accessor:
   image:
-    tag: dev
+    # tag will be set dynamically via global.environment by CI/CD
   env:
     ASPNETCORE_URLS: "http://+:5003"

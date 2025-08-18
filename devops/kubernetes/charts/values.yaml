@@ -2,6 +2,7 @@ global:
   namePrefix: ""
   dockerRegistry: ""
   imagePullPolicy: IfNotPresent
+  environment: ""  # Environment name/tag (e.g., dev, devacr, prod) - set by CI/CD
   dapr:
     enabled: true
     configName: dapr-config
@@ -28,7 +29,7 @@ manager:
     selectorValue: manager
   image:
     name: manager
-    tag: dev
+    # tag: defaults to global.environment, set by CI/CD
   ports:
     container: 5001
     service: 80
@@ -58,7 +59,7 @@ engine:
     selectorValue: engine
   image:
     name: engine
-    tag: dev
+    # tag: defaults to global.environment, set by CI/CD
   ports:
     container: 5002
     service: 5002
@@ -96,7 +97,7 @@ accessor:
     selectorValue: accessor
   image:
     name: accessor
-    tag: dev
+    # tag: defaults to global.environment, set by CI/CD
   ports:
     container: 5003
     service: 80
