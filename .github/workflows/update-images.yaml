@@ -112,35 +112,20 @@ jobs:
           echo "Deploying with new image tag: $NEW_IMAGE_TAG"
           echo "Updating images in namespace: ${{ github.event.inputs.environment_name }}"
           
-          # Retry logic for Helm upgrade in case of conflicts
-          for attempt in 1 2 3; do
-            echo "Attempt $attempt: Running Helm upgrade..."
-            
-            if helm upgrade --install app ./devops/kubernetes/charts \
-              --namespace ${{ github.event.inputs.environment_name }} \
-              -f ./devops/kubernetes/charts/values.dev.yaml \
-              --set namespace.name=${{ github.event.inputs.environment_name }} \
-              --set namespace.create=false \
-              --set global.namePrefix=${{ github.event.inputs.environment_name }} \
-              --set global.dockerRegistry=teachindevacr.azurecr.io \
-              --set global.environment=$NEW_IMAGE_TAG \
-              --set-string engine.env.AzureOpenAI__ApiKey="${{ secrets.AZURE_OPENAI_API_KEY }}" \
-              --set-string engine.env.AzureSpeech__SubscriptionKey="${{ secrets.AZURE_SPEECH_KEY }}" \
-              --set dapr.installComponents=false \
-              --wait --timeout=10m; then
-              
-              echo "Helm deployment completed with image tag: $NEW_IMAGE_TAG"
-              break
-            else
-              echo "Attempt $attempt failed"
-              if [[ $attempt -eq 3 ]]; then
-                echo "All attempts failed"
-                exit 1
-              fi
-              echo "Waiting 30 seconds before retry..."
-              sleep 30
-            fi
-          done
+          # Simple Helm upgrade without wait (let subsequent steps handle the waiting)
+          helm upgrade --install app ./devops/kubernetes/charts \
+            --namespace ${{ github.event.inputs.environment_name }} \
+            -f ./devops/kubernetes/charts/values.dev.yaml \
+            --set namespace.name=${{ github.event.inputs.environment_name }} \
+            --set namespace.create=false \
+            --set global.namePrefix=${{ github.event.inputs.environment_name }} \
+            --set global.dockerRegistry=teachindevacr.azurecr.io \
+            --set global.environment=$NEW_IMAGE_TAG \
+            --set-string engine.env.AzureOpenAI__ApiKey="${{ secrets.AZURE_OPENAI_API_KEY }}" \
+            --set-string engine.env.AzureSpeech__SubscriptionKey="${{ secrets.AZURE_SPEECH_KEY }}" \
+            --set dapr.installComponents=false
+          
+          echo "Helm deployment configuration updated with image tag: $NEW_IMAGE_TAG"
 
       - name: Force delete old pods (to handle resource constraints)
         run: |
