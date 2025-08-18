@@ -81,7 +81,6 @@ public static class AccessorEndpoints
         }
     }
 
-
     public static async Task<IResult> UpdateTaskNameAsync(
         [FromBody] UpdateTaskName request,
         [FromServices] IAccessorService accessorService,
