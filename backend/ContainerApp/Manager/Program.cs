@@ -5,7 +5,6 @@ using Manager.Constants;
 using Manager.Endpoints;
 using Manager.Hubs;
 using Manager.Messaging;
-using Manager.Models;
 using Manager.Models.Auth;
 using Manager.Models.QueueMessages;
 using Manager.Services;
