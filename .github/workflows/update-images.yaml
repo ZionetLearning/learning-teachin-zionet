@@ -60,7 +60,7 @@ jobs:
 
       - name: Set up variables
         run: |
-          echo "AKS_RG=${{ github.event.inputs.environment_name }}-zionet-learning-2025" >> $GITHUB_ENV
+          echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
           echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
           
           # Get the new commit hash for image tagging
@@ -68,8 +68,6 @@ jobs:
           SHORT_SHA="${SHORT_SHA:0:7}"
           echo "NEW_IMAGE_TAG=${SHORT_SHA}" >> $GITHUB_ENV
           echo "New image tag will be: ${SHORT_SHA}"
-          echo "Resource Group: ${{ github.event.inputs.environment_name }}-zionet-learning-2025"
-          echo "AKS Cluster: aks-cluster-dev"
 
       - name: Get AKS credentials
         run: |
