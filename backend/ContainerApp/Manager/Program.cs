@@ -5,7 +5,6 @@ using Manager.Constants;
 using Manager.Endpoints;
 using Manager.Hubs;
 using DotQueue;
-using Manager.Models;
 using Manager.Services;
 using Manager.Services.Clients;
 using Manager.Services.Clients.Engine;
@@ -15,6 +14,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
+using Manager.Models.Auth;
+using Manager.Models.QueueMessages;
 
 var builder = WebApplication.CreateBuilder(args);
 
