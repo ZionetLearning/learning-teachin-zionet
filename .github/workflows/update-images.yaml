@@ -90,10 +90,11 @@ jobs:
 
       - name: Deploy with new commit hash using Helm
         run: |
-          echo "Deploying with new image tag: $NEW_IMAGE_TAG"
-          echo "Updating images in namespace: ${{ github.event.inputs.environment_name }}"
+          echo "🚀 Deploying with new image tag: $NEW_IMAGE_TAG"
+          echo "📦 Updating images in namespace: ${{ github.event.inputs.environment_name }}"
           
           # Use the same approach as aks-helmcharts.yaml (same release name)
+          # Remove atomic for better debugging and increase timeout
           helm upgrade --install app ./devops/kubernetes/charts \
             --namespace ${{ github.event.inputs.environment_name }} \
             -f ./devops/kubernetes/charts/values.dev.yaml \
@@ -105,10 +106,20 @@ jobs:
             --set-string engine.env.AzureOpenAI__ApiKey="${{ secrets.AZURE_OPENAI_API_KEY }}" \
             --set-string engine.env.AzureSpeech__SubscriptionKey="${{ secrets.AZURE_SPEECH_KEY }}" \
             --set dapr.installComponents=false \
-            --wait --timeout=5m \
-            --atomic
             
-          echo "✅ Deployment completed with image tag: $NEW_IMAGE_TAG"
+            
+          echo "✅ Helm deployment completed with image tag: $NEW_IMAGE_TAG"
+
+      - name: Check deployment status
+        run: |
+          echo "Checking deployment status..."
+          kubectl get deployments -n ${{ github.event.inputs.environment_name }}
+          
+          echo "Pod status:"
+          kubectl get pods -n ${{ github.event.inputs.environment_name }} -o wide
+          
+          echo "Events (last 10):"
+          kubectl get events -n ${{ github.event.inputs.environment_name }} --sort-by=.lastTimestamp | tail -10
 
       - name: Wait for deployment to complete
         run: |
