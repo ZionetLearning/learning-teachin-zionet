@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: component-tests-${{ github.ref }}
+  group: run-component-tests-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
