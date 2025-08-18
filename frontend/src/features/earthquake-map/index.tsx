@@ -39,7 +39,11 @@ export const EarthquakeMap = () => {
           {t("pages.earthquakeMap.dropdownLabel")}
         </Typography>
         <FormControl className={classes.formControl} size="small">
-          <Select value={hoursAgo.toString()} onChange={handleChange}>
+          <Select
+            data-testid="eq-timeframe"
+            value={hoursAgo.toString()}
+            onChange={handleChange}
+          >
             <MenuItem value={24}>
               {t("pages.earthquakeMap.last24Hours")}
             </MenuItem>

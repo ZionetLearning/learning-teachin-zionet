@@ -158,7 +158,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         </div>
       )}
 
-      <div className={classes.inputWrapper}>
+      <div className={classes.inputWrapper} data-testid="chat-ou-input-wrapper">
         {/* Context Toggle Button */}
         <button
           className={`${classes.contextButton} ${isContextAttached ? classes.contextButtonActive : ""}`}
@@ -180,6 +180,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         </button>
 
         <textarea
+          data-testid="chat-ou-input"
           ref={textareaRef}
           className={classes.textarea}
           value={inputValue}
@@ -193,6 +194,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           maxLength={2000}
         />
         <button
+          data-testid="chat-ou-send"
           className={`${classes.sendButton} ${isButtonDisabled ? classes.sendButtonDisabled : ""}`}
           onClick={handleSendMessage}
           disabled={isButtonDisabled}

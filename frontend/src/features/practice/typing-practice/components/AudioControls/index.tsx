@@ -43,6 +43,7 @@ export const AudioControls = ({
             className={classes.playButton}
             onClick={onPlayAudio}
             disabled={audioState.isPlaying}
+            data-testid="typing-play"
           >
             {audioState.isPlaying ? (
               <>
@@ -60,6 +61,7 @@ export const AudioControls = ({
             className={classes.replayButton}
             onClick={onReplayAudio}
             disabled={audioState.isPlaying}
+            data-testid="typing-replay"
           >
             {audioState.isPlaying ? (
               <>

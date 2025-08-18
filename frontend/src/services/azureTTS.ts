@@ -4,6 +4,14 @@ export const speakHebrew = async (
   text: string,
   voiceName?: string,
 ): Promise<void> => {
+  // In Cypress test environment, skip actual Azure TTS network call for determinism
+  if (typeof window !== "undefined") {
+    const w = window as Window & { Cypress?: boolean };
+    if (w.Cypress) {
+      return Promise.resolve();
+    }
+  }
+
   if (!text.trim()) {
     throw new Error("Text cannot be empty");
   }
