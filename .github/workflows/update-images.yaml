@@ -1,14 +1,5 @@
 name: AKS - Deploy Current Backend Images to Cloud
-# Builds and pushs current backen      - name: Show current pods status
-        run: |
-          echo "📊 Current pods in ${{ github.event.inputs.environment_name }} namespace:"
-          kubectl get pods -n ${{ github.event.inputs.environment_name }} -o custom-columns=NAME:.metadata.name,IMAGE:.spec.containers[0].image,STATUS:.status.phase || echo "No pods found or namespace doesn't exist"
-
-      - name: Ensure target namespace exists
-        run: |
-          kubectl create namespace "${{ github.event.inputs.environment_name }}" --dry-run=client -o yaml | kubectl apply -f -
-
-      - name: Deploy with new commit hash using Helmes (from current main) into dockerhub(later to be changed to acr) and deploys to AKS in cloud
+# Builds and pushs current backend images (from current main) into dockerhub(later to be changed to acr) and deploys to AKS in cloud
 on:
   # push:
   #   branches: [ main ]
