@@ -1,0 +1,75 @@
+name: Run Component Tests
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'Engine/**'
+      - 'EngineComponentTests/**'
+      - 'Engine2/**'
+      - 'Engine2ComponentTests/**'
+      - 'Directory.Build.props'
+      - '.github/workflows/**'
+  workflow_dispatch:
+
+concurrency:
+  group: component-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.set-services.outputs.services }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect changed services
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          filters: |
+            engine:
+              - 'Engine/**'
+              - 'EngineComponentTests/**'
+              - 'Directory.Build.props'
+            engine2:
+              - 'Engine2/**'
+              - 'Engine2ComponentTests/**'
+              - 'Directory.Build.props'
+
+      - name: Build service list
+        id: set-services
+        run: |
+          echo "::group::Evaluating changed services"
+          SERVICES=()
+          if [ "${{ steps.filter.outputs.engine }}" == 'true' ]; then
+            echo "Engine changed ✅"
+            SERVICES+=("Engine")
+          else
+            echo "Engine not changed ❌"
+          fi
+          if [ "${{ steps.filter.outputs.engine2 }}" == 'true' ]; then
+            echo "Engine2 changed ✅"
+            SERVICES+=("Engine2")
+          else
+            echo "Engine2 not changed ❌"
+          fi
+
+          JSON=$(printf '%s\n' "${SERVICES[@]}" | jq -R . | jq -s .)
+
+          echo "Detected services array: ${SERVICES[@]}"
+          echo "Detected services JSON: ${JSON}"
+
+          echo "services=${JSON}" >> "$GITHUB_OUTPUT"
+          echo "::endgroup::"
+
+  call-component-tests:
+    needs: changes
+    if: needs.changes.outputs.services != '[]'
+    uses: ./.github/workflows/component-tests.yml
+    with:
+      services: ${{ join(fromJson(needs.changes.outputs.services), ',') }}
+      testFilter: ''
+    secrets: inherit
