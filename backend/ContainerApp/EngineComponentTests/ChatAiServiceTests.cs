@@ -32,7 +32,7 @@ public class ChatAiServiceTests
             Policy.NoOpAsync<HttpResponseMessage>();
 
         public IAsyncPolicy<ChatMessageContent> CreateKernelPolicy(ILogger logger) =>
-            _noOpKernel;//jhvjghvjhygcjyfdjyf
+            _noOpKernel;
     }
 
     public ChatAiServiceTests(TestKernelFixture fx)
