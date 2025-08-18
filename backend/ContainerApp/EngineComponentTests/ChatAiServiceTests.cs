@@ -33,8 +33,6 @@ public class ChatAiServiceTests
 
         public IAsyncPolicy<ChatMessageContent> CreateKernelPolicy(ILogger logger) =>
             _noOpKernel;
-
-            //change so it will run the workflow
     }
 
     public ChatAiServiceTests(TestKernelFixture fx)
