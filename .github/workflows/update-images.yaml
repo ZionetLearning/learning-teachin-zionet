@@ -93,14 +93,27 @@ jobs:
           echo "Deploying with new image tag: $NEW_IMAGE_TAG"
           echo "Updating images in namespace: ${{ github.event.inputs.environment_name }}"
           
-          # Use Helm to update the deployment with new commit hash
-          helm upgrade teachin-app ./devops/kubernetes/charts \
-            --namespace ${{ github.event.inputs.environment_name }} \
-            --set global.dockerRegistry=teachindevacr.azurecr.io \
-            --set global.environment=$NEW_IMAGE_TAG \
-            --set namespace.name=${{ github.event.inputs.environment_name }} \
-            --wait --timeout=5m \
-            --atomic
+          # Check if release exists, if not install, otherwise upgrade
+          if helm list -n ${{ github.event.inputs.environment_name }} | grep -q "teachin-app"; then
+            echo "📦 Upgrading existing release..."
+            helm upgrade teachin-app ./devops/kubernetes/charts \
+              --namespace ${{ github.event.inputs.environment_name }} \
+              --set global.dockerRegistry=teachindevacr.azurecr.io \
+              --set global.environment=$NEW_IMAGE_TAG \
+              --set namespace.name=${{ github.event.inputs.environment_name }} \
+              --wait --timeout=5m \
+              --atomic
+          else
+            echo "🚀 Installing new release..."
+            helm install teachin-app ./devops/kubernetes/charts \
+              --namespace ${{ github.event.inputs.environment_name }} \
+              --create-namespace \
+              --set global.dockerRegistry=teachindevacr.azurecr.io \
+              --set global.environment=$NEW_IMAGE_TAG \
+              --set namespace.name=${{ github.event.inputs.environment_name }} \
+              --wait --timeout=5m \
+              --atomic
+          fi
             
           echo "✅ Deployment completed with image tag: $NEW_IMAGE_TAG"
 
