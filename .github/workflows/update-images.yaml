@@ -93,8 +93,8 @@ jobs:
           echo "Deploying with new image tag: $NEW_IMAGE_TAG"
           echo "Updating images in namespace: ${{ github.event.inputs.environment_name }}"
           
-          # Use the same approach as aks-helmcharts.yaml
-          helm upgrade --install teachin-app ./devops/kubernetes/charts \
+          # Use the same approach as aks-helmcharts.yaml (same release name)
+          helm upgrade --install app ./devops/kubernetes/charts \
             --namespace ${{ github.event.inputs.environment_name }} \
             -f ./devops/kubernetes/charts/values.dev.yaml \
             --set namespace.name=${{ github.event.inputs.environment_name }} \
