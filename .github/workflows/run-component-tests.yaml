@@ -27,18 +27,27 @@ jobs:
         uses: dorny/paths-filter@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          list-files: json
           filters: |
             engine:
               - 'backend/ContainerApp/Engine/**'
               - 'backend/ContainerApp/EngineComponentTests/**'
               - 'backend/ContainerApp/Directory.Build.props'
 
+      - name: Debug changed files
+        if: always()
+        run: |
+          echo "::group::paths-filter debug"
+          echo "engine flag: ${{ steps.filter.outputs.engine }}"
+          echo "engine files (JSON): ${{ steps.filter.outputs.engine_files }}"
+          echo "::endgroup::"
+
       - name: Build service list
         id: set-services
         run: |
           echo "::group::Evaluating changed services"
           SERVICES=()
-          if [ "${{ steps.filter.outputs.engine }}" == 'true' ]; then
+          if [ "${{ steps.filter.outputs.engine }}" = 'true' ]; then
             echo "Engine changed ✅"
             SERVICES+=("Engine")
           else
