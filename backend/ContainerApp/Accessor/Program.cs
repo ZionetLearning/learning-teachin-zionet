@@ -2,6 +2,8 @@ using System.Text.Json;
 using Accessor.Constants;
 using Accessor.DB;
 using Accessor.Endpoints;
+using Accessor.Messaging;
+using Accessor.Models.QueueMessages;
 using Accessor.Models;
 using Accessor.Services;
 using Azure.Messaging.ServiceBus;
@@ -28,6 +30,7 @@ builder.Services.AddQueue<Message, AccessorQueueHandler>(
         settings.RetryDelaySeconds = 5;
     });
 builder.Services.AddScoped<IAccessorService, AccessorService>();
+builder.Services.AddScoped<IManagerCallbackQueueService, ManagerCallbackQueueService>();
 
 var env = builder.Environment;
 
