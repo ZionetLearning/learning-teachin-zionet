@@ -9,7 +9,6 @@ public static class ManagerEndpoints
 {
     public static WebApplication MapManagerEndpoints(this WebApplication app)
     {
-
         #region HTTP GET
 
         app.MapGet("/task/{id}", GetTaskAsync).WithName("GetTask");
@@ -21,17 +20,13 @@ public static class ManagerEndpoints
         app.MapPost("/task", CreateTaskAsync).WithName("CreateTaskAsync");
 
         app.MapPost("/tasklong", CreateTaskLongAsync).WithName("CreateTaskLongTest");
-
         #endregion
 
         #region HTTP PUT
-
         app.MapPut("/task/{id}/{name}", UpdateTaskNameAsync).WithName("UpdateTaskName");
-
         #endregion
 
         #region HTTP DELETE
-
         app.MapDelete("/task/{id}", DeleteTaskAsync).WithName("DeleteTask");
 
         #endregion
@@ -133,7 +128,6 @@ public static class ManagerEndpoints
             try
             {
                 logger.LogInformation("Attempting to update task name for ID {TaskId}", id);
-
                 var success = await managerService.UpdateTaskName(id, name);
 
                 if (success)
@@ -163,7 +157,6 @@ public static class ManagerEndpoints
             try
             {
                 logger.LogInformation("Attempting to delete task with ID {TaskId}", id);
-
                 var success = await managerService.DeleteTask(id);
 
                 if (success)
