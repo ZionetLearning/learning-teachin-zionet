@@ -49,7 +49,7 @@ jobs:
           SERVICES=()
           if [ "${{ steps.filter.outputs.engine }}" = 'true' ]; then
             echo "Engine changed ✅"
-            SERVICES+=("Engine")
+            SERVICES+=(Engine)
           else
             echo "Engine not changed ❌"
           fi
