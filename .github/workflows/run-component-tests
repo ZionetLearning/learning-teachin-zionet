@@ -6,8 +6,6 @@ on:
     paths:
       - 'Engine/**'
       - 'EngineComponentTests/**'
-      - 'Engine2/**'
-      - 'Engine2ComponentTests/**'
       - 'Directory.Build.props'
       - '.github/workflows/**'
   workflow_dispatch:
@@ -34,10 +32,6 @@ jobs:
               - 'Engine/**'
               - 'EngineComponentTests/**'
               - 'Directory.Build.props'
-            engine2:
-              - 'Engine2/**'
-              - 'Engine2ComponentTests/**'
-              - 'Directory.Build.props'
 
       - name: Build service list
         id: set-services
@@ -49,12 +43,6 @@ jobs:
             SERVICES+=("Engine")
           else
             echo "Engine not changed ❌"
-          fi
-          if [ "${{ steps.filter.outputs.engine2 }}" == 'true' ]; then
-            echo "Engine2 changed ✅"
-            SERVICES+=("Engine2")
-          else
-            echo "Engine2 not changed ❌"
           fi
 
           JSON=$(printf '%s\n' "${SERVICES[@]}" | jq -R . | jq -s .)
