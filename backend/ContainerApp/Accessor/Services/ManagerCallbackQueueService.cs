@@ -10,14 +10,23 @@ public class ManagerCallbackQueueService : IManagerCallbackQueueService
 
     public ManagerCallbackQueueService(DaprClient dapr, ILogger<ManagerCallbackQueueService> logger)
     {
-        _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _dapr = dapr;
+        _logger = logger;
     }
 
     public async Task PublishToManagerCallbackAsync<T>(T message, CancellationToken ct = default)
     {
-        _logger.LogDebug("Publishing message to {QueueName}", QueueNames.ManagerCallbackQueue);
-        await _dapr.InvokeBindingAsync($"{QueueNames.ManagerCallbackQueue}-out", "create", message, cancellationToken: ct);
-        _logger.LogInformation("Message published to {QueueName}", QueueNames.ManagerCallbackQueue);
+        try
+        {
+            _logger.LogDebug("Publishing message to {QueueName}", QueueNames.ManagerCallbackQueue);
+            await _dapr.InvokeBindingAsync($"{QueueNames.ManagerCallbackQueue}-out", "create", message, cancellationToken: ct);
+            _logger.LogInformation("Message published to {QueueName}", QueueNames.ManagerCallbackQueue);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to publish message to {QueueName}", QueueNames.ManagerCallbackQueue);
+            throw;
+        }
     }
 }
+

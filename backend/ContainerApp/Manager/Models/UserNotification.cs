@@ -6,7 +6,6 @@ namespace Manager.Models;
 public class UserNotification
 {
     [Required(ErrorMessage = "Message is required.")]
-    [MinLength(1, ErrorMessage = "Message cannot be empty.")]
     [MaxLength(400, ErrorMessage = "Message cannot exceed 400 characters.")]
     [JsonPropertyName("message")]
     public required string Message { get; set; }

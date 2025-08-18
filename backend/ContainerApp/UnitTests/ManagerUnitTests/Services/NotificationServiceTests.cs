@@ -111,7 +111,7 @@ public class NotificationServiceTests
         var userId = "user456";
         var payload = new TaskUpdateMessage { TaskId = 42, Status = "COMPLETED" };
 
-        userClientMock.Setup(c => c.ReceiveEvent(It.Is<UserEvent<JsonElement>>(evt => 
+        userClientMock.Setup(c => c.ReceiveEvent(It.Is<UserEvent<JsonElement>>(evt =>
             evt.eventType == EventType.TaskUpdate)))
             .Returns(Task.CompletedTask);
 
@@ -120,7 +120,7 @@ public class NotificationServiceTests
 
         // Assert
         hubContextMock.Verify(h => h.Clients.User(userId), Times.Once);
-        userClientMock.Verify(c => c.ReceiveEvent(It.Is<UserEvent<JsonElement>>(evt => 
+        userClientMock.Verify(c => c.ReceiveEvent(It.Is<UserEvent<JsonElement>>(evt =>
             evt.eventType == EventType.TaskUpdate)), Times.Once);
     }
 
@@ -132,7 +132,7 @@ public class NotificationServiceTests
         var userId = "user789";
         var payload = new { Answer = "AI response", RequestId = "req123" };
 
-        userClientMock.Setup(c => c.ReceiveEvent(It.Is<UserEvent<JsonElement>>(evt => 
+        userClientMock.Setup(c => c.ReceiveEvent(It.Is<UserEvent<JsonElement>>(evt =>
             evt.eventType == EventType.ChatAiAnswer)))
             .Returns(Task.CompletedTask);
 
@@ -141,7 +141,60 @@ public class NotificationServiceTests
 
         // Assert
         hubContextMock.Verify(h => h.Clients.User(userId), Times.Once);
-        userClientMock.Verify(c => c.ReceiveEvent(It.Is<UserEvent<JsonElement>>(evt => 
+        userClientMock.Verify(c => c.ReceiveEvent(It.Is<UserEvent<JsonElement>>(evt =>
             evt.eventType == EventType.ChatAiAnswer)), Times.Once);
+    }
+
+    [Fact]
+    public async Task SendNotificationAsync_ThrowsIfUserIdIsEmpty()
+    {
+        // Arrange
+        var (_, _, service) = CreateNotificationService();
+        var notification = new UserNotification
+        {
+            Message = "Test notification",
+            Type = NotificationType.Info,
+            Timestamp = DateTimeOffset.UtcNow
+        };
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() => service.SendNotificationAsync(string.Empty, notification));
+    }
+
+    [Fact]
+    public async Task SendNotificationAsync_ThrowsIfUserIdIsNull()
+    {
+        // Arrange
+        var (_, _, service) = CreateNotificationService();
+        var notification = new UserNotification
+        {
+            Message = "Test notification",
+            Type = NotificationType.Info,
+            Timestamp = DateTimeOffset.UtcNow
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() => service.SendNotificationAsync(null!, notification));
+    }
+
+    [Fact]
+    public async Task SendEventAsync_ThrowsIfUserIdIsEmpty()
+    {
+        // Arrange
+        var (_, _, service) = CreateNotificationService();
+        var payload = new TaskUpdateMessage { TaskId = 1, Status = "RUNNING" };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() => service.SendEventAsync(EventType.TaskUpdate, string.Empty, payload));
+    }
+
+    [Fact]
+    public async Task SendEventAsync_ThrowsIfUserIdIsNull()
+    {
+        // Arrange
+        var (_, _, service) = CreateNotificationService();
+        var payload = new TaskUpdateMessage { TaskId = 1, Status = "RUNNING" };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() => service.SendEventAsync(EventType.TaskUpdate, null!, payload));
     }
 }

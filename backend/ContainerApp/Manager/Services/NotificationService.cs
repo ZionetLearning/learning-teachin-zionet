@@ -1,5 +1,4 @@
-﻿
-using System.Text.Json;
+﻿using System.Text.Json;
 using Manager.Hubs;
 using Manager.Models;
 using Microsoft.AspNetCore.SignalR;
@@ -21,11 +20,21 @@ public class NotificationService : INotificationService
 
     public async Task SendNotificationAsync(string userId, UserNotification notification)
     {
+        if (string.IsNullOrEmpty(userId))
+        {
+            throw new ArgumentException("User ID cannot be null or empty.", nameof(userId));
+        }
+
         await _hubContext.Clients.User(userId).NotificationMessage(notification);
     }
 
     public async Task SendEventAsync<TPayload>(EventType eventType, string userId, TPayload payload)
     {
+        if (string.IsNullOrEmpty(userId))
+        {
+            throw new ArgumentException("User ID cannot be null or empty.", nameof(userId));
+        }
+
         try
         {
             // now frontend that listen to "ReceiveEvent" method in signal r will receive this event and can see in event type what the payload contains

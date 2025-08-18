@@ -17,7 +17,7 @@ public class AccessorQueueHandler_Invalid_Approval
     {
         var svc = new Mock<IAccessorService>(MockBehavior.Strict);
         var log = new Mock<ILogger<AccessorQueueHandler>>();
-        var managerCallbackSvc = new Mock<IManagerCallbackQueueService>(MockBehavior.Strict); // Add this line
+        var managerCallbackSvc = new Mock<IManagerCallbackQueueService>(MockBehavior.Strict);
 
         var handler = new AccessorQueueHandler(svc.Object, managerCallbackSvc.Object, log.Object);
 
@@ -40,7 +40,6 @@ public class AccessorQueueHandler_Invalid_Approval
             message = ex.Message
         };
 
-        // Use your scrubbed approval helper
         ApprovalSetup.VerifyJsonClean(
             JsonConvert.SerializeObject(snapshot, Formatting.Indented),
             additionalInfo: $"QueueHandler_{tag}"
