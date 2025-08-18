@@ -164,10 +164,6 @@ jobs:
           echo "Building tests:   ${{ steps.paths.outputs.test_csproj }}"
           dotnet build "${{ steps.paths.outputs.test_csproj }}" --no-restore -c Release
 
-      # - name: Verify logger availability (${{ matrix.service }})
-      #   run: |
-      #     dotnet test --no-build -c Release "${{ steps.paths.outputs.test_csproj }}" -- --list-loggers
-
       - name: Run tests (${{ matrix.service }})
         shell: bash
         run: |
