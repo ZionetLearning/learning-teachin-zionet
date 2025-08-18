@@ -5,11 +5,12 @@ using Manager.Constants;
 using Manager.Endpoints;
 using Manager.Hubs;
 using Manager.Messaging;
-using Manager.Models;
 using Manager.Models.Auth;
+using Manager.Models.QueueMessages;
 using Manager.Services;
 using Manager.Services.Clients;
 using Manager.Services.Clients.Engine;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Logging;
@@ -77,12 +78,14 @@ builder.Services.AddScoped<IManagerService, ManagerService>();
 builder.Services.AddScoped<IAiGatewayService, AiGatewayService>();
 builder.Services.AddScoped<IAccessorClient, AccessorClient>();
 builder.Services.AddScoped<IEngineClient, EngineClient>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 builder.Services.AddSingleton(_ =>
     new ServiceBusClient(builder.Configuration["ServiceBus:ConnectionString"]));
+builder.Services.AddSingleton<IUserIdProvider, QueryStringUserIdProvider>();
 builder.Services.AddQueue<Message, ManagerQueueHandler>(
     QueueNames.ManagerCallbackQueue,
     settings =>
@@ -101,6 +104,8 @@ builder.Services.AddOpenApi(
         options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
     }
 );
+builder.Services.AddHttpContextAccessor();
+
 var app = builder.Build();
 app.UseCors("AllowAll");
 app.UseCloudEvents();

@@ -3,6 +3,7 @@ using System.Text.Json;
 using Dapr.Client;
 using Manager.Constants;
 using Manager.Models;
+using Manager.Models.QueueMessages;
 using Microsoft.Extensions.Options;
 
 namespace Manager.Services;
