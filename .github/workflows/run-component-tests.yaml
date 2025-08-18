@@ -44,26 +44,31 @@ jobs:
 
       - name: Build service list
         id: set-services
+        shell: bash
         run: |
+          set -euo pipefail
           echo "::group::Evaluating changed services"
           SERVICES=()
+
           if [ "${{ steps.filter.outputs.engine }}" = 'true' ]; then
             echo "Engine changed ✅"
-            SERVICES+=(Engine)
+            SERVICES+=("Engine")
           else
             echo "Engine not changed ❌"
           fi
 
           if [ ${#SERVICES[@]} -eq 0 ]; then
-            JSON="[]"
+            JSON='[]'
           else
+            # Build a proper JSON array: ["Engine"]
             JSON=$(printf '%s\n' "${SERVICES[@]}" | jq -R . | jq -s .)
           fi
 
           echo "Detected services array: ${SERVICES[@]}"
           echo "Detected services JSON: ${JSON}"
 
-          echo "services=${JSON}" >> "$GITHUB_OUTPUT"
+          # Write raw JSON to output (no extra quotes)
+          echo services=${JSON} >> "$GITHUB_OUTPUT"
           echo "::endgroup::"
 
   call-component-tests:
