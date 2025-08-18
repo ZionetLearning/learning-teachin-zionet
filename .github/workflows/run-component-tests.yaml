@@ -45,7 +45,11 @@ jobs:
             echo "Engine not changed ❌"
           fi
 
-          JSON=$(printf '%s\n' "${SERVICES[@]}" | jq -R . | jq -s .)
+          if [ ${#SERVICES[@]} -eq 0 ]; then
+            JSON="[]"
+          else
+            JSON=$(printf '%s\n' "${SERVICES[@]}" | jq -R . | jq -s .)
+          fi
 
           echo "Detected services array: ${SERVICES[@]}"
           echo "Detected services JSON: ${JSON}"
