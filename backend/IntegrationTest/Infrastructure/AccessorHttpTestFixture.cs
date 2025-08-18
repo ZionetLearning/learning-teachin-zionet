@@ -1,4 +1,4 @@
-﻿using DotNetEnv;
+﻿using Microsoft.Extensions.Configuration;
 
 namespace IntegrationTests.Infrastructure;
 
@@ -8,10 +8,11 @@ public class AccessorHttpTestFixture : IDisposable
 
     public AccessorHttpTestFixture()
     {
-        // Reuse your .env loader
-        Env.Load();
+        var cfg = BuildConfig();
 
-        var baseUrl = GetAccessorBaseUrl();
+        // Reuse the same TestSettings unless you choose to split later
+        var baseUrl = cfg.GetSection("TestSettings")["ApiBaseUrl"]
+            ?? "http://localhost:5003"; // fallback if you run Accessor separately
 
         Client = new HttpClient
         {
@@ -20,17 +21,13 @@ public class AccessorHttpTestFixture : IDisposable
         };
     }
 
-    private static string GetAccessorBaseUrl()
-    {
-        // Prefer a Accessor-specific env var so the other tests can keep API_BASE_URL=5280
-        var url = Environment.GetEnvironmentVariable("ACCESSOR_API_BASE_URL");
-        if (string.IsNullOrWhiteSpace(url))
-        {
-            // Default to 5003 if not provided
-            url = "http://localhost:5003";
-        }
-        return url;
-    }
+    private static IConfigurationRoot BuildConfig() =>
+        new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+            .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false)
+            .AddEnvironmentVariables()
+            .Build();
 
     public void Dispose()
     {
