@@ -1,7 +1,6 @@
 ﻿using Accessor.Services;
 using Accessor.Models.RefreshSessions;
 using Microsoft.AspNetCore.Mvc;
-//using Accessor.Models;
 
 namespace Accessor.Endpoints;
 
@@ -36,29 +35,6 @@ public static class RefreshSessionEndpoints
         #endregion
     }
     #region Handlers
-
-    private static async Task<IResult> CreateSessionAsync(
-        [FromBody] RefreshSessionRequest request,
-        [FromServices] IRefreshSessionService refreshSessionService,
-        [FromServices] ILogger<RefreshSessionService> logger,
-        CancellationToken cancellationToken)
-    {
-        using (logger.BeginScope("Method: {Method}", nameof(CreateSessionAsync)))
-        {
-            try
-            {
-                await refreshSessionService.CreateSessionAsync(request, cancellationToken);
-                logger.LogInformation("Refresh session created for user {UserId}", request.UserId);
-                return Results.Ok();
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error creating refresh session");
-                return Results.Problem("Failed to create refresh session.");
-            }
-        }
-    }
-
     private static async Task<IResult> FindByRefreshHashAsync(
         [FromRoute] string hash,
         [FromServices] IRefreshSessionService refreshSessionService,
@@ -82,6 +58,27 @@ public static class RefreshSessionEndpoints
             {
                 logger.LogError(ex, "Error finding refresh session by hash");
                 return Results.Problem("Failed to find refresh session.");
+            }
+        }
+    }
+    private static async Task<IResult> CreateSessionAsync(
+        [FromBody] RefreshSessionRequest request,
+        [FromServices] IRefreshSessionService refreshSessionService,
+        [FromServices] ILogger<RefreshSessionService> logger,
+        CancellationToken cancellationToken)
+    {
+        using (logger.BeginScope("Method: {Method}", nameof(CreateSessionAsync)))
+        {
+            try
+            {
+                await refreshSessionService.CreateSessionAsync(request, cancellationToken);
+                logger.LogInformation("Refresh session created for user {UserId}", request.UserId);
+                return Results.Ok();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error creating refresh session");
+                return Results.Problem("Failed to create refresh session.");
             }
         }
     }

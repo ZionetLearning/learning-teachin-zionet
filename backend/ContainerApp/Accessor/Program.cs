@@ -25,6 +25,7 @@ builder.Services.AddQueue<Message, AccessorQueueHandler>(
         settings.RetryDelaySeconds = 5;
     });
 builder.Services.AddScoped<IAccessorService, AccessorService>();
+builder.Services.AddScoped<IRefreshSessionService, RefreshSessionService>();
 
 var env = builder.Environment;
 
@@ -108,4 +109,5 @@ if (env.IsDevelopment())
 }
 // Map endpoints (routes)
 app.MapAccessorEndpoints();
+app.MapRefreshSessionEndpoints();
 await app.RunAsync();

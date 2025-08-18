@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Accessor.Models.RefreshSessions;
+namespace Manager.Models.Auth.RefreshSessions;
 
 public class RefreshSessionRequest
 {

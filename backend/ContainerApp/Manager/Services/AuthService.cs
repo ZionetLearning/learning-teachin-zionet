@@ -1,11 +1,13 @@
-﻿//using System;
+﻿//using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+//using System.Text.Json.Serialization;
 using Dapr.Client;
-using Manager.Models;
+//using Manager.Models;
 using Manager.Models.Auth;
-//using Microsoft.Azure.Amqp.Framing;
+using Manager.Models.Auth.RefreshSessions;
+//using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -21,6 +23,7 @@ public class AuthService : IAuthService
         { "1", "1" }
     };
 
+    // To DO: get the user ID from the users table
     public AuthService(DaprClient dapr, ILogger<AuthService> log, IOptions<JwtSettings> jwtOptions)
     {
         _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
@@ -37,37 +40,43 @@ public class AuthService : IAuthService
                 throw new UnauthorizedAccessException("Invalid credentials.");
             }
 
+            // Generate access and refresh tokens
             var accessToken = GenerateJwtToken(loginRequest.Email);
             var refreshToken = Guid.NewGuid().ToString("N");
 
-            // Send the refresh token to the save in the accessor
+            var refreshHash = HashRefreshToken(refreshToken, _jwt.RefreshTokenHashKey);
 
             // Collect session fingerprint data
             var fingerprint = httpRequest.Headers["x-fingerprint"].ToString();
-            var userAgent = httpRequest.Headers.UserAgent.ToString();
-            var ip = httpRequest.HttpContext.Connection.RemoteIpAddress?.ToString();
+            var fingerprintHash = string.IsNullOrWhiteSpace(fingerprint)
+            ? null
+            : HashRefreshToken(fingerprint, _jwt.RefreshTokenHashKey);
 
-            // Save session in "auth-store" -> next task
-
-            //await _dapr.InvokeMethodAsync("auth-store", "store-refresh-token", new
-            //{
-            //    Email = loginRequest.Email,
-            //    RefreshToken = refreshToken,
-            //    Fingerprint = fingerprint,
-            //    UserAgent = userAgent,
-            //    IP = ip
-            //});
-
-            // For now just call unrelated method in the accessor
-            try
+            var ua = httpRequest.Headers["User-Agent"].ToString();
+            if (string.IsNullOrWhiteSpace(ua))
             {
-                var task = await _dapr.InvokeMethodAsync<TaskModel?>(HttpMethod.Get, "accessor", $"task/2"
-, cancellationToken);
+                ua = "unknown";
             }
-            catch (Exception ex)
+
+            var ip = httpRequest.HttpContext.Connection.RemoteIpAddress?.ToString()!;
+
+            // The user Id is taken from the DB, with the credantials of email and password
+            var session = new RefreshSessionRequest
             {
-                _log.LogError(ex, "Error invoking method on accessor service");
-            }
+                UserId = Guid.NewGuid(),
+                RefreshTokenHash = refreshHash,
+                DeviceFingerprintHash = fingerprintHash,
+                ExpiresAt = DateTimeOffset.UtcNow.AddDays(60),
+                IP = ip,
+                UserAgent = ua,
+            };
+
+            await _dapr.InvokeMethodAsync(
+                HttpMethod.Post,
+                "accessor",
+                "api/refresh-sessions",
+                session,
+                cancellationToken);
 
             return (accessToken, refreshToken);
         }
@@ -83,48 +92,70 @@ public class AuthService : IAuthService
         try
         {
             // Get the old refresh token from the request cookies
-            var oldRefreshToken = request.Cookies["refreshToken"];
-            if (string.IsNullOrEmpty(oldRefreshToken))
-            {
-                throw new UnauthorizedAccessException("Missing refresh token.");
-            }
+            var oldRefreshToken = request.Cookies["refreshToken"]
+            ?? throw new UnauthorizedAccessException("Missing refresh token.");
 
             // Collect session fingerprint data
-            var fingerprint = request.Headers["x-fingerprint"].ToString();
-            var userAgent = request.Headers.UserAgent.ToString();
-            var ip = request.HttpContext.Connection.RemoteIpAddress?.ToString();
+            var fingerprint = request.Headers["x-fingerprint"].ToString() ?? "unknown";
+            var userAgent = request.Headers["User-Agent"].ToString() ?? "unknown";
+            var ip = request.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
-            // Get session from Dapr
-            // For now just call unrelated method in the accessor
-            var session = await _dapr.InvokeMethodAsync<TaskModel?>(
-                                HttpMethod.Get,
-                                "accessor",
-                                $"task/2",
-                                cancellationToken
-                            );
+            var oldHash = HashRefreshToken(oldRefreshToken, _jwt.RefreshTokenHashKey);
 
-            //if (session == null || session.Fingerprint != fingerprint || session.IP != ip || session.UserAgent != userAgent)
-            //{
-            //    throw new UnauthorizedAccessException("Invalid or mismatched session.");
-            //}
+            // Get session from Accessor
+            var session = await _dapr.InvokeMethodAsync<RefreshSessionDto>(
+                HttpMethod.Get,
+                "accessor",
+                $"api/refresh-sessions/by-token-hash/{oldHash}",
+                cancellationToken
+            ) ?? throw new UnauthorizedAccessException("Invalid or mismatched session.");
+
+            if (session.ExpiresAt <= DateTimeOffset.UtcNow)
+            {
+                throw new UnauthorizedAccessException("Refresh session expired.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(fingerprint) && !string.IsNullOrWhiteSpace(session.DeviceFingerprintHash))
+            {
+                var fpHash = HashRefreshToken(fingerprint, _jwt.RefreshTokenHashKey);
+                if (!SlowEquals(fpHash, session.DeviceFingerprintHash))
+                {
+                    throw new UnauthorizedAccessException("Device fingerprint mismatch.");
+                }
+            }
+
+            // IP & UA checks (loose). Normalize IPv6-mapped IPv4 and compare.
+            if (!IpRoughMatch(session.IP, ip))
+            {
+                _log.LogWarning("IP mismatch for session {SessionId}. Saved={Saved} Current={Current}",
+                    session.Id, session.IP, ip);
+            }
+
+            if (!UserAgentRoughMatch(session.UserAgent, userAgent))
+            {
+                _log.LogWarning("UA mismatch for session {SessionId}. Saved={Saved} Current={Current}",
+                    session.Id, session.UserAgent, userAgent);
+            }
 
             // All good -> generate tokens
-            //var newAccessToken = GenerateJwtToken(session.Email);
-            var newAccessToken = GenerateJwtToken("some email");
+
+            var newAccessToken = GenerateJwtToken(session.UserId.ToString());
             var newRefreshToken = Guid.NewGuid().ToString("N");
+            var newRefreshHash = HashRefreshToken(newRefreshToken, _jwt.RefreshTokenHashKey);
 
-            //// Save new session
-            //await _dapr.InvokeMethodAsync("auth-store", "store-refresh-token", new
-            //{
-            //    Email = session.Email,
-            //    RefreshToken = newRefreshToken,
-            //    Fingerprint = fingerprint,
-            //    IP = ip,
-            //    UserAgent = userAgent
-            //});
+            var rotatePayload = new RotateRefreshSessionRequest
+            {
+                NewRefreshTokenHash = newRefreshHash,
+                NewExpiresAt = DateTimeOffset.UtcNow.AddDays(_jwt.RefreshTokenTTL)
+            };
 
-            //// Delete old session
-            //await _dapr.InvokeMethodAsync("auth-store", $"delete-refresh-token/{oldRefreshToken}");
+            // Save new session
+            await _dapr.InvokeMethodAsync(
+                HttpMethod.Put,
+                "accessor",
+                $"api/refresh-sessions/{session.Id}/rotate",
+                rotatePayload,
+                cancellationToken);
 
             return (newAccessToken, newRefreshToken);
         }
@@ -140,22 +171,29 @@ public class AuthService : IAuthService
         try
         {
             var refreshToken = request.Cookies["refreshToken"];
-
-            if (!string.IsNullOrEmpty(refreshToken))
+            if (string.IsNullOrEmpty(refreshToken))
             {
-                // Delete session from accessor
-                //await _dapr.InvokeMethodAsync(HttpMethod.Delete, "auth-store", $"delete-refresh-token/{refreshToken}");
-
-                // For now just call unrelated method in the accessor
-                var session = await _dapr.InvokeMethodAsync<TaskModel?>(
-                                    HttpMethod.Get,
-                                    "accessor",
-                                    $"task/2",
-                                    cancellationToken
-                                );
+                _log.LogInformation("No refresh token cookie. Nothing to logout.");
+                return;
             }
 
-            // If the cookie doesn't exist, no need to throw — just silently succeed
+            var hash = HashRefreshToken(refreshToken, _jwt.RefreshTokenHashKey);
+
+            // Lookup session by hash
+            var session = await _dapr.InvokeMethodAsync<RefreshSessionDto?>(
+                HttpMethod.Get, "accessor", $"api/refresh-sessions/by-token-hash/{hash}", cancellationToken);
+
+            if (session is null)
+            {
+                _log.LogInformation("No session found for given refresh token. Already logged out?");
+                return;
+            }
+
+            // Delete by sessionId
+            await _dapr.InvokeMethodAsync(
+                HttpMethod.Delete, "accessor", $"api/refresh-sessions/{session.Id}", cancellationToken);
+
+            _log.LogInformation("Deleted session {SessionId}", session.Id);
         }
         catch (Exception ex)
         {
@@ -164,7 +202,8 @@ public class AuthService : IAuthService
         }
     }
 
-    private string GenerateJwtToken(string email)
+    #region Helpers 
+    private string GenerateJwtToken(string userId)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwt.Secret));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -172,10 +211,66 @@ public class AuthService : IAuthService
         var token = new JwtSecurityToken(
             issuer: _jwt.Issuer,
             audience: _jwt.Audience,
-            claims: new[] { new Claim(ClaimTypes.Name, email) },
+            claims: new[] { new Claim(ClaimTypes.Name, userId) },
             expires: DateTime.UtcNow.AddMinutes(15),
             signingCredentials: creds);
 
         return new JwtSecurityTokenHandler().WriteToken(token).Trim();
     }
+
+    private static string HashRefreshToken(string token, string key)
+    {
+        using var hmac = new System.Security.Cryptography.HMACSHA256(Encoding.UTF8.GetBytes(key));
+        var bytes = hmac.ComputeHash(Encoding.UTF8.GetBytes(token));
+        return Convert.ToHexString(bytes); // uppercase hex
+    }
+
+    private static bool IpRoughMatch(string saved, string current)
+    {
+        static string norm(string ip) => ip.StartsWith("::ffff:", StringComparison.OrdinalIgnoreCase)
+            ? ip.Substring("::ffff:".Length)
+            : ip;
+        saved = norm(saved ?? "");
+        current = norm(current ?? "");
+        if (string.IsNullOrEmpty(saved) || string.IsNullOrEmpty(current))
+        {
+            return true;
+        }
+
+        return saved == current; // consider /24 or /64 matching if you need tolerance
+    }
+
+    private static bool UserAgentRoughMatch(string a, string b)
+    {
+        if (string.IsNullOrWhiteSpace(a) || string.IsNullOrWhiteSpace(b))
+        {
+            return true;
+        }
+
+        a = a.ToLowerInvariant();
+        b = b.ToLowerInvariant();
+        // very light check; you can use UAParser later
+        return a.Contains("chrome") == b.Contains("chrome")
+            && a.Contains("safari") == b.Contains("safari")
+            && a.Contains("mobile") == b.Contains("mobile");
+    }
+
+    private static bool SlowEquals(string x, string y)
+    {
+        // constant-time compare to avoid timing leaks
+        if (x.Length != y.Length)
+        {
+            return false;
+        }
+
+        var result = 0;
+        for (var i = 0; i < x.Length; i++)
+        {
+            result |= x[i] ^ y[i];
+        }
+
+        return result == 0;
+    }
+
+    #endregion
 }

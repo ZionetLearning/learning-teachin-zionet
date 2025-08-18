@@ -22,32 +22,40 @@ public class RefreshSessionService : IRefreshSessionService
 
     public async Task CreateSessionAsync(RefreshSessionRequest request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Creating refresh session for user {UserId}", request.UserId);
-
-        if (!IPAddress.TryParse(request.IP, out var ipAddress))
+        try
         {
-            _logger.LogWarning("Invalid IP address provided: {IP}", request.IP);
-            throw new ArgumentException("Invalid IP address", nameof(request));
+            _logger.LogInformation("Creating refresh session for user {UserId}", request.UserId);
+
+            if (!IPAddress.TryParse(request.IP, out var ipAddress))
+            {
+                _logger.LogWarning("Invalid IP address provided: {IP}", request.IP);
+                throw new ArgumentException("Invalid IP address", nameof(request));
+            }
+
+            var now = DateTimeOffset.UtcNow;
+
+            var session = new RefreshSessionsRecord
+            {
+                Id = Guid.NewGuid(),
+                UserId = request.UserId,
+                RefreshTokenHash = request.RefreshTokenHash,
+                DeviceFingerprintHash = request.DeviceFingerprintHash,
+                IssuedAt = now,
+                ExpiresAt = request.ExpiresAt,
+                LastSeenAt = now,
+                IP = ipAddress,
+                UserAgent = request.UserAgent
+            };
+            _dbContext.RefreshSessions.Add(session);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation("Refresh session {SessionId} created", session.Id);
         }
-
-        var now = DateTimeOffset.UtcNow;
-
-        var session = new RefreshSessionsRecord
+        catch (Exception ex)
         {
-            Id = Guid.NewGuid(),
-            UserId = request.UserId,
-            RefreshTokenHash = request.RefreshTokenHash,
-            DeviceFingerprintHash = request.DeviceFingerprintHash,
-            IssuedAt = now,
-            ExpiresAt = request.ExpiresAt,
-            LastSeenAt = now,
-            IP = ipAddress,
-            UserAgent = request.UserAgent
-        };
-        _dbContext.RefreshSessions.Add(session);
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        _logger.LogInformation("Refresh session {SessionId} created", session.Id);
+            _logger.LogError(ex, "Failed to create refresh session for user {UserId}", request.UserId);
+            throw new InvalidOperationException("Could not create refresh session", ex);
+        }
     }
 
     public async Task<RefreshSessionDto?> FindByRefreshHashAsync(string refreshTokenHash, CancellationToken cancellationToken)
