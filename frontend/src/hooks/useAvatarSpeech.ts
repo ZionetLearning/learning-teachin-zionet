@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useCallback } from "react";
 
-import { useSynthesizeSpeech } from "../api/speech";
+import { useSynthesizeSpeech } from "@/api";
 import { base64ToBlob } from "@/utils";
 
 interface useAvatarSpeechOptions {
