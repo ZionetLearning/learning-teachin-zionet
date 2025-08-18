@@ -4,9 +4,9 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
     paths:
-      - 'Engine/**'
-      - 'EngineComponentTests/**'
-      - 'Directory.Build.props'
+      - 'backend/ContainerApp/Engine/**'
+      - 'backend/ContainerApp/EngineComponentTests/**'
+      - 'backend/ContainerApp/Directory.Build.props'
       - '.github/workflows/**'
   workflow_dispatch:
 
@@ -29,9 +29,9 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           filters: |
             engine:
-              - 'Engine/**'
-              - 'EngineComponentTests/**'
-              - 'Directory.Build.props'
+              - 'backend/ContainerApp/Engine/**'
+              - 'backend/ContainerApp/EngineComponentTests/**'
+              - 'backend/ContainerApp/Directory.Build.props'
 
       - name: Build service list
         id: set-services
