@@ -1,4 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
+using Manager.Services.Clients.Engine.Models;
 
 namespace Manager.Models;
 
@@ -16,7 +18,7 @@ public sealed record AiResponseModel
     public long AnsweredAtUnix { get; init; } = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
     [Required(ErrorMessage = "Status is required.")]
-    [MinLength(1, ErrorMessage = "Status cannot be empty.")]
-    public string Status { get; init; } = "ok";
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public ChatAnswerStatus Status { get; init; } = ChatAnswerStatus.Ok;
     public string? Error { get; init; }
 }

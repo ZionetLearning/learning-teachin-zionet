@@ -45,6 +45,14 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.manager.secrets.serviceBus.name }}
                   key: {{ .Values.manager.secrets.serviceBus.key }}
+            - name: Jwt__Secret
+              value: "{{ .Values.manager.env.Jwt__Secret }}"
+            - name: Jwt__Issuer
+              value: "{{ .Values.manager.env.Jwt__Issuer }}"
+            - name: Jwt__Audience
+              value: "{{ .Values.manager.env.Jwt__Audience }}"
+            - name: Jwt__RefreshTokenHashKey
+              value: "{{ .Values.manager.env.Jwt__RefreshTokenHashKey }}"
           resources:
             {{- toYaml .Values.manager.resources | nindent 12 }}
 ---

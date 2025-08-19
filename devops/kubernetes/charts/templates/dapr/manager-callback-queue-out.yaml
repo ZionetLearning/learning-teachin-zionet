@@ -19,3 +19,4 @@ spec:
       value: "true"
 scopes:
   - {{ .Values.engine.dapr.appId  | default .Values.engine.name  | quote }}
+  - {{ .Values.accessor.dapr.appId  | default .Values.accessor.name  | quote }}
