@@ -39,7 +39,7 @@ public static class ManagerEndpoints
         [FromServices] IManagerService managerService,
         [FromServices] ILogger<ManagerService> logger)
     {
-        using (logger.BeginScope("Method {MethodName}:", nameof(GetTaskAsync)))
+        using var scope = logger.BeginScope("TaskId {TaskId}:", id);
         {
             try
             {
@@ -66,7 +66,7 @@ public static class ManagerEndpoints
         [FromServices] IManagerService managerService,
         [FromServices] ILogger<ManagerService> logger)
     {
-        using (logger.BeginScope("Method: {Method}", nameof(CreateTaskAsync)))
+        using var scope = logger.BeginScope("TaskId {TaskId}:", task.Id);
         {
             if (!ValidationExtensions.TryValidate(task, out var validationErrors))
             {
@@ -76,21 +76,21 @@ public static class ManagerEndpoints
 
             try
             {
-                logger.LogInformation("Processing task creation for ID {TaskId}", task.Id);
+                logger.LogInformation("Processing task creation");
 
                 var (success, message) = await managerService.CreateTaskAsync(task);
                 if (success)
                 {
-                    logger.LogInformation("Task {TaskId} sent to queue successfully", task.Id);
+                    logger.LogInformation("Task sent to queue successfully");
                     return Results.Accepted($"/task/{task.Id}", new { status = message, task.Id });
                 }
 
-                logger.LogWarning("Processing task {TaskId} failed: {Message}", task.Id, message);
+                logger.LogWarning("Processing task failed: {Message}", message);
                 return Results.Problem("Failed to process the task.");
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error processing task {TaskId}", task.Id);
+                logger.LogError(ex, "Error processing task");
                 return Results.Problem("An error occurred while processing the task.");
             }
         }
@@ -101,7 +101,7 @@ public static class ManagerEndpoints
         [FromServices] IManagerService managerService,
         [FromServices] ILogger<ManagerService> logger)
     {
-        using (logger.BeginScope("Method: {Method}", nameof(CreateTaskAsync)))
+        using var scope = logger.BeginScope("TaskId {TaskId}:", task.Id);
         {
             try
             {
@@ -111,7 +111,7 @@ public static class ManagerEndpoints
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error processing task {TaskId}", task.Id);
+                logger.LogError(ex, "Error processing task");
                 return Results.Problem("An error occurred while processing the task.");
             }
         }
@@ -123,25 +123,26 @@ public static class ManagerEndpoints
         [FromServices] IManagerService managerService,
         [FromServices] ILogger<ManagerService> logger)
     {
-        using (logger.BeginScope("Method: {Method}", nameof(UpdateTaskNameAsync)))
+        using var scope = logger.BeginScope("TaskId {TaskId}:", id);
         {
             try
             {
-                logger.LogInformation("Attempting to update task name for ID {TaskId}", id);
+                logger.LogInformation("Attempting to update task name");
+
                 var success = await managerService.UpdateTaskName(id, name);
 
                 if (success)
                 {
-                    logger.LogInformation("Successfully updated task name for ID {TaskId}", id);
+                    logger.LogInformation("Successfully updated task name");
                     return Results.Ok("Task name updated");
                 }
 
-                logger.LogWarning("Task with ID {TaskId} not found for name update", id);
+                logger.LogWarning("Task not found for name update");
                 return Results.NotFound("Task not found");
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error updating task name for ID {TaskId}", id);
+                logger.LogError(ex, "Error updating task name ");
                 return Results.Problem("An error occurred while updating the task name.");
             }
         }
@@ -152,25 +153,26 @@ public static class ManagerEndpoints
         [FromServices] IManagerService managerService,
         [FromServices] ILogger<ManagerService> logger)
     {
-        using (logger.BeginScope("Method: {Method}", nameof(DeleteTaskAsync)))
+        using var scope = logger.BeginScope("TaskId {TaskId}:", id);
         {
             try
             {
-                logger.LogInformation("Attempting to delete task with ID {TaskId}", id);
+                logger.LogInformation("Attempting to delete task ");
+
                 var success = await managerService.DeleteTask(id);
 
                 if (success)
                 {
-                    logger.LogInformation("Successfully deleted task with ID {TaskId}", id);
+                    logger.LogInformation("Successfully deleted task");
                     return Results.Ok("Task deleted");
                 }
 
-                logger.LogWarning("Task with ID {TaskId} not found for deletion", id);
+                logger.LogWarning("Task not found for deletion");
                 return Results.NotFound(new { Message = $"Task with ID {id} not found" });
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error deleting task with ID {TaskId}", id);
+                logger.LogError(ex, "Error deleting task");
                 return Results.Problem("An error occurred while deleting the task.");
             }
         }

@@ -9,16 +9,22 @@ public class AccessorDbContext : DbContext
     public AccessorDbContext(DbContextOptions<AccessorDbContext> options)
         : base(options) { }
 
-    // DbSets
+    // DB tables
     public DbSet<TaskModel> Tasks { get; set; } = default!;
     public DbSet<ChatThread> ChatThreads { get; set; } = default!;
     public DbSet<ChatMessage> ChatMessages { get; set; } = default!;
     public DbSet<ChatHistorySnapshot> ChatHistorySnapshots { get; set; } = default!;
     public DbSet<IdempotencyRecord> Idempotency { get; set; } = default!;
     public DbSet<RefreshSessionsRecord> RefreshSessions { get; set; } = default!;
+    public DbSet<User> Users { get; set; } = default!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // User table configuration
+        modelBuilder.Entity<User>()
+            .HasIndex(u => u.Email)
+            .IsUnique();
+
         // Refresh Sessions table
         modelBuilder.ApplyConfiguration(new RefreshSessionConfiguration());
 

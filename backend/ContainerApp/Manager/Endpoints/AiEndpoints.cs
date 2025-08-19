@@ -44,7 +44,7 @@ public static class AiEndpoints
         [FromServices] ILogger<AnswerEndpoint> log,
         CancellationToken ct)
     {
-        using (log.BeginScope("Method: {Method}, QuestionId: {Id}", nameof(AnswerAsync), id))
+        using var scope = log.BeginScope("QuestionId: {Id}", id);
         {
             try
             {
@@ -72,8 +72,7 @@ public static class AiEndpoints
         [FromServices] ILogger<QuestionEndpoint> log,
         CancellationToken ct)
     {
-        using (log.BeginScope("Method: {Method}, RequestId: {RequestId}, ThreadId: {ThreadId}",
-        nameof(QuestionAsync), dto.Id, dto.ThreadId))
+        using var scope = log.BeginScope("RequestId: {RequestId}, ThreadId: {ThreadId}", dto.Id, dto.ThreadId);
         {
             if (!ValidationExtensions.TryValidate(dto, out var validationErrors))
             {
@@ -103,6 +102,7 @@ public static class AiEndpoints
       [FromServices] ILogger<ChatPostEndpoint> log,
       CancellationToken ct)
     {
+        using var scope = log.BeginScope("ThreadId: {ThreadId}", request.ThreadId);
         if (string.IsNullOrWhiteSpace(request.UserMessage))
         {
             return Results.BadRequest(new { error = "userMessage is required" });

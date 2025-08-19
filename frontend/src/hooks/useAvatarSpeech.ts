@@ -1,8 +1,32 @@
-import { useState, useMemo } from "react";
-import * as sdk from "microsoft-cognitiveservices-speech-sdk";
+import { useState, useMemo, useRef, useCallback } from "react";
 
-export const useAvatarSpeech = (lipsArray: string[]) => {
+import { useSynthesizeSpeech } from "@/api";
+import { base64ToBlob } from "@/utils";
+
+interface useAvatarSpeechOptions {
+  lipsArray?: string[];
+  volume?: number;
+  onAudioStart?: () => void;
+  onAudioEnd?: () => void;
+}
+
+export const useAvatarSpeech = ({
+  lipsArray = [],
+  volume = 1,
+  onAudioStart,
+  onAudioEnd,
+}: useAvatarSpeechOptions) => {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const timeoutsRef = useRef<NodeJS.Timeout[]>([]);
   const [currentViseme, setCurrentViseme] = useState<number>(0);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [isMuted, setIsMuted] = useState<boolean>(false);
+
+  const {
+    mutateAsync: synthesizeSpeech,
+    isPending,
+    error,
+  } = useSynthesizeSpeech();
 
   const visemeMap = useMemo(() => {
     return lipsArray.reduce(
@@ -14,61 +38,126 @@ export const useAvatarSpeech = (lipsArray: string[]) => {
     );
   }, [lipsArray]);
 
-  const speak = (text: string) => {
-    if (!text.trim()) return;
+  const clearTimeouts = useCallback(() => {
+    timeoutsRef.current.forEach(clearTimeout);
+    timeoutsRef.current = [];
+  }, []);
 
-    const speechKey = import.meta.env.VITE_AZURE_SPEECH_KEY!;
-    const speechRegion = import.meta.env.VITE_AZURE_REGION!;
-    const speechConfig = sdk.SpeechConfig.fromSubscription(
-      speechKey,
-      speechRegion,
-    );
+  const stop = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    clearTimeouts();
+    setCurrentViseme(0);
+    setIsPlaying(false);
+    onAudioEnd?.();
+  }, [clearTimeouts, onAudioEnd]);
 
-    speechConfig.speechSynthesisVoiceName = "he-IL-HilaNeural";
-    speechConfig.setProperty(
-      "SpeechServiceConnection_SynthVoiceVisemeEvent",
-      "true",
-    );
+  const toggleMute = useCallback(() => {
+    setIsMuted((prev) => {
+      const newMuted = !prev;
+      if (audioRef.current) {
+        audioRef.current.volume = newMuted ? 0 : volume;
+      }
+      return newMuted;
+    });
+  }, [volume]);
 
-    const audioConfig = sdk.AudioConfig.fromDefaultSpeakerOutput();
-    const synthesizer = new sdk.SpeechSynthesizer(speechConfig, audioConfig);
+  const speak = useCallback(
+    async (text: string) => {
+      if (!text.trim()) return;
 
-    const visemes: { offset: number; visemeId: number }[] = [];
+      if (isPlaying) {
+        stop();
+        return;
+      }
 
-    synthesizer.visemeReceived = (_, e) => {
-      visemes.push({ visemeId: e.visemeId, offset: e.audioOffset / 10000 });
-    };
+      try {
+        clearTimeouts();
+        setCurrentViseme(0);
+        setIsPlaying(false);
 
-    synthesizer.synthesisCompleted = () => {
-      setCurrentViseme(0);
-      synthesizer.close();
-    };
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current = null;
+        }
+        const response = await synthesizeSpeech({
+          text,
+        });
 
-    synthesizer.speakTextAsync(
-      text,
-      () => {
-        if (visemes.length) {
-          visemes.forEach(({ visemeId, offset }) => {
-            setTimeout(() => {
+        const audioBlob = base64ToBlob(response.audioData, "audio/wav");
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        audio.volume = isMuted ? 0 : volume;
+        audioRef.current = audio;
+
+        audio.oncanplaythrough = () => {
+          onAudioStart?.();
+          setIsPlaying(true);
+        };
+
+        if (response.visemes.length > 0) {
+          response.visemes.forEach(({ visemeId, offsetMs }) => {
+            const timeout = setTimeout(() => {
               setCurrentViseme(visemeId);
-            }, offset);
+            }, offsetMs);
+            timeoutsRef.current.push(timeout);
           });
 
-          const totalDuration = Math.max(...visemes.map((v) => v.offset));
-          setTimeout(() => setCurrentViseme(0), totalDuration + 500);
+          const totalDuration = Math.max(
+            ...response.visemes.map((v) => v.offsetMs),
+          );
+          const resetTimeout = setTimeout(() => {
+            setCurrentViseme(0);
+          }, totalDuration + 500);
+          timeoutsRef.current.push(resetTimeout);
         }
-      },
-      (err) => {
-        console.error("Speech error:", err);
+
+        audio.onended = () => {
+          URL.revokeObjectURL(audioUrl);
+          setCurrentViseme(0);
+          setIsPlaying(false);
+          onAudioEnd?.();
+        };
+
+        audio.onerror = (err) => {
+          console.error("Audio playback error:", err);
+          URL.revokeObjectURL(audioUrl);
+          setCurrentViseme(0);
+          setIsPlaying(false);
+          onAudioEnd?.();
+        };
+
+        await audio.play();
+      } catch (error) {
+        console.error("Speech synthesis error:", error);
         setCurrentViseme(0);
-        synthesizer.close();
-      },
-    );
-  };
+        setIsPlaying(false);
+        onAudioEnd?.();
+      }
+    },
+    [
+      synthesizeSpeech,
+      clearTimeouts,
+      isPlaying,
+      stop,
+      volume,
+      isMuted,
+      onAudioStart,
+      onAudioEnd,
+    ],
+  );
 
   return {
     currentViseme,
+    currentVisemeSrc: visemeMap[currentViseme] ?? lipsArray[0],
     speak,
-    currentVisemeSrc: visemeMap[currentViseme] ?? lipsArray[0], // fallback to neutral
+    stop,
+    toggleMute,
+    isPlaying,
+    isMuted,
+    isLoading: isPending,
+    error,
   };
 };
