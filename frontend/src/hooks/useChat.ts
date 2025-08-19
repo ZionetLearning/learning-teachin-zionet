@@ -24,7 +24,7 @@ export const useChat = () => {
 
     const payload: ChatRequest = {
       userMessage: userText,
-      threadId: threadId || "123456789",
+      threadId: threadId || crypto.randomUUID(),
       chatType: "default",
     };
 
@@ -43,7 +43,7 @@ export const useChat = () => {
       onSuccess: (data: ChatResponse) => {
         setThreadId(data.threadId);
 
-        const aiText = data.assistantMessage;
+        const aiText = data.answer;
 
         const aiMsg: ChatMessage = {
           position: "left",

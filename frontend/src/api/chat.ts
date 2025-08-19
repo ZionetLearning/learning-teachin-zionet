@@ -11,7 +11,8 @@ export type ChatRequest = {
 
 export type ChatResponse = {
   threadId: string;
-  assistantMessage: string;
+  answer: string;
+  status: string;
 };
 
 export const useSendChatMessage = () => {
@@ -32,7 +33,7 @@ export const useSendChatMessage = () => {
           userMessage,
           threadId,
           chatType,
-        }
+        },
       );
 
       return response.data;
