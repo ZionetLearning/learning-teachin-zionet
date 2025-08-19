@@ -6,7 +6,6 @@ on:
     - cron: '0 4 * * 0-4'
     # 19:30 Israel time = 16:30 UTC (STOP: Sunday-Saturday)
     - cron: '30 16 * * 0-6'
-  workflow_dispatch:  # Allow manual testing
 
 jobs:
   scheduled-operation:
