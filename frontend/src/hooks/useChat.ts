@@ -24,7 +24,7 @@ export const useChat = () => {
 
     const payload: ChatRequest = {
       userMessage: userText,
-      threadId: threadId || "123456789",
+      threadId: threadId || crypto.randomUUID(),
       chatType: "default",
     };
 
