@@ -80,6 +80,10 @@ jobs:
           echo "ACR_LOGIN_SERVER=teachindevacr.azurecr.io" >> $GITHUB_ENV
           echo "OPENAI_KEY=${{ secrets.AZURE_OPENAI_API_KEY }}" >> $GITHUB_ENV
           echo "AZURE_SPEECH_KEY=${{ secrets.AZURE_SPEECH_KEY }}" >> $GITHUB_ENV
+          echo "MANAGER_JWT_SECRET=${{ secrets.MANAGER_JWT_SECRET }}" >> $GITHUB_ENV
+          echo "MANAGER_JWT_ISSUER=${{ secrets.MANAGER_JWT_ISSUER }}" >> $GITHUB_ENV
+          echo "MANAGER_JWT_AUDIENCE=${{ secrets.MANAGER_JWT_AUDIENCE }}" >> $GITHUB_ENV
+          echo "MANAGER_JWT_REFRESH_TOKEN_HASH_KEY=${{ secrets.MANAGER_JWT_REFRESH_TOKEN_HASH_KEY }}" >> $GITHUB_ENV
 
           # Shared AKS
           echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
@@ -169,6 +173,10 @@ jobs:
             --set global.environment="$IMAGE_TAG" \
             --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" \
             --set-string engine.env.AzureSpeech__SubscriptionKey="$AZURE_SPEECH_KEY" \
+            --set-string manager.env.Jwt__Secret="$MANAGER_JWT_SECRET" \
+            --set-string manager.env.Jwt__Issuer="$MANAGER_JWT_ISSUER" \
+            --set-string manager.env.Jwt__Audience="$MANAGER_JWT_AUDIENCE" \
+            --set-string manager.env.Jwt__RefreshTokenHashKey="$MANAGER_JWT_REFRESH_TOKEN_HASH_KEY" \
             --set dapr.installComponents=false \
           | grep -n '^kind: Namespace' && { echo "Namespace still rendered"; exit 1; } || echo "OK: no Namespace in chart"
 
@@ -190,6 +198,10 @@ jobs:
             --set global.environment="$IMAGE_TAG" \
             --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" \
             --set-string engine.env.AzureSpeech__SubscriptionKey="$AZURE_SPEECH_KEY" \
+            --set-string manager.env.Jwt__Secret="$MANAGER_JWT_SECRET" \
+            --set-string manager.env.Jwt__Issuer="$MANAGER_JWT_ISSUER" \
+            --set-string manager.env.Jwt__Audience="$MANAGER_JWT_AUDIENCE" \
+            --set-string manager.env.Jwt__RefreshTokenHashKey="$MANAGER_JWT_REFRESH_TOKEN_HASH_KEY" \
             --set dapr.installComponents=false
 
       - name: Diagnostics (on failure)
