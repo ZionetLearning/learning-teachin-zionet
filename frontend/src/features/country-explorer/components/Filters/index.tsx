@@ -53,7 +53,7 @@ export const Filters: React.FC<Props> = ({ value, onChange }) => {
         </label>
         <input
           className={classes.input}
-          placeholder="Search by name"
+          placeholder={t("pages.countryExplorer.searchByName")}
           value={value.search}
           onChange={(e) => update("search", e.target.value)}
         />
