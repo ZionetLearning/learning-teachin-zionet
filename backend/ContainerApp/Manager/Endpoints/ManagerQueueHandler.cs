@@ -1,9 +1,9 @@
-﻿using System.Text.Json;
-using Manager.Messaging;
+﻿using DotQueue;
 using Manager.Models;
 using Manager.Models.ModelValidation;
 using Manager.Models.QueueMessages;
 using Manager.Services;
+using System.Text.Json;
 
 namespace Manager.Endpoints;
 public class ManagerQueueHandler : IQueueHandler<Message>

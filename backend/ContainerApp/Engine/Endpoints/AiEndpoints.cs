@@ -55,13 +55,17 @@ public static class AiEndpoints
 
         var aiResponse = await ai.ChatHandlerAsync(serviceRequest, ct);
 
-        if (aiResponse.Status == "error")
+        if (aiResponse.Status != ChatAnswerStatus.Ok)
         {
+            log.LogInformation("Answered thread {Thread} equals null. Error: {Error}", aiResponse.ThreadId, aiResponse.Error);
+
             return Results.Problem(aiResponse.Error);
         }
 
         if (aiResponse.Answer == null)
         {
+            log.LogInformation("Answered thread {Thread} equals null. Error: {Error}", aiResponse.ThreadId, aiResponse.Error);
+
             return Results.Problem(aiResponse.Error);
         }
 
@@ -120,6 +124,16 @@ public static class AiEndpoints
                 logger.LogError("Speech synthesis failed - service returned null");
                 return Results.Problem("Speech synthesis failed.");
             }
+        }
+        catch (OperationCanceledException)
+        {
+            logger.LogWarning("Speech synthesis operation was canceled by user");
+            return Results.StatusCode(StatusCodes.Status499ClientClosedRequest);
+        }
+        catch (TimeoutException)
+        {
+            logger.LogWarning("Speech synthesis operation timed out");
+            return Results.StatusCode(StatusCodes.Status408RequestTimeout);
         }
         catch (Exception ex)
         {
