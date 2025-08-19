@@ -16,10 +16,6 @@ public class AuthService : IAuthService
     private readonly DaprClient _dapr;
     private readonly ILogger<AuthService> _log;
     private readonly JwtSettings _jwt;
-    private static readonly Dictionary<string, string> _fakeUsers = new()
-    {
-        { "1", "1" }
-    };
 
     public AuthService(DaprClient dapr, ILogger<AuthService> log, IOptions<JwtSettings> jwtOptions)
     {
@@ -32,9 +28,18 @@ public class AuthService : IAuthService
     {
         try
         {
-            if (!_fakeUsers.TryGetValue(loginRequest.Email, out var storedPassword) || storedPassword != loginRequest.Password)
+            var UserId = await _dapr.InvokeMethodAsync<LoginRequest, Guid?>(
+                HttpMethod.Post,
+                "accessor",
+                "auth/login",
+                loginRequest,
+                cancellationToken
+            );
+
+            if (UserId is null)
             {
-                throw new UnauthorizedAccessException("Invalid credentials.");
+                _log.LogError("Login failed for user {Email}", loginRequest.Email);
+                throw new UnauthorizedAccessException("Login failed. Please check your credentials.");
             }
 
             var accessToken = GenerateJwtToken(loginRequest.Email);

@@ -14,4 +14,5 @@ public interface IAccessorService
     Task AddMessageAsync(ChatMessage message);
     Task<IEnumerable<ChatMessage>> GetMessagesByThreadAsync(Guid threadId);
     Task<List<ThreadSummaryDto>> GetThreadsForUserAsync(string userId);
+    Task<Guid?> ValidateCredentialsAsync(string Email, string Password);
 }
