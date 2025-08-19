@@ -1,11 +1,14 @@
-import { AvatarDa } from "../features";
-import { useStyles } from "./style";
+import { AvatarDa } from '../features';
+import { useStyles } from './style';
 
 export const AvatarDaPage = () => {
-  const classes = useStyles();
-  return (
-    <div className={classes.fullScreenAvatarDaPage}>
-      <AvatarDa />
-    </div>
-  );
+	const classes = useStyles();
+	return (
+		<div
+			className={classes.fullScreenAvatarDaPage}
+			data-testid="avatar-da-page"
+		>
+			<AvatarDa />
+		</div>
+	);
 };

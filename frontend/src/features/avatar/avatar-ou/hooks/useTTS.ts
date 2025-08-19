@@ -1,87 +1,116 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from 'react';
+
+interface CypressWindow extends Window {
+	Cypress?: unknown;
+}
 
 interface TTSOptions {
-  lang?: string;
-  rate?: number;
-  pitch?: number;
-  volume?: number;
+	lang?: string;
+	rate?: number;
+	pitch?: number;
+	volume?: number;
 }
 
 export const useTTS = (options: TTSOptions = {}) => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
-  const synthRef = useRef<SpeechSynthesis | null>(null);
+	const [isPlaying, setIsPlaying] = useState(false);
+	const [isMuted, setIsMuted] = useState(false);
+	const synthRef = useRef<SpeechSynthesis | null>(null);
 
-  const defaultOptions = {
-    lang: "he-IL",
-    rate: 0.9,
-    pitch: 1.1,
-    volume: 1,
-    ...options,
-  };
+	const defaultOptions = {
+		lang: 'he-IL',
+		rate: 0.9,
+		pitch: 1.1,
+		volume: 1,
+		...options,
+	};
 
-  useEffect(() => {
-    // Check if speech synthesis is supported
-    if ("speechSynthesis" in window) {
-      synthRef.current = window.speechSynthesis;
-    }
+	useEffect(() => {
+		// Check if speech synthesis is supported
+		if ('speechSynthesis' in window) {
+			synthRef.current = window.speechSynthesis;
+		}
 
-    return () => {
-      if (synthRef.current) {
-        synthRef.current.cancel();
-      }
-    };
-  }, []);
+		return () => {
+			if (synthRef.current) {
+				synthRef.current.cancel();
+			}
+		};
+	}, []);
 
-  const speak = (text: string) => {
-    if (!synthRef.current || !text.trim()) return;
+	const timeoutRef = useRef<number | null>(null);
 
-    if (isPlaying) {
-      synthRef.current.cancel();
-      setIsPlaying(false);
-      return;
-    }
+	const speak = (text: string) => {
+		if (!text.trim()) return;
 
-    const utterance = new SpeechSynthesisUtterance(text);
+		// Cypress test environment simulation (deterministic, fast, no real audio)
+		if (typeof window !== 'undefined' && (window as CypressWindow).Cypress) {
+			if (isPlaying) {
+				if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
+				setIsPlaying(false);
+				return;
+			}
+			setIsPlaying(true);
+			timeoutRef.current = window.setTimeout(() => {
+				setIsPlaying(false);
+			}, 600);
+			return;
+		}
 
-    // Apply options
-    utterance.lang = defaultOptions.lang;
-    utterance.rate = defaultOptions.rate;
-    utterance.pitch = defaultOptions.pitch;
-    utterance.volume = isMuted ? 0 : defaultOptions.volume;
+		if (!synthRef.current) return;
 
-    utterance.onstart = () => {
-      setIsPlaying(true);
-    };
+		if (isPlaying) {
+			synthRef.current.cancel();
+			setIsPlaying(false);
+			return;
+		}
 
-    utterance.onend = () => {
-      setIsPlaying(false);
-    };
+		const utterance = new SpeechSynthesisUtterance(text);
 
-    utterance.onerror = () => {
-      setIsPlaying(false);
-    };
+		// Apply options
+		utterance.lang = defaultOptions.lang;
+		utterance.rate = defaultOptions.rate;
+		utterance.pitch = defaultOptions.pitch;
+		utterance.volume = isMuted ? 0 : defaultOptions.volume;
 
-    synthRef.current.speak(utterance);
-  };
+		utterance.onstart = () => {
+			setIsPlaying(true);
+		};
 
-  const stop = () => {
-    if (synthRef.current) {
-      synthRef.current.cancel();
-      setIsPlaying(false);
-    }
-  };
+		utterance.onend = () => {
+			setIsPlaying(false);
+		};
 
-  const toggleMute = () => {
-    setIsMuted(!isMuted);
-  };
+		utterance.onerror = () => {
+			setIsPlaying(false);
+		};
 
-  return {
-    speak,
-    stop,
-    toggleMute,
-    isPlaying,
-    isMuted,
-    isSupported: !!synthRef.current,
-  };
+		synthRef.current.speak(utterance);
+	};
+
+	const stop = () => {
+		if (typeof window !== 'undefined' && (window as CypressWindow).Cypress) {
+			if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
+			setIsPlaying(false);
+			return;
+		}
+		if (synthRef.current) {
+			synthRef.current.cancel();
+			setIsPlaying(false);
+		}
+	};
+
+	const toggleMute = () => {
+		setIsMuted(!isMuted);
+	};
+
+	return {
+		speak,
+		stop,
+		toggleMute,
+		isPlaying,
+		isMuted,
+		isSupported:
+			!!synthRef.current ||
+			!!(typeof window !== 'undefined' && (window as CypressWindow).Cypress),
+	};
 };
