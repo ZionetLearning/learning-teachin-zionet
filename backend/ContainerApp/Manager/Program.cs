@@ -4,9 +4,7 @@ using Azure.Messaging.ServiceBus;
 using Manager.Constants;
 using Manager.Endpoints;
 using Manager.Hubs;
-using Manager.Messaging;
-using Manager.Models.Auth;
-using Manager.Models.QueueMessages;
+using DotQueue;
 using Manager.Services;
 using Manager.Services.Clients;
 using Manager.Services.Clients.Engine;
@@ -17,6 +15,8 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
+using Manager.Models.Auth;
+using Manager.Models.QueueMessages;
 
 var builder = WebApplication.CreateBuilder(args);
 
