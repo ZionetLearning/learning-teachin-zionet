@@ -14,4 +14,6 @@ public interface IAccessorService
     Task AddMessageAsync(ChatMessage message);
     Task<IEnumerable<ChatMessage>> GetMessagesByThreadAsync(Guid threadId);
     Task<List<ThreadSummaryDto>> GetThreadsForUserAsync(string userId);
+    Task<ChatHistorySnapshot?> GetHistorySnapshotAsync(Guid threadId);
+    Task UpsertHistorySnapshotAsync(ChatHistorySnapshot snapshot);
 }

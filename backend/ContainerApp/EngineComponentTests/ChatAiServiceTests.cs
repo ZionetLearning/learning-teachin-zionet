@@ -1,15 +1,15 @@
-﻿using System.Text.RegularExpressions;
-using Engine.Models.Chat;
+﻿using System.Text.Json;
+using System.Text.RegularExpressions;
+using DotQueue;
 using Engine;
+using Engine.Models.Chat;
 using Engine.Services;
-using Engine.Services.Clients.AccessorClient.Models;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Polly;
-using DotQueue;
 
 namespace EngineComponentTests;
 
@@ -35,6 +35,15 @@ public class ChatAiServiceTests
             _noOpKernel;
     }
 
+    private static JsonElement JsonEl(string raw)
+    {
+        using var doc = JsonDocument.Parse(raw);
+        return doc.RootElement.Clone();
+    }
+
+    private static JsonElement EmptyHistory() =>
+        JsonEl("""{"messages":[]}""");
+
     public ChatAiServiceTests(TestKernelFixture fx)
     {
         _fx = fx;
@@ -58,7 +67,7 @@ public class ChatAiServiceTests
     {
         var request = new ChatAiServiseRequest
         {
-            History = Array.Empty<ChatMessage>(),
+            History = EmptyHistory(),
             UserMessage = "How much is 2 + 2?",
             ChatType = ChatType.Default,
             UserId = "TestUserId",
@@ -86,7 +95,7 @@ public class ChatAiServiceTests
         var userMesaage = "Remember the number forty-two.";
         var request1 = new ChatAiServiseRequest
         {
-            History = Array.Empty<ChatMessage>(),
+            History = EmptyHistory(),
             UserMessage = userMesaage,
             ChatType = ChatType.Default,
             UserId = userId,
@@ -98,23 +107,11 @@ public class ChatAiServiceTests
         var response1 = await _aiService.ChatHandlerAsync(request1, CancellationToken.None);
 
         Assert.True(response1.Status == ChatAnswerStatus.Ok);
-
-        var history = new List<ChatMessage>();
-
-        var message = new ChatMessage
-        {
-            Id = Guid.NewGuid(),
-            ThreadId = threadId,
-            UserId = userId,
-            Role = MessageRole.User,
-            Content = userMesaage
-        };
-
-        history.Add(message);
+        Assert.NotNull(response1.Answer);
 
         var request2 = new ChatAiServiseRequest
         {
-            History = history,
+            History = response1.UpdatedHistory,
             UserMessage = "What number did you remember?",
             ChatType = ChatType.Default,
             UserId = "TestUserId",

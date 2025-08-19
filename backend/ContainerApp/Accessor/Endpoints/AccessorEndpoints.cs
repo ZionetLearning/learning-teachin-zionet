@@ -1,4 +1,5 @@
-﻿using Accessor.Models;
+﻿using System.Text.Json;
+using Accessor.Models;
 using Accessor.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,6 +14,7 @@ public static class AccessorEndpoints
         app.MapGet("/task/{id:int}", GetTaskByIdAsync);
 
         app.MapGet("/threads/{threadId:guid}/messages", GetChatHistoryAsync).WithName("GetChatHistory");
+        app.MapGet("/threads/{threadId:guid}/history", GetHistorySnapshotAsync).WithName("GetHistorySnapshot");
 
         app.MapGet("/threads/{userId}", GetThreadsForUserAsync);
 
@@ -23,6 +25,7 @@ public static class AccessorEndpoints
         app.MapPost("/task", CreateTaskAsync);
 
         app.MapPost("/threads/message", StoreMessageAsync);
+        app.MapPost("/threads/{threadId:guid}/history", UpsertHistorySnapshotAsync).WithName("UpsertHistorySnapshot");
 
         #endregion
 
@@ -179,6 +182,72 @@ public static class AccessorEndpoints
         }
     }
 
+    private static async Task<IResult> UpsertHistorySnapshotAsync(
+        [FromBody] UpsertHistoryRequest body,
+        [FromServices] IAccessorService accessorService,
+        [FromServices] ILogger<AccessorService> logger)
+    {
+        using var _ = logger.BeginScope("Handler: {Handler}, ThreadId: {ThreadId}", nameof(UpsertHistorySnapshotAsync), body.ThreadId);
+
+        try
+        {
+            if (body.ThreadId == Guid.Empty)
+            {
+                return Results.BadRequest(new { error = "threadId is required and must be a GUID." });
+
+            }
+
+            if (string.IsNullOrWhiteSpace(body.UserId))
+            {
+                return Results.BadRequest(new { error = "UserId is required." });
+
+            }
+
+            if (body.History.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null)
+            {
+                return Results.BadRequest(new { error = "history (raw SK ChatHistory) is required." });
+
+            }
+
+            var existing = await accessorService.GetHistorySnapshotAsync(body.ThreadId);
+
+            var snapshot = new ChatHistorySnapshot
+            {
+                ThreadId = body.ThreadId,
+                UserId = body.UserId,
+                ChatType = body.ChatType ?? "default",
+                History = body.History.GetRawText(),
+                CreatedAt = existing?.CreatedAt ?? DateTimeOffset.UtcNow,
+                UpdatedAt = DateTimeOffset.UtcNow
+            };
+
+            await accessorService.UpsertHistorySnapshotAsync(snapshot);
+
+            var doc = JsonDocument.Parse(body.History.GetRawText());
+
+            var payload = new
+            {
+                threadId = snapshot.ThreadId,
+                snapshot.UserId,
+                snapshot.ChatType,
+                history = doc.RootElement
+            };
+
+            if (existing is null)
+            {
+                return Results.CreatedAtRoute("GetHistorySnapshot", new { threadId = snapshot.ThreadId }, payload);
+
+            }
+
+            return Results.Ok(payload);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error upserting history snapshot for thread {ThreadId}", body.ThreadId);
+            return Results.Problem("An error occurred while storing the chat history snapshot.");
+        }
+    }
+
     private static async Task<IResult> GetChatHistoryAsync(
         Guid threadId,
         [FromServices] IAccessorService accessorService,
@@ -212,6 +281,46 @@ public static class AccessorEndpoints
         {
             logger.LogError(ex, "Error fetching history for thread {ThreadId}", threadId);
             return Results.Problem("An error occurred while retrieving chat history.");
+        }
+    }
+
+    private static async Task<IResult> GetHistorySnapshotAsync(
+        Guid threadId,
+        [FromServices] IAccessorService accessorService,
+        [FromServices] ILogger<AccessorService> logger)
+    {
+        using var _ = logger.BeginScope(
+            "Handler: {Handler}, ThreadId: {ThreadId}",
+            nameof(GetHistorySnapshotAsync), threadId);
+
+        try
+        {
+            var snapshot = await accessorService.GetHistorySnapshotAsync(threadId);
+            if (snapshot is null)
+            {
+                using var empty = JsonDocument.Parse("""{"messages":[]}""");
+                return Results.Ok(new
+                {
+                    threadId,
+                    userId = (string?)null,
+                    chatType = (string?)null,
+                    history = empty.RootElement
+                });
+            }
+
+            using var doc = JsonDocument.Parse(snapshot.History);
+            return Results.Ok(new
+            {
+                threadId = snapshot.ThreadId,
+                snapshot.UserId,
+                snapshot.ChatType,
+                history = doc.RootElement
+            });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error fetching history snapshot for thread {ThreadId}", threadId);
+            return Results.Problem("An error occurred while retrieving chat history snapshot.");
         }
     }
 
