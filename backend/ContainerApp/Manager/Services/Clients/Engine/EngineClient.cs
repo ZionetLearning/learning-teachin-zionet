@@ -2,6 +2,7 @@
 using Dapr.Client;
 using Manager.Constants;
 using Manager.Models;
+using Manager.Models.QueueMessages;
 using Manager.Models.Speech;
 using Manager.Services.Clients.Engine.Models;
 
@@ -16,38 +17,6 @@ public class EngineClient : IEngineClient
     {
         _logger = logger;
         _daprClient = daprClient;
-    }
-
-    public async Task<(bool success, string message)> ProcessTaskAsync(TaskModel task)
-    {
-        _logger.LogInformation(
-            "Inside: {Method} in {Class}",
-            nameof(ProcessTaskAsync),
-            nameof(EngineClient)
-        );
-
-        try
-        {
-            var payload = JsonSerializer.SerializeToElement(task);
-            var message = new Message
-            {
-                ActionName = MessageAction.CreateTask,
-                Payload = payload
-            };
-            await _daprClient.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message);
-
-            _logger.LogDebug(
-                "Task {TaskId} sent to Engine via binding '{Binding}'",
-                task.Id,
-                QueueNames.EngineQueue
-            );
-            return (true, "sent to engine");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to send task {TaskId} to Engine", task.Id);
-            throw;
-        }
     }
 
     public async Task<(bool success, string message)> ProcessTaskLongAsync(TaskModel task)
@@ -105,6 +74,16 @@ public class EngineClient : IEngineClient
                 cancellationToken: cancellationToken);
 
             return result;
+        }
+        catch (InvocationException ex) when (ex.InnerException is HttpRequestException httpEx && httpEx.Message.Contains("408"))
+        {
+            _logger.LogWarning("Speech synthesis request timed out (408)");
+            throw new TimeoutException("Speech synthesis request timed out", ex);
+        }
+        catch (InvocationException ex) when (ex.InnerException is HttpRequestException httpEx && httpEx.Message.Contains("499"))
+        {
+            _logger.LogWarning("Speech synthesis request was canceled by client (499)");
+            throw new OperationCanceledException("Speech synthesis request was canceled by client", ex);
         }
         catch (Exception ex)
         {

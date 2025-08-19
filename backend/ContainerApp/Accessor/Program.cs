@@ -3,7 +3,7 @@ using Accessor.Constants;
 using Accessor.DB;
 using Accessor.Endpoints;
 using Accessor.Messaging;
-using Accessor.Models;
+using Accessor.Models.QueueMessages;
 using Accessor.Services;
 using Azure.Messaging.ServiceBus;
 using Microsoft.EntityFrameworkCore;
@@ -25,6 +25,8 @@ builder.Services.AddQueue<Message, AccessorQueueHandler>(
         settings.RetryDelaySeconds = 5;
     });
 builder.Services.AddScoped<IAccessorService, AccessorService>();
+builder.Services.AddScoped<IManagerCallbackQueueService, ManagerCallbackQueueService>();
+builder.Services.AddScoped<IRefreshSessionService, RefreshSessionService>();
 
 var env = builder.Environment;
 
@@ -108,4 +110,5 @@ if (env.IsDevelopment())
 }
 // Map endpoints (routes)
 app.MapAccessorEndpoints();
+app.MapRefreshSessionEndpoints();
 await app.RunAsync();

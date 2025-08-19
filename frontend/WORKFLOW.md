@@ -174,6 +174,7 @@ Once you're done with your changes, or you want to get feedback on your work, yo
 
 - Ensure you have run **npm run format**
 - Make sure your branch is up to date with the latest changes from the origin.
+- If you have been working on a new feature, please create a Vitest test for that
 - Mark as `Draft` if you're still working on it or if it's not ready for review.
 - Write a descriptive title.
 - Add a brief background about your changes in the description.

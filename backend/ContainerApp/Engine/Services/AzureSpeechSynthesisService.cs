@@ -51,7 +51,33 @@ public class AzureSpeechSynthesisService : ISpeechSynthesisService
                 });
             };
 
-            var result = await synthesizer.SpeakTextAsync(request.Text);
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(TimeSpan.FromSeconds(_options.TimeoutSeconds));
+
+            SpeechSynthesisResult result;
+            try
+            {
+                result = await synthesizer.SpeakTextAsync(request.Text).WaitAsync(cts.Token);
+            }
+            catch (OperationCanceledException ex)
+            {
+                var processingDuration = DateTime.UtcNow - startTime;
+
+                if (!cancellationToken.IsCancellationRequested)
+                {
+                    // Timeout
+                    _logger.LogWarning(ex, "Speech synthesis timed out after {TimeoutSeconds}s", _options.TimeoutSeconds);
+                    await synthesizer.StopSpeakingAsync();
+                    throw new TimeoutException($"Speech synthesis exceeded {_options.TimeoutSeconds} seconds.", ex);
+                }
+                else
+                {
+                    // External cancellation
+                    _logger.LogInformation("Speech synthesis canceled by caller after {Duration}ms", processingDuration.TotalMilliseconds);
+                    await synthesizer.StopSpeakingAsync();
+                    throw;
+                }
+            }
 
             if (result.Reason == ResultReason.SynthesizingAudioCompleted)
             {
