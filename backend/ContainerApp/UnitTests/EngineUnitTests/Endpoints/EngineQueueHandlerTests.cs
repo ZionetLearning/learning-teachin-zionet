@@ -138,7 +138,7 @@ public class EngineQueueHandlerTests
         {
             RequestId = requestId,
             ThreadId = threadId,
-            Status = "ok",
+            Status = ChatAnswerStatus.Ok,
             Answer = answer,
             Error = null
         };
@@ -157,7 +157,7 @@ public class EngineQueueHandlerTests
             RequestId = requestId,
             AssistantMessage = textAnserFromAI,
             ThreadId = threadId,
-            Status = "ok"
+            Status = ChatAnswerStatus.Ok
 
         };
 

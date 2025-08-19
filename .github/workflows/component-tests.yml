@@ -1,6 +1,22 @@
 name: Component Tests
 
 on:
+  workflow_call:
+    inputs:
+      services:
+        description: "Comma-separated services to test (e.g., Engine,Engine2)"
+        type: string
+        required: true
+      testFilter:
+        description: "Optional dotnet test --filter (e.g., FullyQualifiedName~EngineComponentTests.ChatAiServiceTests)"
+        type: string
+        required: false
+        default: ""
+    secrets:
+      AZURE_OPENAI_API_KEY:
+        required: true
+
+
   workflow_dispatch:
     inputs:
       services:
