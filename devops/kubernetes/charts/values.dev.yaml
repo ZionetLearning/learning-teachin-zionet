@@ -2,6 +2,7 @@
 global:
   dockerRegistry: ""   # CI sets: docker.io/<org> or <acr>.azurecr.io
   imagePullPolicy: IfNotPresent
+  environment: ""      # Will be set by CI/CD to TARGET_NAMESPACE (e.g., "devacr2")
   dapr:
     enabled: true
     configName: dapr-config
@@ -12,7 +13,8 @@ namespace:
 
 manager:
   image:
-    tag: latest                 # dev tag (or a short SHA)
+    name: manager  # Required: image name for the container
+    # tag will be set dynamically via global.environment by CI/CD
   # service, ports, labels inherit from base values.yaml
   env:
     ASPNETCORE_URLS: "http://+:5001"
@@ -28,7 +30,8 @@ manager:
       
 engine:
   image:
-    tag: latest
+    name: engine  # Required: image name for the container
+    # tag will be set dynamically via global.environment by CI/CD
   env:
     ASPNETCORE_URLS: "http://+:5002"
     AzureOpenAI__Endpoint: "https://france-teachin-open-ai.openai.azure.com/"
@@ -42,6 +45,7 @@ engine:
 
 accessor:
   image:
-    tag: latest
+    name: accessor  # Required: image name for the container
+    # tag will be set dynamically via global.environment by CI/CD
   env:
     ASPNETCORE_URLS: "http://+:5003"

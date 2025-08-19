@@ -26,6 +26,7 @@ builder.Services.AddQueue<Message, AccessorQueueHandler>(
     });
 builder.Services.AddScoped<IAccessorService, AccessorService>();
 builder.Services.AddScoped<IManagerCallbackQueueService, ManagerCallbackQueueService>();
+builder.Services.AddScoped<IRefreshSessionService, RefreshSessionService>();
 
 var env = builder.Environment;
 
@@ -109,4 +110,5 @@ if (env.IsDevelopment())
 }
 // Map endpoints (routes)
 app.MapAccessorEndpoints();
+app.MapRefreshSessionEndpoints();
 await app.RunAsync();

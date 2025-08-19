@@ -13,6 +13,7 @@ using Manager.Services.Clients.Engine;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
@@ -138,4 +139,9 @@ if (env.IsDevelopment())
 }
 
 app.MapHub<NotificationHub>("/notificationHub");
+
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 app.Run();
