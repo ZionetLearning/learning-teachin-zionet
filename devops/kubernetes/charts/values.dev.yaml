@@ -18,6 +18,10 @@ manager:
   # service, ports, labels inherit from base values.yaml
   env:
     ASPNETCORE_URLS: "http://+:5001"
+    Jwt__Secret: ""
+    Jwt__Issuer: ""
+    Jwt__Audience: ""
+    Jwt__RefreshTokenHashKey: ""
   # secrets inherit from base values.yaml
   ingress:
     enabled: true
