@@ -142,43 +142,47 @@ export const SpeakingPractice = () => {
   };
 
   return (
-    <div className={classes.container}>
-      <div className={classes.nav}>
-        <button onClick={goPrev}>
+    <div className={classes.container} data-testid="speaking-practice-page">
+      <div className={classes.nav} data-testid="speaking-nav">
+        <button onClick={goPrev} data-testid="speaking-prev">
           &laquo; {t("pages.speakingPractice.prev")}
         </button>
-        <span>
+        <span data-testid="speaking-index">
           {currentIdx + 1} / {phrases.length}
         </span>
-        <button onClick={goNext}>
+        <button onClick={goNext} data-testid="speaking-next">
           {t("pages.speakingPractice.next")} &raquo;
         </button>
       </div>
 
-      <div className={classes.main}>
-        <h2 className={classes.phrase}>
+      <div className={classes.main} data-testid="speaking-main">
+        <h2 className={classes.phrase} data-testid="speaking-phrase">
           {showNikud ? phrasesWithNikud[currentIdx] : phrases[currentIdx]}
         </h2>
 
         <p
           className={`${classes.feedback} ${isCorrect ? "correct" : "incorrect"}`}
+          data-testid="speaking-feedback"
         >
           {feedback}
         </p>
       </div>
 
-      <div className={classes.controls}>
-        <button onClick={handlePlay}>
+      <div className={classes.controls} data-testid="speaking-controls">
+        <button onClick={handlePlay} data-testid="speaking-play">
           {isSpeaking
             ? t("pages.speakingPractice.stop")
             : t("pages.speakingPractice.play")}
         </button>
-        <button onClick={handleRecord}>
+        <button onClick={handleRecord} data-testid="speaking-record">
           {isRecording
             ? t("pages.speakingPractice.stop")
             : t("pages.speakingPractice.record")}
         </button>
-        <button onClick={() => setShowNikud(!showNikud)}>
+        <button
+          onClick={() => setShowNikud(!showNikud)}
+          data-testid="speaking-nikud-toggle"
+        >
           {showNikud
             ? t("pages.speakingPractice.hideNikud")
             : t("pages.speakingPractice.showNikud")}

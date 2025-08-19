@@ -210,17 +210,27 @@ export const MessageInput: React.FC<MessageInputProps> = ({
       </div>
       {/* Demo Suggestions */}
       {showSuggestions && !inputValue.trim() && (
-        <div className={classes.suggestionsPanel}>
-          <div className={classes.suggestionsHeader}>
+        <div
+          className={classes.suggestionsPanel}
+          data-testid="chat-ou-suggestions"
+        >
+          <div
+            className={classes.suggestionsHeader}
+            data-testid="chat-ou-suggestions-header"
+          >
             💡 {t("pages.chatOu.tryTheseDemoExamples")}
           </div>
-          <div className={classes.suggestionsList}>
+          <div
+            className={classes.suggestionsList}
+            data-testid="chat-ou-suggestions-list"
+          >
             {DEMO_SUGGESTIONS.map((suggestion, index) => (
               <button
                 key={index}
                 className={classes.suggestionButton}
                 onClick={() => handleSuggestionClick(suggestion)}
                 type="button"
+                data-testid={`chat-ou-suggestion-${index}`}
               >
                 {suggestion}
               </button>

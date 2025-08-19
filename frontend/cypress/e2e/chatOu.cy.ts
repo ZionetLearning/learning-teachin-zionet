@@ -1,15 +1,35 @@
 describe("chat Ou", () => {
   beforeEach(() => {
     cy.login();
-    cy.contains("Chat Tools").click();
+    cy.contains(/chat tools/i).click();
     cy.get('[data-testid="sidebar-chat-ou"]').click();
+    cy.get('[data-testid="chat-ou-input"]').should("exist");
   });
 
-  it("sends a message and displays it", () => {
+  it("sends a message via button", () => {
     cy.contains(/smart chat/i).should("exist");
-    cy.get('[data-testid="chat-ou-input"]').as("msgInput");
-    cy.get("@msgInput").type("Message OU");
+    cy.get('[data-testid="chat-ou-input"]').as("input").type("Message OU");
     cy.get('[data-testid="chat-ou-send"]').click();
     cy.contains("Message OU").should("be.visible");
+  });
+
+  it("sends a message via Enter key", () => {
+    cy.get('[data-testid="chat-ou-input"]')
+      .as("input")
+      .type("Enter send message{enter}");
+    cy.contains("Enter send message").should("be.visible");
+  });
+
+  it("clicks a suggestion to populate and send", () => {
+    cy.get('[data-testid="chat-ou-input"]').focus();
+    cy.get('[data-testid="chat-ou-suggestions"]').should("exist");
+    cy.get('[data-testid="chat-ou-suggestion-0"]').click();
+    cy.get('[data-testid="chat-ou-send"]').click();
+  });
+
+  it("shows character counter near limit", () => {
+    const longText = "x".repeat(1850);
+    cy.get('[data-testid="chat-ou-input"]').type(longText);
+    cy.contains(/1850\/2000/i).should("exist");
   });
 });

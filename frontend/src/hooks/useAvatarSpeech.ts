@@ -1,6 +1,8 @@
 import { useState, useMemo } from "react";
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";
 
+import { CypressWindow } from "@/types";
+
 export const useAvatarSpeech = (lipsArray: string[]) => {
   const [currentViseme, setCurrentViseme] = useState<number>(0);
 
@@ -16,6 +18,15 @@ export const useAvatarSpeech = (lipsArray: string[]) => {
 
   const speak = (text: string) => {
     if (!text.trim()) return;
+
+    // Cypress environment deterministic simulation (no network / Azure)
+    if (typeof window !== "undefined" && (window as CypressWindow).Cypress) {
+      const simulated = [3, 5, 8, 10, 0];
+      simulated.forEach((v, i) => {
+        setTimeout(() => setCurrentViseme(v), i * 100);
+      });
+      return;
+    }
 
     const speechKey = import.meta.env.VITE_AZURE_SPEECH_KEY!;
     const speechRegion = import.meta.env.VITE_AZURE_REGION!;

@@ -1,12 +1,14 @@
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";
 
+import { CypressWindow } from "@/types";
+
 export const speakHebrew = async (
   text: string,
   voiceName?: string,
 ): Promise<void> => {
   // In Cypress test environment, skip actual Azure TTS network call for determinism
   if (typeof window !== "undefined") {
-    const w = window as Window & { Cypress?: boolean };
+    const w = window as CypressWindow;
     if (w.Cypress) {
       return Promise.resolve();
     }

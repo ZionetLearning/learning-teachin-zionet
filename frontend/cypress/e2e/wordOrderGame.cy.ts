@@ -10,7 +10,6 @@ describe("word order game", () => {
     cy.contains(/Arrange the words/i).should("be.visible");
     cy.contains(/Loading/).should("not.exist");
 
-    // Click first available bank word via fresh query
     cy.get('[data-testid="wog-bank"] button', { timeout: 10000 }).should(
       "have.length.greaterThan",
       0,
@@ -18,11 +17,9 @@ describe("word order game", () => {
     cy.get('[data-testid="wog-bank"] button').first().click();
     cy.get('[data-testid="wog-chosen"] button').should("have.length", 1);
 
-    // Reset
     cy.get('[data-testid="wog-reset"]').click();
     cy.get('[data-testid="wog-chosen"] button').should("have.length", 0);
 
-    // Click up to two words re-querying each time
     cy.get('[data-testid="wog-bank"] button')
       .its("length")
       .then((len) => {
@@ -35,7 +32,6 @@ describe("word order game", () => {
       .its("length")
       .should("be.gte", 1);
 
-    // Next sentence
     cy.get('[data-testid="wog-next"]').click();
     cy.contains(/Loading/, { timeout: 5000 }).should("not.exist");
     cy.get('[data-testid="wog-bank"] button', { timeout: 10000 }).should(
