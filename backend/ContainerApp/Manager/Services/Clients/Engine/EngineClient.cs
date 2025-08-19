@@ -75,6 +75,16 @@ public class EngineClient : IEngineClient
 
             return result;
         }
+        catch (InvocationException ex) when (ex.InnerException is HttpRequestException httpEx && httpEx.Message.Contains("408"))
+        {
+            _logger.LogWarning("Speech synthesis request timed out (408)");
+            throw new TimeoutException("Speech synthesis request timed out", ex);
+        }
+        catch (InvocationException ex) when (ex.InnerException is HttpRequestException httpEx && httpEx.Message.Contains("499"))
+        {
+            _logger.LogWarning("Speech synthesis request was canceled by client (499)");
+            throw new OperationCanceledException("Speech synthesis request was canceled by client", ex);
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error communicating with speech engine");
