@@ -214,3 +214,4 @@ jobs:
           echo "Images updated to commit: $NEW_IMAGE_TAG"
           echo "Namespace: ${{ github.event.inputs.environment_name }}"
           echo "All pods are running with the latest code"
+          
