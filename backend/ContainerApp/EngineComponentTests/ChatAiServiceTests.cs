@@ -70,7 +70,7 @@ public class ChatAiServiceTests
 
         var response = await _aiService.ChatHandlerAsync(request, CancellationToken.None);
 
-        Assert.True(string.IsNullOrEmpty(response.Status) || response.Status == "ok");
+        Assert.True(response.Status == ChatAnswerStatus.Ok);
         Assert.False(string.IsNullOrWhiteSpace(response?.Answer?.Content));
 
         var answerLower = response?.Answer?.Content.ToLowerInvariant();
@@ -97,7 +97,7 @@ public class ChatAiServiceTests
         };
         var response1 = await _aiService.ChatHandlerAsync(request1, CancellationToken.None);
 
-        Assert.True(string.IsNullOrEmpty(response1.Status) || response1.Status == "ok");
+        Assert.True(response1.Status == ChatAnswerStatus.Ok);
 
         var history = new List<ChatMessage>();
 
@@ -126,7 +126,7 @@ public class ChatAiServiceTests
 
         var response2 = await _aiService.ChatHandlerAsync(request2, CancellationToken.None);
 
-        Assert.True(string.IsNullOrEmpty(response2.Status) || response2.Status == "ok");
+        Assert.True(response2.Status == ChatAnswerStatus.Ok);
         Assert.False(string.IsNullOrWhiteSpace(response2?.Answer?.Content));
 
         var answerLower = response2?.Answer?.Content.ToLowerInvariant();
