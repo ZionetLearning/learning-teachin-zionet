@@ -57,11 +57,15 @@ public static class AiEndpoints
 
         if (aiResponse.Status != ChatAnswerStatus.Ok)
         {
+            log.LogInformation("Answered thread {Thread} equals null. Error: {Error}", aiResponse.ThreadId, aiResponse.Error);
+
             return Results.Problem(aiResponse.Error);
         }
 
         if (aiResponse.Answer == null)
         {
+            log.LogInformation("Answered thread {Thread} equals null. Error: {Error}", aiResponse.ThreadId, aiResponse.Error);
+
             return Results.Problem(aiResponse.Error);
         }
 

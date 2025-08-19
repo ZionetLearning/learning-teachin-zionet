@@ -87,7 +87,7 @@ public sealed class ChatAiService : IChatAiService
 
             if (result?.Content == null)
             {
-                response.Status = ChatAnswerStatus.Fail; //todo add enum for reason error
+                response.Status = ChatAnswerStatus.Fail;
                 return response;
 
             }
