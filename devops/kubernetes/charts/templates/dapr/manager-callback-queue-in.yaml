@@ -1,7 +1,7 @@
 apiVersion: dapr.io/v1alpha1
 kind: Component
 metadata:
-  name: {{ include "app.join" (list (include "app.prefix" .) "manager-callback-queue-in") }}
+  name: manager-callback-queue-in
   namespace: {{ include "app.namespace" . }}
 spec:
   type: bindings.azure.servicebusqueues
