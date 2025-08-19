@@ -1,4 +1,4 @@
-import { WordOrderGame } from "../features";
+import { WordOrderGame } from "@/features";
 export const WordOrderGamePage = () => {
   return <WordOrderGame />;
 };
