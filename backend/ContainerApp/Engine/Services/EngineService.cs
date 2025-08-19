@@ -27,6 +27,7 @@ public class EngineService : IEngineService
 
     public async Task ProcessTaskAsync(TaskModel task, CancellationToken ct)
     {
+        using var _ = _logger.BeginScope("TaskId: {TaskId}", task.Id);
         _logger.LogInformation("Inside {Method}", nameof(ProcessTaskAsync));
         ct.ThrowIfCancellationRequested();
         if (task is null)
@@ -35,7 +36,7 @@ public class EngineService : IEngineService
             throw new ArgumentNullException(nameof(task), "Task cannot be null");
         }
 
-        _logger.LogInformation("Logged task: {Id} - {Name}", task.Id, task.Name);
+        _logger.LogInformation("Logged task: {Name}", task.Name);
         try
         {
             await _daprClient.InvokeMethodAsync(
@@ -46,11 +47,11 @@ public class EngineService : IEngineService
                 ct
             );
 
-            _logger.LogInformation("Task {Id} forwarded to the Accessor service", task.Id);
+            _logger.LogInformation("Task forwarded to the Accessor service");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send task {Id} to Accessor", task.Id);
+            _logger.LogError(ex, "Failed to send task to Accessor");
             throw;
         }
     }
