@@ -261,7 +261,7 @@ public class AccessorEndpointsTests
 
     private static Task<IResult> InvokeStoreMessageAsync(ChatMessage m, IAccessorService s, ILogger<AccessorService> l)
         => (Task<IResult>)typeof(AccessorEndpoints)
-            .GetMethod("StoreMessageAsync", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)!
+            .GetMethod("StoreMessageAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
             .Invoke(null, new object[] { m, s, l })!;
 
     #endregion
@@ -326,7 +326,7 @@ public class AccessorEndpointsTests
 
     private static Task<IResult> InvokeGetChatHistoryAsync(Guid id, IAccessorService s, ILogger<AccessorService> l)
         => (Task<IResult>)typeof(AccessorEndpoints)
-            .GetMethod("GetChatHistoryAsync", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)!
+            .GetMethod("GetChatHistoryAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
             .Invoke(null, new object[] { id, s, l })!;
 
     #endregion
@@ -349,7 +349,7 @@ public class AccessorEndpointsTests
 
     private static Task<IResult> InvokeGetThreadsForUserAsync(string user, IAccessorService s, ILogger<AccessorService> l)
         => (Task<IResult>)typeof(AccessorEndpoints)
-            .GetMethod("GetThreadsForUserAsync", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)!
+            .GetMethod("GetThreadsForUserAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
             .Invoke(null, new object[] { user, s, l })!;
     #endregion
 }

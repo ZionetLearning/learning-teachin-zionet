@@ -4,13 +4,19 @@ using Manager.Models;
 using Manager.Models.Chat;
 using System.Net;
 using System.Text.Json;
+using Manager.Models.QueueMessages;
 
 namespace Manager.Services.Clients;
 
-public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClient) : IAccessorClient
+public class AccessorClient(
+    ILogger<AccessorClient> logger,
+    DaprClient daprClient,
+    IHttpContextAccessor httpContextAccessor
+    ) : IAccessorClient
 {
     private readonly ILogger<AccessorClient> _logger = logger;
     private readonly DaprClient _daprClient = daprClient;
+    private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
 
     public async Task<TaskModel?> GetTaskAsync(int id)
     {
@@ -99,6 +105,49 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
         catch (Exception e)
         {
             _logger.LogError(e, "Error inside the DeleteUser");
+            throw;
+        }
+    }
+
+    public async Task<(bool success, string message)> PostTaskAsync(TaskModel task)
+    {
+        _logger.LogInformation(
+           "Inside: {Method} in {Class}",
+           nameof(PostTaskAsync),
+           nameof(AccessorClient)
+       );
+
+        try
+        {
+            var userId = _httpContextAccessor.HttpContext?.Request.Headers["X-User-Id"].FirstOrDefault() ?? "anonymous";
+
+            var payload = JsonSerializer.SerializeToElement(task);
+            var userContextMetadata = JsonSerializer.SerializeToElement(
+                new UserContextMetadata
+                {
+                    UserId = userId,
+                    MessageId = Guid.NewGuid().ToString()
+                }
+            );
+
+            var message = new Message
+            {
+                ActionName = MessageAction.CreateTask,
+                Payload = payload,
+                Metadata = userContextMetadata
+            };
+            await _daprClient.InvokeBindingAsync($"{QueueNames.AccessorQueue}-out", "create", message);
+
+            _logger.LogDebug(
+                "Task {TaskId} sent to Accessor via binding '{Binding}'",
+                task.Id,
+                QueueNames.AccessorQueue
+            );
+            return (true, "sent to queue");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send task {TaskId} to Accessor", task.Id);
             throw;
         }
     }
