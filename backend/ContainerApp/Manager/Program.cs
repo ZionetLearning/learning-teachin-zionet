@@ -108,6 +108,10 @@ builder.Services.AddOpenApi(
 builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 app.UseCors("AllowAll");
 app.UseCloudEvents();
 
@@ -139,9 +143,4 @@ if (env.IsDevelopment())
 }
 
 app.MapHub<NotificationHub>("/notificationHub");
-
-app.UseForwardedHeaders(new ForwardedHeadersOptions
-{
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-});
 app.Run();
