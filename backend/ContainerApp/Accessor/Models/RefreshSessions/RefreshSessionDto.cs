@@ -9,7 +9,7 @@ public class RefreshSessionDto
     public string UserAgent { get; set; } = null!;
     public string? DeviceFingerprintHash { get; set; }
 
-    public string? DeviceInfo => ParseDeviceFromUserAgent(UserAgent); // Optional helper
+    public string? DeviceInfo => ParseDeviceFromUserAgent(UserAgent);
 
     private static string? ParseDeviceFromUserAgent(string userAgent)
     {

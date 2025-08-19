@@ -91,7 +91,7 @@ public class RefreshSessionService : IRefreshSessionService
         {
             _logger.LogInformation("Rotating refresh session {SessionId}", sessionId);
 
-            var session = await _dbContext.RefreshSessions.FindAsync(new object[] { sessionId }, cancellationToken);
+            var session = await _dbContext.RefreshSessions.FindAsync([sessionId], cancellationToken);
             if (session == null)
             {
                 _logger.LogWarning("Session {SessionId} not found", sessionId);
