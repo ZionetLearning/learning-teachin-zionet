@@ -70,7 +70,7 @@ public class ManagerEndpointsTests
     {
         var model = MakeTask(42, "UnitTest Task");
 
-        _svc.Setup(s => s.ProcessTaskAsync(model))
+        _svc.Setup(s => s.CreateTaskAsync(model))
             .ReturnsAsync((true, "queued"));
 
         var result = await PrivateInvoker.InvokePrivateEndpointAsync(

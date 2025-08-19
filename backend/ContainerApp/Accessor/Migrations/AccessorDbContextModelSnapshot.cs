@@ -125,14 +125,15 @@ namespace Accessor.Migrations
                         .HasColumnName("id");
 
                     b.Property<string>("DeviceFingerprintHash")
-                        .IsRequired()
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)")
                         .HasColumnName("device_fingerprint_hash");
 
                     b.Property<DateTimeOffset>("ExpiresAt")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("timestamptz")
-                        .HasColumnName("expires_at");
+                        .HasColumnName("expires_at")
+                        .HasDefaultValueSql("NOW() + INTERVAL '60 days'");
 
                     b.Property<IPAddress>("IP")
                         .IsRequired()

@@ -1,21 +1,19 @@
-﻿using IntegrationTests.Constants;
+﻿using FluentAssertions;
+using IntegrationTests.Constants;
 using IntegrationTests.Helpers;
 using IntegrationTests.Infrastructure;
 using IntegrationTests.Models;
+using IntegrationTests.Models.Notification;
 using Xunit.Abstractions;
 
 namespace IntegrationTests.Tests.Tasks;
 
-public abstract class TaskTestBase : IntegrationTestBase
+public abstract class TaskTestBase(
+    HttpTestFixture fixture,
+    ITestOutputHelper outputHelper,
+    SignalRTestFixture signalRFixture
+) : IntegrationTestBase(fixture, outputHelper, signalRFixture)
 {
-    protected readonly ITestOutputHelper OutputHelper;
-
-    protected TaskTestBase(HttpTestFixture fixture, ITestOutputHelper outputHelper)
-        : base(fixture)
-    {
-        OutputHelper = outputHelper;
-    }
-
     protected async Task<TaskModel> CreateTaskAsync(TaskModel? task = null)
     {
         task ??= TestDataHelper.CreateRandomTask();
@@ -24,10 +22,21 @@ public abstract class TaskTestBase : IntegrationTestBase
 
         var response = await PostAsJsonAsync(ApiRoutes.Task, task);
         response.EnsureSuccessStatusCode();
+        OutputHelper.WriteLine($"Response status code: {response.StatusCode}");
+
+        var receivedNotification = await WaitForNotificationAsync(
+           n => n.Type == NotificationType.Success &&
+           n.Message.Contains(task.Name),
+           TimeSpan.FromSeconds(10));
+        receivedNotification.Should().NotBeNull();
+
+        OutputHelper.WriteLine($"Received notification: {receivedNotification.Notification.Message}");
 
         await TaskUpdateHelper.WaitForTaskNameUpdateAsync(Client, task.Id, task.Name);
 
-        OutputHelper.WriteLine($"Task created successfully with status code: {response.StatusCode}");
+        OutputHelper.WriteLine(
+            $"Task created successfully with status code: {response.StatusCode}"
+        );
         return task;
     }
 
