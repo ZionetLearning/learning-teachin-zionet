@@ -24,6 +24,8 @@ public static class AccessorEndpoints
 
         app.MapPost("/threads/message", StoreMessageAsync);
 
+        app.MapPost("/auth/login", LoginUserAsync);
+
         #endregion
 
         #region HTTP DELETE
@@ -223,6 +225,41 @@ public static class AccessorEndpoints
         {
             logger.LogError(ex, "Error listing threads for user {UserId}", userId);
             return Results.Problem("An error occurred while listing chat threads.");
+        }
+    }
+
+    #endregion
+
+    #region Authentication Handlers
+
+    public static async Task<IResult> LoginUserAsync(
+    [FromBody] LoginRequest request,
+    [FromServices] IAccessorService accessorService,
+    [FromServices] ILogger<AccessorService> logger)
+    {
+        using var scope = logger.BeginScope("Handler: {Handler}, Email: {Email}", nameof(LoginUserAsync), request.Email);
+        try
+        {
+            if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
+            {
+                logger.LogWarning("Email or password was empty.");
+                return Results.BadRequest("Email and password are required.");
+            }
+
+            var userId = await accessorService.ValidateCredentialsAsync(request.Email, request.Password);
+            if (userId == null)
+            {
+                logger.LogWarning("Invalid credentials for email: {Email}", request.Email);
+                return Results.Unauthorized();
+            }
+
+            logger.LogInformation("User logged in successfully.");
+            return Results.Ok(userId);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Login failed.");
+            return Results.Problem("Internal error during login.");
         }
     }
 

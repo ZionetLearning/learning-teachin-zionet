@@ -1,7 +1,6 @@
-﻿
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
-namespace Manager.Models.Auth;
+namespace Accessor.Models;
 
 public class LoginRequest
 {
