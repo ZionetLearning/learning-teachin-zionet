@@ -20,7 +20,6 @@ on:
         description: 'Enter custom prefix (used for Kubernetes namespace, etc.)'
         required: true
         type: string
-        default: 'dev'
       list_services_names:
         description: 'Optional comma-separated list of services to build (e.g., accessor,manager). Leave empty for all.'
         required: false
