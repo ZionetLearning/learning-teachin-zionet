@@ -105,8 +105,8 @@ jobs:
           # Start building tags output
           {
             echo "tags<<EOF"
-            # Add latest tag only for workflow_call
-            if [[ "${GITHUB_EVENT_NAME}" == "workflow_call" ]]; then
+            # Add latest tag only for push events
+            if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
               echo "${IMAGE_NAME}:latest"
             fi
             # Always add these two tags
