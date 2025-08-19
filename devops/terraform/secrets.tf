@@ -1,53 +1,41 @@
 ########################
 # Service Bus secret
 ########################
-resource "kubernetes_secret" "azure_service_bus" {
-  metadata {
-    name      = "azure-service-bus-secret"  
-    namespace = kubernetes_namespace.environment.metadata[0].name   
-  }
-
-  data = {
-    AzureServiceBusConnectionString = module.servicebus.connection_string
-  }
+resource "azurerm_key_vault_secret" "azure_service_bus" {
+  name         = "${var.environment_name}-azure-service-bus-secret"
+  value        = module.servicebus.connection_string
+  key_vault_id = azurerm_key_vault.main.id
 }
 
 ########################
 # PostgreSQL secret
 ########################
-resource "kubernetes_secret" "postgres_connection" {
-  metadata {
-    name      = "postgres-connection"       
-    namespace = kubernetes_namespace.environment.metadata[0].name   
-  }
-  data = {
-    PostgreSQLConnectionString = module.database.postgres_connection_string
-  }
+resource "azurerm_key_vault_secret" "postgres_connection" {
+  name         = "${var.environment_name}-postgres-connection"
+  value        = module.database.postgres_connection_string
+  key_vault_id = azurerm_key_vault.main.id
 }
 
 ########################
 # SignalR secret
 ########################
-resource "kubernetes_secret" "signalr_connection" {
-  metadata {
-    name      = "signalr-connection"        
-    namespace = kubernetes_namespace.environment.metadata[0].name   
-  }
-  data = {
-    SignalRConnectionString = module.signalr.primary_connection_string
-  }
+resource "azurerm_key_vault_secret" "signalr_connection" {
+  name         = "${var.environment_name}-signalr-connection"
+  value        = module.signalr.primary_connection_string
+  key_vault_id = azurerm_key_vault.main.id
 }
 
 ########################
-# Redis secret
+# Redis secrets
 ########################
-resource "kubernetes_secret" "redis_connection" {
-  metadata {
-    name      = "redis-connection"          
-    namespace = kubernetes_namespace.environment.metadata[0].name   
-  }
-  data = {
-    redis-hostport = "${module.redis.hostname}:6380"
-    redis-password = module.redis.primary_access_key
-  }
+resource "azurerm_key_vault_secret" "redis_hostport" {
+  name         = "${var.environment_name}-redis-hostport"
+  value        = "${module.redis.hostname}:6380"
+  key_vault_id = azurerm_key_vault.main.id
+}
+
+resource "azurerm_key_vault_secret" "redis_password" {
+  name         = "${var.environment_name}-redis-password"
+  value        = module.redis.primary_access_key
+  key_vault_id = azurerm_key_vault.main.id
 }

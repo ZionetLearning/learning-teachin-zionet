@@ -156,6 +156,15 @@ jobs:
             --rule-name allow-aks-egress \
             --start-ip-address $AKS_EGRESS_IP \
             --end-ip-address $AKS_EGRESS_IP
+            
+
+      - name: Install External Secrets Operator
+        run: |
+          helm repo add external-secrets https://charts.external-secrets.io
+          helm repo update
+          helm upgrade --install external-secrets external-secrets/external-secrets \
+            --namespace external-secrets \
+            --create-namespace
 
       - name: Helm template sanity (no Namespace objects)
         run: |
@@ -171,6 +180,8 @@ jobs:
             --set global.namePrefix="$TARGET_NAMESPACE" \
             --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
             --set global.environment="$IMAGE_TAG" \
+            --set global.keyvault.clientId="$KEYVAULT_CLIENT_ID" \
+            --set global.keyvault.tenantId="$KEYVAULT_TENANT_ID" \
             --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" \
             --set-string engine.env.AzureSpeech__SubscriptionKey="$AZURE_SPEECH_KEY" \
             --set-string manager.env.Jwt__Secret="$MANAGER_JWT_SECRET" \
@@ -196,6 +207,8 @@ jobs:
             --set global.namePrefix="$TARGET_NAMESPACE" \
             --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
             --set global.environment="$IMAGE_TAG" \
+            --set global.keyvault.clientId="$KEYVAULT_CLIENT_ID" \
+            --set global.keyvault.tenantId="$KEYVAULT_TENANT_ID" \
             --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" \
             --set-string engine.env.AzureSpeech__SubscriptionKey="$AZURE_SPEECH_KEY" \
             --set-string manager.env.Jwt__Secret="$MANAGER_JWT_SECRET" \

@@ -11,6 +11,23 @@ resource "azurerm_resource_group" "main" {
   }
 }
 
+resource "azurerm_user_assigned_identity" "aks" {
+  name                = "${var.prefix}-aks-uami"
+  resource_group_name = var.resource_group_name
+  location            = var.location
+}
+
+resource "azurerm_key_vault_access_policy" "aks_uami" {
+  key_vault_id = azurerm_key_vault.main.id
+  tenant_id    = var.tenant_id
+  object_id    = azurerm_user_assigned_identity.aks_uami.principal_id
+
+  secret_permissions = [
+    "Get",
+    "List"
+  ]
+}
+
 # Data source to reference existing shared AKS cluster
 data "azurerm_kubernetes_cluster" "shared" {
   count               = var.use_shared_aks ? 1 : 0
@@ -208,3 +225,28 @@ resource "kubernetes_resource_quota" "environment" {
   
   depends_on = [kubernetes_namespace.environment]
 }
+
+resource "azurerm_key_vault" "main" {
+  name                        = "${var.environment_name}-kv"
+  location                    = azurerm_resource_group.main.location
+  resource_group_name         = azurerm_resource_group.main.name
+  tenant_id                   = var.tenant_id
+  sku_name                    = "standard"
+
+  soft_delete_retention_days  = 7
+  purge_protection_enabled    = false
+
+  access_policy {
+    tenant_id = var.tenant_id
+    object_id = data.azurerm_client_config.current.object_id
+
+    secret_permissions = [
+      "Get",
+      "List",
+      "Set",
+      "Delete",
+    ]
+  }
+}
+
+data "azurerm_client_config" "current" {}

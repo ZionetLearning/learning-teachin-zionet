@@ -9,8 +9,7 @@ spec:
   metadata:
     - name: connectionString
       secretKeyRef:
-        name: azure-service-bus-secret
-        key: AzureServiceBusConnectionString
+        name: "{{ .Values.namespace.name }}-azure-service-bus-secret"
     - name: queueName
       value: {{ include "app.sbName" (list $ "accessor-queue") | quote }}
     - name: direction

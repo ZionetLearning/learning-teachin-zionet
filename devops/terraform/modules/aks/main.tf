@@ -1,3 +1,8 @@
+resource "azurerm_user_assigned_identity" "aks" {
+  name                = "${var.prefix}-aks-uami"
+  resource_group_name = var.resource_group_name
+  location            = var.location
+}
 
 resource "azurerm_kubernetes_cluster" "main" {
   name                = var.cluster_name
@@ -6,19 +11,15 @@ resource "azurerm_kubernetes_cluster" "main" {
   dns_prefix          = "${var.cluster_name}-dns"
 
   default_node_pool {
-    name       = "default"
-    vm_size    = var.vm_size
-    max_count = var.max_node_count
-    min_count = var.min_node_count
-    auto_scaling_enabled  = true
+    name                 = "default"
+    vm_size              = var.vm_size
+    max_count            = var.max_node_count
+    min_count            = var.min_node_count
+    auto_scaling_enabled = true
   }
 
   identity {
-    type = "SystemAssigned"
+    type         = "SystemAssigned, UserAssigned"
+    identity_ids = [azurerm_user_assigned_identity.aks.id]
   }
-
-
 }
-
-
-
