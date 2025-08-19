@@ -40,6 +40,10 @@ manager:
     appPort: 5001
   env:
     ASPNETCORE_URLS: "http://+:5001"
+    Jwt__Secret: ""
+    Jwt__Issuer: ""
+    Jwt__Audience: ""
+    Jwt__RefreshTokenHashKey: ""
   secrets:
     serviceBus:
       name: azure-service-bus-secret

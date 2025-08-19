@@ -125,6 +125,16 @@ public static class AiEndpoints
                 return Results.Problem("Speech synthesis failed.");
             }
         }
+        catch (OperationCanceledException)
+        {
+            logger.LogWarning("Speech synthesis operation was canceled by user");
+            return Results.StatusCode(StatusCodes.Status499ClientClosedRequest);
+        }
+        catch (TimeoutException)
+        {
+            logger.LogWarning("Speech synthesis operation timed out");
+            return Results.StatusCode(StatusCodes.Status408RequestTimeout);
+        }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error during speech synthesis");
