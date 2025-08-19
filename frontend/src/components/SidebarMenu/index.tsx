@@ -20,7 +20,7 @@ import PublicIcon from "@mui/icons-material/Public";
 import WeatherWidgetIcon from "@mui/icons-material/Cloud";
 import ThreePIcon from "@mui/icons-material/ThreeP";
 import LiveTvIcon from "@mui/icons-material/LiveTv";
-import FlagIcon from '@mui/icons-material/Flag';
+import FlagIcon from "@mui/icons-material/Flag";
 import GBFlag from "country-flag-icons/react/3x2/GB";
 import ILFlag from "country-flag-icons/react/3x2/IL";
 import { useAuth } from "@/providers/auth";

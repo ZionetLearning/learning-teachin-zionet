@@ -17,7 +17,7 @@ import {
   EarthquakeMapPage,
   WeatherWidgetPage,
   AnimeExplorerPage,
-  CountryExplorerPage
+  CountryExplorerPage,
 } from "./pages";
 
 import "./App.css";

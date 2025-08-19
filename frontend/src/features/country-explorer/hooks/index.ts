@@ -1,1 +1,1 @@
-export { useCountriesQuery } from './useCountriesQuery'
+export { useCountriesQuery } from "./useCountriesQuery";
