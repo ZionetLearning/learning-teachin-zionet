@@ -1,4 +1,5 @@
-﻿using System.Net.Http.Json;
+﻿using System.Net;
+using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
 using IntegrationTests.Models.Notification;
@@ -14,6 +15,7 @@ public abstract class IntegrationTestBase
     protected readonly HttpClient Client;
     protected readonly SignalRTestFixture SignalRFixture;
     protected readonly ITestOutputHelper OutputHelper;
+    private static readonly JsonSerializerOptions CachedJsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     protected IntegrationTestBase(
         HttpTestFixture httpFixture,
@@ -66,12 +68,35 @@ public abstract class IntegrationTestBase
         }
 
         if (string.IsNullOrWhiteSpace(content))
-            throw new InvalidOperationException("Empty response content");
-
-        return JsonSerializer.Deserialize<T>(
-            content,
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-        );
+        {
+            if (response.StatusCode == HttpStatusCode.NoContent)
+            {
+                return default;
+            }
+            
+            // For non-nullable value types, empty content is likely an error
+            var type = typeof(T);
+            var isNullable = !type.IsValueType || Nullable.GetUnderlyingType(type) != null;
+            
+            if (!isNullable)
+            {
+                throw new InvalidOperationException(
+                    $"Cannot convert empty response content to non-nullable type {typeof(T).Name}. " +
+                    $"Expected JSON content but received empty response with status {response.StatusCode}."
+                );
+            }
+            
+            return default;
+        }
+        
+        try
+        {
+            return JsonSerializer.Deserialize<T>(content, CachedJsonOptions);
+        }
+        catch (JsonException ex)
+        {
+            throw new InvalidOperationException($"Failed to deserialize response as {typeof(T).Name}: {ex.Message}", ex);
+        }
     }
 
     protected async Task<ReceivedNotification> WaitForNotificationAsync(

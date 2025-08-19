@@ -7,7 +7,7 @@ using IntegrationTests.Constants;
 
 namespace IntegrationTests.Infrastructure;
 
-public class SignalRTestFixture : IDisposable
+public class SignalRTestFixture : IAsyncDisposable
 {
     private readonly HubConnection _connection;
     private readonly ConcurrentQueue<ReceivedNotification> _receivedNotifications = new();
@@ -132,9 +132,12 @@ public class SignalRTestFixture : IDisposable
         return url.TrimEnd('/');
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
-        _connection?.DisposeAsync().AsTask().Wait();
+        if (_connection is not null)
+        {
+            await _connection.DisposeAsync();
+        }
         GC.SuppressFinalize(this);
     }
 }
