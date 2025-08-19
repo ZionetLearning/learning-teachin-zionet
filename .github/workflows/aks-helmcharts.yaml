@@ -1,4 +1,4 @@
-name: AKS - App Helm Deploy
+name: AKS - Update Pod Containers
 
 run-name: >
   🚢 Helm Deploy | Environment: ${{ 
@@ -99,6 +99,21 @@ jobs:
       - name: Ensure target namespace exists
         run: |
           kubectl create namespace "$TARGET_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Check and fix Helm release status
+        run: |
+          echo "Checking Helm release status for namespace: $TARGET_NAMESPACE"
+          RELEASE_STATUS=$(helm status app -n "$TARGET_NAMESPACE" -o json 2>/dev/null | jq -r '.info.status' || echo "not-found")
+          echo "Current release status: $RELEASE_STATUS"
+
+          if [[ "$RELEASE_STATUS" == "pending-install" ]] || [[ "$RELEASE_STATUS" == "pending-upgrade" ]] || [[ "$RELEASE_STATUS" == "pending-rollback" ]]; then
+            echo "⚠️ Found pending operation. Attempting rollback..."
+            helm rollback app -n "$TARGET_NAMESPACE" || echo "Rollback failed, trying to delete release history..."
+            helm delete app -n "$TARGET_NAMESPACE" --wait || echo "Delete failed, continuing anyway..."
+            sleep 5
+          fi
+
+          echo "Helm release status check complete."
 
       - name: Wait for external IP for ingress controller
         run: |
@@ -215,6 +230,3 @@ jobs:
             kubectl -n "$ns" describe "$p" || true
             kubectl -n "$ns" logs "$p" --all-containers --tail=200 || true
           done
-
-      - name: Restart all pods in target namespace (optional)
-        run: kubectl delete pod --all -n "$TARGET_NAMESPACE" || true
