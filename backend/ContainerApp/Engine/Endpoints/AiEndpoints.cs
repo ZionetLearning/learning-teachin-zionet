@@ -55,13 +55,17 @@ public static class AiEndpoints
 
         var aiResponse = await ai.ChatHandlerAsync(serviceRequest, ct);
 
-        if (aiResponse.Status == "error")
+        if (aiResponse.Status != ChatAnswerStatus.Ok)
         {
+            log.LogInformation("Answered thread {Thread} equals null. Error: {Error}", aiResponse.ThreadId, aiResponse.Error);
+
             return Results.Problem(aiResponse.Error);
         }
 
         if (aiResponse.Answer == null)
         {
+            log.LogInformation("Answered thread {Thread} equals null. Error: {Error}", aiResponse.ThreadId, aiResponse.Error);
+
             return Results.Problem(aiResponse.Error);
         }
 
