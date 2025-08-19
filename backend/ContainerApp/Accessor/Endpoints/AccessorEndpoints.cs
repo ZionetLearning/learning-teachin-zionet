@@ -1,6 +1,5 @@
 ﻿using Accessor.Models;
 using Accessor.Services;
-//using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Accessor.Endpoints;
