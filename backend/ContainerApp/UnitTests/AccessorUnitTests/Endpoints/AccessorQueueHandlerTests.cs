@@ -2,6 +2,7 @@
 using Accessor.Endpoints;
 using Accessor.Messaging;
 using Accessor.Models;
+using Accessor.Models.QueueMessages;
 using Accessor.Services;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
@@ -21,12 +22,17 @@ public class AccessorQueueHandlerTests
             Payload = JsonSerializer.SerializeToElement(payload)
         };
 
+    // Update all instantiations of AccessorQueueHandler to include a mock IQueuePublisher as the second argument.
+
+    private static Mock<IManagerCallbackQueueService> Publisher() => new(MockBehavior.Strict);
+
     [Fact]
     public async Task HandleAsync_UpdateTask_Calls_Service()
     {
         var svc = Svc();
+        var pub = Publisher();
         var log = Log();
-        var handler = new AccessorQueueHandler(svc.Object, log.Object);
+        var handler = new AccessorQueueHandler(svc.Object, pub.Object, log.Object);
 
         var payload = new TaskModel { Id = 10, Name = "new-name" };
         var msg = MakeMessage(MessageAction.UpdateTask, payload);
@@ -47,8 +53,9 @@ public class AccessorQueueHandlerTests
     {
         // Arrange
         var svc = Svc();
+        var pub = Publisher();
         var log = Log();
-        var handler = new AccessorQueueHandler(svc.Object, log.Object);
+        var handler = new AccessorQueueHandler(svc.Object, pub.Object, log.Object);
 
         // Act
         Func<Task> act = () => handler.HandleAsync(msg, () => Task.CompletedTask, CancellationToken.None);
@@ -86,8 +93,9 @@ public class AccessorQueueHandlerTests
     public async Task HandleAsync_UpdateTask_InvalidPayload_Throws_NonRetryable_And_NoServiceCalls()
     {
         var svc = Svc();
+        var pub = Publisher();
         var log = Log();
-        var handler = new AccessorQueueHandler(svc.Object, log.Object);
+        var handler = new AccessorQueueHandler(svc.Object, pub.Object, log.Object);
 
         // JSON 'null' forces Deserialize<T> to yield null -> your code throws NonRetryableException
         var jsonNull = JsonDocument.Parse("null").RootElement;

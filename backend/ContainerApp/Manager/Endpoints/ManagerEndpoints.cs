@@ -9,7 +9,6 @@ public static class ManagerEndpoints
 {
     public static WebApplication MapManagerEndpoints(this WebApplication app)
     {
-
         #region HTTP GET
 
         app.MapGet("/task/{id}", GetTaskAsync).WithName("GetTask");
@@ -18,20 +17,16 @@ public static class ManagerEndpoints
 
         #region HTTP POST
 
-        app.MapPost("/task", CreateTaskAsync).WithName("CreateTask");
+        app.MapPost("/task", CreateTaskAsync).WithName("CreateTaskAsync");
 
         app.MapPost("/tasklong", CreateTaskLongAsync).WithName("CreateTaskLongTest");
-
         #endregion
 
         #region HTTP PUT
-
         app.MapPut("/task/{id}/{name}", UpdateTaskNameAsync).WithName("UpdateTaskName");
-
         #endregion
 
         #region HTTP DELETE
-
         app.MapDelete("/task/{id}", DeleteTaskAsync).WithName("DeleteTask");
 
         #endregion
@@ -83,10 +78,10 @@ public static class ManagerEndpoints
             {
                 logger.LogInformation("Processing task creation for ID {TaskId}", task.Id);
 
-                var (success, message) = await managerService.ProcessTaskAsync(task);
+                var (success, message) = await managerService.CreateTaskAsync(task);
                 if (success)
                 {
-                    logger.LogInformation("Task {TaskId} processed successfully", task.Id);
+                    logger.LogInformation("Task {TaskId} sent to queue successfully", task.Id);
                     return Results.Accepted($"/task/{task.Id}", new { status = message, task.Id });
                 }
 
@@ -133,7 +128,6 @@ public static class ManagerEndpoints
             try
             {
                 logger.LogInformation("Attempting to update task name for ID {TaskId}", id);
-
                 var success = await managerService.UpdateTaskName(id, name);
 
                 if (success)
@@ -163,7 +157,6 @@ public static class ManagerEndpoints
             try
             {
                 logger.LogInformation("Attempting to delete task with ID {TaskId}", id);
-
                 var success = await managerService.DeleteTask(id);
 
                 if (success)
