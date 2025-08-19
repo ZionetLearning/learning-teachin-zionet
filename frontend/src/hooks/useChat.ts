@@ -43,7 +43,7 @@ export const useChat = () => {
       onSuccess: (data: ChatResponse) => {
         setThreadId(data.threadId);
 
-        const aiText = data.answer;
+        const aiText = data.assistantMessage;
 
         const aiMsg: ChatMessage = {
           position: "left",
