@@ -112,10 +112,11 @@ public static class AiEndpoints
         //todo: takeUserId from token.
         const string userId = "dev-user-001";
 
-        var threadId = string.IsNullOrWhiteSpace(request.ThreadId)
-       ? Guid.NewGuid()
-       : Guid.TryParse(request.ThreadId, out var giud) ? giud
-       : throw new ArgumentException("threadId must be a valid UUID");
+        if (!TryResolveThreadId(request.ThreadId, out var threadId, out var error))
+        {
+            return Results.BadRequest(new { error = "If threadId is present, it must be a GUID" });
+
+        }
 
         var engineRequest = new EngineChatRequest
         {
@@ -132,11 +133,71 @@ public static class AiEndpoints
 
             return Results.Ok(engineResponse);
         }
+        catch (Dapr.Client.InvocationException ex) when (ex.Response?.StatusCode is not null)
+        {
+            var upstream = (int)ex.Response!.StatusCode!;
+            log.LogError(ex, "Engine call failed with upstream status {Status}", upstream);
+
+            return Results.Problem(
+                title: "Engine call failed",
+                detail: "Upstream service returned an error.",
+                statusCode: StatusCodes.Status502BadGateway,
+                extensions: new Dictionary<string, object?>
+                {
+                    ["upstreamStatus"] = upstream,
+                    ["requestId"] = engineRequest.RequestId
+                });
+        }
+        catch (HttpRequestException ex)
+        {
+            log.LogError(ex, "Engine is unreachable");
+            return Results.Problem(
+                title: "Engine unavailable",
+                detail: "Unable to connect to the upstream service.",
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+        catch (TaskCanceledException ex) when (!ct.IsCancellationRequested)
+        {
+            log.LogWarning(ex, "Engine call timed out");
+            return Results.Problem(
+                title: "Engine timeout",
+                detail: "Upstream service did not respond in time.",
+                statusCode: StatusCodes.Status504GatewayTimeout);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return Results.StatusCode(499);
+        }
         catch (Exception ex)
         {
-            log.LogError(ex, "Engine invocation failed");
-            return Results.Problem("Unable to contact AI engine");
+            log.LogError(ex, "Unhandled error in Manager");
+            return Results.Problem(
+                title: "Unexpected server error",
+                statusCode: StatusCodes.Status500InternalServerError);
         }
+    }
+
+    private static bool TryResolveThreadId(
+        string? rawThreadId,
+        out Guid threadId,
+        out string? error)
+    {
+        if (!string.IsNullOrWhiteSpace(rawThreadId))
+        {
+            if (Guid.TryParse(rawThreadId, out threadId))
+            {
+                error = null;
+                return true;
+            }
+
+            threadId = default;
+            error = "threadId must be a valid GUID (UUID).";
+            return false;
+        }
+
+        threadId = Guid.NewGuid();
+        error = null;
+        return true;
     }
 
     private static async Task<IResult> SynthesizeAsync(
