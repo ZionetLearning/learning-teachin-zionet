@@ -183,3 +183,28 @@ resource "kubernetes_service_account" "environment" {
   
   depends_on = [kubernetes_namespace.environment]
 }
+
+# resource "kubernetes_resource_quota" "environment" {
+#   metadata {
+#     name      = "${var.environment_name}-quota"
+#     namespace = kubernetes_namespace.environment.metadata[0].name
+    
+#     labels = {
+#       environment = var.environment_name
+#       managed-by  = "terraform"
+#     }
+#   }
+  
+#   spec {
+#     hard = {
+#       "requests.cpu"    = "2"
+#       "requests.memory" = "4Gi"
+#       "limits.cpu"      = "4"
+#       "limits.memory"   = "8Gi"
+#       "pods"            = "10"
+#       "services"        = "8"
+#     }
+#   }
+  
+#   depends_on = [kubernetes_namespace.environment]
+# }
