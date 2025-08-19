@@ -7,13 +7,6 @@ metadata:
     {{ .Values.engine.labels.selectorKey }}: {{ .Values.engine.labels.selectorValue }}
 spec:
   replicas: 1
-  strategy:
-    type: {{ .Values.global.deploymentStrategy.type }}
-    {{- if eq .Values.global.deploymentStrategy.type "RollingUpdate" }}
-    rollingUpdate:
-      maxUnavailable: {{ .Values.global.deploymentStrategy.rollingUpdate.maxUnavailable }}
-      maxSurge: {{ .Values.global.deploymentStrategy.rollingUpdate.maxSurge }}
-    {{- end }}
   selector:
     matchLabels:
       {{ .Values.engine.labels.selectorKey }}: {{ .Values.engine.labels.selectorValue }}

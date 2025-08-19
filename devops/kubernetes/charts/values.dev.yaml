@@ -3,12 +3,6 @@ global:
   dockerRegistry: ""   # CI sets: docker.io/<org> or <acr>.azurecr.io
   imagePullPolicy: IfNotPresent
   environment: ""      # Will be set by CI/CD to TARGET_NAMESPACE (e.g., "devacr2")
-  # Deployment strategy to handle resource constraints
-  deploymentStrategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 1
-      maxSurge: 0  # Don't create extra pods during updates
   dapr:
     enabled: true
     configName: dapr-config
