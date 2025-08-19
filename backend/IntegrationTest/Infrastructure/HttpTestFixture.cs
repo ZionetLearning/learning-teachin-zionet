@@ -1,4 +1,5 @@
 using DotNetEnv;
+using IntegrationTests.Constants;
 
 namespace IntegrationTests.Infrastructure;
 
@@ -18,6 +19,8 @@ public class HttpTestFixture : IDisposable
             BaseAddress = new Uri(baseUrl),
             Timeout = TimeSpan.FromSeconds(40)
         };
+
+        Client.DefaultRequestHeaders.Add("X-User-Id", TestConstants.TestUserId);
     }
 
     private static string GetBaseUrl()

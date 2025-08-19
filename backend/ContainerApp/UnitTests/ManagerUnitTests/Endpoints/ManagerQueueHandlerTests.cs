@@ -2,6 +2,7 @@
 using Manager.Endpoints;
 using Manager.Messaging;
 using Manager.Models;
+using Manager.Models.QueueMessages;
 using Manager.Services;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -12,13 +13,14 @@ public class ManagerQueueHandlerTests
 {
     // Centralize common setup to remove boilerplate in each test
     private static (
-        Mock<IAiGatewayService> ai,
-        ManagerQueueHandler handler
-    ) CreateSut()
+    Mock<IAiGatewayService> ai,
+    ManagerQueueHandler handler
+) CreateSut()
     {
         var ai = new Mock<IAiGatewayService>(MockBehavior.Strict);
         var logger = Mock.Of<ILogger<ManagerQueueHandler>>();
-        var handler = new ManagerQueueHandler(ai.Object, logger);
+        var managerService = Mock.Of<IManagerService>();
+        var handler = new ManagerQueueHandler(ai.Object, logger, managerService);
         return (ai, handler);
     }
 
