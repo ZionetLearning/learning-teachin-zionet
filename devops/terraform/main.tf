@@ -197,11 +197,11 @@ resource "kubernetes_resource_quota" "environment" {
   
   spec {
     hard = {
-      "requests.cpu"    = "2"
-      "requests.memory" = "4Gi"
-      "limits.cpu"      = "4"
-      "limits.memory"   = "8Gi"
-      "pods"            = "10"
+      "requests.cpu"    = "4"      # Increased from 2 to handle rolling updates
+      "requests.memory" = "8Gi"    # Increased from 4Gi for safety
+      "limits.cpu"      = "8"      # Increased from 4 to handle rolling updates  
+      "limits.memory"   = "16Gi"   # Increased from 8Gi for safety
+      "pods"            = "15"     # Increased from 10 to handle rolling updates
       "services"        = "8"
     }
   }
