@@ -6,10 +6,52 @@ on:
       environment:
         required: true
         type: string
+      environment_name:
+        required: true
+        type: string
+      list_services_names:
+        required: true
+        type: string
+    outputs:
+      image_tag:
+        description: "The generated image tag (commit hash)"
+        value: ${{ jobs.generate_tag.outputs.image_tag }}
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Select environment (GitHub Environment)'
+        required: true
+        type: choice
+        options:
+          - Development
+          - Production
+        default: Development
+      environment_name:
+        description: 'Enter custom prefix (lowercase letters & digits only). This will be used as the Kubernetes namespace and environment identifier.'
+        required: true
+        type: string
+      list_services_names:
+        description: 'Optional comma-separated list of services to build (e.g., accessor,manager). Leave empty for all.'
+        required: false
+        type: string
+        default: ''
 
 jobs:
-  build-and-push:
-    environment: Development
+  generate_tag:
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.set-tag.outputs.image_tag }}
+    steps:
+      - name: Set image tag
+        id: set-tag
+        run: |
+          SHORT_SHA="${{ github.sha }}"
+          SHORT_SHA="${SHORT_SHA:0:7}"
+          echo "image_tag=${SHORT_SHA}" >> $GITHUB_OUTPUT
+
+  build_and_push:
+    needs: generate_tag
+    environment: ${{ inputs.environment }}
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -30,11 +72,48 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+      - name: Azure Login via OIDC
+        uses: azure/login@v2
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set ACR environment
+        run: |
+          ACR_NAME=teachindevacr
+          echo "ACR_NAME=$ACR_NAME" >> $GITHUB_ENV
+          echo "ACR_LOGIN_SERVER=$ACR_NAME.azurecr.io" >> $GITHUB_ENV
+
+      - name: Log in to Azure Container Registry
+        run: az acr login --name $ACR_NAME
+
+      - name: Set image tags
+        id: imgtag
+        shell: bash
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_SHA: ${{ github.sha }}
+          ENV_TAG: ${{ inputs.environment_name }}
+        run: |
+          ACR_LOGIN_SERVER="teachindevacr.azurecr.io"
+          IMAGE_NAME="${ACR_LOGIN_SERVER}/${{ matrix.service.name }}"
+          
+          # Extract first 7 characters of commit SHA
+          SHORT_SHA="${GITHUB_SHA:0:7}"
+          
+          # Start building tags output
+          {
+            echo "tags<<EOF"
+            # Add latest tag only for push events
+            if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
+              echo "${IMAGE_NAME}:latest"
+            fi
+            # Always add these two tags
+            echo "${IMAGE_NAME}:${SHORT_SHA}"
+            echo "${IMAGE_NAME}:${ENV_TAG}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Build and push ${{ matrix.service.name }} image
         uses: docker/build-push-action@v5
@@ -42,4 +121,5 @@ jobs:
           context: ${{ matrix.service.context }}
           file: ${{ matrix.service.dockerfile }}
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/${{ matrix.service.name }}:latest
+          tags: |
+            ${{ steps.imgtag.outputs.tags }}

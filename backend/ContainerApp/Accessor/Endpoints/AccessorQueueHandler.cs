@@ -1,5 +1,5 @@
 ﻿using System.Text.Json;
-using Accessor.Messaging;
+using DotQueue;
 using Accessor.Models;
 using Accessor.Models.QueueMessages;
 using Accessor.Services;

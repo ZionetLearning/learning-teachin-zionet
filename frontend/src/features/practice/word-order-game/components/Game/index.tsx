@@ -2,8 +2,8 @@ import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useStyles } from "./style";
 import { Speaker } from "../Speaker";
-import { playSentenceCached, clearSpeechCache } from "../../services";
 import { useHebrewSentence } from "../../hooks";
+import { useAvatarSpeech } from "@/hooks";
 
 export const Game = () => {
   const { t } = useTranslation();
@@ -12,6 +12,8 @@ export const Game = () => {
   const [shuffledSentence, setShuffledSentence] = useState<string[]>([]);
   const { sentence, loading, error, fetchSentence, initOnce } =
     useHebrewSentence();
+
+  const { speak, stop } = useAvatarSpeech({});
 
   useEffect(() => {
     initOnce();
@@ -28,14 +30,14 @@ export const Game = () => {
     handleNewSentence();
   }, [sentence]);
 
-  const handlePlay = (mode?: "normal" | "slow") => {
+  const handlePlay = () => {
     if (!sentence) return;
     // play the sentence
-    playSentenceCached(sentence, undefined, mode === "slow" ? -40 : 0);
+    speak(sentence);
   };
 
   const handleNextClick = async () => {
-    clearSpeechCache();
+    stop();
     const s = await fetchSentence();
     if (!s) return;
     setChosen([]);
@@ -91,7 +93,6 @@ export const Game = () => {
       <div className={classes.gameLogic}>
         <div className={classes.speakersContainer}>
           <Speaker onClick={() => handlePlay()} />
-          <Speaker mode="slow" onClick={() => handlePlay("slow")} />
         </div>
 
         <div className={classes.answerArea} dir="rtl">

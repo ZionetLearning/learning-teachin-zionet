@@ -4,27 +4,46 @@ using IntegrationTests.Constants;
 using IntegrationTests.Helpers;
 using IntegrationTests.Infrastructure;
 using IntegrationTests.Models;
-using Xunit.Abstractions; 
+using IntegrationTests.Models.Notification;
+using Xunit.Abstractions;
 
 namespace IntegrationTests.Tests.Tasks;
 
 [Collection("IntegrationTests")]
-public class TaskIntegrationTests(HttpTestFixture fixture, ITestOutputHelper outputHelper)
-    : TaskTestBase(fixture, outputHelper)
+public class TaskIntegrationTests(
+    HttpTestFixture fixture,
+    ITestOutputHelper outputHelper,
+    SignalRTestFixture signalRFixture
+) : TaskTestBase(fixture, outputHelper, signalRFixture)
 {
-
     [Fact(DisplayName = "POST /task - Same ID twice is idempotent (second POST is a no-op)")]
     public async Task Post_Same_Id_Twice_Is_Idempotent()
     {
-        var first  = TestDataHelper.CreateFixedIdTask(); // Id = 888
+        var first = TestDataHelper.CreateFixedIdTask(); // Id = 888
         var second = TestDataHelper.CreateFixedIdTask(); // same Id
 
         // 1) POST first
         var r1 = await Client.PostAsJsonAsync(ApiRoutes.Task, first);
         r1.ShouldBeAccepted();
 
+        var receivedNotification = await WaitForNotificationAsync(
+            n => n.Type == NotificationType.Success && n.Message.Contains(first.Name),
+            TimeSpan.FromSeconds(10)
+        );
+
+        receivedNotification
+            .Should()
+            .NotBeNull("Expected a success notification for task creation");
+        OutputHelper.WriteLine(
+            $"Received notification: {receivedNotification.Notification.Message}"
+        );
+
         // 2) Wait until it's visible
-        var before = await TaskUpdateHelper.WaitForTaskByIdAsync(Client, first.Id, timeoutSeconds: 20);
+        var before = await TaskUpdateHelper.WaitForTaskByIdAsync(
+            Client,
+            first.Id,
+            timeoutSeconds: 20
+        );
         before.Name.Should().Be(first.Name);
         before.Payload.Should().Be(first.Payload);
 
@@ -33,7 +52,11 @@ public class TaskIntegrationTests(HttpTestFixture fixture, ITestOutputHelper out
         r2.ShouldBeAccepted();
 
         // 4) Confirm it did NOT change
-        var after = await TaskUpdateHelper.WaitForTaskByIdAsync(Client, first.Id, timeoutSeconds: 10);
+        var after = await TaskUpdateHelper.WaitForTaskByIdAsync(
+            Client,
+            first.Id,
+            timeoutSeconds: 10
+        );
         after.Name.Should().Be(first.Name);
         after.Payload.Should().Be(first.Payload);
     }
@@ -48,6 +71,19 @@ public class TaskIntegrationTests(HttpTestFixture fixture, ITestOutputHelper out
 
         var response = await PostAsJsonAsync(ApiRoutes.Task, task);
         response.ShouldBeAccepted();
+
+        // Wait for signalR notification
+        var receivedNotification = await WaitForNotificationAsync(
+            n => n.Type == NotificationType.Success && n.Message.Contains(task.Name),
+            TimeSpan.FromSeconds(10)
+        );
+
+        receivedNotification
+            .Should()
+            .NotBeNull("Expected a success notification for task creation");
+        OutputHelper.WriteLine(
+            $"Received notification: {receivedNotification.Notification.Message}"
+        );
 
         var result = await ReadAsJsonAsync<TaskModel>(response);
         result.Should().NotBeNull();
@@ -83,12 +119,13 @@ public class TaskIntegrationTests(HttpTestFixture fixture, ITestOutputHelper out
         OutputHelper.WriteLine($"Verified task: ID={fetchedTask.Id}, Name={fetchedTask.Name}");
     }
 
-
     [Theory(DisplayName = "GET /task/{id} - Invalid ID should return 404 Not Found")]
     [InlineData(-1)]
     public async Task Get_Task_By_Invalid_Id_Should_Return_NotFound(int invalidId)
     {
-        OutputHelper.WriteLine($"Running: Get_Task_By_Invalid_Id_Should_Return_NotFound for ID {invalidId}");
+        OutputHelper.WriteLine(
+            $"Running: Get_Task_By_Invalid_Id_Should_Return_NotFound for ID {invalidId}"
+        );
 
         var response = await Client.GetAsync(ApiRoutes.TaskById(invalidId));
         response.ShouldBeNotFound();
@@ -118,7 +155,6 @@ public class TaskIntegrationTests(HttpTestFixture fixture, ITestOutputHelper out
         OutputHelper.WriteLine($"Successfully updated task name to: {updated.Name}");
     }
 
-
     [Fact(DisplayName = "PUT /task/{id}/{name} - Invalid ID should return 404 Not Found")]
     public async Task Put_TaskName_With_Invalid_Id_Should_Return_NotFound()
     {
@@ -143,7 +179,6 @@ public class TaskIntegrationTests(HttpTestFixture fixture, ITestOutputHelper out
 
         OutputHelper.WriteLine("Verified task deletion");
     }
-
 
     [Fact(DisplayName = "DELETE /task/{id} - With invalid ID should return 404")]
     public async Task Delete_Task_With_Invalid_Id_Should_Return_NotFound()

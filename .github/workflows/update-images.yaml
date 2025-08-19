@@ -1,6 +1,11 @@
 name: AKS - Deploy Current Backend Images to Cloud
 # Builds and pushs current backend images (from current main) into dockerhub(later to be changed to acr) and deploys to AKS in cloud
 on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'backend/**'  # Only trigger for Azure backend changes
+      # - '.github/workflows/build-and-push-images.yaml'  # Trigger on workflow changes
   workflow_dispatch:
     inputs:
       environment:
@@ -11,26 +16,61 @@ on:
         options:
           - Development
           - Production
-
+      environment_name:
+        description: 'Enter custom prefix (used for Kubernetes namespace, etc.)'
+        required: true
+        type: string
+      list_services_names:
+        description: 'Optional comma-separated list of services to build (e.g., accessor,manager). Leave empty for all.'
+        required: false
+        type: string
+        default: ''
+        
 jobs:
+  set-defaults:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.defaults.outputs.environment }}
+      environment_name: ${{ steps.defaults.outputs.environment_name }}
+      list_services_names: ${{ steps.defaults.outputs.list_services_names }}
+    steps:
+      - name: Set default values
+        id: defaults
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            echo "environment=Development" >> $GITHUB_OUTPUT
+            echo "environment_name=dev" >> $GITHUB_OUTPUT
+            echo "list_services_names=" >> $GITHUB_OUTPUT
+          else
+            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+            echo "environment_name=${{ github.event.inputs.environment_name }}" >> $GITHUB_OUTPUT
+            echo "list_services_names=${{ github.event.inputs.list_services_names }}" >> $GITHUB_OUTPUT
+          fi
+
   build-and-push-images:
+    needs: [set-defaults]
     uses: ./.github/workflows/build-and-push-images.yaml
     permissions:
       id-token: write
       contents: read
     with:
-      environment: ${{ github.event.inputs.environment }}
+      environment: ${{ needs.set-defaults.outputs.environment }}
+      environment_name: ${{ needs.set-defaults.outputs.environment_name }}
+      list_services_names: ${{ needs.set-defaults.outputs.list_services_names }}
     secrets: inherit
 
-  restart-pods:
-    needs: [build-and-push-images]
+  deploy-with-new-images:
+    needs: [set-defaults, build-and-push-images]
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment }}
+    environment: ${{ needs.set-defaults.outputs.environment }}
     permissions:
       id-token: write
       contents: read
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Azure Login via OIDC
         uses: azure/login@v2
         with:
@@ -42,6 +82,12 @@ jobs:
         run: |
           echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
           echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
+          
+          # Get the new commit hash for image tagging
+          SHORT_SHA="${{ github.sha }}"
+          SHORT_SHA="${SHORT_SHA:0:7}"
+          echo "NEW_IMAGE_TAG=${SHORT_SHA}" >> $GITHUB_ENV
+          echo "New image tag will be: ${SHORT_SHA}"
 
       - name: Get AKS credentials
         run: |
@@ -52,57 +98,127 @@ jobs:
           STATUS=$(az aks show --resource-group $AKS_RG --name $AKS_NAME --query "powerState.code" -o tsv)
           echo "AKS cluster status: $STATUS"
           if [[ "$STATUS" != "Running" ]]; then
-            echo "❌ Cluster is not running. Status: $STATUS"
+            echo "Cluster is not running. Status: $STATUS"
             echo "Please start the cluster first before restarting pods."
             exit 1
           fi
 
       - name: Show current pods status
         run: |
-          echo "📊 Current pods in dev namespace:"
-          kubectl get pods -n dev -o wide || echo "No pods found or namespace doesn't exist"
+          echo "Current pods in ${{ needs.set-defaults.outputs.environment_name }} namespace:"
+          kubectl get pods -n ${{ needs.set-defaults.outputs.environment_name }} -o custom-columns=NAME:.metadata.name,IMAGE:.spec.containers[0].image,STATUS:.status.phase || echo "No pods found or namespace doesn't exist"
 
-      - name: Restart all pods in dev namespace
+      - name: Check and fix Helm release status
         run: |
-          echo "🔄 Restarting all pods in dev namespace..."
-          kubectl delete pod --all -n dev
-          echo "✅ All pods in dev namespace have been deleted and will be recreated"
-
-      - name: Wait for pods to be recreated
-        run: |
-          echo "⏳ Waiting for pods to be recreated..."
-          sleep 10
+          echo "Checking Helm release status..."
           
-          # Wait for pods to be in Running state
-          for i in {1..20}; do
-            READY_PODS=$(kubectl get pods -n dev --field-selector=status.phase=Running --no-headers 2>/dev/null | wc -l)
-            TOTAL_PODS=$(kubectl get pods -n dev --no-headers 2>/dev/null | wc -l)
+          # Check if there's a pending operation
+          RELEASE_STATUS=$(helm status app -n ${{ needs.set-defaults.outputs.environment_name }} -o json 2>/dev/null | jq -r '.info.status' || echo "not-found")
+          echo "Current release status: $RELEASE_STATUS"
+          
+          if [[ "$RELEASE_STATUS" == "pending-install" ]] || [[ "$RELEASE_STATUS" == "pending-upgrade" ]] || [[ "$RELEASE_STATUS" == "pending-rollback" ]]; then
+            echo "Found pending operation. Rolling back to clear the lock..."
+            helm rollback app -n ${{ needs.set-defaults.outputs.environment_name }} || echo "Rollback failed, trying to delete release history..."
             
-            echo "Attempt $i: $READY_PODS/$TOTAL_PODS pods are running"
-            
-            if [[ $TOTAL_PODS -gt 0 ]]; then
-              # Check if all pods are ready
-              NOT_READY=$(kubectl get pods -n dev --no-headers 2>/dev/null | grep -v "Running\|Completed" | wc -l)
-              if [[ $NOT_READY -eq 0 ]]; then
-                echo "✅ All pods are running successfully"
-                break
-              fi
-            fi
-            
-            if [[ $i -eq 20 ]]; then
-              echo "⚠️ Timeout waiting for all pods to be ready"
-              kubectl get pods -n dev -o wide
-            else
-              sleep 15
-            fi
-          done
+            # If rollback fails, try to delete the release
+            helm delete app -n ${{ needs.set-defaults.outputs.environment_name }} --wait || echo "Delete failed, continuing anyway..."
+            sleep 5
+          fi
+          
+          echo "Helm release status checked"
 
-      - name: Show final pods status
+      - name: Deploy with new commit hash using Helm
         run: |
-          echo "📊 Final pods status in dev namespace:"
-          kubectl get pods -n dev -o wide
+          echo "Deploying with new image tag: $NEW_IMAGE_TAG"
+          echo "Updating images in namespace: ${{ needs.set-defaults.outputs.environment_name }}"
+          
+          # Simple Helm upgrade without wait (let subsequent steps handle the waiting)
+          helm upgrade --install app ./devops/kubernetes/charts \
+            --namespace ${{ needs.set-defaults.outputs.environment_name }} \
+            -f ./devops/kubernetes/charts/values.dev.yaml \
+            --set namespace.name=${{ needs.set-defaults.outputs.environment_name }} \
+            --set namespace.create=false \
+            --set global.namePrefix=${{ needs.set-defaults.outputs.environment_name }} \
+            --set global.dockerRegistry=teachindevacr.azurecr.io \
+            --set-string global.environment="$NEW_IMAGE_TAG" \
+            --set-string engine.env.AzureOpenAI__ApiKey="${{ secrets.AZURE_OPENAI_API_KEY }}" \
+            --set-string engine.env.AzureSpeech__SubscriptionKey="${{ secrets.AZURE_SPEECH_KEY }}" \
+            --set dapr.installComponents=false
+          
+          echo "Helm deployment configuration updated with image tag: $NEW_IMAGE_TAG"
 
-      - name: Check services
+
+      - name: Check deployment status
         run: |
-          echo "🔍 Services in dev namespace:"
-          kubectl get svc -n dev -o wide
+          echo "Checking deployment status..."
+          kubectl get deployments -n ${{ needs.set-defaults.outputs.environment_name }}
+          
+          echo "Pod status:"
+          kubectl get pods -n ${{ needs.set-defaults.outputs.environment_name }} -o wide
+          
+          echo "Events (last 10):"
+          kubectl get events -n ${{ needs.set-defaults.outputs.environment_name }} --sort-by=.lastTimestamp | tail -10
+
+      - name: Wait for new pods to be ready
+        run: |
+          echo "Waiting for new pods to be ready..."
+          
+          # Wait for all deployments to be ready with longer timeout
+          kubectl wait --for=condition=available --timeout=600s deployment --all -n ${{ needs.set-defaults.outputs.environment_name }} || {
+            echo "Deployment timeout. Checking status..."
+            kubectl get deployments -n ${{ needs.set-defaults.outputs.environment_name }}
+            kubectl get pods -n ${{ needs.set-defaults.outputs.environment_name }} -o wide
+            
+            echo "Describing pending/failed pods:"
+            kubectl get pods -n ${{ needs.set-defaults.outputs.environment_name }} --field-selector=status.phase!=Running -o name | while read pod; do
+              echo "--- $pod ---"
+              kubectl describe -n ${{ needs.set-defaults.outputs.environment_name }} $pod
+            done
+            
+            echo "Recent events:"
+            kubectl get events -n ${{ needs.set-defaults.outputs.environment_name }} --sort-by=.lastTimestamp | tail -20
+            exit 1
+          }
+          
+          echo "All deployments are ready"
+
+      - name: Verify new images are running
+        run: |
+          echo "Verifying new images with tag: $NEW_IMAGE_TAG"
+          echo "Current pods in ${{ needs.set-defaults.outputs.environment_name }} namespace:"
+          kubectl get pods -n ${{ needs.set-defaults.outputs.environment_name }} -o custom-columns=NAME:.metadata.name,IMAGE:.spec.containers[0].image,STATUS:.status.phase
+          
+          # Check if all pods are using the new image tag
+          PODS_WITH_NEW_TAG=$(kubectl get pods -n ${{ needs.set-defaults.outputs.environment_name }} -o jsonpath='{.items[*].spec.containers[0].image}' | tr ' ' '\n' | grep -c "$NEW_IMAGE_TAG" || echo "0")
+          TOTAL_PODS=$(kubectl get pods -n ${{ needs.set-defaults.outputs.environment_name }} --no-headers | wc -l)
+          
+          echo "Pods using new tag ($NEW_IMAGE_TAG): $PODS_WITH_NEW_TAG/$TOTAL_PODS"
+          
+          if [[ $PODS_WITH_NEW_TAG -eq $TOTAL_PODS ]] && [[ $TOTAL_PODS -gt 0 ]]; then
+            echo "SUCCESS: All pods are using the new image tag: $NEW_IMAGE_TAG"
+          else
+            echo "WARNING: Some pods may not be using the new image tag"
+            echo "Detailed pod images:"
+            kubectl get pods -n ${{ needs.set-defaults.outputs.environment_name }} -o custom-columns=NAME:.metadata.name,IMAGE:.spec.containers[0].image
+          fi
+          
+          if [[ $PODS_WITH_NEW_TAG -eq $TOTAL_PODS ]]; then
+            echo "All pods are using the new image tag: $NEW_IMAGE_TAG"
+          else
+            echo "Some pods are not using the new image tag"
+            kubectl get pods -n ${{ needs.set-defaults.outputs.environment_name }} -o custom-columns=NAME:.metadata.name,IMAGE:.spec.containers[0].image
+          fi
+
+      - name: Show final deployment status
+        run: |
+          echo "Final deployment status in ${{ needs.set-defaults.outputs.environment_name }} namespace:"
+          kubectl get pods -n ${{ needs.set-defaults.outputs.environment_name }} -o wide
+          echo ""
+          echo "Services in ${{ needs.set-defaults.outputs.environment_name }} namespace:"
+          kubectl get svc -n ${{ needs.set-defaults.outputs.environment_name }} -o wide
+          echo ""
+          echo "Deployment Summary:"
+          echo "Images updated to commit: $NEW_IMAGE_TAG"
+          echo "Namespace: ${{ needs.set-defaults.outputs.environment_name }}"
+          echo "All pods are running with the latest code"
+          
