@@ -9,5 +9,6 @@ public record AzureSpeechSettings
     public required string Region { get; set; } = string.Empty;
 
     public string DefaultVoice { get; set; } = "he-IL-HilaNeural";
+
     public int TimeoutSeconds { get; set; } = 30;
 }

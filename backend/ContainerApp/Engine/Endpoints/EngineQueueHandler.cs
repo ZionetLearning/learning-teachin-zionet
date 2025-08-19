@@ -185,12 +185,12 @@ public class EngineQueueHandler : IQueueHandler<Message>
 
             var aiResp = await _aiService.ChatHandlerAsync(serviceRequest, ct);
 
-            if (aiResp.Status == "error" || aiResp.Answer == null)
+            if (aiResp.Status != ChatAnswerStatus.Ok || aiResp.Answer == null)
             {
                 var errorResponse = new EngineChatResponse
                 {
                     RequestId = serviceRequest.RequestId,
-                    Status = "error",
+                    Status = ChatAnswerStatus.Fail,
                     ThreadId = serviceRequest.ThreadId,
                     AssistantMessage = aiResp.Error
                 };
