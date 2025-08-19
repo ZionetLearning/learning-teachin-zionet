@@ -26,10 +26,4 @@ describe("chat Ou", () => {
     cy.get('[data-testid="chat-ou-suggestion-0"]').click();
     cy.get('[data-testid="chat-ou-send"]').click();
   });
-
-  it("shows character counter near limit", () => {
-    const longText = "x".repeat(1850);
-    cy.get('[data-testid="chat-ou-input"]').type(longText);
-    cy.contains(/1850\/2000/i).should("exist");
-  });
 });

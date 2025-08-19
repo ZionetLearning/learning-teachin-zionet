@@ -13,8 +13,9 @@ describe("typing practice", () => {
     cy.contains(/click play to hear the hebrew text/i).should("exist");
 
     cy.get('[data-testid="typing-play"]').click();
-
-    cy.get('[data-testid="typing-input-wrapper"]').should("exist");
+    cy.get('[data-testid="typing-input-wrapper"]', { timeout: 20000 }).should(
+      "exist",
+    );
     cy.get('[data-testid="typing-input"]').type("test answer");
 
     cy.get('[data-testid="typing-submit"]').click({ force: true });

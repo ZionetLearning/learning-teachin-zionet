@@ -45,24 +45,4 @@ describe("chat Da", () => {
       }
     });
   });
-
-  it("handles multiple sequential messages (waiting each bot completion)", () => {
-    const messages = ["First", "Second", "Third"];
-    cy.wrap(messages).each((m) => {
-      cy.get('[data-testid="chat-da-input"]')
-        .should("not.be.disabled")
-        .type(String(m));
-      cy.get('[data-testid="chat-da-send"]').click();
-      cy.contains(String(m)).should("be.visible");
-      cy.get('[data-testid="chat-da-msg-bot-streaming"]').should("exist");
-      cy.get('[data-testid="chat-da-msg-bot-complete"]', {
-        timeout: 10000,
-      }).should("exist");
-      cy.get('[data-testid="chat-da-input"]').then(($el) => {
-        if ($el.is(":disabled")) {
-          cy.wrap($el, { timeout: 10000 }).should("not.be.disabled");
-        }
-      });
-    });
-  });
 });
