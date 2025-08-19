@@ -1,17 +1,22 @@
 ﻿using Dapr.Client;
 using Manager.Constants;
-
-//using Manager.Constants;
 using Manager.Models;
+using Manager.Models.Chat;
 using System.Net;
 using System.Text.Json;
+using Manager.Models.QueueMessages;
 
 namespace Manager.Services.Clients;
 
-public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClient) : IAccessorClient
+public class AccessorClient(
+    ILogger<AccessorClient> logger,
+    DaprClient daprClient,
+    IHttpContextAccessor httpContextAccessor
+    ) : IAccessorClient
 {
     private readonly ILogger<AccessorClient> _logger = logger;
     private readonly DaprClient _daprClient = daprClient;
+    private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
 
     public async Task<TaskModel?> GetTaskAsync(int id)
     {
@@ -100,6 +105,135 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
         catch (Exception e)
         {
             _logger.LogError(e, "Error inside the DeleteUser");
+            throw;
+        }
+    }
+
+    public async Task<(bool success, string message)> PostTaskAsync(TaskModel task)
+    {
+        _logger.LogInformation(
+           "Inside: {Method} in {Class}",
+           nameof(PostTaskAsync),
+           nameof(AccessorClient)
+       );
+
+        try
+        {
+            var userId = _httpContextAccessor.HttpContext?.Request.Headers["X-User-Id"].FirstOrDefault() ?? "anonymous";
+
+            var payload = JsonSerializer.SerializeToElement(task);
+            var userContextMetadata = JsonSerializer.SerializeToElement(
+                new UserContextMetadata
+                {
+                    UserId = userId,
+                    MessageId = Guid.NewGuid().ToString()
+                }
+            );
+
+            var message = new Message
+            {
+                ActionName = MessageAction.CreateTask,
+                Payload = payload,
+                Metadata = userContextMetadata
+            };
+            await _daprClient.InvokeBindingAsync($"{QueueNames.AccessorQueue}-out", "create", message);
+
+            _logger.LogDebug(
+                "Task {TaskId} sent to Accessor via binding '{Binding}'",
+                task.Id,
+                QueueNames.AccessorQueue
+            );
+            return (true, "sent to queue");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send task {TaskId} to Accessor", task.Id);
+            throw;
+        }
+    }
+
+    public async Task<IReadOnlyList<ChatMessage>> GetChatHistoryAsync(Guid threadId, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetChatHistoryAsync), nameof(AccessorClient));
+        try
+        {
+            var messages = await _daprClient.InvokeMethodAsync<List<ChatMessage>>(
+                HttpMethod.Get,
+                "accessor",
+                $"threads/{threadId}/messages",
+                cancellationToken: ct
+            );
+
+            return messages ?? new List<ChatMessage>();
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("Thread {ThreadId} not found, returning empty history", threadId);
+            return Array.Empty<ChatMessage>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get chat history for thread {ThreadId}", threadId);
+            throw;
+        }
+    }
+
+    public async Task<ChatMessage?> StoreMessageAsync(ChatMessage msg, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Inside: {Method} in {Class}", nameof(StoreMessageAsync), nameof(AccessorClient));
+        try
+        {
+            var created = await _daprClient.InvokeMethodAsync<ChatMessage, ChatMessage>(
+                HttpMethod.Post,
+                "accessor",
+                "threads/message",
+                msg,
+                cancellationToken: ct
+            );
+
+            _logger.LogDebug("Message stored in thread {ThreadId}", msg.ThreadId);
+            return created;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to store message for thread {ThreadId}", msg.ThreadId);
+            throw;
+        }
+    }
+
+    public async Task<IReadOnlyList<ChatThread>> GetThreadsForUserAsync(string userId, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetThreadsForUserAsync), nameof(AccessorClient));
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            throw new ArgumentException("userId cannot be null or whitespace.", nameof(userId));
+        }
+
+        try
+        {
+            var threads = await _daprClient.InvokeMethodAsync<List<ChatThread>>(
+                HttpMethod.Get,
+                "accessor",
+                $"threads/{userId}",
+                cancellationToken: ct
+            );
+
+            return threads ?? new List<ChatThread>();
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("No threads found for user {UserId}", userId);
+            return Array.Empty<ChatThread>();
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            _logger.LogInformation("{Metod} cancelled for user {UserId}", nameof(GetThreadsForUserAsync), userId);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get threads for user {UserId}", userId);
             throw;
         }
     }

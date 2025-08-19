@@ -2,10 +2,10 @@ using System.Text.Json;
 using Accessor.Constants;
 using Accessor.DB;
 using Accessor.Endpoints;
-using Accessor.Messaging;
-using Accessor.Models;
+using Accessor.Models.QueueMessages;
 using Accessor.Services;
 using Azure.Messaging.ServiceBus;
+using DotQueue;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
@@ -13,6 +13,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSingleton(sp =>
   new ServiceBusClient(builder.Configuration["ServiceBus:ConnectionString"]));
+builder.Services.AddSingleton<IRetryPolicyProvider, RetryPolicyProvider>();
+builder.Services.AddSingleton<IRetryPolicy, RetryPolicy>();
+builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
 
 builder.Services.AddQueue<Message, AccessorQueueHandler>(
     QueueNames.AccessorQueue,
@@ -25,6 +28,8 @@ builder.Services.AddQueue<Message, AccessorQueueHandler>(
         settings.RetryDelaySeconds = 5;
     });
 builder.Services.AddScoped<IAccessorService, AccessorService>();
+builder.Services.AddScoped<IManagerCallbackQueueService, ManagerCallbackQueueService>();
+builder.Services.AddScoped<IRefreshSessionService, RefreshSessionService>();
 
 var env = builder.Environment;
 
@@ -108,4 +113,5 @@ if (env.IsDevelopment())
 }
 // Map endpoints (routes)
 app.MapAccessorEndpoints();
+app.MapRefreshSessionEndpoints();
 await app.RunAsync();

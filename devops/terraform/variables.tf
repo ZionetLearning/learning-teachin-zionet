@@ -107,7 +107,7 @@ variable "admin_password" {
 variable "db_version" {
   type        = string
   description = "PostgreSQL version"
-  default     = "15"
+  default     = "16"
 }
 # sku_name
 variable "sku_name" {

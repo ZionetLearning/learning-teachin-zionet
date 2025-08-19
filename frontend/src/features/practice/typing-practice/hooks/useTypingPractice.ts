@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ExerciseState, DifficultyLevel, Exercise } from "../types";
 import { getRandomExercise, compareTexts } from "../utils";
-import { speakHebrew } from "../../../../services";
+import { useAvatarSpeech } from "@/hooks";
 
 export const useTypingPractice = () => {
   const [exerciseState, setExerciseState] = useState<ExerciseState>({
@@ -19,6 +19,50 @@ export const useTypingPractice = () => {
   });
 
   const [currentExercise, setCurrentExercise] = useState<Exercise | null>(null);
+
+  const { speak, stop, isPlaying, error } = useAvatarSpeech({
+    volume: 1,
+    onAudioStart: () => {
+      setExerciseState((prev) => ({
+        ...prev,
+        phase: "playing",
+        audioState: {
+          ...prev.audioState,
+          isPlaying: true,
+          error: null,
+        },
+      }));
+    },
+    onAudioEnd: () => {
+      setExerciseState((prev) => ({
+        ...prev,
+        phase: "typing",
+        audioState: {
+          ...prev.audioState,
+          isPlaying: false,
+          hasPlayed: true,
+          error: null,
+        },
+      }));
+    },
+  });
+
+  useEffect(
+    function handleError() {
+      if (error) {
+        setExerciseState((prev) => ({
+          ...prev,
+          phase: prev.phase === "playing" ? "ready" : prev.phase,
+          audioState: {
+            ...prev.audioState,
+            isPlaying: false,
+            error: error instanceof Error ? error.message : "TTS error",
+          },
+        }));
+      }
+    },
+    [error],
+  );
 
   const handleLevelSelect = (level: DifficultyLevel) => {
     try {
@@ -51,6 +95,7 @@ export const useTypingPractice = () => {
   };
 
   const handleBackToLevelSelection = () => {
+    if (isPlaying) stop();
     setExerciseState({
       phase: "level-selection",
       selectedLevel: null,
@@ -70,82 +115,39 @@ export const useTypingPractice = () => {
   const handlePlayAudio = async () => {
     if (!currentExercise) return;
 
+    if (isPlaying) {
+      stop();
+      return;
+    }
+
     setExerciseState((prev) => ({
       ...prev,
-      phase: "playing",
+      error: null,
       audioState: {
         ...prev.audioState,
-        isPlaying: true,
         error: null,
       },
     }));
-
-    try {
-      await speakHebrew(currentExercise.hebrewText);
-
-      setExerciseState((prev) => ({
-        ...prev,
-        phase: "typing",
-        audioState: {
-          ...prev.audioState,
-          isPlaying: false,
-          hasPlayed: true,
-        },
-      }));
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to play audio";
-
-      setExerciseState((prev) => ({
-        ...prev,
-        phase: "ready",
-        audioState: {
-          ...prev.audioState,
-          isPlaying: false,
-          error: errorMessage,
-        },
-      }));
-    }
+    speak(currentExercise.hebrewText);
   };
 
   const handleReplayAudio = async () => {
     if (!currentExercise) return;
 
+    if (isPlaying) {
+      stop();
+      return;
+    }
+
     setExerciseState((prev) => ({
       ...prev,
-      phase: "playing",
+      error: null,
       audioState: {
         ...prev.audioState,
-        isPlaying: true,
         error: null,
       },
     }));
-
-    try {
-      await speakHebrew(currentExercise.hebrewText);
-
-      setExerciseState((prev) => ({
-        ...prev,
-        phase: "typing",
-        audioState: {
-          ...prev.audioState,
-          isPlaying: false,
-        },
-      }));
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to replay audio";
-
-      setExerciseState((prev) => ({
-        ...prev,
-        phase: "typing",
-        audioState: {
-          ...prev.audioState,
-          isPlaying: false,
-          error: errorMessage,
-        },
-      }));
-    }
+    speak(currentExercise.hebrewText);
   };
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -183,6 +185,7 @@ export const useTypingPractice = () => {
     if (!exerciseState.selectedLevel) return;
 
     try {
+      if (isPlaying) stop();
       const exercise = getRandomExercise(exerciseState.selectedLevel);
       setCurrentExercise(exercise);
 

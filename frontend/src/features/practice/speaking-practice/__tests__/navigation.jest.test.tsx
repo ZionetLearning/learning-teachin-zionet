@@ -1,3 +1,4 @@
+import "./__mocks__";
 import { SpeakingPractice } from "@/features/practice/speaking-practice";
 import { render, fireEvent } from "@testing-library/react";
 

@@ -1,0 +1,9 @@
+﻿{
+    
+  "caseTag":  "InvalidId",
+    
+  "exceptionType":  "DotQueue.NonRetryableException",
+    
+  "message":  "Task Id must be a positive integer."
+
+}

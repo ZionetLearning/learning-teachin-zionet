@@ -12,7 +12,7 @@ export const ChatWithAvatar = () => {
   const { t } = useTranslation();
   const { sendMessage, loading, messages } = useChat();
   const [text, setText] = useState("");
-  const { currentVisemeSrc, speak } = useAvatarSpeech(lipsArray);
+  const { currentVisemeSrc, speak } = useAvatarSpeech({ lipsArray });
   const lastSpokenTextRef = useRef<string | null>(null);
 
   useEffect(() => {
