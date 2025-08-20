@@ -13,7 +13,9 @@ public static class AuthEndpoints
 
         app.MapPost("/auth/login", LoginAsync).WithName("Login");
 
-        app.MapPost("/auth/refresh-tokens", RefreshTokensAsync).WithName("RefreshTokens");
+        app.MapPost("/auth/refresh-tokens", RefreshTokensAsync)
+            .RequireRateLimiting("RefreshTokenPolicy")
+            .WithName("RefreshTokens");
 
         app.MapPost("/auth/logout", LogoutAsync).WithName("Logout");
 

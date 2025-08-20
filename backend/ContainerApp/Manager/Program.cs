@@ -18,6 +18,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -116,18 +117,43 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Add(IPAddress.Parse("127.0.0.1"));
 });
 
+var refreshRateLimitSettings = builder.Configuration
+    .GetSection("RateLimiting:RefreshToken")
+    .Get<RefreshTokenRateLimitSettings>();
+
+builder.Services.Configure<RefreshTokenRateLimitSettings>(
+    builder.Configuration.GetSection("RateLimiting:RefreshToken"));
+
+if (refreshRateLimitSettings != null)
+{
+    // Rate Limiting for Refresh Token
+    builder.Services.AddRateLimiter(options =>
+    {
+        options.RejectionStatusCode = refreshRateLimitSettings.RejectionStatusCode;
+        _ = options.AddPolicy(AuthSettings.RefreshTokenPolicyName, context =>
+        {
+            var ip = context.Connection.RemoteIpAddress?.ToString() ?? AuthSettings.UnknownIpFallback;
+            return RateLimitPartition.Get(ip, _ =>
+                new FixedWindowRateLimiter(new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = refreshRateLimitSettings.PermitLimit,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = refreshRateLimitSettings.QueueLimit
+                }));
+        });
+    });
+}
+
 var app = builder.Build();
 
 var forwardedHeaderOptions = app.Services.GetRequiredService<IOptions<ForwardedHeadersOptions>>().Value;
 app.UseForwardedHeaders(forwardedHeaderOptions);
-
-//app.UseForwardedHeaders();
 app.UseCors("AllowAll");
 app.UseCloudEvents();
-
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 app.MapSubscribeHandler();
 app.MapManagerEndpoints();

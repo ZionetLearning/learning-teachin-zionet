@@ -9,4 +9,6 @@ public sealed class AuthSettings
     public const string CookiePath = "/auth";
     public const int ClockSkewBuffer = 2;
     public const string NameClaimType = "userId";
+    public const string RefreshTokenPolicyName = "RefreshTokenPolicy";
+    public const string UnknownIpFallback = "unknown";
 }
