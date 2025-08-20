@@ -1,6 +1,7 @@
 ﻿using Accessor.Models;
 using Accessor.Services;
 using Microsoft.AspNetCore.Mvc;
+using Accessor.Models.Users;
 
 namespace Accessor.Endpoints;
 
@@ -31,6 +32,15 @@ public static class AccessorEndpoints
         #region HTTP DELETE
 
         app.MapDelete("/task/{taskId}", DeleteTaskAsync);
+
+        #endregion
+
+        #region Users Endpoints
+
+        app.MapGet("/users/{userId:guid}", GetUserAsync).WithName("GetUser");
+        app.MapPost("/users", CreateUserAsync).WithName("CreateUser");
+        app.MapPut("/users/{userId:guid}", UpdateUserAsync).WithName("UpdateUser");
+        app.MapDelete("/users/{userId:guid}", DeleteUserAsync).WithName("DeleteUser");
 
         #endregion
     }
@@ -260,6 +270,80 @@ public static class AccessorEndpoints
         {
             logger.LogError(ex, "Login failed.");
             return Results.Problem("Internal error during login.");
+        }
+    }
+
+    #endregion
+
+    #region Users Handlers
+
+    private static async Task<IResult> GetUserAsync(
+        [FromRoute] Guid userId,
+        [FromServices] IAccessorService service,
+        [FromServices] ILogger<IAccessorService> logger)
+    {
+        try
+        {
+            var user = await service.GetUserAsync(userId);
+            return user is not null ? Results.Ok(user) : Results.NotFound();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to retrieve user.");
+            return Results.Problem("An error occurred while retrieving the user.");
+        }
+    }
+
+    private static async Task<IResult> CreateUserAsync(
+        [FromBody] UserModel user,
+        [FromServices] IAccessorService service,
+        [FromServices] ILogger<IAccessorService> logger)
+    {
+        try
+        {
+            var created = await service.CreateUserAsync(user);
+            return created
+                ? Results.Created($"/api/users/{user.UserId}", user)
+                : Results.Conflict("User with the same email already exists.");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to create user.");
+            return Results.Problem("An error occurred while creating the user.");
+        }
+    }
+
+    private static async Task<IResult> UpdateUserAsync(
+        [FromBody] UserModel user,
+        [FromServices] IAccessorService service,
+        [FromServices] ILogger<IAccessorService> logger)
+    {
+        try
+        {
+            var updated = await service.UpdateUserAsync(user);
+            return updated ? Results.Ok("User updated") : Results.NotFound("User not found");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to update user.");
+            return Results.Problem("An error occurred while updating the user.");
+        }
+    }
+
+    private static async Task<IResult> DeleteUserAsync(
+        [FromRoute] Guid userId,
+        [FromServices] IAccessorService service,
+        [FromServices] ILogger<IAccessorService> logger)
+    {
+        try
+        {
+            var deleted = await service.DeleteUserAsync(userId);
+            return deleted ? Results.Ok("User deleted") : Results.NotFound("User not found");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to delete user.");
+            return Results.Problem("An error occurred while deleting the user.");
         }
     }
 

@@ -2,6 +2,7 @@
 using Manager.Models;
 using Manager.Services.Clients;
 using Manager.Services.Clients.Engine;
+using Manager.Models.Users;
 
 namespace Manager.Services;
 
@@ -221,5 +222,29 @@ public class ManagerService : IManagerService
             _logger.LogError(ex, "Error occurred while sending notification to user {UserId}", userId);
             throw;
         }
+    }
+
+    public async Task<UserModel?> GetUserAsync(Guid userId)
+    {
+        _logger.LogInformation("Fetching user with ID: {UserId}", userId);
+        return await _accessorClient.GetUserAsync(userId);
+    }
+
+    public async Task<bool> CreateUserAsync(UserModel user)
+    {
+        _logger.LogInformation("Creating user with email: {Email}", user.Email);
+        return await _accessorClient.CreateUserAsync(user);
+    }
+
+    public async Task<bool> UpdateUserAsync(UserModel user)
+    {
+        _logger.LogInformation("Updating user with ID: {UserId}", user.UserId);
+        return await _accessorClient.UpdateUserAsync(user);
+    }
+
+    public async Task<bool> DeleteUserAsync(Guid userId)
+    {
+        _logger.LogInformation("Deleting user with ID: {UserId}", userId);
+        return await _accessorClient.DeleteUserAsync(userId);
     }
 }
