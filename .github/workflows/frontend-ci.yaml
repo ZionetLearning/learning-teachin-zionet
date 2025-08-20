@@ -1,0 +1,56 @@
+name: Frontend CI
+run-name: 🧪 Frontend CI - Build & Lint
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'frontend/**'
+
+jobs:
+  frontend-build-and-lint:
+    runs-on: ubuntu-latest
+    env:
+      FE_DIR: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: '${{ env.FE_DIR }}/package-lock.json'
+
+      - name: Install Dependencies
+        working-directory: ${{ env.FE_DIR }}
+        run: npm ci
+
+      - name: Lint Code
+        working-directory: ${{ env.FE_DIR }}
+        run: npm run lint
+      
+      - name: Create release name for Sentry (UTC + short SHA)
+        run: |
+          ts=$(date -u "+Release-%d-%m-%Y_%H-%M")
+          echo "RELEASE_NAME=${ts}-${GITHUB_SHA::7}" >> $GITHUB_ENV  
+
+      - name: Build Application 
+        working-directory: ${{ env.FE_DIR }}
+        env:
+          VITE_AZURE_SPEECH_KEY: ""
+          VITE_AZURE_REGION: "eastus"
+          VITE_AZURE_OPENAI_KEY: ""
+          VITE_AZURE_OPENAI_DEPLOYMENT_NAME: "gpt-4.1-mini"
+          VITE_AZURE_OPENAI_API_VERSION: "2024-04-01-preview"
+          VITE_AZURE_OPENAI_ENDPOINT: "https://france-teachin-open-ai.openai.azure.com/"
+          VITE_APPINSIGHTS_CONNECTION_STRING: ""
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          RELEASE: ${{ env.RELEASE_NAME }}
+        run: npm run build

@@ -9,10 +9,9 @@ permissions:
   contents: read
 
 on:
-  pull_request:
+  push:
     branches:
       - main
-    types: [opened, synchronize, closed]
     paths:
       - 'frontend/**'
   workflow_dispatch:
@@ -46,7 +45,7 @@ on:
         required: false
 
 jobs:
-  frontend-build-and-lint:
+  build-frontend:
     runs-on: ubuntu-latest
     env:
       FE_DIR: frontend
@@ -74,7 +73,6 @@ jobs:
           ts=$(date -u "+Release-%d-%m-%Y_%H-%M")
           echo "RELEASE_NAME=${ts}-${GITHUB_SHA::7}" >> $GITHUB_ENV  
 
-
       - name: Build Application 
         working-directory: ${{ env.FE_DIR }}
         env:
@@ -97,12 +95,8 @@ jobs:
           path: ${{ env.FE_DIR }}/dist/
           retention-days: 1
 
-  deploy:
-    if: |
-      (github.event_name == 'pull_request' && github.event.pull_request.merged == true) ||
-      github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'workflow_call'
-    needs: [frontend-build-and-lint]
+  deploy-frontend:
+    needs: [build-frontend]
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || 'Development' }}
     permissions:
@@ -114,9 +108,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # If triggered by PR merge, set default environment_name to dev
-      - name: Set default environment_name for PR merge
-        if: ${{ github.event_name == 'pull_request' }}
+      # If triggered by push to main, set default environment_name to dev
+      - name: Set default environment_name for main branch push
+        if: ${{ github.event_name == 'push' }}
         run: |
           echo "environment_name=dev" >> $GITHUB_ENV
 
@@ -141,7 +135,6 @@ jobs:
           AI_NAME="${SWA_NAME}-appinsights"
 
           echo "rg=$RG" >> $GITHUB_OUTPUT
-          echo "rg=$RG" 
           echo "swa=$SWA_NAME" >> $GITHUB_OUTPUT
           echo "ai=$AI_NAME" >> $GITHUB_OUTPUT
 
@@ -183,7 +176,7 @@ jobs:
             echo "❌ Could not fetch Static Web Apps deployment token."
             exit 1
           fi
-          echo "::add-mask::$TOKEN"
+          echo "::add-mask::$TOKEN" 
           echo "AZURE_STATIC_WEB_APPS_API_TOKEN=$TOKEN" >> "$GITHUB_ENV"
 
       - name: Deploy to Azure Static Web Apps
