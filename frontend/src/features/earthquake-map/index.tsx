@@ -50,7 +50,7 @@ export const EarthquakeMap = () => {
               {t("pages.earthquakeMap.last72Hours")}
             </MenuItem>
             <MenuItem value={168}>
-              {t("pages.earthquakeMap.last7days")}
+              {t("pages.earthquakeMap.last7Days")}
             </MenuItem>
           </Select>
         </FormControl>
