@@ -31,7 +31,9 @@ export const SignalRProvider: React.FC<{
     let isMounted = true;
 
     const connection = new HubConnectionBuilder()
-      .withUrl(`${hubUrl}?userId=${encodeURIComponent(userId)}`)
+      .withUrl(`${hubUrl}?userId=${encodeURIComponent(userId)}`, {
+        withCredentials: false,
+      })
       .withAutomaticReconnect([0, 2000, 10000, 30000])
       .configureLogging(
         import.meta.env.DEV ? LogLevel.Information : LogLevel.Error
