@@ -13,4 +13,3 @@ npm run vitest
 
 Cypress tests:
 npm run cypress
-
