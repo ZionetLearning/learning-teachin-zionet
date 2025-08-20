@@ -38,7 +38,7 @@ const popRanges: { key: PopRangeKey; label: string }[] = [
   { key: ">=100M", label: "≥ 100M" },
 ];
 
-export const Filters: React.FC<Props> = ({ value, onChange }) => {
+export const Filters = ({ value, onChange }: Props) => {
   const { t } = useTranslation();
   const classes = useStyles();
   function update<K extends keyof FiltersState>(key: K, v: FiltersState[K]) {

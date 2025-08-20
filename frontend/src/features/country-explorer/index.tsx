@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useCountriesQuery } from "./hooks";
 import { Filters, FiltersState, Card } from "./components";
@@ -10,7 +10,7 @@ const initialFilters: FiltersState = {
   popRange: "ALL",
 };
 
-export const CountryExplorer: React.FC = () => {
+export const CountryExplorer = () => {
   const { t } = useTranslation();
   const classes = useStyles();
   const [filters, setFilters] = useState<FiltersState>(initialFilters);

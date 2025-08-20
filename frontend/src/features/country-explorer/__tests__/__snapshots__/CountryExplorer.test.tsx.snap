@@ -26,7 +26,7 @@ exports[`<CountryExplorer /> > matches snapshot (stable render) 1`] = `
         </label>
         <input
           class="input-0-2-9"
-          placeholder="Search by name"
+          placeholder="pages.countryExplorer.searchByName"
           value=""
         />
       </div>

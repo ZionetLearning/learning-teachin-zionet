@@ -12,7 +12,7 @@ type Props = {
   country: Country;
 };
 
-export const Card: React.FC<Props> = ({ country }) => {
+export const Card = ({ country }: Props) => {
   const { t } = useTranslation();
   const classes = useStyles();
   const flag = country.flags?.svg || country.flags?.png;

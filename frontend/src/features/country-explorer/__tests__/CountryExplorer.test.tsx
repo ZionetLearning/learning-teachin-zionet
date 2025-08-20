@@ -1,8 +1,7 @@
-import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 
-// --- 2.1 Stub i18n so t(key) just returns the key string ---
+// Stub i18n so t(key) just returns the key string
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
     t: (k: string) => k,
@@ -10,10 +9,13 @@ vi.mock("react-i18next", () => ({
   }),
 }));
 
-// --- 2.2 Mock the data hook so we control the results ---
+import type { CountryQueryParams } from '../api'; // safe to import types
+
+
+// Mock the data hook so we control the results
 const useCountriesQueryMock = vi.fn();
 vi.mock("../hooks/useCountriesQuery", () => ({
-  useCountriesQuery: (...args: any[]) => useCountriesQueryMock(...args),
+  useCountriesQuery: (...args: CountryQueryParams[]) => useCountriesQueryMock(...args),
 }));
 
 // Import after mocks
@@ -128,7 +130,7 @@ describe("<CountryExplorer />", () => {
 
     render(<CountryExplorer />);
 
-    const input = screen.getByPlaceholderText("Search by name");
+    const input = screen.getByPlaceholderText("pages.countryExplorer.searchByName");
     fireEvent.change(input, { target: { value: "nor" } });
 
     // Should match Norway only
