@@ -20,9 +20,9 @@ const getOrCreateUserId = (): string => {
 };
 
 export const SignalRProvider: React.FC<{
-  hubUrl?: string;
+  hubUrl: string;
   children: React.ReactNode;
-}> = ({ hubUrl = "http://localhost:5280/notificationHub", children }) => {
+}> = ({ hubUrl, children }) => {
   const [status, setStatus] = useState<Status>("idle");
   const [userId] = useState(() => getOrCreateUserId());
   const connRef = useRef<HubConnection | null>(null);
