@@ -4,6 +4,10 @@ run-name: >
     inputs.environment_name || github.event.inputs.environment_name || 
     'dev'
   }} | GitHub Environment: ${{ inputs.environment || github.event.inputs.environment || 'Development'}}
+   
+permissions:
+  contents: read
+
 on:
   pull_request:
     branches:
