@@ -9,6 +9,7 @@ const country = {
   population: 125_800_000,
   languages: { jpn: "Japanese", ainu: "Ainu" },
   currencies: { JPY: { name: "Japanese yen", symbol: "¥" } },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 } as any;
 
 describe("format utils", () => {
@@ -19,11 +20,13 @@ describe("format utils", () => {
   });
 
   it("languagesList", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect(languagesList({ languages: undefined } as any)).toBe("—");
     expect(languagesList(country)).toBe("Japanese, Ainu");
   });
 
   it("primaryCurrency", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect(primaryCurrency({ currencies: undefined } as any)).toBe("—");
     expect(primaryCurrency(country)).toBe("Japanese yen (¥)");
   });
