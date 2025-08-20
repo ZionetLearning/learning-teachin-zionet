@@ -39,7 +39,8 @@ public static class AuthEndpoints
 
                 var (accessToken, refreshToken) = await authService.LoginAsync(loginRequest, httpRequest, cancellationToken);
 
-                CookieHelper.SetRefreshTokenCookie(response, refreshToken);
+                // Set the cookies in the response
+                CookieHelper.SetCookies(response, refreshToken);
 
                 logger.LogInformation("Login successful for {Email}", loginRequest.Email);
                 return Results.Ok(new { accessToken });
@@ -70,7 +71,8 @@ public static class AuthEndpoints
             {
                 var (accessToken, newRefreshToken) = await authService.RefreshTokensAsync(request, cancellationToken);
 
-                CookieHelper.SetRefreshTokenCookie(response, newRefreshToken);
+                // Set again the cookies in the response
+                CookieHelper.SetCookies(response, newRefreshToken);
 
                 logger.LogInformation("Refresh token successful");
                 return Results.Ok(new { accessToken });
@@ -101,8 +103,8 @@ public static class AuthEndpoints
             {
                 await authService.LogoutAsync(request, cancellationToken);
 
-                // Clear the refresh token cookie
-                CookieHelper.ClearRefreshTokenCookie(response);
+                // Clear the cookies in the response
+                CookieHelper.ClearCookies(response);
 
                 logger.LogInformation("Logout successful");
                 return Results.Ok(new { message = "Logged out successfully" });
