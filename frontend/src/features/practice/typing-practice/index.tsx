@@ -34,7 +34,7 @@ export const TypingPractice = () => {
   };
 
   const renderExerciseArea = () => (
-    <div className={classes.exerciseArea}>
+    <div className={classes.exerciseArea} data-testid="typing-exercise-area">
       <div className={classes.exerciseHeader}>
         <h3 className={classes.exerciseTitle}>
           {t("pages.typingPractice.hebrewTypingPractice")}
@@ -43,6 +43,7 @@ export const TypingPractice = () => {
           {exerciseState.selectedLevel && (
             <span
               className={`${classes.levelBadge} ${getLevelBadgeClass(exerciseState.selectedLevel)}`}
+              data-testid="typing-selected-level"
             >
               {exerciseState.selectedLevel}
             </span>
@@ -50,6 +51,7 @@ export const TypingPractice = () => {
           <button
             className={classes.backButton}
             onClick={handleBackToLevelSelection}
+            data-testid="typing-change-level"
           >
             {t("pages.typingPractice.changeLevel")}
           </button>
@@ -67,7 +69,10 @@ export const TypingPractice = () => {
         />
 
         {exerciseState.phase === "typing" && (
-          <div className={classes.typingInput}>
+          <div
+            className={classes.typingInput}
+            data-testid="typing-input-wrapper"
+          >
             <input
               type="text"
               className={classes.typingInputField}
@@ -75,11 +80,13 @@ export const TypingPractice = () => {
               onChange={handleInputChange}
               placeholder={t("pages.typingPractice.typeHereWhatYouHeard")}
               autoFocus
+              data-testid="typing-input"
             />
             <button
               className={classes.typingSubmitButton}
               onClick={handleSubmitAnswer}
               disabled={!exerciseState.userInput.trim()}
+              data-testid="typing-submit"
             >
               {t("pages.typingPractice.submitAnswer")}
             </button>

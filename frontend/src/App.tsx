@@ -25,7 +25,9 @@ import { useTranslation } from "react-i18next";
 
 const ProtectedLayout = () => (
   <RequireAuth>
-    <SidebarMenuLayout />
+    <div data-testid="protected-layout">
+      <SidebarMenuLayout />
+    </div>
   </RequireAuth>
 );
 

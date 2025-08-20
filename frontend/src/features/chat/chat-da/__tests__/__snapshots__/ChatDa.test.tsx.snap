@@ -52,16 +52,19 @@ exports[`<ChatDa /> > matches snapshot 1`] = `
     </main>
     <footer
       class="inputWrapper-0-2-8"
+      data-testid="chat-da-input-wrapper"
     >
       <input
         autocomplete="off"
         class="input-0-2-7"
+        data-testid="chat-da-input"
         id="chat-input"
         placeholder="pages.chatDa.typeMessage"
         value=""
       />
       <svg
         class="sendButton-0-2-9"
+        data-testid="chat-da-send"
         fill="currentColor"
         height="40"
         id="send"

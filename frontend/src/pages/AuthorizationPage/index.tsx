@@ -40,7 +40,7 @@ export const AuthorizationPage = () => {
   };
 
   return (
-    <main className={classes.authPageBackground}>
+    <main className={classes.authPageBackground} data-testid="auth-page">
       <header className={classes.authPageHeader}>
         <h1 className={classes.authPageTitle}>
           {t("pages.auth.welcomeToLearningTeachinZionet")}
@@ -54,6 +54,7 @@ export const AuthorizationPage = () => {
                 key={tab}
                 onClick={() => setMode(tab as AuthModeType)}
                 className={`${classes.authPageTab} ${mode === tab ? "active" : ""}`}
+                data-testid={`auth-tab-${tab}`}
               >
                 {tab === authMode.login
                   ? t("pages.auth.login")
@@ -85,6 +86,7 @@ export const AuthorizationPage = () => {
                       placeholder={t("pages.auth.email")}
                       className={classes.authPageInput}
                       autoComplete="email"
+                      data-testid="auth-email"
                     />
                     <div className={classes.authPageError}>
                       <ErrorMessage name="email" />
@@ -97,6 +99,7 @@ export const AuthorizationPage = () => {
                       placeholder={t("pages.auth.password")}
                       className={classes.authPageInput}
                       autoComplete="current-password"
+                      data-testid="auth-password"
                     />
                     <div className={classes.authPageError}>
                       <ErrorMessage name="password" />
@@ -106,6 +109,7 @@ export const AuthorizationPage = () => {
                     type="submit"
                     disabled={isSubmitting}
                     className={classes.authPageSubmit}
+                    data-testid="auth-submit"
                   >
                     {isSubmitting
                       ? t("pages.auth.loggingIn")
@@ -165,6 +169,7 @@ export const AuthorizationPage = () => {
                       placeholder={t("pages.auth.email")}
                       className={classes.authPageInput}
                       autoComplete="email"
+                      data-testid="auth-email"
                     />
                     <div className={classes.authPageError}>
                       <ErrorMessage name="email" />
@@ -177,6 +182,7 @@ export const AuthorizationPage = () => {
                       placeholder={t("pages.auth.password")}
                       className={classes.authPageInput}
                       autoComplete="new-password"
+                      data-testid="auth-password"
                     />
                     <div className={classes.authPageError}>
                       <ErrorMessage name="password" />
@@ -189,6 +195,7 @@ export const AuthorizationPage = () => {
                       placeholder={t("pages.auth.confirmPassword")}
                       className={classes.authPageInput}
                       autoComplete="new-password"
+                      data-testid="auth-confirm-password"
                     />
                     <div className={classes.authPageError}>
                       <ErrorMessage name="confirmPassword" />
@@ -198,6 +205,7 @@ export const AuthorizationPage = () => {
                     type="submit"
                     disabled={isSubmitting}
                     className={classes.authPageSubmit}
+                    data-testid="auth-submit"
                   >
                     {isSubmitting
                       ? t("pages.auth.creatingAccount")
