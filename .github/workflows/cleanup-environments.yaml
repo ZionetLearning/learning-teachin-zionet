@@ -199,6 +199,47 @@ jobs:
             done
           fi
 
+      - name: Cleanup Terraform State Files
+        run: |
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "DRY RUN: Would clean up these Terraform state files:"
+            for rg in $CLEANUP_RGS; do
+              ENV_NAME=$(echo "$rg" | cut -d'-' -f1)
+              echo "  - Delete state blob: ${ENV_NAME}.terraform.tfstate"
+            done
+          else
+            echo "Cleaning up specific Terraform state files from Azure Storage..."
+            
+            # Get storage account from Terraform backend config
+            STORAGE_ACCOUNT=$(grep 'storage_account_name' devops/terraform/providers.tf | sed 's/.*= *"\([^"]*\)".*/\1/' || echo "")
+            CONTAINER_NAME="tfstate-aks"  # Based on your screenshot
+            
+            if [ -n "$STORAGE_ACCOUNT" ]; then
+              for rg in $CLEANUP_RGS; do
+                ENV_NAME=$(echo "$rg" | cut -d'-' -f1)
+                STATE_BLOB="${ENV_NAME}.terraform.tfstate"
+                
+                echo "Checking for state blob: $STATE_BLOB in container: $CONTAINER_NAME"
+                
+                # Check if the specific state file exists
+                if az storage blob exists --account-name "$STORAGE_ACCOUNT" --container-name "$CONTAINER_NAME" --name "$STATE_BLOB" --query exists -o tsv 2>/dev/null | grep -q true; then
+                  echo "✅ Found state blob: $STATE_BLOB - deleting..."
+                  az storage blob delete --account-name "$STORAGE_ACCOUNT" --container-name "$CONTAINER_NAME" --name "$STATE_BLOB" --delete-snapshots include || echo "❌ Failed to delete $STATE_BLOB"
+                else
+                  echo "No state blob found for environment: $ENV_NAME ($STATE_BLOB)"
+                fi
+              done
+            else
+              echo "Warning: Could not determine storage account name from providers.tf"
+              echo "State files will need manual cleanup from Azure Storage"
+              echo "Container: tfstate-aks"
+              for rg in $CLEANUP_RGS; do
+                ENV_NAME=$(echo "$rg" | cut -d'-' -f1)
+                echo "  - Manually delete: ${ENV_NAME}.terraform.tfstate"
+              done
+            fi
+          fi
+
       - name: Summary
         run: |
           echo "Cleanup Summary:"
@@ -211,5 +252,6 @@ jobs:
             echo ""
             echo "Actual deletions were performed!"
             echo "Resource groups are being deleted in the background."
+            echo "Terraform state files have been cleaned up."
             echo "Check Azure portal for deletion status."
           fi
