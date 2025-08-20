@@ -14,7 +14,7 @@ export const ChatYo = () => {
   };
 
   return (
-    <div className={classes.chatWrapper}>
+    <div className={classes.chatWrapper} data-testid="chat-yo-page">
       <ReactChatElements
         messages={messages}
         loading={loading}

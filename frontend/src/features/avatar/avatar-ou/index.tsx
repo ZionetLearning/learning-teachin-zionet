@@ -2,19 +2,17 @@ import { useState } from "react";
 import Lottie from "react-lottie";
 import { Play, Square, Volume2, VolumeX } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useTTS } from "./hooks";
 import { useStyles } from "./style";
 import speakingSantaAnimation from "./animations/speakingSantaAnimation.json";
 import idleSantaAnimation from "./animations/idleSantaAnimation.json";
+import { useAvatarSpeech } from "@/hooks";
 
 export const AvatarOu = () => {
   const { t } = useTranslation();
   const classes = useStyles();
   const [text, setText] = useState("שלום, איך שלומך היום?");
-  const { speak, stop, toggleMute, isPlaying, isMuted } = useTTS({
-    lang: "he-IL",
-    rate: 0.9,
-    pitch: 1.1,
+  const { speak, stop, toggleMute, isPlaying, isMuted } = useAvatarSpeech({
+    volume: 0.9,
   });
 
   const handleSpeak = () => {
@@ -42,7 +40,7 @@ export const AvatarOu = () => {
   };
 
   return (
-    <div className={classes.container}>
+    <div className={classes.container} data-testid="avatar-ou-page">
       <div className={classes.wrapper}>
         {/* Header */}
         <div className={classes.header}>
@@ -100,6 +98,7 @@ export const AvatarOu = () => {
                   rows={3}
                   placeholder={t("pages.avatarOu.typeHereYourText")}
                   dir="rtl"
+                  data-testid="avatar-ou-input"
                 />
                 <div className={classes.charCounter}>
                   {text.length} {t("pages.avatarOu.characters")}
@@ -120,6 +119,7 @@ export const AvatarOu = () => {
                     className={`${classes.sampleButton} ${
                       classes[`sampleButton${index}` as keyof typeof classes]
                     }`}
+                    data-testid={`avatar-ou-sample-${index}`}
                   >
                     {sample}
                   </button>
@@ -137,6 +137,7 @@ export const AvatarOu = () => {
                     ? classes.primaryButtonPlaying
                     : classes.primaryButtonIdle
                 }`}
+                data-testid="avatar-ou-speak"
               >
                 {isPlaying ? (
                   <>
@@ -156,6 +157,7 @@ export const AvatarOu = () => {
                 className={`${classes.muteButton} ${
                   isMuted ? classes.muteButtonMuted : classes.muteButtonUnmuted
                 }`}
+                data-testid="avatar-ou-mute"
               >
                 {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
               </button>

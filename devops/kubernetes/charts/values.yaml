@@ -53,7 +53,7 @@ manager:
       key: AzureServiceBusConnectionString
   resources:
     requests:
-      cpu: "250m"
+      cpu: "100m"
       memory: "256Mi"
     limits:
       cpu: "500m"
@@ -91,7 +91,7 @@ engine:
       key: AzureServiceBusConnectionString
   resources:
     requests:
-      cpu: "250m"
+      cpu: "100m"
       memory: "256Mi"
     limits:
       cpu: "500m"
@@ -124,7 +124,7 @@ accessor:
       key: PostgreSQLConnectionString
   resources:
     requests:
-      cpu: "250m"
+      cpu: "100m"
       memory: "256Mi"
     limits:
       cpu: "500m"

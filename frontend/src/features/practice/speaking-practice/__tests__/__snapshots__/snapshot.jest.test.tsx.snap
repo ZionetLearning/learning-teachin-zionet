@@ -4,46 +4,64 @@ exports[`<SpeakingPractice /> snapshot renders initial UI correctly 1`] = `
 <div>
   <div
     class="container-0-2-1"
+    data-testid="speaking-practice-page"
   >
     <div
       class="nav-0-2-3"
+      data-testid="speaking-nav"
     >
-      <button>
+      <button
+        data-testid="speaking-prev"
+      >
         « 
         pages.speakingPractice.prev
       </button>
-      <span>
+      <span
+        data-testid="speaking-index"
+      >
         1
          / 
         12
       </span>
-      <button>
+      <button
+        data-testid="speaking-next"
+      >
         pages.speakingPractice.next
          »
       </button>
     </div>
     <div
       class="main-0-2-2"
+      data-testid="speaking-main"
     >
       <h2
         class="phrase-0-2-4"
+        data-testid="speaking-phrase"
       >
         שלום
       </h2>
       <p
         class="feedback-0-2-6 incorrect"
+        data-testid="speaking-feedback"
       />
     </div>
     <div
       class="controls-0-2-5"
+      data-testid="speaking-controls"
     >
-      <button>
+      <button
+        data-testid="speaking-play"
+      >
         pages.speakingPractice.play
       </button>
-      <button>
+      <button
+        data-testid="speaking-record"
+      >
         pages.speakingPractice.record
       </button>
-      <button>
+      <button
+        data-testid="speaking-nikud-toggle"
+      >
         pages.speakingPractice.showNikud
       </button>
     </div>

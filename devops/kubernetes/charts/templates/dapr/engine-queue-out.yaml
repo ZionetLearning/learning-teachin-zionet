@@ -1,7 +1,7 @@
 apiVersion: dapr.io/v1alpha1
 kind: Component
 metadata:
-  name: {{ include "app.join" (list (include "app.prefix" .) "engine-queue-out") }}
+  name: engine-queue-out
   namespace: {{ include "app.namespace" . }}
 spec:
   type: bindings.azure.servicebusqueues
@@ -11,7 +11,7 @@ spec:
       secretKeyRef:
         name: "{{ .Values.namespace.name }}-azure-service-bus-secret"
     - name: queueName
-      value: {{ include "app.sbName" (list $ "engine-queue") | quote }}
+      value: "engine-queue"
     - name: direction
       value: output
     - name: disableEntityManagement

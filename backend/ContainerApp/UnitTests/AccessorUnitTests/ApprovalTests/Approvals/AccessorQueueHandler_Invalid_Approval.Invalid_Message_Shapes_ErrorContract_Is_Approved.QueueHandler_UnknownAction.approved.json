@@ -2,7 +2,7 @@
     
   "caseTag":  "UnknownAction",
     
-  "exceptionType":  "Accessor.Messaging.NonRetryableException",
+  "exceptionType":  "DotQueue.NonRetryableException",
     
   "message":  "No handler for action 9999"
 

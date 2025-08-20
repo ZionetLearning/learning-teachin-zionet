@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { comparePhrases, phrases, phrasesWithNikud } from "./utils";
 
 import { useStyles } from "./style";
+import { useAvatarSpeech } from "@/hooks";
 
 const Feedback = {
   Perfect: "Perfect!",
@@ -23,12 +24,9 @@ export const SpeakingPractice = () => {
   const [feedback, setFeedback] = useState<FeedbackType>(Feedback.None);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [isRecording, setIsRecording] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
 
   const recognizerRef = useRef<sdk.SpeechRecognizer | null>(null); // for speech recognition from microphone
   const audioConfigRef = useRef<sdk.AudioConfig | null>(null); // for audio input/output from microphone/speaker
-  const synthesizerRef = useRef<sdk.SpeechSynthesizer | null>(null); // for TTS synthesis
-  const playerRef = useRef<sdk.SpeakerAudioDestination | null>(null); // for TTS playback
 
   const speechConfig = sdk.SpeechConfig.fromSubscription(
     import.meta.env.VITE_AZURE_SPEECH_KEY!,
@@ -38,18 +36,14 @@ export const SpeakingPractice = () => {
   speechConfig.speechSynthesisVoiceName = "he-IL-HilaNeural";
   speechConfig.speechRecognitionLanguage = "he-IL";
 
-  const stopSynthesis = () => {
-    if (synthesizerRef.current) {
-      synthesizerRef.current.close();
-      synthesizerRef.current = null;
-    }
-    if (playerRef.current) {
-      playerRef.current.pause();
-      playerRef.current.close();
-      playerRef.current = null;
-    }
-    setIsSpeaking(false);
-  };
+  const {
+    speak,
+    stop: stopSpeech,
+    isPlaying,
+    error,
+  } = useAvatarSpeech({
+    volume: 1,
+  });
 
   const stopRecognition = () => {
     if (recognizerRef.current) {
@@ -68,7 +62,9 @@ export const SpeakingPractice = () => {
       stopRecognition();
       return;
     }
-    if (isSpeaking) return;
+    if (isPlaying) {
+      stopSpeech();
+    }
     setFeedback(Feedback.None);
 
     const audioConfig = sdk.AudioConfig.fromDefaultMicrophoneInput();
@@ -95,38 +91,17 @@ export const SpeakingPractice = () => {
   };
 
   const handlePlay = () => {
-    if (isSpeaking) {
-      stopSynthesis();
+    if (isPlaying) {
+      stopSpeech();
       return;
     }
-    setIsSpeaking(true);
-
-    const player = new sdk.SpeakerAudioDestination();
-    playerRef.current = player;
-
-    player.onAudioEnd = () => {
-      stopSynthesis();
-    };
-
-    const audioConfig = sdk.AudioConfig.fromSpeakerOutput(player);
-    const synthesizer = new sdk.SpeechSynthesizer(speechConfig, audioConfig);
-    synthesizerRef.current = synthesizer;
-
-    synthesizer.speakTextAsync(
-      phrases[currentIdx],
-      () => {
-        synthesizer.close();
-        synthesizerRef.current = null;
-      },
-      (err) => {
-        console.error("TTS error:", err);
-        stopSynthesis();
-      },
-    );
+    if (isRecording) stopRecognition();
+    setFeedback(Feedback.None);
+    speak(phrases[currentIdx]);
   };
 
   const goPrev = () => {
-    stopSynthesis();
+    stopSpeech();
     stopRecognition();
     setCurrentIdx((i) => (i === 0 ? phrases.length - 1 : i - 1));
     setFeedback(Feedback.None);
@@ -134,7 +109,7 @@ export const SpeakingPractice = () => {
   };
 
   const goNext = () => {
-    stopSynthesis();
+    stopSpeech();
     stopRecognition();
     setCurrentIdx((i) => (i + 1) % phrases.length);
     setFeedback(Feedback.None);
@@ -142,43 +117,47 @@ export const SpeakingPractice = () => {
   };
 
   return (
-    <div className={classes.container}>
-      <div className={classes.nav}>
-        <button onClick={goPrev}>
+    <div className={classes.container} data-testid="speaking-practice-page">
+      <div className={classes.nav} data-testid="speaking-nav">
+        <button onClick={goPrev} data-testid="speaking-prev">
           &laquo; {t("pages.speakingPractice.prev")}
         </button>
-        <span>
+        <span data-testid="speaking-index">
           {currentIdx + 1} / {phrases.length}
         </span>
-        <button onClick={goNext}>
+        <button onClick={goNext} data-testid="speaking-next">
           {t("pages.speakingPractice.next")} &raquo;
         </button>
       </div>
 
-      <div className={classes.main}>
-        <h2 className={classes.phrase}>
+      <div className={classes.main} data-testid="speaking-main">
+        <h2 className={classes.phrase} data-testid="speaking-phrase">
           {showNikud ? phrasesWithNikud[currentIdx] : phrases[currentIdx]}
         </h2>
 
         <p
           className={`${classes.feedback} ${isCorrect ? "correct" : "incorrect"}`}
+          data-testid="speaking-feedback"
         >
-          {feedback}
+          {error ? "TTS error." : feedback}
         </p>
       </div>
 
-      <div className={classes.controls}>
-        <button onClick={handlePlay}>
-          {isSpeaking
+      <div className={classes.controls} data-testid="speaking-controls">
+        <button onClick={handlePlay} data-testid="speaking-play">
+          {isPlaying
             ? t("pages.speakingPractice.stop")
             : t("pages.speakingPractice.play")}
         </button>
-        <button onClick={handleRecord}>
+        <button onClick={handleRecord} data-testid="speaking-record">
           {isRecording
             ? t("pages.speakingPractice.stop")
             : t("pages.speakingPractice.record")}
         </button>
-        <button onClick={() => setShowNikud(!showNikud)}>
+        <button
+          onClick={() => setShowNikud(!showNikud)}
+          data-testid="speaking-nikud-toggle"
+        >
           {showNikud
             ? t("pages.speakingPractice.hideNikud")
             : t("pages.speakingPractice.showNikud")}

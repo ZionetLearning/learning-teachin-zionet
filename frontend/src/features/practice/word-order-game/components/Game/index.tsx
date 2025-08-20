@@ -2,8 +2,8 @@ import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useStyles } from "./style";
 import { Speaker } from "../Speaker";
-import { playSentenceCached, clearSpeechCache } from "../../services";
 import { useHebrewSentence } from "../../hooks";
+import { useAvatarSpeech } from "@/hooks";
 
 export const Game = () => {
   const { t } = useTranslation();
@@ -12,6 +12,8 @@ export const Game = () => {
   const [shuffledSentence, setShuffledSentence] = useState<string[]>([]);
   const { sentence, loading, error, fetchSentence, initOnce } =
     useHebrewSentence();
+
+  const { speak, stop } = useAvatarSpeech({});
 
   useEffect(() => {
     initOnce();
@@ -28,14 +30,14 @@ export const Game = () => {
     handleNewSentence();
   }, [sentence]);
 
-  const handlePlay = (mode?: "normal" | "slow") => {
+  const handlePlay = () => {
     if (!sentence) return;
     // play the sentence
-    playSentenceCached(sentence, undefined, mode === "slow" ? -40 : 0);
+    speak(sentence);
   };
 
   const handleNextClick = async () => {
-    clearSpeechCache();
+    stop();
     const s = await fetchSentence();
     if (!s) return;
     setChosen([]);
@@ -91,12 +93,11 @@ export const Game = () => {
       <div className={classes.gameLogic}>
         <div className={classes.speakersContainer}>
           <Speaker onClick={() => handlePlay()} />
-          <Speaker mode="slow" onClick={() => handlePlay("slow")} />
         </div>
 
         <div className={classes.answerArea} dir="rtl">
           <div className={classes.dashLine} />
-          <div className={classes.dashLineWithWords}>
+          <div className={classes.dashLineWithWords} data-testid="wog-chosen">
             {chosen.map((w, i) => (
               <button
                 key={`c-${w}-${i}`}
@@ -109,7 +110,7 @@ export const Game = () => {
           </div>
         </div>
 
-        <div className={classes.wordsBank} dir="rtl">
+        <div className={classes.wordsBank} dir="rtl" data-testid="wog-bank">
           {loading && <div>{t("pages.wordOrderGame.loading")}</div>}
           {error && <div style={{ color: "red" }}>{error}</div>}
           {!loading &&
@@ -127,9 +128,13 @@ export const Game = () => {
       </div>
 
       <div className={classes.sideButtons}>
-        <button onClick={handleReset}>{t("pages.wordOrderGame.reset")}</button>
-        <button onClick={handleCheck}>{t("pages.wordOrderGame.check")}</button>
-        <button onClick={handleNextClick}>
+        <button data-testid="wog-reset" onClick={handleReset}>
+          {t("pages.wordOrderGame.reset")}
+        </button>
+        <button data-testid="wog-check" onClick={handleCheck}>
+          {t("pages.wordOrderGame.check")}
+        </button>
+        <button data-testid="wog-next" onClick={handleNextClick}>
           {t("pages.wordOrderGame.next")}
         </button>
       </div>

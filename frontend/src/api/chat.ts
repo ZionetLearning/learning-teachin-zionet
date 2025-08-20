@@ -1,5 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "react-toastify";
 
@@ -20,7 +19,7 @@ export const useSendChatMessage = () => {
   return useMutation<ChatResponse, Error, ChatRequest>({
     mutationFn: async ({
       userMessage,
-      threadId = "123456789",
+      threadId = crypto.randomUUID(),
       chatType = "default",
     }) => {
       const response = await axios.post<ChatResponse>(
@@ -32,7 +31,7 @@ export const useSendChatMessage = () => {
           userMessage,
           threadId,
           chatType,
-        }
+        },
       );
 
       return response.data;

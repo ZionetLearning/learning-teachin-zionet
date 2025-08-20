@@ -158,7 +158,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         </div>
       )}
 
-      <div className={classes.inputWrapper}>
+      <div className={classes.inputWrapper} data-testid="chat-ou-input-wrapper">
         {/* Context Toggle Button */}
         <button
           className={`${classes.contextButton} ${isContextAttached ? classes.contextButtonActive : ""}`}
@@ -180,6 +180,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         </button>
 
         <textarea
+          data-testid="chat-ou-input"
           ref={textareaRef}
           className={classes.textarea}
           value={inputValue}
@@ -193,6 +194,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           maxLength={2000}
         />
         <button
+          data-testid="chat-ou-send"
           className={`${classes.sendButton} ${isButtonDisabled ? classes.sendButtonDisabled : ""}`}
           onClick={handleSendMessage}
           disabled={isButtonDisabled}
@@ -208,17 +210,27 @@ export const MessageInput: React.FC<MessageInputProps> = ({
       </div>
       {/* Demo Suggestions */}
       {showSuggestions && !inputValue.trim() && (
-        <div className={classes.suggestionsPanel}>
-          <div className={classes.suggestionsHeader}>
+        <div
+          className={classes.suggestionsPanel}
+          data-testid="chat-ou-suggestions"
+        >
+          <div
+            className={classes.suggestionsHeader}
+            data-testid="chat-ou-suggestions-header"
+          >
             💡 {t("pages.chatOu.tryTheseDemoExamples")}
           </div>
-          <div className={classes.suggestionsList}>
+          <div
+            className={classes.suggestionsList}
+            data-testid="chat-ou-suggestions-list"
+          >
             {DEMO_SUGGESTIONS.map((suggestion, index) => (
               <button
                 key={index}
                 className={classes.suggestionButton}
                 onClick={() => handleSuggestionClick(suggestion)}
                 type="button"
+                data-testid={`chat-ou-suggestion-${index}`}
               >
                 {suggestion}
               </button>

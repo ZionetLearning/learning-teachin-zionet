@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useRef, type JSX } from "react";
-import { useTranslation } from "react-i18next";
+import { useCallback, useEffect, useMemo, useRef, type JSX } from "react";
+
 import { Html, useAnimations, useFBX, useGLTF } from "@react-three/drei";
 import { useFrame, useGraph, type ThreeElements } from "@react-three/fiber";
 import { useControls } from "leva";
-import * as sdk from "microsoft-cognitiveservices-speech-sdk";
+import { useTranslation } from "react-i18next";
 import * as THREE from "three";
 import { SkeletonUtils, type GLTF } from "three-stdlib";
 
+import { useAvatarSpeech } from "@/hooks";
 import { IdleFbx, TalkingFbx, modelGlb } from "../../assets";
 
 import { useStyles } from "./style";
@@ -57,27 +58,27 @@ type GLTFResult = GLTF & {
 // maps Azure viseme IDs to morph target names for the avatar's mouth animations
 const azureVisemeToMorph: Record<number, string> = {
   0: "viseme_sil",
-  1: "viseme_PP",
-  2: "viseme_FF",
-  3: "viseme_TH",
-  4: "viseme_DD",
-  5: "viseme_kk",
-  6: "viseme_CH",
-  7: "viseme_SS",
-  8: "viseme_nn",
-  9: "viseme_RR",
-  10: "viseme_aa",
-  11: "viseme_E",
-  12: "viseme_I",
-  13: "viseme_O",
-  14: "viseme_U",
-  15: "viseme_OO",
-  16: "viseme_sil",
-  17: "viseme_sil",
-  18: "viseme_PP",
-  19: "viseme_sil",
-  20: "viseme_sil",
-  21: "viseme_sil",
+  1: "viseme_E",
+  2: "viseme_aa",
+  3: "viseme_O",
+  4: "viseme_E",
+  5: "viseme_RR",
+  6: "viseme_I",
+  7: "viseme_U",
+  8: "viseme_O",
+  9: "viseme_O",
+  10: "viseme_O",
+  11: "viseme_I",
+  12: "viseme_aa",
+  13: "viseme_RR",
+  14: "viseme_DD",
+  15: "viseme_SS",
+  16: "viseme_CH",
+  17: "viseme_TH",
+  18: "viseme_FF",
+  19: "viseme_DD",
+  20: "viseme_kk",
+  21: "viseme_PP",
 };
 
 /**
@@ -95,7 +96,6 @@ export const Avatar = (props: JSX.IntrinsicElements["group"]) => {
   const group = useRef<THREE.Group>(null); // reference to the group containing the avatar for animations
   const visemeRef = useRef<number>(0); // holds the current viseme ID for speech animation
   const textRef = useRef<string>(""); // stores the text input for speech synthesis
-  const fallbackRef = useRef<number | null>(null); // reference for fallback timeout to reset animations
   const isSpeakingRef = useRef<boolean>(false); // tracks if the avatar is currently speaking
   const inputEl = useRef<HTMLInputElement>(null);
   const buttonEl = useRef<HTMLButtonElement>(null);
@@ -139,13 +139,42 @@ export const Avatar = (props: JSX.IntrinsicElements["group"]) => {
     [nodes],
   );
 
-  idleAnimation[0].name = "Idle"; // set the name for the idle animation
-  talkingAnimation[0].name = "Talking"; // set the name for the talking animation
+  const clips = useMemo(() => {
+    const idle = idleAnimation[0];
+    const talk = talkingAnimation[0];
+    idle.name = "Idle";
+    talk.name = "Talking";
+    return [idle, talk];
+  }, [idleAnimation, talkingAnimation]);
 
-  const { actions } = useAnimations(
-    [idleAnimation[0], talkingAnimation[0]],
-    group,
-  ); // initialize animations to control idle and talking states in <group>
+  const { actions } = useAnimations(clips, group);
+
+  const { currentViseme, speak, isPlaying, isLoading } = useAvatarSpeech({
+    volume: 1,
+    onAudioStart: () => {
+      actions.Idle!.crossFadeTo(actions.Talking!, 0.2, false);
+      actions.Talking!.reset().play();
+    },
+    onAudioEnd: () => {
+      actions.Talking!.crossFadeTo(actions.Idle!, 0.5, false);
+      actions.Idle!.reset().play();
+      visemeRef.current = 0;
+    },
+  });
+
+  useEffect(
+    function syncCurrentVisemeToRef() {
+      visemeRef.current = currentViseme;
+    },
+    [currentViseme],
+  );
+
+  useEffect(
+    function syncPlayingStateToRef() {
+      isSpeakingRef.current = isPlaying;
+    },
+    [isPlaying],
+  );
 
   useEffect(
     /**
@@ -165,77 +194,11 @@ export const Avatar = (props: JSX.IntrinsicElements["group"]) => {
     morphTargetSmoothing: 0.5,
   }); // controls for morph target smoothing
 
-  /**
-   * function to handle speech synthesis using Azure Speech Service
-   * it initializes the speech synthesizer, sets up event handlers for audio start and end,
-   * and manages viseme events to animate the avatar's mouth.
-   */
-  const speak = () => {
-    if (isSpeakingRef.current) return;
-    if (!textRef.current.trim()) return;
-    if (fallbackRef.current) clearTimeout(fallbackRef.current);
-
-    isSpeakingRef.current = true;
-    inputEl.current!.disabled = true;
-    buttonEl.current!.disabled = true;
-
-    const key = import.meta.env.VITE_AZURE_SPEECH_KEY!;
-    const region = import.meta.env.VITE_AZURE_REGION!;
-    const speechConfig = sdk.SpeechConfig.fromSubscription(key, region);
-    speechConfig.speechSynthesisVoiceName = "he-IL-HilaNeural";
-    speechConfig.setProperty(
-      "SpeechServiceConnection_SynthVoiceVisemeEvent",
-      "true",
-    );
-    let lastOffset = 0; // tracks the last audio offset for fallback cleanup
-    const speaker = new sdk.SpeakerAudioDestination();
-    const audioConfig = sdk.AudioConfig.fromSpeakerOutput(speaker); // create audio output configuration using the speaker
-    const synth = new sdk.SpeechSynthesizer(speechConfig, audioConfig);
-    const buffered: { offsetMs: number; id: number }[] = []; // buffer for viseme events
-
-    speaker.onAudioStart = () => {
-      actions.Idle!.crossFadeTo(actions.Talking!, 0.2, false);
-      actions.Talking!.reset().play();
-    };
-
-    // clean up when audio ends: fade animations back, reset viseme, and close synthesizer
-    const cleanup = () => {
-      actions.Talking!.crossFadeTo(actions.Idle!, 0.5, false);
-      actions.Idle!.reset().play();
-      visemeRef.current = 0;
-      synth.close();
-      if (fallbackRef.current) clearTimeout(fallbackRef.current);
-      isSpeakingRef.current = false;
-      inputEl.current!.disabled = false;
-      buttonEl.current!.disabled = false;
-    };
-    speaker.onAudioEnd = cleanup;
-
-    // capture each viseme event along with its audio offset (in ms)
-    synth.visemeReceived = (_s, e) => {
-      const offsetMs = e.audioOffset / 10_000;
-      buffered.push({ offsetMs, id: e.visemeId });
-      lastOffset = Math.max(lastOffset, offsetMs);
-    };
-
-    // kick off speech synthesis
-    // this will trigger the audio start event and begin processing visemes
-    synth.speakTextAsync(
-      textRef.current,
-      () => {
-        buffered.forEach(({ offsetMs, id }) => {
-          setTimeout(() => {
-            visemeRef.current = id;
-          }, offsetMs);
-        });
-        fallbackRef.current = window.setTimeout(cleanup, lastOffset + 200);
-      },
-      (err) => {
-        console.error("Speech error:", err);
-        cleanup();
-      },
-    );
-  };
+  const handleSpeak = useCallback(() => {
+    const text = textRef.current.trim();
+    if (!text) return;
+    speak(text);
+  }, [speak]);
 
   useFrame(
     /**
@@ -294,11 +257,15 @@ export const Avatar = (props: JSX.IntrinsicElements["group"]) => {
             }}
             className={classes.input}
             autoComplete="off"
+            disabled={isPlaying || isLoading}
+            data-testid="avatar-da-input"
           />
           <button
             ref={buttonEl}
-            onClick={speak}
+            onClick={handleSpeak}
             className={classes.inputButton}
+            disabled={isPlaying || isLoading}
+            data-testid="avatar-da-speak"
           >
             {t("pages.avatarDa.speak")}
           </button>
