@@ -129,7 +129,7 @@ public static class AiEndpoints
 
         try
         {
-            var engineResponse = await engine.ChatAsync(engineRequest, ct);
+            var engineResponse = await engine.ChatAsync(engineRequest);
 
             return Results.Ok(engineResponse);
         }

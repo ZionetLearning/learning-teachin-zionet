@@ -18,5 +18,6 @@ public enum MessageAction
     TestLongTask,
     ProcessingQuestionAi,
     AnswerAi,
+    Chat,
     NotifyUser
 }

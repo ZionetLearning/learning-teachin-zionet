@@ -50,15 +50,31 @@ public class EngineClient : IEngineClient
         }
     }
 
-    public async Task<EngineChatResponse> ChatAsync(EngineChatRequest request, CancellationToken cancellationToken = default)
+    public async Task<(bool success, string message)> ChatAsync(EngineChatRequest request)
     {
         _logger.LogInformation("Invoke Engine /chat synchronously (thread {Thread})", request.ThreadId);
+        try
+        {
+            var message = new Message
+            {
+                ActionName = MessageAction.Chat,
+                Payload = JsonSerializer.SerializeToElement(request)
+            };
 
-        return await _daprClient.InvokeMethodAsync<EngineChatRequest, EngineChatResponse>(
-            appId: AppIds.Engine,
-            methodName: "chat",
-            data: request,
-            cancellationToken: cancellationToken);
+            await _daprClient.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message);
+
+            _logger.LogDebug(
+                "Chat request for thread {ThreadId} sent to Engine via binding '{Binding}'",
+                request.ThreadId,
+                QueueNames.EngineQueue
+            );
+            return (true, "sent to engine");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send chat request to Engine");
+            return (false, "failed to send chat request");
+        }
     }
 
     public async Task<SpeechEngineResponse?> SynthesizeAsync(SpeechRequest request, CancellationToken cancellationToken = default)

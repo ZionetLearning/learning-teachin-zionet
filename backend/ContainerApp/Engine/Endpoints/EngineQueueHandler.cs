@@ -34,7 +34,8 @@ public class EngineQueueHandler : IQueueHandler<Message>
         {
             [MessageAction.CreateTask] = HandleCreateTaskAsync,
             [MessageAction.TestLongTask] = HandleTestLongTaskAsync,
-            [MessageAction.ProcessingQuestionAi] = HandleProcessingQuestionAiAsync
+            [MessageAction.ProcessingQuestionAi] = HandleProcessingQuestionAiAsync,
+            [MessageAction.Chat] = HandleProcessingQuestionAiAsync
 
         };
     }
