@@ -9,7 +9,6 @@ import { SkeletonUtils, type GLTF } from "three-stdlib";
 
 import { useAvatarSpeech } from "@/hooks";
 import { IdleFbx, TalkingFbx, modelGlb } from "../../assets";
-import { CypressWindow } from "@/types";
 
 import { useStyles } from "./style";
 
