@@ -9,8 +9,9 @@ The **Manager** requires an Jwt Secret. Sensitive values must **never** be commi
 
 ## Setup Instructions
 
-If you want to run the project and use Azure OpenAI:
+If you want to run the project:
 
 1. Copy the example configuration:
    ```bash
    cp ContainerApp/Engine/appsettings.Local.example.json ContainerApp/Engine/appsettings.Local.json
+   cp ContainerApp/Manager/appsettings.Local.example.json ContainerApp/Manager/appsettings.Local.json
