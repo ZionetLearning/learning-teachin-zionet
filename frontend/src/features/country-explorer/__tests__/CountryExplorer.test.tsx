@@ -9,13 +9,13 @@ vi.mock("react-i18next", () => ({
   }),
 }));
 
-import type { CountryQueryParams } from '../api'; // safe to import types
-
+import type { CountryQueryParams } from "../api"; // safe to import types
 
 // Mock the data hook so we control the results
 const useCountriesQueryMock = vi.fn();
 vi.mock("../hooks/useCountriesQuery", () => ({
-  useCountriesQuery: (...args: CountryQueryParams[]) => useCountriesQueryMock(...args),
+  useCountriesQuery: (...args: CountryQueryParams[]) =>
+    useCountriesQueryMock(...args),
 }));
 
 // Import after mocks
@@ -130,7 +130,9 @@ describe("<CountryExplorer />", () => {
 
     render(<CountryExplorer />);
 
-    const input = screen.getByPlaceholderText("pages.countryExplorer.searchByName");
+    const input = screen.getByPlaceholderText(
+      "pages.countryExplorer.searchByName",
+    );
     fireEvent.change(input, { target: { value: "nor" } });
 
     // Should match Norway only
