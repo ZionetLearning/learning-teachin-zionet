@@ -7,8 +7,8 @@ ADMIN_USER="admin"
 ADMIN_PASS="admin123"
 GRAFANA_CHART_VERSION="9.3.0"
 MC_RG="MC_dev-zionet-learning-2025_aks-cluster-dev_westeurope"
-# The following will fetch the static public IP from Azure
-CONTROLLER_IP="teaching-zionet.westeurope.cloudapp.azure.com"
+# Public FQDN for ingress controller (must match ingress/grafana-ingress.yaml)
+CONTROLLER_IP="teachin-zionet.westeurope.cloudapp.azure.com"
 # -----------------------------
 
 echo "0. Uninstalling existing Grafana Helm release (if present)..."
@@ -37,6 +37,8 @@ helm upgrade --install grafana grafana/grafana \
   --set env.GF_SERVER_ROOT_URL="https://$CONTROLLER_IP/grafana/" \
   --set env.GF_SERVER_SERVE_FROM_SUB_PATH="true" \
   --set env.GF_SERVER_DOMAIN="$CONTROLLER_IP" \
+  --set resources.requests.memory="128Mi" \
+  --set resources.limits.memory="256Mi" \
   --wait
 
 echo

@@ -22,6 +22,11 @@ helm upgrade --install prom-stack prometheus-community/kube-prometheus-stack \
   --namespace "$PROM_NAMESPACE" \
   --set grafana.enabled=false \
   --set alertmanager.enabled=true \
+  --set prometheus.prometheusSpec.retention="2d" \
+  --set prometheus.prometheusSpec.resources.requests.memory="256Mi" \
+  --set prometheus.prometheusSpec.resources.limits.memory="512Mi" \
+  --set prometheus.prometheusSpec.scrapeInterval="60s" \
+  --set prometheus.prometheusSpec.evaluationInterval="60s" \
   --wait  # Wait for all resources to be ready before continuing
 
 echo "4. Wait for Grafana service to be ready"

@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using System.Text;
 using Dapr.Client;
+using Manager.Constants;
 using Manager.Models.Auth;
 using Manager.Models.Auth.RefreshSessions;
 using Microsoft.Extensions.Options;
@@ -14,12 +15,7 @@ public class AuthService : IAuthService
     private readonly DaprClient _dapr;
     private readonly ILogger<AuthService> _log;
     private readonly JwtSettings _jwt;
-    private static readonly Dictionary<string, string> _fakeUsers = new()
-    {
-        { "1", "1" }
-    };
 
-    // To DO: get the user ID from the users table
     public AuthService(DaprClient dapr, ILogger<AuthService> log, IOptions<JwtSettings> jwtOptions)
     {
         _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
@@ -31,13 +27,22 @@ public class AuthService : IAuthService
     {
         try
         {
-            if (!_fakeUsers.TryGetValue(loginRequest.Email, out var storedPassword) || storedPassword != loginRequest.Password)
+            var userId = await _dapr.InvokeMethodAsync<LoginRequest, Guid?>(
+                HttpMethod.Post,
+                "accessor",
+                "auth/login",
+                loginRequest,
+                cancellationToken
+            );
+
+            if (userId is null)
             {
-                throw new UnauthorizedAccessException("Invalid credentials.");
+                _log.LogError("Login failed for user {Email}", loginRequest.Email);
+                throw new UnauthorizedAccessException("Login failed. Please check your credentials.");
             }
 
             // Generate access and refresh tokens
-            var accessToken = GenerateJwtToken(loginRequest.Email);
+            var accessToken = GenerateJwtToken(userId.Value);
             var refreshToken = Guid.NewGuid().ToString("N");
 
             var refreshHash = HashRefreshToken(refreshToken, _jwt.RefreshTokenHashKey);
@@ -48,18 +53,16 @@ public class AuthService : IAuthService
             ? null
             : HashRefreshToken(fingerprint, _jwt.RefreshTokenHashKey);
 
-            var ua = httpRequest.Headers["User-Agent"].ToString();
-            if (string.IsNullOrWhiteSpace(ua))
-            {
-                ua = "unknown";
-            }
+            var ua = string.IsNullOrWhiteSpace(httpRequest.Headers["User-Agent"])
+                ? "unknown"
+                : httpRequest.Headers["User-Agent"].ToString();
 
             var ip = httpRequest.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
             // The user Id is taken from the DB, with the credantials of email and password
             var session = new RefreshSessionRequest
             {
-                UserId = Guid.NewGuid(),
+                UserId = userId.Value,
                 RefreshTokenHash = refreshHash,
                 DeviceFingerprintHash = fingerprintHash,
                 IP = ip,
@@ -87,8 +90,18 @@ public class AuthService : IAuthService
         try
         {
             // Get the old refresh token from the request cookies
-            var oldRefreshToken = request.Cookies["refreshToken"]
+            var oldRefreshToken = request.Cookies[AuthSettings.RefreshTokenCookieName]
             ?? throw new UnauthorizedAccessException("Missing refresh token.");
+
+            // TODO: In Future, when we will have domain or real frontend validate Origin and Referer headers
+
+            var csrfCookie = request.Cookies[AuthSettings.CsrfTokenCookieName];
+            var csrfHeader = request.Headers["X-CSRF-Token"].ToString();
+
+            if (string.IsNullOrWhiteSpace(csrfHeader) || csrfCookie == null || !SlowEquals(csrfCookie, csrfHeader))
+            {
+                throw new UnauthorizedAccessException("Invalid CSRF token");
+            }
 
             // Collect session fingerprint data
             var fingerprint = request.Headers["x-fingerprint"].ToString() ?? "unknown";
@@ -134,7 +147,7 @@ public class AuthService : IAuthService
 
             // All good -> generate tokens
 
-            var newAccessToken = GenerateJwtToken(session.UserId.ToString());
+            var newAccessToken = GenerateJwtToken(session.UserId);
             var newRefreshToken = Guid.NewGuid().ToString("N");
             var newRefreshHash = HashRefreshToken(newRefreshToken, _jwt.RefreshTokenHashKey);
 
@@ -169,7 +182,7 @@ public class AuthService : IAuthService
     {
         try
         {
-            var refreshToken = request.Cookies["refreshToken"];
+            var refreshToken = request.Cookies[AuthSettings.RefreshTokenCookieName];
             if (string.IsNullOrEmpty(refreshToken))
             {
                 _log.LogInformation("No refresh token cookie. Nothing to logout.");
@@ -202,7 +215,7 @@ public class AuthService : IAuthService
     }
 
     #region Helpers 
-    private string GenerateJwtToken(string userId)
+    private string GenerateJwtToken(Guid userId)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwt.Secret));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -210,7 +223,7 @@ public class AuthService : IAuthService
         var token = new JwtSecurityToken(
             issuer: _jwt.Issuer,
             audience: _jwt.Audience,
-            claims: new[] { new Claim(ClaimTypes.Name, userId) },
+            claims: new[] { new Claim(AuthSettings.NameClaimType, userId.ToString()) },
             expires: DateTime.UtcNow.AddMinutes(_jwt.AccessTokenTTL),
             signingCredentials: creds);
 

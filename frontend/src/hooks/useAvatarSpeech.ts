@@ -10,6 +10,8 @@ interface useAvatarSpeechOptions {
   onAudioEnd?: () => void;
 }
 
+import { CypressWindow } from "@/types";
+
 export const useAvatarSpeech = ({
   lipsArray = [],
   volume = 1,
@@ -67,6 +69,40 @@ export const useAvatarSpeech = ({
   const speak = useCallback(
     async (text: string) => {
       if (!text.trim()) return;
+
+      // Cypress environment deterministic simulation (no network / Azure)
+      if (typeof window !== "undefined" && (window as CypressWindow).Cypress) {
+        // If already playing, treat as stop toggle for consistency
+        if (isPlaying) {
+          stop();
+          return;
+        }
+        clearTimeouts();
+        setCurrentViseme(0);
+        setIsPlaying(false);
+        // Simulate async start
+        const startTimeout = setTimeout(() => {
+          onAudioStart?.();
+          setIsPlaying(true);
+          const visemes = [3, 5, 8, 10, 0];
+          visemes.forEach((v, i) => {
+            const to = setTimeout(() => setCurrentViseme(v), i * 60);
+            timeoutsRef.current.push(to);
+          });
+          // End after sequence
+          const endTimeout = setTimeout(
+            () => {
+              setCurrentViseme(0);
+              setIsPlaying(false);
+              onAudioEnd?.();
+            },
+            visemes.length * 60 + 120,
+          );
+          timeoutsRef.current.push(endTimeout);
+        }, 10);
+        timeoutsRef.current.push(startTimeout);
+        return;
+      }
 
       if (isPlaying) {
         stop();

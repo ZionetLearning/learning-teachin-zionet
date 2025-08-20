@@ -30,10 +30,21 @@ export const AudioControls = ({
           {audioState.isPlaying ? "🔊" : "🎧"}
         </div>
         <div className={classes.audioText}>
-          {phase === "ready" &&
-            t("pages.typingPractice.clickPlayToHearTheHebrewText")}
-          {phase === "playing" && t("pages.typingPractice.playingAudio")}
-          {phase === "typing" && t("pages.typingPractice.typeWhatYouHeard")}
+          {phase === "ready" && (
+            <span data-testid="typing-phase-ready">
+              {t("pages.typingPractice.clickPlayToHearTheHebrewText")}
+            </span>
+          )}
+          {phase === "playing" && (
+            <span data-testid="typing-phase-playing">
+              {t("pages.typingPractice.playingAudio")}
+            </span>
+          )}
+          {phase === "typing" && (
+            <span data-testid="typing-phase-typing">
+              {t("pages.typingPractice.typeWhatYouHeard")}
+            </span>
+          )}
         </div>
       </div>
 
@@ -43,6 +54,7 @@ export const AudioControls = ({
             className={classes.playButton}
             onClick={onPlayAudio}
             disabled={audioState.isPlaying}
+            data-testid="typing-play"
           >
             {audioState.isPlaying ? (
               <>
@@ -60,6 +72,7 @@ export const AudioControls = ({
             className={classes.replayButton}
             onClick={onReplayAudio}
             disabled={audioState.isPlaying}
+            data-testid="typing-replay"
           >
             {audioState.isPlaying ? (
               <>

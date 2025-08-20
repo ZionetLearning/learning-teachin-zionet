@@ -28,17 +28,6 @@ public abstract class IntegrationTestBase
         SignalRFixture = signalRFixture;
     }
 
-    protected IntegrationTestBase(
-        AccessorHttpTestFixture fixture,
-        ITestOutputHelper testOutputHelper,
-        SignalRTestFixture signalRFixture
-    )
-    {
-        OutputHelper = testOutputHelper;
-        Client = fixture.Client;
-        SignalRFixture = signalRFixture;
-    }
-
     public virtual async Task InitializeAsync()
     {
         OutputHelper.WriteLine("Starting SignalR connection...");

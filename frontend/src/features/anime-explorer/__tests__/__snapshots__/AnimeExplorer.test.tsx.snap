@@ -22,6 +22,7 @@ exports[`<AnimeExplorer /> > matches snapshot 1`] = `
           <input
             aria-label="Search anime"
             class="searchInput-0-2-16"
+            data-testid="anime-search-input"
             name="search"
             placeholder="pages.animeExplorer.searchByTitle"
             type="text"
@@ -30,6 +31,7 @@ exports[`<AnimeExplorer /> > matches snapshot 1`] = `
           <button
             aria-label="Clear search"
             class="clearButton-0-2-17"
+            data-testid="anime-clear-search"
             style="visibility: hidden;"
           >
             pages.animeExplorer.clear
@@ -39,6 +41,7 @@ exports[`<AnimeExplorer /> > matches snapshot 1`] = `
     </div>
     <div
       class="listWrap-0-2-2"
+      data-testid="anime-list"
     >
       <div
         class="listInner-0-2-3"
@@ -62,6 +65,7 @@ exports[`<AnimeExplorer /> > matches snapshot 1`] = `
     <button
       aria-label="Back to top"
       class="backToTop-0-2-8 backToTop-d1-0-2-11"
+      data-testid="anime-back-to-top"
     >
       ↑ pages.animeExplorer.top
     </button>
