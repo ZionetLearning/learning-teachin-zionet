@@ -17,16 +17,6 @@ resource "azurerm_user_assigned_identity" "aks" {
   location            = var.location
 }
 
-resource "azurerm_key_vault_access_policy" "aks_uami" {
-  key_vault_id = azurerm_key_vault.main.id
-  tenant_id    = var.tenant_id
-  object_id    = azurerm_user_assigned_identity.aks_uami.principal_id
-
-  secret_permissions = [
-    "Get",
-    "List"
-  ]
-}
 
 # Data source to reference existing shared AKS cluster
 data "azurerm_kubernetes_cluster" "shared" {
@@ -236,5 +226,3 @@ resource "azurerm_key_vault" "main" {
   purge_protection_enabled    = false
 
 }
-
-data "azurerm_client_config" "current" {}
