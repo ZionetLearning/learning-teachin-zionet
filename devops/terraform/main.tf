@@ -215,14 +215,8 @@ resource "kubernetes_service_account" "environment" {
 #   depends_on = [kubernetes_namespace.environment]
 # }
 
-resource "azurerm_key_vault" "main" {
-  name                        = "${var.environment_name}-kv"
-  location                    = azurerm_resource_group.main.location
-  resource_group_name         = azurerm_resource_group.main.name
-  tenant_id                   = var.tenant_id
-  sku_name                    = "standard"
-
-  soft_delete_retention_days  = 7
-  purge_protection_enabled    = false
-
+# Reference the shared Key Vault instead of creating new ones
+data "azurerm_key_vault" "shared" {
+  name                = "teachin-seo-kv"
+  resource_group_name = "dev-zionet-learning-2025"
 }
