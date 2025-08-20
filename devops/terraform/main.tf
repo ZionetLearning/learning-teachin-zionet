@@ -8,9 +8,6 @@ resource "azurerm_resource_group" "main" {
   tags = {
     Environment = var.environment_name
     ManagedBy   = "terraform"
-    CreatedDate = timestamp()
-    # Add protection tag for permanent environments
-    Protected   = contains(["dev", "prod", "production", "staging"], var.environment_name) ? "true" : "false"
   }
 }
 

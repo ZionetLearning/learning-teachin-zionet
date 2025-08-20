@@ -84,8 +84,7 @@ jobs:
           echo "Resource groups eligible for cleanup:"
           for rg in $CLEANUP_RGS; do
             ENV_NAME=$(echo "$rg" | cut -d'-' -f1)
-            CREATED=$(az group show --name "$rg" --query "tags.CreatedDate" -o tsv 2>/dev/null || echo "unknown")
-            echo "  - $rg (env: $ENV_NAME, created: $CREATED)"
+            echo "  - $rg (env: $ENV_NAME)"
           done
           
           echo "CLEANUP_RGS<<EOF" >> $GITHUB_ENV
