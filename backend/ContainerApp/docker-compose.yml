@@ -71,22 +71,6 @@ services:
       retries: 15
 
 
-  # -------------------- SignalR Emulator --------------------
-  signalr-emulator:
-    build:
-      context: ./SignalREmulator
-      dockerfile: Dockerfile
-    container_name: signalr-emulator
-    ports:
-      - "8085:8085"
-    environment:
-      ASRS_EMULATOR_PORT: 8085
-    networks:
-      sb-emulator:
-        aliases:
-          - signalr-emulator
-
-
 # ------------------------- PostgreSQL DB --------------------------
   postgres:
     image: postgres:17.5
@@ -149,6 +133,7 @@ services:
     environment:
       - ASPNETCORE_URLS=http://+:5001
       - ASPNETCORE_ENVIRONMENT=Development
+      # - SignalR__ConnectionString=
     depends_on:
       - servicebus-emulator
       - redis
