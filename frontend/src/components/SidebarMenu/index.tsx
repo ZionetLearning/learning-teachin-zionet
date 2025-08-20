@@ -44,6 +44,7 @@ export const SidebarMenu = () => {
   };
   return (
     <Sidebar
+      data-testid="app-sidebar"
       collapsed={collapsed}
       dir={isHebrew ? "rtl" : "ltr"}
       rootStyles={{
@@ -87,11 +88,16 @@ export const SidebarMenu = () => {
           {!collapsed && t("sidebar.toggleSidebar")}
         </MenuItem>
 
-        <SubMenu label={t("sidebar.languages")} icon={<TranslateIcon />}>
+        <SubMenu
+          label={t("sidebar.languages")}
+          icon={<TranslateIcon />}
+          data-testid="sidebar-languages"
+        >
           <MenuItem
             icon={<ILFlag style={flagSize} />}
             onClick={handleChangeLanguage("he")}
             active={i18n.language === "he"}
+            data-testid="sidebar-lang-he"
           >
             {t("sidebar.he")}
           </MenuItem>
@@ -100,6 +106,7 @@ export const SidebarMenu = () => {
             icon={<GBFlag style={flagSize} />}
             onClick={handleChangeLanguage("en")}
             active={i18n.language === "en"}
+            data-testid="sidebar-lang-en"
           >
             {t("sidebar.en")}
           </MenuItem>
@@ -109,6 +116,7 @@ export const SidebarMenu = () => {
           icon={<HomeIcon />}
           onClick={() => handleNavigation("/")}
           active={isActive("/")}
+          data-testid="sidebar-home"
         >
           {t("sidebar.home")}
         </MenuItem>
@@ -117,6 +125,7 @@ export const SidebarMenu = () => {
           icon={<ThreePIcon />}
           onClick={() => handleNavigation("/chat-with-avatar")}
           active={isActive("/chat-with-avatar")}
+          data-testid="sidebar-chat-avatar"
         >
           {t("sidebar.chatAvatar")}
         </MenuItem>
@@ -125,18 +134,21 @@ export const SidebarMenu = () => {
           <MenuItem
             onClick={() => handleNavigation("/chat/yo")}
             active={isActive("/chat/yo")}
+            data-testid="sidebar-chat-yo"
           >
             {t("sidebar.chatYo")}
           </MenuItem>
           <MenuItem
             onClick={() => handleNavigation("/chat/da")}
             active={isActive("/chat/da")}
+            data-testid="sidebar-chat-da"
           >
             {t("sidebar.chatDa")}
           </MenuItem>
           <MenuItem
             onClick={() => handleNavigation("/chat/ou")}
             active={isActive("/chat/ou")}
+            data-testid="sidebar-chat-ou"
           >
             {t("sidebar.chatOu")}
           </MenuItem>
@@ -146,18 +158,21 @@ export const SidebarMenu = () => {
           <MenuItem
             onClick={() => handleNavigation("/avatar/ou")}
             active={isActive("/avatar/ou")}
+            data-testid="sidebar-avatar-ou"
           >
             {t("sidebar.avatarOu")}
           </MenuItem>
           <MenuItem
             onClick={() => handleNavigation("/avatar/sh")}
             active={isActive("/avatar/sh")}
+            data-testid="sidebar-avatar-sh"
           >
             {t("sidebar.avatarSh")}
           </MenuItem>
           <MenuItem
             onClick={() => handleNavigation("/avatar/da")}
             active={isActive("/avatar/da")}
+            data-testid="sidebar-avatar-da"
           >
             {t("sidebar.avatarDa")}
           </MenuItem>
@@ -167,18 +182,21 @@ export const SidebarMenu = () => {
           <MenuItem
             onClick={() => handleNavigation("/typing")}
             active={isActive("/typing")}
+            data-testid="sidebar-typing"
           >
             {t("sidebar.typingPractice")}
           </MenuItem>
           <MenuItem
             onClick={() => handleNavigation("/word-order-game")}
             active={isActive("/word-order-game")}
+            data-testid="sidebar-word-order"
           >
             {t("sidebar.wordOrderGame")}
           </MenuItem>
           <MenuItem
             onClick={() => handleNavigation("/speaking")}
             active={isActive("/speaking")}
+            data-testid="sidebar-speaking"
           >
             {t("sidebar.speakingPractice")}
           </MenuItem>
@@ -188,6 +206,7 @@ export const SidebarMenu = () => {
           icon={<PublicIcon />}
           onClick={() => handleNavigation("/earthquake-map")}
           active={isActive("/earthquake-map")}
+          data-testid="sidebar-earthquake"
         >
           {t("sidebar.earthquakeMap")}
         </MenuItem>
@@ -195,6 +214,7 @@ export const SidebarMenu = () => {
           onClick={() => handleNavigation("/weather")}
           icon={<WeatherWidgetIcon />}
           active={isActive("/weather")}
+          data-testid="sidebar-weather"
         >
           {t("sidebar.weather")}
         </MenuItem>
@@ -202,6 +222,7 @@ export const SidebarMenu = () => {
           onClick={() => handleNavigation("/anime-explorer")}
           icon={<LiveTvIcon />}
           active={isActive("/anime-explorer")}
+          data-testid="sidebar-anime"
         >
           {t("sidebar.anime")}
         </MenuItem>
@@ -228,7 +249,11 @@ export const SidebarMenu = () => {
           },
         }}
       >
-        <MenuItem icon={<ExitToAppIcon />} onClick={logout}>
+        <MenuItem
+          icon={<ExitToAppIcon />}
+          onClick={logout}
+          data-testid="sidebar-logout"
+        >
           {t("sidebar.logout")}
         </MenuItem>
       </Menu>

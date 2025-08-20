@@ -97,7 +97,7 @@ export const Game = () => {
 
         <div className={classes.answerArea} dir="rtl">
           <div className={classes.dashLine} />
-          <div className={classes.dashLineWithWords}>
+          <div className={classes.dashLineWithWords} data-testid="wog-chosen">
             {chosen.map((w, i) => (
               <button
                 key={`c-${w}-${i}`}
@@ -110,7 +110,7 @@ export const Game = () => {
           </div>
         </div>
 
-        <div className={classes.wordsBank} dir="rtl">
+        <div className={classes.wordsBank} dir="rtl" data-testid="wog-bank">
           {loading && <div>{t("pages.wordOrderGame.loading")}</div>}
           {error && <div style={{ color: "red" }}>{error}</div>}
           {!loading &&
@@ -128,9 +128,13 @@ export const Game = () => {
       </div>
 
       <div className={classes.sideButtons}>
-        <button onClick={handleReset}>{t("pages.wordOrderGame.reset")}</button>
-        <button onClick={handleCheck}>{t("pages.wordOrderGame.check")}</button>
-        <button onClick={handleNextClick}>
+        <button data-testid="wog-reset" onClick={handleReset}>
+          {t("pages.wordOrderGame.reset")}
+        </button>
+        <button data-testid="wog-check" onClick={handleCheck}>
+          {t("pages.wordOrderGame.check")}
+        </button>
+        <button data-testid="wog-next" onClick={handleNextClick}>
           {t("pages.wordOrderGame.next")}
         </button>
       </div>

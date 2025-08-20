@@ -386,4 +386,23 @@ public class AccessorService : IAccessorService
             .OrderBy(m => m.Timestamp)
             .ToListAsync();
     }
+
+    public async Task<Guid?> ValidateCredentialsAsync(string email, string password)
+    {
+        var user = await _dbContext.Users
+            .Where(u => u.Email == email)
+            .FirstOrDefaultAsync();
+
+        if (user == null)
+        {
+            return null;
+        }
+
+        if (user.PasswordHash != password)
+        {
+            return null;
+        }
+
+        return user.UserId;
+    }
 }

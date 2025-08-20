@@ -1,22 +1,23 @@
-using System.Security.Claims;
+using System.Net;
 using System.Text;
 using Azure.Messaging.ServiceBus;
+using DotQueue;
 using Manager.Constants;
 using Manager.Endpoints;
 using Manager.Hubs;
-using DotQueue;
+using Manager.Models.Auth;
+using Manager.Models.QueueMessages;
 using Manager.Services;
 using Manager.Services.Clients;
 using Manager.Services.Clients.Engine;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
-using Manager.Models.Auth;
-using Manager.Models.QueueMessages;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,9 +55,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(key),
 
-            NameClaimType = ClaimTypes.Name,
-            RoleClaimType = ClaimTypes.Role
-
+            NameClaimType = AuthSettings.NameClaimType
         };
     });
 
@@ -107,11 +106,22 @@ builder.Services.AddOpenApi(
 );
 builder.Services.AddHttpContextAccessor();
 
-var app = builder.Build();
-app.UseForwardedHeaders(new ForwardedHeadersOptions
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+
+    // Trust Kubernetes internal network (example: 10.244.0.0/16)
+    options.KnownNetworks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(IPAddress.Parse("10.244.0.0"), 16));
+    // Optionally allow loopback for local dev
+    options.KnownProxies.Add(IPAddress.Parse("127.0.0.1"));
 });
+
+var app = builder.Build();
+
+var forwardedHeaderOptions = app.Services.GetRequiredService<IOptions<ForwardedHeadersOptions>>().Value;
+app.UseForwardedHeaders(forwardedHeaderOptions);
+
+//app.UseForwardedHeaders();
 app.UseCors("AllowAll");
 app.UseCloudEvents();
 

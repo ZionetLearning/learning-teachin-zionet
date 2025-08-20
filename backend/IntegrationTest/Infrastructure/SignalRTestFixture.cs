@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.SignalR.Client;
-using DotNetEnv;
 using System.Collections.Concurrent;
 using System.Text.Json;
 using IntegrationTests.Models.Notification;
 using IntegrationTests.Constants;
+using Microsoft.Extensions.Configuration;
 
 namespace IntegrationTests.Infrastructure;
 
@@ -15,7 +15,6 @@ public class SignalRTestFixture : IAsyncDisposable
 
     public SignalRTestFixture()
     {
-        Env.Load();
         var baseUrl = GetBaseUrl();
         
         _connection = new HubConnectionBuilder()
@@ -120,19 +119,27 @@ public class SignalRTestFixture : IAsyncDisposable
         return null;
     }
 
-    private static string GetBaseUrl()
+
+private static string GetBaseUrl()
+{
+    var config = new ConfigurationBuilder()
+        .SetBasePath(Directory.GetCurrentDirectory())
+        .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+        .Build();
+
+    var url = config["TestSettings:ApiBaseUrl"];
+
+    if (string.IsNullOrWhiteSpace(url))
     {
-        var url = Environment.GetEnvironmentVariable("API_BASE_URL");
-        if (string.IsNullOrWhiteSpace(url))
-        {
-            throw new InvalidOperationException(
-                "API_BASE_URL is not set. Please define it in the .env file or environment variables."
-            );
-        }
-        return url.TrimEnd('/');
+        throw new InvalidOperationException(
+            "ApiBaseUrl is not set in appsettings.json under TestSettings."
+        );
     }
 
-    public async ValueTask DisposeAsync()
+    return url.TrimEnd('/');
+}
+
+public async ValueTask DisposeAsync()
     {
         if (_connection is not null)
         {

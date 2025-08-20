@@ -212,6 +212,30 @@ namespace Accessor.Migrations
                     b.ToTable("Tasks");
                 });
 
+            modelBuilder.Entity("Accessor.Models.User", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.HasKey("UserId");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.ToTable("Users");
+                });
+
             modelBuilder.Entity("Accessor.Models.ChatMessage", b =>
                 {
                     b.HasOne("Accessor.Models.ChatThread", "Thread")
