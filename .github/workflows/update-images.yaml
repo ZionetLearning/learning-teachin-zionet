@@ -70,4 +70,5 @@ jobs:
       environment: ${{ needs.set-defaults.outputs.environment }}
       environment_name: ${{ needs.set-defaults.outputs.environment_name }}
       image_tag: ${{ needs.build-and-push-images.outputs.image_tag }}
+      skip_infra_steps: true
     secrets: inherit
