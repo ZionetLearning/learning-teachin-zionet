@@ -12,11 +12,6 @@ on:
         default: 'true'
         type: choice
         options: ['true', 'false']
-      force_cleanup:
-        description: 'Force cleanup (ignores protection)'
-        required: false
-        default: false
-        type: boolean
       environment_pattern:
         description: 'Optional: cleanup specific pattern (e.g., test*)'
         required: false
@@ -47,12 +42,10 @@ jobs:
           
           # Dry run mode
           DRY_RUN="${{ github.event.inputs.dry_run || 'true' }}"
-          FORCE_CLEANUP="${{ github.event.inputs.force_cleanup || 'false' }}"
           PATTERN="${{ github.event.inputs.environment_pattern || '*' }}"
           
           echo "PROTECTED_ENVS=$PROTECTED_ENVS" >> $GITHUB_ENV
           echo "DRY_RUN=$DRY_RUN" >> $GITHUB_ENV
-          echo "FORCE_CLEANUP=$FORCE_CLEANUP" >> $GITHUB_ENV
           echo "PATTERN=$PATTERN" >> $GITHUB_ENV
           
           # Calculate cutoff date (environments older than 1 day)
@@ -62,7 +55,6 @@ jobs:
           echo "Cleanup Configuration:"
           echo "  Protected environments: $PROTECTED_ENVS"
           echo "  Dry run: $DRY_RUN"
-          echo "  Force cleanup: $FORCE_CLEANUP"
           echo "  Pattern: $PATTERN"
           echo "  Cutoff date: $CUTOFF_DATE"
 
