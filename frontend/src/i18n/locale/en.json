@@ -228,7 +228,8 @@
       "earthquakeMap": "Earthquake Map",
       "weather": "Weather",
       "anime": "Anime Explorer",
-      "countryExplorer": "Country Explorer"
+      "countryExplorer": "Country Explorer",
+      "signalR": "SignalR Testing"
     }
   },
   "goBackToMenu": "Go back to Menu",

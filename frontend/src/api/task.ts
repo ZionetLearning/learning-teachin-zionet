@@ -16,16 +16,15 @@ export const usePostTask = () => {
     mutationFn: async ({ id, name, payload }) => {
       await axios.post(
         //local server endpoint URL:
-        "http://localhost:5280/task",
+        // "http://localhost:5280/task",
         //cloud server endpoint URL:
-        // "https://teachin.westeurope.cloudapp.azure.com/api/dev/task",
-        { task: { id, name, payload } },
+        "https://teachin.westeurope.cloudapp.azure.com/api/dev/task",
+        { id, name, payload },
         {
           headers: {
             "Content-Type": "application/json",
             "X-User-Id": userId,
           },
-          // withCredentials: false, // not needed unless your server expects cookies
         }
       );
     },

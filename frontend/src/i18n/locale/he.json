@@ -228,7 +228,8 @@
       "earthquakeMap": "מפת רעידות אדמה",
       "weather": "מזג האוויר",
       "anime": "ספריית אנימה",
-      "countryExplorer": "ספריית מדינות"
+      "countryExplorer": "ספריית מדינות",
+      "signalR": "בדיקת SignalR"
     }
   },
   "goBackToMenu": "חזור לתפריט",
