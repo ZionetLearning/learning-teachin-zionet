@@ -24,3 +24,12 @@ promtail:
     snippets:
       pipelineStages:
         - cri: {}
+        - json:
+            expressions:
+              TaskId: TaskId
+              TraceId: TraceId
+              SpanId: SpanId
+        - labels:
+            TaskId:
+            TraceId:
+            SpanId:
