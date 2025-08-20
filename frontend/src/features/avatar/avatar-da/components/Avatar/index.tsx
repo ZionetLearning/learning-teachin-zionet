@@ -133,10 +133,10 @@ export const Avatar = (props: JSX.IntrinsicElements["group"]) => {
           if (h != null && t != null) acc[+id] = { h, t };
           return acc;
         },
-        {} as Record<number, { h: number; t: number }>
+        {} as Record<number, { h: number; t: number }>,
       );
     },
-    [nodes]
+    [nodes],
   );
 
   const clips = useMemo(() => {
@@ -166,14 +166,14 @@ export const Avatar = (props: JSX.IntrinsicElements["group"]) => {
     function syncCurrentVisemeToRef() {
       visemeRef.current = currentViseme;
     },
-    [currentViseme]
+    [currentViseme],
   );
 
   useEffect(
     function syncPlayingStateToRef() {
       isSpeakingRef.current = isPlaying;
     },
-    [isPlaying]
+    [isPlaying],
   );
 
   useEffect(
@@ -186,7 +186,7 @@ export const Avatar = (props: JSX.IntrinsicElements["group"]) => {
       idle.setLoop(THREE.LoopRepeat, Infinity);
       idle.fadeIn(0.5).play();
     },
-    [actions.Idle]
+    [actions.Idle],
   );
 
   const { smoothMorphTarget, morphTargetSmoothing } = useControls({
@@ -227,18 +227,18 @@ export const Avatar = (props: JSX.IntrinsicElements["group"]) => {
           headInf[curr.h] = THREE.MathUtils.lerp(
             headInf[curr.h],
             1,
-            morphTargetSmoothing
+            morphTargetSmoothing,
           );
           teethInf[curr.t] = THREE.MathUtils.lerp(
             teethInf[curr.t],
             1,
-            morphTargetSmoothing
+            morphTargetSmoothing,
           );
         } else {
           headInf[curr.h] = teethInf[curr.t] = 1;
         }
       }
-    }
+    },
   );
 
   return (
