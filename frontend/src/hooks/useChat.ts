@@ -17,9 +17,13 @@ export const useChat = () => {
   const [threadId, setThreadId] = useState<string | undefined>(undefined);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
-  const { mutate: sendChatMessage, mutateAsync: sendChatMessageAsync, isPending } = useSendChatMessage();
+  const {
+    mutate: sendChatMessage,
+    mutateAsync: sendChatMessageAsync,
+    isPending,
+  } = useSendChatMessage();
 
-    const pushUser = (text: string) => {
+  const pushUser = (text: string) => {
     const userMsg: ChatMessage = {
       position: "right",
       type: "text",
@@ -71,7 +75,7 @@ export const useChat = () => {
     });
   };
 
-    const sendMessageAsync = async (userText: string): Promise<string> => {
+  const sendMessageAsync = async (userText: string): Promise<string> => {
     if (!userText.trim()) return "";
 
     const payload: ChatRequest = {

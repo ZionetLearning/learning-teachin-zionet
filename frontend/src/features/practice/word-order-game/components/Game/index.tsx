@@ -134,7 +134,11 @@ export const Game = () => {
         <button data-testid="wog-check" onClick={handleCheck}>
           {t("pages.wordOrderGame.check")}
         </button>
-        <button data-testid="wog-next" disabled={loading} onClick={handleNextClick}>
+        <button
+          data-testid="wog-next"
+          disabled={loading}
+          onClick={handleNextClick}
+        >
           {t("pages.wordOrderGame.next")}
         </button>
       </div>
