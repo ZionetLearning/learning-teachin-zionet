@@ -35,7 +35,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
             [MessageAction.CreateTask] = HandleCreateTaskAsync,
             [MessageAction.TestLongTask] = HandleTestLongTaskAsync,
             [MessageAction.ProcessingQuestionAi] = HandleProcessingQuestionAiAsync,
-            [MessageAction.Chat] = HandleProcessingQuestionAiAsync
+            [MessageAction.Chat] = HandleProcessingChatMessageAsync
 
         };
     }
@@ -241,5 +241,102 @@ public class EngineQueueHandler : IQueueHandler<Message>
             throw new RetryableException("Transient error while processing AI question.", ex);
         }
     }
-}
 
+    private async Task HandleProcessingChatMessageAsync(
+        Message message,
+        Func<Task> renewLock,
+        CancellationToken ct)
+    {
+        try
+        {
+            var request = PayloadValidation.DeserializeOrThrow<EngineChatRequest>(message, _logger);
+            using var _ = _logger.BeginScope(new { request.RequestId, request.ThreadId });
+            if (string.IsNullOrWhiteSpace(request.UserMessage))
+            {
+                throw new NonRetryableException("UserMessage is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.UserId))
+            {
+                throw new NonRetryableException("UserId is required.");
+            }
+
+            if (request.TtlSeconds <= 0)
+            {
+                throw new NonRetryableException("TtlSeconds must be greater than 0.");
+            }
+
+            var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            if (now > request.SentAt + request.TtlSeconds)
+            {
+                _logger.LogWarning("Request {RequestId} is expired. Skipping.", request.RequestId);
+                throw new NonRetryableException("Request TTL expired.");
+            }
+
+            var history = await _accessorClient.GetChatHistoryAsync(request.ThreadId, ct);
+            var serviceRequest = new ChatAiServiseRequest
+            {
+                History = history,
+                UserMessage = request.UserMessage,
+                ChatType = request.ChatType,
+                ThreadId = request.ThreadId,
+                UserId = request.UserId,
+                RequestId = request.RequestId,
+                SentAt = request.SentAt,
+                TtlSeconds = request.TtlSeconds,
+            };
+            var aiResp = await _aiService.ChatHandlerAsync(serviceRequest, ct);
+            if (aiResp.Status != ChatAnswerStatus.Ok || aiResp.Answer == null)
+            {
+                var errorResponse = new EngineChatResponse
+                {
+                    RequestId = serviceRequest.RequestId,
+                    Status = ChatAnswerStatus.Fail,
+                    ThreadId = serviceRequest.ThreadId,
+                    AssistantMessage = aiResp.Error
+                };
+                await _publisher.SendReplyAsync(errorResponse, $"{QueueNames.ManagerCallbackQueue}-out", ct);
+                _logger.LogError("AI chat {RequestId} failed", aiResp.RequestId);
+                return;
+            }
+
+            var questionMessage = new ChatMessage
+            {
+                ThreadId = request.ThreadId,
+                UserId = request.UserId,
+                Role = MessageRole.User,
+                Content = request.UserMessage
+            };
+
+            await _accessorClient.StoreMessageAsync(questionMessage, ct);
+            await _accessorClient.StoreMessageAsync(aiResp.Answer, ct);
+
+            var responseToManager = new EngineChatResponse
+            {
+                AssistantMessage = aiResp.Answer.Content,
+                RequestId = aiResp.RequestId,
+                Status = aiResp.Status,
+                ThreadId = aiResp.ThreadId
+            };
+            await _publisher.SendReplyAsync(responseToManager, $"{QueueNames.ManagerCallbackQueue}-out", ct);
+
+            _logger.LogInformation("AI chat {RequestId} processed", aiResp.RequestId);
+        }
+        catch (NonRetryableException ex)
+        {
+            _logger.LogError(ex, "Non-retryable error processing message {Action}", message.ActionName);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            if (ct.IsCancellationRequested)
+            {
+                _logger.LogWarning(ex, "Operation cancelled while processing {Action}", message.ActionName);
+                throw new OperationCanceledException("Operation was cancelled.", ex, ct);
+            }
+
+            _logger.LogError(ex, "Transient error while processing AI chat {Action}", message.ActionName);
+            throw new RetryableException("Transient error while processing AI chat.", ex);
+        }
+    }
+}
