@@ -37,14 +37,18 @@ jobs:
 
       - name: Set cleanup variables
         run: |
-          # Protected environments that should NEVER be deleted
+          # Protected environments that should NEVER be deleted (for resource groups)
           PROTECTED_ENVS="dev,prod,production,staging"
+          
+          # Protected namespaces that should NEVER be deleted (even if RG matches)
+          PROTECTED_NAMESPACES="dev,prod,production,staging,monitoring,dapr-system,cert-manager,kube-system,devops-logs,devops-ingress-nginx,external-secrets"
           
           # Dry run mode
           DRY_RUN="${{ github.event.inputs.dry_run || 'true' }}"
           PATTERN="${{ github.event.inputs.environment_pattern || '*' }}"
           
           echo "PROTECTED_ENVS=$PROTECTED_ENVS" >> $GITHUB_ENV
+          echo "PROTECTED_NAMESPACES=$PROTECTED_NAMESPACES" >> $GITHUB_ENV
           echo "DRY_RUN=$DRY_RUN" >> $GITHUB_ENV
           echo "PATTERN=$PATTERN" >> $GITHUB_ENV
           
@@ -53,7 +57,8 @@ jobs:
           echo "CUTOFF_DATE=$CUTOFF_DATE" >> $GITHUB_ENV
           
           echo "Cleanup Configuration:"
-          echo "  Protected environments: $PROTECTED_ENVS"
+          echo "  Protected environments (RGs): $PROTECTED_ENVS"
+          echo "  Protected namespaces: $PROTECTED_NAMESPACES"
           echo "  Dry run: $DRY_RUN"
           echo "  Pattern: $PATTERN"
           echo "  Cutoff date: $CUTOFF_DATE"
@@ -87,8 +92,8 @@ jobs:
         run: |
           echo "Discovering temporary namespaces..."
           
-          # Infrastructure namespaces that should NEVER be deleted
-          INFRASTRUCTURE_NAMESPACES="dapr-system,monitoring,cert-manager,ingress-nginx,loki,grafana,prometheus,metallb-system,argocd,flux-system"
+          # Namespaces that should NEVER be deleted - explicit protection
+          KEEP_NAMESPACES=("dev" "kube-system" "dapr-system" "cert-manager" "monitoring" "devops-logs" "devops-ingress-nginx" "external-secrets")
           
           # Find all namespaces (excluding system ones)
           echo "All custom namespaces:"
@@ -106,14 +111,22 @@ jobs:
           # Find namespaces that correlate with the resource groups
           CLEANUP_NAMESPACES=""
           for ns in $(kubectl get namespaces --no-headers | grep -v "kube-\|default\|devops-" | awk '{print $1}'); do
-            # Skip infrastructure namespaces
-            if [[ ",$INFRASTRUCTURE_NAMESPACES," == *",$ns,"* ]]; then
-              echo "  Skipping infrastructure namespace: $ns"
+            # Skip keep namespaces - CRITICAL PROTECTION
+            skip_namespace=false
+            for keep_ns in "${KEEP_NAMESPACES[@]}"; do
+              if [[ "$ns" == "$keep_ns" ]]; then
+                echo "  Skipping PROTECTED namespace: $ns"
+                skip_namespace=true
+                break
+              fi
+            done
+            
+            if [[ "$skip_namespace" == true ]]; then
               continue
             fi
             
             # Skip protected environments  
-            if [[ ",$PROTECTED_ENVS," == *",$ns,"* ]]; then
+            if [[ ",$PROTECTED_NAMESPACES," == *",$ns,"* ]]; then
               echo "  Skipping protected namespace: $ns"
               continue
             fi
@@ -151,7 +164,7 @@ jobs:
           done
           
           for ns in $CLEANUP_NAMESPACES; do
-            if [[ ",$PROTECTED_ENVS," == *",$ns,"* ]]; then
+            if [[ ",$PROTECTED_NAMESPACES," == *",$ns,"* ]]; then
               echo "ERROR: Attempting to delete protected namespace: $ns"
               echo "This should never happen. Stopping cleanup."
               exit 1
