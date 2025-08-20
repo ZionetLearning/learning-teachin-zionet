@@ -42,8 +42,7 @@ on:
         required: false
 
 jobs:
-  build-and-lint:
-    if: github.event_name == 'pull_request' && github.event.action != 'closed'
+  frontend-build-and-lint:
     runs-on: ubuntu-latest
     env:
       FE_DIR: frontend
@@ -65,8 +64,14 @@ jobs:
       - name: Lint Code
         working-directory: ${{ env.FE_DIR }}
         run: npm run lint
+      
+      - name: Create release name for Sentry (UTC + short SHA)
+        run: |
+          ts=$(date -u "+Release-%d-%m-%Y_%H-%M")
+          echo "RELEASE_NAME=${ts}-${GITHUB_SHA::7}" >> $GITHUB_ENV  
 
-      - name: Build Application (Test Build)
+
+      - name: Build Application 
         working-directory: ${{ env.FE_DIR }}
         env:
           VITE_AZURE_SPEECH_KEY: ""
@@ -77,13 +82,23 @@ jobs:
           VITE_AZURE_OPENAI_ENDPOINT: "https://france-teachin-open-ai.openai.azure.com/"
           VITE_APPINSIGHTS_CONNECTION_STRING: ""
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          RELEASE: ${{ env.RELEASE_NAME }}
         run: npm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: ${{ env.FE_DIR }}/dist/
+          retention-days: 1
 
   deploy:
     if: |
       (github.event_name == 'pull_request' && github.event.pull_request.merged == true) ||
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'workflow_call'
+    needs: [frontend-build-and-lint]
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || 'Development' }}
     permissions:
@@ -115,13 +130,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ENV="${{ inputs.environment_name || env.environment_name }}"
+          ENV="${{ inputs.environment_name || env.environment_name}}"
           RG="${ENV}-zionet-learning-2025"
 
           SWA_NAME="static-web-app-${ENV}"
           AI_NAME="${SWA_NAME}-appinsights"
 
           echo "rg=$RG" >> $GITHUB_OUTPUT
+          echo "rg=$RG" 
           echo "swa=$SWA_NAME" >> $GITHUB_OUTPUT
           echo "ai=$AI_NAME" >> $GITHUB_OUTPUT
 
@@ -143,57 +159,11 @@ jobs:
           echo "::add-mask::$CONN"
           echo "APPINSIGHTS_CONNECTION_STRING=$CONN" >> "$GITHUB_ENV"
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: '${{ env.FE_DIR }}/package-lock.json'
-
-      - name: Install Dependencies
-        working-directory: ${{ env.FE_DIR }}
-        run: npm ci
-
-      - name: Lint Code
-        working-directory: ${{ env.FE_DIR }}
-        run: npm run lint
-
-      - name: Create release name for Sentry (UTC + short SHA)
-        run: |
-          ts=$(date -u "+Release-%d-%m-%Y_%H-%M")
-          echo "RELEASE_NAME=${ts}-${GITHUB_SHA::7}" >> $GITHUB_ENV
-
-      - name: Build Application
-        working-directory: ${{ env.FE_DIR }}
-        env:
-          VITE_AZURE_SPEECH_KEY: ""
-          VITE_AZURE_REGION: "eastus"
-          VITE_AZURE_OPENAI_KEY: ""
-          VITE_AZURE_OPENAI_DEPLOYMENT_NAME: "gpt-4.1-mini"
-          VITE_AZURE_OPENAI_API_VERSION: "2024-04-01-preview"
-          VITE_AZURE_OPENAI_ENDPOINT: "https://france-teachin-open-ai.openai.azure.com/"
-          VITE_APPINSIGHTS_CONNECTION_STRING: ${{ inputs.app_insights_connection_string || env.APPINSIGHTS_CONNECTION_STRING }}
-          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          RELEASE: ${{ env.RELEASE_NAME }}
-        run: npm run build
-
-      - name: Optimize Build Size
-        working-directory: ${{ env.FE_DIR }}
-        run: |
-          echo "📂 Full frontend directory size (includes node_modules):"
-          du -sh . | cut -f1
-          echo "📦 Build output directory size (what gets deployed):"
-          du -sh dist/ | cut -f1
-          ORIGINAL_SIZE=$(du -sh dist/ | cut -f1)
-          echo "📦 Original build size: $ORIGINAL_SIZE"
-          echo "🧹 Removing unnecessary files..."
-          find dist -name "*.map" -delete
-          find dist -name "*.md" -delete
-          find dist -name "*.txt" -delete
-          find dist -name "*.LICENSE" -delete
-          OPTIMIZED_SIZE=$(du -sh dist/ | cut -f1)
-          echo "✨ Optimized build size: $OPTIMIZED_SIZE"
+          name: frontend-build
+          path: ${{ env.FE_DIR }}/dist/
 
       - name: Get SWA deployment token
         if: ${{ !inputs.deployment_token }}
