@@ -2,13 +2,13 @@ name: Deploy Frontend to Azure Static Web Apps
 run-name: >
   🚀 Deploy Frontend to environment_name: ${{
     inputs.environment_name || github.event.inputs.environment_name || 
-    'custom'
-  }} | GitHub Environment: ${{ inputs.environment || github.event.inputs.environment }}
+    'dev'
+  }} | GitHub Environment: ${{ inputs.environment || github.event.inputs.environment || 'Development'}}
 on:
   pull_request:
     branches:
       - main
-    types: [closed]
+    types: [opened, synchronize, closed]
     paths:
       - 'frontend/**'
   workflow_dispatch:
@@ -42,6 +42,43 @@ on:
         required: false
 
 jobs:
+  build-and-lint:
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    env:
+      FE_DIR: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: '${{ env.FE_DIR }}/package-lock.json'
+
+      - name: Install Dependencies
+        working-directory: ${{ env.FE_DIR }}
+        run: npm ci
+
+      - name: Lint Code
+        working-directory: ${{ env.FE_DIR }}
+        run: npm run lint
+
+      - name: Build Application (Test Build)
+        working-directory: ${{ env.FE_DIR }}
+        env:
+          VITE_AZURE_SPEECH_KEY: ""
+          VITE_AZURE_REGION: "eastus"
+          VITE_AZURE_OPENAI_KEY: ""
+          VITE_AZURE_OPENAI_DEPLOYMENT_NAME: "gpt-4.1-mini"
+          VITE_AZURE_OPENAI_API_VERSION: "2024-04-01-preview"
+          VITE_AZURE_OPENAI_ENDPOINT: "https://france-teachin-open-ai.openai.azure.com/"
+          VITE_APPINSIGHTS_CONNECTION_STRING: ""
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+        run: npm run build
+
   deploy:
     if: |
       (github.event_name == 'pull_request' && github.event.pull_request.merged == true) ||
