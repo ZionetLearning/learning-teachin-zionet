@@ -105,7 +105,7 @@ public class AuthService : IAuthService
 
             // Collect session fingerprint data
             var fingerprint = request.Headers["x-fingerprint"].ToString() ?? AuthSettings.UnknownIpFallback;
-            var userAgent = request.Headers["User-Agent"].ToString() ?? AuthSettings.UnknownIpFallback;
+            var userAgent = request.Headers.UserAgent.ToString() ?? AuthSettings.UnknownIpFallback;
             var ip = request.HttpContext.Connection.RemoteIpAddress?.ToString() ?? AuthSettings.UnknownIpFallback;
 
             var oldHash = HashRefreshToken(oldRefreshToken, _jwt.RefreshTokenHashKey);
