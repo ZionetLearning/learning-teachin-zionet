@@ -66,6 +66,7 @@ export const AnimeExplorer = () => {
         ref={listRef}
         className={classes.listWrap}
         onScroll={handleListScroll}
+        data-testid="anime-list"
       >
         <div className={classes.listInner}>
           <div className={classes.grid}>
@@ -112,6 +113,7 @@ export const AnimeExplorer = () => {
           listRef.current?.scrollTo({ top: 0, behavior: "smooth" })
         }
         aria-label="Back to top"
+        data-testid="anime-back-to-top"
       >
         ↑ {t("pages.animeExplorer.top")}
       </button>

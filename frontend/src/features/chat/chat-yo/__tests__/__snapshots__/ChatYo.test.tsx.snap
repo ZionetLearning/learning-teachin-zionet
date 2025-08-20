@@ -4,6 +4,7 @@ exports[`ChatYo > matches snapshot 1`] = `
 <DocumentFragment>
   <div
     class="chatWrapper-0-2-1"
+    data-testid="chat-yo-page"
   >
     <div>
       <ul>

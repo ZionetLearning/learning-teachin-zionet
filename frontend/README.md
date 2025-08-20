@@ -10,3 +10,6 @@ npm run storybook
 
 Vitest tests:
 npm run vitest
+
+Cypress tests:
+npm run cypress
