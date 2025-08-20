@@ -11,7 +11,7 @@ public static class CookieHelper
             HttpOnly = true, // JavaScript can’t access the cookie (mitigates XSS). 
             Secure = true, // Sent only over HTTPS
             SameSite = SameSiteMode.None, // Allows the cookie in cross-site requests
-            Path = AuthSettings.RefreshTokenCookiePath, //Only sent to /api/auth, not the entire domain.
+            Path = AuthSettings.CookiePath, //Only sent to /api/auth, not the entire domain.
             Expires = DateTimeOffset.UtcNow.AddDays(AuthSettings.RefreshTokenExpiryDays) // Expires in 7 days
         });
 
@@ -22,7 +22,7 @@ public static class CookieHelper
             HttpOnly = false, // Must be accessible to JS
             Secure = true,
             SameSite = SameSiteMode.None,
-            Path = AuthSettings.RefreshTokenCookiePath,
+            Path = AuthSettings.CookiePath,
             Expires = DateTimeOffset.UtcNow.AddMinutes(AuthSettings.CsrfTokenExpiryMinutes) // Short-lived, 30 minutes
         });
     }
@@ -35,7 +35,7 @@ public static class CookieHelper
             HttpOnly = true,
             Secure = true,
             SameSite = SameSiteMode.None,
-            Path = AuthSettings.RefreshTokenCookiePath
+            Path = AuthSettings.CookiePath
         });
 
         // Clear the CSRF token cookie
@@ -44,7 +44,7 @@ public static class CookieHelper
             HttpOnly = false,
             Secure = true,
             SameSite = SameSiteMode.None,
-            Path = AuthSettings.RefreshTokenCookiePath
+            Path = AuthSettings.CookiePath
         });
     }
 }

@@ -11,13 +11,13 @@ public static class AuthEndpoints
     {
         #region Authentication and Authorization Endpoints
 
-        app.MapPost("/api/auth/login", LoginAsync).WithName("Login");
+        app.MapPost("/auth/login", LoginAsync).WithName("Login");
 
-        app.MapPost("/api/auth/refresh-tokens", RefreshTokensAsync).WithName("RefreshTokens");
+        app.MapPost("/auth/refresh-tokens", RefreshTokensAsync).WithName("RefreshTokens");
 
-        app.MapPost("/api/auth/logout", LogoutAsync).WithName("Logout");
+        app.MapPost("/auth/logout", LogoutAsync).WithName("Logout");
 
-        app.MapGet("/api/protected", TestAuthAsync)
+        app.MapGet("/auth/protected", TestAuthAsync)
         .RequireAuthorization();
 
         #endregion
