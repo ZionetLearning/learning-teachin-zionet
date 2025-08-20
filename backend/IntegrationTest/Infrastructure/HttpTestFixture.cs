@@ -1,4 +1,5 @@
-using DotNetEnv;
+using IntegrationTests.Constants;
+using Microsoft.Extensions.Configuration;
 
 namespace IntegrationTests.Infrastructure;
 
@@ -8,31 +9,28 @@ public class HttpTestFixture : IDisposable
 
     public HttpTestFixture()
     {
-        // Load variables from .env file
-        Env.Load();
+        var cfg = BuildConfig();
 
-        var baseUrl = GetBaseUrl();
+        var baseUrl = cfg.GetSection("TestSettings")["ApiBaseUrl"]
+            ?? throw new InvalidOperationException(
+                "TestSettings:ApiBaseUrl is missing. Add it to appsettings.json or appsettings.Local.json.");
 
         Client = new HttpClient
         {
             BaseAddress = new Uri(baseUrl),
             Timeout = TimeSpan.FromSeconds(40)
         };
+
+        Client.DefaultRequestHeaders.Add("X-User-Id", TestConstants.TestUserId);
     }
 
-    private static string GetBaseUrl()
-    {
-        var url = Environment.GetEnvironmentVariable("API_BASE_URL");
-
-        if (string.IsNullOrWhiteSpace(url))
-        {
-            throw new InvalidOperationException(
-                "API_BASE_URL is not set. Please define it in the .env file or environment variables."
-            );
-        }
-
-        return url;
-    }
+    private static IConfigurationRoot BuildConfig() =>
+        new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+            .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false)
+            .AddEnvironmentVariables() // optional: lets CI override
+            .Build();
 
     public void Dispose()
     {

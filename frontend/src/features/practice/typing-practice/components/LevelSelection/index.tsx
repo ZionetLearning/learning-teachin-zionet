@@ -44,7 +44,10 @@ export const LevelSelection = ({
   };
 
   return (
-    <div className={classes.levelSelection}>
+    <div
+      className={classes.levelSelection}
+      data-testid="typing-level-selection"
+    >
       <div>
         <h3 className={classes.levelTitle}>
           {t("pages.typingPractice.chooseYourDifficultyLevel")}

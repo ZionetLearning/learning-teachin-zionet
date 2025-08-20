@@ -60,254 +60,266 @@ public class AccessorService : IAccessorService
 
     public async Task<TaskModel?> GetTaskByIdAsync(int id)
     {
-        _logger.LogInformation("Inside:{Method}", nameof(GetTaskByIdAsync));
-        try
+        using var scope = _logger.BeginScope("TaskId: {TaskId}", id);
         {
-            var key = GetTaskCacheKey(id);
-
-            // Try to get from Redis cache
-            var stateEntry = await _daprClient.GetStateEntryAsync<TaskModel>(ComponentNames.StateStore, key);
-
-            if (stateEntry.Value != null)
+            _logger.LogInformation("Inside:{Method}", nameof(GetTaskByIdAsync));
+            try
             {
-                _logger.LogInformation("Task {TaskId} found in Redis cache (ETag: {ETag})", id, stateEntry.ETag);
-                return stateEntry.Value;
-            }
+                var key = GetTaskCacheKey(id);
 
-            // If not found in cache, fetch from database
-            var task = await _dbContext.Tasks
-                .AsNoTracking()
-                .FirstOrDefaultAsync(t => t.Id == id);
+                // Try to get from Redis cache
+                var stateEntry = await _daprClient.GetStateEntryAsync<TaskModel>(ComponentNames.StateStore, key);
 
-            if (task == null)
-            {
-                _logger.LogWarning("Task with ID {TaskId} not found.", id);
-                return null;
-            }
-
-            // Save the task to Redis cache with ETag, if its not already cached
-            stateEntry.Value = task;
-
-            await _daprClient.SaveStateAsync(
-                storeName: ComponentNames.StateStore,
-                key: key,
-                value: task,
-                metadata: new Dictionary<string, string>
+                if (stateEntry.Value != null)
                 {
-                    { "ttlInSeconds", _ttl.ToString() }
+                    _logger.LogInformation("Task found in Redis cache (ETag: {ETag})", stateEntry.ETag);
+                    return stateEntry.Value;
                 }
-            );
 
-            _logger.LogInformation("Fetched task {TaskId} from DB and cached", id);
-            return task;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving task with ID {TaskId}", id);
-            throw;
+                // If not found in cache, fetch from database
+                var task = await _dbContext.Tasks
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(t => t.Id == id);
+
+                if (task == null)
+                {
+                    _logger.LogWarning("Task not found.");
+                    return null;
+                }
+
+                // Save the task to Redis cache with ETag, if its not already cached
+                stateEntry.Value = task;
+
+                await _daprClient.SaveStateAsync(
+                    storeName: ComponentNames.StateStore,
+                    key: key,
+                    value: task,
+                    metadata: new Dictionary<string, string>
+                    {
+                    { "ttlInSeconds", _ttl.ToString() }
+                    }
+                );
+
+                _logger.LogInformation("Fetched task from DB and cached");
+                return task;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving task");
+                throw;
+            }
         }
     }
 
     public async Task CreateTaskAsync(TaskModel task)
     {
-        _logger.LogInformation("Inside:{Method}", nameof(CreateTaskAsync));
-
-        var key = task.Id.ToString();
-        var expires = DateTime.UtcNow.AddHours(24);
-
-        var strategy = _dbContext.Database.CreateExecutionStrategy();
-
-        await strategy.ExecuteAsync(async () =>
+        using var scope = _logger.BeginScope("TaskId: {TaskId}", task.Id);
         {
-            await using var tx = await _dbContext.Database.BeginTransactionAsync();
+            _logger.LogInformation("Inside:{Method}", nameof(CreateTaskAsync));
 
-            try
+            var key = task.Id.ToString();
+            var expires = DateTime.UtcNow.AddHours(24);
+
+            var strategy = _dbContext.Database.CreateExecutionStrategy();
+
+            await strategy.ExecuteAsync(async () =>
             {
-                // --- Idempotency gate (first writer wins)
-                var record = new IdempotencyRecord
-                {
-                    IdempotencyKey = key,
-                    Status = IdempotencyStatus.InProgress,
-                    CreatedAtUtc = DateTimeOffset.UtcNow,
-                    ExpiresAtUtc = expires
-                };
-
-                _dbContext.Idempotency.Add(record);
+                await using var tx = await _dbContext.Database.BeginTransactionAsync();
 
                 try
                 {
-                    await _dbContext.SaveChangesAsync();
-                    _logger.LogDebug("Idempotency gate created for key {Key}", key);
-                }
-                catch (DbUpdateException ex)
-                {
-                    _logger.LogDebug(ex, "Idempotency key {Key} already exists", key);
-
-                    var existing = await _dbContext.Idempotency
-                        .AsNoTracking()
-                        .FirstOrDefaultAsync(i => i.IdempotencyKey == key);
-
-                    if (existing is null)
+                    // --- Idempotency gate (first writer wins)
+                    var record = new IdempotencyRecord
                     {
-                        _logger.LogWarning("Idempotency record vanished for {Key}, treating as processed", key);
-                        return;
+                        IdempotencyKey = key,
+                        Status = IdempotencyStatus.InProgress,
+                        CreatedAtUtc = DateTimeOffset.UtcNow,
+                        ExpiresAtUtc = expires
+                    };
+
+                    _dbContext.Idempotency.Add(record);
+
+                    try
+                    {
+                        await _dbContext.SaveChangesAsync();
+                        _logger.LogDebug("Idempotency gate created for key {Key}", key);
+                    }
+                    catch (DbUpdateException ex)
+                    {
+                        _logger.LogDebug(ex, "Idempotency key {Key} already exists", key);
+
+                        var existing = await _dbContext.Idempotency
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(i => i.IdempotencyKey == key);
+
+                        if (existing is null)
+                        {
+                            _logger.LogWarning("Idempotency record vanished for {Key}, treating as processed", key);
+                            return;
+                        }
+
+                        if (existing.Status == IdempotencyStatus.Completed)
+                        {
+                            _logger.LogInformation("Duplicate request for {Key} — already completed. No-op.", key);
+                            return;
+                        }
+
+                        var notExpired = existing.ExpiresAtUtc == null || existing.ExpiresAtUtc > DateTime.UtcNow;
+                        if (notExpired)
+                        {
+                            _logger.LogInformation("Duplicate request for {Key} while in-progress. No-op.", key);
+                            return;
+                        }
+
+                        _logger.LogWarning("Stale in-progress idempotency for {Key}; proceeding.", key);
                     }
 
-                    if (existing.Status == IdempotencyStatus.Completed)
+                    // --- Persist Task (unique PK/constraint on Task.Id enforces exactly-once)
+                    _dbContext.Tasks.Add(task);
+
+                    try
                     {
-                        _logger.LogInformation("Duplicate request for {Key} — already completed. No-op.", key);
-                        return;
+                        await _dbContext.SaveChangesAsync();
+                        _logger.LogInformation("Task {TaskId} persisted", task.Id);
+                    }
+                    catch (DbUpdateException ex)
+                    {
+                        _logger.LogWarning(ex, "Duplicate Task insert; treating as success");
                     }
 
-                    var notExpired = existing.ExpiresAtUtc == null || existing.ExpiresAtUtc > DateTime.UtcNow;
-                    if (notExpired)
+                    // --- Mark idempotency as completed
+                    var gate = await _dbContext.Idempotency.FirstOrDefaultAsync(i => i.IdempotencyKey == key);
+                    if (gate != null)
                     {
-                        _logger.LogInformation("Duplicate request for {Key} while in-progress. No-op.", key);
-                        return;
+                        gate.Status = IdempotencyStatus.Completed;
+                        await _dbContext.SaveChangesAsync();
                     }
 
-                    _logger.LogWarning("Stale in-progress idempotency for {Key}; proceeding.", key);
+                    await tx.CommitAsync();
+
+                    // --- Optional cache
+                    await _daprClient.SaveStateAsync(
+                        storeName: ComponentNames.StateStore,
+                        key: GetTaskCacheKey(task.Id),
+                        value: task,
+                        metadata: new Dictionary<string, string> { { "ttlInSeconds", _ttl.ToString() } });
+
+                    _logger.LogInformation("Cached task with TTL {TTL}s", _ttl);
                 }
-
-                // --- Persist Task (unique PK/constraint on Task.Id enforces exactly-once)
-                _dbContext.Tasks.Add(task);
-
-                try
+                catch (Exception ex)
                 {
-                    await _dbContext.SaveChangesAsync();
-                    _logger.LogInformation("Task {TaskId} persisted", task.Id);
+                    _logger.LogError(ex, "Unexpected error saving task");
+
+                    try
+                    {
+                        await tx.RollbackAsync();
+                    }
+                    catch
+                    {
+                        // ignored
+                    }
+
+                    throw;
                 }
-                catch (DbUpdateException ex)
-                {
-                    _logger.LogWarning(ex, "Duplicate Task insert for {TaskId}; treating as success", task.Id);
-                }
-
-                // --- Mark idempotency as completed
-                var gate = await _dbContext.Idempotency.FirstOrDefaultAsync(i => i.IdempotencyKey == key);
-                if (gate != null)
-                {
-                    gate.Status = IdempotencyStatus.Completed;
-                    await _dbContext.SaveChangesAsync();
-                }
-
-                await tx.CommitAsync();
-
-                // --- Optional cache
-                await _daprClient.SaveStateAsync(
-                    storeName: ComponentNames.StateStore,
-                    key: GetTaskCacheKey(task.Id),
-                    value: task,
-                    metadata: new Dictionary<string, string> { { "ttlInSeconds", _ttl.ToString() } });
-
-                _logger.LogInformation("Cached task {TaskId} with TTL {TTL}s", task.Id, _ttl);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error saving task {TaskId}", task.Id);
-
-                try
-                {
-                    await tx.RollbackAsync();
-                }
-                catch
-                {
-                    // ignored
-                }
-
-                throw;
-            }
-        });
+            });
+        }
     }
 
     public async Task<bool> UpdateTaskNameAsync(int taskId, string newName)
     {
-        _logger.LogInformation("Inside:{Method}", nameof(UpdateTaskNameAsync));
-        try
+        using var scope = _logger.BeginScope("TaskId: {TaskId}", taskId);
         {
-            var task = await _dbContext.Tasks.FindAsync(taskId);
-            if (task == null)
+            _logger.LogInformation("Inside:{Method}", nameof(UpdateTaskNameAsync));
+            try
             {
-                _logger.LogWarning("Task {TaskId} not found in DB.", taskId);
-                return false;
-            }
+                var task = await _dbContext.Tasks.FindAsync(taskId);
+                if (task == null)
+                {
+                    _logger.LogWarning("Task not found in DB.");
+                    return false;
+                }
 
-            task.Name = newName;
-            await _dbContext.SaveChangesAsync();
+                task.Name = newName;
+                await _dbContext.SaveChangesAsync();
 
-            var key = GetTaskCacheKey(taskId);
+                var key = GetTaskCacheKey(taskId);
 
-            // Load current state from Redis
-            var stateEntry = await _daprClient.GetStateEntryAsync<TaskModel>(ComponentNames.StateStore, key);
+                // Load current state from Redis
+                var stateEntry = await _daprClient.GetStateEntryAsync<TaskModel>(ComponentNames.StateStore, key);
 
-            if (stateEntry.Value == null)
-            {
-                _logger.LogWarning("Task {TaskId} not found in Redis cache. Skipping cache update.", taskId);
+                if (stateEntry.Value == null)
+                {
+                    _logger.LogWarning("Task not found in Redis cache. Skipping cache update.");
+                    return true;
+                }
+
+                stateEntry.Value.Name = newName;
+
+                await _daprClient.SaveStateAsync(
+                   storeName: ComponentNames.StateStore,
+                   key: key,
+                   value: task,
+                   metadata: new Dictionary<string, string>
+                   {
+                    { "ttlInSeconds", _ttl.ToString() }
+                   });
+                _logger.LogInformation("Successfully cached task with TTL {TTL}s", _ttl);
                 return true;
             }
-
-            stateEntry.Value.Name = newName;
-
-            await _daprClient.SaveStateAsync(
-               storeName: ComponentNames.StateStore,
-               key: key,
-               value: task,
-               metadata: new Dictionary<string, string>
-               {
-                    { "ttlInSeconds", _ttl.ToString() }
-               });
-            _logger.LogInformation("Successfully cached task {TaskId} with TTL {TTL}s", task.Id, _ttl);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to update task name.");
-            return false;
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to update task name.");
+                return false;
+            }
         }
     }
 
     public async Task<bool> DeleteTaskAsync(int taskId)
     {
-        _logger.LogInformation("Inside:{Method}", nameof(DeleteTaskAsync));
-        try
+        using var scope = _logger.BeginScope("TaskId: {TaskId}", taskId);
         {
-            var task = await _dbContext.Tasks.FindAsync(taskId);
-            if (task == null)
+            _logger.LogInformation("Inside:{Method}", nameof(DeleteTaskAsync));
+            try
             {
-                _logger.LogWarning("Task {TaskId} not found in DB.", taskId);
-                return false;
-            }
-            // Remove task from the database
-            _dbContext.Tasks.Remove(task);
-            await _dbContext.SaveChangesAsync();
-            _logger.LogInformation("Task {TaskId} deleted from DB.", taskId);
+                var task = await _dbContext.Tasks.FindAsync(taskId);
+                if (task == null)
+                {
+                    _logger.LogWarning("Task not found in DB.");
+                    return false;
+                }
+                // Remove task from the database
+                _dbContext.Tasks.Remove(task);
+                await _dbContext.SaveChangesAsync();
+                _logger.LogInformation("Task deleted from DB.");
 
-            // Remove task from Redis cache
-            var key = GetTaskCacheKey(taskId);
-            var stateEntry = await _daprClient.GetStateEntryAsync<TaskModel>(ComponentNames.StateStore, key);
+                // Remove task from Redis cache
+                var key = GetTaskCacheKey(taskId);
+                var stateEntry = await _daprClient.GetStateEntryAsync<TaskModel>(ComponentNames.StateStore, key);
 
-            if (stateEntry.Value == null)
-            {
-                _logger.LogWarning("Task {TaskId} not found in Redis cache. Skipping cache deletion.", taskId);
+                if (stateEntry.Value == null)
+                {
+                    _logger.LogWarning("Task not found in Redis cache. Skipping cache deletion.");
+                    return true;
+                }
+
+                var deleteSuccess = await stateEntry.TryDeleteAsync();
+
+                if (deleteSuccess)
+                {
+                    _logger.LogInformation("Task removed from Redis cache (ETag: {ETag})", stateEntry.ETag);
+                }
+                else
+                {
+                    _logger.LogWarning("ETag conflict — failed to remove task from Redis cache.");
+                }
+
                 return true;
             }
-
-            var deleteSuccess = await stateEntry.TryDeleteAsync();
-
-            if (deleteSuccess)
+            catch (Exception ex)
             {
-                _logger.LogInformation("Task {TaskId} removed from Redis cache (ETag: {ETag})", taskId, stateEntry.ETag);
+                _logger.LogError(ex, "Failed to delete task.");
+                return false;
             }
-            else
-            {
-                _logger.LogWarning("ETag conflict — failed to remove task {TaskId} from Redis cache.", taskId);
-            }
-
-            return true;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to delete task.");
-            return false;
         }
     }
 
@@ -373,5 +385,24 @@ public class AccessorService : IAccessorService
             .Where(m => m.ThreadId == threadId)
             .OrderBy(m => m.Timestamp)
             .ToListAsync();
+    }
+
+    public async Task<Guid?> ValidateCredentialsAsync(string email, string password)
+    {
+        var user = await _dbContext.Users
+            .Where(u => u.Email == email)
+            .FirstOrDefaultAsync();
+
+        if (user == null)
+        {
+            return null;
+        }
+
+        if (user.PasswordHash != password)
+        {
+            return null;
+        }
+
+        return user.UserId;
     }
 }

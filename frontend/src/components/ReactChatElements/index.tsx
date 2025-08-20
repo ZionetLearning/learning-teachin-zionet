@@ -33,7 +33,6 @@ export const ReactChatElements = ({
   useEffect(() => {
     const el = listRef.current;
     if (!el) return;
-    // scroll to the bottom
     el.scrollTop = el.scrollHeight;
   }, [messages]);
 
@@ -44,54 +43,69 @@ export const ReactChatElements = ({
           avatarMode ? classes.messagesListAvatar : classes.messagesList
         }
         ref={listRef}
+        data-testid="chat-yo-messages"
       >
         {messages?.map((msg, i) => (
-          <MessageBox
+          <div
             key={i}
-            className={classes.messageBox}
-            styles={{
-              backgroundColor: msg.position === "right" ? "#11bbff" : "#fff",
-              color: "#000",
-            }}
-            id={String(i)}
-            position={msg.position}
-            type="text"
-            text={msg.text}
-            title={msg.position === "right" ? "Me" : "Assistant"}
-            titleColor={msg.position === "right" ? "black" : "gray"}
-            date={msg.date}
-            forwarded={false}
-            replyButton={false}
-            removeButton={false}
-            status="received"
-            retracted={false}
-            focus={false}
-            avatar={msg.position === "left" ? avatarUrl : undefined}
-            notch
-          />
+            data-testid={
+              msg.position === "right"
+                ? "chat-yo-msg-user"
+                : "chat-yo-msg-assistant"
+            }
+          >
+            <MessageBox
+              className={classes.messageBox}
+              styles={{
+                backgroundColor: msg.position === "right" ? "#11bbff" : "#fff",
+                color: "#000",
+              }}
+              id={String(i)}
+              position={msg.position}
+              type="text"
+              text={msg.text}
+              title={msg.position === "right" ? "Me" : "Assistant"}
+              titleColor={msg.position === "right" ? "black" : "gray"}
+              date={msg.date}
+              forwarded={false}
+              replyButton={false}
+              removeButton={false}
+              status="received"
+              retracted={false}
+              focus={false}
+              avatar={msg.position === "left" ? avatarUrl : undefined}
+              notch
+            />
+          </div>
         ))}
         {loading && (
-          <MessageBox
-            id="assistant"
-            position="left"
-            type="text"
-            text={t("pages.chatYo.thinking")}
-            title="Assistant"
-            titleColor="none"
-            date={new Date()}
-            forwarded={false}
-            replyButton={false}
-            removeButton={false}
-            status="waiting"
-            retracted={false}
-            focus={false}
-            notch
-          />
+          <div data-testid="chat-yo-msg-loading">
+            <MessageBox
+              id="assistant"
+              position="left"
+              type="text"
+              text={t("pages.chatYo.thinking")}
+              title="Assistant"
+              titleColor="none"
+              date={new Date()}
+              forwarded={false}
+              replyButton={false}
+              removeButton={false}
+              status="waiting"
+              retracted={false}
+              focus={false}
+              notch
+            />
+          </div>
         )}
       </div>
 
-      <div className={avatarMode ? classes.inputContainer : undefined}>
+      <div
+        className={avatarMode ? classes.inputContainer : undefined}
+        data-testid="chat-yo-input-wrapper"
+      >
         <Input
+          data-testid="chat-yo-input"
           placeholder={t("pages.chatYo.typeMessage")}
           className={avatarMode ? classes.inputAvatar : classes.input}
           value={value}
@@ -107,6 +121,7 @@ export const ReactChatElements = ({
                   className={classes.sendButton}
                   title={t("pages.chatYo.replayAvatar")}
                   onClick={handlePlay}
+                  data-testid="chat-yo-replay"
                 >
                   🗣
                 </button>
@@ -114,6 +129,7 @@ export const ReactChatElements = ({
                   className={classes.sendButton}
                   title={t("pages.chatYo.send")}
                   onClick={handleSendMessage}
+                  data-testid="chat-yo-send"
                 >
                   {loading ? "…" : "↑"}
                 </button>
@@ -122,6 +138,7 @@ export const ReactChatElements = ({
               <button
                 className={classes.sendButton}
                 onClick={handleSendMessage}
+                data-testid="chat-yo-send"
               >
                 {loading ? "…" : "↑"}
               </button>

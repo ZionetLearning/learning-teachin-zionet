@@ -125,14 +125,15 @@ namespace Accessor.Migrations
                         .HasColumnName("id");
 
                     b.Property<string>("DeviceFingerprintHash")
-                        .IsRequired()
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)")
                         .HasColumnName("device_fingerprint_hash");
 
                     b.Property<DateTimeOffset>("ExpiresAt")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("timestamptz")
-                        .HasColumnName("expires_at");
+                        .HasColumnName("expires_at")
+                        .HasDefaultValueSql("NOW() + INTERVAL '60 days'");
 
                     b.Property<IPAddress>("IP")
                         .IsRequired()
@@ -209,6 +210,30 @@ namespace Accessor.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Tasks");
+                });
+
+            modelBuilder.Entity("Accessor.Models.User", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.HasKey("UserId");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("Accessor.Models.ChatMessage", b =>

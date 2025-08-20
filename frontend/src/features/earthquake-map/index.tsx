@@ -34,12 +34,19 @@ export const EarthquakeMap = () => {
 
   return (
     <>
-      <Box className={classes.dropdownWrapper}>
+      <Box
+        className={classes.dropdownWrapper}
+        data-testid="eq-dropdown-wrapper"
+      >
         <Typography className={classes.dropdownTitle}>
           {t("pages.earthquakeMap.dropdownLabel")}
         </Typography>
         <FormControl className={classes.formControl} size="small">
-          <Select value={hoursAgo.toString()} onChange={handleChange}>
+          <Select
+            data-testid="eq-timeframe"
+            value={hoursAgo.toString()}
+            onChange={handleChange}
+          >
             <MenuItem value={24}>
               {t("pages.earthquakeMap.last24Hours")}
             </MenuItem>
@@ -59,31 +66,33 @@ export const EarthquakeMap = () => {
       {isLoading && <p>{t("pages.earthquakeMap.loadingMap")}</p>}
       {error && <p>{t("pages.earthquakeMap.error")}</p>}
 
-      <MapContainer
-        center={[20, 0]}
-        zoom={2}
-        style={{ height: "calc(100vh - 60px)", width: "100%" }}
-      >
-        {/* defines where Leaflet should load the map tiles from, in this case from openstreetmap */}
-        <TileLayer
-          attribution='&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        {quakes?.map((eq) => {
-          const [lng, lat] = eq.geometry.coordinates;
-          return (
-            <Marker key={eq.id} position={[lat, lng]} icon={customMarkerIcon}>
-              <Popup>
-                <strong>{eq.properties.place}</strong>
-                <br />
-                {t("pages.earthquakeMap.magnitude")} {eq.properties.mag}
-                <br />
-                {new Date(eq.properties.time).toLocaleString()}
-              </Popup>
-            </Marker>
-          );
-        })}
-      </MapContainer>
+      <div data-testid="eq-map">
+        <MapContainer
+          center={[20, 0]}
+          zoom={2}
+          style={{ height: "calc(100vh - 60px)", width: "100%" }}
+        >
+          {/* defines where Leaflet should load the map tiles from, in this case from openstreetmap */}
+          <TileLayer
+            attribution='&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          {quakes?.map((eq) => {
+            const [lng, lat] = eq.geometry.coordinates;
+            return (
+              <Marker key={eq.id} position={[lat, lng]} icon={customMarkerIcon}>
+                <Popup>
+                  <strong>{eq.properties.place}</strong>
+                  <br />
+                  {t("pages.earthquakeMap.magnitude")} {eq.properties.mag}
+                  <br />
+                  {new Date(eq.properties.time).toLocaleString()}
+                </Popup>
+              </Marker>
+            );
+          })}
+        </MapContainer>
+      </div>
     </>
   );
 };

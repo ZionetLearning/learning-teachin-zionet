@@ -8,15 +8,25 @@ import { useStyles } from "./style";
 export const AvatarSh = () => {
   const { t } = useTranslation();
   const classes = useStyles();
-  const { currentVisemeSrc, speak } = useAvatarSpeech(lipsArray);
+  const { currentVisemeSrc, speak } = useAvatarSpeech({ lipsArray });
   const [text, setText] = useState("");
 
   return (
-    <div>
+    <div data-testid="avatar-sh-page">
       <div className={classes.wrapper}>
-        <img src={avatar} alt="Avatar" className={classes.avatar} />
+        <img
+          src={avatar}
+          alt="Avatar"
+          className={classes.avatar}
+          data-testid="avatar-sh-avatar"
+        />
 
-        <img src={currentVisemeSrc} alt="Lips" className={classes.lipsImage} />
+        <img
+          src={currentVisemeSrc}
+          alt="Lips"
+          className={classes.lipsImage}
+          data-testid="avatar-sh-lips"
+        />
       </div>
       <div style={{ marginTop: "20px" }}>
         <input
@@ -26,9 +36,14 @@ export const AvatarSh = () => {
           onChange={(e) => setText(e.target.value)}
           className={classes.input}
           dir="rtl"
+          data-testid="avatar-sh-input"
         />
         <br />
-        <button onClick={() => speak(text)} className={classes.button}>
+        <button
+          onClick={() => speak(text)}
+          className={classes.button}
+          data-testid="avatar-sh-speak"
+        >
           {t("pages.avatarSh.speak")}
         </button>
       </div>
