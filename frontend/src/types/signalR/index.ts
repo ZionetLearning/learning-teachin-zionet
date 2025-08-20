@@ -1,4 +1,10 @@
+import { ReactNode } from "react";
 import { HubConnection } from "@microsoft/signalr";
+
+export type SignalRProviderProps = {
+  hubUrl: string;
+  children: ReactNode;
+};
 
 export type Status =
   | "idle"

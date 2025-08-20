@@ -44,7 +44,6 @@ export const useSignalRInvoke = <
   return useCallback(
     async (...args: TReq): Promise<TRes> => {
       if (!connection) throw new Error("SignalR not connected");
-      // Cast once at the boundary to satisfy strict typing
       return connection.invoke(
         method,
         ...(args as unknown[])

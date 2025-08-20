@@ -1,10 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   HubConnection,
   HubConnectionBuilder,
   LogLevel,
 } from "@microsoft/signalr";
-import { Status, SignalRContextType } from "@/types";
+import { Status, SignalRContextType, SignalRProviderProps } from "@/types";
 import { SignalRContext } from "@/context";
 
 const getOrCreateUserId = (): string => {
@@ -19,10 +19,7 @@ const getOrCreateUserId = (): string => {
   return id;
 };
 
-export const SignalRProvider: React.FC<{
-  hubUrl: string;
-  children: React.ReactNode;
-}> = ({ hubUrl, children }) => {
+export const SignalRProvider = ({ hubUrl, children }: SignalRProviderProps) => {
   const [status, setStatus] = useState<Status>("idle");
   const [userId] = useState(() => getOrCreateUserId());
   const connRef = useRef<HubConnection | null>(null);
