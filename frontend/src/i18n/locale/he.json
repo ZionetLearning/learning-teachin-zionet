@@ -188,6 +188,20 @@
         "exploreAnime": "ספריית אנימה",
         "searchByTitle": "חפש לפי כותרת",
         "clear": "נקה חיפוש"
+      },
+      "countryExplorer": {
+        "title": "ספריית מדינות",
+        "description": "חפש לפי שם מדינה, סנן לפי איזור וגודל אוכלוסייה",
+        "loadingCountries": "טוען מדינות...",
+        "failedToLoad": "הטעינה נכשלה:",
+        "capital": "עיר בירה:",
+        "region": "איזור:",
+        "population": "גודל אוכלוסייה:",
+        "currency": "מטבע:",
+        "languages": "שפות:",
+        "searchByName": "חפש לפי שם מדינה",
+        "regionWithNoColon": "איזור",
+        "populationWithNoColon": "גודל אוכלוסייה"
       }
     },
     "sidebar": {
@@ -213,7 +227,8 @@
       "en": "אנגלית",
       "earthquakeMap": "מפת רעידות אדמה",
       "weather": "מזג האוויר",
-      "anime": "ספריית אנימה"
+      "anime": "ספריית אנימה",
+      "countryExplorer": "ספריית מדינות"
     }
   },
   "goBackToMenu": "חזור לתפריט",
