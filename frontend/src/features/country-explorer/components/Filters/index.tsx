@@ -1,4 +1,3 @@
-import React from "react";
 import { useTranslation } from "react-i18next";
 import { useStyles } from "./style";
 export type PopRangeKey = "ALL" | "<10M" | "10M-100M" | ">=100M";
