@@ -17,6 +17,7 @@ import {
   EarthquakeMapPage,
   WeatherWidgetPage,
   AnimeExplorerPage,
+  CountryExplorerPage,
 } from "./pages";
 
 import "./App.css";
@@ -57,6 +58,7 @@ function App() {
           <Route path="/earthquake-map" element={<EarthquakeMapPage />} />
           <Route path="/weather" element={<WeatherWidgetPage />} />
           <Route path="/anime-explorer" element={<AnimeExplorerPage />} />
+          <Route path="/country-explorer" element={<CountryExplorerPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
