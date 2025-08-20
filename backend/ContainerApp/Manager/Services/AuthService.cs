@@ -16,7 +16,6 @@ public class AuthService : IAuthService
     private readonly ILogger<AuthService> _log;
     private readonly JwtSettings _jwt;
 
-    // To DO: get the user ID from the users table
     public AuthService(DaprClient dapr, ILogger<AuthService> log, IOptions<JwtSettings> jwtOptions)
     {
         _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
@@ -91,8 +90,18 @@ public class AuthService : IAuthService
         try
         {
             // Get the old refresh token from the request cookies
-            var oldRefreshToken = request.Cookies["refreshToken"]
+            var oldRefreshToken = request.Cookies[AuthSettings.RefreshTokenCookieName]
             ?? throw new UnauthorizedAccessException("Missing refresh token.");
+
+            // TODO: In Future, when we will have domain or real frontend validate Origin and Referer headers
+
+            var csrfCookie = request.Cookies[AuthSettings.CsrfTokenCookieName];
+            var csrfHeader = request.Headers["X-CSRF-Token"].ToString();
+
+            if (string.IsNullOrWhiteSpace(csrfHeader) || csrfCookie == null || !SlowEquals(csrfCookie, csrfHeader))
+            {
+                throw new UnauthorizedAccessException("Invalid CSRF token");
+            }
 
             // Collect session fingerprint data
             var fingerprint = request.Headers["x-fingerprint"].ToString() ?? "unknown";
@@ -173,7 +182,7 @@ public class AuthService : IAuthService
     {
         try
         {
-            var refreshToken = request.Cookies["refreshToken"];
+            var refreshToken = request.Cookies[AuthSettings.RefreshTokenCookieName];
             if (string.IsNullOrEmpty(refreshToken))
             {
                 _log.LogInformation("No refresh token cookie. Nothing to logout.");

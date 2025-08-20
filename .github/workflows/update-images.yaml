@@ -62,7 +62,7 @@ jobs:
 
   helm-deploy:
     needs: [set-defaults, build-and-push-images]
-    uses: ./.github/workflows/aks-app-helm-deploy.yaml
+    uses: ./.github/workflows/aks-helmcharts.yaml
     permissions:
       id-token: write
       contents: read
