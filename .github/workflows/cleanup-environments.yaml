@@ -1,0 +1,215 @@
+name: Cleanup Temporary Environments
+
+on:
+#   schedule:
+#     # Run every day at 11 PM UTC (adjust to your timezone)
+#     - cron: '0 23 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run - only show what would be deleted'
+        required: false
+        default: 'true'
+        type: choice
+        options: ['true', 'false']
+      force_cleanup:
+        description: 'Force cleanup (ignores protection)'
+        required: false
+        default: false
+        type: boolean
+      environment_pattern:
+        description: 'Optional: cleanup specific pattern (e.g., test*)'
+        required: false
+        type: string
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure Login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set cleanup variables
+        run: |
+          # Protected environments that should NEVER be deleted
+          PROTECTED_ENVS="dev,prod,production,staging"
+          
+          # Dry run mode
+          DRY_RUN="${{ github.event.inputs.dry_run || 'true' }}"
+          FORCE_CLEANUP="${{ github.event.inputs.force_cleanup || 'false' }}"
+          PATTERN="${{ github.event.inputs.environment_pattern || '*' }}"
+          
+          echo "PROTECTED_ENVS=$PROTECTED_ENVS" >> $GITHUB_ENV
+          echo "DRY_RUN=$DRY_RUN" >> $GITHUB_ENV
+          echo "FORCE_CLEANUP=$FORCE_CLEANUP" >> $GITHUB_ENV
+          echo "PATTERN=$PATTERN" >> $GITHUB_ENV
+          
+          # Calculate cutoff date (environments older than 1 day)
+          CUTOFF_DATE=$(date -d '1 day ago' '+%Y-%m-%dT%H:%M:%SZ')
+          echo "CUTOFF_DATE=$CUTOFF_DATE" >> $GITHUB_ENV
+          
+          echo "Cleanup Configuration:"
+          echo "  Protected environments: $PROTECTED_ENVS"
+          echo "  Dry run: $DRY_RUN"
+          echo "  Force cleanup: $FORCE_CLEANUP"
+          echo "  Pattern: $PATTERN"
+          echo "  Cutoff date: $CUTOFF_DATE"
+
+      - name: Get AKS credentials
+        run: |
+          az aks get-credentials --resource-group dev-zionet-learning-2025 --name aks-cluster-dev --overwrite-existing
+
+      - name: Discover temporary environments
+        run: |
+          echo "Discovering temporary environments..."
+          
+          # Find all resource groups matching pattern
+          echo "All resource groups matching pattern:"
+          az group list --query "[?contains(name, 'zionet-learning-2025')].{Name:name, CreatedTime:properties.provisioningState}" -o table
+          
+          # Find resource groups to cleanup (exclude protected ones)
+          CLEANUP_RGS=$(az group list --query "[?contains(name, 'zionet-learning-2025') && !contains('$PROTECTED_ENVS', split(name, '-')[0])].name" -o tsv)
+          
+          echo "Resource groups eligible for cleanup:"
+          for rg in $CLEANUP_RGS; do
+            ENV_NAME=$(echo "$rg" | cut -d'-' -f1)
+            CREATED=$(az group show --name "$rg" --query "tags.CreatedDate" -o tsv 2>/dev/null || echo "unknown")
+            echo "  - $rg (env: $ENV_NAME, created: $CREATED)"
+          done
+          
+          echo "CLEANUP_RGS<<EOF" >> $GITHUB_ENV
+          echo "$CLEANUP_RGS" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Discover Kubernetes namespaces
+        run: |
+          echo "Discovering temporary namespaces..."
+          
+          # Infrastructure namespaces that should NEVER be deleted
+          INFRASTRUCTURE_NAMESPACES="dapr-system,monitoring,cert-manager,ingress-nginx,loki,grafana,prometheus,metallb-system,argocd,flux-system"
+          
+          # Find all namespaces (excluding system ones)
+          echo "All custom namespaces:"
+          kubectl get namespaces --no-headers | grep -v "kube-\|default\|devops-" | awk '{print $1}' || true
+          
+          # Extract environment names from resource groups that will be cleaned
+          ENV_NAMES_FROM_RGS=""
+          for rg in $CLEANUP_RGS; do
+            ENV_NAME=$(echo "$rg" | cut -d'-' -f1)  # devhelm-zionet-learning-2025 → devhelm
+            ENV_NAMES_FROM_RGS="$ENV_NAMES_FROM_RGS $ENV_NAME"
+          done
+          
+          echo "Environment names from resource groups to cleanup: $ENV_NAMES_FROM_RGS"
+          
+          # Find namespaces that correlate with the resource groups
+          CLEANUP_NAMESPACES=""
+          for ns in $(kubectl get namespaces --no-headers | grep -v "kube-\|default\|devops-" | awk '{print $1}'); do
+            # Skip infrastructure namespaces
+            if [[ ",$INFRASTRUCTURE_NAMESPACES," == *",$ns,"* ]]; then
+              echo "  Skipping infrastructure namespace: $ns"
+              continue
+            fi
+            
+            # Skip protected environments  
+            if [[ ",$PROTECTED_ENVS," == *",$ns,"* ]]; then
+              echo "  Skipping protected namespace: $ns"
+              continue
+            fi
+            
+            # Check if namespace matches any environment from resource groups
+            for env_name in $ENV_NAMES_FROM_RGS; do
+              if [[ "$ns" == "$env_name" ]]; then
+                CLEANUP_NAMESPACES="$CLEANUP_NAMESPACES $ns"
+                echo "  Found matching namespace for environment: $ns → $env_name-zionet-learning-2025"
+                break
+              fi
+            done
+          done
+          
+          echo "Namespaces eligible for cleanup (correlated with resource groups):"
+          for ns in $CLEANUP_NAMESPACES; do
+            AGE=$(kubectl get namespace "$ns" --no-headers 2>/dev/null | awk '{print $3}' || echo "unknown")
+            echo "  - $ns (age: $AGE) → corresponds to $ns-zionet-learning-2025"
+          done
+          
+          echo "CLEANUP_NAMESPACES=$CLEANUP_NAMESPACES" >> $GITHUB_ENV
+
+      - name: Safety check
+        run: |
+          echo "Running safety checks..."
+          
+          # Check if we're about to delete protected environments
+          for rg in $CLEANUP_RGS; do
+            ENV_NAME=$(echo "$rg" | cut -d'-' -f1)
+            if [[ ",$PROTECTED_ENVS," == *",$ENV_NAME,"* ]]; then
+              echo "ERROR: Attempting to delete protected environment: $ENV_NAME"
+              echo "This should never happen. Stopping cleanup."
+              exit 1
+            fi
+          done
+          
+          for ns in $CLEANUP_NAMESPACES; do
+            if [[ ",$PROTECTED_ENVS," == *",$ns,"* ]]; then
+              echo "ERROR: Attempting to delete protected namespace: $ns"
+              echo "This should never happen. Stopping cleanup."
+              exit 1
+            fi
+          done
+          
+          echo "✅ Safety check passed. No protected environments will be deleted."
+
+      - name: Cleanup Kubernetes namespaces
+        run: |
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "DRY RUN: Would delete these namespaces:"
+            for ns in $CLEANUP_NAMESPACES; do
+              echo "  kubectl delete namespace $ns"
+            done
+          else
+            echo "Deleting temporary namespaces..."
+            for ns in $CLEANUP_NAMESPACES; do
+              echo "Deleting namespace: $ns"
+              kubectl delete namespace "$ns" --timeout=300s || echo "Failed to delete namespace $ns"
+            done
+          fi
+
+      - name: Cleanup Azure Resource Groups
+        run: |
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "DRY RUN: Would delete these resource groups:"
+            for rg in $CLEANUP_RGS; do
+              echo "  az group delete --name $rg --yes --no-wait"
+            done
+          else
+            echo "Deleting temporary resource groups..."
+            for rg in $CLEANUP_RGS; do
+              echo "Deleting resource group: $rg"
+              az group delete --name "$rg" --yes --no-wait || echo "Failed to delete resource group $rg"
+            done
+          fi
+
+      - name: Summary
+        run: |
+          echo "Cleanup Summary:"
+          echo "  Mode: $([ "$DRY_RUN" = "true" ] && echo "DRY RUN" || echo "ACTUAL DELETION")"
+          echo "  Resource groups processed: $(echo "$CLEANUP_RGS" | wc -w)"
+          echo "  Namespaces processed: $(echo "$CLEANUP_NAMESPACES" | wc -w)"
+          echo "  Protected environments: $PROTECTED_ENVS"
+          
+          if [ "$DRY_RUN" = "false" ]; then
+            echo ""
+            echo "Actual deletions were performed!"
+            echo "Resource groups are being deleted in the background."
+            echo "Check Azure portal for deletion status."
+          fi
