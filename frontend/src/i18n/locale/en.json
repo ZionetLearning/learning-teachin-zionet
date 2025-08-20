@@ -202,6 +202,16 @@
         "searchByName": "Search by name",
         "regionWithNoColon": "Region",
         "populationWithNoColon": "Population"
+      },
+      "signalR": {
+        "title": "SignalR Testing",
+        "description": "This page is for testing SignalR functionality.",
+        "createTask": "Create Task",
+        "taskId": "Task ID",
+        "taskName": "Task Name",
+        "payload": "Payload",
+        "posting": "Posting...",
+        "send": "Send"
       }
     },
     "sidebar": {

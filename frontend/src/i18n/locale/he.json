@@ -202,6 +202,17 @@
         "searchByName": "חפש לפי שם מדינה",
         "regionWithNoColon": "איזור",
         "populationWithNoColon": "גודל אוכלוסייה"
+      },
+      "signalR": {
+        "title": "בדיקת SignalR",
+        "description": "עמוד זה מיועד לבדיקה של SignalR.",
+        "createTask": "צור משימה",
+        "taskId": "מזהה משימה",
+        "taskName": "שם המשימה",
+        "payload": "תוכן (Payload)",
+        "posting": "שולח...",
+        "postiong": "שולח...",
+        "send": "שלח"
       }
     },
     "sidebar": {

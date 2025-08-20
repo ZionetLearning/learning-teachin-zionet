@@ -45,14 +45,32 @@ export const SignalRPage = () => {
   };
 
   return (
-    <>
+    <Box
+      sx={{
+        height: "100%",
+        display: "flex",
+        alignItems: "center", // use "center" for vertical centering
+        justifyContent: "center", // horizontal centering
+
+        flexDirection: "column",
+      }}
+    >
       <Typography variant="h4" gutterBottom>
-        {t("SignalR Testing: ")}
+        {t("pages.signalR.title")}
       </Typography>
-      <Box sx={{ p: 1 }}>
-        SignalR status: <b>{status}</b> <br />
-        👤 userId: {userId}
-      </Box>
+
+      <Typography variant="h5" gutterBottom>
+        {t("pages.signalR.description")}
+      </Typography>
+
+      <Typography variant="h6">
+        SignalR status:{" "}
+        <b style={{ color: status === "connected" ? "green" : "red" }}>
+          {status}
+        </b>
+        <br />
+        userId: {userId}
+      </Typography>
 
       <Paper
         component="form"
@@ -60,12 +78,12 @@ export const SignalRPage = () => {
         sx={{ mt: 2, p: 2, maxWidth: 520, display: "block" }}
       >
         <Typography variant="h6" gutterBottom>
-          {t("pages.home.createTask", "Create Task")}
+          {t("pages.signalR.createTask")}
         </Typography>
 
         <Stack spacing={2}>
           <TextField
-            label={t("forms.task.id", "Task ID")}
+            label={t("pages.signalR.taskId")}
             value={id}
             onChange={(e) => setId(e.target.value)}
             required
@@ -73,7 +91,7 @@ export const SignalRPage = () => {
           />
 
           <TextField
-            label={t("forms.task.name", "Task Name")}
+            label={t("pages.signalR.taskName")}
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
@@ -81,7 +99,7 @@ export const SignalRPage = () => {
           />
 
           <TextField
-            label={t("forms.task.payload", "Payload")}
+            label={t("pages.signalR.payload")}
             value={payload}
             onChange={(e) => setPayload(e.target.value)}
             required
@@ -96,13 +114,11 @@ export const SignalRPage = () => {
               type="submit"
               disabled={isPending || !isValid || status !== "connected"}
             >
-              {isPending
-                ? t("common.sending", "Posting…")
-                : t("common.send", "Post Task")}
+              {isPending ? t("pages.signalR.posting") : t("pages.signalR.send")}
             </Button>
           </Stack>
         </Stack>
       </Paper>
-    </>
+    </Box>
   );
 };
