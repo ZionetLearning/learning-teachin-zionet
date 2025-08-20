@@ -1,17 +1,14 @@
 name: Deploy Frontend to Azure Static Web Apps
 run-name: >
   🚀 Deploy Frontend to environment_name: ${{
-    inputs.environment_name || github.event.inputs.environment_name || 
-    'dev'
+    inputs.environment_name || github.event.inputs.environment_name || 'dev'
   }} | GitHub Environment: ${{ inputs.environment || github.event.inputs.environment || 'Development'}}
-   
-permissions:
-  contents: read
 
 on:
-  push:
+  pull_request:
     branches:
       - main
+    types: [opened, synchronize, closed]
     paths:
       - 'frontend/**'
   workflow_dispatch:
@@ -45,11 +42,10 @@ on:
         required: false
 
 jobs:
-  build-frontend:
+  frontend-build-and-lint:
     runs-on: ubuntu-latest
     env:
       FE_DIR: frontend
-
     steps:
       - uses: actions/checkout@v4
 
@@ -67,13 +63,13 @@ jobs:
       - name: Lint Code
         working-directory: ${{ env.FE_DIR }}
         run: npm run lint
-      
+
       - name: Create release name for Sentry (UTC + short SHA)
         run: |
           ts=$(date -u "+Release-%d-%m-%Y_%H-%M")
-          echo "RELEASE_NAME=${ts}-${GITHUB_SHA::7}" >> $GITHUB_ENV  
+          echo "RELEASE_NAME=${ts}-${GITHUB_SHA::7}" >> $GITHUB_ENV
 
-      - name: Build Application 
+      - name: Build Application
         working-directory: ${{ env.FE_DIR }}
         env:
           VITE_AZURE_SPEECH_KEY: ""
@@ -95,8 +91,12 @@ jobs:
           path: ${{ env.FE_DIR }}/dist/
           retention-days: 1
 
-  deploy-frontend:
-    needs: [build-frontend]
+  deploy:
+    if: |
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == true) ||
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'workflow_call'
+    needs: [frontend-build-and-lint]
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || 'Development' }}
     permissions:
@@ -104,13 +104,12 @@ jobs:
       contents: read
     env:
       FE_DIR: frontend
-
     steps:
       - uses: actions/checkout@v4
 
-      # If triggered by push to main, set default environment_name to dev
-      - name: Set default environment_name for main branch push
-        if: ${{ github.event_name == 'push' }}
+      # If triggered by PR merge, set default environment_name to dev
+      - name: Set default environment_name for PR merge
+        if: ${{ github.event_name == 'pull_request' }}
         run: |
           echo "environment_name=dev" >> $GITHUB_ENV
 
@@ -130,11 +129,10 @@ jobs:
           set -euo pipefail
           ENV="${{ inputs.environment_name || env.environment_name}}"
           RG="${ENV}-zionet-learning-2025"
-
           SWA_NAME="static-web-app-${ENV}"
           AI_NAME="${SWA_NAME}-appinsights"
-
           echo "rg=$RG" >> $GITHUB_OUTPUT
+          echo "rg=$RG"
           echo "swa=$SWA_NAME" >> $GITHUB_OUTPUT
           echo "ai=$AI_NAME" >> $GITHUB_OUTPUT
 
@@ -176,7 +174,7 @@ jobs:
             echo "❌ Could not fetch Static Web Apps deployment token."
             exit 1
           fi
-          echo "::add-mask::$TOKEN" 
+          echo "::add-mask::$TOKEN"
           echo "AZURE_STATIC_WEB_APPS_API_TOKEN=$TOKEN" >> "$GITHUB_ENV"
 
       - name: Deploy to Azure Static Web Apps
