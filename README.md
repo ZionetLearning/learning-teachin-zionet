@@ -3,6 +3,7 @@
 ## Purpose
 
 The **Engine** requires an Azure OpenAI API key to work correctly. Sensitive values must **never** be committed to the repository.
+The **Manager** requires an Jwt Secret. Sensitive values must **never** be committed to the repository.
 
 ---
 
