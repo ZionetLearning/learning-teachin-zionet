@@ -103,10 +103,10 @@ jobs:
           retention-days: 1
 
   deploy:
-    if: |
-      (github.event_name == 'pull_request' && github.event.pull_request.merged == true) ||
-      github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'workflow_call'
+    #if: |
+      # (github.event_name == 'pull_request' && github.event.pull_request.merged == true) ||
+      # github.event_name == 'workflow_dispatch' ||
+      # github.event_name == 'workflow_call'
     needs: [frontend-build-and-lint]
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || 'Development' }}
