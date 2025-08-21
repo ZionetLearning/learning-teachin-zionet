@@ -443,9 +443,9 @@ public class AccessorService : IAccessorService
         return true;
     }
 
-    public async Task<bool> UpdateUserAsync(UserModel updateUser)
+    public async Task<bool> UpdateUserAsync(UpdateUserModel updateUser, Guid userId)
     {
-        var user = await _dbContext.Users.FindAsync(updateUser.UserId);
+        var user = await _dbContext.Users.FindAsync(userId);
         if (user == null)
         {
             return false;

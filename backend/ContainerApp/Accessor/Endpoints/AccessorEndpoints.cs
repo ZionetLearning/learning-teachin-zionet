@@ -314,13 +314,14 @@ public static class AccessorEndpoints
     }
 
     private static async Task<IResult> UpdateUserAsync(
-        [FromBody] UserModel user,
+        [FromRoute] Guid userId,
+        [FromBody] UpdateUserModel user,
         [FromServices] IAccessorService service,
         [FromServices] ILogger<IAccessorService> logger)
     {
         try
         {
-            var updated = await service.UpdateUserAsync(user);
+            var updated = await service.UpdateUserAsync(user, userId);
             return updated ? Results.Ok("User updated") : Results.NotFound("User not found");
         }
         catch (Exception ex)

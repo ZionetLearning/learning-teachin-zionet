@@ -13,7 +13,7 @@ public interface IManagerService
     Task SendUserNotificationAsync(string userId, UserNotification notification);
     Task<UserModel?> GetUserAsync(Guid userId);
     Task<bool> CreateUserAsync(UserModel user);
-    Task<bool> UpdateUserAsync(UserModel user);
+    Task<bool> UpdateUserAsync(UpdateUserModel user, Guid userId);
     Task<bool> DeleteUserAsync(Guid userId);
 
 }

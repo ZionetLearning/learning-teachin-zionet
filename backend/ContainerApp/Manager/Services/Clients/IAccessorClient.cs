@@ -15,6 +15,6 @@ public interface IAccessorClient
     Task<IReadOnlyList<ChatThread>> GetThreadsForUserAsync(string userId, CancellationToken ct = default);
     Task<UserModel?> GetUserAsync(Guid userId);
     Task<bool> CreateUserAsync(UserModel user);
-    Task<bool> UpdateUserAsync(UserModel user);
+    Task<bool> UpdateUserAsync(UpdateUserModel user, Guid userId);
     Task<bool> DeleteUserAsync(Guid userId);
 }

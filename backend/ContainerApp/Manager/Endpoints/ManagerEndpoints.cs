@@ -242,14 +242,14 @@ public static class ManagerEndpoints
 
     private static async Task<IResult> UpdateUserAsync(
         [FromRoute] Guid userId,
-        [FromBody] UserModel user,
+        [FromBody] UpdateUserModel user,
         [FromServices] IManagerService managerService,
         [FromServices] ILogger<ManagerService> logger)
     {
         using var scope = logger.BeginScope("UpdateUser {UserId}:", userId);
         try
         {
-            var success = await managerService.UpdateUserAsync(user);
+            var success = await managerService.UpdateUserAsync(user, userId);
             if (!success)
             {
                 logger.LogWarning("User not found for update");

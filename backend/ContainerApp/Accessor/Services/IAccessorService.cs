@@ -18,6 +18,6 @@ public interface IAccessorService
     Task<Guid?> ValidateCredentialsAsync(string email, string password);
     Task<UserModel?> GetUserAsync(Guid userId);
     Task<bool> CreateUserAsync(UserModel newUser);
-    Task<bool> UpdateUserAsync(UserModel updateUser);
+    Task<bool> UpdateUserAsync(UpdateUserModel updateUser, Guid userId);
     Task<bool> DeleteUserAsync(Guid userId);
 }

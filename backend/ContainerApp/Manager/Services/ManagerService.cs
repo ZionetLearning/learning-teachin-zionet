@@ -236,10 +236,10 @@ public class ManagerService : IManagerService
         return await _accessorClient.CreateUserAsync(user);
     }
 
-    public async Task<bool> UpdateUserAsync(UserModel user)
+    public async Task<bool> UpdateUserAsync(UpdateUserModel user, Guid userId)
     {
-        _logger.LogInformation("Updating user with ID: {UserId}", user.UserId);
-        return await _accessorClient.UpdateUserAsync(user);
+        _logger.LogInformation("Updating user with ID: {UserId}", userId);
+        return await _accessorClient.UpdateUserAsync(user, userId);
     }
 
     public async Task<bool> DeleteUserAsync(Guid userId)

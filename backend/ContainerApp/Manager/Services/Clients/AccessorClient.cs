@@ -273,20 +273,20 @@ public class AccessorClient(
         }
     }
 
-    public async Task<bool> UpdateUserAsync(UserModel user)
+    public async Task<bool> UpdateUserAsync(UpdateUserModel user, Guid userId)
     {
         try
         {
             await _daprClient.InvokeMethodAsync(
                 HttpMethod.Put,
                 "accessor",
-                $"users/{user.UserId}",
+                $"users/{userId}",
                 user);
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating user {UserId}", user.UserId);
+            _logger.LogError(ex, "Error updating user {UserId}", userId);
             return false;
         }
     }
