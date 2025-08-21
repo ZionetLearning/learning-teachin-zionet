@@ -61,3 +61,7 @@ backend/ContainerApp/.idea/.idea.backend/.idea/vcs.xml
 # Ignore all local override config files (secrets, API keys)
 **/appsettings.Local.json
 
+devops/helm-tools/loki/get_helm.sh
+devops/helm-tools/loki/helm-v3.18.6-windows-amd64.zip
+devops/helm-tools/loki/windows-amd64/LICENSE
+devops/helm-tools/loki/windows-amd64/README.md
