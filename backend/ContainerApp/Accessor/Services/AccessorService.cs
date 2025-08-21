@@ -110,7 +110,24 @@ public class AccessorService : IAccessorService
             }
         }
     }
+    public async Task<StatsSnapshot> ComputeStatsAsync(CancellationToken ct = default)
+    {
+        // Users: count distinct UserId from ChatThreads (works even if you don’t have a Users table)
+        var totalUsers = await _dbContext.ChatThreads
+            .Select(t => t.UserId)
+            .Distinct()
+            .LongCountAsync(ct);
 
+        var totalThreads = await _dbContext.ChatThreads.LongCountAsync(ct);
+        var totalMessages = await _dbContext.ChatMessages.LongCountAsync(ct);
+
+        return new StatsSnapshot(
+            TotalUsers: totalUsers,
+            TotalThreads: totalThreads,
+            TotalMessages: totalMessages,
+            GeneratedAtUtc: DateTimeOffset.UtcNow
+        );
+    }
     public async Task CreateTaskAsync(TaskModel task)
     {
         using var scope = _logger.BeginScope("TaskId: {TaskId}", task.Id);

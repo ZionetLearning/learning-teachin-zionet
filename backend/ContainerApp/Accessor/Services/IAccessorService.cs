@@ -15,4 +15,5 @@ public interface IAccessorService
     Task<IEnumerable<ChatMessage>> GetMessagesByThreadAsync(Guid threadId);
     Task<List<ThreadSummaryDto>> GetThreadsForUserAsync(string userId);
     Task<Guid?> ValidateCredentialsAsync(string email, string password);
+    Task<StatsSnapshot> ComputeStatsAsync(CancellationToken ct = default);
 }

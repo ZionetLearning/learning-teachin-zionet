@@ -133,6 +133,7 @@ app.MapSubscribeHandler();
 app.MapManagerEndpoints();
 app.MapAiEndpoints();
 app.MapAuthEndpoints();
+app.MapStatsPing();
 if (env.IsDevelopment())
 {
     app.MapOpenApi();
