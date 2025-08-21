@@ -202,6 +202,19 @@
         "searchByName": "חפש לפי שם מדינה",
         "regionWithNoColon": "איזור",
         "populationWithNoColon": "גודל אוכלוסייה"
+      },
+      "signalR": {
+        "title": "בדיקת SignalR",
+        "description": "עמוד זה מיועד לבדיקה של SignalR.",
+        "createTask": "צור משימה",
+        "taskId": "מזהה משימה",
+        "taskName": "שם המשימה",
+        "payload": "תוכן (Payload)",
+        "posting": "שולח...",
+        "postiong": "שולח...",
+        "send": "שלח",
+         "noNotifications": "אין התראות",
+        "notifications": "התראות"
       }
     },
     "sidebar": {
@@ -228,7 +241,8 @@
       "earthquakeMap": "מפת רעידות אדמה",
       "weather": "מזג האוויר",
       "anime": "ספריית אנימה",
-      "countryExplorer": "ספריית מדינות"
+      "countryExplorer": "ספריית מדינות",
+      "signalR": "בדיקת SignalR"
     }
   },
   "goBackToMenu": "חזור לתפריט",

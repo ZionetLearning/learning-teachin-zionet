@@ -202,6 +202,18 @@
         "searchByName": "Search by name",
         "regionWithNoColon": "Region",
         "populationWithNoColon": "Population"
+      },
+      "signalR": {
+        "title": "SignalR Testing",
+        "description": "This page is for testing SignalR functionality.",
+        "createTask": "Create Task",
+        "taskId": "Task ID",
+        "taskName": "Task Name",
+        "payload": "Payload",
+        "posting": "Posting...",
+        "send": "Send",
+        "noNotifications": "No notifications",
+        "notifications": "Notifications"
       }
     },
     "sidebar": {
@@ -228,7 +240,8 @@
       "earthquakeMap": "Earthquake Map",
       "weather": "Weather",
       "anime": "Anime Explorer",
-      "countryExplorer": "Country Explorer"
+      "countryExplorer": "Country Explorer",
+      "signalR": "SignalR Testing"
     }
   },
   "goBackToMenu": "Go back to Menu",
