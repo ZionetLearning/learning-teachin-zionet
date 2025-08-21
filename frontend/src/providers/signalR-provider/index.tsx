@@ -1,9 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  HubConnection,
-  HubConnectionBuilder,
-  LogLevel,
-} from "@microsoft/signalr";
+import { HubConnection, HubConnectionBuilder } from "@microsoft/signalr";
 import { Status, SignalRContextType, SignalRProviderProps } from "@/types";
 import { SignalRContext } from "@/context";
 
@@ -28,13 +24,10 @@ export const SignalRProvider = ({ hubUrl, children }: SignalRProviderProps) => {
     let isMounted = true;
 
     const connection = new HubConnectionBuilder()
-      .withUrl(`${hubUrl}?userId=${encodeURIComponent(userId)}`, {
+      .withUrl(hubUrl, {
         withCredentials: false,
       })
-      .withAutomaticReconnect([0, 2000, 10000, 30000])
-      .configureLogging(
-        import.meta.env.DEV ? LogLevel.Information : LogLevel.Error
-      )
+      .withAutomaticReconnect()
       .build();
 
     connection.onreconnecting(() => isMounted && setStatus("reconnecting"));
@@ -50,7 +43,7 @@ export const SignalRProvider = ({ hubUrl, children }: SignalRProviderProps) => {
         if (!isMounted) return;
         setStatus("connected");
       } catch (e) {
-        if (import.meta.env.DEV) console.error("SignalR start failed", e);
+        console.error("SignalR start failed", e);
         if (isMounted) setStatus("disconnected");
       }
     })();
