@@ -18,9 +18,14 @@ on:
           - Development
           - Production
       environment_name:
-        description: 'Enter custom prefix (used for Kubernetes namespace, etc.)'
+        description: 'Select environment (MUST choose one)'
         required: true
-        type: string
+        type: choice
+        options:
+          - Choose
+          - dev
+          - featest
+          - featest2
       list_services_names:
         description: 'Optional comma-separated list of services to build (e.g., accessor,manager). Leave empty for all.'
         required: false
