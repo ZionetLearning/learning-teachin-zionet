@@ -165,7 +165,7 @@ jobs:
             az staticwebapp environment delete \
               --name "$env" \
               --resource-group "${{ steps.names.outputs.rg }}" \
-              --yes
+              --yes || true
           done
 
 
