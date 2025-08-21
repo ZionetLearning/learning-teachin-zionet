@@ -26,23 +26,12 @@ promtail:
         - cri: {}
         - json:
             expressions:
-              TaskId0: Scopes[0].TaskId
-              TaskId1: Scopes[1].TaskId
-              TaskId2: Scopes[2].TaskId
-              TaskId3: Scopes[3].TaskId
-              TaskId4: Scopes[4].TaskId
-
               TraceId0: Scopes[0].TraceId
               TraceId1: Scopes[1].TraceId
               TraceId2: Scopes[2].TraceId
-
               SpanId0: Scopes[0].SpanId
               SpanId1: Scopes[1].SpanId
               SpanId2: Scopes[2].SpanId
-        - template:
-            source: TaskId0
-            dest: TaskId
-            template: '{{ if .TaskId0 }}{{ .TaskId0 }}{{ else if .TaskId1 }}{{ .TaskId1 }}{{ else if .TaskId2 }}{{ .TaskId2 }}{{ else if .TaskId3 }}{{ .TaskId3 }}{{ else }}{{ .TaskId4 }}{{ end }}'
         - template:
             source: TraceId0
             dest: TraceId
@@ -54,4 +43,3 @@ promtail:
         - labels:
             TraceId:
             SpanId:
-            TaskId:
