@@ -25,7 +25,7 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore IntegrationTests.csproj
 
       - name: Ensure correct appsettings.json
         run: |
@@ -36,4 +36,4 @@ jobs:
           }' > appsettings.json
 
       - name: Run integration tests
-        run: dotnet test --no-build --verbosity normal
+        run: dotnet test IntegrationTests.csproj --no-build --verbosity normal
