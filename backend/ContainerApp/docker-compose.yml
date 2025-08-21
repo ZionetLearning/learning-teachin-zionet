@@ -17,6 +17,9 @@ services:
         interval: 10s
         retries: 3
 
+
+ # -------------------- stats-scheduler --------------------
+
   stats-scheduler:
      image: alpine:3.20
      command: >

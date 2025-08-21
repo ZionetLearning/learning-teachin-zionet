@@ -1,4 +1,4 @@
-﻿namespace Accessor.Models;
+﻿namespace Manager.Models;
 
 public record StatsSnapshot(
     long TotalThreads,

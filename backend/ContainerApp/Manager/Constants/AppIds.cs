@@ -4,5 +4,6 @@ public static class AppIds
 {
     public const string Engine = "engine";
     public const string Accessor = "accessor";
+    public const string StateStore = "statestore";
 
 }

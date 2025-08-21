@@ -1,49 +1,41 @@
 ﻿using Dapr.Client;
+using Manager.Constants;
+using Manager.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Endpoints;
 
 public static class StatsPingEndpoints
 {
-    private const string DefaultAccessorAppId = "accessor";   // Dapr app-id of Accessor
-    private const string DefaultStateStore = "statestore"; // Dapr state store component name
     private const string StatsKey = "stats:latest";
-    private const int StatsTtlSeconds = 600;          // 10 minutes
-
-    // Local DTO (shape must match Accessor.Models.StatsSnapshot)
-    public record StatsSnapshot(long TotalUsers, long TotalThreads, long TotalMessages, DateTimeOffset GeneratedAtUtc);
-
+    private const int StatsTtlSeconds = 86400;        // 24h
     public static IEndpointRouteBuilder MapStatsPing(this IEndpointRouteBuilder app)
     {
-        // POST: trigger compute in Accessor and cache in state (what you already had)
+        // POST: compute & cache for 24h
         app.MapPost("/internal/compute-stats/ping",
             async ([FromServices] ILoggerFactory lf,
                    [FromServices] DaprClient dapr,
-                   [FromServices] IConfiguration cfg,
-                   CancellationToken ct) =>
+                   [FromServices] IConfiguration cfg) =>
             {
                 var log = lf.CreateLogger("StatsCompute");
-                var accessorAppId = cfg["Services:Accessor:AppId"] ?? DefaultAccessorAppId;
-                var stateStore = cfg["Services:StateStore:Name"] ?? DefaultStateStore;
 
                 try
                 {
-                    // 1) Fetch snapshot from Accessor via Dapr service invocation
+                    // 1) Invoke Accessor via Dapr service invocation (no request-abort token)
                     var snapshot = await dapr.InvokeMethodAsync<StatsSnapshot>(
-                        HttpMethod.Get, accessorAppId, "internal/stats/snapshot", ct);
+                        HttpMethod.Get, AppIds.Accessor, "internal/stats/snapshot", cancellationToken: default);
 
-                    // 2) Save to Dapr state with TTL
+                    // 2) Save to state with TTL so Dapr auto-expires it
                     await dapr.SaveStateAsync(
-                        storeName: stateStore,
+                        storeName: AppIds.StateStore,
                         key: StatsKey,
                         value: snapshot,
                         metadata: new Dictionary<string, string> { ["ttlInSeconds"] = StatsTtlSeconds.ToString() },
-                        cancellationToken: ct);
+                        cancellationToken: default);
 
-                    log.LogInformation("Stats snapshot saved to '{StateStore}' key '{Key}' (TTL {TTL}s): {@Snapshot}",
-                        stateStore, StatsKey, StatsTtlSeconds, snapshot);
+                    log.LogInformation("Saved stats to '{StateStore}' key '{Key}' with TTL {TTL}s", AppIds.StateStore, StatsKey, StatsTtlSeconds);
 
-                    return Results.Ok(new { ok = true, savedKey = StatsKey, ttlSeconds = StatsTtlSeconds, snapshot });
+                    return Results.Ok(new { ok = true, key = StatsKey, ttlSeconds = StatsTtlSeconds, snapshot });
                 }
                 catch (Exception ex)
                 {
@@ -55,7 +47,7 @@ public static class StatsPingEndpoints
             .WithTags("Internal")
             .Produces(StatusCodes.Status200OK);
 
-        // NEW: GET latest cached stats from Dapr state
+        // GET: latest cached stats (404 if expired / not set)
         app.MapGet("/internal/stats/latest",
             async ([FromServices] ILoggerFactory lf,
                    [FromServices] DaprClient dapr,
@@ -63,16 +55,13 @@ public static class StatsPingEndpoints
                    CancellationToken ct) =>
             {
                 var log = lf.CreateLogger("StatsRead");
-                var stateStore = cfg["Services:StateStore:Name"] ?? DefaultStateStore;
 
                 var snapshot = await dapr.GetStateAsync<StatsSnapshot>(
-                    storeName: stateStore,
-                    key: StatsKey,
-                    cancellationToken: ct);
+                    storeName: AppIds.StateStore, key: StatsKey, cancellationToken: ct);
 
                 if (snapshot is null)
                 {
-                    log.LogWarning("No stats snapshot found in '{StateStore}' under key '{Key}'", stateStore, StatsKey);
+                    log.LogWarning("No stats snapshot found in '{StateStore}' for key '{Key}'", AppIds.StateStore, StatsKey);
                     return Results.NotFound(new { ok = false, message = "No stats snapshot available." });
                 }
 
