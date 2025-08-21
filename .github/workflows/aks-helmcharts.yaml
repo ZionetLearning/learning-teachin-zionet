@@ -98,12 +98,18 @@ jobs:
           echo "PG_DB=${ENVIRONMENT_NAME}-pg-zionet-learning" >> $GITHUB_ENV
           echo "PG_RG=${ENVIRONMENT_NAME}-zionet-learning-2025" >> $GITHUB_ENV
 
+          # Debug infrastructure step conditions
+          echo "Debug: github.event_name = ${{ github.event_name }}"
+          echo "Debug: inputs.skip_infra_steps = ${{ inputs.skip_infra_steps }}"
+          echo "Debug: !inputs.skip_infra_steps = ${{ !inputs.skip_infra_steps }}"
+          echo "Debug: Full condition = ${{ github.event_name == 'workflow_call' && !inputs.skip_infra_steps }}"
+
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
 
 
       - name: Create namespace
-        if: ${{ github.event_name == 'workflow_call' && !inputs.skip_infra_steps }}
+        if: ${{ github.event_name == 'workflow_call' && inputs.skip_infra_steps != true }}
         run: |
           kubectl create namespace "$TARGET_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 
@@ -123,7 +129,7 @@ jobs:
           echo "Helm release status check complete."
 
       - name: Wait for external IP for ingress controller
-        if: ${{ github.event_name == 'workflow_call' && !inputs.skip_infra_steps }}
+        if: ${{ github.event_name == 'workflow_call' && inputs.skip_infra_steps != true }}
         run: |
           echo "Waiting for external IP for ingress-nginx-controller..."
           for i in {1..30}; do
@@ -139,7 +145,7 @@ jobs:
           echo "Failed to get ingress IP."; exit 1
 
       - name: Add ingress IP to PostgreSQL firewall
-        if: ${{ github.event_name == 'workflow_call' && !inputs.skip_infra_steps }}
+        if: ${{ github.event_name == 'workflow_call' && inputs.skip_infra_steps != true }}
         run: |
           INGRESS_IP=$(kubectl -n devops-ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
           az postgres flexible-server firewall-rule create \
@@ -150,7 +156,7 @@ jobs:
             --end-ip-address $INGRESS_IP
 
       - name: Add AKS outbound IP to PostgreSQL firewall
-        if: ${{ github.event_name == 'workflow_call' && !inputs.skip_infra_steps }}
+        if: ${{ github.event_name == 'workflow_call' && inputs.skip_infra_steps != true }}
         run: |
           # Try NAT Gateway first, else fallback to Load Balancer
           OUTBOUND_IP_ID=$(az aks show \
