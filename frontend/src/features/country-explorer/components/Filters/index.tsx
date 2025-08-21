@@ -5,13 +5,13 @@ export type PopRangeKey = "ALL" | "<10M" | "10M-100M" | ">=100M";
 export type FiltersState = {
   search: string;
   region:
-  | "All"
-  | "Africa"
-  | "Americas"
-  | "Asia"
-  | "Europe"
-  | "Oceania"
-  | "Antarctic";
+    | "All"
+    | "Africa"
+    | "Americas"
+    | "Asia"
+    | "Europe"
+    | "Oceania"
+    | "Antarctic";
   popRange: PopRangeKey;
 };
 
