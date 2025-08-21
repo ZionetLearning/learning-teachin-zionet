@@ -1,7 +1,7 @@
 import { createUseStyles } from "react-jss";
 
 export const useStyles = createUseStyles({
-  container: {
+  cardContainer: {
     border: "1px solid #eee",
     borderRadius: 12,
     overflow: "hidden",

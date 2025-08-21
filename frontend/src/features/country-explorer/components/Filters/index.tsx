@@ -5,13 +5,13 @@ export type PopRangeKey = "ALL" | "<10M" | "10M-100M" | ">=100M";
 export type FiltersState = {
   search: string;
   region:
-    | "All"
-    | "Africa"
-    | "Americas"
-    | "Asia"
-    | "Europe"
-    | "Oceania"
-    | "Antarctic";
+  | "All"
+  | "Africa"
+  | "Americas"
+  | "Asia"
+  | "Europe"
+  | "Oceania"
+  | "Antarctic";
   popRange: PopRangeKey;
 };
 
@@ -47,10 +47,12 @@ export const Filters = ({ value, onChange }: Props) => {
   return (
     <div className={classes.wrapper}>
       <div>
-        <label className={classes.label}>
+        <label className={classes.label} htmlFor="search-input">
           {t("pages.countryExplorer.searchByName")}
         </label>
         <input
+          id="search-input"
+          data-testid="search-input"
           className={classes.input}
           placeholder={t("pages.countryExplorer.searchByName")}
           value={value.search}
@@ -59,10 +61,12 @@ export const Filters = ({ value, onChange }: Props) => {
       </div>
 
       <div>
-        <label className={classes.label}>
+        <label className={classes.label} htmlFor="region-select">
           {t("pages.countryExplorer.regionWithNoColon")}
         </label>
         <select
+          id="region-select"
+          data-testid="region-select"
           className={classes.select}
           value={value.region}
           onChange={(e) =>
@@ -78,10 +82,12 @@ export const Filters = ({ value, onChange }: Props) => {
       </div>
 
       <div>
-        <label style={{ display: "block", fontSize: 12, color: "#555" }}>
+        <label htmlFor="population-select" className={classes.label}>
           {t("pages.countryExplorer.populationWithNoColon")}
         </label>
         <select
+          id="population-select"
+          data-testid="population-select"
           className={classes.select}
           value={value.popRange}
           onChange={(e) => update("popRange", e.target.value as PopRangeKey)}
