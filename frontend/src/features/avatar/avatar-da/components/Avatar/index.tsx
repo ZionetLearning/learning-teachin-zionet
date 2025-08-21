@@ -258,12 +258,14 @@ export const Avatar = (props: JSX.IntrinsicElements["group"]) => {
             className={classes.input}
             autoComplete="off"
             disabled={isPlaying || isLoading}
+            data-testid="avatar-da-input"
           />
           <button
             ref={buttonEl}
             onClick={handleSpeak}
             className={classes.inputButton}
             disabled={isPlaying || isLoading}
+            data-testid="avatar-da-speak"
           >
             {t("pages.avatarDa.speak")}
           </button>

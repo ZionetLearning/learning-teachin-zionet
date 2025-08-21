@@ -18,9 +18,13 @@ export const ChatInput = ({
   const { t } = useTranslation();
   const classes = useStyles();
   return (
-    <footer className={classes.inputWrapper}>
+    <footer
+      className={classes.inputWrapper}
+      data-testid="chat-da-input-wrapper"
+    >
       <input
         id="chat-input"
+        data-testid="chat-da-input"
         className={classes.input}
         value={input}
         onChange={(e) => setInput(e.target.value)}
@@ -38,10 +42,13 @@ export const ChatInput = ({
         width={40}
         height={40}
         className={classes.sendButton}
+        data-testid="chat-da-send"
         fill={disabled ? "#ccc" : "currentColor"}
         stroke={disabled ? "#ccc" : "currentColor"}
         onClick={() => {
-          if (!disabled) sendMessage(input.trim());
+          if (!disabled && input.trim()) {
+            sendMessage(input.trim());
+          }
           setInput("");
         }}
       />

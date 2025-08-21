@@ -188,6 +188,20 @@
         "exploreAnime": "Explore Anime",
         "searchByTitle": "Search by title",
         "clear": "Clear"
+      },
+      "countryExplorer": {
+        "title": "Country Explorer",
+        "description": "Search by country name, filter by region and population",
+        "loadingCountries": "Loading countries...",
+        "failedToLoad": "Failed to load:",
+        "capital": "Capital:",
+        "region": "Region:",
+        "population": "Population:",
+        "currency": "Currency:",
+        "languages": "Languages:",
+        "searchByName": "Search by name",
+        "regionWithNoColon": "Region",
+        "populationWithNoColon": "Population"
       }
     },
     "sidebar": {
@@ -213,7 +227,8 @@
       "en": "EN",
       "earthquakeMap": "Earthquake Map",
       "weather": "Weather",
-      "anime": "Anime Explorer"
+      "anime": "Anime Explorer",
+      "countryExplorer": "Country Explorer"
     }
   },
   "goBackToMenu": "Go back to Menu",
