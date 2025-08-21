@@ -25,7 +25,7 @@ on:
       skip_infra_steps:
         description: 'Skip infrastructure steps (for update-images workflow)'
         required: false
-        default: 'false'
+        default: 'true'
 
   workflow_call:
     inputs:
@@ -105,7 +105,17 @@ jobs:
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
 
+      - name: Check if target namespace exists
+        run: |
+          if kubectl get namespace "$TARGET_NAMESPACE" >/dev/null 2>&1; then
+            echo "Namespace '$TARGET_NAMESPACE' exists - proceeding with deployment"
+          else
+            echo "ERROR: Namespace '$TARGET_NAMESPACE' does not exist!"
+            exit 1
+          fi
+
       - name: Ensure target namespace exists
+        if: ${{ !inputs.skip_infra_steps }}
         run: |
           kubectl create namespace "$TARGET_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 
@@ -116,7 +126,7 @@ jobs:
           echo "Current release status: $RELEASE_STATUS"
 
           if [[ "$RELEASE_STATUS" == "pending-install" ]] || [[ "$RELEASE_STATUS" == "pending-upgrade" ]] || [[ "$RELEASE_STATUS" == "pending-rollback" ]]; then
-            echo "⚠️ Found pending operation. Attempting rollback..."
+            echo "Found pending operation. Attempting rollback..."
             helm rollback app -n "$TARGET_NAMESPACE" || echo "Rollback failed, trying to delete release history..."
             helm delete app -n "$TARGET_NAMESPACE" --wait || echo "Delete failed, continuing anyway..."
             sleep 5
