@@ -61,3 +61,4 @@ backend/ContainerApp/.idea/.idea.backend/.idea/vcs.xml
 # Ignore all local override config files (secrets, API keys)
 **/appsettings.Local.json
 
+backend/IntegrationTest/.idea/.idea.IntegrationTest/.idea/*
