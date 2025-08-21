@@ -282,6 +282,14 @@ public static class AccessorEndpoints
         [FromServices] IAccessorService service,
         [FromServices] ILogger<IAccessorService> logger)
     {
+        using var scope = logger.BeginScope("Method: {Method}, UserId: {UserId}", nameof(GetUserAsync), userId);
+
+        if (userId == Guid.Empty)
+        {
+            logger.LogWarning("Invalid user ID provided: {UserId}", userId);
+            return Results.BadRequest("Invalid user ID.");
+        }
+
         try
         {
             var user = await service.GetUserAsync(userId);
@@ -299,6 +307,13 @@ public static class AccessorEndpoints
         [FromServices] IAccessorService service,
         [FromServices] ILogger<IAccessorService> logger)
     {
+        using var scope = logger.BeginScope("Method: {Method}, UserId: {UserId}", nameof(CreateUserAsync), user.UserId);
+        if (user is null)
+        {
+            logger.LogWarning("User model is null.");
+            return Results.BadRequest("User data is required.");
+        }
+
         try
         {
             var created = await service.CreateUserAsync(user);
@@ -319,6 +334,19 @@ public static class AccessorEndpoints
         [FromServices] IAccessorService service,
         [FromServices] ILogger<IAccessorService> logger)
     {
+        using var scope = logger.BeginScope("Method: {Method}, UserId: {UserId}", nameof(UpdateUserAsync), userId);
+        if (user is null)
+        {
+            logger.LogWarning("Update user model is null.");
+            return Results.BadRequest("User data is required.");
+        }
+
+        if (userId == Guid.Empty)
+        {
+            logger.LogWarning("Invalid user ID provided: {UserId}", userId);
+            return Results.BadRequest("Invalid user ID.");
+        }
+
         try
         {
             var updated = await service.UpdateUserAsync(user, userId);
@@ -336,6 +364,13 @@ public static class AccessorEndpoints
         [FromServices] IAccessorService service,
         [FromServices] ILogger<IAccessorService> logger)
     {
+        using var scope = logger.BeginScope("Method: {Method}, UserId: {UserId}", nameof(DeleteUserAsync), userId);
+        if (userId == Guid.Empty)
+        {
+            logger.LogWarning("Invalid user ID provided: {UserId}", userId);
+            return Results.BadRequest("Invalid user ID.");
+        }
+
         try
         {
             var deleted = await service.DeleteUserAsync(userId);
