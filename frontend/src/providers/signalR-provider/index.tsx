@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { HubConnection, HubConnectionBuilder } from "@microsoft/signalr";
+import {
+  HubConnection,
+  HubConnectionBuilder,
+} from "@microsoft/signalr";
 import { Status, SignalRContextType, SignalRProviderProps } from "@/types";
 import { SignalRContext } from "@/context";
 
@@ -24,7 +27,7 @@ export const SignalRProvider = ({ hubUrl, children }: SignalRProviderProps) => {
     let isMounted = true;
 
     const connection = new HubConnectionBuilder()
-      .withUrl(hubUrl, {
+      .withUrl(`${hubUrl}?userId=${userId}`, {
         withCredentials: false,
       })
       .withAutomaticReconnect()
