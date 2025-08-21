@@ -190,7 +190,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "histogram_quantile(0.95, sum(rate(dapr_http_server_request_duration_ms_bucket{kubernetes_namespace=~\"$namespace\"}[5m])) by (le, dapr_app_id))",
+          "expr": "histogram_quantile(0.95, sum(rate(dapr_http_server_latency_bucket{kubernetes_namespace=~\"$namespace\"}[5m])) by (le, dapr_app_id))",
           "interval": "",
           "legendFormat": "{{dapr_app_id}} - 95th percentile",
           "refId": "A"
@@ -200,7 +200,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "histogram_quantile(0.50, sum(rate(dapr_http_server_request_duration_ms_bucket{kubernetes_namespace=~\"$namespace\"}[5m])) by (le, dapr_app_id))",
+          "expr": "histogram_quantile(0.50, sum(rate(dapr_http_server_latency_bucket{kubernetes_namespace=~\"$namespace\"}[5m])) by (le, dapr_app_id))",
           "interval": "",
           "legendFormat": "{{dapr_app_id}} - 50th percentile",
           "refId": "B"
@@ -288,10 +288,20 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(dapr_component_invocation_count{kubernetes_namespace=~\"$namespace\"}[5m])) by (dapr_app_id, component)",
+          "expr": "sum(rate(dapr_component_output_binding_count{kubernetes_namespace=~\"$namespace\"}[5m])) by (dapr_app_id, component)",
           "interval": "",
-          "legendFormat": "{{dapr_app_id}} - {{component}}",
+          "legendFormat": "{{dapr_app_id}} - {{component}} (out)",
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(rate(dapr_component_input_binding_count{kubernetes_namespace=~\"$namespace\"}[5m])) by (dapr_app_id, component)",
+          "interval": "",
+          "legendFormat": "{{dapr_app_id}} - {{component}} (in)",
+          "refId": "B"
         }
       ],
       "title": "Dapr Component Invocations (Service Bus, State Store)",
@@ -376,7 +386,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(dapr_service_invocation_req_sent_total{kubernetes_namespace=~\"$namespace\"}[5m])) by (dapr_app_id, target_app_id)",
+          "expr": "sum(rate(dapr_runtime_service_invocation_req_sent_total{kubernetes_namespace=~\"$namespace\"}[5m])) by (dapr_app_id, target_app_id)",
           "interval": "",
           "legendFormat": "{{dapr_app_id}} → {{target_app_id}}",
           "refId": "A"
