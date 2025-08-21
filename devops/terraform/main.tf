@@ -13,7 +13,7 @@ resource "azurerm_resource_group" "main" {
 
 resource "azurerm_user_assigned_identity" "aks" {
   name                = "${var.prefix}-aks-uami"
-  resource_group_name = var.resource_group_name
+  resource_group_name = var.shared_aks_resource_group # dev-zionet-learning-2025
   location            = var.location
 }
 
