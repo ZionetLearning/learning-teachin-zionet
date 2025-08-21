@@ -38,14 +38,11 @@ public static class AiEndpoints
             return Results.BadRequest(new { error = "userMessage is required" });
         }
 
-        // 1) Получить текущий снэпшот истории
         var snapshot = await accessorClient.GetHistorySnapshotAsync(request.ThreadId, ct);
-        // snapshot.History — JsonElement (сырой ChatHistory); если нет — возвращаем пустую структуру на стороне клиента
 
-        // 2) Сформировать запрос в ChatAiService
         var serviceRequest = new ChatAiServiseRequest
         {
-            History = snapshot.History,        // сырой JSON
+            History = snapshot.History,
             UserMessage = request.UserMessage,
             ChatType = request.ChatType,
             ThreadId = request.ThreadId,
@@ -55,7 +52,6 @@ public static class AiEndpoints
             TtlSeconds = request.TtlSeconds,
         };
 
-        // 3) Вызвать ИИ
         var aiResponse = await ai.ChatHandlerAsync(serviceRequest, ct);
 
         if (aiResponse.Status != ChatAnswerStatus.Ok || aiResponse.Answer == null)
@@ -64,17 +60,15 @@ public static class AiEndpoints
             return Results.Problem(aiResponse.Error ?? "AI failed.");
         }
 
-        // 4) Сохранить (upsert) ПОЛНУЮ обновлённую историю
         var upsert = new UpsertHistoryRequest
         {
             ThreadId = request.ThreadId,
             UserId = request.UserId,
-            ChatType = request.ChatType.ToString().ToLowerInvariant(), // либо null, если не нужно
-            History = aiResponse.UpdatedHistory    // сырой JSON со всеми сообщениями
+            ChatType = request.ChatType.ToString().ToLowerInvariant(),
+            History = aiResponse.UpdatedHistory
         };
         await accessorClient.UpsertHistorySnapshotAsync(upsert, ct);
 
-        // 5) Вернуть минимальный ответ в менеджер/фронт
         var responseToManager = new EngineChatResponse
         {
             AssistantMessage = aiResponse.Answer.Content,

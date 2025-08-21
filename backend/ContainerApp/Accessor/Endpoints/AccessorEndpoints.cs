@@ -25,7 +25,7 @@ public static class AccessorEndpoints
         app.MapPost("/task", CreateTaskAsync);
 
         app.MapPost("/threads/message", StoreMessageAsync);
-        app.MapPost("/threads/{threadId:guid}/history", UpsertHistorySnapshotAsync).WithName("UpsertHistorySnapshot");
+        app.MapPost("/threads/history", UpsertHistorySnapshotAsync).WithName("UpsertHistorySnapshot");
 
         app.MapPost("/auth/login", LoginUserAsync);
 
@@ -177,11 +177,13 @@ public static class AccessorEndpoints
     }
 
     private static async Task<IResult> UpsertHistorySnapshotAsync(
-        [FromBody] UpsertHistoryRequest body,
-        [FromServices] IAccessorService accessorService,
-        [FromServices] ILogger<AccessorService> logger)
+    [FromBody] UpsertHistoryRequest body,
+    [FromServices] IAccessorService accessorService,
+    [FromServices] ILogger<AccessorService> logger)
     {
-        using var _ = logger.BeginScope("Handler: {Handler}, ThreadId: {ThreadId}", nameof(UpsertHistorySnapshotAsync), body.ThreadId);
+        using var _ = logger.BeginScope(
+            "Handler: {Handler}, ThreadId: {ThreadId}",
+            nameof(UpsertHistorySnapshotAsync), body.ThreadId);
 
         try
         {
@@ -217,23 +219,19 @@ public static class AccessorEndpoints
 
             await accessorService.UpsertHistorySnapshotAsync(snapshot);
 
-            var doc = JsonDocument.Parse(body.History.GetRawText());
+            var historyForResponse = body.History.Clone();
 
             var payload = new
             {
                 threadId = snapshot.ThreadId,
                 snapshot.UserId,
                 snapshot.ChatType,
-                history = doc.RootElement
+                history = historyForResponse
             };
 
-            if (existing is null)
-            {
-                return Results.CreatedAtRoute("GetHistorySnapshot", new { threadId = snapshot.ThreadId }, payload);
-
-            }
-
-            return Results.Ok(payload);
+            return existing is null
+                ? Results.CreatedAtRoute("GetHistorySnapshot", new { threadId = snapshot.ThreadId }, payload)
+                : Results.Ok(payload);
         }
         catch (Exception ex)
         {
@@ -279,9 +277,9 @@ public static class AccessorEndpoints
     }
 
     private static async Task<IResult> GetHistorySnapshotAsync(
-        Guid threadId,
-        [FromServices] IAccessorService accessorService,
-        [FromServices] ILogger<AccessorService> logger)
+      Guid threadId,
+      [FromServices] IAccessorService accessorService,
+      [FromServices] ILogger<AccessorService> logger)
     {
         using var _ = logger.BeginScope(
             "Handler: {Handler}, ThreadId: {ThreadId}",
@@ -292,23 +290,24 @@ public static class AccessorEndpoints
             var snapshot = await accessorService.GetHistorySnapshotAsync(threadId);
             if (snapshot is null)
             {
+
                 using var empty = JsonDocument.Parse("""{"messages":[]}""");
-                return Results.Ok(new
-                {
-                    threadId,
-                    userId = (string?)null,
-                    chatType = (string?)null,
-                    history = empty.RootElement
-                });
+                var historyEmpty = empty.RootElement.Clone();
+                return Results.Ok(new { threadId, userId = (string?)null, chatType = (string?)null, history = historyEmpty });
             }
 
-            using var doc = JsonDocument.Parse(snapshot.History);
+            JsonElement historySafe;
+            using (var doc = JsonDocument.Parse(snapshot.History))
+            {
+                historySafe = doc.RootElement.Clone();
+            }
+
             return Results.Ok(new
             {
                 threadId = snapshot.ThreadId,
                 snapshot.UserId,
                 snapshot.ChatType,
-                history = doc.RootElement
+                history = historySafe
             });
         }
         catch (Exception ex)

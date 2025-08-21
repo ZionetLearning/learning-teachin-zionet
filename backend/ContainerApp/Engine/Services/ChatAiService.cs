@@ -1,5 +1,4 @@
 ﻿using System.Text.Json;
-using System.Text.Json.Nodes;
 using Engine.Constants;
 using Engine.Models.Chat;
 using Engine.Services.Clients.AccessorClient.Models;
@@ -58,17 +57,16 @@ public sealed class ChatAiService : IChatAiService
 
         try
         {
-            // 1) Построить SK ChatHistory из сырого JSON
             var skHistory = BuildSkHistoryFromRaw(request.History);
 
-            // Если история пустая — добавим системный промпт
             if (skHistory.Count == 0)
             {
-                var prompt = Prompts.Combine(Prompts.SystemDefault, Prompts.DetailedExplanation);
-                skHistory.AddSystemMessage(prompt);
+                var SystemPrompt = Prompts.Combine(Prompts.SystemDefault, Prompts.DetailedExplanation);
+                skHistory.AddSystemMessage(SystemPrompt);
             }
 
-            // 2) Добавить юзерское сообщение в SK-историю
+            var baseline = skHistory.Count;
+
             var cleanUserMsg = request.UserMessage.Trim();
             skHistory.AddUserMessage(cleanUserMsg);
 
@@ -77,7 +75,6 @@ public sealed class ChatAiService : IChatAiService
                 FunctionChoiceBehavior = FunctionChoiceBehavior.Auto()
             };
 
-            // 3) Вызов LLM
             var result = await _kernelPolicy.ExecuteAsync(
                 async ct2 => await _chat.GetChatMessageContentAsync(skHistory, settings, _kernel, ct2),
                 ct);
@@ -89,13 +86,41 @@ public sealed class ChatAiService : IChatAiService
                 return response;
             }
 
-            // 4) Добавить ассистента в SK-историю
             skHistory.Add(result);
 
-            // 5) Сформировать обновлённый сырой JSON (append user + assistant)
-            var updatedRaw = AppendMessagesToRaw(request.History,
-                ("user", cleanUserMsg),
-                ("assistant", result.Content!));
+            HistoryEnvelope envelope;
+
+            if (request.History.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null)
+            {
+                envelope = new HistoryEnvelope();
+            }
+            else
+            {
+                try
+                {
+                    envelope = System.Text.Json.JsonSerializer.Deserialize<HistoryEnvelope>(request.History.GetRawText(), HistoryJsonOptions)
+                               ?? new HistoryEnvelope();
+                }
+                catch
+                {
+                    envelope = new HistoryEnvelope();
+                }
+            }
+
+            if (!EnvelopeHasSystem(envelope))
+            {
+                var SystemPrompt = Prompts.Combine(Prompts.SystemDefault, Prompts.DetailedExplanation);
+                envelope.Messages.Insert(0, new ChatMessageContent(AuthorRole.System, SystemPrompt));
+            }
+
+            for (var i = baseline; i < skHistory.Count; i++)
+            {
+                envelope.Messages.Add(skHistory[i]);
+            }
+
+            var json = System.Text.Json.JsonSerializer.Serialize(envelope, HistoryJsonOptions);
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            var updatedRaw = doc.RootElement.Clone();
 
             response.Status = ChatAnswerStatus.Ok;
             response.Answer = new ChatMessage
@@ -117,122 +142,54 @@ public sealed class ChatAiService : IChatAiService
         }
     }
 
-    private static ChatHistory BuildSkHistory(IEnumerable<ChatMessage> db)
-    {
-        var history = new ChatHistory();
-
-        var systemPrompt = Prompts.Combine(
-            Prompts.SystemDefault,
-            Prompts.DetailedExplanation
-        );
-        history.AddSystemMessage(systemPrompt);
-
-        foreach (var m in db)
-        {
-            switch (m.Role)
-            {
-                case MessageRole.User:
-                    history.AddUserMessage(m.Content);
-                    break;
-                case MessageRole.Assistant:
-                    history.AddAssistantMessage(m.Content);
-                    break;
-                case MessageRole.System:
-                    history.AddSystemMessage(m.Content);
-                    break;
-                default:
-                    history.AddUserMessage(m.Content);
-                    break;
-            }
-        }
-
-        return history;
-    }
-
     private static ChatHistory BuildSkHistoryFromRaw(JsonElement raw)
     {
         var history = new ChatHistory();
 
-        JsonArray? msgs = null;
         try
         {
-            if (raw.ValueKind is not JsonValueKind.Undefined and not JsonValueKind.Null)
+            if (raw.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null)
             {
-                var node = JsonNode.Parse(raw.GetRawText()) as JsonObject;
-                msgs = node?["messages"] as JsonArray;
+                return history;
+            }
+
+            var env = System.Text.Json.JsonSerializer.Deserialize<HistoryEnvelope>(raw.GetRawText(), HistoryJsonOptions);
+            if (env?.Messages is not null && env.Messages.Count > 0)
+            {
+                history.AddRange(env.Messages);
             }
         }
         catch
         {
-            // если format неожиданно другой — начнём с чистого списка + системный промпт добавим выше
-        }
-
-        if (msgs is not null)
-        {
-            foreach (var item in msgs)
-            {
-                var obj = item as JsonObject;
-                var role = obj?["role"]?.GetValue<string>();
-                var content = obj?["content"]?.GetValue<string>();
-                if (string.IsNullOrWhiteSpace(content))
-                {
-                    continue;
-                }
-
-                switch (role)
-                {
-                    case "system":
-                        history.AddSystemMessage(content);
-                        break;
-                    case "assistant":
-                        history.AddAssistantMessage(content);
-                        break;
-                    case "user":
-                        history.AddUserMessage(content);
-                        break;
-                    default:
-                        history.AddUserMessage(content);
-                        break;
-                }
-            }
+            //todo: action if exception
         }
 
         return history;
     }
-    private static JsonElement AppendMessagesToRaw(JsonElement raw, params (string role, string content)[] toAppend)
+
+    private static readonly JsonSerializerOptions HistoryJsonOptions = CreateHistoryJsonOptions();
+
+    private static JsonSerializerOptions CreateHistoryJsonOptions()
     {
-        JsonObject root;
-        JsonArray messages;
+        var opts = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        };
 
-        if (raw.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null)
-        {
-            root = new JsonObject();
-            messages = new JsonArray();
-            root["messages"] = messages;
-        }
-        else
-        {
-            root = (JsonNode.Parse(raw.GetRawText()) as JsonObject) ?? new JsonObject();
-            messages = root["messages"] as JsonArray ?? new JsonArray();
-            root["messages"] = messages;
-        }
+        opts.Converters.Add(new Helpers.ChatMessageContentConverter());
+        return opts;
+    }
 
-        foreach (var (role, content) in toAppend)
+    private static bool EnvelopeHasSystem(HistoryEnvelope env)
+    {
+        foreach (var m in env.Messages)
         {
-            if (string.IsNullOrWhiteSpace(content))
+            if (m.Role == AuthorRole.System)
             {
-                continue;
+                return true;
             }
-
-            messages.Add(new JsonObject
-            {
-                ["role"] = role,
-                ["content"] = content
-            });
         }
 
-        using var doc = JsonDocument.Parse(root.ToJsonString());
-        // Clone, чтобы отвязаться от doc
-        return doc.RootElement.Clone();
+        return false;
     }
 }

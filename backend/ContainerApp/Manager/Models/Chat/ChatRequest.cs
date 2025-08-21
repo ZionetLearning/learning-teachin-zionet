@@ -5,8 +5,9 @@ namespace Manager.Models.Chat;
 
 public sealed record ChatRequest
 {
+    [Required, MinLength(36)]
     [JsonPropertyName("threadId")]
-    public string? ThreadId { get; init; }
+    public string ThreadId { get; init; } = string.Empty;
 
     [Required, MinLength(1)]
     [JsonPropertyName("userMessage")]
