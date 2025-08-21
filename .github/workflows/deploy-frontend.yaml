@@ -164,7 +164,8 @@ jobs:
             echo "Deleting staging environment: $env"
             az staticwebapp environment delete \
               --name "$env" \
-              --resource-group "${{ steps.names.outputs.rg }}"
+              --resource-group "${{ steps.names.outputs.rg }}" \
+              --yes
           done
 
 
