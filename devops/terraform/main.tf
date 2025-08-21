@@ -79,7 +79,7 @@ module "database" {
   delegated_subnet_id           = var.delegated_subnet_id
 
   environment_name     = var.environment_name
-  database_name       = "${var.environment_name}-${var.database_name}"
+  database_name       = "${var.database_name}-${var.environment_name}"
 
   use_shared_postgres  = var.use_shared_postgres
   existing_server_id   = var.use_shared_postgres ? data.azurerm_postgresql_flexible_server.shared[0].id : null
