@@ -1,13 +1,14 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Accessor.Models;
+namespace Accessor.Models.Users;
 
 [Table("Users")]
-public class User
+public class UserModel
 {
     [Key]
-    public Guid UserId { get; set; } = Guid.NewGuid();
+    public Guid UserId { get; set; }
 
     [Required]
     [MaxLength(100)]
