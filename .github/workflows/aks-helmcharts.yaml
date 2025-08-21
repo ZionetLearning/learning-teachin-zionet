@@ -106,14 +106,6 @@ jobs:
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
 
-      - name: Check if target namespace exists
-        run: |
-          if kubectl get namespace "$TARGET_NAMESPACE" >/dev/null 2>&1; then
-            echo "Namespace '$TARGET_NAMESPACE' exists - proceeding with deployment"
-          else
-            echo "ERROR: Namespace '$TARGET_NAMESPACE' does not exist!"
-            exit 1
-          fi
 
       - name: Create namespace
         if: ${{ !inputs.skip_infra_steps }}
