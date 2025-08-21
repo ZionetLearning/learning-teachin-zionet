@@ -24,15 +24,12 @@ promtail:
     snippets:
       pipelineStages:
         - cri: {}
-        - regex:
-            expression: '=>\s*(?P<scope>.*)$'
-        - replace:
-            expression: ','
-            replace: ' '
-            source: scope
-        - logfmt:
-            source: scope
+        - json:
+            expressions:
+              TraceId: Scopes[0].TraceId
+              SpanId: Scopes[0].SpanId
+              TaskId: Scopes[0].TaskId
         - labels:
-            TaskId:
             TraceId:
             SpanId:
+            TaskId:
