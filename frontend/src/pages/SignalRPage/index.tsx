@@ -17,17 +17,16 @@ export const SignalRPage = () => {
     SignalRNotificationMessage[]
   >([]);
 
-  // receive server → client messages
-  const onNotification = useCallback((n: SignalRNotificationMessage) => {
+  const handleNotificationMessage = useCallback((n: SignalRNotificationMessage) => {
     setNotifications((prev) => [...prev, n]);
   }, []);
 
   useSignalREvent<[SignalRNotificationMessage]>(
     "NotificationMessage",
-    onNotification
+    handleNotificationMessage
   );
 
-  // submit via API; TaskForm resets itself via the callback
+  // submit with API, TaskForm resets itself 
   const handleSubmit = useCallback(
     (task: TaskInput, reset: () => void) => {
       postTask(task, { onSuccess: reset });
