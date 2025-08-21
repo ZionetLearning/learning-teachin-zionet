@@ -1,31 +1,24 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  HubConnection,
-  HubConnectionBuilder,
-} from "@microsoft/signalr";
+import { HubConnection, HubConnectionBuilder } from "@microsoft/signalr";
 import { Status, SignalRContextType, SignalRProviderProps } from "@/types";
 import { SignalRContext } from "@/context";
 
-const getOrCreateUserId = (): string => {
-  const key = "sig_user_id";
-  let id = localStorage.getItem(key);
-  if (!id) {
-    id =
-      crypto?.randomUUID?.() ??
-      (() => {
-        // Secure fallback: generate 16 random bytes and encode as hex
-        const arr = new Uint8Array(16);
-        window.crypto.getRandomValues(arr);
-        return Array.from(arr, b => b.toString(16).padStart(2, "0")).join("");
-      })();
-    localStorage.setItem(key, id);
-  }
+const createUserId = (): string => {
+  const id =
+    crypto?.randomUUID?.() ??
+    (() => {
+      // Secure fallback: generate 16 random bytes and encode as hex
+      const arr = new Uint8Array(16);
+      window.crypto.getRandomValues(arr);
+      return Array.from(arr, (b) => b.toString(16).padStart(2, "0")).join("");
+    })();
+
   return id;
 };
 
 export const SignalRProvider = ({ hubUrl, children }: SignalRProviderProps) => {
   const [status, setStatus] = useState<Status>("idle");
-  const [userId] = useState(() => getOrCreateUserId());
+  const [userId] = useState(() => createUserId());
   const connRef = useRef<HubConnection | null>(null);
 
   useEffect(() => {
