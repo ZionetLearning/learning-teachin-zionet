@@ -18,3 +18,11 @@ export type SignalRContextType = {
   status: Status;
   userId: string;
 };
+
+export type SignalRNotificationType = "Success" | "Info" | "Warning" | "Error";
+
+export type SignalRNotificationMessage = {
+  message: string;
+  type: SignalRNotificationType;
+  timestamp: string;
+};

@@ -1,5 +1,6 @@
 import "./i18n";
 import { createRoot } from "react-dom/client";
+import { ToastContainer } from "react-toastify";
 import * as Sentry from "@sentry/react";
 import { initializeSentry } from "./sentry";
 import {
@@ -24,6 +25,7 @@ createRoot(document.getElementById("root")!).render(
         <SignalRProvider hubUrl={HUB_URL}>
           <Sentry.ErrorBoundary fallback={<div>Something went wrong</div>}>
             <App />
+            <ToastContainer />
           </Sentry.ErrorBoundary>{" "}
         </SignalRProvider>
       </AuthProvider>

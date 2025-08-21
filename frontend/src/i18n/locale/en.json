@@ -211,7 +211,9 @@
         "taskName": "Task Name",
         "payload": "Payload",
         "posting": "Posting...",
-        "send": "Send"
+        "send": "Send",
+        "noNotifications": "No notifications",
+        "notifications": "Notifications"
       }
     },
     "sidebar": {

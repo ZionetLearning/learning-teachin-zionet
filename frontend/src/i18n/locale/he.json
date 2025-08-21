@@ -212,7 +212,9 @@
         "payload": "תוכן (Payload)",
         "posting": "שולח...",
         "postiong": "שולח...",
-        "send": "שלח"
+        "send": "שלח",
+         "noNotifications": "אין התראות",
+        "notifications": "התראות"
       }
     },
     "sidebar": {
