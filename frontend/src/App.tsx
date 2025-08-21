@@ -22,6 +22,8 @@ import {
 } from "./pages";
 
 import "./App.css";
+// Lint error: unused variable
+const unusedVariable = 123;
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
