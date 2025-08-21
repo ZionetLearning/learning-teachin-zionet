@@ -31,7 +31,7 @@ export const useHebrewSentence = () => {
       setLoading(false);
       pendingRef.current = false;
     }
-  }, []);
+  }, [sentence]);
 
   const initOnce = useCallback(async () => {
     if (didInitRef.current) return;

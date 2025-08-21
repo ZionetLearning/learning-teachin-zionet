@@ -37,7 +37,7 @@ describe("Country Explorer", () => {
         .then((text) => {
           console.log("DEBUG - Population text:", text);
           const match = text.match(/Population:\s*([\d,]+)/);
-          expect(match).to.not.be.null;
+          const isValid = expect(match).to.not.be.null;
           const number = parseInt(match![1].replace(/,/g, ""));
           expect(number).to.be.lessThan(10_000_000);
         });
@@ -55,7 +55,7 @@ describe("Country Explorer", () => {
         .then((text) => {
           console.log("DEBUG - Population text:", text);
           const match = text.match(/Population:\s*([\d,]+)/);
-          expect(match).to.not.be.null;
+          const isValid = expect(match).to.not.be.null;
           const number = parseInt(match![1].replace(/,/g, ""));
           expect(number).to.be.lessThan(100_000_000);
           expect(number).to.be.greaterThan(10_000_000);
@@ -74,7 +74,7 @@ describe("Country Explorer", () => {
         .then((text) => {
           console.log("DEBUG - Population text:", text);
           const match = text.match(/Population:\s*([\d,]+)/);
-          expect(match).to.not.be.null;
+          const isValid = expect(match).to.not.be.null;
           const number = parseInt(match![1].replace(/,/g, ""));
           expect(number).to.be.greaterThan(100_000_000);
         });
