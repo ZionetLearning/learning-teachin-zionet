@@ -20,6 +20,7 @@ import PublicIcon from "@mui/icons-material/Public";
 import WeatherWidgetIcon from "@mui/icons-material/Cloud";
 import ThreePIcon from "@mui/icons-material/ThreeP";
 import LiveTvIcon from "@mui/icons-material/LiveTv";
+import ConnectWithoutContactIcon from "@mui/icons-material/ConnectWithoutContact";
 import FlagIcon from "@mui/icons-material/Flag";
 import GBFlag from "country-flag-icons/react/3x2/GB";
 import ILFlag from "country-flag-icons/react/3x2/IL";
@@ -119,6 +120,15 @@ export const SidebarMenu = () => {
           data-testid="sidebar-home"
         >
           {t("sidebar.home")}
+        </MenuItem>
+
+        <MenuItem
+          icon={<ConnectWithoutContactIcon />}
+          onClick={() => handleNavigation("/signalr")}
+          active={isActive("/signalr")}
+          data-testid="signalR"
+        >
+          {t("sidebar.signalR")}
         </MenuItem>
 
         <MenuItem
