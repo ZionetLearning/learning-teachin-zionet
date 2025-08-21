@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from "react";
-import { askAzureOpenAI } from "../../../chat/chat-yo/services";
+import { useChat } from "@/hooks";
 
 export const useHebrewSentence = () => {
   const [sentence, setSentence] = useState<string>("");
@@ -9,29 +9,28 @@ export const useHebrewSentence = () => {
   const pendingRef = useRef(false);
   const didInitRef = useRef(false);
 
+  const { sendMessageAsync } = useChat();
+
+  const PROMPT =
+    "צור משפט אחד קצר בעברית, ללא ניקוד. השב רק את המשפט עצמו ללא הסברים נוספים.";
+
   const fetchSentence = useCallback(async () => {
     if (pendingRef.current) return sentence;
     pendingRef.current = true;
     setLoading(true);
     setError(null);
     try {
-      const response = await askAzureOpenAI(
-        "צור משפט אחד קצר בעברית, ללא ניקוד.",
-        "צור משפטים קצרים וברורים בעברית ללומדי מתחילים.",
-      );
+      const response = await sendMessageAsync(PROMPT);
       setSentence(response);
       return response;
     } catch (e: unknown) {
-      if (e instanceof Error) {
-        setError(e.message);
-      } else {
-        setError("An unknown error occurred");
-      }
+      if (e instanceof Error) setError(e.message);
+      else setError("An unknown error occurred");
     } finally {
       setLoading(false);
       pendingRef.current = false;
     }
-  }, [sentence]);
+  }, [sendMessageAsync, sentence]);
 
   const initOnce = useCallback(async () => {
     if (didInitRef.current) return;

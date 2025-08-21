@@ -44,6 +44,10 @@ on:
       AZURE_STATIC_WEB_APPS_API_TOKEN:
         required: false
 
+concurrency:
+  group: deploy-frontend-${{ inputs.environment_name || github.event.inputs.environment_name || 'dev' }}
+  cancel-in-progress: false
+
 jobs:
   frontend-build-and-lint:
     runs-on: ubuntu-latest
@@ -88,6 +92,10 @@ jobs:
         run: npm run build
 
       - name: Upload build artifacts
+        if: |
+          (github.event_name == 'pull_request' && github.event.pull_request.merged == true) ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'workflow_call'
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build
@@ -138,6 +146,28 @@ jobs:
           echo "rg=$RG"
           echo "swa=$SWA_NAME" >> $GITHUB_OUTPUT
           echo "ai=$AI_NAME" >> $GITHUB_OUTPUT
+       
+      - name: Clean stage environment
+        shell: bash
+        run: |
+          set -euo pipefail 
+
+          # Get all staging environments for this Static Web App
+          ENVIRONMENTS=$(az staticwebapp environment list \
+            --name "${{ steps.names.outputs.swa }}" \
+            --resource-group "${{ steps.names.outputs.rg }}" \
+            --query "[?name != 'default'].{name:name, createdOn:createdOn}" \
+            --output json)
+
+          # Delete all staging environments
+          for env in $(echo "$ENVIRONMENTS" | jq -r '.[].name'); do
+            echo "Deleting staging environment: $env"
+            az staticwebapp environment delete \
+              --name "$env" \
+              --resource-group "${{ steps.names.outputs.rg }}"
+          done
+
+
 
       - name: Get App Insights connection string
         if: ${{ !inputs.app_insights_connection_string }}
@@ -187,3 +217,6 @@ jobs:
           action: "upload"
           app_location: "${{ env.FE_DIR }}/dist"
           skip_app_build: true
+
+
+
