@@ -56,12 +56,12 @@ data "azurerm_postgresql_flexible_server" "shared" {
 
 # Create new PostgreSQL server and database only if not using shared
 module "database" {
-  count               = var.use_shared_postgres ? 0 : 1
+  count               = var.use_shared_postgres ? 1 : 1
   source              = "./modules/postgresql"
 
   server_name         = var.database_server_name
   location            = var.db_location
-  resource_group_name = azurerm_resource_group.main.name
+  resource_group_name = var.use_shared_postgres ? var.shared_aks_resource_group : azurerm_resource_group.main.name
 
   admin_username      = var.admin_username
   admin_password      = var.admin_password
