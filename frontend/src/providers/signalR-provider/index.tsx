@@ -12,7 +12,12 @@ const getOrCreateUserId = (): string => {
   if (!id) {
     id =
       crypto?.randomUUID?.() ??
-      `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      (() => {
+        // Secure fallback: generate 16 random bytes and encode as hex
+        const arr = new Uint8Array(16);
+        window.crypto.getRandomValues(arr);
+        return Array.from(arr, b => b.toString(16).padStart(2, "0")).join("");
+      })();
     localStorage.setItem(key, id);
   }
   return id;
