@@ -50,7 +50,7 @@ output "servicebus_connection_string" {
 }
 
 output "postgres_connection_string" {
-  value     = module.database.postgres_connection_string
+  value     = module.database[0].postgres_connection_string
   sensitive = true
 }
 

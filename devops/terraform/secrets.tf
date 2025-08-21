@@ -21,7 +21,7 @@ resource "kubernetes_secret" "postgres_connection" {
     namespace = kubernetes_namespace.environment.metadata[0].name   
   }
   data = {
-    PostgreSQLConnectionString = module.database.postgres_connection_string
+    PostgreSQLConnectionString = module.database[0].postgres_connection_string
   }
 }
 
