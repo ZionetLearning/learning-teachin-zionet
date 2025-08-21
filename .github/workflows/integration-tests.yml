@@ -36,4 +36,4 @@ jobs:
           }' > appsettings.json
 
       - name: Run integration tests
-        run: dotnet test IntegrationTests.csproj --no-build --verbosity normal
+        run: dotnet test IntegrationTests.csproj --verbosity normal
