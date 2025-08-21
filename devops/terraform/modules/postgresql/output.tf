@@ -1,10 +1,10 @@
 output "postgres_fqdn" {
-  value       = azurerm_postgresql_flexible_server.this.fqdn
+  value       = azurerm_postgresql_flexible_server.this[0].fqdn
   description = "Fully qualified domain name of the PostgreSQL server"
 }
 
 output "postgres_admin_username" {
-  value       = azurerm_postgresql_flexible_server.this.administrator_login
+  value       = azurerm_postgresql_flexible_server.this[0].administrator_login
   description = "Administrator username"
 }
 
@@ -14,7 +14,7 @@ output "postgres_database_name" {
 }
 
 output "postgres_connection_string" {
-  value = "Host=${azurerm_postgresql_flexible_server.this.fqdn};Database=${var.database_name};Username=${azurerm_postgresql_flexible_server.this.administrator_login};Password=${var.admin_password};SslMode=Require"
+  value = "Host=${azurerm_postgresql_flexible_server.this[0].fqdn};Database=${var.database_name};Username=${azurerm_postgresql_flexible_server.this[0].administrator_login};Password=${var.admin_password};SslMode=Require"
   description = "Full PostgreSQL connection string"
   sensitive   = true
 }
