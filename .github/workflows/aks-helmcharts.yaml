@@ -25,7 +25,8 @@ on:
       skip_infra_steps:
         description: 'Skip infrastructure steps (for update-images workflow)'
         required: false
-        default: 'true'
+        default: true
+        type: boolean
 
   workflow_call:
     inputs:
@@ -114,7 +115,7 @@ jobs:
             exit 1
           fi
 
-      - name: Ensure target namespace exists
+      - name: Create namespace
         if: ${{ !inputs.skip_infra_steps }}
         run: |
           kubectl create namespace "$TARGET_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
