@@ -1,4 +1,5 @@
 ﻿using Dapr.Client;
+using Manager.Constants;
 using Manager.Models.Auth;
 using Manager.Services;
 using Microsoft.AspNetCore.Http;
@@ -11,31 +12,14 @@ using Xunit;
 
 namespace AuthComponentTests;
 
+[Collection("Auth Test Collection")]
 public class AuthServiceTests
 {
-    private readonly IAuthService _sut;
-    private readonly Mock<DaprClient> _daprMock = new();
-    private readonly HttpContext _httpContext;
-    private readonly JwtSettings _jwtSettings = new()
+    private readonly AuthTestFixture _fixture;
+
+    public AuthServiceTests(AuthTestFixture fixture)
     {
-        Secret = "super-secret-key-that-is-32-bytes!",
-        Issuer = "test-issuer",
-        Audience = "test-audience",
-        AccessTokenTTL = 15,
-        RefreshTokenTTL = 7,
-        RefreshTokenHashKey = "test-hash-key"
-    };
-
-    public AuthServiceTests()
-    {
-        _httpContext = new DefaultHttpContext();
-        _httpContext.Connection.RemoteIpAddress = IPAddress.Parse("127.0.0.1");
-        _httpContext.Request.Headers["User-Agent"] = "Chrome Test";
-        _httpContext.Request.Headers["x-fingerprint"] = "abc123";
-
-        var options = Options.Create(_jwtSettings);
-
-        _sut = new AuthService(_daprMock.Object, NullLogger<AuthService>.Instance, options);
+        _fixture = fixture;
     }
 
     [Fact(DisplayName = "LoginAsync returns access and refresh token")]
@@ -48,7 +32,7 @@ public class AuthServiceTests
             Password = "pass"
         };
 
-        _daprMock
+        _fixture.DaprMock
             .Setup(d => d.InvokeMethodAsync<LoginRequest, Guid?>(
                 HttpMethod.Post,
                 "accessor",
@@ -57,7 +41,7 @@ public class AuthServiceTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(Guid.NewGuid());
 
-        _daprMock
+        _fixture.DaprMock
             .Setup(d => d.InvokeMethodAsync(
                 HttpMethod.Post,
                 "accessor",
@@ -66,10 +50,40 @@ public class AuthServiceTests
                 It.IsAny<CancellationToken>()));
 
         // Act
-        var (accessToken, refreshToken) = await _sut.LoginAsync(request, _httpContext.Request, CancellationToken.None);
+        var (accessToken, refreshToken) = await _fixture.AuthService.LoginAsync(request, _fixture.HttpContext.Request, CancellationToken.None);
 
         // Assert
         Assert.False(string.IsNullOrWhiteSpace(accessToken));
         Assert.False(string.IsNullOrWhiteSpace(refreshToken));
     }
+
+
+    [Fact(DisplayName = "LoginAsync throws when user is null")]
+    public async Task LoginAsync_Throws_WhenUserIdIsNull()
+    {
+        // Arrange
+        var request = new LoginRequest
+        {
+            Email = "wrong@email.com",
+            Password = "bad"
+        };
+
+        _fixture.DaprMock
+            .Setup(d => d.InvokeMethodAsync<LoginRequest, Guid?>(
+                HttpMethod.Post,
+                "accessor",
+                "auth/login",
+                It.IsAny<LoginRequest>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Guid?)null); // simulate failure
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            _fixture.AuthService.LoginAsync(request, _fixture.HttpContext.Request, CancellationToken.None));
+
+        Assert.Equal("Login failed. Please check your credentials.", ex.Message);
+    }
+
+
+
 }
