@@ -1,1 +1,40 @@
 
+name: Integration Tests
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+  pull_request:
+
+jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/IntegrationTest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Ensure correct appsettings.json
+        run: |
+          echo '{
+            "TestSettings": {
+              "ApiBaseUrl": "https://teachin.westeurope.cloudapp.azure.com/api/test/"
+            }
+          }' > appsettings.json
+
+      - name: Run integration tests
+        run: dotnet test --no-build --verbosity normal
