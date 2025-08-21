@@ -163,8 +163,9 @@ jobs:
           for env in $(echo "$ENVIRONMENTS" | jq -r '.[].name'); do
             echo "Deleting staging environment: $env"
             az staticwebapp environment delete \
-              --name "$env" \
+              --name "${{ steps.names.outputs.swa }}" \
               --resource-group "${{ steps.names.outputs.rg }}" \
+              --environment-name "$env" \
               --yes || true
           done
 
