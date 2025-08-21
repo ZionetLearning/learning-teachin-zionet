@@ -1,5 +1,4 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-
 import { RequireAuth, SidebarMenuLayout } from "./components";
 import {
   AuthorizationPage,
@@ -22,8 +21,6 @@ import {
 } from "./pages";
 
 import "./App.css";
-// Lint error: unused variable
-
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
