@@ -35,6 +35,7 @@ public static class ManagerEndpoints
         #region User Endpoints
 
         app.MapGet("/user/{userId}", GetUserAsync).WithName("GetUser");
+        app.MapGet("/users", GetAllUserAsync).WithName("GetAllUsers");
         app.MapPost("/user", CreateUserAsync).WithName("CreateUser");
         app.MapPut("/user/{userId}", UpdateUserAsync).WithName("UpdateUser");
         app.MapDelete("/user/{userId}", DeleteUserAsync).WithName("DeleteUser");
@@ -288,6 +289,32 @@ public static class ManagerEndpoints
         {
             logger.LogError(ex, "Error deleting user");
             return Results.Problem("Failed to delete user.");
+        }
+    }
+
+    private static async Task<IResult> GetAllUserAsync(
+        [FromServices] IManagerService managerService,
+        [FromServices] ILogger<ManagerService> logger)
+    {
+        using var scope = logger.BeginScope("GetAllUsers:");
+
+        try
+        {
+            var users = await managerService.GetAllUsersAsync();
+
+            if (users == null || !users.Any())
+            {
+                logger.LogWarning("No users found");
+                return Results.NotFound("No users found.");
+            }
+
+            logger.LogInformation("Users retrieved");
+            return Results.Ok(users);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error retrieving users");
+            return Results.Problem("Failed to retrieve users.");
         }
     }
 

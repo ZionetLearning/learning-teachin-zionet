@@ -279,4 +279,28 @@ public class ManagerService : IManagerService
             return false;
         }
     }
+
+    public async Task<IEnumerable<UserModel>> GetAllUsersAsync()
+    {
+        _logger.LogDebug("Inside: {MethodName}", nameof(GetAllUsersAsync));
+
+        try
+        {
+            var users = await _accessorClient.GetAllUsersAsync();
+
+            if (users is null || !users.Any())
+            {
+                _logger.LogWarning("No users found in the system");
+                return Enumerable.Empty<UserModel>();
+            }
+
+            _logger.LogInformation("Retrieved {Count} users", users.Count());
+            return users;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while fetching all users");
+            throw;
+        }
+    }
 }

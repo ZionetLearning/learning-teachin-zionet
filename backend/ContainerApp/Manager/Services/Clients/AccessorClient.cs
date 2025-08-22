@@ -307,4 +307,27 @@ public class AccessorClient(
             return false;
         }
     }
+
+    public async Task<IEnumerable<UserModel>> GetAllUsersAsync(CancellationToken ct = default)
+    {
+        _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetAllUsersAsync), nameof(AccessorClient));
+
+        try
+        {
+            var users = await _daprClient.InvokeMethodAsync<List<UserModel>>(
+                HttpMethod.Get,
+                "accessor",
+                "users",
+                ct
+            );
+
+            _logger.LogInformation("Retrieved {Count} users from accessor", users?.Count ?? 0);
+            return users ?? Enumerable.Empty<UserModel>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get all users from accessor");
+            throw;
+        }
+    }
 }
