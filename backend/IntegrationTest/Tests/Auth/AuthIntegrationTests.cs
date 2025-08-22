@@ -176,6 +176,7 @@ public class AuthIntegrationTests(
         await DeleteTestUserAsync(user.UserId);
     }
 
+
     [Fact(DisplayName = "Successful full auth flow (register, login, access protected, refresh, logout)")]
     public async Task SuccessfulAuthFlow_ShouldSetCookiesAndAccessProtectedRoute()
     {
@@ -261,6 +262,5 @@ public class AuthIntegrationTests(
         var response = await Client.DeleteAsync($"/user/{userId}");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
-
 
 }
