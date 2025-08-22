@@ -12,6 +12,8 @@ public class HttpTestFixture : IDisposable
 
     public HttpTestFixture()
     {
+        Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Test");
+
         var cfg = BuildConfig();
 
         var baseUrl = cfg.GetSection("TestSettings")["ApiBaseUrl"]

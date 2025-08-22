@@ -176,6 +176,68 @@ public class AuthIntegrationTests(
         await DeleteTestUserAsync(user.UserId);
     }
 
+    [Fact(DisplayName = "Successful full auth flow (register, login, access protected, refresh, logout)")]
+    public async Task SuccessfulAuthFlow_ShouldSetCookiesAndAccessProtectedRoute()
+    {
+        // Register user
+        var user = await RegisterTestUserAsync();
+
+        // Login
+        var loginRequest = new LoginRequest
+        {
+            Email = user.Email,
+            Password = user.PasswordHash
+        };
+
+        var loginResponse = await Client.PostAsJsonAsync("/auth/login", loginRequest);
+        loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        // Extract access token
+        var json = JsonDocument.Parse(await loginResponse.Content.ReadAsStringAsync());
+        var accessToken = json.RootElement.GetProperty("accessToken").GetString();
+        accessToken.Should().NotBeNullOrWhiteSpace();
+
+        // Exctract Refresh and CSRF cookie
+        var refreshToken = CookieHelper.ExtractCookieFromHeaders(loginResponse, "refreshToken");
+        refreshToken.Should().NotBeNullOrWhiteSpace();
+        var csrfToken = CookieHelper.ExtractCookieFromHeaders(loginResponse, "csrfToken");
+        csrfToken.Should().NotBeNullOrWhiteSpace();
+
+
+        // Use access token to hit protected endpoint
+        var protectedRequest = new HttpRequestMessage(HttpMethod.Get, "/auth/protected");
+        protectedRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+
+        var protectedResponse = await Client.SendAsync(protectedRequest);
+        protectedResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        // Refresh tokens using valid refresh cookie and CSRF header
+        var refreshRequest = new HttpRequestMessage(HttpMethod.Post, "/auth/refresh-tokens");
+        refreshRequest.Headers.Add("X-CSRF-Token", csrfToken);
+        refreshRequest.Headers.Add("Cookie", $"refreshToken={refreshToken}; csrfToken={csrfToken}");
+
+        var refreshResponse = await Client.SendAsync(refreshRequest);
+        refreshResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        // Check the access token and refresh cookie are updated
+        var refreshBody = JsonDocument.Parse(await refreshResponse.Content.ReadAsStringAsync());
+        var newAccessToken = refreshBody.RootElement.GetProperty("accessToken").GetString();
+        newAccessToken.Should().NotBeNullOrWhiteSpace();
+        refreshToken = CookieHelper.ExtractCookieFromHeaders(refreshResponse, "refreshToken");
+        refreshToken.Should().NotBeNullOrWhiteSpace();
+
+        // Logout
+        var logoutRequest = new HttpRequestMessage(HttpMethod.Post, "/auth/logout");
+        logoutRequest.Headers.Add("Cookie", $"refreshToken={refreshToken}");
+        var logoutResponse = await Client.SendAsync(logoutRequest);
+        logoutResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var logoutSetCookies = logoutResponse.Headers.GetValues("Set-Cookie").ToList();
+        logoutSetCookies.Should().Contain(c => c.Contains("refreshToken=;"));
+        logoutSetCookies.Should().Contain(c => c.Contains("csrfToken=;"));
+
+        await DeleteTestUserAsync(user.UserId);
+    }
 
 
     private async Task<UserModel> RegisterTestUserAsync()
