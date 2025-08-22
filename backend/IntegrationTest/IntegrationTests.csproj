@@ -8,6 +8,11 @@
   </PropertyGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\ContainerApp\Manager\Manager.csproj" />
+	</ItemGroup>
+
+
+	<ItemGroup>
 		<Content Include="appsettings.json">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
