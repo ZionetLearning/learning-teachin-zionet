@@ -3,8 +3,7 @@ using Accessor.DB;
 using Accessor.Models;
 using Dapr.Client;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.ObjectModel;
-using Common.Models;
+using System.Text.Json;
 
 namespace Accessor.Services;
 public class AccessorService : IAccessorService
@@ -44,7 +43,7 @@ public class AccessorService : IAccessorService
         }
     }
 
-    public async Task<TaskModel?> GetTaskByIdAsync(int id)
+    public async Task<TaskModel?> GetTaskByIdAsync(int id, IDictionary<string, string>? callbackHeaders = null)
     {
         _logger.LogInformation("Inside:{Method}", nameof(GetTaskByIdAsync));
         try
@@ -83,6 +82,36 @@ public class AccessorService : IAccessorService
                     { "ttlInSeconds", _ttl.ToString() }
                 }
             );
+
+            // Send callback if headers present
+            if (callbackHeaders != null && callbackHeaders.Count > 0)
+            {
+                var queueHeader = callbackHeaders
+                    .FirstOrDefault(h => h.Key.Equals("x-callback-queue", StringComparison.OrdinalIgnoreCase));
+
+                if (!string.IsNullOrWhiteSpace(queueHeader.Value))
+                {
+                    var result = new TaskResult(task.Id, "Fetched");
+
+                    var message = new Message
+                    {
+                        ActionName = MessageAction.TaskResult,
+                        Payload = JsonSerializer.SerializeToElement(result),
+                        Metadata = new Dictionary<string, string>(callbackHeaders)
+                    };
+
+                    await _daprClient.InvokeBindingAsync(
+                        $"{queueHeader.Value}-out",
+                        "create",
+                        message);
+
+                    _logger.LogInformation(
+                        "Sent TaskResult (Fetched) for Task {Id} to callback queue {Queue}",
+                        task.Id,
+                        queueHeader.Value
+                    );
+                }
+            }
 
             _logger.LogInformation("Fetched task {TaskId} from DB and cached", id);
             return task;
@@ -186,22 +215,32 @@ public class AccessorService : IAccessorService
                     metadata: new Dictionary<string, string> { { "ttlInSeconds", _ttl.ToString() } });
 
                 _logger.LogInformation("Cached task {TaskId} with TTL {TTL}s", task.Id, _ttl);
-
+                _logger.LogInformation("Callback headers: {Headers}", callbackHeaders == null ? "null" : string.Join(", ", callbackHeaders));
                 // --- Send callback if requested
-                if (callbackHeaders != null &&
-                    callbackHeaders.TryGetValue("x-callback-queue", out var callbackQueue) &&
-                    !string.IsNullOrWhiteSpace(callbackQueue))
+                if (callbackHeaders != null)
                 {
-                    var result = new TaskResult(task.Id, "Completed");
+                    var queueHeader = callbackHeaders
+                        .FirstOrDefault(h => h.Key.Equals("x-callback-queue", StringComparison.OrdinalIgnoreCase));
 
-                    await _daprClient.InvokeBindingAsync(
-                        $"{callbackQueue}-out",
-                        "create",
-                        result,
-                        new ReadOnlyDictionary<string, string>(callbackHeaders) // so Manager knows which method to call
-                    );
+                    if (!string.IsNullOrWhiteSpace(queueHeader.Value))
+                    {
+                        var result = new TaskResult(task.Id, "Completed");
 
-                    _logger.LogInformation("Sent TaskResult for Task {Id} to callback queue {Queue}", task.Id, callbackQueue);
+                        var message = new Message
+                        {
+                            ActionName = MessageAction.TaskResult,
+                            Payload = JsonSerializer.SerializeToElement(result),
+                            Metadata = new Dictionary<string, string>(callbackHeaders)
+                        };
+
+                        await _daprClient.InvokeBindingAsync(
+                            $"{queueHeader.Value}-out",
+                            "create",
+                            message
+                        );
+
+                        _logger.LogInformation("Sent TaskResult for Task {Id} to callback queue {Queue}", task.Id, queueHeader.Value);
+                    }
                 }
             }
             catch (Exception ex)
@@ -222,7 +261,7 @@ public class AccessorService : IAccessorService
         });
     }
 
-    public async Task<bool> UpdateTaskNameAsync(int taskId, string newName)
+    public async Task<bool> UpdateTaskNameAsync(int taskId, string newName, IDictionary<string, string>? callbackHeaders = null)
     {
         _logger.LogInformation("Inside:{Method}", nameof(UpdateTaskNameAsync));
         try
@@ -237,28 +276,45 @@ public class AccessorService : IAccessorService
             task.Name = newName;
             await _dbContext.SaveChangesAsync();
 
+            // update cache
             var key = GetTaskCacheKey(taskId);
-
-            // Load current state from Redis
             var stateEntry = await _daprClient.GetStateEntryAsync<TaskModel>(ComponentNames.StateStore, key);
-
-            if (stateEntry.Value == null)
-            {
-                _logger.LogWarning("Task {TaskId} not found in Redis cache. Skipping cache update.", taskId);
-                return true;
-            }
-
-            stateEntry.Value.Name = newName;
+            stateEntry.Value = task;
 
             await _daprClient.SaveStateAsync(
-               storeName: ComponentNames.StateStore,
-               key: key,
-               value: task,
-               metadata: new Dictionary<string, string>
-               {
-                    { "ttlInSeconds", _ttl.ToString() }
-               });
-            _logger.LogInformation("Successfully cached task {TaskId} with TTL {TTL}s", task.Id, _ttl);
+                ComponentNames.StateStore,
+                key,
+                task,
+                metadata: new Dictionary<string, string> { { "ttlInSeconds", _ttl.ToString() } });
+
+            _logger.LogInformation("Successfully updated and cached task {TaskId}", task.Id);
+
+            //Send callback if headers present
+            if (callbackHeaders != null && callbackHeaders.Count > 0)
+            {
+                var queueHeader = callbackHeaders
+                    .FirstOrDefault(h => h.Key.Equals("x-callback-queue", StringComparison.OrdinalIgnoreCase));
+
+                if (!string.IsNullOrWhiteSpace(queueHeader.Value))
+                {
+                    var result = new TaskResult(task.Id, "Updated");
+
+                    var message = new Message
+                    {
+                        ActionName = MessageAction.TaskResult,
+                        Payload = JsonSerializer.SerializeToElement(result),
+                        Metadata = new Dictionary<string, string>(callbackHeaders)
+                    };
+
+                    await _daprClient.InvokeBindingAsync(
+                        $"{queueHeader.Value}-out",
+                        "create",
+                        message);
+
+                    _logger.LogInformation("Sent TaskResult (Updated) for Task {Id} to callback queue {Queue}", task.Id, queueHeader.Value);
+                }
+            }
+
             return true;
         }
         catch (Exception ex)
@@ -268,7 +324,7 @@ public class AccessorService : IAccessorService
         }
     }
 
-    public async Task<bool> DeleteTaskAsync(int taskId)
+    public async Task<bool> DeleteTaskAsync(int taskId, IDictionary<string, string>? callbackHeaders = null)
     {
         _logger.LogInformation("Inside:{Method}", nameof(DeleteTaskAsync));
         try
@@ -279,30 +335,45 @@ public class AccessorService : IAccessorService
                 _logger.LogWarning("Task {TaskId} not found in DB.", taskId);
                 return false;
             }
-            // Remove task from the database
+
             _dbContext.Tasks.Remove(task);
             await _dbContext.SaveChangesAsync();
             _logger.LogInformation("Task {TaskId} deleted from DB.", taskId);
 
-            // Remove task from Redis cache
+            // remove from cache
             var key = GetTaskCacheKey(taskId);
             var stateEntry = await _daprClient.GetStateEntryAsync<TaskModel>(ComponentNames.StateStore, key);
-
-            if (stateEntry.Value == null)
+            if (stateEntry.Value != null)
             {
-                _logger.LogWarning("Task {TaskId} not found in Redis cache. Skipping cache deletion.", taskId);
-                return true;
+                var deleteSuccess = await stateEntry.TryDeleteAsync();
+                if (deleteSuccess)
+                    _logger.LogInformation("Task {TaskId} removed from Redis cache", taskId);
             }
 
-            var deleteSuccess = await stateEntry.TryDeleteAsync();
+            //Send callback if headers present
+            if (callbackHeaders != null && callbackHeaders.Count > 0)
+            {
+                var queueHeader = callbackHeaders
+                    .FirstOrDefault(h => h.Key.Equals("x-callback-queue", StringComparison.OrdinalIgnoreCase));
 
-            if (deleteSuccess)
-            {
-                _logger.LogInformation("Task {TaskId} removed from Redis cache (ETag: {ETag})", taskId, stateEntry.ETag);
-            }
-            else
-            {
-                _logger.LogWarning("ETag conflict — failed to remove task {TaskId} from Redis cache.", taskId);
+                if (!string.IsNullOrWhiteSpace(queueHeader.Value))
+                {
+                    var result = new TaskResult(task.Id, "Deleted");
+
+                    var message = new Message
+                    {
+                        ActionName = MessageAction.TaskResult,
+                        Payload = JsonSerializer.SerializeToElement(result),
+                        Metadata = new Dictionary<string, string>(callbackHeaders)
+                    };
+
+                    await _daprClient.InvokeBindingAsync(
+                        $"{queueHeader.Value}-out",
+                        "create",
+                        message);
+
+                    _logger.LogInformation("Sent TaskResult (Deleted) for Task {Id} to callback queue {Queue}", task.Id, queueHeader.Value);
+                }
             }
 
             return true;

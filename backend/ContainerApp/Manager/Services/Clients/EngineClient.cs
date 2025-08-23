@@ -28,7 +28,8 @@ public class EngineClient : IEngineClient
             var message = new Message
             {
                 ActionName = MessageAction.CreateTask,
-                Payload = payload
+                Payload = payload,
+                Metadata = metadata
             };
 
             // Pass metadata if provided
@@ -60,7 +61,7 @@ public class EngineClient : IEngineClient
         }
     }
 
-    public async Task<(bool success, string message)> ProcessTaskLongAsync(TaskModel task)
+    public async Task<(bool success, string message)> ProcessTaskLongAsync(TaskModel task, IDictionary<string, string>? metadata = null)
     {
         _logger.LogInformation(
             "Inside: {Method} in {Class}",
@@ -74,17 +75,30 @@ public class EngineClient : IEngineClient
             var message = new Message
             {
                 ActionName = MessageAction.TestLongTask,
-                Payload = payload
+                Payload = payload,
+                Metadata = metadata
             };
 
-            await _daprClient.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message);
+            // Pass metadata if provided
+            if (metadata is not null && metadata.Count > 0)
+            {
+                await _daprClient.InvokeBindingAsync(
+                    $"{QueueNames.EngineQueue}-out",
+                    "create",
+                    message,
+                    new ReadOnlyDictionary<string, string>(metadata)
+                );
+            }
+            else
+            {
+                await _daprClient.InvokeBindingAsync(
+                    $"{QueueNames.EngineQueue}-out",
+                    "create",
+                    message
+                );
+            }
 
-            _logger.LogDebug(
-                "Task {TaskId} sent to Engine via binding '{Binding}'",
-                task.Id,
-                QueueNames.EngineQueue
-            );
-
+            _logger.LogDebug("Task {TaskId} sent to Engine via binding '{Binding}'", task.Id, QueueNames.EngineQueue);
             return (true, "sent to engine");
         }
         catch (Exception ex)

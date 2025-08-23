@@ -57,8 +57,22 @@ public class AccessorQueueHandler : IQueueHandler<Message>
                 throw new NonRetryableException("Task Name is required.");
             }
 
+            // Log metadata if exists
+            if (message.Metadata != null && message.Metadata.Count > 0)
+            {
+                var metadataLog = string.Join(", ", message.Metadata.Select(kv => $"{kv.Key}={kv.Value}"));
+                _logger.LogInformation("Received metadata for Task {Id}: {Metadata}", payload.Id, metadataLog);
+            }
+            else
+            {
+                _logger.LogWarning("No metadata received for Task {Id}", payload.Id);
+            }
+
             _logger.LogDebug("Processing task {Id}", payload.Id);
-            await _accessorService.UpdateTaskNameAsync(payload.Id, payload.Name);
+
+            // Pass metadata forward so AccessorService can send callback
+            await _accessorService.UpdateTaskNameAsync(payload.Id, payload.Name, message.Metadata);
+
             _logger.LogInformation("Task {Id} processed", payload.Id);
         }
         catch (NonRetryableException ex)

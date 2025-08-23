@@ -51,9 +51,18 @@ public class EngineQueueHandler : IQueueHandler<Message>
             var payload = PayloadValidation.DeserializeOrThrow<TaskModel>(message, _logger);
 
             PayloadValidation.ValidateTask(payload, _logger);
+            if (message.Metadata != null && message.Metadata.Count > 0)
+            {
+                var metadataLog = string.Join(", ", message.Metadata.Select(kv => $"{kv.Key}={kv.Value}"));
+                _logger.LogInformation("Received metadata for Task {Id}: {Metadata}", payload.Id, metadataLog);
+            }
+            else
+            {
+                _logger.LogWarning("No metadata received for Task {Id}", payload.Id);
+            }
 
             _logger.LogDebug("Processing task {Id}", payload.Id);
-            await _engine.ProcessTaskAsync(payload, null, cancellationToken);
+            await _engine.ProcessTaskAsync(payload, message.Metadata, cancellationToken);
             _logger.LogInformation("Task {Id} processed", payload.Id);
         }
         catch (NonRetryableException ex)
@@ -89,22 +98,35 @@ public class EngineQueueHandler : IQueueHandler<Message>
             }
             catch (OperationCanceledException)
             {
-                _logger.LogError("Renew Lock loop error");
-                throw;
+                _logger.LogDebug("Renew lock loop cancelled for long task handler");
             }
         }, renewalCts.Token);
+
         try
         {
             var payload = PayloadValidation.DeserializeOrThrow<TaskModel>(message, _logger);
-
             PayloadValidation.ValidateTask(payload, _logger);
+
+            //Log metadata if exists
+            if (message.Metadata != null && message.Metadata.Count > 0)
+            {
+                var metadataLog = string.Join(", ", message.Metadata.Select(kv => $"{kv.Key}={kv.Value}"));
+                _logger.LogInformation("Received metadata for Task {Id}: {Metadata}", payload.Id, metadataLog);
+            }
+            else
+            {
+                _logger.LogWarning("No metadata received for Task {Id}", payload.Id);
+            }
 
             _logger.LogInformation("Starting long task handler for Task {Id}", payload.Id);
 
+            // Simulate long work
             await Task.Delay(TimeSpan.FromSeconds(80), cancellationToken);
-            await _engine.ProcessTaskAsync(payload, null, cancellationToken);
-            _logger.LogInformation("Task {Id} processed", payload.Id);
 
+            // Pass metadata along so callback works
+            await _engine.ProcessTaskAsync(payload, message.Metadata, cancellationToken);
+
+            _logger.LogInformation("Task {Id} processed", payload.Id);
         }
         catch (NonRetryableException ex)
         {

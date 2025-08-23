@@ -24,11 +24,18 @@ public class AccessorEndpointsTests
     {
         // Arrange
         var task = new TaskModel { Id = 1, Name = "Test" };
+        var context = new DefaultHttpContext();
+        var request = context.Request;
 
-        _mockService.Setup(s => s.GetTaskByIdAsync(1)).ReturnsAsync(task);
+        _mockService.Setup(s => s.GetTaskByIdAsync(1, It.IsAny<IDictionary<string, string>>()))
+                    .ReturnsAsync(task);
 
         // Act
-        var result = await AccessorEndpoints.GetTaskByIdAsync(1, _mockService.Object, _mockLogger.Object);
+        var result = await AccessorEndpoints.GetTaskByIdAsync(
+            1,
+            request,
+            _mockService.Object,
+            _mockLogger.Object);
 
         // Assert
         var okResult = Assert.IsType<Ok<TaskModel>>(result);
@@ -39,11 +46,19 @@ public class AccessorEndpointsTests
     public async Task GetTaskById_ReturnsNotFound_WhenTaskDoesNotExist()
     {
         // Arrange
-        var taskId = 999; // non-existing task ID
-        _mockService.Setup(s => s.GetTaskByIdAsync(taskId)).ReturnsAsync((TaskModel?)null);
+        var taskId = 999;
+        var context = new DefaultHttpContext();
+        var request = context.Request;
+
+        _mockService.Setup(s => s.GetTaskByIdAsync(taskId, It.IsAny<IDictionary<string, string>>()))
+                    .ReturnsAsync((TaskModel?)null);
 
         // Act
-        var result = await AccessorEndpoints.GetTaskByIdAsync(taskId, _mockService.Object, _mockLogger.Object);
+        var result = await AccessorEndpoints.GetTaskByIdAsync(
+            taskId,
+            request,
+            _mockService.Object,
+            _mockLogger.Object);
 
         // Assert
         var statusResult = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
@@ -62,7 +77,10 @@ public class AccessorEndpointsTests
         // Arrange
         var task = new TaskModel { Id = 42, Name = "UnitTest Task" };
         var context = new DefaultHttpContext();
-        var request = context.Request; // fake HttpRequest
+        var request = context.Request;
+
+        _mockService.Setup(s => s.CreateTaskAsync(task, It.IsAny<IDictionary<string, string>>()))
+                    .Returns(Task.CompletedTask);
 
         // Act
         var result = await AccessorEndpoints.CreateTaskAsync(
@@ -84,29 +102,42 @@ public class AccessorEndpointsTests
     public async Task UpdateTaskName_ReturnsOk_WhenSuccessful()
     {
         // Arrange
-        var request = new UpdateTaskName { Id = 99, Name = "Updated Name" };
+        var requestModel = new UpdateTaskName { Id = 99, Name = "Updated Name" };
+        var context = new DefaultHttpContext();
+        var httpRequest = context.Request;
 
-        _mockService.Setup(s => s.UpdateTaskNameAsync(99, "Updated Name")).ReturnsAsync(true);
+        _mockService.Setup(s => s.UpdateTaskNameAsync(99, "Updated Name", It.IsAny<IDictionary<string, string>>()))
+                    .ReturnsAsync(true);
 
         // Act
-        var result = await AccessorEndpoints.UpdateTaskNameAsync(request, _mockService.Object, _mockLogger.Object);
+        var result = await AccessorEndpoints.UpdateTaskNameAsync(
+            requestModel,
+            httpRequest,
+            _mockService.Object,
+            _mockLogger.Object);
 
         // Assert
         var okResult = Assert.IsType<Ok<string>>(result);
-        Assert.Equal($"Task {request.Id} updated successfully.", okResult.Value);
+        Assert.Equal($"Task {requestModel.Id} updated successfully.", okResult.Value);
     }
 
     [Fact]
     public async Task UpdateTaskName_ReturnsNotFound_WhenTaskDoesNotExist()
     {
         // Arrange
-        var request = new UpdateTaskName { Id = 999, Name = "DoesNotExist" };
+        var requestModel = new UpdateTaskName { Id = 999, Name = "DoesNotExist" };
+        var context = new DefaultHttpContext();
+        var httpRequest = context.Request;
 
-        // Simulate task not found
-        _mockService.Setup(s => s.UpdateTaskNameAsync(request.Id, request.Name)).ReturnsAsync(false);
+        _mockService.Setup(s => s.UpdateTaskNameAsync(requestModel.Id, requestModel.Name, It.IsAny<IDictionary<string, string>>()))
+                    .ReturnsAsync(false);
 
         // Act
-        var result = await AccessorEndpoints.UpdateTaskNameAsync(request, _mockService.Object, _mockLogger.Object);
+        var result = await AccessorEndpoints.UpdateTaskNameAsync(
+            requestModel,
+            httpRequest,
+            _mockService.Object,
+            _mockLogger.Object);
 
         // Assert
         var statusResult = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
@@ -114,7 +145,7 @@ public class AccessorEndpointsTests
 
         var valueResult = Assert.IsAssignableFrom<IValueHttpResult>(result);
         var value = valueResult.Value;
-        Assert.Equal($"Task with ID {request.Id} not found.", value?.ToString());
+        Assert.Equal($"Task with ID {requestModel.Id} not found.", value?.ToString());
     }
 
     [Fact]
@@ -122,14 +153,48 @@ public class AccessorEndpointsTests
     {
         // Arrange
         var taskId = 15;
+        var context = new DefaultHttpContext();
+        var request = context.Request;
 
-        _mockService.Setup(s => s.DeleteTaskAsync(taskId)).ReturnsAsync(true);
+        _mockService.Setup(s => s.DeleteTaskAsync(taskId, It.IsAny<IDictionary<string, string>>()))
+                    .ReturnsAsync(true);
 
         // Act
-        var result = await AccessorEndpoints.DeleteTaskAsync(taskId, _mockService.Object, _mockLogger.Object);
+        var result = await AccessorEndpoints.DeleteTaskAsync(
+            taskId,
+            request,
+            _mockService.Object,
+            _mockLogger.Object);
 
         // Assert
         var okResult = Assert.IsType<Ok<string>>(result);
         Assert.Equal($"Task {taskId} deleted.", okResult.Value);
+    }
+
+    [Fact]
+    public async Task DeleteTask_ReturnsNotFound_WhenTaskDoesNotExist()
+    {
+        // Arrange
+        var taskId = 123;
+        var context = new DefaultHttpContext();
+        var request = context.Request;
+
+        _mockService.Setup(s => s.DeleteTaskAsync(taskId, It.IsAny<IDictionary<string, string>>()))
+                    .ReturnsAsync(false);
+
+        // Act
+        var result = await AccessorEndpoints.DeleteTaskAsync(
+            taskId,
+            request,
+            _mockService.Object,
+            _mockLogger.Object);
+
+        // Assert
+        var statusResult = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
+        Assert.Equal(404, statusResult.StatusCode);
+
+        var valueResult = Assert.IsAssignableFrom<IValueHttpResult>(result);
+        var value = valueResult.Value;
+        Assert.Equal($"Task with ID {taskId} not found.", value?.ToString());
     }
 }

@@ -7,7 +7,6 @@ using Manager.Models;
 using Manager.Services;
 using Manager.Services.Clients;
 using Scalar.AspNetCore;
-using Common.Callbacks;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,8 +42,6 @@ builder.Services.AddScoped<IManagerService, ManagerService>();
 builder.Services.AddScoped<IAiGatewayService, AiGatewayService>();
 builder.Services.AddScoped<IAccessorClient, AccessorClient>();
 builder.Services.AddScoped<IEngineClient, EngineClient>();
-builder.Services.AddSingleton<ICallbackContextManager, CallbackContextManager>();
-builder.Services.AddSingleton<CallbackDispatcher>();
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 

@@ -16,3 +16,4 @@ spec:
       value: "true"
 scopes:
   - engine-${ENVIRONMENT_NAME}
+  - accessor

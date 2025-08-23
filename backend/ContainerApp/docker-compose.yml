@@ -89,7 +89,7 @@ services:
 
 # ------------------------- PostgreSQL DB --------------------------
   postgres:
-    image: postgres:15
+    image: postgres:17.5
     container_name: postgres-db
     restart: always
     environment:
@@ -142,8 +142,7 @@ services:
   # ------------------------ Manager Service ---------------------------
   manager:
     build:
-      context: .
-      dockerfile: Manager/Dockerfile
+      context: ./Manager
     container_name: manager
     ports:
       - "5001:5001"
@@ -209,8 +208,7 @@ services:
   # ------------------------ Engine Service ---------------------------
   engine:
     build:
-      context: .
-      dockerfile: Engine/Dockerfile
+      context: ./Engine
     container_name: engine
     ports:
       - "5002"
@@ -254,8 +252,7 @@ services:
   # ------------------------ Accessor Service ---------------------------
   accessor:
     build:
-      context: .
-      dockerfile: Accessor/Dockerfile
+      context: ./Accessor
     container_name: accessor
     ports:
       - "5003:5003"

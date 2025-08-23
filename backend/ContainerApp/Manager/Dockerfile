@@ -7,15 +7,10 @@ EXPOSE 5001
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
-COPY Common/Common.csproj Common/
-COPY Manager/Manager.csproj Manager/
+COPY *.csproj ./
+RUN dotnet restore
 
-RUN dotnet restore Manager/Manager.csproj
-
-COPY Common/ Common/
-COPY Manager/ Manager/
-
-WORKDIR /src/Manager
+COPY . ./
 RUN dotnet publish -c Release -o /app/publish
 
 # ----------------- Final Image -----------------

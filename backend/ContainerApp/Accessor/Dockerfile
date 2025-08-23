@@ -5,19 +5,10 @@ EXPOSE 5003
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
-# Copy project files individually so restore can resolve references
-COPY Common/Common.csproj Common/
-COPY Accessor/Accessor.csproj Accessor/
+COPY *.csproj ./
+RUN dotnet restore
 
-# Restore
-RUN dotnet restore Accessor/Accessor.csproj
-
-# Copy the rest of the source code
-COPY Common/ Common/
-COPY Accessor/ Accessor/
-
-# Publish
-WORKDIR /src/Accessor
+COPY . ./
 RUN dotnet publish -c Release -o /app/publish
 
 FROM base AS final

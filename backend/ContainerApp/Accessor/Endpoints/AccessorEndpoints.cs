@@ -35,16 +35,31 @@ public static class AccessorEndpoints
 
     #region HandlerMethods
     public static async Task<IResult> GetTaskByIdAsync(
-        int id,
-        [FromServices] IAccessorService accessorService,
-        [FromServices] ILogger<AccessorService> logger
-    )
+    int id,
+    HttpRequest request,
+    [FromServices] IAccessorService accessorService,
+    [FromServices] ILogger<AccessorService> logger)
     {
         using (logger.BeginScope("Method: {Method}, TaskId: {TaskId}", nameof(GetTaskByIdAsync), id))
         {
             try
             {
-                var task = await accessorService.GetTaskByIdAsync(id);
+                var callbackHeaders = request.Headers
+                    .Where(h => h.Key.StartsWith("x-callback-", StringComparison.OrdinalIgnoreCase))
+                    .ToDictionary(h => h.Key, h => h.Value.ToString());
+
+                if (callbackHeaders.Count > 0)
+                {
+                    var headersLog = string.Join(", ", callbackHeaders.Select(kv => $"{kv.Key}={kv.Value}"));
+                    logger.LogInformation("Received callback headers for Task {TaskId}: {Headers}", id, headersLog);
+                }
+                else
+                {
+                    logger.LogWarning("No callback headers received for Task {TaskId}", id);
+                }
+
+                var task = await accessorService.GetTaskByIdAsync(id, callbackHeaders);
+
                 if (task != null)
                 {
                     logger.LogInformation("Successfully retrieved task.");
@@ -53,7 +68,6 @@ public static class AccessorEndpoints
 
                 logger.LogWarning("Task not found.");
                 return Results.NotFound($"Task with ID {id} not found.");
-
             }
             catch (Exception ex)
             {
@@ -74,11 +88,20 @@ public static class AccessorEndpoints
         {
             try
             {
-                var callbackHeaders = new Dictionary<string, string>
+                var callbackHeaders = request.Headers
+                    .Where(h => h.Key.StartsWith("x-callback-", StringComparison.OrdinalIgnoreCase))
+                    .ToDictionary(h => h.Key, h => h.Value.ToString());
+
+                if (callbackHeaders.Count > 0)
                 {
-                    { "x-callback-method", request.Headers["x-callback-method"].ToString() },
-                    { "x-callback-queue", request.Headers["x-callback-queue"].ToString() }
-                };
+                    var headersLog = string.Join(", ", callbackHeaders.Select(kv => $"{kv.Key}={kv.Value}"));
+                    logger.LogInformation("Received callback headers for Task {TaskId}: {Headers}", task.Id, headersLog);
+                }
+                else
+                {
+                    logger.LogWarning("No callback headers received for Task {TaskId}", task.Id);
+                }
+
                 await accessorService.CreateTaskAsync(task, callbackHeaders);
                 logger.LogInformation("Task saved successfully.");
                 return Results.Ok($"Task {task.Id} Saved");
@@ -93,6 +116,7 @@ public static class AccessorEndpoints
 
     public static async Task<IResult> UpdateTaskNameAsync(
         [FromBody] UpdateTaskName request,
+        HttpRequest httpRequest,
         [FromServices] IAccessorService accessorService,
         [FromServices] ILogger<AccessorService> logger)
     {
@@ -100,7 +124,21 @@ public static class AccessorEndpoints
         {
             try
             {
-                var success = await accessorService.UpdateTaskNameAsync(request.Id, request.Name);
+                var callbackHeaders = httpRequest.Headers
+                    .Where(h => h.Key.StartsWith("x-callback-", StringComparison.OrdinalIgnoreCase))
+                    .ToDictionary(h => h.Key, h => h.Value.ToString());
+
+                if (callbackHeaders.Count > 0)
+                {
+                    var headersLog = string.Join(", ", callbackHeaders.Select(kv => $"{kv.Key}={kv.Value}"));
+                    logger.LogInformation("Received callback headers for Task {TaskId}: {Headers}", request.Id, headersLog);
+                }
+                else
+                {
+                    logger.LogWarning("No callback headers received for Task {TaskId}", request.Id);
+                }
+
+                var success = await accessorService.UpdateTaskNameAsync(request.Id, request.Name, callbackHeaders);
                 if (!success)
                 {
                     logger.LogWarning("Task not found.");
@@ -120,6 +158,7 @@ public static class AccessorEndpoints
 
     public static async Task<IResult> DeleteTaskAsync(
         int taskId,
+        HttpRequest request,
         [FromServices] IAccessorService accessorService,
         [FromServices] ILogger<AccessorService> logger)
     {
@@ -127,7 +166,21 @@ public static class AccessorEndpoints
         {
             try
             {
-                var deleted = await accessorService.DeleteTaskAsync(taskId);
+                var callbackHeaders = request.Headers
+                    .Where(h => h.Key.StartsWith("x-callback-", StringComparison.OrdinalIgnoreCase))
+                    .ToDictionary(h => h.Key, h => h.Value.ToString());
+
+                if (callbackHeaders.Count > 0)
+                {
+                    var headersLog = string.Join(", ", callbackHeaders.Select(kv => $"{kv.Key}={kv.Value}"));
+                    logger.LogInformation("Received callback headers for Task {TaskId}: {Headers}", taskId, headersLog);
+                }
+                else
+                {
+                    logger.LogWarning("No callback headers received for Task {TaskId}", taskId);
+                }
+
+                var deleted = await accessorService.DeleteTaskAsync(taskId, callbackHeaders);
                 if (!deleted)
                 {
                     logger.LogWarning("Task not found.");

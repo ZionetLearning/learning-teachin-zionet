@@ -2,24 +2,34 @@
 using Manager.Models.ModelValidation;
 using Manager.Services;
 using Manager.Messaging;
+using Manager.Hubs;
+using Microsoft.AspNetCore.SignalR;
 using System.Text.Json;
 
 namespace Manager.Endpoints;
 public class ManagerQueueHandler : IQueueHandler<Message>
 {
     private readonly IAiGatewayService _aiService;
+    private readonly IManagerService _managerService;
+    private readonly IHubContext<NotificationHub> _hubContext;
     private readonly ILogger<ManagerQueueHandler> _logger;
     private readonly Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>> _handlers;
 
     public ManagerQueueHandler(
         IAiGatewayService aiService,
+        IManagerService managerService,
+        IHubContext<NotificationHub> hubContext,
         ILogger<ManagerQueueHandler> logger)
     {
         _aiService = aiService;
+        _managerService = managerService;
+        _hubContext = hubContext;
         _logger = logger;
         _handlers = new Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>>
         {
             [MessageAction.AnswerAi] = HandleAnswerAiAsync,
+            [MessageAction.TaskResult] = HandleTaskResultAsync
+
         };
     }
 
@@ -33,6 +43,37 @@ public class ManagerQueueHandler : IQueueHandler<Message>
         {
             _logger.LogWarning("No handler for action {Action}", message.ActionName);
             throw new NonRetryableException($"No handler for action {message.ActionName}");
+        }
+    }
+
+    public async Task HandleTaskResultAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = message.Payload.Deserialize<TaskResult>();
+            if (result == null)
+            {
+                _logger.LogError("Payload deserialization returned null for TaskResult.");
+                throw new NonRetryableException("Payload deserialization returned null for TaskResult.");
+            }
+
+            _logger.LogInformation("[CALLBACK via QueueHandler] Task {Id} finished with status: {Status}",
+                result.Id, result.Status);
+
+            _logger.LogInformation("Sending TaskUpdated for TaskId {Id}, Status {Status} to all clients", result.Id, result.Status);
+
+            await _hubContext.Clients.All.SendAsync(
+                "TaskUpdated",
+                new TaskUpdateMessage { TaskId = result.Id, Status = result.Status },
+                cancellationToken
+            );
+
+            _logger.LogInformation("TaskUpdated event dispatched via SignalR for TaskId {Id}", result.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error handling TaskResult callback");
+            throw;
         }
     }
 

@@ -1,7 +1,6 @@
 ﻿using Dapr.Client;
 using Manager.Constants;
-
-//using Manager.Constants;
+using System.Collections.ObjectModel;
 using Manager.Models;
 using System.Net;
 using System.Text.Json;
@@ -13,16 +12,21 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
     private readonly ILogger<AccessorClient> _logger = logger;
     private readonly DaprClient _daprClient = daprClient;
 
-    public async Task<TaskModel?> GetTaskAsync(int id)
+    public async Task<TaskModel?> GetTaskAsync(int id, IDictionary<string, string>? metadata = null)
     {
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetTaskAsync), nameof(AccessorClient));
         try
         {
-            var task = await _daprClient.InvokeMethodAsync<TaskModel?>(
-                HttpMethod.Get,
-                "accessor",
-                $"task/{id}"
-            );
+            var request = _daprClient.CreateInvokeMethodRequest(HttpMethod.Get, "accessor", $"task/{id}");
+
+            // attach callback headers if any
+            if (metadata is not null && metadata.Count > 0)
+            {
+                foreach (var kv in metadata)
+                    request.Headers.TryAddWithoutValidation(kv.Key, kv.Value);
+            }
+
+            var task = await _daprClient.InvokeMethodAsync<TaskModel?>(request);
             _logger.LogDebug("Received task {TaskId} from Accessor service", id);
             return task;
         }
@@ -38,7 +42,7 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
         }
     }
 
-    public async Task<bool> UpdateTaskName(int id, string newTaskName)
+    public async Task<bool> UpdateTaskName(int id, string newTaskName, IDictionary<string, string>? metadata = null)
     {
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(UpdateTaskName), nameof(AccessorClient));
         try
@@ -60,14 +64,27 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
             var message = new Message
             {
                 ActionName = MessageAction.UpdateTask,
-                Payload = payload
+                Payload = payload,
+                Metadata = metadata
             };
 
-            await _daprClient.InvokeBindingAsync(
-                $"{QueueNames.AccessorQueue}-out",
-                "create",
-                message
-            );
+            if (metadata is not null && metadata.Count > 0)
+            {
+                await _daprClient.InvokeBindingAsync(
+                    $"{QueueNames.AccessorQueue}-out",
+                    "create",
+                    message,
+                    new ReadOnlyDictionary<string, string>(metadata)
+                );
+            }
+            else
+            {
+                await _daprClient.InvokeBindingAsync(
+                    $"{QueueNames.AccessorQueue}-out",
+                    "create",
+                    message
+                );
+            }
 
             return true;
         }
@@ -78,7 +95,7 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
         }
     }
 
-    public async Task<bool> DeleteTask(int id)
+    public async Task<bool> DeleteTask(int id, IDictionary<string, string>? metadata = null)
     {
         _logger.LogInformation(
             "Inside: {Method} in {Class}",
@@ -87,7 +104,15 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
         );
         try
         {
-            await _daprClient.InvokeMethodAsync(HttpMethod.Delete, "accessor", $"task/{id}");
+            var request = _daprClient.CreateInvokeMethodRequest(HttpMethod.Delete, "accessor", $"task/{id}");
+
+            if (metadata is not null && metadata.Count > 0)
+            {
+                foreach (var kv in metadata)
+                    request.Headers.TryAddWithoutValidation(kv.Key, kv.Value);
+            }
+
+            await _daprClient.InvokeMethodAsync(request);
             _logger.LogDebug("Task {TaskId} deletion request sent to Accessor service", id);
 
             return true;

@@ -1,8 +1,6 @@
 ﻿using AutoMapper;
 using Manager.Models;
 using Manager.Services.Clients;
-using Common.Callbacks;
-using Common.Models;
 
 namespace Manager.Services;
 
@@ -12,21 +10,18 @@ public class ManagerService : IManagerService
     private readonly ILogger<ManagerService> _logger;
     private readonly IAccessorClient _accessorClient;
     private readonly IEngineClient _engineClient;
-    private readonly ICallbackContextManager _callbackManager;
     private readonly IMapper _mapper;
 
     public ManagerService(IConfiguration configuration,
         ILogger<ManagerService> logger,
         IAccessorClient accessorClient,
         IEngineClient engineClient,
-        ICallbackContextManager callbackManager,
         IMapper mapper)
     {
         _configuration = configuration;
         _logger = logger;
         _accessorClient = accessorClient;
         _engineClient = engineClient;
-        _callbackManager = callbackManager;
         _mapper = mapper;
     }
 
@@ -42,7 +37,12 @@ public class ManagerService : IManagerService
 
         try
         {
-            var task = await _accessorClient.GetTaskAsync(id);
+            var metadata = new Dictionary<string, string>
+            {
+                ["x-callback-queue"] = "manager-callback-queue"
+            };
+
+            var task = await _accessorClient.GetTaskAsync(id, metadata);
             if (task != null)
             {
                 _logger.LogDebug("Successfully retrieved task {TaskId}", id);
@@ -87,14 +87,10 @@ public class ManagerService : IManagerService
         {
             _logger.LogDebug("Processing task {TaskId} with name '{TaskName}'", task.Id, task.Name);
 
-            // Create callback context
-            var callbackContext = new CallbackContext(
-                typeof(ManagerService).FullName!,   // TargetTypeName
-                nameof(OnTaskProcessedAsync),       // MethodName
-                "manager-callback-queue"            // QueueName
-            );
-
-            var metadata = _callbackManager.ToHeaders(callbackContext);
+            var metadata = new Dictionary<string, string>
+            {
+                ["x-callback-queue"] = "manager-callback-queue"
+            };
 
             // Send to Engine or Accessor with callback headers
             var result = await _engineClient.ProcessTaskAsync(task, metadata);
@@ -117,19 +113,18 @@ public class ManagerService : IManagerService
         }
     }
 
-    // This will be called automatically by CallbackDispatcher
-    public Task OnTaskProcessedAsync(TaskResult result)
-    {
-        _logger.LogInformation("[CALLBACK] Task {TaskId} finished with status: {Status}", result.Id, result.Status);
-        return Task.CompletedTask;
-    }
-
     public async Task<(bool success, string message)> ProcessTaskLongAsync(TaskModel task)
     {
         try
         {
             _logger.LogDebug("Inside: {MethodName}", nameof(ProcessTaskAsync));
-            var result = await _engineClient.ProcessTaskLongAsync(task);
+
+            var metadata = new Dictionary<string, string>
+            {
+                ["x-callback-queue"] = "manager-callback-queue"
+            };
+
+            var result = await _engineClient.ProcessTaskLongAsync(task, metadata);
             return (result.success, result.message);
         }
         catch (Exception ex)
@@ -164,7 +159,12 @@ public class ManagerService : IManagerService
         try
         {
             _logger.LogInformation("Updating task {TaskId} name to '{NewTaskName}'", id, newTaskName);
-            var result = await _accessorClient.UpdateTaskName(id, newTaskName);
+
+            var metadata = new Dictionary<string, string>
+            {
+                ["x-callback-queue"] = "manager-callback-queue"
+            };
+            var result = await _accessorClient.UpdateTaskName(id, newTaskName, metadata);
             if (result)
             {
                 _logger.LogInformation("Task {TaskId} name successfully updated", id);
@@ -195,7 +195,13 @@ public class ManagerService : IManagerService
         try
         {
             _logger.LogInformation("Attempting to delete task {TaskId}", id);
-            var result = await _accessorClient.DeleteTask(id);
+
+            var metadata = new Dictionary<string, string>
+            {
+                ["x-callback-queue"] = "manager-callback-queue"
+            };
+
+            var result = await _accessorClient.DeleteTask(id, metadata);
             if (result)
             {
                 _logger.LogInformation("Task {TaskId} successfully deleted", id);
