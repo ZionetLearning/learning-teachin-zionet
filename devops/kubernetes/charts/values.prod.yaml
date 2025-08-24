@@ -47,6 +47,7 @@ accessor:
 
 # Frontend Static Web App Proxy
 frontend:
+  name: frontend-proxy
   enabled: true
   path: "/"
   staticWebApp:
