@@ -9,6 +9,7 @@ jobs:
   purge:
     name: Purge ${{ matrix.repo }} images
     runs-on: ubuntu-latest
+    environment: Development
     strategy:
       matrix:
         repo: [manager, engine, accessor]
@@ -20,7 +21,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Azure Login
+      - name: Azure Login via OIDC
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
