@@ -44,3 +44,10 @@ accessor:
     tag: "1.0.0"
   env:
     ASPNETCORE_URLS: "http://+:5003"
+
+# Frontend Static Web App Proxy
+frontend:
+  enabled: true
+  path: "/"
+  staticWebApp:
+    hostname: ""  # Will be set dynamically by deployment pipeline from Terraform output
