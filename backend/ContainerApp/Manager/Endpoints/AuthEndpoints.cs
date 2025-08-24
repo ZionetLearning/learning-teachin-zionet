@@ -2,6 +2,7 @@
 using Manager.Services;
 using Microsoft.AspNetCore.Mvc;
 using Manager.Models.Auth;
+using Manager.Constants;
 
 namespace Manager.Endpoints;
 
@@ -13,7 +14,9 @@ public static class AuthEndpoints
 
         app.MapPost("/auth/login", LoginAsync).WithName("Login");
 
-        app.MapPost("/auth/refresh-tokens", RefreshTokensAsync).WithName("RefreshTokens");
+        app.MapPost("/auth/refresh-tokens", RefreshTokensAsync)
+            .RequireRateLimiting(AuthSettings.RefreshTokenPolicy)
+            .WithName("RefreshTokens");
 
         app.MapPost("/auth/logout", LogoutAsync).WithName("Logout");
 
