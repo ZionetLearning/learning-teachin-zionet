@@ -14,7 +14,7 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    cert-manager.io/cluster-issuer: {{ .Values.ingress.tls.clusterIssuer }}
+    cert-manager.io/cluster-issuer: {{ .Values.manager.ingress.tls.clusterIssuer }}
     # Proxy to Static Web App
     nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
     nginx.ingress.kubernetes.io/upstream-vhost: {{ $staticWebAppHostname | quote }}
@@ -23,10 +23,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - {{ .Values.ingress.host }}
-      secretName: {{ .Values.ingress.tls.secretName }}
+        - {{ .Values.manager.ingress.host }}
+      secretName: {{ .Values.manager.ingress.tls.secretName }}
   rules:
-  - host: {{ .Values.ingress.host }}
+  - host: {{ .Values.manager.ingress.host }}
     http:
       paths:
       - path: {{ .Values.frontend.path | default "/" }}
