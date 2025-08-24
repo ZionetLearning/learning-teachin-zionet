@@ -201,7 +201,22 @@
         "languages": "Languages:",
         "searchByName": "Search by name",
         "regionWithNoColon": "Region",
-        "populationWithNoColon": "Population"
+        "populationWithNoColon": "Population",
+        "regionFilter" : {
+          "all": "All",
+          "africa": "Africa",
+          "americas": "Americas",
+          "asia": "Asia",
+          "europe": "Europe",
+          "oceania": "Oceania",
+          "antarctic": "Antarctic"
+        },
+        "populationFilter": {
+          "allPopulations": "All populations",
+          "lessThan10M": "Less than 10M",
+          "between10MAnd100M": "Between 10M and 100M",
+          "moreThan100M": "More than 100M"
+        }
       },
       "signalR": {
         "title": "SignalR Testing",

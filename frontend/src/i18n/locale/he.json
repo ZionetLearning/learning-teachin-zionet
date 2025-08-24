@@ -201,7 +201,22 @@
         "languages": "שפות:",
         "searchByName": "חפש לפי שם מדינה",
         "regionWithNoColon": "איזור",
-        "populationWithNoColon": "גודל אוכלוסייה"
+        "populationWithNoColon": "גודל אוכלוסייה",
+        "regionFilter": {
+          "all": "כל האזורים",
+          "africa": "אפריקה",
+          "americas": "אמריקה",
+          "asia": "אסיה",
+          "europe": "אירופה",
+          "oceania": "אוקיאניה",
+          "antarctic": "אנטארקטיקה"
+        },
+        "populationFilter": {
+          "allPopulations": "כל גדלי האוכלוסייה",
+          "lessThan10M": "מתחת ל-10 מיליון",
+          "between10MAnd100M": "בין 10 מיליון ל-100 מיליון",
+          "moreThan100M": "מעל ל-100 מיליון"
+        }
       },
       "signalR": {
         "title": "בדיקת SignalR",
@@ -213,7 +228,7 @@
         "posting": "שולח...",
         "postiong": "שולח...",
         "send": "שלח",
-         "noNotifications": "אין התראות",
+        "noNotifications": "אין התראות",
         "notifications": "התראות"
       }
     },
