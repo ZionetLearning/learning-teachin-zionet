@@ -115,19 +115,6 @@ public sealed class ChatAiService : IChatAiService
         }
     }
 
-    private static bool EnvelopeHasSystem(HistoryEnvelope env)
-    {
-        foreach (var m in env.Messages)
-        {
-            if (m.Role == AuthorRole.System)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     private static JsonElement ToJsonElementCompat<T>(T value)
     {
         return System.Text.Json.JsonSerializer.SerializeToElement(value!);
