@@ -19,5 +19,4 @@ docker_registry        = "snir1551"
 #------------- Frontend Configuration -------------
 frontend_sku_tier      = "Free"    
 frontend_sku_size      = "Free"    
-frontend_custom_domain = "teachin.westeurope.cloudapp.azure.com"
 

@@ -194,12 +194,6 @@ variable "frontend_appinsights_sampling_percentage" {
   default     = 100
 }
 
-variable "frontend_custom_domain" {
-  description = "Custom domain for the frontend Static Web App"
-  type        = string
-  default     = ""
-}
-
 #------------- Redis Variables -------------
 variable "redis_name" {
   description = "Name of the Redis cache instance"

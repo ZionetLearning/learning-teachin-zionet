@@ -44,9 +44,3 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
-
-variable "custom_domain" {
-  description = "Custom domain for the Static Web App"
-  type        = string
-  default     = ""
-}
