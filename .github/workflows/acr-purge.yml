@@ -80,11 +80,9 @@ jobs:
           
           for tag in $TAGS; do
             if ! echo "$WHITELIST" | grep -qx "$tag"; then
-              echo "Deleting $REPO:$tag"
-              az acr repository delete \
+              echo "Deleting tag $REPO:$tag"
+              az acr repository untag \
                 --name teachindevacr \
-                --repository $REPO \
-                --tag $tag \
-                --yes
+                --image $REPO:$tag
             fi
           done
