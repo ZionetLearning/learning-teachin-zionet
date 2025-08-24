@@ -202,7 +202,7 @@
         "searchByName": "Search by name",
         "regionWithNoColon": "Region",
         "populationWithNoColon": "Population",
-        "regionFilter" : {
+        "regionFilter": {
           "all": "All",
           "africa": "Africa",
           "americas": "Americas",

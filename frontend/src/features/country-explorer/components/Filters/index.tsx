@@ -11,7 +11,7 @@ export type FiltersState = {
     | "Asia"
     | "Europe"
     | "Oceania"
-    | "Antarctic"
+    | "Antarctic";
   popRange: PopRangeKey;
 };
 
@@ -47,19 +47,36 @@ export const Filters = ({ value, onChange }: Props) => {
   const regions: { key: FiltersState["region"]; label: string }[] = [
     { key: "All", label: t("pages.countryExplorer.regionFilter.all") },
     { key: "Africa", label: t("pages.countryExplorer.regionFilter.africa") },
-    { key: "Americas", label: t("pages.countryExplorer.regionFilter.americas") },
+    {
+      key: "Americas",
+      label: t("pages.countryExplorer.regionFilter.americas"),
+    },
     { key: "Asia", label: t("pages.countryExplorer.regionFilter.asia") },
     { key: "Europe", label: t("pages.countryExplorer.regionFilter.europe") },
     { key: "Oceania", label: t("pages.countryExplorer.regionFilter.oceania") },
-    { key: "Antarctic", label: t("pages.countryExplorer.regionFilter.antarctic") },
-  
+    {
+      key: "Antarctic",
+      label: t("pages.countryExplorer.regionFilter.antarctic"),
+    },
   ];
 
   const popRanges: { key: PopRangeKey; label: string }[] = [
-    { key: "ALL", label: t("pages.countryExplorer.populationFilter.allPopulations") },
-    { key: "<10M", label: t("pages.countryExplorer.populationFilter.lessThan10M") },
-    { key: "10M-100M", label: t("pages.countryExplorer.populationFilter.between10MAnd100M") },
-    { key: ">=100M", label: t("pages.countryExplorer.populationFilter.moreThan100M") },
+    {
+      key: "ALL",
+      label: t("pages.countryExplorer.populationFilter.allPopulations"),
+    },
+    {
+      key: "<10M",
+      label: t("pages.countryExplorer.populationFilter.lessThan10M"),
+    },
+    {
+      key: "10M-100M",
+      label: t("pages.countryExplorer.populationFilter.between10MAnd100M"),
+    },
+    {
+      key: ">=100M",
+      label: t("pages.countryExplorer.populationFilter.moreThan100M"),
+    },
   ];
 
   return (
