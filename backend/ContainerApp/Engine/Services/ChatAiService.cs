@@ -6,7 +6,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.OpenAI;
+using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
 using Polly;
 
 namespace Engine.Services;
@@ -57,26 +57,28 @@ public sealed class ChatAiService : IChatAiService
 
         try
         {
-            var skHistory = BuildSkHistoryFromRaw(request.History);
+            var skHistory = ToChatHistoryFromElement(request.History);
 
-            if (skHistory.Count == 0)
+            var storyForKernel = CloneToChatHistory(skHistory);
+
+            if (storyForKernel.Count == 0)
             {
                 var SystemPrompt = Prompts.Combine(Prompts.SystemDefault, Prompts.DetailedExplanation);
-                skHistory.AddSystemMessage(SystemPrompt);
+                storyForKernel.AddSystemMessage(SystemPrompt);
             }
 
-            var baseline = skHistory.Count;
+            var baseline = storyForKernel.Count;
 
             var cleanUserMsg = request.UserMessage.Trim();
-            skHistory.AddUserMessage(cleanUserMsg);
+            storyForKernel.AddUserMessage(cleanUserMsg);
 
-            var settings = new OpenAIPromptExecutionSettings
+            var settings = new AzureOpenAIPromptExecutionSettings
             {
                 FunctionChoiceBehavior = FunctionChoiceBehavior.Auto()
             };
 
             var result = await _kernelPolicy.ExecuteAsync(
-                async ct2 => await _chat.GetChatMessageContentAsync(skHistory, settings, _kernel, ct2),
+                async ct2 => await _chat.GetChatMessageContentAsync(storyForKernel, settings, _kernel, ct2),
                 ct);
 
             if (string.IsNullOrWhiteSpace(result?.Content))
@@ -86,41 +88,12 @@ public sealed class ChatAiService : IChatAiService
                 return response;
             }
 
-            skHistory.Add(result);
+            storyForKernel.Add(result);
 
-            HistoryEnvelope envelope;
+            AppendDelta(skHistory, storyForKernel, baseline);
 
-            if (request.History.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null)
-            {
-                envelope = new HistoryEnvelope();
-            }
-            else
-            {
-                try
-                {
-                    envelope = System.Text.Json.JsonSerializer.Deserialize<HistoryEnvelope>(request.History.GetRawText(), HistoryJsonOptions)
-                               ?? new HistoryEnvelope();
-                }
-                catch
-                {
-                    envelope = new HistoryEnvelope();
-                }
-            }
-
-            if (!EnvelopeHasSystem(envelope))
-            {
-                var SystemPrompt = Prompts.Combine(Prompts.SystemDefault, Prompts.DetailedExplanation);
-                envelope.Messages.Insert(0, new ChatMessageContent(AuthorRole.System, SystemPrompt));
-            }
-
-            for (var i = baseline; i < skHistory.Count; i++)
-            {
-                envelope.Messages.Add(skHistory[i]);
-            }
-
-            var json = System.Text.Json.JsonSerializer.Serialize(envelope, HistoryJsonOptions);
-            using var doc = System.Text.Json.JsonDocument.Parse(json);
-            var updatedRaw = doc.RootElement.Clone();
+            var envelope = new HistoryEnvelope { Messages = skHistory.ToList() };
+            var updatedRaw = ToJsonElementCompat(envelope);
 
             response.Status = ChatAnswerStatus.Ok;
             response.Answer = new ChatMessage
@@ -142,44 +115,6 @@ public sealed class ChatAiService : IChatAiService
         }
     }
 
-    private static ChatHistory BuildSkHistoryFromRaw(JsonElement raw)
-    {
-        var history = new ChatHistory();
-
-        try
-        {
-            if (raw.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null)
-            {
-                return history;
-            }
-
-            var env = System.Text.Json.JsonSerializer.Deserialize<HistoryEnvelope>(raw.GetRawText(), HistoryJsonOptions);
-            if (env?.Messages is not null && env.Messages.Count > 0)
-            {
-                history.AddRange(env.Messages);
-            }
-        }
-        catch
-        {
-            //todo: action if exception
-        }
-
-        return history;
-    }
-
-    private static readonly JsonSerializerOptions HistoryJsonOptions = CreateHistoryJsonOptions();
-
-    private static JsonSerializerOptions CreateHistoryJsonOptions()
-    {
-        var opts = new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true
-        };
-
-        opts.Converters.Add(new Helpers.ChatMessageContentConverter());
-        return opts;
-    }
-
     private static bool EnvelopeHasSystem(HistoryEnvelope env)
     {
         foreach (var m in env.Messages)
@@ -191,5 +126,289 @@ public sealed class ChatAiService : IChatAiService
         }
 
         return false;
+    }
+
+    private static JsonElement ToJsonElementCompat<T>(T value)
+    {
+        return System.Text.Json.JsonSerializer.SerializeToElement(value!);
+
+    }
+
+    private static ChatHistory CloneToChatHistory(ChatHistory source)
+    {
+        var h = new ChatHistory();
+        foreach (var m in source)
+        {
+            h.Add(DeepCloneMessage(m));
+        }
+
+        return h;
+    }
+
+    private static ChatMessageContent DeepCloneMessage(ChatMessageContent msg)
+    {
+        var json = System.Text.Json.JsonSerializer.Serialize(msg);
+        var clone = System.Text.Json.JsonSerializer.Deserialize<ChatMessageContent>(json);
+
+        return clone!;
+    }
+
+    private static void AppendDelta(ChatHistory baseHistory, ChatHistory srcWithNew, int baseline)
+    {
+        for (var i = baseline; i < srcWithNew.Count; i++)
+        {
+            baseHistory.Add(DeepCloneMessage(srcWithNew[i]));
+        }
+    }
+
+    private static ChatHistory ToChatHistoryFromElement(JsonElement element)
+    {
+        var history = new ChatHistory();
+
+        if (element.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null)
+        {
+            return history;
+        }
+
+        if (!element.TryGetProperty("messages", out var messages) || messages.ValueKind != JsonValueKind.Array)
+        {
+            return history;
+        }
+
+        foreach (var msgEl in messages.EnumerateArray())
+        {
+            var role = AuthorRole.User;
+            if (msgEl.TryGetProperty("Role", out var roleObj) && roleObj.ValueKind == JsonValueKind.Object)
+            {
+                var label = roleObj.GetPropertyOrNull("Label")?.GetString();
+                role = MapRole(label);
+            }
+            else
+            {
+                var label = msgEl.GetPropertyOrNull("role")?.GetString();
+                if (!string.IsNullOrWhiteSpace(label))
+                {
+                    role = MapRole(label);
+                }
+            }
+
+            var itemsCol = new ChatMessageContentItemCollection();
+
+            if (msgEl.TryGetProperty("Items", out var itemsEl) && itemsEl.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var it in itemsEl.EnumerateArray())
+                {
+                    var typeStr = it.GetPropertyOrNull("$type")?.GetString();
+
+                    switch (typeStr)
+                    {
+                        case "TextContent":
+                        {
+                            var text = it.GetPropertyOrNull("Text")?.GetString();
+                            if (!string.IsNullOrWhiteSpace(text))
+                            {
+                                itemsCol.Add(new TextContent(text));
+                            }
+
+                            break;
+                        }
+
+                        case "FunctionCallContent":
+                        {
+                            var fn = it.GetPropertyOrNull("FunctionName")?.GetString();
+                            if (string.IsNullOrWhiteSpace(fn))
+                            {
+                                break;
+                            }
+
+                            var plugin = it.GetPropertyOrNull("PluginName")?.GetString();
+                            var id = it.GetPropertyOrNull("Id")?.GetString();
+                            var argsKA = ElementToKernelArguments(it.GetPropertyOrNull("Arguments"));
+
+                            itemsCol.Add(new FunctionCallContent(fn!, plugin, id, argsKA));
+                            break;
+                        }
+
+                        case "FunctionResultContent":
+                        {
+                            var fn = it.GetPropertyOrNull("FunctionName")?.GetString() ?? string.Empty;
+                            var plugin = it.GetPropertyOrNull("PluginName")?.GetString();
+                            var callId = it.GetPropertyOrNull("CallId")?.GetString();
+                            object? resultObj = null;
+                            var resEl = it.GetPropertyOrNull("Result");
+                            if (resEl.HasValue)
+                            {
+                                resultObj = ElementToObj(resEl.Value);
+                            }
+
+                            itemsCol.Add(new FunctionResultContent(fn, plugin, callId, resultObj));
+                            break;
+                        }
+
+                        default:
+                        {
+                            var text = it.GetPropertyOrNull("Text")?.GetString();
+                            if (!string.IsNullOrWhiteSpace(text))
+                            {
+                                itemsCol.Add(new TextContent(text));
+                            }
+
+                            break;
+                        }
+                    }
+                }
+            }
+
+            var content = msgEl.GetPropertyOrNull("content")?.GetString() ?? string.Empty;
+
+            var modelId = msgEl.GetPropertyOrNull("ModelId")?.GetString()
+                              ?? msgEl.GetPropertyOrNull("modelId")?.GetString();
+
+            var metadata = ReadMetadataFromMessage(msgEl);
+
+            ChatMessageContent message;
+            if (itemsCol.Count > 0)
+            {
+                message = new ChatMessageContent(role, itemsCol, null, null, null, metadata);
+            }
+            else
+            {
+                message = new ChatMessageContent(role, content, null, null, null, metadata);
+            }
+
+            if (!string.IsNullOrWhiteSpace(modelId))
+            {
+                message.ModelId = modelId;
+            }
+
+            history.Add(message);
+        }
+
+        return history;
+    }
+
+    private static AuthorRole MapRole(string? label)
+    {
+        switch (label?.Trim().ToLowerInvariant())
+        {
+            case "system":
+                return AuthorRole.System;
+            case "assistant":
+                return AuthorRole.Assistant;
+            case "developer":
+                return AuthorRole.Developer;
+            case "tool":
+                return AuthorRole.Tool;
+            case "user":
+            default:
+                return AuthorRole.User;
+        }
+    }
+
+    private static KernelArguments? ElementToKernelArguments(JsonElement? elNullable)
+    {
+        if (!elNullable.HasValue)
+        {
+            return null;
+        }
+
+        var el = elNullable.Value;
+        if (el.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        var ka = new KernelArguments();
+        foreach (var p in el.EnumerateObject())
+        {
+            ka[p.Name] = ElementToObj(p.Value);
+        }
+
+        return ka;
+    }
+
+    private static object? ElementToObj(JsonElement el)
+    {
+        switch (el.ValueKind)
+        {
+            case JsonValueKind.String:
+                return el.GetString();
+
+            case JsonValueKind.Number:
+            {
+                if (el.TryGetInt64(out var l))
+                {
+                    return l;
+                }
+
+                if (el.TryGetDouble(out var d))
+                {
+                    return d;
+                }
+
+                return el.GetRawText();
+            }
+
+            case JsonValueKind.True:
+            case JsonValueKind.False:
+                return el.GetBoolean();
+
+            case JsonValueKind.Null:
+            case JsonValueKind.Undefined:
+                return null;
+
+            case JsonValueKind.Array:
+            {
+                var list = new List<object?>();
+                foreach (var item in el.EnumerateArray())
+                {
+                    list.Add(ElementToObj(item));
+                }
+
+                return list;
+            }
+
+            case JsonValueKind.Object:
+            {
+                var dict = new Dictionary<string, object?>();
+                foreach (var p in el.EnumerateObject())
+                {
+                    dict[p.Name] = ElementToObj(p.Value);
+                }
+
+                return dict;
+            }
+
+            default:
+                return el.GetRawText();
+        }
+    }
+
+    private static IReadOnlyDictionary<string, object?>? ReadMetadataFromMessage(JsonElement msgEl)
+    {
+        if (msgEl.TryGetProperty("Metadata", out var metaEl) && metaEl.ValueKind == JsonValueKind.Object)
+        {
+            return (IReadOnlyDictionary<string, object?>)ElementToObj(metaEl)!;
+        }
+
+        if (msgEl.TryGetProperty("metadata", out metaEl) && metaEl.ValueKind == JsonValueKind.Object)
+        {
+            return (IReadOnlyDictionary<string, object?>)ElementToObj(metaEl)!;
+        }
+
+        return null;
+    }
+}
+
+file static class JsonElementExt
+{
+    public static JsonElement? GetPropertyOrNull(this JsonElement element, string name)
+    {
+        if (element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var v))
+        {
+            return v;
+        }
+
+        return null;
     }
 }
