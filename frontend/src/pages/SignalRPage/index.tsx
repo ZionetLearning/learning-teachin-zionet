@@ -17,21 +17,24 @@ export const SignalRPage = () => {
     SignalRNotificationMessage[]
   >([]);
 
-  const handleNotificationMessage = useCallback((n: SignalRNotificationMessage) => {
-    setNotifications((prev) => [...prev, n]);
-  }, []);
+  const handleNotificationMessage = useCallback(
+    (n: SignalRNotificationMessage) => {
+      setNotifications((prev) => [...prev, n]);
+    },
+    [],
+  );
 
   useSignalREvent<[SignalRNotificationMessage]>(
     "NotificationMessage",
-    handleNotificationMessage
+    handleNotificationMessage,
   );
 
-  // submit with API, TaskForm resets itself 
+  // submit with API, TaskForm resets itself
   const handleSubmit = useCallback(
     (task: TaskInput, reset: () => void) => {
       postTask(task, { onSuccess: reset });
     },
-    [postTask]
+    [postTask],
   );
 
   return (

@@ -26,7 +26,7 @@ export const usePostTask = () => {
             "Content-Type": "application/json",
             "X-User-Id": userId,
           },
-        }
+        },
       );
     },
 

@@ -13,7 +13,6 @@ import "./index.css";
 import App from "./App.tsx";
 
 initializeSentry();
-
 // const HUB_URL = "http://localhost:5280/notificationHub";
 const HUB_URL =
   "https://teachin.westeurope.cloudapp.azure.com/api/dev/notificationHub";
@@ -30,5 +29,5 @@ createRoot(document.getElementById("root")!).render(
         </SignalRProvider>
       </AuthProvider>
     </ReactQueryProvider>
-  </I18nTranslateProvider>
+  </I18nTranslateProvider>,
 );
