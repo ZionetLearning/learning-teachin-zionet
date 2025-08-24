@@ -11,4 +11,6 @@ public sealed class AuthSettings
     public const string NameClaimType = "userId";
     public const string RefreshTokenPolicyName = "RefreshTokenPolicy";
     public const string UnknownIpFallback = "unknown";
+    public const string RefreshTokenPolicy = "RefreshTokenPolicy";
+
 }

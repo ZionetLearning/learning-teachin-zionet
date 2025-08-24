@@ -132,12 +132,16 @@ if (refreshRateLimitSettings != null)
         options.RejectionStatusCode = refreshRateLimitSettings.RejectionStatusCode;
         _ = options.AddPolicy(AuthSettings.RefreshTokenPolicyName, context =>
         {
-            var ip = context.Connection.RemoteIpAddress?.ToString() ?? AuthSettings.UnknownIpFallback;
+            //var ip = context.Connection.RemoteIpAddress?.ToString() ?? AuthSettings.UnknownIpFallback;
+            var ip = context.Request.Headers["X-Forwarded-For"].FirstOrDefault()
+                 ?? context.Connection.RemoteIpAddress?.ToString()
+                 ?? AuthSettings.UnknownIpFallback;
+
             return RateLimitPartition.Get(ip, _ =>
                 new FixedWindowRateLimiter(new FixedWindowRateLimiterOptions
                 {
                     PermitLimit = refreshRateLimitSettings.PermitLimit,
-                    Window = TimeSpan.FromMinutes(1),
+                    Window = refreshRateLimitSettings.WindowMinutes,
                     QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                     QueueLimit = refreshRateLimitSettings.QueueLimit
                 }));
