@@ -34,9 +34,7 @@ public static class ManagerEndpoints
 
         #region User Endpoints
 
-        //app.MapGet("/user/all", GetAllUsersAsync).WithName("GetAllUsers");
-        app.MapGet("/user-list", GetAllUsersAsync); // Different shape
-
+        app.MapGet("/user-list", GetAllUsersAsync).WithName("GetAllUsers");
         app.MapGet("/user/{userId:guid}", GetUserAsync).WithName("GetUser");
         app.MapPost("/user", CreateUserAsync).WithName("CreateUser");
         app.MapPut("/user/{userId}", UpdateUserAsync).WithName("UpdateUser");
