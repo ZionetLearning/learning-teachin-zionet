@@ -34,7 +34,7 @@ public static class ManagerEndpoints
 
         #region User Endpoints
 
-        app.MapGet("/user/{userId}", GetUserAsync).WithName("GetUser");
+        app.MapGet("/user/{userId:guid}", GetUserAsync).WithName("GetUser");
         app.MapGet("/user/all", GetAllUsersAsync).WithName("GetAllUsers");
         app.MapPost("/user", CreateUserAsync).WithName("CreateUser");
         app.MapPut("/user/{userId}", UpdateUserAsync).WithName("UpdateUser");
@@ -292,31 +292,23 @@ public static class ManagerEndpoints
         }
     }
 
-    //private static async Task<IResult> GetAllUsersAsync(
-    //    [FromServices] IManagerService managerService,
-    //    [FromServices] ILogger<ManagerService> logger)
-    //{
-    //    using var scope = logger.BeginScope("GetAllUsers:");
-
-    //    try
-    //    {
-    //        var users = await managerService.GetAllUsersAsync();
-    //        logger.LogInformation("Retrieved {Count} users", users.Count());
-    //        return Results.Ok(users);
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        logger.LogError(ex, "Error retrieving users");
-    //        return Results.Problem("Failed to retrieve users.");
-    //    }
-    //}
-
-    private static Task<IResult> GetAllUsersAsync()
+    private static async Task<IResult> GetAllUsersAsync(
+        [FromServices] IManagerService managerService,
+        [FromServices] ILogger<ManagerService> logger)
     {
-        return Task.FromResult(Results.Ok(new[]
+        using var scope = logger.BeginScope("GetAllUsers:");
+
+        try
         {
-        new { Id = Guid.NewGuid(), Name = "Test User" }
-    }));
+            var users = await managerService.GetAllUsersAsync();
+            logger.LogInformation("Retrieved {Count} users", users.Count());
+            return Results.Ok(users);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error retrieving users");
+            return Results.Problem("Failed to retrieve users.");
+        }
     }
 
     #endregion
