@@ -11,9 +11,12 @@ on:
   pull_request:
     branches:
       - main
-    types: [opened, synchronize, closed]
+    types: [opened, synchronize, reopened]
     paths:
       - 'frontend/**'
+  push:
+    branches: [main]
+    paths: ['frontend/**']    
   workflow_dispatch:
     inputs:
       environment:
@@ -93,9 +96,9 @@ jobs:
 
       - name: Upload build artifacts
         if: |
-          (github.event_name == 'pull_request' && github.event.pull_request.merged == true) ||
-          github.event_name == 'workflow_dispatch' ||
-          github.event_name == 'workflow_call'
+         github.event_name == 'push' ||
+         github.event_name == 'workflow_dispatch' ||
+         github.event_name == 'workflow_call'
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build
@@ -104,9 +107,9 @@ jobs:
 
   deploy:
     if: |
-      (github.event_name == 'pull_request' && github.event.pull_request.merged == true) ||
-      github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'workflow_call'
+     github.event_name == 'push' ||
+     github.event_name == 'workflow_dispatch' ||
+     github.event_name == 'workflow_call'
     needs: [frontend-build-and-lint]
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || 'Development' }}
