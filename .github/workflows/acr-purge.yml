@@ -54,7 +54,7 @@ jobs:
             d=$(az acr repository show-manifests \
                   --name teachindevacr \
                   --repository $REPO \
-                  --query "[?tags[?contains(@, '$tag')]].digest" -o tsv)
+                  --query "[?tags[?@ == '$tag']].digest" -o tsv)
             if [ -n "$d" ]; then
               DIGESTS+=($d)
             fi
