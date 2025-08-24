@@ -124,9 +124,7 @@ jobs:
         run: |
           echo "environment_name=dev" >> $GITHUB_ENV
 
-      # Login only if we actually need az (missing AI conn string or SWA token)
       - name: Azure Login (OIDC)
-        if: ${{ !inputs.app_insights_connection_string || !inputs.deployment_token }}
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -212,13 +210,14 @@ jobs:
           echo "::add-mask::$TOKEN"
           echo "AZURE_STATIC_WEB_APPS_API_TOKEN=$TOKEN" >> "$GITHUB_ENV"
 
-      - name: Deploy to Azure Static Web Apps
+      - name: Deploy to Azure Static Web Apps (Production slot)
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ inputs.deployment_token || env.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: "upload"
           app_location: "${{ env.FE_DIR }}/dist"
           skip_app_build: true
+          production_branch: 'main'
 
 
 

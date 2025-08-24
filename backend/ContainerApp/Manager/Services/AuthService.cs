@@ -56,10 +56,10 @@ public class AuthService : IAuthService
             : HashRefreshToken(fingerprint, _jwt.RefreshTokenHashKey);
 
             var ua = string.IsNullOrWhiteSpace(httpRequest.Headers["User-Agent"])
-                ? "unknown"
+                ? AuthSettings.UnknownIpFallback
                 : httpRequest.Headers["User-Agent"].ToString();
 
-            var ip = httpRequest.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            var ip = httpRequest.HttpContext.Connection.RemoteIpAddress?.ToString() ?? AuthSettings.UnknownIpFallback;
 
             // The user Id is taken from the DB, with the credantials of email and password
             var session = new RefreshSessionRequest
@@ -125,9 +125,9 @@ public class AuthService : IAuthService
             }
 
             // Collect session fingerprint data
-            var fingerprint = request.Headers["x-fingerprint"].ToString() ?? "unknown";
-            var userAgent = request.Headers.UserAgent.ToString() ?? "unknown";
-            var ip = request.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            var fingerprint = request.Headers["x-fingerprint"].ToString() ?? AuthSettings.UnknownIpFallback;
+            var userAgent = request.Headers.UserAgent.ToString() ?? AuthSettings.UnknownIpFallback;
+            var ip = request.HttpContext.Connection.RemoteIpAddress?.ToString() ?? AuthSettings.UnknownIpFallback;
 
             var oldHash = HashRefreshToken(oldRefreshToken, _jwt.RefreshTokenHashKey);
 

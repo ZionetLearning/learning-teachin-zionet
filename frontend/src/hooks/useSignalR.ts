@@ -13,7 +13,7 @@ export const useSignalR = () => {
 // Subscribe to server event with automatic cleanup
 export const useSignalREvent = <TArgs extends unknown[] = unknown[]>(
   eventName: string,
-  handler: Handler<TArgs>
+  handler: Handler<TArgs>,
 ) => {
   const { connection } = useSignalR();
 

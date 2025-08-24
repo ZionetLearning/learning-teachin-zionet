@@ -10,6 +10,7 @@ export type TaskInput = {
 };
 
 export const usePostTask = () => {
+  const BASE_URL = import.meta.env.VITE_BASE_URL!;
   const { userId } = useSignalR();
 
   return useMutation<void, Error, TaskInput>({
@@ -18,14 +19,14 @@ export const usePostTask = () => {
         //local server endpoint URL:
         // "http://localhost:5280/task",
         //cloud server endpoint URL:
-        "https://teachin.westeurope.cloudapp.azure.com/api/dev/task",
+        `${BASE_URL}/task`,
         { id, name, payload },
         {
           headers: {
             "Content-Type": "application/json",
             "X-User-Id": userId,
           },
-        }
+        },
       );
     },
 

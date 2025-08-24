@@ -1,4 +1,5 @@
 resource "azurerm_postgresql_flexible_server" "this" {
+  count                   = var.use_shared_postgres ? 0 : 1
   name                   = var.server_name
   location               = var.location
   resource_group_name    = var.resource_group_name
@@ -34,7 +35,7 @@ resource "azurerm_postgresql_flexible_server" "this" {
 
 resource "azurerm_postgresql_flexible_server_database" "this" {
   name      = var.database_name
-  server_id = azurerm_postgresql_flexible_server.this.id
+  server_id = var.use_shared_postgres ? var.existing_server_id : azurerm_postgresql_flexible_server.this[0].id
   charset   = "UTF8"
   collation = "en_US.utf8"
 
