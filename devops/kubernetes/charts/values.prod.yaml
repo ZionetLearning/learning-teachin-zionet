@@ -13,7 +13,6 @@ namespace:
 cronjobs:
   statsPing:
     enabled: false
-    # schedule: "*/15 * * * *"  # example if/when you enable in prod
 
 manager:
   image:

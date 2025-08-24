@@ -15,11 +15,11 @@ namespace:
 cronjobs:
   statsPing:
     enabled: true
-    schedule: "* * * * *"       # every minute in dev
+    schedule: "*/5 * * * *"     # every 5 minutes in dev
     target:
       mode: "service"
       serviceName: "manager"    # your Service name
-      port: 80                  # your Service port (maps to container 5001)
+      port: 80
 
 manager:
   image:
