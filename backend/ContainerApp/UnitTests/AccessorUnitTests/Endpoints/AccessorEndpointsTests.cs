@@ -1,4 +1,5 @@
-﻿using Accessor.Endpoints;
+﻿using System.Text.Json;
+using Accessor.Endpoints;
 using Accessor.Models;
 using Accessor.Services;
 using FluentAssertions;
@@ -168,165 +169,267 @@ public class AccessorEndpointsTests
 
     #endregion
 
-    #region StoreMessageAsync
+    #region UpsertHistorySnapshotAsync
 
     [Fact]
-    public async Task StoreMessageAsync_BadRequest_When_Content_Missing_Or_Role_Invalid()
+    public async Task UpsertHistorySnapshotAsync_BadRequest_When_ThreadId_Missing()
     {
         var svc = Svc();
         var log = Log();
 
-        // invalid: empty content
-        var msg1 = new ChatMessage
+        var body = new UpsertHistoryRequest
         {
-            ThreadId = Guid.NewGuid(),
-            Content = "",
-            Role = 0
+            ThreadId = Guid.Empty,
+            UserId = "u",
+            ChatType = null,
+            History = default
         };
 
-        var r1 = await InvokeStoreMessageAsync(msg1, svc.Object, log.Object);
-        r1.Should().BeOfType<BadRequest<string>>();
+        var result = await InvokeUpsertHistorySnapshotAsync(body, svc.Object, log.Object);
 
-        // invalid: whitespace content
-        var msg2 = new ChatMessage
-        {
-            ThreadId = Guid.NewGuid(),
-            Content = "   ",
-            Role = (MessageRole)123 // definitely invalid enum value
-        };
+        var status = result.Should().BeAssignableTo<IStatusCodeHttpResult>().Subject;
+        status.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
 
-        var r2 = await InvokeStoreMessageAsync(msg2, svc.Object, log.Object);
-        r2.Should().BeOfType<BadRequest<string>>();
+        var val = result.Should().BeAssignableTo<IValueHttpResult>().Subject.Value!;
+        var json = JsonSerializer.Serialize(val);
+        using var doc = JsonDocument.Parse(json);
+        doc.RootElement.GetProperty("error").GetString().Should().NotBeNullOrWhiteSpace();
 
         svc.VerifyNoOtherCalls();
     }
 
     [Fact]
-    public async Task StoreMessageAsync_Success_Sets_Id_And_Timestamp_And_Returns_CreatedAtRoute()
+    public async Task UpsertHistorySnapshotAsync_BadRequest_When_UserId_Missing()
+    {
+        var svc = Svc();
+        var log = Log();
+
+        using var docIn = JsonDocument.Parse("""{"messages":[]}""");
+        var body = new UpsertHistoryRequest
+        {
+            ThreadId = Guid.NewGuid(),
+            UserId = "",
+            ChatType = null,
+            History = docIn.RootElement.Clone()
+        };
+
+        var result = await InvokeUpsertHistorySnapshotAsync(body, svc.Object, log.Object);
+
+        var status = result.Should().BeAssignableTo<IStatusCodeHttpResult>().Subject;
+        status.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
+
+        var val = result.Should().BeAssignableTo<IValueHttpResult>().Subject.Value!;
+        var json = JsonSerializer.Serialize(val);
+        using var doc = JsonDocument.Parse(json);
+        doc.RootElement.GetProperty("error").GetString().Should().NotBeNullOrWhiteSpace();
+
+        svc.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task UpsertHistorySnapshotAsync_BadRequest_When_History_Missing()
+    {
+        var svc = Svc();
+        var log = Log();
+
+        var body = new UpsertHistoryRequest
+        {
+            ThreadId = Guid.NewGuid(),
+            UserId = "u",
+            ChatType = "default",
+            History = default
+        };
+
+        var result = await InvokeUpsertHistorySnapshotAsync(body, svc.Object, log.Object);
+
+        var status = result.Should().BeAssignableTo<IStatusCodeHttpResult>().Subject;
+        status.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
+
+        var val = result.Should().BeAssignableTo<IValueHttpResult>().Subject.Value!;
+        var json = JsonSerializer.Serialize(val);
+        using var doc = JsonDocument.Parse(json);
+        doc.RootElement.GetProperty("error").GetString().Should().NotBeNullOrWhiteSpace();
+
+        svc.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task UpsertHistorySnapshotAsync_Existing_Updated_Returns200_And_PreservesCreatedAt()
     {
         var svc = Svc();
         var log = Log();
 
         var threadId = Guid.NewGuid();
-        ChatMessage? saved = null;
+        var createdAt = DateTimeOffset.UtcNow.AddDays(-1);
 
-        svc.Setup(s => s.AddMessageAsync(It.IsAny<ChatMessage>()))
-           .Callback<ChatMessage>(m => saved = m)
-           .Returns(Task.CompletedTask);
-
-        var msg = new ChatMessage
+        var existing = new ChatHistorySnapshot
         {
             ThreadId = threadId,
-            Content = "hello",
-            Role = MessageRole.User
+            UserId = "old",
+            ChatType = "default",
+            History = """{"messages":[]}""",
+            CreatedAt = createdAt,
+            UpdatedAt = createdAt
         };
 
-        var result = await InvokeStoreMessageAsync(msg, svc.Object, log.Object);
+        svc.Setup(s => s.GetHistorySnapshotAsync(threadId)).ReturnsAsync(existing);
 
-        var created = result.Should().BeOfType<CreatedAtRoute<ChatMessage>>().Subject;
-        created.RouteName.Should().Be("GetChatHistory");
-        created.RouteValues.Should().ContainKey("threadId").WhoseValue.Should().Be(threadId);
-        created.Value.Should().NotBeNull();
+        ChatHistorySnapshot? saved = null;
+        svc.Setup(s => s.UpsertHistorySnapshotAsync(It.IsAny<ChatHistorySnapshot>()))
+           .Callback<ChatHistorySnapshot>(snp => saved = snp)
+           .Returns(Task.CompletedTask);
 
-        // server-side mutation checks
+        using var doc = JsonDocument.Parse("""{"messages":[{"role":"user","content":"new"}]}""");
+        var body = new UpsertHistoryRequest
+        {
+            ThreadId = threadId,
+            UserId = "user-2",
+            ChatType = "chatty",
+            History = doc.RootElement.Clone()
+        };
+
+        var result = await InvokeUpsertHistorySnapshotAsync(body, svc.Object, log.Object);
+
+        var status = result.Should().BeAssignableTo<IStatusCodeHttpResult>().Subject;
+        status.StatusCode.Should().Be(StatusCodes.Status200OK);
+
+        var val = result.Should().BeAssignableTo<IValueHttpResult>().Subject.Value!;
+        val.Should().NotBeNull();
+
         saved.Should().NotBeNull();
-        saved!.Id.Should().NotBe(Guid.Empty);
-        saved.Timestamp.Should().BeAfter(DateTimeOffset.UtcNow.AddMinutes(-1)); // sanity
-        saved.ThreadId.Should().Be(threadId);
+        saved!.ThreadId.Should().Be(threadId);
+        saved.UserId.Should().Be("user-2");
+        saved.ChatType.Should().Be("chatty");
+        saved.History.Should().Be(doc.RootElement.GetRawText());
+        saved.CreatedAt.Should().Be(createdAt);
+        saved.UpdatedAt.Should().BeOnOrAfter(createdAt);
 
         svc.VerifyAll();
     }
 
     [Fact]
-    public async Task StoreMessageAsync_Exception_ReturnsProblem()
+    public async Task UpsertHistorySnapshotAsync_Exception_ReturnsProblem()
     {
         var svc = Svc();
         var log = Log();
 
-        svc.Setup(s => s.AddMessageAsync(It.IsAny<ChatMessage>()))
-           .ThrowsAsync(new Exception("db down"));
+        var threadId = Guid.NewGuid();
+        svc.Setup(s => s.GetHistorySnapshotAsync(threadId)).ReturnsAsync((ChatHistorySnapshot?)null);
+        svc.Setup(s => s.UpsertHistorySnapshotAsync(It.IsAny<ChatHistorySnapshot>()))
+           .ThrowsAsync(new Exception("db fail"));
 
-        var msg = new ChatMessage
+        using var doc = JsonDocument.Parse("""{"messages":[]}""");
+        var body = new UpsertHistoryRequest
         {
-            ThreadId = Guid.NewGuid(),
-            Content = "x",
-            Role = MessageRole.Assistant
+            ThreadId = threadId,
+            UserId = "u",
+            ChatType = "default",
+            History = doc.RootElement.Clone()
         };
 
-        var result = await InvokeStoreMessageAsync(msg, svc.Object, log.Object);
+        var result = await InvokeUpsertHistorySnapshotAsync(body, svc.Object, log.Object);
 
         result.Should().BeOfType<ProblemHttpResult>();
         svc.VerifyAll();
     }
 
-    private static Task<IResult> InvokeStoreMessageAsync(ChatMessage m, IAccessorService s, ILogger<AccessorService> l)
+    private static Task<IResult> InvokeUpsertHistorySnapshotAsync(
+        UpsertHistoryRequest body, IAccessorService s, ILogger<AccessorService> l)
         => (Task<IResult>)typeof(AccessorEndpoints)
-            .GetMethod("StoreMessageAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
-            .Invoke(null, new object[] { m, s, l })!;
+            .GetMethod("UpsertHistorySnapshotAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
+            .Invoke(null, new object[] { body, s, l })!;
 
     #endregion
 
-    #region GetChatHistoryAsync
+    #region GetHistorySnapshotAsync
 
     [Fact]
-    public async Task GetChatHistoryAsync_ThreadExists_ReturnsMessages()
+    public async Task GetHistorySnapshotAsync_SnapshotExists_ReturnsOkWithHistory()
     {
         var svc = Svc();
         var log = Log();
 
         var threadId = Guid.NewGuid();
-        svc.Setup(s => s.GetThreadByIdAsync(threadId)).ReturnsAsync(new ChatThread { ThreadId = threadId });
-        var messages = new List<ChatMessage> {
-            new ChatMessage { ThreadId = threadId, Content = "a", Role = MessageRole.User },
-            new ChatMessage { ThreadId = threadId, Content = "b", Role = MessageRole.Assistant }
-        };
-        svc.Setup(s => s.GetMessagesByThreadAsync(threadId)).ReturnsAsync(messages);
+        var json = """{"messages":[{"role":"assistant","content":"yo"}]}""";
 
-        var result = await InvokeGetChatHistoryAsync(threadId, svc.Object, log.Object);
+        svc.Setup(s => s.GetHistorySnapshotAsync(threadId)).ReturnsAsync(new ChatHistorySnapshot
+        {
+            ThreadId = threadId,
+            UserId = "u1",
+            ChatType = "default",
+            History = json,
+            CreatedAt = DateTimeOffset.UtcNow.AddDays(-2),
+            UpdatedAt = DateTimeOffset.UtcNow.AddDays(-1)
+        });
 
-        var ok = result.Should().BeOfType<Ok<IEnumerable<ChatMessage>>>().Subject;
-        ok.Value.Should().BeEquivalentTo(messages);
+        var result = await InvokeGetHistorySnapshotAsync(threadId, svc.Object, log.Object);
+
+        var status = result.Should().BeAssignableTo<IStatusCodeHttpResult>().Subject;
+        status.StatusCode.Should().Be(StatusCodes.Status200OK);
+
+        var value = result.Should().BeAssignableTo<IValueHttpResult>().Subject.Value!;
+        var payloadJson = JsonSerializer.Serialize(value);
+        using var doc = JsonDocument.Parse(payloadJson);
+        var root = doc.RootElement;
+
+        root.GetProperty("threadId").GetGuid().Should().Be(threadId);
+        root.GetProperty("UserId").GetString().Should().Be("u1");
+        root.GetProperty("ChatType").GetString().Should().Be("default");
+        var hist = root.GetProperty("history");
+        hist.ValueKind.Should().Be(JsonValueKind.Object);
+        hist.GetProperty("messages").EnumerateArray().Should().HaveCount(1);
 
         svc.VerifyAll();
     }
 
     [Fact]
-    public async Task GetChatHistoryAsync_ThreadMissing_AutoCreates_And_ReturnsEmpty()
+    public async Task GetHistorySnapshotAsync_SnapshotMissing_ReturnsOkWithEmptyMessages()
     {
         var svc = Svc();
         var log = Log();
 
         var threadId = Guid.NewGuid();
-        svc.Setup(s => s.GetThreadByIdAsync(threadId)).ReturnsAsync((ChatThread?)null);
-        svc.Setup(s => s.CreateThreadAsync(It.Is<ChatThread>(t => t.ThreadId == threadId)))
-           .Returns(Task.CompletedTask);
+        svc.Setup(s => s.GetHistorySnapshotAsync(threadId)).ReturnsAsync((ChatHistorySnapshot?)null);
 
-        var result = await InvokeGetChatHistoryAsync(threadId, svc.Object, log.Object);
+        var result = await InvokeGetHistorySnapshotAsync(threadId, svc.Object, log.Object);
 
-        var ok = result.Should().BeOfType<Ok<ChatMessage[]>>().Subject;
-        ok.Value.Should().BeEmpty();
+        var status = result.Should().BeAssignableTo<IStatusCodeHttpResult>().Subject;
+        status.StatusCode.Should().Be(StatusCodes.Status200OK);
+
+        var value = result.Should().BeAssignableTo<IValueHttpResult>().Subject.Value!;
+        var payloadJson = JsonSerializer.Serialize(value);
+        using var doc = JsonDocument.Parse(payloadJson);
+        var root = doc.RootElement;
+
+        root.GetProperty("threadId").GetGuid().Should().Be(threadId);
+        root.GetProperty("userId").ValueKind.Should().Be(JsonValueKind.Null);
+        root.GetProperty("chatType").ValueKind.Should().Be(JsonValueKind.Null);
+
+        var hist = root.GetProperty("history");
+        hist.ValueKind.Should().Be(JsonValueKind.Object);
+        hist.GetProperty("messages").EnumerateArray().Should().BeEmpty();
 
         svc.VerifyAll();
     }
 
     [Fact]
-    public async Task GetChatHistoryAsync_Exception_ReturnsProblem()
+    public async Task GetHistorySnapshotAsync_Exception_ReturnsProblem()
     {
         var svc = Svc();
         var log = Log();
 
         var threadId = Guid.NewGuid();
-        svc.Setup(s => s.GetThreadByIdAsync(threadId)).ThrowsAsync(new Exception("boom"));
+        svc.Setup(s => s.GetHistorySnapshotAsync(threadId)).ThrowsAsync(new Exception("boom"));
 
-        var result = await InvokeGetChatHistoryAsync(threadId, svc.Object, log.Object);
+        var result = await InvokeGetHistorySnapshotAsync(threadId, svc.Object, log.Object);
 
         result.Should().BeOfType<ProblemHttpResult>();
         svc.VerifyAll();
     }
-
-    private static Task<IResult> InvokeGetChatHistoryAsync(Guid id, IAccessorService s, ILogger<AccessorService> l)
+    private static Task<IResult> InvokeGetHistorySnapshotAsync(
+        Guid id, IAccessorService s, ILogger<AccessorService> l)
         => (Task<IResult>)typeof(AccessorEndpoints)
-            .GetMethod("GetChatHistoryAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
+            .GetMethod("GetHistorySnapshotAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
             .Invoke(null, new object[] { id, s, l })!;
 
     #endregion
@@ -351,5 +454,7 @@ public class AccessorEndpointsTests
         => (Task<IResult>)typeof(AccessorEndpoints)
             .GetMethod("GetThreadsForUserAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
             .Invoke(null, new object[] { user, s, l })!;
+
+
     #endregion
 }

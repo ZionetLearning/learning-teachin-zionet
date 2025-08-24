@@ -21,4 +21,6 @@ public interface IAccessorService
     Task<bool> UpdateUserAsync(UpdateUserModel updateUser, Guid userId);
     Task<bool> DeleteUserAsync(Guid userId);
     Task<IEnumerable<UserData>> GetAllUsersAsync();
+    Task<ChatHistorySnapshot?> GetHistorySnapshotAsync(Guid threadId);
+    Task UpsertHistorySnapshotAsync(ChatHistorySnapshot snapshot);
 }

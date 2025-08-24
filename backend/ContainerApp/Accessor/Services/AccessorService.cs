@@ -472,6 +472,34 @@ public class AccessorService : IAccessorService
         return true;
     }
 
+    public async Task<ChatHistorySnapshot?> GetHistorySnapshotAsync(Guid threadId)
+    {
+        return await _dbContext.ChatHistorySnapshots
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.ThreadId == threadId);
+    }
+    public async Task UpsertHistorySnapshotAsync(ChatHistorySnapshot snapshot)
+    {
+        var existing = await _dbContext.ChatHistorySnapshots.FirstOrDefaultAsync(x => x.ThreadId == snapshot.ThreadId);
+        var now = DateTimeOffset.UtcNow;
+
+        if (existing is null)
+        {
+            snapshot.CreatedAt = now;
+            snapshot.UpdatedAt = now;
+            _dbContext.ChatHistorySnapshots.Add(snapshot);
+        }
+        else
+        {
+            existing.UserId = snapshot.UserId;
+            existing.ChatType = snapshot.ChatType;
+            existing.History = snapshot.History;
+            existing.UpdatedAt = now;
+        }
+
+        await _dbContext.SaveChangesAsync();
+    }
+
     public async Task<IEnumerable<UserData>> GetAllUsersAsync()
     {
         _logger.LogInformation("Fetching all users from the database...");
