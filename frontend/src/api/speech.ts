@@ -26,8 +26,7 @@ export const useSynthesizeSpeech = () => {
   return useMutation<SynthesizeResponse, Error, SynthesizerRequest>({
     mutationFn: async ({ text }: SynthesizerRequest) => {
       const response = await axios.post<SynthesizeResponse>(
-        //`${BASE_URL}/speech/synthesize`,
-        "https://teachin.westeurope.cloudapp.azure.com/api/dev/speech/synthesize",
+        `${BASE_URL}/speech/synthesize`,
         { text },
       );
       return response.data;

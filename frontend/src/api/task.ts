@@ -19,8 +19,7 @@ export const usePostTask = () => {
         //local server endpoint URL:
         // "http://localhost:5280/task",
         //cloud server endpoint URL:
-        "https://teachin.westeurope.cloudapp.azure.com/api/dev/task",
-        //`${BASE_URL}/task`,
+        `${BASE_URL}/task`,
         { id, name, payload },
         {
           headers: {
