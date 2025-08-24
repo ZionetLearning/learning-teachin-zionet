@@ -92,7 +92,7 @@ export const Filters = ({ value, onChange }: Props) => {
           }
         >
           {regions.map((r) => (
-            <option key={r.key} value={r.label}>
+            <option key={r.key} value={r.key}>
               {r.label}
             </option>
           ))}
