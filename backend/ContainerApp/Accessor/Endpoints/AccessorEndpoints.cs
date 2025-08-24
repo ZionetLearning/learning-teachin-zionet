@@ -1,7 +1,7 @@
 ﻿using Accessor.Models;
+using Accessor.Models.Users;
 using Accessor.Services;
 using Microsoft.AspNetCore.Mvc;
-using Accessor.Models.Users;
 
 namespace Accessor.Endpoints;
 
@@ -386,7 +386,8 @@ public static class AccessorEndpoints
 
     private static async Task<IResult> GetAllUsersAsync(
         [FromServices] IAccessorService service,
-        [FromServices] ILogger<IAccessorService> logger)
+        [FromServices] ILogger<IAccessorService> logger,
+        CancellationToken ct)
     {
         using var scope = logger.BeginScope("Method: {Method}", nameof(GetAllUsersAsync));
 
