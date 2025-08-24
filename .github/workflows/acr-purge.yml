@@ -1,0 +1,89 @@
+name: Purge Old ACR Images
+
+on:
+  schedule:
+    - cron: "0 16 * * *"
+  workflow_dispatch:
+
+jobs:
+  purge:
+    name: Purge ${{ matrix.repo }} images
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        repo: [manager, engine, accessor]
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: ACR Login
+        run: az acr login --name teachindevacr
+
+      - name: Purge old tags for ${{ matrix.repo }}
+        run: |
+          REPO="${{ matrix.repo }}"
+          KEEP_ALWAYS=("latest" "dev" "prod")
+
+          echo "Cleaning repo: $REPO"
+
+
+          TAGS=$(az acr repository show-tags \
+            --name teachindevacr \
+            --repository $REPO \
+            --orderby time_desc \
+            --output tsv)
+
+
+          KEEP_RECENT=$(echo "$TAGS" | head -n 5)
+
+
+          DIGESTS=()
+          for tag in "${KEEP_ALWAYS[@]}"; do
+            d=$(az acr repository show-manifests \
+                  --name teachindevacr \
+                  --repository $REPO \
+                  --query "[?tags[?contains(@, '$tag')]].digest" -o tsv)
+            if [ -n "$d" ]; then
+              DIGESTS+=($d)
+            fi
+          done
+
+
+          DIGEST_TAGS=()
+          for digest in "${DIGESTS[@]}"; do
+            tags=$(az acr repository show-manifests \
+                     --name teachindevacr \
+                     --repository $REPO \
+                     --query "[?digest=='$digest'].tags[]" -o tsv)
+            if [ -n "$tags" ]; then
+              DIGEST_TAGS+=($tags)
+            fi
+          done
+
+          WHITELIST=$(printf "%s\n%s\n%s\n" "$KEEP_RECENT" "${KEEP_ALWAYS[@]}" "${DIGEST_TAGS[@]}" | sort -u)
+
+          echo "Keeping in $REPO:"
+          echo "$WHITELIST"
+
+          
+          for tag in $TAGS; do
+            if ! echo "$WHITELIST" | grep -qx "$tag"; then
+              echo "Deleting $REPO:$tag"
+              az acr repository delete \
+                --name teachindevacr \
+                --repository $REPO \
+                --tag $tag \
+                --yes
+            fi
+          done

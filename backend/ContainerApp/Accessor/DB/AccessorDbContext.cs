@@ -1,6 +1,7 @@
 using Accessor.DB.Configurations;
 using Accessor.Models;
 using Microsoft.EntityFrameworkCore;
+using Accessor.Models.Users;
 
 namespace Accessor.DB;
 
@@ -15,12 +16,12 @@ public class AccessorDbContext : DbContext
     public DbSet<ChatMessage> ChatMessages { get; set; } = default!;
     public DbSet<IdempotencyRecord> Idempotency { get; set; } = default!;
     public DbSet<RefreshSessionsRecord> RefreshSessions { get; set; } = default!;
-    public DbSet<User> Users { get; set; } = default!;
+    public DbSet<UserModel> Users { get; set; } = default!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         // User table configuration
-        modelBuilder.Entity<User>()
+        modelBuilder.Entity<UserModel>()
             .HasIndex(u => u.Email)
             .IsUnique();
 

@@ -1,4 +1,3 @@
-import React from "react";
 import { useTranslation } from "react-i18next";
 import { useStyles } from "./style";
 import type { Country } from "../../api";
@@ -17,7 +16,7 @@ export const Card = ({ country }: Props) => {
   const classes = useStyles();
   const flag = country.flags?.svg || country.flags?.png;
   return (
-    <div className={classes.container}>
+    <div data-testid="country-card" className={classes.cardContainer}>
       {flag && (
         <img
           className={classes.img}
