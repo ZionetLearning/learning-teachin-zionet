@@ -29,3 +29,11 @@ resource "azurerm_application_insights" "frontend" {
   
   tags = var.tags
 }
+
+# Custom domain configuration for Static Web App
+resource "azurerm_static_web_app_custom_domain" "frontend_domain" {
+  count               = var.custom_domain != "" ? 1 : 0
+  static_web_app_id   = azurerm_static_web_app.frontend.id
+  domain_name         = var.custom_domain
+  validation_type     = "cname-delegation"
+}

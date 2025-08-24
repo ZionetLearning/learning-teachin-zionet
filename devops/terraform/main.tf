@@ -116,6 +116,7 @@ module "frontend" {
   sku_size            = var.frontend_sku_size
   appinsights_retention_days = var.frontend_appinsights_retention_days
   appinsights_sampling_percentage = var.frontend_appinsights_sampling_percentage
+  custom_domain       = var.frontend_custom_domain
   
   tags = {
     Environment = var.environment_name
