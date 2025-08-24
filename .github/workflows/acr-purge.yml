@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        repo: [manager, engine, accessor]   # כל repo ירוץ בנפרד
+        repo: [manager, engine, accessor]
     permissions:
       id-token: write
       contents: read
