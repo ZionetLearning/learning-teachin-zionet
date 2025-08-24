@@ -1,5 +1,4 @@
-﻿//using System.Collections.Generic;
-using Manager.Constants;
+﻿using Manager.Constants;
 
 namespace Manager.Helpers;
 public static class CookieHelper
