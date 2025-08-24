@@ -33,7 +33,7 @@ export const useSendChatMessage = () => {
           userMessage,
           threadId,
           chatType,
-        }
+        },
       );
 
       return response.data;
