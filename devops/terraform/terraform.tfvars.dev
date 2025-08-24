@@ -6,6 +6,9 @@ aks_cluster_name       = "aks-cluster-dev"
 #------------- Resource Configuration -------------
 location               = "westeurope"
 
+#------------- Shared Postgres Configuration -------------
+use_shared_postgres        = false  # If false, create server (dev); if true, use shared server (non-dev)
+
 #------------- Azure Configuration-------------------
 subscription_id        = "90ea4c2f-1eee-4ec9-927d-ed24c563003e"
 tenant_id              = "a814ee32-f813-4a36-9686-1b9268183e27"
