@@ -1,11 +1,11 @@
-﻿using Engine.Services.Clients.AccessorClient.Models;
+﻿using System.Text.Json;
 
 namespace Engine.Models.Chat;
 
 public sealed record ChatAiServiseRequest
 {
     public required string RequestId { get; init; }
-    public IReadOnlyList<ChatMessage> History { get; init; } = Array.Empty<ChatMessage>();
+    public required JsonElement History { get; init; }
     public string UserMessage { get; init; } = string.Empty;
     public ChatType ChatType { get; init; } = ChatType.Default; // todo: use for systemPrompt
     public Guid ThreadId { get; init; }
