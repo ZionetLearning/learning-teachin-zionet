@@ -5,13 +5,13 @@ export type PopRangeKey = "ALL" | "<10M" | "10M-100M" | ">=100M";
 export type FiltersState = {
   search: string;
   region:
-    | "All"
-    | "Africa"
-    | "Americas"
-    | "Asia"
-    | "Europe"
-    | "Oceania"
-    | "Antarctic";
+  | "All"
+  | "Africa"
+  | "Americas"
+  | "Asia"
+  | "Europe"
+  | "Oceania"
+  | "Antarctic";
   popRange: PopRangeKey;
 };
 
@@ -19,23 +19,6 @@ type Props = {
   value: FiltersState;
   onChange: (next: FiltersState) => void;
 };
-
-/*const regions: FiltersState["region"][] = [
-  "All",
-  "Africa",
-  "Americas",
-  "Asia",
-  "Europe",
-  "Oceania",
-  "Antarctic",
-];*/
-
-/*const popRanges: { key: PopRangeKey; label: string }[] = [
-  { key: "ALL", label: "All populations" },
-  { key: "<10M", label: "< 10M" },
-  { key: "10M-100M", label: "10M – 100M" },
-  { key: ">=100M", label: "≥ 100M" },
-];*/
 
 export const Filters = ({ value, onChange }: Props) => {
   const { t } = useTranslation();
