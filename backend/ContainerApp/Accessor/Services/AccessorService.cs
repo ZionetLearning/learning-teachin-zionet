@@ -499,4 +499,29 @@ public class AccessorService : IAccessorService
 
         await _dbContext.SaveChangesAsync();
     }
+
+    public async Task<IEnumerable<UserData>> GetAllUsersAsync()
+    {
+        _logger.LogInformation("Fetching all users from the database...");
+
+        try
+        {
+            var users = await _dbContext.Users
+                .AsNoTracking()
+                .Select(u => new UserData
+                {
+                    UserId = u.UserId,
+                    Email = u.Email,
+                })
+                .ToListAsync();
+
+            _logger.LogInformation("Retrieved {Count} users", users.Count);
+            return users;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to retrieve users");
+            throw;
+        }
+    }
 }

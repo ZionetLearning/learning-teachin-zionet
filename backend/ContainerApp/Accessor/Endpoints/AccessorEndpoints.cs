@@ -1,8 +1,8 @@
 ﻿using System.Text.Json;
 using Accessor.Models;
+using Accessor.Models.Users;
 using Accessor.Services;
 using Microsoft.AspNetCore.Mvc;
-using Accessor.Models.Users;
 
 namespace Accessor.Endpoints;
 
@@ -41,6 +41,7 @@ public static class AccessorEndpoints
         #region Users Endpoints
 
         app.MapGet("/users/{userId:guid}", GetUserAsync).WithName("GetUser");
+        app.MapGet("/users", GetAllUsersAsync).WithName("GetAllUsers");
         app.MapPost("/users", CreateUserAsync).WithName("CreateUser");
         app.MapPut("/users/{userId:guid}", UpdateUserAsync).WithName("UpdateUser");
         app.MapDelete("/users/{userId:guid}", DeleteUserAsync).WithName("DeleteUser");
@@ -488,6 +489,26 @@ public static class AccessorEndpoints
         {
             logger.LogError(ex, "Failed to delete user.");
             return Results.Problem("An error occurred while deleting the user.");
+        }
+    }
+
+    private static async Task<IResult> GetAllUsersAsync(
+        [FromServices] IAccessorService service,
+        [FromServices] ILogger<IAccessorService> logger,
+        CancellationToken ct)
+    {
+        using var scope = logger.BeginScope("Method: {Method}", nameof(GetAllUsersAsync));
+
+        try
+        {
+            var users = await service.GetAllUsersAsync();
+            logger.LogInformation("Retrieved {Count} users", users.Count());
+            return Results.Ok(users);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to retrieve all users.");
+            return Results.Problem("An error occurred while retrieving users.");
         }
     }
 
