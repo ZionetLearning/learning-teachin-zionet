@@ -24,10 +24,8 @@ on:
         default: featest
         options:
           - featest
-          - dev
-
       custom_environment_name:
-        description: 'custom prefix (This is for devops guys only, leave empty otherwise)'
+        description: 'Custom prefix (This is for devops guys only, leave empty otherwise)'
         required: false
         type: string
       list_services_names:
@@ -35,7 +33,7 @@ on:
         required: false
         type: string
         default: ''
-        
+
 jobs:
   set-defaults:
     runs-on: ubuntu-latest
