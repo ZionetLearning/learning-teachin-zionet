@@ -126,7 +126,7 @@ jobs:
 
       # Login only if we actually need az (missing AI conn string or SWA token)
       - name: Azure Login (OIDC)
-        # if: ${{ !inputs.app_insights_connection_string || !inputs.deployment_token }}
+        if: ${{ !inputs.app_insights_connection_string || !inputs.deployment_token }}
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
