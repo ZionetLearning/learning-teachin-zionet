@@ -27,6 +27,7 @@ public static class AuthEndpoints
        [FromBody] LoginRequest loginRequest,
        [FromServices] IAuthService authService,
        [FromServices] ILogger<ManagerService> logger,
+       [FromServices] CookieHelper cookieHelper,
        HttpRequest httpRequest,
        HttpResponse response,
        CancellationToken cancellationToken)
@@ -40,7 +41,7 @@ public static class AuthEndpoints
                 var (accessToken, refreshToken) = await authService.LoginAsync(loginRequest, httpRequest, cancellationToken);
 
                 // Set the cookies in the response
-                CookieHelper.SetCookies(response, refreshToken);
+                cookieHelper.SetCookies(response, refreshToken);
 
                 logger.LogInformation("Login successful for {Email}", loginRequest.Email);
                 return Results.Ok(new { accessToken });
@@ -61,6 +62,7 @@ public static class AuthEndpoints
     private static async Task<IResult> RefreshTokensAsync(
         [FromServices] IAuthService authService,
         [FromServices] ILogger<ManagerService> logger,
+        [FromServices] CookieHelper cookieHelper,
         HttpRequest request,
         HttpResponse response,
         CancellationToken cancellationToken)
@@ -72,7 +74,7 @@ public static class AuthEndpoints
                 var (accessToken, newRefreshToken) = await authService.RefreshTokensAsync(request, cancellationToken);
 
                 // Set again the cookies in the response
-                CookieHelper.SetCookies(response, newRefreshToken);
+                cookieHelper.SetCookies(response, newRefreshToken);
 
                 logger.LogInformation("Refresh token successful");
                 return Results.Ok(new { accessToken });
@@ -93,6 +95,7 @@ public static class AuthEndpoints
     private static async Task<IResult> LogoutAsync(
         [FromServices] IAuthService authService,
         [FromServices] ILogger<ManagerService> logger,
+        [FromServices] CookieHelper cookieHelper,
         HttpRequest request,
         HttpResponse response,
         CancellationToken cancellationToken)
@@ -104,7 +107,7 @@ public static class AuthEndpoints
                 await authService.LogoutAsync(request, cancellationToken);
 
                 // Clear the cookies in the response
-                CookieHelper.ClearCookies(response);
+                cookieHelper.ClearCookies(response);
 
                 logger.LogInformation("Logout successful");
                 return Results.Ok(new { message = "Logged out successfully" });

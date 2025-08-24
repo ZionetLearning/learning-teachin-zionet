@@ -1,18 +1,27 @@
 ﻿using Manager.Constants;
+using Manager.Models.Auth.Test;
+using Microsoft.Extensions.Options;
 
 namespace Manager.Helpers;
-public static class CookieHelper
+public class CookieHelper
 {
-    public static void SetCookies(HttpResponse response, string refreshToken)
+    private readonly bool _isTest;
+
+    public CookieHelper(IOptions<TestSettings> testOptions)
+    {
+        _isTest = testOptions.Value.IsTest;
+    }
+
+    public void SetCookies(HttpResponse response, string refreshToken)
     {
         // For testing the flow
-        var isTest = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Test";
+        //var isTest = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Test";
 
         // -- Refresh Cookie --
         response.Cookies.Append(AuthSettings.RefreshTokenCookieName, refreshToken, new CookieOptions
         {
             HttpOnly = true, // JavaScript can’t access the cookie (mitigates XSS). 
-            Secure = !isTest, // Sent only over HTTPS
+            Secure = !_isTest, // Sent only over HTTPS
             // In the future when have domain or frontend, consider using SameSiteMode.Lax for better CSRF protection
             SameSite = SameSiteMode.None, // Allows the cookie in cross-site requests
             Path = AuthSettings.CookiePath, //Only sent to /api/auth, not the entire domain.
@@ -24,7 +33,7 @@ public static class CookieHelper
         response.Cookies.Append(AuthSettings.CsrfTokenCookieName, csrfToken, new CookieOptions
         {
             HttpOnly = false, // Must be accessible to JS
-            Secure = !isTest,
+            Secure = !_isTest,
             // In the future when have domain or frontend, consider using SameSiteMode.Lax for better CSRF protection
             SameSite = SameSiteMode.None,
             Path = AuthSettings.CookiePath,
@@ -32,16 +41,16 @@ public static class CookieHelper
         });
     }
 
-    public static void ClearCookies(HttpResponse response)
+    public void ClearCookies(HttpResponse response)
     {
         // For testing the flow
-        var isTest = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Test";
+        //var isTest = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Test";
 
         // Clear the refresh token cookie
         response.Cookies.Delete(AuthSettings.RefreshTokenCookieName, new CookieOptions
         {
             HttpOnly = true,
-            Secure = !isTest,
+            Secure = !_isTest,
             // In the future when have domain or frontend, consider using SameSiteMode.Lax for better CSRF protection
             SameSite = SameSiteMode.None,
             Path = AuthSettings.CookiePath
@@ -51,7 +60,7 @@ public static class CookieHelper
         response.Cookies.Delete(AuthSettings.CsrfTokenCookieName, new CookieOptions
         {
             HttpOnly = false,
-            Secure = !isTest,
+            Secure = !_isTest,
             // In the future when have domain or frontend, consider using SameSiteMode.Lax for better CSRF protection
             SameSite = SameSiteMode.None,
             Path = AuthSettings.CookiePath

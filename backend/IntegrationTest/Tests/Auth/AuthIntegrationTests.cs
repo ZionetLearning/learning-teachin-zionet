@@ -118,7 +118,7 @@ public class AuthIntegrationTests(
         refreshResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         await DeleteTestUserAsync(user.UserId);
     }
-
+    
 
     [Fact(DisplayName = "Refresh without CSRF token should fail")]
     public async Task Refresh_WithoutCsrf_ShouldReturnUnauthorized()

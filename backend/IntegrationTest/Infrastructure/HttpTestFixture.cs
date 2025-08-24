@@ -12,7 +12,7 @@ public class HttpTestFixture : IDisposable
 
     public HttpTestFixture()
     {
-        Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Test");
+        //Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Test");
 
         var cfg = BuildConfig();
 

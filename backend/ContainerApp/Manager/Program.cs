@@ -4,8 +4,10 @@ using Azure.Messaging.ServiceBus;
 using DotQueue;
 using Manager.Constants;
 using Manager.Endpoints;
+using Manager.Helpers;
 using Manager.Hubs;
 using Manager.Models.Auth;
+using Manager.Models.Auth.Test;
 using Manager.Models.QueueMessages;
 using Manager.Services;
 using Manager.Services.Clients;
@@ -27,6 +29,9 @@ builder.Configuration
     .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
     .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
     .AddEnvironmentVariables();
+
+builder.Services.Configure<TestSettings>(
+    builder.Configuration.GetSection("TestSettings"));
 
 builder.Services.Configure<AiSettings>(builder.Configuration.GetSection("Ai"));
 
@@ -80,6 +85,7 @@ builder.Services.AddScoped<IAccessorClient, AccessorClient>();
 builder.Services.AddScoped<IEngineClient, EngineClient>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<CookieHelper>();
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
