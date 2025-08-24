@@ -1,0 +1,21 @@
+{{- if .Values.frontend.enabled }}
+{{- $staticWebAppHostname := .Values.frontend.staticWebApp.hostname }}
+{{- if not $staticWebAppHostname }}
+  {{- fail "frontend.staticWebApp.hostname must be provided when frontend.enabled=true" }}
+{{- end }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ printf "%s-frontend-proxy" (default .Release.Namespace .Values.namespace.name) }}"
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    app: frontend-proxy
+    environment: {{ .Values.global.environment }}
+spec:
+  type: ExternalName
+  externalName: {{ $staticWebAppHostname }}
+  ports:
+  - port: 443
+    protocol: TCP
+    name: https
+{{- end }}

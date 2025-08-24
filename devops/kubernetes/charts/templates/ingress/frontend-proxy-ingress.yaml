@@ -1,0 +1,39 @@
+{{- if .Values.frontend.enabled }}
+{{- $staticWebAppHostname := .Values.frontend.staticWebApp.hostname }}
+{{- if not $staticWebAppHostname }}
+  {{- fail "frontend.staticWebApp.hostname must be provided when frontend.enabled=true" }}
+{{- end }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: "{{ printf "%s-frontend-proxy-ingress" (default .Release.Namespace .Values.namespace.name) }}"
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    app: frontend-proxy
+    environment: {{ .Values.global.environment }}
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: {{ .Values.ingress.tls.clusterIssuer }}
+    # Proxy to Static Web App
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    nginx.ingress.kubernetes.io/upstream-vhost: {{ $staticWebAppHostname | quote }}
+    nginx.ingress.kubernetes.io/proxy-ssl-server-name: "on"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - {{ .Values.ingress.host }}
+      secretName: {{ .Values.ingress.tls.secretName }}
+  rules:
+  - host: {{ .Values.ingress.host }}
+    http:
+      paths:
+      - path: {{ .Values.frontend.path | default "/" }}
+        pathType: Prefix
+        backend:
+          service:
+            name: "{{ printf "%s-frontend-proxy" (default .Release.Namespace .Values.namespace.name) }}"
+            port:
+              number: 443
+{{- end }}

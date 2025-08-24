@@ -162,3 +162,10 @@ dapr:
         poolTimeout: "30s"
         idleTimeout: "300s"
         maxConnAge: "30m"
+
+# Frontend Static Web App Proxy Configuration
+frontend:
+  enabled: false  # Enable in environment-specific values
+  path: "/"
+  staticWebApp:
+    hostname: ""  # Set in environment-specific values

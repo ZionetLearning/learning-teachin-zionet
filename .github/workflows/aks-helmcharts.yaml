@@ -93,6 +93,9 @@ jobs:
           echo "PG_DB=dev-pg-zionet-learning" >> $GITHUB_ENV
           echo "PG_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
 
+          # Frontend (for Static Web App proxy)
+          echo "FRONTEND_RG=${TARGET_NAMESPACE}-zionet-learning-2025" >> $GITHUB_ENV
+
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
 
@@ -172,6 +175,25 @@ jobs:
             --start-ip-address $AKS_EGRESS_IP \
             --end-ip-address $AKS_EGRESS_IP
 
+      - name: Get Static Web App URL
+        run: |
+          # Get Static Web App hostname for frontend proxy
+          STATIC_WEB_APP_NAME="static-web-app-${TARGET_NAMESPACE}"
+          STATIC_WEB_APP_URL=$(az staticwebapp show \
+            --name "$STATIC_WEB_APP_NAME" \
+            --resource-group "$FRONTEND_RG" \
+            --query "defaultHostname" -o tsv 2>/dev/null || echo "")
+          
+          if [ -z "$STATIC_WEB_APP_URL" ]; then
+            echo "Static Web App not found: $STATIC_WEB_APP_NAME in $FRONTEND_RG"
+            echo "Frontend proxy will be disabled"
+            echo "FRONTEND_ENABLED=false" >> $GITHUB_ENV
+          else
+            echo "Found Static Web App: $STATIC_WEB_APP_URL"
+            echo "FRONTEND_ENABLED=true" >> $GITHUB_ENV
+            echo "STATIC_WEB_APP_HOSTNAME=$STATIC_WEB_APP_URL" >> $GITHUB_ENV
+          fi
+
       - name: Helm template sanity (no Namespace objects)
         run: |
           # Use image_tag if provided, otherwise fall back to TARGET_NAMESPACE
@@ -186,6 +208,8 @@ jobs:
             --set global.namePrefix="$TARGET_NAMESPACE" \
             --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
             --set global.environment="$IMAGE_TAG" \
+            --set frontend.enabled="$FRONTEND_ENABLED" \
+            --set frontend.staticWebApp.hostname="$STATIC_WEB_APP_HOSTNAME" \
             --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" \
             --set-string engine.env.AzureSpeech__SubscriptionKey="$AZURE_SPEECH_KEY" \
             --set-string manager.env.Jwt__Secret="$MANAGER_JWT_SECRET" \
@@ -211,6 +235,8 @@ jobs:
             --set global.namePrefix="$TARGET_NAMESPACE" \
             --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
             --set global.environment="$IMAGE_TAG" \
+            --set frontend.enabled="$FRONTEND_ENABLED" \
+            --set frontend.staticWebApp.hostname="$STATIC_WEB_APP_HOSTNAME" \
             --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" \
             --set-string engine.env.AzureSpeech__SubscriptionKey="$AZURE_SPEECH_KEY" \
             --set-string manager.env.Jwt__Secret="$MANAGER_JWT_SECRET" \
