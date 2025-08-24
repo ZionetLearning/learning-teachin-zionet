@@ -1,12 +1,12 @@
 #------------- General Variables -------------
 variable "resource_group_name" {
   description = "Name of the resource group"
-  type = string
-  default = "zionet-learning-2025"
+  type        = string
+  default     = "zionet-learning-2025"
 }
 variable "location" {
   description = "Azure region"
-  type = string
+  type        = string
 }
 variable "subscription_id" {
   description = "Azure subscription ID"
@@ -20,39 +20,39 @@ variable "tenant_id" {
 #------------- AKS Variables -------------
 variable "aks_cluster_name" {
   description = "Name of the AKS cluster"
-  type = string
-  default = "aks-cluster-dev"
+  type        = string
+  default     = "aks-cluster-dev"
 }
 variable "node_count" {
   description = "Number of nodes in the AKS cluster"
-  type    = number
-  default = 2
+  type        = number
+  default     = 2
 }
 variable "vm_size" {
   description = "Size of the VM instances in the AKS cluster"
-  type    = string
-  default = "Standard_B2s"
+  type        = string
+  default     = "Standard_B2s"
 }
 
 #------------- Service Bus Variables -------------
 variable "servicebus_namespace" {
   description = "Globally unique Service Bus namespace name"
-  type = string
-  default = "servicebus-zionet-learning"
+  type        = string
+  default     = "servicebus-zionet-learning"
 }
 variable "servicebus_sku" {
   description = "Service Bus namespace SKU (Basic, Standard, Premium)"
-  type    = string
-  default = "Standard"
+  type        = string
+  default     = "Standard"
 }
 variable "queue_names" {
   description = "List of Service Bus queues to create"
-  type = list(string)
+  type        = list(string)
   default = [
-              "manager-callback-queue",
-              "engine-queue",
-              "accessor-queue",
-            ]
+    "manager-callback-queue",
+    "engine-queue",
+    "accessor-queue",
+  ]
 }
 
 #------------- Docker Hub (or ACR) Variables --------------------
@@ -69,13 +69,13 @@ variable "signalr_name" {
 }
 
 variable "signalr_sku_name" {
-  type        = string
-  default     = "Free_F1"
+  type    = string
+  default = "Free_F1"
 }
 
 variable "signalr_sku_capacity" {
-  type        = number
-  default     = 1
+  type    = number
+  default = 1
 }
 
 #------------- Postgres Variables -------------
@@ -85,16 +85,16 @@ variable "database_server_name" {
   default     = "pg-zionet-learning"
 }
 variable "db_location" {
-    description = "Location for the PostgreSQL database"
-    type        = string
-    default     = "Israel Central"
-  
+  description = "Location for the PostgreSQL database"
+  type        = string
+  default     = "Israel Central"
+
 }
 # admin_username
 variable "admin_username" {
   type        = string
   description = "PostgreSQL administrator username"
-  default = "postgres"
+  default     = "postgres"
 }
 # admin_password
 variable "admin_password" {
@@ -113,37 +113,37 @@ variable "db_version" {
 variable "sku_name" {
   type        = string
   description = "SKU name for the PostgreSQL server"
-  default = "B_Standard_B1ms"
+  default     = "B_Standard_B1ms"
 }
 # storage_mb
 variable "storage_mb" {
   type        = number
   description = "Storage size in MB for the PostgreSQL server"
-  default = 32768
+  default     = 32768
 }
 # password_auth_enabled
 variable "password_auth_enabled" {
   type        = bool
   description = "Enable password authentication for PostgreSQL"
-  default = true
+  default     = true
 }
 # active_directory_auth_enabled
 variable "active_directory_auth_enabled" {
   type        = bool
   description = "Enable Active Directory authentication for PostgreSQL"
-  default = false
+  default     = false
 }
 # backup_retention_days
 variable "backup_retention_days" {
   type        = number
   description = "Number of days to retain backups for PostgreSQL"
-  default = 7
+  default     = 7
 }
 # geo_redundant_backup_enabled
 variable "geo_redundant_backup_enabled" {
   type        = bool
   description = "Enable geo-redundant backups for PostgreSQL"
-  default = false
+  default     = false
 }
 # delegated_subnet_id
 variable "delegated_subnet_id" {
@@ -194,7 +194,23 @@ variable "redis_name" {
   type        = string
   default     = "redis-teachin"
 }
+variable "use_shared_redis" {
+  description = "Use shared Redis cache instance instead of creating new one"
+  type        = bool
+  default     = true
+}
 
+variable "shared_redis_name" {
+  description = "Name of the shared Redis cache instance"
+  type        = string
+  default     = "redis-teachin-shared"
+}
+
+variable "shared_redis_resource_group" {
+  description = "Resource group containing the shared Redis instance"
+  type        = string
+  default     = "dev-zionet-learning-2025"
+}
 
 #------------- Environment Variables -------------
 variable "environment_name" {

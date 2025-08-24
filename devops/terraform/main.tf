@@ -4,7 +4,7 @@
 resource "azurerm_resource_group" "main" {
   name     = "${var.environment_name}-${var.resource_group_name}"
   location = var.location
-  
+
   tags = {
     Environment = var.environment_name
     ManagedBy   = "terraform"
@@ -18,6 +18,37 @@ data "azurerm_kubernetes_cluster" "shared" {
   resource_group_name = var.shared_aks_resource_group
 }
 
+# Data source to reference existing shared Redis instance
+data "azurerm_redis_cache" "shared" {
+  count               = var.use_shared_redis ? 1 : 0
+  name                = var.shared_redis_name
+  resource_group_name = var.shared_redis_resource_group
+}
+
+# Local values for Redis database index mapping and validation
+locals {
+  # Environment to database index mapping
+  redis_database_index_map = {
+    "dev"   = 0
+    "test"  = 1
+    "prod"  = 2
+    "feat1" = 3
+    "feat2" = 4
+  }
+
+  # Get database index for current environment
+  redis_database_index = lookup(local.redis_database_index_map, var.environment_name, null)
+
+  # Validation for supported environments when using shared Redis
+  validate_environment = var.use_shared_redis && local.redis_database_index == null ? tobool("Unsupported environment: ${var.environment_name}. Supported environments for shared Redis: ${join(", ", keys(local.redis_database_index_map))}") : true
+
+  # Redis connection details from module (handles both shared and dedicated)
+  redis_hostname           = module.redis.hostname
+  redis_port               = module.redis.port
+  redis_primary_access_key = module.redis.primary_access_key
+  redis_ssl_port           = module.redis.ssl_port
+}
+
 # Create new AKS cluster only if not using shared
 module "aks" {
   count               = var.use_shared_aks ? 0 : 1
@@ -26,15 +57,15 @@ module "aks" {
   location            = var.location
   cluster_name        = var.aks_cluster_name
   vm_size             = var.vm_size
-  depends_on = [azurerm_resource_group.main]
+  depends_on          = [azurerm_resource_group.main]
 }
 
 # Local values to determine which cluster to use
 locals {
-  aks_cluster_name = var.use_shared_aks ? data.azurerm_kubernetes_cluster.shared[0].name : module.aks[0].cluster_name
-  aks_resource_group = var.use_shared_aks ? var.shared_aks_resource_group : azurerm_resource_group.main.name
+  aks_cluster_name     = var.use_shared_aks ? data.azurerm_kubernetes_cluster.shared[0].name : module.aks[0].cluster_name
+  aks_resource_group   = var.use_shared_aks ? var.shared_aks_resource_group : azurerm_resource_group.main.name
   kubernetes_namespace = var.kubernetes_namespace != "" ? var.kubernetes_namespace : var.environment_name
-  aks_kube_config = var.use_shared_aks ? data.azurerm_kubernetes_cluster.shared[0].kube_config[0] : module.aks[0].kube_config
+  aks_kube_config      = var.use_shared_aks ? data.azurerm_kubernetes_cluster.shared[0].kube_config[0] : module.aks[0].kube_config
 }
 
 module "servicebus" {
@@ -44,32 +75,32 @@ module "servicebus" {
   namespace_name      = "${var.environment_name}-${var.servicebus_namespace}"
   sku                 = var.servicebus_sku
   queue_names         = var.queue_names
-  depends_on = [azurerm_resource_group.main]
+  depends_on          = [azurerm_resource_group.main]
 }
 
 module "database" {
-  source              = "./modules/postgresql"
+  source = "./modules/postgresql"
 
   server_name         = "${var.environment_name}-${var.database_server_name}"
   location            = var.db_location
   resource_group_name = azurerm_resource_group.main.name
 
-  admin_username      = var.admin_username
-  admin_password      = var.admin_password
+  admin_username = var.admin_username
+  admin_password = var.admin_password
 
-  db_version          = var.db_version
-  sku_name            = var.sku_name
-  storage_mb          = var.storage_mb
+  db_version = var.db_version
+  sku_name   = var.sku_name
+  storage_mb = var.storage_mb
 
   password_auth_enabled         = var.password_auth_enabled
   active_directory_auth_enabled = var.active_directory_auth_enabled
 
-  backup_retention_days         = var.backup_retention_days
-  geo_redundant_backup_enabled  = var.geo_redundant_backup_enabled
+  backup_retention_days        = var.backup_retention_days
+  geo_redundant_backup_enabled = var.geo_redundant_backup_enabled
 
-  delegated_subnet_id           = var.delegated_subnet_id
+  delegated_subnet_id = var.delegated_subnet_id
 
-  database_name       = var.database_name
+  database_name = var.database_name
 
   depends_on = [azurerm_resource_group.main]
 }
@@ -83,6 +114,7 @@ module "signalr" {
   sku_capacity        = var.signalr_sku_capacity
 }
 
+# Redis module - supports both shared and dedicated Redis instances
 module "redis" {
   source              = "./modules/redis"
   name                = "${var.redis_name}-${var.environment_name}"
@@ -92,23 +124,31 @@ module "redis" {
   family              = "C"
   capacity            = 0
   shard_count         = 0
+
+  # Shared Redis configuration
+  use_shared_redis                = var.use_shared_redis
+  database_index                  = local.redis_database_index
+  shared_redis_hostname           = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].hostname : null
+  shared_redis_port               = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].port : null
+  shared_redis_ssl_port           = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].ssl_port : null
+  shared_redis_primary_access_key = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].primary_access_key : null
 }
 
 module "frontend" {
-  source              = "./modules/frontend"
-  resource_group_name = azurerm_resource_group.main.name
-  location            = azurerm_resource_group.main.location
-  static_web_app_name = "${var.static_web_app_name}-${var.environment_name}"
-  sku_tier            = var.frontend_sku_tier
-  sku_size            = var.frontend_sku_size
-  appinsights_retention_days = var.frontend_appinsights_retention_days
+  source                          = "./modules/frontend"
+  resource_group_name             = azurerm_resource_group.main.name
+  location                        = azurerm_resource_group.main.location
+  static_web_app_name             = "${var.static_web_app_name}-${var.environment_name}"
+  sku_tier                        = var.frontend_sku_tier
+  sku_size                        = var.frontend_sku_size
+  appinsights_retention_days      = var.frontend_appinsights_retention_days
   appinsights_sampling_percentage = var.frontend_appinsights_sampling_percentage
-  
+
   tags = {
     Environment = var.environment_name
     Project     = "Frontend"
   }
-  
+
   depends_on = [azurerm_resource_group.main]
 }
 
@@ -119,13 +159,13 @@ module "frontend" {
 resource "null_resource" "aks_ready" {
   # This resource completes when the AKS cluster (shared or new) is ready
   count = 1
-  
+
   # Use triggers to ensure this runs after the appropriate AKS resource is ready
   triggers = {
     cluster_name = local.aks_cluster_name
     cluster_rg   = local.aks_resource_group
   }
-  
+
   # Implicit dependency on the AKS module when not using shared AKS
   depends_on = [
     module.aks,
@@ -137,7 +177,7 @@ resource "null_resource" "aks_ready" {
 data "azurerm_kubernetes_cluster" "main" {
   name                = local.aks_cluster_name
   resource_group_name = local.aks_resource_group
-  
+
   depends_on = [null_resource.aks_ready]
 }
 
@@ -155,13 +195,13 @@ resource "kubernetes_namespace" "environment" {
       created-by  = "terraform"
       purpose     = "application-deployment"
     }
-    
+
     annotations = {
       "kubernetes.io/managed-by" = "terraform"
       "terraform.io/environment" = var.environment_name
     }
   }
-  
+
   depends_on = [data.azurerm_kubernetes_cluster.main]
 }
 
@@ -170,17 +210,17 @@ resource "kubernetes_service_account" "environment" {
   metadata {
     name      = "${var.environment_name}-serviceaccount"
     namespace = kubernetes_namespace.environment.metadata[0].name
-    
+
     labels = {
       environment = var.environment_name
       managed-by  = "terraform"
     }
-    
+
     annotations = {
       "kubernetes.io/managed-by" = "terraform"
     }
   }
-  
+
   depends_on = [kubernetes_namespace.environment]
 }
 
@@ -188,13 +228,13 @@ resource "kubernetes_service_account" "environment" {
 #   metadata {
 #     name      = "${var.environment_name}-quota"
 #     namespace = kubernetes_namespace.environment.metadata[0].name
-    
+
 #     labels = {
 #       environment = var.environment_name
 #       managed-by  = "terraform"
 #     }
 #   }
-  
+
 #   spec {
 #     hard = {
 #       "requests.cpu"    = "2"
@@ -205,6 +245,6 @@ resource "kubernetes_service_account" "environment" {
 #       "services"        = "8"
 #     }
 #   }
-  
+
 #   depends_on = [kubernetes_namespace.environment]
 # }

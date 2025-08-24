@@ -3,9 +3,10 @@
 use_shared_aks         = true   # Use shared dev cluster to save costs
 shared_aks_cluster_name     = "aks-cluster-dev"
 shared_aks_resource_group   = "dev-zionet-learning-2025"
+#------------- Shared Redis Configuration -------------
+use_shared_aks         = true 
 #------------- Resource Configuration -------------
 location               = "westeurope"
-
 #------------- Azure Configuration-------------------
 subscription_id        = "90ea4c2f-1eee-4ec9-927d-ed24c563003e"
 tenant_id              = "a814ee32-f813-4a36-9686-1b9268183e27"

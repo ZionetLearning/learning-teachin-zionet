@@ -60,11 +60,40 @@ output "signalr_connection_string" {
 }
 
 output "redis_hostname" {
-  value = module.redis.hostname
+  description = "Redis hostname"
+  value       = module.redis.hostname
 }
+
+output "redis_port" {
+  description = "Redis port"
+  value       = module.redis.port
+}
+
+output "redis_ssl_port" {
+  description = "Redis SSL port"
+  value       = module.redis.ssl_port
+}
+
 output "redis_primary_access_key" {
-  value     = module.redis.primary_access_key
-  sensitive = true
+  description = "Redis primary access key"
+  value       = module.redis.primary_access_key
+  sensitive   = true
+}
+
+output "redis_database_index" {
+  description = "Redis database index for this environment"
+  value       = module.redis.database_index
+}
+
+output "redis_connection_string" {
+  description = "Redis connection string with database index"
+  value       = module.redis.connection_string
+  sensitive   = true
+}
+
+output "use_shared_redis" {
+  description = "Whether shared Redis is being used"
+  value       = module.redis.use_shared_redis
 }
 
 # Frontend outputs

@@ -3,6 +3,8 @@ environment_name       = "dev"
 use_shared_aks         = false  # dev still uses its own cluster
 kubernetes_namespace   = "dev"
 aks_cluster_name       = "aks-cluster-dev"
+#------------- Shared Redis Configuration -------------
+use_shared_aks         = false  # dev still uses its own redis
 #------------- Resource Configuration -------------
 location               = "westeurope"
 
