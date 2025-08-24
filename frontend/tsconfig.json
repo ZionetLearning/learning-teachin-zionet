@@ -2,6 +2,7 @@
   "compilerOptions": {
     "esModuleInterop": true
   },
+  "include": ["src"],
   "exclude": ["cypress"], // to prevent conflicts with Vitest
   "extends": "./tsconfig.app.json"
 }
