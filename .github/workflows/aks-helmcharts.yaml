@@ -93,9 +93,6 @@ jobs:
           echo "PG_DB=dev-pg-zionet-learning" >> $GITHUB_ENV
           echo "PG_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
 
-          # Frontend (for Static Web App proxy)
-          echo "FRONTEND_RG=${TARGET_NAMESPACE}-zionet-learning-2025" >> $GITHUB_ENV
-
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
 
@@ -177,8 +174,14 @@ jobs:
 
       - name: Get Static Web App URL
         run: |
+          # Set frontend resource group dynamically based on target namespace
+          FRONTEND_RG="${TARGET_NAMESPACE}-zionet-learning-2025"
+          echo "Frontend resource group: $FRONTEND_RG"
+          
           # Get Static Web App hostname for frontend proxy
           STATIC_WEB_APP_NAME="static-web-app-${TARGET_NAMESPACE}"
+          echo "Looking for Static Web App: $STATIC_WEB_APP_NAME in resource group: $FRONTEND_RG"
+          
           STATIC_WEB_APP_URL=$(az staticwebapp show \
             --name "$STATIC_WEB_APP_NAME" \
             --resource-group "$FRONTEND_RG" \
@@ -188,6 +191,7 @@ jobs:
             echo "Static Web App not found: $STATIC_WEB_APP_NAME in $FRONTEND_RG"
             echo "Frontend proxy will be disabled"
             echo "FRONTEND_ENABLED=false" >> $GITHUB_ENV
+            echo "STATIC_WEB_APP_HOSTNAME=" >> $GITHUB_ENV
           else
             echo "Found Static Web App: $STATIC_WEB_APP_URL"
             echo "FRONTEND_ENABLED=true" >> $GITHUB_ENV
