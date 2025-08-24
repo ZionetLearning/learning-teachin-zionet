@@ -123,7 +123,7 @@ jobs:
 
       # If triggered by PR merge, set default environment_name to dev
       - name: Set default environment_name for PR merge
-        if: ${{ github.event_name == 'pull_request' }}
+        if: ${{ github.event_name == 'push' }}
         run: |
           echo "environment_name=dev" >> $GITHUB_ENV
 
