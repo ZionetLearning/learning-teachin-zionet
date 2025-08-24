@@ -212,7 +212,7 @@ namespace Accessor.Migrations
                     b.ToTable("Tasks");
                 });
 
-            modelBuilder.Entity("Accessor.Models.User", b =>
+            modelBuilder.Entity("Accessor.Models.Users.UserModel", b =>
                 {
                     b.Property<Guid>("UserId")
                         .ValueGeneratedOnAdd()

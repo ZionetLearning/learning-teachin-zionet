@@ -3,6 +3,7 @@ using Accessor.DB;
 using Accessor.Models;
 using Dapr.Client;
 using Microsoft.EntityFrameworkCore;
+using Accessor.Models.Users;
 
 namespace Accessor.Services;
 public class AccessorService : IAccessorService
@@ -452,5 +453,70 @@ public class AccessorService : IAccessorService
         }
 
         return user.UserId;
+    }
+
+    public async Task<UserModel?> GetUserAsync(Guid userId)
+    {
+        var user = await _dbContext.Users.FindAsync(userId);
+        if (user == null)
+        {
+            return null;
+        }
+
+        return new UserModel
+        {
+            UserId = user.UserId,
+            Email = user.Email,
+            PasswordHash = user.PasswordHash
+        };
+    }
+
+    public async Task<bool> CreateUserAsync(UserModel newUser)
+    {
+        var exists = await _dbContext.Users.AnyAsync(u => u.Email == newUser.Email);
+        if (exists)
+        {
+            return false;
+        }
+
+        var user = new UserModel
+        {
+            UserId = newUser.UserId,
+            Email = newUser.Email,
+            PasswordHash = newUser.PasswordHash
+        };
+
+        _dbContext.Users.Add(user);
+        await _dbContext.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> UpdateUserAsync(UpdateUserModel updateUser, Guid userId)
+    {
+        var user = await _dbContext.Users.FindAsync(userId);
+        if (user == null)
+        {
+            return false;
+        }
+
+        user.Email = updateUser.Email;
+        user.PasswordHash = updateUser.PasswordHash; // Again, hash in real apps
+
+        _dbContext.Users.Update(user);
+        await _dbContext.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> DeleteUserAsync(Guid userId)
+    {
+        var user = await _dbContext.Users.FindAsync(userId);
+        if (user == null)
+        {
+            return false;
+        }
+
+        _dbContext.Users.Remove(user);
+        await _dbContext.SaveChangesAsync();
+        return true;
     }
 }
