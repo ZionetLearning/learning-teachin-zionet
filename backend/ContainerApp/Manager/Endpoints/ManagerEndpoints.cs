@@ -35,7 +35,7 @@ public static class ManagerEndpoints
         #region User Endpoints
 
         app.MapGet("/user/{userId}", GetUserAsync).WithName("GetUser");
-        app.MapGet("/users", GetAllUserAsync).WithName("GetAllUsers");
+        app.MapGet("/users", GetAllUsersAsync).WithName("GetAllUsers");
         app.MapPost("/user", CreateUserAsync).WithName("CreateUser");
         app.MapPut("/user/{userId}", UpdateUserAsync).WithName("UpdateUser");
         app.MapDelete("/user/{userId}", DeleteUserAsync).WithName("DeleteUser");
@@ -292,7 +292,7 @@ public static class ManagerEndpoints
         }
     }
 
-    private static async Task<IResult> GetAllUserAsync(
+    private static async Task<IResult> GetAllUsersAsync(
         [FromServices] IManagerService managerService,
         [FromServices] ILogger<ManagerService> logger)
     {
@@ -301,14 +301,7 @@ public static class ManagerEndpoints
         try
         {
             var users = await managerService.GetAllUsersAsync();
-
-            if (users == null || !users.Any())
-            {
-                logger.LogWarning("No users found");
-                return Results.NotFound("No users found.");
-            }
-
-            logger.LogInformation("Users retrieved");
+            logger.LogInformation("Retrieved {Count} users", users.Count());
             return Results.Ok(users);
         }
         catch (Exception ex)

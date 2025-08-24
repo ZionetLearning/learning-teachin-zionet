@@ -472,7 +472,7 @@ public class AccessorService : IAccessorService
         return true;
     }
 
-    public async Task<IEnumerable<UserModel>> GetAllUsersAsync()
+    public async Task<IEnumerable<UserData>> GetAllUsersAsync()
     {
         _logger.LogInformation("Fetching all users from the database...");
 
@@ -480,11 +480,10 @@ public class AccessorService : IAccessorService
         {
             var users = await _dbContext.Users
                 .AsNoTracking()
-                .Select(u => new UserModel
+                .Select(u => new UserData
                 {
                     UserId = u.UserId,
                     Email = u.Email,
-                    PasswordHash = u.PasswordHash // In the future, dont expose it!
                 })
                 .ToListAsync();
 

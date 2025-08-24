@@ -280,7 +280,7 @@ public class ManagerService : IManagerService
         }
     }
 
-    public async Task<IEnumerable<UserModel>> GetAllUsersAsync()
+    public async Task<IEnumerable<UserData>> GetAllUsersAsync()
     {
         _logger.LogDebug("Inside: {MethodName}", nameof(GetAllUsersAsync));
 
@@ -291,7 +291,7 @@ public class ManagerService : IManagerService
             if (users is null || !users.Any())
             {
                 _logger.LogWarning("No users found in the system");
-                return Enumerable.Empty<UserModel>();
+                return [];
             }
 
             _logger.LogInformation("Retrieved {Count} users", users.Count());
