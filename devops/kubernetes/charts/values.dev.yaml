@@ -11,6 +11,16 @@ namespace:
   create: true
   name: dev
 
+
+cronjobs:
+  statsPing:
+    enabled: true
+    schedule: "* * * * *"       # every minute in dev
+    target:
+      mode: "service"
+      serviceName: "manager"    # your Service name
+      port: 80                  # your Service port (maps to container 5001)
+
 manager:
   image:
     name: manager  # Required: image name for the container
