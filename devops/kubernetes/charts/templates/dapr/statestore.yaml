@@ -32,7 +32,7 @@ spec:
     - name: maxConnAge
       value: '{{ default "30m" .Values.dapr.stateStore.redis.options.maxConnAge }}'
     - name: databaseIndex
-      value: '{{ default "5" .Values.dapr.stateStore.redis.databaseIndex }}'
+      value: '{{ .Values.dapr.stateStore.redis.databaseIndex | quote }}'
 scopes:
   - {{ include "app.appIdFor" (list $ .Values.accessor.name) | quote }}
   - {{ include "app.appIdFor" (list $ .Values.manager.name)  | quote }}
