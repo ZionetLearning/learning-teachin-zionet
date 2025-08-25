@@ -51,6 +51,9 @@ manager:
     serviceBus:
       name: azure-service-bus-secret
       key: AzureServiceBusConnectionString
+    signalr:
+      name: signalr-connection
+      key: SignalRConnectionString
   resources:
     requests:
       cpu: "100m"
