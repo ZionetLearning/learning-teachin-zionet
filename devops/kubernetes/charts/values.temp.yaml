@@ -1,0 +1,61 @@
+# Template values file for temporary environments (test*, feat*, pr*, etc.)
+# Based on values.dev.yaml but with frontend disabled to prevent DNS conflicts
+
+global:
+  dockerRegistry: ""   # CI sets: docker.io/<org> or <acr>.azurecr.io
+  imagePullPolicy: IfNotPresent
+  environment: ""      # Will be set by CI/CD to TARGET_NAMESPACE (e.g., "featest", "test123")
+  dapr:
+    enabled: true
+    configName: dapr-config
+
+namespace:
+  create: true
+  name: ""  # Will be set dynamically to TARGET_NAMESPACE
+
+manager:
+  image:
+    name: manager  # Required: image name for the container
+    # tag will be set dynamically via global.environment by CI/CD
+  # service, ports, labels inherit from base values.yaml
+  env:
+    ASPNETCORE_URLS: "http://+:5001"
+  # secrets inherit from base values.yaml
+  ingress:
+    enabled: true
+    host: teachin.westeurope.cloudapp.azure.com
+    basePath: /api
+    tls:
+      enabled: true
+      clusterIssuer: letsencrypt-prod
+      secretName: teachin-tls
+      
+engine:
+  image:
+    name: engine  # Required: image name for the container
+    # tag will be set dynamically via global.environment by CI/CD
+  env:
+    ASPNETCORE_URLS: "http://+:5002"
+    AzureOpenAI__Endpoint: "https://france-teachin-open-ai.openai.azure.com/"
+    AzureOpenAI__ApiKey: ""     # injecting via secret/CI
+    AzureOpenAI__DeploymentName: "gpt-4.1-mini"
+    AzureOpenAI__ModelId: "gpt-4o-mini"
+    AzureSpeech__SubscriptionKey: ""
+    AzureSpeech__Region: "eastus"
+    AzureSpeech__DefaultVoice: "he-IL-HilaNeural"
+    AzureSpeech__TimeoutSeconds: "70"
+
+accessor:
+  image:
+    name: accessor  # Required: image name for the container
+    # tag will be set dynamically via global.environment by CI/CD
+  env:
+    ASPNETCORE_URLS: "http://+:5003"
+
+# Frontend Static Web App Proxy - DISABLED for temporary environments
+frontend:
+  name: frontend-proxy
+  enabled: false  # Disabled to prevent DNS conflicts with dev/prod environments
+  path: "/"
+  staticWebApp:
+    hostname: ""  # Only used when enabled=true
