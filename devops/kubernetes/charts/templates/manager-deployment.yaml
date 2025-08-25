@@ -56,8 +56,8 @@ spec:
             - name: SignalR__ConnectionString
               valueFrom:
                 secretKeyRef:
-                  name: signalr-connection
-                  key: SignalRConnectionString
+                  name: {{ .Values.manager.secrets.signalr.name }}
+                  key: {{ .Values.manager.secrets.signalr.key }}
           resources:
             {{- toYaml .Values.manager.resources | nindent 12 }}
 ---
