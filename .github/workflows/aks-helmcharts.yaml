@@ -197,9 +197,6 @@ jobs:
           echo "❌ Timeout waiting for ExternalSecrets API"
           exit 1
 
-      - name: Apply ClusterSecretStore + ExternalSecrets
-        run: |
-          kubectl apply -f devops/kubernetes/secrets/
 
       - name: Helm template sanity (no Namespace objects)
         run: |
