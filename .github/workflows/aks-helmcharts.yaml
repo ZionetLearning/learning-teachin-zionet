@@ -94,7 +94,7 @@ jobs:
           echo "PG_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
 
           # Redis (shared)
-          case "$TARGET_NAMESPACE" in
+          case "$ENVIRONMENT_NAME" in
             dev)
               echo "REDIS_DATABASE_INDEX=0" >> $GITHUB_ENV
               ;;
@@ -112,6 +112,7 @@ jobs:
               ;;
             *)
               echo "REDIS_DATABASE_INDEX=5" >> $GITHUB_ENV
+              echo "ENVIRONMENT_NAME is $ENVIRONMENT_NAME"
               ;;
           esac
 
