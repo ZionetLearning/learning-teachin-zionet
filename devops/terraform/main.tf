@@ -100,7 +100,7 @@ module "signalr" {
 # ------------- Shared Redis -----------------------
 data "azurerm_redis_cache" "shared" {
   count               = var.use_shared_redis ? 1 : 0
-  name                = "${var.redis_name}-${var.shared_resource_group}"
+  name                = var.redis_name
   resource_group_name = var.shared_resource_group
 }
 
@@ -108,7 +108,7 @@ data "azurerm_redis_cache" "shared" {
 module "redis" {
   count                = var.use_shared_redis ? 0 : 1
   source               = "./modules/redis"
-  name                 = "${var.redis_name}-${var.environment_name}"
+  name                 = var.redis_name
   location             = azurerm_resource_group.main.location
   resource_group_name  = azurerm_resource_group.main.name
   sku_name             = "Basic"

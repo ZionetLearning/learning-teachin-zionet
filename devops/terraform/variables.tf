@@ -201,7 +201,7 @@ variable "frontend_appinsights_sampling_percentage" {
 variable "redis_name" {
   description = "Name of the Redis cache instance"
   type        = string
-  default     = "redis-teachin"
+  default     = "redis-teachin-shared"
 }
 
 variable "use_shared_redis" {
