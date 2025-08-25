@@ -177,7 +177,7 @@ dapr:
 
 # Frontend Static Web App Proxy Configuration
 frontend:
-  enabled: true  # Enable in environment-specific values
+  enabled: false  # Enable in environment-specific values
   path: "/"
   staticWebApp:
     hostname: ""  # Set in environment-specific values
