@@ -16,7 +16,7 @@ export const Card = ({ country }: Props) => {
   const classes = useStyles();
   const flag = country.flags?.svg || country.flags?.png;
   return (
-    <div className={classes.container}>
+    <div data-testid="country-card" className={classes.cardContainer}>
       {flag && (
         <img
           className={classes.img}

@@ -178,12 +178,12 @@ public class EngineQueueHandler : IQueueHandler<Message>
             }
 
             // 1. Load history
-            var history = await _accessorClient.GetChatHistoryAsync(request.ThreadId, ct);
+            var snapshot = await _accessorClient.GetHistorySnapshotAsync(request.ThreadId, ct);
 
             // 2. Build service request
             var serviceRequest = new ChatAiServiseRequest
             {
-                History = history,
+                History = snapshot.History,
                 UserMessage = request.UserMessage,
                 ChatType = request.ChatType,
                 ThreadId = request.ThreadId,
@@ -252,4 +252,13 @@ public class EngineQueueHandler : IQueueHandler<Message>
             throw new RetryableException("Transient error while processing AI chat.", ex);
         }
     }
+
+    private static JsonElement JsonEl(string raw)
+    {
+        using var doc = JsonDocument.Parse(raw);
+        return doc.RootElement.Clone();
+    }
+
+    private static JsonElement EmptyHistory() =>
+        JsonEl("""{"messages":[]}""");
 }

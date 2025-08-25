@@ -108,6 +108,11 @@ public static class AiEndpoints
             return Results.BadRequest(new { error = "userMessage is required" });
         }
 
+        if (string.IsNullOrWhiteSpace(request.ThreadId))
+        {
+            return Results.BadRequest(new { error = "threadId is required" });
+        }
+
         var requestId = Guid.NewGuid().ToString("N");
         //todo: takeUserId from token.
         const string userId = "dev-user-001";

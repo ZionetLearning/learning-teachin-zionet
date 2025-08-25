@@ -18,6 +18,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -63,7 +64,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddControllers();
 
 builder.Services.AddControllers().AddDapr();
-builder.Services.AddSignalR();
+var signalRBuilder = builder.Services.AddSignalR();
+
+var signalRConnString = builder.Configuration["SignalR:ConnectionString"];
+if (!string.IsNullOrEmpty(signalRConnString))
+{
+    signalRBuilder.AddAzureSignalR(signalRConnString);
+}
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -116,23 +124,54 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Add(IPAddress.Parse("127.0.0.1"));
 });
 
+var refreshRateLimitSettings = builder.Configuration
+    .GetSection("RateLimiting:RefreshToken")
+    .Get<RefreshTokenRateLimitSettings>();
+
+builder.Services.Configure<RefreshTokenRateLimitSettings>(
+    builder.Configuration.GetSection("RateLimiting:RefreshToken"));
+
+if (refreshRateLimitSettings != null)
+{
+    // Rate Limiting for Refresh Token
+    builder.Services.AddRateLimiter(options =>
+    {
+        options.RejectionStatusCode = refreshRateLimitSettings.RejectionStatusCode;
+        _ = options.AddPolicy(AuthSettings.RefreshTokenPolicyName, context =>
+        {
+            //var ip = context.Connection.RemoteIpAddress?.ToString() ?? AuthSettings.UnknownIpFallback;
+            var ip = context.Request.Headers["X-Forwarded-For"].FirstOrDefault()
+                 ?? context.Connection.RemoteIpAddress?.ToString()
+                 ?? AuthSettings.UnknownIpFallback;
+
+            return RateLimitPartition.Get(ip, _ =>
+                new FixedWindowRateLimiter(new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = refreshRateLimitSettings.PermitLimit,
+                    Window = refreshRateLimitSettings.WindowMinutes,
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = refreshRateLimitSettings.QueueLimit
+                }));
+        });
+    });
+}
+
 var app = builder.Build();
 
 var forwardedHeaderOptions = app.Services.GetRequiredService<IOptions<ForwardedHeadersOptions>>().Value;
 app.UseForwardedHeaders(forwardedHeaderOptions);
-
-//app.UseForwardedHeaders();
 app.UseCors("AllowAll");
 app.UseCloudEvents();
-
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 app.MapSubscribeHandler();
 app.MapManagerEndpoints();
 app.MapAiEndpoints();
 app.MapAuthEndpoints();
+app.MapHub<NotificationHub>("/NotificationHub");
+
 if (env.IsDevelopment())
 {
     app.MapOpenApi();
@@ -152,5 +191,4 @@ if (env.IsDevelopment())
     });
 }
 
-app.MapHub<NotificationHub>("/notificationHub");
 app.Run();

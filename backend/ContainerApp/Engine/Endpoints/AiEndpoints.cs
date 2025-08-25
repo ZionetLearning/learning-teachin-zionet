@@ -38,12 +38,11 @@ public static class AiEndpoints
             return Results.BadRequest(new { error = "userMessage is required" });
         }
 
-        //todo: Improve explicit handling of ThreadId = null
+        var snapshot = await accessorClient.GetHistorySnapshotAsync(request.ThreadId, ct);
 
-        var history = await accessorClient.GetChatHistoryAsync(request.ThreadId, ct);
         var serviceRequest = new ChatAiServiseRequest
         {
-            History = history,
+            History = snapshot.History,
             UserMessage = request.UserMessage,
             ChatType = request.ChatType,
             ThreadId = request.ThreadId,
@@ -55,30 +54,20 @@ public static class AiEndpoints
 
         var aiResponse = await ai.ChatHandlerAsync(serviceRequest, ct);
 
-        if (aiResponse.Status != ChatAnswerStatus.Ok)
+        if (aiResponse.Status != ChatAnswerStatus.Ok || aiResponse.Answer == null)
         {
-            log.LogInformation("Answered thread {Thread} equals null. Error: {Error}", aiResponse.ThreadId, aiResponse.Error);
-
-            return Results.Problem(aiResponse.Error);
+            log.LogWarning("Answer for thread {Thread} failed. Error: {Error}", aiResponse.ThreadId, aiResponse.Error);
+            return Results.Problem(aiResponse.Error ?? "AI failed.");
         }
 
-        if (aiResponse.Answer == null)
-        {
-            log.LogInformation("Answered thread {Thread} equals null. Error: {Error}", aiResponse.ThreadId, aiResponse.Error);
-
-            return Results.Problem(aiResponse.Error);
-        }
-
-        var questionMessage = new ChatMessage
+        var upsert = new UpsertHistoryRequest
         {
             ThreadId = request.ThreadId,
             UserId = request.UserId,
-            Role = MessageRole.User,
-            Content = request.UserMessage
+            ChatType = request.ChatType.ToString().ToLowerInvariant(),
+            History = aiResponse.UpdatedHistory
         };
-        await accessorClient.StoreMessageAsync(questionMessage, ct);
-
-        await accessorClient.StoreMessageAsync(aiResponse.Answer, ct);
+        await accessorClient.UpsertHistorySnapshotAsync(upsert, ct);
 
         var responseToManager = new EngineChatResponse
         {

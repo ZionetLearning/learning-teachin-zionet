@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -14,6 +15,7 @@ export type ChatResponse = {
 };
 
 export const useSendChatMessage = () => {
+  const BASE_URL = import.meta.env.VITE_BASE_URL!;
   const queryClient = useQueryClient();
 
   return useMutation<ChatResponse, Error, ChatRequest>({
@@ -26,7 +28,7 @@ export const useSendChatMessage = () => {
         //local server endpoint URL:
         // "http://localhost:5280/chat",
         //cloud server endpoint URL:
-        "https://teachin.westeurope.cloudapp.azure.com/api/dev/chat",
+        `${BASE_URL}/chat`,
         {
           userMessage,
           threadId,
@@ -38,7 +40,6 @@ export const useSendChatMessage = () => {
     },
 
     onSuccess: (data) => {
-      toast.success("Message sent successfully");
       queryClient.invalidateQueries({ queryKey: ["chat", data.threadId] });
     },
 

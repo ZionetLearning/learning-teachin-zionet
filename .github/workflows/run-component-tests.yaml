@@ -7,7 +7,6 @@ on:
       - 'backend/ContainerApp/Engine/**'
       - 'backend/ContainerApp/EngineComponentTests/**'
       - 'backend/ContainerApp/Directory.Build.props'
-      - '.github/workflows/**'
   workflow_dispatch:
 
 concurrency:
