@@ -115,50 +115,46 @@ public class AccessorService : IAccessorService
     {
         try
         {
-            using var serverTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(StatsWindow.TimeOut));
-            using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, serverTimeout.Token);
-            var token = linked.Token;
-
             var nowUtc = DateTimeOffset.UtcNow;
             var from15m = nowUtc.AddMinutes(-StatsWindow.ActiveUsersMinutes);
             var from5m = nowUtc.AddMinutes(-StatsWindow.MessagesLast5m);
 
             var totalThreads = await _dbContext.ChatThreads
                 .AsNoTracking()
-                .LongCountAsync(token);
+                .LongCountAsync(ct);
 
             var totalUniqueUsersByThread = await _dbContext.ChatThreads
                 .AsNoTracking()
                 .Select(t => t.UserId)
                 .Distinct()
-                .LongCountAsync(token);
+                .LongCountAsync(ct);
 
             var totalMessages = await _dbContext.ChatMessages
                 .AsNoTracking()
-                .LongCountAsync(token);
+                .LongCountAsync(ct);
 
             var totalUniqueUsersByMessage = await _dbContext.ChatMessages
                 .AsNoTracking()
                 .Select(m => m.UserId)
                 .Distinct()
-                .LongCountAsync(token);
+                .LongCountAsync(ct);
 
             var activeUsersLast15m = await _dbContext.ChatMessages
                 .AsNoTracking()
                 .Where(m => m.Timestamp >= from15m)
                 .Select(m => m.UserId)
                 .Distinct()
-                .LongCountAsync(token);
+                .LongCountAsync(ct);
 
             var messagesLast5m = await _dbContext.ChatMessages
                 .AsNoTracking()
                 .Where(m => m.Timestamp >= from5m)
-                .LongCountAsync(token);
+                .LongCountAsync(ct);
 
             var messagesLast15m = await _dbContext.ChatMessages
                 .AsNoTracking()
                 .Where(m => m.Timestamp >= from15m)
-                .LongCountAsync(token);
+                .LongCountAsync(ct);
 
             return new StatsSnapshot(
                 TotalThreads: totalThreads,

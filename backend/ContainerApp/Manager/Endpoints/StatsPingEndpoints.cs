@@ -1,6 +1,7 @@
 ﻿using Dapr.Client;
 using Manager.Constants;
 using Manager.Models;
+using Manager.Services;
 using Manager.Services.Clients;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,7 +13,7 @@ public static class StatsPingEndpoints
     {
         // POST: compute & cache for 24h
         app.MapPost("/internal/compute-stats/ping",
-            async ([FromServices] ILogger log,
+            async ([FromServices] ILogger<ManagerService> log,
                    [FromServices] IAccessorClient accessorClient,
                    [FromServices] DaprClient dapr,
                    CancellationToken ct) =>
@@ -51,7 +52,7 @@ public static class StatsPingEndpoints
 
         // GET: latest cached stats (404 if expired / not set)
         app.MapGet("/internal/stats/latest",
-            async ([FromServices] ILogger log,
+            async ([FromServices] ILogger<ManagerService> log,
                    [FromServices] DaprClient dapr,
                    CancellationToken ct) =>
             {
