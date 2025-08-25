@@ -80,3 +80,22 @@ variable "database_name" {
 #   type        = string
 #   description = "Public IP of the AKS cluster"
 # }
+
+# Use shared postgres server logic (like use_shared_aks)
+variable "use_shared_postgres" {
+  type        = bool
+  description = "If true, use shared postgres server; if false, create new server."
+  default     = true
+}
+# Environment name to control dynamic server/database creation
+variable "environment_name" {
+  type        = string
+  description = "Name of the environment (e.g., dev, test, prod, feature-123)"
+}
+
+# Existing server ID for non-dev environments
+variable "existing_server_id" {
+  type        = string
+  description = "ID of the existing PostgreSQL flexible server to use for non-dev environments"
+  default     = ""
+}

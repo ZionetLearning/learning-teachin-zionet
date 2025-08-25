@@ -22,10 +22,11 @@ export type SynthesizerRequest = {
 };
 
 export const useSynthesizeSpeech = () => {
+  const BASE_URL = import.meta.env.VITE_BASE_URL!;
   return useMutation<SynthesizeResponse, Error, SynthesizerRequest>({
     mutationFn: async ({ text }: SynthesizerRequest) => {
       const response = await axios.post<SynthesizeResponse>(
-        "https://teachin.westeurope.cloudapp.azure.com/api/dev/speech/synthesize",
+        `${BASE_URL}/speech/synthesize`,
         { text },
       );
       return response.data;

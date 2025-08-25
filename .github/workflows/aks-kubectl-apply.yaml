@@ -116,4 +116,8 @@ jobs:
           chmod +x loki.sh
           ./loki.sh
       - name: Restart logging stack pods (optional)
-        run: kubectl delete pod --all -n devops-logs || true
+        run: |
+          set -e
+          kubectl rollout restart deployment grafana -n devops-logs || true
+          kubectl rollout restart statefulset loki-stack -n devops-logs || true
+          kubectl rollout restart daemonset loki-stack-promtail -n devops-logs || true

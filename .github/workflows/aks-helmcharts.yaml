@@ -95,9 +95,9 @@ jobs:
           echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
           echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
 
-          # PG (per env name)
-          echo "PG_DB=${ENVIRONMENT_NAME}-pg-zionet-learning" >> $GITHUB_ENV
-          echo "PG_RG=${ENVIRONMENT_NAME}-zionet-learning-2025" >> $GITHUB_ENV
+          # PG (shared)
+          echo "PG_DB=dev-pg-zionet-learning" >> $GITHUB_ENV
+          echo "PG_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
 
           # Determine if infrastructure steps should be skipped
           # Skip for: manual dispatch (no skip_infra_steps input) OR when skip_infra_steps=true

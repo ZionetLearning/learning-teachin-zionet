@@ -18,15 +18,22 @@ on:
           - Development
           - Production
       environment_name:
-        description: 'Enter custom prefix (used for Kubernetes namespace, etc.)'
+        description: 'Select prefix (used for Kubernetes namespace, etc.)'
         required: true
+        type: choice
+        default: featest
+        options:
+          - featest
+      custom_environment_name:
+        description: 'Custom prefix (This is for devops guys only, leave empty otherwise)'
+        required: false
         type: string
       list_services_names:
         description: 'Optional comma-separated list of services to build (e.g., accessor,manager). Leave empty for all.'
         required: false
         type: string
         default: ''
-        
+
 jobs:
   set-defaults:
     runs-on: ubuntu-latest
@@ -39,12 +46,19 @@ jobs:
         id: defaults
         run: |
           if [[ "${{ github.event_name }}" == "push" ]]; then
+            # Push to main → always use dev
             echo "environment=Development" >> $GITHUB_OUTPUT
             echo "environment_name=dev" >> $GITHUB_OUTPUT
             echo "list_services_names=" >> $GITHUB_OUTPUT
           else
             echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
-            echo "environment_name=${{ github.event.inputs.environment_name }}" >> $GITHUB_OUTPUT
+
+            if [ -n "${{ github.event.inputs.custom_environment_name }}" ]; then
+              echo "environment_name=${{ github.event.inputs.custom_environment_name }}" >> $GITHUB_OUTPUT
+            else
+              echo "environment_name=${{ github.event.inputs.environment_name }}" >> $GITHUB_OUTPUT
+            fi
+
             echo "list_services_names=${{ github.event.inputs.list_services_names }}" >> $GITHUB_OUTPUT
           fi
 
