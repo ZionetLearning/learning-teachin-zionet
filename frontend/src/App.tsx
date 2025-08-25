@@ -1,5 +1,4 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-
 import { RequireAuth, SidebarMenuLayout } from "./components";
 import {
   AuthorizationPage,
@@ -18,6 +17,7 @@ import {
   WeatherWidgetPage,
   AnimeExplorerPage,
   CountryExplorerPage,
+  SignalRPage,
 } from "./pages";
 
 import "./App.css";
@@ -59,6 +59,7 @@ function App() {
           <Route path="/weather" element={<WeatherWidgetPage />} />
           <Route path="/anime-explorer" element={<AnimeExplorerPage />} />
           <Route path="/country-explorer" element={<CountryExplorerPage />} />
+          <Route path="/signalr" element={<SignalRPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

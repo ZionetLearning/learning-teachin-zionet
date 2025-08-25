@@ -79,10 +79,15 @@ variable "signalr_sku_capacity" {
 }
 
 #------------- Postgres Variables -------------
+variable "use_shared_postgres" {
+  description = "Use shared PostgreSQL server instead of creating new one"
+  type        = bool
+  default     = true
+}
 variable "database_server_name" {
   description = "Name of the PostgreSQL server (must be globally unique)"
   type        = string
-  default     = "pg-zionet-learning"
+  default     = "dev-pg-zionet-learning"
 }
 variable "db_location" {
     description = "Location for the PostgreSQL database"

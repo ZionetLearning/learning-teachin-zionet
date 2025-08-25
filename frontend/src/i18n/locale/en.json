@@ -201,7 +201,34 @@
         "languages": "Languages:",
         "searchByName": "Search by name",
         "regionWithNoColon": "Region",
-        "populationWithNoColon": "Population"
+        "populationWithNoColon": "Population",
+        "regionFilter": {
+          "all": "All",
+          "africa": "Africa",
+          "americas": "Americas",
+          "asia": "Asia",
+          "europe": "Europe",
+          "oceania": "Oceania",
+          "antarctic": "Antarctic"
+        },
+        "populationFilter": {
+          "allPopulations": "All populations",
+          "lessThan10M": "Less than 10M",
+          "between10MAnd100M": "Between 10M and 100M",
+          "moreThan100M": "More than 100M"
+        }
+      },
+      "signalR": {
+        "title": "SignalR Testing",
+        "description": "This page is for testing SignalR functionality.",
+        "createTask": "Create Task",
+        "taskId": "Task ID",
+        "taskName": "Task Name",
+        "payload": "Payload",
+        "posting": "Posting...",
+        "send": "Send",
+        "noNotifications": "No notifications",
+        "notifications": "Notifications"
       }
     },
     "sidebar": {
@@ -228,7 +255,8 @@
       "earthquakeMap": "Earthquake Map",
       "weather": "Weather",
       "anime": "Anime Explorer",
-      "countryExplorer": "Country Explorer"
+      "countryExplorer": "Country Explorer",
+      "signalR": "SignalR Testing"
     }
   },
   "goBackToMenu": "Go back to Menu",

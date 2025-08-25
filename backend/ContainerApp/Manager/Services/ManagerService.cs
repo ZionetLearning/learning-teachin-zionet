@@ -2,6 +2,7 @@
 using Manager.Models;
 using Manager.Services.Clients;
 using Manager.Services.Clients.Engine;
+using Manager.Models.Users;
 
 namespace Manager.Services;
 
@@ -219,6 +220,86 @@ public class ManagerService : IManagerService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error occurred while sending notification to user {UserId}", userId);
+            throw;
+        }
+    }
+
+    public async Task<UserModel?> GetUserAsync(Guid userId)
+    {
+        try
+        {
+            _logger.LogInformation("Fetching user with ID: {UserId}", userId);
+            return await _accessorClient.GetUserAsync(userId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while fetching user with ID: {UserId}", userId);
+            return null;
+        }
+    }
+
+    public async Task<bool> CreateUserAsync(UserModel user)
+    {
+        try
+        {
+            _logger.LogInformation("Creating user with email: {Email}", user.Email);
+            return await _accessorClient.CreateUserAsync(user);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while creating user with email: {Email}", user.Email);
+            return false;
+        }
+    }
+
+    public async Task<bool> UpdateUserAsync(UpdateUserModel user, Guid userId)
+    {
+        try
+        {
+            _logger.LogInformation("Updating user with ID: {UserId}", userId);
+            return await _accessorClient.UpdateUserAsync(user, userId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while updating user with ID: {UserId}", userId);
+            return false;
+        }
+    }
+
+    public async Task<bool> DeleteUserAsync(Guid userId)
+    {
+        try
+        {
+            _logger.LogInformation("Deleting user with ID: {UserId}", userId);
+            return await _accessorClient.DeleteUserAsync(userId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while deleting user with ID: {UserId}", userId);
+            return false;
+        }
+    }
+
+    public async Task<IEnumerable<UserData>> GetAllUsersAsync()
+    {
+        _logger.LogDebug("Inside: {MethodName}", nameof(GetAllUsersAsync));
+
+        try
+        {
+            var users = await _accessorClient.GetAllUsersAsync();
+
+            if (users is null || !users.Any())
+            {
+                _logger.LogWarning("No users found in the system");
+                return [];
+            }
+
+            _logger.LogInformation("Retrieved {Count} users", users.Count());
+            return users;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while fetching all users");
             throw;
         }
     }
