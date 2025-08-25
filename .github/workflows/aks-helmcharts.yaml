@@ -171,15 +171,6 @@ jobs:
             --rule-name allow-aks-egress \
             --start-ip-address $AKS_EGRESS_IP \
             --end-ip-address $AKS_EGRESS_IP
-            
-
-      - name: Install External Secrets Operator
-        run: |
-          helm repo add external-secrets https://charts.external-secrets.io
-          helm repo update
-          helm upgrade --install external-secrets external-secrets/external-secrets \
-            --namespace external-secrets \
-            --create-namespace
 
       - name: Helm template sanity (no Namespace objects)
         run: |
