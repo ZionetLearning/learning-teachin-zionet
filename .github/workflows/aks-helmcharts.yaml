@@ -69,18 +69,14 @@ jobs:
             echo "TARGET_NAMESPACE=$ENVIRONMENT_NAME" >> $GITHUB_ENV
             echo "RESOLVED_TARGET=custom($ENVIRONMENT_NAME)" >> $GITHUB_ENV
             
-            # Use environment-specific values file if it exists, otherwise use base values.yaml
-            if [ -f "devops/kubernetes/charts/values.$ENVIRONMENT_NAME.yaml" ]; then
-              echo "VALUES_FILE=devops/kubernetes/charts/values.$ENVIRONMENT_NAME.yaml" >> $GITHUB_ENV
-              echo "Using environment-specific values file: values.$ENVIRONMENT_NAME.yaml"
+            # Use values.dev.yaml for 'dev' environment, values.temp.yaml for all others
+            if [ "$ENVIRONMENT_NAME" = "dev" ]; then
+              echo "VALUES_FILE=devops/kubernetes/charts/values.dev.yaml" >> $GITHUB_ENV
+              echo "Using dev values file for dev environment"
             else
-              echo "VALUES_FILE=devops/kubernetes/charts/values.yaml" >> $GITHUB_ENV
-              echo "Using base values file for temporary environment: $ENVIRONMENT_NAME"
+              echo "VALUES_FILE=devops/kubernetes/charts/values.temp.yaml" >> $GITHUB_ENV
+              echo "Using template values file for temporary environment: $ENVIRONMENT_NAME"
             fi
-          else
-            echo "TARGET_NAMESPACE=dev" >> $GITHUB_ENV
-            echo "RESOLVED_TARGET=dev" >> $GITHUB_ENV
-            echo "VALUES_FILE=devops/kubernetes/charts/values.dev.yaml" >> $GITHUB_ENV
           fi
 
           echo "K8S_DIR=devops/kubernetes/" >> $GITHUB_ENV
@@ -183,7 +179,19 @@ jobs:
 
       - name: Get Static Web App URL
         run: |
-          # Set frontend resource group dynamically based on target namespace
+          # First check if frontend is enabled in the values file
+          echo "Checking if frontend is enabled in values file: $VALUES_FILE"
+          FRONTEND_ENABLED_IN_VALUES=$(grep -A 5 "^frontend:" "$VALUES_FILE" | grep "enabled:" | awk '{print $2}' || echo "false")
+          echo "Frontend enabled in values: $FRONTEND_ENABLED_IN_VALUES"
+          
+          if [ "$FRONTEND_ENABLED_IN_VALUES" != "true" ]; then
+            echo "Frontend is disabled in values file - skipping Static Web App lookup"
+            echo "STATIC_WEB_APP_HOSTNAME=" >> $GITHUB_ENV
+            exit 0
+          fi
+          
+          # Frontend is enabled in values, so check if Static Web App exists
+          echo "Frontend enabled in values, checking for Static Web App..."
           FRONTEND_RG="${TARGET_NAMESPACE}-zionet-learning-2025"
           echo "Frontend resource group: $FRONTEND_RG"
           
@@ -197,13 +205,11 @@ jobs:
             --query "defaultHostname" -o tsv 2>/dev/null || echo "")
           
           if [ -z "$STATIC_WEB_APP_URL" ]; then
-            echo "Static Web App not found: $STATIC_WEB_APP_NAME in $FRONTEND_RG"
-            echo "Frontend proxy will be disabled"
-            echo "FRONTEND_ENABLED=false" >> $GITHUB_ENV
+            echo "⚠️ Static Web App not found: $STATIC_WEB_APP_NAME in $FRONTEND_RG"
+            echo "Frontend enabled in values but no Static Web App found"
             echo "STATIC_WEB_APP_HOSTNAME=" >> $GITHUB_ENV
           else
-            echo "Found Static Web App: $STATIC_WEB_APP_URL"
-            echo "FRONTEND_ENABLED=true" >> $GITHUB_ENV
+            echo "✅ Found Static Web App: $STATIC_WEB_APP_URL"
             echo "STATIC_WEB_APP_HOSTNAME=$STATIC_WEB_APP_URL" >> $GITHUB_ENV
           fi
 
@@ -266,8 +272,8 @@ jobs:
             "--set" "dapr.installComponents=false"
           )
           
-          # Only set hostname if frontend is enabled and hostname is not empty
-          if [ "$FRONTEND_ENABLED" = "true" ] && [ -n "$STATIC_WEB_APP_HOSTNAME" ]; then
+          # Only set hostname if hostname is not empty (frontend enabled in values + Static Web App exists)
+          if [ -n "$STATIC_WEB_APP_HOSTNAME" ]; then
             HELM_ARGS+=("--set" "frontend.staticWebApp.hostname=$STATIC_WEB_APP_HOSTNAME")
           fi
           
