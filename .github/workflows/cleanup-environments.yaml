@@ -1,0 +1,269 @@
+name: Cleanup Temporary Environments
+
+on:
+#   schedule:
+#     # Run every day at 11 PM UTC (adjust to your timezone)
+#     - cron: '0 23 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run - only show what would be deleted'
+        required: false
+        default: 'true'
+        type: choice
+        options: ['true', 'false']
+      environment_pattern:
+        description: 'Optional: cleanup specific pattern (e.g., test*)'
+        required: false
+        type: string
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure Login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set cleanup variables
+        run: |
+          # Protected environments that should NEVER be deleted (for resource groups)
+          PROTECTED_ENVS="dev,prod,production,staging"
+          
+          # Protected namespaces that should NEVER be deleted (even if RG matches)
+          PROTECTED_NAMESPACES="dev,prod,production,staging,monitoring,dapr-system,cert-manager,kube-system,devops-logs,devops-ingress-nginx,external-secrets"
+          
+          # Dry run mode
+          DRY_RUN="${{ github.event.inputs.dry_run || 'true' }}"
+          PATTERN="${{ github.event.inputs.environment_pattern || '*' }}"
+          
+          echo "PROTECTED_ENVS=$PROTECTED_ENVS" >> $GITHUB_ENV
+          echo "PROTECTED_NAMESPACES=$PROTECTED_NAMESPACES" >> $GITHUB_ENV
+          echo "DRY_RUN=$DRY_RUN" >> $GITHUB_ENV
+          echo "PATTERN=$PATTERN" >> $GITHUB_ENV
+          
+          # Calculate cutoff date (environments older than 1 day)
+          CUTOFF_DATE=$(date -d '1 day ago' '+%Y-%m-%dT%H:%M:%SZ')
+          echo "CUTOFF_DATE=$CUTOFF_DATE" >> $GITHUB_ENV
+          
+          echo "Cleanup Configuration:"
+          echo "  Protected environments (RGs): $PROTECTED_ENVS"
+          echo "  Protected namespaces: $PROTECTED_NAMESPACES"
+          echo "  Dry run: $DRY_RUN"
+          echo "  Pattern: $PATTERN"
+          echo "  Cutoff date: $CUTOFF_DATE"
+
+      - name: Get AKS credentials
+        run: |
+          az aks get-credentials --resource-group dev-zionet-learning-2025 --name aks-cluster-dev --overwrite-existing
+
+      - name: Discover temporary environments
+        run: |
+          echo "Discovering temporary environments..."
+          
+          # Find all resource groups matching pattern
+          echo "All resource groups matching pattern:"
+          az group list --query "[?contains(name, 'zionet-learning-2025')].{Name:name, CreatedTime:properties.provisioningState}" -o table
+          
+          # Get all resource groups, then filter in bash (JMESPath array membership is complex)
+          ALL_RGS=$(az group list --query "[?contains(name, 'zionet-learning-2025')].name" -o tsv)
+          
+          echo "Resource groups eligible for cleanup:"
+          CLEANUP_RGS=""
+          for rg in $ALL_RGS; do
+            ENV_NAME=$(echo "$rg" | cut -d'-' -f1)
+            
+            # Check if environment name is in protected list
+            if [[ ",$PROTECTED_ENVS," == *",$ENV_NAME,"* ]]; then
+              echo "  - $rg (env: $ENV_NAME) - PROTECTED, skipping"
+            else
+              echo "  - $rg (env: $ENV_NAME) - eligible for cleanup"
+              CLEANUP_RGS="$CLEANUP_RGS $rg"
+            fi
+          done
+          
+          echo "CLEANUP_RGS<<EOF" >> $GITHUB_ENV
+          echo "$CLEANUP_RGS" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Discover Kubernetes namespaces
+        run: |
+          echo "Discovering temporary namespaces..."
+          
+          # Namespaces that should NEVER be deleted - explicit protection
+          KEEP_NAMESPACES=("dev" "kube-system" "dapr-system" "cert-manager" "monitoring" "devops-logs" "devops-ingress-nginx" "external-secrets")
+          
+          # Find all namespaces (excluding system ones)
+          echo "All custom namespaces:"
+          kubectl get namespaces --no-headers | grep -v "kube-\|default\|devops-" | awk '{print $1}' || true
+          
+          # Extract environment names from resource groups that will be cleaned
+          ENV_NAMES_FROM_RGS=""
+          for rg in $CLEANUP_RGS; do
+            ENV_NAME=$(echo "$rg" | cut -d'-' -f1)  # devhelm-zionet-learning-2025 → devhelm
+            ENV_NAMES_FROM_RGS="$ENV_NAMES_FROM_RGS $ENV_NAME"
+          done
+          
+          echo "Environment names from resource groups to cleanup: $ENV_NAMES_FROM_RGS"
+          
+          # Find namespaces that correlate with the resource groups
+          CLEANUP_NAMESPACES=""
+          for ns in $(kubectl get namespaces --no-headers | grep -v "kube-\|default\|devops-" | awk '{print $1}'); do
+            # Skip keep namespaces - CRITICAL PROTECTION
+            skip_namespace=false
+            for keep_ns in "${KEEP_NAMESPACES[@]}"; do
+              if [[ "$ns" == "$keep_ns" ]]; then
+                echo "  Skipping PROTECTED namespace: $ns"
+                skip_namespace=true
+                break
+              fi
+            done
+            
+            if [[ "$skip_namespace" == true ]]; then
+              continue
+            fi
+            
+            # Skip protected environments  
+            if [[ ",$PROTECTED_NAMESPACES," == *",$ns,"* ]]; then
+              echo "  Skipping protected namespace: $ns"
+              continue
+            fi
+            
+            # Check if namespace matches any environment from resource groups
+            for env_name in $ENV_NAMES_FROM_RGS; do
+              if [[ "$ns" == "$env_name" ]]; then
+                CLEANUP_NAMESPACES="$CLEANUP_NAMESPACES $ns"
+                echo "  Found matching namespace for environment: $ns → $env_name-zionet-learning-2025"
+                break
+              fi
+            done
+          done
+          
+          echo "Namespaces eligible for cleanup (correlated with resource groups):"
+          for ns in $CLEANUP_NAMESPACES; do
+            AGE=$(kubectl get namespace "$ns" --no-headers 2>/dev/null | awk '{print $3}' || echo "unknown")
+            echo "  - $ns (age: $AGE) → corresponds to $ns-zionet-learning-2025"
+          done
+          
+          echo "CLEANUP_NAMESPACES=$CLEANUP_NAMESPACES" >> $GITHUB_ENV
+
+      - name: Safety check
+        run: |
+          echo "Running safety checks..."
+          
+          # Check if we're about to delete protected environments
+          for rg in $CLEANUP_RGS; do
+            ENV_NAME=$(echo "$rg" | cut -d'-' -f1)
+            if [[ ",$PROTECTED_ENVS," == *",$ENV_NAME,"* ]]; then
+              echo "ERROR: Attempting to delete protected environment: $ENV_NAME"
+              echo "This should never happen. Stopping cleanup."
+              exit 1
+            fi
+          done
+          
+          for ns in $CLEANUP_NAMESPACES; do
+            if [[ ",$PROTECTED_NAMESPACES," == *",$ns,"* ]]; then
+              echo "ERROR: Attempting to delete protected namespace: $ns"
+              echo "This should never happen. Stopping cleanup."
+              exit 1
+            fi
+          done
+          
+          echo "Safety check passed. No protected environments will be deleted."
+
+      - name: Cleanup Kubernetes namespaces
+        run: |
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "DRY RUN: Would delete these namespaces:"
+            for ns in $CLEANUP_NAMESPACES; do
+              echo "  kubectl delete namespace $ns"
+            done
+          else
+            echo "Deleting temporary namespaces..."
+            for ns in $CLEANUP_NAMESPACES; do
+              echo "Deleting namespace: $ns"
+              kubectl delete namespace "$ns" --timeout=300s || echo "Failed to delete namespace $ns"
+            done
+          fi
+
+      - name: Cleanup Azure Resource Groups
+        run: |
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "DRY RUN: Would delete these resource groups:"
+            for rg in $CLEANUP_RGS; do
+              echo "  az group delete --name $rg --yes --no-wait"
+            done
+          else
+            echo "Deleting temporary resource groups..."
+            for rg in $CLEANUP_RGS; do
+              echo "Deleting resource group: $rg"
+              az group delete --name "$rg" --yes --no-wait || echo "Failed to delete resource group $rg"
+            done
+          fi
+
+      - name: Cleanup Terraform State Files
+        run: |
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "DRY RUN: Would clean up these Terraform state files:"
+            for rg in $CLEANUP_RGS; do
+              ENV_NAME=$(echo "$rg" | cut -d'-' -f1)
+              echo "  - Delete state blob: ${ENV_NAME}.terraform.tfstate"
+            done
+          else
+            echo "Cleaning up specific Terraform state files from Azure Storage..."
+            
+            # Get storage account from Terraform backend config
+            STORAGE_ACCOUNT=$(grep 'storage_account_name' devops/terraform/providers.tf | sed 's/.*= *"\([^"]*\)".*/\1/' || echo "")
+            CONTAINER_NAME="tfstate-aks"  # Based on your screenshot
+            
+            if [ -n "$STORAGE_ACCOUNT" ]; then
+              for rg in $CLEANUP_RGS; do
+                ENV_NAME=$(echo "$rg" | cut -d'-' -f1)
+                STATE_BLOB="${ENV_NAME}.terraform.tfstate"
+                
+                echo "Checking for state blob: $STATE_BLOB in container: $CONTAINER_NAME"
+                
+                # Check if the specific state file exists
+                if az storage blob exists --account-name "$STORAGE_ACCOUNT" --container-name "$CONTAINER_NAME" --name "$STATE_BLOB" --query exists -o tsv 2>/dev/null | grep -q true; then
+                  echo "Found state blob: $STATE_BLOB - deleting..."
+                  az storage blob delete --account-name "$STORAGE_ACCOUNT" --container-name "$CONTAINER_NAME" --name "$STATE_BLOB" --delete-snapshots include || echo "❌ Failed to delete $STATE_BLOB"
+                else
+                  echo "No state blob found for environment: $ENV_NAME ($STATE_BLOB)"
+                fi
+              done
+            else
+              echo "Warning: Could not determine storage account name from providers.tf"
+              echo "State files will need manual cleanup from Azure Storage"
+              echo "Container: tfstate-aks"
+              for rg in $CLEANUP_RGS; do
+                ENV_NAME=$(echo "$rg" | cut -d'-' -f1)
+                echo "  - Manually delete: ${ENV_NAME}.terraform.tfstate"
+              done
+            fi
+          fi
+
+      - name: Summary
+        run: |
+          echo "Cleanup Summary:"
+          echo "  Mode: $([ "$DRY_RUN" = "true" ] && echo "DRY RUN" || echo "ACTUAL DELETION")"
+          echo "  Resource groups processed: $(echo "$CLEANUP_RGS" | wc -w)"
+          echo "  Namespaces processed: $(echo "$CLEANUP_NAMESPACES" | wc -w)"
+          echo "  Protected environments: $PROTECTED_ENVS"
+          
+          if [ "$DRY_RUN" = "false" ]; then
+            echo ""
+            echo "Actual deletions were performed!"
+            echo "Resource groups are being deleted in the background."
+            echo "Terraform state files have been cleaned up."
+            echo "Check Azure portal for deletion status."
+          fi
