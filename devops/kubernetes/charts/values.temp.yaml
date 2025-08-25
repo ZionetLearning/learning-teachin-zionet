@@ -55,7 +55,7 @@ accessor:
 # Frontend Static Web App Proxy - DISABLED for temporary environments
 # This prevents DNS conflicts with permanent environments (dev, prod)
 frontend:
-  enabled: false  # Set to true only if you want frontend for this specific environment
+  enabled: true  # Set to true only if you want frontend for this specific environment
   path: "/"
   staticWebApp:
     hostname: ""  # Only used when enabled=true
