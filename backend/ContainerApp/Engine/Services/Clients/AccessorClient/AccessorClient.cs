@@ -1,6 +1,7 @@
-﻿using Dapr.Client;
+﻿using System.Net;
+using System.Text.Json;
+using Dapr.Client;
 using Engine.Services.Clients.AccessorClient.Models;
-using System.Net;
 
 namespace Engine.Services.Clients.AccessorClient;
 
@@ -80,6 +81,62 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get threads for user {UserId}", userId);
+            throw;
+        }
+    }
+
+    public async Task<HistorySnapshotDto> GetHistorySnapshotAsync(Guid threadId, CancellationToken ct = default)
+    {
+        _logger.LogInformation("GET history snapshot for thread {ThreadId}", threadId);
+
+        try
+        {
+            var dto = await _daprClient.InvokeMethodAsync<HistorySnapshotDto>(
+                HttpMethod.Get,
+                "accessor",
+                $"threads/{threadId}/history",
+                cancellationToken: ct);
+
+            return dto;
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("History snapshot for thread {ThreadId} not found, returning empty", threadId);
+
+            using var doc = JsonDocument.Parse("""{"messages":[]}""");
+            return new HistorySnapshotDto
+            {
+                ThreadId = threadId,
+                UserId = "",
+                ChatType = "default",
+                History = doc.RootElement.Clone()
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get history snapshot for thread {ThreadId}", threadId);
+            throw;
+        }
+    }
+
+    public async Task<HistorySnapshotDto> UpsertHistorySnapshotAsync(UpsertHistoryRequest request, CancellationToken ct = default)
+    {
+        _logger.LogInformation("UPSERT history snapshot for thread {ThreadId}", request.ThreadId);
+
+        try
+        {
+            var dto = await _daprClient.InvokeMethodAsync<UpsertHistoryRequest, HistorySnapshotDto>(
+                HttpMethod.Post,
+                "accessor",
+                "threads/history",
+                request,
+                cancellationToken: ct);
+
+            return dto;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to upsert history snapshot for thread {ThreadId}", request.ThreadId);
             throw;
         }
     }

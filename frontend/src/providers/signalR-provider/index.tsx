@@ -59,7 +59,7 @@ export const SignalRProvider = ({ hubUrl, children }: SignalRProviderProps) => {
 
   const value = useMemo<SignalRContextType>(
     () => ({ connection: connRef.current, status, userId }),
-    [status, userId]
+    [status, userId],
   );
 
   return (

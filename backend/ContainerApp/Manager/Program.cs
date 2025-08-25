@@ -64,7 +64,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddControllers();
 
 builder.Services.AddControllers().AddDapr();
-builder.Services.AddSignalR();
+var signalRBuilder = builder.Services.AddSignalR();
+
+var signalRConnString = builder.Configuration["SignalR:ConnectionString"];
+if (!string.IsNullOrEmpty(signalRConnString))
+{
+    signalRBuilder.AddAzureSignalR(signalRConnString);
+}
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -163,6 +170,8 @@ app.MapSubscribeHandler();
 app.MapManagerEndpoints();
 app.MapAiEndpoints();
 app.MapAuthEndpoints();
+app.MapHub<NotificationHub>("/NotificationHub");
+
 app.MapStatsPing();
 if (env.IsDevelopment())
 {
@@ -183,5 +192,4 @@ if (env.IsDevelopment())
     });
 }
 
-app.MapHub<NotificationHub>("/notificationHub");
 app.Run();

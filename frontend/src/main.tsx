@@ -30,5 +30,6 @@ createRoot(document.getElementById("root")!).render(
         </SignalRProvider>
       </AuthProvider>
     </ReactQueryProvider>
-  </I18nTranslateProvider>
+  </I18nTranslateProvider>,
 );
+

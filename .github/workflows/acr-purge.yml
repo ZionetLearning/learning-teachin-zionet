@@ -9,6 +9,7 @@ jobs:
   purge:
     name: Purge ${{ matrix.repo }} images
     runs-on: ubuntu-latest
+    environment: Development
     strategy:
       matrix:
         repo: [manager, engine, accessor]
@@ -20,7 +21,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Azure Login
+      - name: Azure Login via OIDC
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -53,7 +54,7 @@ jobs:
             d=$(az acr repository show-manifests \
                   --name teachindevacr \
                   --repository $REPO \
-                  --query "[?tags[?contains(@, '$tag')]].digest" -o tsv)
+                  --query "[?tags[?@ == '$tag']].digest" -o tsv)
             if [ -n "$d" ]; then
               DIGESTS+=($d)
             fi
@@ -79,11 +80,9 @@ jobs:
           
           for tag in $TAGS; do
             if ! echo "$WHITELIST" | grep -qx "$tag"; then
-              echo "Deleting $REPO:$tag"
-              az acr repository delete \
+              echo "Deleting tag $REPO:$tag"
+              az acr repository untag \
                 --name teachindevacr \
-                --repository $REPO \
-                --tag $tag \
-                --yes
+                --image $REPO:$tag
             fi
           done
