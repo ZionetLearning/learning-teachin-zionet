@@ -53,6 +53,11 @@ spec:
               value: "{{ .Values.manager.env.Jwt__Audience }}"
             - name: Jwt__RefreshTokenHashKey
               value: "{{ .Values.manager.env.Jwt__RefreshTokenHashKey }}"
+            - name: SignalR__ConnectionString
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.manager.secrets.signalr.name }}
+                  key: {{ .Values.manager.secrets.signalr.key }}
           resources:
             {{- toYaml .Values.manager.resources | nindent 12 }}
 ---
