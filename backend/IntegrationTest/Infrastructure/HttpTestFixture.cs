@@ -15,7 +15,9 @@ public class HttpTestFixture : IDisposable
             ?? throw new InvalidOperationException(
                 "TestSettings:ApiBaseUrl is missing. Add it to appsettings.json or appsettings.Local.json.");
 
-        Client = new HttpClient
+        var handler = new HttpClientHandler();
+
+        Client = new HttpClient(handler)
         {
             BaseAddress = new Uri(baseUrl),
             Timeout = TimeSpan.FromSeconds(40)
