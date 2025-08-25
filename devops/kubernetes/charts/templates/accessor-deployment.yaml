@@ -41,9 +41,16 @@ spec:
             - name: ASPNETCORE_URLS
               value: "{{ .Values.accessor.env.ASPNETCORE_URLS }}"
             - name: ServiceBus__ConnectionString
-              value: "{{ .Values.namespace.name }}-azure-service-bus-secret"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.accessor.secrets.serviceBus.name }}
+                  key: {{ .Values.accessor.secrets.serviceBus.key }}
+
             - name: ConnectionStrings__Postgres
-              value: "{{ .Values.namespace.name }}-postgres-connection"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.accessor.secrets.postgres.name }}
+                  key: {{ .Values.accessor.secrets.postgres.key }}
           resources:
             {{- toYaml .Values.accessor.resources | nindent 12 }}
 ---
