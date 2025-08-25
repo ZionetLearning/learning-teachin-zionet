@@ -206,21 +206,30 @@ jobs:
             IMAGE_TAG="$TARGET_NAMESPACE"
           fi
           
-          helm template app "$CHART_DIR" -f "$VALUES_FILE" \
-            --set namespace.name="$TARGET_NAMESPACE" \
-            --set namespace.create=false \
-            --set global.namePrefix="$TARGET_NAMESPACE" \
-            --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
-            --set global.environment="$IMAGE_TAG" \
-            --set frontend.enabled="$FRONTEND_ENABLED" \
-            --set frontend.staticWebApp.hostname="$STATIC_WEB_APP_HOSTNAME" \
-            --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" \
-            --set-string engine.env.AzureSpeech__SubscriptionKey="$AZURE_SPEECH_KEY" \
-            --set-string manager.env.Jwt__Secret="$MANAGER_JWT_SECRET" \
-            --set-string manager.env.Jwt__Issuer="$MANAGER_JWT_ISSUER" \
-            --set-string manager.env.Jwt__Audience="$MANAGER_JWT_AUDIENCE" \
-            --set-string manager.env.Jwt__RefreshTokenHashKey="$MANAGER_JWT_REFRESH_TOKEN_HASH_KEY" \
-            --set dapr.installComponents=false \
+          # Build helm command with conditional frontend hostname
+          HELM_ARGS=(
+            "app" "$CHART_DIR" "-f" "$VALUES_FILE"
+            "--set" "namespace.name=$TARGET_NAMESPACE"
+            "--set" "namespace.create=false"
+            "--set" "global.namePrefix=$TARGET_NAMESPACE"
+            "--set" "global.dockerRegistry=$ACR_LOGIN_SERVER"
+            "--set" "global.environment=$IMAGE_TAG"
+            "--set" "frontend.enabled=$FRONTEND_ENABLED"
+            "--set-string" "engine.env.AzureOpenAI__ApiKey=$OPENAI_KEY"
+            "--set-string" "engine.env.AzureSpeech__SubscriptionKey=$AZURE_SPEECH_KEY"
+            "--set-string" "manager.env.Jwt__Secret=$MANAGER_JWT_SECRET"
+            "--set-string" "manager.env.Jwt__Issuer=$MANAGER_JWT_ISSUER"
+            "--set-string" "manager.env.Jwt__Audience=$MANAGER_JWT_AUDIENCE"
+            "--set-string" "manager.env.Jwt__RefreshTokenHashKey=$MANAGER_JWT_REFRESH_TOKEN_HASH_KEY"
+            "--set" "dapr.installComponents=false"
+          )
+          
+          # Only set hostname if frontend is enabled and hostname is not empty
+          if [ "$FRONTEND_ENABLED" = "true" ] && [ -n "$STATIC_WEB_APP_HOSTNAME" ]; then
+            HELM_ARGS+=("--set" "frontend.staticWebApp.hostname=$STATIC_WEB_APP_HOSTNAME")
+          fi
+          
+          helm template "${HELM_ARGS[@]}" \
           | grep -n '^kind: Namespace' && { echo "Namespace still rendered"; exit 1; } || echo "OK: no Namespace in chart"
 
       - name: Helm upgrade/install app
@@ -231,23 +240,31 @@ jobs:
             IMAGE_TAG="$TARGET_NAMESPACE"
           fi
           
-          helm upgrade --install app "$CHART_DIR" \
-            --namespace "$TARGET_NAMESPACE" \
-            -f "$VALUES_FILE" \
-            --set namespace.name="$TARGET_NAMESPACE" \
-            --set namespace.create=false \
-            --set global.namePrefix="$TARGET_NAMESPACE" \
-            --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
-            --set global.environment="$IMAGE_TAG" \
-            --set frontend.enabled="$FRONTEND_ENABLED" \
-            --set frontend.staticWebApp.hostname="$STATIC_WEB_APP_HOSTNAME" \
-            --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" \
-            --set-string engine.env.AzureSpeech__SubscriptionKey="$AZURE_SPEECH_KEY" \
-            --set-string manager.env.Jwt__Secret="$MANAGER_JWT_SECRET" \
-            --set-string manager.env.Jwt__Issuer="$MANAGER_JWT_ISSUER" \
-            --set-string manager.env.Jwt__Audience="$MANAGER_JWT_AUDIENCE" \
-            --set-string manager.env.Jwt__RefreshTokenHashKey="$MANAGER_JWT_REFRESH_TOKEN_HASH_KEY" \
-            --set dapr.installComponents=false
+          # Build helm command with conditional frontend hostname
+          HELM_ARGS=(
+            "--namespace" "$TARGET_NAMESPACE"
+            "-f" "$VALUES_FILE"
+            "--set" "namespace.name=$TARGET_NAMESPACE"
+            "--set" "namespace.create=false"
+            "--set" "global.namePrefix=$TARGET_NAMESPACE"
+            "--set" "global.dockerRegistry=$ACR_LOGIN_SERVER"
+            "--set" "global.environment=$IMAGE_TAG"
+            "--set" "frontend.enabled=$FRONTEND_ENABLED"
+            "--set-string" "engine.env.AzureOpenAI__ApiKey=$OPENAI_KEY"
+            "--set-string" "engine.env.AzureSpeech__SubscriptionKey=$AZURE_SPEECH_KEY"
+            "--set-string" "manager.env.Jwt__Secret=$MANAGER_JWT_SECRET"
+            "--set-string" "manager.env.Jwt__Issuer=$MANAGER_JWT_ISSUER"
+            "--set-string" "manager.env.Jwt__Audience=$MANAGER_JWT_AUDIENCE"
+            "--set-string" "manager.env.Jwt__RefreshTokenHashKey=$MANAGER_JWT_REFRESH_TOKEN_HASH_KEY"
+            "--set" "dapr.installComponents=false"
+          )
+          
+          # Only set hostname if frontend is enabled and hostname is not empty
+          if [ "$FRONTEND_ENABLED" = "true" ] && [ -n "$STATIC_WEB_APP_HOSTNAME" ]; then
+            HELM_ARGS+=("--set" "frontend.staticWebApp.hostname=$STATIC_WEB_APP_HOSTNAME")
+          fi
+          
+          helm upgrade --install app "$CHART_DIR" "${HELM_ARGS[@]}"
 
       - name: Diagnostics (on failure)
         if: failure()
