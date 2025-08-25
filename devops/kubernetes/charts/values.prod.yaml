@@ -6,10 +6,6 @@ global:
     enabled: true
     configName: dapr-config
 
-dapr:
-  stateStore:
-    redis:
-      databaseIndex: 1   # prod environment uses DB 1
 
 namespace:
   create: true
