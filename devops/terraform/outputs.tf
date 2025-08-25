@@ -67,6 +67,15 @@ output "redis_primary_access_key" {
   sensitive = true
 }
 
+output "redis_hostname" {
+  value = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].hostname : module.redis[0].hostname
+}
+
+output "redis_primary_access_key" {
+  value     = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].primary_access_key : module.redis[0].primary_access_key
+  sensitive = true
+}
+
 # Frontend outputs
 output "static_web_app_url" {
   description = "URL of the Azure Static Web App"

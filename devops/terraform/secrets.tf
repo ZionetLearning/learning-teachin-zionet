@@ -46,7 +46,10 @@ resource "kubernetes_secret" "redis_connection" {
     name      = "redis-connection"
     namespace = kubernetes_namespace.environment.metadata[0].name
   }
-  data = {
+  data = var.use_shared_redis ? {
+    redis-hostport = "${data.azurerm_redis_cache.shared[0].hostname}:6380"
+    redis-password = data.azurerm_redis_cache.shared[0].primary_access_key
+  } : {
     redis-hostport = "${module.redis[0].hostname}:6380"
     redis-password = module.redis[0].primary_access_key
   }
