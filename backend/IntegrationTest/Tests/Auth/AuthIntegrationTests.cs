@@ -241,18 +241,7 @@ public class AuthIntegrationTests(
         await DeleteTestUserAsync(user.UserId);
     }
 
-    // TODO: Create one user instance for all the tests
-    // Create the user in fixture
-    // Cerate the fixture with share state
-    // script to create one user login
-    // Generate the email and passowrd for tests
-
-    // 1. refactor the test
-    // 2. using the fixture
-    // 3. protected other routers
-    // 4. create the fixture to create user and maybe do the login
-    // 5. add roles
-
+  
     private async Task<UserModel> RegisterTestUserAsync()
     {
         var user = new UserModel
