@@ -47,7 +47,7 @@ resource "kubernetes_secret" "redis_connection" {
     namespace = kubernetes_namespace.environment.metadata[0].name
   }
   data = {
-    redis-hostport = "${module.redis.hostname}:6380"
-    redis-password = module.redis.primary_access_key
+    redis-hostport = "${module.redis[0].hostname}:6380"
+    redis-password = module.redis[0].primary_access_key
   }
 }

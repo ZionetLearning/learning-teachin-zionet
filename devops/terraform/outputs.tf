@@ -60,10 +60,10 @@ output "signalr_connection_string" {
 }
 
 output "redis_hostname" {
-  value = module.redis.hostname
+  value = module.redis[0].hostname
 }
 output "redis_primary_access_key" {
-  value     = module.redis.primary_access_key
+  value     = module.redis[0].primary_access_key
   sensitive = true
 }
 
