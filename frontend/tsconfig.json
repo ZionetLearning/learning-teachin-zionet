@@ -1,8 +1,13 @@
 {
-  "compilerOptions": {
-    "esModuleInterop": true
-  },
-  "include": ["src"],
-  "exclude": ["cypress"], // to prevent conflicts with Vitest
-  "extends": "./tsconfig.app.json"
+  "extends": "./tsconfig.base.json",
+  "compileOnSave": false,
+  "files": [],
+  "references": [
+    {
+      "path": "./apps/teacher-e2e"
+    },
+    {
+      "path": "./apps/teacher"
+    }
+  ]
 }
