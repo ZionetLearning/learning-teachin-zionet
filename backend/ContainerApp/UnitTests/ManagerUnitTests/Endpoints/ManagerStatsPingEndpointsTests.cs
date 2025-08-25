@@ -51,20 +51,37 @@ public class ManagerStatsPingEndpointsTests
             MessagesLast15m: 9,
             GeneratedAtUtc: DateTimeOffset.UtcNow);
 
-        stats.Setup(s => s.GetSnapshotAsync(default)).ReturnsAsync(snapshot);
-        stats.Setup(s => s.SaveSnapshotAsync(snapshot, 86400, default)).Returns(Task.CompletedTask);
+        stats.Setup(s => s.GetSnapshotAsync(It.IsAny<CancellationToken>()))
+             .ReturnsAsync(snapshot);
+
+        stats.Setup(s => s.SaveSnapshotAsync(
+                It.Is<StatsSnapshot>(x =>
+                    x.TotalThreads == snapshot.TotalThreads &&
+                    x.TotalMessages == snapshot.TotalMessages &&
+                    x.TotalUniqueUsersByThread == snapshot.TotalUniqueUsersByThread &&
+                    x.TotalUniqueUsersByMessage == snapshot.TotalUniqueUsersByMessage &&
+                    x.ActiveUsersLast15m == snapshot.ActiveUsersLast15m &&
+                    x.MessagesLast5m == snapshot.MessagesLast5m &&
+                    x.MessagesLast15m == snapshot.MessagesLast15m &&
+                    x.GeneratedAtUtc == snapshot.GeneratedAtUtc),
+                StatsKeys.DefaultTtlSeconds,
+                It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
 
         var resp = await client.PostAsync("/internal/compute-stats/ping", content: null);
         resp.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var root = JsonDocument.Parse(await resp.Content.ReadAsStringAsync()).RootElement;
         root.GetProperty("ok").GetBoolean().Should().BeTrue();
-        root.GetProperty("key").GetString().Should().Be("stats:latest");
-        root.GetProperty("ttlSeconds").GetInt32().Should().Be(86400);
+        root.GetProperty("key").GetString().Should().Be(StatsKeys.Latest);
+        root.GetProperty("ttlSeconds").GetInt32().Should().Be(StatsKeys.DefaultTtlSeconds);
 
-        // Default System.Text.Json uses camelCase
         var snap = root.GetProperty("snapshot");
         snap.GetProperty("totalThreads").GetInt64().Should().Be(10);
+        snap.GetProperty("generatedAtUtc")
+            .GetDateTimeOffset()
+            .Should()
+            .BeCloseTo(snapshot.GeneratedAtUtc, precision: TimeSpan.FromSeconds(1));
 
         stats.VerifyAll();
     }
@@ -74,10 +91,14 @@ public class ManagerStatsPingEndpointsTests
     {
         var (client, stats) = BuildApp();
 
-        stats.Setup(s => s.GetSnapshotAsync(default)).ThrowsAsync(new Exception("kaboom"));
+        stats.Setup(s => s.GetSnapshotAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new Exception("kaboom"));
 
         var resp = await client.PostAsync("/internal/compute-stats/ping", content: null);
         resp.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
+            stats.Verify(s => s.SaveSnapshotAsync(
+        It.IsAny<StatsSnapshot>(),
+        It.IsAny<int>(),
+        It.IsAny<CancellationToken>()), Times.Never);
 
         stats.VerifyAll();
     }
@@ -104,7 +125,7 @@ public class ManagerStatsPingEndpointsTests
         root.GetProperty("key").GetString().Should().Be("stats:latest");
         var snap = root.GetProperty("snapshot");
         snap.GetProperty("totalMessages").GetInt64().Should().Be(3);
-
+        snap.GetProperty("generatedAtUtc").GetDateTimeOffset().Should().BeCloseTo(snapshot.GeneratedAtUtc, precision: TimeSpan.FromSeconds(1));
         stats.VerifyAll();
     }
 
