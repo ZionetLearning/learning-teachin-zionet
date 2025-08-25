@@ -1,6 +1,7 @@
 ﻿using Dapr.Client;
 using Manager.Constants;
 using Manager.Models;
+using Manager.Services.Clients;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Endpoints;
@@ -12,14 +13,14 @@ public static class StatsPingEndpoints
         // POST: compute & cache for 24h
         app.MapPost("/internal/compute-stats/ping",
             async ([FromServices] ILogger log,
+                   [FromServices] IAccessorClient accessorClient,
                    [FromServices] DaprClient dapr,
-                   [FromServices] IConfiguration cfg, CancellationToken ct) =>
+                   CancellationToken ct) =>
             {
                 try
                 {
                     // 1) Invoke Accessor via Dapr service invocation (no request-abort token)
-                    var snapshot = await dapr.InvokeMethodAsync<StatsSnapshot>(
-                        HttpMethod.Get, AppIds.Accessor, "internal/stats/snapshot", ct);
+                    var snapshot = await accessorClient.GetStatsSnapshotAsync(ct);
                     if (snapshot is null)
                     {
                         log.LogWarning("Received null stats snapshot from Accessor");
@@ -52,7 +53,6 @@ public static class StatsPingEndpoints
         app.MapGet("/internal/stats/latest",
             async ([FromServices] ILogger log,
                    [FromServices] DaprClient dapr,
-                   [FromServices] IConfiguration cfg,
                    CancellationToken ct) =>
             {
                 var snapshot = await dapr.GetStateAsync<StatsSnapshot>(
