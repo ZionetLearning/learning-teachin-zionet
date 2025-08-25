@@ -1,32 +1,21 @@
 using IntegrationTests.Constants;
 using Microsoft.Extensions.Configuration;
-using System.Net;
 
 namespace IntegrationTests.Infrastructure;
 
 public class HttpTestFixture : IDisposable
 {
     public HttpClient Client { get; }
-    public CookieContainer CookieContainer { get; }
-
 
     public HttpTestFixture()
     {
-        //Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Test");
-
         var cfg = BuildConfig();
 
         var baseUrl = cfg.GetSection("TestSettings")["ApiBaseUrl"]
             ?? throw new InvalidOperationException(
                 "TestSettings:ApiBaseUrl is missing. Add it to appsettings.json or appsettings.Local.json.");
 
-        CookieContainer = new CookieContainer();
-
-        var handler = new HttpClientHandler
-        {
-            CookieContainer = CookieContainer,
-            UseCookies = true
-        };
+        var handler = new HttpClientHandler();
 
         Client = new HttpClient(handler)
         {
