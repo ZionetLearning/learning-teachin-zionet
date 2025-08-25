@@ -59,13 +59,6 @@ output "signalr_connection_string" {
   sensitive = true
 }
 
-output "redis_hostname" {
-  value = module.redis[0].hostname
-}
-output "redis_primary_access_key" {
-  value     = module.redis[0].primary_access_key
-  sensitive = true
-}
 
 output "redis_hostname" {
   value = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].hostname : module.redis[0].hostname
