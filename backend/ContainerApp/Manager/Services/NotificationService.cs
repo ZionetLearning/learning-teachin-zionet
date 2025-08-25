@@ -41,7 +41,7 @@ public class NotificationService : INotificationService
             var jsonPayload = JsonSerializer.SerializeToElement(payload);
             var evt = new UserEvent<JsonElement>
             {
-                eventType = eventType, // Type of the event, e.g., "ChatMessage", "UserJoined", etc.
+                EventType = eventType, // Type of the event, e.g., "ChatMessage", "UserJoined", etc.
                 Payload = jsonPayload // The actual data being sent with the event (e.g., chat message class, user info class, etc.)
             };
 

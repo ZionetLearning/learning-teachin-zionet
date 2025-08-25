@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using Dapr.Client;
-using Engine.Models;
 using Engine.Models.Chat;
+using Engine.Models.QueueMessages;
 
 namespace Engine.Services;
 

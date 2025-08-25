@@ -3,6 +3,7 @@ using Engine.Constants;
 using Engine.Endpoints;
 using Engine.Models;
 using Engine.Models.Chat;
+using Engine.Models.QueueMessages;
 using Engine.Services;
 using Engine.Services.Clients.AccessorClient;
 using Engine.Services.Clients.AccessorClient.Models;
@@ -166,7 +167,7 @@ public class EngineQueueHandlerTests
 
         var msg = new Message
         {
-            ActionName = MessageAction.ProcessingQuestionAi,
+            ActionName = MessageAction.ProcessingChatMessage,
             Payload = ToJsonElement(requestToEngine)
         };
 
@@ -205,7 +206,7 @@ public class EngineQueueHandlerTests
 
         var msg = new Message
         {
-            ActionName = MessageAction.ProcessingQuestionAi,
+            ActionName = MessageAction.ProcessingChatMessage,
             Payload = ToJsonElement(req)
         };
 
@@ -268,7 +269,7 @@ public class EngineQueueHandlerTests
 
         var msg = new Message
         {
-            ActionName = MessageAction.ProcessingQuestionAi,
+            ActionName = MessageAction.ProcessingChatMessage,
             Payload = ToJsonElement(requestToEngine)
         };
 

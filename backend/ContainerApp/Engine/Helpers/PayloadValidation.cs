@@ -2,6 +2,7 @@ using System.Text.Json;
 using Engine.Models;
 using Engine.Models.Chat;
 using DotQueue;
+using Engine.Models.QueueMessages;
 
 namespace Engine.Helpers;
 public static class PayloadValidation

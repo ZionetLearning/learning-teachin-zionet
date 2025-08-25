@@ -30,7 +30,7 @@ public static class AiEndpoints
 
         app.MapPost("/ai/question", QuestionAsync).WithName("Question");
 
-        app.MapPost("/chat", ChatAsync).WithName("Chat");
+        app.MapPost("/chat", ChatAsync).WithName("ProccessingChatMessage");
         app.MapPost("/speech/synthesize", SynthesizeAsync).WithName("SynthesizeText");
 
         #endregion

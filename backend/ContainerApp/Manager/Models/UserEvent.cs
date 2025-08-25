@@ -5,7 +5,7 @@ namespace Manager.Models;
 public class UserEvent<TPayload>
 {
     [JsonConverter(typeof(JsonStringEnumConverter))]
-    public EventType eventType { get; set; }
+    public EventType EventType { get; set; }
     public TPayload Payload { get; set; } = default!;
 }
 

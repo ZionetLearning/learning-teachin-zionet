@@ -57,14 +57,14 @@ public class EngineClient : IEngineClient
         {
             var message = new Message
             {
-                ActionName = MessageAction.Chat,
+                ActionName = MessageAction.ProcessingChatMessage,
                 Payload = JsonSerializer.SerializeToElement(request)
             };
 
             await _daprClient.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message);
 
             _logger.LogDebug(
-                "Chat request for thread {ThreadId} sent to Engine via binding '{Binding}'",
+                "ProccessingChatMessage request for thread {ThreadId} sent to Engine via binding '{Binding}'",
                 request.ThreadId,
                 QueueNames.EngineQueue
             );
