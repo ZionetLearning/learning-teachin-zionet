@@ -21,11 +21,11 @@ public class ManagerEndpointsTests
         method switch
         {
             "UpdateTaskNameAsync" => PrivateInvoker.InvokePrivateEndpointAsync(
-                                        typeof(ManagerEndpoints),
+                                        typeof(TasksEndpoints),
                                         "UpdateTaskNameAsync",
                                         id, name!, _svc.Object),
             "DeleteTaskAsync" => PrivateInvoker.InvokePrivateEndpointAsync(
-                                        typeof(ManagerEndpoints),
+                                        typeof(TasksEndpoints),
                                         "DeleteTaskAsync",
                                         id, _svc.Object),
             _ => throw new ArgumentOutOfRangeException(nameof(method), method, "Unknown endpoint")
@@ -38,7 +38,7 @@ public class ManagerEndpointsTests
         _svc.Setup(s => s.GetTaskAsync(7)).ReturnsAsync(task);
 
         var result = await PrivateInvoker.InvokePrivateEndpointAsync(
-            typeof(ManagerEndpoints),
+            typeof(TasksEndpoints),
             "GetTaskAsync",
             7,
             _svc.Object);
@@ -55,7 +55,7 @@ public class ManagerEndpointsTests
         _svc.Setup(s => s.GetTaskAsync(999)).ReturnsAsync((TaskModel?)null);
 
         var result = await PrivateInvoker.InvokePrivateEndpointAsync(
-            typeof(ManagerEndpoints),
+            typeof(TasksEndpoints),
             "GetTaskAsync",
             999,
             _svc.Object);
@@ -74,7 +74,7 @@ public class ManagerEndpointsTests
             .ReturnsAsync((true, "queued"));
 
         var result = await PrivateInvoker.InvokePrivateEndpointAsync(
-            typeof(ManagerEndpoints),
+            typeof(TasksEndpoints),
             "CreateTaskAsync",
             model,
             _svc.Object);
@@ -85,7 +85,7 @@ public class ManagerEndpointsTests
 
         // 2) Location (property exists on Accepted<T>)
         var location = result.GetType().GetProperty("Location")?.GetValue(result) as string;
-        Assert.Equal("/task/42", location);
+        Assert.Equal("/tasks-manager/task/42", location);
 
         // 3) Assert payload via IValueHttpResult (anonymous object)
         var valueResult = Assert.IsAssignableFrom<IValueHttpResult>(result);
@@ -106,7 +106,7 @@ public class ManagerEndpointsTests
             .ReturnsAsync((true, "accepted"));
 
         var result = await PrivateInvoker.InvokePrivateEndpointAsync(
-            typeof(ManagerEndpoints),
+            typeof(TasksEndpoints),
             "CreateTaskLongAsync",
             model,
             _svc.Object);
