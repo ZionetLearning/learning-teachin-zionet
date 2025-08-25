@@ -139,7 +139,7 @@ export const useTypingPractice = () => {
     setCurrentExercise(null);
   };
 
-  const handlePlayAudio = async () => {
+  const handlePlayAudio = async (): Promise<void> => {
     if (!currentExercise) return;
 
     if (isPlaying) {

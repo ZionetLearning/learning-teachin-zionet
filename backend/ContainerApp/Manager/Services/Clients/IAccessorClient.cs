@@ -17,4 +17,5 @@ public interface IAccessorClient
     Task<bool> CreateUserAsync(UserModel user);
     Task<bool> UpdateUserAsync(UpdateUserModel user, Guid userId);
     Task<bool> DeleteUserAsync(Guid userId);
+    Task<IEnumerable<UserData>> GetAllUsersAsync(CancellationToken ct = default);
 }
