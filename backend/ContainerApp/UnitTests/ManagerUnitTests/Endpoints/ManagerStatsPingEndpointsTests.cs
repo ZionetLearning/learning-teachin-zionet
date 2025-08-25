@@ -129,17 +129,17 @@ public static class StatsPingEndpoints
         // POST: compute & cache for 24h
         app.MapPost("/internal/compute-stats/ping",
             async ([FromServices] ILoggerFactory lf,
-                   [FromServices] IStatsClient statsClient) =>
+                   [FromServices] IStatsClient statsClient, CancellationToken ct) =>
             {
                 var log = lf.CreateLogger("StatsCompute");
 
                 try
                 {
                     // 1) Invoke Accessor via adapter
-                    var snapshot = await statsClient.GetSnapshotAsync(default);
+                    var snapshot = await statsClient.GetSnapshotAsync(ct);
 
                     // 2) Save to state with TTL via adapter
-                    await statsClient.SaveSnapshotAsync(snapshot, StatsKeys.DefaultTtlSeconds, default);
+                    await statsClient.SaveSnapshotAsync(snapshot, StatsKeys.DefaultTtlSeconds, ct);
 
                     log.LogInformation("Saved stats with TTL {TTL}s to key {Key}", StatsKeys.DefaultTtlSeconds, StatsKeys.Latest);
 

@@ -7,15 +7,13 @@ namespace Manager.Endpoints;
 
 public static class StatsPingEndpoints
 {
-    private const string StatsKey = "stats:latest";
-    private const int StatsTtlSeconds = 86400;        // 24h
     public static IEndpointRouteBuilder MapStatsPing(this IEndpointRouteBuilder app)
     {
         // POST: compute & cache for 24h
         app.MapPost("/internal/compute-stats/ping",
             async ([FromServices] ILoggerFactory lf,
                    [FromServices] DaprClient dapr,
-                   [FromServices] IConfiguration cfg) =>
+                   [FromServices] IConfiguration cfg, CancellationToken ct) =>
             {
                 var log = lf.CreateLogger("StatsCompute");
 
@@ -23,19 +21,19 @@ public static class StatsPingEndpoints
                 {
                     // 1) Invoke Accessor via Dapr service invocation (no request-abort token)
                     var snapshot = await dapr.InvokeMethodAsync<StatsSnapshot>(
-                        HttpMethod.Get, AppIds.Accessor, "internal/stats/snapshot", cancellationToken: default);
+                        HttpMethod.Get, AppIds.Accessor, "internal/stats/snapshot", ct);
 
                     // 2) Save to state with TTL so Dapr auto-expires it
                     await dapr.SaveStateAsync(
                         storeName: AppIds.StateStore,
-                        key: StatsKey,
+                        key: StatsKeys.Latest,
                         value: snapshot,
-                        metadata: new Dictionary<string, string> { ["ttlInSeconds"] = StatsTtlSeconds.ToString() },
-                        cancellationToken: default);
+                        metadata: new Dictionary<string, string> { ["ttlInSeconds"] = StatsKeys.DefaultTtlSeconds.ToString() },
+                        cancellationToken: ct);
 
-                    log.LogInformation("Saved stats to '{StateStore}' key '{Key}' with TTL {TTL}s", AppIds.StateStore, StatsKey, StatsTtlSeconds);
+                    log.LogInformation("Saved stats to '{StateStore}' key '{Key}' with TTL {TTL}s", AppIds.StateStore, StatsKeys.Latest, StatsKeys.DefaultTtlSeconds);
 
-                    return Results.Ok(new { ok = true, key = StatsKey, ttlSeconds = StatsTtlSeconds, snapshot });
+                    return Results.Ok(new { ok = true, key = StatsKeys.Latest, ttlSeconds = StatsKeys.DefaultTtlSeconds, snapshot });
                 }
                 catch (Exception ex)
                 {
@@ -57,18 +55,18 @@ public static class StatsPingEndpoints
                 var log = lf.CreateLogger("StatsRead");
 
                 var snapshot = await dapr.GetStateAsync<StatsSnapshot>(
-                    storeName: AppIds.StateStore, key: StatsKey, cancellationToken: ct);
+                    storeName: AppIds.StateStore, key: StatsKeys.Latest, cancellationToken: ct);
 
                 if (snapshot is null)
                 {
-                    log.LogWarning("No stats snapshot found in '{StateStore}' for key '{Key}'", AppIds.StateStore, StatsKey);
+                    log.LogWarning("No stats snapshot found in '{StateStore}' for key '{Key}'", AppIds.StateStore, StatsKeys.Latest);
                     return Results.NotFound(new { ok = false, message = "No stats snapshot available." });
                 }
 
                 return Results.Ok(new
                 {
                     ok = true,
-                    key = StatsKey,
+                    key = StatsKeys.Latest,
                     retrievedAtUtc = DateTimeOffset.UtcNow,
                     snapshot
                 });
