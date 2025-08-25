@@ -115,62 +115,62 @@ jobs:
 
           echo "Helm release status check complete."
 
-      - name: Wait for external IP for ingress controller
-        run: |
-          echo "Waiting for external IP for ingress-nginx-controller..."
-          for i in {1..30}; do
-            INGRESS_IP=$(kubectl -n devops-ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-            if [[ -n "$INGRESS_IP" ]]; then
-              echo "Ingress IP is ready: $INGRESS_IP"
-              echo "ingress_url=http://$INGRESS_IP" >> $GITHUB_OUTPUT
-              exit 0
-            fi
-            echo "Attempt $i: not ready. Sleeping 10s..."
-            sleep 10
-          done
-          echo "Failed to get ingress IP."; exit 1
+      # - name: Wait for external IP for ingress controller
+      #   run: |
+      #     echo "Waiting for external IP for ingress-nginx-controller..."
+      #     for i in {1..30}; do
+      #       INGRESS_IP=$(kubectl -n devops-ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+      #       if [[ -n "$INGRESS_IP" ]]; then
+      #         echo "Ingress IP is ready: $INGRESS_IP"
+      #         echo "ingress_url=http://$INGRESS_IP" >> $GITHUB_OUTPUT
+      #         exit 0
+      #       fi
+      #       echo "Attempt $i: not ready. Sleeping 10s..."
+      #       sleep 10
+      #     done
+      #     echo "Failed to get ingress IP."; exit 1
 
-      - name: Add ingress IP to PostgreSQL firewall
-        run: |
-          INGRESS_IP=$(kubectl -n devops-ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-          az postgres flexible-server firewall-rule create \
-            --resource-group $PG_RG \
-            --name $PG_DB \
-            --rule-name allow-ingress-controller \
-            --start-ip-address $INGRESS_IP \
-            --end-ip-address $INGRESS_IP
+      # - name: Add ingress IP to PostgreSQL firewall
+      #   run: |
+      #     INGRESS_IP=$(kubectl -n devops-ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+      #     az postgres flexible-server firewall-rule create \
+      #       --resource-group $PG_RG \
+      #       --name $PG_DB \
+      #       --rule-name allow-ingress-controller \
+      #       --start-ip-address $INGRESS_IP \
+      #       --end-ip-address $INGRESS_IP
 
-      - name: Add AKS outbound IP to PostgreSQL firewall
-        run: |
-          # Try NAT Gateway first, else fallback to Load Balancer
-          OUTBOUND_IP_ID=$(az aks show \
-            --resource-group $AKS_RG \
-            --name $AKS_NAME \
-            --query "networkProfile.natGatewayProfile.effectiveOutboundIPs[0].id" -o tsv 2>/dev/null || true)
+      # - name: Add AKS outbound IP to PostgreSQL firewall
+      #   run: |
+      #     # Try NAT Gateway first, else fallback to Load Balancer
+      #     OUTBOUND_IP_ID=$(az aks show \
+      #       --resource-group $AKS_RG \
+      #       --name $AKS_NAME \
+      #       --query "networkProfile.natGatewayProfile.effectiveOutboundIPs[0].id" -o tsv 2>/dev/null || true)
 
-          if [ -z "$OUTBOUND_IP_ID" ] || [ "$OUTBOUND_IP_ID" = "null" ]; then
-            echo "No NAT Gateway found, checking Load Balancer outbound IP..."
-            OUTBOUND_IP_ID=$(az aks show \
-              --resource-group $AKS_RG \
-              --name $AKS_NAME \
-              --query "networkProfile.loadBalancerProfile.effectiveOutboundIPs[0].id" -o tsv)
-          fi
+      #     if [ -z "$OUTBOUND_IP_ID" ] || [ "$OUTBOUND_IP_ID" = "null" ]; then
+      #       echo "No NAT Gateway found, checking Load Balancer outbound IP..."
+      #       OUTBOUND_IP_ID=$(az aks show \
+      #         --resource-group $AKS_RG \
+      #         --name $AKS_NAME \
+      #         --query "networkProfile.loadBalancerProfile.effectiveOutboundIPs[0].id" -o tsv)
+      #     fi
 
-          if [ -z "$OUTBOUND_IP_ID" ] || [ "$OUTBOUND_IP_ID" = "null" ]; then
-            echo "❌ Could not detect outbound IP ID for AKS cluster."
-            exit 1
-          fi
+      #     if [ -z "$OUTBOUND_IP_ID" ] || [ "$OUTBOUND_IP_ID" = "null" ]; then
+      #       echo "❌ Could not detect outbound IP ID for AKS cluster."
+      #       exit 1
+      #     fi
 
-          AKS_EGRESS_IP=$(az resource show --ids $OUTBOUND_IP_ID --query "properties.ipAddress" -o tsv)
+      #     AKS_EGRESS_IP=$(az resource show --ids $OUTBOUND_IP_ID --query "properties.ipAddress" -o tsv)
 
-          echo "AKS outbound IP: $AKS_EGRESS_IP"
+      #     echo "AKS outbound IP: $AKS_EGRESS_IP"
 
-          az postgres flexible-server firewall-rule create \
-            --resource-group $PG_RG \
-            --name $PG_DB \
-            --rule-name allow-aks-egress \
-            --start-ip-address $AKS_EGRESS_IP \
-            --end-ip-address $AKS_EGRESS_IP
+      #     az postgres flexible-server firewall-rule create \
+      #       --resource-group $PG_RG \
+      #       --name $PG_DB \
+      #       --rule-name allow-aks-egress \
+      #       --start-ip-address $AKS_EGRESS_IP \
+      #       --end-ip-address $AKS_EGRESS_IP
             
 
       - name: Install External Secrets Operator (with CRDs)
@@ -181,22 +181,25 @@ jobs:
             --namespace external-secrets \
             --create-namespace \
             --set installCRDs=true \
-            --wait --timeout 120s
+            --wait --timeout 180s
 
-
-      - name: Wait for External Secrets CRDs
+      - name: Wait for External Secrets API
         run: |
-          echo "⏳ Waiting for External Secrets CRDs..."
-          for crd in clustersecretstores.externalsecrets.io externalsecrets.externalsecrets.io secretstores.externalsecrets.io; do
-            for i in {1..30}; do
-              if kubectl get crd $crd >/dev/null 2>&1; then
-                echo "✅ Found CRD: $crd"
-                break
-              fi
-              echo "Waiting for CRD: $crd"
-              sleep 5
-            done
+          echo "⏳ Waiting for ExternalSecrets API..."
+          for i in {1..30}; do
+            if kubectl api-resources | grep -q "externalsecrets"; then
+              echo "✅ ExternalSecrets API ready"
+              exit 0
+            fi
+            echo "Waiting for API..."
+            sleep 5
           done
+          echo "❌ Timeout waiting for ExternalSecrets API"
+          exit 1
+
+      - name: Apply ClusterSecretStore + ExternalSecrets
+        run: |
+          kubectl apply -f devops/kubernetes/secrets/
 
       - name: Helm template sanity (no Namespace objects)
         run: |
