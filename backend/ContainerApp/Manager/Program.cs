@@ -139,7 +139,6 @@ if (refreshRateLimitSettings != null)
         options.RejectionStatusCode = refreshRateLimitSettings.RejectionStatusCode;
         _ = options.AddPolicy(AuthSettings.RefreshTokenPolicyName, context =>
         {
-            //var ip = context.Connection.RemoteIpAddress?.ToString() ?? AuthSettings.UnknownIpFallback;
             var ip = context.Request.Headers["X-Forwarded-For"].FirstOrDefault()
                  ?? context.Connection.RemoteIpAddress?.ToString()
                  ?? AuthSettings.UnknownIpFallback;
