@@ -11,17 +11,20 @@ public static class StatsPingEndpoints
     {
         // POST: compute & cache for 24h
         app.MapPost("/internal/compute-stats/ping",
-            async ([FromServices] ILoggerFactory lf,
+            async ([FromServices] ILogger log,
                    [FromServices] DaprClient dapr,
                    [FromServices] IConfiguration cfg, CancellationToken ct) =>
             {
-                var log = lf.CreateLogger("StatsCompute");
-
                 try
                 {
                     // 1) Invoke Accessor via Dapr service invocation (no request-abort token)
                     var snapshot = await dapr.InvokeMethodAsync<StatsSnapshot>(
                         HttpMethod.Get, AppIds.Accessor, "internal/stats/snapshot", ct);
+                    if (snapshot is null)
+                    {
+                        log.LogWarning("Received null stats snapshot from Accessor");
+                        return Results.Problem("No stats snapshot returned from Accessor");
+                    }
 
                     // 2) Save to state with TTL so Dapr auto-expires it
                     await dapr.SaveStateAsync(
@@ -47,13 +50,11 @@ public static class StatsPingEndpoints
 
         // GET: latest cached stats (404 if expired / not set)
         app.MapGet("/internal/stats/latest",
-            async ([FromServices] ILoggerFactory lf,
+            async ([FromServices] ILogger log,
                    [FromServices] DaprClient dapr,
                    [FromServices] IConfiguration cfg,
                    CancellationToken ct) =>
             {
-                var log = lf.CreateLogger("StatsRead");
-
                 var snapshot = await dapr.GetStateAsync<StatsSnapshot>(
                     storeName: AppIds.StateStore, key: StatsKeys.Latest, cancellationToken: ct);
 
