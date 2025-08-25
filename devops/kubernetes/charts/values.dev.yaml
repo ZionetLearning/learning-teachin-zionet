@@ -7,6 +7,11 @@ global:
     enabled: true
     configName: dapr-config
 
+dapr:
+  stateStore:
+    redis:
+      databaseIndex: 0   # dev environment uses DB 0
+
 namespace:
   create: true
   name: dev
