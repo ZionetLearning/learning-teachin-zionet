@@ -124,9 +124,6 @@ public class ManagerStatsPingEndpointsTests
 }
 public static class StatsPingEndpoints
 {
-    private const string StatsKey = "stats:latest";
-    private const int StatsTtlSeconds = 86400; // 24h
-
     public static IEndpointRouteBuilder MapStatsPing(this IEndpointRouteBuilder app)
     {
         // POST: compute & cache for 24h
@@ -142,11 +139,11 @@ public static class StatsPingEndpoints
                     var snapshot = await statsClient.GetSnapshotAsync(default);
 
                     // 2) Save to state with TTL via adapter
-                    await statsClient.SaveSnapshotAsync(snapshot, StatsTtlSeconds, default);
+                    await statsClient.SaveSnapshotAsync(snapshot, StatsKeys.DefaultTtlSeconds, default);
 
-                    log.LogInformation("Saved stats with TTL {TTL}s to key {Key}", StatsTtlSeconds, StatsKey);
+                    log.LogInformation("Saved stats with TTL {TTL}s to key {Key}", StatsKeys.DefaultTtlSeconds, StatsKeys.Latest);
 
-                    return Results.Ok(new { ok = true, key = StatsKey, ttlSeconds = StatsTtlSeconds, snapshot });
+                    return Results.Ok(new { ok = true, key = StatsKeys.Latest, ttlSeconds = StatsKeys.DefaultTtlSeconds, snapshot });
                 }
                 catch (Exception ex)
                 {
@@ -170,14 +167,14 @@ public static class StatsPingEndpoints
 
                 if (snapshot is null)
                 {
-                    log.LogWarning("No stats snapshot found for key '{Key}'", StatsKey);
+                    log.LogWarning("No stats snapshot found for key '{Key}'", StatsKeys.Latest);
                     return Results.NotFound(new { ok = false, message = "No stats snapshot available." });
                 }
 
                 return Results.Ok(new
                 {
                     ok = true,
-                    key = StatsKey,
+                    key = StatsKeys.Latest,
                     retrievedAtUtc = DateTimeOffset.UtcNow,
                     snapshot
                 });
