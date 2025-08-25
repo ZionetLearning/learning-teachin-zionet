@@ -163,6 +163,15 @@ module "monitoring" {
   signalr_id                  = module.signalr.signalr_id
   redis_id                    = module.redis.redis_id
   frontend_static_web_app_id  = module.frontend.static_web_app_id
+
+    depends_on = [
+    azurerm_log_analytics_workspace.main,
+    module.servicebus,
+    module.database,
+    module.signalr,
+    module.redis,
+    module.frontend
+  ]
 }
 
 ########################################
