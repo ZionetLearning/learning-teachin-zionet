@@ -1,6 +1,5 @@
 ﻿using System.Text.Json;
 using DotQueue;
-using Engine.Constants;
 using Engine.Helpers;
 using Engine.Models;
 using Engine.Models.Chat;
@@ -165,6 +164,11 @@ public class EngineQueueHandler : IQueueHandler<Message>
                 throw new NonRetryableException("UserMessage is required.");
             }
 
+            if (string.IsNullOrWhiteSpace(request.UserId))
+            {
+                throw new NonRetryableException("UserId is required in the request.");
+            }
+
             if (request.TtlSeconds <= 0)
             {
                 throw new NonRetryableException("TtlSeconds must be greater than 0.");
@@ -177,10 +181,8 @@ public class EngineQueueHandler : IQueueHandler<Message>
                 throw new NonRetryableException("Request TTL expired.");
             }
 
-            // 1. Load history
             var snapshot = await _accessorClient.GetHistorySnapshotAsync(request.ThreadId, ct);
 
-            // 2. Build service request
             var serviceRequest = new ChatAiServiseRequest
             {
                 History = snapshot.History,
@@ -193,7 +195,13 @@ public class EngineQueueHandler : IQueueHandler<Message>
                 TtlSeconds = request.TtlSeconds,
             };
 
-            // 3. Call AI
+            var chatResponseMetadata = new ChatContextMetadata
+            {
+                RequestId = request.RequestId,
+                ThreadId = request.ThreadId,
+                UserId = metadata.UserId
+            };
+
             var aiResponse = await _aiService.ChatHandlerAsync(serviceRequest, ct);
 
             if (aiResponse.Status != ChatAnswerStatus.Ok || aiResponse.Answer is null)
@@ -206,12 +214,11 @@ public class EngineQueueHandler : IQueueHandler<Message>
                     AssistantMessage = aiResponse.Error
                 };
 
-                await _publisher.SendReplyAsync(errorResponse, $"{QueueNames.ManagerCallbackQueue}-out", ct);
+                await _publisher.SendReplyAsync(chatResponseMetadata, errorResponse, ct);
                 _logger.LogError("Chat request {RequestId} failed: {Error}", aiResponse.RequestId, aiResponse.Error);
                 return;
             }
 
-            // 4. Store user question + assistant answer
             var questionMessage = new ChatMessage
             {
                 ThreadId = request.ThreadId,
@@ -223,7 +230,6 @@ public class EngineQueueHandler : IQueueHandler<Message>
             await _accessorClient.StoreMessageAsync(questionMessage, ct);
             await _accessorClient.StoreMessageAsync(aiResponse.Answer, ct);
 
-            // 5. Publish back to Manager
             var responseToManager = new EngineChatResponse
             {
                 AssistantMessage = aiResponse.Answer.Content,
@@ -232,7 +238,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
                 ThreadId = aiResponse.ThreadId
             };
 
-            await _publisher.SendReplyAsync(responseToManager, $"{QueueNames.ManagerCallbackQueue}-out", ct);
+            await _publisher.SendReplyAsync(chatResponseMetadata, responseToManager, ct);
             _logger.LogInformation("Chat request {RequestId} processed successfully", aiResponse.RequestId);
         }
         catch (NonRetryableException ex)

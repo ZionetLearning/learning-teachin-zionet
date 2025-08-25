@@ -55,10 +55,23 @@ public class EngineClient : IEngineClient
         _logger.LogInformation("Invoke Engine /chat synchronously (thread {Thread})", request.ThreadId);
         try
         {
+            var requestMetadata = new ChatContextMetadata
+            {
+                RequestId = request.RequestId,
+                ThreadId = request.ThreadId,
+                UserId = request.UserId
+            };
+
             var message = new Message
             {
                 ActionName = MessageAction.ProcessingChatMessage,
-                Payload = JsonSerializer.SerializeToElement(request)
+                Payload = JsonSerializer.SerializeToElement(request),
+                Metadata = JsonSerializer.SerializeToElement(requestMetadata)
+            };
+
+            var queueMetadata = new Dictionary<string, string>
+            {
+                ["sessionId"] = request.ThreadId.ToString()
             };
 
             await _daprClient.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message);

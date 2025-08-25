@@ -208,8 +208,14 @@ public class EngineQueueHandlerTests
             ThreadId = threadId,
             Status = ChatAnswerStatus.Ok
         };
+        var chatMetadata = new ChatContextMetadata
+        {
+            RequestId = requestId,
+            ThreadId = threadId,
+            UserId = userId
+        };
 
-        pub.Setup(p => p.SendReplyAsync(engineResponse, $"{QueueNames.ManagerCallbackQueue}-out", It.IsAny<CancellationToken>()))
+        pub.Setup(p => p.SendReplyAsync(chatMetadata, engineResponse, It.IsAny<CancellationToken>()))
            .Returns(Task.CompletedTask);
 
         var msg = new Message
@@ -225,7 +231,7 @@ public class EngineQueueHandlerTests
         accessorClient.Verify(a => a.GetHistorySnapshotAsync(threadId, It.IsAny<CancellationToken>()), Times.Once);
         ai.VerifyAll();
         accessorClient.Verify(a => a.UpsertHistorySnapshotAsync(It.IsAny<UpsertHistoryRequest>(), It.IsAny<CancellationToken>()), Times.Once);
-        pub.Verify(p => p.SendReplyAsync(engineResponse, $"{QueueNames.ManagerCallbackQueue}-out", It.IsAny<CancellationToken>()), Times.Once);
+        pub.Verify(p => p.SendReplyAsync(chatMetadata, engineResponse, It.IsAny<CancellationToken>()), Times.Once);
 
         engine.VerifyNoOtherCalls();
     }
