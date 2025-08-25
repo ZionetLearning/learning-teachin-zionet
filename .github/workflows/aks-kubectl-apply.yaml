@@ -93,6 +93,17 @@ jobs:
           cd devops/helm-tools
           chmod +x grafana.sh
           ./grafana.sh
+      
+      - name: Configure Azure Monitor datasource in Grafana
+        run: |
+          cd devops/helm-tools/azure-monitor
+          chmod +x azure-monitor.sh
+          ./azure-monitor.sh
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
 
       ###### This is one time only!! Never use unless the whole RG is wiped out
       # - name: Setup HTTPS certificates

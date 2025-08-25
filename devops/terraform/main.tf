@@ -125,6 +125,46 @@ module "frontend" {
   depends_on = [azurerm_resource_group.main]
 }
 
+# Monitoring - Diagnostic Settings for resources to Log Analytics
+# Log Analytics Workspace
+resource "azurerm_log_analytics_workspace" "main" {
+  name                = "${var.environment_name}-laworkspace"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  sku                 = "PerGB2018"
+  retention_in_days   = 30
+
+  tags = {
+    Environment = var.environment_name
+  }
+}
+
+# Application Insights
+resource "azurerm_application_insights" "main" {
+  name                = "${var.environment_name}-appinsights"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  application_type    = "web"
+  workspace_id        = azurerm_log_analytics_workspace.main.id
+
+  tags = {
+    Environment = var.environment_name
+  }
+}
+
+
+module "monitoring" {
+  source = "./modules/monitoring"
+
+  log_analytics_workspace_id  = azurerm_log_analytics_workspace.main.id
+
+  servicebus_namespace_id     = module.servicebus.namespace_id
+  postgres_server_id          = module.database.server_id
+  signalr_id                  = module.signalr.signalr_id
+  redis_id                    = module.redis.redis_id
+  frontend_static_web_app_id  = module.frontend.static_web_app_id
+}
+
 ########################################
 # 2. AKS kube-config for providers
 ########################################
