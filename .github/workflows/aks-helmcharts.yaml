@@ -205,11 +205,11 @@ jobs:
             --query "defaultHostname" -o tsv 2>/dev/null || echo "")
           
           if [ -z "$STATIC_WEB_APP_URL" ]; then
-            echo "⚠️ Static Web App not found: $STATIC_WEB_APP_NAME in $FRONTEND_RG"
+            echo "Static Web App not found: $STATIC_WEB_APP_NAME in $FRONTEND_RG"
             echo "Frontend enabled in values but no Static Web App found"
             echo "STATIC_WEB_APP_HOSTNAME=" >> $GITHUB_ENV
           else
-            echo "✅ Found Static Web App: $STATIC_WEB_APP_URL"
+            echo "Found Static Web App: $STATIC_WEB_APP_URL"
             echo "STATIC_WEB_APP_HOSTNAME=$STATIC_WEB_APP_URL" >> $GITHUB_ENV
           fi
 
