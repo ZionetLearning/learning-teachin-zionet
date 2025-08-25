@@ -75,13 +75,21 @@ jobs:
           echo "All resource groups matching pattern:"
           az group list --query "[?contains(name, 'zionet-learning-2025')].{Name:name, CreatedTime:properties.provisioningState}" -o table
           
-          # Find resource groups to cleanup (exclude protected ones)
-          CLEANUP_RGS=$(az group list --query "[?contains(name, 'zionet-learning-2025') && !contains('$PROTECTED_ENVS', split(name, '-')[0])].name" -o tsv)
+          # Get all resource groups, then filter in bash (JMESPath array membership is complex)
+          ALL_RGS=$(az group list --query "[?contains(name, 'zionet-learning-2025')].name" -o tsv)
           
           echo "Resource groups eligible for cleanup:"
-          for rg in $CLEANUP_RGS; do
+          CLEANUP_RGS=""
+          for rg in $ALL_RGS; do
             ENV_NAME=$(echo "$rg" | cut -d'-' -f1)
-            echo "  - $rg (env: $ENV_NAME)"
+            
+            # Check if environment name is in protected list
+            if [[ ",$PROTECTED_ENVS," == *",$ENV_NAME,"* ]]; then
+              echo "  - $rg (env: $ENV_NAME) - PROTECTED, skipping"
+            else
+              echo "  - $rg (env: $ENV_NAME) - eligible for cleanup"
+              CLEANUP_RGS="$CLEANUP_RGS $rg"
+            fi
           done
           
           echo "CLEANUP_RGS<<EOF" >> $GITHUB_ENV
@@ -171,7 +179,7 @@ jobs:
             fi
           done
           
-          echo "✅ Safety check passed. No protected environments will be deleted."
+          echo "Safety check passed. No protected environments will be deleted."
 
       - name: Cleanup Kubernetes namespaces
         run: |
@@ -227,7 +235,7 @@ jobs:
                 
                 # Check if the specific state file exists
                 if az storage blob exists --account-name "$STORAGE_ACCOUNT" --container-name "$CONTAINER_NAME" --name "$STATE_BLOB" --query exists -o tsv 2>/dev/null | grep -q true; then
-                  echo "✅ Found state blob: $STATE_BLOB - deleting..."
+                  echo "Found state blob: $STATE_BLOB - deleting..."
                   az storage blob delete --account-name "$STORAGE_ACCOUNT" --container-name "$CONTAINER_NAME" --name "$STATE_BLOB" --delete-snapshots include || echo "❌ Failed to delete $STATE_BLOB"
                 else
                   echo "No state blob found for environment: $ENV_NAME ($STATE_BLOB)"
