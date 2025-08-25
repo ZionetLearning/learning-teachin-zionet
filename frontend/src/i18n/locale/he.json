@@ -188,6 +188,48 @@
         "exploreAnime": "ספריית אנימה",
         "searchByTitle": "חפש לפי כותרת",
         "clear": "נקה חיפוש"
+      },
+      "countryExplorer": {
+        "title": "ספריית מדינות",
+        "description": "חפש לפי שם מדינה, סנן לפי איזור וגודל אוכלוסייה",
+        "loadingCountries": "טוען מדינות...",
+        "failedToLoad": "הטעינה נכשלה:",
+        "capital": "עיר בירה:",
+        "region": "איזור:",
+        "population": "גודל אוכלוסייה:",
+        "currency": "מטבע:",
+        "languages": "שפות:",
+        "searchByName": "חפש לפי שם מדינה",
+        "regionWithNoColon": "איזור",
+        "populationWithNoColon": "גודל אוכלוסייה",
+        "regionFilter": {
+          "all": "כל האזורים",
+          "africa": "אפריקה",
+          "americas": "אמריקה",
+          "asia": "אסיה",
+          "europe": "אירופה",
+          "oceania": "אוקיאניה",
+          "antarctic": "אנטארקטיקה"
+        },
+        "populationFilter": {
+          "allPopulations": "כל גדלי האוכלוסייה",
+          "lessThan10M": "מתחת ל-10 מיליון",
+          "between10MAnd100M": "בין 10 מיליון ל-100 מיליון",
+          "moreThan100M": "מעל ל-100 מיליון"
+        }
+      },
+      "signalR": {
+        "title": "בדיקת SignalR",
+        "description": "עמוד זה מיועד לבדיקה של SignalR.",
+        "createTask": "צור משימה",
+        "taskId": "מזהה משימה",
+        "taskName": "שם המשימה",
+        "payload": "תוכן (Payload)",
+        "posting": "שולח...",
+        "postiong": "שולח...",
+        "send": "שלח",
+        "noNotifications": "אין התראות",
+        "notifications": "התראות"
       }
     },
     "sidebar": {
@@ -213,7 +255,9 @@
       "en": "אנגלית",
       "earthquakeMap": "מפת רעידות אדמה",
       "weather": "מזג האוויר",
-      "anime": "ספריית אנימה"
+      "anime": "ספריית אנימה",
+      "countryExplorer": "ספריית מדינות",
+      "signalR": "בדיקת SignalR"
     }
   },
   "goBackToMenu": "חזור לתפריט",

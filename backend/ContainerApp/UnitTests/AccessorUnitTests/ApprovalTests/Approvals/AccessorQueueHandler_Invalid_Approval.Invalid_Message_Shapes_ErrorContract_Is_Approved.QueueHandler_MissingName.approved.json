@@ -1,0 +1,9 @@
+﻿{
+    
+  "caseTag":  "MissingName",
+    
+  "exceptionType":  "DotQueue.NonRetryableException",
+    
+  "message":  "Task Name is required."
+
+}

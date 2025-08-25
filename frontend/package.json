@@ -13,11 +13,13 @@
     "jest-test:watch": "jest --watch",
     "vitest": "vitest run",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "cypress": "cypress open"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@microsoft/signalr": "^9.0.6",
     "@mui/icons-material": "^7.2.0",
     "@mui/material": "^7.2.0",
     "@react-nano/use-event-source": "^0.16.0",
@@ -72,6 +74,7 @@
     "@types/three": "^0.178.1",
     "@vitejs/plugin-react": "^4.7.0",
     "@vitest/snapshot": "^3.2.4",
+    "cypress": "^14.5.4",
     "eslint": "^9.30.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react-hooks": "^5.2.0",

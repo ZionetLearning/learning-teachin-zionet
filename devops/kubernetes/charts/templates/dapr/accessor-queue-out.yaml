@@ -1,7 +1,7 @@
 apiVersion: dapr.io/v1alpha1
 kind: Component
 metadata:
-  name: {{ include "app.join" (list (include "app.prefix" .) "accessor-queue-out") }}
+  name: accessor-queue-out
   namespace: {{ include "app.namespace" . }}
 spec:
   type: bindings.azure.servicebusqueues
@@ -12,7 +12,7 @@ spec:
         name: azure-service-bus-secret
         key: AzureServiceBusConnectionString
     - name: queueName
-      value: {{ include "app.sbName" (list $ "accessor-queue") | quote }}
+      value: "accessor-queue"
     - name: direction
       value: output
     - name: disableEntityManagement

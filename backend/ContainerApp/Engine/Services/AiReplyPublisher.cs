@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using Dapr.Client;
 using Engine.Models;
+using Engine.Models.Chat;
 
 namespace Engine.Services;
 
@@ -15,8 +16,9 @@ public sealed class AiReplyPublisher : IAiReplyPublisher
         _log = log ?? throw new ArgumentNullException(nameof(log));
     }
 
-    public async Task SendReplyAsync(AiResponseModel response, string replyToQueue, CancellationToken ct = default)
+    public async Task SendReplyAsync(EngineChatResponse response, string replyToQueue, CancellationToken ct = default)
     {
+        using var _ = _log.BeginScope("RequestId: {RequestId}", response.RequestId);
         try
         {
             if (string.IsNullOrWhiteSpace(replyToQueue))
@@ -31,7 +33,7 @@ public sealed class AiReplyPublisher : IAiReplyPublisher
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(response.Id))
+            if (string.IsNullOrWhiteSpace(response.RequestId))
             {
                 _log.LogWarning("Response Id is required.");
                 return;
@@ -44,16 +46,16 @@ public sealed class AiReplyPublisher : IAiReplyPublisher
                 Payload = payload
             };
 
-            _log.LogInformation("Publishing AI answer {Id} to the queue {Topic}", response.Id, replyToQueue);
+            _log.LogInformation("Publishing AI answer to the queue {Topic}", replyToQueue);
 
             await _dapr.InvokeBindingAsync(replyToQueue, "create", message, cancellationToken: ct);
 
-            _log.LogDebug("AI answer {Id} published successfully", response.Id);
+            _log.LogDebug("AI answer published successfully");
         }
         catch (Exception ex)
         {
             _log.LogError(ex,
-                "Failed to publish AI answer {Id} to topic {Topic}", response.Id, replyToQueue);
+                "Failed to publish AI answer to topic {Topic}", replyToQueue);
             throw;
         }
     }

@@ -40,12 +40,14 @@ export const Header = ({
             value={local}
             onChange={(e) => setLocal(e.target.value)}
             placeholder={t("pages.animeExplorer.searchByTitle")}
+            data-testid="anime-search-input"
           />
           <button
             className={classes.clearButton}
             style={{ visibility: local ? "visible" : "hidden" }}
             onClick={() => setLocal("")}
             aria-label="Clear search"
+            data-testid="anime-clear-search"
           >
             {t("pages.animeExplorer.clear")}
           </button>

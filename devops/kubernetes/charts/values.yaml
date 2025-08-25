@@ -2,6 +2,7 @@ global:
   namePrefix: ""
   dockerRegistry: ""
   imagePullPolicy: IfNotPresent
+  environment: ""  # Environment name/tag (e.g., dev, devacr, prod) - set by CI/CD
   dapr:
     enabled: true
     configName: dapr-config
@@ -28,7 +29,7 @@ manager:
     selectorValue: manager
   image:
     name: manager
-    tag: latest
+    # tag: defaults to global.environment, set by CI/CD
   ports:
     container: 5001
     service: 80
@@ -39,13 +40,17 @@ manager:
     appPort: 5001
   env:
     ASPNETCORE_URLS: "http://+:5001"
+    Jwt__Secret: ""
+    Jwt__Issuer: ""
+    Jwt__Audience: ""
+    Jwt__RefreshTokenHashKey: ""
   secrets:
     serviceBus:
       name: azure-service-bus-secret
       key: AzureServiceBusConnectionString
   resources:
     requests:
-      cpu: "250m"
+      cpu: "100m"
       memory: "256Mi"
     limits:
       cpu: "500m"
@@ -58,7 +63,7 @@ engine:
     selectorValue: engine
   image:
     name: engine
-    tag: latest
+    # tag: defaults to global.environment, set by CI/CD
   ports:
     container: 5002
     service: 5002
@@ -83,7 +88,7 @@ engine:
       key: AzureServiceBusConnectionString
   resources:
     requests:
-      cpu: "250m"
+      cpu: "100m"
       memory: "256Mi"
     limits:
       cpu: "500m"
@@ -96,7 +101,7 @@ accessor:
     selectorValue: accessor
   image:
     name: accessor
-    tag: latest
+    # tag: defaults to global.environment, set by CI/CD
   ports:
     container: 5003
     service: 80
@@ -116,7 +121,7 @@ accessor:
       key: PostgreSQLConnectionString
   resources:
     requests:
-      cpu: "250m"
+      cpu: "100m"
       memory: "256Mi"
     limits:
       cpu: "500m"

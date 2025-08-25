@@ -1,0 +1,9 @@
+﻿{
+    
+  "caseTag":  "NullPayload",
+    
+  "exceptionType":  "DotQueue.NonRetryableException",
+    
+  "message":  "Payload deserialization returned null for TaskModel."
+
+}

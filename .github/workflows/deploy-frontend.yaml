@@ -1,11 +1,22 @@
 name: Deploy Frontend to Azure Static Web Apps
 run-name: >
   🚀 Deploy Frontend to environment_name: ${{
-    inputs.environment_name || github.event.inputs.environment_name || 
-    'custom'
-  }} | GitHub Environment: ${{ inputs.environment || github.event.inputs.environment }}
-on:
+    inputs.environment_name || github.event.inputs.environment_name || 'dev'
+  }} | GitHub Environment: ${{ inputs.environment || github.event.inputs.environment || 'Development'}}
+   
+permissions:
+   contents: read
 
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'frontend/**'
+  push:
+    branches: [main]
+    paths: ['frontend/**']    
   workflow_dispatch:
     inputs:
       environment:
@@ -15,7 +26,7 @@ on:
         type: choice
         options: [Development, Production]
       environment_name:
-        description: 'lowercase letters & digits only (env identifier)'
+        description: 'lowercase letters & digits only (env identifier) where the application is deployed'
         required: true
         type: string
   workflow_call:
@@ -36,22 +47,87 @@ on:
       AZURE_STATIC_WEB_APPS_API_TOKEN:
         required: false
 
+concurrency:
+  group: deploy-frontend-${{ inputs.environment_name || github.event.inputs.environment_name || 'dev' }}
+  cancel-in-progress: false
+
 jobs:
-  deploy:
+  frontend-build-and-lint:
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}     
+    env:
+      FE_DIR: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: '${{ env.FE_DIR }}/package-lock.json'
+
+      - name: Install Dependencies
+        working-directory: ${{ env.FE_DIR }}
+        run: npm ci
+
+      - name: Lint Code
+        working-directory: ${{ env.FE_DIR }}
+        run: npm run lint
+
+      - name: Create release name for Sentry (UTC + short SHA)
+        run: |
+          ts=$(date -u "+Release-%d-%m-%Y_%H-%M")
+          echo "RELEASE_NAME=${ts}-${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+      - name: Build Application
+        working-directory: ${{ env.FE_DIR }}
+        env:
+          VITE_AZURE_SPEECH_KEY: ""
+          VITE_AZURE_REGION: "eastus"
+          VITE_AZURE_OPENAI_KEY: ""
+          VITE_AZURE_OPENAI_DEPLOYMENT_NAME: "gpt-4.1-mini"
+          VITE_AZURE_OPENAI_API_VERSION: "2024-04-01-preview"
+          VITE_AZURE_OPENAI_ENDPOINT: "https://france-teachin-open-ai.openai.azure.com/"
+          VITE_APPINSIGHTS_CONNECTION_STRING: ""
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          RELEASE: ${{ env.RELEASE_NAME }}
+        run: npm run build
+
+      - name: Upload build artifacts
+        if: |
+         github.event_name == 'push' ||
+         github.event_name == 'workflow_dispatch' ||
+         github.event_name == 'workflow_call'
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: ${{ env.FE_DIR }}/dist/
+          retention-days: 1
+
+  deploy:
+    if: |
+     github.event_name == 'push' ||
+     github.event_name == 'workflow_dispatch' ||
+     github.event_name == 'workflow_call'
+    needs: [frontend-build-and-lint]
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment || 'Development' }}
     permissions:
       id-token: write
       contents: read
     env:
       FE_DIR: frontend
-
     steps:
       - uses: actions/checkout@v4
 
-      # Login only if we actually need az (missing AI conn string or SWA token)
+      # If triggered by PR merge, set default environment_name to dev
+      - name: Set default environment_name for PR merge
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          echo "environment_name=dev" >> $GITHUB_ENV
+
       - name: Azure Login (OIDC)
-        if: ${{ !inputs.app_insights_connection_string || !inputs.deployment_token }}
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -63,15 +139,38 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ENV="${{ inputs.environment_name }}"
+          ENV="${{ inputs.environment_name || env.environment_name}}"
           RG="${ENV}-zionet-learning-2025"
-
           SWA_NAME="static-web-app-${ENV}"
           AI_NAME="${SWA_NAME}-appinsights"
-
           echo "rg=$RG" >> $GITHUB_OUTPUT
+          echo "rg=$RG"
           echo "swa=$SWA_NAME" >> $GITHUB_OUTPUT
           echo "ai=$AI_NAME" >> $GITHUB_OUTPUT
+       
+      - name: Clean stage environment
+        shell: bash
+        run: |
+          set -euo pipefail 
+
+          # Get all staging environments for this Static Web App
+          ENVIRONMENTS=$(az staticwebapp environment list \
+            --name "${{ steps.names.outputs.swa }}" \
+            --resource-group "${{ steps.names.outputs.rg }}" \
+            --query "[?name != 'default'].{name:name, createdOn:createdOn}" \
+            --output json)
+
+          # Delete all staging environments
+          for env in $(echo "$ENVIRONMENTS" | jq -r '.[].name'); do
+            echo "Deleting staging environment: $env"
+            az staticwebapp environment delete \
+              --name "${{ steps.names.outputs.swa }}" \
+              --resource-group "${{ steps.names.outputs.rg }}" \
+              --environment-name "$env" \
+              --yes || true
+          done
+
+
 
       - name: Get App Insights connection string
         if: ${{ !inputs.app_insights_connection_string }}
@@ -91,62 +190,11 @@ jobs:
           echo "::add-mask::$CONN"
           echo "APPINSIGHTS_CONNECTION_STRING=$CONN" >> "$GITHUB_ENV"
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: '${{ env.FE_DIR }}/package-lock.json'
-
-      - name: Install Dependencies
-        working-directory: ${{ env.FE_DIR }}
-        run: npm ci
-
-      # Create release name with date + short SHA for Sentry
-      - name: Create release name for Sentry (UTC + short SHA)
-        run: |
-          ts=$(date -u "+Release-%d-%m-%Y_%H-%M")
-          echo "RELEASE_NAME=${ts}-${GITHUB_SHA::7}" >> $GITHUB_ENV
-
-      - name: Build Application
-        working-directory: ${{ env.FE_DIR }}
-        env:
-          VITE_AZURE_SPEECH_KEY: ""
-          VITE_AZURE_REGION: "eastus"
-          VITE_AZURE_OPENAI_KEY: ""
-          VITE_AZURE_OPENAI_DEPLOYMENT_NAME: "gpt-4.1-mini"
-          VITE_AZURE_OPENAI_API_VERSION: "2024-04-01-preview"
-          VITE_AZURE_OPENAI_ENDPOINT: "https://france-teachin-open-ai.openai.azure.com/"
-          VITE_APPINSIGHTS_CONNECTION_STRING: ${{ inputs.app_insights_connection_string || env.APPINSIGHTS_CONNECTION_STRING }}
-          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          RELEASE: ${{ env.RELEASE_NAME }}
-        run: npm run build
-
-      - name: Optimize Build Size
-        working-directory: ${{ env.FE_DIR }}
-        run: |
-          # Show directory sizes for comparison
-          echo "📂 Full frontend directory size (includes node_modules):"
-          du -sh . | cut -f1
-          echo "📦 Build output directory size (what gets deployed):"
-          du -sh dist/ | cut -f1
-          
-          # Show original build size
-          ORIGINAL_SIZE=$(du -sh dist/ | cut -f1)
-          echo "📦 Original build size: $ORIGINAL_SIZE"
-          
-          # Remove unnecessary files to reduce deployment size
-          echo "🧹 Removing unnecessary files..."
-          find dist -name "*.map" -delete
-          find dist -name "*.md" -delete
-          find dist -name "*.txt" -delete
-          find dist -name "*.LICENSE" -delete
-          
-          # Show optimized build size and savings
-          OPTIMIZED_SIZE=$(du -sh dist/ | cut -f1)
-          echo "✨ Optimized build size: $OPTIMIZED_SIZE"
-          echo "💾 Space saved by removing: source maps, docs, and license files"
+          name: frontend-build
+          path: ${{ env.FE_DIR }}/dist/
 
       - name: Get SWA deployment token
         if: ${{ !inputs.deployment_token }}
@@ -165,10 +213,14 @@ jobs:
           echo "::add-mask::$TOKEN"
           echo "AZURE_STATIC_WEB_APPS_API_TOKEN=$TOKEN" >> "$GITHUB_ENV"
 
-      - name: Deploy to Azure Static Web Apps
+      - name: Deploy to Azure Static Web Apps (Production slot)
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ inputs.deployment_token || env.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: "upload"
           app_location: "${{ env.FE_DIR }}/dist"
-          skip_app_build: true                
+          skip_app_build: true
+          production_branch: 'main'
+
+
+

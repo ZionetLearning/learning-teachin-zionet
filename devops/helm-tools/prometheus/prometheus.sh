@@ -15,13 +15,12 @@ echo "2. Create namespaces if needed"
 # Create the namespace for Prometheus if it doesn't exist
 kubectl get ns $PROM_NAMESPACE >/dev/null 2>&1 || kubectl create ns $PROM_NAMESPACE
 
-echo "3. Install/upgrade Prometheus Stack"
-# Deploy or upgrade the Prometheus stack using Helm
+echo "3. Install/upgrade Prometheus Stack with Dapr metrics support"
+# Deploy or upgrade the Prometheus stack using Helm with Dapr scraping configuration
 helm upgrade --install prom-stack prometheus-community/kube-prometheus-stack \
   --version "$PROM_CHART_VERSION" \
   --namespace "$PROM_NAMESPACE" \
-  --set grafana.enabled=false \
-  --set alertmanager.enabled=true \
+  --values ./values-prometheus-dapr.yaml \
   --wait  # Wait for all resources to be ready before continuing
 
 echo "4. Wait for Grafana service to be ready"

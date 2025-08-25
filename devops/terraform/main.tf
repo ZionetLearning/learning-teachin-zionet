@@ -47,12 +47,21 @@ module "servicebus" {
   depends_on = [azurerm_resource_group.main]
 }
 
+## Shared PostgreSQL server (created only once, in main RG)
+data "azurerm_postgresql_flexible_server" "shared" {
+  count                = var.use_shared_postgres ? 1 : 0
+  name                 = var.database_server_name
+  resource_group_name  = var.shared_aks_resource_group
+}
+
+# Create new PostgreSQL server and database only if not using shared
 module "database" {
+  count               = var.use_shared_postgres ? 1 : 1
   source              = "./modules/postgresql"
 
-  server_name         = "${var.environment_name}-${var.database_server_name}"
+  server_name         = var.database_server_name
   location            = var.db_location
-  resource_group_name = azurerm_resource_group.main.name
+  resource_group_name = var.use_shared_postgres ? var.shared_aks_resource_group : azurerm_resource_group.main.name
 
   admin_username      = var.admin_username
   admin_password      = var.admin_password
@@ -69,7 +78,11 @@ module "database" {
 
   delegated_subnet_id           = var.delegated_subnet_id
 
-  database_name       = var.database_name
+  environment_name     = var.environment_name
+  database_name       = "${var.database_name}-${var.environment_name}"
+
+  use_shared_postgres  = var.use_shared_postgres
+  existing_server_id   = var.use_shared_postgres ? data.azurerm_postgresql_flexible_server.shared[0].id : null
 
   depends_on = [azurerm_resource_group.main]
 }
@@ -184,27 +197,27 @@ resource "kubernetes_service_account" "environment" {
   depends_on = [kubernetes_namespace.environment]
 }
 
-resource "kubernetes_resource_quota" "environment" {
-  metadata {
-    name      = "${var.environment_name}-quota"
-    namespace = kubernetes_namespace.environment.metadata[0].name
+# resource "kubernetes_resource_quota" "environment" {
+#   metadata {
+#     name      = "${var.environment_name}-quota"
+#     namespace = kubernetes_namespace.environment.metadata[0].name
     
-    labels = {
-      environment = var.environment_name
-      managed-by  = "terraform"
-    }
-  }
+#     labels = {
+#       environment = var.environment_name
+#       managed-by  = "terraform"
+#     }
+#   }
   
-  spec {
-    hard = {
-      "requests.cpu"    = "2"
-      "requests.memory" = "4Gi"
-      "limits.cpu"      = "4"
-      "limits.memory"   = "8Gi"
-      "pods"            = "10"
-      "services"        = "8"
-    }
-  }
+#   spec {
+#     hard = {
+#       "requests.cpu"    = "2"
+#       "requests.memory" = "4Gi"
+#       "limits.cpu"      = "4"
+#       "limits.memory"   = "8Gi"
+#       "pods"            = "10"
+#       "services"        = "8"
+#     }
+#   }
   
-  depends_on = [kubernetes_namespace.environment]
-}
+#   depends_on = [kubernetes_namespace.environment]
+# }

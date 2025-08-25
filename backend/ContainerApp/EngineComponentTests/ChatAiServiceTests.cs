@@ -1,6 +1,8 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Text.Json;
+using System.Text.RegularExpressions;
+using DotQueue;
 using Engine;
-using Engine.Models;
+using Engine.Models.Chat;
 using Engine.Services;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -8,7 +10,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Polly;
-using DotQueue;
 
 namespace EngineComponentTests;
 
@@ -34,6 +35,15 @@ public class ChatAiServiceTests
             _noOpKernel;
     }
 
+    private static JsonElement JsonEl(string raw)
+    {
+        using var doc = JsonDocument.Parse(raw);
+        return doc.RootElement.Clone();
+    }
+
+    private static JsonElement EmptyHistory() =>
+        JsonEl("""{"messages":[]}""");
+
     public ChatAiServiceTests(TestKernelFixture fx)
     {
         _fx = fx;
@@ -55,59 +65,68 @@ public class ChatAiServiceTests
     [SkippableFact(DisplayName = "ProcessAsync: answer contains 4 or four")]
     public async Task ProcessAsync_Returns_Number4()
     {
-        var request = new AiRequestModel
+        var request = new ChatAiServiseRequest
         {
-            Id = Guid.NewGuid().ToString("N"),
-            ThreadId = Guid.NewGuid().ToString("N"),
-            Question = "How much is 2 + 2?",
-            TtlSeconds = 120,
+            History = EmptyHistory(),
+            UserMessage = "How much is 2 + 2?",
+            ChatType = ChatType.Default,
+            UserId = "TestUserId",
+            RequestId = Guid.NewGuid().ToString("N"),
+            ThreadId = Guid.NewGuid(),
+            TtlSeconds = 60,
             SentAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-            ReplyToQueue = "ignored-in-test"
         };
 
-        var response = await _aiService.ProcessAsync(request, CancellationToken.None);
+        var response = await _aiService.ChatHandlerAsync(request, CancellationToken.None);
 
-        Assert.True(string.IsNullOrEmpty(response.Status) || response.Status == "ok");
-        Assert.False(string.IsNullOrWhiteSpace(response.Answer));
+        Assert.True(response.Status == ChatAnswerStatus.Ok);
+        Assert.False(string.IsNullOrWhiteSpace(response?.Answer?.Content));
 
-        var answerLower = response.Answer.ToLowerInvariant();
+        var answerLower = response?.Answer?.Content.ToLowerInvariant();
         Assert.Matches(new Regex(@"\b4\b|four"), answerLower);
     }
 
     [SkippableFact(DisplayName = "ProcessAsync: history persists across calls")]
     public async Task ProcessAsync_Context_Persists()
     {
-        var threadId = Guid.NewGuid().ToString("N");
+        var threadId = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-
-        var request1 = new AiRequestModel
+        var userId = "TestUserId";
+        var userMesaage = "Remember the number forty-two.";
+        var request1 = new ChatAiServiseRequest
         {
-            Id = Guid.NewGuid().ToString("N"),
+            History = EmptyHistory(),
+            UserMessage = userMesaage,
+            ChatType = ChatType.Default,
+            UserId = userId,
+            RequestId = Guid.NewGuid().ToString("N"),
             ThreadId = threadId,
-            Question = "Remember the number forty-two.",
-            TtlSeconds = 120,
+            TtlSeconds = 60,
             SentAt = now,
-            ReplyToQueue = "ignored"
         };
-        var response1 = await _aiService.ProcessAsync(request1, CancellationToken.None);
+        var response1 = await _aiService.ChatHandlerAsync(request1, CancellationToken.None);
 
-        Assert.True(string.IsNullOrEmpty(response1.Status) || response1.Status == "ok");
+        Assert.True(response1.Status == ChatAnswerStatus.Ok);
+        Assert.NotNull(response1.Answer);
 
-        var request2 = new AiRequestModel
+        var request2 = new ChatAiServiseRequest
         {
-            Id = Guid.NewGuid().ToString("N"),
+            History = response1.UpdatedHistory,
+            UserMessage = "What number did you remember?",
+            ChatType = ChatType.Default,
+            UserId = "TestUserId",
+            RequestId = Guid.NewGuid().ToString("N"),
             ThreadId = threadId,
-            Question = "What number did you remember?",
-            TtlSeconds = 120,
+            TtlSeconds = 60,
             SentAt = now + 1,
-            ReplyToQueue = "ignored"
         };
-        var response2 = await _aiService.ProcessAsync(request2, CancellationToken.None);
 
-        Assert.True(string.IsNullOrEmpty(response2.Status) || response2.Status == "ok");
-        Assert.False(string.IsNullOrWhiteSpace(response2.Answer));
+        var response2 = await _aiService.ChatHandlerAsync(request2, CancellationToken.None);
 
-        var answerLower = response2.Answer.ToLowerInvariant();
+        Assert.True(response2.Status == ChatAnswerStatus.Ok);
+        Assert.False(string.IsNullOrWhiteSpace(response2?.Answer?.Content));
+
+        var answerLower = response2?.Answer?.Content.ToLowerInvariant();
         Assert.Matches(new Regex(@"\b42\b|forty[- ]?two"), answerLower);
     }
 

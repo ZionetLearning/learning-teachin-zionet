@@ -17,26 +17,44 @@ export const useChat = () => {
   const [threadId, setThreadId] = useState<string | undefined>(undefined);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
-  const { mutate: sendChatMessage, isPending } = useSendChatMessage();
+  const {
+    mutate: sendChatMessage,
+    mutateAsync: sendChatMessageAsync,
+    isPending,
+  } = useSendChatMessage();
+
+  const pushUser = (text: string) => {
+    const userMsg: ChatMessage = {
+      position: "right",
+      type: "text",
+      sender: "user",
+      text,
+      date: new Date(),
+    };
+    setMessages((prev) => [...prev, userMsg]);
+  };
+
+  const pushAssistant = (text: string) => {
+    const aiMsg: ChatMessage = {
+      position: "left",
+      type: "text",
+      sender: "system",
+      text,
+      date: new Date(),
+    };
+    setMessages((prev) => [...prev, aiMsg]);
+  };
 
   const sendMessage = (userText: string) => {
     if (!userText.trim()) return;
 
     const payload: ChatRequest = {
       userMessage: userText,
-      threadId: threadId || "123456789",
+      threadId: threadId || crypto.randomUUID(),
       chatType: "default",
     };
 
-    // push user message
-    const userMsg: ChatMessage = {
-      position: "right",
-      type: "text",
-      sender: "user",
-      text: userText,
-      date: new Date(),
-    };
-    setMessages((prev) => [...prev, userMsg]);
+    pushUser(userText);
 
     // call API
     sendChatMessage(payload, {
@@ -57,9 +75,27 @@ export const useChat = () => {
     });
   };
 
+  const sendMessageAsync = async (userText: string): Promise<string> => {
+    if (!userText.trim()) return "";
+
+    const payload: ChatRequest = {
+      userMessage: userText,
+      threadId: threadId || crypto.randomUUID(),
+      chatType: "default",
+    };
+
+    pushUser(userText);
+
+    const data = await sendChatMessageAsync(payload);
+    setThreadId(data.threadId);
+    pushAssistant(data.assistantMessage);
+    return data.assistantMessage;
+  };
+
   return {
     messages,
     sendMessage,
+    sendMessageAsync,
     loading: isPending,
     threadId,
     setMessages,

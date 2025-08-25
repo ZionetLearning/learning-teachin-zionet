@@ -58,5 +58,8 @@ backend/ContainerApp/.idea/.idea.backend/.idea/vcs.xml
 
 .vscode/settings.json
 
-/backend/ContainerApp/Engine/appsettings.Local.json
+# Ignore all local override config files (secrets, API keys)
+**/appsettings.Local.json
 
+# Ignore Kiro all folder and files
+/.kiro

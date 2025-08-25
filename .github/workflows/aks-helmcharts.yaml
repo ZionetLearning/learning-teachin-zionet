@@ -1,4 +1,4 @@
-name: AKS - App Helm Deploy
+name: AKS - Update Pod Containers
 
 run-name: >
   🚢 Helm Deploy | Environment: ${{ 
@@ -18,6 +18,10 @@ on:
         description: 'Optional namespace/prefix (lowercase letters & digits). Empty -> dev'
         required: false
         default: ''
+      image_tag:
+        description: 'Optional image tag (e.g., commit hash). Empty -> uses environment_name'
+        required: false
+        default: ''
   workflow_call:
     inputs:
       environment:
@@ -26,6 +30,10 @@ on:
       environment_name:
         required: false
         type: string
+      image_tag:
+        required: false
+        type: string
+        description: 'Docker image tag to deploy (e.g., commit hash)'
     outputs:
       app_url:
         description: "Ingress URL (if already created by platform setup)"
@@ -68,17 +76,22 @@ jobs:
           echo "K8S_DIR=devops/kubernetes/" >> $GITHUB_ENV
           echo "CHART_DIR=devops/kubernetes/charts" >> $GITHUB_ENV
           echo "VALUES_FILE=devops/kubernetes/charts/values.dev.yaml" >> $GITHUB_ENV
-          echo "DOCKER_REGISTRY=${{ secrets.DOCKER_USERNAME }}" >> $GITHUB_ENV
+          echo "ACR_NAME=teachindevacr" >> $GITHUB_ENV
+          echo "ACR_LOGIN_SERVER=teachindevacr.azurecr.io" >> $GITHUB_ENV
           echo "OPENAI_KEY=${{ secrets.AZURE_OPENAI_API_KEY }}" >> $GITHUB_ENV
           echo "AZURE_SPEECH_KEY=${{ secrets.AZURE_SPEECH_KEY }}" >> $GITHUB_ENV
+          echo "MANAGER_JWT_SECRET=${{ secrets.MANAGER_JWT_SECRET }}" >> $GITHUB_ENV
+          echo "MANAGER_JWT_ISSUER=${{ secrets.MANAGER_JWT_ISSUER }}" >> $GITHUB_ENV
+          echo "MANAGER_JWT_AUDIENCE=${{ secrets.MANAGER_JWT_AUDIENCE }}" >> $GITHUB_ENV
+          echo "MANAGER_JWT_REFRESH_TOKEN_HASH_KEY=${{ secrets.MANAGER_JWT_REFRESH_TOKEN_HASH_KEY }}" >> $GITHUB_ENV
 
           # Shared AKS
           echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
           echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
 
-          # PG (per env name)
-          echo "PG_DB=${ENVIRONMENT_NAME}-pg-zionet-learning" >> $GITHUB_ENV
-          echo "PG_RG=${ENVIRONMENT_NAME}-zionet-learning-2025" >> $GITHUB_ENV
+          # PG (shared)
+          echo "PG_DB=dev-pg-zionet-learning" >> $GITHUB_ENV
+          echo "PG_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
 
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
@@ -86,6 +99,21 @@ jobs:
       - name: Ensure target namespace exists
         run: |
           kubectl create namespace "$TARGET_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Check and fix Helm release status
+        run: |
+          echo "Checking Helm release status for namespace: $TARGET_NAMESPACE"
+          RELEASE_STATUS=$(helm status app -n "$TARGET_NAMESPACE" -o json 2>/dev/null | jq -r '.info.status' || echo "not-found")
+          echo "Current release status: $RELEASE_STATUS"
+
+          if [[ "$RELEASE_STATUS" == "pending-install" ]] || [[ "$RELEASE_STATUS" == "pending-upgrade" ]] || [[ "$RELEASE_STATUS" == "pending-rollback" ]]; then
+            echo "⚠️ Found pending operation. Attempting rollback..."
+            helm rollback app -n "$TARGET_NAMESPACE" || echo "Rollback failed, trying to delete release history..."
+            helm delete app -n "$TARGET_NAMESPACE" --wait || echo "Delete failed, continuing anyway..."
+            sleep 5
+          fi
+
+          echo "Helm release status check complete."
 
       - name: Wait for external IP for ingress controller
         run: |
@@ -146,27 +174,49 @@ jobs:
 
       - name: Helm template sanity (no Namespace objects)
         run: |
+          # Use image_tag if provided, otherwise fall back to TARGET_NAMESPACE
+          IMAGE_TAG="${{ inputs.image_tag || github.event.inputs.image_tag }}"
+          if [ -z "$IMAGE_TAG" ]; then
+            IMAGE_TAG="$TARGET_NAMESPACE"
+          fi
+          
           helm template app "$CHART_DIR" -f "$VALUES_FILE" \
             --set namespace.name="$TARGET_NAMESPACE" \
             --set namespace.create=false \
             --set global.namePrefix="$TARGET_NAMESPACE" \
-            --set global.dockerRegistry="$DOCKER_REGISTRY" \
+            --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
+            --set global.environment="$IMAGE_TAG" \
             --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" \
             --set-string engine.env.AzureSpeech__SubscriptionKey="$AZURE_SPEECH_KEY" \
+            --set-string manager.env.Jwt__Secret="$MANAGER_JWT_SECRET" \
+            --set-string manager.env.Jwt__Issuer="$MANAGER_JWT_ISSUER" \
+            --set-string manager.env.Jwt__Audience="$MANAGER_JWT_AUDIENCE" \
+            --set-string manager.env.Jwt__RefreshTokenHashKey="$MANAGER_JWT_REFRESH_TOKEN_HASH_KEY" \
             --set dapr.installComponents=false \
           | grep -n '^kind: Namespace' && { echo "Namespace still rendered"; exit 1; } || echo "OK: no Namespace in chart"
 
       - name: Helm upgrade/install app
         run: |
+          # Use image_tag if provided, otherwise fall back to TARGET_NAMESPACE
+          IMAGE_TAG="${{ inputs.image_tag || github.event.inputs.image_tag }}"
+          if [ -z "$IMAGE_TAG" ]; then
+            IMAGE_TAG="$TARGET_NAMESPACE"
+          fi
+          
           helm upgrade --install app "$CHART_DIR" \
             --namespace "$TARGET_NAMESPACE" \
             -f "$VALUES_FILE" \
             --set namespace.name="$TARGET_NAMESPACE" \
             --set namespace.create=false \
             --set global.namePrefix="$TARGET_NAMESPACE" \
-            --set global.dockerRegistry="$DOCKER_REGISTRY" \
+            --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
+            --set global.environment="$IMAGE_TAG" \
             --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" \
             --set-string engine.env.AzureSpeech__SubscriptionKey="$AZURE_SPEECH_KEY" \
+            --set-string manager.env.Jwt__Secret="$MANAGER_JWT_SECRET" \
+            --set-string manager.env.Jwt__Issuer="$MANAGER_JWT_ISSUER" \
+            --set-string manager.env.Jwt__Audience="$MANAGER_JWT_AUDIENCE" \
+            --set-string manager.env.Jwt__RefreshTokenHashKey="$MANAGER_JWT_REFRESH_TOKEN_HASH_KEY" \
             --set dapr.installComponents=false
 
       - name: Diagnostics (on failure)
@@ -180,7 +230,3 @@ jobs:
             kubectl -n "$ns" describe "$p" || true
             kubectl -n "$ns" logs "$p" --all-containers --tail=200 || true
           done
-
-      - name: Restart all pods in target namespace (optional)
-        run: kubectl delete pod --all -n "$TARGET_NAMESPACE" || true
-

@@ -2,6 +2,7 @@
 using Manager.Models.ModelValidation;
 using Manager.Services;
 using Microsoft.AspNetCore.Mvc;
+using Manager.Models.Users;
 
 namespace Manager.Endpoints;
 
@@ -9,7 +10,6 @@ public static class ManagerEndpoints
 {
     public static WebApplication MapManagerEndpoints(this WebApplication app)
     {
-
         #region HTTP GET
 
         app.MapGet("/task/{id}", GetTaskAsync).WithName("GetTask");
@@ -18,21 +18,27 @@ public static class ManagerEndpoints
 
         #region HTTP POST
 
-        app.MapPost("/task", CreateTaskAsync).WithName("CreateTask");
+        app.MapPost("/task", CreateTaskAsync).WithName("CreateTaskAsync");
 
         app.MapPost("/tasklong", CreateTaskLongAsync).WithName("CreateTaskLongTest");
-
         #endregion
 
         #region HTTP PUT
-
         app.MapPut("/task/{id}/{name}", UpdateTaskNameAsync).WithName("UpdateTaskName");
-
         #endregion
 
         #region HTTP DELETE
-
         app.MapDelete("/task/{id}", DeleteTaskAsync).WithName("DeleteTask");
+
+        #endregion
+
+        #region User Endpoints
+
+        app.MapGet("/user-list", GetAllUsersAsync).WithName("GetAllUsers");
+        app.MapGet("/user/{userId:guid}", GetUserAsync).WithName("GetUser");
+        app.MapPost("/user", CreateUserAsync).WithName("CreateUser");
+        app.MapPut("/user/{userId}", UpdateUserAsync).WithName("UpdateUser");
+        app.MapDelete("/user/{userId}", DeleteUserAsync).WithName("DeleteUser");
 
         #endregion
 
@@ -44,7 +50,7 @@ public static class ManagerEndpoints
         [FromServices] IManagerService managerService,
         [FromServices] ILogger<ManagerService> logger)
     {
-        using (logger.BeginScope("Method {MethodName}:", nameof(GetTaskAsync)))
+        using var scope = logger.BeginScope("TaskId {TaskId}:", id);
         {
             try
             {
@@ -71,7 +77,7 @@ public static class ManagerEndpoints
         [FromServices] IManagerService managerService,
         [FromServices] ILogger<ManagerService> logger)
     {
-        using (logger.BeginScope("Method: {Method}", nameof(CreateTaskAsync)))
+        using var scope = logger.BeginScope("TaskId {TaskId}:", task.Id);
         {
             if (!ValidationExtensions.TryValidate(task, out var validationErrors))
             {
@@ -81,21 +87,21 @@ public static class ManagerEndpoints
 
             try
             {
-                logger.LogInformation("Processing task creation for ID {TaskId}", task.Id);
+                logger.LogInformation("Processing task creation");
 
-                var (success, message) = await managerService.ProcessTaskAsync(task);
+                var (success, message) = await managerService.CreateTaskAsync(task);
                 if (success)
                 {
-                    logger.LogInformation("Task {TaskId} processed successfully", task.Id);
+                    logger.LogInformation("Task sent to queue successfully");
                     return Results.Accepted($"/task/{task.Id}", new { status = message, task.Id });
                 }
 
-                logger.LogWarning("Processing task {TaskId} failed: {Message}", task.Id, message);
+                logger.LogWarning("Processing task failed: {Message}", message);
                 return Results.Problem("Failed to process the task.");
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error processing task {TaskId}", task.Id);
+                logger.LogError(ex, "Error processing task");
                 return Results.Problem("An error occurred while processing the task.");
             }
         }
@@ -106,7 +112,7 @@ public static class ManagerEndpoints
         [FromServices] IManagerService managerService,
         [FromServices] ILogger<ManagerService> logger)
     {
-        using (logger.BeginScope("Method: {Method}", nameof(CreateTaskAsync)))
+        using var scope = logger.BeginScope("TaskId {TaskId}:", task.Id);
         {
             try
             {
@@ -116,7 +122,7 @@ public static class ManagerEndpoints
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error processing task {TaskId}", task.Id);
+                logger.LogError(ex, "Error processing task");
                 return Results.Problem("An error occurred while processing the task.");
             }
         }
@@ -128,26 +134,26 @@ public static class ManagerEndpoints
         [FromServices] IManagerService managerService,
         [FromServices] ILogger<ManagerService> logger)
     {
-        using (logger.BeginScope("Method: {Method}", nameof(UpdateTaskNameAsync)))
+        using var scope = logger.BeginScope("TaskId {TaskId}:", id);
         {
             try
             {
-                logger.LogInformation("Attempting to update task name for ID {TaskId}", id);
+                logger.LogInformation("Attempting to update task name");
 
                 var success = await managerService.UpdateTaskName(id, name);
 
                 if (success)
                 {
-                    logger.LogInformation("Successfully updated task name for ID {TaskId}", id);
+                    logger.LogInformation("Successfully updated task name");
                     return Results.Ok("Task name updated");
                 }
 
-                logger.LogWarning("Task with ID {TaskId} not found for name update", id);
+                logger.LogWarning("Task not found for name update");
                 return Results.NotFound("Task not found");
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error updating task name for ID {TaskId}", id);
+                logger.LogError(ex, "Error updating task name ");
                 return Results.Problem("An error occurred while updating the task name.");
             }
         }
@@ -158,28 +164,152 @@ public static class ManagerEndpoints
         [FromServices] IManagerService managerService,
         [FromServices] ILogger<ManagerService> logger)
     {
-        using (logger.BeginScope("Method: {Method}", nameof(DeleteTaskAsync)))
+        using var scope = logger.BeginScope("TaskId {TaskId}:", id);
         {
             try
             {
-                logger.LogInformation("Attempting to delete task with ID {TaskId}", id);
+                logger.LogInformation("Attempting to delete task ");
 
                 var success = await managerService.DeleteTask(id);
 
                 if (success)
                 {
-                    logger.LogInformation("Successfully deleted task with ID {TaskId}", id);
+                    logger.LogInformation("Successfully deleted task");
                     return Results.Ok("Task deleted");
                 }
 
-                logger.LogWarning("Task with ID {TaskId} not found for deletion", id);
+                logger.LogWarning("Task not found for deletion");
                 return Results.NotFound(new { Message = $"Task with ID {id} not found" });
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error deleting task with ID {TaskId}", id);
+                logger.LogError(ex, "Error deleting task");
                 return Results.Problem("An error occurred while deleting the task.");
             }
         }
     }
+
+    #region User Handlers
+
+    private static async Task<IResult> GetUserAsync(
+        [FromRoute] Guid userId,
+        [FromServices] IManagerService managerService,
+        [FromServices] ILogger<ManagerService> logger)
+    {
+        using var scope = logger.BeginScope("UserId {UserId}:", userId);
+        try
+        {
+            var user = await managerService.GetUserAsync(userId);
+            if (user is null)
+            {
+                logger.LogWarning("User not found");
+                return Results.NotFound($"User with ID {userId} not found.");
+            }
+
+            logger.LogInformation("User retrieved");
+            return Results.Ok(user);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error retrieving user");
+            return Results.Problem("Failed to get user.");
+        }
+    }
+
+    private static async Task<IResult> CreateUserAsync(
+        [FromBody] UserModel user,
+        [FromServices] IManagerService managerService,
+        [FromServices] ILogger<ManagerService> logger)
+    {
+        using var scope = logger.BeginScope("CreateUser {Email}:", user.Email);
+        try
+        {
+            var success = await managerService.CreateUserAsync(user);
+            if (!success)
+            {
+                logger.LogWarning("User creation failed");
+                return Results.Conflict("User already exists.");
+            }
+
+            logger.LogInformation("User created");
+            return Results.Created($"/user/{user.UserId}", user);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error creating user");
+            return Results.Problem("Failed to create user.");
+        }
+    }
+
+    private static async Task<IResult> UpdateUserAsync(
+        [FromRoute] Guid userId,
+        [FromBody] UpdateUserModel user,
+        [FromServices] IManagerService managerService,
+        [FromServices] ILogger<ManagerService> logger)
+    {
+        using var scope = logger.BeginScope("UpdateUser {UserId}:", userId);
+        try
+        {
+            var success = await managerService.UpdateUserAsync(user, userId);
+            if (!success)
+            {
+                logger.LogWarning("User not found for update");
+                return Results.NotFound("User not found.");
+            }
+
+            logger.LogInformation("User updated");
+            return Results.Ok("User updated.");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error updating user");
+            return Results.Problem("Failed to update user.");
+        }
+    }
+
+    private static async Task<IResult> DeleteUserAsync(
+        [FromRoute] Guid userId,
+        [FromServices] IManagerService managerService,
+        [FromServices] ILogger<ManagerService> logger)
+    {
+        using var scope = logger.BeginScope("DeleteUser {UserId}:", userId);
+        try
+        {
+            var success = await managerService.DeleteUserAsync(userId);
+            if (!success)
+            {
+                logger.LogWarning("User not found for deletion");
+                return Results.NotFound("User not found.");
+            }
+
+            logger.LogInformation("User deleted");
+            return Results.Ok("User deleted.");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error deleting user");
+            return Results.Problem("Failed to delete user.");
+        }
+    }
+
+    private static async Task<IResult> GetAllUsersAsync(
+        [FromServices] IManagerService managerService,
+        [FromServices] ILogger<ManagerService> logger)
+    {
+        using var scope = logger.BeginScope("GetAllUsers:");
+
+        try
+        {
+            var users = await managerService.GetAllUsersAsync();
+            logger.LogInformation("Retrieved {Count} users", users.Count());
+            return Results.Ok(users);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error retrieving users");
+            return Results.Problem("Failed to retrieve users.");
+        }
+    }
+
+    #endregion
 }

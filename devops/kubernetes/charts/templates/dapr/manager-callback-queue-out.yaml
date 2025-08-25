@@ -1,7 +1,7 @@
 apiVersion: dapr.io/v1alpha1
 kind: Component
 metadata:
-  name: {{ include "app.join" (list (include "app.prefix" .) "manager-callback-queue-out") }}
+  name: manager-callback-queue-out
   namespace: {{ include "app.namespace" . }}
 spec:
   type: bindings.azure.servicebusqueues
@@ -12,10 +12,11 @@ spec:
         name: azure-service-bus-secret
         key: AzureServiceBusConnectionString
     - name: queueName
-      value: {{ include "app.sbName" (list $ "manager-callback-queue") | quote }}
+      value: "manager-callback-queue"
     - name: direction
       value: output
     - name: disableEntityManagement
       value: "true"
 scopes:
   - {{ .Values.engine.dapr.appId  | default .Values.engine.name  | quote }}
+  - {{ .Values.accessor.dapr.appId  | default .Values.accessor.name  | quote }}

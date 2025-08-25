@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { useChat } from "@/hooks/useChat";
-import { useAvatarSpeech } from "@/hooks";
+import { useAvatarSpeech, useChat } from "@/hooks";
 import { ReactChatElements } from "@/components";
 import avatar from "@/assets/avatar.svg";
 import { lipsArray } from "@/assets/lips";
@@ -12,7 +11,7 @@ export const ChatWithAvatar = () => {
   const { t } = useTranslation();
   const { sendMessage, loading, messages } = useChat();
   const [text, setText] = useState("");
-  const { currentVisemeSrc, speak } = useAvatarSpeech(lipsArray);
+  const { currentVisemeSrc, speak } = useAvatarSpeech({ lipsArray });
   const lastSpokenTextRef = useRef<string | null>(null);
 
   useEffect(() => {

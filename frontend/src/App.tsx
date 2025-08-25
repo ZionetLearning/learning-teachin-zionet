@@ -1,5 +1,4 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-
 import { RequireAuth, SidebarMenuLayout } from "./components";
 import {
   AuthorizationPage,
@@ -17,6 +16,8 @@ import {
   EarthquakeMapPage,
   WeatherWidgetPage,
   AnimeExplorerPage,
+  CountryExplorerPage,
+  SignalRPage,
 } from "./pages";
 
 import "./App.css";
@@ -25,7 +26,9 @@ import { useTranslation } from "react-i18next";
 
 const ProtectedLayout = () => (
   <RequireAuth>
-    <SidebarMenuLayout />
+    <div data-testid="protected-layout">
+      <SidebarMenuLayout />
+    </div>
   </RequireAuth>
 );
 
@@ -55,6 +58,8 @@ function App() {
           <Route path="/earthquake-map" element={<EarthquakeMapPage />} />
           <Route path="/weather" element={<WeatherWidgetPage />} />
           <Route path="/anime-explorer" element={<AnimeExplorerPage />} />
+          <Route path="/country-explorer" element={<CountryExplorerPage />} />
+          <Route path="/signalr" element={<SignalRPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

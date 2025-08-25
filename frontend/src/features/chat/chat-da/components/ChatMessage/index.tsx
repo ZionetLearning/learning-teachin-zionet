@@ -11,6 +11,13 @@ export const ChatMessage = ({ message }: { message: Message }) => {
       className={`${classes.message} ${
         message.sender === "user" ? classes.userMessage : classes.botMessage
       }`}
+      data-testid={
+        message.sender === "user"
+          ? "chat-da-msg-user"
+          : message.isComplete
+            ? "chat-da-msg-bot-complete"
+            : "chat-da-msg-bot-streaming"
+      }
     >
       {message.text}
     </div>

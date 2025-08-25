@@ -13,3 +13,5 @@ export * from "./AuthorizationPage";
 export * from "./EarthquakeMapPage";
 export * from "./WeatherWidgetPage";
 export * from "./AnimeExplorerPage";
+export * from "./CountryExplorerPage";
+export * from "./SignalRPage";
