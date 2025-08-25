@@ -69,13 +69,13 @@ jobs:
             echo "TARGET_NAMESPACE=$ENVIRONMENT_NAME" >> $GITHUB_ENV
             echo "RESOLVED_TARGET=custom($ENVIRONMENT_NAME)" >> $GITHUB_ENV
             
-            # Use values.dev.yaml for 'dev' environment, values.temp.yaml for all others
+            # Use values.dev.yaml for 'dev' environment, base values.yaml for all others
             if [ "$ENVIRONMENT_NAME" = "dev" ]; then
               echo "VALUES_FILE=devops/kubernetes/charts/values.dev.yaml" >> $GITHUB_ENV
               echo "Using dev values file for dev environment"
             else
-              echo "VALUES_FILE=devops/kubernetes/charts/values.temp.yaml" >> $GITHUB_ENV
-              echo "Using template values file for temporary environment: $ENVIRONMENT_NAME"
+              echo "VALUES_FILE=devops/kubernetes/charts/values.yaml" >> $GITHUB_ENV
+              echo "Using base values file for temporary environment: $ENVIRONMENT_NAME"
             fi
           fi
 

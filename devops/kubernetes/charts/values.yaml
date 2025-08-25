@@ -44,6 +44,14 @@ manager:
     Jwt__Issuer: ""
     Jwt__Audience: ""
     Jwt__RefreshTokenHashKey: ""
+  ingress:
+    enabled: true
+    host: teachin.westeurope.cloudapp.azure.com
+    basePath: /api
+    tls:
+      enabled: true
+      clusterIssuer: letsencrypt-prod
+      secretName: teachin-tls
   secrets:
     serviceBus:
       name: azure-service-bus-secret
