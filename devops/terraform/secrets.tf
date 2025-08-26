@@ -19,7 +19,6 @@ resource "azurerm_key_vault_secret" "postgres_connection" {
         data.azurerm_postgresql_flexible_server.shared[0].fqdn,
         "${var.database_name}-${var.environment_name}",
         var.admin_username,
-        data.azurerm_postgresql_flexible_server.shared[0].name,
         var.admin_password
       )
     : module.database[0].postgres_connection_string
