@@ -14,6 +14,7 @@ public class AccessorDbContext : DbContext
     public DbSet<TaskModel> Tasks { get; set; } = default!;
     public DbSet<ChatThread> ChatThreads { get; set; } = default!;
     public DbSet<ChatMessage> ChatMessages { get; set; } = default!;
+    public DbSet<ChatHistorySnapshot> ChatHistorySnapshots { get; set; } = default!;
     public DbSet<IdempotencyRecord> Idempotency { get; set; } = default!;
     public DbSet<RefreshSessionsRecord> RefreshSessions { get; set; } = default!;
     public DbSet<UserModel> Users { get; set; } = default!;
@@ -54,6 +55,26 @@ public class AccessorDbContext : DbContext
             e.Property(i => i.Status).IsRequired();
             e.Property(i => i.CreatedAtUtc).IsRequired();
             // ExpiresAtUtc optional
+        });
+
+        // ChatHistorySnapshot table
+        modelBuilder.Entity<ChatHistorySnapshot>(e =>
+        {
+            e.ToTable("ChatHistorySnapshots");
+            e.HasKey(x => x.ThreadId);
+            e.Property(x => x.UserId).IsRequired();
+            e.Property(x => x.ChatType).HasDefaultValue("default");
+
+            // jsonb в Postgres
+            e.Property(x => x.History)
+             .HasColumnType("jsonb")
+             .IsRequired();
+
+            e.Property(x => x.CreatedAt)
+             .HasDefaultValueSql("NOW()");
+
+            e.Property(x => x.UpdatedAt)
+             .HasDefaultValueSql("NOW()");
         });
 
         base.OnModelCreating(modelBuilder);

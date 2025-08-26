@@ -307,4 +307,53 @@ public class AccessorClient(
             return false;
         }
     }
+
+    public async Task<IEnumerable<UserData>> GetAllUsersAsync(CancellationToken ct = default)
+    {
+        _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetAllUsersAsync), nameof(AccessorClient));
+
+        try
+        {
+            var users = await _daprClient.InvokeMethodAsync<List<UserData>>(
+                HttpMethod.Get,
+                "accessor",
+                "users",
+                ct
+            );
+
+            _logger.LogInformation("Retrieved {Count} users from accessor", users?.Count ?? 0);
+            return users ?? Enumerable.Empty<UserData>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get all users from accessor");
+            throw;
+        }
+    }
+    public async Task<StatsSnapshot?> GetStatsSnapshotAsync(CancellationToken ct = default)
+    {
+        _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetStatsSnapshotAsync), nameof(AccessorClient));
+        try
+        {
+            var snapshot = await _daprClient.InvokeMethodAsync<StatsSnapshot>(
+                HttpMethod.Get,
+                AppIds.Accessor,                 // keep using your constant if you have it
+                "internal/stats/snapshot",
+                ct
+            );
+            return snapshot; // may be null if Accessor returns empty body
+        }
+        catch (InvocationException ex) when (
+            ex.Response?.StatusCode == HttpStatusCode.NoContent ||
+            ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("No stats snapshot available from Accessor ({Status})", ex.Response?.StatusCode);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get stats snapshot from Accessor");
+            throw;
+        }
+    }
 }
