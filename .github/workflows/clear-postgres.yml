@@ -1,0 +1,49 @@
+name: Clear Postgres Database
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "drop = DROP TABLE (removes structure), truncate = TRUNCATE (keeps tables)"
+        required: true
+        default: "drop"
+        type: choice
+        options:
+          - drop
+          - truncate
+      dry_run:
+        description: "If true, only print SQL and do not execute"
+        required: false
+        default: "true"
+      verify_ssl:
+        description: "true=require SSL (Azure default). false=disable SSL (NOT recommended)."
+        required: false
+        default: "true"
+
+jobs:
+  clear-db:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      # PGHOST: ${{ secrets.POSTGRES_HOST }}
+      PGHOST: myserver.postgres.database.azure.com
+      # PGDATABASE: ${{ secrets.POSTGRES_DB }}
+      PGDATABASE: mydatabase
+      # PGUSER: ${{ secrets.POSTGRES_USER }}
+      PGUSER: myuser@myserver
+      # PGPASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      PGPASSWORD: mySuperSecretPassword123   # WARNING: replace with secret
+      # PGPORT: ${{ secrets.POSTGRES_PORT != '' && secrets.POSTGRES_PORT || '5432' }}
+      PGPORT: 5432
+      MODE: ${{ github.event.inputs.mode }}
+      DRY_RUN: ${{ github.event.inputs.dry_run }}
+      VERIFY_SSL: ${{ github.event.inputs.verify_ssl }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Make scripts executable
+        run: chmod +x scripts/clear_postgres.sh
+      - name: Install psql client
+        run: sudo apt-get update -y && sudo apt-get install -y postgresql-client
+      - name: Clear Postgres
+        run: ./scripts/clear_postgres.sh
