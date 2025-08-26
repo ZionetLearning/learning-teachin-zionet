@@ -39,17 +39,16 @@ resource "azurerm_key_vault_secret" "signalr_connection" {
 # Redis secret
 ########################
 resource "azurerm_key_vault_secret" "redis_hostport" {
-  name         = "${var.environment_name}-redis-hostport"
-  value        = "${module.redis.hostname}:6380"
+  name         = "redis-hostport"
+  value        = var.use_shared_redis ? "${data.azurerm_redis_cache.shared[0].hostname}:6380" : "${module.redis.hostname}:6380"
   key_vault_id = data.azurerm_key_vault.shared.id
 }
 
 resource "azurerm_key_vault_secret" "redis_password" {
-  name         = "${var.environment_name}-redis-password"
-  value        = module.redis.primary_access_key
+  name         = "redis-password"
+  value        = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].primary_access_key : module.redis.primary_access_key
   key_vault_id = data.azurerm_key_vault.shared.id
 }
-
 resource "kubernetes_manifest" "cluster_secret_store" {
   manifest = {
     apiVersion = "external-secrets.io/v1"
