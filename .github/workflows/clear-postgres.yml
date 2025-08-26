@@ -23,6 +23,7 @@ on:
 jobs:
   clear-db:
     runs-on: ubuntu-latest
+    environment: Development
     timeout-minutes: 10
     permissions:
       id-token: write
