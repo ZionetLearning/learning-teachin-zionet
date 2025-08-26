@@ -10,16 +10,16 @@ export type TaskInput = {
 };
 
 export const usePostTask = () => {
-  const BASE_URL = import.meta.env.VITE_BASE_URL!;
+  const TASKS_BASE_URL = import.meta.env.VITE_TASKS_URL!;
   const { userId } = useSignalR();
 
   return useMutation<void, Error, TaskInput>({
     mutationFn: async ({ id, name, payload }) => {
       await axios.post(
         //local server endpoint URL:
-        // "http://localhost:5280/task",
+        // "http://localhost:5280/tasks-manager/task",
         //cloud server endpoint URL:
-        `${BASE_URL}/task`,
+        `${TASKS_BASE_URL}/task`,
         { id, name, payload },
         {
           headers: {

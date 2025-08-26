@@ -22,11 +22,11 @@ export type SynthesizerRequest = {
 };
 
 export const useSynthesizeSpeech = () => {
-  const BASE_URL = import.meta.env.VITE_BASE_URL!;
+  const AI_BASE_URL = import.meta.env.VITE_AI_URL!;
   return useMutation<SynthesizeResponse, Error, SynthesizerRequest>({
     mutationFn: async ({ text }: SynthesizerRequest) => {
       const response = await axios.post<SynthesizeResponse>(
-        `${BASE_URL}/speech/synthesize`,
+        `${AI_BASE_URL}/speech/synthesize`,
         { text },
       );
       return response.data;
