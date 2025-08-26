@@ -21,11 +21,14 @@ exports[`<CountryExplorer /> > matches snapshot (stable render) 1`] = `
       <div>
         <label
           class="label-0-2-8"
+          for="search-input"
         >
           pages.countryExplorer.searchByName
         </label>
         <input
           class="input-0-2-9"
+          data-testid="search-input"
+          id="search-input"
           placeholder="pages.countryExplorer.searchByName"
           value=""
         />
@@ -33,77 +36,83 @@ exports[`<CountryExplorer /> > matches snapshot (stable render) 1`] = `
       <div>
         <label
           class="label-0-2-8"
+          for="region-select"
         >
           pages.countryExplorer.regionWithNoColon
         </label>
         <select
           class="select-0-2-10"
+          data-testid="region-select"
+          id="region-select"
         >
           <option
             value="All"
           >
-            All
+            pages.countryExplorer.regionFilter.all
           </option>
           <option
             value="Africa"
           >
-            Africa
+            pages.countryExplorer.regionFilter.africa
           </option>
           <option
             value="Americas"
           >
-            Americas
+            pages.countryExplorer.regionFilter.americas
           </option>
           <option
             value="Asia"
           >
-            Asia
+            pages.countryExplorer.regionFilter.asia
           </option>
           <option
             value="Europe"
           >
-            Europe
+            pages.countryExplorer.regionFilter.europe
           </option>
           <option
             value="Oceania"
           >
-            Oceania
+            pages.countryExplorer.regionFilter.oceania
           </option>
           <option
             value="Antarctic"
           >
-            Antarctic
+            pages.countryExplorer.regionFilter.antarctic
           </option>
         </select>
       </div>
       <div>
         <label
-          style="display: block; font-size: 12px; color: rgb(85, 85, 85);"
+          class="label-0-2-8"
+          for="population-select"
         >
           pages.countryExplorer.populationWithNoColon
         </label>
         <select
           class="select-0-2-10"
+          data-testid="population-select"
+          id="population-select"
         >
           <option
             value="ALL"
           >
-            All populations
+            pages.countryExplorer.populationFilter.allPopulations
           </option>
           <option
             value="<10M"
           >
-            &lt; 10M
+            pages.countryExplorer.populationFilter.lessThan10M
           </option>
           <option
             value="10M-100M"
           >
-            10M – 100M
+            pages.countryExplorer.populationFilter.between10MAnd100M
           </option>
           <option
             value=">=100M"
           >
-            ≥ 100M
+            pages.countryExplorer.populationFilter.moreThan100M
           </option>
         </select>
       </div>
@@ -115,7 +124,8 @@ exports[`<CountryExplorer /> > matches snapshot (stable render) 1`] = `
         class="cards-0-2-6"
       >
         <div
-          class="container-0-2-11"
+          class="cardContainer-0-2-11"
+          data-testid="country-card"
         >
           <img
             alt="France flag"
