@@ -5,6 +5,7 @@ import {
   useQueryClient,
   UseQueryResult,
 } from "@tanstack/react-query";
+import axios from "axios";
 
 type UserDto = User & {
   passwordHash?: string;
@@ -20,7 +21,7 @@ export interface User {
   email: string;
 }
 
-const USERS_URL = `${import.meta.env.VITE_BASE_URL}/user`;
+const USERS_URL = `${import.meta.env.VITE_USERS_URL}/user`;
 
 const mapUser = (dto: UserDto): User => ({
   userId: dto.userId,
@@ -28,11 +29,11 @@ const mapUser = (dto: UserDto): User => ({
 });
 
 const getAllUsers = async (): Promise<User[]> => {
-  const response = await fetch(`${USERS_URL}-list`);
-  const payload = await response.json();
-  if (!response.ok)
-    throw new Error(payload?.message || "Failed to fetch users");
-  return (payload as UserDto[]).map(mapUser);
+  const response = await axios.get(`${USERS_URL}-list`);
+  if (response.status !== 200) {
+    throw new Error(response.data?.message || "Failed to fetch users");
+  }
+  return (response.data as UserDto[]).map(mapUser);
 };
 
 const updateUserByUserId = async (
@@ -44,21 +45,17 @@ const updateUserByUserId = async (
     email: userData.email,
     passwordHash: userData.passwordHash,
   };
-  const response = await fetch(`${USERS_URL}/${userId}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  const payload = await response.json();
-  if (!response.ok)
-    throw new Error(payload?.message || "Failed to update user");
-  return mapUser(payload as UserDto);
+  const response = await axios.put(`${USERS_URL}/${userId}`, body);
+  if (response.status !== 200) {
+    throw new Error(response.data?.message || "Failed to update user");
+  }
+  return mapUser(response.data as UserDto);
 };
 
 const deleteUserByUserId = async (userId: string): Promise<void> => {
-  const response = await fetch(`${USERS_URL}/${userId}`, { method: "DELETE" });
-  if (!response.ok) {
-    const payload: unknown = await response.json().catch(() => null);
+  const response = await axios.delete(`${USERS_URL}/${userId}`);
+  if (response.status !== 200) {
+    const payload: unknown = await response.data;
     const message =
       payload && typeof payload === "object" && "message" in payload
         ? (payload as { message?: string }).message
@@ -68,15 +65,11 @@ const deleteUserByUserId = async (userId: string): Promise<void> => {
 };
 
 const createUser = async (userData: Partial<UserDto>): Promise<User> => {
-  const response = await fetch(USERS_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(userData),
-  });
-  const payload = await response.json();
-  if (!response.ok)
-    throw new Error(payload?.message || "Failed to create user");
-  return mapUser(payload as UserDto);
+  const response = await axios.post(USERS_URL, userData);
+  if (response.status !== 201) {
+    throw new Error(response.data?.message || "Failed to create user");
+  }
+  return mapUser(response.data as UserDto);
 };
 
 export const useGetAllUsers = (): UseQueryResult<User[], Error> => {
