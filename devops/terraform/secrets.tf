@@ -15,7 +15,7 @@ resource "azurerm_key_vault_secret" "postgres_connection" {
   value = (
     var.use_shared_postgres
     ? format(
-        "Host=%s;Port=5432;Database=%s;Username=%s@%s;Password=%s;SslMode=Require",
+        "Host=%s;Port=5432;Database=%s;Username=%s;Password=%s;SslMode=Require",
         data.azurerm_postgresql_flexible_server.shared[0].fqdn,
         "${var.database_name}-${var.environment_name}",
         var.admin_username,
