@@ -231,9 +231,3 @@ variable "kubernetes_namespace" {
   type        = string
   default     = ""
 }
-
-#------------- Monitoring Variables -------------
-variable "log_analytics_workspace_id" {
-  description = "The Log Analytics Workspace ID to send diagnostics"
-  type        = string
-}
