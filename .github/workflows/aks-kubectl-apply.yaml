@@ -115,7 +115,6 @@ jobs:
           cd devops/helm-tools/loki
           chmod +x loki.sh
           ./loki.sh
-
       - name: Restart logging stack pods (optional)
         run: |
           set -e

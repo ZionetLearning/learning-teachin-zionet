@@ -36,7 +36,7 @@ resource "azurerm_key_vault_secret" "signalr_connection" {
 }
 
 ########################
-# Redis secrets
+# Redis secret
 ########################
 resource "azurerm_key_vault_secret" "redis_hostport" {
   name         = "${var.environment_name}-redis-hostport"
