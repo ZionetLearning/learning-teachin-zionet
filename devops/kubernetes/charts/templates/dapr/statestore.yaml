@@ -11,10 +11,12 @@ spec:
   metadata:
     - name: redisHost
       secretKeyRef:
-        name: "{{ .Values.namespace.name }}-redis-hostport"
+        name: {{ .Values.dapr.stateStore.redis.secretName }}
+        key: {{ .Values.dapr.stateStore.redis.hostKey }}
     - name: redisPassword
       secretKeyRef:
-        name: "{{ .Values.namespace.name }}-redis-password"
+        name: {{ .Values.dapr.stateStore.redis.secretName }}
+        key: {{ .Values.dapr.stateStore.redis.passwordKey }}
     - name: enableTLS
       value: '{{ default "true" .Values.dapr.stateStore.redis.enableTLS }}'
     - name: dialTimeout
