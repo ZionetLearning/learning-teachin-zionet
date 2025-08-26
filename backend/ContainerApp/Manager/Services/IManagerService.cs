@@ -1,4 +1,5 @@
 ﻿using Manager.Models;
+using Manager.Models.Notifications;
 using Manager.Models.Users;
 
 namespace Manager.Services;

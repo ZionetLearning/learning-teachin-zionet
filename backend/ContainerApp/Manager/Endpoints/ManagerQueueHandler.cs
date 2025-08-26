@@ -3,6 +3,7 @@ using DotQueue;
 using Manager.Models;
 using Manager.Models.Chat;
 using Manager.Models.ModelValidation;
+using Manager.Models.Notifications;
 using Manager.Models.QueueMessages;
 using Manager.Services;
 

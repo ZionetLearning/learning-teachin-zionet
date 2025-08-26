@@ -4,6 +4,7 @@ using Manager.Services.Clients;
 using Manager.Services.Clients.Engine;
 using Manager.Models.Users;
 using System.Text.Json;
+using Manager.Models.Notifications;
 
 namespace Manager.Services;
 

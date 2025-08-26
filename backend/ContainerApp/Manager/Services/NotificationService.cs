@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 using Manager.Hubs;
-using Manager.Models;
+using Manager.Models.Notifications;
 using Microsoft.AspNetCore.SignalR;
 
 namespace Manager.Services;

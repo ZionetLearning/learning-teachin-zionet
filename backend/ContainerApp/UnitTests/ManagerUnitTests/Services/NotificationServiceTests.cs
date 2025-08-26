@@ -1,5 +1,6 @@
 ﻿using Manager.Hubs;
 using Manager.Models;
+using Manager.Models.Notifications;
 using Manager.Services;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;

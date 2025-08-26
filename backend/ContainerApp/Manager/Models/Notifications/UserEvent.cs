@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Manager.Models;
+namespace Manager.Models.Notifications;
 
 public class UserEvent<TPayload>
 {
