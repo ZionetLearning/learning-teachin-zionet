@@ -51,6 +51,8 @@ resource "azurerm_key_vault_secret" "redis_password" {
 }
 
 resource "kubectl_manifest" "cluster_secret_store" {
+  provider = kubectl.inherited
+
   yaml_body = <<YAML
 apiVersion: external-secrets.io/v1
 kind: ClusterSecretStore
