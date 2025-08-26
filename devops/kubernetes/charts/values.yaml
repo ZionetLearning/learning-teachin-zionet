@@ -161,7 +161,7 @@ dapr:
       hostKey: "redis-hostport"
       passwordKey: "redis-password"
       enableTLS: "true"
-      redisDB: 5  
+      redisDB: "5"  # default Redis database index
       options:
         dialTimeout: "30s"
         readTimeout: "30s"

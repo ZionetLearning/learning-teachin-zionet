@@ -37,3 +37,4 @@ scopes:
   - {{ include "app.appIdFor" (list $ .Values.accessor.name) | quote }}
   - {{ include "app.appIdFor" (list $ .Values.manager.name)  | quote }}
   - {{ include "app.appIdFor" (list $ .Values.engine.name)   | quote }}
+
