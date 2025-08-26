@@ -19,17 +19,6 @@ resource "azurerm_static_web_app_custom_domain" "custom" {
   validation_type     = "cname-delegation"
   
   depends_on = [azurerm_static_web_app.frontend]
-  
-  lifecycle {
-    # Prevent accidental destruction
-    prevent_destroy = false
-  }
-  
-  # Add timeouts to handle DNS validation
-  timeouts {
-    create = "10m"
-    delete = "5m"
-  }
 }
 
 # Create Application Insights for frontend monitoring
