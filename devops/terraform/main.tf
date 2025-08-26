@@ -226,3 +226,7 @@ data "azurerm_key_vault" "shared" {
   name                = "teachin-seo-kv"
   resource_group_name = "dev-zionet-learning-2025"
 }
+
+locals {
+  aks_kube_config = module.aks.kube_config
+}
