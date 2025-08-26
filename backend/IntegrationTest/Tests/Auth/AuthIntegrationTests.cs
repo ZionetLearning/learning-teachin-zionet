@@ -63,7 +63,7 @@ public class AuthIntegrationTests : AuthTestBase
         var logoutResponse = await Client.PostAsync(AuthRoutes.Logout, null);
         logoutResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var cookies = logoutResponse.Headers.GetValues(TestConstants.setCookie).ToList();
+        var cookies = logoutResponse.Headers.GetValues(TestConstants.SetCookie).ToList();
         cookies.Should().Contain(c => c.Contains($"{TestConstants.RefreshToken}=;"));
         cookies.Should().Contain(c => c.Contains($"{TestConstants.CsrfToken}=;"));
     }
@@ -165,7 +165,7 @@ public class AuthIntegrationTests : AuthTestBase
         var logoutResponse = await Client.SendAsync(logoutRequest);
         logoutResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var logoutCookies = logoutResponse.Headers.GetValues("Set-Cookie").ToList();
+        var logoutCookies = logoutResponse.Headers.GetValues($"{TestConstants.SetCookie}").ToList();
         logoutCookies.Should().Contain(c => c.Contains($"{TestConstants.RefreshToken}=;"));
         logoutCookies.Should().Contain(c => c.Contains($"{TestConstants.CsrfToken}=;"));
 

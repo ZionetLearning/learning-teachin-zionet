@@ -16,7 +16,7 @@ public class TestUserFixture : IAsyncLifetime
     public async Task InitializeAsync()
     {
         var email = $"test-{Guid.NewGuid():N}@example.com";
-        var password = "Test123!";
+        var password = $"Test-{Guid.NewGuid():N}";
 
         TestUser = new UserModel
         {

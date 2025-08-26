@@ -1,8 +1,9 @@
-﻿public static class CookieHelper
+﻿using IntegrationTests.Constants;
+public static class CookieHelper
 {
     public static string? ExtractCookieFromHeaders(HttpResponseMessage response, string cookieName)
     {
-        if (response.Headers.TryGetValues("Set-Cookie", out var setCookieHeaders))
+        if (response.Headers.TryGetValues($"{TestConstants.SetCookie}", out var setCookieHeaders))
         {
             foreach (var header in setCookieHeaders)
             {
