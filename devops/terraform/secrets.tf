@@ -49,23 +49,3 @@ resource "azurerm_key_vault_secret" "redis_password" {
   value        = module.redis.primary_access_key
   key_vault_id = data.azurerm_key_vault.shared.id
 }
-
-resource "kubernetes_manifest" "cluster_secret_store" {
-  manifest = {
-    apiVersion = "external-secrets.io/v1"
-    kind       = "ClusterSecretStore"
-    metadata = {
-      name = "azure-keyvault-backend"
-    }
-    spec = {
-      provider = {
-        azurekv = {
-          authType   = "ManagedIdentity"
-          vaultUrl   = "https://teachin-seo-kv.vault.azure.net/"
-          identityId = "0997f44d-fadf-4be8-8dc6-202f7302f680"
-          tenantId   = "a814ee32-f813-4a36-9686-1b9268183e27"
-        }
-      }
-    }
-  }
-}
