@@ -159,9 +159,9 @@ module "monitoring" {
   log_analytics_workspace_id  = azurerm_log_analytics_workspace.main.id
 
   servicebus_namespace_id     = module.servicebus.namespace_id
-  postgres_server_id          = module.database.server_id
-  signalr_id                  = module.signalr.signalr_id
-  redis_id                    = module.redis.redis_id
+  postgres_server_id          = module.database[0].id
+  signalr_id                  = module.signalr.id
+  redis_id                    = module.redis.id
   frontend_static_web_app_id  = module.frontend.static_web_app_id
 
     depends_on = [
