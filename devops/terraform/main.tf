@@ -11,13 +11,6 @@ resource "azurerm_resource_group" "main" {
   }
 }
 
-resource "azurerm_user_assigned_identity" "aks" {
-  name                = "${var.prefix}-aks-uami"
-  resource_group_name = var.shared_aks_resource_group # dev-zionet-learning-2025
-  location            = var.location
-}
-
-
 # Data source to reference existing shared AKS cluster
 data "azurerm_kubernetes_cluster" "shared" {
   count               = var.use_shared_aks ? 1 : 0
