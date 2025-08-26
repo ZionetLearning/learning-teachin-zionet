@@ -23,7 +23,8 @@ resource "azurerm_kubernetes_cluster" "main" {
     type         = "UserAssigned"
     identity_ids = [azurerm_user_assigned_identity.aks.id]
   }
-
+  
+  oidc_issuer_enabled = true # Enable OIDC issuer for the cluster
 
 }
 
