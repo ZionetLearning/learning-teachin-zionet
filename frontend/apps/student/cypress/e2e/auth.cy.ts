@@ -1,5 +1,5 @@
 describe("auth", () => {
-  const baseUrl = "http://localhost:5173";
+  const baseUrl = "http://localhost:4000";
 
   it("full UI login then logout", () => {
     cy.visit(baseUrl + "/");

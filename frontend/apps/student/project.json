@@ -50,10 +50,17 @@
     },
     "test": {
       "executor": "@nx/vite:test",
-      "outputs": ["coverage/apps/student"],
       "options": {
         "passWithNoTests": true,
         "reportsDirectory": "../../coverage/apps/student"
+      }
+    },
+    "cypress-open": {
+      "executor": "@nx/cypress:cypress",
+      "options": {
+        "cypressConfig": "apps/student/cypress.config.ts",
+        "testingType": "e2e",
+        "watch": true
       }
     },
     "lint": {
@@ -61,6 +68,22 @@
       "outputs": ["{options.outputFile}"],
       "options": {
         "lintFilePatterns": ["apps/student/**/*.{ts,tsx,js,jsx}"]
+      }
+    },
+
+    "storybook": {
+      "executor": "@nx/storybook:storybook",
+      "options": {
+        "port": 4400,
+        "configDir": "apps/student/.storybook"
+      }
+    },
+    "build-storybook": {
+      "executor": "@nx/storybook:build",
+      "outputs": ["{options.outputDir}"],
+      "options": {
+        "configDir": "apps/student/.storybook",
+        "outputDir": "dist/storybook/student"
       }
     }
   },
