@@ -3,6 +3,9 @@
 use_shared_aks         = true   # Use shared dev cluster to save costs
 shared_aks_cluster_name     = "aks-cluster-dev"
 shared_aks_resource_group   = "dev-zionet-learning-2025"
+#-------------------------------------- 
+environment_name       = "prod"
+kubernetes_namespace   = "prod"
 #------------- Resource Configuration -------------
 location               = "westeurope"
 
@@ -21,5 +24,7 @@ frontend_sku_tier      = "Free"
 frontend_sku_size      = "Free"    
 #------------- Redis Shared Instance -------------
 use_shared_redis = false  # prod uses shared Redis instance
+
+
 
 
