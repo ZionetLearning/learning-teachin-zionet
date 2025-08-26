@@ -16,7 +16,9 @@
     "serve:student": "nx serve student",
     "serve:teacher": "nx serve teacher",
     "serve:admin": "nx serve admin",
-    "cypress:student": "nx run student:cypress-open"
+    "cypress:student": "nx run student:cypress-open",
+    "test:student": "nx run student:test -- --reporter=verbose",
+    "test-fix:student": "nx run student:test -- -u"
   },
   "private": true,
   "dependencies": {

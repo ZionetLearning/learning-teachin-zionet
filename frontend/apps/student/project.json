@@ -50,7 +50,6 @@
     },
     "test": {
       "executor": "@nx/vite:test",
-      "outputs": ["coverage/apps/student"],
       "options": {
         "passWithNoTests": true,
         "reportsDirectory": "../../coverage/apps/student"
