@@ -23,7 +23,7 @@ docker_registry        = "snir1551"
 frontend_sku_tier      = "Free"    
 frontend_sku_size      = "Free"    
 #------------- Redis Shared Instance -------------
-use_shared_redis = false  # prod uses shared Redis instance
+use_shared_redis = true  # prod uses shared Redis instance
 
 
 

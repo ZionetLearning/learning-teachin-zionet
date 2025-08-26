@@ -101,7 +101,7 @@ module "signalr" {
 data "azurerm_redis_cache" "shared" {
   count               = var.use_shared_redis ? 1 : 0
   name                = var.redis_name
-  resource_group_name = "prod-zionet-learning-2025"
+  resource_group_name = var.shared_resource_group
 }
 
 # Create new Redis only if not using shared
