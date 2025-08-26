@@ -16,6 +16,9 @@ global:
   imagePullSecret:
     enabled: false
     name: ""
+  keyvault:
+    clientId: ""
+    tenantId: ""
 
 # If empty, namespace becomes <namePrefix>
 namespace:
