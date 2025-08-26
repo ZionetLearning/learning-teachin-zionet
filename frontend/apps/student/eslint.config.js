@@ -1,3 +1,5 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import storybook from "eslint-plugin-storybook";
 import js from "@eslint/js";
 import globals from "globals";
