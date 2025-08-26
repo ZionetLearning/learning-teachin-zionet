@@ -234,3 +234,9 @@ variable "kubernetes_namespace" {
   type        = string
   default     = ""
 }
+
+variable "prefix" {
+  type        = string
+  description = "Prefix for naming resources"
+  default     = "dev"
+}

@@ -1,4 +1,10 @@
 
+
+resource "azurerm_user_assigned_identity" "aks" {
+  name                = "${var.prefix}-aks-uami"
+  resource_group_name = var.resource_group_name
+  location            = var.location
+}
 resource "azurerm_kubernetes_cluster" "main" {
   name                = var.cluster_name
   location            = var.location
@@ -14,12 +20,12 @@ resource "azurerm_kubernetes_cluster" "main" {
   }
 
   identity {
-    type = "SystemAssigned"
+    type         = "UserAssigned"
+    identity_ids = [azurerm_user_assigned_identity.aks.id]
   }
-
+  
   oidc_issuer_enabled = true # Enable OIDC issuer for the cluster
 
 }
-
 
 
