@@ -1,0 +1,16 @@
+# Dapr Configuration for Distributed Tracing
+# This enables Dapr to send traces to our isolated Jaeger instance
+# Safe to apply - only enables tracing, doesn't affect existing functionality
+
+apiVersion: dapr.io/v1alpha1
+kind: Configuration
+metadata:
+  name: tracing-config
+  namespace: dapr-system
+spec:
+  tracing:
+    samplingRate: "1"  # 100% sampling for testing (reduce to 0.1 for production)
+    zipkin:
+      endpointAddress: "http://jaeger-all-in-one.observability.svc.cluster.local:9411/api/v2/spans"
+  metric:
+    enabled: true
