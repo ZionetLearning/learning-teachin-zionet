@@ -119,7 +119,6 @@ public class EngineQueueHandlerTests
             ThreadId = threadId,
             UserMessage = userMsg,
             ChatType = ChatType.Default,
-            UserId = userId,
             SentAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
             TtlSeconds = 120,
         };
@@ -240,15 +239,12 @@ public class EngineQueueHandlerTests
         var (engine, ai, pub, accessorClient, log, sut) = CreateSut();
 
         var requestId = Guid.NewGuid().ToString();
-        var userId = "testUserId";
-
         var req = new EngineChatRequest
         {
             RequestId = requestId,
             ThreadId = Guid.Empty,
             UserMessage = "hello",
             ChatType = ChatType.Default,
-            UserId = userId,
             SentAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
             TtlSeconds = 120,
         };
@@ -293,7 +289,6 @@ public class EngineQueueHandlerTests
             ThreadId = threadId,
             UserMessage = "boom",
             ChatType = ChatType.Default,
-            UserId = userId,
             SentAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
             TtlSeconds = 120,
         };
