@@ -44,3 +44,16 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+# Custom Domain Variables (CNAME only)
+variable "custom_domain_enabled" {
+  description = "Whether to configure a custom domain for the Static Web App"
+  type        = bool
+  default     = false
+}
+
+variable "custom_domain_name" {
+  description = "Custom domain name to configure (e.g., www.teachin.cloudns.pro)"
+  type        = string
+  default     = ""
+}

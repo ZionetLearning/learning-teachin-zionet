@@ -32,3 +32,24 @@ output "application_insights_connection_string" {
   value       = azurerm_application_insights.frontend.connection_string
   sensitive   = true
 }
+
+# Custom Domain Outputs (CNAME only)
+output "custom_domain_enabled" {
+  description = "Whether custom domain is enabled"
+  value       = var.custom_domain_enabled
+}
+
+output "custom_domain_name" {
+  description = "Custom domain name if configured"
+  value       = var.custom_domain_enabled ? var.custom_domain_name : null
+}
+
+output "cname_target" {
+  description = "CNAME target for DNS configuration (the default hostname without https://)"
+  value       = var.custom_domain_enabled ? azurerm_static_web_app.frontend.default_host_name : null
+}
+
+output "final_url" {
+  description = "Final URL to use - custom domain if available, otherwise default URL"
+  value       = var.custom_domain_enabled ? "https://${var.custom_domain_name}" : "https://${azurerm_static_web_app.frontend.default_host_name}"
+}

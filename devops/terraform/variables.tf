@@ -193,6 +193,19 @@ variable "frontend_appinsights_sampling_percentage" {
   type        = number
   default     = 100
 }
+
+# Custom Domain Variables for Frontend (CNAME only)
+variable "frontend_custom_domain_enabled" {
+  description = "Whether to configure a custom domain for the Static Web App (uses CNAME validation)"
+  type        = bool
+  default     = false
+}
+
+variable "frontend_custom_domain_name" {
+  description = "Custom domain name to configure (e.g., www.teachin.cloudns.pro)"
+  type        = string
+  default     = ""
+}
 #------------- Redis Variables -------------
 variable "redis_name" {
   description = "Name of the Redis cache instance"

@@ -19,3 +19,9 @@ docker_registry        = "snir1551"
 #------------- Frontend Configuration -------------
 frontend_sku_tier      = "Free"
 frontend_sku_size      = "Free"
+
+#------------- Custom Domain Configuration (DEV ONLY) -------------
+# Enable custom domain ONLY for dev environment
+frontend_custom_domain_enabled = true
+# Custom domain for dev environment
+frontend_custom_domain_name = "www.teachin.cloudns.pro"

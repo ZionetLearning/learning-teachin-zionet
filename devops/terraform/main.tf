@@ -117,6 +117,10 @@ module "frontend" {
   appinsights_retention_days = var.frontend_appinsights_retention_days
   appinsights_sampling_percentage = var.frontend_appinsights_sampling_percentage
   
+  # Custom Domain Configuration (CNAME only)
+  custom_domain_enabled = var.frontend_custom_domain_enabled
+  custom_domain_name    = var.frontend_custom_domain_name
+  
   tags = {
     Environment = var.environment_name
     Project     = "Frontend"

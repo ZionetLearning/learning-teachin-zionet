@@ -84,3 +84,24 @@ output "application_insights_connection_string" {
   value       = module.frontend.application_insights_connection_string
   sensitive   = true
 }
+
+# Custom Domain outputs (CNAME only)
+output "frontend_custom_domain_enabled" {
+  description = "Whether custom domain is enabled for frontend"
+  value       = module.frontend.custom_domain_enabled
+}
+
+output "frontend_custom_domain_name" {
+  description = "Custom domain name if configured for frontend"
+  value       = module.frontend.custom_domain_name
+}
+
+output "frontend_cname_target" {
+  description = "CNAME target for DNS configuration (point your domain to this)"
+  value       = module.frontend.cname_target
+}
+
+output "frontend_final_url" {
+  description = "Final URL to use for frontend - custom domain if available, otherwise default URL"
+  value       = module.frontend.final_url
+}

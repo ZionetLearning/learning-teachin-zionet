@@ -20,4 +20,5 @@ docker_registry        = "snir1551"
 frontend_sku_tier      = "Free"    
 frontend_sku_size      = "Free"    
 
-
+#------------- Custom Domain Configuration (DEV ONLY) -------------
+frontend_custom_domain_enabled = false
