@@ -40,4 +40,13 @@ public abstract class AuthTestBase : IntegrationTestBase
         );
     }
 
+    protected HttpRequestMessage CreateRefreshRequest(string refreshToken, string csrfToken)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, AuthRoutes.Refresh);
+        request.Headers.Add("X-CSRF-Token", csrfToken);
+        request.Headers.Add("Cookie", $"{TestConstants.RefreshToken}={refreshToken}; {TestConstants.CsrfToken}={csrfToken}");
+        return request;
+    }
+
+
 }

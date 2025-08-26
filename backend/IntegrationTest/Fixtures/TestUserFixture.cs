@@ -26,14 +26,14 @@ public class TestUserFixture : IAsyncLifetime
         };
 
         // Create the test user in DB
-        var response = await _client.PostAsJsonAsync("/user", TestUser);
+        var response = await _client.PostAsJsonAsync("/users-manager/user", TestUser);
         response.EnsureSuccessStatusCode();
     }
 
     public async Task DisposeAsync()
     {
         // Clean up the test user from DB
-        var response = await _client.DeleteAsync($"/user/{TestUser.UserId}");
+        var response = await _client.DeleteAsync($"/users-manager/user/{TestUser.UserId}");
         response.EnsureSuccessStatusCode();
     }
 }

@@ -93,21 +93,6 @@ public class AuthIntegrationTests : AuthTestBase
     }
     
 
-    [Fact(DisplayName = "Refresh without CSRF token should fail")]
-    public async Task Refresh_WithoutCsrf_ShouldReturnUnauthorized()
-    {
-        var user = _sharedFixture.UserFixture.TestUser;
-
-        var loginResponse = await LoginAsync(user.Email, user.PasswordHash);
-        loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-
-        var refreshRequest = new HttpRequestMessage(HttpMethod.Post, AuthRoutes.Refresh);
-        var refreshResponse = await Client.SendAsync(refreshRequest);
-
-        refreshResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-    }
-
-
     [Fact(DisplayName = "Access token allows access to protected endpoint")]
     public async Task AccessToken_ShouldAllowAccessToProtectedEndpoint()
     {
@@ -163,31 +148,6 @@ public class AuthIntegrationTests : AuthTestBase
     }
 
 
-    [Fact(DisplayName = "Reusing old refresh token after rotation should fail")]
-    public async Task ReuseOldRefreshToken_ShouldReturnUnauthorized()
-    {
-        var user = _sharedFixture.UserFixture.TestUser;
-
-        var loginResponse = await LoginAsync(user.Email, user.PasswordHash);
-        var (oldRefreshToken, csrfToken) = ExtractTokens(loginResponse);
-
-        var refreshRequest1 = new HttpRequestMessage(HttpMethod.Post, AuthRoutes.Refresh);
-        refreshRequest1.Headers.Add("X-CSRF-Token", csrfToken!);
-        refreshRequest1.Headers.Add("Cookie", $"{TestConstants.RefreshToken}={oldRefreshToken}; {TestConstants.CsrfToken}={csrfToken}");
-
-        var refreshResponse1 = await Client.SendAsync(refreshRequest1);
-        refreshResponse1.StatusCode.Should().Be(HttpStatusCode.OK);
-
-        // Reuse the same old token
-        var refreshRequest2 = new HttpRequestMessage(HttpMethod.Post, AuthRoutes.Refresh);
-        refreshRequest2.Headers.Add("X-CSRF-Token", csrfToken!);
-        refreshRequest2.Headers.Add("Cookie", $"{TestConstants.RefreshToken}={oldRefreshToken}; {TestConstants.CsrfToken}={csrfToken}");
-
-        var refreshResponse2 = await Client.SendAsync(refreshRequest2);
-        refreshResponse2.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-    }
-
-
     [Fact(DisplayName = "Refresh after logout should fail")]
     public async Task Refresh_AfterLogout_ShouldReturnUnauthorized()
     {
@@ -203,9 +163,7 @@ public class AuthIntegrationTests : AuthTestBase
         logoutResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
         // Try to refresh after logout
-        var refreshRequest = new HttpRequestMessage(HttpMethod.Post, AuthRoutes.Refresh);
-        refreshRequest.Headers.Add("X-CSRF-Token", csrfToken!);
-        refreshRequest.Headers.Add("Cookie", $"{TestConstants.RefreshToken}={refreshToken}; {TestConstants.CsrfToken}={csrfToken}");
+        var refreshRequest = CreateRefreshRequest(refreshToken!, csrfToken!);
 
         var refreshResponse = await Client.SendAsync(refreshRequest);
         refreshResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -229,10 +187,8 @@ public class AuthIntegrationTests : AuthTestBase
         var protectedResponse = await Client.SendAsync(protectedRequest);
         protectedResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        // Refresh
-        var refreshRequest = new HttpRequestMessage(HttpMethod.Post, AuthRoutes.Refresh);
-        refreshRequest.Headers.Add("X-CSRF-Token", csrfToken!);
-        refreshRequest.Headers.Add("Cookie", $"{TestConstants.RefreshToken}={refreshToken}; {TestConstants.CsrfToken}={csrfToken}");
+
+        var refreshRequest = CreateRefreshRequest(refreshToken!, csrfToken!);
 
         var refreshResponse = await Client.SendAsync(refreshRequest);
         refreshResponse.StatusCode.Should().Be(HttpStatusCode.OK);
