@@ -38,7 +38,7 @@ public static class AiEndpoints
             return Results.BadRequest(new { error = "userMessage is required" });
         }
 
-        var snapshot = await accessorClient.GetHistorySnapshotAsync(request.ThreadId, ct);
+        var snapshot = await accessorClient.GetHistorySnapshotAsync(request.ThreadId, request.UserId, ct);
 
         var serviceRequest = new ChatAiServiseRequest
         {
@@ -47,6 +47,7 @@ public static class AiEndpoints
             ChatType = request.ChatType,
             ThreadId = request.ThreadId,
             UserId = request.UserId,
+            Name = snapshot.Name,
             RequestId = request.RequestId,
             SentAt = request.SentAt,
             TtlSeconds = request.TtlSeconds,
@@ -64,6 +65,7 @@ public static class AiEndpoints
         {
             ThreadId = request.ThreadId,
             UserId = request.UserId,
+            Name = aiResponse.Name,
             ChatType = request.ChatType.ToString().ToLowerInvariant(),
             History = aiResponse.UpdatedHistory
         };
@@ -72,6 +74,7 @@ public static class AiEndpoints
         var responseToManager = new EngineChatResponse
         {
             AssistantMessage = aiResponse.Answer.Content,
+            ChatName = aiResponse.Name,
             RequestId = request.RequestId,
             Status = aiResponse.Status,
             ThreadId = aiResponse.ThreadId

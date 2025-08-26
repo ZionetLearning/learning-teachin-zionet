@@ -52,7 +52,7 @@ public class EngineClient : IEngineClient
 
     public async Task<EngineChatResponse> ChatAsync(EngineChatRequest request, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Invoke Engine /chat synchronously (thread {Thread})", request.ThreadId);
+        _logger.LogInformation("Invoke Engine /chat synchronously (thread: {Thread}, userId:{UserId})", request.ThreadId, request.UserId);
 
         return await _daprClient.InvokeMethodAsync<EngineChatRequest, EngineChatResponse>(
             appId: AppIds.Engine,

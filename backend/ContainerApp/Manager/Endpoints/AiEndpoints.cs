@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Manager.Models.Chat;
 using Manager.Services.Clients.Engine;
 using Manager.Services.Clients.Engine.Models;
+using Manager.Services.Clients;
 
 namespace Manager.Endpoints;
 
@@ -24,6 +25,8 @@ public static class AiEndpoints
 
         app.MapGet("/ai/answer/{id}", AnswerAsync).WithName("Answer");
 
+        app.MapGet("/chats/{userId:guid}", GetChatsAsync).WithName("GetChats");
+
         #endregion
 
         #region HTTP POST
@@ -31,6 +34,7 @@ public static class AiEndpoints
         app.MapPost("/ai/question", QuestionAsync).WithName("Question");
 
         app.MapPost("/chat", ChatAsync).WithName("Chat");
+
         app.MapPost("/speech/synthesize", SynthesizeAsync).WithName("SynthesizeText");
 
         #endregion
@@ -38,11 +42,40 @@ public static class AiEndpoints
         return app;
     }
 
-    private static async Task<IResult> AnswerAsync(
-        [FromRoute] string id,
-        [FromServices] IAiGatewayService aiService,
-        [FromServices] ILogger<AnswerEndpoint> log,
+    private static async Task<IResult> GetChatsAsync(
+        [FromRoute] Guid userId,
+        [FromServices] IAccessorClient accessorClient,
+        [FromServices] ILogger<ChatPostEndpoint> log,
         CancellationToken ct)
+    {
+        using var scope = log.BeginScope("userId: {UserId}", userId);
+        {
+            //todo change userId from token
+            try
+            {
+                var chats = await accessorClient.GetChatsForUserAsync(userId, ct);
+                if (chats is null)
+                {
+                    log.LogInformation("chats not found");
+                    return Results.NotFound(new { error = "Chats not found" });
+                }
+
+                log.LogInformation("Chats returned");
+                return Results.Ok(new { chats = chats });
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, "Failed to retrieve chats");
+                return Results.Problem("Get chats retrieval failed");
+            }
+        }
+    }
+
+    private static async Task<IResult> AnswerAsync(
+    [FromRoute] string id,
+    [FromServices] IAiGatewayService aiService,
+    [FromServices] ILogger<AnswerEndpoint> log,
+    CancellationToken ct)
     {
         using var scope = log.BeginScope("QuestionId: {Id}", id);
         {
@@ -113,13 +146,24 @@ public static class AiEndpoints
             return Results.BadRequest(new { error = "threadId is required" });
         }
 
-        var requestId = Guid.NewGuid().ToString("N");
-        //todo: takeUserId from token.
-        const string userId = "dev-user-001";
+        if (string.IsNullOrWhiteSpace(request.UserId))
+        {
+            return Results.BadRequest(new { error = "userId is required" });
+        }
 
-        if (!TryResolveThreadId(request.ThreadId, out var threadId, out var error))
+        var requestId = Guid.NewGuid().ToString("N");
+
+        //todo: takeUserId from token.
+
+        if (!TryResolveThreadId(request.ThreadId, out var threadId, out var errorThread))
         {
             return Results.BadRequest(new { error = "If threadId is present, it must be a GUID" });
+
+        }
+
+        if (!TryResolveThreadId(request.UserId, out var userId, out var errorUser))
+        {
+            return Results.BadRequest(new { error = "If userId is present, it must be a GUID" });
 
         }
 

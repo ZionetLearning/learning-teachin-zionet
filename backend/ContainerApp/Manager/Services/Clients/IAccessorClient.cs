@@ -10,9 +10,7 @@ public interface IAccessorClient
     Task<bool> DeleteTask(int id);
     Task<(bool success, string message)> PostTaskAsync(TaskModel task);
     Task<TaskModel?> GetTaskAsync(int id);
-    Task<IReadOnlyList<ChatMessage>> GetChatHistoryAsync(Guid threadId, CancellationToken ct = default);
-    Task<ChatMessage?> StoreMessageAsync(ChatMessage msg, CancellationToken ct = default);
-    Task<IReadOnlyList<ChatThread>> GetThreadsForUserAsync(string userId, CancellationToken ct = default);
+    Task<IReadOnlyList<ChatSummary>> GetChatsForUserAsync(Guid userId, CancellationToken ct = default);
     Task<UserModel?> GetUserAsync(Guid userId);
     Task<bool> CreateUserAsync(UserModel user);
     Task<bool> UpdateUserAsync(UpdateUserModel user, Guid userId);
