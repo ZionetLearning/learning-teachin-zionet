@@ -39,27 +39,26 @@ provider "azurerm" {
 
 # Kubernetes provider configuration - moved from main.tf
 provider "kubernetes" {
-  host                   = local.aks_kube_config.host
-  client_certificate     = base64decode(local.aks_kube_config.client_certificate)
-  client_key             = base64decode(local.aks_kube_config.client_key)
-  cluster_ca_certificate = base64decode(local.aks_kube_config.cluster_ca_certificate)
+  host                   = data.azurerm_kubernetes_cluster.main.kube_config[0].host
+  client_certificate     = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].client_certificate)
+  client_key             = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].client_key)
+  cluster_ca_certificate = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].cluster_ca_certificate)
 }
 
-# Helm provider configuration - moved from main.tf and fixed consistency
 provider "helm" {
   kubernetes {
-    host                   = local.aks_kube_config.host
-    client_certificate     = base64decode(local.aks_kube_config.client_certificate)
-    client_key             = base64decode(local.aks_kube_config.client_key)
-    cluster_ca_certificate = base64decode(local.aks_kube_config.cluster_ca_certificate)
+    host                   = data.azurerm_kubernetes_cluster.main.kube_config[0].host
+    client_certificate     = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].client_certificate)
+    client_key             = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].client_key)
+    cluster_ca_certificate = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].cluster_ca_certificate)
   }
 }
 
 provider "kubectl" {
   alias = "inherited"
-  
-  host                   = local.aks_kube_config.host
-  client_certificate     = base64decode(local.aks_kube_config.client_certificate)
-  client_key             = base64decode(local.aks_kube_config.client_key)
-  cluster_ca_certificate = base64decode(local.aks_kube_config.cluster_ca_certificate)
+
+  host                   = data.azurerm_kubernetes_cluster.main.kube_config[0].host
+  client_certificate     = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].client_certificate)
+  client_key             = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].client_key)
+  cluster_ca_certificate = base64decode(data.azurerm_kubernetes_cluster.main.kube_config[0].cluster_ca_certificate)
 }
