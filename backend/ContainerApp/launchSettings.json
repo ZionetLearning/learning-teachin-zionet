@@ -19,7 +19,6 @@
         "postgres": "StartWithoutDebugging",
         "redis": "StartWithoutDebugging",
         "servicebus-emulator": "StartWithoutDebugging",
-        "signalr-emulator": "StartWithoutDebugging",
         "sqledge": "StartWithoutDebugging"
       }
     }

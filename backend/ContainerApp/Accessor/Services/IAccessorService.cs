@@ -20,4 +20,8 @@ public interface IAccessorService
     Task<bool> CreateUserAsync(UserModel newUser);
     Task<bool> UpdateUserAsync(UpdateUserModel updateUser, Guid userId);
     Task<bool> DeleteUserAsync(Guid userId);
+    Task<IEnumerable<UserData>> GetAllUsersAsync();
+    Task<ChatHistorySnapshot?> GetHistorySnapshotAsync(Guid threadId);
+    Task UpsertHistorySnapshotAsync(ChatHistorySnapshot snapshot);
+    Task<StatsSnapshot> ComputeStatsAsync(CancellationToken ct = default);
 }

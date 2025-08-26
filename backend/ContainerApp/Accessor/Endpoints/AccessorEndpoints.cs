@@ -1,7 +1,8 @@
-﻿using Accessor.Models;
+﻿using System.Text.Json;
+using Accessor.Models;
+using Accessor.Models.Users;
 using Accessor.Services;
 using Microsoft.AspNetCore.Mvc;
-using Accessor.Models.Users;
 
 namespace Accessor.Endpoints;
 
@@ -14,6 +15,7 @@ public static class AccessorEndpoints
         app.MapGet("/task/{id:int}", GetTaskByIdAsync);
 
         app.MapGet("/threads/{threadId:guid}/messages", GetChatHistoryAsync).WithName("GetChatHistory");
+        app.MapGet("/threads/{threadId:guid}/history", GetHistorySnapshotAsync).WithName("GetHistorySnapshot");
 
         app.MapGet("/threads/{userId}", GetThreadsForUserAsync);
 
@@ -24,6 +26,7 @@ public static class AccessorEndpoints
         app.MapPost("/task", CreateTaskAsync);
 
         app.MapPost("/threads/message", StoreMessageAsync);
+        app.MapPost("/threads/history", UpsertHistorySnapshotAsync).WithName("UpsertHistorySnapshot");
 
         app.MapPost("/auth/login", LoginUserAsync);
 
@@ -38,6 +41,7 @@ public static class AccessorEndpoints
         #region Users Endpoints
 
         app.MapGet("/users/{userId:guid}", GetUserAsync).WithName("GetUser");
+        app.MapGet("/users", GetAllUsersAsync).WithName("GetAllUsers");
         app.MapPost("/users", CreateUserAsync).WithName("CreateUser");
         app.MapPut("/users/{userId:guid}", UpdateUserAsync).WithName("UpdateUser");
         app.MapDelete("/users/{userId:guid}", DeleteUserAsync).WithName("DeleteUser");
@@ -183,6 +187,70 @@ public static class AccessorEndpoints
         }
     }
 
+    private static async Task<IResult> UpsertHistorySnapshotAsync(
+    [FromBody] UpsertHistoryRequest body,
+    [FromServices] IAccessorService accessorService,
+    [FromServices] ILogger<AccessorService> logger)
+    {
+        using var _ = logger.BeginScope(
+            "Handler: {Handler}, ThreadId: {ThreadId}",
+            nameof(UpsertHistorySnapshotAsync), body.ThreadId);
+
+        try
+        {
+            if (body.ThreadId == Guid.Empty)
+            {
+                return Results.BadRequest(new { error = "threadId is required and must be a GUID." });
+
+            }
+
+            if (string.IsNullOrWhiteSpace(body.UserId))
+            {
+                return Results.BadRequest(new { error = "UserId is required." });
+
+            }
+
+            if (body.History.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null)
+            {
+                return Results.BadRequest(new { error = "history (raw SK ChatHistory) is required." });
+
+            }
+
+            var existing = await accessorService.GetHistorySnapshotAsync(body.ThreadId);
+
+            var snapshot = new ChatHistorySnapshot
+            {
+                ThreadId = body.ThreadId,
+                UserId = body.UserId,
+                ChatType = body.ChatType ?? "default",
+                History = body.History.GetRawText(),
+                CreatedAt = existing?.CreatedAt ?? DateTimeOffset.UtcNow,
+                UpdatedAt = DateTimeOffset.UtcNow
+            };
+
+            await accessorService.UpsertHistorySnapshotAsync(snapshot);
+
+            var historyForResponse = body.History.Clone();
+
+            var payload = new
+            {
+                threadId = snapshot.ThreadId,
+                snapshot.UserId,
+                snapshot.ChatType,
+                history = historyForResponse
+            };
+
+            return existing is null
+                ? Results.CreatedAtRoute("GetHistorySnapshot", new { threadId = snapshot.ThreadId }, payload)
+                : Results.Ok(payload);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error upserting history snapshot for thread {ThreadId}", body.ThreadId);
+            return Results.Problem("An error occurred while storing the chat history snapshot.");
+        }
+    }
+
     private static async Task<IResult> GetChatHistoryAsync(
         Guid threadId,
         [FromServices] IAccessorService accessorService,
@@ -216,6 +284,47 @@ public static class AccessorEndpoints
         {
             logger.LogError(ex, "Error fetching history for thread {ThreadId}", threadId);
             return Results.Problem("An error occurred while retrieving chat history.");
+        }
+    }
+
+    private static async Task<IResult> GetHistorySnapshotAsync(
+      Guid threadId,
+      [FromServices] IAccessorService accessorService,
+      [FromServices] ILogger<AccessorService> logger)
+    {
+        using var _ = logger.BeginScope(
+            "Handler: {Handler}, ThreadId: {ThreadId}",
+            nameof(GetHistorySnapshotAsync), threadId);
+
+        try
+        {
+            var snapshot = await accessorService.GetHistorySnapshotAsync(threadId);
+            if (snapshot is null)
+            {
+
+                using var empty = JsonDocument.Parse("""{"messages":[]}""");
+                var historyEmpty = empty.RootElement.Clone();
+                return Results.Ok(new { threadId, userId = (string?)null, chatType = (string?)null, history = historyEmpty });
+            }
+
+            JsonElement historySafe;
+            using (var doc = JsonDocument.Parse(snapshot.History))
+            {
+                historySafe = doc.RootElement.Clone();
+            }
+
+            return Results.Ok(new
+            {
+                threadId = snapshot.ThreadId,
+                snapshot.UserId,
+                snapshot.ChatType,
+                history = historySafe
+            });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error fetching history snapshot for thread {ThreadId}", threadId);
+            return Results.Problem("An error occurred while retrieving chat history snapshot.");
         }
     }
 
@@ -380,6 +489,26 @@ public static class AccessorEndpoints
         {
             logger.LogError(ex, "Failed to delete user.");
             return Results.Problem("An error occurred while deleting the user.");
+        }
+    }
+
+    private static async Task<IResult> GetAllUsersAsync(
+        [FromServices] IAccessorService service,
+        [FromServices] ILogger<IAccessorService> logger,
+        CancellationToken ct)
+    {
+        using var scope = logger.BeginScope("Method: {Method}", nameof(GetAllUsersAsync));
+
+        try
+        {
+            var users = await service.GetAllUsersAsync();
+            logger.LogInformation("Retrieved {Count} users", users.Count());
+            return Results.Ok(users);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to retrieve all users.");
+            return Results.Problem("An error occurred while retrieving users.");
         }
     }
 
