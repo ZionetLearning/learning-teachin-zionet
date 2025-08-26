@@ -6,6 +6,8 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 import { globalIgnores } from "eslint/config";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 export default tseslint.config(
   [
     globalIgnores(["dist"]),
@@ -18,7 +20,18 @@ export default tseslint.config(
         reactRefresh.configs.vite,
       ],
       languageOptions: {
-        ecmaVersion: 2020,
+        parser: tseslint.parser,
+        parserOptions: {
+          project: [
+            "./tsconfig.json",
+            "./tsconfig.app.json",
+            "./tsconfig.node.json",
+          ],
+          // IMPORTANT: anchor the parser to this folder
+          tsconfigRootDir: __dirname,
+          ecmaVersion: 2020,
+          sourceType: "module",
+        },
         globals: globals.browser,
       },
     },

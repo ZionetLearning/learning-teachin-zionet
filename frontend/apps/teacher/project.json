@@ -10,7 +10,8 @@
       "defaultConfiguration": "production",
       "options": {
         "outputPath": "dist/apps/teacher",
-        "configFile": "apps/teacher/vite.config.ts"
+        "configFile": "apps/teacher/vite.config.ts",
+        "lintFilePatterns": ["apps/teacher/**/*.{ts,tsx,js,jsx}"]
       },
       "configurations": {
         "development": { "mode": "development" },
