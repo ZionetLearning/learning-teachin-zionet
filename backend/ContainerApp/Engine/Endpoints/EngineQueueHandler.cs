@@ -198,7 +198,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
             var upsert = new UpsertHistoryRequest
             {
                 ThreadId = request.ThreadId,
-                UserId = request.UserId,
+                UserId = userContext.UserId,
                 ChatType = request.ChatType.ToString().ToLowerInvariant(),
                 History = aiResponse.UpdatedHistory
             };
