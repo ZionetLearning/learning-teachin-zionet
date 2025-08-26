@@ -322,7 +322,7 @@ public class ManagerService : IManagerService
             throw new ArgumentNullException(nameof(userEvent));
         }
 
-        if (userEvent.Payload is null && typeof(T).IsClass)
+        if (userEvent.Payload is null)
         {
             _logger.LogWarning("Null payload for event {EventType} to user {UserId}", userEvent.EventType, userId);
         }
