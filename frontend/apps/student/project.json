@@ -1,0 +1,68 @@
+{
+  "name": "student",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/student/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nx/vite:build",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "outputPath": "dist/apps/student",
+        "configFile": "apps/student/vite.config.ts"
+      },
+      "configurations": {
+        "development": { "mode": "development" },
+        "production": { "mode": "production" }
+      }
+    },
+    "serve": {
+      "executor": "@nx/vite:dev-server",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "student:build",
+        "configFile": "apps/student/vite.config.ts",
+        "port": 4000
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "student:build:development",
+          "hmr": true
+        },
+        "production": {
+          "buildTarget": "student:build:production",
+          "hmr": false
+        }
+      }
+    },
+    "preview": {
+      "executor": "@nx/vite:preview-server",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "student:build",
+        "configFile": "apps/student/vite.config.ts"
+      },
+      "configurations": {
+        "development": { "buildTarget": "student:build:development" },
+        "production": { "buildTarget": "student:build:production" }
+      }
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": ["coverage/apps/student"],
+      "options": {
+        "passWithNoTests": true,
+        "reportsDirectory": "../../coverage/apps/student"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["apps/student/**/*.{ts,tsx,js,jsx}"]
+      }
+    }
+  },
+  "tags": []
+}

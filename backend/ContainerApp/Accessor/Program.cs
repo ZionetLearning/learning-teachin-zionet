@@ -114,4 +114,5 @@ if (env.IsDevelopment())
 // Map endpoints (routes)
 app.MapAccessorEndpoints();
 app.MapRefreshSessionEndpoints();
+app.MapStatsEndpoints();
 await app.RunAsync();
