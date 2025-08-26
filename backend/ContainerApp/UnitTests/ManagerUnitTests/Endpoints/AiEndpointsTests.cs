@@ -68,7 +68,7 @@ public class AiEndpointsTests
         Assert.Equal(StatusCodes.Status202Accepted, status.StatusCode);
 
         var location = result.GetType().GetProperty("Location")?.GetValue(result) as string;
-        Assert.Equal("/ai/answer/new-id-1", location);
+        Assert.Equal("/ai-manager/answer/new-id-1", location);
 
         var valueResult = Assert.IsAssignableFrom<IValueHttpResult>(result);
         using var doc = JsonDocument.Parse(JsonSerializer.Serialize(valueResult.Value));
