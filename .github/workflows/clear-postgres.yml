@@ -49,20 +49,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Azure Login (explicit fields from JSON)
+      - name: Azure Login via OIDC
         uses: azure/login@v2
         with:
-          client-id:        ${{ fromJSON(secrets.AZURE_CREDENTIALS).clientId }}
-          tenant-id:        ${{ fromJSON(secrets.AZURE_CREDENTIALS).tenantId }}
-          subscription-id:  ${{ fromJSON(secrets.AZURE_CREDENTIALS).subscriptionId }}
-          #client-secret:    ${{ fromJSON(secrets.AZURE_CREDENTIALS).clientSecret }}
-      
-
-      - name: Confirm Azure context
-        run: |
-          set -euo pipefail
-          az account set --subscription "$AZURE_SUB"
-          az account show --query "{name:name, subscriptionId:id}" -o table
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Allow GitHub runner IP
         id: fw
