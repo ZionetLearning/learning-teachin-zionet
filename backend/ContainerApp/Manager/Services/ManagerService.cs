@@ -233,11 +233,6 @@ public class ManagerService : IManagerService
             _logger.LogInformation("Fetching user with ID: {UserId}", userId);
             return await _accessorClient.GetUserAsync(userId);
         }
-        catch (JsonException jex)
-        {
-            _logger.LogError(jex, "JSON error occurred while fetching user {UserId}", userId);
-            return null;
-        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error occurred while fetching user with ID: {UserId}", userId);
