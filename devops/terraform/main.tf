@@ -218,6 +218,11 @@ resource "kubernetes_service_account" "environment" {
 #       "services"        = "8"
 #     }
 #   }
-  
 #   depends_on = [kubernetes_namespace.environment]
 # }
+
+# Reference the shared Key Vault instead of creating new ones
+data "azurerm_key_vault" "shared" {
+  name                = "teachin-seo-kv"
+  resource_group_name = "dev-zionet-learning-2025"
+}
