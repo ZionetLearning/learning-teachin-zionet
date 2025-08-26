@@ -17,7 +17,7 @@ resource "azurerm_kubernetes_cluster" "main" {
     type = "SystemAssigned"
   }
 
-
+  oidc_issuer_enabled = true
 }
 
 
