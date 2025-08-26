@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Paper, Stack, TextField, Button, Typography } from "@mui/material";
+import { Paper, Stack, TextField, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import { Button } from "../../../../../../../libs/ui/components";
 
 export type TaskInput = { id: number; name: string; payload: string };
 
@@ -81,8 +82,6 @@ export const TaskForm = ({
 
         <Stack direction="row" spacing={1} justifyContent="flex-end">
           <Button
-            variant="contained"
-            type="submit"
             disabled={isPending || disabled || !isValid}
           >
             {isPending ? t("pages.signalR.posting") : t("pages.signalR.send")}
