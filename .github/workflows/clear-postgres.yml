@@ -35,12 +35,52 @@ jobs:
       MODE: ${{ github.event.inputs.mode }}
       DRY_RUN: ${{ github.event.inputs.dry_run }}
       VERIFY_SSL: ${{ github.event.inputs.verify_ssl }}
+      
+      AZURE_POSTGRES_SERVER: dev-pg-zionet-learning    # server name (no domain)
+      AZURE_RG: dev-zionet-learning-2025
+      AZURE_SUB: 90ea4c2f-1eee-4ec9-927d-ed24c563003e
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Allow GitHub runner IP
+        id: fw
+        run: |
+            set -euo pipefail
+            RUNNER_IP=$(curl -s https://api.ipify.org)
+            echo "runner_ip=$RUNNER_IP" >> "$GITHUB_OUTPUT"
+            az account set --subscription "$AZURE_SUB"
+            RULE="gha-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+            echo "Creating firewall rule $RULE for $RUNNER_IP"
+            az postgres flexible-server firewall-rule create \
+              --resource-group "$AZURE_RG" \
+              --name "$AZURE_POSTGRES_SERVER" \
+              --rule-name "$RULE" \
+              --start-ip-address "$RUNNER_IP" \
+              --end-ip-address "$RUNNER_IP"
+
       - name: Make scripts executable
         run: chmod +x .github/workflows/scripts/clear_postgres.sh
+
       - name: Install psql client
         run: sudo apt-get update -y && sudo apt-get install -y postgresql-client
+
       - name: Clear Postgres
         run: .github/workflows/scripts/clear_postgres.sh
+
+         # Always remove the firewall rule
+      - name: Remove firewall rule
+        if: always()
+        run: |
+          set -euo pipefail
+          RULE="gha-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          az postgres flexible-server firewall-rule delete \
+            --resource-group "$AZURE_RG" \
+            --name "$AZURE_POSTGRES_SERVER" \
+            --rule-name "$RULE" \
+            --yes
