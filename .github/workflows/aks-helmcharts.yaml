@@ -240,7 +240,7 @@ jobs:
             --set-string manager.env.Jwt__Issuer="$MANAGER_JWT_ISSUER" \
             --set-string manager.env.Jwt__Audience="$MANAGER_JWT_AUDIENCE" \
             --set-string manager.env.Jwt__RefreshTokenHashKey="$MANAGER_JWT_REFRESH_TOKEN_HASH_KEY" \
-            --set dapr.stateStore.redis.databaseIndex=$REDIS_DATABASE_INDEX \
+            --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false
 
       - name: Diagnostics (on failure)

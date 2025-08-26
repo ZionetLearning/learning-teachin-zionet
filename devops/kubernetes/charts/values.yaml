@@ -161,7 +161,7 @@ dapr:
       hostKey: "redis-hostport"
       passwordKey: "redis-password"
       enableTLS: "true"
-      databaseIndex: 5   # Default, can be overridden in values.dev.yaml, values.prod.yaml, etc.
+      redisDB: 5  
       options:
         dialTimeout: "30s"
         readTimeout: "30s"
