@@ -10,6 +10,10 @@ namespace:
   create: true
   name: prod
 
+cronjobs:
+  statsPing:
+    enabled: false
+
 manager:
   image:
     tag: "1.0.0"                  # pin a version

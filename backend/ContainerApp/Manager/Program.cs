@@ -171,6 +171,7 @@ app.MapAiEndpoints();
 app.MapAuthEndpoints();
 app.MapHub<NotificationHub>("/NotificationHub");
 
+app.MapStatsPing();
 if (env.IsDevelopment())
 {
     app.MapOpenApi();

@@ -17,8 +17,19 @@ services:
         interval: 10s
         retries: 3
 
- 
 
+ # -------------------- stats-scheduler cron job --------------------
+ # A simple Alpine-based container that runs a cron job every 5 minutes to ping the Manager service's stats computation endpoint.
+ 
+ # stats-scheduler:
+  #   image: alpine:3.20
+  #   command: >
+  #     sh -lc "
+  #     apk add --no-cache curl &&
+  #     printf '*/5 * * * * /usr/bin/curl -sS --fail -X POST http://host.docker.internal:5001/internal/compute-stats/ping || echo CRON-FAIL >&2\n' > /etc/crontabs/root &&
+  #     crond -f -l 8 -L /dev/stdout
+  #     "
+  #   restart: unless-stopped
 
 
 
