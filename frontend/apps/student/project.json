@@ -56,6 +56,14 @@
         "reportsDirectory": "../../coverage/apps/student"
       }
     },
+    "cypress-open": {
+      "executor": "@nx/cypress:cypress",
+      "options": {
+        "cypressConfig": "apps/student/cypress.config.ts",
+        "testingType": "e2e",
+        "watch": true
+      }
+    },
     "lint": {
       "executor": "@nx/eslint:lint",
       "outputs": ["{options.outputFile}"],

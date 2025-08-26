@@ -9,7 +9,14 @@
     "lint:affected:fix": "nx affected --target=lint --parallel=3 --fix",
     "lint:teacher": "nx lint teacher",
     "lint:student": "nx lint student",
-    "lint:admin": "nx lint admin"
+    "lint:admin": "nx lint admin",
+    "build:student": "nx build student",
+    "build:teacher": "nx build teacher",  
+    "build:admin": "nx build admin",
+    "serve:student": "nx serve student",
+    "serve:teacher": "nx serve teacher",
+    "serve:admin": "nx serve admin",
+    "cypress:student": "nx run student:cypress-open"
   },
   "private": true,
   "dependencies": {
@@ -52,6 +59,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",
+    "@nx/cypress": "^21.4.1",
     "@nx/eslint": "^21.4.1",
     "@nx/js": "^21.4.1",
     "@nx/react": "^21.4.1",
