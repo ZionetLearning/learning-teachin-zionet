@@ -1,5 +1,10 @@
-﻿using IntegrationTests.Infrastructure;
+﻿using IntegrationTests.Fixtures;
+using IntegrationTests.Infrastructure;
+using Manager.Models.Auth;
+using System.Net.Http.Json;
+using System.Text.Json;
 using Xunit.Abstractions;
+using IntegrationTests.Constants;
 
 namespace IntegrationTests.Tests.Auth;
 
@@ -10,5 +15,29 @@ public abstract class AuthTestBase : IntegrationTestBase
     {
     }
 
-    // Optional: You can add shared auth logic here later
+    protected async Task<HttpResponseMessage> LoginAsync(string email, string password)
+    {
+        var loginRequest = new LoginRequest 
+        { 
+            Email = email, 
+            Password = password 
+        };
+        return await Client.PostAsJsonAsync(AuthRoutes.Login, loginRequest);
+    }
+
+    protected async Task<string> ExtractAccessToken(HttpResponseMessage response)
+    {
+        var body = await response.Content.ReadAsStringAsync();
+        var json = JsonDocument.Parse(body);
+        return json.RootElement.GetProperty(TestConstants.AccessToken).GetString()!;
+    }
+
+    protected static (string? RefreshToken, string? CsrfToken) ExtractTokens(HttpResponseMessage response)
+    {
+        return (
+            CookieHelper.ExtractCookieFromHeaders(response, TestConstants.RefreshToken),
+            CookieHelper.ExtractCookieFromHeaders(response, TestConstants.CsrfToken)
+        );
+    }
+
 }

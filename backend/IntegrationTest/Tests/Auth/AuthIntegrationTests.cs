@@ -1,267 +1,175 @@
 ﻿using FluentAssertions;
-using IntegrationTests.Infrastructure;
+using IntegrationTests.Constants;
+using IntegrationTests.Fixtures;
 using Manager.Models.Auth;
-using Manager.Models.Users;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Xunit.Abstractions;
-namespace IntegrationTests.Tests.Auth;
-using IntegrationTests.Constants;
 
-public class AuthIntegrationTests(
-    HttpTestFixture fixture,
-    ITestOutputHelper outputHelper,
-    SignalRTestFixture signalRFixture
-) : AuthTestBase(fixture, outputHelper, signalRFixture)
+namespace IntegrationTests.Tests.Auth;
+
+
+[Collection("Shared test collection")]
+public class AuthIntegrationTests : AuthTestBase
 {
-    
+    private readonly SharedTestFixture _sharedFixture;
+
+    public AuthIntegrationTests(
+        SharedTestFixture sharedFixture,
+        ITestOutputHelper outputHelper
+    ) : base(sharedFixture.HttpFixture, outputHelper, new SignalRTestFixture())
+    {
+        _sharedFixture = sharedFixture;
+    }
+
     [Fact(DisplayName = "Login returns access token and sets cookies")]
     public async Task Login_ShouldReturnAccessTokenAndSetCookies()
     {
-        // Register user
-        var user = await RegisterTestUserAsync();
+        var user = _sharedFixture.UserFixture.TestUser;
 
-        var loginRequest = new LoginRequest
-        {
-            Email = user.Email,
-            Password = user.PasswordHash
-        };
+        var response = await LoginAsync(user.Email, user.PasswordHash);
 
-        var response = await Client.PostAsJsonAsync("/auth/login", loginRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var accessToken = await ExtractAccessToken(response);
+        accessToken.Should().NotBeNullOrWhiteSpace();
 
-        var body = await response.Content.ReadAsStringAsync();
-        var json = JsonSerializer.Deserialize<JsonElement>(body);
-
-        Assert.True(json.TryGetProperty("accessToken", out var accessToken));
-        Assert.False(string.IsNullOrWhiteSpace(accessToken.GetString()));
-
-        Assert.True(response.Headers.TryGetValues("Set-Cookie", out var cookies));
-        var cookieList = cookies.ToList();
-        Assert.Contains(cookieList, c => c.Contains("refreshToken="));
-        Assert.Contains(cookieList, c => c.Contains("csrfToken="));
-        await DeleteTestUserAsync(user.UserId);
+        var (refreshToken, csrfToken) = ExtractTokens(response);
+        refreshToken.Should().NotBeNullOrWhiteSpace();
+        csrfToken.Should().NotBeNullOrWhiteSpace();
     }
 
 
     [Fact(DisplayName = "Login fails with 401 on invalid credentials")]
     public async Task Login_ShouldReturnUnauthorized_WhenCredentialsInvalid()
     {
-        var user = await RegisterTestUserAsync();
+        var user = _sharedFixture.UserFixture.TestUser;
 
-        var loginRequest = new LoginRequest
-        {
-            Email = "wrong@email.com",
-            Password = user.PasswordHash
-        };
+        var response = await LoginAsync($"{user.Email}.invalid", user.PasswordHash);
 
-        var response = await Client.PostAsJsonAsync("/auth/login", loginRequest);
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        await DeleteTestUserAsync(user.UserId);
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
 
     [Fact(DisplayName = "Logout clears refresh and csrf cookies")]
     public async Task Logout_ShouldClearCookies()
     {
-        var user = await RegisterTestUserAsync();
+        var user = _sharedFixture.UserFixture.TestUser;
 
-        // Simulate login to get cookies
-        var loginRequest = new LoginRequest 
-        { 
-            Email = user.Email, 
-            Password = user.PasswordHash
-        };
-        // Call login
-        var loginResponse = await Client.PostAsJsonAsync("/auth/login", loginRequest);
-        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
+        var loginResponse = await LoginAsync(user.Email, user.PasswordHash);
+        loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        // Call logout
-        var logoutResponse = await Client.PostAsync("/auth/logout", null);
-        Assert.Equal(HttpStatusCode.OK, logoutResponse.StatusCode);
+        var logoutResponse = await Client.PostAsync(AuthRoutes.Logout, null);
+        logoutResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        Assert.True(logoutResponse.Headers.TryGetValues("Set-Cookie", out var cookies));
-        var cookieList = cookies.ToList();
-        Assert.Contains(cookieList, c => c.Contains("refreshToken=;"));
-        Assert.Contains(cookieList, c => c.Contains("csrfToken=;"));
-        await DeleteTestUserAsync(user.UserId);
+        var cookies = logoutResponse.Headers.GetValues(TestConstants.setCookie).ToList();
+        cookies.Should().Contain(c => c.Contains($"{TestConstants.RefreshToken}=;"));
+        cookies.Should().Contain(c => c.Contains($"{TestConstants.CsrfToken}=;"));
     }
 
 
     [Fact(DisplayName = "Refresh with invalid refresh token should fail")]
     public async Task Refresh_ShouldReturnUnauthorized()
     {
-        // Register a user inside the DB
-        var user = await RegisterTestUserAsync();
+        var user = _sharedFixture.UserFixture.TestUser;
 
-        // Login
-        var loginRequest = new LoginRequest
-        {
-            Email = user.Email,
-            Password = user.PasswordHash
-        };
-
-        var loginResponse = await Client.PostAsJsonAsync("/auth/login", loginRequest);
+        var loginResponse = await LoginAsync(user.Email, user.PasswordHash);
         loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        // Extract csrfToken from Set-Cookie
-        var csrfToken = CookieHelper.ExtractCookieFromHeaders(loginResponse, "csrfToken");
+        var (_, csrfToken) = ExtractTokens(loginResponse);
         csrfToken.Should().NotBeNullOrWhiteSpace();
 
-        // Send wrong refresh request
-        var refreshRequest = new HttpRequestMessage(HttpMethod.Post, "/auth/refresh-tokens");
-        refreshRequest.Headers.Add("X-CSRF-Token", csrfToken);
-        refreshRequest.Headers.Add("Cookie", $"refreshToken=UnauthorizedToken");
+        var request = new HttpRequestMessage(HttpMethod.Post, AuthRoutes.Refresh)
+        {
+            Headers =
+            {
+                { "X-CSRF-Token", csrfToken! },
+                { "Cookie", $"refreshToken=InvalidToken" }
+            }
+        };
 
-        var refreshResponse = await Client.SendAsync(refreshRequest);
+        var refreshResponse = await Client.SendAsync(request);
         refreshResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-        await DeleteTestUserAsync(user.UserId);
     }
     
 
     [Fact(DisplayName = "Refresh without CSRF token should fail")]
     public async Task Refresh_WithoutCsrf_ShouldReturnUnauthorized()
     {
-        var user = await RegisterTestUserAsync();
+        var user = _sharedFixture.UserFixture.TestUser;
 
-        // Login
-        var loginRequest = new LoginRequest
-        {
-            Email = user.Email,
-            Password = user.PasswordHash
-        };
-        var loginResponse = await Client.PostAsJsonAsync("/auth/login", loginRequest);
+        var loginResponse = await LoginAsync(user.Email, user.PasswordHash);
         loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        // Attempt refresh with no CSRF header
-        var refreshRequest = new HttpRequestMessage(HttpMethod.Post, "/auth/refresh-tokens");
+        var refreshRequest = new HttpRequestMessage(HttpMethod.Post, AuthRoutes.Refresh);
         var refreshResponse = await Client.SendAsync(refreshRequest);
 
         refreshResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-        await DeleteTestUserAsync(user.UserId);
     }
 
 
     [Fact(DisplayName = "Access token allows access to protected endpoint")]
     public async Task AccessToken_ShouldAllowAccessToProtectedEndpoint()
     {
-        var user = await RegisterTestUserAsync();
+        var user = _sharedFixture.UserFixture.TestUser;
 
-        // Login 
-        var loginRequest = new LoginRequest
-        {
-            Email = user.Email,
-            Password = user.PasswordHash
-        };
-
-        var loginResponse = await Client.PostAsJsonAsync("/auth/login", loginRequest);
+        var loginResponse = await LoginAsync(user.Email, user.PasswordHash);
         loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var body = await loginResponse.Content.ReadAsStringAsync();
-        var json = JsonDocument.Parse(body);
-        json.RootElement.TryGetProperty("accessToken", out var accessToken).Should().BeTrue();
+        var token = await ExtractAccessToken(loginResponse);
 
-        // Get the access token
-        var token = accessToken.GetString();
-        token.Should().NotBeNullOrWhiteSpace();
-
-        // Use the token to access a protected endpoint
-        var request = new HttpRequestMessage(HttpMethod.Get, "auth/protected");
+        var request = new HttpRequestMessage(HttpMethod.Get, AuthRoutes.Protected);
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
-        var protectedResponse = await Client.SendAsync(request);
-
-        protectedResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        await DeleteTestUserAsync(user.UserId);
+        var response = await Client.SendAsync(request);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
 
     [Fact(DisplayName = "Successful full auth flow (register, login, access protected, refresh, logout)")]
     public async Task SuccessfulAuthFlow_ShouldSetCookiesAndAccessProtectedRoute()
     {
-        // Register user
-        var user = await RegisterTestUserAsync();
+        var user = _sharedFixture.UserFixture.TestUser;
 
-        // Login
-        var loginRequest = new LoginRequest
-        {
-            Email = user.Email,
-            Password = user.PasswordHash
-        };
-
-        var loginResponse = await Client.PostAsJsonAsync("/auth/login", loginRequest);
+        var loginResponse = await LoginAsync(user.Email, user.PasswordHash);
         loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        // Extract access token
-        var json = JsonDocument.Parse(await loginResponse.Content.ReadAsStringAsync());
-        var accessToken = json.RootElement.GetProperty("accessToken").GetString();
-        accessToken.Should().NotBeNullOrWhiteSpace();
+        var accessToken = await ExtractAccessToken(loginResponse);
+        var (refreshToken, csrfToken) = ExtractTokens(loginResponse);
 
-        // Exctract Refresh and CSRF cookie
-        var refreshToken = CookieHelper.ExtractCookieFromHeaders(loginResponse, "refreshToken");
-        refreshToken.Should().NotBeNullOrWhiteSpace();
-        var csrfToken = CookieHelper.ExtractCookieFromHeaders(loginResponse, "csrfToken");
-        csrfToken.Should().NotBeNullOrWhiteSpace();
-
-
-        // Use access token to hit protected endpoint
-        var protectedRequest = new HttpRequestMessage(HttpMethod.Get, "/auth/protected");
+        // Access protected
+        var protectedRequest = new HttpRequestMessage(HttpMethod.Get, AuthRoutes.Protected);
         protectedRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
-
         var protectedResponse = await Client.SendAsync(protectedRequest);
         protectedResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        // Refresh tokens using valid refresh cookie and CSRF header
-        var refreshRequest = new HttpRequestMessage(HttpMethod.Post, "/auth/refresh-tokens");
-        refreshRequest.Headers.Add("X-CSRF-Token", csrfToken);
-        refreshRequest.Headers.Add("Cookie", $"refreshToken={refreshToken}; csrfToken={csrfToken}");
+        // Refresh
+        var refreshRequest = new HttpRequestMessage(HttpMethod.Post, AuthRoutes.Refresh);
+        refreshRequest.Headers.Add("X-CSRF-Token", csrfToken!);
+        refreshRequest.Headers.Add("Cookie", $"{TestConstants.RefreshToken}={refreshToken}; {TestConstants.CsrfToken}={csrfToken}");
 
         var refreshResponse = await Client.SendAsync(refreshRequest);
         refreshResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        // Check the access token and refresh cookie are updated
-        var refreshBody = JsonDocument.Parse(await refreshResponse.Content.ReadAsStringAsync());
-        var newAccessToken = refreshBody.RootElement.GetProperty("accessToken").GetString();
+        var newAccessToken = await ExtractAccessToken(refreshResponse);
         newAccessToken.Should().NotBeNullOrWhiteSpace();
-        refreshToken = CookieHelper.ExtractCookieFromHeaders(refreshResponse, "refreshToken");
-        refreshToken.Should().NotBeNullOrWhiteSpace();
+
+        var newRefreshToken = CookieHelper.ExtractCookieFromHeaders(refreshResponse, TestConstants.RefreshToken);
+        newRefreshToken.Should().NotBeNullOrWhiteSpace();
 
         // Logout
-        var logoutRequest = new HttpRequestMessage(HttpMethod.Post, "/auth/logout");
-        logoutRequest.Headers.Add("Cookie", $"refreshToken={refreshToken}");
+        var logoutRequest = new HttpRequestMessage(HttpMethod.Post, AuthRoutes.Logout);
+        logoutRequest.Headers.Add("Cookie", $"{TestConstants.RefreshToken}={newRefreshToken}");
+
         var logoutResponse = await Client.SendAsync(logoutRequest);
         logoutResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var logoutSetCookies = logoutResponse.Headers.GetValues("Set-Cookie").ToList();
-        logoutSetCookies.Should().Contain(c => c.Contains("refreshToken=;"));
-        logoutSetCookies.Should().Contain(c => c.Contains("csrfToken=;"));
+        var logoutCookies = logoutResponse.Headers.GetValues("Set-Cookie").ToList();
+        logoutCookies.Should().Contain(c => c.Contains($"{TestConstants.RefreshToken}=;"));
+        logoutCookies.Should().Contain(c => c.Contains($"{TestConstants.CsrfToken}=;"));
 
-        await DeleteTestUserAsync(user.UserId);
     }
 
-  
-    private async Task<UserModel> RegisterTestUserAsync()
-    {
-        var user = new UserModel
-        {
-            UserId = Guid.NewGuid(),
-            Email = TestConstants._testUserEmail,
-            PasswordHash = TestConstants._testUserPassword,
-        };
-
-        var response = await Client.PostAsJsonAsync("/user", user);
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
-
-        return user;
-    }
-
-
-    private async Task DeleteTestUserAsync(Guid userId)
-    {
-        var response = await Client.DeleteAsync($"/user/{userId}");
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-    }
 
 }

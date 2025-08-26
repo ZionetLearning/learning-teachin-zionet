@@ -1,7 +1,7 @@
 using IntegrationTests.Constants;
 using Microsoft.Extensions.Configuration;
 
-namespace IntegrationTests.Infrastructure;
+namespace IntegrationTests.Fixtures;
 
 public class HttpTestFixture : IDisposable
 {
