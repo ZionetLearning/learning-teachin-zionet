@@ -18,6 +18,7 @@ import {
   AnimeExplorerPage,
   CountryExplorerPage,
   SignalRPage,
+  UsersPage,
 } from "./pages";
 
 import "./App.css";
@@ -60,6 +61,7 @@ function App() {
           <Route path="/anime-explorer" element={<AnimeExplorerPage />} />
           <Route path="/country-explorer" element={<CountryExplorerPage />} />
           <Route path="/signalr" element={<SignalRPage />} />
+          <Route path="/users" element={<UsersPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
