@@ -15,12 +15,11 @@ resource "azurerm_key_vault_secret" "postgres_connection" {
   value = (
     var.use_shared_postgres
     ? format(
-        "Host=%s;Database=%s;User ID=%s@%s;Password=%s;SslMode=Require",
+        "Host=%s;Port=5432;Database=%s;Username=%s@%s;Password=%s;SslMode=Require",
         data.azurerm_postgresql_flexible_server.shared[0].fqdn,
         "${var.database_name}-${var.environment_name}",
         var.admin_username,
-        # strip .postgres.database.azure.com from fqdn → server short name
-        replace(data.azurerm_postgresql_flexible_server.shared[0].name, ".postgres.database.azure.com", ""),
+        data.azurerm_postgresql_flexible_server.shared[0].name,
         var.admin_password
       )
     : module.database[0].postgres_connection_string
