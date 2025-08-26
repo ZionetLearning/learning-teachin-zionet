@@ -197,7 +197,6 @@ jobs:
           echo "❌ Timeout waiting for ExternalSecrets API"
           exit 1
 
-
       - name: Helm template sanity (no Namespace objects)
         run: |
           # Use image_tag if provided, otherwise fall back to TARGET_NAMESPACE
