@@ -11,6 +11,12 @@ resource "azurerm_resource_group" "main" {
   }
 }
 
+resource "azurerm_user_assigned_identity" "aks" {
+  name                = "${var.prefix}-aks-uami"
+  resource_group_name = var.shared_aks_resource_group # dev-zionet-learning-2025
+  location            = var.location
+}
+
 # Data source to reference existing shared AKS cluster
 data "azurerm_kubernetes_cluster" "shared" {
   count               = var.use_shared_aks ? 1 : 0
@@ -218,6 +224,11 @@ resource "kubernetes_service_account" "environment" {
 #       "services"        = "8"
 #     }
 #   }
-  
 #   depends_on = [kubernetes_namespace.environment]
 # }
+
+# Reference the shared Key Vault instead of creating new ones
+data "azurerm_key_vault" "shared" {
+  name                = "teachin-seo-kv"
+  resource_group_name = "dev-zionet-learning-2025"
+}

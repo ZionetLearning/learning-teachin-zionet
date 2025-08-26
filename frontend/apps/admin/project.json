@@ -1,0 +1,69 @@
+{
+  "name": "admin",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/admin/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nx/vite:build",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "outputPath": "dist/apps/admin",
+        "configFile": "apps/admin/vite.config.ts",
+        "lintFilePatterns": ["apps/admin/**/*.{ts,tsx,js,jsx}"]
+      },
+      "configurations": {
+        "development": { "mode": "development" },
+        "production": { "mode": "production" }
+      }
+    },
+    "serve": {
+      "executor": "@nx/vite:dev-server",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "admin:build",
+        "configFile": "apps/admin/vite.config.ts",
+        "port": 4002
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "admin:build:development",
+          "hmr": true
+        },
+        "production": {
+          "buildTarget": "admin:build:production",
+          "hmr": false
+        }
+      }
+    },
+    "preview": {
+      "executor": "@nx/vite:preview-server",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "admin:build",
+        "configFile": "apps/admin/vite.config.ts"
+      },
+      "configurations": {
+        "development": { "buildTarget": "admin:build:development" },
+        "production": { "buildTarget": "admin:build:production" }
+      }
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": ["coverage/apps/admin"],
+      "options": {
+        "passWithNoTests": true,
+        "reportsDirectory": "../../coverage/apps/admin"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["apps/admin/**/*.{ts,tsx,js,jsx}"]
+      }
+    }
+  },
+  "tags": []
+}

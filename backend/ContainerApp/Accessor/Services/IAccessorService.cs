@@ -20,4 +20,5 @@ public interface IAccessorService
     Task<IEnumerable<UserData>> GetAllUsersAsync();
     Task<ChatHistorySnapshot?> GetHistorySnapshotAsync(Guid threadId);
     Task UpsertHistorySnapshotAsync(ChatHistorySnapshot snapshot);
+    Task<StatsSnapshot> ComputeStatsAsync(CancellationToken ct = default);
 }

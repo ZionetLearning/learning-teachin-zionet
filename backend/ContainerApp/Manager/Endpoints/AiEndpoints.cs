@@ -20,10 +20,12 @@ public static class AiEndpoints
 
     public static WebApplication MapAiEndpoints(this WebApplication app)
     {
+        var aiGroup = app.MapGroup("/ai-manager").WithTags("AI");
 
         #region HTTP GET
 
-        app.MapGet("/ai/answer/{id}", AnswerAsync).WithName("Answer");
+        // GET /ai-manager/answer/{id}
+        aiGroup.MapGet("/answer/{id}", AnswerAsync).WithName("Answer");
 
         app.MapGet("/chats/{userId:guid}", GetChatsAsync).WithName("GetChats");
 
@@ -31,7 +33,11 @@ public static class AiEndpoints
 
         #region HTTP POST
 
-        app.MapPost("/ai/question", QuestionAsync).WithName("Question");
+        // POST /ai-manager/question
+        aiGroup.MapPost("/question", QuestionAsync).WithName("Question");
+
+        // POST /ai-manager/chat
+        aiGroup.MapPost("/chat", ChatAsync).WithName("Chat");
 
         app.MapPost("/chat", ChatAsync).WithName("Chat");
 
@@ -119,7 +125,7 @@ public static class AiEndpoints
 
                 var id = await aiService.SendQuestionAsync(threadId, dto.Question, ct);
                 log.LogInformation("Request {Id} (thread {Thread}) accept", id, threadId);
-                return Results.Accepted($"/ai/answer/{id}", new { questionId = id, threadId });
+                return Results.Accepted($"/ai-manager/answer/{id}", new { questionId = id, threadId });
             }
             catch (Exception ex)
             {
