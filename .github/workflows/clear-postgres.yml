@@ -14,7 +14,7 @@ on:
       dry_run:
         description: "If true, only print SQL and do not execute"
         required: false
-        default: "true"
+        default: "false"
       verify_ssl:
         description: "true=require SSL (Azure default). false=disable SSL (NOT recommended)."
         required: false
