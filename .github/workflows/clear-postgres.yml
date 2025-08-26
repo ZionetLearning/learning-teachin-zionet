@@ -27,11 +27,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      PGHOST: ${{ secrets.POSTGRES_HOST }}
-      PGDATABASE: ${{ secrets.POSTGRES_DB }}
+      PGHOST: dev-pg-zionet-learning.postgres.database.azure.com
+      PGDATABASE: appdb-test
       PGUSER: ${{ secrets.POSTGRES_USER }}
       PGPASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-      PGPORT: ${{ secrets.POSTGRES_PORT != '' && secrets.POSTGRES_PORT || '5432' }}
+      #PGPORT: 5432
       MODE: ${{ github.event.inputs.mode }}
       DRY_RUN: ${{ github.event.inputs.dry_run }}
       VERIFY_SSL: ${{ github.event.inputs.verify_ssl }}
