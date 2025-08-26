@@ -5,5 +5,5 @@ namespace Engine.Services;
 
 public interface IAiReplyPublisher
 {
-    Task SendReplyAsync(ChatContextMetadata chatMetadata, EngineChatResponse response, CancellationToken ct = default);
+    Task SendReplyAsync(UserContextMetadata chatMetadata, EngineChatResponse response, CancellationToken ct = default);
 }

@@ -55,10 +55,8 @@ public class EngineClient : IEngineClient
         _logger.LogInformation("Invoke Engine /chat synchronously (thread {Thread})", request.ThreadId);
         try
         {
-            var requestMetadata = new ChatContextMetadata
+            var requestMetadata = new UserContextMetadata
             {
-                RequestId = request.RequestId,
-                ThreadId = request.ThreadId,
                 UserId = request.UserId
             };
 

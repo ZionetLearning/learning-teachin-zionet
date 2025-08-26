@@ -19,7 +19,7 @@ public sealed class AiReplyPublisher : IAiReplyPublisher
         _log = log ?? throw new ArgumentNullException(nameof(log));
     }
 
-    public async Task SendReplyAsync(ChatContextMetadata chatMetadata, EngineChatResponse response, CancellationToken ct = default)
+    public async Task SendReplyAsync(UserContextMetadata chatMetadata, EngineChatResponse response, CancellationToken ct = default)
     {
         if (response is null)
         {
@@ -43,7 +43,7 @@ public sealed class AiReplyPublisher : IAiReplyPublisher
 
             var message = new Message
             {
-                ActionName = MessageAction.AnswerAi,
+                ActionName = MessageAction.ProcessingChatMessage,
                 Payload = payload,
                 Metadata = messageMetadata
             };

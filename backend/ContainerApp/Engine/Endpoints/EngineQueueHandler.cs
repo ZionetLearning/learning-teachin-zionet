@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using DotQueue;
+﻿using DotQueue;
 using Engine.Helpers;
 using Engine.Models;
 using Engine.Models.Chat;
@@ -146,28 +145,12 @@ public class EngineQueueHandler : IQueueHandler<Message>
         try
         {
             var request = PayloadValidation.DeserializeOrThrow<EngineChatRequest>(message, _logger);
+            PayloadValidation.ValidateEngineChatRequest(request, _logger);
+
+            var userContext = MetadataValidation.DeserializeOrThrow<UserContextMetadata>(message, _logger);
+            MetadataValidation.ValidateUserContext(userContext, _logger);
+
             using var _ = _logger.BeginScope(new { request.RequestId, request.ThreadId });
-
-            UserContextMetadata? metadata = null;
-            if (message.Metadata.HasValue)
-            {
-                metadata = JsonSerializer.Deserialize<UserContextMetadata>(message.Metadata.Value);
-            }
-
-            if (metadata is null || string.IsNullOrWhiteSpace(metadata.UserId))
-            {
-                throw new NonRetryableException("Chat message requires valid metadata with UserId.");
-            }
-
-            if (string.IsNullOrWhiteSpace(request.UserMessage))
-            {
-                throw new NonRetryableException("UserMessage is required.");
-            }
-
-            if (string.IsNullOrWhiteSpace(request.UserId))
-            {
-                throw new NonRetryableException("UserId is required in the request.");
-            }
 
             if (request.TtlSeconds <= 0)
             {
@@ -189,17 +172,10 @@ public class EngineQueueHandler : IQueueHandler<Message>
                 UserMessage = request.UserMessage,
                 ChatType = request.ChatType,
                 ThreadId = request.ThreadId,
-                UserId = metadata.UserId,
+                UserId = userContext.UserId,
                 RequestId = request.RequestId,
                 SentAt = request.SentAt,
                 TtlSeconds = request.TtlSeconds,
-            };
-
-            var chatResponseMetadata = new ChatContextMetadata
-            {
-                RequestId = request.RequestId,
-                ThreadId = request.ThreadId,
-                UserId = metadata.UserId
             };
 
             var aiResponse = await _aiService.ChatHandlerAsync(serviceRequest, ct);
@@ -214,21 +190,19 @@ public class EngineQueueHandler : IQueueHandler<Message>
                     AssistantMessage = aiResponse.Error
                 };
 
-                await _publisher.SendReplyAsync(chatResponseMetadata, errorResponse, ct);
+                await _publisher.SendReplyAsync(userContext, errorResponse, ct);
                 _logger.LogError("Chat request {RequestId} failed: {Error}", aiResponse.RequestId, aiResponse.Error);
                 return;
             }
 
-            var questionMessage = new ChatMessage
+            var upsert = new UpsertHistoryRequest
             {
                 ThreadId = request.ThreadId,
-                UserId = metadata.UserId,
-                Role = MessageRole.User,
-                Content = request.UserMessage
+                UserId = request.UserId,
+                ChatType = request.ChatType.ToString().ToLowerInvariant(),
+                History = aiResponse.UpdatedHistory
             };
-
-            await _accessorClient.StoreMessageAsync(questionMessage, ct);
-            await _accessorClient.StoreMessageAsync(aiResponse.Answer, ct);
+            await _accessorClient.UpsertHistorySnapshotAsync(upsert, ct);
 
             var responseToManager = new EngineChatResponse
             {
@@ -238,7 +212,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
                 ThreadId = aiResponse.ThreadId
             };
 
-            await _publisher.SendReplyAsync(chatResponseMetadata, responseToManager, ct);
+            await _publisher.SendReplyAsync(userContext, responseToManager, ct);
             _logger.LogInformation("Chat request {RequestId} processed successfully", aiResponse.RequestId);
         }
         catch (NonRetryableException ex)
@@ -258,13 +232,4 @@ public class EngineQueueHandler : IQueueHandler<Message>
             throw new RetryableException("Transient error while processing AI chat.", ex);
         }
     }
-
-    private static JsonElement JsonEl(string raw)
-    {
-        using var doc = JsonDocument.Parse(raw);
-        return doc.RootElement.Clone();
-    }
-
-    private static JsonElement EmptyHistory() =>
-        JsonEl("""{"messages":[]}""");
 }

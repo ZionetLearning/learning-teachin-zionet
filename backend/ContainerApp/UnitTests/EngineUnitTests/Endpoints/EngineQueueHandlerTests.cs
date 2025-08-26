@@ -208,10 +208,8 @@ public class EngineQueueHandlerTests
             ThreadId = threadId,
             Status = ChatAnswerStatus.Ok
         };
-        var chatMetadata = new ChatContextMetadata
+        var chatMetadata = new UserContextMetadata
         {
-            RequestId = requestId,
-            ThreadId = threadId,
             UserId = userId
         };
 
