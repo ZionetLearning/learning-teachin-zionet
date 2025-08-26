@@ -49,11 +49,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Option A: Service Principal with client secret (sdk-auth JSON)
-      - name: Azure Login (Service Principal)
+      - name: Azure Login (explicit fields from JSON)
         uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id:        ${{ fromJSON(secrets.AZURE_CREDENTIALS).clientId }}
+          tenant-id:        ${{ fromJSON(secrets.AZURE_CREDENTIALS).tenantId }}
+          subscription-id:  ${{ fromJSON(secrets.AZURE_CREDENTIALS).subscriptionId }}
+          #client-secret:    ${{ fromJSON(secrets.AZURE_CREDENTIALS).clientSecret }}
+      
 
       - name: Confirm Azure context
         run: |
