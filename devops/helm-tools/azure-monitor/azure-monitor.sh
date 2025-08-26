@@ -41,8 +41,7 @@ data:
           subscriptionId: \$__env{AZURE_SUBSCRIPTION_ID}
           clientId: \$__env{AZURE_CLIENT_ID}
           defaultSubscription: \$__env{AZURE_SUBSCRIPTION_ID}
-        secureJsonData:
-          clientSecret: \$__env{AZURE_CLIENT_SECRET}
+
 EOF
 
 echo "4. Update Grafana deployment to use the Secret"
