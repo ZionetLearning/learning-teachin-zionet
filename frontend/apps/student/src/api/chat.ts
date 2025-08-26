@@ -15,7 +15,7 @@ export type ChatResponse = {
 };
 
 export const useSendChatMessage = () => {
-  const BASE_URL = import.meta.env.VITE_BASE_URL!;
+  const AI_BASE_URL = import.meta.env.VITE_AI_URL!;
   const queryClient = useQueryClient();
 
   return useMutation<ChatResponse, Error, ChatRequest>({
@@ -26,9 +26,9 @@ export const useSendChatMessage = () => {
     }) => {
       const response = await axios.post<ChatResponse>(
         //local server endpoint URL:
-        // "http://localhost:5280/chat",
+        // "http://localhost:5280/ai-manager/chat",
         //cloud server endpoint URL:
-        `${BASE_URL}/chat`,
+        `${AI_BASE_URL}/chat`,
         {
           userMessage,
           threadId,
