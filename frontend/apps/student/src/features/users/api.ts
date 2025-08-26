@@ -6,11 +6,9 @@ import {
   UseQueryResult,
 } from "@tanstack/react-query";
 
-interface UserDto {
-  userId: string;
-  email: string;
+type UserDto = User & {
   passwordHash?: string;
-}
+};
 
 interface UpdateUserInput {
   email: string;
