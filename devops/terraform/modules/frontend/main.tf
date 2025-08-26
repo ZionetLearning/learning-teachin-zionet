@@ -12,18 +12,15 @@ resource "azurerm_static_web_app" "frontend" {
 }
 
 # Configure custom domain if enabled (CNAME only)
-resource "azurerm_static_site_custom_domain" "custom" {
-  count            = var.custom_domain_enabled ? 1 : 0
-  static_site_id   = azurerm_static_web_app.frontend.id
-  domain_name      = var.custom_domain_name
-  validation_type  = "cname-delegation"
+resource "azurerm_static_web_app_custom_domain" "custom" {
+  count               = var.custom_domain_enabled ? 1 : 0
+  static_web_app_id   = azurerm_static_web_app.frontend.id
+  domain_name         = var.custom_domain_name
+  validation_type     = "cname-delegation"
   
   depends_on = [azurerm_static_web_app.frontend]
   
   lifecycle {
-    # Ignore changes to validation_token as it's auto-generated
-    ignore_changes = [validation_token]
-    
     # Prevent accidental destruction
     prevent_destroy = false
   }
