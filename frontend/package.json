@@ -2,7 +2,15 @@
   "name": "@frontend/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "lint": "nx run-many --target=lint --all --parallel=3",
+    "lint:affected": "nx affected --target=lint --parallel=3",
+    "lint:fix": "nx run-many --target=lint --all --parallel=3 --fix",
+    "lint:affected:fix": "nx affected --target=lint --parallel=3 --fix",
+    "lint:teacher": "nx lint teacher",
+    "lint:student": "nx lint student",
+    "lint:admin": "nx lint admin"
+  },
   "private": true,
   "dependencies": {
     "@emotion/react": "^11.14.0",

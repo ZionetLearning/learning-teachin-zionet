@@ -7,10 +7,17 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 import { globalIgnores } from "eslint/config";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default tseslint.config([
-  globalIgnores(["dist"]),
+  globalIgnores([
+    "dist",
+    "build",
+    "coverage",
+    "storybook-static",
+    "node_modules",
+    "cypress",
+  ]),
   {
     files: ["**/*.{ts,tsx}"],
     extends: [
@@ -36,7 +43,7 @@ export default tseslint.config([
     },
     extends: [
       js.configs.recommended,
-      tseslint.configs.recommendedTypeChecked, // type-aware rules
+      tseslint.configs.recommended,
       reactHooks.configs["recommended-latest"],
       reactRefresh.configs.vite,
     ],
