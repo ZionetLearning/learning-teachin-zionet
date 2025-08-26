@@ -44,8 +44,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Make scripts executable
-        run: chmod +x scripts/clear_postgres.sh
+        run: chmod +x .github/workflows/scripts/clear_postgres.sh
       - name: Install psql client
         run: sudo apt-get update -y && sudo apt-get install -y postgresql-client
       - name: Clear Postgres
-        run: ./scripts/clear_postgres.sh
+        run: .github/workflows/scripts/clear_postgres.sh
