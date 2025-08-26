@@ -1,8 +1,9 @@
 ﻿using Manager.Helpers;
+using Manager.Models.Auth;
+using Manager.Models.Auth.Erros;
+using Manager.Constants;
 using Manager.Services;
 using Microsoft.AspNetCore.Mvc;
-using Manager.Models.Auth;
-using Manager.Constants;
 
 namespace Manager.Endpoints;
 
@@ -12,16 +13,19 @@ public static class AuthEndpoints
     {
         #region Authentication and Authorization Endpoints
 
-        app.MapPost("/auth/login", LoginAsync).WithName("Login");
+        var authGroup = app.MapGroup("/auth").WithTags("Auth");
 
-        app.MapPost("/auth/refresh-tokens", RefreshTokensAsync)
+        authGroup.MapPost("/login", LoginAsync).WithName("Login");
+
+        authGroup.MapPost("/refresh-tokens", RefreshTokensAsync)
             .RequireRateLimiting(AuthSettings.RefreshTokenPolicy)
             .WithName("RefreshTokens");
 
-        app.MapPost("/auth/logout", LogoutAsync).WithName("Logout");
+        authGroup.MapPost("/logout", LogoutAsync).WithName("Logout");
 
-        app.MapGet("/auth/protected", TestAuthAsync)
-        .RequireAuthorization();
+        authGroup.MapGet("/protected", TestAuthAsync)
+            .RequireAuthorization()
+            .WithName("Protected");
 
         #endregion
     }
@@ -48,15 +52,26 @@ public static class AuthEndpoints
                 logger.LogInformation("Login successful for {Email}", loginRequest.Email);
                 return Results.Ok(new { accessToken });
             }
-            catch (UnauthorizedAccessException)
+            catch (UnauthorizedAccessException ex)
             {
-                logger.LogWarning("Unauthorized login attempt for {Email}", loginRequest.Email);
-                return Results.Unauthorized();
+                logger.LogWarning("Unauthorized login attempt for {Email}: {Message}", loginRequest.Email, ex.Message);
+                return Results.Json(new ErrorResponse
+                {
+                    Status = StatusCodes.Status401Unauthorized,
+                    Code = ErrorCodes.Unauthorized,
+                    Message = ex.Message
+                }, statusCode: StatusCodes.Status401Unauthorized);
+
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error during login for {Email}", loginRequest.Email);
-                return Results.Problem("An unexpected error occurred during login.");
+                return Results.Json(new ErrorResponse
+                {
+                    Status = StatusCodes.Status500InternalServerError,
+                    Code = ErrorCodes.InternalServerError,
+                    Message = "An unexpected error occurred. Please try again later."
+                }, statusCode: StatusCodes.Status500InternalServerError);
             }
         }
     }
@@ -80,15 +95,26 @@ public static class AuthEndpoints
                 logger.LogInformation("Refresh token successful");
                 return Results.Ok(new { accessToken });
             }
-            catch (UnauthorizedAccessException)
+            catch (UnauthorizedAccessException ex)
             {
-                logger.LogWarning("Refresh token request unauthorized");
-                return Results.Unauthorized();
+                logger.LogWarning(ex, "Refresh token request unauthorized");
+                return Results.Json(new ErrorResponse
+                {
+                    Status = StatusCodes.Status401Unauthorized,
+                    Code = ErrorCodes.Unauthorized,
+                    Message = ex.Message
+                }, statusCode: StatusCodes.Status401Unauthorized);
+
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error refreshing token");
-                return Results.Problem("Failed to refresh token");
+                return Results.Json(new ErrorResponse
+                {
+                    Status = StatusCodes.Status500InternalServerError,
+                    Code = ErrorCodes.InternalServerError,
+                    Message = "An unexpected error occurred. Please try again later."
+                }, statusCode: StatusCodes.Status500InternalServerError);
             }
         }
     }

@@ -139,7 +139,6 @@ if (refreshRateLimitSettings != null)
         options.RejectionStatusCode = refreshRateLimitSettings.RejectionStatusCode;
         _ = options.AddPolicy(AuthSettings.RefreshTokenPolicyName, context =>
         {
-            //var ip = context.Connection.RemoteIpAddress?.ToString() ?? AuthSettings.UnknownIpFallback;
             var ip = context.Request.Headers["X-Forwarded-For"].FirstOrDefault()
                  ?? context.Connection.RemoteIpAddress?.ToString()
                  ?? AuthSettings.UnknownIpFallback;
@@ -167,11 +166,13 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapSubscribeHandler();
-app.MapManagerEndpoints();
 app.MapAiEndpoints();
 app.MapAuthEndpoints();
+app.MapTasksEndpoints();
+app.MapUsersEndpoints();
 app.MapHub<NotificationHub>("/NotificationHub");
 
+app.MapStatsPing();
 if (env.IsDevelopment())
 {
     app.MapOpenApi();

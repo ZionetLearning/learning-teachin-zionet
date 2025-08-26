@@ -16,11 +16,41 @@ global:
   imagePullSecret:
     enabled: false
     name: ""
+  keyvault:
+    clientId: ""
+    tenantId: ""
 
 # If empty, namespace becomes <namePrefix>
 namespace:
   create: true
   name: ""
+cronjobs:
+  statsPing:
+    enabled: false                      # OFF by default (safe)
+    schedule: "*/5 * * * *"             # every 5 minutes (default)
+    timeZone: "Etc/UTC"                 # optional
+    concurrencyPolicy: Forbid
+    startingDeadlineSeconds: 120
+    successfulJobsHistoryLimit: 3
+    failedJobsHistoryLimit: 3
+    backoffLimit: 2
+
+    image:
+      repository: curlimages/curl       # official curl image
+      tag: "8.8.0"
+      pullPolicy: IfNotPresent
+
+    curl:
+      maxTimeSeconds: 60
+      retries: 2
+      retryDelaySeconds: 2
+
+    # How to reach Manager from inside the cluster
+    target:
+      mode: "service"                   # "service" (in-cluster) or "ingress"
+      serviceName: ""                   # defaults to .Values.manager.name (manager) if empty
+      port:                              # defaults to .Values.manager.ports.service (80) if empty
+      url: ""                           # used only when mode = "ingress"
 
 manager:
   name: manager
@@ -48,6 +78,9 @@ manager:
     serviceBus:
       name: azure-service-bus-secret
       key: AzureServiceBusConnectionString
+    signalr:
+      name: signalr-connection
+      key: SignalRConnectionString
   resources:
     requests:
       cpu: "100m"
