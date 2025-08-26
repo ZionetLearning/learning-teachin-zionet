@@ -4,6 +4,22 @@ set -e
 # Namespaces
 GRAFANA_NAMESPACE="devops-logs"
 
+# Validate environment variables
+if [[ -z "$AZURE_TENANT_ID" || -z "$AZURE_SUBSCRIPTION_ID" || -z "$AZURE_CLIENT_ID" || -z "$AZURE_CLIENT_SECRET" ]]; then
+  echo "Error: Required Azure environment variables are not set!"
+  echo "Make sure GitHub secrets are properly configured:"
+  echo "  - AZURE_TENANT_ID"
+  echo "  - AZURE_SUBSCRIPTION_ID" 
+  echo "  - AZURE_CLIENT_ID"
+  echo "  - AZURE_CLIENT_SECRET"
+  exit 1
+fi
+
+echo "   Azure environment variables are set"
+echo "   Tenant ID: ${AZURE_TENANT_ID:0:8}..."
+echo "   Subscription ID: ${AZURE_SUBSCRIPTION_ID:0:8}..."
+echo "   Client ID: ${AZURE_CLIENT_ID:0:8}..."
+
 echo "1. Check if Grafana is running in the '$GRAFANA_NAMESPACE' namespace"
 kubectl wait --namespace "$GRAFANA_NAMESPACE" \
   --for=condition=Ready pod \
@@ -35,13 +51,16 @@ data:
         type: grafana-azure-monitor-datasource
         access: proxy
         editable: true
+        isDefault: false
         jsonData:
           cloudName: azuremonitor
-          tenantId: \$__env{AZURE_TENANT_ID}
-          subscriptionId: \$__env{AZURE_SUBSCRIPTION_ID}
-          clientId: \$__env{AZURE_CLIENT_ID}
-          defaultSubscription: \$__env{AZURE_SUBSCRIPTION_ID}
-
+          tenantId: $AZURE_TENANT_ID
+          subscriptionId: $AZURE_SUBSCRIPTION_ID
+          clientId: $AZURE_CLIENT_ID
+          defaultSubscription: $AZURE_SUBSCRIPTION_ID
+        secureJsonData:
+          clientSecret: $AZURE_CLIENT_SECRET
+        version: 1
 EOF
 
 echo "4. Update Grafana deployment to use the Secret"
