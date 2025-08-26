@@ -2,7 +2,7 @@
 using Manager.Constants;
 using Manager.Models;
 using Manager.Services;
-using Manager.Services.Clients;
+using Manager.Services.Clients.Accessor;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Endpoints;

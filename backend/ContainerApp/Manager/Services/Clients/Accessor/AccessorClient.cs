@@ -1,13 +1,16 @@
 ﻿using System.Net;
 using System.Text.Json;
 using Dapr.Client;
+using Google.Api;
 using Manager.Constants;
 using Manager.Models;
+using Manager.Models.Auth;
 using Manager.Models.Chat;
 using Manager.Models.QueueMessages;
 using Manager.Models.Users;
 
-namespace Manager.Services.Clients;
+
+namespace Manager.Services.Clients.Accessor;
 
 public class AccessorClient(
     ILogger<AccessorClient> logger,
@@ -58,7 +61,7 @@ public class AccessorClient(
 
             var payload = JsonSerializer.SerializeToElement(new
             {
-                id = id,
+                id,
                 name = newTaskName,
                 payload = ""
             });
@@ -348,6 +351,36 @@ public class AccessorClient(
             ex.Response?.StatusCode == HttpStatusCode.NotFound)
         {
             _logger.LogWarning("No stats snapshot available from Accessor ({Status})", ex.Response?.StatusCode);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get stats snapshot from Accessor");
+            throw;
+        }
+    }
+
+    public async Task<Guid?> LoginUserAsync(LoginRequest loginRequest, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Inside: {Method} in {Class}", nameof(LoginUserAsync), nameof(AccessorClient));
+        try
+        {
+            var userId = await _daprClient.InvokeMethodAsync<LoginRequest, Guid?>(
+                HttpMethod.Post,
+                "accessor",
+                "auth/login",
+                loginRequest,
+                ct
+            );
+            return userId;
+        }
+        catch (InvocationException ex) when (
+            ex.Response?.StatusCode == HttpStatusCode.NoContent ||
+            ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning(
+                        "Login failed for Email: {Email} – received {StatusCode} from Accessor",
+                            loginRequest.Email, ex.Response?.StatusCode);
             return null;
         }
         catch (Exception ex)

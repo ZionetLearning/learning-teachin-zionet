@@ -8,6 +8,7 @@ using Manager.Models.Auth;
 using Manager.Models.Auth.RefreshSessions;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Manager.Services.Clients.Accessor;
 
 namespace Manager.Services;
 
@@ -16,12 +17,14 @@ public class AuthService : IAuthService
     private readonly DaprClient _dapr;
     private readonly ILogger<AuthService> _log;
     private readonly JwtSettings _jwt;
+    private readonly IAccessorClient _accessorClient;
 
-    public AuthService(DaprClient dapr, ILogger<AuthService> log, IOptions<JwtSettings> jwtOptions)
+    public AuthService(DaprClient dapr, ILogger<AuthService> log, IOptions<JwtSettings> jwtOptions, IAccessorClient accessorClient)
     {
         _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
         _log = log ?? throw new ArgumentNullException(nameof(log));
         _jwt = jwtOptions?.Value ?? throw new ArgumentNullException(nameof(jwtOptions));
+        _accessorClient = accessorClient;
     }
 
     public async Task<(string, string)> LoginAsync(LoginRequest loginRequest, HttpRequest httpRequest, CancellationToken cancellationToken)
@@ -29,13 +32,7 @@ public class AuthService : IAuthService
         _log.LogInformation("Login attempt for user {Email}", loginRequest.Email);
         try
         {
-            var userId = await _dapr.InvokeMethodAsync<LoginRequest, Guid?>(
-                HttpMethod.Post,
-                "accessor",
-                "auth/login",
-                loginRequest,
-                cancellationToken
-            );
+            var userId = await _accessorClient.LoginUserAsync(loginRequest, cancellationToken);
 
             if (userId is null)
             {

@@ -1,8 +1,9 @@
 ﻿using Manager.Models;
 using Manager.Models.Chat;
 using Manager.Models.Users;
+using Manager.Models.Auth;
 
-namespace Manager.Services.Clients;
+namespace Manager.Services.Clients.Accessor;
 
 public interface IAccessorClient
 {
@@ -19,4 +20,6 @@ public interface IAccessorClient
     Task<bool> DeleteUserAsync(Guid userId);
     Task<IEnumerable<UserData>> GetAllUsersAsync(CancellationToken ct = default);
     Task<StatsSnapshot?> GetStatsSnapshotAsync(CancellationToken ct = default);
+    Task<Guid?> LoginUserAsync(LoginRequest loginRequest, CancellationToken ct = default);
+
 }
