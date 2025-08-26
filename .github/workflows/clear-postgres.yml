@@ -1,5 +1,6 @@
 permissions:
   contents: read
+
 name: Clear Postgres Database
 
 on:
@@ -26,17 +27,21 @@ jobs:
   clear-db:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+
+    # Keep sensitive values in secrets where possible
     env:
+      # Database connectivity
       PGHOST: dev-pg-zionet-learning.postgres.database.azure.com
       PGDATABASE: appdb-test
-      PGUSER: ${{ secrets.POSTGRES_USER }}
+      PGUSER: ${{ secrets.POSTGRES_USER }}          # e.g. 'dbadmin' (Flexible Server: NO '@server' suffix)
       PGPASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-      #PGPORT: 5432
+
       MODE: ${{ github.event.inputs.mode }}
       DRY_RUN: ${{ github.event.inputs.dry_run }}
       VERIFY_SSL: ${{ github.event.inputs.verify_ssl }}
-      
-      AZURE_POSTGRES_SERVER: dev-pg-zionet-learning    # server name (no domain)
+
+      # Azure infra (move to secrets if you prefer)
+      AZURE_POSTGRES_SERVER: dev-pg-zionet-learning  # server name only (no domain)
       AZURE_RG: dev-zionet-learning-2025
       AZURE_SUB: 90ea4c2f-1eee-4ec9-927d-ed24c563003e
 
@@ -44,36 +49,45 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - uses: azure/login@v2
+      # Option A: Service Principal with client secret (sdk-auth JSON)
+      - name: Azure Login (Service Principal)
+        uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Confirm Azure context
+        run: |
+          set -euo pipefail
+          az account set --subscription "$AZURE_SUB"
+          az account show --query "{name:name, subscriptionId:id}" -o table
 
       - name: Allow GitHub runner IP
         id: fw
         run: |
-            set -euo pipefail
-            RUNNER_IP=$(curl -s https://api.ipify.org)
-            echo "runner_ip=$RUNNER_IP" >> "$GITHUB_OUTPUT"
-            az account set --subscription "$AZURE_SUB"
-            RULE="gha-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-            echo "Creating firewall rule $RULE for $RUNNER_IP"
-            az postgres flexible-server firewall-rule create \
-              --resource-group "$AZURE_RG" \
-              --name "$AZURE_POSTGRES_SERVER" \
-              --rule-name "$RULE" \
-              --start-ip-address "$RUNNER_IP" \
-              --end-ip-address "$RUNNER_IP"
+          set -euo pipefail
+          RUNNER_IP=$(curl -s https://api.ipify.org)
+          echo "runner_ip=$RUNNER_IP" >> "$GITHUB_OUTPUT"
+          RULE="gha-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          echo "Creating firewall rule $RULE for $RUNNER_IP"
+          az postgres flexible-server firewall-rule create \
+            --resource-group "$AZURE_RG" \
+            --name "$AZURE_POSTGRES_SERVER" \
+            --rule-name "$RULE" \
+            --start-ip-address "$RUNNER_IP" \
+            --end-ip-address "$RUNNER_IP"
+
+      - name: Install psql client
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y postgresql-client
 
       - name: Make scripts executable
         run: chmod +x .github/workflows/scripts/clear_postgres.sh
 
-      - name: Install psql client
-        run: sudo apt-get update -y && sudo apt-get install -y postgresql-client
-
       - name: Clear Postgres
         run: .github/workflows/scripts/clear_postgres.sh
 
-         # Always remove the firewall rule
+      # Always remove the firewall rule even if the job fails
       - name: Remove firewall rule
         if: always()
         run: |
