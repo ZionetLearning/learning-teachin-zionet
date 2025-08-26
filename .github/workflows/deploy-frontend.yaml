@@ -1,6 +1,6 @@
-name: Deploy Frontend to Azure Static Web Apps
+name: Deploy Frontend Apps to Azure Static Web Apps
 run-name: >
-  🚀 Deploy Frontend to environment_name: ${{
+  🚀 Deploy Frontend Apps to environment_name: ${{
     inputs.environment_name || github.event.inputs.environment_name || 'dev'
   }} | GitHub Environment: ${{ inputs.environment || github.event.inputs.environment || 'Development'}}
    
@@ -70,7 +70,7 @@ jobs:
         working-directory: ${{ env.FE_DIR }}
         run: npm ci
 
-      - name: Lint Code
+      - name: Lint All Apps
         working-directory: ${{ env.FE_DIR }}
         run: npm run lint
 
@@ -79,7 +79,7 @@ jobs:
           ts=$(date -u "+Release-%d-%m-%Y_%H-%M")
           echo "RELEASE_NAME=${ts}-${GITHUB_SHA::7}" >> $GITHUB_ENV
 
-      - name: Build Application
+      - name: Build All Applications
         working-directory: ${{ env.FE_DIR }}
         env:
           VITE_AZURE_SPEECH_KEY: ""
@@ -92,7 +92,10 @@ jobs:
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           RELEASE: ${{ env.RELEASE_NAME }}
-        run: npm run build
+        run: |
+          npm run build:student
+          npm run build:teacher
+          npm run build:admin
 
       - name: Upload build artifacts
         if: |
@@ -170,8 +173,6 @@ jobs:
               --yes || true
           done
 
-
-
       - name: Get App Insights connection string
         if: ${{ !inputs.app_insights_connection_string }}
         id: ai
@@ -213,7 +214,7 @@ jobs:
           echo "::add-mask::$TOKEN"
           echo "AZURE_STATIC_WEB_APPS_API_TOKEN=$TOKEN" >> "$GITHUB_ENV"
 
-      - name: Deploy to Azure Static Web Apps (Production slot)
+      - name: Deploy All Apps to Azure Static Web Apps (Production slot)
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ inputs.deployment_token || env.AZURE_STATIC_WEB_APPS_API_TOKEN }}
