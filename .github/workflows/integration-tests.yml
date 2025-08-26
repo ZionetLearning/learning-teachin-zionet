@@ -9,6 +9,8 @@ on:
 
 jobs:
   integration-tests:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     defaults:
       run:
