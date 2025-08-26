@@ -7,15 +7,16 @@ namespace Manager.Endpoints;
 
 public static class TasksEndpoints
 {
+    private sealed class TaskEndpoint { }
     public static IEndpointRouteBuilder MapTasksEndpoints(this IEndpointRouteBuilder app)
     {
-        var g = app.MapGroup("/tasks-manager").WithTags("Tasks");
+        var tasksGroup = app.MapGroup("/tasks-manager").WithTags("Tasks");
 
-        g.MapGet("/task/{id}", GetTaskAsync).WithName("GetTask");
-        g.MapPost("/task", CreateTaskAsync).WithName("CreateTask");
-        g.MapPost("/tasklong", CreateTaskLongAsync).WithName("CreateTaskLongTest");
-        g.MapPut("/task/{id:int}/{name}", UpdateTaskNameAsync).WithName("UpdateTaskName");
-        g.MapDelete("/task/{id:int}", DeleteTaskAsync).WithName("DeleteTask");
+        tasksGroup.MapGet("/task/{id}", GetTaskAsync).WithName("GetTask");
+        tasksGroup.MapPost("/task", CreateTaskAsync).WithName("CreateTask");
+        tasksGroup.MapPost("/tasklong", CreateTaskLongAsync).WithName("CreateTaskLongTest");
+        tasksGroup.MapPut("/task/{id:int}/{name}", UpdateTaskNameAsync).WithName("UpdateTaskName");
+        tasksGroup.MapDelete("/task/{id:int}", DeleteTaskAsync).WithName("DeleteTask");
 
         return app;
     }
@@ -23,7 +24,7 @@ public static class TasksEndpoints
     private static async Task<IResult> GetTaskAsync(
         [FromRoute] int id,
         [FromServices] IManagerService managerService,
-        [FromServices] ILogger<ManagerService> logger)
+        [FromServices] ILogger<TaskEndpoint> logger)
     {
         using var scope = logger.BeginScope("TaskId {TaskId}:", id);
         try
@@ -48,7 +49,7 @@ public static class TasksEndpoints
     private static async Task<IResult> CreateTaskAsync(
         [FromBody] TaskModel task,
         [FromServices] IManagerService managerService,
-        [FromServices] ILogger<ManagerService> logger)
+        [FromServices] ILogger<TaskEndpoint> logger)
     {
         using var scope = logger.BeginScope("TaskId {TaskId}:", task.Id);
 
@@ -82,7 +83,7 @@ public static class TasksEndpoints
     private static async Task<IResult> CreateTaskLongAsync(
         [FromBody] TaskModel task,
         [FromServices] IManagerService managerService,
-        [FromServices] ILogger<ManagerService> logger)
+        [FromServices] ILogger<TaskEndpoint> logger)
     {
         using var scope = logger.BeginScope("TaskId {TaskId}:", task.Id);
         try
@@ -102,7 +103,7 @@ public static class TasksEndpoints
         [FromRoute] int id,
         [FromRoute] string name,
         [FromServices] IManagerService managerService,
-        [FromServices] ILogger<ManagerService> logger)
+        [FromServices] ILogger<TaskEndpoint> logger)
     {
         using var scope = logger.BeginScope("TaskId {TaskId}:", id);
         try
@@ -130,7 +131,7 @@ public static class TasksEndpoints
     private static async Task<IResult> DeleteTaskAsync(
         [FromRoute] int id,
         [FromServices] IManagerService managerService,
-        [FromServices] ILogger<ManagerService> logger)
+        [FromServices] ILogger<TaskEndpoint> logger)
     {
         using var scope = logger.BeginScope("TaskId {TaskId}:", id);
         try

@@ -6,15 +6,16 @@ namespace Manager.Endpoints;
 
 public static class UsersEndpoints
 {
+    private sealed class UserEndpoint { }
     public static IEndpointRouteBuilder MapUsersEndpoints(this IEndpointRouteBuilder app)
     {
-        var g = app.MapGroup("/users-manager").WithTags("Users");
+        var usersGroup = app.MapGroup("/users-manager").WithTags("Users");
 
-        g.MapGet("/user-list", GetAllUsersAsync).WithName("GetAllUsers");
-        g.MapGet("/user/{userId:guid}", GetUserAsync).WithName("GetUser");
-        g.MapPost("/user", CreateUserAsync).WithName("CreateUser");
-        g.MapPut("/user/{userId:guid}", UpdateUserAsync).WithName("UpdateUser");
-        g.MapDelete("/user/{userId:guid}", DeleteUserAsync).WithName("DeleteUser");
+        usersGroup.MapGet("/user-list", GetAllUsersAsync).WithName("GetAllUsers");
+        usersGroup.MapGet("/user/{userId:guid}", GetUserAsync).WithName("GetUser");
+        usersGroup.MapPost("/user", CreateUserAsync).WithName("CreateUser");
+        usersGroup.MapPut("/user/{userId:guid}", UpdateUserAsync).WithName("UpdateUser");
+        usersGroup.MapDelete("/user/{userId:guid}", DeleteUserAsync).WithName("DeleteUser");
 
         return app;
     }
@@ -22,7 +23,7 @@ public static class UsersEndpoints
     private static async Task<IResult> GetUserAsync(
         [FromRoute] Guid userId,
         [FromServices] IManagerService managerService,
-        [FromServices] ILogger<ManagerService> logger)
+        [FromServices] ILogger<UserEndpoint> logger)
     {
         using var scope = logger.BeginScope("UserId {UserId}:", userId);
         try
@@ -47,7 +48,7 @@ public static class UsersEndpoints
     private static async Task<IResult> CreateUserAsync(
         [FromBody] UserModel user,
         [FromServices] IManagerService managerService,
-        [FromServices] ILogger<ManagerService> logger)
+        [FromServices] ILogger<UserEndpoint> logger)
     {
         using var scope = logger.BeginScope("CreateUser {Email}:", user.Email);
         try
@@ -73,7 +74,7 @@ public static class UsersEndpoints
         [FromRoute] Guid userId,
         [FromBody] UpdateUserModel user,
         [FromServices] IManagerService managerService,
-        [FromServices] ILogger<ManagerService> logger)
+        [FromServices] ILogger<UserEndpoint> logger)
     {
         using var scope = logger.BeginScope("UpdateUser {UserId}:", userId);
         try
@@ -98,7 +99,7 @@ public static class UsersEndpoints
     private static async Task<IResult> DeleteUserAsync(
         [FromRoute] Guid userId,
         [FromServices] IManagerService managerService,
-        [FromServices] ILogger<ManagerService> logger)
+        [FromServices] ILogger<UserEndpoint> logger)
     {
         using var scope = logger.BeginScope("DeleteUser {UserId}:", userId);
         try
@@ -122,7 +123,7 @@ public static class UsersEndpoints
 
     private static async Task<IResult> GetAllUsersAsync(
         [FromServices] IManagerService managerService,
-        [FromServices] ILogger<ManagerService> logger)
+        [FromServices] ILogger<UserEndpoint> logger)
     {
         using var scope = logger.BeginScope("GetAllUsers:");
         try

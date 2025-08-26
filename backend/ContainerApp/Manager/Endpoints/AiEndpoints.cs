@@ -19,25 +19,25 @@ public static class AiEndpoints
 
     public static WebApplication MapAiEndpoints(this WebApplication app)
     {
-        var g = app.MapGroup("/ai-manager").WithTags("AI");
+        var aiGroup = app.MapGroup("/ai-manager").WithTags("AI");
 
         #region HTTP GET
 
         // GET /ai-manager/answer/{id}
-        g.MapGet("/answer/{id}", AnswerAsync).WithName("Answer");
+        aiGroup.MapGet("/answer/{id}", AnswerAsync).WithName("Answer");
 
         #endregion
 
         #region HTTP POST
 
         // POST /ai-manager/question
-        g.MapPost("/question", QuestionAsync).WithName("Question");
+        aiGroup.MapPost("/question", QuestionAsync).WithName("Question");
 
         // POST /ai-manager/chat
-        g.MapPost("/chat", ChatAsync).WithName("Chat");
+        aiGroup.MapPost("/chat", ChatAsync).WithName("Chat");
 
         // POST /ai-manager/speech/synthesize
-        g.MapPost("/speech/synthesize", SynthesizeAsync).WithName("SynthesizeText");
+        aiGroup.MapPost("/speech/synthesize", SynthesizeAsync).WithName("SynthesizeText");
 
         #endregion
 
