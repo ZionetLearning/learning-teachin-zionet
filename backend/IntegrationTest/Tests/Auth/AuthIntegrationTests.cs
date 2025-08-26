@@ -4,7 +4,6 @@ using IntegrationTests.Fixtures;
 using Manager.Models.Auth;
 using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json;
 using Xunit.Abstractions;
 
 namespace IntegrationTests.Tests.Auth;
@@ -124,6 +123,92 @@ public class AuthIntegrationTests : AuthTestBase
 
         var response = await Client.SendAsync(request);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+
+    [Fact(DisplayName = "Refresh fails with mismatched fingerprint")]
+    public async Task Refresh_ShouldFail_WhenFingerprintMismatch()
+    {
+        var user = _sharedFixture.UserFixture.TestUser;
+
+        var request = new HttpRequestMessage(HttpMethod.Post, AuthRoutes.Login)
+        {
+            Content = JsonContent.Create(new LoginRequest
+            {
+                Email = user.Email,
+                Password = user.PasswordHash
+            })
+        };
+
+        // Initial login with fingerprint A
+        request.Headers.Add("x-fingerprint", "fingerprint-A");
+        request.Headers.Add("User-Agent", "Test-UA");
+
+        var loginResponse = await Client.SendAsync(request);
+        loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var (_, csrfToken) = ExtractTokens(loginResponse);
+
+        // Now send refresh request with DIFFERENT fingerprint
+        var refreshRequest = new HttpRequestMessage(HttpMethod.Post, AuthRoutes.Refresh);
+        refreshRequest.Headers.Add("x-fingerprint", "fingerprint-B");
+        refreshRequest.Headers.Add("X-CSRF-Token", csrfToken!);
+        refreshRequest.Headers.Add("Cookie", string.Join("; ", loginResponse.Headers
+            .GetValues(TestConstants.SetCookie)
+            .Where(c => c.StartsWith(TestConstants.RefreshToken) || c.StartsWith(TestConstants.CsrfToken))
+            .Select(c => c.Split(';')[0]))); // Simulate sending both cookies
+
+        var refreshResponse = await Client.SendAsync(refreshRequest);
+        refreshResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+
+    [Fact(DisplayName = "Reusing old refresh token after rotation should fail")]
+    public async Task ReuseOldRefreshToken_ShouldReturnUnauthorized()
+    {
+        var user = _sharedFixture.UserFixture.TestUser;
+
+        var loginResponse = await LoginAsync(user.Email, user.PasswordHash);
+        var (oldRefreshToken, csrfToken) = ExtractTokens(loginResponse);
+
+        var refreshRequest1 = new HttpRequestMessage(HttpMethod.Post, AuthRoutes.Refresh);
+        refreshRequest1.Headers.Add("X-CSRF-Token", csrfToken!);
+        refreshRequest1.Headers.Add("Cookie", $"{TestConstants.RefreshToken}={oldRefreshToken}; {TestConstants.CsrfToken}={csrfToken}");
+
+        var refreshResponse1 = await Client.SendAsync(refreshRequest1);
+        refreshResponse1.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        // Reuse the same old token
+        var refreshRequest2 = new HttpRequestMessage(HttpMethod.Post, AuthRoutes.Refresh);
+        refreshRequest2.Headers.Add("X-CSRF-Token", csrfToken!);
+        refreshRequest2.Headers.Add("Cookie", $"{TestConstants.RefreshToken}={oldRefreshToken}; {TestConstants.CsrfToken}={csrfToken}");
+
+        var refreshResponse2 = await Client.SendAsync(refreshRequest2);
+        refreshResponse2.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+
+    [Fact(DisplayName = "Refresh after logout should fail")]
+    public async Task Refresh_AfterLogout_ShouldReturnUnauthorized()
+    {
+        var user = _sharedFixture.UserFixture.TestUser;
+
+        var loginResponse = await LoginAsync(user.Email, user.PasswordHash);
+        var (refreshToken, csrfToken) = ExtractTokens(loginResponse);
+
+        // Logout
+        var logoutRequest = new HttpRequestMessage(HttpMethod.Post, AuthRoutes.Logout);
+        logoutRequest.Headers.Add("Cookie", $"{TestConstants.RefreshToken}={refreshToken}");
+        var logoutResponse = await Client.SendAsync(logoutRequest);
+        logoutResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        // Try to refresh after logout
+        var refreshRequest = new HttpRequestMessage(HttpMethod.Post, AuthRoutes.Refresh);
+        refreshRequest.Headers.Add("X-CSRF-Token", csrfToken!);
+        refreshRequest.Headers.Add("Cookie", $"{TestConstants.RefreshToken}={refreshToken}; {TestConstants.CsrfToken}={csrfToken}");
+
+        var refreshResponse = await Client.SendAsync(refreshRequest);
+        refreshResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
 
