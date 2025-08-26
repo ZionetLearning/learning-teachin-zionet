@@ -3,6 +3,7 @@ using Accessor.DB;
 using Accessor.Models;
 using Dapr.Client;
 using Microsoft.EntityFrameworkCore;
+using Accessor.Models.Users;
 
 namespace Accessor.Services;
 public class AccessorService : IAccessorService
@@ -110,7 +111,68 @@ public class AccessorService : IAccessorService
             }
         }
     }
+    public async Task<StatsSnapshot> ComputeStatsAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            var nowUtc = DateTimeOffset.UtcNow;
+            var from15m = nowUtc.AddMinutes(-StatsWindow.ActiveUsersMinutes);
+            var from5m = nowUtc.AddMinutes(-StatsWindow.MessagesLast5m);
 
+            var totalThreads = await _dbContext.ChatThreads
+                .AsNoTracking()
+                .LongCountAsync(ct);
+
+            var totalUniqueUsersByThread = await _dbContext.ChatThreads
+                .AsNoTracking()
+                .Select(t => t.UserId)
+                .Distinct()
+                .LongCountAsync(ct);
+
+            var totalMessages = await _dbContext.ChatMessages
+                .AsNoTracking()
+                .LongCountAsync(ct);
+
+            var totalUniqueUsersByMessage = await _dbContext.ChatMessages
+                .AsNoTracking()
+                .Select(m => m.UserId)
+                .Distinct()
+                .LongCountAsync(ct);
+
+            var activeUsersLast15m = await _dbContext.ChatMessages
+                .AsNoTracking()
+                .Where(m => m.Timestamp >= from15m)
+                .Select(m => m.UserId)
+                .Distinct()
+                .LongCountAsync(ct);
+
+            var messagesLast5m = await _dbContext.ChatMessages
+                .AsNoTracking()
+                .Where(m => m.Timestamp >= from5m)
+                .LongCountAsync(ct);
+
+            var messagesLast15m = await _dbContext.ChatMessages
+                .AsNoTracking()
+                .Where(m => m.Timestamp >= from15m)
+                .LongCountAsync(ct);
+
+            return new StatsSnapshot(
+                TotalThreads: totalThreads,
+                TotalUniqueUsersByThread: totalUniqueUsersByThread,
+                TotalMessages: totalMessages,
+                TotalUniqueUsersByMessage: totalUniqueUsersByMessage,
+                ActiveUsersLast15m: activeUsersLast15m,
+                MessagesLast5m: messagesLast5m,
+                MessagesLast15m: messagesLast15m,
+                GeneratedAtUtc: nowUtc
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to compute stats");
+            throw;
+        }
+    }
     public async Task CreateTaskAsync(TaskModel task)
     {
         using var scope = _logger.BeginScope("TaskId: {TaskId}", task.Id);
@@ -404,5 +466,123 @@ public class AccessorService : IAccessorService
         }
 
         return user.UserId;
+    }
+
+    public async Task<UserModel?> GetUserAsync(Guid userId)
+    {
+        var user = await _dbContext.Users.FindAsync(userId);
+        if (user == null)
+        {
+            return null;
+        }
+
+        return new UserModel
+        {
+            UserId = user.UserId,
+            Email = user.Email,
+            PasswordHash = user.PasswordHash
+        };
+    }
+
+    public async Task<bool> CreateUserAsync(UserModel newUser)
+    {
+        var exists = await _dbContext.Users.AnyAsync(u => u.Email == newUser.Email);
+        if (exists)
+        {
+            return false;
+        }
+
+        var user = new UserModel
+        {
+            UserId = newUser.UserId,
+            Email = newUser.Email,
+            PasswordHash = newUser.PasswordHash
+        };
+
+        _dbContext.Users.Add(user);
+        await _dbContext.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> UpdateUserAsync(UpdateUserModel updateUser, Guid userId)
+    {
+        var user = await _dbContext.Users.FindAsync(userId);
+        if (user == null)
+        {
+            return false;
+        }
+
+        user.Email = updateUser.Email;
+        user.PasswordHash = updateUser.PasswordHash; // Again, hash in real apps
+
+        _dbContext.Users.Update(user);
+        await _dbContext.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> DeleteUserAsync(Guid userId)
+    {
+        var user = await _dbContext.Users.FindAsync(userId);
+        if (user == null)
+        {
+            return false;
+        }
+
+        _dbContext.Users.Remove(user);
+        await _dbContext.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<ChatHistorySnapshot?> GetHistorySnapshotAsync(Guid threadId)
+    {
+        return await _dbContext.ChatHistorySnapshots
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.ThreadId == threadId);
+    }
+    public async Task UpsertHistorySnapshotAsync(ChatHistorySnapshot snapshot)
+    {
+        var existing = await _dbContext.ChatHistorySnapshots.FirstOrDefaultAsync(x => x.ThreadId == snapshot.ThreadId);
+        var now = DateTimeOffset.UtcNow;
+
+        if (existing is null)
+        {
+            snapshot.CreatedAt = now;
+            snapshot.UpdatedAt = now;
+            _dbContext.ChatHistorySnapshots.Add(snapshot);
+        }
+        else
+        {
+            existing.UserId = snapshot.UserId;
+            existing.ChatType = snapshot.ChatType;
+            existing.History = snapshot.History;
+            existing.UpdatedAt = now;
+        }
+
+        await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task<IEnumerable<UserData>> GetAllUsersAsync()
+    {
+        _logger.LogInformation("Fetching all users from the database...");
+
+        try
+        {
+            var users = await _dbContext.Users
+                .AsNoTracking()
+                .Select(u => new UserData
+                {
+                    UserId = u.UserId,
+                    Email = u.Email,
+                })
+                .ToListAsync();
+
+            _logger.LogInformation("Retrieved {Count} users", users.Count);
+            return users;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to retrieve users");
+            throw;
+        }
     }
 }

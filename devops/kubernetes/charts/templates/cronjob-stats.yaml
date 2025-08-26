@@ -1,0 +1,48 @@
+{{- if .Values.cronjobs.statsPing.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}-stats-ping
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/part-of: {{ .Release.Name }}
+    app.kubernetes.io/component: stats-cron
+spec:
+  schedule: {{ .Values.cronjobs.statsPing.schedule | quote }}
+  {{- if .Values.cronjobs.statsPing.timeZone }}
+  timeZone: {{ .Values.cronjobs.statsPing.timeZone | quote }}
+  {{- end }}
+  concurrencyPolicy: {{ .Values.cronjobs.statsPing.concurrencyPolicy | default "Forbid" | quote }}
+  startingDeadlineSeconds: {{ .Values.cronjobs.statsPing.startingDeadlineSeconds | default 120 }}
+  successfulJobsHistoryLimit: {{ .Values.cronjobs.statsPing.successfulJobsHistoryLimit | default 3 }}
+  failedJobsHistoryLimit: {{ .Values.cronjobs.statsPing.failedJobsHistoryLimit | default 3 }}
+  jobTemplate:
+    spec:
+      backoffLimit: {{ .Values.cronjobs.statsPing.backoffLimit | default 2 }}
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: pinger
+              image: "{{ .Values.cronjobs.statsPing.image.repository }}:{{ .Values.cronjobs.statsPing.image.tag }}"
+              imagePullPolicy: {{ .Values.cronjobs.statsPing.image.pullPolicy | default "IfNotPresent" }}
+              args:
+                - "-sS"
+                - "--fail"
+                - "--max-time"
+                - "{{ .Values.cronjobs.statsPing.curl.maxTimeSeconds | default 60 }}"
+                - "--retry"
+                - "{{ .Values.cronjobs.statsPing.curl.retries | default 2 }}"
+                - "--retry-delay"
+                - "{{ .Values.cronjobs.statsPing.curl.retryDelaySeconds | default 2 }}"
+                - "-X"
+                - "POST"
+                {{- $t := .Values.cronjobs.statsPing.target -}}
+                {{- $svc := default .Values.manager.name $t.serviceName -}}
+                {{- $port := default .Values.manager.ports.service $t.port -}}
+                {{- if eq (default "service" $t.mode) "service" }}
+                - "http://{{ $svc }}.{{ .Release.Namespace }}.svc.cluster.local:{{ $port }}/internal/compute-stats/ping"
+                {{- else }}
+                - "{{ $t.url }}"
+                {{- end }}
+{{- end }}

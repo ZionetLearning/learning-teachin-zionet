@@ -1,4 +1,5 @@
-﻿using DotQueue;
+﻿using System.Text.Json;
+using DotQueue;
 using Engine.Constants;
 using Engine.Helpers;
 using Engine.Models;
@@ -136,6 +137,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
             await renewalTask;
         }
     }
+
     private async Task HandleProcessingQuestionAiAsync(
         Message message,
         Func<Task> renewLock,
@@ -169,11 +171,11 @@ public class EngineQueueHandler : IQueueHandler<Message>
                 throw new NonRetryableException("Request TTL expired.");
             }
 
-            var history = await _accessorClient.GetChatHistoryAsync(request.ThreadId, ct);
+            var snapshot = await _accessorClient.GetHistorySnapshotAsync(request.ThreadId, ct);
 
             var serviceRequest = new ChatAiServiseRequest
             {
-                History = history,
+                History = snapshot.History,
                 UserMessage = request.UserMessage,
                 ChatType = request.ChatType,
                 ThreadId = request.ThreadId,
@@ -240,5 +242,14 @@ public class EngineQueueHandler : IQueueHandler<Message>
             throw new RetryableException("Transient error while processing AI question.", ex);
         }
     }
+
+    private static JsonElement JsonEl(string raw)
+    {
+        using var doc = JsonDocument.Parse(raw);
+        return doc.RootElement.Clone();
+    }
+
+    private static JsonElement EmptyHistory() =>
+        JsonEl("""{"messages":[]}""");
 }
 

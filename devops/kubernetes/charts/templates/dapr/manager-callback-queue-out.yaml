@@ -9,8 +9,8 @@ spec:
   metadata:
     - name: connectionString
       secretKeyRef:
-        name: azure-service-bus-secret
-        key: AzureServiceBusConnectionString
+        name: {{ .Values.accessor.secrets.serviceBus.name }}
+        key: {{ .Values.accessor.secrets.serviceBus.key }}
     - name: queueName
       value: "manager-callback-queue"
     - name: direction

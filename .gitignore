@@ -61,4 +61,7 @@ backend/ContainerApp/.idea/.idea.backend/.idea/vcs.xml
 # Ignore all local override config files (secrets, API keys)
 **/appsettings.Local.json
 
+# Ignore Kiro all folder and files
+/.kiro
+
 backend/IntegrationTest/.idea/.idea.IntegrationTest/.idea/*

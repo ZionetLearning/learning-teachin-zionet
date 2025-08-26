@@ -1,10 +1,11 @@
-﻿using Dapr.Client;
+﻿using System.Net;
+using System.Text.Json;
+using Dapr.Client;
 using Manager.Constants;
 using Manager.Models;
 using Manager.Models.Chat;
-using System.Net;
-using System.Text.Json;
 using Manager.Models.QueueMessages;
+using Manager.Models.Users;
 
 namespace Manager.Services.Clients;
 
@@ -234,6 +235,124 @@ public class AccessorClient(
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get threads for user {UserId}", userId);
+            throw;
+        }
+    }
+
+    public async Task<UserModel?> GetUserAsync(Guid userId)
+    {
+        try
+        {
+            return await _daprClient.InvokeMethodAsync<UserModel?>(
+                HttpMethod.Get,
+                "accessor",
+                $"users/{userId}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting user {UserId}", userId);
+            return null;
+        }
+    }
+
+    public async Task<bool> CreateUserAsync(UserModel user)
+    {
+        try
+        {
+            await _daprClient.InvokeMethodAsync(
+                HttpMethod.Post,
+                "accessor",
+                "users",
+                user);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating user {Email}", user.Email);
+            return false;
+        }
+    }
+
+    public async Task<bool> UpdateUserAsync(UpdateUserModel user, Guid userId)
+    {
+        try
+        {
+            await _daprClient.InvokeMethodAsync(
+                HttpMethod.Put,
+                "accessor",
+                $"users/{userId}",
+                user);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating user {UserId}", userId);
+            return false;
+        }
+    }
+
+    public async Task<bool> DeleteUserAsync(Guid userId)
+    {
+        try
+        {
+            await _daprClient.InvokeMethodAsync(
+                HttpMethod.Delete,
+                "accessor",
+                $"users/{userId}");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting user {UserId}", userId);
+            return false;
+        }
+    }
+
+    public async Task<IEnumerable<UserData>> GetAllUsersAsync(CancellationToken ct = default)
+    {
+        _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetAllUsersAsync), nameof(AccessorClient));
+
+        try
+        {
+            var users = await _daprClient.InvokeMethodAsync<List<UserData>>(
+                HttpMethod.Get,
+                "accessor",
+                "users",
+                ct
+            );
+
+            _logger.LogInformation("Retrieved {Count} users from accessor", users?.Count ?? 0);
+            return users ?? Enumerable.Empty<UserData>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get all users from accessor");
+            throw;
+        }
+    }
+    public async Task<StatsSnapshot?> GetStatsSnapshotAsync(CancellationToken ct = default)
+    {
+        _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetStatsSnapshotAsync), nameof(AccessorClient));
+        try
+        {
+            var snapshot = await _daprClient.InvokeMethodAsync<StatsSnapshot>(
+                HttpMethod.Get,
+                AppIds.Accessor,                 // keep using your constant if you have it
+                "internal/stats/snapshot",
+                ct
+            );
+            return snapshot; // may be null if Accessor returns empty body
+        }
+        catch (InvocationException ex) when (
+            ex.Response?.StatusCode == HttpStatusCode.NoContent ||
+            ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("No stats snapshot available from Accessor ({Status})", ex.Response?.StatusCode);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get stats snapshot from Accessor");
             throw;
         }
     }

@@ -1,4 +1,5 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 using System.Security.Claims;
 using System.Text;
 using Dapr.Client;
@@ -25,6 +26,7 @@ public class AuthService : IAuthService
 
     public async Task<(string, string)> LoginAsync(LoginRequest loginRequest, HttpRequest httpRequest, CancellationToken cancellationToken)
     {
+        _log.LogInformation("Login attempt for user {Email}", loginRequest.Email);
         try
         {
             var userId = await _dapr.InvokeMethodAsync<LoginRequest, Guid?>(
@@ -38,7 +40,7 @@ public class AuthService : IAuthService
             if (userId is null)
             {
                 _log.LogError("Login failed for user {Email}", loginRequest.Email);
-                throw new UnauthorizedAccessException("Login failed. Please check your credentials.");
+                throw new UnauthorizedAccessException($"Login failed for user {loginRequest.Email}");
             }
 
             // Generate access and refresh tokens
@@ -54,10 +56,10 @@ public class AuthService : IAuthService
             : HashRefreshToken(fingerprint, _jwt.RefreshTokenHashKey);
 
             var ua = string.IsNullOrWhiteSpace(httpRequest.Headers["User-Agent"])
-                ? "unknown"
+                ? AuthSettings.UnknownIpFallback
                 : httpRequest.Headers["User-Agent"].ToString();
 
-            var ip = httpRequest.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            var ip = httpRequest.HttpContext.Connection.RemoteIpAddress?.ToString() ?? AuthSettings.UnknownIpFallback;
 
             // The user Id is taken from the DB, with the credantials of email and password
             var session = new RefreshSessionRequest
@@ -78,15 +80,34 @@ public class AuthService : IAuthService
 
             return (accessToken, refreshToken);
         }
+
+        catch (InvocationException ex) when (ex.InnerException is HttpRequestException httpEx)
+        {
+            if (httpEx.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                _log.LogError(ex, "Unauthorized response from accessor for {Email}", loginRequest.Email);
+                throw new UnauthorizedAccessException("Login failed. Please check your credentials.", ex);
+            }
+            // rethrow other HTTP errors
+            throw;
+        }
+
+        catch (UnauthorizedAccessException ex)
+        {
+            _log.LogError(ex, "Login failed for user {Email}, Authorized exception.", loginRequest.Email);
+            throw new UnauthorizedAccessException(ex.Message, ex);
+        }
+
         catch (Exception ex)
         {
-            _log.LogError(ex, "Login failed for user {Email}", loginRequest.Email);
-            throw new UnauthorizedAccessException("Login failed. Please check your credentials.", ex);
+            _log.LogError(ex, "Login failed for user {Email}, Internal exception.", loginRequest.Email);
+            throw new Exception("Internal server error. Login failed.", ex);
         }
     }
 
     public async Task<(string accessToken, string refreshToken)> RefreshTokensAsync(HttpRequest request, CancellationToken cancellationToken)
     {
+        _log.LogInformation("Token refresh attempt");
         try
         {
             // Get the old refresh token from the request cookies
@@ -104,9 +125,9 @@ public class AuthService : IAuthService
             }
 
             // Collect session fingerprint data
-            var fingerprint = request.Headers["x-fingerprint"].ToString() ?? "unknown";
-            var userAgent = request.Headers["User-Agent"].ToString() ?? "unknown";
-            var ip = request.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            var fingerprint = request.Headers["x-fingerprint"].ToString() ?? AuthSettings.UnknownIpFallback;
+            var userAgent = request.Headers.UserAgent.ToString() ?? AuthSettings.UnknownIpFallback;
+            var ip = request.HttpContext.Connection.RemoteIpAddress?.ToString() ?? AuthSettings.UnknownIpFallback;
 
             var oldHash = HashRefreshToken(oldRefreshToken, _jwt.RefreshTokenHashKey);
 
@@ -118,11 +139,15 @@ public class AuthService : IAuthService
                 cancellationToken
             ) ?? throw new UnauthorizedAccessException("Invalid or mismatched session.");
 
+            // ------------------------ strat validations ------------------------
+
+            // Expiry Validate
             if (session.ExpiresAt <= DateTimeOffset.UtcNow)
             {
                 throw new UnauthorizedAccessException("Refresh session expired.");
             }
 
+            // Fingerprint Validate
             if (!string.IsNullOrWhiteSpace(fingerprint) && !string.IsNullOrWhiteSpace(session.DeviceFingerprintHash))
             {
                 var fpHash = HashRefreshToken(fingerprint, _jwt.RefreshTokenHashKey);
@@ -132,17 +157,20 @@ public class AuthService : IAuthService
                 }
             }
 
-            // IP & UA checks
+            // IP Validate
             if (!IpRoughMatch(session.IP, ip))
             {
                 _log.LogWarning("IP mismatch for session {SessionId}. Saved={Saved} Current={Current}",
                     session.Id, session.IP, ip);
+                throw new UnauthorizedAccessException("IP address mismatch.");
             }
 
+            // User-Agent Validate
             if (!UserAgentRoughMatch(session.UserAgent, userAgent))
             {
                 _log.LogWarning("UA mismatch for session {SessionId}. Saved={Saved} Current={Current}",
-                    session.Id, session.UserAgent, userAgent);
+                    session.Id, session.IP, ip);
+                throw new UnauthorizedAccessException("User-Agent mismatch.");
             }
 
             // All good -> generate tokens
@@ -171,10 +199,15 @@ public class AuthService : IAuthService
 
             return (newAccessToken, newRefreshToken);
         }
+        catch (UnauthorizedAccessException ex)
+        {
+            _log.LogError(ex, "Refresh token failed, Authorized exception.");
+            throw new UnauthorizedAccessException(ex.Message);
+        }
         catch (Exception ex)
         {
-            _log.LogError(ex, "Token refresh failed");
-            throw new UnauthorizedAccessException("Token refresh failed. Please log in again.", ex);
+            _log.LogError(ex, "Refresh token failed, Internal exception.");
+            throw new Exception("Token refresh failed. Please log in again.", ex);
         }
     }
 
