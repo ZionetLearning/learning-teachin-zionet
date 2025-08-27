@@ -27,7 +27,7 @@ describe("Country Explorer", () => {
     });
   });
   it("filters countries by population less than 10M", () => {
-    cy.get('[data-testid="population-select"]').select("< 10M");
+    cy.get('[data-testid="population-select"]').select("<10M");
 
     cy.get('[data-testid="country-card"]').each(($el) => {
       cy.wrap($el)
@@ -46,7 +46,7 @@ describe("Country Explorer", () => {
   });
 
   it("filters countries by population between 10M - 100M", () => {
-    cy.get('[data-testid="population-select"]').select("10M – 100M");
+    cy.get('[data-testid="population-select"]').select("10M-100M");
 
     cy.get('[data-testid="country-card"]').each(($el) => {
       cy.wrap($el)
@@ -65,8 +65,8 @@ describe("Country Explorer", () => {
     });
   });
 
-  it("filters countries by population less than 100M", () => {
-    cy.get('[data-testid="population-select"]').select("≥ 100M");
+  it("filters countries by population >= 100M", () => {
+    cy.get('[data-testid="population-select"]').select(">=100M");
 
     cy.get('[data-testid="country-card"]').each(($el) => {
       cy.wrap($el)

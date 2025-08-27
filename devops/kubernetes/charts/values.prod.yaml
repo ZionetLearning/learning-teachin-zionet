@@ -6,6 +6,7 @@ global:
     enabled: true
     configName: dapr-config
 
+
 namespace:
   create: true
   name: prod
