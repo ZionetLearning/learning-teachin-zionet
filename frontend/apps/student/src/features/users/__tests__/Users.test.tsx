@@ -166,11 +166,9 @@ describe("<Users />", () => {
 
     render(<Users />);
     fireEvent.click(screen.getByRole("button", { name: /update/i }));
-    const emailInput = screen.getByTestId(
-      "users-edit-email",
-    ) as HTMLInputElement;
-    const passwordInput = screen.getByTestId(
-      "users-edit-password",
+    const emailInput = screen.getByPlaceholderText("email") as HTMLInputElement;
+    const passwordInput = screen.getByPlaceholderText(
+      "new password",
     ) as HTMLInputElement;
     fireEvent.change(emailInput, { target: { value: "changed@example.com" } });
     fireEvent.change(passwordInput, { target: { value: "newpass" } });

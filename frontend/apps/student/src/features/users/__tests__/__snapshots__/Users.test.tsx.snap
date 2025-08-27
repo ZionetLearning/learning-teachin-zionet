@@ -85,7 +85,6 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
             class="info-0-2-13"
           >
             <span
-              data-cy="users-email"
               data-testid="users-email"
               title="alpha@example.com"
             >
@@ -122,7 +121,6 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
             class="info-0-2-13"
           >
             <span
-              data-cy="users-email"
               data-testid="users-email"
               title="beta@example.com"
             >

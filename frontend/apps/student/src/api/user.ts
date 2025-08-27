@@ -13,7 +13,7 @@ type UserDto = User & {
 
 interface UpdateUserInput {
   email: string;
-  passwordHash?: string;
+  passwordHash: string;
 }
 
 export interface User {
@@ -34,14 +34,6 @@ const getAllUsers = async (): Promise<User[]> => {
     throw new Error(response.data?.message || "Failed to fetch users");
   }
   return (response.data as UserDto[]).map(mapUser);
-};
-
-export const getUserByUserId = async (userId: string): Promise<UserDto> => {
-  const response = await axios.get(`${USERS_URL}/${userId}`);
-  if (response.status !== 200) {
-    throw new Error(response.data?.message || "Failed to fetch user");
-  }
-  return response.data;
 };
 
 const updateUserByUserId = async (
@@ -84,16 +76,6 @@ export const useGetAllUsers = (): UseQueryResult<User[], Error> => {
   return useQuery<User[], Error>({
     queryKey: ["users"],
     queryFn: getAllUsers,
-    staleTime: 60_000,
-  });
-};
-
-export const useGetUserByUserId = (
-  userId: string,
-): UseQueryResult<User, Error> => {
-  return useQuery<User, Error>({
-    queryKey: ["users", userId],
-    queryFn: () => getUserByUserId(userId),
     staleTime: 60_000,
   });
 };
