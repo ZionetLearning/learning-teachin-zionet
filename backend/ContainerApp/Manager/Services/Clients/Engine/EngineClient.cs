@@ -52,7 +52,7 @@ public class EngineClient : IEngineClient
 
     public async Task<(bool success, string message)> ChatAsync(EngineChatRequest request)
     {
-        _logger.LogInformation("Invoke Engine /chat synchronously (thread {Thread})", request.ThreadId);
+        _logger.LogInformation("Invoke Engine /chat asynchronously (thread {Thread})", request.ThreadId);
         try
         {
             var requestMetadata = new UserContextMetadata

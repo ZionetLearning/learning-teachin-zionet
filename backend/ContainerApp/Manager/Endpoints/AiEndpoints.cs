@@ -27,7 +27,8 @@ public static class AiEndpoints
         // GET /ai-manager/answer/{id}
         aiGroup.MapGet("/answer/{id}", AnswerAsync).WithName("Answer");
 
-        app.MapGet("/chats/{userId:guid}", GetChatsAsync).WithName("GetChats");
+        // GET /ai-manager/chats/{userId}
+        aiGroup.MapGet("/chats/{userId:guid}", GetChatsAsync).WithName("GetChats");
 
         #endregion
 
@@ -39,9 +40,8 @@ public static class AiEndpoints
         // POST /ai-manager/chat
         aiGroup.MapPost("/chat", ChatAsync).WithName("Chat");
 
-        app.MapPost("/chat", ChatAsync).WithName("Chat");
-
-        app.MapPost("/speech/synthesize", SynthesizeAsync).WithName("SynthesizeText");
+        // POST /ai-manager/speech/synthesize
+        aiGroup.MapPost("/speech/synthesize", SynthesizeAsync).WithName("SynthesizeText");
 
         #endregion
 
@@ -164,13 +164,11 @@ public static class AiEndpoints
         if (!TryResolveThreadId(request.ThreadId, out var threadId, out var errorThread))
         {
             return Results.BadRequest(new { error = "If threadId is present, it must be a GUID" });
-
         }
 
         if (!TryResolveThreadId(request.UserId, out var userId, out var errorUser))
         {
             return Results.BadRequest(new { error = "If userId is present, it must be a GUID" });
-
         }
 
         var engineRequest = new EngineChatRequest
@@ -186,7 +184,27 @@ public static class AiEndpoints
         {
             var engineResponse = await engine.ChatAsync(engineRequest);
 
-            return Results.Ok(engineResponse);
+            if (engineResponse.success)
+            {
+                log.LogInformation("Request {RequestId} (thread {Thread}) accepted", requestId, threadId);
+                return Results.Ok(new
+                {
+                    requestId
+                });
+            }
+            else
+            {
+                log.LogError("Engine chat failed - service returned failure for request {RequestId}", requestId);
+                return Results.Problem(
+                    title: "Engine chat failed",
+                    detail: "Upstream service returned an error.",
+                    statusCode: StatusCodes.Status502BadGateway,
+                    extensions: new Dictionary<string, object?>
+                    {
+                        ["upstreamStatus"] = 500,
+                        ["requestId"] = engineRequest.RequestId
+                    });
+            }
         }
         catch (Dapr.Client.InvocationException ex) when (ex.Response?.StatusCode is not null)
         {

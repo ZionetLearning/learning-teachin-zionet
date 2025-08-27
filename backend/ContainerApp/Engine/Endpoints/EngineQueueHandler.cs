@@ -178,6 +178,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
                 ChatType = request.ChatType,
                 ThreadId = request.ThreadId,
                 UserId = request.UserId,
+                Name = snapshot.Name,
                 RequestId = request.RequestId,
                 SentAt = request.SentAt,
                 TtlSeconds = request.TtlSeconds,
@@ -205,6 +206,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
             {
                 ThreadId = request.ThreadId,
                 UserId = request.UserId,
+                Name = aiResponse.Name,
                 ChatType = request.ChatType.ToString().ToLowerInvariant(),
                 History = aiResponse.UpdatedHistory
             };
