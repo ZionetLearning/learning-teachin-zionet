@@ -48,7 +48,7 @@ accessor:
 # Frontend Static Web App Proxy
 frontend:
   name: frontend-proxy
-  enabled: true
+  enabled: false
   path: "/"
   staticWebApp:
     hostname: ""  # Will be set dynamically by deployment pipeline from Terraform output
