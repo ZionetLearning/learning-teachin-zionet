@@ -40,12 +40,7 @@ public class EngineService : IEngineService
         try
         {
             await _daprClient.InvokeMethodAsync(
-                HttpMethod.Post,
-                "accessor",
-                "task",
-                task,
-                ct
-            );
+                HttpMethod.Post, "accessor", "tasks-accessor/task", task, ct);
 
             _logger.LogInformation("Task forwarded to the Accessor service");
         }

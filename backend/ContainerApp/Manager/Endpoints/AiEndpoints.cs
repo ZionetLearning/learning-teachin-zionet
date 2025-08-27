@@ -39,8 +39,6 @@ public static class AiEndpoints
         // POST /ai-manager/chat
         aiGroup.MapPost("/chat", ChatAsync).WithName("Chat");
 
-        app.MapPost("/chat", ChatAsync).WithName("Chat");
-
         app.MapPost("/speech/synthesize", SynthesizeAsync).WithName("SynthesizeText");
 
         #endregion

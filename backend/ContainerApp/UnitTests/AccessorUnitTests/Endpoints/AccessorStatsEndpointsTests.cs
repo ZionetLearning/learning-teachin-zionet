@@ -50,7 +50,7 @@ public class AccessorStatsEndpointsTests
 
         var client = BuildClientReturning(expected, out var svc);
 
-        var resp = await client.GetAsync("/internal/stats/snapshot");
+        var resp = await client.GetAsync("/internal-accessor/stats/snapshot");
         resp.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var got = await resp.Content.ReadFromJsonAsync<StatsSnapshot>();
