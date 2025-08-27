@@ -241,12 +241,13 @@ jobs:
           echo "::add-mask::$TOKEN"
           echo "AZURE_STATIC_WEB_APPS_API_TOKEN=$TOKEN" >> "$GITHUB_ENV"
 
-      - name: Deploy to Azure Static Web Apps (Production slot)
+      - name: Deploy to Azure Static Web Apps (Production slot) - ${{ matrix.app }}
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ inputs.deployment_token || env.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: "upload"
-          app_location: "${{ env.FE_DIR }}/dist/apps/${{ matrix.app }}"
+          app_location: "frontend/dist/apps/${{ matrix.app }}"
+          output_location: ""
           skip_app_build: true
           production_branch: 'main'
 
