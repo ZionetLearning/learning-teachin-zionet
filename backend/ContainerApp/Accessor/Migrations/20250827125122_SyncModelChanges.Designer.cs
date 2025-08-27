@@ -13,15 +13,15 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Accessor.Migrations
 {
     [DbContext(typeof(AccessorDbContext))]
-    [Migration("20250825135125_ChatHistorySnapshots_Update")]
-    partial class ChatHistorySnapshots_Update
+    [Migration("20250827125122_SyncModelChanges")]
+    partial class SyncModelChanges
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.7")
+                .HasAnnotation("ProductVersion", "9.0.8")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -62,80 +62,6 @@ namespace Accessor.Migrations
                     b.HasKey("ThreadId");
 
                     b.ToTable("ChatHistorySnapshots", (string)null);
-                });
-
-            modelBuilder.Entity("Accessor.Models.ChatMessage", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasAnnotation("Relational:JsonPropertyName", "id");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasAnnotation("Relational:JsonPropertyName", "content");
-
-                    b.Property<int>("Role")
-                        .HasColumnType("integer")
-                        .HasAnnotation("Relational:JsonPropertyName", "role");
-
-                    b.Property<Guid>("ThreadId")
-                        .HasColumnType("uuid")
-                        .HasAnnotation("Relational:JsonPropertyName", "threadId");
-
-                    b.Property<DateTimeOffset>("Timestamp")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("timestamp")
-                        .HasAnnotation("Relational:JsonPropertyName", "timestamp");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasAnnotation("Relational:JsonPropertyName", "userId");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ThreadId");
-
-                    b.HasIndex("ThreadId", "Timestamp");
-
-                    b.ToTable("ChatMessages");
-                });
-
-            modelBuilder.Entity("Accessor.Models.ChatThread", b =>
-                {
-                    b.Property<Guid>("ThreadId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasAnnotation("Relational:JsonPropertyName", "threadId");
-
-                    b.Property<string>("ChatName")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasAnnotation("Relational:JsonPropertyName", "chatName");
-
-                    b.Property<string>("ChatType")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasAnnotation("Relational:JsonPropertyName", "chatType");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasAnnotation("Relational:JsonPropertyName", "createdAt");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasAnnotation("Relational:JsonPropertyName", "updatedAt");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasAnnotation("Relational:JsonPropertyName", "userId");
-
-                    b.HasKey("ThreadId");
-
-                    b.ToTable("ChatThreads");
                 });
 
             modelBuilder.Entity("Accessor.Models.IdempotencyRecord", b =>
@@ -264,7 +190,7 @@ namespace Accessor.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<string>("PasswordHash")
+                    b.Property<string>("Password")
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
@@ -275,22 +201,6 @@ namespace Accessor.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
-                });
-
-            modelBuilder.Entity("Accessor.Models.ChatMessage", b =>
-                {
-                    b.HasOne("Accessor.Models.ChatThread", "Thread")
-                        .WithMany("Messages")
-                        .HasForeignKey("ThreadId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Thread");
-                });
-
-            modelBuilder.Entity("Accessor.Models.ChatThread", b =>
-                {
-                    b.Navigation("Messages");
                 });
 #pragma warning restore 612, 618
         }

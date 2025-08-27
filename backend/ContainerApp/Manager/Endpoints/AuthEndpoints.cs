@@ -1,7 +1,7 @@
-﻿using Manager.Helpers;
+﻿using Manager.Constants;
+using Manager.Helpers;
 using Manager.Models.Auth;
 using Manager.Models.Auth.Erros;
-using Manager.Constants;
 using Manager.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -158,7 +158,9 @@ public static class AuthEndpoints
             try
             {
                 logger.LogInformation("You are authenticated!");
-                return Task.FromResult(Results.Ok(new { message = "You are authenticated!" }));
+                // Exctract the userId from the token
+                var userId = UserContextHelper.GetUserId(request.HttpContext);
+                return Task.FromResult(Results.Ok(new { message = $"You are authenticated! , UserId: {userId}" }));
             }
             catch (Exception ex)
             {

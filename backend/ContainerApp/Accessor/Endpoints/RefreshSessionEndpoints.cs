@@ -32,8 +32,6 @@ public static class RefreshSessionEndpoints
 
         refreshSessionGroup.MapDelete("/{sessionId:guid}", DeleteSessionAsync).WithName("DeleteRefreshSession");
 
-        //app.MapDelete("/api/refresh-sessions/by-user/{userId}", DeleteAllUserSessionsAsync).WithName("DeleteAllUserRefreshSessions");
-
         #endregion
     }
     #region Handlers
