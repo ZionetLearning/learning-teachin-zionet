@@ -304,14 +304,46 @@ jobs:
             echo "AZURE_STATIC_WEB_APPS_API_TOKEN=$TOKEN" >> "$GITHUB_ENV"
           fi
 
+      - name: Verify build artifacts before deployment
+        shell: bash
+        run: |
+          echo "🔍 Verifying build artifacts before deployment..."
+          APP_PATH="${{ env.FE_DIR }}/dist/apps/${{ matrix.app }}"
+          echo "App location: $APP_PATH"
+          
+          if [ ! -d "$APP_PATH" ]; then
+            echo "❌ App directory not found: $APP_PATH"
+            echo "📋 Available directories in dist/apps/:"
+            ls -la "${{ env.FE_DIR }}/dist/apps/" || echo "No apps directory found"
+            exit 1
+          fi
+          
+          echo "✅ App directory found: $APP_PATH"
+          echo "📋 Contents of app directory:"
+          ls -la "$APP_PATH"
+          
+          # Check for index.html
+          if [ ! -f "$APP_PATH/index.html" ]; then
+            echo "❌ index.html not found in $APP_PATH"
+            echo "🔍 Looking for HTML files:"
+            find "$APP_PATH" -name "*.html" -type f || echo "No HTML files found"
+            exit 1
+          fi
+          
+          echo "✅ index.html found in app directory"
+          echo "📊 App directory size:"
+          du -sh "$APP_PATH"
+
       - name: Deploy to Azure Static Web Apps (Production slot)
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ env.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: "upload"
           app_location: "${{ env.FE_DIR }}/dist/apps/${{ matrix.app }}"
+          api_location: "" # No API
+          output_location: "" # Files are already built
           skip_app_build: true
-          deployment_environment: "Production"
+          skip_api_build: true
 
 
 
