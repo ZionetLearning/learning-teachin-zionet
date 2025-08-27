@@ -122,8 +122,18 @@ public class AuthService : IAuthService
 
             var oldHash = HashRefreshToken(oldRefreshToken, _jwt.RefreshTokenHashKey);
 
-            var session = await _accessorClient.GetSessionAsync(oldHash, cancellationToken)
-                ?? throw new UnauthorizedAccessException("Invalid or mismatched session.");
+            // Get session from Accessor
+            RefreshSessionDto session;
+            try
+            {
+                session = await _accessorClient.GetSessionAsync(oldHash, cancellationToken)
+                    ?? throw new UnauthorizedAccessException("Invalid or mismatched session.");
+            }
+            catch (InvocationException ex) when (ex.InnerException is HttpRequestException httpEx && httpEx.StatusCode == HttpStatusCode.NotFound)
+            {
+                _log.LogWarning("No session found for given refresh token hash.");
+                throw new UnauthorizedAccessException("Invalid or mismatched session.", ex);
+            }
 
             // ------------------------ strat validations ------------------------
 
@@ -191,7 +201,7 @@ public class AuthService : IAuthService
         catch (UnauthorizedAccessException ex)
         {
             _log.LogError(ex, "Refresh token failed, Authorized exception.");
-            throw new UnauthorizedAccessException(ex.Message);
+            throw;
         }
         catch (Exception ex)
         {

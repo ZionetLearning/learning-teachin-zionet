@@ -2,6 +2,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
+using IntegrationTests.Fixtures;
 using IntegrationTests.Models.Notification;
 using Xunit.Abstractions;
 

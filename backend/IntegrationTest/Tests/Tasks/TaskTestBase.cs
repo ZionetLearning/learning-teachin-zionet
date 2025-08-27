@@ -1,5 +1,6 @@
 ﻿using FluentAssertions;
 using IntegrationTests.Constants;
+using IntegrationTests.Fixtures;
 using IntegrationTests.Helpers;
 using IntegrationTests.Infrastructure;
 using IntegrationTests.Models;
