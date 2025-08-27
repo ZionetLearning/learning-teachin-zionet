@@ -40,12 +40,18 @@ public class AuthIntegrationTests : AuthTestBase
     }
 
 
-    [Fact(DisplayName = "Login fails with 401 on invalid credentials")]
-    public async Task Login_ShouldReturnUnauthorized_WhenCredentialsInvalid()
+    [Theory(DisplayName = "Login fails with 401 on invalid credentials")]
+    [InlineData("invalid@example.com", "VALID")]       // Invalid email
+    [InlineData("VALID", "wrongpass")]                 // Invalid password
+    [InlineData("invalid@example.com", "wrongpass")]   // Both invalid
+    public async Task Login_ShouldReturnUnauthorized_WhenCredentialsInvalid(string email, string password)
     {
         var user = _sharedFixture.UserFixture.TestUser;
 
-        var response = await LoginAsync($"{user.Email}.invalid", user.PasswordHash);
+        var actualEmail = email == "VALID" ? user.Email : email;
+        var actualPassword = password == "VALID" ? user.PasswordHash : password;
+
+        var response = await LoginAsync(actualEmail, actualPassword);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -87,7 +93,6 @@ public class AuthIntegrationTests : AuthTestBase
                 { "Cookie", $"refreshToken=InvalidToken" }
             }
         };
-
         var refreshResponse = await Client.SendAsync(request);
         refreshResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }

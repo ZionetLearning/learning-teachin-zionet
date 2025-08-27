@@ -217,7 +217,6 @@ public class AuthService : IAuthService
         catch (UnauthorizedAccessException ex)
         {
             _log.LogError(ex, "Refresh token failed, Authorized exception.");
-            //throw new UnauthorizedAccessException(ex.Message);
             throw;
         }
         catch (Exception ex)

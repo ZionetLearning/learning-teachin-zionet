@@ -1,6 +1,7 @@
 ﻿using IntegrationTests.Fixtures;
 using IntegrationTests.Infrastructure;
 using Manager.Models.Auth;
+using IntegrationTests.Models.Auth;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Xunit.Abstractions;
@@ -25,11 +26,14 @@ public abstract class AuthTestBase : IntegrationTestBase
         return await Client.PostAsJsonAsync(AuthRoutes.Login, loginRequest);
     }
 
-    protected async Task<string> ExtractAccessToken(HttpResponseMessage response)
+    protected async Task<string> ExtractAccessToken(HttpResponseMessage response, CancellationToken ct = default)
     {
-        var body = await response.Content.ReadAsStringAsync();
-        var json = JsonDocument.Parse(body);
-        return json.RootElement.GetProperty(TestConstants.AccessToken).GetString()!;
+        response.EnsureSuccessStatusCode();
+        var body = await response.Content.ReadAsStringAsync(ct);
+        var result = JsonSerializer.Deserialize<AccessTokenResponse>(body)
+                     ?? throw new InvalidOperationException("Invalid JSON response");
+
+        return result.AccessToken;
     }
 
     protected static (string? RefreshToken, string? CsrfToken) ExtractTokens(HttpResponseMessage response)
