@@ -14,14 +14,12 @@ namespace Manager.Services;
 
 public class AuthService : IAuthService
 {
-    private readonly DaprClient _dapr;
     private readonly ILogger<AuthService> _log;
     private readonly JwtSettings _jwt;
     private readonly IAccessorClient _accessorClient;
 
-    public AuthService(DaprClient dapr, ILogger<AuthService> log, IOptions<JwtSettings> jwtOptions, IAccessorClient accessorClient)
+    public AuthService(ILogger<AuthService> log, IOptions<JwtSettings> jwtOptions, IAccessorClient accessorClient)
     {
-        _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
         _log = log ?? throw new ArgumentNullException(nameof(log));
         _jwt = jwtOptions?.Value ?? throw new ArgumentNullException(nameof(jwtOptions));
         _accessorClient = accessorClient;
