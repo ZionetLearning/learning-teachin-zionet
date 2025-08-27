@@ -2,7 +2,7 @@
 
 namespace Manager.Models.Chat;
 
-public sealed class ChatSummary
+public record class ChatSummary
 {
     [JsonPropertyName("chatId")]
     public Guid ChatId { get; set; }

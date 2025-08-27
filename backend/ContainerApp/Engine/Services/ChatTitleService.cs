@@ -22,13 +22,13 @@ public sealed class ChatTitleService : IChatTitleService
         _kernelPolicy = retryPolicy.CreateKernelPolicy(log);
     }
 
-    public async Task<string> GenerateAsync(ChatHistory history, CancellationToken ct = default)
+    public async Task<string> GenerateTitleAsync(ChatHistory history, CancellationToken ct = default)
     {
         var tail = new ChatHistory();
         var onlyUser = history
                .Where(m => m.Role == AuthorRole.User && !string.IsNullOrWhiteSpace(m.Content))
                .Reverse()
-               .Take(TailMessages) // последние N пользовательских
+               .Take(TailMessages)
                .Reverse();
 
         foreach (var m in onlyUser)
@@ -88,7 +88,7 @@ Return STRICT JSON: {"title":"..."}
 
             }
         }
-        //todo: think what I need do here
+        // TODO: think about what I need to do here
         catch { }
 
         return null;

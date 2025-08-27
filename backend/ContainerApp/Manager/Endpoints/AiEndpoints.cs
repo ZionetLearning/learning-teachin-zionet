@@ -56,7 +56,7 @@ public static class AiEndpoints
     {
         using var scope = log.BeginScope("userId: {UserId}", userId);
         {
-            //todo change userId from token
+            // TODO: Change userId from token
             try
             {
                 var chats = await accessorClient.GetChatsForUserAsync(userId, ct);

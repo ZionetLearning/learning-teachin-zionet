@@ -4,5 +4,5 @@ namespace Engine.Services;
 
 public interface IChatTitleService
 {
-    Task<string> GenerateAsync(ChatHistory history, CancellationToken ct = default);
+    Task<string> GenerateTitleAsync(ChatHistory history, CancellationToken ct = default);
 }

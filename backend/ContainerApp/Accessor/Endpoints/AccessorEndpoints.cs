@@ -249,7 +249,7 @@ public static class AccessorEndpoints
             if (snapshot.UserId != userId)
             {
                 logger.LogError("Error accessing chat history chatID:{ChatId}, userId from request:{UserId}, userId in chat: {UserIdInChat}", threadId, userId, snapshot.UserId);
-                //todo add return
+                // TODO: Return forbidden when userId does not match chat owner
             }
 
             JsonElement historySafe;

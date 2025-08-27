@@ -101,7 +101,7 @@ public sealed class ChatAiService : IChatAiService
             {
                 try
                 {
-                    name = await _chatTitleService.GenerateAsync(skHistory, ct);
+                    name = await _chatTitleService.GenerateTitleAsync(skHistory, ct);
 
                 }
                 catch (Exception exName)

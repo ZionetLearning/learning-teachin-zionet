@@ -38,7 +38,7 @@ public class ChatAiServiceTests
 
     private sealed class FakeChatTitleService : IChatTitleService
     {
-        public Task<string> GenerateAsync(ChatHistory history, CancellationToken ct = default)
+        public Task<string> GenerateTitleAsync(ChatHistory history, CancellationToken ct = default)
             => Task.FromResult("New chat");
     }
 
