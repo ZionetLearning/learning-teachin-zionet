@@ -176,27 +176,51 @@ jobs:
           echo "ai=$AI_NAME" >> $GITHUB_OUTPUT
           echo "app=$APP" >> $GITHUB_OUTPUT
        
-      - name: Clean stage environment for ${{ matrix.app }}
+      - name: Clean stage environment for ${{ matrix.app }} (Optional)
         shell: bash
         run: |
           set -euo pipefail 
+          
+          echo "Attempting to clean staging environments for ${{ matrix.app }}..."
+          
+          # Check if the Static Web App exists first
+          if ! az staticwebapp show \
+            --name "${{ steps.names.outputs.swa }}" \
+            --resource-group "${{ steps.names.outputs.rg }}" \
+            --output none 2>/dev/null; then
+            echo "ℹ️  Static Web App ${{ steps.names.outputs.swa }} does not exist yet. Skipping cleanup."
+            exit 0
+          fi
 
-          # Get all staging environments for this Static Web App
-          ENVIRONMENTS=$(az staticwebapp environment list \
+          # Get all staging environments for this Static Web App with timeout
+          echo "Listing staging environments..."
+          if ! ENVIRONMENTS=$(timeout 30s az staticwebapp environment list \
             --name "${{ steps.names.outputs.swa }}" \
             --resource-group "${{ steps.names.outputs.rg }}" \
             --query "[?name != 'default'].{name:name, createdOn:createdOn}" \
-            --output json)
+            --output json 2>/dev/null); then
+            echo "⚠️  Failed to list environments or operation timed out. Continuing with deployment..."
+            exit 0
+          fi
 
           # Delete all staging environments
-          for env in $(echo "$ENVIRONMENTS" | jq -r '.[].name'); do
-            echo "Deleting staging environment: $env for ${{ matrix.app }}"
-            az staticwebapp environment delete \
-              --name "${{ steps.names.outputs.swa }}" \
-              --resource-group "${{ steps.names.outputs.rg }}" \
-              --environment-name "$env" \
-              --yes || true
-          done
+          if [ "$ENVIRONMENTS" != "[]" ]; then
+            echo "Found staging environments to clean up..."
+            for env in $(echo "$ENVIRONMENTS" | jq -r '.[].name' 2>/dev/null || echo ""); do
+              if [ -n "$env" ]; then
+                echo "Deleting staging environment: $env for ${{ matrix.app }}"
+                timeout 30s az staticwebapp environment delete \
+                  --name "${{ steps.names.outputs.swa }}" \
+                  --resource-group "${{ steps.names.outputs.rg }}" \
+                  --environment-name "$env" \
+                  --yes 2>/dev/null || echo "⚠️  Failed to delete $env, continuing..."
+              fi
+            done
+          else
+            echo "✅ No staging environments to clean up."
+          fi
+          
+          echo "✅ Staging environment cleanup completed (or skipped)."
 
 
 
