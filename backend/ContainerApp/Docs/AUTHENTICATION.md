@@ -228,10 +228,11 @@ This section explains the complete authentication flow — from registration to 
 
 ### 📈 Flow Diagram
 
+```mermaid
 graph TD
     A[User Registers] --> B[Login (/auth/login)]
     B --> C[JWT Issued]
-    C --> D[Refresh Token in Cookie]
+    C --> D[Refresh Token Set in Cookie]
 
     D --> E[Authenticated Request (/auth/protected)]
     E --> F[Authorized Access]
@@ -242,10 +243,7 @@ graph TD
     E --> H[Logout (/auth/logout)]
     H --> I[Session Deleted]
     H --> J[Cookies Cleared]
+    
 
-
-
-
----
 
 
