@@ -31,7 +31,10 @@ spec:
       value: '{{ default "300s" .Values.dapr.stateStore.redis.options.idleTimeout }}'
     - name: maxConnAge
       value: '{{ default "30m" .Values.dapr.stateStore.redis.options.maxConnAge }}'
+    - name: redisDB
+      value: '{{ .Values.dapr.stateStore.redis.redisDB }}'
 scopes:
   - {{ include "app.appIdFor" (list $ .Values.accessor.name) | quote }}
   - {{ include "app.appIdFor" (list $ .Values.manager.name)  | quote }}
   - {{ include "app.appIdFor" (list $ .Values.engine.name)   | quote }}
+
