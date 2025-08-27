@@ -199,22 +199,34 @@ jobs:
 
 
       - name: Get App Insights connection string
-        if: ${{ !inputs.app_insights_connection_string }}
         id: ai
         shell: bash
         run: |
-          set -euo pipefail
-          CONN=$(az resource show \
-            -g "${{ steps.names.outputs.rg }}" \
-            -n "${{ steps.names.outputs.ai }}" \
-            --resource-type "Microsoft.Insights/components" \
-            --query "properties.ConnectionString" -o tsv)
-          if [ -z "$CONN" ]; then
-            echo "❌ Could not resolve Application Insights connection string."
-            exit 1
+          if [ -n "${{ inputs.app_insights_connection_string || '' }}" ]; then
+            echo "Using provided App Insights connection strings from terraform output..."
+            # Extract the connection string for the current app from the JSON object
+            CONN=$(echo '${{ inputs.app_insights_connection_string }}' | jq -r '."${{ matrix.app }}"')
+            if [ "$CONN" = "null" ] || [ -z "$CONN" ]; then
+              echo "❌ No App Insights connection string found for app: ${{ matrix.app }}"
+              exit 1
+            fi
+            echo "::add-mask::$CONN"
+            echo "APPINSIGHTS_CONNECTION_STRING=$CONN" >> "$GITHUB_ENV"
+          else
+            echo "Fetching App Insights connection string from Azure CLI..."
+            set -euo pipefail
+            CONN=$(az resource show \
+              -g "${{ steps.names.outputs.rg }}" \
+              -n "${{ steps.names.outputs.ai }}" \
+              --resource-type "Microsoft.Insights/components" \
+              --query "properties.ConnectionString" -o tsv)
+            if [ -z "$CONN" ]; then
+              echo "❌ Could not resolve Application Insights connection string."
+              exit 1
+            fi
+            echo "::add-mask::$CONN"
+            echo "APPINSIGHTS_CONNECTION_STRING=$CONN" >> "$GITHUB_ENV"
           fi
-          echo "::add-mask::$CONN"
-          echo "APPINSIGHTS_CONNECTION_STRING=$CONN" >> "$GITHUB_ENV"
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
@@ -223,26 +235,38 @@ jobs:
           path: ${{ env.FE_DIR }}/dist/
 
       - name: Get SWA deployment token
-        if: ${{ !inputs.deployment_token }}
         id: swatoken
         shell: bash
         run: |
-          set -euo pipefail
-          TOKEN=$(az staticwebapp secrets list \
-            --name "${{ steps.names.outputs.swa }}" \
-            --resource-group "${{ steps.names.outputs.rg }}" \
-            --query "properties.apiKey" -o tsv)
-          if [ -z "$TOKEN" ]; then
-            echo "❌ Could not fetch Static Web Apps deployment token."
-            exit 1
+          if [ -n "${{ inputs.deployment_token || '' }}" ]; then
+            echo "Using provided deployment tokens from terraform output..."
+            # Extract the token for the current app from the JSON object
+            TOKEN=$(echo '${{ inputs.deployment_token }}' | jq -r '."${{ matrix.app }}"')
+            if [ "$TOKEN" = "null" ] || [ -z "$TOKEN" ]; then
+              echo "❌ No deployment token found for app: ${{ matrix.app }}"
+              exit 1
+            fi
+            echo "::add-mask::$TOKEN"
+            echo "AZURE_STATIC_WEB_APPS_API_TOKEN=$TOKEN" >> "$GITHUB_ENV"
+          else
+            echo "Fetching deployment token from Azure CLI..."
+            set -euo pipefail
+            TOKEN=$(az staticwebapp secrets list \
+              --name "${{ steps.names.outputs.swa }}" \
+              --resource-group "${{ steps.names.outputs.rg }}" \
+              --query "properties.apiKey" -o tsv)
+            if [ -z "$TOKEN" ]; then
+              echo "❌ Could not fetch Static Web Apps deployment token."
+              exit 1
+            fi
+            echo "::add-mask::$TOKEN"
+            echo "AZURE_STATIC_WEB_APPS_API_TOKEN=$TOKEN" >> "$GITHUB_ENV"
           fi
-          echo "::add-mask::$TOKEN"
-          echo "AZURE_STATIC_WEB_APPS_API_TOKEN=$TOKEN" >> "$GITHUB_ENV"
 
       - name: Deploy to Azure Static Web Apps (Production slot)
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ inputs.deployment_token || env.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          azure_static_web_apps_api_token: ${{ env.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: "upload"
           app_location: "${{ env.FE_DIR }}/dist/apps/${{ matrix.app }}"
           skip_app_build: true

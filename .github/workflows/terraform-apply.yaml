@@ -16,7 +16,13 @@ on:
       environment_name:
         required: true
         type: string  
-    # Removed outputs - deploy-frontend.yaml now fetches tokens directly from Azure
+    outputs:
+      static_web_app_api_keys:
+        description: "API keys for the Azure Static Web Apps"
+        value: ${{ jobs.terraform.outputs.static_web_app_api_keys }}
+      application_insights_connection_strings:
+        description: "Connection strings for Application Insights per frontend app"
+        value: ${{ jobs.terraform.outputs.application_insights_connection_strings }}
   workflow_dispatch:
     inputs:
       environment:
@@ -38,7 +44,9 @@ jobs:
       id-token: write      # Required for OIDC login
       contents: read       # For actions/checkout
     
-    # Removed outputs - deploy-frontend.yaml now fetches tokens directly from Azure
+    outputs:
+      static_web_app_api_keys: ${{ steps.terraform_output.outputs.static_web_app_api_keys }}
+      application_insights_connection_strings: ${{ steps.terraform_output.outputs.application_insights_connection_strings }}
 
     env:
       ARM_USE_OIDC: "true" # tell provider to use the OIDC token
@@ -127,4 +135,15 @@ jobs:
 
       - name: Terraform Apply
         run: terraform apply -auto-approve -var-file=${{ env.TFVARS_FILE }}
+        working-directory: ${{ env.TF_DIR }}
+
+      - name: Get Terraform Outputs
+        id: terraform_output
+        run: |
+          echo "Getting terraform outputs..."
+          STATIC_WEB_APP_API_KEYS=$(terraform output -json static_web_app_api_keys)
+          APP_INSIGHTS_CONN_STRINGS=$(terraform output -json application_insights_connection_strings)
+          
+          echo "static_web_app_api_keys=$STATIC_WEB_APP_API_KEYS" >> "$GITHUB_OUTPUT"
+          echo "application_insights_connection_strings=$APP_INSIGHTS_CONN_STRINGS" >> "$GITHUB_OUTPUT"
         working-directory: ${{ env.TF_DIR }}
