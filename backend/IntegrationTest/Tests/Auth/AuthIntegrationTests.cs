@@ -27,7 +27,7 @@ public class AuthIntegrationTests : AuthTestBase
     {
         var user = _sharedFixture.UserFixture.TestUser;
 
-        var response = await LoginAsync(user.Email, user.PasswordHash);
+        var response = await LoginAsync(user.Email, user.Password);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -49,7 +49,7 @@ public class AuthIntegrationTests : AuthTestBase
         var user = _sharedFixture.UserFixture.TestUser;
 
         var actualEmail = email == "VALID" ? user.Email : email;
-        var actualPassword = password == "VALID" ? user.PasswordHash : password;
+        var actualPassword = password == "VALID" ? user.Password : password;
 
         var response = await LoginAsync(actualEmail, actualPassword);
 
@@ -62,7 +62,7 @@ public class AuthIntegrationTests : AuthTestBase
     {
         var user = _sharedFixture.UserFixture.TestUser;
 
-        var loginResponse = await LoginAsync(user.Email, user.PasswordHash);
+        var loginResponse = await LoginAsync(user.Email, user.Password);
         loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var logoutResponse = await Client.PostAsync(AuthRoutes.Logout, null);
@@ -79,7 +79,7 @@ public class AuthIntegrationTests : AuthTestBase
     {
         var user = _sharedFixture.UserFixture.TestUser;
 
-        var loginResponse = await LoginAsync(user.Email, user.PasswordHash);
+        var loginResponse = await LoginAsync(user.Email, user.Password);
         loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var (_, csrfToken) = ExtractTokens(loginResponse);
@@ -103,7 +103,7 @@ public class AuthIntegrationTests : AuthTestBase
     {
         var user = _sharedFixture.UserFixture.TestUser;
 
-        var loginResponse = await LoginAsync(user.Email, user.PasswordHash);
+        var loginResponse = await LoginAsync(user.Email, user.Password);
         loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var token = await ExtractAccessToken(loginResponse);
@@ -126,7 +126,7 @@ public class AuthIntegrationTests : AuthTestBase
             Content = JsonContent.Create(new LoginRequest
             {
                 Email = user.Email,
-                Password = user.PasswordHash
+                Password = user.Password
             })
         };
 
@@ -158,7 +158,7 @@ public class AuthIntegrationTests : AuthTestBase
     {
         var user = _sharedFixture.UserFixture.TestUser;
 
-        var loginResponse = await LoginAsync(user.Email, user.PasswordHash);
+        var loginResponse = await LoginAsync(user.Email, user.Password);
         var (refreshToken, csrfToken) = ExtractTokens(loginResponse);
 
         // Logout
@@ -180,7 +180,7 @@ public class AuthIntegrationTests : AuthTestBase
     {
         var user = _sharedFixture.UserFixture.TestUser;
 
-        var loginResponse = await LoginAsync(user.Email, user.PasswordHash);
+        var loginResponse = await LoginAsync(user.Email, user.Password);
         loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var accessToken = await ExtractAccessToken(loginResponse);

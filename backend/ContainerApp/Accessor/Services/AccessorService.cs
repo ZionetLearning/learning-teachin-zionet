@@ -414,7 +414,7 @@ public class AccessorService : IAccessorService
             return null;
         }
 
-        if (user.PasswordHash != password)
+        if (!BCrypt.Net.BCrypt.Verify(password, user.Password))
         {
             return null;
         }
@@ -422,7 +422,7 @@ public class AccessorService : IAccessorService
         return user.UserId;
     }
 
-    public async Task<UserModel?> GetUserAsync(Guid userId)
+    public async Task<UserData?> GetUserAsync(Guid userId)
     {
         var user = await _dbContext.Users.FindAsync(userId);
         if (user == null)
@@ -430,11 +430,10 @@ public class AccessorService : IAccessorService
             return null;
         }
 
-        return new UserModel
+        return new UserData
         {
             UserId = user.UserId,
             Email = user.Email,
-            PasswordHash = user.PasswordHash
         };
     }
 
@@ -446,14 +445,7 @@ public class AccessorService : IAccessorService
             return false;
         }
 
-        var user = new UserModel
-        {
-            UserId = newUser.UserId,
-            Email = newUser.Email,
-            PasswordHash = newUser.PasswordHash
-        };
-
-        _dbContext.Users.Add(user);
+        _dbContext.Users.Add(newUser);
         await _dbContext.SaveChangesAsync();
         return true;
     }
@@ -467,7 +459,6 @@ public class AccessorService : IAccessorService
         }
 
         user.Email = updateUser.Email;
-        user.PasswordHash = updateUser.PasswordHash; // Again, hash in real apps
 
         _dbContext.Users.Update(user);
         await _dbContext.SaveChangesAsync();
@@ -493,6 +484,7 @@ public class AccessorService : IAccessorService
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.ThreadId == threadId);
     }
+
     public async Task UpsertHistorySnapshotAsync(ChatHistorySnapshot snapshot)
     {
         var existing = await _dbContext.ChatHistorySnapshots.FirstOrDefaultAsync(x => x.ThreadId == snapshot.ThreadId);

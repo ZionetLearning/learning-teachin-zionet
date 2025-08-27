@@ -8,20 +8,21 @@ using Manager.Models.Auth;
 using Manager.Models.Auth.RefreshSessions;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Manager.Services.Clients.Accessor;
 
 namespace Manager.Services;
 
 public class AuthService : IAuthService
 {
-    private readonly DaprClient _dapr;
     private readonly ILogger<AuthService> _log;
     private readonly JwtSettings _jwt;
+    private readonly IAccessorClient _accessorClient;
 
-    public AuthService(DaprClient dapr, ILogger<AuthService> log, IOptions<JwtSettings> jwtOptions)
+    public AuthService(ILogger<AuthService> log, IOptions<JwtSettings> jwtOptions, IAccessorClient accessorClient)
     {
-        _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
         _log = log ?? throw new ArgumentNullException(nameof(log));
         _jwt = jwtOptions?.Value ?? throw new ArgumentNullException(nameof(jwtOptions));
+        _accessorClient = accessorClient;
     }
 
     public async Task<(string, string)> LoginAsync(LoginRequest loginRequest, HttpRequest httpRequest, CancellationToken cancellationToken)
@@ -29,8 +30,7 @@ public class AuthService : IAuthService
         _log.LogInformation("Login attempt for user {Email}", loginRequest.Email);
         try
         {
-            var userId = await _dapr.InvokeMethodAsync<LoginRequest, Guid?>(
-                HttpMethod.Post, "accessor", "auth-accessor/login", loginRequest, cancellationToken);
+            var userId = await _accessorClient.LoginUserAsync(loginRequest, cancellationToken);
 
             if (userId is null)
             {
@@ -50,9 +50,9 @@ public class AuthService : IAuthService
             ? null
             : HashRefreshToken(fingerprint, _jwt.RefreshTokenHashKey);
 
-            var ua = string.IsNullOrWhiteSpace(httpRequest.Headers["User-Agent"])
+            var ua = string.IsNullOrWhiteSpace(httpRequest.Headers.UserAgent)
                 ? AuthSettings.UnknownIpFallback
-                : httpRequest.Headers["User-Agent"].ToString();
+                : httpRequest.Headers.UserAgent.ToString();
 
             var ip = httpRequest.HttpContext.Connection.RemoteIpAddress?.ToString() ?? AuthSettings.UnknownIpFallback;
 
@@ -66,9 +66,7 @@ public class AuthService : IAuthService
                 UserAgent = ua,
             };
 
-            await _dapr.InvokeMethodAsync(
-                HttpMethod.Post, "accessor", "auth-accessor/refresh-sessions", session, cancellationToken);
-
+            await _accessorClient.SaveSessionDBAsync(session, cancellationToken);
             return (accessToken, refreshToken);
         }
 
@@ -122,27 +120,17 @@ public class AuthService : IAuthService
 
             var oldHash = HashRefreshToken(oldRefreshToken, _jwt.RefreshTokenHashKey);
 
+            // Get session from Accessor
             RefreshSessionDto session;
-
             try
             {
-                // Get session from Accessor
-                session = await _dapr.InvokeMethodAsync<RefreshSessionDto>(
-                    HttpMethod.Get,
-                    "accessor",
-                    $"auth-accessor/refresh-sessions/by-token-hash/{oldHash}",
-                    cancellationToken
-                ) ?? throw new UnauthorizedAccessException("Invalid or mismatched session.");
+                session = await _accessorClient.GetSessionAsync(oldHash, cancellationToken)
+                    ?? throw new UnauthorizedAccessException("Invalid or mismatched session.");
             }
-            catch (InvocationException ex)
+            catch (InvocationException ex) when (ex.InnerException is HttpRequestException httpEx && httpEx.StatusCode == HttpStatusCode.NotFound)
             {
-                _log.LogWarning(ex, "Session not found for hash: {Hash}", oldHash);
-                throw new UnauthorizedAccessException("Invalid or expired session.");
-            }
-            catch (HttpRequestException ex)
-            {
-                _log.LogError(ex, "Dapr/HTTP network error.");
-                throw new UnauthorizedAccessException("Could not connect to session service.");
+                _log.LogWarning("No session found for given refresh token hash.");
+                throw new UnauthorizedAccessException("Invalid or mismatched session.", ex);
             }
 
             // ------------------------ strat validations ------------------------
@@ -195,9 +183,8 @@ public class AuthService : IAuthService
                 IssuedAt = now
             };
 
-            // Save new session
-            await _dapr.InvokeMethodAsync(
-                HttpMethod.Put, "accessor", $"auth-accessor/refresh-sessions/{session.Id}/rotate", rotatePayload, cancellationToken);
+            // Update session using accessor client
+            await _accessorClient.UpdateSessionDBAsync(session.Id, rotatePayload, cancellationToken);
 
             return (newAccessToken, newRefreshToken);
         }
@@ -227,8 +214,7 @@ public class AuthService : IAuthService
             var hash = HashRefreshToken(refreshToken, _jwt.RefreshTokenHashKey);
 
             // Lookup session by hash
-            var session = await _dapr.InvokeMethodAsync<RefreshSessionDto?>(
-                HttpMethod.Get, "accessor", $"auth-accessor/refresh-sessions/by-token-hash/{hash}", cancellationToken);
+            var session = await _accessorClient.GetSessionAsync(hash, cancellationToken);
 
             if (session is null)
             {
@@ -237,8 +223,7 @@ public class AuthService : IAuthService
             }
 
             // Delete by sessionId
-            await _dapr.InvokeMethodAsync(
-                HttpMethod.Delete, "accessor", $"auth-accessor/refresh-sessions/{session.Id}", cancellationToken);
+            await _accessorClient.DeleteSessionDBAsync(session.Id, cancellationToken);
 
             _log.LogInformation("Deleted session {SessionId}", session.Id);
         }
@@ -258,6 +243,7 @@ public class AuthService : IAuthService
         var token = new JwtSecurityToken(
             issuer: _jwt.Issuer,
             audience: _jwt.Audience,
+            // Store the userId in the token
             claims: new[] { new Claim(AuthSettings.NameClaimType, userId.ToString()) },
             expires: DateTime.UtcNow.AddMinutes(_jwt.AccessTokenTTL),
             signingCredentials: creds);
