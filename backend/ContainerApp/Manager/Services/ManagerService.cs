@@ -1,10 +1,10 @@
 ﻿using AutoMapper;
 using Manager.Models;
-using Manager.Services.Clients;
 using Manager.Services.Clients.Engine;
 using Manager.Models.Users;
 using System.Text.Json;
 using Manager.Models.Notifications;
+using Manager.Services.Clients.Accessor;
 
 namespace Manager.Services;
 
@@ -226,7 +226,7 @@ public class ManagerService : IManagerService
         }
     }
 
-    public async Task<UserModel?> GetUserAsync(Guid userId)
+    public async Task<UserData?> GetUserAsync(Guid userId)
     {
         try
         {
@@ -245,6 +245,8 @@ public class ManagerService : IManagerService
         try
         {
             _logger.LogInformation("Creating user with email: {Email}", user.Email);
+            // Hash the password before storing
+            user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
             return await _accessorClient.CreateUserAsync(user);
         }
         catch (Exception ex)
