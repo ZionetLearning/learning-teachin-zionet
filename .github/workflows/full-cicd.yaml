@@ -83,8 +83,7 @@ jobs:
     with:
       environment: ${{ github.event.inputs.environment }}
       environment_name: ${{ github.event.inputs.environment_name }}
-      deployment_token: ${{ needs.terraform-apply.outputs.static_web_app_api_token }}
-      app_insights_connection_string: ${{ needs.terraform-apply.outputs.app_insights_connection_string }}
+      # Removed deployment_token and app_insights_connection_string - deploy-frontend.yaml now fetches them directly
     secrets: inherit
  
  
