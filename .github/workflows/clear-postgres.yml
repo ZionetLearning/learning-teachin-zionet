@@ -2,7 +2,7 @@ name: Clear Postgres Database
 
 on:
   schedule:
-   - cron: '0 22 * * *'  # At 22:00 every day
+   - cron: '0 22 * * *'  # At 22:00 every day (Israel time)
 
   workflow_dispatch:
     inputs:
@@ -55,13 +55,13 @@ jobs:
       PGUSER: ${{ secrets.POSTGRES_USER }}          
       PGPASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
 
-      MODE: ${{ inputs.mode }}
-      DRY_RUN: ${{ inputs.dry_run }}
-      VERIFY_SSL: ${{ inputs.verify_ssl }}
+      MODE: ${{  github.event.inputs.mode || inputs.mode }}
+      DRY_RUN: ${{ github.event.inputs.dry_run ||  inputs.dry_run }}
+      VERIFY_SSL: ${{ github.event.inputs.verify_ssl || inputs.verify_ssl }}
 
       AZURE_POSTGRES_SERVER: dev-pg-zionet-learning  
       AZURE_RG: dev-zionet-learning-2025
-      AZURE_SUB: 90ea4c2f-1eee-4ec9-927d-ed24c563003e
+      AZURE_SUB: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
     steps:
       - name: Checkout
