@@ -1,12 +1,11 @@
 name: AKS - Deploy Current Backend Images (and refresh pods)
-# Builds and pushs current backend images (from current main) into acr
-# and refreshes the pods with the new images.
+# Builds & pushes current backend images to ACR and deploys them via Helm
+
 on:
   push:
     branches: [ main ]
     paths:
-      - 'backend/**'  # Only trigger for Azure backend changes
-      # - '.github/workflows/build-and-push-images.yaml'  # Trigger on workflow changes
+      - 'backend/**'
   workflow_dispatch:
     inputs:
       environment:
@@ -14,22 +13,36 @@ on:
         required: true
         default: 'Development'
         type: choice
-        options:
-          - Development
-          - Production
+        options: [Development, Production]
       environment_name:
         description: 'Select prefix (used for Kubernetes namespace, etc.)'
         required: true
         type: choice
         default: featest
-        options:
-          - featest
+        options: [featest]
       custom_environment_name:
-        description: 'Custom prefix (This is for devops guys only, leave empty otherwise)'
+        description: 'Custom prefix (for DevOps only, leave empty otherwise)'
         required: false
         type: string
       list_services_names:
-        description: 'Optional comma-separated list of services to build (e.g., accessor,manager). Leave empty for all.'
+        description: 'Optional comma-separated list (e.g., accessor,manager). Empty = all.'
+        required: false
+        type: string
+        default: ''
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      environment_name:
+        required: false
+        type: string
+        default: ''
+      custom_environment_name:
+        required: false
+        type: string
+        default: ''
+      list_services_names:
         required: false
         type: string
         default: ''
@@ -44,22 +57,26 @@ jobs:
     steps:
       - name: Set default values
         id: defaults
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          IN_ENVIRONMENT: ${{ inputs.environment || github.event.inputs.environment || '' }}
+          IN_ENVIRONMENT_NAME: ${{ inputs.environment_name || github.event.inputs.environment_name || '' }}
+          IN_CUSTOM_ENVIRONMENT_NAME: ${{ inputs.custom_environment_name || github.event.inputs.custom_environment_name || '' }}
+          IN_LIST_SERVICES_NAMES: ${{ inputs.list_services_names || github.event.inputs.list_services_names || '' }}
         run: |
-          if [[ "${{ github.event_name }}" == "push" ]]; then
-            # Push to main → always use dev
+          if [[ "$EVENT_NAME" == "push" ]]; then
+            # Push to main → always deploy "dev"
             echo "environment=Development" >> $GITHUB_OUTPUT
             echo "environment_name=dev" >> $GITHUB_OUTPUT
             echo "list_services_names=" >> $GITHUB_OUTPUT
           else
-            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
-
-            if [ -n "${{ github.event.inputs.custom_environment_name }}" ]; then
-              echo "environment_name=${{ github.event.inputs.custom_environment_name }}" >> $GITHUB_OUTPUT
+            echo "environment=${IN_ENVIRONMENT:-Development}" >> $GITHUB_OUTPUT
+            if [[ -n "$IN_CUSTOM_ENVIRONMENT_NAME" ]]; then
+              echo "environment_name=$IN_CUSTOM_ENVIRONMENT_NAME" >> $GITHUB_OUTPUT
             else
-              echo "environment_name=${{ github.event.inputs.environment_name }}" >> $GITHUB_OUTPUT
+              echo "environment_name=${IN_ENVIRONMENT_NAME:-dev}" >> $GITHUB_OUTPUT
             fi
-
-            echo "list_services_names=${{ github.event.inputs.list_services_names }}" >> $GITHUB_OUTPUT
+            echo "list_services_names=$IN_LIST_SERVICES_NAMES" >> $GITHUB_OUTPUT
           fi
 
   build-and-push-images:
