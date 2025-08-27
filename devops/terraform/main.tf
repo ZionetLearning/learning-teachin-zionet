@@ -108,10 +108,12 @@ module "redis" {
 }
 
 module "frontend" {
+  for_each = toset(var.frontend_apps)
+  
   source              = "./modules/frontend"
   resource_group_name = azurerm_resource_group.main.name
   location            = azurerm_resource_group.main.location
-  static_web_app_name = "${var.static_web_app_name}-${var.environment_name}"
+  static_web_app_name = "${var.static_web_app_name}-${each.key}-${var.environment_name}"
   sku_tier            = var.frontend_sku_tier
   sku_size            = var.frontend_sku_size
   appinsights_retention_days = var.frontend_appinsights_retention_days

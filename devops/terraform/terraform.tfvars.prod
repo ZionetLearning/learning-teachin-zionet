@@ -21,3 +21,4 @@ frontend_sku_tier      = "Free"
 frontend_sku_size      = "Free"    
 
 
+frontend_apps          = ["student", "teacher", "admin"]
