@@ -191,62 +191,59 @@ Set-Cookie: csrf-token=xyz987...; Secure
 
 
 
-🔁 Full Authentication Flow
+## 🔁 Full Authentication Flow
 
-This section explains the complete authentication flow, from registration to logout, with security checks at each step.
+This section explains the complete authentication flow — from registration to logout — with security checks at each step.
 
-
-
-📋 Flow Steps
-
-1. User Registers
-
-✅ User account is created (this step is handled outside the auth service).
-
-2. User Logs In (POST /auth/login)
-
-✅ Validates credentials
-
-✅ Returns accessToken (JWT)
-
-✅ Sets refresh-token and csrf-token cookies
-
-3. Authenticated Request (GET /auth/protected)
-
-✅ Sends request with Authorization: Bearer <accessToken>
-
-4. Refresh Tokens (POST /auth/refresh-tokens)
-
-✅ Requires X-CSRF-Token header and refresh-token cookie
-
-✅ Returns new accessToken and rotates refresh token
-
-5. Logout (POST /auth/logout)
-
-✅ Deletes session from DB
-
-✅ Clears cookies
+---
 
 
 
 
 
 
-🔄 Flow Diagram
+
+### 📋 Flow Steps
+
+1. **User Registers**  
+   ✅ User account is created (handled outside the auth service)
+
+2. **User Logs In** (`POST /auth/login`)  
+   ✅ Validates credentials  
+   ✅ Returns `accessToken` (JWT)  
+   ✅ Sets `refresh-token` and `csrf-token` cookies
+
+3. **Authenticated Request** (`GET /auth/protected`)  
+   ✅ Sends request with `Authorization: Bearer <accessToken>`
+
+4. **Refresh Tokens** (`POST /auth/refresh-tokens`)  
+   ✅ Requires `X-CSRF-Token` header and `refresh-token` cookie  
+   ✅ Returns new `accessToken` and rotates refresh token
+
+5. **Logout** (`POST /auth/logout`)  
+   ✅ Deletes session from DB  
+   ✅ Clears cookies
+
+---
+
+### 📈 Flow Diagram
+
+```mermaid
 graph TD
-    A[🧑 User Registers] --> B[🔐 Login (/auth/login)]
-    B -->|Valid Credentials| C[✅ JWT Issued]
-    C --> D[🍪 Refresh Token in Cookie]
+    A[User Registers] --> B[Login (/auth/login)]
+    B -->|Valid Credentials| C[JWT Issued]
+    C --> D[Refresh Token in Cookie]
 
-    D --> E[📥 Authenticated Request]
-    E -->|Access Token| F[🔒 /auth/protected]
+    D --> E[Authenticated Request (/auth/protected)]
+    E -->|Access Token| F[Authorized Access]
 
-    D --> G[♻️ Refresh Token Rotation (/auth/refresh-tokens)]
+    D --> G[Refresh Token Rotation (/auth/refresh-tokens)]
     G -->|New JWT & Refresh Token| D
 
-    E --> H[🚪 Logout (/auth/logout)]
-    H --> I[🗑 Session Deleted]
-    H --> J[🧹 Cookies Cleared]
+    E --> H[Logout (/auth/logout)]
+    H --> I[Session Deleted]
+    H --> J[Cookies Cleared]
+
 
 
 ---
