@@ -51,7 +51,7 @@ export const Users = () => {
           {({ isSubmitting }) => (
             <Form className={classes.form}>
               <label className={classes.label}>
-                Email
+                {t("pages.users.email")}
                 <Field
                   name="email"
                   type="email"
@@ -64,7 +64,7 @@ export const Users = () => {
                 </span>
               </label>
               <label className={classes.label}>
-                Password
+                {t("pages.users.password")}
                 <Field
                   name="password"
                   type="password"

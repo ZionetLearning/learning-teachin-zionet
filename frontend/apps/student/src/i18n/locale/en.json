@@ -251,7 +251,9 @@
         "delete": "Delete",
         "saving": "Saving...",
         "save": "Save",
-        "userUpdated": "User updated"
+        "userUpdated": "User updated",
+        "email": "Email",
+        "password": "Password"
       }
     },
     "sidebar": {

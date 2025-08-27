@@ -253,7 +253,9 @@
         "delete": "מחיקה",
         "saving": "שומר...",
         "save": "שמור",
-        "userUpdated": "המשתמש עודכן"
+        "userUpdated": "המשתמש עודכן",
+        "email": "אימייל",
+        "password": "סיסמה"
       }
     },
     "sidebar": {

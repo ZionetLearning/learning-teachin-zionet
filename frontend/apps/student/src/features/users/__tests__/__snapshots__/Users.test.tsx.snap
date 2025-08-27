@@ -21,7 +21,7 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
         <label
           class="label-0-2-6"
         >
-          Email
+          pages.users.email
           <input
             autocomplete="email"
             data-testid="users-create-email"
@@ -37,7 +37,7 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
         <label
           class="label-0-2-6"
         >
-          Password
+          pages.users.password
           <input
             autocomplete="new-password"
             data-testid="users-create-password"
