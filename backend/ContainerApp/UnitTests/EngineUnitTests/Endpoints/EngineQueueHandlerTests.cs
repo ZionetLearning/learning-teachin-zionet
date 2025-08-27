@@ -118,6 +118,7 @@ public class EngineQueueHandlerTests
         {
             RequestId = requestId,
             ThreadId = threadId,
+            UserId = userId,
             UserMessage = userMsg,
             ChatType = ChatType.Default,
             SentAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
@@ -212,7 +213,7 @@ public class EngineQueueHandlerTests
         };
         var chatMetadata = new UserContextMetadata
         {
-            UserId = userId
+            UserId = userId.ToString()
         };
 
         pub.Setup(p => p.SendReplyAsync(chatMetadata, engineResponse, It.IsAny<CancellationToken>()))
@@ -248,6 +249,7 @@ public class EngineQueueHandlerTests
         {
             RequestId = requestId,
             ThreadId = Guid.Empty,
+            UserId = userId,
             UserMessage = "hello",
             ChatType = ChatType.Default,
             SentAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
@@ -292,6 +294,7 @@ public class EngineQueueHandlerTests
         {
             RequestId = requestId,
             ThreadId = threadId,
+            UserId = userId,
             UserMessage = "boom",
             ChatType = ChatType.Default,
             SentAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),

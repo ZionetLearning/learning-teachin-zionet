@@ -57,7 +57,7 @@ public class EngineClient : IEngineClient
         {
             var requestMetadata = new UserContextMetadata
             {
-                UserId = request.UserId
+                UserId = request.UserId.ToString()
             };
 
             var message = new Message
