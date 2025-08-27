@@ -74,18 +74,6 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      # Grant Key Vault access to workflow identity using RBAC (for shared Redis secrets)
-      - name: Grant Key Vault Secrets User role (RBAC)
-        run: |
-          az role assignment create \
-            --assignee ${{ secrets.AZURE_CLIENT_OBJECT_ID }} \
-            --role "Key Vault Secrets User" \
-            --scope /subscriptions/${{ env.AZURE_SUBSCRIPTION_ID }}/resourceGroups/dev-zionet-learning-2025/providers/Microsoft.KeyVault/vaults/teachin-seo-kv
-        env:
-          AZURE_CLIENT_OBJECT_ID: ${{ secrets.AZURE_CLIENT_OBJECT_ID }}
-          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-        # This step ensures the workflow identity can read secrets from the dev Key Vault
-
       - name: Extract and validate environment variables
         id: extract_env
         run: |
