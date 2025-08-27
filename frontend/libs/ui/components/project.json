@@ -1,5 +1,5 @@
 {
-  "name": "ui",
+  "name": "ui-components",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/ui/components/src",
   "projectType": "library",
@@ -42,30 +42,6 @@
       "configurations": {
         "ci": { "quiet": true },
         "development": {}
-      }
-    },
-    "build-storybook": {
-      "executor": "@nx/storybook:build",
-      "outputs": ["{options.outputDir}"],
-      "options": {
-        "configDir": "libs/ui/components/.storybook",
-        "outputDir": "dist/storybook/ui"
-      },
-      "configurations": {
-        "ci": { "quiet": true },
-        "development": {}
-      }
-    },
-    "static-storybook": {
-      "executor": "@nx/web:file-server",
-      "options": {
-        "buildTarget": "ui:build-storybook",
-        "staticFilePath": "dist/storybook/ui",
-        "port": 5601
-      },
-      "configurations": {
-        "ci": { "buildTarget": "ui:build-storybook:ci" },
-        "development": { "buildTarget": "ui:build-storybook" }
       }
     }
   }

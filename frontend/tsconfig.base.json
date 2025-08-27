@@ -8,7 +8,7 @@
     "baseUrl": ".",
     "paths": {
       "@ui/components": [
-        "libs/ui/components/src/index.ts"
+        "frontend/libs/ui/components/src/index.ts"
       ]
     }
   }
