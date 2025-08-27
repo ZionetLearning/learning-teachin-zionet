@@ -445,13 +445,6 @@ public class AccessorService : IAccessorService
             return false;
         }
 
-        //var user = new UserModel
-        //{
-        //    UserId = newUser.UserId,
-        //    Email = newUser.Email,
-        //    Password = newUser.Password
-        //};
-
         _dbContext.Users.Add(newUser);
         await _dbContext.SaveChangesAsync();
         return true;

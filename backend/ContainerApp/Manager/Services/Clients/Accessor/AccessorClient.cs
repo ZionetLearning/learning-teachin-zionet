@@ -291,7 +291,7 @@ public class AccessorClient(
         {
             var userId = await _daprClient.InvokeMethodAsync<LoginRequest, Guid?>(
                 HttpMethod.Post,
-                "accessor",
+                AppIds.Accessor,
                 "auth-accessor/login",
                 loginRequest,
                 ct
@@ -303,13 +303,12 @@ public class AccessorClient(
             ex.Response?.StatusCode == HttpStatusCode.NotFound)
         {
             _logger.LogWarning(
-                        "Login failed for Email: {Email} – received {StatusCode} from Accessor",
-                            loginRequest.Email, ex.Response?.StatusCode);
+                        "Login failed – received {StatusCode} from Accessor", ex.Response?.StatusCode);
             return null;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to get stats snapshot from Accessor");
+            _logger.LogError(ex, "Failed to get login from the Accessor");
             throw;
         }
     }
@@ -321,7 +320,7 @@ public class AccessorClient(
         {
             await _daprClient.InvokeMethodAsync(
             HttpMethod.Post,
-            "accessor",
+            AppIds.Accessor,
             "auth-accessor/refresh-sessions",
             session,
             ct
@@ -341,7 +340,7 @@ public class AccessorClient(
         {
             var session = await _daprClient.InvokeMethodAsync<RefreshSessionDto>(
                 HttpMethod.Get,
-                "accessor",
+                AppIds.Accessor,
                 $"auth-accessor/refresh-sessions/by-token-hash/{oldHash}",
                 ct
             );
@@ -361,7 +360,7 @@ public class AccessorClient(
         {
             await _daprClient.InvokeMethodAsync(
             HttpMethod.Put,
-            "accessor",
+            AppIds.Accessor,
             $"auth-accessor/refresh-sessions/{sessionId}/rotate",
             rotatePayload,
             ct
@@ -381,7 +380,7 @@ public class AccessorClient(
         {
             await _daprClient.InvokeMethodAsync(
             HttpMethod.Delete,
-            "accessor",
+            AppIds.Accessor,
             $"auth-accessor/refresh-sessions/{sessionId}",
             ct
             );
