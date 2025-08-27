@@ -26,13 +26,14 @@ on:
         options:
           - featest
       custom_environment_name:
-        description: 'Custom prefix (for DevOps only, leave empty otherwise)'
+        description: 'Custom prefix (This is for devops guys only, leave empty otherwise)'
         required: false
         type: string
       list_services_names:
-        description: 'Optional comma-separated list (e.g., accessor,manager). Empty = all.'
+        description: 'Optional comma-separated list of services to build (e.g., accessor,manager). Leave empty for all.'
         required: false
         type: string
+        default: ''
   workflow_call:
     inputs:
       environment:
@@ -41,9 +42,11 @@ on:
       environment_name:
         required: false
         type: string
+        default: ''
       custom_environment_name:
         required: false
         type: string
+        default: ''
       list_services_names:
         required: false
         type: string
@@ -66,19 +69,19 @@ jobs:
           IN_CUSTOM_ENVIRONMENT_NAME: ${{ inputs.custom_environment_name || github.event.inputs.custom_environment_name || '' }}
           IN_LIST_SERVICES_NAMES: ${{ inputs.list_services_names || github.event.inputs.list_services_names || '' }}
         run: |
-          if [[ "${{ github.event_name }}" == "push" ]]; then
-            # Push to main → always use dev
+          if [[ "$EVENT_NAME" == "push" ]]; then
+            # Push to main → always deploy "dev"
             echo "environment=Development" >> $GITHUB_OUTPUT
             echo "environment_name=dev" >> $GITHUB_OUTPUT
             echo "list_services_names=" >> $GITHUB_OUTPUT
           else
-            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
-            if [ -n "${{ github.event.inputs.custom_environment_name }}" ]; then
-              echo "environment_name=${{ github.event.inputs.custom_environment_name }}" >> $GITHUB_OUTPUT
+            echo "environment=${IN_ENVIRONMENT:-Development}" >> $GITHUB_OUTPUT
+            if [[ -n "$IN_CUSTOM_ENVIRONMENT_NAME" ]]; then
+              echo "environment_name=$IN_CUSTOM_ENVIRONMENT_NAME" >> $GITHUB_OUTPUT
             else
-              echo "environment_name=${{ github.event.inputs.environment_name }}" >> $GITHUB_OUTPUT
+              echo "environment_name=${IN_ENVIRONMENT_NAME:-dev}" >> $GITHUB_OUTPUT
             fi
-            echo "list_services_names=${{ github.event.inputs.list_services_names }}" >> $GITHUB_OUTPUT
+            echo "list_services_names=$IN_LIST_SERVICES_NAMES" >> $GITHUB_OUTPUT
           fi
 
   build-and-push-images:
