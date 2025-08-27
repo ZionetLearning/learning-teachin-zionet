@@ -1,24 +1,19 @@
-// frontend/libs/ui/components/eslint.config.js
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+// frontend/libs/ui/components/eslint.config.mjs
 import js from '@eslint/js';
 import globals from 'globals';
 import reactHooks from 'eslint-plugin-react-hooks';
 import tseslint from 'typescript-eslint';
 import { globalIgnores } from 'eslint/config';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
 export default tseslint.config([
   globalIgnores(['dist', 'build', 'coverage', 'storybook-static', 'node_modules']),
 
-  // TypeScript files (non type-aware)
+  // TypeScript files (non type-aware; no parserOptions.project)
   {
     files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
       parser: tseslint.parser,
-      parserOptions: { ecmaVersion: 2020, sourceType: 'module' }, // <-- no "project"
-      tsconfigRootDir: __dirname,
+      parserOptions: { ecmaVersion: 2020, sourceType: 'module' },
       globals: { ...globals.browser, ...globals.node },
     },
     extends: [
