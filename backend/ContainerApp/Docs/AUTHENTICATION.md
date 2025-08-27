@@ -26,7 +26,7 @@ This service uses **JWT-based authentication** combined with secure, HttpOnly **
 
 All endpoints are grouped under `/auth` and tagged with `Auth`.
 
-### ### 🔐 `POST /auth/login`
+### 🔐 `POST /auth/login`
 
 Authenticates a user via email/password.
 
@@ -187,7 +187,20 @@ Set-Cookie: csrf-token=xyz987...; Secure
 | `appsettings.Local.json` | Secrets and TTL settings                     |
 
 ---
-
+\br
+\br
+\br
+\br
+\br
+\br
+\br
+\br
+\br
+\br
+\br
+\br
+\br
+\br
 ## ✅ Best Practices Summary
 
 * 🔒 Always hash and store refresh tokens securely
@@ -197,5 +210,3 @@ Set-Cookie: csrf-token=xyz987...; Secure
 * 🧵 Use structured logging (with `BeginScope`) for tracing auth flows
 
 ---
-
-Feel free to extend or tailor the README for internal teams or contributor onboarding.
