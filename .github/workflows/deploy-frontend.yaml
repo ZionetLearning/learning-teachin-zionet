@@ -167,7 +167,48 @@ jobs:
           ENV="${{ inputs.environment_name || env.environment_name}}"
           APP="${{ matrix.app }}"
           RG="${ENV}-zionet-learning-2025"
-          SWA_NAME="static-web-app-${APP}-${ENV}"
+          
+          echo "🔍 Looking up actual Static Web App names in resource group: $RG"
+          
+          # Get all Static Web Apps in the resource group
+          STATIC_WEB_APPS=$(az staticwebapp list --resource-group "$RG" --query "[].{name:name, tags:tags}" -o json 2>/dev/null || echo '[]')
+          
+          if [ "$STATIC_WEB_APPS" = "[]" ]; then
+            echo "❌ No Static Web Apps found in resource group $RG"
+            echo "🔍 Listing all resource groups to help debug..."
+            az group list --query "[].name" -o table
+            exit 1
+          fi
+          
+          echo "📋 Found Static Web Apps:"
+          echo "$STATIC_WEB_APPS" | jq -r '.[] | "- \(.name)"'
+          
+          # Find the Static Web App for this specific app (student/teacher/admin)
+          # Look for apps with Project:Frontend tag and Environment matching our env
+          SWA_NAME=$(echo "$STATIC_WEB_APPS" | jq -r --arg app "$APP" --arg env "$ENV" '
+            .[] | select(
+              (.tags.Project // "") == "Frontend" and 
+              (.tags.Environment // "") == $env and
+              (.name | test($app; "i"))
+            ) | .name' | head -1)
+          
+          # If no tagged app found, try to find by name pattern
+          if [ -z "$SWA_NAME" ] || [ "$SWA_NAME" = "null" ]; then
+            echo "🔍 No tagged Static Web App found for $APP, trying name pattern matching..."
+            SWA_NAME=$(echo "$STATIC_WEB_APPS" | jq -r --arg app "$APP" '
+              .[] | select(.name | test($app; "i")) | .name' | head -1)
+          fi
+          
+          # If still no app found, list what's available and fail
+          if [ -z "$SWA_NAME" ] || [ "$SWA_NAME" = "null" ]; then
+            echo "❌ No Static Web App found for app: $APP"
+            echo "📋 Available Static Web Apps:"
+            echo "$STATIC_WEB_APPS" | jq -r '.[] | "- \(.name) (tags: \(.tags // {}))"'
+            exit 1
+          fi
+          
+          echo "✅ Selected Static Web App for $APP: $SWA_NAME"
+          
           AI_NAME="${SWA_NAME}-appinsights"
           echo "rg=$RG" >> $GITHUB_OUTPUT
           echo "rg=$RG"
