@@ -270,7 +270,7 @@ jobs:
           action: "upload"
           app_location: "${{ env.FE_DIR }}/dist/apps/${{ matrix.app }}"
           skip_app_build: true
-          production_branch: 'main'
+          deployment_environment: "Production"
 
 
 
