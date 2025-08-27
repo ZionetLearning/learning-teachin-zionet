@@ -20,6 +20,23 @@ on:
         required: false
         default: "true"
 
+  workflow_call:
+        inputs:
+            mode: { required: true, type: string }
+            dry_run: { required: false, type: string }
+            verify_ssl: { required: false, type: string }
+        secrets:
+          POSTGRES_USER:
+            required: true
+          POSTGRES_PASSWORD:
+            required: true
+          AZURE_CLIENT_ID:
+            required: true
+          AZURE_TENANT_ID:
+            required: true
+          AZURE_SUBSCRIPTION_ID:
+            required: true
+
 jobs:
   clear-db:
     runs-on: ubuntu-latest
@@ -37,9 +54,9 @@ jobs:
       PGUSER: ${{ secrets.POSTGRES_USER }}          # e.g. 'dbadmin' (Flexible Server: NO '@server' suffix)
       PGPASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
 
-      MODE: ${{ github.event.inputs.mode }}
-      DRY_RUN: ${{ github.event.inputs.dry_run }}
-      VERIFY_SSL: ${{ github.event.inputs.verify_ssl }}
+      MODE: ${{ inputs.mode }}
+      DRY_RUN: ${{ inputs.dry_run }}
+      VERIFY_SSL: ${{ inputs.verify_ssl }}
 
       # Azure infra (move to secrets if you prefer)
       AZURE_POSTGRES_SERVER: dev-pg-zionet-learning  # server name only (no domain)
