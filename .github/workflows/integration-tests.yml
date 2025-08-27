@@ -38,8 +38,8 @@ jobs:
       - name: Run integration tests
         run: dotnet test IntegrationTests.csproj --verbosity normal
 
+  #this needs to run even if the tests fail
   clear-db:
-        needs: integration-tests
         uses: ./.github/workflows/clear-postgres.yml
         permissions:
           id-token: write
