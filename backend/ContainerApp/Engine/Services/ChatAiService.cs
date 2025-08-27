@@ -15,6 +15,7 @@ public sealed class ChatAiService : IChatAiService
 {
     private readonly Kernel _kernel;
     private readonly ILogger<ChatAiService> _log;
+    private readonly IChatTitleService _chatTitleService;
     private readonly IChatCompletionService _chat;
     private readonly IRetryPolicy _retryPolicy;
     private readonly IAsyncPolicy<ChatMessageContent> _kernelPolicy;
@@ -23,11 +24,13 @@ public sealed class ChatAiService : IChatAiService
         Kernel kernel,
         ILogger<ChatAiService> log,
         IMemoryCache cache,
+        IChatTitleService chatTitleService,
         IOptions<MemoryCacheEntryOptions> cacheOptions,
         IRetryPolicy retryPolicy)
     {
         _kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
         _log = log ?? throw new ArgumentNullException(nameof(log));
+        _chatTitleService = chatTitleService ?? throw new ArgumentNullException(nameof(chatTitleService));
         _retryPolicy = retryPolicy ?? throw new ArgumentNullException(nameof(retryPolicy));
         _chat = _kernel.GetRequiredService<IChatCompletionService>();
         _kernelPolicy = _retryPolicy.CreateKernelPolicy(_log);
@@ -61,13 +64,13 @@ public sealed class ChatAiService : IChatAiService
 
             var storyForKernel = CloneToChatHistory(skHistory);
 
+            var baseline = storyForKernel.Count;
+
             if (storyForKernel.Count == 0)
             {
                 var SystemPrompt = Prompts.Combine(Prompts.SystemDefault, Prompts.DetailedExplanation);
                 storyForKernel.AddSystemMessage(SystemPrompt);
             }
-
-            var baseline = storyForKernel.Count;
 
             var cleanUserMsg = request.UserMessage.Trim();
             storyForKernel.AddUserMessage(cleanUserMsg);
@@ -92,6 +95,23 @@ public sealed class ChatAiService : IChatAiService
 
             AppendDelta(skHistory, storyForKernel, baseline);
 
+            var name = request.Name;
+
+            if (name == "New chat")
+            {
+                try
+                {
+                    name = await _chatTitleService.GenerateTitleAsync(skHistory, ct);
+
+                }
+                catch (Exception exName)
+                {
+                    _log.LogError(exName, "Error while processing naming chat: {RequestId}", request.RequestId);
+                    name = DateTime.UtcNow.ToString("HHmm_dd_MM");
+
+                }
+            }
+
             var envelope = new HistoryEnvelope { Messages = skHistory.ToList() };
             var updatedRaw = ToJsonElementCompat(envelope);
 
@@ -103,6 +123,7 @@ public sealed class ChatAiService : IChatAiService
                 Role = MessageRole.Assistant,
                 Content = result.Content!
             };
+            response.Name = name;
             response.UpdatedHistory = updatedRaw;
             return response;
         }
