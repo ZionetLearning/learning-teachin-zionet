@@ -1,4 +1,3 @@
-import "./i18n";
 import { createRoot } from "react-dom/client";
 import { ToastContainer } from "react-toastify";
 import * as Sentry from "@sentry/react";

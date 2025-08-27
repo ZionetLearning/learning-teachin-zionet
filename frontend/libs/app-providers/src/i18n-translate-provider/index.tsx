@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { I18nextProvider } from "react-i18next";
-import i18n from "../../../../apps/student/src/i18n";
+import i18n from "@app-providers/i18n";
 
 interface Props {
   children: ReactNode;
