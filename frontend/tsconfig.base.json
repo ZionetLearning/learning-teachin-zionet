@@ -9,6 +9,15 @@
     "paths": {
       "@ui/components": [
         "libs/ui/components/src/index.ts"
+      ],
+      "@ui/components/.storybook/decorators": [
+        "libs/ui/components/.storybook/decorators"
+      ],
+      "@storybook/decorators": [
+        "libs/ui/storybook-decorators/index.ts"
+      ],
+      "@storybook/decorators/*": [
+        "libs/ui/storybook-decorators/*"
       ]
     }
   }

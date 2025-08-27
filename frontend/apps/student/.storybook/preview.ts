@@ -1,5 +1,5 @@
 import type { Preview } from '@storybook/react';
-import { WithReactQuery } from '../../../libs/ui/components/.storybook/decorators';
+import { WithReactQuery } from '@ui/components/.storybook/decorators';
 
 const preview: Preview = {
   decorators: [WithReactQuery],

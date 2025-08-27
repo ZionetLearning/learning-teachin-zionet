@@ -35,6 +35,9 @@
       ],
       "@ui/components": [
         "../../libs/ui/components/src/index.ts"
+      ],
+      "@ui/components/.storybook/decorators": [
+        "../../libs/ui/components/.storybook/decorators"
       ]
     }
   },
