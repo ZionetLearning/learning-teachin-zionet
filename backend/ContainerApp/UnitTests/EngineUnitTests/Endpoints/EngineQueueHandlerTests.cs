@@ -108,7 +108,8 @@ public class EngineQueueHandlerTests
 
         var requestId = Guid.NewGuid().ToString();
         var threadId = Guid.NewGuid();
-        var userId = "testUserId";
+        var chatName = "chat name";
+        var userId = Guid.NewGuid();
         var userMsg = "hello";
         var textAnswer = "world";
 
@@ -131,7 +132,7 @@ public class EngineQueueHandlerTests
             History = EmptyHistory()
         };
 
-        accessorClient.Setup(a => a.GetHistorySnapshotAsync(threadId, It.IsAny<CancellationToken>()))
+        accessorClient.Setup(a => a.GetHistorySnapshotAsync(threadId, userId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(snapshotFromAccessor);
 
         var expectedAiReq = new ChatAiServiseRequest
@@ -171,6 +172,7 @@ public class EngineQueueHandlerTests
             ThreadId = threadId,
             Status = ChatAnswerStatus.Ok,
             Answer = answer,
+            Name = chatName,
             UpdatedHistory = updatedHistory
         };
 
@@ -204,6 +206,7 @@ public class EngineQueueHandlerTests
         {
             RequestId = requestId,
             AssistantMessage = textAnswer,
+            ChatName = chatName,
             ThreadId = threadId,
             Status = ChatAnswerStatus.Ok
         };
@@ -217,7 +220,7 @@ public class EngineQueueHandlerTests
         await sut.HandleAsync(msg, () => Task.CompletedTask, CancellationToken.None);
 
         // Assert
-        accessorClient.Verify(a => a.GetHistorySnapshotAsync(threadId, It.IsAny<CancellationToken>()), Times.Once);
+        accessorClient.Verify(a => a.GetHistorySnapshotAsync(threadId, userId, It.IsAny<CancellationToken>()), Times.Once);
         ai.VerifyAll();
         accessorClient.Verify(a => a.UpsertHistorySnapshotAsync(It.IsAny<UpsertHistoryRequest>(), It.IsAny<CancellationToken>()), Times.Once);
         pub.Verify(p => p.SendReplyAsync(engineResponse, $"{QueueNames.ManagerCallbackQueue}-out", It.IsAny<CancellationToken>()), Times.Once);
@@ -231,7 +234,7 @@ public class EngineQueueHandlerTests
         var (engine, ai, pub, accessorClient, log, sut) = CreateSut();
 
         var requestId = Guid.NewGuid().ToString();
-        var userId = "testUserId";
+        var userId = Guid.NewGuid();
 
         var req = new EngineChatRequest
         {
@@ -276,7 +279,7 @@ public class EngineQueueHandlerTests
 
         var requestId = Guid.NewGuid().ToString();
         var threadId = Guid.NewGuid();
-        var userId = "testUserId";
+        var userId = Guid.NewGuid();
 
         var engineReq = new EngineChatRequest
         {
@@ -297,7 +300,7 @@ public class EngineQueueHandlerTests
             History = EmptyHistory()
         };
 
-        accessor.Setup(a => a.GetHistorySnapshotAsync(threadId, It.IsAny<CancellationToken>()))
+        accessor.Setup(a => a.GetHistorySnapshotAsync(threadId, userId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(snapshotFromAccessor);
 
         var expectedAiReq = new ChatAiServiseRequest
@@ -332,7 +335,7 @@ public class EngineQueueHandlerTests
         ex.InnerException.Should().BeOfType<InvalidOperationException>();
         ex.InnerException!.Message.Should().Contain("AI failed");
 
-        accessor.Verify(a => a.GetHistorySnapshotAsync(threadId, It.IsAny<CancellationToken>()), Times.Once);
+        accessor.Verify(a => a.GetHistorySnapshotAsync(threadId, userId, It.IsAny<CancellationToken>()), Times.Once);
         accessor.Verify(a => a.UpsertHistorySnapshotAsync(It.IsAny<UpsertHistoryRequest>(), It.IsAny<CancellationToken>()), Times.Never);
         pub.VerifyNoOtherCalls();
         engine.VerifyNoOtherCalls();

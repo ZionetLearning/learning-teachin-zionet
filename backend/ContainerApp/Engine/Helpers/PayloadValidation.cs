@@ -81,7 +81,7 @@ public static class PayloadValidation
 
         }
 
-        if (string.IsNullOrWhiteSpace(req.UserId))
+        if (req.UserId == Guid.Empty)
         {
             Fail(logger, "UserId is required.", nameof(req.UserId));
 
