@@ -40,6 +40,8 @@ jobs:
 
   #this needs to run even if the tests fail
   clear-db:
+        needs: integration-tests
+        if: ${{ always() }} 
         uses: ./.github/workflows/clear-postgres.yml
         permissions:
           id-token: write
