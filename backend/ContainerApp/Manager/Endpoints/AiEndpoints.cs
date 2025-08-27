@@ -28,6 +28,8 @@ public static class AiEndpoints
         aiGroup.MapGet("/answer/{id}", AnswerAsync).WithName("Answer");
 
         app.MapGet("/chats/{userId:guid}", GetChatsAsync).WithName("GetChats");
+        app.MapGet("/chat/{chatId:guid}/{userId:guid}", GetChatHistoryAsync).WithName("GetChatHistory");
+
 
         #endregion
 
@@ -76,6 +78,37 @@ public static class AiEndpoints
             }
         }
     }
+
+    private static async Task<IResult> GetChatHistoryAsync(
+    [FromRoute] Guid chatId,
+    [FromRoute] Guid userId,
+    [FromServices] IAccessorClient accessorClient,
+    [FromServices] ILogger<ChatPostEndpoint> log,
+    CancellationToken ct)
+    {
+        using var scope = log.BeginScope("ChatId: {ChatId}, userId: {UserId}", chatId, userId);
+        {
+            // TODO: Change userId from token
+            try
+            {
+                var chats = await accessorClient.GetHistorySnapshotAsync(chatId, userId, ct);
+                if (chats is null)
+                {
+                    log.LogInformation("chat history not found");
+                    return Results.NotFound(new { error = "Chat history not found" });
+                }
+
+                log.LogInformation("Chat histiry returned");
+                return Results.Ok(new { chat = chat });
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, "Failed to retrieve chats");
+                return Results.Problem("Get chats retrieval failed");
+            }
+        }
+    }
+
 
     private static async Task<IResult> AnswerAsync(
     [FromRoute] string id,

@@ -190,6 +190,43 @@ public class AccessorClient(
         }
     }
 
+    public async Task<IReadOnlyList<ChatSummary>> GetHistorySnapshotAsync(Guid chatId, Guid userId, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetHistorySnapshotAsync), nameof(AccessorClient));
+
+        if (userId == Guid.Empty)
+        {
+            throw new ArgumentException("userId cannot be not Empty.", nameof(userId));
+        }
+
+        try
+        {
+            var chats = await _daprClient.InvokeMethodAsync<List<ChatSummary>>(
+                HttpMethod.Get,
+                "accessor",
+                $"chat/{chatId}/{userId}",
+                cancellationToken: ct
+            );
+
+            return chats ?? new List<ChatSummary>();
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("Not found chat history chatId:{ChatId} for user: {UserId}", chatId, userId);
+            return Array.Empty<ChatSummary>();
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            _logger.LogInformation("{Metod} cancelled chatId:{ChatId} for user: {UserId}", nameof(GetHistorySnapshotAsync), chatId, userId);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get chat history chatId:{ChatId} for user: {UserId}", chatId, userId);
+            throw;
+        }
+    }
+
     public async Task<UserModel?> GetUserAsync(Guid userId)
     {
         try

@@ -11,6 +11,7 @@ public interface IAccessorClient
     Task<(bool success, string message)> PostTaskAsync(TaskModel task);
     Task<TaskModel?> GetTaskAsync(int id);
     Task<IReadOnlyList<ChatSummary>> GetChatsForUserAsync(Guid userId, CancellationToken ct = default);
+    Task<IReadOnlyList<ChatSummary>> GetHistorySnapshotAsync(Guid chatId, Guid userId, CancellationToken ct = default);
     Task<UserModel?> GetUserAsync(Guid userId);
     Task<bool> CreateUserAsync(UserModel user);
     Task<bool> UpdateUserAsync(UpdateUserModel user, Guid userId);
