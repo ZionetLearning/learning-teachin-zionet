@@ -72,7 +72,7 @@ public class EngineClient : IEngineClient
                 ["sessionId"] = request.ThreadId.ToString()
             };
 
-            await _daprClient.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message);
+            await _daprClient.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message, queueMetadata);
 
             _logger.LogDebug(
                 "ProcessingChatMessage request for thread {ThreadId} sent to Engine via binding '{Binding}'",
