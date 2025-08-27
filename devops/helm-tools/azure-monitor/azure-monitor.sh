@@ -56,7 +56,7 @@ data:
           cloudName: azuremonitor
           tenantId: $AZURE_TENANT_ID
           subscriptionId: $AZURE_SUBSCRIPTION_ID
-          applicationId: $AZURE_APPLICATION_ID
+          clientId: $AZURE_APPLICATION_ID
           defaultSubscription: $AZURE_SUBSCRIPTION_ID
         secureJsonData:
           clientSecret: $AZURE_CLIENT_SECRET
