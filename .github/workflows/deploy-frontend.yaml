@@ -224,6 +224,32 @@ jobs:
           name: frontend-build
           path: ${{ env.FE_DIR }}/dist/
 
+      - name: Debug - Check app structure for ${{ matrix.app }}
+        shell: bash
+        run: |
+          echo "=== Debugging ${{ matrix.app }} deployment structure ==="
+          echo "Current working directory: $(pwd)"
+          echo "Contents of repository root:"
+          ls -la
+          
+          echo "Contents of frontend/:"
+          ls -la frontend/ || echo "frontend/ not found"
+          
+          echo "Contents of frontend/dist/:"
+          ls -la frontend/dist/ || echo "frontend/dist/ not found"
+          
+          echo "Contents of frontend/dist/apps/:"
+          ls -la frontend/dist/apps/ || echo "frontend/dist/apps/ not found"
+          
+          echo "Contents of frontend/dist/apps/${{ matrix.app }}/:"
+          ls -la "frontend/dist/apps/${{ matrix.app }}/" || echo "${{ matrix.app }} app directory not found"
+          
+          echo "Looking for index.html in ${{ matrix.app }}:"
+          find "frontend/dist/apps/${{ matrix.app }}/" -name "index.html" -type f || echo "No index.html found"
+          
+          echo "Total size of ${{ matrix.app }} app:"
+          du -sh "frontend/dist/apps/${{ matrix.app }}/" || echo "Cannot calculate size"
+
       - name: Get SWA deployment token
         if: ${{ !inputs.deployment_token }}
         id: swatoken
@@ -246,8 +272,8 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ inputs.deployment_token || env.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: "upload"
-          app_location: "frontend/dist/apps/${{ matrix.app }}"
-          output_location: ""
+          app_location: "/"
+          app_artifact_location: "frontend/dist/apps/${{ matrix.app }}"
           skip_app_build: true
           production_branch: 'main'
 
