@@ -21,6 +21,7 @@ helm upgrade --install prom-stack prometheus-community/kube-prometheus-stack \
   --version "$PROM_CHART_VERSION" \
   --namespace "$PROM_NAMESPACE" \
   --values ./values-prometheus-dapr.yaml \
+  --set grafana.enabled=false
   --wait  # Wait for all resources to be ready before continuing
 
 echo "4. Wait for Grafana service to be ready"
