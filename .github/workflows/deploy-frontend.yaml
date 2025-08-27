@@ -172,55 +172,29 @@ jobs:
           echo "rg=$RG" >> $GITHUB_OUTPUT
           echo "rg=$RG"
           echo "swa=$SWA_NAME" >> $GITHUB_OUTPUT
-          echo "swa=$SWA_NAME"
           echo "ai=$AI_NAME" >> $GITHUB_OUTPUT
-          echo "app=$APP" >> $GITHUB_OUTPUT
        
-      - name: Clean stage environment for ${{ matrix.app }} (Optional)
+      - name: Clean stage environment
         shell: bash
         run: |
           set -euo pipefail 
-          
-          echo "Attempting to clean staging environments for ${{ matrix.app }}..."
-          
-          # Check if the Static Web App exists first
-          if ! az staticwebapp show \
-            --name "${{ steps.names.outputs.swa }}" \
-            --resource-group "${{ steps.names.outputs.rg }}" \
-            --output none 2>/dev/null; then
-            echo "ℹ️  Static Web App ${{ steps.names.outputs.swa }} does not exist yet. Skipping cleanup."
-            exit 0
-          fi
 
-          # Get all staging environments for this Static Web App with timeout
-          echo "Listing staging environments..."
-          if ! ENVIRONMENTS=$(timeout 30s az staticwebapp environment list \
+          # Get all staging environments for this Static Web App
+          ENVIRONMENTS=$(az staticwebapp environment list \
             --name "${{ steps.names.outputs.swa }}" \
             --resource-group "${{ steps.names.outputs.rg }}" \
             --query "[?name != 'default'].{name:name, createdOn:createdOn}" \
-            --output json 2>/dev/null); then
-            echo "⚠️  Failed to list environments or operation timed out. Continuing with deployment..."
-            exit 0
-          fi
+            --output json)
 
           # Delete all staging environments
-          if [ "$ENVIRONMENTS" != "[]" ]; then
-            echo "Found staging environments to clean up..."
-            for env in $(echo "$ENVIRONMENTS" | jq -r '.[].name' 2>/dev/null || echo ""); do
-              if [ -n "$env" ]; then
-                echo "Deleting staging environment: $env for ${{ matrix.app }}"
-                timeout 30s az staticwebapp environment delete \
-                  --name "${{ steps.names.outputs.swa }}" \
-                  --resource-group "${{ steps.names.outputs.rg }}" \
-                  --environment-name "$env" \
-                  --yes 2>/dev/null || echo "⚠️  Failed to delete $env, continuing..."
-              fi
-            done
-          else
-            echo "✅ No staging environments to clean up."
-          fi
-          
-          echo "✅ Staging environment cleanup completed (or skipped)."
+          for env in $(echo "$ENVIRONMENTS" | jq -r '.[].name'); do
+            echo "Deleting staging environment: $env"
+            az staticwebapp environment delete \
+              --name "${{ steps.names.outputs.swa }}" \
+              --resource-group "${{ steps.names.outputs.rg }}" \
+              --environment-name "$env" \
+              --yes || true
+          done
 
 
 
@@ -248,32 +222,6 @@ jobs:
           name: frontend-build
           path: ${{ env.FE_DIR }}/dist/
 
-      - name: Debug - Check app structure for ${{ matrix.app }}
-        shell: bash
-        run: |
-          echo "=== Debugging ${{ matrix.app }} deployment structure ==="
-          echo "Current working directory: $(pwd)"
-          echo "Contents of repository root:"
-          ls -la
-          
-          echo "Contents of frontend/:"
-          ls -la frontend/ || echo "frontend/ not found"
-          
-          echo "Contents of frontend/dist/:"
-          ls -la frontend/dist/ || echo "frontend/dist/ not found"
-          
-          echo "Contents of frontend/dist/apps/:"
-          ls -la frontend/dist/apps/ || echo "frontend/dist/apps/ not found"
-          
-          echo "Contents of frontend/dist/apps/${{ matrix.app }}/:"
-          ls -la "frontend/dist/apps/${{ matrix.app }}/" || echo "${{ matrix.app }} app directory not found"
-          
-          echo "Looking for index.html in ${{ matrix.app }}:"
-          find "frontend/dist/apps/${{ matrix.app }}/" -name "index.html" -type f || echo "No index.html found"
-          
-          echo "Total size of ${{ matrix.app }} app:"
-          du -sh "frontend/dist/apps/${{ matrix.app }}/" || echo "Cannot calculate size"
-
       - name: Get SWA deployment token
         if: ${{ !inputs.deployment_token }}
         id: swatoken
@@ -291,13 +239,12 @@ jobs:
           echo "::add-mask::$TOKEN"
           echo "AZURE_STATIC_WEB_APPS_API_TOKEN=$TOKEN" >> "$GITHUB_ENV"
 
-      - name: Deploy to Azure Static Web Apps (Production slot) - ${{ matrix.app }}
+      - name: Deploy to Azure Static Web Apps (Production slot)
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ inputs.deployment_token || env.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: "upload"
-          app_location: "/"
-          app_artifact_location: "frontend/dist/apps/${{ matrix.app }}"
+          app_location: "${{ env.FE_DIR }}/dist/apps/${{ matrix.app }}"
           skip_app_build: true
           production_branch: 'main'
 
