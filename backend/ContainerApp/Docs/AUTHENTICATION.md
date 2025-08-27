@@ -234,11 +234,11 @@ graph TD
     B --> C[JWT Issued]
     C --> D[Refresh Token Stored]
 
-    D --> E[Authenticated Request]
+    C --> E[Authenticated Request]
     E --> F[Authorized Access]
 
     D --> G[Refresh Token Rotation]
-    G --> D
+    G --> C
 
     E --> H[Logout]
     H --> I[Session Deleted]
