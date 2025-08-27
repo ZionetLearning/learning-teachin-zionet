@@ -74,6 +74,17 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      # Grant Key Vault access to workflow identity (for shared Redis secrets)
+      - name: Grant Key Vault access to workflow identity
+        run: |
+          az keyvault set-policy \
+            --name teachin-seo-kv \
+            --object-id ${{ secrets.AZURE_CLIENT_OBJECT_ID }} \
+            --secret-permissions get list
+        env:
+          AZURE_CLIENT_OBJECT_ID: ${{ secrets.AZURE_CLIENT_OBJECT_ID }}
+        # This step ensures the workflow identity can read secrets from the dev Key Vault
+
       - name: Extract and validate environment variables
         id: extract_env
         run: |
