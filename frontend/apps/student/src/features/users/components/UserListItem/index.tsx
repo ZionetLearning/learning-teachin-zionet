@@ -3,7 +3,11 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 
-import { useDeleteUserByUserId, useUpdateUserByUserId } from "@/api";
+import {
+  getUserByUserId,
+  useDeleteUserByUserId,
+  useUpdateUserByUserId,
+} from "@/api";
 import { useStyles } from "./style";
 
 export const UserListItem = ({
@@ -43,26 +47,55 @@ export const UserListItem = ({
     setPasswordValue("");
   };
 
-  const saveEdit = () => {
-    if (!emailValue.trim()) {
+  const saveEdit = async () => {
+    const trimmedEmail = emailValue.trim();
+    const trimmedPassword = passwordValue.trim();
+    if (!trimmedEmail) {
       toast.error(t("pages.users.emailRequired"));
       return;
     }
-    if (!passwordValue.trim()) {
-      toast.error(t("pages.users.passwordRequired"));
+    if (trimmedPassword) {
+      updateUser(
+        { email: trimmedEmail, passwordHash: trimmedPassword },
+        {
+          onSuccess: () => {
+            toast.success(t("pages.users.userUpdated"));
+            setEditing(false);
+          },
+          onError: (e) =>
+            toast.error(e.message || t("pages.users.failedToUpdate")),
+        },
+      );
       return;
     }
-    updateUser(
-      { email: emailValue.trim(), passwordHash: passwordValue },
-      {
-        onSuccess: () => {
-          toast.success(t("pages.users.userUpdated"));
-          setEditing(false);
-        },
-        onError: (e) =>
-          toast.error(e.message || t("pages.users.failedToUpdate")),
-      },
-    );
+    if (trimmedEmail !== email) {
+      try {
+        const existing = await getUserByUserId(userId);
+        if (!existing.passwordHash) {
+          toast.error(t("pages.users.passwordMissingBackend"));
+          return;
+        }
+        updateUser(
+          { email: trimmedEmail, passwordHash: existing.passwordHash },
+          {
+            onSuccess: () => {
+              toast.success(t("pages.users.userUpdated"));
+              setEditing(false);
+            },
+            onError: (e) =>
+              toast.error(e.message || t("pages.users.failedToUpdate")),
+          },
+        );
+      } catch (err: unknown) {
+        const message =
+          err && typeof err === "object" && "message" in err
+            ? (err as { message?: string }).message
+            : undefined;
+        toast.error(message || t("pages.users.failedToFetchUser"));
+      }
+      return;
+    }
+    toast.info(t("pages.users.nothingToUpdate"));
   };
 
   const initial = email?.charAt(0)?.toUpperCase() || "?";
@@ -81,9 +114,10 @@ export const UserListItem = ({
             className={classes.editInput}
             value={emailValue}
             onChange={(e) => setEmailValue(e.target.value)}
-            placeholder="email"
+            placeholder={t("pages.users.emailPlaceholderEdit", {
+              defaultValue: "email (leave blank to keep)",
+            })}
             type="email"
-            required
             autoComplete="email"
             data-testid="users-edit-email"
           />
@@ -91,9 +125,10 @@ export const UserListItem = ({
             className={classes.editInput}
             value={passwordValue}
             onChange={(e) => setPasswordValue(e.target.value)}
-            placeholder="new password"
+            placeholder={t("pages.users.newPasswordPlaceholder", {
+              defaultValue: "new password (optional)",
+            })}
             type="password"
-            required
             autoComplete="new-password"
             data-testid="users-edit-password"
           />
@@ -120,7 +155,7 @@ export const UserListItem = ({
       ) : (
         <>
           <div className={classes.info}>
-            <span title={email} data-testid="users-email">
+            <span title={email} data-testid="users-email" data-cy="users-email">
               {email}
             </span>
           </div>

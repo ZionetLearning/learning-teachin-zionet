@@ -255,7 +255,12 @@
         "save": "שמור",
         "userUpdated": "המשתמש עודכן",
         "email": "אימייל",
-        "password": "סיסמה"
+        "password": "סיסמה",
+        "emailPlaceholderEdit": "אימייל (השאר ריק כדי לא לשנות)",
+        "newPasswordPlaceholder": "סיסמה חדשה (אופציונלי)",
+        "passwordMissingBackend": "סיסמה חסרה בשרת",
+        "failedToFetchUser": "נכשל בשליפת משתמש",
+        "nothingToUpdate": "אין מה לעדכן"
       }
     },
     "sidebar": {

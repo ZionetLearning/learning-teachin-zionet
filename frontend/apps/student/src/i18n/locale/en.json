@@ -253,7 +253,12 @@
         "save": "Save",
         "userUpdated": "User updated",
         "email": "Email",
-        "password": "Password"
+        "password": "Password",
+        "emailPlaceholderEdit": "Email (leave blank to keep)",
+        "newPasswordPlaceholder": "New password (optional)",
+        "passwordMissingBackend": "Password missing on server",
+        "failedToFetchUser": "Failed to fetch user",
+        "nothingToUpdate": "Nothing to update"
       }
     },
     "sidebar": {
