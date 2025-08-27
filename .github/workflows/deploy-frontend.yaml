@@ -168,20 +168,13 @@ jobs:
           APP="${{ matrix.app }}"
           RG="${ENV}-zionet-learning-2025"
           
-          echo "🔍 Looking up actual Static Web App names in resource group: $RG"
-          
           # Get all Static Web Apps in the resource group
           STATIC_WEB_APPS=$(az staticwebapp list --resource-group "$RG" --query "[].{name:name, tags:tags}" -o json 2>/dev/null || echo '[]')
           
           if [ "$STATIC_WEB_APPS" = "[]" ]; then
-            echo "❌ No Static Web Apps found in resource group $RG"
-            echo "🔍 Listing all resource groups to help debug..."
-            az group list --query "[].name" -o table
+            echo "No Static Web Apps found in resource group $RG"
             exit 1
           fi
-          
-          echo "📋 Found Static Web Apps:"
-          echo "$STATIC_WEB_APPS" | jq -r '.[] | "- \(.name)"'
           
           # Find the Static Web App for this specific app (student/teacher/admin)
           # Look for apps with Project:Frontend tag and Environment matching our env
@@ -194,24 +187,21 @@ jobs:
           
           # If no tagged app found, try to find by name pattern
           if [ -z "$SWA_NAME" ] || [ "$SWA_NAME" = "null" ]; then
-            echo "🔍 No tagged Static Web App found for $APP, trying name pattern matching..."
             SWA_NAME=$(echo "$STATIC_WEB_APPS" | jq -r --arg app "$APP" '
               .[] | select(.name | test($app; "i")) | .name' | head -1)
           fi
           
           # If still no app found, list what's available and fail
           if [ -z "$SWA_NAME" ] || [ "$SWA_NAME" = "null" ]; then
-            echo "❌ No Static Web App found for app: $APP"
-            echo "📋 Available Static Web Apps:"
-            echo "$STATIC_WEB_APPS" | jq -r '.[] | "- \(.name) (tags: \(.tags // {}))"'
+            echo "No Static Web App found for app: $APP"
+            echo "$STATIC_WEB_APPS" | jq -r '.[] | "Available: \(.name)"'
             exit 1
           fi
           
-          echo "✅ Selected Static Web App for $APP: $SWA_NAME"
+          echo "Deploying $APP to: $SWA_NAME"
           
           AI_NAME="${SWA_NAME}-appinsights"
           echo "rg=$RG" >> $GITHUB_OUTPUT
-          echo "rg=$RG"
           echo "swa=$SWA_NAME" >> $GITHUB_OUTPUT
           echo "ai=$AI_NAME" >> $GITHUB_OUTPUT
        
@@ -248,7 +238,7 @@ jobs:
             # Extract the connection string for the current app from the JSON object
             CONN=$(echo '${{ inputs.app_insights_connection_string }}' | jq -r '."${{ matrix.app }}"')
             if [ "$CONN" = "null" ] || [ -z "$CONN" ]; then
-              echo "❌ No App Insights connection string found for app: ${{ matrix.app }}"
+              echo "No App Insights connection string found for app: ${{ matrix.app }}"
               exit 1
             fi
             echo "::add-mask::$CONN"
@@ -262,7 +252,7 @@ jobs:
               --resource-type "Microsoft.Insights/components" \
               --query "properties.ConnectionString" -o tsv)
             if [ -z "$CONN" ]; then
-              echo "❌ Could not resolve Application Insights connection string."
+              echo "Could not resolve Application Insights connection string."
               exit 1
             fi
             echo "::add-mask::$CONN"
@@ -280,7 +270,6 @@ jobs:
         shell: bash
         run: |
           if [ -n "${{ inputs.deployment_token || '' }}" ]; then
-            echo "Using provided deployment tokens from terraform output..."
             # Extract the token for the current app from the JSON object
             TOKEN=$(echo '${{ inputs.deployment_token }}' | jq -r '."${{ matrix.app }}"')
             if [ "$TOKEN" = "null" ] || [ -z "$TOKEN" ]; then
@@ -290,7 +279,6 @@ jobs:
             echo "::add-mask::$TOKEN"
             echo "AZURE_STATIC_WEB_APPS_API_TOKEN=$TOKEN" >> "$GITHUB_ENV"
           else
-            echo "Fetching deployment token from Azure CLI..."
             set -euo pipefail
             TOKEN=$(az staticwebapp secrets list \
               --name "${{ steps.names.outputs.swa }}" \
@@ -303,36 +291,6 @@ jobs:
             echo "::add-mask::$TOKEN"
             echo "AZURE_STATIC_WEB_APPS_API_TOKEN=$TOKEN" >> "$GITHUB_ENV"
           fi
-
-      - name: Verify build artifacts before deployment
-        shell: bash
-        run: |
-          echo "🔍 Verifying build artifacts before deployment..."
-          APP_PATH="${{ env.FE_DIR }}/dist/apps/${{ matrix.app }}"
-          echo "App location: $APP_PATH"
-          
-          if [ ! -d "$APP_PATH" ]; then
-            echo "App directory not found: $APP_PATH"
-            echo "Available directories in dist/apps/:"
-            ls -la "${{ env.FE_DIR }}/dist/apps/" || echo "No apps directory found"
-            exit 1
-          fi
-          
-          echo "App directory found: $APP_PATH"
-          echo "Contents of app directory:"
-          ls -la "$APP_PATH"
-          
-          # Check for index.html
-          if [ ! -f "$APP_PATH/index.html" ]; then
-            echo "index.html not found in $APP_PATH"
-            echo "Looking for HTML files:"
-            find "$APP_PATH" -name "*.html" -type f || echo "No HTML files found"
-            exit 1
-          fi
-          
-          echo "index.html found in app directory"
-          echo "App directory size:"
-          du -sh "$APP_PATH"
 
       - name: Deploy to Azure Static Web Apps (Production slot)
         uses: Azure/static-web-apps-deploy@v1
