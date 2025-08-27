@@ -1,3 +1,4 @@
+
 {
   "translation": {
     "pages": {
@@ -230,6 +231,31 @@
         "send": "שלח",
         "noNotifications": "אין התראות",
         "notifications": "התראות"
+      },
+      "users": {
+        "createUsers": "צור משתמשים",
+        "userCreated": "המשתמש נוצר",
+        "userCreationFailed": "נכשל ביצירת משתמש",
+        "creating": "יוצר...",
+        "createUser": "צור משתמש",
+        "users": "משתמשים",
+        "loadingUsers": "טוען משתמשים...",
+        "userNotFound": "משתמש לא נמצא",
+        "noUsersFound": "לא נמצאו משתמשים",
+        "sureDelete": "האם אתה בטוח שברצונך למחוק את המשתמש הזה?",
+        "failedToDelete": "נכשל במחיקת משתמש",
+        "userDeleted": "המשתמש נמחק",
+        "emailRequired": "נדרש אימייל",
+        "passwordRequired": "נדרש סיסמה",
+        "failedToUpdate": "נכשל בעדכון משתמש",
+        "cancel": "ביטול",
+        "update": "עדכון",
+        "delete": "מחיקה",
+        "saving": "שומר...",
+        "save": "שמור",
+        "userUpdated": "המשתמש עודכן",
+        "email": "אימייל",
+        "password": "סיסמה"
       }
     },
     "sidebar": {
@@ -257,7 +283,8 @@
       "weather": "מזג האוויר",
       "anime": "ספריית אנימה",
       "countryExplorer": "ספריית מדינות",
-      "signalR": "בדיקת SignalR"
+      "signalR": "בדיקת SignalR",
+      "users": "משתמשים"
     }
   },
   "goBackToMenu": "חזור לתפריט",

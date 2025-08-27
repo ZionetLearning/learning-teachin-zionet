@@ -40,12 +40,12 @@ resource "azurerm_key_vault_secret" "signalr_connection" {
 ########################
 resource "azurerm_key_vault_secret" "redis_hostport" {
   name         = "${var.environment_name}-redis-hostport"
-  value        = "${module.redis.hostname}:6380"
+  value        = var.use_shared_redis ? "${data.azurerm_redis_cache.shared[0].hostname}:6380" : "${module.redis[0].hostname}:6380"
   key_vault_id = data.azurerm_key_vault.shared.id
 }
 
 resource "azurerm_key_vault_secret" "redis_password" {
   name         = "${var.environment_name}-redis-password"
-  value        = module.redis.primary_access_key
+  value        = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].primary_access_key : module.redis[0].primary_access_key
   key_vault_id = data.azurerm_key_vault.shared.id
 }

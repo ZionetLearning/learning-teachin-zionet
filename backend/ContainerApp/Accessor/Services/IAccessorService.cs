@@ -10,11 +10,8 @@ public interface IAccessorService
     Task CreateTaskAsync(TaskModel task);
     Task<bool> DeleteTaskAsync(int taskId);
     Task<bool> UpdateTaskNameAsync(int taskId, string newName);
-    Task<ChatThread?> GetThreadByIdAsync(Guid threadId);
-    Task CreateThreadAsync(ChatThread thread);
-    Task AddMessageAsync(ChatMessage message);
-    Task<IEnumerable<ChatMessage>> GetMessagesByThreadAsync(Guid threadId);
-    Task<List<ThreadSummaryDto>> GetThreadsForUserAsync(string userId);
+    Task CreateChatAsync(ChatHistorySnapshot chat);
+    Task<List<ChatSummaryDto>> GetChatsForUserAsync(Guid userId);
     Task<Guid?> ValidateCredentialsAsync(string email, string password);
     Task<UserData?> GetUserAsync(Guid userId);
     Task<bool> CreateUserAsync(UserModel newUser);

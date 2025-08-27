@@ -34,3 +34,10 @@ variable "allowed_subnet" {
   type    = string
   default = null
 }
+
+# Whether to use a shared Redis instance (true for prod, test, etc.; false for dev)
+variable "use_shared_redis" {
+  type        = bool
+  default     = false
+  description = "If true, use a shared Redis instance across environments."
+}

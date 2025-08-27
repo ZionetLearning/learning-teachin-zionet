@@ -2,7 +2,7 @@
 # Using existing dev cluster to save costs
 use_shared_aks         = true   # Use shared dev cluster to save costs
 shared_aks_cluster_name     = "aks-cluster-dev"
-shared_aks_resource_group   = "dev-zionet-learning-2025"
+shared_resource_group   = "dev-zionet-learning-2025"
 #------------- Resource Configuration -------------
 location               = "westeurope"
 
@@ -19,4 +19,6 @@ docker_registry        = "snir1551"
 #------------- Frontend Configuration -------------
 frontend_sku_tier      = "Free"    
 frontend_sku_size      = "Free"    
+#------------- Redis Shared Instance -------------
+use_shared_redis = true  # template/test uses shared Redis instance
 

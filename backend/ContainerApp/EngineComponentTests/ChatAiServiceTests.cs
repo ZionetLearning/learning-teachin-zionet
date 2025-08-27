@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.ChatCompletion;
 using Polly;
 
 namespace EngineComponentTests;
@@ -35,6 +36,12 @@ public class ChatAiServiceTests
             _noOpKernel;
     }
 
+    private sealed class FakeChatTitleService : IChatTitleService
+    {
+        public Task<string> GenerateTitleAsync(ChatHistory history, CancellationToken ct = default)
+            => Task.FromResult("New chat");
+    }
+
     private static JsonElement JsonEl(string raw)
     {
         using var doc = JsonDocument.Parse(raw);
@@ -58,6 +65,7 @@ public class ChatAiServiceTests
             _fx.Kernel,
             NullLogger<ChatAiService>.Instance,
             _cache,
+            new FakeChatTitleService(),
             Options.Create(_cacheOptions),
             new FakeRetryPolicyProvider());
     }
@@ -65,12 +73,13 @@ public class ChatAiServiceTests
     [SkippableFact(DisplayName = "ProcessAsync: answer contains 4 or four")]
     public async Task ProcessAsync_Returns_Number4()
     {
+        var userId = Guid.NewGuid();
         var request = new ChatAiServiseRequest
         {
             History = EmptyHistory(),
             UserMessage = "How much is 2 + 2?",
             ChatType = ChatType.Default,
-            UserId = "TestUserId",
+            UserId = userId,
             RequestId = Guid.NewGuid().ToString("N"),
             ThreadId = Guid.NewGuid(),
             TtlSeconds = 60,
@@ -91,7 +100,7 @@ public class ChatAiServiceTests
     {
         var threadId = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        var userId = "TestUserId";
+        var userId = Guid.NewGuid();
         var userMesaage = "Remember the number forty-two.";
         var request1 = new ChatAiServiseRequest
         {
@@ -114,7 +123,7 @@ public class ChatAiServiceTests
             History = response1.UpdatedHistory,
             UserMessage = "What number did you remember?",
             ChatType = ChatType.Default,
-            UserId = "TestUserId",
+            UserId = userId,
             RequestId = Guid.NewGuid().ToString("N"),
             ThreadId = threadId,
             TtlSeconds = 60,

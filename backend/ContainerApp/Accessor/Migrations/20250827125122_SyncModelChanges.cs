@@ -5,7 +5,7 @@
 namespace Accessor.Migrations;
 
 /// <inheritdoc />
-public partial class RenamePasswordHashToPassword : Migration
+public partial class SyncModelChanges : Migration
 {
     /// <inheritdoc />
     protected override void Up(MigrationBuilder migrationBuilder)
