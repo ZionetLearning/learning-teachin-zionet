@@ -25,7 +25,7 @@ import FlagIcon from "@mui/icons-material/Flag";
 import PeopleIcon from "@mui/icons-material/People";
 import GBFlag from "country-flag-icons/react/3x2/GB";
 import ILFlag from "country-flag-icons/react/3x2/IL";
-import { useAuth } from "@/providers/auth";
+import { useAuth } from "@app-providers";
 
 export const SidebarMenu = () => {
   const navigate = useNavigate();

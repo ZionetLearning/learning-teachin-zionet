@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { HubConnection, HubConnectionBuilder } from "@microsoft/signalr";
-import { Status, SignalRContextType, SignalRProviderProps } from "@/types";
-import { SignalRContext } from "@/context";
+import { SignalRContextType, SignalRProviderProps, Status } from "../types";
+import { SignalRContext } from "../context";
 
 const createUserId = (): string => {
   const id =

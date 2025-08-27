@@ -7,9 +7,9 @@
     "strict": true,
     "baseUrl": ".",
     "paths": {
-      "@ui/components": [
-        "libs/ui/components/src/index.ts"
-      ]
+      "@ui/components": ["libs/ui/components/src/index.ts"],
+      "@app-providers": ["libs/app-providers/src/index.ts"],
+      "@app-providers/*": ["libs/app-providers/src/*"]
     }
   }
 }
