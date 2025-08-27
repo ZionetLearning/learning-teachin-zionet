@@ -112,7 +112,10 @@ if (env.IsDevelopment())
     });
 }
 // Map endpoints (routes)
-app.MapAccessorEndpoints();
+app.MapTasksEndpoints();
+app.MapChatsEndpoints();
+app.MapUsersEndpoints();
+app.MapAuthEndpoints();
 app.MapRefreshSessionEndpoints();
 app.MapStatsEndpoints();
 await app.RunAsync();

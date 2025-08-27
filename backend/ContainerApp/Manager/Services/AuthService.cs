@@ -30,12 +30,7 @@ public class AuthService : IAuthService
         try
         {
             var userId = await _dapr.InvokeMethodAsync<LoginRequest, Guid?>(
-                HttpMethod.Post,
-                "accessor",
-                "auth/login",
-                loginRequest,
-                cancellationToken
-            );
+                HttpMethod.Post, "accessor", "auth-accessor/login", loginRequest, cancellationToken);
 
             if (userId is null)
             {
@@ -72,11 +67,7 @@ public class AuthService : IAuthService
             };
 
             await _dapr.InvokeMethodAsync(
-                HttpMethod.Post,
-                "accessor",
-                "api/refresh-sessions",
-                session,
-                cancellationToken);
+                HttpMethod.Post, "accessor", "auth-accessor/refresh-sessions", session, cancellationToken);
 
             return (accessToken, refreshToken);
         }
@@ -139,7 +130,7 @@ public class AuthService : IAuthService
                 session = await _dapr.InvokeMethodAsync<RefreshSessionDto>(
                     HttpMethod.Get,
                     "accessor",
-                    $"api/refresh-sessions/by-token-hash/{oldHash}",
+                    $"auth-accessor/refresh-sessions/by-token-hash/{oldHash}",
                     cancellationToken
                 ) ?? throw new UnauthorizedAccessException("Invalid or mismatched session.");
             }
@@ -206,11 +197,7 @@ public class AuthService : IAuthService
 
             // Save new session
             await _dapr.InvokeMethodAsync(
-                HttpMethod.Put,
-                "accessor",
-                $"api/refresh-sessions/{session.Id}/rotate",
-                rotatePayload,
-                cancellationToken);
+                HttpMethod.Put, "accessor", $"auth-accessor/refresh-sessions/{session.Id}/rotate", rotatePayload, cancellationToken);
 
             return (newAccessToken, newRefreshToken);
         }
@@ -241,7 +228,7 @@ public class AuthService : IAuthService
 
             // Lookup session by hash
             var session = await _dapr.InvokeMethodAsync<RefreshSessionDto?>(
-                HttpMethod.Get, "accessor", $"api/refresh-sessions/by-token-hash/{hash}", cancellationToken);
+                HttpMethod.Get, "accessor", $"auth-accessor/refresh-sessions/by-token-hash/{hash}", cancellationToken);
 
             if (session is null)
             {
@@ -251,7 +238,7 @@ public class AuthService : IAuthService
 
             // Delete by sessionId
             await _dapr.InvokeMethodAsync(
-                HttpMethod.Delete, "accessor", $"api/refresh-sessions/{session.Id}", cancellationToken);
+                HttpMethod.Delete, "accessor", $"auth-accessor/refresh-sessions/{session.Id}", cancellationToken);
 
             _log.LogInformation("Deleted session {SessionId}", session.Id);
         }

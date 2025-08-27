@@ -17,7 +17,10 @@ export default defineConfig({
   plugins: [
     react(),
     // point the paths plugin to the **workspace root** (tsconfig.base.json lives there)
-    viteTsConfigPaths({ root: path.resolve(__dirname, "../../") }),
+    //viteTsConfigPaths({ root: path.resolve(__dirname, "../../") }),
+    viteTsConfigPaths({
+      projects: [path.resolve(__dirname, "../../tsconfig.base.json")]
+    }),
     sentryVitePlugin({
       org: "zionet",
       project: "teach-in",
