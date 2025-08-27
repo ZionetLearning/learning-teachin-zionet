@@ -125,16 +125,6 @@ locals {
   redis_key      = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].primary_access_key : module.redis[0].primary_access_key
 }
 
-  source              = "./modules/redis"
-  name                = "${var.redis_name}-${var.environment_name}"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-  sku_name            = "Basic"
-  family              = "C"
-  capacity            = 0
-  shard_count         = 0
-}
-
 module "frontend" {
   source              = "./modules/frontend"
   resource_group_name = azurerm_resource_group.main.name
