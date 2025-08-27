@@ -11,12 +11,6 @@ resource "azurerm_resource_group" "main" {
   }
 }
 
-resource "azurerm_user_assigned_identity" "aks" {
-  name                = "${var.prefix}-aks-uami"
-  resource_group_name = var.shared_aks_resource_group # dev-zionet-learning-2025
-  location            = var.location
-}
-
 # Data source to reference existing shared AKS cluster
 data "azurerm_kubernetes_cluster" "shared" {
   count               = var.use_shared_aks ? 1 : 0
@@ -235,4 +229,11 @@ resource "kubernetes_service_account" "environment" {
 data "azurerm_key_vault" "shared" {
   name                = "teachin-seo-kv"
   resource_group_name = "dev-zionet-learning-2025"
+}
+
+module "clustersecretstore" {
+  count       = var.environment_name == "dev" ? 1 : 0
+  source     = "./modules/clustersecretstore"
+  identity_id = "0997f44d-fadf-4be8-8dc6-202f7302f680" # your AKS managed identity clientId
+  tenant_id   = "a814ee32-f813-4a36-9686-1b9268183e27"
 }

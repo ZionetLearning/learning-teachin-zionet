@@ -5,7 +5,7 @@ using IntegrationTests.Models.Notification;
 using IntegrationTests.Constants;
 using Microsoft.Extensions.Configuration;
 
-namespace IntegrationTests.Infrastructure;
+namespace IntegrationTests.Fixtures;
 
 public class SignalRTestFixture : IAsyncDisposable
 {
