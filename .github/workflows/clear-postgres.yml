@@ -46,20 +46,17 @@ jobs:
       id-token: write
       contents: read
 
-    # Keep sensitive values in secrets where possible
     env:
-      # Database connectivity
       PGHOST: dev-pg-zionet-learning.postgres.database.azure.com
       PGDATABASE: appdb-test
-      PGUSER: ${{ secrets.POSTGRES_USER }}          # e.g. 'dbadmin' (Flexible Server: NO '@server' suffix)
+      PGUSER: ${{ secrets.POSTGRES_USER }}          
       PGPASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
 
       MODE: ${{ inputs.mode }}
       DRY_RUN: ${{ inputs.dry_run }}
       VERIFY_SSL: ${{ inputs.verify_ssl }}
 
-      # Azure infra (move to secrets if you prefer)
-      AZURE_POSTGRES_SERVER: dev-pg-zionet-learning  # server name only (no domain)
+      AZURE_POSTGRES_SERVER: dev-pg-zionet-learning  
       AZURE_RG: dev-zionet-learning-2025
       AZURE_SUB: 90ea4c2f-1eee-4ec9-927d-ed24c563003e
 
