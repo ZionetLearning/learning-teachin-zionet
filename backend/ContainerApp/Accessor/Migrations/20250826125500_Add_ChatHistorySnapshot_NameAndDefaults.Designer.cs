@@ -13,8 +13,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Accessor.Migrations
 {
     [DbContext(typeof(AccessorDbContext))]
-    [Migration("20250820190017_UpdateUserSchema")]
-    partial class UpdateUserSchema
+    [Migration("20250826125500_Add_ChatHistorySnapshot_NameAndDefaults")]
+    partial class Add_ChatHistorySnapshot_NameAndDefaults
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -26,43 +26,42 @@ namespace Accessor.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Accessor.Models.ChatMessage", b =>
+            modelBuilder.Entity("Accessor.Models.ChatHistorySnapshot", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasAnnotation("Relational:JsonPropertyName", "id");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasAnnotation("Relational:JsonPropertyName", "content");
-
-                    b.Property<int>("Role")
-                        .HasColumnType("integer")
-                        .HasAnnotation("Relational:JsonPropertyName", "role");
-
                     b.Property<Guid>("ThreadId")
-                        .HasColumnType("uuid")
-                        .HasAnnotation("Relational:JsonPropertyName", "threadId");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
 
-                    b.Property<DateTimeOffset>("Timestamp")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("timestamp")
-                        .HasAnnotation("Relational:JsonPropertyName", "timestamp");
+                    b.Property<string>("ChatType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("default");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("History")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
 
                     b.Property<Guid>("UserId")
-                        .IsRequired()
-                        .HasColumnType("uuid")
-                        .HasAnnotation("Relational:JsonPropertyName", "userId");
+                        .HasColumnType("uuid");
 
-                    b.HasKey("Id");
+                    b.HasKey("ThreadId");
 
-                    b.HasIndex("ThreadId");
-
-                    b.HasIndex("ThreadId", "Timestamp");
-
-                    b.ToTable("ChatMessages");
+                    b.ToTable("ChatHistorySnapshots", (string)null);
                 });
 
             modelBuilder.Entity("Accessor.Models.IdempotencyRecord", b =>
@@ -202,22 +201,6 @@ namespace Accessor.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
-                });
-
-            modelBuilder.Entity("Accessor.Models.ChatMessage", b =>
-                {
-                    b.HasOne("Accessor.Models.ChatThread", "Thread")
-                        .WithMany("Messages")
-                        .HasForeignKey("ThreadId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Thread");
-                });
-
-            modelBuilder.Entity("Accessor.Models.ChatThread", b =>
-                {
-                    b.Navigation("Messages");
                 });
 #pragma warning restore 612, 618
         }

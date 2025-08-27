@@ -7,7 +7,7 @@ public sealed record EngineChatRequest
 
     public Guid ThreadId { get; init; } = Guid.NewGuid();
 
-    public required string UserId { get; init; }
+    public required Guid UserId { get; init; }
 
     public required string UserMessage { get; init; }
 
