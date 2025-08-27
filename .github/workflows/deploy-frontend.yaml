@@ -284,7 +284,7 @@ jobs:
             # Extract the token for the current app from the JSON object
             TOKEN=$(echo '${{ inputs.deployment_token }}' | jq -r '."${{ matrix.app }}"')
             if [ "$TOKEN" = "null" ] || [ -z "$TOKEN" ]; then
-              echo "❌ No deployment token found for app: ${{ matrix.app }}"
+              echo "No deployment token found for app: ${{ matrix.app }}"
               exit 1
             fi
             echo "::add-mask::$TOKEN"
@@ -297,7 +297,7 @@ jobs:
               --resource-group "${{ steps.names.outputs.rg }}" \
               --query "properties.apiKey" -o tsv)
             if [ -z "$TOKEN" ]; then
-              echo "❌ Could not fetch Static Web Apps deployment token."
+              echo "Could not fetch Static Web Apps deployment token."
               exit 1
             fi
             echo "::add-mask::$TOKEN"
@@ -312,26 +312,26 @@ jobs:
           echo "App location: $APP_PATH"
           
           if [ ! -d "$APP_PATH" ]; then
-            echo "❌ App directory not found: $APP_PATH"
-            echo "📋 Available directories in dist/apps/:"
+            echo "App directory not found: $APP_PATH"
+            echo "Available directories in dist/apps/:"
             ls -la "${{ env.FE_DIR }}/dist/apps/" || echo "No apps directory found"
             exit 1
           fi
           
-          echo "✅ App directory found: $APP_PATH"
-          echo "📋 Contents of app directory:"
+          echo "App directory found: $APP_PATH"
+          echo "Contents of app directory:"
           ls -la "$APP_PATH"
           
           # Check for index.html
           if [ ! -f "$APP_PATH/index.html" ]; then
-            echo "❌ index.html not found in $APP_PATH"
-            echo "🔍 Looking for HTML files:"
+            echo "index.html not found in $APP_PATH"
+            echo "Looking for HTML files:"
             find "$APP_PATH" -name "*.html" -type f || echo "No HTML files found"
             exit 1
           fi
           
-          echo "✅ index.html found in app directory"
-          echo "📊 App directory size:"
+          echo "index.html found in app directory"
+          echo "App directory size:"
           du -sh "$APP_PATH"
 
       - name: Deploy to Azure Static Web Apps (Production slot)
