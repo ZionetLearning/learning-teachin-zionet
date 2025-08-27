@@ -8,7 +8,6 @@ using Manager.Hubs;
 using Manager.Models.Auth;
 using Manager.Models.QueueMessages;
 using Manager.Services;
-using Manager.Services.Clients;
 using Manager.Services.Clients.Engine;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -19,6 +18,7 @@ using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using System.Threading.RateLimiting;
+using Manager.Services.Clients.Accessor;
 
 var builder = WebApplication.CreateBuilder(args);
 

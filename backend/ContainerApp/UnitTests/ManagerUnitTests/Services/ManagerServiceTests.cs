@@ -2,7 +2,7 @@
 using FluentAssertions;
 using Manager.Models;
 using Manager.Services;
-using Manager.Services.Clients;
+using Manager.Services.Clients.Accessor;
 using Manager.Services.Clients.Engine;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
