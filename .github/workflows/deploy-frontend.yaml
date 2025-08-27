@@ -79,7 +79,7 @@ jobs:
           ts=$(date -u "+Release-%d-%m-%Y_%H-%M")
           echo "RELEASE_NAME=${ts}-${GITHUB_SHA::7}" >> $GITHUB_ENV
 
-      - name: Build Application
+      - name: Build All Applications (Parallel)
         working-directory: ${{ env.FE_DIR }}
         env:
           VITE_AZURE_SPEECH_KEY: ""
@@ -92,7 +92,29 @@ jobs:
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           RELEASE: ${{ env.RELEASE_NAME }}
-        run: npm run build
+        run: |
+          echo "Starting parallel builds for all frontend applications..."
+          
+          # Start all builds in parallel
+          npm run build:student &
+          STUDENT_PID=$!
+          echo "Started student build (PID: $STUDENT_PID)"
+          
+          npm run build:teacher &
+          TEACHER_PID=$!
+          echo "Started teacher build (PID: $TEACHER_PID)"
+          
+          npm run build:admin &
+          ADMIN_PID=$!
+          echo "Started admin build (PID: $ADMIN_PID)"
+          
+          # Wait for all builds to complete
+          echo "Waiting for all builds to complete..."
+          wait $STUDENT_PID && echo "Student build completed"
+          wait $TEACHER_PID && echo "Teacher build completed" 
+          wait $ADMIN_PID && echo "Admin build completed"
+          
+          echo "🚀 All frontend applications built successfully!"
 
       - name: Upload build artifacts
         if: |
