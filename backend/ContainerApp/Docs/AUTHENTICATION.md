@@ -237,7 +237,7 @@ graph TD
     C --> E[Refresh Token Rotation]
 
     D --> F[Logout]
-    E --> F
+    E --> C
 
     F --> G[Session Deleted]
     F --> H[Cookies Cleared]
