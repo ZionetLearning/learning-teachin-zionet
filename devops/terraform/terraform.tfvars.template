@@ -22,5 +22,7 @@ frontend_sku_size      = "Free"
 #------------- Redis Shared Instance -------------
 use_shared_redis = true  # template/test uses shared Redis instance
 
-#------------- Custom Domain Configuration (DEV ONLY) -------------
-frontend_custom_domain_enabled = false
+# Enable custom domain ONLY for dev environment
+frontend_custom_domain_enabled = true
+# Custom domain for dev environment
+frontend_custom_domain_name = "teacher.teachin.cloudns.pro"
