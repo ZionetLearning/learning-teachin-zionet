@@ -152,7 +152,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
 
             using var _ = _logger.BeginScope(new { request.RequestId, request.ThreadId });
 
-            if (string.IsNullOrWhiteSpace(request.UserId))
+            if (request.UserId == Guid.Empty)
             {
                 throw new NonRetryableException("UserId is required.");
             }
@@ -169,7 +169,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
                 throw new NonRetryableException("Request TTL expired.");
             }
 
-            var snapshot = await _accessorClient.GetHistorySnapshotAsync(request.ThreadId, userContext.UserId, ct);
+            var snapshot = await _accessorClient.GetHistorySnapshotAsync(request.ThreadId, request.UserId, ct);
 
             var serviceRequest = new ChatAiServiseRequest
             {
@@ -177,7 +177,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
                 UserMessage = request.UserMessage,
                 ChatType = request.ChatType,
                 ThreadId = request.ThreadId,
-                UserId = userContext.UserId,
+                UserId = request.UserId,
                 RequestId = request.RequestId,
                 SentAt = request.SentAt,
                 TtlSeconds = request.TtlSeconds,
@@ -204,12 +204,12 @@ public class EngineQueueHandler : IQueueHandler<Message>
             var upsert = new UpsertHistoryRequest
             {
                 ThreadId = request.ThreadId,
-                UserId = userContext.UserId,
+                UserId = request.UserId,
                 ChatType = request.ChatType.ToString().ToLowerInvariant(),
                 History = aiResponse.UpdatedHistory
             };
 
-            await _accessorClient.UpsertHistorySnapshotAsync(upsert, ct); ;
+            await _accessorClient.UpsertHistorySnapshotAsync(upsert, ct);
 
             var responseToManager = new EngineChatResponse
             {
