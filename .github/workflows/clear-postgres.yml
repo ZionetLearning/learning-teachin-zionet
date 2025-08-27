@@ -1,6 +1,9 @@
 name: Clear Postgres Database
 
 on:
+  schedule:
+   - cron: '0 22 * * *'  # At 22:00 every day
+
   workflow_dispatch:
     inputs:
       mode:
