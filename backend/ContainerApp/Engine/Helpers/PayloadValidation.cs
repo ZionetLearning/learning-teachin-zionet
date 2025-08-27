@@ -82,6 +82,12 @@ public static class PayloadValidation
 
         }
 
+        if (req.UserId == Guid.Empty)
+        {
+            Fail(logger, "UserId is required.", nameof(req.UserId));
+
+        }
+
         if (req.ThreadId == Guid.Empty)
         {
             Fail(logger, "ThreadId is required.", nameof(req.ThreadId));

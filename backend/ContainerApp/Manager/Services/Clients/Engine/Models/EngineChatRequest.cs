@@ -9,7 +9,7 @@ public sealed record EngineChatRequest
 
     public required Guid ThreadId { get; init; }
 
-    public required string UserId { get; init; }
+    public required Guid UserId { get; init; }
 
     [Required(ErrorMessage = "Question is required.")]
     [MinLength(1, ErrorMessage = "Question must be at least 1 character.")]

@@ -1,31 +1,23 @@
 ﻿[
-    
+
   {
-        
-    "ThreadId":  "GUID",
-        
-    "ChatName":  "B",
-        
-    "ChatType":  "default",
-        
-    "CreatedAt":  "2020-01-01T12:00:00+00:00",
-        
-    "UpdatedAt":  "2020-01-01T14:00:00+00:00"
-  
-    },
-    
+
+    "ChatId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+    "ChatName": "B",
+    "ChatType": "default",
+    "CreatedAt": "2020-01-01T12:00:00+00:00",
+    "UpdatedAt": "2020-01-01T14:00:00+00:00"
+
+  },
+
   {
-        
-    "ThreadId":  "GUID",
-        
-    "ChatName":  "A",
-        
-    "ChatType":  "default",
-        
-    "CreatedAt":  "2020-01-01T12:00:00+00:00",
-        
-    "UpdatedAt":  "2020-01-01T13:00:00+00:00"
-  
-    }
+
+    "ChatId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    "ChatName": "A",
+    "ChatType": "default",
+    "CreatedAt": "2020-01-01T12:00:00+00:00",
+    "UpdatedAt": "2020-01-01T13:00:00+00:00"
+
+  }
 
 ]

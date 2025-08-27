@@ -9,6 +9,10 @@ public sealed record ChatRequest
     [JsonPropertyName("threadId")]
     public string ThreadId { get; init; } = string.Empty;
 
+    [Required, MinLength(36)]
+    [JsonPropertyName("userId")]
+    public string UserId { get; init; } = string.Empty;
+
     [Required, MinLength(1)]
     [JsonPropertyName("userMessage")]
     public string UserMessage { get; init; } = string.Empty;

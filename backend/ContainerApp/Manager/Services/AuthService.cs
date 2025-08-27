@@ -131,13 +131,28 @@ public class AuthService : IAuthService
 
             var oldHash = HashRefreshToken(oldRefreshToken, _jwt.RefreshTokenHashKey);
 
-            // Get session from Accessor
-            var session = await _dapr.InvokeMethodAsync<RefreshSessionDto>(
-                HttpMethod.Get,
-                "accessor",
-                $"api/refresh-sessions/by-token-hash/{oldHash}",
-                cancellationToken
-            ) ?? throw new UnauthorizedAccessException("Invalid or mismatched session.");
+            RefreshSessionDto session;
+
+            try
+            {
+                // Get session from Accessor
+                session = await _dapr.InvokeMethodAsync<RefreshSessionDto>(
+                    HttpMethod.Get,
+                    "accessor",
+                    $"api/refresh-sessions/by-token-hash/{oldHash}",
+                    cancellationToken
+                ) ?? throw new UnauthorizedAccessException("Invalid or mismatched session.");
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogWarning(ex, "Session not found for hash: {Hash}", oldHash);
+                throw new UnauthorizedAccessException("Invalid or expired session.");
+            }
+            catch (HttpRequestException ex)
+            {
+                _log.LogError(ex, "Dapr/HTTP network error.");
+                throw new UnauthorizedAccessException("Could not connect to session service.");
+            }
 
             // ------------------------ strat validations ------------------------
 
@@ -202,7 +217,7 @@ public class AuthService : IAuthService
         catch (UnauthorizedAccessException ex)
         {
             _log.LogError(ex, "Refresh token failed, Authorized exception.");
-            throw new UnauthorizedAccessException(ex.Message);
+            throw;
         }
         catch (Exception ex)
         {

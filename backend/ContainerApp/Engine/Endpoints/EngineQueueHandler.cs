@@ -152,6 +152,11 @@ public class EngineQueueHandler : IQueueHandler<Message>
 
             using var _ = _logger.BeginScope(new { request.RequestId, request.ThreadId });
 
+            if (string.IsNullOrWhiteSpace(request.UserId))
+            {
+                throw new NonRetryableException("UserId is required.");
+            }
+
             if (request.TtlSeconds <= 0)
             {
                 throw new NonRetryableException("TtlSeconds must be greater than 0.");
@@ -164,7 +169,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
                 throw new NonRetryableException("Request TTL expired.");
             }
 
-            var snapshot = await _accessorClient.GetHistorySnapshotAsync(request.ThreadId, ct);
+            var snapshot = await _accessorClient.GetHistorySnapshotAsync(request.ThreadId, userContext.UserId, ct);
 
             var serviceRequest = new ChatAiServiseRequest
             {
@@ -186,6 +191,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
                 {
                     RequestId = serviceRequest.RequestId,
                     Status = ChatAnswerStatus.Fail,
+                    ChatName = aiResponse.Name,
                     ThreadId = serviceRequest.ThreadId,
                     AssistantMessage = aiResponse.Error
                 };
@@ -202,12 +208,14 @@ public class EngineQueueHandler : IQueueHandler<Message>
                 ChatType = request.ChatType.ToString().ToLowerInvariant(),
                 History = aiResponse.UpdatedHistory
             };
-            await _accessorClient.UpsertHistorySnapshotAsync(upsert, ct);
+
+            await _accessorClient.UpsertHistorySnapshotAsync(upsert, ct); ;
 
             var responseToManager = new EngineChatResponse
             {
                 AssistantMessage = aiResponse.Answer.Content,
                 RequestId = aiResponse.RequestId,
+                ChatName = aiResponse.Name,
                 Status = aiResponse.Status,
                 ThreadId = aiResponse.ThreadId
             };

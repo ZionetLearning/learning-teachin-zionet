@@ -15,8 +15,9 @@ public partial class AddChatHistorySnapshots : Migration
             columns: table => new
             {
                 ThreadId = table.Column<Guid>(type: "uuid", nullable: false),
-                UserId = table.Column<string>(type: "text", nullable: false),
+                UserId = table.Column<Guid>(type: "uuid", nullable: false),
                 ChatType = table.Column<string>(type: "text", nullable: false, defaultValue: "default"),
+                Name = table.Column<string>(type: "text", nullable: false),
                 History = table.Column<string>(type: "jsonb", nullable: false),
                 CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()"),
                 UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()")
