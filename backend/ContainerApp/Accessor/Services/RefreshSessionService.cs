@@ -74,6 +74,7 @@ public class RefreshSessionService : IRefreshSessionService
                 Id = session.Id,
                 UserId = session.UserId,
                 ExpiresAt = session.ExpiresAt,
+                DeviceFingerprintHash = session.DeviceFingerprintHash,
                 IP = session.IP.ToString(),
                 UserAgent = session.UserAgent
             };
