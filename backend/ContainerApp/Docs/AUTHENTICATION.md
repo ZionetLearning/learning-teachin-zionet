@@ -231,18 +231,16 @@ This section explains the complete authentication flow — from registration to 
 ```mermaid
 graph TD
     A[User Registers] --> B[Login]
-    B --> C[JWT Issued]
-    C --> D[Refresh Token Stored]
+    B --> C[JWT Issued + Refresh Token Stored]
 
-    C --> E[Authenticated Request]
-    E --> F[Authorized Access]
+    C --> D[Authenticated Request]
+    C --> E[Refresh Token Rotation]
 
-    D --> G[Refresh Token Rotation]
-    G --> C
+    D --> F[Logout]
+    E --> F
 
-    E --> H[Logout]
-    H --> I[Session Deleted]
-    H --> J[Cookies Cleared]
+    F --> G[Session Deleted]
+    F --> H[Cookies Cleared]
     
 
 
