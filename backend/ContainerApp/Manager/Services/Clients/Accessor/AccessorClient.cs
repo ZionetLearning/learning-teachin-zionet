@@ -1,14 +1,15 @@
 ﻿using System.Net;
 using System.Text.Json;
+//using System.Threading;
 using Dapr.Client;
-using Google.Api;
+//using Dapr.Client.Autogen.Grpc.v1;
 using Manager.Constants;
 using Manager.Models;
 using Manager.Models.Auth;
+using Manager.Models.Auth.RefreshSessions;
 using Manager.Models.Chat;
 using Manager.Models.QueueMessages;
 using Manager.Models.Users;
-
 
 namespace Manager.Services.Clients.Accessor;
 
@@ -386,6 +387,85 @@ public class AccessorClient(
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get stats snapshot from Accessor");
+            throw;
+        }
+    }
+
+    public async Task SaveSessionDBAsync(RefreshSessionRequest session, CancellationToken ct)
+    {
+        _logger.LogInformation("Inside: {Method} in {Class}", nameof(SaveSessionDBAsync), nameof(AccessorClient));
+        try
+        {
+            await _daprClient.InvokeMethodAsync(
+            HttpMethod.Post,
+            "accessor",
+            "auth/refresh-sessions",
+            session,
+            ct
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save refresh session to Accessor");
+            throw;
+        }
+    }
+
+    public async Task<RefreshSessionDto> GetSessionAsync(string oldHash, CancellationToken ct)
+    {
+        _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetSessionAsync), nameof(AccessorClient));
+        try
+        {
+            var session = await _daprClient.InvokeMethodAsync<RefreshSessionDto>(
+                HttpMethod.Get,
+                "accessor",
+                $"api/refresh-sessions/by-token-hash/{oldHash}",
+                ct
+            );
+            return session;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get session from the accessor");
+            throw;
+        }
+    }
+
+    public async Task UpdateSessionDBAsync(Guid sessionId, RotateRefreshSessionRequest rotatePayload, CancellationToken ct)
+    {
+        _logger.LogInformation("Inside: {Method} in {Class}", nameof(UpdateSessionDBAsync), nameof(AccessorClient));
+        try
+        {
+            await _daprClient.InvokeMethodAsync(
+            HttpMethod.Put,
+            "accessor",
+            $"api/refresh-sessions/{sessionId}/rotate",
+            rotatePayload,
+            ct
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save refresh session to Accessor");
+            throw;
+        }
+    }
+
+    public async Task DeleteSessionDBAsync(Guid sessionId, CancellationToken ct)
+    {
+        _logger.LogInformation("Inside: {Method} in {Class}", nameof(DeleteSessionDBAsync), nameof(AccessorClient));
+        try
+        {
+            await _daprClient.InvokeMethodAsync(
+            HttpMethod.Delete,
+            "accessor",
+            $"api/refresh-sessions/{sessionId}",
+            ct
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save refresh session to Accessor");
             throw;
         }
     }

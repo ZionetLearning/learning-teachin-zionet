@@ -1,7 +1,8 @@
 ﻿using Manager.Models;
+using Manager.Models.Auth;
+using Manager.Models.Auth.RefreshSessions;
 using Manager.Models.Chat;
 using Manager.Models.Users;
-using Manager.Models.Auth;
 
 namespace Manager.Services.Clients.Accessor;
 
@@ -21,5 +22,9 @@ public interface IAccessorClient
     Task<IEnumerable<UserData>> GetAllUsersAsync(CancellationToken ct = default);
     Task<StatsSnapshot?> GetStatsSnapshotAsync(CancellationToken ct = default);
     Task<Guid?> LoginUserAsync(LoginRequest loginRequest, CancellationToken ct = default);
+    Task SaveSessionDBAsync(RefreshSessionRequest session, CancellationToken ct = default);
+    Task<RefreshSessionDto> GetSessionAsync(string oldHash, CancellationToken ct = default);
+    Task UpdateSessionDBAsync(Guid sessionId, RotateRefreshSessionRequest rotatePayload, CancellationToken ct);
+    Task DeleteSessionDBAsync(Guid sessionId, CancellationToken ct);
 
 }

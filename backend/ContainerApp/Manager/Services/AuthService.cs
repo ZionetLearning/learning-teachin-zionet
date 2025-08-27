@@ -54,7 +54,7 @@ public class AuthService : IAuthService
 
             var ua = string.IsNullOrWhiteSpace(httpRequest.Headers["User-Agent"])
                 ? AuthSettings.UnknownIpFallback
-                : httpRequest.Headers["User-Agent"].ToString();
+                : httpRequest.Headers.UserAgent.ToString();
 
             var ip = httpRequest.HttpContext.Connection.RemoteIpAddress?.ToString() ?? AuthSettings.UnknownIpFallback;
 
@@ -68,13 +68,7 @@ public class AuthService : IAuthService
                 UserAgent = ua,
             };
 
-            await _dapr.InvokeMethodAsync(
-                HttpMethod.Post,
-                "accessor",
-                "api/refresh-sessions",
-                session,
-                cancellationToken);
-
+            await _accessorClient.SaveSessionDBAsync(session, cancellationToken);
             return (accessToken, refreshToken);
         }
 
@@ -128,13 +122,8 @@ public class AuthService : IAuthService
 
             var oldHash = HashRefreshToken(oldRefreshToken, _jwt.RefreshTokenHashKey);
 
-            // Get session from Accessor
-            var session = await _dapr.InvokeMethodAsync<RefreshSessionDto>(
-                HttpMethod.Get,
-                "accessor",
-                $"api/refresh-sessions/by-token-hash/{oldHash}",
-                cancellationToken
-            ) ?? throw new UnauthorizedAccessException("Invalid or mismatched session.");
+            var session = await _accessorClient.GetSessionAsync(oldHash, cancellationToken)
+                ?? throw new UnauthorizedAccessException("Invalid or mismatched session.");
 
             // ------------------------ strat validations ------------------------
 
@@ -187,12 +176,15 @@ public class AuthService : IAuthService
             };
 
             // Save new session
-            await _dapr.InvokeMethodAsync(
-                HttpMethod.Put,
-                "accessor",
-                $"api/refresh-sessions/{session.Id}/rotate",
-                rotatePayload,
-                cancellationToken);
+            //await _dapr.InvokeMethodAsync(
+            //    HttpMethod.Put,
+            //    "accessor",
+            //    $"api/refresh-sessions/{session.Id}/rotate",
+            //    rotatePayload,
+            //    cancellationToken);
+
+            // Update session using accessor client
+            await _accessorClient.UpdateSessionDBAsync(session.Id, rotatePayload, cancellationToken);
 
             return (newAccessToken, newRefreshToken);
         }
@@ -222,8 +214,7 @@ public class AuthService : IAuthService
             var hash = HashRefreshToken(refreshToken, _jwt.RefreshTokenHashKey);
 
             // Lookup session by hash
-            var session = await _dapr.InvokeMethodAsync<RefreshSessionDto?>(
-                HttpMethod.Get, "accessor", $"api/refresh-sessions/by-token-hash/{hash}", cancellationToken);
+            var session = await _accessorClient.GetSessionAsync(hash, cancellationToken);
 
             if (session is null)
             {
@@ -232,8 +223,7 @@ public class AuthService : IAuthService
             }
 
             // Delete by sessionId
-            await _dapr.InvokeMethodAsync(
-                HttpMethod.Delete, "accessor", $"api/refresh-sessions/{session.Id}", cancellationToken);
+            await _accessorClient.DeleteSessionDBAsync(session.Id, cancellationToken);
 
             _log.LogInformation("Deleted session {SessionId}", session.Id);
         }
