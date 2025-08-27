@@ -22,6 +22,7 @@ import ThreePIcon from "@mui/icons-material/ThreeP";
 import LiveTvIcon from "@mui/icons-material/LiveTv";
 import ConnectWithoutContactIcon from "@mui/icons-material/ConnectWithoutContact";
 import FlagIcon from "@mui/icons-material/Flag";
+import PeopleIcon from "@mui/icons-material/People";
 import GBFlag from "country-flag-icons/react/3x2/GB";
 import ILFlag from "country-flag-icons/react/3x2/IL";
 import { useAuth } from "@/providers/auth";
@@ -242,6 +243,14 @@ export const SidebarMenu = () => {
           active={isActive("/country-explorer")}
         >
           {t("sidebar.countryExplorer")}
+        </MenuItem>
+        <MenuItem
+          onClick={() => handleNavigation("/users")}
+          icon={<PeopleIcon />}
+          active={isActive("/users")}
+          data-testid="sidebar-users"
+        >
+          {t("sidebar.users")}
         </MenuItem>
       </Menu>
       <Menu
