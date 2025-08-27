@@ -1,5 +1,5 @@
 import { useContext, useEffect } from "react";
-import { SignalRContext } from "../../../../libs/app-providers/src/context";
+import { SignalRContext } from "@app-providers/context";
 
 type Handler<TArgs extends unknown[]> = (...args: TArgs) => void;
 

@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useSignalR, useSignalREvent } from "@/hooks";
 import { usePostTask } from "@/api";
 import { TaskForm, TaskInput, NotificationFeed } from "./components";
-import { SignalRNotificationMessage } from "@/types";
+import { SignalRNotificationMessage } from "@app-providers/types";
 import { useStyles } from "./style";
 
 export const SignalRPage = () => {
