@@ -1,8 +1,6 @@
 ﻿using System.Net;
 using System.Text.Json;
-//using System.Threading;
 using Dapr.Client;
-//using Dapr.Client.Autogen.Grpc.v1;
 using Manager.Constants;
 using Manager.Models;
 using Manager.Models.Auth;
@@ -243,11 +241,11 @@ public class AccessorClient(
         }
     }
 
-    public async Task<UserModel?> GetUserAsync(Guid userId)
+    public async Task<UserData?> GetUserAsync(Guid userId)
     {
         try
         {
-            return await _daprClient.InvokeMethodAsync<UserModel?>(
+            return await _daprClient.InvokeMethodAsync<UserData?>(
                 HttpMethod.Get,
                 "accessor",
                 $"users/{userId}");
@@ -334,6 +332,7 @@ public class AccessorClient(
             throw;
         }
     }
+
     public async Task<StatsSnapshot?> GetStatsSnapshotAsync(CancellationToken ct = default)
     {
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetStatsSnapshotAsync), nameof(AccessorClient));
@@ -399,7 +398,7 @@ public class AccessorClient(
             await _daprClient.InvokeMethodAsync(
             HttpMethod.Post,
             "accessor",
-            "auth/refresh-sessions",
+            "api/refresh-sessions",
             session,
             ct
             );

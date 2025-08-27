@@ -52,7 +52,7 @@ public class AuthService : IAuthService
             ? null
             : HashRefreshToken(fingerprint, _jwt.RefreshTokenHashKey);
 
-            var ua = string.IsNullOrWhiteSpace(httpRequest.Headers["User-Agent"])
+            var ua = string.IsNullOrWhiteSpace(httpRequest.Headers.UserAgent)
                 ? AuthSettings.UnknownIpFallback
                 : httpRequest.Headers.UserAgent.ToString();
 
@@ -184,14 +184,6 @@ public class AuthService : IAuthService
                 LastSeenAt = now,
                 IssuedAt = now
             };
-
-            // Save new session
-            //await _dapr.InvokeMethodAsync(
-            //    HttpMethod.Put,
-            //    "accessor",
-            //    $"api/refresh-sessions/{session.Id}/rotate",
-            //    rotatePayload,
-            //    cancellationToken);
 
             // Update session using accessor client
             await _accessorClient.UpdateSessionDBAsync(session.Id, rotatePayload, cancellationToken);

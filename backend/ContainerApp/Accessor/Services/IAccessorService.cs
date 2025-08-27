@@ -16,7 +16,7 @@ public interface IAccessorService
     Task<IEnumerable<ChatMessage>> GetMessagesByThreadAsync(Guid threadId);
     Task<List<ThreadSummaryDto>> GetThreadsForUserAsync(string userId);
     Task<Guid?> ValidateCredentialsAsync(string email, string password);
-    Task<UserModel?> GetUserAsync(Guid userId);
+    Task<UserData?> GetUserAsync(Guid userId);
     Task<bool> CreateUserAsync(UserModel newUser);
     Task<bool> UpdateUserAsync(UpdateUserModel updateUser, Guid userId);
     Task<bool> DeleteUserAsync(Guid userId);

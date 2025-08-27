@@ -224,7 +224,7 @@ public class ManagerService : IManagerService
         }
     }
 
-    public async Task<UserModel?> GetUserAsync(Guid userId)
+    public async Task<UserData?> GetUserAsync(Guid userId)
     {
         try
         {
@@ -243,6 +243,8 @@ public class ManagerService : IManagerService
         try
         {
             _logger.LogInformation("Creating user with email: {Email}", user.Email);
+            // Hash the password before storing
+            user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
             return await _accessorClient.CreateUserAsync(user);
         }
         catch (Exception ex)
