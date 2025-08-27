@@ -1,4 +1,5 @@
 name: Integration Tests
+
 on:
   workflow_dispatch:
   # push:
@@ -11,35 +12,21 @@ jobs:
     permissions:
       contents: read
     runs-on: ubuntu-latest
-
-    
-          
-            
-    
-
-          
-          Expand Down
-          
-            
-    
-
-          
-          Expand Up
-    
-    @@ -38,21 +53,21 @@ jobs:
-  
     defaults:
       run:
         working-directory: backend/IntegrationTest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.x'
+
       - name: Restore dependencies
         run: dotnet restore IntegrationTests.csproj
+
       - name: Ensure correct appsettings.json
         run: |
           echo '{
@@ -47,6 +34,7 @@ jobs:
               "ApiBaseUrl": "https://teachin.westeurope.cloudapp.azure.com/api/test/"
             }
           }' > appsettings.json
+
       - name: Run integration tests
         run: dotnet test IntegrationTests.csproj --verbosity normal
 
