@@ -93,6 +93,29 @@ jobs:
           echo "PG_DB=dev-pg-zionet-learning" >> $GITHUB_ENV
           echo "PG_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
 
+          # Redis (shared)
+          case "$ENVIRONMENT_NAME" in
+            dev)
+              echo "REDIS_DATABASE_INDEX=0" >> $GITHUB_ENV
+              ;;
+            prod)
+              echo "REDIS_DATABASE_INDEX=1" >> $GITHUB_ENV
+              ;;
+            test)
+              echo "REDIS_DATABASE_INDEX=2" >> $GITHUB_ENV
+              ;;
+            featest)
+              echo "REDIS_DATABASE_INDEX=3" >> $GITHUB_ENV
+              ;;
+            featest2)
+              echo "REDIS_DATABASE_INDEX=4" >> $GITHUB_ENV
+              ;;
+            *)
+              echo "REDIS_DATABASE_INDEX=5" >> $GITHUB_ENV
+              echo "ENVIRONMENT_NAME is $ENVIRONMENT_NAME"
+              ;;
+          esac
+
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
 
@@ -246,6 +269,7 @@ jobs:
             --set-string manager.env.Jwt__Issuer="$MANAGER_JWT_ISSUER" \
             --set-string manager.env.Jwt__Audience="$MANAGER_JWT_AUDIENCE" \
             --set-string manager.env.Jwt__RefreshTokenHashKey="$MANAGER_JWT_REFRESH_TOKEN_HASH_KEY" \
+            --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false
 
       - name: Diagnostics (on failure)
