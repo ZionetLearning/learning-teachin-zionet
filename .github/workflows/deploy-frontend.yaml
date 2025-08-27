@@ -1,6 +1,6 @@
-name: Deploy Frontend to Azure Static Web Apps
+name: Deploy Frontend Apps to Azure Static Web Apps
 run-name: >
-  🚀 Deploy Frontend to environment_name: ${{
+  🚀 Deploy Frontend Apps (student, teacher, admin) to environment: ${{
     inputs.environment_name || github.event.inputs.environment_name || 'dev'
   }} | GitHub Environment: ${{ inputs.environment || github.event.inputs.environment || 'Development'}}
    
@@ -48,7 +48,7 @@ on:
         required: false
 
 concurrency:
-  group: deploy-frontend-${{ inputs.environment_name || github.event.inputs.environment_name || 'dev' }}
+  group: deploy-frontend-apps-${{ inputs.environment_name || github.event.inputs.environment_name || 'dev' }}
   cancel-in-progress: false
 
 jobs:
@@ -116,6 +116,9 @@ jobs:
     permissions:
       id-token: write
       contents: read
+    strategy:
+      matrix:
+        app: [student, teacher, admin]
     env:
       FE_DIR: frontend
     steps:
@@ -140,15 +143,18 @@ jobs:
         run: |
           set -euo pipefail
           ENV="${{ inputs.environment_name || env.environment_name}}"
+          APP="${{ matrix.app }}"
           RG="${ENV}-zionet-learning-2025"
-          SWA_NAME="static-web-app-${ENV}"
+          SWA_NAME="static-web-app-${APP}-${ENV}"
           AI_NAME="${SWA_NAME}-appinsights"
           echo "rg=$RG" >> $GITHUB_OUTPUT
           echo "rg=$RG"
           echo "swa=$SWA_NAME" >> $GITHUB_OUTPUT
+          echo "swa=$SWA_NAME"
           echo "ai=$AI_NAME" >> $GITHUB_OUTPUT
+          echo "app=$APP" >> $GITHUB_OUTPUT
        
-      - name: Clean stage environment
+      - name: Clean stage environment for ${{ matrix.app }}
         shell: bash
         run: |
           set -euo pipefail 
@@ -162,7 +168,7 @@ jobs:
 
           # Delete all staging environments
           for env in $(echo "$ENVIRONMENTS" | jq -r '.[].name'); do
-            echo "Deleting staging environment: $env"
+            echo "Deleting staging environment: $env for ${{ matrix.app }}"
             az staticwebapp environment delete \
               --name "${{ steps.names.outputs.swa }}" \
               --resource-group "${{ steps.names.outputs.rg }}" \
@@ -218,7 +224,7 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ inputs.deployment_token || env.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: "upload"
-          app_location: "${{ env.FE_DIR }}/dist"
+          app_location: "${{ env.FE_DIR }}/dist/apps/${{ matrix.app }}"
           skip_app_build: true
           production_branch: 'main'
 
