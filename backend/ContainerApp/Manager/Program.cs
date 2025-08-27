@@ -166,9 +166,10 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapSubscribeHandler();
-app.MapManagerEndpoints();
 app.MapAiEndpoints();
 app.MapAuthEndpoints();
+app.MapTasksEndpoints();
+app.MapUsersEndpoints();
 app.MapHub<NotificationHub>("/NotificationHub");
 
 app.MapStatsPing();
