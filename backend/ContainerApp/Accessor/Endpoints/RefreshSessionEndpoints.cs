@@ -8,27 +8,29 @@ public static class RefreshSessionEndpoints
 {
     public static void MapRefreshSessionEndpoints(this WebApplication app)
     {
+        var refreshSessionGroup = app.MapGroup("/auth-accessor/refresh-sessions").WithTags("Auth");
+
         #region HTTP GET
 
-        app.MapGet("/api/refresh-sessions/by-token-hash/{hash}", FindByRefreshHashAsync).WithName("FindRefreshSessionByHash");
+        refreshSessionGroup.MapGet("/by-token-hash/{hash}", FindByRefreshHashAsync).WithName("FindRefreshSessionByHash");
 
         #endregion
 
         #region HTTP POST
 
-        app.MapPost("/api/refresh-sessions", CreateSessionAsync).WithName("CreateRefreshSession");
+        refreshSessionGroup.MapPost("", CreateSessionAsync).WithName("CreateRefreshSession");
 
         #endregion
 
         #region HTTP PUT
 
-        app.MapPut("/api/refresh-sessions/{sessionId}/rotate", RotateSessionAsync).WithName("RotateRefreshSession");
+        refreshSessionGroup.MapPut("/{sessionId:guid}/rotate", RotateSessionAsync).WithName("RotateRefreshSession");
 
         #endregion
 
         #region HTTP DELETE
 
-        app.MapDelete("/api/refresh-sessions/{sessionId}", DeleteSessionAsync).WithName("DeleteRefreshSession");
+        refreshSessionGroup.MapDelete("/{sessionId:guid}", DeleteSessionAsync).WithName("DeleteRefreshSession");
 
         //app.MapDelete("/api/refresh-sessions/by-user/{userId}", DeleteAllUserSessionsAsync).WithName("DeleteAllUserRefreshSessions");
 
