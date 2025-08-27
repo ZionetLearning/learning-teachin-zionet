@@ -5,12 +5,12 @@ set -e
 GRAFANA_NAMESPACE="devops-logs"
 
 # Validate environment variables
-if [[ -z "$AZURE_TENANT_ID" || -z "$AZURE_SUBSCRIPTION_ID" || -z "$AZURE_CLIENT_ID" || -z "$AZURE_CLIENT_SECRET" ]]; then
+if [[ -z "$AZURE_TENANT_ID" || -z "$AZURE_SUBSCRIPTION_ID" || -z "$AZURE_APPLICATION_ID" || -z "$AZURE_CLIENT_SECRET" ]]; then
   echo "Error: Required Azure environment variables are not set!"
   echo "Make sure GitHub secrets are properly configured:"
   echo "  - AZURE_TENANT_ID"
   echo "  - AZURE_SUBSCRIPTION_ID" 
-  echo "  - AZURE_CLIENT_ID"
+  echo "  - AZURE_APPLICATION_ID"
   echo "  - AZURE_CLIENT_SECRET"
   exit 1
 fi
@@ -18,7 +18,7 @@ fi
 echo "   Azure environment variables are set"
 echo "   Tenant ID: ${AZURE_TENANT_ID:0:8}..."
 echo "   Subscription ID: ${AZURE_SUBSCRIPTION_ID:0:8}..."
-echo "   Client ID: ${AZURE_CLIENT_ID:0:8}..."
+echo "   APPLICATION ID: ${AZURE_APPLICATION_ID:0:8}..."
 
 echo "1. Check if Grafana is running in the '$GRAFANA_NAMESPACE' namespace"
 kubectl wait --namespace "$GRAFANA_NAMESPACE" \
@@ -30,7 +30,7 @@ echo "2. Create Kubernetes Secret for Azure credentials"
 kubectl create secret generic azure-monitor-secrets -n $GRAFANA_NAMESPACE \
   --from-literal=AZURE_TENANT_ID=$AZURE_TENANT_ID \
   --from-literal=AZURE_SUBSCRIPTION_ID=$AZURE_SUBSCRIPTION_ID \
-  --from-literal=AZURE_CLIENT_ID=$AZURE_CLIENT_ID \
+  --from-literal=AZURE_APPLICATION_ID=$AZURE_APPLICATION_ID \
   --from-literal=AZURE_CLIENT_SECRET=$AZURE_CLIENT_SECRET \
   --dry-run=client -o yaml | kubectl apply -f -
 
@@ -56,7 +56,7 @@ data:
           cloudName: azuremonitor
           tenantId: $AZURE_TENANT_ID
           subscriptionId: $AZURE_SUBSCRIPTION_ID
-          clientId: $AZURE_CLIENT_ID
+          applicationId: $AZURE_APPLICATION_ID
           defaultSubscription: $AZURE_SUBSCRIPTION_ID
         secureJsonData:
           clientSecret: $AZURE_CLIENT_SECRET
