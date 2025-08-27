@@ -96,7 +96,6 @@ module "signalr" {
   sku_capacity        = var.signalr_sku_capacity
 }
 
-
 # ------------- Shared Redis -----------------------
 data "azurerm_redis_cache" "shared" {
   count               = var.use_shared_redis ? 1 : 0
@@ -123,24 +122,6 @@ locals {
   redis_hostname = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].hostname : module.redis[0].hostname
   redis_port     = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].port : module.redis[0].port
   redis_key      = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].primary_access_key : module.redis[0].primary_access_key
-}
-
-module "frontend" {
-  source              = "./modules/frontend"
-  resource_group_name = azurerm_resource_group.main.name
-  location            = azurerm_resource_group.main.location
-  static_web_app_name = "${var.static_web_app_name}-${var.environment_name}"
-  sku_tier            = var.frontend_sku_tier
-  sku_size            = var.frontend_sku_size
-  appinsights_retention_days = var.frontend_appinsights_retention_days
-  appinsights_sampling_percentage = var.frontend_appinsights_sampling_percentage
-  
-  tags = {
-    Environment = var.environment_name
-    Project     = "Frontend"
-  }
-  
-  depends_on = [azurerm_resource_group.main]
 }
 
 # Monitoring - Diagnostic Settings for resources to Log Analytics
