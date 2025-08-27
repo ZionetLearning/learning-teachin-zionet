@@ -147,7 +147,7 @@ module "monitoring" {
   servicebus_namespace_id     = module.servicebus.namespace_id
   postgres_server_id          = module.database[0].id
   signalr_id                  = module.signalr.id
-  redis_id                    = module.redis.id
+  redis_id                    = module.redis[0].id
   frontend_static_web_app_id  = module.frontend.static_web_app_id
 
     depends_on = [
