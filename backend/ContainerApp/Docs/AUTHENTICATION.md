@@ -206,43 +206,43 @@ This section explains the complete authentication flow — from registration to 
 ### 📋 Flow Steps
 
 1. **User Registers**  
-   ✅ User account is created (handled outside the auth service)
+   - User account is created in DB, with email and password
 
 2. **User Logs In** (`POST /auth/login`)  
-   ✅ Validates credentials  
-   ✅ Returns `accessToken` (JWT)  
-   ✅ Sets `refresh-token` and `csrf-token` cookies
+    - Validates credentials  
+    - Returns `accessToken` (JWT)  
+    - Sets `refresh-token` and `csrf-token` cookies
 
 3. **Authenticated Request** (`GET /auth/protected`)  
-   ✅ Sends request with `Authorization: Bearer <accessToken>`
+    - Sends request with `Authorization: Bearer <accessToken>`
 
 4. **Refresh Tokens** (`POST /auth/refresh-tokens`)  
-   ✅ Requires `X-CSRF-Token` header and `refresh-token` cookie  
-   ✅ Returns new `accessToken` and rotates refresh token
+    - Requires `X-CSRF-Token` header and `refresh-token` cookie  
+    - Returns new `accessToken` and rotates refresh token
 
 5. **Logout** (`POST /auth/logout`)  
-   ✅ Deletes session from DB  
-   ✅ Clears cookies
+    - Deletes session from DB  
+    - Clears cookies
 
 ---
 
 ### 📈 Flow Diagram
 
-```mermaid
 graph TD
     A[User Registers] --> B[Login (/auth/login)]
-    B -->|Valid Credentials| C[JWT Issued]
+    B --> C[JWT Issued]
     C --> D[Refresh Token in Cookie]
 
     D --> E[Authenticated Request (/auth/protected)]
-    E -->|Access Token| F[Authorized Access]
+    E --> F[Authorized Access]
 
     D --> G[Refresh Token Rotation (/auth/refresh-tokens)]
-    G -->|New JWT & Refresh Token| D
+    G --> D
 
     E --> H[Logout (/auth/logout)]
     H --> I[Session Deleted]
     H --> J[Cookies Cleared]
+
 
 
 
