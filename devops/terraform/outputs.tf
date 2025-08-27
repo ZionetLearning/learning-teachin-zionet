@@ -50,7 +50,7 @@ output "servicebus_connection_string" {
 }
 
 output "postgres_connection_string" {
-  value = var.use_shared_postgres ? format("Host=%s;Database=%s;Username=%s;Password=%s;SslMode=Require", data.azurerm_postgresql_flexible_server.shared[0].fqdn, "${var.database_name}-${var.environment_name}", var.admin_username, var.admin_password) : module.database[0].postgres_connection_string
+  value     = var.use_shared_postgres ? format("Host=%s;Database=%s;Username=%s;Password=%s;SslMode=Require", data.azurerm_postgresql_flexible_server.shared[0].fqdn, "${var.database_name}-${var.environment_name}", var.admin_username, var.admin_password) : module.database[0].postgres_connection_string
   sensitive = true
 }
 
@@ -59,11 +59,13 @@ output "signalr_connection_string" {
   sensitive = true
 }
 
+
 output "redis_hostname" {
-  value = module.redis.hostname
+  value = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].hostname : module.redis[0].hostname
 }
+
 output "redis_primary_access_key" {
-  value     = module.redis.primary_access_key
+  value     = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].primary_access_key : module.redis[0].primary_access_key
   sensitive = true
 }
 

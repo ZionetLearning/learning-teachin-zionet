@@ -51,9 +51,9 @@ namespace Accessor.Migrations
                         .HasColumnName("timestamp")
                         .HasAnnotation("Relational:JsonPropertyName", "timestamp");
 
-                    b.Property<string>("UserId")
+                    b.Property<Guid>("UserId")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasColumnType("uuid")
                         .HasAnnotation("Relational:JsonPropertyName", "userId");
 
                     b.HasKey("Id");
@@ -63,41 +63,6 @@ namespace Accessor.Migrations
                     b.HasIndex("ThreadId", "Timestamp");
 
                     b.ToTable("ChatMessages");
-                });
-
-            modelBuilder.Entity("Accessor.Models.ChatThread", b =>
-                {
-                    b.Property<Guid>("ThreadId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasAnnotation("Relational:JsonPropertyName", "threadId");
-
-                    b.Property<string>("ChatName")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasAnnotation("Relational:JsonPropertyName", "chatName");
-
-                    b.Property<string>("ChatType")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasAnnotation("Relational:JsonPropertyName", "chatType");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasAnnotation("Relational:JsonPropertyName", "createdAt");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasAnnotation("Relational:JsonPropertyName", "updatedAt");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasAnnotation("Relational:JsonPropertyName", "userId");
-
-                    b.HasKey("ThreadId");
-
-                    b.ToTable("ChatThreads");
                 });
 
             modelBuilder.Entity("Accessor.Models.IdempotencyRecord", b =>

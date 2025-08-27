@@ -13,7 +13,7 @@ public sealed class ChatMessage
     public Guid ThreadId { get; set; }
 
     [JsonPropertyName("userId")]
-    public string UserId { get; set; } = string.Empty;
+    public Guid UserId { get; set; }
 
     [JsonPropertyName("role")]
     public MessageRole Role { get; set; } = MessageRole.User;

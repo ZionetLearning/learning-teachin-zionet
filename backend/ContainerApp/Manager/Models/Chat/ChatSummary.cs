@@ -2,13 +2,10 @@
 
 namespace Manager.Models.Chat;
 
-public sealed class ChatThread
+public record class ChatSummary
 {
-    [JsonPropertyName("threadId")]
-    public Guid ThreadId { get; set; }
-
-    [JsonPropertyName("userId")]
-    public required string UserId { get; set; }
+    [JsonPropertyName("chatId")]
+    public Guid ChatId { get; set; }
 
     [JsonPropertyName("chatName")]
     public string ChatName { get; set; } = string.Empty;

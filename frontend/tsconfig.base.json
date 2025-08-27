@@ -6,6 +6,10 @@
     "jsx": "react-jsx",
     "strict": true,
     "baseUrl": ".",
-    "paths": {}
+    "paths": {
+      "@ui/components": [
+        "libs/ui/components/src/index.ts"
+      ]
+    }
   }
 }
