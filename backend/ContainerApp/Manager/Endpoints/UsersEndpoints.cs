@@ -60,8 +60,14 @@ public static class UsersEndpoints
                 return Results.Conflict("User already exists.");
             }
 
+            var result = new UserData
+            {
+                UserId = user.UserId,
+                Email = user.Email
+            };
+
             logger.LogInformation("User created");
-            return Results.Created($"/users-manager/user/{user.UserId}", user);
+            return Results.Created($"/users-manager/user/{user.UserId}", result);
         }
         catch (Exception ex)
         {

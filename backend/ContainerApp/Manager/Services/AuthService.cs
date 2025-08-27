@@ -245,6 +245,7 @@ public class AuthService : IAuthService
         var token = new JwtSecurityToken(
             issuer: _jwt.Issuer,
             audience: _jwt.Audience,
+            // Store the userId in the token
             claims: new[] { new Claim(AuthSettings.NameClaimType, userId.ToString()) },
             expires: DateTime.UtcNow.AddMinutes(_jwt.AccessTokenTTL),
             signingCredentials: creds);
