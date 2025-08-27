@@ -25,10 +25,7 @@ public class AccessorClient(
         try
         {
             var task = await _daprClient.InvokeMethodAsync<TaskModel?>(
-                HttpMethod.Get,
-                "accessor",
-                $"task/{id}"
-            );
+                HttpMethod.Get, "accessor", $"tasks-accessor/task/{id}");
             _logger.LogDebug("Received task {TaskId} from Accessor service", id);
             return task;
         }
@@ -93,7 +90,7 @@ public class AccessorClient(
         );
         try
         {
-            await _daprClient.InvokeMethodAsync(HttpMethod.Delete, "accessor", $"task/{id}");
+            await _daprClient.InvokeMethodAsync(HttpMethod.Delete, "accessor", $"tasks-accessor/task/{id}");
             _logger.LogDebug("Task {TaskId} deletion request sent to Accessor service", id);
 
             return true;
@@ -153,88 +150,35 @@ public class AccessorClient(
         }
     }
 
-    public async Task<IReadOnlyList<ChatMessage>> GetChatHistoryAsync(Guid threadId, CancellationToken ct = default)
+    public async Task<IReadOnlyList<ChatSummary>> GetChatsForUserAsync(Guid userId, CancellationToken ct = default)
     {
-        _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetChatHistoryAsync), nameof(AccessorClient));
+        _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetChatsForUserAsync), nameof(AccessorClient));
+
+        if (userId == Guid.Empty)
+        {
+            throw new ArgumentException("userId cannot be not Empty.", nameof(userId));
+        }
+
         try
         {
-            var messages = await _daprClient.InvokeMethodAsync<List<ChatMessage>>(
-                HttpMethod.Get,
-                "accessor",
-                $"threads/{threadId}/messages",
-                cancellationToken: ct
-            );
+            var chats = await _daprClient.InvokeMethodAsync<List<ChatSummary>>(
+                HttpMethod.Get, "accessor", $"chats-accessor/{userId}", cancellationToken: ct);
 
-            return messages ?? new List<ChatMessage>();
+            return chats ?? new List<ChatSummary>();
         }
         catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
         {
-            _logger.LogWarning("Thread {ThreadId} not found, returning empty history", threadId);
-            return Array.Empty<ChatMessage>();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to get chat history for thread {ThreadId}", threadId);
-            throw;
-        }
-    }
-
-    public async Task<ChatMessage?> StoreMessageAsync(ChatMessage msg, CancellationToken ct = default)
-    {
-        _logger.LogInformation("Inside: {Method} in {Class}", nameof(StoreMessageAsync), nameof(AccessorClient));
-        try
-        {
-            var created = await _daprClient.InvokeMethodAsync<ChatMessage, ChatMessage>(
-                HttpMethod.Post,
-                "accessor",
-                "threads/message",
-                msg,
-                cancellationToken: ct
-            );
-
-            _logger.LogDebug("Message stored in thread {ThreadId}", msg.ThreadId);
-            return created;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to store message for thread {ThreadId}", msg.ThreadId);
-            throw;
-        }
-    }
-
-    public async Task<IReadOnlyList<ChatThread>> GetThreadsForUserAsync(string userId, CancellationToken ct = default)
-    {
-        _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetThreadsForUserAsync), nameof(AccessorClient));
-
-        if (string.IsNullOrWhiteSpace(userId))
-        {
-            throw new ArgumentException("userId cannot be null or whitespace.", nameof(userId));
-        }
-
-        try
-        {
-            var threads = await _daprClient.InvokeMethodAsync<List<ChatThread>>(
-                HttpMethod.Get,
-                "accessor",
-                $"threads/{userId}",
-                cancellationToken: ct
-            );
-
-            return threads ?? new List<ChatThread>();
-        }
-        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
-        {
-            _logger.LogWarning("No threads found for user {UserId}", userId);
-            return Array.Empty<ChatThread>();
+            _logger.LogWarning("No chats found for user {UserId}", userId);
+            return Array.Empty<ChatSummary>();
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
-            _logger.LogInformation("{Metod} cancelled for user {UserId}", nameof(GetThreadsForUserAsync), userId);
+            _logger.LogInformation("{Metod} cancelled for user {UserId}", nameof(GetChatsForUserAsync), userId);
             throw;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to get threads for user {UserId}", userId);
+            _logger.LogError(ex, "Failed to get chats for user {UserId}", userId);
             throw;
         }
     }
@@ -244,9 +188,7 @@ public class AccessorClient(
         try
         {
             return await _daprClient.InvokeMethodAsync<UserModel?>(
-                HttpMethod.Get,
-                "accessor",
-                $"users/{userId}");
+                HttpMethod.Get, "accessor", $"users-accessor/{userId}");
         }
         catch (Exception ex)
         {
@@ -259,11 +201,8 @@ public class AccessorClient(
     {
         try
         {
-            await _daprClient.InvokeMethodAsync(
-                HttpMethod.Post,
-                "accessor",
-                "users",
-                user);
+            await _daprClient.InvokeMethodAsync(HttpMethod.Post, "accessor", "users-accessor", user);
+
             return true;
         }
         catch (Exception ex)
@@ -277,11 +216,7 @@ public class AccessorClient(
     {
         try
         {
-            await _daprClient.InvokeMethodAsync(
-                HttpMethod.Put,
-                "accessor",
-                $"users/{userId}",
-                user);
+            await _daprClient.InvokeMethodAsync(HttpMethod.Put, "accessor", $"users-accessor/{userId}", user);
             return true;
         }
         catch (Exception ex)
@@ -295,10 +230,7 @@ public class AccessorClient(
     {
         try
         {
-            await _daprClient.InvokeMethodAsync(
-                HttpMethod.Delete,
-                "accessor",
-                $"users/{userId}");
+            await _daprClient.InvokeMethodAsync(HttpMethod.Delete, "accessor", $"users-accessor/{userId}");
             return true;
         }
         catch (Exception ex)
@@ -315,11 +247,7 @@ public class AccessorClient(
         try
         {
             var users = await _daprClient.InvokeMethodAsync<List<UserData>>(
-                HttpMethod.Get,
-                "accessor",
-                "users",
-                ct
-            );
+                HttpMethod.Get, "accessor", "users-accessor", ct);
 
             _logger.LogInformation("Retrieved {Count} users from accessor", users?.Count ?? 0);
             return users ?? Enumerable.Empty<UserData>();
@@ -336,11 +264,7 @@ public class AccessorClient(
         try
         {
             var snapshot = await _daprClient.InvokeMethodAsync<StatsSnapshot>(
-                HttpMethod.Get,
-                AppIds.Accessor,                 // keep using your constant if you have it
-                "internal/stats/snapshot",
-                ct
-            );
+                HttpMethod.Get, AppIds.Accessor, "internal-accessor/stats/snapshot", ct);
             return snapshot; // may be null if Accessor returns empty body
         }
         catch (InvocationException ex) when (

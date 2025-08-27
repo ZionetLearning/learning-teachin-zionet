@@ -25,3 +25,8 @@ frontend_sku_size      = "Free"
 frontend_custom_domain_enabled = true
 # Custom domain for dev environment
 frontend_custom_domain_name = "www.teachin.cloudns.pro"
+
+#------------- Redis Shared Instance -------------
+use_shared_redis = false  # dev uses its own Redis instance
+
+

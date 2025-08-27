@@ -154,11 +154,6 @@ public class EngineQueueHandler : IQueueHandler<Message>
                 throw new NonRetryableException("UserMessage is required.");
             }
 
-            if (string.IsNullOrWhiteSpace(request.UserId))
-            {
-                throw new NonRetryableException("UserId is required.");
-            }
-
             if (request.TtlSeconds <= 0)
             {
                 throw new NonRetryableException("TtlSeconds must be greater than 0.");
@@ -171,7 +166,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
                 throw new NonRetryableException("Request TTL expired.");
             }
 
-            var snapshot = await _accessorClient.GetHistorySnapshotAsync(request.ThreadId, ct);
+            var snapshot = await _accessorClient.GetHistorySnapshotAsync(request.ThreadId, request.UserId, ct);
 
             var serviceRequest = new ChatAiServiseRequest
             {
@@ -193,6 +188,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
                 {
                     RequestId = serviceRequest.RequestId,
                     Status = ChatAnswerStatus.Fail,
+                    ChatName = aiResp.Name,
                     ThreadId = serviceRequest.ThreadId,
                     AssistantMessage = aiResp.Error
                 };
@@ -210,14 +206,15 @@ public class EngineQueueHandler : IQueueHandler<Message>
                 Content = request.UserMessage
             };
 
-            await _accessorClient.StoreMessageAsync(questionMessage, ct);
-
-            await _accessorClient.StoreMessageAsync(aiResp.Answer, ct);
+            // need use method for chatHistorySnapshots
+            //await _accessorClient.StoreMessageAsync(questionMessage, ct);
+            //await _accessorClient.StoreMessageAsync(aiResp.Answer, ct);
 
             var responseToManager = new EngineChatResponse
             {
                 AssistantMessage = aiResp.Answer.Content,
                 RequestId = aiResp.RequestId,
+                ChatName = aiResp.Name,
                 Status = aiResp.Status,
                 ThreadId = aiResp.ThreadId
             };
