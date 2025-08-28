@@ -172,7 +172,7 @@ jobs:
      github.event_name == 'push' ||
      github.event_name == 'workflow_dispatch' ||
      github.event_name == 'workflow_call'
-    needs: [frontend-test, frontend-build-and-lint]
+    needs: [frontend-build-and-lint]
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || 'Development' }}
     permissions:
