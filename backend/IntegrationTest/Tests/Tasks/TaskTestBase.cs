@@ -5,6 +5,9 @@ using IntegrationTests.Helpers;
 using IntegrationTests.Infrastructure;
 using IntegrationTests.Models;
 using IntegrationTests.Models.Notification;
+using Manager.Models.Auth;
+using System.Net.Http.Json;
+using System.Text.Json;
 using Xunit.Abstractions;
 
 namespace IntegrationTests.Tests.Tasks;
@@ -15,6 +18,37 @@ public abstract class TaskTestBase(
     SignalRTestFixture signalRFixture
 ) : IntegrationTestBase(fixture, outputHelper, signalRFixture)
 {
+    protected async Task<string> EnsureAuthenticatedAndGetTokenAsync(string email, string password, CancellationToken ct = default)
+    {
+        if (Client.DefaultRequestHeaders.Authorization is not null)
+        {
+            return Client.DefaultRequestHeaders.Authorization.Parameter!;
+        }
+
+        var loginResponse = await LoginAsync(email, password, ct);
+        loginResponse.EnsureSuccessStatusCode();
+
+        var accessToken = await ExtractAccessToken(loginResponse, ct);
+        Client.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+        return accessToken;
+
+    }
+    private async Task<HttpResponseMessage> LoginAsync(string email, string password, CancellationToken ct)
+    {
+        var req = new LoginRequest { Email = email, Password = password };
+        return await Client.PostAsJsonAsync(AuthRoutes.Login, req, ct);
+    }
+
+    private static async Task<string> ExtractAccessToken(HttpResponseMessage response, CancellationToken ct)
+    {
+        response.EnsureSuccessStatusCode();
+        var body = await response.Content.ReadAsStringAsync(ct);
+        var dto = JsonSerializer.Deserialize<IntegrationTests.Models.Auth.AccessTokenResponse>(body)
+                  ?? throw new InvalidOperationException("Invalid JSON response for access token.");
+        return dto.AccessToken;
+    }
+
     protected async Task<TaskModel> CreateTaskAsync(TaskModel? task = null)
     {
         task ??= TestDataHelper.CreateRandomTask();

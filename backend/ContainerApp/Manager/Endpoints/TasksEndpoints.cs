@@ -10,7 +10,7 @@ public static class TasksEndpoints
     private sealed class TaskEndpoint { }
     public static IEndpointRouteBuilder MapTasksEndpoints(this IEndpointRouteBuilder app)
     {
-        var tasksGroup = app.MapGroup("/tasks-manager").WithTags("Tasks");
+        var tasksGroup = app.MapGroup("/tasks-manager").WithTags("Tasks").RequireAuthorization();
 
         tasksGroup.MapGet("/task/{id}", GetTaskAsync).WithName("GetTask");
         tasksGroup.MapPost("/task", CreateTaskAsync).WithName("CreateTask");

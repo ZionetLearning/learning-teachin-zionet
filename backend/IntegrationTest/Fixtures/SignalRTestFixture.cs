@@ -9,24 +9,23 @@ namespace IntegrationTests.Fixtures;
 
 public class SignalRTestFixture : IAsyncDisposable
 {
-    private readonly HubConnection _connection;
+    private HubConnection? _connection;
     private readonly ConcurrentQueue<ReceivedNotification> _receivedNotifications = new();
     private readonly ConcurrentQueue<ReceivedEvent> _receivedEvents = new();
 
+    private readonly string _baseUrl;
+    private string? _accessToken;
+
     public SignalRTestFixture()
     {
-        var baseUrl = GetBaseUrl();
-        
-        _connection = new HubConnectionBuilder()
-            .WithUrl($"{baseUrl}/notificationHub?userId={TestConstants.TestUserId}")
-            .Build();
-
-        SetupEventHandlers();
+        _baseUrl = GetBaseUrl();
     }
+
+    public void UseAccessToken(string token) => _accessToken = token;
 
     private void SetupEventHandlers()
     {
-        _connection.On<UserNotification>("NotificationMessage", notification =>
+        _connection!.On<UserNotification>("NotificationMessage", notification =>
         {
             _receivedNotifications.Enqueue(new ReceivedNotification
             {
@@ -47,6 +46,22 @@ public class SignalRTestFixture : IAsyncDisposable
 
     public async Task StartAsync()
     {
+        if (_connection is null)
+        {
+            _connection = new HubConnectionBuilder()
+                .WithUrl($"{_baseUrl}/notificationHub?userId={TestConstants.TestUserId}", options =>
+                {
+                    if (!string.IsNullOrEmpty(_accessToken))
+                    {
+                        options.AccessTokenProvider = () => Task.FromResult(_accessToken)!;
+                    }
+                })
+                .WithAutomaticReconnect()
+                .Build();
+
+            SetupEventHandlers();
+        }
+
         if (_connection.State != HubConnectionState.Connected)
         {
             await _connection.StartAsync();
@@ -55,7 +70,7 @@ public class SignalRTestFixture : IAsyncDisposable
 
     public async Task StopAsync()
     {
-        if (_connection.State == HubConnectionState.Connected)
+        if (_connection is not null && _connection.State == HubConnectionState.Connected)
         {
             await _connection.StopAsync();
         }
@@ -78,7 +93,7 @@ public class SignalRTestFixture : IAsyncDisposable
     }
 
     public async Task<ReceivedNotification?> WaitForNotificationAsync(
-        Predicate<UserNotification>? predicate = null, 
+        Predicate<UserNotification>? predicate = null,
         TimeSpan? timeout = null)
     {
         timeout ??= TimeSpan.FromSeconds(10);
@@ -88,7 +103,7 @@ public class SignalRTestFixture : IAsyncDisposable
         {
             var notification = _receivedNotifications
                 .FirstOrDefault(n => predicate?.Invoke(n.Notification) ?? true);
-            
+
             if (notification != null)
                 return notification;
 
@@ -109,7 +124,7 @@ public class SignalRTestFixture : IAsyncDisposable
         {
             var evt = _receivedEvents
                 .FirstOrDefault(e => predicate?.Invoke(e.Event) ?? true);
-            
+
             if (evt != null)
                 return evt;
 
@@ -120,26 +135,26 @@ public class SignalRTestFixture : IAsyncDisposable
     }
 
 
-private static string GetBaseUrl()
-{
-    var config = new ConfigurationBuilder()
-        .SetBasePath(Directory.GetCurrentDirectory())
-        .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-        .Build();
+    private static string GetBaseUrl()
+    {
+        var config = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .Build();
 
-    var url = config["TestSettings:ApiBaseUrl"];
+        var url = config["TestSettings:ApiBaseUrl"];
 
-    if (string.IsNullOrWhiteSpace(url))
+        if (string.IsNullOrWhiteSpace(url))
     {
         throw new InvalidOperationException(
             "ApiBaseUrl is not set in appsettings.json under TestSettings."
         );
     }
 
-    return url.TrimEnd('/');
-}
+        return url.TrimEnd('/');
+    }
 
-public async ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         if (_connection is not null)
         {

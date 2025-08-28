@@ -9,13 +9,26 @@ using Xunit.Abstractions;
 
 namespace IntegrationTests.Tests.Tasks;
 
-[Collection("IntegrationTests")]
+[Collection("Shared test collection")]
 public class TaskIntegrationTests(
-    HttpTestFixture fixture,
+    SharedTestFixture sharedFixture,
     ITestOutputHelper outputHelper,
     SignalRTestFixture signalRFixture
-) : TaskTestBase(fixture, outputHelper, signalRFixture)
+) : TaskTestBase(sharedFixture.HttpFixture, outputHelper, signalRFixture), IAsyncLifetime
 {
+    private readonly SharedTestFixture _shared = sharedFixture;
+
+    public override async Task InitializeAsync()
+    {
+        var user = _shared.UserFixture.TestUser;
+        var token = await EnsureAuthenticatedAndGetTokenAsync(user.Email, user.Password);
+
+        // Tell the SignalR fixture to use this access token when building the hub connection
+        SignalRFixture.UseAccessToken(token);
+
+        await base.InitializeAsync(); // this starts the SignalR connection
+    }
+
     [Fact(DisplayName = "POST /tasks-manager/task - Same ID twice is idempotent (second POST is a no-op)")]
     public async Task Post_Same_Id_Twice_Is_Idempotent()
     {
@@ -63,7 +76,7 @@ public class TaskIntegrationTests(
         // Wait for signalR notification
         var receivedNotification = await WaitForNotificationAsync(
             n => n.Type == NotificationType.Success && n.Message.Contains(task.Name),
-            TimeSpan.FromSeconds(10)
+            TimeSpan.FromSeconds(20)
         );
 
         receivedNotification
