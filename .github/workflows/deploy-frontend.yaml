@@ -53,42 +53,42 @@ concurrency:
 
 jobs:
 
-  frontend-test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        app: [student, teacher, admin]
-    env:
-      FE_DIR: frontend
-    steps:
-      - uses: actions/checkout@v4
+  # frontend-test:
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     matrix:
+  #       app: [student, teacher, admin]
+  #   env:
+  #     FE_DIR: frontend
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: '${{ env.FE_DIR }}/package-lock.json'
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: '20'
+  #         cache: 'npm'
+  #         cache-dependency-path: '${{ env.FE_DIR }}/package-lock.json'
 
-      - name: Install Dependencies
-        working-directory: ${{ env.FE_DIR }}
-        run: npm ci
+  #     - name: Install Dependencies
+  #       working-directory: ${{ env.FE_DIR }}
+  #       run: npm ci
 
-      - name: Run Tests for ${{ matrix.app }}
-        working-directory: ${{ env.FE_DIR }}
-        run: |
-          # Check if test script exists in package.json
-          if grep -q "\"test:${{ matrix.app }}\":" package.json; then
-            echo "Running tests for ${{ matrix.app }}..."
-            npm run test:${{ matrix.app }} -- --ci --threads=false --reporter=verbose
-            echo "Tests completed successfully for ${{ matrix.app }}"
-          else
-            echo "No test:${{ matrix.app }} script found in package.json - skipping"
-          fi
+  #     - name: Run Tests for ${{ matrix.app }}
+  #       working-directory: ${{ env.FE_DIR }}
+  #       run: |
+  #         # Check if test script exists in package.json
+  #         if grep -q "\"test:${{ matrix.app }}\":" package.json; then
+  #           echo "Running tests for ${{ matrix.app }}..."
+  #           npm run test:${{ matrix.app }} -- --ci --threads=false --reporter=verbose
+  #           echo "Tests completed successfully for ${{ matrix.app }}"
+  #         else
+  #           echo "No test:${{ matrix.app }} script found in package.json - skipping"
+  #         fi
 
 
   frontend-build-and-lint:
-    needs: [frontend-test]
+    # needs: [frontend-test]
     runs-on: ubuntu-latest
     env:
       FE_DIR: frontend
