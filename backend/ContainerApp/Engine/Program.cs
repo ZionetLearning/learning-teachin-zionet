@@ -11,6 +11,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using DotQueue;
 using Engine;
+using Engine.Models.QueueMessages;
 var builder = WebApplication.CreateBuilder(args);
 
 var env = builder.Environment;
