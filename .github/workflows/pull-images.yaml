@@ -1,0 +1,120 @@
+name: Manual Deploy Existing Images
+
+on:
+  workflow_dispatch:
+    inputs:
+      namespace_name:
+        description: 'Namespace name (e.g., dev, dev2)'
+        required: true
+        type: string
+      service:
+        description: 'Service to update (or "all")'
+        required: true
+        default: 'all'
+        type: choice
+        options: [all, manager, accessor, engine]
+      image_hashes:
+        description: 'Comma-separated short hashes (e.g., abc1234,def5678,ghi9012 for all)'
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: Development # This is the crucial line you need to add or update
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      
+      - name: Set ACR environment
+        run: |
+          ACR_NAME=teachindevacr
+          echo "ACR_NAME=$ACR_NAME" >> $GITHUB_ENV
+          echo "ACR_LOGIN_SERVER=$ACR_NAME.azurecr.io" >> $GITHUB_ENV
+
+      - name: Log in to Azure Container Registry
+        run: az acr login --name $ACR_NAME
+
+      - name: Set up variables
+        run: |
+          NAMESPACE_NAME="${{ inputs.namespace_name || github.event.inputs.namespace_name }}"
+          if [ -n "$NAMESPACE_NAME" ]; then
+            [[ "$NAMESPACE_NAME" =~ ^[a-z0-9]+$ ]] || { echo "namespace_name must be ^[a-z0-9]+$"; exit 1; }
+            echo "TARGET_NAMESPACE=$NAMESPACE_NAME" >> $GITHUB_ENV
+            echo "RESOLVED_TARGET=custom($NAMESPACE_NAME)" >> $GITHUB_ENV
+          else
+            echo "TARGET_NAMESPACE=dev" >> $GITHUB_ENV
+            echo "RESOLVED_TARGET=dev" >> $GITHUB_ENV
+          fi
+
+          # Shared AKS
+          echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
+          echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
+
+      - name: Get AKS credentials
+        run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
+
+      - name: Validate namespace
+        run: |
+          NAMESPACE="$TARGET_NAMESPACE"
+          if ! kubectl get namespace "$NAMESPACE" > /dev/null 2>&1; then
+              echo "Error: namespace $NAMESPACE does not exist"
+              exit 1
+          fi
+
+      - name: Deploy selected images
+        run: |
+          # Split hashes into array
+          SERVICES=("manager" "accessor" "engine")
+          IFS=',' read -ra HASHES <<< "${{ github.event.inputs.image_hashes }}"
+          NAMESPACE="$TARGET_NAMESPACE"
+          SELECTED="${{ github.event.inputs.service }}"
+
+          if [[ "$SELECTED" == "all" ]]; then
+            SELECTED_SERVICES=("manager" "accessor" "engine")
+          else
+              IFS=',' read -ra SELECTED_SERVICES <<< "${{ github.event.inputs.service }}"
+          fi
+
+          # Update each selected service
+          for i in "${!SELECTED_SERVICES[@]}"; do
+              SERVICE="${SELECTED_SERVICES[$i]}"
+              HASH="${HASHES[$i]// /}"  # Remove spaces
+
+              # Check deployment exists
+              if ! kubectl get deployment "$SERVICE" -n "$NAMESPACE" > /dev/null 2>&1; then
+                  echo "Error: deployment $SERVICE not found in namespace $NAMESPACE"
+                  exit 1
+              fi
+
+              # Check image exists in ACR
+              if ! az acr repository show-tags --name $ACR_NAME --repository "$SERVICE" --query "contains(@, '$HASH')" -o tsv | grep true > /dev/null; then
+                  echo "Error: image $HASH for $SERVICE does not exist in $ACR_NAME"
+                  exit 1
+              fi
+
+              echo "Updating $SERVICE to $HASH in namespace $NAMESPACE"
+              # Scale down to 0
+              kubectl -n "$NAMESPACE" scale deployment/$SERVICE --replicas=0
+
+              # Set the new image
+              kubectl -n "$NAMESPACE" set image deployment/$SERVICE \
+                  $SERVICE=$ACR_LOGIN_SERVER/$SERVICE:$HASH
+
+              # Scale up to 1
+              kubectl -n "$NAMESPACE" scale deployment/$SERVICE --replicas=1
+
+              # Wait for rollout to finish
+              kubectl -n "$NAMESPACE" rollout status deployment/$SERVICE
+          done
