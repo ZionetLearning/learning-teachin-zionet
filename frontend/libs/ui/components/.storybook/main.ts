@@ -14,7 +14,7 @@ const config: StorybookConfig = {
     mergeConfig(base, {
       plugins: [
         tsconfigPaths({
-          projects: [p("tsconfig.base.json")], // uses the new aliases above
+          projects: [p("tsconfig.base.json")],
         }),
       ],
       resolve: {
