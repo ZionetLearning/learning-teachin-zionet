@@ -16,5 +16,5 @@ public class UserModel
 
     [Required]
     [MaxLength(255)]
-    public required string PasswordHash { get; set; }
+    public required string Password { get; set; }
 }

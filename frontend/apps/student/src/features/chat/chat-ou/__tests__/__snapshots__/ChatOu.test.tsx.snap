@@ -1,0 +1,136 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`<ChatOu /> > matches snapshot (initialized empty conversation) 1`] = `
+<body>
+  <div>
+    <div
+      class="container-0-2-1"
+    >
+      <div
+        class="header-0-2-2"
+      >
+        <div
+          class="container-0-2-13"
+        >
+          <div
+            class="titleSection-0-2-14"
+          >
+            <h2
+              class="title-0-2-15"
+            >
+              pages.chatOu.smartChatDemo
+            </h2>
+            <div
+              class="subtitle-0-2-16"
+            >
+              2
+               
+              pages.chatOu.participants
+            </div>
+          </div>
+          <div
+            class="statusSection-0-2-17"
+          >
+            <div
+              class="statusIndicator-0-2-18 "
+            >
+              <span
+                class="statusIcon-0-2-20"
+              >
+                🟢
+              </span>
+              <span
+                class="statusText-0-2-21"
+              >
+                pages.chatOu.online
+              </span>
+            </div>
+          </div>
+          <div
+            class="actions-0-2-24"
+          >
+            <button
+              class="actionButton-0-2-25"
+              title="pages.chatOu.moreOptions"
+            >
+              ⋯
+            </button>
+          </div>
+        </div>
+      </div>
+      <div
+        class="messageArea-0-2-3"
+      >
+        <div
+          class="messageList-0-2-4"
+        >
+          <div
+            class="container-0-2-28"
+          >
+            <div
+              class="messagesList-0-2-29"
+            >
+              <div
+                class="emptyState-0-2-34"
+              >
+                <div
+                  class="emptyStateIcon-0-2-35"
+                >
+                  💬
+                </div>
+                <div
+                  class="emptyStateText-0-2-36"
+                >
+                  pages.chatOu.startConversationBySendingTheMessageBelow
+                </div>
+              </div>
+              <div />
+            </div>
+          </div>
+        </div>
+        <div
+          class="inputArea-0-2-5"
+        >
+          <div
+            class="container-0-2-42"
+          >
+            <div
+              class="inputWrapper-0-2-50"
+              data-testid="chat-ou-input-wrapper"
+            >
+              <button
+                aria-label="pages.chatOu.attachContext"
+                class="contextButton-0-2-51 "
+                title="pages.chatOu.attachContext"
+                type="button"
+              >
+                📎
+              </button>
+              <textarea
+                class="textarea-0-2-53"
+                data-testid="chat-ou-input"
+                maxlength="2000"
+                placeholder="pages.chatOu.typeYourMessage"
+                rows="1"
+              />
+              <button
+                aria-label="Send message"
+                class="sendButton-0-2-54 sendButtonDisabled-0-2-55"
+                data-testid="chat-ou-send"
+                disabled=""
+                type="button"
+              >
+                <span
+                  class="sendIcon-0-2-56"
+                >
+                  ➤
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+`;

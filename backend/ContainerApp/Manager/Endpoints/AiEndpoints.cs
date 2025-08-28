@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Manager.Models.Chat;
 using Manager.Services.Clients.Engine;
 using Manager.Services.Clients.Engine.Models;
-using Manager.Services.Clients;
+using Manager.Services.Clients.Accessor;
 
 namespace Manager.Endpoints;
 

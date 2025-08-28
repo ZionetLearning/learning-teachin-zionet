@@ -3,11 +3,13 @@ using System.Text.Json;
 using Dapr.Client;
 using Manager.Constants;
 using Manager.Models;
+using Manager.Models.Auth;
+using Manager.Models.Auth.RefreshSessions;
 using Manager.Models.Chat;
 using Manager.Models.QueueMessages;
 using Manager.Models.Users;
 
-namespace Manager.Services.Clients;
+namespace Manager.Services.Clients.Accessor;
 
 public class AccessorClient(
     ILogger<AccessorClient> logger,
@@ -25,10 +27,7 @@ public class AccessorClient(
         try
         {
             var task = await _daprClient.InvokeMethodAsync<TaskModel?>(
-                HttpMethod.Get,
-                "accessor",
-                $"task/{id}"
-            );
+                HttpMethod.Get, "accessor", $"tasks-accessor/task/{id}");
             _logger.LogDebug("Received task {TaskId} from Accessor service", id);
             return task;
         }
@@ -58,7 +57,7 @@ public class AccessorClient(
 
             var payload = JsonSerializer.SerializeToElement(new
             {
-                id = id,
+                id,
                 name = newTaskName,
                 payload = ""
             });
@@ -93,7 +92,7 @@ public class AccessorClient(
         );
         try
         {
-            await _daprClient.InvokeMethodAsync(HttpMethod.Delete, "accessor", $"task/{id}");
+            await _daprClient.InvokeMethodAsync(HttpMethod.Delete, "accessor", $"tasks-accessor/task/{id}");
             _logger.LogDebug("Task {TaskId} deletion request sent to Accessor service", id);
 
             return true;
@@ -165,11 +164,7 @@ public class AccessorClient(
         try
         {
             var chats = await _daprClient.InvokeMethodAsync<List<ChatSummary>>(
-                HttpMethod.Get,
-                "accessor",
-                $"chats/{userId}",
-                cancellationToken: ct
-            );
+                HttpMethod.Get, "accessor", $"chats-accessor/{userId}", cancellationToken: ct);
 
             return chats ?? new List<ChatSummary>();
         }
@@ -227,14 +222,12 @@ public class AccessorClient(
         }
     }
 
-    public async Task<UserModel?> GetUserAsync(Guid userId)
+    public async Task<UserData?> GetUserAsync(Guid userId)
     {
         try
         {
-            return await _daprClient.InvokeMethodAsync<UserModel?>(
-                HttpMethod.Get,
-                "accessor",
-                $"users/{userId}");
+            return await _daprClient.InvokeMethodAsync<UserData?>(
+                HttpMethod.Get, "accessor", $"users-accessor/{userId}");
         }
         catch (Exception ex)
         {
@@ -247,11 +240,8 @@ public class AccessorClient(
     {
         try
         {
-            await _daprClient.InvokeMethodAsync(
-                HttpMethod.Post,
-                "accessor",
-                "users",
-                user);
+            await _daprClient.InvokeMethodAsync(HttpMethod.Post, "accessor", "users-accessor", user);
+
             return true;
         }
         catch (Exception ex)
@@ -265,11 +255,7 @@ public class AccessorClient(
     {
         try
         {
-            await _daprClient.InvokeMethodAsync(
-                HttpMethod.Put,
-                "accessor",
-                $"users/{userId}",
-                user);
+            await _daprClient.InvokeMethodAsync(HttpMethod.Put, "accessor", $"users-accessor/{userId}", user);
             return true;
         }
         catch (Exception ex)
@@ -283,10 +269,7 @@ public class AccessorClient(
     {
         try
         {
-            await _daprClient.InvokeMethodAsync(
-                HttpMethod.Delete,
-                "accessor",
-                $"users/{userId}");
+            await _daprClient.InvokeMethodAsync(HttpMethod.Delete, "accessor", $"users-accessor/{userId}");
             return true;
         }
         catch (Exception ex)
@@ -303,11 +286,7 @@ public class AccessorClient(
         try
         {
             var users = await _daprClient.InvokeMethodAsync<List<UserData>>(
-                HttpMethod.Get,
-                "accessor",
-                "users",
-                ct
-            );
+                HttpMethod.Get, "accessor", "users-accessor", ct);
 
             _logger.LogInformation("Retrieved {Count} users from accessor", users?.Count ?? 0);
             return users ?? Enumerable.Empty<UserData>();
@@ -318,17 +297,14 @@ public class AccessorClient(
             throw;
         }
     }
+
     public async Task<StatsSnapshot?> GetStatsSnapshotAsync(CancellationToken ct = default)
     {
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetStatsSnapshotAsync), nameof(AccessorClient));
         try
         {
             var snapshot = await _daprClient.InvokeMethodAsync<StatsSnapshot>(
-                HttpMethod.Get,
-                AppIds.Accessor,                 // keep using your constant if you have it
-                "internal/stats/snapshot",
-                ct
-            );
+                HttpMethod.Get, AppIds.Accessor, "internal-accessor/stats/snapshot", ct);
             return snapshot; // may be null if Accessor returns empty body
         }
         catch (InvocationException ex) when (
@@ -341,6 +317,114 @@ public class AccessorClient(
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get stats snapshot from Accessor");
+            throw;
+        }
+    }
+
+    public async Task<Guid?> LoginUserAsync(LoginRequest loginRequest, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Inside: {Method} in {Class}", nameof(LoginUserAsync), nameof(AccessorClient));
+        try
+        {
+            var userId = await _daprClient.InvokeMethodAsync<LoginRequest, Guid?>(
+                HttpMethod.Post,
+                AppIds.Accessor,
+                "auth-accessor/login",
+                loginRequest,
+                ct
+            );
+            return userId;
+        }
+        catch (InvocationException ex) when (
+            ex.Response?.StatusCode == HttpStatusCode.NoContent ||
+            ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning(
+                        "Login failed – received {StatusCode} from Accessor", ex.Response?.StatusCode);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get login from the Accessor");
+            throw;
+        }
+    }
+
+    public async Task SaveSessionDBAsync(RefreshSessionRequest session, CancellationToken ct)
+    {
+        _logger.LogInformation("Inside: {Method} in {Class}", nameof(SaveSessionDBAsync), nameof(AccessorClient));
+        try
+        {
+            await _daprClient.InvokeMethodAsync(
+            HttpMethod.Post,
+            AppIds.Accessor,
+            "auth-accessor/refresh-sessions",
+            session,
+            ct
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save refresh session to Accessor");
+            throw;
+        }
+    }
+
+    public async Task<RefreshSessionDto> GetSessionAsync(string oldHash, CancellationToken ct)
+    {
+        _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetSessionAsync), nameof(AccessorClient));
+        try
+        {
+            var session = await _daprClient.InvokeMethodAsync<RefreshSessionDto>(
+                HttpMethod.Get,
+                AppIds.Accessor,
+                $"auth-accessor/refresh-sessions/by-token-hash/{oldHash}",
+                ct
+            );
+            return session;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get session from the accessor");
+            throw;
+        }
+    }
+
+    public async Task UpdateSessionDBAsync(Guid sessionId, RotateRefreshSessionRequest rotatePayload, CancellationToken ct)
+    {
+        _logger.LogInformation("Inside: {Method} in {Class}", nameof(UpdateSessionDBAsync), nameof(AccessorClient));
+        try
+        {
+            await _daprClient.InvokeMethodAsync(
+            HttpMethod.Put,
+            AppIds.Accessor,
+            $"auth-accessor/refresh-sessions/{sessionId}/rotate",
+            rotatePayload,
+            ct
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save refresh session to Accessor");
+            throw;
+        }
+    }
+
+    public async Task DeleteSessionDBAsync(Guid sessionId, CancellationToken ct)
+    {
+        _logger.LogInformation("Inside: {Method} in {Class}", nameof(DeleteSessionDBAsync), nameof(AccessorClient));
+        try
+        {
+            await _daprClient.InvokeMethodAsync(
+            HttpMethod.Delete,
+            AppIds.Accessor,
+            $"auth-accessor/refresh-sessions/{sessionId}",
+            ct
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save refresh session to Accessor");
             throw;
         }
     }
