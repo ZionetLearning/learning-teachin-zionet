@@ -3,6 +3,7 @@ using DotQueue;
 using Accessor.Models;
 using Accessor.Models.QueueMessages;
 using Accessor.Services;
+using Dapr.Client;
 
 namespace Accessor.Endpoints;
 
@@ -11,28 +12,31 @@ public class AccessorQueueHandler : IQueueHandler<Message>
     private readonly IAccessorService _accessorService;
     private readonly IManagerCallbackQueueService _managerCallbackQueueService;
     private readonly ILogger<AccessorQueueHandler> _logger;
-    private readonly Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>> _handlers;
+    private readonly DaprClient _daprClient;
+    private readonly Dictionary<MessageAction, Func<Message, IReadOnlyDictionary<string, string>?, Func<Task>, CancellationToken, Task>> _handlers;
 
     public AccessorQueueHandler(
         IAccessorService accessorService,
         IManagerCallbackQueueService managerCallbackQueueService,
-        ILogger<AccessorQueueHandler> logger)
+        ILogger<AccessorQueueHandler> logger,
+        DaprClient daprClient)
     {
         _accessorService = accessorService;
         _managerCallbackQueueService = managerCallbackQueueService;
+        _daprClient = daprClient;
         _logger = logger;
-        _handlers = new Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>>
+        _handlers = new Dictionary<MessageAction, Func<Message, IReadOnlyDictionary<string, string>?, Func<Task>, CancellationToken, Task>>
         {
             [MessageAction.UpdateTask] = HandleUpdateTaskAsync,
             [MessageAction.CreateTask] = HandleCreateTaskAsync
         };
     }
 
-    public async Task HandleAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
+    public async Task HandleAsync(Message message, IReadOnlyDictionary<string, string>? metadataCallback, Func<Task> renewLock, CancellationToken cancellationToken)
     {
         if (_handlers.TryGetValue(message.ActionName, out var handler))
         {
-            await handler(message, renewLock, cancellationToken);
+            await handler(message, metadataCallback, renewLock, cancellationToken);
         }
         else
         {
@@ -41,7 +45,7 @@ public class AccessorQueueHandler : IQueueHandler<Message>
         }
     }
 
-    private async Task HandleUpdateTaskAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
+    private async Task HandleUpdateTaskAsync(Message message, IReadOnlyDictionary<string, string>? metadataCallback, Func<Task> renewLock, CancellationToken cancellationToken)
     {
         try
         {
@@ -65,6 +69,28 @@ public class AccessorQueueHandler : IQueueHandler<Message>
             }
 
             _logger.LogDebug("Processing task {Id}", payload.Id);
+
+            // build TaskResult
+            var result = new TaskResult(payload.Id, TaskResultStatus.Updated);
+            var resultMessage = new Message
+            {
+                ActionName = MessageAction.TaskResult,
+                Payload = JsonSerializer.SerializeToElement(result)
+            };
+
+            // extract queue + method from metadataCallback
+            var parsed = CallbackMetadataParser.TryParse(metadataCallback);
+            if (parsed is { } cb)
+            {
+                await _daprClient.InvokeBindingAsync($"{cb.Queue}-out", "create", resultMessage, metadataCallback, cancellationToken);
+                _logger.LogInformation("Sent TaskResult (Updated) for Task {Id} to {Queue} (Method={Method})",
+                    payload.Id, cb.Queue, cb.Method);
+            }
+            else
+            {
+                _logger.LogWarning("No valid callback metadata for Task {Id}", payload.Id);
+            }
+
             await _accessorService.UpdateTaskNameAsync(payload.Id, payload.Name);
             _logger.LogInformation("Task {Id} processed", payload.Id);
         }
@@ -91,7 +117,7 @@ public class AccessorQueueHandler : IQueueHandler<Message>
         }
     }
 
-    private async Task HandleCreateTaskAsync(Message message, Func<Task> func, CancellationToken cancellationToken)
+    private async Task HandleCreateTaskAsync(Message message, IReadOnlyDictionary<string, string>? metadataCallback, Func<Task> func, CancellationToken cancellationToken)
     {
         try
         {
@@ -128,6 +154,28 @@ public class AccessorQueueHandler : IQueueHandler<Message>
 
             _logger.LogDebug("Creating task {Id}", taskModel.Id);
             await _accessorService.CreateTaskAsync(taskModel);
+
+            // build TaskResult
+            var result = new TaskResult(taskModel.Id, TaskResultStatus.Created);
+
+            var resultMessage = new Message
+            {
+                ActionName = MessageAction.TaskResult,
+                Payload = JsonSerializer.SerializeToElement(result)
+            };
+
+            // extract queue + method from metadataCallback
+            var parsed = CallbackMetadataParser.TryParse(metadataCallback);
+            if (parsed is { } cb)
+            {
+                await _daprClient.InvokeBindingAsync($"{cb.Queue}-out", "create", resultMessage, metadataCallback, cancellationToken);
+                _logger.LogInformation("Sent TaskResult (Created) for Task {Id} to {Queue} (Method={Method})",
+                    taskModel.Id, cb.Queue, cb.Method);
+            }
+            else
+            {
+                _logger.LogWarning("No valid callback metadata for Task {Id}", taskModel.Id);
+            }
 
             var notification = new Notification
             {

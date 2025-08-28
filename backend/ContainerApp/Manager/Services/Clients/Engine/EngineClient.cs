@@ -20,7 +20,7 @@ public class EngineClient : IEngineClient
         _daprClient = daprClient;
     }
 
-    public async Task<(bool success, string message)> ProcessTaskLongAsync(TaskModel task)
+    public async Task<(bool success, string message)> ProcessTaskLongAsync(TaskModel task, IReadOnlyDictionary<string, string>? metadataCallback = null)
     {
         _logger.LogInformation(
             "Inside: {Method} in {Class}",
@@ -35,7 +35,7 @@ public class EngineClient : IEngineClient
                 ActionName = MessageAction.TestLongTask,
                 Payload = payload
             };
-            await _daprClient.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message);
+            await _daprClient.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message, metadataCallback);
 
             _logger.LogDebug(
                 "Task {TaskId} sent to Engine via binding '{Binding}'",

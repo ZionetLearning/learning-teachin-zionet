@@ -43,7 +43,7 @@ public class AccessorClient(
         }
     }
 
-    public async Task<bool> UpdateTaskName(int id, string newTaskName)
+    public async Task<bool> UpdateTaskName(int id, string newTaskName, IReadOnlyDictionary<string, string>? metadataCallback = null)
     {
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(UpdateTaskName), nameof(AccessorClient));
         try
@@ -71,7 +71,8 @@ public class AccessorClient(
             await _daprClient.InvokeBindingAsync(
                 $"{QueueNames.AccessorQueue}-out",
                 "create",
-                message
+                message,
+                metadataCallback
             );
 
             return true;
@@ -109,7 +110,7 @@ public class AccessorClient(
         }
     }
 
-    public async Task<(bool success, string message)> PostTaskAsync(TaskModel task)
+    public async Task<(bool success, string message)> PostTaskAsync(TaskModel task, IReadOnlyDictionary<string, string>? metadataCallback = null)
     {
         _logger.LogInformation(
            "Inside: {Method} in {Class}",
@@ -136,7 +137,7 @@ public class AccessorClient(
                 Payload = payload,
                 Metadata = userContextMetadata
             };
-            await _daprClient.InvokeBindingAsync($"{QueueNames.AccessorQueue}-out", "create", message);
+            await _daprClient.InvokeBindingAsync($"{QueueNames.AccessorQueue}-out", "create", message, metadataCallback);
 
             _logger.LogDebug(
                 "Task {TaskId} sent to Accessor via binding '{Binding}'",

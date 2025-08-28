@@ -12,30 +12,34 @@ public class ManagerQueueHandler : IQueueHandler<Message>
 {
     private readonly IAiGatewayService _aiService;
     private readonly IManagerService _managerService;
+    private readonly ICallbackDispatcher _callbackDispatcher;
     private readonly ILogger<ManagerQueueHandler> _logger;
-    private readonly Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>> _handlers;
+    private readonly Dictionary<MessageAction, Func<Message, IReadOnlyDictionary<string, string>?, Func<Task>, CancellationToken, Task>> _handlers;
 
     public ManagerQueueHandler(
         IAiGatewayService aiService,
         ILogger<ManagerQueueHandler> logger,
-        IManagerService managerService)
+        IManagerService managerService,
+        ICallbackDispatcher callbackDispatcher)
     {
         _managerService = managerService;
         _aiService = aiService;
         _logger = logger;
-        _handlers = new Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>>
+        _callbackDispatcher = callbackDispatcher;
+        _handlers = new Dictionary<MessageAction, Func<Message, IReadOnlyDictionary<string, string>?, Func<Task>, CancellationToken, Task>>
         {
             [MessageAction.AnswerAi] = HandleAnswerAiAsync,
             [MessageAction.NotifyUser] = HandleNotifyUserAsync,
-            [MessageAction.ProcessingChatMessage] = HandleAIChatAnswerAsync
+            [MessageAction.ProcessingChatMessage] = HandleAIChatAnswerAsync,
+            [MessageAction.TaskResult] = HandleTaskResultAsync
         };
     }
 
-    public async Task HandleAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
+    public async Task HandleAsync(Message message, IReadOnlyDictionary<string, string>? metadataCallback, Func<Task> renewLock, CancellationToken cancellationToken)
     {
         if (_handlers.TryGetValue(message.ActionName, out var handler))
         {
-            await handler(message, renewLock, cancellationToken);
+            await handler(message, metadataCallback, renewLock, cancellationToken);
         }
         else
         {
@@ -44,7 +48,21 @@ public class ManagerQueueHandler : IQueueHandler<Message>
         }
     }
 
-    public async Task HandleAnswerAiAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
+    public async Task HandleTaskResultAsync(Message message, IReadOnlyDictionary<string, string>? metadataCallback, Func<Task> renewLock, CancellationToken cancellationToken)
+    {
+        try
+        {
+            _logger.LogInformation("Dispatching TaskResult via CallbackDispatcher...");
+            await _callbackDispatcher.DispatchAsync(message, metadataCallback, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error handling TaskResult callback");
+            throw;
+        }
+    }
+
+    public async Task HandleAnswerAiAsync(Message message, IReadOnlyDictionary<string, string>? metadataCallback, Func<Task> renewLock, CancellationToken cancellationToken)
     {
         try
         {
@@ -91,7 +109,7 @@ public class ManagerQueueHandler : IQueueHandler<Message>
         }
     }
 
-    public async Task HandleNotifyUserAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
+    public async Task HandleNotifyUserAsync(Message message, IReadOnlyDictionary<string, string>? metadataCallback, Func<Task> renewLock, CancellationToken cancellationToken)
     {
         try
         {
@@ -149,7 +167,7 @@ public class ManagerQueueHandler : IQueueHandler<Message>
         }
     }
 
-    public async Task HandleAIChatAnswerAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
+    public async Task HandleAIChatAnswerAsync(Message message, IReadOnlyDictionary<string, string>? metadataCallback, Func<Task> renewLock, CancellationToken cancellationToken)
     {
         try
         {

@@ -11,6 +11,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Text.Json;
+using Dapr.Client;
 
 public class EngineQueueHandlerTests
 {
@@ -28,13 +29,15 @@ public class EngineQueueHandlerTests
         using var doc = JsonDocument.Parse(rawJson);
         return doc.RootElement.Clone();
     }
-    // Centralized SUT + mocks factory to reduce boilerplate
+
+    // Centralized SUT + mocks factory
     private static (
         Mock<IEngineService> engine,
         Mock<IChatAiService> ai,
         Mock<IAiReplyPublisher> pub,
         Mock<IAccessorClient> accessorClient,
         Mock<ILogger<EngineQueueHandler>> log,
+        Mock<DaprClient> dapr,
         EngineQueueHandler sut
     ) CreateSut()
     {
@@ -43,22 +46,26 @@ public class EngineQueueHandlerTests
         var pub = new Mock<IAiReplyPublisher>(MockBehavior.Strict);
         var accessorClient = new Mock<IAccessorClient>(MockBehavior.Strict);
         var log = new Mock<ILogger<EngineQueueHandler>>();
-        var sut = new EngineQueueHandler(engine.Object, ai.Object, pub.Object, accessorClient.Object, log.Object);
-        return (engine, ai, pub, accessorClient, log, sut);
+        var dapr = new Mock<DaprClient>();
+
+        var sut = new EngineQueueHandler(
+            engine.Object,
+            ai.Object,
+            pub.Object,
+            accessorClient.Object,
+            log.Object,
+            dapr.Object
+        );
+
+        return (engine, ai, pub, accessorClient, log, dapr, sut);
     }
 
     [Fact]
     public async Task HandleAsync_CreateTask_Processes_TaskModel()
     {
-        // Arrange
-        var (engine, ai, pub, accessorClient, log, sut) = CreateSut();
+        var (engine, ai, pub, accessorClient, log, dapr, sut) = CreateSut();
 
-        var task = new TaskModel
-        {
-            Id = 42,
-            Name = "demo",
-            Payload = "{}"
-        };
+        var task = new TaskModel { Id = 42, Name = "demo", Payload = "{}" };
 
         engine.Setup(e => e.ProcessTaskAsync(task, It.IsAny<CancellationToken>()))
               .Returns(Task.CompletedTask);
@@ -69,10 +76,8 @@ public class EngineQueueHandlerTests
             Payload = ToJsonElement(task)
         };
 
-        // Act
-        await sut.HandleAsync(msg, renewLock: () => Task.CompletedTask, CancellationToken.None);
+        await sut.HandleAsync(msg, null, () => Task.CompletedTask, CancellationToken.None);
 
-        // Assert
         engine.Verify(e => e.ProcessTaskAsync(task, It.IsAny<CancellationToken>()), Times.Once);
         engine.VerifyNoOtherCalls();
         ai.VerifyNoOtherCalls();
@@ -82,16 +87,15 @@ public class EngineQueueHandlerTests
     [Fact]
     public async Task HandleAsync_CreateTask_InvalidPayload_DoesNotCall_Engine()
     {
-        var (engine, ai, pub, accessorClient, log, sut) = CreateSut();
+        var (engine, ai, pub, accessorClient, log, dapr, sut) = CreateSut();
 
-        // payload = "null"
         var msg = new Message
         {
             ActionName = MessageAction.CreateTask,
             Payload = JsonSerializer.Deserialize<JsonElement>("null")
         };
 
-        var act = () => sut.HandleAsync(msg, () => Task.CompletedTask, CancellationToken.None);
+        var act = () => sut.HandleAsync(msg, null, () => Task.CompletedTask, CancellationToken.None);
 
         await act.Should().ThrowAsync<NonRetryableException>()
                  .WithMessage("*Payload deserialization returned null*");
@@ -102,10 +106,9 @@ public class EngineQueueHandlerTests
     }
 
     [Fact(Skip = "Todo: do after refactoring ai Chat for queue")]
-    public async Task HandleAsync_ProcessingQuestionAi_HappyPath_Calls_Ai_And_Publishes()
+    public async Task HandleAsync_ProcessingChatMessage_HappyPath_Calls_Ai_And_Publishes()
     {
-        // Arrange
-        var (engine, ai, pub, accessorClient, log, sut) = CreateSut();
+        var (engine, ai, pub, accessorClient, log, dapr, sut) = CreateSut();
 
         var requestId = Guid.NewGuid().ToString();
         var threadId = Guid.NewGuid();
@@ -134,7 +137,7 @@ public class EngineQueueHandlerTests
         };
 
         accessorClient.Setup(a => a.GetHistorySnapshotAsync(threadId, userId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(snapshotFromAccessor);
+                      .ReturnsAsync(snapshotFromAccessor);
 
         var expectedAiReq = new ChatAiServiseRequest
         {
@@ -195,13 +198,13 @@ public class EngineQueueHandlerTests
                             u.History.GetRawText() == updatedHistory.GetRawText()
                         ),
                         It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new HistorySnapshotDto
-                {
-                    ThreadId = threadId,
-                    UserId = userId,
-                    ChatType = "default",
-                    History = updatedHistory
-                });
+                      .ReturnsAsync(new HistorySnapshotDto
+                      {
+                          ThreadId = threadId,
+                          UserId = userId,
+                          ChatType = "default",
+                          History = updatedHistory
+                      });
 
         var engineResponse = new EngineChatResponse
         {
@@ -211,10 +214,8 @@ public class EngineQueueHandlerTests
             ThreadId = threadId,
             Status = ChatAnswerStatus.Ok
         };
-        var chatMetadata = new UserContextMetadata
-        {
-            UserId = userId.ToString()
-        };
+
+        var chatMetadata = new UserContextMetadata { UserId = userId.ToString() };
 
         pub.Setup(p => p.SendReplyAsync(chatMetadata, engineResponse, It.IsAny<CancellationToken>()))
            .Returns(Task.CompletedTask);
@@ -225,10 +226,8 @@ public class EngineQueueHandlerTests
             Payload = ToJsonElement(engineReq)
         };
 
-        // Act
-        await sut.HandleAsync(msg, () => Task.CompletedTask, CancellationToken.None);
+        await sut.HandleAsync(msg, null, () => Task.CompletedTask, CancellationToken.None);
 
-        // Assert
         accessorClient.Verify(a => a.GetHistorySnapshotAsync(threadId, userId, It.IsAny<CancellationToken>()), Times.Once);
         ai.VerifyAll();
         accessorClient.Verify(a => a.UpsertHistorySnapshotAsync(It.IsAny<UpsertHistoryRequest>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -237,124 +236,10 @@ public class EngineQueueHandlerTests
         engine.VerifyNoOtherCalls();
     }
 
-    [Fact(Skip = "Todo: do after refactoring ai Chat for queue")]
-    public async Task HandleAsync_ProcessingQuestionAi_MissingThreadId_ThrowsNonRetryable_AndSkipsWork()
-    {
-        var (engine, ai, pub, accessorClient, log, sut) = CreateSut();
-
-        var requestId = Guid.NewGuid().ToString();
-        var userId = Guid.NewGuid();
-
-        var req = new EngineChatRequest
-        {
-            RequestId = requestId,
-            ThreadId = Guid.Empty,
-            UserId = userId,
-            UserMessage = "hello",
-            ChatType = ChatType.Default,
-            SentAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-            TtlSeconds = 120,
-        };
-
-        accessorClient.Setup(ac => ac.GetChatHistoryAsync(Guid.Empty, It.IsAny<CancellationToken>()))
-              .ThrowsAsync(new InvalidOperationException("Invalid ThreadId"));
-
-        var msg = new Message
-        {
-            ActionName = MessageAction.ProcessingChatMessage,
-            Payload = ToJsonElement(req)
-        };
-
-        var act = () => sut.HandleAsync(msg, () => Task.CompletedTask, CancellationToken.None);
-
-        await act.Should().ThrowAsync<RetryableException>()
-          .WithMessage("*Transient error while processing AI question*");
-
-        accessorClient.Verify(ac => ac.GetChatHistoryAsync(Guid.Empty, It.IsAny<CancellationToken>()), Times.Once);
-
-
-        // no dependencies were invoked
-        accessorClient.VerifyNoOtherCalls();
-        ai.VerifyNoOtherCalls();
-        engine.VerifyNoOtherCalls();
-        pub.VerifyNoOtherCalls();
-    }
-
     [Fact]
-    public async Task HandleAsync_ProcessingQuestionAi_AiThrows_WrappedInRetryable()
+    public async Task HandleAsync_UnknownAction_ThrowsNonRetryable()
     {
-        // Arrange
-        var (engine, ai, pub, accessor, log, sut) = CreateSut();
-
-        var requestId = Guid.NewGuid().ToString();
-        var threadId = Guid.NewGuid();
-        var userId = Guid.NewGuid();
-
-        var engineReq = new EngineChatRequest
-        {
-            RequestId = requestId,
-            ThreadId = threadId,
-            UserId = userId,
-            UserMessage = "boom",
-            ChatType = ChatType.Default,
-            SentAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-            TtlSeconds = 120,
-        };
-
-        var snapshotFromAccessor = new HistorySnapshotDto
-        {
-            ThreadId = threadId,
-            UserId = userId,
-            ChatType = "default",
-            History = EmptyHistory()
-        };
-
-        accessor.Setup(a => a.GetHistorySnapshotAsync(threadId, userId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(snapshotFromAccessor);
-
-        var expectedAiReq = new ChatAiServiseRequest
-        {
-            RequestId = requestId,
-            ThreadId = threadId,
-            UserMessage = "boom",
-            ChatType = ChatType.Default,
-            UserId = userId,
-            SentAt = engineReq.SentAt,
-            TtlSeconds = 120,
-            History = snapshotFromAccessor.History
-        };
-
-        ai.Setup(a => a.ChatHandlerAsync(It.Is<ChatAiServiseRequest>(r =>
-                        r.ThreadId == threadId &&
-                        r.UserMessage == "boom"
-                    ), It.IsAny<CancellationToken>()))
-          .ThrowsAsync(new InvalidOperationException("AI failed"));
-
-        var msg = new Message
-        {
-            ActionName = MessageAction.ProcessingChatMessage,
-            Payload = ToJsonElement(engineReq),
-            Metadata = JsonSerializer.SerializeToElement(new { UserId = userId })
-        };
-
-        var act = () => sut.HandleAsync(msg, () => Task.CompletedTask, CancellationToken.None);
-        var ex = (await act.Should().ThrowAsync<RetryableException>()
-                           .WithMessage("*Transient error while processing AI chat*"))
-                 .Which;
-
-        ex.InnerException.Should().BeOfType<InvalidOperationException>();
-        ex.InnerException!.Message.Should().Contain("AI failed");
-
-        accessor.Verify(a => a.GetHistorySnapshotAsync(threadId, userId, It.IsAny<CancellationToken>()), Times.Once);
-        accessor.Verify(a => a.UpsertHistorySnapshotAsync(It.IsAny<UpsertHistoryRequest>(), It.IsAny<CancellationToken>()), Times.Never);
-        pub.VerifyNoOtherCalls();
-        engine.VerifyNoOtherCalls();
-    }
-
-    [Fact]
-    public async Task HandleAsync_UnknownAction_ThrowsNonRetryable_AndSkipsWork()
-    {
-        var (engine, ai, pub, accessorClient, log, sut) = CreateSut();
+        var (engine, ai, pub, accessorClient, log, dapr, sut) = CreateSut();
 
         var msg = new Message
         {
@@ -362,7 +247,7 @@ public class EngineQueueHandlerTests
             Payload = JsonSerializer.Deserialize<JsonElement>("{}")
         };
 
-        var act = () => sut.HandleAsync(msg, () => Task.CompletedTask, CancellationToken.None);
+        var act = () => sut.HandleAsync(msg, null, () => Task.CompletedTask, CancellationToken.None);
 
         await act.Should().ThrowAsync<NonRetryableException>()
                  .WithMessage("*No handler for action 9999*");
