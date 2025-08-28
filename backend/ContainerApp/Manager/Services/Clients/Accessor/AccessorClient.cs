@@ -42,6 +42,26 @@ public class AccessorClient(
             throw;
         }
     }
+    public async Task<int> CleanupRefreshSessionsAsync(CancellationToken ct = default)
+    {
+        _logger.LogInformation("Inside: {Method} in {Class}", nameof(CleanupRefreshSessionsAsync), nameof(AccessorClient));
+        try
+        {
+            // Accessor returns { deleted: <int> }
+            var resp = await _daprClient.InvokeMethodAsync<CleanupResponse>(
+                HttpMethod.Post,
+                AppIds.Accessor, // you already use this constant here
+                "auth-accessor/refresh-sessions/internal/cleanup",
+                ct);
+
+            return resp?.Deleted ?? 0;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to invoke cleanup on Accessor");
+            throw;
+        }
+    }
 
     public async Task<bool> UpdateTaskName(int id, string newTaskName)
     {

@@ -9,4 +9,5 @@ public interface IRefreshSessionService
     Task RotateSessionAsync(Guid sessionId, RotateRefreshSessionRequest request, CancellationToken cancellationToken);
     Task DeleteSessionAsync(Guid sessionId, CancellationToken cancellationToken);
     Task DeleteAllUserSessionsAsync(Guid userId, CancellationToken cancellationToken);
+    Task<int> PurgeExpiredOrRevokedAsync(int batchSize, CancellationToken ct);
 }

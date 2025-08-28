@@ -169,6 +169,7 @@ app.MapSubscribeHandler();
 app.MapAiEndpoints();
 app.MapAuthEndpoints();
 app.MapTasksEndpoints();
+app.MapMaintenanceEndpoints();
 app.MapUsersEndpoints();
 app.MapHub<NotificationHub>("/NotificationHub");
 

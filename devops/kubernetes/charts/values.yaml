@@ -52,6 +52,31 @@ cronjobs:
       port:                              # defaults to .Values.manager.ports.service (80) if empty
       url: ""                           # used only when mode = "ingress"
 
+  refreshSessionsCleanup:
+    enabled: false
+    schedule: "30 2 * * *"      # every night at 02:30
+    timeZone: "Asia/Jerusalem"
+    concurrencyPolicy: Forbid
+    startingDeadlineSeconds: 300
+    successfulJobsHistoryLimit: 3
+    failedJobsHistoryLimit: 3
+    backoffLimit: 2
+
+    image:
+      repository: curlimages/curl
+      tag: "8.8.0"
+      pullPolicy: IfNotPresent
+
+    curl:
+      maxTimeSeconds: 60
+      retries: 2
+      retryDelaySeconds: 2
+
+    target:
+      mode: "service"
+      serviceName: "manager"
+      port: 80
+
 manager:
   name: manager
   labels:
