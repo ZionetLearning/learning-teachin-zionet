@@ -164,7 +164,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build
-          path: ${{ env.FE_DIR }}/dist/apps/
+          path: dist/
           retention-days: 1
 
   deploy:
@@ -303,7 +303,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: frontend-build
-          path: ${{ env.FE_DIR }}/dist/apps/
+          path: ${{ env.FE_DIR }}/
 
       - name: Debug - List workspace contents
         run: |
@@ -346,7 +346,7 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ env.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: "upload"
-          app_location: "${{ env.FE_DIR }}/dist/apps/${{ matrix.app }}"
+          app_location: "dist/apps/${{ matrix.app }}"
           api_location: "" # No API
           output_location: "" # Files are already built
           skip_app_build: true
