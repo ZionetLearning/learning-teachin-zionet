@@ -27,7 +27,10 @@ public static class AiEndpoints
         // GET /ai-manager/answer/{id}
         aiGroup.MapGet("/answer/{id}", AnswerAsync).WithName("Answer");
 
-        app.MapGet("/chats/{userId:guid}", GetChatsAsync).WithName("GetChats");
+        // GET /ai-manager/chats/{userId}
+        aiGroup.MapGet("/chats/{userId:guid}", GetChatsAsync).WithName("GetChats");
+        // GET /ai-manager/chat/{chatId:guid}/{userId:guid}
+        aiGroup.MapGet("/chat/{chatId:guid}/{userId:guid}", GetChatHistoryAsync).WithName("GetChatHistory");
 
         #endregion
 
@@ -37,9 +40,10 @@ public static class AiEndpoints
         aiGroup.MapPost("/question", QuestionAsync).WithName("Question");
 
         // POST /ai-manager/chat
-        app.MapPost("/chat", ChatAsync).WithName("Chat");
+        aiGroup.MapPost("/chat", ChatAsync).WithName("Chat");
 
-        app.MapPost("/speech/synthesize", SynthesizeAsync).WithName("SynthesizeText");
+        // POST /ai-manager/speech/synthesize
+        aiGroup.MapPost("/speech/synthesize", SynthesizeAsync).WithName("SynthesizeText");
 
         #endregion
 
@@ -66,6 +70,36 @@ public static class AiEndpoints
 
                 log.LogInformation("Chats returned");
                 return Results.Ok(new { chats = chats });
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, "Failed to retrieve chats");
+                return Results.Problem("Get chats retrieval failed");
+            }
+        }
+    }
+
+    private static async Task<IResult> GetChatHistoryAsync(
+    [FromRoute] Guid chatId,
+    [FromRoute] Guid userId,
+    [FromServices] IEngineClient engineClient,
+    [FromServices] ILogger<ChatPostEndpoint> log,
+    CancellationToken ct)
+    {
+        using var scope = log.BeginScope("ChatId: {ChatId}, userId: {UserId}", chatId, userId);
+        {
+            // TODO: Change userId from token
+            try
+            {
+                var history = await engineClient.GetHistoryChatAsync(chatId, userId, ct);
+                if (history is null)
+                {
+                    log.LogInformation("chat history not found");
+                    return Results.NotFound(new { error = "Chat history not found" });
+                }
+
+                log.LogInformation("Chat histiry returned");
+                return Results.Ok(history);
             }
             catch (Exception ex)
             {
@@ -162,13 +196,11 @@ public static class AiEndpoints
         if (!TryResolveThreadId(request.ThreadId, out var threadId, out var errorThread))
         {
             return Results.BadRequest(new { error = "If threadId is present, it must be a GUID" });
-
         }
 
         if (!TryResolveThreadId(request.UserId, out var userId, out var errorUser))
         {
             return Results.BadRequest(new { error = "If userId is present, it must be a GUID" });
-
         }
 
         var engineRequest = new EngineChatRequest
@@ -182,9 +214,29 @@ public static class AiEndpoints
 
         try
         {
-            var engineResponse = await engine.ChatAsync(engineRequest, ct);
+            var engineResponse = await engine.ChatAsync(engineRequest);
 
-            return Results.Ok(engineResponse);
+            if (engineResponse.success)
+            {
+                log.LogInformation("Request {RequestId} (thread {Thread}) accepted", requestId, threadId);
+                return Results.Ok(new
+                {
+                    requestId
+                });
+            }
+            else
+            {
+                log.LogError("Engine chat failed - service returned failure for request {RequestId}", requestId);
+                return Results.Problem(
+                    title: "Engine chat failed",
+                    detail: "Upstream service returned an error.",
+                    statusCode: StatusCodes.Status502BadGateway,
+                    extensions: new Dictionary<string, object?>
+                    {
+                        ["upstreamStatus"] = 500,
+                        ["requestId"] = engineRequest.RequestId
+                    });
+            }
         }
         catch (Dapr.Client.InvocationException ex) when (ex.Response?.StatusCode is not null)
         {

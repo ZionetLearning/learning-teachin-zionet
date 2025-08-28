@@ -240,3 +240,10 @@ variable "prefix" {
   description = "Prefix for naming resources"
   default     = "dev"
 }
+
+#------------- Frontend Application Variables -------------
+variable "frontend_apps" {
+  description = "List of frontend applications to deploy"
+  type        = list(string)
+  default     = ["student", "teacher", "admin"]
+}

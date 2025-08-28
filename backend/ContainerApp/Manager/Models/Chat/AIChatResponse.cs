@@ -1,6 +1,6 @@
-﻿namespace Engine.Models.Chat;
+﻿namespace Manager.Models.Chat;
 
-public sealed record EngineChatResponse
+public sealed record AIChatResponse
 {
     public required string RequestId { get; init; }
 
@@ -12,4 +12,3 @@ public sealed record EngineChatResponse
 
     public Guid ThreadId { get; init; }
 }
-
