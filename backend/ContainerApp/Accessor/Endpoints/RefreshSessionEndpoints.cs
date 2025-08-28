@@ -20,6 +20,9 @@ public static class RefreshSessionEndpoints
 
         refreshSessionGroup.MapPost("", CreateSessionAsync).WithName("CreateRefreshSession");
 
+        refreshSessionGroup.MapPost("/internal/cleanup", CleanupRefreshSessionsAsync)
+            .WithName("CleanupRefreshSessions");
+
         #endregion
 
         #region HTTP PUT
@@ -83,6 +86,27 @@ public static class RefreshSessionEndpoints
         }
     }
 
+    private static async Task<IResult> CleanupRefreshSessionsAsync(
+    [FromServices] IRefreshSessionService refreshSessionService,
+    [FromServices] ILogger<RefreshSessionService> logger,
+    CancellationToken ct)
+    {
+        using (logger.BeginScope("Method: {Method}", nameof(CleanupRefreshSessionsAsync)))
+        {
+            try
+            {
+                // use a sensible default batch size; you can make it configurable later
+                var deleted = await refreshSessionService.PurgeExpiredOrRevokedAsync(5000, ct);
+                logger.LogInformation("Cleanup removed {Deleted} refresh sessions", deleted);
+                return Results.Ok(new { deleted });
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Cleanup failed");
+                return Results.Problem("Cleanup failed.");
+            }
+        }
+    }
     private static async Task<IResult> RotateSessionAsync(
         [FromRoute] Guid sessionId,
         [FromBody] RotateRefreshSessionRequest request,
