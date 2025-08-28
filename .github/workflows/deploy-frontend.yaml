@@ -76,11 +76,12 @@ jobs:
       - name: Run Tests for ${{ matrix.app }}
         working-directory: ${{ env.FE_DIR }}
         run: |
-          if npm run test:${{ matrix.app }} --dry-run 2>/dev/null; then
+          # Check if test script exists in package.json
+          if grep -q "\"test:${{ matrix.app }}\":" package.json; then
             echo "Running tests for ${{ matrix.app }}..."
             npm run test:${{ matrix.app }} -- --run
           else
-            echo "No test:${{ matrix.app }} script found - skipping"
+            echo "⚠️ No test:${{ matrix.app }} script found in package.json - skipping"
           fi
 
   frontend-build-and-lint:
