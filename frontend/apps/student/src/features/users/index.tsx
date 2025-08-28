@@ -33,7 +33,7 @@ export const Users = () => {
               {
                 userId: crypto.randomUUID(),
                 email: values.email,
-                passwordHash: values.password,
+                password: values.password,
               },
               {
                 onSuccess: () => {
