@@ -8,9 +8,7 @@ on:
         required: false
         default: test
         type: choice
-        options:
-          - test
-          - featest
+        options: [test, featest]
 
   workflow_call:
     inputs:
@@ -45,7 +43,7 @@ jobs:
         run: |
           echo '{
             "TestSettings": {
-              "ApiBaseUrl": "https://teachin.westeurope.cloudapp.azure.com/api/test/"
+              "ApiBaseUrl": "https://teachin.westeurope.cloudapp.azure.com/api/${{ inputs.api_stage }}/"
             }
           }' > appsettings.json
 
@@ -53,21 +51,21 @@ jobs:
         run: dotnet test IntegrationTests.csproj --verbosity normal
 
   #this needs to run even if the tests fail
-  # clear-db:
-  #       needs: integration-tests
-  #       if: ${{ always() }} 
-  #       uses: ./.github/workflows/clear-postgres.yml
-  #       permissions:
-  #         id-token: write
-  #         contents: read
-  #       with:
-  #         mode: 'drop'
-  #         pg_database: 'appdb-test'
-  #         dry_run: 'false'
-  #         verify_ssl: 'true'
-  #       secrets:
-  #         POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-  #         POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-  #         AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-  #         AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-  #         AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  clear-db:
+        needs: integration-tests
+        if: ${{ always() }} 
+        uses: ./.github/workflows/clear-postgres.yml
+        permissions:
+          id-token: write
+          contents: read
+        with:
+          mode: 'drop'
+          pg_database: 'appdb-${{ inputs.api_stage }}'
+          dry_run: 'false'
+          verify_ssl: 'true'
+        secrets:
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
