@@ -80,7 +80,7 @@ jobs:
           # Check if test script exists in package.json
           if grep -q "\"test:${{ matrix.app }}\":" package.json; then
             echo "Running tests for ${{ matrix.app }}..."
-            npm run test:${{ matrix.app }} -- --reporter=verbose --run --no-watch --pool=threads
+            npm run test:${{ matrix.app }} --watch=false --threads=false
             echo "Tests completed successfully for ${{ matrix.app }}"
           else
             echo "No test:${{ matrix.app }} script found in package.json - skipping"
