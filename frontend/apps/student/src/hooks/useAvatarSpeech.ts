@@ -10,7 +10,7 @@ interface useAvatarSpeechOptions {
   onAudioEnd?: () => void;
 }
 
-import { CypressWindow } from "@/types";
+import { CypressWindow } from "@student/types";
 
 export const useAvatarSpeech = ({
   lipsArray = [],
