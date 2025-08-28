@@ -78,7 +78,7 @@ jobs:
         run: |
           if npm run test:${{ matrix.app }} --dry-run 2>/dev/null; then
             echo "Running tests for ${{ matrix.app }}..."
-            npm run test:${{ matrix.app }}
+            npm run test:${{ matrix.app }} -- --run
           else
             echo "No test:${{ matrix.app }} script found - skipping"
           fi
