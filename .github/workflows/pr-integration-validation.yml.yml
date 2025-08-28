@@ -8,43 +8,43 @@ on:
   pull_request:
 
 jobs:
-  deploy-under-test:
-    uses: ./.github/workflows/update-images.yaml
-    permissions:
-      id-token: write
-      contents: read
-    with:
-      environment: Development
-      # deploy into the test namespace
-      environment_name: test
-      # leave empty to build all services (accessor/manager/engine).
-      # or set like: "manager,engine"
-      list_services_names: ''
-    secrets: inherit
+  # deploy-under-test:
+  #   uses: ./.github/workflows/update-images.yaml
+  #   permissions:
+  #     id-token: write
+  #     contents: read
+  #   with:
+  #     environment: Development
+  #     # deploy into the test namespace
+  #     environment_name: test
+  #     # leave empty to build all services (accessor/manager/engine).
+  #     # or set like: "manager,engine"
+  #     list_services_names: ''
+  #   secrets: inherit
 
   run-integration-tests:
-    needs: deploy-under-test
+    #needs: deploy-under-test
     uses: ./.github/workflows/integration-tests.yml
     permissions:
       contents: read
     secrets: inherit
 
-  #this needs to run even if the tests fail
+  # this needs to run even if the tests fail
   clear-db:
-        needs: run-integration-tests
-        if: ${{ always() }} 
-        uses: ./.github/workflows/clear-postgres.yml
-        permissions:
-          id-token: write
-          contents: read
-        with:
-          mode: 'drop'
-          pg_database: 'appdb-test'
-          dry_run: 'false'
-          verify_ssl: 'true'
-        secrets:
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+    needs: run-integration-tests
+    if: ${{ always() }}
+    uses: ./.github/workflows/clear-postgres.yml
+    permissions:
+      id-token: write
+      contents: read
+    with:
+      mode: 'drop'
+      pg_database: 'appdb-test'
+      dry_run: 'false'
+      verify_ssl: 'true'
+    secrets:
+      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
