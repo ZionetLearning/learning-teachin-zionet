@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { comparePhrases, phrases, phrasesWithNikud } from "./utils";
 
 import { useStyles } from "./style";
-import { useAvatarSpeech } from "@/hooks";
+import { useAvatarSpeech } from "@student/hooks";
 
 const Feedback = {
   Perfect: "Perfect!",

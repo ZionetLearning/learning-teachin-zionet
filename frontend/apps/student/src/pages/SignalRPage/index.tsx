@@ -1,8 +1,8 @@
 import { useCallback, useState } from "react";
 import { Box, Paper, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { useSignalR, useSignalREvent } from "@/hooks";
-import { usePostTask } from "@/api";
+import { useSignalR, useSignalREvent } from "@student/hooks";
+import { usePostTask } from "@student/api";
 import { TaskForm, TaskInput, NotificationFeed } from "./components";
 import { SignalRNotificationMessage } from "@/types";
 import { useStyles } from "./style";

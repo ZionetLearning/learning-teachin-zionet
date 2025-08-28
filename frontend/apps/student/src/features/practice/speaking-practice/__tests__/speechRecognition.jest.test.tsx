@@ -1,5 +1,5 @@
 import "./__mocks__";
-import { SpeakingPractice } from "@/features/practice/speaking-practice";
+import { SpeakingPractice } from "@student/features/practice/speaking-practice";
 import { fireEvent, render, waitFor } from "@testing-library/react";
 
 jest.mock("microsoft-cognitiveservices-speech-sdk");

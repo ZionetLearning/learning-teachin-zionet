@@ -1,11 +1,11 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Manager.Models;
+namespace Manager.Models.Notifications;
 
 public class UserEvent<TPayload>
 {
     [JsonConverter(typeof(JsonStringEnumConverter))]
-    public EventType eventType { get; set; }
+    public EventType EventType { get; set; }
     public TPayload Payload { get; set; } = default!;
 }
 

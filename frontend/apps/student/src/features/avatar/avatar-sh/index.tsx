@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useAvatarSpeech } from "@/hooks";
-import avatar from "@/assets/avatar.svg";
-import { lipsArray } from "@/assets/lips";
+import { useAvatarSpeech } from "@student/hooks";
+import avatar from "@student/assets/avatar.svg";
+import { lipsArray } from "@student/assets/lips";
 import { useStyles } from "./style";
 
 export const AvatarSh = () => {

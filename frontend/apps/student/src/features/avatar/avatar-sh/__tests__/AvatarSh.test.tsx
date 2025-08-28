@@ -8,7 +8,7 @@ vi.mock("react-i18next", () => ({
 }));
 
 const speakMock = vi.fn();
-vi.mock("@/hooks", () => ({
+vi.mock("@student/hooks", () => ({
   useAvatarSpeech: () => ({
     currentVisemeSrc: "viseme.svg",
     speak: speakMock,

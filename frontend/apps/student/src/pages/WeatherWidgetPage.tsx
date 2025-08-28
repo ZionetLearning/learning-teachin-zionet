@@ -1,4 +1,4 @@
-import { WeatherWidget } from "@/features";
+import { WeatherWidget } from "@student/features";
 
 export const WeatherWidgetPage = () => {
   return <WeatherWidget />;

@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useSendChatMessage } from "@/api/chat";
-import type { ChatRequest, ChatResponse } from "@/api/chat";
+import { useSendChatMessage } from "@student/api";
+import type { ChatRequest, ChatResponse } from "@student/api";
 
 export type ChatPosition = "left" | "right";
 export type ChatSender = "user" | "system";

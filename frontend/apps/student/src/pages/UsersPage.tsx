@@ -1,4 +1,4 @@
-import { Users } from "@/features/users";
+import { Users } from "@student/features/users";
 
 export const UsersPage = () => {
   return <Users />;

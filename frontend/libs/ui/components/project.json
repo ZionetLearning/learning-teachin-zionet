@@ -37,7 +37,7 @@
       "executor": "@nx/storybook:storybook",
       "options": {
         "configDir": "libs/ui/components/.storybook",
-        "port": 4601
+        "port": 4600
       },
       "configurations": {
         "ci": { "quiet": true },
