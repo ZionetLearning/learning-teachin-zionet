@@ -4,7 +4,7 @@ import {
   UseQueryResult,
 } from "@tanstack/react-query";
 
-import { WeatherData, WeatherParams } from "@/types";
+import { WeatherData, WeatherParams } from "@student/types";
 
 const getWeatherByCoordinates = async (
   lat: number,
