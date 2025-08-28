@@ -43,10 +43,7 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
         try
         {
             var dto = await _daprClient.InvokeMethodAsync<HistorySnapshotDto>(
-                HttpMethod.Get,
-                "accessor",
-                $"chats/{threadId}/{userId}/history",
-                cancellationToken: ct);
+                HttpMethod.Get, "accessor", $"chats-accessor/{threadId}/{userId}/history", cancellationToken: ct);
 
             return dto;
         }
@@ -78,11 +75,7 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
         try
         {
             var dto = await _daprClient.InvokeMethodAsync<UpsertHistoryRequest, HistorySnapshotDto>(
-                HttpMethod.Post,
-                "accessor",
-                "chats/history",
-                request,
-                cancellationToken: ct);
+                HttpMethod.Post, "accessor", "chats-accessor/history", request, cancellationToken: ct);
 
             return dto;
         }

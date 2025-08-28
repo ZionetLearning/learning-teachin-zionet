@@ -13,7 +13,7 @@ public interface IAccessorService
     Task CreateChatAsync(ChatHistorySnapshot chat);
     Task<List<ChatSummaryDto>> GetChatsForUserAsync(Guid userId);
     Task<Guid?> ValidateCredentialsAsync(string email, string password);
-    Task<UserModel?> GetUserAsync(Guid userId);
+    Task<UserData?> GetUserAsync(Guid userId);
     Task<bool> CreateUserAsync(UserModel newUser);
     Task<bool> UpdateUserAsync(UpdateUserModel updateUser, Guid userId);
     Task<bool> DeleteUserAsync(Guid userId);

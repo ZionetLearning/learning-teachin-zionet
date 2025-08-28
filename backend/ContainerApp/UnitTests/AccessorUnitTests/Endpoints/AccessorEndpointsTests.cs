@@ -26,7 +26,7 @@ public class AccessorEndpointsTests
         var task = new TaskModel { Id = 7, Name = "hello" };
         svc.Setup(s => s.GetTaskByIdAsync(7)).ReturnsAsync(task);
 
-        var result = await AccessorEndpoints.GetTaskByIdAsync(7, svc.Object, log.Object);
+        var result = await TasksEndpoints.GetTaskByIdAsync(7, svc.Object, log.Object);
 
         var ok = result.Should().BeOfType<Ok<TaskModel>>().Subject;
         ok.Value.Should().Be(task);
@@ -41,7 +41,7 @@ public class AccessorEndpointsTests
 
         svc.Setup(s => s.GetTaskByIdAsync(99)).ReturnsAsync((TaskModel?)null);
 
-        var result = await AccessorEndpoints.GetTaskByIdAsync(99, svc.Object, log.Object);
+        var result = await TasksEndpoints.GetTaskByIdAsync(99, svc.Object, log.Object);
 
         result.Should().BeOfType<NotFound<string>>();
         svc.VerifyAll();
@@ -55,7 +55,7 @@ public class AccessorEndpointsTests
 
         svc.Setup(s => s.GetTaskByIdAsync(1)).ThrowsAsync(new InvalidOperationException("boom"));
 
-        var result = await AccessorEndpoints.GetTaskByIdAsync(1, svc.Object, log.Object);
+        var result = await TasksEndpoints.GetTaskByIdAsync(1, svc.Object, log.Object);
 
         result.Should().BeOfType<ProblemHttpResult>();
         svc.VerifyAll();
@@ -74,7 +74,7 @@ public class AccessorEndpointsTests
         var model = new TaskModel { Id = 1, Name = "n" };
         svc.Setup(s => s.CreateTaskAsync(model)).Returns(Task.CompletedTask);
 
-        var result = await AccessorEndpoints.CreateTaskAsync(model, svc.Object, log.Object, CancellationToken.None);
+        var result = await TasksEndpoints.CreateTaskAsync(model, svc.Object, log.Object, CancellationToken.None);
 
         var ok = result.Should().BeOfType<Ok<string>>().Subject;
         ok.Value.Should().Contain("Task 1 Saved");
@@ -90,7 +90,7 @@ public class AccessorEndpointsTests
         var model = new TaskModel { Id = 1, Name = "n" };
         svc.Setup(s => s.CreateTaskAsync(model)).ThrowsAsync(new Exception("nope"));
 
-        var result = await AccessorEndpoints.CreateTaskAsync(model, svc.Object, log.Object, CancellationToken.None);
+        var result = await TasksEndpoints.CreateTaskAsync(model, svc.Object, log.Object, CancellationToken.None);
 
         result.Should().BeOfType<ProblemHttpResult>();
         svc.VerifyAll();
@@ -112,7 +112,7 @@ public class AccessorEndpointsTests
         var req = new UpdateTaskName { Id = id, Name = name };
         svc.Setup(s => s.UpdateTaskNameAsync(id, name)).ReturnsAsync(found);
 
-        var result = await AccessorEndpoints.UpdateTaskNameAsync(req, svc.Object, log.Object);
+        var result = await TasksEndpoints.UpdateTaskNameAsync(req, svc.Object, log.Object);
 
         result.Should().BeOfType(expectedType);
         svc.VerifyAll();
@@ -127,7 +127,7 @@ public class AccessorEndpointsTests
         var req = new UpdateTaskName { Id = 5, Name = "new" };
         svc.Setup(s => s.UpdateTaskNameAsync(5, "new")).ThrowsAsync(new Exception("oops"));
 
-        var result = await AccessorEndpoints.UpdateTaskNameAsync(req, svc.Object, log.Object);
+        var result = await TasksEndpoints.UpdateTaskNameAsync(req, svc.Object, log.Object);
 
         result.Should().BeOfType<ProblemHttpResult>();
         svc.VerifyAll();
@@ -147,7 +147,7 @@ public class AccessorEndpointsTests
 
         svc.Setup(s => s.DeleteTaskAsync(id)).ReturnsAsync(found);
 
-        var result = await AccessorEndpoints.DeleteTaskAsync(id, svc.Object, log.Object);
+        var result = await TasksEndpoints.DeleteTaskAsync(id, svc.Object, log.Object);
 
         result.Should().BeOfType(expectedType);
         svc.VerifyAll();
@@ -161,7 +161,7 @@ public class AccessorEndpointsTests
 
         svc.Setup(s => s.DeleteTaskAsync(3)).ThrowsAsync(new Exception("err"));
 
-        var result = await AccessorEndpoints.DeleteTaskAsync(3, svc.Object, log.Object);
+        var result = await TasksEndpoints.DeleteTaskAsync(3, svc.Object, log.Object);
 
         result.Should().BeOfType<ProblemHttpResult>();
         svc.VerifyAll();
@@ -338,7 +338,7 @@ public class AccessorEndpointsTests
 
     private static Task<IResult> InvokeUpsertHistorySnapshotAsync(
         UpsertHistoryRequest body, IAccessorService s, ILogger<AccessorService> l)
-        => (Task<IResult>)typeof(AccessorEndpoints)
+        => (Task<IResult>)typeof(ChatsEndpoints)
             .GetMethod("UpsertHistorySnapshotAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
             .Invoke(null, new object[] { body, s, l })!;
 
@@ -453,7 +453,7 @@ public class AccessorEndpointsTests
     }
     private static Task<IResult> InvokeGetHistorySnapshotAsync(
         Guid threadId, Guid userId, IAccessorService s, ILogger<AccessorService> l)
-        => (Task<IResult>)typeof(AccessorEndpoints)
+        => (Task<IResult>)typeof(ChatsEndpoints)
             .GetMethod("GetHistorySnapshotAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
             .Invoke(null, new object[] { threadId, userId, s, l })!;
 
@@ -477,7 +477,7 @@ public class AccessorEndpointsTests
     }
 
     private static Task<IResult> InvokeGetThreadsForUserAsync(Guid user, IAccessorService s, ILogger<AccessorService> l)
-        => (Task<IResult>)typeof(AccessorEndpoints)
+        => (Task<IResult>)typeof(ChatsEndpoints)
             .GetMethod("GetChatsForUserAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
             .Invoke(null, new object[] { user, s, l })!;
 

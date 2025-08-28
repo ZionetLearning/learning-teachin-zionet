@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Manager.Models.Chat;
 using Manager.Services.Clients.Engine;
 using Manager.Services.Clients.Engine.Models;
-using Manager.Services.Clients;
+using Manager.Services.Clients.Accessor;
 
 namespace Manager.Endpoints;
 
@@ -37,8 +37,6 @@ public static class AiEndpoints
         aiGroup.MapPost("/question", QuestionAsync).WithName("Question");
 
         // POST /ai-manager/chat
-        aiGroup.MapPost("/chat", ChatAsync).WithName("Chat");
-
         app.MapPost("/chat", ChatAsync).WithName("Chat");
 
         app.MapPost("/speech/synthesize", SynthesizeAsync).WithName("SynthesizeText");
