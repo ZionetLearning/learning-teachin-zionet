@@ -15,7 +15,7 @@ public static class UsersEndpoints
         usersGroup.MapGet("/user/{userId:guid}", GetUserAsync).WithName("GetUser").RequireAuthorization();
         usersGroup.MapPost("/user", CreateUserAsync).WithName("CreateUser");
         usersGroup.MapPut("/user/{userId:guid}", UpdateUserAsync).WithName("UpdateUser").RequireAuthorization();
-        usersGroup.MapDelete("/user/{userId:guid}", DeleteUserAsync).WithName("DeleteUser");
+        usersGroup.MapDelete("/user/{userId:guid}", DeleteUserAsync).WithName("DeleteUser").RequireAuthorization();
 
         return app;
     }
