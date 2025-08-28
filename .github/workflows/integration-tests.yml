@@ -48,6 +48,7 @@ jobs:
   #         contents: read
   #       with:
   #         mode: 'drop'
+  #         pg_database: 'appdb-test'
   #         dry_run: 'false'
   #         verify_ssl: 'true'
   #       secrets:

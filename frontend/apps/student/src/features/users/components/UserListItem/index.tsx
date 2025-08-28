@@ -53,7 +53,7 @@ export const UserListItem = ({
       return;
     }
     updateUser(
-      { email: emailValue.trim(), passwordHash: passwordValue },
+      { email: emailValue.trim(), password: passwordValue },
       {
         onSuccess: () => {
           toast.success(t("pages.users.userUpdated"));

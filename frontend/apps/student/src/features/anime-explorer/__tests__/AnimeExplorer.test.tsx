@@ -9,7 +9,7 @@ import {
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { vi } from "vitest";
 
-import { AnimeResponse } from "@/types";
+import { AnimeResponse } from "@student/types";
 import { AnimeExplorer } from "..";
 import { useDebounceValue } from "../utils";
 

@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useState } from "react";
-import { AuthContext } from "../context";
+import { AuthContext } from "@app-providers/context";
 
 export interface Credentials {
   email: string;
