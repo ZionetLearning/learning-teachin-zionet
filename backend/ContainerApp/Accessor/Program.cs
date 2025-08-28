@@ -111,6 +111,12 @@ if (env.IsDevelopment())
 
     });
 }
+
+builder.Services.Configure<RefreshSessionsCleanupOptions>(
+    builder.Configuration.GetSection("RefreshSessionsCleanup"));
+
+builder.Services.AddHostedService<RefreshSessionsCleanupJob>();
+
 // Map endpoints (routes)
 app.MapTasksEndpoints();
 app.MapChatsEndpoints();

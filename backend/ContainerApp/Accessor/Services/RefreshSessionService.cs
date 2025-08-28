@@ -52,6 +52,53 @@ public class RefreshSessionService : IRefreshSessionService
             throw new InvalidOperationException("Could not create refresh session", ex);
         }
     }
+    public async Task<int> PurgeExpiredOrRevokedAsync(int batchSize, CancellationToken ct)
+    {
+        var total = 0;
+        var isRelational = _dbContext.Database.IsRelational(); // key: InMemory => false
+
+        while (true)
+        {
+            // 1) Select a batch of candidate IDs (works on any provider)
+            var ids = await _dbContext.RefreshSessions
+                .AsNoTracking()
+                .Where(r => r.ExpiresAt < DateTimeOffset.UtcNow || r.RevokedAt != null)
+                .OrderBy(r => r.Id)
+                .Select(r => r.Id)
+                .Take(batchSize)
+                .ToListAsync(ct);
+
+            if (ids.Count == 0)
+            {
+                break;
+            }
+
+            int deleted;
+
+            if (isRelational)
+            {
+                // 2a) Fast server-side delete (relational only, e.g., Postgres)
+                deleted = await _dbContext.RefreshSessions
+                    .Where(r => ids.Contains(r.Id))
+                    .ExecuteDeleteAsync(ct);
+            }
+            else
+            {
+                // 2b) InMemory (and other non-relational providers): load + RemoveRange
+                var entities = await _dbContext.RefreshSessions
+                    .Where(r => ids.Contains(r.Id))
+                    .ToListAsync(ct);
+
+                _dbContext.RefreshSessions.RemoveRange(entities);
+                deleted = await _dbContext.SaveChangesAsync(ct);
+            }
+
+            total += deleted;
+        }
+
+        _logger.LogInformation("RefreshSessions cleanup removed {Count} rows", total);
+        return total;
+    }
 
     public async Task<RefreshSessionDto?> FindByRefreshHashAsync(string refreshTokenHash, CancellationToken cancellationToken)
     {
