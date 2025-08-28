@@ -3,6 +3,7 @@ using Engine.Models;
 using Engine.Models.Chat;
 using DotQueue;
 using Engine.Models.QueueMessages;
+using Engine.Models.Sentences;
 
 namespace Engine.Helpers;
 public static class PayloadValidation
@@ -118,5 +119,13 @@ public static class PayloadValidation
         }
 
         logger.LogDebug("ChatAiServiseRequest validation passed.");
+    }
+    public static void ValidateSentenceGenerationRequest(SentenceRequest req, ILogger logger)
+    {
+        if (req is null)
+        {
+            logger.LogWarning("EngineChatRequest cannot be null.");
+            throw new NonRetryableException("EngineChatRequest cannot be null.");
+        }
     }
 }

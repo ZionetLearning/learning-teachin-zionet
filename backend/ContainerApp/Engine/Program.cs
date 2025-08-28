@@ -85,6 +85,16 @@ builder.Services.AddSingleton(sp =>
         }
     }
 
+    try
+    {
+        kernel.CreatePluginFromPromptDirectory("Plugins/Sentences");
+        logger.LogInformation("Prompt plugin loaded from {Dir}", "Plugins/Sentences");
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Failed to load prompt plugin from {Dir}", "Plugins/Sentences");
+    }
+
     return kernel;
 
 });

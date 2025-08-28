@@ -7,6 +7,7 @@ using Manager.Models.Chat;
 using Manager.Services.Clients.Engine;
 using Manager.Services.Clients.Engine.Models;
 using Manager.Services.Clients.Accessor;
+using Manager.Models.Sentences;
 
 namespace Manager.Endpoints;
 
@@ -44,6 +45,7 @@ public static class AiEndpoints
 
         // POST /ai-manager/speech/synthesize
         aiGroup.MapPost("/speech/synthesize", SynthesizeAsync).WithName("SynthesizeText");
+        aiGroup.MapPost("/sentence", SentenceGenerateAsync).WithName("GenerateSentence");
 
         #endregion
 
@@ -340,6 +342,40 @@ public static class AiEndpoints
                 logger.LogError("Engine synthesis failed - service returned null");
                 return Results.Problem("Speech synthesis failed.");
             }
+        }
+        catch (OperationCanceledException)
+        {
+            logger.LogWarning("Speech synthesis operation was canceled by user");
+            return Results.StatusCode(StatusCodes.Status499ClientClosedRequest);
+        }
+        catch (TimeoutException)
+        {
+            logger.LogWarning("Speech synthesis operation timed out");
+            return Results.Problem("Speech is too long.", statusCode: StatusCodes.Status408RequestTimeout);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error in speech synthesis manager");
+            return Results.Problem("An error occurred during speech synthesis.");
+        }
+    }
+    private static async Task<IResult> SentenceGenerateAsync(
+       [FromBody] SentenceRequest request,
+       [FromServices] IEngineClient engineClient,
+       [FromServices] ILogger<SpeechEndpoints> logger,
+       CancellationToken ct)
+    {
+        if (request is null)
+        {
+            return Results.BadRequest(new { error = "Request is required" });
+        }
+
+        logger.LogInformation("Received sentence generation request");
+
+        try
+        {
+            await engineClient.GenerateSentenceAsync(request, ct);
+            return Results.Ok();
         }
         catch (OperationCanceledException)
         {
