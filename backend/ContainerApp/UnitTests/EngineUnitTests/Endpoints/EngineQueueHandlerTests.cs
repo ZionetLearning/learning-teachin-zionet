@@ -9,6 +9,7 @@ using Engine.Services.Clients.AccessorClient.Models;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Dapr.Client;
 using System.Text.Json;
 
 public class EngineQueueHandlerTests
@@ -23,6 +24,7 @@ public class EngineQueueHandlerTests
         Mock<IAiReplyPublisher> pub,
         Mock<IAccessorClient> accessorClient,
         Mock<ILogger<EngineQueueHandler>> log,
+        Mock<DaprClient> dapr,
         EngineQueueHandler sut
     ) CreateSut()
     {
@@ -31,36 +33,25 @@ public class EngineQueueHandlerTests
         var pub = new Mock<IAiReplyPublisher>(MockBehavior.Strict);
         var accessorClient = new Mock<IAccessorClient>(MockBehavior.Strict);
         var log = new Mock<ILogger<EngineQueueHandler>>();
-        var sut = new EngineQueueHandler(engine.Object, ai.Object, pub.Object, accessorClient.Object, log.Object);
-        return (engine, ai, pub, accessorClient, log, sut);
+        var dapr = new Mock<DaprClient>(MockBehavior.Strict);
+        var sut = new EngineQueueHandler(engine.Object, ai.Object, pub.Object, accessorClient.Object, log.Object, dapr.Object);
+        return (engine, ai, pub, accessorClient, log, dapr, sut);
     }
 
     [Fact]
     public async Task HandleAsync_CreateTask_Processes_TaskModel()
     {
-        // Arrange
-        var (engine, ai, pub, accessorClient, log, sut) = CreateSut();
+        var (engine, ai, pub, accessorClient, log, dapr, sut) = CreateSut();
 
-        var task = new TaskModel
-        {
-            Id = 42,
-            Name = "demo",
-            Payload = "{}"
-        };
+        var task = new TaskModel { Id = 42, Name = "demo", Payload = "{}" };
 
         engine.Setup(e => e.ProcessTaskAsync(task, It.IsAny<CancellationToken>()))
               .Returns(Task.CompletedTask);
 
-        var msg = new Message
-        {
-            ActionName = MessageAction.CreateTask,
-            Payload = ToJsonElement(task)
-        };
+        var msg = new Message { ActionName = MessageAction.CreateTask, Payload = ToJsonElement(task) };
 
-        // Act
-        await sut.HandleAsync(msg, renewLock: () => Task.CompletedTask, CancellationToken.None);
+        await sut.HandleAsync(msg, null, () => Task.CompletedTask, CancellationToken.None);
 
-        // Assert
         engine.Verify(e => e.ProcessTaskAsync(task, It.IsAny<CancellationToken>()), Times.Once);
         engine.VerifyNoOtherCalls();
         ai.VerifyNoOtherCalls();
@@ -70,16 +61,15 @@ public class EngineQueueHandlerTests
     [Fact]
     public async Task HandleAsync_CreateTask_InvalidPayload_DoesNotCall_Engine()
     {
-        var (engine, ai, pub, accessorClient, log, sut) = CreateSut();
+        var (engine, ai, pub, accessorClient, log, dapr, sut) = CreateSut();
 
-        // payload = "null"
         var msg = new Message
         {
             ActionName = MessageAction.CreateTask,
             Payload = JsonSerializer.Deserialize<JsonElement>("null")
         };
 
-        var act = () => sut.HandleAsync(msg, () => Task.CompletedTask, CancellationToken.None);
+        var act = () => sut.HandleAsync(msg, null, () => Task.CompletedTask, CancellationToken.None);
 
         await act.Should().ThrowAsync<NonRetryableException>()
                  .WithMessage("*Payload deserialization returned null*");
@@ -92,14 +82,12 @@ public class EngineQueueHandlerTests
     [Fact]
     public async Task HandleAsync_ProcessingQuestionAi_HappyPath_Calls_Ai_And_Publishes()
     {
-        // Arrange
-        var (engine, ai, pub, accessorClient, log, sut) = CreateSut();
+        var (engine, ai, pub, accessorClient, log, dapr, sut) = CreateSut();
 
         var requestId = Guid.NewGuid().ToString();
         var threadId = Guid.NewGuid();
         var userId = "testUserId";
-        var textAnserFromAI = "world";
-
+        var textAnswerFromAI = "world";
         var chatHistory = new List<ChatMessage>();
 
         var requestToEngine = new EngineChatRequest
@@ -131,7 +119,7 @@ public class EngineQueueHandlerTests
             ThreadId = threadId,
             UserId = userId,
             Role = MessageRole.Assistant,
-            Content = textAnserFromAI
+            Content = textAnswerFromAI
         };
 
         var aiResponse = new ChatAiServiceResponse
@@ -155,25 +143,18 @@ public class EngineQueueHandlerTests
         var engineResponse = new EngineChatResponse
         {
             RequestId = requestId,
-            AssistantMessage = textAnserFromAI,
+            AssistantMessage = textAnswerFromAI,
             ThreadId = threadId,
             Status = ChatAnswerStatus.Ok
-
         };
 
         pub.Setup(p => p.SendReplyAsync(engineResponse, $"{QueueNames.ManagerCallbackQueue}-out", It.IsAny<CancellationToken>()))
            .Returns(Task.CompletedTask);
 
-        var msg = new Message
-        {
-            ActionName = MessageAction.ProcessingQuestionAi,
-            Payload = ToJsonElement(requestToEngine)
-        };
+        var msg = new Message { ActionName = MessageAction.ProcessingQuestionAi, Payload = ToJsonElement(requestToEngine) };
 
-        // Act
-        await sut.HandleAsync(msg, () => Task.CompletedTask, CancellationToken.None);
+        await sut.HandleAsync(msg, null, () => Task.CompletedTask, CancellationToken.None);
 
-        // Assert
         ai.Verify(a => a.ChatHandlerAsync(reqestToAiService, It.IsAny<CancellationToken>()), Times.Once);
         ai.VerifyNoOtherCalls();
         pub.Verify(p => p.SendReplyAsync(engineResponse, $"{QueueNames.ManagerCallbackQueue}-out", It.IsAny<CancellationToken>()), Times.Once);
@@ -184,18 +165,15 @@ public class EngineQueueHandlerTests
     [Fact(Skip = "Todo: do after refactoring ai Chat for queue")]
     public async Task HandleAsync_ProcessingQuestionAi_MissingThreadId_ThrowsNonRetryable_AndSkipsWork()
     {
-        var (engine, ai, pub, accessorClient, log, sut) = CreateSut();
-
-        var requestId = Guid.NewGuid().ToString();
-        var userId = "testUserId";
+        var (engine, ai, pub, accessorClient, log, dapr, sut) = CreateSut();
 
         var req = new EngineChatRequest
         {
-            RequestId = requestId,
+            RequestId = Guid.NewGuid().ToString(),
             ThreadId = Guid.Empty,
             UserMessage = "hello",
             ChatType = ChatType.Default,
-            UserId = userId,
+            UserId = "testUserId",
             SentAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
             TtlSeconds = 120,
         };
@@ -203,21 +181,14 @@ public class EngineQueueHandlerTests
         accessorClient.Setup(ac => ac.GetChatHistoryAsync(Guid.Empty, It.IsAny<CancellationToken>()))
               .ThrowsAsync(new InvalidOperationException("Invalid ThreadId"));
 
-        var msg = new Message
-        {
-            ActionName = MessageAction.ProcessingQuestionAi,
-            Payload = ToJsonElement(req)
-        };
+        var msg = new Message { ActionName = MessageAction.ProcessingQuestionAi, Payload = ToJsonElement(req) };
 
-        var act = () => sut.HandleAsync(msg, () => Task.CompletedTask, CancellationToken.None);
+        var act = () => sut.HandleAsync(msg, null, () => Task.CompletedTask, CancellationToken.None);
 
         await act.Should().ThrowAsync<RetryableException>()
           .WithMessage("*Transient error while processing AI question*");
 
         accessorClient.Verify(ac => ac.GetChatHistoryAsync(Guid.Empty, It.IsAny<CancellationToken>()), Times.Once);
-
-
-        // no dependencies were invoked
         accessorClient.VerifyNoOtherCalls();
         ai.VerifyNoOtherCalls();
         engine.VerifyNoOtherCalls();
@@ -227,13 +198,11 @@ public class EngineQueueHandlerTests
     [Fact]
     public async Task HandleAsync_ProcessingQuestionAi_AiThrows_WrappedInRetryable()
     {
-        var (engine, ai, pub, accessorClient, log, sut) = CreateSut();
-
+        var (engine, ai, pub, accessorClient, log, dapr, sut) = CreateSut();
 
         var requestId = Guid.NewGuid().ToString();
         var threadId = Guid.NewGuid();
         var userId = "testUserId";
-
         var chatHistory = new List<ChatMessage>();
 
         var requestToEngine = new EngineChatRequest
@@ -265,14 +234,9 @@ public class EngineQueueHandlerTests
         ai.Setup(a => a.ChatHandlerAsync(expectedAiRequest, It.IsAny<CancellationToken>()))
           .ThrowsAsync(new InvalidOperationException("AI failed"));
 
+        var msg = new Message { ActionName = MessageAction.ProcessingQuestionAi, Payload = ToJsonElement(requestToEngine) };
 
-        var msg = new Message
-        {
-            ActionName = MessageAction.ProcessingQuestionAi,
-            Payload = ToJsonElement(requestToEngine)
-        };
-
-        var act = () => sut.HandleAsync(msg, () => Task.CompletedTask, CancellationToken.None);
+        var act = () => sut.HandleAsync(msg, null, () => Task.CompletedTask, CancellationToken.None);
 
         var ex = (await act.Should().ThrowAsync<RetryableException>()
                            .WithMessage("*Transient error while processing AI question*"))
@@ -290,15 +254,11 @@ public class EngineQueueHandlerTests
     [Fact]
     public async Task HandleAsync_UnknownAction_ThrowsNonRetryable_AndSkipsWork()
     {
-        var (engine, ai, pub, accessorClient, log, sut) = CreateSut();
+        var (engine, ai, pub, accessorClient, log, dapr, sut) = CreateSut();
 
-        var msg = new Message
-        {
-            ActionName = (MessageAction)9999,
-            Payload = JsonSerializer.Deserialize<JsonElement>("{}")
-        };
+        var msg = new Message { ActionName = (MessageAction)9999, Payload = JsonSerializer.Deserialize<JsonElement>("{}") };
 
-        var act = () => sut.HandleAsync(msg, () => Task.CompletedTask, CancellationToken.None);
+        var act = () => sut.HandleAsync(msg, null, () => Task.CompletedTask, CancellationToken.None);
 
         await act.Should().ThrowAsync<NonRetryableException>()
                  .WithMessage("*No handler for action 9999*");

@@ -15,5 +15,6 @@ public enum MessageAction
     CreateTask,
     TestLongTask,
     ProcessingQuestionAi,
-    AnswerAi
+    AnswerAi,
+    TaskResult
 }

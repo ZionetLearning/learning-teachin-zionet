@@ -11,17 +11,20 @@ namespace ManagerUnitTests.Endpoints;
 
 public class ManagerQueueHandlerTests
 {
-    // Centralize common setup to remove boilerplate in each test
+    // Centralize common setup
     private static (
-    Mock<IAiGatewayService> ai,
-    ManagerQueueHandler handler
-) CreateSut()
+        Mock<IAiGatewayService> ai,
+        Mock<ICallbackDispatcher> dispatcher,
+        ManagerQueueHandler handler
+    ) CreateSut()
     {
         var ai = new Mock<IAiGatewayService>(MockBehavior.Strict);
+        var dispatcher = new Mock<ICallbackDispatcher>(MockBehavior.Loose);
         var logger = Mock.Of<ILogger<ManagerQueueHandler>>();
         var managerService = Mock.Of<IManagerService>();
-        var handler = new ManagerQueueHandler(ai.Object, logger, managerService);
-        return (ai, handler);
+        var handler = new ManagerQueueHandler(ai.Object, logger, managerService, dispatcher.Object);
+
+        return (ai, dispatcher, handler);
     }
 
     private static JsonElement ToJsonElement<T>(T value) =>
@@ -30,8 +33,7 @@ public class ManagerQueueHandlerTests
     [Fact(DisplayName = "HandleAnswerAiAsync => saves valid AI answer")]
     public async Task HandleAnswerAi_Saves_When_Valid()
     {
-        // Arrange
-        var (ai, handler) = CreateSut();
+        var (ai, _, handler) = CreateSut();
 
         var response = new AiResponseModel
         {
@@ -55,10 +57,8 @@ public class ManagerQueueHandlerTests
           .Returns(Task.CompletedTask)
           .Verifiable();
 
-        // Act
-        await handler.HandleAnswerAiAsync(message, () => Task.CompletedTask, CancellationToken.None);
+        await handler.HandleAnswerAiAsync(message, null, () => Task.CompletedTask, CancellationToken.None);
 
-        // Assert
         ai.Verify();
         ai.VerifyNoOtherCalls();
     }
@@ -66,7 +66,7 @@ public class ManagerQueueHandlerTests
     [Fact(DisplayName = "HandleAnswerAiAsync wraps failure in RetryableException for retry policy")]
     public async Task HandleAnswerAi_Wraps_On_Error()
     {
-        var (ai, handler) = CreateSut();
+        var (ai, _, handler) = CreateSut();
 
         var payload = new AiResponseModel
         {
@@ -85,7 +85,7 @@ public class ManagerQueueHandlerTests
           .ThrowsAsync(new InvalidOperationException("boom"));
 
         var ex = await Assert.ThrowsAsync<RetryableException>(() =>
-            handler.HandleAnswerAiAsync(message, () => Task.CompletedTask, CancellationToken.None));
+            handler.HandleAnswerAiAsync(message, null, () => Task.CompletedTask, CancellationToken.None));
 
         Assert.IsType<InvalidOperationException>(ex.InnerException);
         Assert.Contains("boom", ex.InnerException!.Message);
@@ -98,9 +98,8 @@ public class ManagerQueueHandlerTests
     [Fact(DisplayName = "HandleAsync routes known action; unknown action throws NonRetryable")]
     public async Task HandleAsync_Routes_Known_And_Throws_On_Unknown()
     {
-        var (ai, handler) = CreateSut();
+        var (ai, _, handler) = CreateSut();
 
-        // known action: valid payload so it routes and calls SaveAnswerAsync once
         var ok = new AiResponseModel
         {
             Id = "x",
@@ -120,12 +119,11 @@ public class ManagerQueueHandlerTests
           .Returns(Task.CompletedTask)
           .Verifiable();
 
-        await handler.HandleAsync(okMsg, () => Task.CompletedTask, CancellationToken.None);
+        await handler.HandleAsync(okMsg, null, () => Task.CompletedTask, CancellationToken.None);
 
         ai.Verify(a => a.SaveAnswerAsync(It.IsAny<AiResponseModel>(), It.IsAny<CancellationToken>()), Times.Once);
         ai.VerifyNoOtherCalls();
 
-        // unknown action: handler should throw NonRetryableException
         var unknownMsg = new Message
         {
             ActionName = (MessageAction)999,
@@ -133,6 +131,6 @@ public class ManagerQueueHandlerTests
         };
 
         await Assert.ThrowsAsync<NonRetryableException>(() =>
-            handler.HandleAsync(unknownMsg, () => Task.CompletedTask, CancellationToken.None));
+            handler.HandleAsync(unknownMsg, null, () => Task.CompletedTask, CancellationToken.None));
     }
 }

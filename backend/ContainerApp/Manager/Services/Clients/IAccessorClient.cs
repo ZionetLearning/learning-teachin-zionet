@@ -6,9 +6,9 @@ namespace Manager.Services.Clients;
 
 public interface IAccessorClient
 {
-    Task<bool> UpdateTaskName(int id, string newTaskName);
+    Task<bool> UpdateTaskName(int id, string newTaskName, IReadOnlyDictionary<string, string>? metadataCallback = null);
     Task<bool> DeleteTask(int id);
-    Task<(bool success, string message)> PostTaskAsync(TaskModel task);
+    Task<(bool success, string message)> PostTaskAsync(TaskModel task, IReadOnlyDictionary<string, string>? metadataCallback = null);
     Task<TaskModel?> GetTaskAsync(int id);
     Task<IReadOnlyList<ChatMessage>> GetChatHistoryAsync(Guid threadId, CancellationToken ct = default);
     Task<ChatMessage?> StoreMessageAsync(ChatMessage msg, CancellationToken ct = default);

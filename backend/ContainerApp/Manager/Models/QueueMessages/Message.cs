@@ -10,6 +10,7 @@ public record Message
     public JsonElement Payload { get; set; }
     public JsonElement? Metadata { get; set; } = null;
 }
+
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum MessageAction
 {
@@ -18,5 +19,6 @@ public enum MessageAction
     TestLongTask,
     ProcessingQuestionAi,
     AnswerAi,
-    NotifyUser
+    NotifyUser,
+    TaskResult
 }

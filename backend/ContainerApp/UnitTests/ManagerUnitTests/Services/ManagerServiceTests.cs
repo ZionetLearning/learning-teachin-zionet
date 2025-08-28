@@ -84,7 +84,7 @@ public class ManagerServiceTests
 
         ok.Should().BeFalse();
         msg.Should().Be(expectedMsg);
-        _accessor.Verify(a => a.PostTaskAsync(It.IsAny<TaskModel>()), Times.Never);
+        _accessor.Verify(a => a.PostTaskAsync(It.IsAny<TaskModel>(), null), Times.Never);
     }
 
     [Fact]
@@ -92,7 +92,7 @@ public class ManagerServiceTests
     {
         var sut = Create();
         var t = new TaskModel { Id = 2, Name = "ok", Payload = "p" };
-        _accessor.Setup(a => a.PostTaskAsync(t)).ReturnsAsync((true, "sent"));
+        _accessor.Setup(a => a.PostTaskAsync(t, null)).ReturnsAsync((true, "sent"));
 
         var (ok, msg) = await sut.CreateTaskAsync(t);
 
@@ -106,7 +106,7 @@ public class ManagerServiceTests
     {
         var sut = Create();
         var t = new TaskModel { Id = 3, Name = "ok", Payload = "p" };
-        _accessor.Setup(a => a.PostTaskAsync(t)).ReturnsAsync((false, "bad"));
+        _accessor.Setup(a => a.PostTaskAsync(t, null)).ReturnsAsync((false, "bad"));
 
         var (ok, msg) = await sut.CreateTaskAsync(t);
 
@@ -120,7 +120,7 @@ public class ManagerServiceTests
     {
         var sut = Create();
         var t = new TaskModel { Id = 4, Name = "ok", Payload = "p" };
-        _accessor.Setup(a => a.PostTaskAsync(t)).ThrowsAsync(new Exception("boom"));
+        _accessor.Setup(a => a.PostTaskAsync(t, null)).ThrowsAsync(new Exception("boom"));
 
         var (ok, msg) = await sut.CreateTaskAsync(t);
 
@@ -135,7 +135,7 @@ public class ManagerServiceTests
     {
         var sut = Create();
         var t = new TaskModel { Id = 9, Name = "n", Payload = "p" };
-        _engine.Setup(e => e.ProcessTaskLongAsync(t)).ReturnsAsync((true, "ok"));
+        _engine.Setup(e => e.ProcessTaskLongAsync(t, null)).ReturnsAsync((true, "ok"));
 
         var (ok, msg) = await sut.ProcessTaskLongAsync(t);
 
@@ -149,7 +149,7 @@ public class ManagerServiceTests
     {
         var sut = Create();
         var t = new TaskModel { Id = 9, Name = "n", Payload = "p" };
-        _engine.Setup(e => e.ProcessTaskLongAsync(t)).ThrowsAsync(new Exception("x"));
+        _engine.Setup(e => e.ProcessTaskLongAsync(t, null)).ThrowsAsync(new Exception("x"));
 
         var (ok, msg) = await sut.ProcessTaskLongAsync(t);
 
@@ -168,14 +168,14 @@ public class ManagerServiceTests
         (await sut.UpdateTaskName(1, "")).Should().BeFalse();
         (await sut.UpdateTaskName(1, new string('a', 101))).Should().BeFalse();
 
-        _accessor.Verify(a => a.UpdateTaskName(It.IsAny<int>(), It.IsAny<string>()), Times.Never);
+        _accessor.Verify(a => a.UpdateTaskName(It.IsAny<int>(), It.IsAny<string>(), null), Times.Never);
     }
 
     [Fact]
     public async Task UpdateTaskName_Success_ReturnsTrue()
     {
         var sut = Create();
-        _accessor.Setup(a => a.UpdateTaskName(5, "new")).ReturnsAsync(true);
+        _accessor.Setup(a => a.UpdateTaskName(5, "new", null)).ReturnsAsync(true);
 
         var ok = await sut.UpdateTaskName(5, "new");
 
@@ -187,7 +187,7 @@ public class ManagerServiceTests
     public async Task UpdateTaskName_WhenAccessorReturnsFalse_ReturnsFalse()
     {
         var sut = Create();
-        _accessor.Setup(a => a.UpdateTaskName(6, "x")).ReturnsAsync(false);
+        _accessor.Setup(a => a.UpdateTaskName(6, "x", null)).ReturnsAsync(false);
 
         var ok = await sut.UpdateTaskName(6, "x");
 
@@ -199,7 +199,7 @@ public class ManagerServiceTests
     public async Task UpdateTaskName_WhenAccessorThrows_ReturnsFalse()
     {
         var sut = Create();
-        _accessor.Setup(a => a.UpdateTaskName(7, "x")).ThrowsAsync(new Exception("fail"));
+        _accessor.Setup(a => a.UpdateTaskName(7, "x", null)).ThrowsAsync(new Exception("fail"));
 
         var ok = await sut.UpdateTaskName(7, "x");
 

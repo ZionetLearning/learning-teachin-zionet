@@ -86,7 +86,10 @@ public class ManagerService : IManagerService
         try
         {
             _logger.LogDebug("Posting task {TaskId} with name '{TaskName}'", task.Id, task.Name);
-            var result = await _accessorClient.PostTaskAsync(task);
+
+            var metadataCallback = CallbackMetadataFactory.GetCallbackMethod(nameof(IManagerCallbacks.OnTaskCreatedAsync));
+
+            var result = await _accessorClient.PostTaskAsync(task, metadataCallback);
             if (result.success)
             {
                 _logger.LogDebug("Task {TaskId} successfully posted to queue", task.Id);
@@ -110,7 +113,11 @@ public class ManagerService : IManagerService
         try
         {
             _logger.LogDebug("Inside: {MethodName}", nameof(CreateTaskAsync));
-            var result = await _engineClient.ProcessTaskLongAsync(task);
+
+            var metadataCallback = CallbackMetadataFactory.GetCallbackMethod(nameof(IManagerCallbacks.OnTaskCreatedAsync));
+
+            var result = await _engineClient.ProcessTaskLongAsync(task, metadataCallback);
+
             return (result.success, result.message);
         }
         catch (Exception ex)
@@ -145,7 +152,11 @@ public class ManagerService : IManagerService
         try
         {
             _logger.LogInformation("Updating task {TaskId} name to '{NewTaskName}'", id, newTaskName);
-            var result = await _accessorClient.UpdateTaskName(id, newTaskName);
+
+            var metadataCallback = CallbackMetadataFactory.GetCallbackMethod(nameof(IManagerCallbacks.OnTaskUpdatedAsync));
+
+            var result = await _accessorClient.UpdateTaskName(id, newTaskName, metadataCallback);
+
             if (result)
             {
                 _logger.LogInformation("Task {TaskId} name successfully updated", id);
@@ -176,6 +187,7 @@ public class ManagerService : IManagerService
         try
         {
             _logger.LogInformation("Attempting to delete task {TaskId}", id);
+
             var result = await _accessorClient.DeleteTask(id);
             if (result)
             {

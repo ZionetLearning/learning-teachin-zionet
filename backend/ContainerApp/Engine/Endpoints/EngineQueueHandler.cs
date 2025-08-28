@@ -1,4 +1,6 @@
 ﻿using DotQueue;
+using System.Text.Json;
+using Dapr.Client;
 using Engine.Constants;
 using Engine.Helpers;
 using Engine.Models;
@@ -13,24 +15,27 @@ public class EngineQueueHandler : IQueueHandler<Message>
 {
     private readonly IEngineService _engine;
     private readonly ILogger<EngineQueueHandler> _logger;
-    private readonly Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>> _handlers;
+    private readonly Dictionary<MessageAction, Func<Message, IReadOnlyDictionary<string, string>?, Func<Task>, CancellationToken, Task>> _handlers;
     private readonly IChatAiService _aiService;
     private readonly IAiReplyPublisher _publisher;
     private readonly IAccessorClient _accessorClient;
+    private readonly DaprClient _daprClient;
 
     public EngineQueueHandler(
         IEngineService engine,
         IChatAiService aiService,
         IAiReplyPublisher publisher,
         IAccessorClient accessorClient,
-        ILogger<EngineQueueHandler> logger)
+        ILogger<EngineQueueHandler> logger,
+        DaprClient daprClient)
     {
         _engine = engine;
         _aiService = aiService;
         _publisher = publisher;
         _accessorClient = accessorClient;
         _logger = logger;
-        _handlers = new Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>>
+        _daprClient = daprClient;
+        _handlers = new Dictionary<MessageAction, Func<Message, IReadOnlyDictionary<string, string>?, Func<Task>, CancellationToken, Task>>
         {
             [MessageAction.CreateTask] = HandleCreateTaskAsync,
             [MessageAction.TestLongTask] = HandleTestLongTaskAsync,
@@ -39,11 +44,11 @@ public class EngineQueueHandler : IQueueHandler<Message>
         };
     }
 
-    public async Task HandleAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
+    public async Task HandleAsync(Message message, IReadOnlyDictionary<string, string>? metadataCallback, Func<Task> renewLock, CancellationToken cancellationToken)
     {
         if (_handlers.TryGetValue(message.ActionName, out var handler))
         {
-            await handler(message, renewLock, cancellationToken);
+            await handler(message, metadataCallback, renewLock, cancellationToken);
         }
         else
         {
@@ -52,7 +57,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
         }
     }
 
-    private async Task HandleCreateTaskAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
+    private async Task HandleCreateTaskAsync(Message message, IReadOnlyDictionary<string, string>? metadataCallback, Func<Task> renewLock, CancellationToken cancellationToken)
     {
         try
         {
@@ -62,6 +67,29 @@ public class EngineQueueHandler : IQueueHandler<Message>
 
             _logger.LogDebug("Processing task {Id}", payload.Id);
             await _engine.ProcessTaskAsync(payload, cancellationToken);
+
+            // build TaskResult
+            var result = new TaskResult(payload.Id, TaskResultStatus.Created);
+
+            var resultMessage = new Message
+            {
+                ActionName = MessageAction.TaskResult,
+                Payload = JsonSerializer.SerializeToElement(result)
+            };
+
+            // extract queue + method from metadataCallback
+            var parsed = CallbackMetadataParser.TryParse(metadataCallback);
+            if (parsed is { } cb)
+            {
+                await _daprClient.InvokeBindingAsync($"{cb.Queue}-out", "create", resultMessage, metadataCallback, cancellationToken);
+                _logger.LogInformation("Sent TaskResult (Created) for Task {Id} to {Queue} (Method={Method})",
+                    payload.Id, cb.Queue, cb.Method);
+            }
+            else
+            {
+                _logger.LogWarning("No valid callback metadata for Task {Id}", payload.Id);
+            }
+
             _logger.LogInformation("Task {Id} processed", payload.Id);
         }
         catch (NonRetryableException ex)
@@ -82,7 +110,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
         }
     }
 
-    private async Task HandleTestLongTaskAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
+    private async Task HandleTestLongTaskAsync(Message message, IReadOnlyDictionary<string, string>? metadataCallback, Func<Task> renewLock, CancellationToken cancellationToken)
     {
         using var renewalCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         var renewalTask = Task.Run(async () =>
@@ -138,6 +166,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
     }
     private async Task HandleProcessingQuestionAiAsync(
         Message message,
+        IReadOnlyDictionary<string, string>? metadataCallback,
         Func<Task> renewLock,
         CancellationToken ct)
     {

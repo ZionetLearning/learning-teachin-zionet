@@ -6,6 +6,7 @@ using Accessor.Models.QueueMessages;
 using Accessor.Services;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Dapr.Client;
 
 namespace AccessorUnitTests.ApprovalTests;
 
@@ -18,13 +19,14 @@ public class AccessorQueueHandler_Invalid_Approval
         var svc = new Mock<IAccessorService>(MockBehavior.Strict);
         var log = new Mock<ILogger<AccessorQueueHandler>>();
         var managerCallbackSvc = new Mock<IManagerCallbackQueueService>(MockBehavior.Strict);
+        var dapr = new Mock<DaprClient>(MockBehavior.Strict);
 
-        var handler = new AccessorQueueHandler(svc.Object, managerCallbackSvc.Object, log.Object);
+        var handler = new AccessorQueueHandler(svc.Object, managerCallbackSvc.Object, log.Object, dapr.Object);
 
         Exception? ex = null;
         try
         {
-            await handler.HandleAsync(msg, () => Task.CompletedTask, CancellationToken.None);
+            await handler.HandleAsync(msg, metadataCallback: null, () => Task.CompletedTask, CancellationToken.None);
         }
         catch (Exception e)
         {
@@ -46,6 +48,7 @@ public class AccessorQueueHandler_Invalid_Approval
         );
 
         svc.VerifyNoOtherCalls();
+        dapr.VerifyNoOtherCalls();
     }
 
     public static IEnumerable<object[]> BadMessages()
