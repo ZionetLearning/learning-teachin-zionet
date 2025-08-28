@@ -1,4 +1,4 @@
-import { AnimeExplorer } from "@/features";
+import { AnimeExplorer } from "@student/features";
 
 export const AnimeExplorerPage = () => {
   return <AnimeExplorer />;

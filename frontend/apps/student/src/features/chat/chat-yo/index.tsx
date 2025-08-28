@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useChat } from "@/hooks";
+import { useChat } from "@student/hooks";
 import { useStyles } from "./style";
-import { ReactChatElements } from "@/components";
+import { ReactChatElements } from "@student/components";
 import "react-chat-elements/dist/main.css";
 
 export const ChatYo = () => {

@@ -1,6 +1,5 @@
 import { WordOrderGame } from "./index";
-import type { Meta, StoryObj } from "@storybook/react-vite";
-
+import type { Meta, StoryObj } from "@storybook/react";
 const meta: Meta = {
   title: "Features/WordOrderGame",
   component: WordOrderGame,

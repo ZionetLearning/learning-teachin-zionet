@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { ErrorMessage, Field, Form, Formik, FormikHelpers } from "formik";
 import { useNavigate } from "react-router-dom";
 
-import { useAuth } from "@app-providers";
+import { useAuth } from "@student/providers/auth";
 import { useStyles } from "./style";
 import {
   loginSchema,

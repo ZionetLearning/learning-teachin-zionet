@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { useSignalR } from "@/hooks/useSignalR";
+import { useSignalR } from "@student/hooks/useSignalR";
 
 export type TaskInput = {
   id: number;

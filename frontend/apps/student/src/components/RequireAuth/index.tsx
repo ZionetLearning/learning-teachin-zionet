@@ -1,7 +1,7 @@
 import { ReactNode, useEffect } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 
-import { Credentials, useAuth } from "@app-providers";
+import { Credentials, useAuth } from "@student/providers/auth";
 
 export const RequireAuth = ({ children }: { children: ReactNode }) => {
   const { isAuthorized, logout } = useAuth();
