@@ -52,7 +52,43 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+
+  frontend-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [student, teacher, admin]
+    env:
+      FE_DIR: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: '${{ env.FE_DIR }}/package-lock.json'
+
+      - name: Install Dependencies
+        working-directory: ${{ env.FE_DIR }}
+        run: npm ci
+
+      - name: Run Tests for ${{ matrix.app }}
+        working-directory: ${{ env.FE_DIR }}
+        run: |
+          # Check if test script exists in package.json
+          if grep -q "\"test:${{ matrix.app }}\":" package.json; then
+            echo "Running tests for ${{ matrix.app }}..."
+            npm run test:${{ matrix.app }} -- --reporter=verbose --run --no-watch --pool=threads
+            echo "Tests completed successfully for ${{ matrix.app }}"
+          else
+            echo "No test:${{ matrix.app }} script found in package.json - skipping"
+          fi
+
+
   frontend-build-and-lint:
+    needs: [frontend-test]
     runs-on: ubuntu-latest
     env:
       FE_DIR: frontend
@@ -92,10 +128,10 @@ jobs:
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
           VITE_OPENWEATHERMAP_API_KEY: ${{ secrets.VITE_OPENWEATHERMAP_API_KEY }}
           VITE_BASE_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev"
-          VITE_AI_URL: "${VITE_BASE_URL}/ai-manager"
-          VITE_AUTH_URL: "${VITE_BASE_URL}/auth"
-          VITE_TASKS_URL: "${VITE_BASE_URL}/tasks-manager"
-          VITE_USERS_URL: "${VITE_BASE_URL}/users-manager"
+          VITE_AI_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/ai-manager"
+          VITE_AUTH_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/auth"
+          VITE_TASKS_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/tasks-manager"
+          VITE_USERS_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/users-manager"
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           RELEASE: ${{ env.RELEASE_NAME }}
         run: |
