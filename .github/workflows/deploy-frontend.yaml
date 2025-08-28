@@ -90,6 +90,12 @@ jobs:
           VITE_AZURE_OPENAI_ENDPOINT: "https://france-teachin-open-ai.openai.azure.com/"
           VITE_APPINSIGHTS_CONNECTION_STRING: ""
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          VITE_OPENWEATHERMAP_API_KEY: ${{ secrets.VITE_OPENWEATHERMAP_API_KEY }}
+          VITE_BASE_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev"
+          VITE_AI_URL: "${VITE_BASE_URL}/ai-manager"
+          VITE_AUTH_URL: "${VITE_BASE_URL}/auth"
+          VITE_TASKS_URL: "${VITE_BASE_URL}/tasks-manager"
+          VITE_USERS_URL: "${VITE_BASE_URL}/users-manager"
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           RELEASE: ${{ env.RELEASE_NAME }}
         run: |
@@ -263,18 +269,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: frontend-build
-          path: frontend-build-downloaded/
-
-      - name: Debug - Show downloaded structure
-        run: |
-          echo "=== Downloaded artifact structure ==="
-          find frontend-build-downloaded/ -type f | head -20
-          echo "=== Looking for apps directory ==="
-          ls -la frontend-build-downloaded/
-          if [ -d "frontend-build-downloaded/apps" ]; then
-            echo "Found apps directory, listing contents:"
-            ls -la frontend-build-downloaded/apps/
-          fi
+          path: ${{ env.FE_DIR }}/dist/
 
       - name: Get SWA deployment token
         id: swatoken
@@ -308,7 +303,7 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ env.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: "upload"
-          app_location: "frontend-build-downloaded/apps/${{ matrix.app }}"
+          app_location: "${{ env.FE_DIR }}/dist/apps/${{ matrix.app }}"
           api_location: "" # No API
           output_location: "" # Files are already built
           skip_app_build: true
