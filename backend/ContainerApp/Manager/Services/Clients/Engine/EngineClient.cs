@@ -51,15 +51,42 @@ public class EngineClient : IEngineClient
         }
     }
 
-    public async Task<EngineChatResponse> ChatAsync(EngineChatRequest request, CancellationToken cancellationToken = default)
+    public async Task<(bool success, string message)> ChatAsync(EngineChatRequest request)
     {
-        _logger.LogInformation("Invoke Engine /chat synchronously (thread: {Thread}, userId:{UserId})", request.ThreadId, request.UserId);
+        _logger.LogInformation("Invoke Engine /chat asynchronously (thread {Thread})", request.ThreadId);
+        try
+        {
+            var requestMetadata = new UserContextMetadata
+            {
+                UserId = request.UserId.ToString()
+            };
 
-        return await _daprClient.InvokeMethodAsync<EngineChatRequest, EngineChatResponse>(
-            appId: AppIds.Engine,
-            methodName: "chat",
-            data: request,
-            cancellationToken: cancellationToken);
+            var message = new Message
+            {
+                ActionName = MessageAction.ProcessingChatMessage,
+                Payload = JsonSerializer.SerializeToElement(request),
+                Metadata = JsonSerializer.SerializeToElement(requestMetadata)
+            };
+
+            var queueMetadata = new Dictionary<string, string>
+            {
+                ["sessionId"] = request.ThreadId.ToString()
+            };
+
+            await _daprClient.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message, queueMetadata);
+
+            _logger.LogDebug(
+                "ProcessingChatMessage request for thread {ThreadId} sent to Engine via binding '{Binding}'",
+                request.ThreadId,
+                QueueNames.EngineQueue
+            );
+            return (true, "sent to engine");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send chat request to Engine");
+            return (false, "failed to send chat request");
+        }
     }
 
     public async Task<ChatHistoryForFrontDto?> GetHistoryChatAsync(Guid chatId, Guid userId, CancellationToken cancellationToken = default)

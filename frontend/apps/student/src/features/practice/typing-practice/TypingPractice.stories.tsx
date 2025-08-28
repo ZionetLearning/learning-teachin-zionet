@@ -1,6 +1,5 @@
 import { TypingPractice } from ".";
-import type { Meta, StoryObj } from "@storybook/react-vite";
-
+import type { Meta, StoryObj } from "@storybook/react";
 const meta: Meta<typeof TypingPractice> = {
   component: TypingPractice,
   title: "Features/Practices/TypingPractice",

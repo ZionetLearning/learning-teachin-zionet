@@ -1,9 +1,11 @@
-﻿using DotQueue;
+﻿using System.Text.Json;
+using DotQueue;
 using Manager.Models;
+using Manager.Models.Chat;
 using Manager.Models.ModelValidation;
+using Manager.Models.Notifications;
 using Manager.Models.QueueMessages;
 using Manager.Services;
-using System.Text.Json;
 
 namespace Manager.Endpoints;
 public class ManagerQueueHandler : IQueueHandler<Message>
@@ -25,6 +27,7 @@ public class ManagerQueueHandler : IQueueHandler<Message>
         {
             [MessageAction.AnswerAi] = HandleAnswerAiAsync,
             [MessageAction.NotifyUser] = HandleNotifyUserAsync,
+            [MessageAction.ProcessingChatMessage] = HandleAIChatAnswerAsync
         };
     }
 
@@ -143,6 +146,69 @@ public class ManagerQueueHandler : IQueueHandler<Message>
 
             _logger.LogError(ex, "Error notifying user");
             throw new RetryableException("Transient error while notifying user.", ex);
+        }
+    }
+
+    public async Task HandleAIChatAnswerAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var chatResponse = message.Payload.Deserialize<AIChatResponse>();
+            if (chatResponse is null)
+            {
+                _logger.LogError("Payload deserialization returned null for EngineChatResponse.");
+                throw new NonRetryableException("Payload deserialization returned null for EngineChatResponse.");
+            }
+
+            UserContextMetadata? metadata = null;
+            if (message.Metadata.HasValue)
+            {
+                metadata = JsonSerializer.Deserialize<UserContextMetadata>(message.Metadata.Value);
+            }
+
+            if (metadata is null)
+            {
+                _logger.LogWarning("Metadata is null for ProcessingChatMessage action");
+                throw new NonRetryableException("Chat Metadata is required for ProcessingChatMessage action.");
+            }
+
+            if (!ValidationExtensions.TryValidate(chatResponse, out var validationErrors))
+            {
+                _logger.LogWarning("Validation failed for {Model}: {Errors}",
+                    nameof(AIChatResponse), validationErrors);
+                throw new NonRetryableException(
+                    $"Validation failed for {nameof(AIChatResponse)}: {string.Join("; ", validationErrors)}");
+            }
+
+            var userEvent = new UserEvent<AIChatResponse>
+            {
+                EventType = EventType.ChatAiAnswer,
+                Payload = chatResponse,
+            };
+
+            await _managerService.SendUserEventAsync(metadata.UserId, userEvent);
+
+        }
+        catch (NonRetryableException ex)
+        {
+            _logger.LogError(ex, "Non-retryable error processing message {Action}", message.ActionName);
+            throw;
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "Invalid JSON chat response for {Action}", message.ActionName);
+            throw new NonRetryableException("Invalid JSON chat response.", ex);
+        }
+        catch (Exception ex)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning("Operation cancelled while processing message {Action}", message.ActionName);
+                throw new OperationCanceledException("Operation was cancelled.", ex, cancellationToken);
+            }
+
+            _logger.LogError(ex, "Error processing AI chat answer");
+            throw new RetryableException("Transient error while processing AI chat answer.", ex);
         }
     }
 }

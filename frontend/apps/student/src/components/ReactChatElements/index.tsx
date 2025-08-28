@@ -3,7 +3,7 @@ import { MessageBox, Input } from "react-chat-elements";
 import { useTranslation } from "react-i18next";
 import type { ChatMessage } from "../../hooks";
 import { useStyles } from "./style";
-import avatar from "@/assets/avatar.svg";
+import avatar from "@student/assets/avatar.svg";
 import "react-chat-elements/dist/main.css";
 
 interface ReactChatElementsProps {

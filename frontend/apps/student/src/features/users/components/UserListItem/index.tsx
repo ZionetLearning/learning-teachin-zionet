@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 
-import { useDeleteUserByUserId, useUpdateUserByUserId } from "@/api";
+import { useDeleteUserByUserId, useUpdateUserByUserId } from "@student/api";
 import { useStyles } from "./style";
 
 export const UserListItem = ({
