@@ -2,8 +2,8 @@ name: Clear Postgres Database
 
 on:
   schedule:
-   - cron: '0 22 * * *'  # At 22:00 every day (Israel time)
-
+    - cron: '0 22 * * *'  # At 22:00 every day (Israel time)
+    
   workflow_dispatch:
     inputs:
       mode:
@@ -11,34 +11,37 @@ on:
         required: true
         default: "drop"
         type: choice
-        options:
-          - drop
-          - truncate
+        options: [drop, truncate]
+
+      pg_database:
+        description: "Target PG database name"
+        required: true
+        default: "appdb-test"
+        type: choice
+        options: [appdb-test, appdb-featest]
+
       dry_run:
         description: "If true, only print SQL and do not execute"
         required: false
         default: "false"
+
       verify_ssl:
         description: "true=require SSL (Azure default). false=disable SSL (NOT recommended)."
         required: false
         default: "true"
 
   workflow_call:
-        inputs:
-            mode: { required: true, type: string }
-            dry_run: { required: false, type: string }
-            verify_ssl: { required: false, type: string }
-        secrets:
-          POSTGRES_USER:
-            required: true
-          POSTGRES_PASSWORD:
-            required: true
-          AZURE_CLIENT_ID:
-            required: true
-          AZURE_TENANT_ID:
-            required: true
-          AZURE_SUBSCRIPTION_ID:
-            required: true
+    inputs:
+      mode: { required: true, type: string }
+      pg_database: { required: false, type: string, default: "appdb-test" }
+      dry_run: { required: false, type: string }
+      verify_ssl: { required: false, type: string }
+    secrets:
+      POSTGRES_USER: { required: true }
+      POSTGRES_PASSWORD: { required: true }
+      AZURE_CLIENT_ID: { required: true }
+      AZURE_TENANT_ID: { required: true }
+      AZURE_SUBSCRIPTION_ID: { required: true }
 
 jobs:
   clear-db:
@@ -51,15 +54,17 @@ jobs:
 
     env:
       PGHOST: dev-pg-zionet-learning.postgres.database.azure.com
-      PGDATABASE: appdb-test
-      PGUSER: ${{ secrets.POSTGRES_USER }}          
+      # For schedule: fall back to default "appdb-test"
+      PGDATABASE: ${{ github.event.inputs.pg_database || inputs.pg_database || 'appdb-test' }}
+      PGUSER: ${{ secrets.POSTGRES_USER }}
       PGPASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
 
-      MODE: ${{  github.event.inputs.mode || inputs.mode }}
-      DRY_RUN: ${{ github.event.inputs.dry_run ||  inputs.dry_run }}
-      VERIFY_SSL: ${{ github.event.inputs.verify_ssl || inputs.verify_ssl }}
+      # For schedule: fall back to defaults below
+      MODE: ${{ github.event.inputs.mode || inputs.mode || 'drop' }}
+      DRY_RUN: ${{ github.event.inputs.dry_run || inputs.dry_run || 'false' }}
+      VERIFY_SSL: ${{ github.event.inputs.verify_ssl || inputs.verify_ssl || 'true' }}
 
-      AZURE_POSTGRES_SERVER: dev-pg-zionet-learning  
+      AZURE_POSTGRES_SERVER: dev-pg-zionet-learning
       AZURE_RG: dev-zionet-learning-2025
       AZURE_SUB: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
@@ -100,7 +105,7 @@ jobs:
       - name: Clear Postgres
         run: .github/workflows/scripts/clear_postgres.sh
 
-      # Always remove the firewall rule even if the job fails
+        # Always remove the firewall rule even if the job fails
       - name: Remove firewall rule
         if: always()
         run: |
