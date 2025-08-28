@@ -184,7 +184,6 @@ public class AccessorClient(
             throw;
         }
     }
-
     public async Task<UserData?> GetUserAsync(Guid userId)
     {
         try
