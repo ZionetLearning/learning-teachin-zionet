@@ -30,7 +30,6 @@ public static class AiEndpoints
         app.MapGet("/chats/{userId:guid}", GetChatsAsync).WithName("GetChats");
         app.MapGet("/chat/{chatId:guid}/{userId:guid}", GetChatHistoryAsync).WithName("GetChatHistory");
 
-
         #endregion
 
         #region HTTP POST
@@ -39,8 +38,6 @@ public static class AiEndpoints
         aiGroup.MapPost("/question", QuestionAsync).WithName("Question");
 
         // POST /ai-manager/chat
-        aiGroup.MapPost("/chat", ChatAsync).WithName("Chat");
-
         app.MapPost("/chat", ChatAsync).WithName("Chat");
 
         app.MapPost("/speech/synthesize", SynthesizeAsync).WithName("SynthesizeText");
@@ -82,7 +79,7 @@ public static class AiEndpoints
     private static async Task<IResult> GetChatHistoryAsync(
     [FromRoute] Guid chatId,
     [FromRoute] Guid userId,
-    [FromServices] IAccessorClient accessorClient,
+    [FromServices] IEngineClient engineClient,
     [FromServices] ILogger<ChatPostEndpoint> log,
     CancellationToken ct)
     {
@@ -91,15 +88,15 @@ public static class AiEndpoints
             // TODO: Change userId from token
             try
             {
-                var chats = await accessorClient.GetHistorySnapshotAsync(chatId, userId, ct);
-                if (chats is null)
+                var history = await engineClient.GetHistoryChatAsync(chatId, userId, ct);
+                if (history is null)
                 {
                     log.LogInformation("chat history not found");
                     return Results.NotFound(new { error = "Chat history not found" });
                 }
 
                 log.LogInformation("Chat histiry returned");
-                return Results.Ok(new { chat = chat });
+                return Results.Ok(history);
             }
             catch (Exception ex)
             {
@@ -108,7 +105,6 @@ public static class AiEndpoints
             }
         }
     }
-
 
     private static async Task<IResult> AnswerAsync(
     [FromRoute] string id,

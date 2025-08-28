@@ -1,4 +1,5 @@
-﻿using Engine.Models.Chat;
+﻿using Engine.Helpers;
+using Engine.Models.Chat;
 using Engine.Models.Speech;
 using Engine.Services;
 using Engine.Services.Clients.AccessorClient;
@@ -15,6 +16,12 @@ public static class AiEndpoints
 
     public static WebApplication MapAiEndpoints(this WebApplication app)
     {
+        #region HTTP GET
+
+        app.MapGet("/chat/{chatId:guid}/{userId:guid}/history", GetHistoryChatAsync).WithName("GetHistoryChat");
+
+        #endregion
+
         #region HTTP POST
 
         app.MapPost("/chat", ChatProcessAsync).WithName("ChatSync");
@@ -24,6 +31,23 @@ public static class AiEndpoints
         #endregion
 
         return app;
+    }
+
+    private static async Task<IResult> GetHistoryChatAsync(
+    Guid chatId,
+    Guid userId,
+    [FromServices] IChatAiService ai,
+    [FromServices] IAccessorClient accessorClient,
+    [FromServices] ILogger<ChatEndpoint> log,
+    CancellationToken ct)
+    {
+        log.LogInformation("Start method: {Method}, chatId {ChatId}, userId:{UserId}", nameof(GetHistoryChatAsync), chatId, userId);
+
+        var snapshot = await accessorClient.GetHistorySnapshotAsync(chatId, userId, ct);
+
+        var payload = HistoryMapper.MapHistoryForFront(snapshot);
+
+        return Results.Ok(payload);
     }
 
     private static async Task<IResult> ChatProcessAsync(
