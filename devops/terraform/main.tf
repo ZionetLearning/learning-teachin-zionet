@@ -106,14 +106,23 @@ data "azurerm_redis_cache" "shared" {
 
 # Create new Redis only if not using shared
 module "redis" {
-  source              = "./modules/redis"
-  name                = "${var.redis_name}-${var.environment_name}"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-  sku_name            = "Basic"
-  family              = "C"
-  capacity            = 0
-  shard_count         = 0
+  count                = var.use_shared_redis ? 0 : 1
+  source               = "./modules/redis"
+  name                 = var.redis_name
+  location             = azurerm_resource_group.main.location
+  resource_group_name  = azurerm_resource_group.main.name
+  sku_name             = "Basic"
+  family               = "C"
+  capacity             = 0
+  shard_count          = 0
+  use_shared_redis     = false
+}
+
+# Use shared Redis outputs if enabled, otherwise use module outputs
+locals {
+  redis_hostname = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].hostname : module.redis[0].hostname
+  redis_port     = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].port : module.redis[0].port
+  redis_key      = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].primary_access_key : module.redis[0].primary_access_key
 }
 
 ########################################
