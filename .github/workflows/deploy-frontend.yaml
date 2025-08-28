@@ -263,7 +263,18 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: frontend-build
-          path: ${{ env.FE_DIR }}/dist/
+          path: frontend-build-downloaded/
+
+      - name: Debug - Show downloaded structure
+        run: |
+          echo "=== Downloaded artifact structure ==="
+          find frontend-build-downloaded/ -type f | head -20
+          echo "=== Looking for apps directory ==="
+          ls -la frontend-build-downloaded/
+          if [ -d "frontend-build-downloaded/apps" ]; then
+            echo "Found apps directory, listing contents:"
+            ls -la frontend-build-downloaded/apps/
+          fi
 
       - name: Get SWA deployment token
         id: swatoken
@@ -297,7 +308,7 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ env.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: "upload"
-          app_location: "frontend/dist/apps/${{ matrix.app }}"
+          app_location: "frontend-build-downloaded/apps/${{ matrix.app }}"
           api_location: "" # No API
           output_location: "" # Files are already built
           skip_app_build: true
