@@ -21,6 +21,7 @@ public class ManagerServiceTests
 
     private ManagerService Create() =>
         new(_cfg, _log.Object, _accessor.Object, _engine.Object, _mapper.Object, _notification.Object);
+
     // ---------- GetTaskAsync ----------
 
     [Fact]
@@ -64,9 +65,9 @@ public class ManagerServiceTests
     {
         var sut = Create();
 
-        var (ok, msg) = await sut.CreateTaskAsync(null!);
+        var (success, msg) = await sut.CreateTaskAsync(null!);
 
-        ok.Should().BeFalse();
+        success.Should().BeFalse();
         msg.Should().Be("Task is null");
     }
 
@@ -80,11 +81,11 @@ public class ManagerServiceTests
         var sut = Create();
         var task = new TaskModel { Id = 5, Name = name, Payload = payload };
 
-        var (ok, msg) = await sut.CreateTaskAsync(task);
+        var (success, msg) = await sut.CreateTaskAsync(task);
 
-        ok.Should().BeFalse();
+        success.Should().BeFalse();
         msg.Should().Be(expectedMsg);
-        _accessor.Verify(a => a.PostTaskAsync(It.IsAny<TaskModel>(), null), Times.Never);
+        _accessor.Verify(a => a.PostTaskAsync(It.IsAny<TaskModel>(), It.IsAny<IReadOnlyDictionary<string, string>>()), Times.Never);
     }
 
     [Fact]
@@ -92,11 +93,12 @@ public class ManagerServiceTests
     {
         var sut = Create();
         var t = new TaskModel { Id = 2, Name = "ok", Payload = "p" };
-        _accessor.Setup(a => a.PostTaskAsync(t, null)).ReturnsAsync((true, "sent"));
+        _accessor.Setup(a => a.PostTaskAsync(t, It.IsAny<IReadOnlyDictionary<string, string>>()))
+                 .ReturnsAsync((true, "sent"));
 
-        var (ok, msg) = await sut.CreateTaskAsync(t);
+        var (success, msg) = await sut.CreateTaskAsync(t);
 
-        ok.Should().BeTrue();
+        success.Should().BeTrue();
         msg.Should().Be("sent");
         _accessor.VerifyAll();
     }
@@ -106,11 +108,12 @@ public class ManagerServiceTests
     {
         var sut = Create();
         var t = new TaskModel { Id = 3, Name = "ok", Payload = "p" };
-        _accessor.Setup(a => a.PostTaskAsync(t, null)).ReturnsAsync((false, "bad"));
+        _accessor.Setup(a => a.PostTaskAsync(t, It.IsAny<IReadOnlyDictionary<string, string>>()))
+                 .ReturnsAsync((false, "bad"));
 
-        var (ok, msg) = await sut.CreateTaskAsync(t);
+        var (success, msg) = await sut.CreateTaskAsync(t);
 
-        ok.Should().BeFalse();
+        success.Should().BeFalse();
         msg.Should().Be("bad");
         _accessor.VerifyAll();
     }
@@ -120,11 +123,12 @@ public class ManagerServiceTests
     {
         var sut = Create();
         var t = new TaskModel { Id = 4, Name = "ok", Payload = "p" };
-        _accessor.Setup(a => a.PostTaskAsync(t, null)).ThrowsAsync(new Exception("boom"));
+        _accessor.Setup(a => a.PostTaskAsync(t, It.IsAny<IReadOnlyDictionary<string, string>>()))
+                 .ThrowsAsync(new Exception("boom"));
 
-        var (ok, msg) = await sut.CreateTaskAsync(t);
+        var (success, msg) = await sut.CreateTaskAsync(t);
 
-        ok.Should().BeFalse();
+        success.Should().BeFalse();
         msg.Should().Be("Failed to send to Engine");
     }
 
@@ -135,11 +139,12 @@ public class ManagerServiceTests
     {
         var sut = Create();
         var t = new TaskModel { Id = 9, Name = "n", Payload = "p" };
-        _engine.Setup(e => e.ProcessTaskLongAsync(t, null)).ReturnsAsync((true, "ok"));
+        _engine.Setup(e => e.ProcessTaskLongAsync(t, It.IsAny<IReadOnlyDictionary<string, string>>()))
+               .ReturnsAsync((true, "ok"));
 
-        var (ok, msg) = await sut.ProcessTaskLongAsync(t);
+        var (success, msg) = await sut.ProcessTaskLongAsync(t);
 
-        ok.Should().BeTrue();
+        success.Should().BeTrue();
         msg.Should().Be("ok");
         _engine.VerifyAll();
     }
@@ -149,11 +154,12 @@ public class ManagerServiceTests
     {
         var sut = Create();
         var t = new TaskModel { Id = 9, Name = "n", Payload = "p" };
-        _engine.Setup(e => e.ProcessTaskLongAsync(t, null)).ThrowsAsync(new Exception("x"));
+        _engine.Setup(e => e.ProcessTaskLongAsync(t, It.IsAny<IReadOnlyDictionary<string, string>>()))
+               .ThrowsAsync(new Exception("x"));
 
-        var (ok, msg) = await sut.ProcessTaskLongAsync(t);
+        var (success, msg) = await sut.ProcessTaskLongAsync(t);
 
-        ok.Should().BeFalse();
+        success.Should().BeFalse();
         msg.Should().Be("Failed to send to Engine");
     }
 
@@ -168,14 +174,15 @@ public class ManagerServiceTests
         (await sut.UpdateTaskName(1, "")).Should().BeFalse();
         (await sut.UpdateTaskName(1, new string('a', 101))).Should().BeFalse();
 
-        _accessor.Verify(a => a.UpdateTaskName(It.IsAny<int>(), It.IsAny<string>(), null), Times.Never);
+        _accessor.Verify(a => a.UpdateTaskName(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, string>>()), Times.Never);
     }
 
     [Fact]
     public async Task UpdateTaskName_Success_ReturnsTrue()
     {
         var sut = Create();
-        _accessor.Setup(a => a.UpdateTaskName(5, "new", null)).ReturnsAsync(true);
+        _accessor.Setup(a => a.UpdateTaskName(5, "new", It.IsAny<IReadOnlyDictionary<string, string>>()))
+                 .ReturnsAsync(true);
 
         var ok = await sut.UpdateTaskName(5, "new");
 
@@ -187,7 +194,8 @@ public class ManagerServiceTests
     public async Task UpdateTaskName_WhenAccessorReturnsFalse_ReturnsFalse()
     {
         var sut = Create();
-        _accessor.Setup(a => a.UpdateTaskName(6, "x", null)).ReturnsAsync(false);
+        _accessor.Setup(a => a.UpdateTaskName(6, "x", It.IsAny<IReadOnlyDictionary<string, string>>()))
+                 .ReturnsAsync(false);
 
         var ok = await sut.UpdateTaskName(6, "x");
 
@@ -199,7 +207,8 @@ public class ManagerServiceTests
     public async Task UpdateTaskName_WhenAccessorThrows_ReturnsFalse()
     {
         var sut = Create();
-        _accessor.Setup(a => a.UpdateTaskName(7, "x", null)).ThrowsAsync(new Exception("fail"));
+        _accessor.Setup(a => a.UpdateTaskName(7, "x", It.IsAny<IReadOnlyDictionary<string, string>>()))
+                 .ThrowsAsync(new Exception("fail"));
 
         var ok = await sut.UpdateTaskName(7, "x");
 
