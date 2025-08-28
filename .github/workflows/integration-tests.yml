@@ -2,10 +2,24 @@ name: Integration Tests
 
 on:
   workflow_dispatch:
-  # push:
-  #   branches:
-  #     - main
-  #pull_request:
+    inputs:
+      api_stage:
+        description: "Suffix for ApiBaseUrl (test|featest)"
+        required: false
+        default: test
+        type: choice
+        options:
+          - test
+          - featest
+
+  workflow_call:
+    inputs:
+      api_stage:
+        description: "Suffix for ApiBaseUrl"
+        required: false
+        type: string
+        default: test
+
 
 jobs:
   integration-tests:

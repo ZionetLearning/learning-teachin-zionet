@@ -1,1 +1,23 @@
+name: CI For PRs
 
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  deploy-under-test:
+    uses: ./.github/workflows/update-images.yaml
+    permissions:
+      id-token: write
+      contents: read
+    with:
+      environment: Development
+      # deploy into the test namespace
+      environment_name: test
+      # leave empty to build all services (accessor/manager/engine).
+      # or set like: "manager,engine"
+      list_services_names: ''
+    secrets: inherit
