@@ -28,3 +28,4 @@ use_shared_redis = true  # prod uses shared Redis instance
 
 
 
+frontend_apps          = ["student", "teacher", "admin"]
