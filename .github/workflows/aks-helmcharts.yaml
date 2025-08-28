@@ -99,6 +99,7 @@ jobs:
           echo "PG_DB=dev-pg-zionet-learning" >> $GITHUB_ENV
           echo "PG_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
 
+
           # Determine if infrastructure steps should be skipped
           # Skip for: manual dispatch (no skip_infra_steps input) OR when skip_infra_steps=true
           # Run for: CI/CD workflows (when skip_infra_steps is explicitly false)
@@ -112,6 +113,30 @@ jobs:
             echo "skip_infra_steps=false passed, running infrastructure"
             echo "skip_infra_steps=false" >> $GITHUB_OUTPUT
           fi
+
+          # Redis (shared)
+          case "$ENVIRONMENT_NAME" in
+            dev)
+              echo "REDIS_DATABASE_INDEX=0" >> $GITHUB_ENV
+              ;;
+            prod)
+              echo "REDIS_DATABASE_INDEX=1" >> $GITHUB_ENV
+              ;;
+            test)
+              echo "REDIS_DATABASE_INDEX=2" >> $GITHUB_ENV
+              ;;
+            featest)
+              echo "REDIS_DATABASE_INDEX=3" >> $GITHUB_ENV
+              ;;
+            featest2)
+              echo "REDIS_DATABASE_INDEX=4" >> $GITHUB_ENV
+              ;;
+            *)
+              echo "REDIS_DATABASE_INDEX=5" >> $GITHUB_ENV
+              echo "ENVIRONMENT_NAME is $ENVIRONMENT_NAME"
+              ;;
+          esac
+
 
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
@@ -196,6 +221,31 @@ jobs:
             --rule-name allow-aks-egress \
             --start-ip-address $AKS_EGRESS_IP \
             --end-ip-address $AKS_EGRESS_IP
+            
+
+      - name: Install External Secrets Operator (with CRDs)
+        run: |
+          helm repo add external-secrets https://charts.external-secrets.io
+          helm repo update
+          helm upgrade --install external-secrets external-secrets/external-secrets \
+            --namespace external-secrets \
+            --create-namespace \
+            --set installCRDs=true \
+            --wait --timeout 180s
+
+      - name: Wait for External Secrets API
+        run: |
+          echo "⏳ Waiting for ExternalSecrets API..."
+          for i in {1..30}; do
+            if kubectl api-resources | grep -q "externalsecrets"; then
+              echo "✅ ExternalSecrets API ready"
+              exit 0
+            fi
+            echo "Waiting for API..."
+            sleep 5
+          done
+          echo "❌ Timeout waiting for ExternalSecrets API"
+          exit 1
 
       - name: Helm template sanity (no Namespace objects)
         run: |
@@ -211,6 +261,8 @@ jobs:
             --set global.namePrefix="$TARGET_NAMESPACE" \
             --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
             --set global.environment="$IMAGE_TAG" \
+            --set global.keyvault.clientId="$KEYVAULT_CLIENT_ID" \
+            --set global.keyvault.tenantId="$KEYVAULT_TENANT_ID" \
             --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" \
             --set-string engine.env.AzureSpeech__SubscriptionKey="$AZURE_SPEECH_KEY" \
             --set-string manager.env.Jwt__Secret="$MANAGER_JWT_SECRET" \
@@ -236,12 +288,15 @@ jobs:
             --set global.namePrefix="$TARGET_NAMESPACE" \
             --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
             --set global.environment="$IMAGE_TAG" \
+            --set global.keyvault.clientId="$KEYVAULT_CLIENT_ID" \
+            --set global.keyvault.tenantId="$KEYVAULT_TENANT_ID" \
             --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" \
             --set-string engine.env.AzureSpeech__SubscriptionKey="$AZURE_SPEECH_KEY" \
             --set-string manager.env.Jwt__Secret="$MANAGER_JWT_SECRET" \
             --set-string manager.env.Jwt__Issuer="$MANAGER_JWT_ISSUER" \
             --set-string manager.env.Jwt__Audience="$MANAGER_JWT_AUDIENCE" \
             --set-string manager.env.Jwt__RefreshTokenHashKey="$MANAGER_JWT_REFRESH_TOKEN_HASH_KEY" \
+            --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false
 
       - name: Diagnostics (on failure)

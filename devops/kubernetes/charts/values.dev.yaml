@@ -7,9 +7,20 @@ global:
     enabled: true
     configName: dapr-config
 
+
 namespace:
   create: true
   name: dev
+
+
+cronjobs:
+  statsPing:
+    enabled: true
+    schedule: "*/5 * * * *"     # every 5 minutes in dev
+    target:
+      mode: "service"
+      serviceName: "manager"    # your Service name
+      port: 80
 
 manager:
   image:

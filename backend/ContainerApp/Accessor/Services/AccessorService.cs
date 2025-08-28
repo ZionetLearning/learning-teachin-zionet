@@ -111,7 +111,68 @@ public class AccessorService : IAccessorService
             }
         }
     }
+    public async Task<StatsSnapshot> ComputeStatsAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            var nowUtc = DateTimeOffset.UtcNow;
+            var from15m = nowUtc.AddMinutes(-StatsWindow.ActiveUsersMinutes);
+            var from5m = nowUtc.AddMinutes(-StatsWindow.MessagesLast5m);
 
+            var totalThreads = await _dbContext.ChatHistorySnapshots
+                .AsNoTracking()
+                .LongCountAsync(ct);
+
+            var totalUniqueUsersByThread = await _dbContext.ChatHistorySnapshots
+                .AsNoTracking()
+                .Select(t => t.UserId)
+                .Distinct()
+                .LongCountAsync(ct);
+
+            //var totalMessages = await _dbContext.ChatMessages
+            //    .AsNoTracking()
+            //    .LongCountAsync(ct);
+
+            //var totalUniqueUsersByMessage = await _dbContext.ChatMessages
+            //    .AsNoTracking()
+            //    .Select(m => m.UserId)
+            //    .Distinct()
+            //    .LongCountAsync(ct);
+
+            var activeUsersLast15m = await _dbContext.ChatHistorySnapshots
+                .AsNoTracking()
+                .Where(m => m.UpdatedAt >= from15m)
+                .Select(m => m.UserId)
+                .Distinct()
+                .LongCountAsync(ct);
+
+            //var messagesLast5m = await _dbContext.ChatMessages
+            //    .AsNoTracking()
+            //    .Where(m => m.Timestamp >= from5m)
+            //    .LongCountAsync(ct);
+
+            //var messagesLast15m = await _dbContext.ChatMessages
+            //    .AsNoTracking()
+            //    .Where(m => m.Timestamp >= from15m)
+            //    .LongCountAsync(ct);
+
+            return new StatsSnapshot(
+                TotalThreads: totalThreads,
+                TotalUniqueUsersByThread: totalUniqueUsersByThread,
+                TotalMessages: 0,
+                TotalUniqueUsersByMessage: 0,
+                ActiveUsersLast15m: activeUsersLast15m,
+                MessagesLast5m: 0,
+                MessagesLast15m: 0,
+                GeneratedAtUtc: nowUtc
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to compute stats");
+            throw;
+        }
+    }
     public async Task CreateTaskAsync(TaskModel task)
     {
         using var scope = _logger.BeginScope("TaskId: {TaskId}", task.Id);
@@ -326,65 +387,19 @@ public class AccessorService : IAccessorService
 
     private static string GetTaskCacheKey(int taskId) => $"task:{taskId}";
 
-    public async Task<ChatThread?> GetThreadByIdAsync(Guid threadId)
+    public async Task CreateChatAsync(ChatHistorySnapshot chat)
     {
-        return await _dbContext.ChatThreads.FindAsync(threadId);
-    }
-
-    public async Task CreateThreadAsync(ChatThread thread)
-    {
-        _dbContext.ChatThreads.Add(thread);
+        _dbContext.ChatHistorySnapshots.Add(chat);
         await _dbContext.SaveChangesAsync();
     }
 
-    public async Task<List<ThreadSummaryDto>> GetThreadsForUserAsync(string userId)
+    public async Task<List<ChatSummaryDto>> GetChatsForUserAsync(Guid userId)
     {
-        return await _dbContext.ChatThreads
+        return await _dbContext.ChatHistorySnapshots
             .AsNoTracking() // read-only path
             .Where(t => t.UserId == userId)
             .OrderByDescending(t => t.UpdatedAt)
-            .Select(t => new ThreadSummaryDto(t.ThreadId, t.ChatName, t.ChatType, t.CreatedAt, t.UpdatedAt))
-            .ToListAsync();
-    }
-
-    public async Task AddMessageAsync(ChatMessage message)
-    {
-        // 1) Look up the parent thread
-        var thread = await _dbContext.ChatThreads.FindAsync(message.ThreadId);
-
-        message.Timestamp = message.Timestamp.ToUniversalTime();
-        // 2) If missing, insert it first
-        if (thread is null)
-        {
-            thread = new ChatThread
-            {
-                ThreadId = message.ThreadId,
-                UserId = message.UserId,
-                ChatType = "default",
-                CreatedAt = message.Timestamp,
-                UpdatedAt = message.Timestamp
-            };
-            _dbContext.ChatThreads.Add(thread);
-        }
-        else
-        {
-            // 3) If it exists, just bump the timestamp
-            thread.UpdatedAt = message.Timestamp;
-        }
-
-        // 4) Now it's safe to add the child message
-        _dbContext.ChatMessages.Add(message);
-
-        // 5) Commit both inserts/updates in one SaveChanges
-        await _dbContext.SaveChangesAsync();
-    }
-
-    public async Task<IEnumerable<ChatMessage>> GetMessagesByThreadAsync(Guid threadId)
-    {
-        return await _dbContext.ChatMessages
-            .AsNoTracking()
-            .Where(m => m.ThreadId == threadId)
-            .OrderBy(m => m.Timestamp)
+            .Select(t => new ChatSummaryDto(t.ThreadId, t.Name, t.ChatType, t.CreatedAt, t.UpdatedAt))
             .ToListAsync();
     }
 
@@ -399,7 +414,7 @@ public class AccessorService : IAccessorService
             return null;
         }
 
-        if (user.PasswordHash != password)
+        if (!BCrypt.Net.BCrypt.Verify(password, user.Password))
         {
             return null;
         }
@@ -407,7 +422,7 @@ public class AccessorService : IAccessorService
         return user.UserId;
     }
 
-    public async Task<UserModel?> GetUserAsync(Guid userId)
+    public async Task<UserData?> GetUserAsync(Guid userId)
     {
         var user = await _dbContext.Users.FindAsync(userId);
         if (user == null)
@@ -415,11 +430,10 @@ public class AccessorService : IAccessorService
             return null;
         }
 
-        return new UserModel
+        return new UserData
         {
             UserId = user.UserId,
             Email = user.Email,
-            PasswordHash = user.PasswordHash
         };
     }
 
@@ -431,14 +445,7 @@ public class AccessorService : IAccessorService
             return false;
         }
 
-        var user = new UserModel
-        {
-            UserId = newUser.UserId,
-            Email = newUser.Email,
-            PasswordHash = newUser.PasswordHash
-        };
-
-        _dbContext.Users.Add(user);
+        _dbContext.Users.Add(newUser);
         await _dbContext.SaveChangesAsync();
         return true;
     }
@@ -452,7 +459,6 @@ public class AccessorService : IAccessorService
         }
 
         user.Email = updateUser.Email;
-        user.PasswordHash = updateUser.PasswordHash; // Again, hash in real apps
 
         _dbContext.Users.Update(user);
         await _dbContext.SaveChangesAsync();
@@ -478,6 +484,7 @@ public class AccessorService : IAccessorService
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.ThreadId == threadId);
     }
+
     public async Task UpsertHistorySnapshotAsync(ChatHistorySnapshot snapshot)
     {
         var existing = await _dbContext.ChatHistorySnapshots.FirstOrDefaultAsync(x => x.ThreadId == snapshot.ThreadId);
@@ -493,6 +500,7 @@ public class AccessorService : IAccessorService
         {
             existing.UserId = snapshot.UserId;
             existing.ChatType = snapshot.ChatType;
+            existing.Name = snapshot.Name;
             existing.History = snapshot.History;
             existing.UpdatedAt = now;
         }

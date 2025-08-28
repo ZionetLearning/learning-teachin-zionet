@@ -1,0 +1,58 @@
+name: Integration Tests
+
+on:
+  workflow_dispatch:
+  # push:
+  #   branches:
+  #     - main
+  #pull_request:
+
+jobs:
+  integration-tests:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/IntegrationTest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore IntegrationTests.csproj
+
+      - name: Ensure correct appsettings.json
+        run: |
+          echo '{
+            "TestSettings": {
+              "ApiBaseUrl": "https://teachin.westeurope.cloudapp.azure.com/api/test/"
+            }
+          }' > appsettings.json
+
+      - name: Run integration tests
+        run: dotnet test IntegrationTests.csproj --verbosity normal
+
+  #this needs to run even if the tests fail
+  # clear-db:
+  #       needs: integration-tests
+  #       if: ${{ always() }} 
+  #       uses: ./.github/workflows/clear-postgres.yml
+  #       permissions:
+  #         id-token: write
+  #         contents: read
+  #       with:
+  #         mode: 'drop'
+  #         dry_run: 'false'
+  #         verify_ssl: 'true'
+  #       secrets:
+  #         POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+  #         POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+  #         AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  #         AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  #         AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}

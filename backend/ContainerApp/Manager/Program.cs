@@ -8,7 +8,6 @@ using Manager.Hubs;
 using Manager.Models.Auth;
 using Manager.Models.QueueMessages;
 using Manager.Services;
-using Manager.Services.Clients;
 using Manager.Services.Clients.Engine;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -19,6 +18,7 @@ using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using System.Threading.RateLimiting;
+using Manager.Services.Clients.Accessor;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -64,7 +64,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddControllers();
 
 builder.Services.AddControllers().AddDapr();
-builder.Services.AddSignalR();
+var signalRBuilder = builder.Services.AddSignalR();
+
+var signalRConnString = builder.Configuration["SignalR:ConnectionString"];
+if (!string.IsNullOrEmpty(signalRConnString))
+{
+    signalRBuilder.AddAzureSignalR(signalRConnString);
+}
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -132,7 +139,6 @@ if (refreshRateLimitSettings != null)
         options.RejectionStatusCode = refreshRateLimitSettings.RejectionStatusCode;
         _ = options.AddPolicy(AuthSettings.RefreshTokenPolicyName, context =>
         {
-            //var ip = context.Connection.RemoteIpAddress?.ToString() ?? AuthSettings.UnknownIpFallback;
             var ip = context.Request.Headers["X-Forwarded-For"].FirstOrDefault()
                  ?? context.Connection.RemoteIpAddress?.ToString()
                  ?? AuthSettings.UnknownIpFallback;
@@ -160,9 +166,13 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapSubscribeHandler();
-app.MapManagerEndpoints();
 app.MapAiEndpoints();
 app.MapAuthEndpoints();
+app.MapTasksEndpoints();
+app.MapUsersEndpoints();
+app.MapHub<NotificationHub>("/NotificationHub");
+
+app.MapStatsPing();
 if (env.IsDevelopment())
 {
     app.MapOpenApi();
@@ -182,5 +192,4 @@ if (env.IsDevelopment())
     });
 }
 
-app.MapHub<NotificationHub>("/notificationHub");
 app.Run();

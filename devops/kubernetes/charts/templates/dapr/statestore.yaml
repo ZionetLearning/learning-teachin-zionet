@@ -11,12 +11,12 @@ spec:
   metadata:
     - name: redisHost
       secretKeyRef:
-        name: '{{ default "redis-connection" .Values.dapr.stateStore.redis.secretName }}'
-        key: '{{ default "redis-hostport" .Values.dapr.stateStore.redis.hostKey }}'
+        name: {{ .Values.dapr.stateStore.redis.secretName }}
+        key: {{ .Values.dapr.stateStore.redis.hostKey }}
     - name: redisPassword
       secretKeyRef:
-        name: '{{ default "redis-connection" .Values.dapr.stateStore.redis.secretName }}'
-        key: '{{ default "redis-password" .Values.dapr.stateStore.redis.passwordKey }}'
+        name: {{ .Values.dapr.stateStore.redis.secretName }}
+        key: {{ .Values.dapr.stateStore.redis.passwordKey }}
     - name: enableTLS
       value: '{{ default "true" .Values.dapr.stateStore.redis.enableTLS }}'
     - name: dialTimeout
@@ -31,7 +31,10 @@ spec:
       value: '{{ default "300s" .Values.dapr.stateStore.redis.options.idleTimeout }}'
     - name: maxConnAge
       value: '{{ default "30m" .Values.dapr.stateStore.redis.options.maxConnAge }}'
+    - name: redisDB
+      value: '{{ .Values.dapr.stateStore.redis.redisDB }}'
 scopes:
   - {{ include "app.appIdFor" (list $ .Values.accessor.name) | quote }}
   - {{ include "app.appIdFor" (list $ .Values.manager.name)  | quote }}
   - {{ include "app.appIdFor" (list $ .Values.engine.name)   | quote }}
+

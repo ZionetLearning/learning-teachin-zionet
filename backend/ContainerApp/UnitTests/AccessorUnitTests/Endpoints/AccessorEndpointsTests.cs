@@ -26,7 +26,7 @@ public class AccessorEndpointsTests
         var task = new TaskModel { Id = 7, Name = "hello" };
         svc.Setup(s => s.GetTaskByIdAsync(7)).ReturnsAsync(task);
 
-        var result = await AccessorEndpoints.GetTaskByIdAsync(7, svc.Object, log.Object);
+        var result = await TasksEndpoints.GetTaskByIdAsync(7, svc.Object, log.Object);
 
         var ok = result.Should().BeOfType<Ok<TaskModel>>().Subject;
         ok.Value.Should().Be(task);
@@ -41,7 +41,7 @@ public class AccessorEndpointsTests
 
         svc.Setup(s => s.GetTaskByIdAsync(99)).ReturnsAsync((TaskModel?)null);
 
-        var result = await AccessorEndpoints.GetTaskByIdAsync(99, svc.Object, log.Object);
+        var result = await TasksEndpoints.GetTaskByIdAsync(99, svc.Object, log.Object);
 
         result.Should().BeOfType<NotFound<string>>();
         svc.VerifyAll();
@@ -55,7 +55,7 @@ public class AccessorEndpointsTests
 
         svc.Setup(s => s.GetTaskByIdAsync(1)).ThrowsAsync(new InvalidOperationException("boom"));
 
-        var result = await AccessorEndpoints.GetTaskByIdAsync(1, svc.Object, log.Object);
+        var result = await TasksEndpoints.GetTaskByIdAsync(1, svc.Object, log.Object);
 
         result.Should().BeOfType<ProblemHttpResult>();
         svc.VerifyAll();
@@ -74,7 +74,7 @@ public class AccessorEndpointsTests
         var model = new TaskModel { Id = 1, Name = "n" };
         svc.Setup(s => s.CreateTaskAsync(model)).Returns(Task.CompletedTask);
 
-        var result = await AccessorEndpoints.CreateTaskAsync(model, svc.Object, log.Object, CancellationToken.None);
+        var result = await TasksEndpoints.CreateTaskAsync(model, svc.Object, log.Object, CancellationToken.None);
 
         var ok = result.Should().BeOfType<Ok<string>>().Subject;
         ok.Value.Should().Contain("Task 1 Saved");
@@ -90,7 +90,7 @@ public class AccessorEndpointsTests
         var model = new TaskModel { Id = 1, Name = "n" };
         svc.Setup(s => s.CreateTaskAsync(model)).ThrowsAsync(new Exception("nope"));
 
-        var result = await AccessorEndpoints.CreateTaskAsync(model, svc.Object, log.Object, CancellationToken.None);
+        var result = await TasksEndpoints.CreateTaskAsync(model, svc.Object, log.Object, CancellationToken.None);
 
         result.Should().BeOfType<ProblemHttpResult>();
         svc.VerifyAll();
@@ -112,7 +112,7 @@ public class AccessorEndpointsTests
         var req = new UpdateTaskName { Id = id, Name = name };
         svc.Setup(s => s.UpdateTaskNameAsync(id, name)).ReturnsAsync(found);
 
-        var result = await AccessorEndpoints.UpdateTaskNameAsync(req, svc.Object, log.Object);
+        var result = await TasksEndpoints.UpdateTaskNameAsync(req, svc.Object, log.Object);
 
         result.Should().BeOfType(expectedType);
         svc.VerifyAll();
@@ -127,7 +127,7 @@ public class AccessorEndpointsTests
         var req = new UpdateTaskName { Id = 5, Name = "new" };
         svc.Setup(s => s.UpdateTaskNameAsync(5, "new")).ThrowsAsync(new Exception("oops"));
 
-        var result = await AccessorEndpoints.UpdateTaskNameAsync(req, svc.Object, log.Object);
+        var result = await TasksEndpoints.UpdateTaskNameAsync(req, svc.Object, log.Object);
 
         result.Should().BeOfType<ProblemHttpResult>();
         svc.VerifyAll();
@@ -147,7 +147,7 @@ public class AccessorEndpointsTests
 
         svc.Setup(s => s.DeleteTaskAsync(id)).ReturnsAsync(found);
 
-        var result = await AccessorEndpoints.DeleteTaskAsync(id, svc.Object, log.Object);
+        var result = await TasksEndpoints.DeleteTaskAsync(id, svc.Object, log.Object);
 
         result.Should().BeOfType(expectedType);
         svc.VerifyAll();
@@ -161,7 +161,7 @@ public class AccessorEndpointsTests
 
         svc.Setup(s => s.DeleteTaskAsync(3)).ThrowsAsync(new Exception("err"));
 
-        var result = await AccessorEndpoints.DeleteTaskAsync(3, svc.Object, log.Object);
+        var result = await TasksEndpoints.DeleteTaskAsync(3, svc.Object, log.Object);
 
         result.Should().BeOfType<ProblemHttpResult>();
         svc.VerifyAll();
@@ -180,7 +180,7 @@ public class AccessorEndpointsTests
         var body = new UpsertHistoryRequest
         {
             ThreadId = Guid.Empty,
-            UserId = "u",
+            UserId = Guid.NewGuid(),
             ChatType = null,
             History = default
         };
@@ -208,7 +208,7 @@ public class AccessorEndpointsTests
         var body = new UpsertHistoryRequest
         {
             ThreadId = Guid.NewGuid(),
-            UserId = "",
+            UserId = Guid.Empty,
             ChatType = null,
             History = docIn.RootElement.Clone()
         };
@@ -235,7 +235,7 @@ public class AccessorEndpointsTests
         var body = new UpsertHistoryRequest
         {
             ThreadId = Guid.NewGuid(),
-            UserId = "u",
+            UserId = Guid.NewGuid(),
             ChatType = "default",
             History = default
         };
@@ -262,10 +262,13 @@ public class AccessorEndpointsTests
         var threadId = Guid.NewGuid();
         var createdAt = DateTimeOffset.UtcNow.AddDays(-1);
 
+        var userIdOld = Guid.NewGuid();
+        var userIdNew = Guid.NewGuid();
+
         var existing = new ChatHistorySnapshot
         {
             ThreadId = threadId,
-            UserId = "old",
+            UserId = userIdOld,
             ChatType = "default",
             History = """{"messages":[]}""",
             CreatedAt = createdAt,
@@ -283,7 +286,7 @@ public class AccessorEndpointsTests
         var body = new UpsertHistoryRequest
         {
             ThreadId = threadId,
-            UserId = "user-2",
+            UserId = userIdNew,
             ChatType = "chatty",
             History = doc.RootElement.Clone()
         };
@@ -298,7 +301,7 @@ public class AccessorEndpointsTests
 
         saved.Should().NotBeNull();
         saved!.ThreadId.Should().Be(threadId);
-        saved.UserId.Should().Be("user-2");
+        saved.UserId.Should().Be(userIdNew);
         saved.ChatType.Should().Be("chatty");
         saved.History.Should().Be(doc.RootElement.GetRawText());
         saved.CreatedAt.Should().Be(createdAt);
@@ -322,7 +325,7 @@ public class AccessorEndpointsTests
         var body = new UpsertHistoryRequest
         {
             ThreadId = threadId,
-            UserId = "u",
+            UserId = Guid.NewGuid(),
             ChatType = "default",
             History = doc.RootElement.Clone()
         };
@@ -335,7 +338,7 @@ public class AccessorEndpointsTests
 
     private static Task<IResult> InvokeUpsertHistorySnapshotAsync(
         UpsertHistoryRequest body, IAccessorService s, ILogger<AccessorService> l)
-        => (Task<IResult>)typeof(AccessorEndpoints)
+        => (Task<IResult>)typeof(ChatsEndpoints)
             .GetMethod("UpsertHistorySnapshotAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
             .Invoke(null, new object[] { body, s, l })!;
 
@@ -350,19 +353,21 @@ public class AccessorEndpointsTests
         var log = Log();
 
         var threadId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+
         var json = """{"messages":[{"role":"assistant","content":"yo"}]}""";
 
         svc.Setup(s => s.GetHistorySnapshotAsync(threadId)).ReturnsAsync(new ChatHistorySnapshot
         {
             ThreadId = threadId,
-            UserId = "u1",
+            UserId = userId,
             ChatType = "default",
             History = json,
             CreatedAt = DateTimeOffset.UtcNow.AddDays(-2),
             UpdatedAt = DateTimeOffset.UtcNow.AddDays(-1)
         });
 
-        var result = await InvokeGetHistorySnapshotAsync(threadId, svc.Object, log.Object);
+        var result = await InvokeGetHistorySnapshotAsync(threadId, userId, svc.Object, log.Object);
 
         var status = result.Should().BeAssignableTo<IStatusCodeHttpResult>().Subject;
         status.StatusCode.Should().Be(StatusCodes.Status200OK);
@@ -373,7 +378,7 @@ public class AccessorEndpointsTests
         var root = doc.RootElement;
 
         root.GetProperty("threadId").GetGuid().Should().Be(threadId);
-        root.GetProperty("UserId").GetString().Should().Be("u1");
+        root.GetProperty("UserId").GetGuid().Should().Be(userId);
         root.GetProperty("ChatType").GetString().Should().Be("default");
         var hist = root.GetProperty("history");
         hist.ValueKind.Should().Be(JsonValueKind.Object);
@@ -389,9 +394,22 @@ public class AccessorEndpointsTests
         var log = Log();
 
         var threadId = Guid.NewGuid();
-        svc.Setup(s => s.GetHistorySnapshotAsync(threadId)).ReturnsAsync((ChatHistorySnapshot?)null);
+        var userId = Guid.NewGuid();
 
-        var result = await InvokeGetHistorySnapshotAsync(threadId, svc.Object, log.Object);
+        svc.Setup(s => s.GetHistorySnapshotAsync(threadId))
+           .ReturnsAsync((ChatHistorySnapshot?)null);
+
+
+        svc.Setup(s => s.CreateChatAsync(
+                It.Is<ChatHistorySnapshot>(c =>
+                    c.ThreadId == threadId &&
+                    c.UserId == userId &&
+                    c.ChatType == "default" &&
+                    c.Name == "New chat" &&
+                    c.History == """{"messages":[]}""")))
+           .Returns(Task.CompletedTask);
+
+        var result = await InvokeGetHistorySnapshotAsync(threadId, userId, svc.Object, log.Object);
 
         var status = result.Should().BeAssignableTo<IStatusCodeHttpResult>().Subject;
         status.StatusCode.Should().Be(StatusCodes.Status200OK);
@@ -402,14 +420,19 @@ public class AccessorEndpointsTests
         var root = doc.RootElement;
 
         root.GetProperty("threadId").GetGuid().Should().Be(threadId);
-        root.GetProperty("userId").ValueKind.Should().Be(JsonValueKind.Null);
+        root.GetProperty("userId").GetGuid().Should().Be(userId);
         root.GetProperty("chatType").ValueKind.Should().Be(JsonValueKind.Null);
 
         var hist = root.GetProperty("history");
         hist.ValueKind.Should().Be(JsonValueKind.Object);
         hist.GetProperty("messages").EnumerateArray().Should().BeEmpty();
 
-        svc.VerifyAll();
+        svc.Verify(s => s.GetHistorySnapshotAsync(threadId), Times.Once);
+        svc.Verify(s => s.CreateChatAsync(
+                      It.Is<ChatHistorySnapshot>(c => c.ThreadId == threadId && c.UserId == userId)),
+                   Times.Once);
+
+        svc.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -419,18 +442,20 @@ public class AccessorEndpointsTests
         var log = Log();
 
         var threadId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+
         svc.Setup(s => s.GetHistorySnapshotAsync(threadId)).ThrowsAsync(new Exception("boom"));
 
-        var result = await InvokeGetHistorySnapshotAsync(threadId, svc.Object, log.Object);
+        var result = await InvokeGetHistorySnapshotAsync(threadId, userId, svc.Object, log.Object);
 
         result.Should().BeOfType<ProblemHttpResult>();
         svc.VerifyAll();
     }
     private static Task<IResult> InvokeGetHistorySnapshotAsync(
-        Guid id, IAccessorService s, ILogger<AccessorService> l)
-        => (Task<IResult>)typeof(AccessorEndpoints)
+        Guid threadId, Guid userId, IAccessorService s, ILogger<AccessorService> l)
+        => (Task<IResult>)typeof(ChatsEndpoints)
             .GetMethod("GetHistorySnapshotAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
-            .Invoke(null, new object[] { id, s, l })!;
+            .Invoke(null, new object[] { threadId, userId, s, l })!;
 
     #endregion
 
@@ -441,18 +466,19 @@ public class AccessorEndpointsTests
     {
         var svc = Svc();
         var log = Log();
+        var userId = Guid.NewGuid();
 
-        svc.Setup(s => s.GetThreadsForUserAsync("bob")).ThrowsAsync(new Exception("x"));
+        svc.Setup(s => s.GetChatsForUserAsync(userId)).ThrowsAsync(new Exception("x"));
 
-        var result = await InvokeGetThreadsForUserAsync("bob", svc.Object, log.Object);
+        var result = await InvokeGetThreadsForUserAsync(userId, svc.Object, log.Object);
 
         result.Should().BeOfType<ProblemHttpResult>();
         svc.VerifyAll();
     }
 
-    private static Task<IResult> InvokeGetThreadsForUserAsync(string user, IAccessorService s, ILogger<AccessorService> l)
-        => (Task<IResult>)typeof(AccessorEndpoints)
-            .GetMethod("GetThreadsForUserAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
+    private static Task<IResult> InvokeGetThreadsForUserAsync(Guid user, IAccessorService s, ILogger<AccessorService> l)
+        => (Task<IResult>)typeof(ChatsEndpoints)
+            .GetMethod("GetChatsForUserAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
             .Invoke(null, new object[] { user, s, l })!;
 
 
