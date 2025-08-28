@@ -1,1 +1,1 @@
-export * from './WithReactQuery';
+export * from './withReactQuery';
