@@ -305,6 +305,15 @@ jobs:
           name: frontend-build
           path: ${{ env.FE_DIR }}/dist/apps/
 
+      - name: Debug - List workspace contents
+        run: |
+          echo "=== Workspace structure ==="
+          find . -type d -name "dist" -exec ls -la {} \;
+          echo "=== Looking for apps directories ==="
+          find . -name "apps" -type d -exec ls -la {} \;
+          echo "=== Looking for student directories ==="
+          find . -name "student" -type d -exec ls -la {} \;
+
       - name: Get SWA deployment token
         id: swatoken
         shell: bash
