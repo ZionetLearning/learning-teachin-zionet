@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import * as THREE from "three";
 import { SkeletonUtils, type GLTF } from "three-stdlib";
 
-import { useAvatarSpeech } from "@/hooks";
+import { useAvatarSpeech } from "@student/hooks";
 import { IdleFbx, TalkingFbx, modelGlb } from "../../assets";
 
 import { useStyles } from "./style";

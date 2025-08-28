@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useStyles } from "./style";
 import speakingSantaAnimation from "./animations/speakingSantaAnimation.json";
 import idleSantaAnimation from "./animations/idleSantaAnimation.json";
-import { useAvatarSpeech } from "@/hooks";
+import { useAvatarSpeech } from "@student/hooks";
 
 export const AvatarOu = () => {
   const { t } = useTranslation();

@@ -1,5 +1,5 @@
-import { vi } from 'vitest';
-import React from 'react';
+import { vi } from "vitest";
+import React from "react";
 
 // Mock functions that we'll track
 export const mockT = vi.fn((key: string) => key);
@@ -8,7 +8,7 @@ export const mockStop = vi.fn();
 export const mockToggleMute = vi.fn();
 
 // First, mock the API layer to prevent React Query from being called
-vi.mock('@/api/speech', () => ({
+vi.mock("@student/api/speech", () => ({
   useSynthesizeSpeech: vi.fn(() => ({
     mutate: vi.fn(),
     isLoading: false,
@@ -17,7 +17,7 @@ vi.mock('@/api/speech', () => ({
 }));
 
 // Mock TanStack Query to prevent any query client issues
-vi.mock('@tanstack/react-query', () => ({
+vi.mock("@tanstack/react-query", () => ({
   useMutation: vi.fn(() => ({
     mutate: vi.fn(),
     isLoading: false,
@@ -29,7 +29,7 @@ vi.mock('@tanstack/react-query', () => ({
 }));
 
 // Mock react-i18next with our tracked function
-vi.mock('react-i18next', () => ({
+vi.mock("react-i18next", () => ({
   useTranslation: vi.fn(() => ({
     t: mockT,
     i18n: { changeLanguage: vi.fn() },
@@ -37,7 +37,7 @@ vi.mock('react-i18next', () => ({
 }));
 
 // Mock useAvatarSpeech hook with tracked functions
-vi.mock('@/hooks/useAvatarSpeech', () => ({
+vi.mock("@student/hooks/useAvatarSpeech", () => ({
   useAvatarSpeech: vi.fn(() => ({
     speak: mockSpeak,
     stop: mockStop,
@@ -50,7 +50,7 @@ vi.mock('@/hooks/useAvatarSpeech', () => ({
 }));
 
 // Also mock the hooks index file
-vi.mock('@/hooks', () => ({
+vi.mock("@student/hooks", () => ({
   useAvatarSpeech: vi.fn(() => ({
     speak: mockSpeak,
     stop: mockStop,
@@ -63,7 +63,7 @@ vi.mock('@/hooks', () => ({
 }));
 
 // Mock lottie-web at the lowest level to prevent canvas access
-vi.mock('lottie-web', () => ({
+vi.mock("lottie-web", () => ({
   __esModule: true,
   default: {
     loadAnimation: vi.fn(),
@@ -77,24 +77,32 @@ vi.mock('lottie-web', () => ({
 }));
 
 // Mock react-lottie completely to avoid canvas issues
-vi.mock('react-lottie', () => ({
+vi.mock("react-lottie", () => ({
   __esModule: true,
-  default: vi.fn(() => React.createElement('div', { 'data-testid': 'lottie-animation' })),
+  default: vi.fn(() =>
+    React.createElement("div", { "data-testid": "lottie-animation" }),
+  ),
 }));
 
 // Mock animation JSON files
-vi.mock('../animations/speakingSantaAnimation.json', () => ({
+vi.mock("../animations/speakingSantaAnimation.json", () => ({
   default: { frames: [], ip: 0, op: 60, fr: 60, w: 512, h: 512 },
 }));
 
-vi.mock('../animations/idleSantaAnimation.json', () => ({
+vi.mock("../animations/idleSantaAnimation.json", () => ({
   default: { frames: [], ip: 0, op: 60, fr: 60, w: 512, h: 512 },
 }));
 
 // Mock Lucide React icons
-vi.mock('lucide-react', () => ({
-  Play: vi.fn(() => React.createElement('div', { 'data-testid': 'play-icon' })),
-  Square: vi.fn(() => React.createElement('div', { 'data-testid': 'square-icon' })),
-  Volume2: vi.fn(() => React.createElement('div', { 'data-testid': 'volume2-icon' })),
-  VolumeX: vi.fn(() => React.createElement('div', { 'data-testid': 'volumex-icon' })),
+vi.mock("lucide-react", () => ({
+  Play: vi.fn(() => React.createElement("div", { "data-testid": "play-icon" })),
+  Square: vi.fn(() =>
+    React.createElement("div", { "data-testid": "square-icon" }),
+  ),
+  Volume2: vi.fn(() =>
+    React.createElement("div", { "data-testid": "volume2-icon" }),
+  ),
+  VolumeX: vi.fn(() =>
+    React.createElement("div", { "data-testid": "volumex-icon" }),
+  ),
 }));

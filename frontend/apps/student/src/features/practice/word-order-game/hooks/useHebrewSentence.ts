@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from "react";
-import { useChat } from "@/hooks";
+import { useChat } from "@student/hooks";
 
 export const useHebrewSentence = () => {
   const [sentence, setSentence] = useState<string>("");

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useStyles } from "./style";
 import { Speaker } from "../Speaker";
 import { useHebrewSentence } from "../../hooks";
-import { useAvatarSpeech } from "@/hooks";
+import { useAvatarSpeech } from "@student/hooks";
 
 export const Game = () => {
   const { t } = useTranslation();
