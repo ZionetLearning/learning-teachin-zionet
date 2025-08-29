@@ -2,41 +2,55 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { useSignalR } from "@/hooks/useSignalR";
+import { EventType } from "@/types/signalR";
 
 export type ChatRequest = {
   userMessage: string;
   threadId?: string;
   chatType?: "default" | string;
+  userId: string; // needed for correlation
 };
 
 export type ChatResponse = {
+  requestId: string;
+  assistantMessage?: string;
+  chatName: string;
+  status: number;
   threadId: string;
-  assistantMessage: string;
 };
 
 export const useSendChatMessage = () => {
   const AI_BASE_URL = import.meta.env.VITE_AI_URL!;
   const queryClient = useQueryClient();
+  const { waitForResponse } = useSignalR();
 
   return useMutation<ChatResponse, Error, ChatRequest>({
     mutationFn: async ({
       userMessage,
       threadId = crypto.randomUUID(),
       chatType = "default",
+      userId,
     }) => {
-      const response = await axios.post<ChatResponse>(
-        //local server endpoint URL:
-        // "http://localhost:5280/ai-manager/chat",
-        //cloud server endpoint URL:
+      // 1. Send request to backend → get requestId
+      const { data } = await axios.post<{ requestId: string }>(
         `${AI_BASE_URL}/chat`,
         {
           userMessage,
           threadId,
           chatType,
+          userId,
         },
       );
 
-      return response.data;
+      const requestId = data.requestId;
+
+      // 2. Wait for SignalR event carrying the full AIChatResponse
+      const aiResponse = await waitForResponse<ChatResponse>(
+        EventType.ChatAiAnswer,
+        requestId,
+      );
+      return aiResponse;
     },
 
     onSuccess: (data) => {

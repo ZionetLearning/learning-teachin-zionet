@@ -1,33 +1,36 @@
 import { useCallback, useState } from "react";
 import { Box, Paper, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { useSignalR, useSignalREvent } from "@/hooks";
+import { useEffect } from "react";
+import { useSignalR } from "@/hooks";
 import { usePostTask } from "@/api";
 import { TaskForm, TaskInput, NotificationFeed } from "./components";
-import { SignalRNotificationMessage } from "@/types";
+import type { UserNotification } from "@/types/signalR";
 import { useStyles } from "./style";
 
 export const SignalRPage = () => {
   const { t } = useTranslation();
   const classes = useStyles();
-  const { status, userId } = useSignalR();
+  const { status, userId, subscribe } = useSignalR();
   const { mutate: postTask, isPending } = usePostTask();
 
-  const [notifications, setNotifications] = useState<
-    SignalRNotificationMessage[]
-  >([]);
+  const [notifications, setNotifications] = useState<UserNotification[]>([]);
 
   const handleNotificationMessage = useCallback(
-    (n: SignalRNotificationMessage) => {
+    (n: UserNotification) => {
       setNotifications((prev) => [...prev, n]);
     },
     [],
   );
 
-  useSignalREvent<[SignalRNotificationMessage]>(
-    "NotificationMessage",
-    handleNotificationMessage,
-  );
+  // subscribe to notification messages (new API)
+  useEffect(() => {
+  const unsubscribe = subscribe<UserNotification>(
+      "NotificationMessage",
+      handleNotificationMessage,
+    );
+    return unsubscribe;
+  }, [subscribe, handleNotificationMessage]);
 
   // submit with API, TaskForm resets itself
   const handleSubmit = useCallback(

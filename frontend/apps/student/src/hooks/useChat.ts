@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useSendChatMessage } from "@/api/chat";
+import { useSignalR } from "./";
 import type { ChatRequest, ChatResponse } from "@/api/chat";
 
 export type ChatPosition = "left" | "right";
@@ -22,6 +23,8 @@ export const useChat = () => {
     mutateAsync: sendChatMessageAsync,
     isPending,
   } = useSendChatMessage();
+
+  const { userId } = useSignalR();
 
   const pushUser = (text: string) => {
     const userMsg: ChatMessage = {
@@ -52,6 +55,7 @@ export const useChat = () => {
       userMessage: userText,
       threadId: threadId || crypto.randomUUID(),
       chatType: "default",
+      userId: userId
     };
 
     pushUser(userText);
@@ -61,7 +65,7 @@ export const useChat = () => {
       onSuccess: (data: ChatResponse) => {
         setThreadId(data.threadId);
 
-        const aiText = data.assistantMessage;
+        const aiText = data.assistantMessage ?? "";
 
         const aiMsg: ChatMessage = {
           position: "left",
@@ -82,14 +86,15 @@ export const useChat = () => {
       userMessage: userText,
       threadId: threadId || crypto.randomUUID(),
       chatType: "default",
+      userId: userId
     };
 
     pushUser(userText);
 
     const data = await sendChatMessageAsync(payload);
     setThreadId(data.threadId);
-    pushAssistant(data.assistantMessage);
-    return data.assistantMessage;
+    pushAssistant(data.assistantMessage ?? "");
+    return data.assistantMessage ?? "";
   };
 
   return {
