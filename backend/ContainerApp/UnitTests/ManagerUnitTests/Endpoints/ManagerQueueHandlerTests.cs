@@ -1,4 +1,3 @@
-﻿
 ﻿using System.Text.Json;
 using Manager.Endpoints;
 using DotQueue;
@@ -7,25 +6,28 @@ using Manager.Models.QueueMessages;
 using Manager.Services;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Manager.Routing;
 
 namespace ManagerUnitTests.Endpoints;
 
 public class ManagerQueueHandlerTests
 {
-    // Centralize common setup
+    // Centralize common setup to remove boilerplate in each test
     private static (
-        Mock<IAiGatewayService> ai,
-        Mock<ICallbackDispatcher> dispatcher,
-        ManagerQueueHandler handler
+    Mock<IAiGatewayService> ai,
+    ManagerQueueHandler handler
     ) CreateSut()
     {
         var ai = new Mock<IAiGatewayService>(MockBehavior.Strict);
-        var dispatcher = new Mock<ICallbackDispatcher>(MockBehavior.Loose);
         var logger = Mock.Of<ILogger<ManagerQueueHandler>>();
         var managerService = Mock.Of<IManagerService>();
-        var handler = new ManagerQueueHandler(ai.Object, logger, managerService, dispatcher.Object);
+        var callbackDispatcher = new Mock<ICallbackDispatcher>();
+        var routingAccessor = new Mock<IRoutingContextAccessor>();
+        var routingLogger = new Mock<ILogger<RoutingMiddleware>>();
+        var routing = new RoutingMiddleware(routingAccessor.Object, routingLogger.Object);
 
-        return (ai, dispatcher, handler);
+        var handler = new ManagerQueueHandler(ai.Object, logger, managerService, callbackDispatcher.Object, routing);
+        return (ai, handler);
     }
 
     private static JsonElement ToJsonElement<T>(T value) =>
@@ -34,7 +36,8 @@ public class ManagerQueueHandlerTests
     [Fact(DisplayName = "HandleAnswerAiAsync => saves valid AI answer")]
     public async Task HandleAnswerAi_Saves_When_Valid()
     {
-        var (ai, _, handler) = CreateSut();
+        // Arrange
+        var (ai, handler) = CreateSut();
 
         var response = new AiResponseModel
         {
@@ -58,8 +61,10 @@ public class ManagerQueueHandlerTests
           .Returns(Task.CompletedTask)
           .Verifiable();
 
-        await handler.HandleAnswerAiAsync(message, null, () => Task.CompletedTask, CancellationToken.None);
+        // Act
+        await handler.HandleAnswerAiAsync(message, () => Task.CompletedTask, CancellationToken.None);
 
+        // Assert
         ai.Verify();
         ai.VerifyNoOtherCalls();
     }
@@ -67,7 +72,7 @@ public class ManagerQueueHandlerTests
     [Fact(DisplayName = "HandleAnswerAiAsync wraps failure in RetryableException for retry policy")]
     public async Task HandleAnswerAi_Wraps_On_Error()
     {
-        var (ai, _, handler) = CreateSut();
+        var (ai, handler) = CreateSut();
 
         var payload = new AiResponseModel
         {
@@ -86,7 +91,7 @@ public class ManagerQueueHandlerTests
           .ThrowsAsync(new InvalidOperationException("boom"));
 
         var ex = await Assert.ThrowsAsync<RetryableException>(() =>
-            handler.HandleAnswerAiAsync(message, null, () => Task.CompletedTask, CancellationToken.None));
+            handler.HandleAnswerAiAsync(message, () => Task.CompletedTask, CancellationToken.None));
 
         Assert.IsType<InvalidOperationException>(ex.InnerException);
         Assert.Contains("boom", ex.InnerException!.Message);
@@ -99,8 +104,9 @@ public class ManagerQueueHandlerTests
     [Fact(DisplayName = "HandleAsync routes known action; unknown action throws NonRetryable")]
     public async Task HandleAsync_Routes_Known_And_Throws_On_Unknown()
     {
-        var (ai, _, handler) = CreateSut();
+        var (ai, handler) = CreateSut();
 
+        // known action: valid payload so it routes and calls SaveAnswerAsync once
         var ok = new AiResponseModel
         {
             Id = "x",
@@ -125,6 +131,7 @@ public class ManagerQueueHandlerTests
         ai.Verify(a => a.SaveAnswerAsync(It.IsAny<AiResponseModel>(), It.IsAny<CancellationToken>()), Times.Once);
         ai.VerifyNoOtherCalls();
 
+        // unknown action: handler should throw NonRetryableException
         var unknownMsg = new Message
         {
             ActionName = (MessageAction)999,

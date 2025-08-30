@@ -2,6 +2,7 @@
 using System.Text.Json;
 using Dapr.Client;
 using Manager.Constants;
+using Manager.Routing;
 using Manager.Models;
 using Manager.Models.Auth;
 using Manager.Models.Auth.RefreshSessions;
@@ -14,12 +15,16 @@ namespace Manager.Services.Clients.Accessor;
 public class AccessorClient(
     ILogger<AccessorClient> logger,
     DaprClient daprClient,
-    IHttpContextAccessor httpContextAccessor
+    IHttpContextAccessor httpContextAccessor,
+    IQueueDispatcher queueDispatcher,
+    RoutingMiddleware routingMiddleware
     ) : IAccessorClient
 {
     private readonly ILogger<AccessorClient> _logger = logger;
     private readonly DaprClient _daprClient = daprClient;
     private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
+    private readonly IQueueDispatcher _queueDispatcher = queueDispatcher;
+    private readonly RoutingMiddleware _routingMiddleware = routingMiddleware;
 
     public async Task<TaskModel?> GetTaskAsync(int id)
     {
@@ -43,7 +48,7 @@ public class AccessorClient(
         }
     }
 
-    public async Task<bool> UpdateTaskName(int id, string newTaskName, IReadOnlyDictionary<string, string>? metadataCallback = null)
+    public async Task<bool> UpdateTaskName(int id, string newTaskName)
     {
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(UpdateTaskName), nameof(AccessorClient));
         try
@@ -68,12 +73,13 @@ public class AccessorClient(
                 Payload = payload
             };
 
-            await _daprClient.InvokeBindingAsync(
-                $"{QueueNames.AccessorQueue}-out",
-                "create",
+            await _routingMiddleware.HandleAsync(
                 message,
-                metadataCallback
-            );
+                metadata: null, // middleware will auto-populate
+                async () =>
+                {
+                    await _queueDispatcher.SendAsync(QueueNames.AccessorQueue, message);
+                });
 
             return true;
         }
@@ -110,7 +116,7 @@ public class AccessorClient(
         }
     }
 
-    public async Task<(bool success, string message)> PostTaskAsync(TaskModel task, IReadOnlyDictionary<string, string>? metadataCallback = null)
+    public async Task<(bool success, string message)> PostTaskAsync(TaskModel task)
     {
         _logger.LogInformation(
            "Inside: {Method} in {Class}",
@@ -137,7 +143,14 @@ public class AccessorClient(
                 Payload = payload,
                 Metadata = userContextMetadata
             };
-            await _daprClient.InvokeBindingAsync($"{QueueNames.AccessorQueue}-out", "create", message, metadataCallback);
+
+            await _routingMiddleware.HandleAsync(
+                message,
+                metadata: null, // middleware will auto-populate
+                async () =>
+                {
+                    await _queueDispatcher.SendAsync(QueueNames.AccessorQueue, message);
+                });
 
             _logger.LogDebug(
                 "Task {TaskId} sent to Accessor via binding '{Binding}'",

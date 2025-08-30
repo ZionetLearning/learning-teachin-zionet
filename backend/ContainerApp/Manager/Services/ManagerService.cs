@@ -89,8 +89,7 @@ public class ManagerService : IManagerService
         {
             _logger.LogDebug("Posting task {TaskId} with name '{TaskName}'", task.Id, task.Name);
 
-            var metadataCallback = CallbackMetadataFactory.GetCallbackMethod(nameof(IManagerCallbacks.OnTaskCreatedAsync));
-            var result = await _accessorClient.PostTaskAsync(task, metadataCallback);
+            var result = await _accessorClient.PostTaskAsync(task);
 
             if (result.success)
             {
@@ -116,8 +115,7 @@ public class ManagerService : IManagerService
         {
             _logger.LogDebug("Inside: {MethodName}", nameof(CreateTaskAsync));
 
-            var metadataCallback = CallbackMetadataFactory.GetCallbackMethod(nameof(IManagerCallbacks.OnTaskCreatedAsync));
-            var result = await _engineClient.ProcessTaskLongAsync(task, metadataCallback);
+            var result = await _engineClient.ProcessTaskLongAsync(task);
 
             return (result.success, result.message);
         }
@@ -154,8 +152,7 @@ public class ManagerService : IManagerService
         {
             _logger.LogInformation("Updating task {TaskId} name to '{NewTaskName}'", id, newTaskName);
 
-            var metadataCallback = CallbackMetadataFactory.GetCallbackMethod(nameof(IManagerCallbacks.OnTaskUpdatedAsync));
-            var result = await _accessorClient.UpdateTaskName(id, newTaskName, metadataCallback);
+            var result = await _accessorClient.UpdateTaskName(id, newTaskName);
 
             if (result)
             {

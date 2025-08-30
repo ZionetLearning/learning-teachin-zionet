@@ -3,6 +3,8 @@ using DotQueue;
 using Accessor.Models;
 using Accessor.Models.QueueMessages;
 using Accessor.Services;
+using Accessor.Constants;
+using Accessor.Routing;
 using Dapr.Client;
 
 namespace Accessor.Endpoints;
@@ -13,19 +15,26 @@ public class AccessorQueueHandler : IQueueHandler<Message>
     private readonly IManagerCallbackQueueService _managerCallbackQueueService;
     private readonly ILogger<AccessorQueueHandler> _logger;
     private readonly DaprClient _daprClient;
-    private readonly Dictionary<MessageAction, Func<Message, IReadOnlyDictionary<string, string>?, Func<Task>, CancellationToken, Task>> _handlers;
+    private readonly IQueueDispatcher _queueDispatcher;
+    private readonly RoutingMiddleware _routingMiddleware;
+    private readonly Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>> _handlers;
 
     public AccessorQueueHandler(
         IAccessorService accessorService,
         IManagerCallbackQueueService managerCallbackQueueService,
         ILogger<AccessorQueueHandler> logger,
-        DaprClient daprClient)
+        DaprClient daprClient,
+        IQueueDispatcher queueDispatcher,
+        RoutingMiddleware routingMiddleware)
     {
         _accessorService = accessorService;
         _managerCallbackQueueService = managerCallbackQueueService;
         _daprClient = daprClient;
         _logger = logger;
-        _handlers = new Dictionary<MessageAction, Func<Message, IReadOnlyDictionary<string, string>?, Func<Task>, CancellationToken, Task>>
+        _queueDispatcher = queueDispatcher;
+        _routingMiddleware = routingMiddleware;
+
+        _handlers = new Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>>
         {
             [MessageAction.UpdateTask] = HandleUpdateTaskAsync,
             [MessageAction.CreateTask] = HandleCreateTaskAsync
@@ -34,18 +43,24 @@ public class AccessorQueueHandler : IQueueHandler<Message>
 
     public async Task HandleAsync(Message message, IReadOnlyDictionary<string, string>? metadataCallback, Func<Task> renewLock, CancellationToken cancellationToken)
     {
-        if (_handlers.TryGetValue(message.ActionName, out var handler))
-        {
-            await handler(message, metadataCallback, renewLock, cancellationToken);
-        }
-        else
-        {
-            _logger.LogWarning("No handler for action {Action}", message.ActionName);
-            throw new NonRetryableException($"No handler for action {message.ActionName}");
-        }
+        await _routingMiddleware.HandleAsync(
+            message,
+            metadataCallback,
+            async () =>
+            {
+                if (_handlers.TryGetValue(message.ActionName, out var handler))
+                {
+                    await handler(message, renewLock, cancellationToken);
+                }
+                else
+                {
+                    _logger.LogWarning("No handler for action {Action}", message.ActionName);
+                    throw new NonRetryableException($"No handler for action {message.ActionName}");
+                }
+            });
     }
 
-    private async Task HandleUpdateTaskAsync(Message message, IReadOnlyDictionary<string, string>? metadataCallback, Func<Task> renewLock, CancellationToken cancellationToken)
+    private async Task HandleUpdateTaskAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
     {
         try
         {
@@ -70,6 +85,8 @@ public class AccessorQueueHandler : IQueueHandler<Message>
 
             _logger.LogDebug("Processing task {Id}", payload.Id);
 
+            await _accessorService.UpdateTaskNameAsync(payload.Id, payload.Name);
+
             // build TaskResult
             var result = new TaskResult(payload.Id, TaskResultStatus.Updated);
             var resultMessage = new Message
@@ -78,20 +95,15 @@ public class AccessorQueueHandler : IQueueHandler<Message>
                 Payload = JsonSerializer.SerializeToElement(result)
             };
 
-            // extract queue + method from metadataCallback
-            var parsed = CallbackMetadataParser.TryParse(metadataCallback);
-            if (parsed is { } cb)
-            {
-                await _daprClient.InvokeBindingAsync($"{cb.Queue}-out", "create", resultMessage, metadataCallback, cancellationToken);
-                _logger.LogInformation("Sent TaskResult (Updated) for Task {Id} to {Queue} (Method={Method})",
-                    payload.Id, cb.Queue, cb.Method);
-            }
-            else
-            {
-                _logger.LogWarning("No valid callback metadata for Task {Id}", payload.Id);
-            }
+            var ctx = _routingMiddleware.Accessor.Current;
+            _logger.LogInformation(
+                "[ACCESSOR:OUTBOUND] Forwarding TaskResult with Callback={Callback}, ReplyQueue={ReplyQueue}",
+                ctx?.CallbackMethod ?? "(none)",
+                ctx?.ReplyQueue ?? "(none)");
 
-            await _accessorService.UpdateTaskNameAsync(payload.Id, payload.Name);
+            //Dispatcher automatically attaches routing headers
+            await _queueDispatcher.SendAsync(QueueNames.ManagerCallbackQueue, resultMessage, cancellationToken);
+
             _logger.LogInformation("Task {Id} processed", payload.Id);
         }
         catch (NonRetryableException ex)
@@ -117,7 +129,7 @@ public class AccessorQueueHandler : IQueueHandler<Message>
         }
     }
 
-    private async Task HandleCreateTaskAsync(Message message, IReadOnlyDictionary<string, string>? metadataCallback, Func<Task> func, CancellationToken cancellationToken)
+    private async Task HandleCreateTaskAsync(Message message, Func<Task> func, CancellationToken cancellationToken)
     {
         try
         {
@@ -164,18 +176,13 @@ public class AccessorQueueHandler : IQueueHandler<Message>
                 Payload = JsonSerializer.SerializeToElement(result)
             };
 
-            // extract queue + method from metadataCallback
-            var parsed = CallbackMetadataParser.TryParse(metadataCallback);
-            if (parsed is { } cb)
-            {
-                await _daprClient.InvokeBindingAsync($"{cb.Queue}-out", "create", resultMessage, metadataCallback, cancellationToken);
-                _logger.LogInformation("Sent TaskResult (Created) for Task {Id} to {Queue} (Method={Method})",
-                    taskModel.Id, cb.Queue, cb.Method);
-            }
-            else
-            {
-                _logger.LogWarning("No valid callback metadata for Task {Id}", taskModel.Id);
-            }
+            var ctx = _routingMiddleware.Accessor.Current;
+            _logger.LogInformation(
+                "[ACCESSOR:OUTBOUND] Forwarding TaskResult with Callback={Callback}, ReplyQueue={ReplyQueue}",
+                ctx?.CallbackMethod ?? "(none)",
+                ctx?.ReplyQueue ?? "(none)");
+
+            await _queueDispatcher.SendAsync(QueueNames.ManagerCallbackQueue, resultMessage, cancellationToken);
 
             var notification = new Notification
             {

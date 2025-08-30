@@ -1,5 +1,8 @@
+using System.Reflection;
 using System.Text.Json;
+using Manager.Models;
 using Manager.Models.QueueMessages;
+using Manager.Routing;
 
 namespace Manager.Services;
 
@@ -7,39 +10,58 @@ public class CallbackDispatcher : ICallbackDispatcher
 {
     private readonly IServiceProvider _services;
     private readonly ILogger<CallbackDispatcher> _logger;
+    private readonly IRoutingContextAccessor _routing;
 
-    public CallbackDispatcher(IServiceProvider services, ILogger<CallbackDispatcher> logger)
+    public CallbackDispatcher(
+        IServiceProvider services,
+        ILogger<CallbackDispatcher> logger,
+        IRoutingContextAccessor routing)
     {
         _services = services;
         _logger = logger;
+        _routing = routing;
     }
 
-    public async Task DispatchAsync(Message message, IReadOnlyDictionary<string, string>? metadataCallback, CancellationToken ct)
+    public async Task DispatchAsync(Message message, CancellationToken ct)
     {
-        string? target = null;
-        metadataCallback?.TryGetValue(CallbackHeaderHelper.HeaderMethod, out target);
-
-        if (string.IsNullOrEmpty(target))
+        var result = message.Payload.Deserialize<TaskResult>();
+        if (result == null)
         {
-            _logger.LogWarning("No callback method in metadataCallbacks for {Action}", message.ActionName);
+            _logger.LogWarning("[CALLBACK] TaskResult deserialization failed for {Action}", message.ActionName);
             return;
         }
 
-        var callback = _services.GetService<IManagerCallbacks>();
-        var method = typeof(IManagerCallbacks).GetMethod(target);
+        var ctx = _routing.Current;
+        var callbackName = ctx?.CallbackMethod;
 
-        if (callback == null || method == null)
+        _logger.LogInformation("[CALLBACK] Dispatching {Status} for Task {TaskId}", result.Status, result.Id);
+
+        var callbacks = _services.GetService<IManagerCallbacks>();
+        if (callbacks == null)
         {
-            _logger.LogWarning("No callback service found for {Target}", target);
+            _logger.LogWarning("[CALLBACK] No IManagerCallbacks service registered.");
             return;
         }
 
-        _logger.LogInformation("Dispatching callback {Target} on {Service}", target, callback.GetType().Name);
+        if (string.IsNullOrEmpty(callbackName))
+        {
+            _logger.LogWarning("[CALLBACK] No callback method in RoutingContext.");
+            return;
+        }
 
-        var paramType = method.GetParameters().First().ParameterType;
-        var model = message.Payload.Deserialize(paramType);
+        //Use reflection to find matching method on IManagerCallbacks
+        var method = typeof(IManagerCallbacks).GetMethod(callbackName,
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase);
 
-        var task = (Task?)method.Invoke(callback, new[] { model! });
+        if (method == null)
+        {
+            _logger.LogWarning("[CALLBACK] Method {CallbackMethod} not found on IManagerCallbacks.", callbackName);
+            return;
+        }
+
+        _logger.LogInformation("[CALLBACK] Invoking {CallbackMethod} for Task {TaskId}", callbackName, result.Id);
+
+        var task = (Task?)method.Invoke(callbacks, new object?[] { result });
         if (task != null)
         {
             await task;

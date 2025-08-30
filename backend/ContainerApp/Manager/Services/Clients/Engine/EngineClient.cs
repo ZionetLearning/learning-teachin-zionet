@@ -2,6 +2,7 @@
 using System.Text.Json;
 using Dapr.Client;
 using Manager.Constants;
+using Manager.Routing;
 using Manager.Models;
 using Manager.Models.QueueMessages;
 using Manager.Models.Speech;
@@ -13,14 +14,18 @@ public class EngineClient : IEngineClient
 {
     private readonly ILogger<EngineClient> _logger;
     private readonly DaprClient _daprClient;
+    private readonly IQueueDispatcher _queueDispatcher;
+    private readonly RoutingMiddleware _routingMiddleware;
 
-    public EngineClient(ILogger<EngineClient> logger, DaprClient daprClient)
+    public EngineClient(ILogger<EngineClient> logger, DaprClient daprClient, IQueueDispatcher queueDispatcher, RoutingMiddleware routingMiddleware)
     {
         _logger = logger;
         _daprClient = daprClient;
+        _queueDispatcher = queueDispatcher;
+        _routingMiddleware = routingMiddleware;
     }
 
-    public async Task<(bool success, string message)> ProcessTaskLongAsync(TaskModel task, IReadOnlyDictionary<string, string>? metadataCallback = null)
+    public async Task<(bool success, string message)> ProcessTaskLongAsync(TaskModel task)
     {
         _logger.LogInformation(
             "Inside: {Method} in {Class}",
@@ -35,7 +40,14 @@ public class EngineClient : IEngineClient
                 ActionName = MessageAction.TestLongTask,
                 Payload = payload
             };
-            await _daprClient.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message, metadataCallback);
+
+            await _routingMiddleware.HandleAsync(
+                message,
+                metadata: null, // middleware will auto-populate
+                async () =>
+                {
+                    await _queueDispatcher.SendAsync(QueueNames.EngineQueue, message);
+                });
 
             _logger.LogDebug(
                 "Task {TaskId} sent to Engine via binding '{Binding}'",
