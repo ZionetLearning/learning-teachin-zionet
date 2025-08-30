@@ -10,6 +10,7 @@ using Moq;
 using Xunit;
 using Dapr.Client;
 using Accessor.Routing;
+using Accessor.Constants;
 
 namespace AccessorUnitTests.Endpoints;
 
@@ -44,6 +45,13 @@ public class AccessorQueueHandlerTests
         var dispatcher = Dispatcher();
         var routing = Routing();
 
+        dispatcher
+            .Setup(d => d.SendAsync(
+                QueueNames.ManagerCallbackQueue,
+                It.IsAny<Message>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
         var handler = new AccessorQueueHandler(
             svc.Object, pub.Object, log.Object,
             dapr.Object, dispatcher.Object, routing);
@@ -58,8 +66,12 @@ public class AccessorQueueHandlerTests
 
         await handler.HandleAsync(msg, null, renew, CancellationToken.None);
 
-        renewed.Should().BeFalse(); // ensure renew not called
+        renewed.Should().BeFalse();
         svc.VerifyAll();
+        dispatcher.Verify(d => d.SendAsync(
+            QueueNames.ManagerCallbackQueue,
+            It.IsAny<Message>(),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Theory]
