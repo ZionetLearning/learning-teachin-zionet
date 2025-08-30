@@ -16,5 +16,6 @@ public enum MessageAction
 {
     UpdateTask,
     CreateTask,
-    NotifyUser
+    NotifyUser,
+    TaskResult
 }

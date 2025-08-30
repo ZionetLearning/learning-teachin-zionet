@@ -6,6 +6,7 @@ using Manager.Models.QueueMessages;
 using Manager.Services;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Manager.Routing;
 
 namespace ManagerUnitTests.Endpoints;
 
@@ -15,12 +16,17 @@ public class ManagerQueueHandlerTests
     private static (
     Mock<IAiGatewayService> ai,
     ManagerQueueHandler handler
-) CreateSut()
+    ) CreateSut()
     {
         var ai = new Mock<IAiGatewayService>(MockBehavior.Strict);
         var logger = Mock.Of<ILogger<ManagerQueueHandler>>();
         var managerService = Mock.Of<IManagerService>();
-        var handler = new ManagerQueueHandler(ai.Object, logger, managerService);
+        var callbackDispatcher = new Mock<ICallbackDispatcher>();
+        var routingAccessor = new Mock<IRoutingContextAccessor>();
+        var routingLogger = new Mock<ILogger<RoutingMiddleware>>();
+        var routing = new RoutingMiddleware(routingAccessor.Object, routingLogger.Object);
+
+        var handler = new ManagerQueueHandler(ai.Object, logger, managerService, callbackDispatcher.Object, routing);
         return (ai, handler);
     }
 
@@ -120,7 +126,7 @@ public class ManagerQueueHandlerTests
           .Returns(Task.CompletedTask)
           .Verifiable();
 
-        await handler.HandleAsync(okMsg, () => Task.CompletedTask, CancellationToken.None);
+        await handler.HandleAsync(okMsg, null, () => Task.CompletedTask, CancellationToken.None);
 
         ai.Verify(a => a.SaveAnswerAsync(It.IsAny<AiResponseModel>(), It.IsAny<CancellationToken>()), Times.Once);
         ai.VerifyNoOtherCalls();
@@ -133,6 +139,6 @@ public class ManagerQueueHandlerTests
         };
 
         await Assert.ThrowsAsync<NonRetryableException>(() =>
-            handler.HandleAsync(unknownMsg, () => Task.CompletedTask, CancellationToken.None));
+            handler.HandleAsync(unknownMsg, null, () => Task.CompletedTask, CancellationToken.None));
     }
 }

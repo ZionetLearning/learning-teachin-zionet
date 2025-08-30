@@ -88,7 +88,9 @@ public class ManagerService : IManagerService
         try
         {
             _logger.LogDebug("Posting task {TaskId} with name '{TaskName}'", task.Id, task.Name);
+
             var result = await _accessorClient.PostTaskAsync(task);
+
             if (result.success)
             {
                 _logger.LogDebug("Task {TaskId} successfully posted to queue", task.Id);
@@ -112,7 +114,9 @@ public class ManagerService : IManagerService
         try
         {
             _logger.LogDebug("Inside: {MethodName}", nameof(CreateTaskAsync));
+
             var result = await _engineClient.ProcessTaskLongAsync(task);
+
             return (result.success, result.message);
         }
         catch (Exception ex)
@@ -147,7 +151,9 @@ public class ManagerService : IManagerService
         try
         {
             _logger.LogInformation("Updating task {TaskId} name to '{NewTaskName}'", id, newTaskName);
+
             var result = await _accessorClient.UpdateTaskName(id, newTaskName);
+
             if (result)
             {
                 _logger.LogInformation("Task {TaskId} name successfully updated", id);

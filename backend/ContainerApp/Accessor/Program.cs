@@ -4,6 +4,7 @@ using Accessor.DB;
 using Accessor.Endpoints;
 using Accessor.Models.QueueMessages;
 using Accessor.Services;
+using Accessor.Routing;
 using Azure.Messaging.ServiceBus;
 using DotQueue;
 using Microsoft.EntityFrameworkCore;
@@ -30,6 +31,9 @@ builder.Services.AddQueue<Message, AccessorQueueHandler>(
 builder.Services.AddScoped<IAccessorService, AccessorService>();
 builder.Services.AddScoped<IManagerCallbackQueueService, ManagerCallbackQueueService>();
 builder.Services.AddScoped<IRefreshSessionService, RefreshSessionService>();
+builder.Services.AddScoped<IRoutingContextAccessor, RoutingContextAccessor>();
+builder.Services.AddScoped<IQueueDispatcher, DaprQueueDispatcher>();
+builder.Services.AddScoped<RoutingMiddleware>();
 
 var env = builder.Environment;
 
