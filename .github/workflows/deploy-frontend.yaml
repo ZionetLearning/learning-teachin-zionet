@@ -131,8 +131,8 @@ jobs:
 
 
   frontend-build-and-lint:
-    #needs: [frontend-test]
     if: inputs.run_only_tests == false
+    needs: [frontend-test]
     runs-on: ubuntu-latest
     env:
       FE_DIR: frontend
