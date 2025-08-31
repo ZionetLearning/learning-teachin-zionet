@@ -8,12 +8,12 @@ import {
 import axios from "axios";
 
 type UserDto = User & {
-  passwordHash?: string;
+  password?: string;
 };
 
 interface UpdateUserInput {
   email: string;
-  passwordHash: string;
+  password: string;
 }
 
 export interface User {
@@ -43,7 +43,7 @@ const updateUserByUserId = async (
   const body: UserDto = {
     userId,
     email: userData.email,
-    passwordHash: userData.passwordHash,
+    password: userData.password,
   };
   const response = await axios.put(`${USERS_URL}/${userId}`, body);
   if (response.status !== 200) {
