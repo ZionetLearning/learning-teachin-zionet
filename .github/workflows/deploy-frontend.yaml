@@ -78,13 +78,9 @@ jobs:
         working-directory: ${{ env.FE_DIR }}
         run: |
           # Check if test script exists in package.json
-          if grep -q "\"test:${{ matrix.app }}\":" package.json; then
-            echo "Running tests for ${{ matrix.app }}..."
-            npx vitest run --reporter=verbose --passWithNoTests --root apps/${{ matrix.app }}
-            echo "Tests completed successfully for ${{ matrix.app }}"
-          else
-            echo "No test:${{ matrix.app }} script found in package.json - skipping"
-          fi
+          echo "Running tests for ${{ matrix.app }}..."
+          npx vitest run --reporter=verbose --passWithNoTests --root apps/${{ matrix.app }}
+          echo "Tests completed successfully for ${{ matrix.app }}"
 
 
   frontend-build-and-lint:
