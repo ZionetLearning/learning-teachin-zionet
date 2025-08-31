@@ -255,7 +255,10 @@
         "save": "שמור",
         "userUpdated": "המשתמש עודכן",
         "email": "אימייל",
-        "password": "סיסמה"
+        "password": "סיסמה",
+        "firstName": "שם פרטי",
+        "lastName": "שם משפחה",
+        "noChanges": "אין שינויים"
       }
     },
     "sidebar": {
