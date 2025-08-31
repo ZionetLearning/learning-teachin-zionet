@@ -3,7 +3,7 @@ import { useState } from "react";
 import StarIcon from "@mui/icons-material/Star";
 import { Box, Card, Typography } from "@mui/material";
 
-import { AnimeItem } from "@/types";
+import { AnimeItem } from "@student/types";
 
 import { useStyles } from "./style";
 

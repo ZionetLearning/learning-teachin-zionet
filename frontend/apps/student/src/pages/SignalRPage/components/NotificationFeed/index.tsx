@@ -1,5 +1,5 @@
 import { Stack, Typography } from "@mui/material";
-import { SignalRNotificationMessage } from "@/types";
+import { SignalRNotificationMessage } from "@app-providers/types";
 
 type Props = {
   items: SignalRNotificationMessage[];
