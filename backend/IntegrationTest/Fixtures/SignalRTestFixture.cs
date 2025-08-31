@@ -64,9 +64,18 @@ public class SignalRTestFixture : IAsyncDisposable
 
         if (_connection.State != HubConnectionState.Connected)
         {
-            await _connection.StartAsync();
+            try
+            {
+                await _connection.StartAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to start SignalR connection: {ex.Message}");
+                throw;
+            }
         }
     }
+
 
     public async Task StopAsync()
     {
