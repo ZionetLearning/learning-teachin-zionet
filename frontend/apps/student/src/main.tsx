@@ -21,7 +21,7 @@ const HUB_URL = `${BASE_URL}/notificationHub`;
 createRoot(document.getElementById("root")!).render(
   <I18nTranslateProvider>
     <ReactQueryProvider>
-      <AuthProvider>
+      <AuthProvider appRole="student">
         <SignalRProvider hubUrl={HUB_URL}>
           <Sentry.ErrorBoundary fallback={<div>Something went wrong</div>}>
             <App />
