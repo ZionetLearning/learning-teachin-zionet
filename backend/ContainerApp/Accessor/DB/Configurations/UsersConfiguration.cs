@@ -26,6 +26,10 @@ public class UsersConfiguration : IEntityTypeConfiguration<UserModel>
             .IsRequired()
             .HasMaxLength(255);
 
+        builder.Property(u => u.Role)
+            .HasConversion<string>() // Store enum as string
+            .IsRequired();
+
         builder.HasIndex(u => u.Email)
             .IsUnique();
     }

@@ -4,6 +4,7 @@ using Accessor.Models;
 using Dapr.Client;
 using Microsoft.EntityFrameworkCore;
 using Accessor.Models.Users;
+using Accessor.Models.Auth;
 
 namespace Accessor.Services;
 public class AccessorService : IAccessorService
@@ -403,7 +404,7 @@ public class AccessorService : IAccessorService
             .ToListAsync();
     }
 
-    public async Task<Guid?> ValidateCredentialsAsync(string email, string password)
+    public async Task<AuthenticatedUser?> ValidateCredentialsAsync(string email, string password)
     {
         var user = await _dbContext.Users
             .Where(u => u.Email == email)
@@ -419,7 +420,13 @@ public class AccessorService : IAccessorService
             return null;
         }
 
-        return user.UserId;
+        var response = new AuthenticatedUser
+        {
+            UserId = user.UserId,
+            Role = user.Role
+        };
+
+        return response;
     }
 
     public async Task<UserData?> GetUserAsync(Guid userId)
@@ -432,7 +439,8 @@ public class AccessorService : IAccessorService
                 UserId = user.UserId,
                 Email = user.Email,
                 FirstName = user.FirstName,
-                LastName = user.LastName
+                LastName = user.LastName,
+                Role = user.Role
             };
     }
 
@@ -533,6 +541,7 @@ public class AccessorService : IAccessorService
                     Email = u.Email,
                     FirstName = u.FirstName,
                     LastName = u.LastName,
+                    Role = u.Role
                 })
                 .ToListAsync();
 

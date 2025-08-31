@@ -14,7 +14,7 @@ public static class UserContextHelper
             return null;
         }
 
-        var userIdClaim = httpContext.User.FindFirst(AuthSettings.NameClaimType);
+        var userIdClaim = httpContext.User.FindFirst(AuthSettings.UserIdClaimType);
 
         if (userIdClaim == null || string.IsNullOrWhiteSpace(userIdClaim.Value))
         {

@@ -283,19 +283,19 @@ public class AccessorClient(
         }
     }
 
-    public async Task<Guid?> LoginUserAsync(LoginRequest loginRequest, CancellationToken ct = default)
+    public async Task<AuthenticatedUser?> LoginUserAsync(LoginRequest loginRequest, CancellationToken ct = default)
     {
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(LoginUserAsync), nameof(AccessorClient));
         try
         {
-            var userId = await _daprClient.InvokeMethodAsync<LoginRequest, Guid?>(
+            var response = await _daprClient.InvokeMethodAsync<LoginRequest, AuthenticatedUser?>(
                 HttpMethod.Post,
                 AppIds.Accessor,
                 "auth-accessor/login",
                 loginRequest,
                 ct
             );
-            return userId;
+            return response;
         }
         catch (InvocationException ex) when (
             ex.Response?.StatusCode == HttpStatusCode.NoContent ||
