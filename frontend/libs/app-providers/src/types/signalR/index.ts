@@ -18,7 +18,7 @@ export type SignalRContextType = {
   status: Status;
   userId: string;
   subscribe: <T = unknown>(eventName: string, handler: (data: T) => void) => () => void;
-  waitForResponse: <T = unknown>(eventType: keyof typeof EventType, requestId: string, timeoutMs?: number) => Promise<T>;
+  waitForResponse: <T = unknown>(eventType: EventType, requestId: string, timeoutMs?: number) => Promise<T>;
 };
 
 export type SignalRNotificationType = "Success" | "Info" | "Warning" | "Error";

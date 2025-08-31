@@ -83,8 +83,8 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({
   }, []);
 
   const waitForResponse = useCallback(<T = unknown>(
-    eventType: keyof typeof EventType, 
-    requestId: string, 
+    eventType: EventType, 
+    requestId: string,
     timeoutMs: number = 300000
   ): Promise<T> => {
     if (status !== "connected") {
