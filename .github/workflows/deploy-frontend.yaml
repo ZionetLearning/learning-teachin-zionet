@@ -83,7 +83,6 @@ jobs:
             timeout 30s npx vitest run \
               --reporter=verbose \
               --passWithNoTests \
-              --coverage \
               --root apps/${{ matrix.app }}
             EXIT_CODE=$?
             if [ $EXIT_CODE -eq 124 ]; then
