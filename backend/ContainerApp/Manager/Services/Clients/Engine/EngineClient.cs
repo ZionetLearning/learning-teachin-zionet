@@ -162,34 +162,28 @@ public class EngineClient : IEngineClient
             return null;
         }
     }
-    public async Task<SpeechEngineResponse?> GenerateSentenceAsync(SentenceRequest request, CancellationToken cancellationToken = default)
+    public async Task<(bool success, string message)> GenerateSentenceAsync(SentenceRequest request)
     {
         try
         {
-            _logger.LogInformation("Forwarding speech synthesis request to engine");
+            var payload = JsonSerializer.SerializeToElement(request);
+            var message = new Message
+            {
+                ActionName = MessageAction.GenerateSentences,
+                Payload = payload
+            };
+            await _daprClient.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message);
 
-            var result = await _daprClient.InvokeMethodAsync<SentenceRequest, SpeechEngineResponse>(
-                appId: AppIds.Engine,
-                methodName: "speech/synthesize",
-                data: request,
-                cancellationToken: cancellationToken);
-
-            return result;
-        }
-        catch (InvocationException ex) when (ex.InnerException is HttpRequestException httpEx && httpEx.Message.Contains("408"))
-        {
-            _logger.LogWarning("Speech synthesis request timed out (408)");
-            throw new TimeoutException("Speech synthesis request timed out", ex);
-        }
-        catch (InvocationException ex) when (ex.InnerException is HttpRequestException httpEx && httpEx.Message.Contains("499"))
-        {
-            _logger.LogWarning("Speech synthesis request was canceled by client (499)");
-            throw new OperationCanceledException("Speech synthesis request was canceled by client", ex);
+            _logger.LogDebug(
+                "Generate request sent to Engine via binding '{Binding}'",
+                QueueNames.EngineQueue
+            );
+            return (true, "sent to engine");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error communicating with speech engine");
-            return null;
+            _logger.LogError(ex, "Failed to send request for generation to Engine");
+            throw;
         }
     }
 }

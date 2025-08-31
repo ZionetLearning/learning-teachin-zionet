@@ -1,6 +1,6 @@
 ﻿{
-  "template_format": "liquid",
-  "name": "Generate",
+  "type": "prompt",
+  "template_format": "semantic-kernel",
   "description": "Generate Hebrew sentences as strict JSON",
   "input_variables": [
     {

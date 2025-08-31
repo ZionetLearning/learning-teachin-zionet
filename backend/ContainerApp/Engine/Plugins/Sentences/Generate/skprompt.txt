@@ -9,13 +9,13 @@
 Return ONLY a valid JSON:
 {
   "sentences": [
-    { "text": "HEBREW_SENTENCE", "difficulty": "<echo difficulty>", "nikud": <echo nikud> }
+    { "text": "HEBREW_SENTENCE", "difficulty": "{{$difficulty}}", "nikud": {{$nikud}} }
   ]
 }
 
 Rules:
 - Valid JSON only (no comments/explanations).
-- The number of items in "sentences" must equal {count}.
+- The number of items in "sentences" must equal {{$count}}.
 - Echo "difficulty" and "nikud" exactly as provided for every item.
 - Each "text" is one grammatical Hebrew sentence with punctuation.
 - If nikud=true: include vowel points; if false: no vowel marks.
@@ -26,6 +26,6 @@ Difficulty:
 - medium: 5–9 words, simple clauses.
 - hard: 10–18 words, more complex structures.
 
-Now generate {count} sentences with:
-- difficulty = {difficulty}
-- nikud = {nikud}
+Now generate {{$count}} sentences with:
+- difficulty = {{$difficulty}}
+- nikud = {{$nikud}}

@@ -374,7 +374,7 @@ public static class AiEndpoints
 
         try
         {
-            await engineClient.GenerateSentenceAsync(request, ct);
+            await engineClient.GenerateSentenceAsync(request);
             return Results.Ok();
         }
         catch (OperationCanceledException)

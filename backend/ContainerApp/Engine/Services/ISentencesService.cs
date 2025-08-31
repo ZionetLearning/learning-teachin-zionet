@@ -4,5 +4,5 @@ namespace Engine.Services;
 
 public interface ISentencesService
 {
-    Task<string> GenerateAsync(SentenceRequest req, CancellationToken ct = default);
+    Task<SentenceResponse> GenerateAsync(SentenceRequest req, CancellationToken ct = default);
 }

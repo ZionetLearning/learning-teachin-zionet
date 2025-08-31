@@ -1,32 +1,47 @@
-﻿using Engine.Models.Sentences;
+﻿using System.Text.Json;
+using DotQueue;
+using Engine.Models.Sentences;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
 
 namespace Engine.Services;
 
-public class SentencesService
+public class SentencesService : ISentencesService
 {
-    private readonly Kernel _kernel;
+    private readonly Kernel _genKernel;
 
-    public SentencesService(Kernel kernel) => _kernel = kernel;
-
-    public async Task<string> GenerateAsync(SentenceRequest req, CancellationToken ct = default)
+    public SentencesService([FromKeyedServices("gen")] Kernel genKernel)
     {
-        var func = _kernel.Plugins["Sentences"]["Generate"];
+        _genKernel = genKernel;
+    }
+
+    public async Task<SentenceResponse> GenerateAsync(SentenceRequest req, CancellationToken ct = default)
+    {
+        var func = _genKernel.Plugins["Sentences"]["Generate"];
 
         var exec = new AzureOpenAIPromptExecutionSettings
         {
             Temperature = 0.3,
+            ResponseFormat = typeof(SentenceResponse)
         };
 
         var args = new KernelArguments(exec)
         {
-            ["difficulty"] = req.Difficulty.ToString(),
-            ["nikud"] = req.Nikud,
-            ["count"] = req.Count
+            ["difficulty"] = req.Difficulty.ToString().ToLowerInvariant(),
+            ["nikud"] = req.Nikud.ToString().ToLowerInvariant(),
+            ["count"] = req.Count.ToString()
         };
 
-        var result = await _kernel.InvokeAsync(func, args, ct);
-        return result.ToString() ?? "{}";
+        var result = await _genKernel.InvokeAsync(func, args, ct);
+        var json = result.GetValue<string>();
+        var parsed = JsonSerializer.Deserialize<SentenceResponse>(json!);
+        if (parsed != null)
+        {
+            return parsed;
+        }
+        else
+        {
+            throw new RetryableException("Error while generating sentences. The response is empty");
+        }
     }
 }
