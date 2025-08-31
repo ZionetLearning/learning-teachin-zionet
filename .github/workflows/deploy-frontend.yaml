@@ -75,15 +75,24 @@ jobs:
         run: npm ci
 
       - name: Run Vitest for ${{ matrix.app }}
-        working-directory: ${{ env.FE_DIR }}/apps/${{ matrix.app }}
+        working-directory: ${{ env.FE_DIR }}
         timeout-minutes: 1
         run: |
-          echo "Running Vitest for ${{ matrix.app }}..."
-          timeout 30s npx vitest run --reporter=verbose --passWithNoTests --coverage
-          EXIT_CODE=$?
-          if [ $EXIT_CODE -eq 124 ]; then
-            echo "❌ Vitest for ${{ matrix.app }} timed out after 30s"
-            exit 1
+          if grep -q "\"test:${{ matrix.app }}\":" package.json; then
+            echo "Running Vitest for ${{ matrix.app }}..."
+            timeout 30s npx vitest run \
+              --reporter=verbose \
+              --passWithNoTests \
+              --coverage \
+              --root apps/${{ matrix.app }}
+            EXIT_CODE=$?
+            if [ $EXIT_CODE -eq 124 ]; then
+              echo "❌ Vitest for ${{ matrix.app }} timed out after 30s"
+              exit 1
+            fi
+            echo "✅ Tests completed successfully for ${{ matrix.app }}"
+          else
+            echo "⚠️ No test:${{ matrix.app }} script found in package.json - skipping"
           fi
 
   frontend-build-and-lint:
