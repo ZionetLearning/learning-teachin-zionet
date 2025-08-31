@@ -21,7 +21,7 @@ type AuthModeType = (typeof authMode)[keyof typeof authMode];
 
 export const AuthorizationPage = () => {
   const classes = useStyles();
-  const { login, role } = useAuth();
+  const { login, signup, role } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [mode, setMode] = useState<AuthModeType>(authMode.login);
@@ -141,7 +141,13 @@ export const AuthorizationPage = () => {
                 values,
                 { setSubmitting }: FormikHelpers<SignupValues>,
               ) => {
-                login(values.email, values.password);
+                signup({
+                  email: values.email,
+                  password: values.password,
+                  firstName: values.firstName,
+                  lastName: values.lastName,
+                  role: role,
+                });
                 setSubmitting(false);
                 handleAuthSuccess();
               }}

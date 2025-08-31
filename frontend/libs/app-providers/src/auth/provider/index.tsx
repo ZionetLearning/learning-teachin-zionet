@@ -1,7 +1,7 @@
 import { ReactNode, useCallback, useEffect, useState } from "react";
 
 import { AuthContext } from "@app-providers/context";
-import { AppRoleType, Credentials } from "@app-providers/types";
+import { AppRoleType, Credentials, SignupData } from "@app-providers/types";
 
 export interface AuthProviderProps {
   children: ReactNode;
@@ -48,16 +48,28 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
     [credentials, logout],
   );
 
+  const persistSession = useCallback(
+    (email: string, password: string, role: AppRoleType) => {
+      const sessionExpiry = Date.now() + 10 * 60 * 60 * 1000; // 10h
+      const creds = { email, password, sessionExpiry, role };
+      localStorage.setItem("credentials", JSON.stringify(creds));
+      setCredentials(creds);
+    },
+    [],
+  );
+
   const login = useCallback(
     (email: string, password: string, role: AppRoleType = appRole) => {
-      const sessionExpiry = Date.now() + 10 * 60 * 60 * 1000;
-      localStorage.setItem(
-        "credentials",
-        JSON.stringify({ email, password, sessionExpiry, role }),
-      );
-      setCredentials({ email, password, sessionExpiry, role });
+      persistSession(email, password, role);
     },
-    [appRole],
+    [appRole, persistSession],
+  );
+
+  const signup = useCallback(
+    (data: SignupData) => {
+      persistSession(data.email, data.password, data.role);
+    },
+    [persistSession],
   );
 
   return (
@@ -66,6 +78,7 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
         isAuthorized: credentials !== null,
         role: credentials?.role || appRole,
         login,
+        signup,
         logout,
       }}
     >

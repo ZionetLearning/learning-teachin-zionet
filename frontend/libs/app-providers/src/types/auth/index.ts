@@ -11,3 +11,11 @@ export interface Credentials {
   sessionExpiry: number;
   role: AppRoleType;
 }
+
+export interface SignupData {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  role: AppRoleType;
+}
