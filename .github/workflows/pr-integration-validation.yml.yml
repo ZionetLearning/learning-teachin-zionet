@@ -25,6 +25,8 @@ jobs:
   run-integration-tests:
     needs: deploy-under-test
     uses: ./.github/workflows/integration-tests.yml
+    with:
+      api_stage: 'test'
     permissions:
       contents: read
     secrets: inherit
