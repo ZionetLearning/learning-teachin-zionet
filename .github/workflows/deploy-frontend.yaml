@@ -51,6 +51,32 @@ concurrency:
   group: deploy-frontend-apps-${{ inputs.environment_name || github.event.inputs.environment_name || 'dev' }}
   cancel-in-progress: false
 
+env:
+  # Azure Speech SDK configuration
+  VITE_AZURE_SPEECH_KEY: ${{ secrets.VITE_AZURE_SPEECH_KEY }}
+  VITE_AZURE_REGION: "eastus"
+  
+  # External APIs
+  VITE_OPENWEATHERMAP_API_KEY: ${{ secrets.VITE_OPENWEATHERMAP_API_KEY }}
+  
+  # Backend microservices URLs
+  VITE_BASE_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev"
+  VITE_AI_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/ai-manager"
+  VITE_AUTH_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/auth"
+  VITE_TASKS_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/tasks-manager"
+  VITE_USERS_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/users-manager"
+  
+  # Azure OpenAI configuration
+  VITE_AZURE_OPENAI_KEY: ""
+  VITE_AZURE_OPENAI_DEPLOYMENT_NAME: "gpt-4.1-mini"
+  VITE_AZURE_OPENAI_API_VERSION: "2024-04-01-preview"
+  VITE_AZURE_OPENAI_ENDPOINT: "https://france-teachin-open-ai.openai.azure.com/"
+  
+  # Monitoring and tracking
+  VITE_APPINSIGHTS_CONNECTION_STRING: ""
+  VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+  SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+
 jobs:
 
   frontend-test:
@@ -84,25 +110,6 @@ jobs:
       - name: Run E2E Tests (Cypress) for ${{ matrix.app }}
         continue-on-error: true
         working-directory: ${{ env.FE_DIR }}
-        env:
-          # Required for Azure Speech SDK (speakingPractice tests)
-          VITE_AZURE_SPEECH_KEY: ${{ secrets.VITE_AZURE_SPEECH_KEY }}
-          VITE_AZURE_REGION: "eastus"
-          # Required for weather tests
-          VITE_OPENWEATHERMAP_API_KEY: ${{ secrets.VITE_OPENWEATHERMAP_API_KEY }}
-          # Backend API configuration for user tests
-          VITE_BASE_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev"
-          VITE_AI_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/ai-manager"
-          VITE_AUTH_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/auth"
-          VITE_TASKS_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/tasks-manager"
-          VITE_USERS_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/users-manager"
-          # Other required environment variables
-          VITE_AZURE_OPENAI_KEY: ""
-          VITE_AZURE_OPENAI_DEPLOYMENT_NAME: "gpt-4.1-mini"
-          VITE_AZURE_OPENAI_API_VERSION: "2024-04-01-preview"
-          VITE_AZURE_OPENAI_ENDPOINT: "https://france-teachin-open-ai.openai.azure.com/"
-          VITE_APPINSIGHTS_CONNECTION_STRING: ""
-          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
         run: |
           echo "Running Cypress for ${{ matrix.app }}..."
           if grep -q "\"cypress:${{ matrix.app }}\":" package.json; then
@@ -146,21 +153,7 @@ jobs:
       - name: Build All Applications (Parallel)
         working-directory: ${{ env.FE_DIR }}
         env:
-          VITE_AZURE_SPEECH_KEY: ""
-          VITE_AZURE_REGION: "eastus"
-          VITE_AZURE_OPENAI_KEY: ""
-          VITE_AZURE_OPENAI_DEPLOYMENT_NAME: "gpt-4.1-mini"
-          VITE_AZURE_OPENAI_API_VERSION: "2024-04-01-preview"
-          VITE_AZURE_OPENAI_ENDPOINT: "https://france-teachin-open-ai.openai.azure.com/"
-          VITE_APPINSIGHTS_CONNECTION_STRING: ""
-          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
-          VITE_OPENWEATHERMAP_API_KEY: ${{ secrets.VITE_OPENWEATHERMAP_API_KEY }}
-          VITE_BASE_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev"
-          VITE_AI_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/ai-manager"
-          VITE_AUTH_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/auth"
-          VITE_TASKS_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/tasks-manager"
-          VITE_USERS_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/users-manager"
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          # Build-specific environment variables (RELEASE_NAME is created in the previous step)
           RELEASE: ${{ env.RELEASE_NAME }}
         run: |
           echo "Starting parallel builds for all frontend applications..."
