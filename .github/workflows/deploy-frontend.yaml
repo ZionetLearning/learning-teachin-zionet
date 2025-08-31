@@ -77,10 +77,15 @@ jobs:
       - name: Run Tests for ${{ matrix.app }}
         working-directory: ${{ env.FE_DIR }}
         run: |
-          # Check if test script exists in package.json
           echo "Running tests for ${{ matrix.app }}..."
           npx vitest run --reporter=verbose --passWithNoTests --root apps/${{ matrix.app }}
           echo "Tests completed successfully for ${{ matrix.app }}"
+      
+      - name: Run E2E Tests (Cypress) for ${{ matrix.app }}
+        working-directory: ${{ env.FE_DIR }}
+        run: |
+          echo "Running Cypress for ${{ matrix.app }}..."
+          npm run cypress:${{ matrix.app }} -- --headless
 
 
   frontend-build-and-lint:
