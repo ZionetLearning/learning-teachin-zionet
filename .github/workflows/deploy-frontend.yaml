@@ -29,6 +29,11 @@ on:
         description: 'lowercase letters & digits only (env identifier) where the application is deployed'
         required: true
         type: string
+      run_only_tests:
+        description: 'Run only frontend tests'
+        required: false
+        default: true
+        type: boolean
   workflow_call:
     inputs:
       environment:
@@ -43,6 +48,10 @@ on:
       deployment_token:
         required: false
         type: string
+      run_only_tests:
+        required: false
+        type: boolean
+        default: false
     secrets:
       AZURE_STATIC_WEB_APPS_API_TOKEN:
         required: false
@@ -51,44 +60,79 @@ concurrency:
   group: deploy-frontend-apps-${{ inputs.environment_name || github.event.inputs.environment_name || 'dev' }}
   cancel-in-progress: false
 
+env:
+  # Azure Speech SDK configuration
+  VITE_AZURE_SPEECH_KEY: ${{ secrets.VITE_AZURE_SPEECH_KEY }}
+  VITE_AZURE_REGION: "eastus"
+  
+  # External APIs
+  VITE_OPENWEATHERMAP_API_KEY: ${{ secrets.VITE_OPENWEATHERMAP_API_KEY }}
+  
+  # Backend microservices URLs
+  VITE_BASE_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev"
+  VITE_AI_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/ai-manager"
+  VITE_AUTH_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/auth"
+  VITE_TASKS_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/tasks-manager"
+  VITE_USERS_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/users-manager"
+  
+  # Azure OpenAI configuration
+  VITE_AZURE_OPENAI_KEY: ""
+  VITE_AZURE_OPENAI_DEPLOYMENT_NAME: "gpt-4.1-mini"
+  VITE_AZURE_OPENAI_API_VERSION: "2024-04-01-preview"
+  VITE_AZURE_OPENAI_ENDPOINT: "https://france-teachin-open-ai.openai.azure.com/"
+  
+  # Monitoring and tracking
+  VITE_APPINSIGHTS_CONNECTION_STRING: ""
+  VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+  SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+
 jobs:
 
-  # frontend-test:
-  #   runs-on: ubuntu-latest
-  #   strategy:
-  #     matrix:
-  #       app: [student, teacher, admin]
-  #   env:
-  #     FE_DIR: frontend
-  #   steps:
-  #     - uses: actions/checkout@v4
+  frontend-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [student, teacher, admin]
+    env:
+      FE_DIR: frontend
+    steps:
+      - uses: actions/checkout@v4
 
-  #     - name: Setup Node.js
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: '20'
-  #         cache: 'npm'
-  #         cache-dependency-path: '${{ env.FE_DIR }}/package-lock.json'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: '${{ env.FE_DIR }}/package-lock.json'
 
-  #     - name: Install Dependencies
-  #       working-directory: ${{ env.FE_DIR }}
-  #       run: npm ci
+      - name: Install Dependencies
+        working-directory: ${{ env.FE_DIR }}
+        run: npm ci
 
-  #     - name: Run Tests for ${{ matrix.app }}
-  #       working-directory: ${{ env.FE_DIR }}
-  #       run: |
-  #         # Check if test script exists in package.json
-  #         if grep -q "\"test:${{ matrix.app }}\":" package.json; then
-  #           echo "Running tests for ${{ matrix.app }}..."
-  #           npm run test:${{ matrix.app }} -- --run --no-watch
-  #           echo "Tests completed successfully for ${{ matrix.app }}"
-  #         else
-  #           echo "No test:${{ matrix.app }} script found in package.json - skipping"
-  #         fi
+      - name: Run Tests for ${{ matrix.app }}
+        working-directory: ${{ env.FE_DIR }}
+        run: |
+          echo "Running tests for ${{ matrix.app }}..."
+          npx vitest run --reporter=verbose --passWithNoTests --root apps/${{ matrix.app }}
+          echo "Tests completed successfully for ${{ matrix.app }}"
+      
+      - name: Run E2E Tests (Cypress) for ${{ matrix.app }}
+        continue-on-error: true
+        working-directory: ${{ env.FE_DIR }}
+        run: |
+          echo "Running Cypress for ${{ matrix.app }}..."
+          if grep -q "\"cypress:${{ matrix.app }}\":" package.json; then
+            # Run Cypress - will show results even with some test failures
+            npm run cypress:${{ matrix.app }}:ci
+            echo "Cypress run completed for ${{ matrix.app }}"
+          else
+            echo "No cypress:${{ matrix.app }} script found in package.json - skipping"
+          fi
 
 
   frontend-build-and-lint:
-    # needs: [frontend-test]
+    if: inputs.run_only_tests == false
+    needs: [frontend-test]
     runs-on: ubuntu-latest
     env:
       FE_DIR: frontend
@@ -118,21 +162,7 @@ jobs:
       - name: Build All Applications (Parallel)
         working-directory: ${{ env.FE_DIR }}
         env:
-          VITE_AZURE_SPEECH_KEY: ""
-          VITE_AZURE_REGION: "eastus"
-          VITE_AZURE_OPENAI_KEY: ""
-          VITE_AZURE_OPENAI_DEPLOYMENT_NAME: "gpt-4.1-mini"
-          VITE_AZURE_OPENAI_API_VERSION: "2024-04-01-preview"
-          VITE_AZURE_OPENAI_ENDPOINT: "https://france-teachin-open-ai.openai.azure.com/"
-          VITE_APPINSIGHTS_CONNECTION_STRING: ""
-          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
-          VITE_OPENWEATHERMAP_API_KEY: ${{ secrets.VITE_OPENWEATHERMAP_API_KEY }}
-          VITE_BASE_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev"
-          VITE_AI_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/ai-manager"
-          VITE_AUTH_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/auth"
-          VITE_TASKS_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/tasks-manager"
-          VITE_USERS_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/users-manager"
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          # Build-specific environment variables (RELEASE_NAME is created in the previous step)
           RELEASE: ${{ env.RELEASE_NAME }}
         run: |
           echo "Starting parallel builds for all frontend applications..."
