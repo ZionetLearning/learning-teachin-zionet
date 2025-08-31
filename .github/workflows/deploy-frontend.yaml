@@ -86,9 +86,9 @@ jobs:
         run: |
           echo "Running Cypress for ${{ matrix.app }}..."
           if grep -q "\"cypress:${{ matrix.app }}\":" package.json; then
-            npm run cypress:${{ matrix.app }}
+            npm run cypress:${{ matrix.app }}:ci
           else
-            echo "⚠️ No cypress:${{ matrix.app }} script found in package.json - skipping"
+            echo "No cypress:${{ matrix.app }} script found in package.json - skipping"
           fi
 
 
