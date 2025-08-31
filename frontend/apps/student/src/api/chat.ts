@@ -2,8 +2,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { useSignalR } from "@/hooks/useSignalR";
-import { EventType } from "@/types/signalR";
+import { EventType } from "@app-providers/types";
 
 export type ChatRequest = {
   userMessage: string;
