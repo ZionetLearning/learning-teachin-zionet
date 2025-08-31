@@ -24,6 +24,8 @@ public class TestUserFixture : IAsyncLifetime
             UserId = Guid.NewGuid(),
             Email = email,
             Password = password,
+            FirstName = "Test-User-FirstName",
+            LastName = "Test-User-LastName",
         };
 
         // Create the test user in DB
