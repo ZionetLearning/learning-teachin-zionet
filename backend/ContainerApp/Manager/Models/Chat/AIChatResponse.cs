@@ -1,4 +1,6 @@
-﻿namespace Manager.Models.Chat;
+﻿using System.Text.Json.Serialization;
+
+namespace Manager.Models.Chat;
 
 public sealed record AIChatResponse
 {
@@ -8,7 +10,7 @@ public sealed record AIChatResponse
 
     public required string ChatName { get; init; }
 
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public ChatAnswerStatus Status { get; set; } = ChatAnswerStatus.Ok;
-
     public Guid ThreadId { get; init; }
 }
