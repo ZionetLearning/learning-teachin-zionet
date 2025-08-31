@@ -69,16 +69,26 @@ resource "azurerm_monitor_diagnostic_setting" "redis" {
 # which is configured separately in your frontend application code
 
 # Uncomment this block if/when Azure adds support for Static Web App diagnostic settings
-# resource "azurerm_monitor_diagnostic_setting" "frontend" {
-#   name                       = "frontend-diag"
-#   target_resource_id         = var.frontend_static_web_app_id
-#   log_analytics_workspace_id = var.log_analytics_workspace_id
-#
-#   enabled_log {
-#     category = "AppLogs"
-#   }
-#
-#   enabled_metric {
-#     category = "AllMetrics"
-#   }
-# }
+resource "azurerm_monitor_diagnostic_setting" "application_insights" {
+  count                      = length(var.frontend_application_insights_ids)
+  name                       = "appinsights-diag-${count.index}"
+  target_resource_id         = var.frontend_application_insights_ids[count.index]
+  log_analytics_workspace_id = var.log_analytics_workspace_id
+
+  # Only the logs we need for basic monitoring
+  enabled_log {
+    category = "AppRequests"
+  }
+  
+  enabled_log {
+    category = "AppPageViews" 
+  }
+  
+  enabled_log {
+    category = "AppExceptions"
+  }
+
+  enabled_metric {
+    category = "AllMetrics"
+  }
+}

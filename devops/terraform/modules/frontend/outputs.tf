@@ -21,6 +21,11 @@ output "application_insights_id" {
   value       = azurerm_application_insights.frontend.id
 }
 
+output "application_insights_app_id" {
+  value = azurerm_application_insights.frontend.app_id
+  description = "Use this in Grafana Azure Monitor data source"
+}
+
 output "application_insights_instrumentation_key" {
   description = "Instrumentation key for Application Insights"
   value       = azurerm_application_insights.frontend.instrumentation_key

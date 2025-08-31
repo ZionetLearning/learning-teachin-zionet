@@ -21,3 +21,9 @@ variable "redis_id" {
 variable "frontend_static_web_app_id" {
   type = list(string)
 }
+
+variable "frontend_application_insights_ids" {
+  description = "List of Application Insights IDs for frontend apps"
+  type        = list(string)
+  default     = []
+}

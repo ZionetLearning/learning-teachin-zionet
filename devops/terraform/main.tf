@@ -143,12 +143,13 @@ module "monitoring" {
   source = "./modules/monitoring"
 
   log_analytics_workspace_id  = azurerm_log_analytics_workspace.main.id
-
   servicebus_namespace_id     = module.servicebus.namespace_id
   postgres_server_id          = module.database[0].id
   signalr_id                  = module.signalr.id
   redis_id                    = module.redis[0].id
   frontend_static_web_app_id  = [for f in module.frontend : f.static_web_app_id]
+
+  frontend_application_insights_ids = [for f in module.frontend : f.application_insights_id]
 
     depends_on = [
     azurerm_log_analytics_workspace.main,
@@ -243,6 +244,8 @@ module "frontend" {
   sku_size            = var.frontend_sku_size
   appinsights_retention_days = var.frontend_appinsights_retention_days
   appinsights_sampling_percentage = var.frontend_appinsights_sampling_percentage
+  
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.main.id
   
   tags = {
     Environment = var.environment_name

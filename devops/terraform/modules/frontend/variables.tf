@@ -39,6 +39,11 @@ variable "appinsights_sampling_percentage" {
   default     = 100
 }
 
+variable "log_analytics_workspace_id" {
+  description = "Log Analytics Workspace ID"
+  type        = string
+}
+
 variable "tags" {
   description = "Tags to apply to resources"
   type        = map(string)

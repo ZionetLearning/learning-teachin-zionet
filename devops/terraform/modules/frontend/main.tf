@@ -31,5 +31,7 @@ resource "azurerm_application_insights" "frontend" {
     ignore_changes = [workspace_id]
   }
   
+  workspace_id = var.log_analytics_workspace_id
+  
   tags = var.tags
 }
