@@ -1,290 +1,173 @@
-import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import {
-  Sidebar,
-  Menu,
-  MenuItem,
-  SubMenu,
-  sidebarClasses,
-} from "react-pro-sidebar";
+import { useState } from 'react';
+import { Sidebar, Menu, MenuItem, SubMenu, sidebarClasses } from 'react-pro-sidebar';
 
-import MenuIcon from "@mui/icons-material/Menu";
-import ChatIcon from "@mui/icons-material/Chat";
-import FaceIcon from "@mui/icons-material/Face";
-import KeyboardIcon from "@mui/icons-material/Keyboard";
-import TranslateIcon from "@mui/icons-material/Translate";
-import HomeIcon from "@mui/icons-material/Home";
-import ExitToAppIcon from "@mui/icons-material/ExitToApp";
-import PublicIcon from "@mui/icons-material/Public";
-import WeatherWidgetIcon from "@mui/icons-material/Cloud";
-import ThreePIcon from "@mui/icons-material/ThreeP";
-import LiveTvIcon from "@mui/icons-material/LiveTv";
-import ConnectWithoutContactIcon from "@mui/icons-material/ConnectWithoutContact";
-import FlagIcon from "@mui/icons-material/Flag";
-import PeopleIcon from "@mui/icons-material/People";
-import GBFlag from "country-flag-icons/react/3x2/GB";
-import ILFlag from "country-flag-icons/react/3x2/IL";
-import { useAuth } from "@app-providers/auth";
-
-export interface AppSidebarProps {
-  items: React.ReactNode[];
-  langs?: {he: 'he', en: 'en'};
-  onNavigate: (path: string) => void;
-  onLogout?: () => void;
-  dir: 'ltr' | 'rtl';
-  activePath: string;
+export interface SidebarLink {
+  label: React.ReactNode;
+  icon?: React.ReactNode;
+  path?: string;
+  onClick?: () => void;
+  testId?: string;
+  children?: SidebarLink[];
 }
 
-export const AppSidebar = (props: AppSidebarProps) => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { logout } = useAuth();
-  const { t, i18n } = useTranslation();
-  const [collapsed, setCollapsed] = useState(false);
-  const flagSize = { width: 22, height: 16 };
-  const handleNavigation = (path: string) => {
-    navigate(path);
+export interface LanguageItem {
+  code: string;           // 'en' | 'he'
+  label: React.ReactNode; // visible label
+  icon?: React.ReactNode; // optional flag/icon
+  active?: boolean;
+  onClick: () => void;    // switch language
+  testId?: string;
+}
+
+export interface AppSidebarProps {
+  items: SidebarLink[];
+  languages?: {
+    label: React.ReactNode;
+    icon?: React.ReactNode;
+    items: LanguageItem[];
+  };
+  toggleLabel?: React.ReactNode;
+  /* initial state only (the component manages the rest) */
+  defaultCollapsed?: boolean;
+  /* notify parent when user toggles */
+  onCollapsedChange?: (collapsed: boolean) => void;
+  dir?: 'ltr' | 'rtl';
+  activePath?: string;
+  onNavigate?: (path: string) => void;
+  logoutItem?: {
+    label: React.ReactNode;
+    icon?: React.ReactNode;
+    onLogout: () => void;
+    testId?: string;
+  };
+}
+
+export const AppSidebar = ({
+  items,
+  languages,
+  toggleLabel = 'Toggle sidebar',
+  defaultCollapsed = false,
+  onCollapsedChange,
+  dir = 'ltr',
+  activePath,
+  onNavigate,
+  logoutItem,
+}: AppSidebarProps) => {
+  const [collapsed, setCollapsed] = useState<boolean>(defaultCollapsed);
+
+  const toggle = () => {
+    setCollapsed(prev => {
+      const next = !prev;
+      onCollapsedChange?.(next);
+      return next;
+    });
   };
 
-  const isHebrew = i18n.language === props.langs?.he;
-  const isActive = (path: string) => props.activePath === path;
+  const isActive = (path?: string) => Boolean(path) && activePath === path;
 
-  const handleChangeLanguage = (lng: "en" | "he") => () => {
-    i18n.changeLanguage(lng);
+  const handleItemClick = (item: SidebarLink) => {
+    if (item.onClick) {
+      item.onClick();
+      return;
+    }
+    if (item.path && onNavigate) {
+      onNavigate(item.path);
+    }
   };
+
+  const renderItem = (item: SidebarLink): React.ReactNode => {
+    if (item.children?.length) {
+      return (
+        <SubMenu key={String(item.label)} label={item.label} icon={item.icon}>
+          {item.children.map((child) => renderItem(child))}
+        </SubMenu>
+      );
+    }
+    return (
+      <MenuItem
+        key={String(item.label)}
+        icon={item.icon}
+        active={isActive(item.path)}
+        data-testid={item.testId}
+        onClick={() => handleItemClick(item)}
+      >
+        {item.label}
+      </MenuItem>
+    );
+  };
+
   return (
     <Sidebar
       data-testid="app-sidebar"
       collapsed={collapsed}
-      dir={isHebrew ? "rtl" : "ltr"}
+      dir={dir}
       rootStyles={{
         [`.${sidebarClasses.container}`]: {
-          backgroundColor: "#f4f4f4",
-          borderRight: "1px solid #ddd",
-          height: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
-          direction: isHebrew ? "rtl" : "ltr",
+          backgroundColor: '#f4f4f4',
+          borderRight: '1px solid #ddd',
+          height: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          direction: dir,
         },
       }}
     >
       <Menu
         menuItemStyles={{
           button: ({ active }) => ({
-            color: active ? "white" : "#333",
-            backgroundColor: active ? "#7c4dff" : "transparent",
-            borderRadius: "8px",
-            margin: "4px 8px",
-            padding: "10px",
-            "& .ps-menu-icon": {
-              color: active ? "#fff" : "#7c4dff",
-            },
-            "&:hover": {
-              backgroundColor: active ? "#6a40e6" : "#f0f0f0",
-              color: active ? "#fff" : "#000",
-            },
-            textTransform: "capitalize",
+            color: active ? 'white' : '#333',
+            backgroundColor: active ? '#7c4dff' : 'transparent',
+            borderRadius: '8px',
+            margin: '4px 8px',
+            padding: '10px',
+            '& .ps-menu-icon': { color: active ? '#fff' : '#7c4dff' },
+            '&:hover': { backgroundColor: active ? '#6a40e6' : '#f0f0f0', color: active ? '#fff' : '#000' },
+            textTransform: 'capitalize',
           }),
-          label: {
-            textAlign: isHebrew ? "right" : "left",
-          },
+          label: { textAlign: dir === 'rtl' ? 'right' : 'left' },
         }}
       >
-        <MenuItem
-          icon={<MenuIcon />}
-          onClick={() => setCollapsed((prev) => !prev)}
-        >
-          {!collapsed && t("sidebar.toggleSidebar")}
-        </MenuItem>
+        <MenuItem onClick={toggle}>{!collapsed && toggleLabel}</MenuItem>
 
-        <SubMenu
-          label={t("sidebar.languages")}
-          icon={<TranslateIcon />}
-          data-testid="sidebar-languages"
-        >
-          <MenuItem
-            icon={<ILFlag style={flagSize} />}
-            onClick={handleChangeLanguage("he")}
-            active={i18n.language === "he"}
-            data-testid="sidebar-lang-he"
-          >
-            {t("sidebar.he")}
-          </MenuItem>
+        {languages?.items?.length ? (
+          <SubMenu label={languages.label} icon={languages.icon} data-testid="sidebar-languages">
+            {languages.items.map((lng) => (
+              <MenuItem
+                key={lng.code}
+                icon={lng.icon}
+                onClick={lng.onClick}
+                active={Boolean(lng.active)}
+                data-testid={lng.testId}
+              >
+                {lng.label}
+              </MenuItem>
+            ))}
+          </SubMenu>
+        ) : null}
 
-          <MenuItem
-            icon={<GBFlag style={flagSize} />}
-            onClick={handleChangeLanguage("en")}
-            active={i18n.language === "en"}
-            data-testid="sidebar-lang-en"
-          >
-            {t("sidebar.en")}
-          </MenuItem>
-        </SubMenu>
-
-        <MenuItem
-          icon={<HomeIcon />}
-          onClick={() => props.onNavigate("/")}
-          active={isActive("/")}
-          data-testid="sidebar-home"
-        >
-          {t("sidebar.home")}
-        </MenuItem>
-
-        <MenuItem
-          icon={<ConnectWithoutContactIcon />}
-          onClick={() => props.onNavigate("/signalr")}
-          active={isActive("/signalr")}
-          data-testid="signalR"
-        >
-          {t("sidebar.signalR")}
-        </MenuItem>
-
-        <MenuItem
-          icon={<ThreePIcon />}
-          onClick={() => props.onNavigate("/chat-with-avatar")}
-          active={isActive("/chat-with-avatar")}
-          data-testid="sidebar-chat-avatar"
-        >
-          {t("sidebar.chatAvatar")}
-        </MenuItem>
-
-        <SubMenu label={t("sidebar.chatTools")} icon={<ChatIcon />}>
-          <MenuItem
-            onClick={() => props.onNavigate("/chat/yo")}
-            active={isActive("/chat/yo")}
-            data-testid="sidebar-chat-yo"
-          >
-            {t("sidebar.chatYo")}
-          </MenuItem>
-          <MenuItem
-            onClick={() => props.onNavigate("/chat/da")}
-            active={isActive("/chat/da")}
-            data-testid="sidebar-chat-da"
-          >
-            {t("sidebar.chatDa")}
-          </MenuItem>
-          <MenuItem
-            onClick={() => props.onNavigate("/chat/ou")}
-            active={isActive("/chat/ou")}
-            data-testid="sidebar-chat-ou"
-          >
-            {t("sidebar.chatOu")}
-          </MenuItem>
-        </SubMenu>
-
-        <SubMenu label={t("sidebar.avatarTools")} icon={<FaceIcon />}>
-          <MenuItem
-            onClick={() => props.onNavigate("/avatar/ou")}
-            active={isActive("/avatar/ou")}
-            data-testid="sidebar-avatar-ou"
-          >
-            {t("sidebar.avatarOu")}
-          </MenuItem>
-          <MenuItem
-            onClick={() => props.onNavigate("/avatar/sh")}
-            active={isActive("/avatar/sh")}
-            data-testid="sidebar-avatar-sh"
-          >
-            {t("sidebar.avatarSh")}
-          </MenuItem>
-          <MenuItem
-            onClick={() => props.onNavigate("/avatar/da")}
-            active={isActive("/avatar/da")}
-            data-testid="sidebar-avatar-da"
-          >
-            {t("sidebar.avatarDa")}
-          </MenuItem>
-        </SubMenu>
-
-        <SubMenu label={t("sidebar.practiceTools")} icon={<KeyboardIcon />}>
-          <MenuItem
-            onClick={() => props.onNavigate("/typing")}
-            active={isActive("/typing")}
-            data-testid="sidebar-typing"
-          >
-            {t("sidebar.typingPractice")}
-          </MenuItem>
-          <MenuItem
-            onClick={() => props.onNavigate("/word-order-game")}
-            active={isActive("/word-order-game")}
-            data-testid="sidebar-word-order"
-          >
-            {t("sidebar.wordOrderGame")}
-          </MenuItem>
-          <MenuItem
-            onClick={() => props.onNavigate("/speaking")}
-            active={isActive("/speaking")}
-            data-testid="sidebar-speaking"
-          >
-            {t("sidebar.speakingPractice")}
-          </MenuItem>
-        </SubMenu>
-
-        <MenuItem
-          icon={<PublicIcon />}
-          onClick={() => props.onNavigate("/earthquake-map")}
-          active={isActive("/earthquake-map")}
-          data-testid="sidebar-earthquake"
-        >
-          {t("sidebar.earthquakeMap")}
-        </MenuItem>
-        <MenuItem
-          onClick={() => props.onNavigate("/weather")}
-          icon={<WeatherWidgetIcon />}
-          active={isActive("/weather")}
-          data-testid="sidebar-weather"
-        >
-          {t("sidebar.weather")}
-        </MenuItem>
-        <MenuItem
-          onClick={() => props.onNavigate("/anime-explorer")}
-          icon={<LiveTvIcon />}
-          active={isActive("/anime-explorer")}
-          data-testid="sidebar-anime"
-        >
-          {t("sidebar.anime")}
-        </MenuItem>
-        <MenuItem
-          onClick={() => props.onNavigate("/country-explorer")}
-          icon={<FlagIcon />}
-          active={isActive("/country-explorer")}
-        >
-          {t("sidebar.countryExplorer")}
-        </MenuItem>
-        <MenuItem
-          onClick={() => props.onNavigate("/users")}
-          icon={<PeopleIcon />}
-          active={isActive("/users")}
-          data-testid="sidebar-users"
-        >
-          {t("sidebar.users")}
-        </MenuItem>
+        {items?.map((item) => renderItem(item))}
       </Menu>
-      <Menu
-        menuItemStyles={{
-          button: {
-            color: "#333",
-            backgroundColor: "transparent",
-            borderRadius: "8px",
-            margin: "4px 8px",
-            padding: "10px",
-            "&:hover": {
-              backgroundColor: "#f0f0f0",
+
+      {logoutItem && (
+        <Menu
+          menuItemStyles={{
+            button: {
+              color: '#333',
+              backgroundColor: 'transparent',
+              borderRadius: '8px',
+              margin: '4px 8px',
+              padding: '10px',
+              '&:hover': { backgroundColor: '#f0f0f0' },
+              textTransform: 'capitalize',
             },
-            textTransform: "capitalize",
-          },
-        }}
-      >
-        <MenuItem
-          icon={<ExitToAppIcon />}
-          onClick={props.onLogout ? props.onLogout : logout}
-          data-testid="sidebar-logout"
+          }}
         >
-          {t("sidebar.logout")}
-        </MenuItem>
-      </Menu>
+          <MenuItem icon={logoutItem.icon} onClick={logoutItem.onLogout} data-testid={logoutItem.testId}>
+            {logoutItem.label}
+          </MenuItem>
+        </Menu>
+      )}
     </Sidebar>
   );
 };
