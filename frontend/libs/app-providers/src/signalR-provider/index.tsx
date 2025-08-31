@@ -15,10 +15,7 @@ const createUserId = (): string => {
     Array.from(new Uint8Array(16), (b) => b.toString(16).padStart(2, "0")).join("");
 };
 
-export const SignalRProvider: React.FC<SignalRProviderProps> = ({ 
-  hubUrl, 
-  children 
-}) => {
+export const SignalRProvider = ({ hubUrl, children }: SignalRProviderProps) => {
   const [status, setStatus] = useState<Status>("idle");
   const [userId] = useState(() => createUserId());
   const connRef = useRef<HubConnection | null>(null);
