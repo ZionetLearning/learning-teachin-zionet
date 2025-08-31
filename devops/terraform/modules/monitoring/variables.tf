@@ -19,5 +19,5 @@ variable "redis_id" {
 }
 
 variable "frontend_static_web_app_id" {
-  type = string
+  type = list(string)
 }

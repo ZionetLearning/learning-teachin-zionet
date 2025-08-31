@@ -148,7 +148,7 @@ module "monitoring" {
   postgres_server_id          = module.database[0].id
   signalr_id                  = module.signalr.id
   redis_id                    = module.redis[0].id
-  frontend_static_web_app_id  = module.frontend.static_web_app_id
+  frontend_static_web_app_id  = [for f in module.frontend : f.static_web_app_id]
 
     depends_on = [
     azurerm_log_analytics_workspace.main,
