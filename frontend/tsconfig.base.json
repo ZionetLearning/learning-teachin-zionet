@@ -13,7 +13,9 @@
       "@ui-components/*": ["libs/ui/components/src/*"],
       "@ui-components": ["libs/ui/components/src/index.ts"],
       "@app-providers": ["libs/app-providers/src/index.ts"],
-      "@app-providers/*": ["libs/app-providers/src/*"]
+      "@app-providers/*": ["libs/app-providers/src/*"],
+      "@authorization": ["libs/authorization/src/index.ts"],
+      "@authorization/*": ["libs/authorization/src/*"],
     }
   }
 }

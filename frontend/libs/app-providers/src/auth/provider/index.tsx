@@ -1,11 +1,11 @@
 import { ReactNode, useCallback, useEffect, useState } from "react";
 
 import { AuthContext } from "@app-providers/context";
-import { Role, Credentials } from "@app-providers/types";
+import { AppRoleType, Credentials } from "@app-providers/types";
 
 export interface AuthProviderProps {
   children: ReactNode;
-  appRole: Role;
+  appRole: AppRoleType;
 }
 
 export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
@@ -49,7 +49,7 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
   );
 
   const login = useCallback(
-    (email: string, password: string, role: Role = appRole) => {
+    (email: string, password: string, role: AppRoleType = appRole) => {
       const sessionExpiry = Date.now() + 10 * 60 * 60 * 1000;
       localStorage.setItem(
         "credentials",

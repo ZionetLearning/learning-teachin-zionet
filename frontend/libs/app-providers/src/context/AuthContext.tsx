@@ -1,10 +1,10 @@
 import { createContext } from "react";
 
-import { Role } from "@app-providers/types";
+import { AppRoleType } from "@app-providers/types";
 
 export interface AuthContextValue {
   isAuthorized: boolean;
-  role: Role;
+  role: AppRoleType;
   login: (email: string, password: string) => void;
   logout: () => void;
 }
