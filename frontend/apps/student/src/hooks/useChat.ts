@@ -63,10 +63,11 @@ export const useChat = () => {
     // call API
     sendChatMessage(payload, {
       onSuccess: (data: ChatResponse) => {
-        setThreadId(data.threadId);
+        console.log("Chat message sent successfully:", data);
+        setThreadId(data.ThreadId);
 
-        const aiText = data.assistantMessage ?? "";
 
+        const aiText = data.AssistantMessage ?? "";
         const aiMsg: ChatMessage = {
           position: "left",
           type: "text",
@@ -92,9 +93,9 @@ export const useChat = () => {
     pushUser(userText);
 
     const data = await sendChatMessageAsync(payload);
-    setThreadId(data.threadId);
-    pushAssistant(data.assistantMessage ?? "");
-    return data.assistantMessage ?? "";
+    setThreadId(data.ThreadId);
+    pushAssistant(data.AssistantMessage ?? "");
+    return data.AssistantMessage ?? "";
   };
 
   return {

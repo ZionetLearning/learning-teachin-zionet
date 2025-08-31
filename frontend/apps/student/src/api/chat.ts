@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { EventType } from "@app-providers/types";
+import { useSignalR } from "@student/hooks";
 
 export type ChatRequest = {
   userMessage: string;
@@ -11,12 +12,13 @@ export type ChatRequest = {
   userId: string; // needed for correlation
 };
 
+// need to fix backend to send camelCase
 export type ChatResponse = {
-  requestId: string;
-  assistantMessage?: string;
-  chatName: string;
-  status: number;
-  threadId: string;
+  RequestId: string;
+  AssistantMessage?: string;
+  ChatName: string;
+  Status: number;
+  ThreadId: string;
 };
 
 export const useSendChatMessage = () => {
@@ -53,7 +55,7 @@ export const useSendChatMessage = () => {
     },
 
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["chat", data.threadId] });
+      queryClient.invalidateQueries({ queryKey: ["chat", data.ThreadId] });
     },
 
     onError: (error) => {
