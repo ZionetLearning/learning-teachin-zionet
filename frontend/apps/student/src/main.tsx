@@ -16,7 +16,6 @@ initializeSentry();
 
 // const HUB_URL = "http://localhost:5280/notificationHub";
 const BASE_URL = import.meta.env.VITE_BASE_URL!;
-
 const HUB_URL = `${BASE_URL}/notificationHub`;
 
 createRoot(document.getElementById("root")!).render(

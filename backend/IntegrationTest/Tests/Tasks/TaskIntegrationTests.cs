@@ -9,13 +9,22 @@ using Xunit.Abstractions;
 
 namespace IntegrationTests.Tests.Tasks;
 
-[Collection("IntegrationTests")]
+[Collection("Shared test collection")]
 public class TaskIntegrationTests(
-    HttpTestFixture fixture,
+    SharedTestFixture sharedFixture,
     ITestOutputHelper outputHelper,
     SignalRTestFixture signalRFixture
-) : TaskTestBase(fixture, outputHelper, signalRFixture)
+) : TaskTestBase(sharedFixture.HttpFixture, outputHelper, signalRFixture), IAsyncLifetime
 {
+    private readonly SharedTestFixture _shared = sharedFixture;
+
+    public override async Task InitializeAsync()
+    {
+        await _shared.GetAuthenticatedTokenAsync();
+
+        await _shared.EnsureSignalRStartedAsync(SignalRFixture, OutputHelper);
+    }
+
     [Fact(DisplayName = "POST /tasks-manager/task - Same ID twice is idempotent (second POST is a no-op)")]
     public async Task Post_Same_Id_Twice_Is_Idempotent()
     {

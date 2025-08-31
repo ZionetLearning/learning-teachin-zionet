@@ -255,7 +255,10 @@
         "save": "Save",
         "userUpdated": "User updated",
         "email": "Email",
-        "password": "Password"
+        "password": "Password",
+        "firstName": "First Name",
+        "lastName": "Last Name",
+        "noChanges": "No changes"
       }
     },
     "sidebar": {

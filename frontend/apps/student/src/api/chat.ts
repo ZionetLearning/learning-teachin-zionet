@@ -2,41 +2,53 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { EventType } from "@app-providers/types";
+import { useSignalR } from "@student/hooks";
 
 export type ChatRequest = {
   userMessage: string;
   threadId?: string;
   chatType?: "default" | string;
+  userId: string; // needed for correlation
 };
 
 export type ChatResponse = {
+  requestId: string;
+  assistantMessage?: string;
+  chatName: string;
+  status: number;
   threadId: string;
-  assistantMessage: string;
 };
 
 export const useSendChatMessage = () => {
   const AI_BASE_URL = import.meta.env.VITE_AI_URL!;
   const queryClient = useQueryClient();
+  const { waitForResponse } = useSignalR();
 
   return useMutation<ChatResponse, Error, ChatRequest>({
     mutationFn: async ({
       userMessage,
       threadId = crypto.randomUUID(),
       chatType = "default",
+      userId,
     }) => {
-      const response = await axios.post<ChatResponse>(
-        //local server endpoint URL:
-        // "http://localhost:5280/ai-manager/chat",
-        //cloud server endpoint URL:
+      const { data } = await axios.post<{ requestId: string }>(
         `${AI_BASE_URL}/chat`,
         {
           userMessage,
           threadId,
           chatType,
+          userId,
         },
       );
 
-      return response.data;
+      const requestId = data.requestId;
+
+      const aiResponse = await waitForResponse<ChatResponse>(
+        EventType.ChatAiAnswer,
+        requestId,
+      );
+      return aiResponse;
     },
 
     onSuccess: (data) => {
