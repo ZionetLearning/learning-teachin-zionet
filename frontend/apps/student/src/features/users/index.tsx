@@ -17,7 +17,12 @@ export const Users = () => {
 
   const { mutate: createUser, isPending: isCreatingUser } = useCreateUser();
 
-  const initialValues: CreateUserFormValues = { email: "", password: "" };
+  const initialValues: CreateUserFormValues = {
+    email: "",
+    password: "",
+    firstName: "",
+    lastName: "",
+  };
 
   const classes = useStyles();
 
@@ -34,6 +39,8 @@ export const Users = () => {
                 userId: crypto.randomUUID(),
                 email: values.email,
                 password: values.password,
+                firstName: values.firstName,
+                lastName: values.lastName,
               },
               {
                 onSuccess: () => {
@@ -61,6 +68,32 @@ export const Users = () => {
                 />
                 <span className={classes.error}>
                   <ErrorMessage name="email" />
+                </span>
+              </label>
+              <label className={classes.label}>
+                {t("pages.users.firstName")}
+                <Field
+                  name="firstName"
+                  type="text"
+                  placeholder="John"
+                  autoComplete="given-name"
+                  data-testid="users-create-first-name"
+                />
+                <span className={classes.error}>
+                  <ErrorMessage name="firstName" />
+                </span>
+              </label>
+              <label className={classes.label}>
+                {t("pages.users.lastName")}
+                <Field
+                  name="lastName"
+                  type="text"
+                  placeholder="Doe"
+                  autoComplete="family-name"
+                  data-testid="users-create-last-name"
+                />
+                <span className={classes.error}>
+                  <ErrorMessage name="lastName" />
                 </span>
               </label>
               <label className={classes.label}>
@@ -102,6 +135,8 @@ export const Users = () => {
               key={user.userId}
               userId={user.userId}
               email={user.email}
+              firstName={user.firstName}
+              lastName={user.lastName}
             />
           ))}
           {!isUsersLoading && users?.length === 0 && !getUsersError && (

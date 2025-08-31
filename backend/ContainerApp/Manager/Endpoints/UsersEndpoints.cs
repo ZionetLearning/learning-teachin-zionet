@@ -63,7 +63,9 @@ public static class UsersEndpoints
             var result = new UserData
             {
                 UserId = user.UserId,
-                Email = user.Email
+                Email = user.Email,
+                FirstName = user.FirstName,
+                LastName = user.LastName
             };
 
             logger.LogInformation("User created");
