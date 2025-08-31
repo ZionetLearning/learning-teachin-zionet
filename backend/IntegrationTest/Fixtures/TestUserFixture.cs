@@ -22,7 +22,7 @@ public class TestUserFixture : IAsyncLifetime
         {
             UserId = Guid.NewGuid(),
             Email = email,
-            PasswordHash = password,
+            Password = password,
         };
 
         // Create the test user in DB

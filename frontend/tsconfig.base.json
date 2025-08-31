@@ -7,9 +7,13 @@
     "strict": true,
     "baseUrl": ".",
     "paths": {
-      "@ui/components": [
-        "libs/ui/components/src/index.ts"
-      ]
+      "@student/*": ["apps/student/src/*"],
+      "@teacher/*": ["apps/teacher/src/*"],
+      "@admin/*": ["apps/admin/src/*"],
+      "@ui-components/*": ["libs/ui/components/src/*"],
+      "@ui-components": ["libs/ui/components/src/index.ts"],
+      "@app-providers": ["libs/app-providers/src/index.ts"],
+      "@app-providers/*": ["libs/app-providers/src/*"]
     }
   }
 }

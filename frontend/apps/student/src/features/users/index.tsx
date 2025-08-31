@@ -2,7 +2,7 @@ import { ErrorMessage, Field, Form, Formik } from "formik";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 
-import { useCreateUser, useGetAllUsers } from "@/api";
+import { useCreateUser, useGetAllUsers } from "@student/api";
 import { UserListItem } from "./components";
 import { useStyles } from "./style";
 import { CreateUserFormValues, validationSchema } from "./validation";
@@ -33,7 +33,7 @@ export const Users = () => {
               {
                 userId: crypto.randomUUID(),
                 email: values.email,
-                passwordHash: values.password,
+                password: values.password,
               },
               {
                 onSuccess: () => {

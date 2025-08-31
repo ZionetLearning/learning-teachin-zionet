@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
 using Manager.Models;
-using Manager.Services.Clients;
 using Manager.Services.Clients.Engine;
 using Manager.Models.Users;
+using System.Text.Json;
+using Manager.Models.Notifications;
+using Manager.Services.Clients.Accessor;
 
 namespace Manager.Services;
 
@@ -224,7 +226,7 @@ public class ManagerService : IManagerService
         }
     }
 
-    public async Task<UserModel?> GetUserAsync(Guid userId)
+    public async Task<UserData?> GetUserAsync(Guid userId)
     {
         try
         {
@@ -243,6 +245,8 @@ public class ManagerService : IManagerService
         try
         {
             _logger.LogInformation("Creating user with email: {Email}", user.Email);
+            // Hash the password before storing
+            user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
             return await _accessorClient.CreateUserAsync(user);
         }
         catch (Exception ex)
@@ -300,6 +304,45 @@ public class ManagerService : IManagerService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error occurred while fetching all users");
+            throw;
+        }
+    }
+
+    public async Task SendUserEventAsync<T>(string userId, UserEvent<T> userEvent)
+    {
+        _logger.LogDebug("Inside: {MethodName}", nameof(SendUserEventAsync));
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            _logger.LogWarning("Invalid user ID provided for event");
+            throw new ArgumentException("User ID is required", nameof(userId));
+        }
+
+        if (userEvent is null)
+        {
+            _logger.LogWarning("Null user event received for user {UserId}", userId);
+            throw new ArgumentNullException(nameof(userEvent));
+        }
+
+        if (userEvent.Payload is null)
+        {
+            _logger.LogWarning("Null payload for event {EventType} to user {UserId}", userEvent.EventType, userId);
+        }
+
+        try
+        {
+            _logger.LogInformation("Sending event {EventType} to user {UserId}", userEvent.EventType, userId);
+            await _notificationService.SendEventAsync(userEvent.EventType, userId, userEvent.Payload);
+            _logger.LogInformation("Event {EventType} sent successfully to user {UserId}", userEvent.EventType, userId);
+        }
+        catch (JsonException jex)
+        {
+            _logger.LogError(jex, "JSON error occurred while sending event {EventType} to user {UserId}", userEvent.EventType, userId);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while sending event {EventType} to user {UserId}", userEvent.EventType, userId);
             throw;
         }
     }

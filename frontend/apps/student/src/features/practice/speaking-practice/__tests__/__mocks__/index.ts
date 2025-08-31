@@ -4,7 +4,7 @@ jest.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (k: string) => k }),
 }));
 
-jest.mock("@/hooks", () => {
+jest.mock("@student/hooks", () => {
   return {
     useAvatarSpeech: () => {
       const [isPlaying, setIsPlaying] = useState(false);

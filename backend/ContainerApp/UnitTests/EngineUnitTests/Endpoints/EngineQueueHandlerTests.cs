@@ -3,6 +3,7 @@ using Engine.Constants;
 using Engine.Endpoints;
 using Engine.Models;
 using Engine.Models.Chat;
+using Engine.Models.QueueMessages;
 using Engine.Services;
 using Engine.Services.Clients.AccessorClient;
 using Engine.Services.Clients.AccessorClient.Models;
@@ -117,9 +118,9 @@ public class EngineQueueHandlerTests
         {
             RequestId = requestId,
             ThreadId = threadId,
+            UserId = userId,
             UserMessage = userMsg,
             ChatType = ChatType.Default,
-            UserId = userId,
             SentAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
             TtlSeconds = 120,
         };
@@ -210,11 +211,19 @@ public class EngineQueueHandlerTests
             ThreadId = threadId,
             Status = ChatAnswerStatus.Ok
         };
+        var chatMetadata = new UserContextMetadata
+        {
+            UserId = userId.ToString()
+        };
 
-        pub.Setup(p => p.SendReplyAsync(engineResponse, $"{QueueNames.ManagerCallbackQueue}-out", It.IsAny<CancellationToken>()))
+        pub.Setup(p => p.SendReplyAsync(chatMetadata, engineResponse, It.IsAny<CancellationToken>()))
            .Returns(Task.CompletedTask);
 
-        var msg = new Message { ActionName = MessageAction.ProcessingQuestionAi, Payload = ToJsonElement(engineReq) };
+        var msg = new Message
+        {
+            ActionName = MessageAction.ProcessingChatMessage,
+            Payload = ToJsonElement(engineReq)
+        };
 
         // Act
         await sut.HandleAsync(msg, () => Task.CompletedTask, CancellationToken.None);
@@ -223,7 +232,7 @@ public class EngineQueueHandlerTests
         accessorClient.Verify(a => a.GetHistorySnapshotAsync(threadId, userId, It.IsAny<CancellationToken>()), Times.Once);
         ai.VerifyAll();
         accessorClient.Verify(a => a.UpsertHistorySnapshotAsync(It.IsAny<UpsertHistoryRequest>(), It.IsAny<CancellationToken>()), Times.Once);
-        pub.Verify(p => p.SendReplyAsync(engineResponse, $"{QueueNames.ManagerCallbackQueue}-out", It.IsAny<CancellationToken>()), Times.Once);
+        pub.Verify(p => p.SendReplyAsync(chatMetadata, engineResponse, It.IsAny<CancellationToken>()), Times.Once);
 
         engine.VerifyNoOtherCalls();
     }
@@ -240,9 +249,9 @@ public class EngineQueueHandlerTests
         {
             RequestId = requestId,
             ThreadId = Guid.Empty,
+            UserId = userId,
             UserMessage = "hello",
             ChatType = ChatType.Default,
-            UserId = userId,
             SentAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
             TtlSeconds = 120,
         };
@@ -252,7 +261,7 @@ public class EngineQueueHandlerTests
 
         var msg = new Message
         {
-            ActionName = MessageAction.ProcessingQuestionAi,
+            ActionName = MessageAction.ProcessingChatMessage,
             Payload = ToJsonElement(req)
         };
 
@@ -285,9 +294,9 @@ public class EngineQueueHandlerTests
         {
             RequestId = requestId,
             ThreadId = threadId,
+            UserId = userId,
             UserMessage = "boom",
             ChatType = ChatType.Default,
-            UserId = userId,
             SentAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
             TtlSeconds = 120,
         };
@@ -323,13 +332,14 @@ public class EngineQueueHandlerTests
 
         var msg = new Message
         {
-            ActionName = MessageAction.ProcessingQuestionAi,
-            Payload = ToJsonElement(engineReq)
+            ActionName = MessageAction.ProcessingChatMessage,
+            Payload = ToJsonElement(engineReq),
+            Metadata = JsonSerializer.SerializeToElement(new { UserId = userId })
         };
 
         var act = () => sut.HandleAsync(msg, () => Task.CompletedTask, CancellationToken.None);
         var ex = (await act.Should().ThrowAsync<RetryableException>()
-                           .WithMessage("*Transient error while processing AI question*"))
+                           .WithMessage("*Transient error while processing AI chat*"))
                  .Which;
 
         ex.InnerException.Should().BeOfType<InvalidOperationException>();

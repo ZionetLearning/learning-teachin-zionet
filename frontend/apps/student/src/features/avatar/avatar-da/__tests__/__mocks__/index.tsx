@@ -160,7 +160,7 @@ vi.mock("leva", () => ({
 
 /* ====== hook under test: we only need speak ====== */
 export const mockSpeak = vi.fn();
-vi.mock("@/hooks/useAvatarSpeech", () => ({
+vi.mock("@student/hooks/useAvatarSpeech", () => ({
   useAvatarSpeech: vi.fn(() => ({
     currentViseme: 0,
     speak: mockSpeak,

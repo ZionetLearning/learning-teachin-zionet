@@ -4,7 +4,7 @@ import {
   UseInfiniteQueryResult,
 } from "@tanstack/react-query";
 
-import { AnimeResponse } from "@/types";
+import { AnimeResponse } from "@student/types";
 
 interface GetAnimeSearchParams {
   page?: number;
