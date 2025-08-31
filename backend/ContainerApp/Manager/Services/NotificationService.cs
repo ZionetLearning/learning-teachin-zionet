@@ -10,9 +10,14 @@ public class NotificationService : INotificationService
     private readonly IHubContext<NotificationHub, INotificationClient> _hubContext;
     private readonly ILogger<NotificationService> _logger;
 
+    private static readonly JsonSerializerOptions s_payloadJsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
+
     public NotificationService(
-    IHubContext<NotificationHub, INotificationClient> hubContext,
-    ILogger<NotificationService> logger)
+        IHubContext<NotificationHub, INotificationClient> hubContext,
+        ILogger<NotificationService> logger)
     {
         _hubContext = hubContext;
         _logger = logger;
@@ -37,12 +42,12 @@ public class NotificationService : INotificationService
 
         try
         {
-            // now frontend that listen to "ReceiveEvent" method in signal r will receive this event and can see in event type what the payload contains
-            var jsonPayload = JsonSerializer.SerializeToElement(payload);
+            var jsonPayload = JsonSerializer.SerializeToElement(payload, s_payloadJsonOptions);
+
             var evt = new UserEvent<JsonElement>
             {
-                EventType = eventType, // Type of the event, e.g., "ChatMessage", "UserJoined", etc.
-                Payload = jsonPayload // The actual data being sent with the event (e.g., chat message class, user info class, etc.)
+                EventType = eventType,
+                Payload = jsonPayload
             };
 
             await _hubContext.Clients.User(userId).ReceiveEvent(evt);
