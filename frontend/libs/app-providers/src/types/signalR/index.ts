@@ -44,7 +44,7 @@ export interface ChatAiAnswerPayload {
   chatName: string;
   status: string;
   threadId: string;
-}
+};
 
 export interface NotificationPayload {
   message: string;
