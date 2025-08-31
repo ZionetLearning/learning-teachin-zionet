@@ -60,6 +60,7 @@
       "options": {
         "cypressConfig": "apps/student/cypress.config.ts",
         "testingType": "e2e",
+        "devServerTarget": "student:serve:development",
         "watch": false
       }
     },
