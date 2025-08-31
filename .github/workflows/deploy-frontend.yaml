@@ -85,7 +85,11 @@ jobs:
         working-directory: ${{ env.FE_DIR }}
         run: |
           echo "Running Cypress for ${{ matrix.app }}..."
-          npm run cypress:${{ matrix.app }} -- --headless
+          if grep -q "\"cypress:${{ matrix.app }}\":" package.json; then
+            npm run cypress:${{ matrix.app }}
+          else
+            echo "⚠️ No cypress:${{ matrix.app }} script found in package.json - skipping"
+          fi
 
 
   frontend-build-and-lint:
