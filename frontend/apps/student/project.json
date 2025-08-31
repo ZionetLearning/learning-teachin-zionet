@@ -60,7 +60,7 @@
       "options": {
         "cypressConfig": "apps/student/cypress.config.ts",
         "testingType": "e2e",
-        "watch": true
+        "watch": false
       }
     },
     "lint": {
