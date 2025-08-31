@@ -2,6 +2,7 @@
 using System.Text.RegularExpressions;
 using DotQueue;
 using Engine;
+using Engine.Constants;
 using Engine.Models.Chat;
 using Engine.Plugins;
 using Engine.Services;
@@ -76,7 +77,7 @@ public class ChatAiServiceTests
 
         public async Task OnFunctionInvocationAsync(FunctionInvocationContext context, Func<FunctionInvocationContext, Task> next)
         {
-            if (string.Equals(context.Function.Name, "current_time", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(context.Function.Name, PluginNames.CurrentTime, StringComparison.OrdinalIgnoreCase))
             {
                 Interlocked.Increment(ref _count);
             }
@@ -180,14 +181,14 @@ public class ChatAiServiceTests
         var spyClock = new SpyClock(fixedUtc);
         var spyFilter = new TimeInvocationSpy();
 
-        var pluginName = typeof(TimePlugin).ToPluginName(); // "Time"
+        var pluginName = typeof(TimePlugin).ToPluginName();
         try
         {
             _fx.Kernel.Plugins.AddFromObject(new TimePlugin(spyClock), pluginName);
         }
         catch
         {
-
+            //if already added earlier - do not crash
         }
 
         _fx.Kernel.FunctionInvocationFilters.Add(spyFilter);
@@ -220,7 +221,7 @@ public class ChatAiServiceTests
 
             // Assert
             Assert.Equal(ChatAnswerStatus.Ok, response.Status);
-            Assert.True(spyFilter.Count > 0, "Expected plugin function 'current_time' to be invoked at least once.");
+            Assert.True(spyFilter.Count > 0, $"Expected plugin function {PluginNames.CurrentTime} to be invoked at least once.");
             Assert.True(spyClock.Hits > 0, "Expected IDateTimeProvider.UtcNow to be read.");
 
         }
