@@ -72,7 +72,8 @@ public class AccessorEndpointsTests
         var log = Log();
 
         var model = new TaskModel { Id = 1, Name = "n" };
-        svc.Setup(s => s.CreateTaskAsync(model)).Returns(Task.CompletedTask);
+        svc.Setup(s => s.CreateTaskAsync(model))
+        .ReturnsAsync(true);
 
         var result = await TasksEndpoints.CreateTaskAsync(model, svc.Object, log.Object, CancellationToken.None);
 
