@@ -2,29 +2,16 @@
 using Accessor.DB;
 using Accessor.Models;
 using Accessor.Services;
+using AccessorUnitTests.Helpers;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Xunit;
 
 namespace AccessorUnitTests.Cleanup;
 
 public class RefreshSessionService_PurgeTests
 {
-    // --- Test helpers --------------------------------------------------------
-
-    private static AccessorDbContext NewDb(string name)
-    {
-        var opts = new DbContextOptionsBuilder<AccessorDbContext>()
-            .UseInMemoryDatabase(name)
-            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
-            .EnableSensitiveDataLogging()
-            .Options;
-
-        return new AccessorDbContext(opts);
-    }
 
     private static RefreshSessionService NewService(AccessorDbContext db)
     {
@@ -42,15 +29,14 @@ public class RefreshSessionService_PurgeTests
         UserAgent = "unit-test",
         IssuedAt = DateTimeOffset.UtcNow,
         LastSeenAt = DateTimeOffset.UtcNow,
-        ExpiresAt = DateTimeOffset.UtcNow.AddDays(60) // default future; tests override as needed
+        ExpiresAt = DateTimeOffset.UtcNow.AddDays(60)
     };
 
-    // --- Tests ---------------------------------------------------------------
 
     [Fact]
     public async Task Purge_NoRows_ReturnsZero()
     {
-        var db = NewDb(Guid.NewGuid().ToString());
+        var db = DbHelpers.NewInMemoryDb(Guid.NewGuid().ToString());
         var svc = NewService(db);
 
         var deleted = await svc.PurgeExpiredOrRevokedAsync(batchSize: 1000, ct: default);
@@ -62,7 +48,7 @@ public class RefreshSessionService_PurgeTests
     [Fact]
     public async Task Purge_Deletes_Only_Expired()
     {
-        var db = NewDb(Guid.NewGuid().ToString());
+        var db = DbHelpers.NewInMemoryDb(Guid.NewGuid().ToString());
         var now = DateTimeOffset.UtcNow;
 
         var expired1 = Make(); expired1.ExpiresAt = now.AddMinutes(-1);
@@ -84,7 +70,7 @@ public class RefreshSessionService_PurgeTests
     [Fact]
     public async Task Purge_Deletes_Only_Revoked()
     {
-        var db = NewDb(Guid.NewGuid().ToString());
+        var db = DbHelpers.NewInMemoryDb(Guid.NewGuid().ToString());
         var now = DateTimeOffset.UtcNow;
 
         var revoked = Make(); revoked.RevokedAt = now.AddMinutes(-2);
@@ -104,7 +90,7 @@ public class RefreshSessionService_PurgeTests
     [Fact]
     public async Task Purge_Deletes_Expired_And_Revoked_Mixed()
     {
-        var db = NewDb(Guid.NewGuid().ToString());
+        var db = DbHelpers.NewInMemoryDb(Guid.NewGuid().ToString());
         var now = DateTimeOffset.UtcNow;
 
         var expired = Make(); expired.ExpiresAt = now.AddSeconds(-1);
@@ -124,7 +110,7 @@ public class RefreshSessionService_PurgeTests
     [Fact]
     public async Task Purge_Runs_In_Batches()
     {
-        var db = NewDb(Guid.NewGuid().ToString());
+        var db = DbHelpers.NewInMemoryDb(Guid.NewGuid().ToString());
         var now = DateTimeOffset.UtcNow;
 
         // 13 expired + 7 fresh; batch size 5 => deletes across 3 loops (5,5,3)
@@ -151,7 +137,7 @@ public class RefreshSessionService_PurgeTests
     [Fact]
     public async Task Purge_Is_Idempotent_Second_Run_Removes_Zero()
     {
-        var db = NewDb(Guid.NewGuid().ToString());
+        var db = DbHelpers.NewInMemoryDb(Guid.NewGuid().ToString());
         var now = DateTimeOffset.UtcNow;
 
         var e1 = Make(); e1.ExpiresAt = now.AddMinutes(-5);
@@ -172,7 +158,7 @@ public class RefreshSessionService_PurgeTests
     [Fact]
     public async Task Purge_Does_Not_Delete_Fresh_And_Not_Revoked()
     {
-        var db = NewDb(Guid.NewGuid().ToString());
+        var db = DbHelpers.NewInMemoryDb(Guid.NewGuid().ToString());
         var now = DateTimeOffset.UtcNow;
 
         var a = Make(); a.ExpiresAt = now.AddDays(+1);

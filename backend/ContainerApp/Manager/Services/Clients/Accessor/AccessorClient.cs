@@ -47,10 +47,9 @@ public class AccessorClient(
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(CleanupRefreshSessionsAsync), nameof(AccessorClient));
         try
         {
-            // Accessor returns { deleted: <int> }
             var resp = await _daprClient.InvokeMethodAsync<CleanupResponse>(
                 HttpMethod.Post,
-                AppIds.Accessor, // you already use this constant here
+                AppIds.Accessor,
                 "auth-accessor/refresh-sessions/internal/cleanup",
                 ct);
 

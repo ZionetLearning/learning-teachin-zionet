@@ -1,6 +1,7 @@
 ﻿using Accessor.Services;
 using Accessor.Models.RefreshSessions;
 using Microsoft.AspNetCore.Mvc;
+using Accessor.Constants;
 
 namespace Accessor.Endpoints;
 
@@ -87,16 +88,15 @@ public static class RefreshSessionEndpoints
     }
 
     private static async Task<IResult> CleanupRefreshSessionsAsync(
-    [FromServices] IRefreshSessionService refreshSessionService,
-    [FromServices] ILogger<RefreshSessionService> logger,
-    CancellationToken ct)
+        [FromServices] IRefreshSessionService refreshSessionService,
+        [FromServices] ILogger<RefreshSessionService> logger,
+        CancellationToken ct)
     {
         using (logger.BeginScope("Method: {Method}", nameof(CleanupRefreshSessionsAsync)))
         {
             try
             {
-                // use a sensible default batch size; you can make it configurable later
-                var deleted = await refreshSessionService.PurgeExpiredOrRevokedAsync(5000, ct);
+                var deleted = await refreshSessionService.PurgeExpiredOrRevokedAsync(AuthSettings.RefreshSessionCleanupBatchSize, ct);
                 logger.LogInformation("Cleanup removed {Deleted} refresh sessions", deleted);
                 return Results.Ok(new { deleted });
             }
