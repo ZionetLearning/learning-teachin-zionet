@@ -53,12 +53,7 @@ public static class UsersEndpoints
         using var scope = logger.BeginScope("CreateUser {Email}:", user.Email);
         try
         {
-            var success = await managerService.CreateUserAsync(user);
-            if (!success)
-            {
-                logger.LogWarning("User creation failed");
-                return Results.Conflict("User already exists.");
-            }
+            await managerService.CreateUserAsync(user);
 
             var result = new UserData
             {
@@ -71,6 +66,16 @@ public static class UsersEndpoints
 
             logger.LogInformation("User created");
             return Results.Created($"/users-manager/user/{user.UserId}", result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            logger.LogWarning(ex, "User creation conflict");
+            return Results.Conflict("User with the same email already exists.");
+        }
+        catch (ArgumentException ex)
+        {
+            logger.LogWarning(ex, "Invalid user data");
+            return Results.BadRequest("Invalid user data provided.");
         }
         catch (Exception ex)
         {

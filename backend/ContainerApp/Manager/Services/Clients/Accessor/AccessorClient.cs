@@ -184,6 +184,7 @@ public class AccessorClient(
             throw;
         }
     }
+
     public async Task<UserData?> GetUserAsync(Guid userId)
     {
         try
@@ -198,18 +199,30 @@ public class AccessorClient(
         }
     }
 
-    public async Task<bool> CreateUserAsync(UserModel user)
+    public async Task CreateUserAsync(UserModel user)
     {
         try
         {
             await _daprClient.InvokeMethodAsync(HttpMethod.Post, "accessor", "users-accessor", user);
-
-            return true;
+            _logger.LogInformation("User {Email} created successfully", user.Email);
         }
+
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.Conflict)
+        {
+            _logger.LogWarning("Conflict: User already exists: {Email}", user.Email);
+            throw new InvalidOperationException("User already exists");
+        }
+
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.BadRequest)
+        {
+            _logger.LogWarning("Bad request when creating user: {Email}", user.Email);
+            throw new ArgumentException("Invalid user data");
+        }
+
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating user {Email}", user.Email);
-            return false;
+            throw;
         }
     }
 

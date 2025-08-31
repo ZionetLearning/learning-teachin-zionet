@@ -112,6 +112,7 @@ public class AccessorService : IAccessorService
             }
         }
     }
+
     public async Task<StatsSnapshot> ComputeStatsAsync(CancellationToken ct = default)
     {
         try
@@ -174,6 +175,7 @@ public class AccessorService : IAccessorService
             throw;
         }
     }
+
     public async Task CreateTaskAsync(TaskModel task)
     {
         using var scope = _logger.BeginScope("TaskId: {TaskId}", task.Id);
