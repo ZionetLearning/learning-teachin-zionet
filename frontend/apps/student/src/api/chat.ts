@@ -12,13 +12,12 @@ export type ChatRequest = {
   userId: string; // needed for correlation
 };
 
-// need to fix backend to send camelCase
 export type ChatResponse = {
-  RequestId: string;
-  AssistantMessage?: string;
-  ChatName: string;
-  Status: number;
-  ThreadId: string;
+  requestId: string;
+  assistantMessage?: string;
+  chatName: string;
+  status: number;
+  threadId: string;
 };
 
 export const useSendChatMessage = () => {
@@ -33,7 +32,6 @@ export const useSendChatMessage = () => {
       chatType = "default",
       userId,
     }) => {
-      // 1. Send request to backend → get requestId
       const { data } = await axios.post<{ requestId: string }>(
         `${AI_BASE_URL}/chat`,
         {
@@ -46,7 +44,6 @@ export const useSendChatMessage = () => {
 
       const requestId = data.requestId;
 
-      // 2. Wait for SignalR event carrying the full AIChatResponse
       const aiResponse = await waitForResponse<ChatResponse>(
         EventType.ChatAiAnswer,
         requestId,
@@ -55,7 +52,7 @@ export const useSendChatMessage = () => {
     },
 
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["chat", data.ThreadId] });
+      queryClient.invalidateQueries({ queryKey: ["chat", data.threadId] });
     },
 
     onError: (error) => {
