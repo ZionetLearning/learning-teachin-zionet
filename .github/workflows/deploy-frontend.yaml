@@ -29,6 +29,11 @@ on:
         description: 'lowercase letters & digits only (env identifier) where the application is deployed'
         required: true
         type: string
+      run_only_tests:
+        description: 'Run frontend tests before deployment'
+        required: false
+        default: false
+        type: boolean
   workflow_call:
     inputs:
       environment:
@@ -43,6 +48,10 @@ on:
       deployment_token:
         required: false
         type: string
+      run_only_tests:
+        required: false
+        type: boolean
+        default: true
     secrets:
       AZURE_STATIC_WEB_APPS_API_TOKEN:
         required: false
@@ -122,8 +131,8 @@ jobs:
 
 
   frontend-build-and-lint:
-    if: false
     needs: [frontend-test]
+    if: inputs.run_only_tests == true
     runs-on: ubuntu-latest
     env:
       FE_DIR: frontend
