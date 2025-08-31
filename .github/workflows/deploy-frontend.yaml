@@ -30,9 +30,9 @@ on:
         required: true
         type: string
       run_only_tests:
-        description: 'Run frontend tests before deployment'
+        description: 'Run only frontend tests'
         required: false
-        default: false
+        default: true
         type: boolean
   workflow_call:
     inputs:
@@ -51,7 +51,7 @@ on:
       run_only_tests:
         required: false
         type: boolean
-        default: true
+        default: false
     secrets:
       AZURE_STATIC_WEB_APPS_API_TOKEN:
         required: false
@@ -132,7 +132,7 @@ jobs:
 
   frontend-build-and-lint:
     #needs: [frontend-test]
-    if: inputs.run_only_tests == true
+    if: inputs.run_only_tests == false
     runs-on: ubuntu-latest
     env:
       FE_DIR: frontend
