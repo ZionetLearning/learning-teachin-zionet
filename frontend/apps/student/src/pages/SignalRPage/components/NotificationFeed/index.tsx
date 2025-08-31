@@ -1,5 +1,5 @@
 import { Stack, Typography } from "@mui/material";
-import type { UserNotification } from "@/types/signalR";
+import type { UserNotification } from "@app-providers/types";
 
 type Props = {
   items: UserNotification[];

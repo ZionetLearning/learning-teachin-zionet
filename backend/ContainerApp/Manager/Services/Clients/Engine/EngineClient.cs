@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Net;
+using System.Text.Json;
 using Dapr.Client;
 using Manager.Constants;
 using Manager.Models;
@@ -50,15 +51,84 @@ public class EngineClient : IEngineClient
         }
     }
 
-    public async Task<EngineChatResponse> ChatAsync(EngineChatRequest request, CancellationToken cancellationToken = default)
+    public async Task<(bool success, string message)> ChatAsync(EngineChatRequest request)
     {
-        _logger.LogInformation("Invoke Engine /chat synchronously (thread: {Thread}, userId:{UserId})", request.ThreadId, request.UserId);
+        _logger.LogInformation("Invoke Engine /chat asynchronously (thread {Thread})", request.ThreadId);
+        try
+        {
+            var requestMetadata = new UserContextMetadata
+            {
+                UserId = request.UserId.ToString()
+            };
 
-        return await _daprClient.InvokeMethodAsync<EngineChatRequest, EngineChatResponse>(
-            appId: AppIds.Engine,
-            methodName: "chat",
-            data: request,
-            cancellationToken: cancellationToken);
+            var message = new Message
+            {
+                ActionName = MessageAction.ProcessingChatMessage,
+                Payload = JsonSerializer.SerializeToElement(request),
+                Metadata = JsonSerializer.SerializeToElement(requestMetadata)
+            };
+
+            var queueMetadata = new Dictionary<string, string>
+            {
+                ["sessionId"] = request.ThreadId.ToString()
+            };
+
+            await _daprClient.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message, queueMetadata);
+
+            _logger.LogDebug(
+                "ProcessingChatMessage request for thread {ThreadId} sent to Engine via binding '{Binding}'",
+                request.ThreadId,
+                QueueNames.EngineQueue
+            );
+            return (true, "sent to engine");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send chat request to Engine");
+            return (false, "failed to send chat request");
+        }
+    }
+
+    public async Task<ChatHistoryForFrontDto?> GetHistoryChatAsync(Guid chatId, Guid userId, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetHistoryChatAsync), nameof(EngineClient));
+
+        if (chatId == Guid.Empty)
+        {
+            throw new ArgumentException("chatId cannot be not Empty.", nameof(chatId));
+        }
+
+        if (userId == Guid.Empty)
+        {
+            throw new ArgumentException("userId cannot be not Empty.", nameof(userId));
+        }
+
+        try
+        {
+            var responce = await _daprClient.InvokeMethodAsync<ChatHistoryForFrontDto>(
+                HttpMethod.Get,
+                "engine",
+                $"chat/{chatId}/{userId}/history",
+                cancellationToken: cancellationToken
+            );
+
+            return responce;
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("No chats found for user {UserId}", userId);
+            return null;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogInformation("{Metod} cancelled for chatId:{ChatId} userId {UserId}", nameof(GetHistoryChatAsync), chatId, userId);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get chats chatId:{ChatId} userId {UserId}", chatId, userId);
+            throw;
+        }
     }
 
     public async Task<SpeechEngineResponse?> SynthesizeAsync(SpeechRequest request, CancellationToken cancellationToken = default)

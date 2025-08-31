@@ -30,7 +30,7 @@ public sealed class AiGatewayService : IAiGatewayService
 
         var message = new Message
         {
-            ActionName = MessageAction.ProcessingQuestionAi,
+            ActionName = MessageAction.ProcessingChatMessage,
             Payload = JsonSerializer.SerializeToElement(msg)
         };
 

@@ -1,5 +1,6 @@
 ﻿using Manager.Hubs;
 using Manager.Models;
+using Manager.Models.Notifications;
 using Manager.Services;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
@@ -65,7 +66,7 @@ public class NotificationServiceTests
             };
 
             userClientMock.Setup(c => c.ReceiveEvent(It.Is<UserEvent<JsonElement>>(evt =>
-                evt.eventType == eventType.Value)))
+                evt.EventType == eventType.Value)))
                 .Returns(Task.CompletedTask);
 
             // Act
@@ -73,7 +74,7 @@ public class NotificationServiceTests
 
             // Assert
             userClientMock.Verify(c => c.ReceiveEvent(It.Is<UserEvent<JsonElement>>(evt =>
-                evt.eventType == eventType.Value)), Times.Once);
+                evt.EventType == eventType.Value)), Times.Once);
         }
 
         hubContextMock.Verify(h => h.Clients.User(userId), Times.Once);
@@ -112,7 +113,7 @@ public class NotificationServiceTests
         var payload = new TaskUpdateMessage { TaskId = 42, Status = "COMPLETED" };
 
         userClientMock.Setup(c => c.ReceiveEvent(It.Is<UserEvent<JsonElement>>(evt =>
-            evt.eventType == EventType.TaskUpdate)))
+            evt.EventType == EventType.TaskUpdate)))
             .Returns(Task.CompletedTask);
 
         // Act
@@ -121,7 +122,7 @@ public class NotificationServiceTests
         // Assert
         hubContextMock.Verify(h => h.Clients.User(userId), Times.Once);
         userClientMock.Verify(c => c.ReceiveEvent(It.Is<UserEvent<JsonElement>>(evt =>
-            evt.eventType == EventType.TaskUpdate)), Times.Once);
+            evt.EventType == EventType.TaskUpdate)), Times.Once);
     }
 
     [Fact]
@@ -133,7 +134,7 @@ public class NotificationServiceTests
         var payload = new { Answer = "AI response", RequestId = "req123" };
 
         userClientMock.Setup(c => c.ReceiveEvent(It.Is<UserEvent<JsonElement>>(evt =>
-            evt.eventType == EventType.ChatAiAnswer)))
+            evt.EventType == EventType.ChatAiAnswer)))
             .Returns(Task.CompletedTask);
 
         // Act
@@ -142,7 +143,7 @@ public class NotificationServiceTests
         // Assert
         hubContextMock.Verify(h => h.Clients.User(userId), Times.Once);
         userClientMock.Verify(c => c.ReceiveEvent(It.Is<UserEvent<JsonElement>>(evt =>
-            evt.eventType == EventType.ChatAiAnswer)), Times.Once);
+            evt.EventType == EventType.ChatAiAnswer)), Times.Once);
     }
 
     [Fact]

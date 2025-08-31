@@ -22,6 +22,7 @@ on:
         description: 'Optional image tag (e.g., commit hash). Empty -> uses environment_name'
         required: false
         default: ''
+
   workflow_call:
     inputs:
       environment:
@@ -34,6 +35,10 @@ on:
         required: false
         type: string
         description: 'Docker image tag to deploy (e.g., commit hash)'
+      skip_infra_steps:
+        required: false
+        type: boolean
+        default: false
     outputs:
       app_url:
         description: "Ingress URL (if already created by platform setup)"
@@ -62,6 +67,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Set up variables
+        id: setup
         run: |
           ENVIRONMENT_NAME="${{ inputs.environment_name || github.event.inputs.environment_name }}"
           if [ -n "$ENVIRONMENT_NAME" ]; then
@@ -93,10 +99,51 @@ jobs:
           echo "PG_DB=dev-pg-zionet-learning" >> $GITHUB_ENV
           echo "PG_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
 
+
+          # Determine if infrastructure steps should be skipped
+          # Skip for: manual dispatch (no skip_infra_steps input) OR when skip_infra_steps=true
+          # Run for: CI/CD workflows (when skip_infra_steps is explicitly false)
+          if [ "${{ inputs.skip_infra_steps }}" = "" ]; then
+            echo "Manual dispatch - no skip_infra_steps input, skipping infrastructure"
+            echo "skip_infra_steps=true" >> $GITHUB_OUTPUT
+          elif [ "${{ inputs.skip_infra_steps }}" = "true" ]; then
+            echo "skip_infra_steps=true passed, skipping infrastructure"
+            echo "skip_infra_steps=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip_infra_steps=false passed, running infrastructure"
+            echo "skip_infra_steps=false" >> $GITHUB_OUTPUT
+          fi
+
+          # Redis (shared)
+          case "$ENVIRONMENT_NAME" in
+            dev)
+              echo "REDIS_DATABASE_INDEX=0" >> $GITHUB_ENV
+              ;;
+            prod)
+              echo "REDIS_DATABASE_INDEX=1" >> $GITHUB_ENV
+              ;;
+            test)
+              echo "REDIS_DATABASE_INDEX=2" >> $GITHUB_ENV
+              ;;
+            featest)
+              echo "REDIS_DATABASE_INDEX=3" >> $GITHUB_ENV
+              ;;
+            featest2)
+              echo "REDIS_DATABASE_INDEX=4" >> $GITHUB_ENV
+              ;;
+            *)
+              echo "REDIS_DATABASE_INDEX=5" >> $GITHUB_ENV
+              echo "ENVIRONMENT_NAME is $ENVIRONMENT_NAME"
+              ;;
+          esac
+
+
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
 
-      - name: Ensure target namespace exists
+
+      - name: Create namespace
+        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
         run: |
           kubectl create namespace "$TARGET_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 
@@ -107,7 +154,7 @@ jobs:
           echo "Current release status: $RELEASE_STATUS"
 
           if [[ "$RELEASE_STATUS" == "pending-install" ]] || [[ "$RELEASE_STATUS" == "pending-upgrade" ]] || [[ "$RELEASE_STATUS" == "pending-rollback" ]]; then
-            echo "⚠️ Found pending operation. Attempting rollback..."
+            echo "Found pending operation. Attempting rollback..."
             helm rollback app -n "$TARGET_NAMESPACE" || echo "Rollback failed, trying to delete release history..."
             helm delete app -n "$TARGET_NAMESPACE" --wait || echo "Delete failed, continuing anyway..."
             sleep 5
@@ -116,6 +163,7 @@ jobs:
           echo "Helm release status check complete."
 
       - name: Wait for external IP for ingress controller
+        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
         run: |
           echo "Waiting for external IP for ingress-nginx-controller..."
           for i in {1..30}; do
@@ -131,6 +179,7 @@ jobs:
           echo "Failed to get ingress IP."; exit 1
 
       - name: Add ingress IP to PostgreSQL firewall
+        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
         run: |
           INGRESS_IP=$(kubectl -n devops-ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
           az postgres flexible-server firewall-rule create \
@@ -141,6 +190,7 @@ jobs:
             --end-ip-address $INGRESS_IP
 
       - name: Add AKS outbound IP to PostgreSQL firewall
+        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
         run: |
           # Try NAT Gateway first, else fallback to Load Balancer
           OUTBOUND_IP_ID=$(az aks show \
@@ -157,7 +207,7 @@ jobs:
           fi
 
           if [ -z "$OUTBOUND_IP_ID" ] || [ "$OUTBOUND_IP_ID" = "null" ]; then
-            echo "❌ Could not detect outbound IP ID for AKS cluster."
+            echo "Could not detect outbound IP ID for AKS cluster."
             exit 1
           fi
 
@@ -246,6 +296,7 @@ jobs:
             --set-string manager.env.Jwt__Issuer="$MANAGER_JWT_ISSUER" \
             --set-string manager.env.Jwt__Audience="$MANAGER_JWT_AUDIENCE" \
             --set-string manager.env.Jwt__RefreshTokenHashKey="$MANAGER_JWT_REFRESH_TOKEN_HASH_KEY" \
+            --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false
 
       - name: Diagnostics (on failure)

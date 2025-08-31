@@ -1,8 +1,9 @@
-permissions:
-  contents: read
 name: Clear Postgres Database
 
 on:
+  schedule:
+    - cron: '0 22 * * *'  # At 22:00 every day (Israel time)
+    
   workflow_dispatch:
     inputs:
       mode:
@@ -10,42 +11,108 @@ on:
         required: true
         default: "drop"
         type: choice
-        options:
-          - drop
-          - truncate
+        options: [drop, truncate]
+
+      pg_database:
+        description: "Target PG database name"
+        required: true
+        default: "appdb-test"
+        type: choice
+        options: [appdb-test, appdb-featest]
+
       dry_run:
         description: "If true, only print SQL and do not execute"
         required: false
-        default: "true"
+        default: "false"
+
       verify_ssl:
         description: "true=require SSL (Azure default). false=disable SSL (NOT recommended)."
         required: false
         default: "true"
 
+  workflow_call:
+    inputs:
+      mode: { required: true, type: string }
+      pg_database: { required: false, type: string, default: "appdb-test" }
+      dry_run: { required: false, type: string }
+      verify_ssl: { required: false, type: string }
+    secrets:
+      POSTGRES_USER: { required: true }
+      POSTGRES_PASSWORD: { required: true }
+      AZURE_CLIENT_ID: { required: true }
+      AZURE_TENANT_ID: { required: true }
+      AZURE_SUBSCRIPTION_ID: { required: true }
+
 jobs:
   clear-db:
     runs-on: ubuntu-latest
+    environment: Development
     timeout-minutes: 10
+    permissions:
+      id-token: write
+      contents: read
+
     env:
-      # PGHOST: ${{ secrets.POSTGRES_HOST }}
-      PGHOST: myserver.postgres.database.azure.com
-      # PGDATABASE: ${{ secrets.POSTGRES_DB }}
-      PGDATABASE: mydatabase
-      # PGUSER: ${{ secrets.POSTGRES_USER }}
-      PGUSER: myuser@myserver
-      # PGPASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-      PGPASSWORD: mySuperSecretPassword123   # WARNING: replace with secret
-      # PGPORT: ${{ secrets.POSTGRES_PORT != '' && secrets.POSTGRES_PORT || '5432' }}
-      PGPORT: 5432
-      MODE: ${{ github.event.inputs.mode }}
-      DRY_RUN: ${{ github.event.inputs.dry_run }}
-      VERIFY_SSL: ${{ github.event.inputs.verify_ssl }}
+      PGHOST: dev-pg-zionet-learning.postgres.database.azure.com
+      # For schedule: fall back to default "appdb-test"
+      PGDATABASE: ${{ github.event.inputs.pg_database || inputs.pg_database || 'appdb-test' }}
+      PGUSER: ${{ secrets.POSTGRES_USER }}
+      PGPASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+
+      # For schedule: fall back to defaults below
+      MODE: ${{ github.event.inputs.mode || inputs.mode || 'drop' }}
+      DRY_RUN: ${{ github.event.inputs.dry_run || inputs.dry_run || 'false' }}
+      VERIFY_SSL: ${{ github.event.inputs.verify_ssl || inputs.verify_ssl || 'true' }}
+
+      AZURE_POSTGRES_SERVER: dev-pg-zionet-learning
+      AZURE_RG: dev-zionet-learning-2025
+      AZURE_SUB: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Make scripts executable
-        run: chmod +x scripts/clear_postgres.sh
+
+      - name: Azure Login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Allow GitHub runner IP
+        id: fw
+        run: |
+          set -euo pipefail
+          RUNNER_IP=$(curl -s https://api.ipify.org)
+          echo "runner_ip=$RUNNER_IP" >> "$GITHUB_OUTPUT"
+          RULE="gha-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          echo "Creating firewall rule $RULE for $RUNNER_IP"
+          az postgres flexible-server firewall-rule create \
+            --resource-group "$AZURE_RG" \
+            --name "$AZURE_POSTGRES_SERVER" \
+            --rule-name "$RULE" \
+            --start-ip-address "$RUNNER_IP" \
+            --end-ip-address "$RUNNER_IP"
+
       - name: Install psql client
-        run: sudo apt-get update -y && sudo apt-get install -y postgresql-client
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y postgresql-client
+
+      - name: Make scripts executable
+        run: chmod +x .github/workflows/scripts/clear_postgres.sh
+
       - name: Clear Postgres
-        run: ./scripts/clear_postgres.sh
+        run: .github/workflows/scripts/clear_postgres.sh
+
+        # Always remove the firewall rule even if the job fails
+      - name: Remove firewall rule
+        if: always()
+        run: |
+          set -euo pipefail
+          RULE="gha-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          az postgres flexible-server firewall-rule delete \
+            --resource-group "$AZURE_RG" \
+            --name "$AZURE_POSTGRES_SERVER" \
+            --rule-name "$RULE" \
+            --yes

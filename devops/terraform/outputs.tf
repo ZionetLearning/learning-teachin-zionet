@@ -50,7 +50,7 @@ output "servicebus_connection_string" {
 }
 
 output "postgres_connection_string" {
-  value = var.use_shared_postgres ? format("Host=%s;Database=%s;Username=%s;Password=%s;SslMode=Require", data.azurerm_postgresql_flexible_server.shared[0].fqdn, "${var.database_name}-${var.environment_name}", var.admin_username, var.admin_password) : module.database[0].postgres_connection_string
+  value     = var.use_shared_postgres ? format("Host=%s;Database=%s;Username=%s;Password=%s;SslMode=Require", data.azurerm_postgresql_flexible_server.shared[0].fqdn, "${var.database_name}-${var.environment_name}", var.admin_username, var.admin_password) : module.database[0].postgres_connection_string
   sensitive = true
 }
 
@@ -59,28 +59,30 @@ output "signalr_connection_string" {
   sensitive = true
 }
 
+
 output "redis_hostname" {
-  value = module.redis.hostname
+  value = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].hostname : module.redis[0].hostname
 }
+
 output "redis_primary_access_key" {
-  value     = module.redis.primary_access_key
+  value     = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].primary_access_key : module.redis[0].primary_access_key
   sensitive = true
 }
 
 # Frontend outputs
-output "static_web_app_url" {
-  description = "URL of the Azure Static Web App"
-  value       = module.frontend.static_web_app_url
+output "static_web_app_urls" {
+  description = "URLs of the Azure Static Web Apps"
+  value       = { for app_name, frontend in module.frontend : app_name => frontend.static_web_app_url }
 }
 
-output "static_web_app_api_key" {
-  description = "API key for the Azure Static Web App"
-  value       = module.frontend.static_web_app_api_key
+output "static_web_app_api_keys" {
+  description = "API keys for the Azure Static Web Apps"
+  value       = { for app_name, frontend in module.frontend : app_name => frontend.static_web_app_api_key }
   sensitive   = true
 }
 
-output "application_insights_connection_string" {
-  description = "Connection string for Application Insights"
-  value       = module.frontend.application_insights_connection_string
+output "application_insights_connection_strings" {
+  description = "Connection strings for Application Insights per frontend app"
+  value       = { for app_name, frontend in module.frontend : app_name => frontend.application_insights_connection_string }
   sensitive   = true
 }

@@ -5,6 +5,9 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 import viteTsConfigPaths from "vite-tsconfig-paths";
 
+const r = (...x: string[]) =>
+  path.resolve(__dirname, "..", "..", ...x).replace(/\\/g, "/");
+
 export default defineConfig({
   root: __dirname,
   server: {
@@ -17,7 +20,10 @@ export default defineConfig({
   plugins: [
     react(),
     // point the paths plugin to the **workspace root** (tsconfig.base.json lives there)
-    viteTsConfigPaths({ root: path.resolve(__dirname, "../../") }),
+    //viteTsConfigPaths({ root: path.resolve(__dirname, "../../") }),
+    viteTsConfigPaths({
+      projects: [path.resolve(__dirname, "../../tsconfig.base.json")],
+    }),
     sentryVitePlugin({
       org: "zionet",
       project: "teach-in",
@@ -29,7 +35,10 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "src"),
+      "@student": r("apps/student/src"),
+      "@teacher": r("apps/teacher/src"),
+      "@admin": r("apps/admin/src"),
+      "@ui-components": r("libs/ui/components/src"),
     },
   },
   define: {

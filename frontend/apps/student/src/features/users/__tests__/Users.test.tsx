@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { Users } from "../index";
-import type { User } from "@/api";
+import type { User } from "@student/api";
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
@@ -16,7 +16,7 @@ vi.mock("react-toastify", () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock("@/api", () => ({
+vi.mock("@student/api", () => ({
   useGetAllUsers: vi.fn(),
   useCreateUser: vi.fn(),
   useUpdateUserByUserId: vi.fn(),
@@ -28,7 +28,7 @@ const {
   useCreateUser,
   useUpdateUserByUserId,
   useDeleteUserByUserId,
-} = vi.mocked(await import("@/api")) as unknown as {
+} = vi.mocked(await import("@student/api")) as unknown as {
   useGetAllUsers: ReturnType<typeof vi.fn>;
   useCreateUser: ReturnType<typeof vi.fn>;
   useUpdateUserByUserId: ReturnType<typeof vi.fn>;
@@ -147,7 +147,7 @@ describe("<Users />", () => {
     await waitFor(() => expect(mutate).toHaveBeenCalledTimes(1));
     const arg = mutate.mock.calls[0][0];
     expect(arg.email).toBe("new@example.com");
-    expect(arg.passwordHash).toBe("secret");
+    expect(arg.password).toBe("secret");
     expect(arg.userId).toBe("123e4567-e89b-12d3-a456-426614174000");
   });
 
@@ -176,7 +176,7 @@ describe("<Users />", () => {
     expect(updateMutate).toHaveBeenCalledTimes(1);
     expect(updateMutate.mock.calls[0][0]).toEqual({
       email: "changed@example.com",
-      passwordHash: "newpass",
+      password: "newpass",
     });
   });
 

@@ -1,11 +1,10 @@
 import { useCallback, useState } from "react";
 import { Box, Paper, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { useEffect } from "react";
-import { useSignalR } from "@/hooks";
-import { usePostTask } from "@/api";
+import { useSignalR } from "@student/hooks";
+import { usePostTask } from "@student/api";
 import { TaskForm, TaskInput, NotificationFeed } from "./components";
-import type { UserNotification } from "@/types/signalR";
+import { UserNotification } from "@app-providers/types";
 import { useStyles } from "./style";
 
 export const SignalRPage = () => {

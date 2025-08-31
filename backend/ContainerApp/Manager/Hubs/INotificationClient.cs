@@ -1,5 +1,5 @@
 ﻿using System.Text.Json;
-using Manager.Models;
+using Manager.Models.Notifications;
 // here we can add methods for different channels of signalR - so we can split to notifications events, etc.
 namespace Manager.Hubs;
 
