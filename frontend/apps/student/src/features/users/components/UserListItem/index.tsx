@@ -27,7 +27,6 @@ export const UserListItem = ({
 
   const [editing, setEditing] = useState(false);
   const [emailValue, setEmailValue] = useState(email);
-  // Start empty for optional updates; blank means "don't change"
   const [firstNameValue, setFirstNameValue] = useState("");
   const [lastNameValue, setLastNameValue] = useState("");
 
@@ -42,11 +41,15 @@ export const UserListItem = ({
   const beginEdit = () => {
     setEmailValue(email);
     setEditing(true);
+    setFirstNameValue(firstName);
+    setLastNameValue(lastName);
   };
 
   const cancelEdit = () => {
     setEditing(false);
     setEmailValue(email);
+    setFirstNameValue(firstName);
+    setLastNameValue(lastName);
   };
 
   const saveEdit = () => {
@@ -57,8 +60,10 @@ export const UserListItem = ({
 
     const payload: Record<string, string> = {};
     if (emailValue.trim() !== email) payload.email = emailValue.trim();
-    if (firstNameValue.trim()) payload.firstName = firstNameValue.trim();
-    if (lastNameValue.trim()) payload.lastName = lastNameValue.trim();
+    if (firstNameValue.trim() && firstNameValue.trim() !== firstName)
+      payload.firstName = firstNameValue.trim();
+    if (lastNameValue.trim() && lastNameValue.trim() !== lastName)
+      payload.lastName = lastNameValue.trim();
 
     if (Object.keys(payload).length === 0) {
       toast.info(t("pages.users.noChanges"));
