@@ -40,6 +40,8 @@ describe("Users Page Flow", () => {
   it("can create a user (API dependent)", () => {
     const email = `testuser_${Date.now()}@example.com`;
     cy.get('[data-testid="users-create-email"]').clear().type(email);
+    cy.get('[data-testid="users-create-first-name"]').clear().type("Test");
+    cy.get('[data-testid="users-create-last-name"]').clear().type("User");
     cy.get('[data-testid="users-create-password"]').clear().type("Passw0rd!");
     cy.get('[data-testid="users-create-submit"]').click();
 
@@ -58,6 +60,8 @@ describe("Users Page Flow", () => {
   it("can edit a freshly created user inline (isolated)", () => {
     const originalEmail = `edituser_${Date.now()}@example.com`;
     cy.get('[data-testid="users-create-email"]').clear().type(originalEmail);
+    cy.get('[data-testid="users-create-first-name"]').clear().type("Edit");
+    cy.get('[data-testid="users-create-last-name"]').clear().type("User");
     cy.get('[data-testid="users-create-password"]').clear().type("Passw0rd!");
     cy.get('[data-testid="users-create-submit"]').click();
     cy.wait("@createUser").then((interception) => {
@@ -78,13 +82,17 @@ describe("Users Page Flow", () => {
       cy.get(`[data-testid="users-item-${id}"]`).within(() => {
         cy.get('[data-testid="users-update-btn"]').click();
         cy.get('[data-testid="users-edit-email"]').clear().type(updatedEmail);
-        cy.get('[data-testid="users-edit-password"]')
-          .clear()
-          .type("NewPass123!");
         cy.get('[data-testid="users-edit-save"]').click();
       });
     });
-    cy.wait("@updateUser");
+    cy.wait("@updateUser").then((interception) => {
+      expect(interception?.request?.body).to.have.property(
+        "email",
+        updatedEmail,
+      );
+      expect(interception?.request?.body).to.not.have.property("firstName");
+      expect(interception?.request?.body).to.not.have.property("lastName");
+    });
     cy.wait("@getUsers");
     cy.get("@editUserId").then((id) => {
       cy.get("@updatedEmail").then((val) => {
@@ -103,6 +111,8 @@ describe("Users Page Flow", () => {
         cy.log("No users to delete; creating one first");
         const email = `deluser_${Date.now()}@example.com`;
         cy.get('[data-testid="users-create-email"]').clear().type(email);
+        cy.get('[data-testid="users-create-first-name"]').clear().type("Del");
+        cy.get('[data-testid="users-create-last-name"]').clear().type("User");
         cy.get('[data-testid="users-create-password"]')
           .clear()
           .type("Passw0rd!");
