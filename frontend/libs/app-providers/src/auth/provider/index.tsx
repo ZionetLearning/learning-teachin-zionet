@@ -59,8 +59,8 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
   );
 
   const login = useCallback(
-    (email: string, password: string, role: AppRoleType = appRole) => {
-      persistSession(email, password, role);
+    (email: string, password: string) => {
+      persistSession(email, password, appRole);
     },
     [appRole, persistSession],
   );

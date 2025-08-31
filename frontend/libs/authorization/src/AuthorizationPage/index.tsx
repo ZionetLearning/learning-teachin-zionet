@@ -146,7 +146,7 @@ export const AuthorizationPage = () => {
                   password: values.password,
                   firstName: values.firstName,
                   lastName: values.lastName,
-                  role: role,
+                  role,
                 });
                 setSubmitting(false);
                 handleAuthSuccess();
