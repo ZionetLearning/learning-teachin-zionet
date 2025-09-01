@@ -4,6 +4,7 @@ using Accessor.Models;
 using Dapr.Client;
 using Microsoft.EntityFrameworkCore;
 using Accessor.Models.Users;
+using Accessor.Exceptions;
 
 namespace Accessor.Services;
 public class AccessorService : IAccessorService
@@ -174,65 +175,83 @@ public class AccessorService : IAccessorService
         }
     }
 
-    public async Task<bool> CreateTaskAsync(TaskModel task)
+    public async Task CreateTaskAsync(TaskModel task)
     {
         using var scope = _logger.BeginScope("TaskId: {TaskId}", task.Id);
         _logger.LogInformation("Inside:{Method}", nameof(CreateTaskAsync));
 
-        var strategy = _dbContext.Database.CreateExecutionStrategy();
-
-        return await strategy.ExecuteAsync(async () =>
+        try
         {
-            await using var tx = await _dbContext.Database.BeginTransactionAsync();
-            var inserted = false;
+            // 1. Check cache for idempotency
+            var cached = await _daprClient.GetStateAsync<TaskModel>(
+                ComponentNames.StateStore,
+                GetTaskCacheKey(task.Id));
 
-            try
+            if (cached is not null)
             {
-                _dbContext.Tasks.Add(task);
-
-                try
+                if (!TasksAreEqual(cached, task))
                 {
-                    await _dbContext.SaveChangesAsync();
-                    inserted = true;
-                    _logger.LogInformation("Task {TaskId} persisted", task.Id);
-                }
-                catch (DbUpdateException ex)
-                {
-                    _logger.LogWarning(ex, "Duplicate Task insert for {TaskId}; treating as idempotent success", task.Id);
+                    _logger.LogWarning("Conflict: Task {TaskId} already exists with different payload", task.Id);
+                    throw new ConflictException($"Task {task.Id} already exists with different payload.");
                 }
 
-                await tx.CommitAsync();
+                _logger.LogInformation("Idempotent retry for Task {TaskId}, no-op", task.Id);
+                return; // same payload → idempotent success
             }
-            catch
+
+            // 2. Insert new task
+            _dbContext.Tasks.Add(task);
+            await _dbContext.SaveChangesAsync();
+
+            _logger.LogInformation("Task {TaskId} persisted", task.Id);
+
+            // 3. Cache for retries
+            await _daprClient.SaveStateAsync(
+                storeName: ComponentNames.StateStore,
+                key: GetTaskCacheKey(task.Id),
+                value: task,
+                stateOptions: null,
+                metadata: new Dictionary<string, string> { { "ttlInSeconds", _ttl.ToString() } });
+
+            _logger.LogInformation("Cached task {TaskId} with TTL {TTL}s", task.Id, _ttl);
+        }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogWarning(ex, "Duplicate Task insert for {TaskId}", task.Id);
+
+            var dbTask = await _dbContext.Tasks.FindAsync(task.Id);
+            if (dbTask is null)
             {
-                try
-                {
-                    await tx.RollbackAsync();
-                }
-                catch
-                {
-
-                }
-
                 throw;
             }
 
-            if (inserted)
+            if (!TasksAreEqual(dbTask, task))
             {
-                await _daprClient.SaveStateAsync(
-                    storeName: ComponentNames.StateStore,
-                    key: $"task:{task.Id}",
-                    value: task,
-                    metadata: new Dictionary<string, string> { { "ttlInSeconds", _ttl.ToString() } });
-                _logger.LogInformation("Cached task {TaskId} with TTL {TTL}s", task.Id, _ttl);
-            }
-            else
-            {
-                _logger.LogInformation("Idempotent no-op for {TaskId} — skipping cache/side-effects", task.Id);
+                _logger.LogWarning("Conflict: Task {TaskId} already exists in DB with different payload", task.Id);
+                throw new ConflictException($"Task {task.Id} already exists with different payload.");
             }
 
-            return inserted;
-        });
+            // Ensure consistent cache
+            await _daprClient.SaveStateAsync(
+                storeName: ComponentNames.StateStore,
+                key: GetTaskCacheKey(task.Id),
+                value: dbTask,
+                stateOptions: null,
+                metadata: new Dictionary<string, string> { { "ttlInSeconds", _ttl.ToString() } });
+
+            // Idempotent no-op
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error creating Task {TaskId}", task.Id);
+            throw new RetryableException("Unexpected infrastructure error while creating task.", ex);
+        }
+    }
+
+    private bool TasksAreEqual(TaskModel a, TaskModel b)
+    {
+        // Minimal equality check for idempotency
+        return a.Id == b.Id && a.Name == b.Name;
     }
 
     public async Task<bool> UpdateTaskNameAsync(int taskId, string newName)

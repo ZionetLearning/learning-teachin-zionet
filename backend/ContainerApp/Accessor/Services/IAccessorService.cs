@@ -7,7 +7,7 @@ public interface IAccessorService
 {
     Task InitializeAsync();
     Task<TaskModel?> GetTaskByIdAsync(int id);
-    Task<bool> CreateTaskAsync(TaskModel task);
+    Task CreateTaskAsync(TaskModel task);
     Task<bool> DeleteTaskAsync(int taskId);
     Task<bool> UpdateTaskNameAsync(int taskId, string newName);
     Task CreateChatAsync(ChatHistorySnapshot chat);

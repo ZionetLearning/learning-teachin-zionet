@@ -127,14 +127,8 @@ public class AccessorQueueHandler : IQueueHandler<Message>
             }
 
             _logger.LogDebug("Creating task {Id}", taskModel.Id);
-            var inserted = await _accessorService.CreateTaskAsync(taskModel);
 
-            if (!inserted)
-            {
-                // Duplicate -> idempotent no-op: don't notify/publish again
-                _logger.LogInformation("Duplicate create for Task {Id}; suppressing callback.", taskModel.Id);
-                return;
-            }
+            await _accessorService.CreateTaskAsync(taskModel);
 
             var notification = new Notification
             {
