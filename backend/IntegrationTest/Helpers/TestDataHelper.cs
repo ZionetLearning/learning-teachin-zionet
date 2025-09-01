@@ -20,10 +20,10 @@ public static class TestDataHelper
         };
     }
 
-    public static TaskModel CreateFixedIdTask() => new()
+    public static TaskModel CreateFixedIdTask(int id = 888) => new()
     {
-        Id = 888,
-        Name = $"Task-888",
-        Payload = $"Payload-{888}"
+        Id = id,
+        Name = $"Task-{id}",
+        Payload = $"Payload-{id}"
     };
 }
