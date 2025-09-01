@@ -254,7 +254,7 @@ public class ManagerService : IManagerService
             // Hash the password before storing
             user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
             await _accessorClient.CreateUserAsync(user);
-            _logger.LogInformation("User created succeffuly!");
+            _logger.LogInformation("User created successfully!");
         }
         catch (Exception ex)
         {

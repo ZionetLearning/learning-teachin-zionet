@@ -64,12 +64,6 @@ public class AuthIntegrationTests : AuthTestBase
         var response = await LoginAsync(actualEmail, actualPassword);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-
-        var (refreshToken, _) = ExtractTokens(response);
-
-        // Clear the refreshSessions
-        var logoutResponse = await LogoutAsync(refreshToken!);
-        logoutResponse.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
 
