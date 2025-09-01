@@ -24,9 +24,7 @@ import {
   WeatherWidgetPage,
   WordOrderGamePage,
 } from "./pages";
-
 import "./App.css";
-
 const ProtectedLayout = () => (
   <RequireAuth>
     <div data-testid="protected-layout">
