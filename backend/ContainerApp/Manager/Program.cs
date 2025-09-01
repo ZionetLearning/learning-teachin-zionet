@@ -73,16 +73,33 @@ if (!string.IsNullOrEmpty(signalRConnString))
     signalRBuilder.AddAzureSignalR(signalRConnString);
 }
 
+//builder.Services.AddCors(options =>
+//{
+//    options.AddPolicy("AllowAll", policy =>
+//    {
+//        policy
+//            .AllowAnyOrigin()
+//            .AllowAnyMethod()
+//            .AllowAnyHeader()
+//            .AllowCredentials();
+//    });
+//});
+
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    options.AddPolicy("LocalhostFrontend", policy =>
     {
-        policy
-            .AllowAnyOrigin()
+        policy.WithOrigins(
+                "http://localhost:4000",
+                "http://localhost:4001",
+                "http://localhost:4002"
+            )
             .AllowAnyMethod()
-            .AllowAnyHeader();
+            .AllowAnyHeader()
+            .AllowCredentials(); // Required for sending/receiving cookies
     });
 });
+
 builder.Services.AddScoped<IManagerService, ManagerService>();
 builder.Services.AddScoped<IAiGatewayService, AiGatewayService>();
 builder.Services.AddScoped<IAccessorClient, AccessorClient>();
@@ -160,7 +177,9 @@ var app = builder.Build();
 
 var forwardedHeaderOptions = app.Services.GetRequiredService<IOptions<ForwardedHeadersOptions>>().Value;
 app.UseForwardedHeaders(forwardedHeaderOptions);
-app.UseCors("AllowAll");
+//app.UseCors("AllowAll");
+app.UseCors("LocalhostFrontend");
+
 app.UseCloudEvents();
 app.UseRateLimiter();
 app.UseAuthentication();
