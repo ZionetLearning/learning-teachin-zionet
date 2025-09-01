@@ -12,7 +12,9 @@
         "loggingIn": "מתחבר...",
         "firstName": "שם פרטי",
         "lastName": "שם משפחה",
-        "creatingAccount": "יוצר חשבון..."
+        "creatingAccount": "יוצר חשבון...",
+        "teacherDashboard": "מורים",
+        "studentDashboard": "תלמידים"
       },
       "home": {
         "title": "ברוכים הבאים למגרש המשחקים הפנימי שלנו",
