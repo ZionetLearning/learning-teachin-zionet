@@ -100,18 +100,15 @@ jobs:
           echo "PG_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
 
 
-          # Determine if infrastructure steps should be skipped
-          # Skip for: manual dispatch (no skip_infra_steps input) OR when skip_infra_steps=true
-          # Run for: CI/CD workflows (when skip_infra_steps is explicitly false)
-          if [ "${{ inputs.skip_infra_steps }}" = "" ]; then
-            echo "Manual dispatch - no skip_infra_steps input, skipping infrastructure"
-            echo "skip_infra_steps=true" >> $GITHUB_OUTPUT
-          elif [ "${{ inputs.skip_infra_steps }}" = "true" ]; then
-            echo "skip_infra_steps=true passed, skipping infrastructure"
-            echo "skip_infra_steps=true" >> $GITHUB_OUTPUT
-          else
+          # Determine if infrastructure steps should be skipped - Three scenarios:
+          # Skip for: manual dispatch OR push events (infrastructure already exists)
+          # workflow_call when skip_infra_steps=false (full CI/CD)
+          if [[ "${{ github.event_name }}" == "workflow_call" ]] && [[ "${{ inputs.skip_infra_steps }}" == "false" ]]; then
             echo "skip_infra_steps=false passed, running infrastructure"
             echo "skip_infra_steps=false" >> $GITHUB_OUTPUT
+          else
+            echo "Manual dispatch or push event, skipping infrastructure"
+            echo "skip_infra_steps=true" >> $GITHUB_OUTPUT
           fi
 
           # Redis (shared)
@@ -224,6 +221,7 @@ jobs:
             
 
       - name: Install External Secrets Operator (with CRDs)
+        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
         run: |
           helm repo add external-secrets https://charts.external-secrets.io
           helm repo update
@@ -234,6 +232,7 @@ jobs:
             --wait --timeout 180s
 
       - name: Wait for External Secrets API
+        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
         run: |
           echo "⏳ Waiting for ExternalSecrets API..."
           for i in {1..30}; do
