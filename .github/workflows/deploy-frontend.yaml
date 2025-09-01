@@ -160,15 +160,6 @@ jobs:
           ts=$(date -u "+Release-%d-%m-%Y_%H-%M")
           echo "RELEASE_NAME=${ts}-${GITHUB_SHA::7}" >> $GITHUB_ENV
 
-      - name: Sanity check: AI secret available (masked)
-        working-directory: ${{ env.FE_DIR }}
-        run: |
-          if [ -z "${VITE_APPINSIGHTS_CONNECTION_STRING}" ]; then
-            echo "❌ Missing VITE_APPINSIGHTS_CONNECTION_STRING in this job."
-            exit 1
-          fi
-          echo "✅ APPINSIGHTS conn exists (length: ${#VITE_APPINSIGHTS_CONNECTION_STRING})"
-
       - name: Build All Applications (Parallel)
         working-directory: ${{ env.FE_DIR }}
         env:
