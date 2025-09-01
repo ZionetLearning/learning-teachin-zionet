@@ -10,6 +10,7 @@ import {
   AuthProvider,
   SignalRProvider,
 } from "@app-providers";
+import { AppRole } from "@app-providers/types";
 import "./index.css";
 import App from "./App.tsx";
 
@@ -22,7 +23,7 @@ const HUB_URL = `${BASE_URL}/notificationHub`;
 createRoot(document.getElementById("root")!).render(
   <I18nTranslateProvider>
     <ReactQueryProvider>
-      <AuthProvider>
+      <AuthProvider appRole={AppRole.student}>
         <SignalRProvider hubUrl={HUB_URL}>
           <Sentry.ErrorBoundary fallback={<div>Something went wrong</div>}>
             <App />

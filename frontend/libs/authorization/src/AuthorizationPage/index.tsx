@@ -21,7 +21,7 @@ type AuthModeType = (typeof authMode)[keyof typeof authMode];
 
 export const AuthorizationPage = () => {
   const classes = useStyles();
-  const { login } = useAuth();
+  const { login, signup, role } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [mode, setMode] = useState<AuthModeType>(authMode.login);
@@ -48,6 +48,14 @@ export const AuthorizationPage = () => {
       </header>
       <div className={classes.authPageContent}>
         <div className={classes.authPageContainer}>
+          <h2
+            className={classes.authPageSubtitle}
+            data-testid="auth-role-heading"
+          >
+            {role === "teacher"
+              ? t("pages.auth.teacherDashboard")
+              : t("pages.auth.studentDashboard")}
+          </h2>
           <div className={classes.authPageTabs}>
             {[authMode.login, authMode.signup].map((tab) => (
               <button
@@ -133,7 +141,13 @@ export const AuthorizationPage = () => {
                 values,
                 { setSubmitting }: FormikHelpers<SignupValues>,
               ) => {
-                login(values.email, values.password);
+                signup({
+                  email: values.email,
+                  password: values.password,
+                  firstName: values.firstName,
+                  lastName: values.lastName,
+                  role,
+                });
                 setSubmitting(false);
                 handleAuthSuccess();
               }}
