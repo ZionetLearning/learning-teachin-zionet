@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ErrorMessage, Field, Form, Formik, FormikHelpers } from "formik";
 import { useNavigate } from "react-router-dom";
@@ -21,7 +21,7 @@ type AuthModeType = (typeof authMode)[keyof typeof authMode];
 
 export const AuthorizationPage = () => {
   const classes = useStyles();
-  const { login, signup, role } = useAuth();
+  const { login, signup, role, isAuthorized, loginStatus } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [mode, setMode] = useState<AuthModeType>(authMode.login);
@@ -33,11 +33,21 @@ export const AuthorizationPage = () => {
     };
   }, []);
 
-  const handleAuthSuccess = () => {
+  const redirectAfterLogin = useCallback(() => {
     const to = sessionStorage.getItem("redirectAfterLogin") || "/";
     sessionStorage.removeItem("redirectAfterLogin");
     navigate(to, { replace: true });
+  }, [navigate]);
+
+  const handleAuthSuccess = () => {
+    redirectAfterLogin();
   };
+
+  useEffect(() => {
+    if (isAuthorized) {
+      redirectAfterLogin();
+    }
+  }, [isAuthorized, redirectAfterLogin]);
 
   return (
     <main className={classes.authPageBackground} data-testid="auth-page">
@@ -76,13 +86,15 @@ export const AuthorizationPage = () => {
               key="login"
               initialValues={{ email: "", password: "" }}
               validationSchema={loginSchema}
-              onSubmit={(
+              onSubmit={async (
                 values,
                 { setSubmitting }: FormikHelpers<LoginValues>,
               ) => {
-                login(values.email, values.password);
-                setSubmitting(false);
-                handleAuthSuccess();
+                try {
+                  await login(values.email, values.password);
+                } finally {
+                  setSubmitting(false);
+                }
               }}
             >
               {({ isSubmitting }) => (
@@ -115,11 +127,11 @@ export const AuthorizationPage = () => {
                   </div>
                   <button
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || loginStatus?.isLoading}
                     className={classes.authPageSubmit}
                     data-testid="auth-submit"
                   >
-                    {isSubmitting
+                    {isSubmitting || loginStatus?.isLoading
                       ? t("pages.auth.loggingIn")
                       : t("pages.auth.login")}
                   </button>

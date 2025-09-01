@@ -1,7 +1,24 @@
 import { ReactNode, useCallback, useEffect, useState } from "react";
 
+import { useLoginMutation } from "@app-providers/api/auth";
 import { AuthContext } from "@app-providers/context";
-import { AppRoleType, Credentials, SignupData } from "@app-providers/types";
+import { AppRoleType, Credentials } from "@app-providers/types";
+
+const decodeJwtExp = (token: string): number | undefined => {
+  try {
+    const [, payload] = token.split(".");
+    if (!payload) return undefined;
+    const json = JSON.parse(
+      atob(payload.replace(/-/g, "+").replace(/_/g, "/")),
+    );
+    if (typeof json.exp === "number") {
+      return json.exp * 1000;
+    }
+  } catch {
+    /* noop */
+  }
+  return undefined;
+};
 
 export interface AuthProviderProps {
   children: ReactNode;
@@ -10,22 +27,35 @@ export interface AuthProviderProps {
 
 export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
   const [credentials, setCredentials] = useState<Credentials | null>(() => {
-    let stored: Credentials = {} as Credentials;
-
     try {
-      stored = JSON.parse(localStorage.getItem("credentials") || "{}");
+      const raw = localStorage.getItem("credentials");
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as Partial<
+        Credentials & { sessionExpiry?: number; password?: string }
+      >;
+      if (
+        parsed &&
+        parsed.email &&
+        parsed.accessToken &&
+        parsed.accessTokenExpiry
+      ) {
+        if (Date.now() < parsed.accessTokenExpiry) {
+          return {
+            email: parsed.email,
+            accessToken: parsed.accessToken,
+            accessTokenExpiry: parsed.accessTokenExpiry,
+            role: parsed.role,
+          };
+        } else {
+          localStorage.removeItem("credentials");
+        }
+      } else if (parsed && parsed.email && parsed.sessionExpiry) {
+        localStorage.removeItem("credentials");
+      }
     } catch (error) {
       console.warn("Error parsing credentials:", error);
-      logout();
-      return null;
+      localStorage.removeItem("credentials");
     }
-    const { email, password, sessionExpiry, role } = stored;
-    const expiry = Number(sessionExpiry);
-    if (email && password && expiry && Date.now() < expiry) {
-      return { email, password, sessionExpiry: expiry, role };
-    }
-
-    localStorage.removeItem("credentials");
     return null;
   });
 
@@ -37,7 +67,7 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
   useEffect(
     function checkAuth() {
       if (!credentials) return;
-      const ms = credentials.sessionExpiry - Date.now();
+      const ms = credentials.accessTokenExpiry - Date.now();
       if (ms <= 0) {
         logout();
         return;
@@ -49,28 +79,45 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
   );
 
   const persistSession = useCallback(
-    (email: string, password: string, role: AppRoleType) => {
-      const sessionExpiry = Date.now() + 10 * 60 * 60 * 1000; // 10h
-      const creds = { email, password, sessionExpiry, role };
+    (email: string, accessToken: string, role?: AppRoleType) => {
+      const decodedExp = decodeJwtExp(accessToken);
+      const fallback = Date.now() + 15 * 60 * 1000;
+      const accessTokenExpiry =
+        decodedExp && decodedExp > Date.now() ? decodedExp : fallback;
+      const creds: Credentials = {
+        email,
+        accessToken,
+        accessTokenExpiry,
+        role,
+      };
       localStorage.setItem("credentials", JSON.stringify(creds));
       setCredentials(creds);
     },
     [],
   );
 
-  const login = useCallback(
-    (email: string, password: string) => {
-      persistSession(email, password, appRole);
+  const loginMutation = useLoginMutation({
+    onSuccess: (data, vars) => {
+      persistSession(vars.email, data.accessToken, appRole);
     },
-    [appRole, persistSession],
+    onError: (err) => {
+      console.error("Login error", err);
+      logout();
+    },
+  });
+
+  const login = useCallback(
+    async (email: string, password: string) => {
+      await loginMutation.mutateAsync({ email, password });
+    },
+    [loginMutation],
   );
 
-  const signup = useCallback(
-    (data: SignupData) => {
-      persistSession(data.email, data.password, data.role);
-    },
-    [persistSession],
-  );
+  const signup = useCallback(() => {
+    // TODO: Implement real signup flow when backend endpoint is available.
+    logout();
+    console.warn("Signup placeholder: implement backend signup before using.");
+  }, [logout]);
 
   return (
     <AuthContext.Provider
@@ -80,6 +127,11 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
         login,
         signup,
         logout,
+        accessToken: credentials?.accessToken || null,
+        loginStatus: {
+          isLoading: loginMutation.isPending,
+          error: loginMutation.error,
+        },
       }}
     >
       {children}

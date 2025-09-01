@@ -1,31 +1,35 @@
 import { ReactNode, useEffect } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 
-import { useAuth, Credentials } from "@app-providers";
+import { useAuth } from "@app-providers";
 
 export const RequireAuth = ({ children }: { children: ReactNode }) => {
   const { isAuthorized, logout } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
 
   useEffect(
     function checkCredentials() {
-      let stored: Credentials = {} as Credentials;
+      if (!isAuthorized) return;
       try {
-        stored = JSON.parse(localStorage.getItem("credentials") || "{}");
-      } catch (error) {
-        console.warn("Error parsing credentials:", error);
+        const raw = localStorage.getItem("credentials");
+        if (!raw) return;
+        const parsed = JSON.parse(raw) as {
+          accessToken?: string;
+          accessTokenExpiry?: number;
+        };
+        if (
+          !parsed.accessToken ||
+          !parsed.accessTokenExpiry ||
+          Date.now() >= parsed.accessTokenExpiry
+        ) {
+          logout();
+        }
+      } catch (e) {
+        console.warn("Error validating stored credentials", e);
         logout();
-        return;
-      }
-
-      const { email, password, sessionExpiry, role } = stored;
-      if (!email || !password || !sessionExpiry || !role) {
-        sessionStorage.setItem("redirectAfterLogin", location.pathname);
-        navigate("/signin", { replace: true });
       }
     },
-    [location.pathname, logout, navigate],
+    [isAuthorized, logout],
   );
 
   if (!isAuthorized) {
