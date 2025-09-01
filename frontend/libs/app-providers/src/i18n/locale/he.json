@@ -13,8 +13,8 @@
         "firstName": "שם פרטי",
         "lastName": "שם משפחה",
         "creatingAccount": "יוצר חשבון...",
-        "teacherDashboard": "לוח מחוונים למורים",
-        "studentDashboard": "לוח מחוונים לתלמידים"
+        "teacherDashboard": "מורים",
+        "studentDashboard": "תלמידים"
       },
       "home": {
         "title": "ברוכים הבאים למגרש המשחקים הפנימי שלנו",
