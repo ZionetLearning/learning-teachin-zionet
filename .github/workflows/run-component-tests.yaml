@@ -7,10 +7,6 @@ on:
     paths:
       - 'backend/ContainerApp/Engine/**'
       - 'backend/ContainerApp/EngineComponentTests/**'
-      - 'backend/ContainerApp/Manager/**'
-      - 'backend/ContainerApp/ManagerComponentTests/**'
-      - 'backend/ContainerApp/Accessor/**'
-      - 'backend/ContainerApp/AccessorComponentTests/**'
       - 'backend/ContainerApp/Directory.Build.props'
   workflow_dispatch:
 
@@ -37,14 +33,6 @@ jobs:
               - 'backend/ContainerApp/Engine/**'
               - 'backend/ContainerApp/EngineComponentTests/**'
               - 'backend/ContainerApp/Directory.Build.props'
-            manager:
-              - 'backend/ContainerApp/Manager/**'
-              - 'backend/ContainerApp/ManagerComponentTests/**'
-              - 'backend/ContainerApp/Directory.Build.props'
-            accessor:
-              - 'backend/ContainerApp/Accessor/**'
-              - 'backend/ContainerApp/AccessorComponentTests/**'
-              - 'backend/ContainerApp/Directory.Build.props'
 
       - name: Build changed services matrix (JSON)
         id: build-matrix
@@ -54,10 +42,8 @@ jobs:
           declare -a services=()
 
           [[ "${{ steps.filter.outputs.engine }}"  == "true" ]] && services+=("Engine")
-          [[ "${{ steps.filter.outputs.manager }}" == "true" ]] && services+=("Manager")
-          [[ "${{ steps.filter.outputs.accessor }}" == "true" ]] && services+=("Accessor")
 
-          # JSON array like ["Engine","Manager"]
+          # JSON array like ["Engine","SomeOtherService"]
           if (( ${#services[@]} )); then
             json=$(printf '%s\n' "${services[@]}" | jq -R . | jq -s .)
           else
