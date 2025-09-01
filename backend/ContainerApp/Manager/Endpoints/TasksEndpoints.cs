@@ -9,11 +9,12 @@ namespace Manager.Endpoints;
 public static class TasksEndpoints
 {
     private sealed class TaskEndpoint { }
+
     public static IEndpointRouteBuilder MapTasksEndpoints(this IEndpointRouteBuilder app)
     {
         var tasksGroup = app.MapGroup("/tasks-manager").WithTags("Tasks").RequireAuthorization();
 
-        tasksGroup.MapGet("/task/{id}", GetTaskAsync).WithName("GetTask");
+        tasksGroup.MapGet("/task/{id:int}", GetTaskAsync).WithName("GetTask");
         tasksGroup.MapPost("/task", CreateTaskAsync).WithName("CreateTask");
         tasksGroup.MapPost("/tasklong", CreateTaskLongAsync).WithName("CreateTaskLongTest");
         tasksGroup.MapPut("/task/{id:int}/{name}", UpdateTaskNameAsync).WithName("UpdateTaskName");
@@ -28,12 +29,6 @@ public static class TasksEndpoints
         [FromServices] ILogger<TaskEndpoint> logger)
     {
         using var scope = logger.BeginScope("TaskId {TaskId}:", id);
-
-        if (id <= 0)
-        {
-            logger.LogWarning("Invalid task ID");
-            return Results.BadRequest("Invalid task ID");
-        }
 
         try
         {
@@ -131,12 +126,6 @@ public static class TasksEndpoints
     {
         using var scope = logger.BeginScope("TaskId {TaskId}:", id);
 
-        if (id <= 0)
-        {
-            logger.LogWarning("Invalid task ID");
-            return Results.BadRequest("Invalid task ID");
-        }
-
         if (string.IsNullOrWhiteSpace(name))
         {
             logger.LogWarning("Invalid task name");
@@ -176,12 +165,6 @@ public static class TasksEndpoints
         [FromServices] ILogger<TaskEndpoint> logger)
     {
         using var scope = logger.BeginScope("TaskId {TaskId}:", id);
-
-        if (id <= 0)
-        {
-            logger.LogWarning("Invalid task ID");
-            return Results.BadRequest("Invalid task ID");
-        }
 
         try
         {
