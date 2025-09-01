@@ -1,5 +1,3 @@
-import { initAppInsights } from '../../../libs/observability/src/appInsights';
-initAppInsights('student');
 import { createRoot } from "react-dom/client";
 import { ToastContainer } from "react-toastify";
 import * as Sentry from "@sentry/react";
@@ -9,11 +7,13 @@ import {
   I18nTranslateProvider,
   AuthProvider,
   SignalRProvider,
+  initAppInsights,
 } from "@app-providers";
 import { AppRole } from "@app-providers/types";
 import "./index.css";
 import App from "./App.tsx";
 
+initAppInsights("student");
 initializeSentry();
 
 // const HUB_URL = "http://localhost:5280/notificationHub";
