@@ -256,7 +256,9 @@ public class EngineQueueHandler : IQueueHandler<Message>
             PayloadValidation.ValidateSentenceGenerationRequest(payload, _logger);
 
             _logger.LogDebug("Processing sentence generation");
-            await _sentencesService.GenerateAsync(payload, cancellationToken);
+            var response = await _sentencesService.GenerateAsync(payload, cancellationToken);
+            var userId = payload.UserId;
+            await _publisher.SendGeneratedMessagesAsync(userId.ToString(), response, cancellationToken);
         }
         catch (NonRetryableException ex)
         {
