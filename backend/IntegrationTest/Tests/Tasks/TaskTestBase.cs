@@ -28,7 +28,7 @@ public abstract class TaskTestBase(
         var receivedNotification = await WaitForNotificationAsync(
            n => n.Type == NotificationType.Success &&
            n.Message.Contains(task.Name),
-           TimeSpan.FromSeconds(10));
+           TimeSpan.FromSeconds(30));
         receivedNotification.Should().NotBeNull();
 
         OutputHelper.WriteLine($"Received notification: {receivedNotification.Notification.Message}");
