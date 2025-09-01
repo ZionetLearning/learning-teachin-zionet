@@ -57,10 +57,19 @@
     },
     "cypress-open": {
       "executor": "@nx/cypress:cypress",
+      "defaultConfiguration": "local",
       "options": {
         "cypressConfig": "apps/student/cypress.config.ts",
-        "testingType": "e2e",
-        "watch": true
+        "testingType": "e2e"
+      },
+      "configurations": {
+        "ci": {
+          "devServerTarget": "student:serve:development",
+          "watch": false
+        },
+        "local": {
+          "watch": true
+        }
       }
     },
     "lint": {

@@ -11,7 +11,9 @@
         "loggingIn": "Logging in…",
         "firstName": "First Name",
         "lastName": "Last Name",
-        "creatingAccount": "Creating Account..."
+        "creatingAccount": "Creating Account...",
+        "teacherDashboard": "Teacher Dashboard",
+        "studentDashboard": "Student Dashboard"
       },
       "home": {
         "title": "Welcome to our internal playground project",
@@ -253,7 +255,10 @@
         "save": "Save",
         "userUpdated": "User updated",
         "email": "Email",
-        "password": "Password"
+        "password": "Password",
+        "firstName": "First Name",
+        "lastName": "Last Name",
+        "noChanges": "No changes"
       }
     },
     "sidebar": {

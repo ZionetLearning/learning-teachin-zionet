@@ -4,6 +4,7 @@ using Accessor.Models;
 using Dapr.Client;
 using Microsoft.EntityFrameworkCore;
 using Accessor.Models.Users;
+using Accessor.Models.Auth;
 using Accessor.Exceptions;
 
 namespace Accessor.Services;
@@ -112,6 +113,7 @@ public class AccessorService : IAccessorService
             }
         }
     }
+
     public async Task<StatsSnapshot> ComputeStatsAsync(CancellationToken ct = default)
     {
         try
@@ -370,7 +372,7 @@ public class AccessorService : IAccessorService
             .ToListAsync();
     }
 
-    public async Task<Guid?> ValidateCredentialsAsync(string email, string password)
+    public async Task<AuthenticatedUser?> ValidateCredentialsAsync(string email, string password)
     {
         var user = await _dbContext.Users
             .Where(u => u.Email == email)
@@ -386,22 +388,28 @@ public class AccessorService : IAccessorService
             return null;
         }
 
-        return user.UserId;
+        var response = new AuthenticatedUser
+        {
+            UserId = user.UserId,
+            Role = user.Role
+        };
+
+        return response;
     }
 
     public async Task<UserData?> GetUserAsync(Guid userId)
     {
         var user = await _dbContext.Users.FindAsync(userId);
-        if (user == null)
-        {
-            return null;
-        }
-
-        return new UserData
-        {
-            UserId = user.UserId,
-            Email = user.Email,
-        };
+        return user == null
+            ? null
+            : new UserData
+            {
+                UserId = user.UserId,
+                Email = user.Email,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Role = user.Role
+            };
     }
 
     public async Task<bool> CreateUserAsync(UserModel newUser)
@@ -425,9 +433,21 @@ public class AccessorService : IAccessorService
             return false;
         }
 
-        user.Email = updateUser.Email;
+        if (updateUser.FirstName is not null)
+        {
+            user.FirstName = updateUser.FirstName;
+        }
 
-        _dbContext.Users.Update(user);
+        if (updateUser.LastName is not null)
+        {
+            user.LastName = updateUser.LastName;
+        }
+
+        if (updateUser.Email is not null)
+        {
+            user.Email = updateUser.Email;
+        }
+
         await _dbContext.SaveChangesAsync();
         return true;
     }
@@ -487,6 +507,9 @@ public class AccessorService : IAccessorService
                 {
                     UserId = u.UserId,
                     Email = u.Email,
+                    FirstName = u.FirstName,
+                    LastName = u.LastName,
+                    Role = u.Role
                 })
                 .ToListAsync();
 

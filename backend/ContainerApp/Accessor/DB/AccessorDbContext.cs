@@ -18,10 +18,8 @@ public class AccessorDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // User table configuration
-        modelBuilder.Entity<UserModel>()
-            .HasIndex(u => u.Email)
-            .IsUnique();
+        // Users table
+        modelBuilder.ApplyConfiguration(new UsersConfiguration());
 
         // Refresh Sessions table
         modelBuilder.ApplyConfiguration(new RefreshSessionConfiguration());

@@ -1,8 +1,10 @@
-﻿using Manager.Constants;
+﻿using System.Security.Claims;
+using Manager.Constants;
 using Manager.Helpers;
 using Manager.Models.Auth;
 using Manager.Models.Auth.Erros;
 using Manager.Services;
+using Manager.Services.Clients.Accessor;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Endpoints;
@@ -26,6 +28,10 @@ public static class AuthEndpoints
         authGroup.MapGet("/protected", TestAuthAsync)
             .RequireAuthorization()
             .WithName("Protected");
+
+        var maintenanceGroup = authGroup.MapGroup("/maintenance").WithTags("Maintenance");
+        maintenanceGroup.MapPost("/refresh-sessions/cleanup", RefreshSessionsCleanupAsync)
+            .WithName("Auth_RefreshSessionsCleanup");
 
         #endregion
     }
@@ -138,19 +144,32 @@ public static class AuthEndpoints
                 logger.LogInformation("Logout successful");
                 return Results.Ok(new { message = "Logged out successfully" });
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                logger.LogWarning(ex, "Logout request unauthorized");
+                return Results.Json(new ErrorResponse
+                {
+                    Status = StatusCodes.Status401Unauthorized,
+                    Code = ErrorCodes.Unauthorized,
+                    Message = ex.Message
+                }, statusCode: StatusCodes.Status401Unauthorized);
+            }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error during logout");
-                return Results.Problem("An error occurred during logout.");
+                return Results.Json(new ErrorResponse
+                {
+                    Status = StatusCodes.Status500InternalServerError,
+                    Code = ErrorCodes.InternalServerError,
+                    Message = ex.Message
+                }, statusCode: StatusCodes.Status500InternalServerError);
             }
         }
     }
 
     private static Task<IResult> TestAuthAsync(
-        [FromServices] IAuthService authService,
         [FromServices] ILogger<ManagerService> logger,
-        HttpRequest request,
-        HttpResponse response,
+        HttpContext context,
         CancellationToken cancellationToken)
     {
         using (logger.BeginScope("Method: {Method}", nameof(TestAuthAsync)))
@@ -158,9 +177,19 @@ public static class AuthEndpoints
             try
             {
                 logger.LogInformation("You are authenticated!");
-                // Exctract the userId from the token
-                var userId = UserContextHelper.GetUserId(request.HttpContext);
-                return Task.FromResult(Results.Ok(new { message = $"You are authenticated! , UserId: {userId}" }));
+                var user = context.User;
+
+                var userId = user.Identity?.Name; // because NameClaimType = "userid"
+                var role = user.FindFirst(ClaimTypes.Role)?.Value;
+
+                logger.LogInformation("Authenticated request. UserId: {UserId}, Role: {Role}", userId, role);
+
+                return Task.FromResult(Results.Ok(new
+                {
+                    message = "You are authenticated!",
+                    userId,
+                    role
+                }));
             }
             catch (Exception ex)
             {
@@ -169,5 +198,25 @@ public static class AuthEndpoints
             }
         }
     }
+    private static async Task<IResult> RefreshSessionsCleanupAsync(
+    [FromServices] IAccessorClient accessorClient,
+    [FromServices] ILoggerFactory loggerFactory,
+    CancellationToken ct)
+    {
+        var logger = loggerFactory.CreateLogger("Maintenance.RefreshSessionsCleanup");
+
+        try
+        {
+            var deleted = await accessorClient.CleanupRefreshSessionsAsync(ct);
+            logger.LogInformation("Cleanup done; deleted={Deleted}", deleted);
+            return Results.Ok(new { deleted });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Cleanup failed");
+            return Results.Problem("Cleanup failed");
+        }
+    }
+
     #endregion
 }
