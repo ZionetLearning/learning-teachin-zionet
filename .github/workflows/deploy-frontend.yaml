@@ -160,6 +160,15 @@ jobs:
           ts=$(date -u "+Release-%d-%m-%Y_%H-%M")
           echo "RELEASE_NAME=${ts}-${GITHUB_SHA::7}" >> $GITHUB_ENV
 
+      - name: Sanity check: AI secret available (masked)
+        working-directory: ${{ env.FE_DIR }}
+        run: |
+          if [ -z "${VITE_APPINSIGHTS_CONNECTION_STRING}" ]; then
+            echo "❌ Missing VITE_APPINSIGHTS_CONNECTION_STRING in this job."
+            exit 1
+          fi
+          echo "✅ APPINSIGHTS conn exists (length: ${#VITE_APPINSIGHTS_CONNECTION_STRING})"
+
       - name: Build All Applications (Parallel)
         working-directory: ${{ env.FE_DIR }}
         env:
@@ -188,6 +197,30 @@ jobs:
           wait $ADMIN_PID && echo "Admin build completed"
           
           echo "🚀 All frontend applications built successfully!"
+
+      - name: Normalize build outputs to frontend/dist/apps/*
+        working-directory: ${{ env.FE_DIR }}
+        run: |
+          set -e
+          mkdir -p dist/apps/student dist/apps/teacher dist/apps/admin
+          if [ -d apps/student/dist ]; then rsync -a --delete apps/student/dist/ dist/apps/student/; fi
+          if [ -d apps/teacher/dist ]; then rsync -a --delete apps/teacher/dist/ dist/apps/teacher/; fi
+          if [ -d apps/admin/dist ];  then rsync -a --delete apps/admin/dist/  dist/apps/admin/;  fi
+          echo "== dist tree =="
+          find dist -maxdepth 3 -type d -print
+
+      - name: Verify AI is in bundles
+        working-directory: ${{ env.FE_DIR }}
+        run: |
+          if ! grep -R "applicationinsights" -n dist/ >/dev/null 2>&1; then
+            echo "❌ AI SDK not found in built files."
+            exit 1
+          fi
+          if ! grep -R "applicationinsights.azure.com" -n dist/ >/dev/null 2>&1; then
+            echo "❌ Ingestion endpoint not found (env missing?)."
+            exit 1
+          fi
+          echo "✅ AI present in bundles."
 
       - name: Upload build artifacts
         if: |
