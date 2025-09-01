@@ -25,6 +25,14 @@ export const useStyles = createUseStyles({
     textShadow: "0 2px 6px rgba(0,0,0,0.3)",
     lineHeight: 1.2,
   },
+  authPageSubtitle: {
+    margin: "0 0 1.5rem 0",
+    padding: 0,
+    fontSize: "1.1rem",
+    fontWeight: 500,
+    color: "#23437a",
+    textAlign: "center",
+  },
   authPageContent: {
     flex: 1,
     display: "flex",
@@ -39,7 +47,7 @@ export const useStyles = createUseStyles({
     border: "1px solid #e0e0e0",
     background: "white",
     margin: "0 auto 0",
-    padding: "2.5rem",
+    padding: "1.5rem 2.5rem 2.5rem 2.5rem",
     borderRadius: 12,
     boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
   },

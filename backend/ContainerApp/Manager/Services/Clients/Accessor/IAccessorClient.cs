@@ -12,6 +12,7 @@ public interface IAccessorClient
     Task<bool> DeleteTask(int id);
     Task<(bool success, string message)> PostTaskAsync(TaskModel task);
     Task<TaskModel?> GetTaskAsync(int id);
+    Task<int> CleanupRefreshSessionsAsync(CancellationToken ct = default);
     Task<IReadOnlyList<ChatSummary>> GetChatsForUserAsync(Guid userId, CancellationToken ct = default);
     Task<UserData?> GetUserAsync(Guid userId);
     Task<bool> CreateUserAsync(UserModel user);

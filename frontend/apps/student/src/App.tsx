@@ -1,29 +1,31 @@
+import { useEffect } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { RequireAuth, SidebarMenuLayout } from "./components";
+
+import { useTranslation } from "react-i18next";
+
+import { AuthorizationPage, RequireAuth } from "@authorization";
+import { SidebarMenuLayout } from "./components";
 import {
-  AuthorizationPage,
+  AnimeExplorerPage,
   AvatarDaPage,
   AvatarOuPage,
   AvatarShPage,
   ChatDaPage,
   ChatOuPage,
-  ChatYoPage,
   ChatWithAvatarPage,
+  ChatYoPage,
+  CountryExplorerPage,
+  EarthquakeMapPage,
   HomePage,
+  SignalRPage,
   SpeakingPracticePage,
   TypingPracticePage,
-  WordOrderGamePage,
-  EarthquakeMapPage,
-  WeatherWidgetPage,
-  AnimeExplorerPage,
-  CountryExplorerPage,
-  SignalRPage,
   UsersPage,
+  WeatherWidgetPage,
+  WordOrderGamePage,
 } from "./pages";
 
 import "./App.css";
-import { useEffect } from "react";
-import { useTranslation } from "react-i18next";
 
 const ProtectedLayout = () => (
   <RequireAuth>
