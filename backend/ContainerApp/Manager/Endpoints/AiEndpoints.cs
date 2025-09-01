@@ -337,8 +337,7 @@ public static class AiEndpoints
             {
                 var audioBytes = Convert.FromBase64String(engineResult.AudioData);
 
-                var contentType = !string.IsNullOrWhiteSpace(engineResult.Metadata?.ContentType)
-                    ? engineResult.Metadata!.ContentType!
+                    ? engineResult.Metadata.ContentType
                     : "audio/mpeg";
 
                 logger.LogInformation("Returning binary audio (length {Length}, type {Type})", audioBytes.Length, contentType);
