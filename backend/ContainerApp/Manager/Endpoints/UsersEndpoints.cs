@@ -55,7 +55,7 @@ public static class UsersEndpoints
         {
             if (!Enum.TryParse<Role>(newUser.Role, true, out var parsedRole))
             {
-
+                logger.LogWarning("User creation failed due to invalid role: {RoleInput}", newUser.Role);
                 return Results.BadRequest("Invalid role provided.");
             }
 

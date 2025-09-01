@@ -253,8 +253,8 @@ public class AuthIntegrationTests : AuthTestBase
         var handler = new JwtSecurityTokenHandler();
         var jwtToken = handler.ReadJwtToken(token);
 
-        var userIdClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "userId")?.Value;
-        var roleClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "role")?.Value;
+        var userIdClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == TestConstants.UserId)?.Value;
+        var roleClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == TestConstants.Role)?.Value;
 
         userIdClaim.Should().NotBeNullOrWhiteSpace("userId should be present in the token");
         roleClaim.Should().NotBeNullOrWhiteSpace("Role should be present in the token");

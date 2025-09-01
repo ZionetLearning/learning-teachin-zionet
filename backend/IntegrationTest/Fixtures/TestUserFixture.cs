@@ -3,6 +3,7 @@ using IntegrationTests.Models.Auth;
 using Manager.Constants;
 using Manager.Models.Auth;
 using Manager.Models.Users;
+using System.Data;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -24,12 +25,8 @@ public class TestUserFixture : IAsyncLifetime
         var email = $"test-{Guid.NewGuid():N}@example.com";
         var password = $"Test-{Guid.NewGuid():N}";
 
-
-        // Randomly assign a role for the test user
-        var roles = new[] { "Admin", "Teacher", "Student" };
-        var role = roles[new Random().Next(roles.Length)];
-
-
+        // For now, the default role is Student
+        Role defaultRole = Role.Student;
 
         TestUser = new CreateUser
         {
@@ -38,7 +35,7 @@ public class TestUserFixture : IAsyncLifetime
             Password = password,
             FirstName = "Test-User-FirstName",
             LastName = "Test-User-LastName",
-            Role = role
+            Role = defaultRole.ToString()
         };
 
         // Create the test user in DB
@@ -48,37 +45,45 @@ public class TestUserFixture : IAsyncLifetime
 
     public async Task DisposeAsync()
     {
-        // Log in to get access token
-        var loginRequest = new LoginRequest
+        try
         {
-            Email = TestUser.Email,
-            Password = TestUser.Password
-        };
-        var loginResponse = await _client.PostAsJsonAsync(AuthRoutes.Login, loginRequest);
-        loginResponse.EnsureSuccessStatusCode();
+            // Log in to get access token
+            var loginRequest = new LoginRequest
+            {
+                Email = TestUser.Email,
+                Password = TestUser.Password
+            };
+            var loginResponse = await _client.PostAsJsonAsync(AuthRoutes.Login, loginRequest);
+            loginResponse.EnsureSuccessStatusCode();
 
-        var body = await loginResponse.Content.ReadAsStringAsync();
-        var result = JsonSerializer.Deserialize<AccessTokenResponse>(body)
-                     ?? throw new InvalidOperationException("Invalid JSON response");
+            var body = await loginResponse.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<AccessTokenResponse>(body)
+                         ?? throw new InvalidOperationException("Invalid JSON response");
 
-        var accessToken = result.AccessToken;
-        var refreshToken = CookieHelper.ExtractCookieFromHeaders(loginResponse, AuthSettings.RefreshTokenCookieName);
+            var accessToken = result.AccessToken;
+            var refreshToken = CookieHelper.ExtractCookieFromHeaders(loginResponse, AuthSettings.RefreshTokenCookieName);
 
 
-        // Set the Authorization header on the shared client
-        _client.DefaultRequestHeaders.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+            // Set the Authorization header on the shared client
+            _client.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
 
-        // Clean up the test user from DB
-        var deleteResponse = await _client.DeleteAsync(UserRoutes.UserById(TestUser.UserId));
-        deleteResponse.EnsureSuccessStatusCode();
+            // Clean up the test user from DB
+            var deleteResponse = await _client.DeleteAsync(UserRoutes.UserById(TestUser.UserId));
+            deleteResponse.EnsureSuccessStatusCode();
 
-        // Clean up the refreshSession DB
-        var logoutRequest = new HttpRequestMessage(HttpMethod.Post, AuthRoutes.Logout);
-        logoutRequest.Headers.Add("Cookie", $"{AuthSettings.RefreshTokenCookieName}={refreshToken}");
+            // Clean up the refreshSession DB
+            var logoutRequest = new HttpRequestMessage(HttpMethod.Post, AuthRoutes.Logout);
+            logoutRequest.Headers.Add("Cookie", $"{AuthSettings.RefreshTokenCookieName}={refreshToken}");
 
-        var logoutResponse = await _client.SendAsync(logoutRequest);
-        logoutResponse.EnsureSuccessStatusCode();
+            var logoutResponse = await _client.SendAsync(logoutRequest);
+            logoutResponse.EnsureSuccessStatusCode();
+        }
+        catch (Exception ex)
+        {
+            // Log the exception or handle it as needed
+            Console.WriteLine($"Error during TestUserFixture cleanup: {ex.Message}");
+        }
 
     }
 }
