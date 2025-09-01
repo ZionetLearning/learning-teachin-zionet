@@ -1,852 +1,259 @@
 {
-  "annotations": {
-    "list": []
-  },
-  "editable": true,
-  "gnetId": null,
-  "graphTooltip": 0,
-  "id": null,
-  "links": [],
-  "panels": [
-    {
-      "datasource": "Azure Monitor",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "vis": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 0
-      },
-      "id": 1,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      },
-      "targets": [
-        {
-          "appInsights": {
-            "metricName": "pageViews/count",
-            "aggregation": "sum",
-            "timeGrain": "PT1M"
-          },
-          "datasource": "Azure Monitor",
-          "refId": "A",
-          "alias": "Page Views"
-        }
-      ],
-      "title": "Page Views",
-      "type": "timeseries"
-    },
-    {
-      "datasource": "Azure Monitor",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "vis": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 0
-      },
-      "id": 2,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      },
-      "targets": [
-        {
-          "appInsights": {
-            "metricName": "users/count",
-            "aggregation": "sum",
-            "timeGrain": "PT1M"
-          },
-          "datasource": "Azure Monitor",
-          "refId": "A",
-          "alias": "Unique Users"
-        }
-      ],
-      "title": "Unique Users",
-      "type": "timeseries"
-    },
-    {
-      "datasource": "Azure Monitor",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "vis": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "ms"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 8
-      },
-      "id": 3,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      },
-      "targets": [
-        {
-          "appInsights": {
-            "metricName": "browserTimings/totalDuration",
-            "aggregation": "avg",
-            "timeGrain": "PT1M"
-          },
-          "datasource": "Azure Monitor",
-          "refId": "A",
-          "alias": "Page Load Time"
-        }
-      ],
-      "title": "Page Load Performance",
-      "type": "timeseries"
-    },
-    {
-      "datasource": "Azure Monitor",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "vis": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 8
-      },
-      "id": 4,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      },
-      "targets": [
-        {
-          "appInsights": {
-            "metricName": "sessions/count",
-            "aggregation": "sum",
-            "timeGrain": "PT1M"
-          },
-          "datasource": "Azure Monitor",
-          "refId": "A",
-          "alias": "Sessions"
-        }
-      ],
-      "title": "User Sessions",
-      "type": "timeseries"
-    },
-    {
-      "datasource": "Azure Monitor",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "vis": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 16
-      },
-      "id": 5,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "multi"
-        }
-      },
-      "targets": [
-        {
-          "appInsights": {
-            "metricName": "exceptions/count",
-            "aggregation": "sum",
-            "timeGrain": "PT1M"
-          },
-          "datasource": "Azure Monitor",
-          "refId": "A",
-          "alias": "Exceptions"
-        },
-        {
-          "appInsights": {
-            "metricName": "requests/failed",
-            "aggregation": "sum",
-            "timeGrain": "PT1M"
-          },
-          "datasource": "Azure Monitor",
-          "refId": "B",
-          "alias": "Failed Requests"
-        }
-      ],
-      "title": "Errors and Exceptions",
-      "type": "timeseries"
-    },
-    {
-      "datasource": "Azure Monitor",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 2000
-              },
-              {
-                "color": "red",
-                "value": 5000
-              }
-            ]
-          },
-          "unit": "ms"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 0,
-        "y": 24
-      },
-      "id": 6,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "orientation": "auto",
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": ""
-        },
-        "textMode": "auto"
-      },
-      "pluginVersion": "8.0.0",
-      "targets": [
-        {
-          "appInsights": {
-            "metricName": "browserTimings/totalDuration",
-            "aggregation": "avg"
-          },
-          "datasource": "Azure Monitor",
-          "refId": "A"
-        }
-      ],
-      "title": "Current Load Time",
-      "type": "stat"
-    },
-    {
-      "datasource": "Azure Monitor",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 6,
-        "y": 24
-      },
-      "id": 7,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "orientation": "auto",
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": ""
-        },
-        "textMode": "auto"
-      },
-      "pluginVersion": "8.0.0",
-      "targets": [
-        {
-          "appInsights": {
-            "metricName": "users/count",
-            "aggregation": "sum"
-          },
-          "datasource": "Azure Monitor",
-          "refId": "A"
-        }
-      ],
-      "title": "Active Users (1h)",
-      "type": "stat"
-    },
-    {
-      "datasource": "Azure Monitor",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 12,
-        "y": 24
-      },
-      "id": 8,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "orientation": "auto",
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": ""
-        },
-        "textMode": "auto"
-      },
-      "pluginVersion": "8.0.0",
-      "targets": [
-        {
-          "appInsights": {
-            "metricName": "pageViews/count",
-            "aggregation": "sum"
-          },
-          "datasource": "Azure Monitor",
-          "refId": "A"
-        }
-      ],
-      "title": "Total Page Views (1h)",
-      "type": "stat"
-    },
-    {
-      "datasource": "Azure Monitor",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 1
-              },
-              {
-                "color": "red",
-                "value": 5
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 18,
-        "y": 24
-      },
-      "id": 9,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "orientation": "auto",
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": ""
-        },
-        "textMode": "auto"
-      },
-      "pluginVersion": "8.0.0",
-      "targets": [
-        {
-          "appInsights": {
-            "metricName": "exceptions/count",
-            "aggregation": "sum"
-          },
-          "datasource": "Azure Monitor",
-          "refId": "A"
-        }
-      ],
-      "title": "Exceptions (1h)",
-      "type": "stat"
-    },
-    {
-      "datasource": "Azure Monitor",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "vis": false
-            }
-          },
-          "mappings": []
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 28
-      },
-      "id": 10,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "pieType": "pie",
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": ""
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      },
-      "targets": [
-        {
-          "appInsights": {
-            "metricName": "pageViews/count",
-            "aggregation": "sum",
-            "segmentMetadata": {
-              "segment": "client/browser"
-            }
-          },
-          "datasource": "Azure Monitor",
-          "refId": "A",
-          "alias": "Browser Distribution"
-        }
-      ],
-      "title": "Browser Usage",
-      "type": "piechart"
-    },
-    {
-      "datasource": "Azure Monitor",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "vis": false
-            }
-          },
-          "mappings": []
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 28
-      },
-      "id": 11,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "pieType": "pie",
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": ""
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      },
-      "targets": [
-        {
-          "appInsights": {
-            "metricName": "pageViews/count",
-            "aggregation": "sum",
-            "segmentMetadata": {
-              "segment": "client/countryOrRegion"
-            }
-          },
-          "datasource": "Azure Monitor",
-          "refId": "A",
-          "alias": "Geographic Distribution"
-        }
-      ],
-      "title": "Users by Country",
-      "type": "piechart"
-    }
-  ],
-  "schemaVersion": 27,
+  "title": "Static Web App - Application Insights Dashboard (Logs)",
+  "uid": "static-webapp-insights",
+  "timezone": "",
   "style": "dark",
-  "tags": [
-    "static-webapp",
-    "application-insights",
-    "azure"
-  ],
+  "tags": ["static-webapp","application-insights","azure"],
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
   "templating": {
     "list": [
       {
-        "allValue": null,
-        "current": {
-          "selected": false,
-          "text": "your-resource-group",
-          "value": "your-resource-group"
-        },
-        "datasource": "Azure Monitor",
-        "definition": "ResourceGroups()",
-        "hide": 0,
-        "includeAll": false,
-        "label": "Resource Group",
-        "multi": false,
         "name": "resource_group",
-        "options": [],
+        "label": "Resource Group",
+        "type": "query",
+        "datasource": "Azure Monitor",
         "query": "ResourceGroups()",
+        "definition": "ResourceGroups()",
         "refresh": 1,
-        "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
-        "type": "query"
+        "hide": 0,
+        "includeAll": false
       },
       {
-        "allValue": null,
-        "current": {
-          "selected": false,
-          "text": "your-app-insights",
-          "value": "your-app-insights"
-        },
+        "name": "workspace",
+        "label": "Log Analytics Workspace",
+        "type": "query",
         "datasource": "Azure Monitor",
-        "definition": "ResourceNames($resource_group, Microsoft.Insights/components)",
-        "hide": 0,
-        "includeAll": false,
-        "label": "Application Insights",
-        "multi": false,
-        "name": "app_insights",
-        "options": [],
-        "query": "ResourceNames($resource_group, Microsoft.Insights/components)",
+        "query": "ResourceNames($resource_group, Microsoft.OperationalInsights/workspaces)",
+        "definition": "ResourceNames($resource_group, Microsoft.OperationalInsights/workspaces)",
         "refresh": 1,
-        "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
-        "type": "query"
+        "hide": 0,
+        "includeAll": false
       }
     ]
   },
-  "time": {
-    "from": "now-1h",
-    "to": "now"
-  },
-  "timepicker": {},
-  "timezone": "",
-  "title": "Static Web App - Application Insights Dashboard",
-  "uid": "static-webapp-insights",
-  "version": 1,
-  "refresh": "30s"
+  "panels": [
+    {
+      "id": 1,
+      "title": "Page Views",
+      "type": "timeseries",
+      "datasource": "Azure Monitor",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Logs",
+          "azureLogAnalytics": {
+            "workspace": "$workspace",
+            "resultFormat": "timeSeries",
+            "timeColumn": "TimeGenerated",
+            "query": "AppPageViews\n| where $__timeFilter(TimeGenerated)\n| summarize total=count() by bin(TimeGenerated, 5m)\n| order by TimeGenerated asc"
+          }
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Unique Users",
+      "type": "timeseries",
+      "datasource": "Azure Monitor",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Logs",
+          "azureLogAnalytics": {
+            "workspace": "$workspace",
+            "resultFormat": "timeSeries",
+            "timeColumn": "TimeGenerated",
+            "query": "AppPageViews\n| where $__timeFilter(TimeGenerated)\n| summarize users=dcount(tostring(user_Id)) by bin(TimeGenerated, 5m)\n| order by TimeGenerated asc"
+          }
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Page Load Performance (avg ms)",
+      "type": "timeseries",
+      "datasource": "Azure Monitor",
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Logs",
+          "azureLogAnalytics": {
+            "workspace": "$workspace",
+            "resultFormat": "timeSeries",
+            "timeColumn": "TimeGenerated",
+            "query": "AppPageViews\n| where $__timeFilter(TimeGenerated)\n| summarize avg_ms=avg(DurationMs) by bin(TimeGenerated, 5m)\n| order by TimeGenerated asc"
+          }
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "User Sessions",
+      "type": "timeseries",
+      "datasource": "Azure Monitor",
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Logs",
+          "azureLogAnalytics": {
+            "workspace": "$workspace",
+            "resultFormat": "timeSeries",
+            "timeColumn": "TimeGenerated",
+            "query": "AppSessions\n| where $__timeFilter(TimeGenerated)\n| summarize total=count() by bin(TimeGenerated, 5m)\n| order by TimeGenerated asc"
+          }
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Errors & Failed Requests",
+      "type": "timeseries",
+      "datasource": "Azure Monitor",
+      "gridPos": { "x": 0, "y": 16, "w": 24, "h": 8 },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Logs",
+          "azureLogAnalytics": {
+            "workspace": "$workspace",
+            "resultFormat": "timeSeries",
+            "timeColumn": "TimeGenerated",
+            "query": "AppExceptions\n| where $__timeFilter(TimeGenerated)\n| summarize exceptions=count() by bin(TimeGenerated, 5m)\n| order by TimeGenerated asc"
+          }
+        },
+        {
+          "refId": "B",
+          "queryType": "Logs",
+          "azureLogAnalytics": {
+            "workspace": "$workspace",
+            "resultFormat": "timeSeries",
+            "timeColumn": "TimeGenerated",
+            "query": "AppRequests\n| where $__timeFilter(TimeGenerated)\n| where tostring(Success) == \"False\" or tobool(isnull(Success)) == false and Success == false\n| summarize failed=count() by bin(TimeGenerated, 5m)\n| order by TimeGenerated asc"
+          }
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Current Load Time",
+      "type": "stat",
+      "datasource": "Azure Monitor",
+      "gridPos": { "x": 0, "y": 24, "w": 6, "h": 4 },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Logs",
+          "azureLogAnalytics": {
+            "workspace": "$workspace",
+            "resultFormat": "table",
+            "timeColumn": "TimeGenerated",
+            "query": "AppPageViews\n| where $__timeFilter(TimeGenerated)\n| summarize avg_ms=avg(DurationMs)\n| project avg_ms"
+          }
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Active Users (1h)",
+      "type": "stat",
+      "datasource": "Azure Monitor",
+      "gridPos": { "x": 6, "y": 24, "w": 6, "h": 4 },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Logs",
+          "azureLogAnalytics": {
+            "workspace": "$workspace",
+            "resultFormat": "table",
+            "timeColumn": "TimeGenerated",
+            "query": "AppPageViews\n| where TimeGenerated >= ago(1h)\n| summarize users=dcount(tostring(user_Id))\n| project users"
+          }
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Total Page Views (1h)",
+      "type": "stat",
+      "datasource": "Azure Monitor",
+      "gridPos": { "x": 12, "y": 24, "w": 6, "h": 4 },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Logs",
+          "azureLogAnalytics": {
+            "workspace": "$workspace",
+            "resultFormat": "table",
+            "timeColumn": "TimeGenerated",
+            "query": "AppPageViews\n| where TimeGenerated >= ago(1h)\n| summarize total=count()\n| project total"
+          }
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "Exceptions (1h)",
+      "type": "stat",
+      "datasource": "Azure Monitor",
+      "gridPos": { "x": 18, "y": 24, "w": 6, "h": 4 },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Logs",
+          "azureLogAnalytics": {
+            "workspace": "$workspace",
+            "resultFormat": "table",
+            "timeColumn": "TimeGenerated",
+            "query": "AppExceptions\n| where TimeGenerated >= ago(1h)\n| summarize total=count()\n| project total"
+          }
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "Browser Usage",
+      "type": "piechart",
+      "datasource": "Azure Monitor",
+      "gridPos": { "x": 0, "y": 28, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Logs",
+          "azureLogAnalytics": {
+            "workspace": "$workspace",
+            "resultFormat": "table",
+            "timeColumn": "TimeGenerated",
+            "query": "AppPageViews\n| where $__timeFilter(TimeGenerated)\n| summarize total=count() by Client_Browser\n| project Client_Browser, total"
+          }
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "title": "Users by Country",
+      "type": "piechart",
+      "datasource": "Azure Monitor",
+      "gridPos": { "x": 12, "y": 28, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Logs",
+          "azureLogAnalytics": {
+            "workspace": "$workspace",
+            "resultFormat": "table",
+            "timeColumn": "TimeGenerated",
+            "query": "AppPageViews\n| where $__timeFilter(TimeGenerated)\n| summarize total=count() by Client_CountryOrRegion\n| project Client_CountryOrRegion, total"
+          }
+        }
+      ]
+    }
+  ],
+  "annotations": { "list": [] },
+  "schemaVersion": 38,
+  "version": 1
 }
