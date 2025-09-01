@@ -1,6 +1,7 @@
 ﻿using Manager.Models;
 using Manager.Models.ModelValidation;
-using Manager.Services;
+using Manager.Services.Clients.Accessor;
+using Manager.Services.Clients.Engine;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Endpoints;
@@ -23,13 +24,20 @@ public static class TasksEndpoints
 
     private static async Task<IResult> GetTaskAsync(
         [FromRoute] int id,
-        [FromServices] IManagerService managerService,
+        [FromServices] IAccessorClient accessorClient,
         [FromServices] ILogger<TaskEndpoint> logger)
     {
         using var scope = logger.BeginScope("TaskId {TaskId}:", id);
+
+        if (id <= 0)
+        {
+            logger.LogWarning("Invalid task ID");
+            return Results.BadRequest("Invalid task ID");
+        }
+
         try
         {
-            var task = await managerService.GetTaskAsync(id);
+            var task = await accessorClient.GetTaskAsync(id);
             if (task is not null)
             {
                 logger.LogInformation("Successfully retrieved task");
@@ -48,7 +56,7 @@ public static class TasksEndpoints
 
     private static async Task<IResult> CreateTaskAsync(
         [FromBody] TaskModel task,
-        [FromServices] IManagerService managerService,
+        [FromServices] IAccessorClient accessorClient,
         [FromServices] ILogger<TaskEndpoint> logger)
     {
         using var scope = logger.BeginScope("TaskId {TaskId}:", task.Id);
@@ -59,19 +67,31 @@ public static class TasksEndpoints
             return Results.BadRequest(new { errors = validationErrors });
         }
 
+        if (string.IsNullOrWhiteSpace(task.Name))
+        {
+            logger.LogWarning("Task {TaskId} has invalid name", task.Id);
+            return Results.BadRequest("Task name is required");
+        }
+
+        if (string.IsNullOrWhiteSpace(task.Payload))
+        {
+            logger.LogWarning("Task {TaskId} has invalid payload", task.Id);
+            return Results.BadRequest("Task payload is required");
+        }
+
         try
         {
-            logger.LogInformation("Processing task creation");
+            logger.LogInformation("Posting task {TaskId} with name '{TaskName}'", task.Id, task.Name);
+            var result = await accessorClient.PostTaskAsync(task);
 
-            var (success, message) = await managerService.CreateTaskAsync(task);
-            if (success)
+            if (result.success)
             {
-                logger.LogInformation("Task sent to queue successfully");
-                return Results.Accepted($"/tasks-manager/task/{task.Id}", new { status = message, task.Id });
+                logger.LogInformation("Task {TaskId} successfully posted", task.Id);
+                return Results.Accepted($"/tasks-manager/task/{task.Id}", new { status = result.message, task.Id });
             }
 
-            logger.LogWarning("Processing task failed: {Message}", message);
-            return Results.Problem("Failed to process the task.");
+            logger.LogWarning("Task {TaskId} failed: {Message}", task.Id, result.message);
+            return Results.Problem(result.message);
         }
         catch (Exception ex)
         {
@@ -82,15 +102,19 @@ public static class TasksEndpoints
 
     private static async Task<IResult> CreateTaskLongAsync(
         [FromBody] TaskModel task,
-        [FromServices] IManagerService managerService,
+        [FromServices] IEngineClient engineClient,
         [FromServices] ILogger<TaskEndpoint> logger)
     {
         using var scope = logger.BeginScope("TaskId {TaskId}:", task.Id);
+
         try
         {
             logger.LogInformation("Long running flow test");
-            await managerService.ProcessTaskLongAsync(task);
-            return Results.Accepted("Long running task accepted");
+            var result = await engineClient.ProcessTaskLongAsync(task);
+
+            return result.success
+                ? Results.Accepted("Long running task accepted")
+                : Results.Problem(result.message);
         }
         catch (Exception ex)
         {
@@ -102,15 +126,33 @@ public static class TasksEndpoints
     private static async Task<IResult> UpdateTaskNameAsync(
         [FromRoute] int id,
         [FromRoute] string name,
-        [FromServices] IManagerService managerService,
+        [FromServices] IAccessorClient accessorClient,
         [FromServices] ILogger<TaskEndpoint> logger)
     {
         using var scope = logger.BeginScope("TaskId {TaskId}:", id);
+
+        if (id <= 0)
+        {
+            logger.LogWarning("Invalid task ID");
+            return Results.BadRequest("Invalid task ID");
+        }
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            logger.LogWarning("Invalid task name");
+            return Results.BadRequest("Invalid task name");
+        }
+
+        if (name.Length > 100)
+        {
+            logger.LogWarning("Task name too long");
+            return Results.BadRequest("Task name too long");
+        }
+
         try
         {
             logger.LogInformation("Attempting to update task name");
-
-            var success = await managerService.UpdateTaskName(id, name);
+            var success = await accessorClient.UpdateTaskName(id, name);
 
             if (success)
             {
@@ -118,27 +160,33 @@ public static class TasksEndpoints
                 return Results.Ok("Task name updated");
             }
 
-            logger.LogWarning("Task not found for name update");
+            logger.LogWarning("Task not found for update");
             return Results.NotFound("Task not found");
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error updating task name ");
+            logger.LogError(ex, "Error updating task name");
             return Results.Problem("An error occurred while updating the task name.");
         }
     }
 
     private static async Task<IResult> DeleteTaskAsync(
         [FromRoute] int id,
-        [FromServices] IManagerService managerService,
+        [FromServices] IAccessorClient accessorClient,
         [FromServices] ILogger<TaskEndpoint> logger)
     {
         using var scope = logger.BeginScope("TaskId {TaskId}:", id);
+
+        if (id <= 0)
+        {
+            logger.LogWarning("Invalid task ID");
+            return Results.BadRequest("Invalid task ID");
+        }
+
         try
         {
-            logger.LogInformation("Attempting to delete task ");
-
-            var success = await managerService.DeleteTask(id);
+            logger.LogInformation("Attempting to delete task");
+            var success = await accessorClient.DeleteTask(id);
 
             if (success)
             {

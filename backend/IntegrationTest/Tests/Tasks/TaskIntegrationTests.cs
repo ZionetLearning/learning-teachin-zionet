@@ -123,7 +123,7 @@ public class TaskIntegrationTests(
         OutputHelper.WriteLine($"Running: Get_Task_By_Invalid_Id_Should_Return_NotFound for ID {invalidId}");
 
         var response = await Client.GetAsync(ApiRoutes.TaskById(invalidId));
-        response.ShouldBeNotFound();
+        response.ShouldBeBadRequest();
     }
 
     [Fact(DisplayName = "PUT /tasks-manager/task/{id}/{name} - Valid update should return 200 OK")]
@@ -156,7 +156,7 @@ public class TaskIntegrationTests(
         OutputHelper.WriteLine("Running: Put_TaskName_With_Invalid_Id_Should_Return_NotFound");
 
         var response = await UpdateTaskNameAsync(-1, "DoesNotMatter");
-        response.ShouldBeNotFound();
+        response.ShouldBeBadRequest();
     }
 
     [Fact(DisplayName = "DELETE /tasks-manager/task/{id} - With valid ID should delete task")]
@@ -181,6 +181,6 @@ public class TaskIntegrationTests(
         OutputHelper.WriteLine("Running: Delete_Task_With_Invalid_Id_Should_Return_NotFound");
 
         var response = await Client.DeleteAsync(ApiRoutes.TaskById(-1));
-        response.ShouldBeNotFound();
+        response.ShouldBeBadRequest();
     }
 }

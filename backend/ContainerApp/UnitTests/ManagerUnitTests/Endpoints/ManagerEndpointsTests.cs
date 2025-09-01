@@ -1,15 +1,20 @@
 ﻿using Manager.Endpoints;
 using Manager.Models;
 using Manager.Services;
+using Manager.Services.Clients.Accessor;
+using Manager.Services.Clients.Engine;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.Extensions.Logging;
 using Moq;
 using System.Text.Json;
 
 namespace ManagerUnitTests.Endpoints;
 public class ManagerEndpointsTests
 {
-    private readonly Mock<IManagerService> _svc = new(MockBehavior.Strict);
+    private readonly Mock<IAccessorClient> _accessor = new(MockBehavior.Strict);
+    private readonly Mock<IEngineClient> _engine = new(MockBehavior.Strict);
+    private readonly Mock<ILogger> _log = new();
 
     private static TaskModel MakeTask(int id, string name) => new()
     {
@@ -23,46 +28,50 @@ public class ManagerEndpointsTests
             "UpdateTaskNameAsync" => PrivateInvoker.InvokePrivateEndpointAsync(
                                         typeof(TasksEndpoints),
                                         "UpdateTaskNameAsync",
-                                        id, name!, _svc.Object),
+                                        id, name!, _accessor.Object, _log.Object),
             "DeleteTaskAsync" => PrivateInvoker.InvokePrivateEndpointAsync(
                                         typeof(TasksEndpoints),
                                         "DeleteTaskAsync",
-                                        id, _svc.Object),
+                                        id, _accessor.Object, _log.Object),
             _ => throw new ArgumentOutOfRangeException(nameof(method), method, "Unknown endpoint")
         };
 
-    [Fact(DisplayName = "GET /task/{id} => 200 when found")]
+   [Fact(DisplayName = "GET /task/{id} => 200 when found")]
     public async Task GetTask_Returns_Ok_When_Found()
     {
         var task = MakeTask(7, "X");
-        _svc.Setup(s => s.GetTaskAsync(7)).ReturnsAsync(task);
+        _accessor.Setup(s => s.GetTaskAsync(7)).ReturnsAsync(task);
 
         var result = await PrivateInvoker.InvokePrivateEndpointAsync(
             typeof(TasksEndpoints),
             "GetTaskAsync",
             7,
-            _svc.Object);
+            _accessor.Object,
+            _log.Object);
 
         var ok = Assert.IsType<Ok<TaskModel>>(result);
         Assert.Equal(7, ok.Value!.Id);
         Assert.Equal("X", ok.Value!.Name);
-        _svc.VerifyAll();
+
+        _accessor.VerifyAll();
     }
 
     [Fact(DisplayName = "GET /task/{id} => 404 when missing")]
     public async Task GetTask_Returns_NotFound_When_Missing()
     {
-        _svc.Setup(s => s.GetTaskAsync(999)).ReturnsAsync((TaskModel?)null);
+        _accessor.Setup(s => s.GetTaskAsync(999)).ReturnsAsync((TaskModel?)null);
 
         var result = await PrivateInvoker.InvokePrivateEndpointAsync(
             typeof(TasksEndpoints),
             "GetTaskAsync",
             999,
-            _svc.Object);
+            _accessor.Object,
+            _log.Object);
 
         var status = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
         Assert.Equal(StatusCodes.Status404NotFound, status.StatusCode);
-        _svc.VerifyAll();
+
+        _accessor.VerifyAll();
     }
 
     [Fact(DisplayName = "POST /task => 202 + body when valid")]
@@ -70,31 +79,29 @@ public class ManagerEndpointsTests
     {
         var model = MakeTask(42, "UnitTest Task");
 
-        _svc.Setup(s => s.CreateTaskAsync(model))
-            .ReturnsAsync((true, "queued"));
+        _accessor.Setup(s => s.PostTaskAsync(model))
+                 .ReturnsAsync((true, "queued"));
 
         var result = await PrivateInvoker.InvokePrivateEndpointAsync(
             typeof(TasksEndpoints),
             "CreateTaskAsync",
             model,
-            _svc.Object);
+            _accessor.Object,
+            _log.Object);
 
-        // 1) Assert status via interface (Accepted<T> is generic)
         var status = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
         Assert.Equal(StatusCodes.Status202Accepted, status.StatusCode);
 
-        // 2) Location (property exists on Accepted<T>)
         var location = result.GetType().GetProperty("Location")?.GetValue(result) as string;
         Assert.Equal("/tasks-manager/task/42", location);
 
-        // 3) Assert payload via IValueHttpResult (anonymous object)
         var valueResult = Assert.IsAssignableFrom<IValueHttpResult>(result);
         using var doc = JsonDocument.Parse(JsonSerializer.Serialize(valueResult.Value));
         var root = doc.RootElement;
         Assert.Equal("queued", root.GetProperty("status").GetString());
         Assert.Equal(42, root.GetProperty("Id").GetInt32());
 
-        _svc.VerifyAll();
+        _accessor.VerifyAll();
     }
 
     [Fact(DisplayName = "POST /tasklong => 202 Accepted")]
@@ -102,18 +109,20 @@ public class ManagerEndpointsTests
     {
         var model = MakeTask(77, "Long");
 
-        _svc.Setup(s => s.ProcessTaskLongAsync(It.IsAny<TaskModel>()))
-            .ReturnsAsync((true, "accepted"));
+        _engine.Setup(s => s.ProcessTaskLongAsync(It.IsAny<TaskModel>()))
+               .ReturnsAsync((true, "accepted"));
 
         var result = await PrivateInvoker.InvokePrivateEndpointAsync(
             typeof(TasksEndpoints),
             "CreateTaskLongAsync",
             model,
-            _svc.Object);
+            _engine.Object,
+            _log.Object);
 
         var status = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
         Assert.Equal(StatusCodes.Status202Accepted, status.StatusCode);
-        _svc.VerifyAll();
+
+        _engine.VerifyAll();
     }
 
     [Theory(DisplayName = "Update/Delete => 200 when true, 404 when false")]
@@ -122,23 +131,33 @@ public class ManagerEndpointsTests
     public async Task Endpoint_Returns_Correct_Status(
         string method, bool successFirst, Type okType, int notFoundStatus)
     {
-        var seq = method switch
+        if (method == "UpdateTaskNameAsync")
         {
-            "UpdateTaskNameAsync" => _svc.SetupSequence(s => s.UpdateTaskName(It.IsAny<int>(), It.IsAny<string>())),
-            "DeleteTaskAsync" => _svc.SetupSequence(s => s.DeleteTask(It.IsAny<int>())),
-            _ => throw new ArgumentOutOfRangeException(nameof(method), method, "Unknown endpoint")
-        };
+            _accessor.SetupSequence(s => s.UpdateTaskName(It.IsAny<int>(), It.IsAny<string>()))
+                     .ReturnsAsync(successFirst)
+                     .ReturnsAsync(false);
 
-        seq.ReturnsAsync(successFirst)
-           .ReturnsAsync(false);
+            var okRes = await Invoke(method, 10, "new-name");
+            Assert.IsType(okType, okRes);
 
-        var okRes = await Invoke(method, 10, "new-name");
-        Assert.IsType(okType, okRes);
+            var nfRes = await Invoke(method, 11, "missing");
+            var status = Assert.IsAssignableFrom<IStatusCodeHttpResult>(nfRes);
+            Assert.Equal(notFoundStatus, status.StatusCode);
+        }
+        else if (method == "DeleteTaskAsync")
+        {
+            _accessor.SetupSequence(s => s.DeleteTask(It.IsAny<int>()))
+                     .ReturnsAsync(successFirst)
+                     .ReturnsAsync(false);
 
-        var nfRes = await Invoke(method, 11, "missing");
-        var status = Assert.IsAssignableFrom<IStatusCodeHttpResult>(nfRes);
-        Assert.Equal(notFoundStatus, status.StatusCode);
+            var okRes = await Invoke(method, 10);
+            Assert.IsType(okType, okRes);
 
-        _svc.VerifyAll();
+            var nfRes = await Invoke(method, 11);
+            var status = Assert.IsAssignableFrom<IStatusCodeHttpResult>(nfRes);
+            Assert.Equal(notFoundStatus, status.StatusCode);
+        }
+
+        _accessor.VerifyAll();
     }
 }
