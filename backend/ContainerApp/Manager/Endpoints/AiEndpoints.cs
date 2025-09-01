@@ -328,10 +328,9 @@ public static class AiEndpoints
                 return Results.Problem("Speech synthesis failed.");
             }
 
-            var acceptHeader = string.Join(",", req.Headers.Accept.ToArray());
             var wantsBinary =
-                acceptHeader.Contains("application/octet-stream", StringComparison.OrdinalIgnoreCase) ||
-                acceptHeader.Contains("audio/", StringComparison.OrdinalIgnoreCase) ||
+                req.Headers.Accept.Any(h => h != null && h.Contains("application/octet-stream", StringComparison.OrdinalIgnoreCase)) ||
+                req.Headers.Accept.Any(h => h != null && h.Contains("audio/", StringComparison.OrdinalIgnoreCase)) ||
                 (req.Query.TryGetValue("format", out var fmt) && string.Equals(fmt, "binary", StringComparison.OrdinalIgnoreCase));
 
             if (wantsBinary && !string.IsNullOrWhiteSpace(engineResult.AudioData))
