@@ -336,7 +336,7 @@ public static class AiEndpoints
             if (wantsBinary && !string.IsNullOrWhiteSpace(engineResult.AudioData))
             {
                 var audioBytes = Convert.FromBase64String(engineResult.AudioData);
-
+                var contentType = !string.IsNullOrWhiteSpace(engineResult.Metadata?.ContentType)
                     ? engineResult.Metadata.ContentType
                     : "audio/mpeg";
 
