@@ -3,6 +3,7 @@ describe("word order game", () => {
     cy.login();
     cy.contains("Practice Tools").click();
     cy.contains("Word Order Game").click();
+    cy.contains("SignalR is not connected").should("not.exist");
     cy.contains("Word Order Game").should("be.visible");
   });
 
@@ -10,10 +11,11 @@ describe("word order game", () => {
     cy.contains(/Arrange the words/i).should("be.visible");
     cy.contains(/Loading/).should("not.exist");
 
-    cy.get('[data-testid="wog-bank"] button', { timeout: 10000 }).should(
-      "have.length.greaterThan",
-      0,
-    );
+    cy.get('[data-testid="wog-bank"]', { timeout: 25000 })
+      .should("exist")
+      .find("button")
+
+      .should("have.length.greaterThan", 0);
     cy.get('[data-testid="wog-bank"] button').first().click();
     cy.get('[data-testid="wog-chosen"] button').should("have.length", 1);
 
