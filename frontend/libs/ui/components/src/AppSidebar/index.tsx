@@ -26,7 +26,7 @@ export interface AppSidebarProps {
     icon?: React.ReactNode;
     items: LanguageItem[];
   };
-  toggleLabel?: React.ReactNode;
+  toggle?: SidebarLink;
   /* initial state only (the component manages the rest) */
   defaultCollapsed?: boolean;
   /* notify parent when user toggles */
@@ -45,6 +45,7 @@ export interface AppSidebarProps {
 export const AppSidebar = ({
   items,
   languages,
+  toggle,
   defaultCollapsed = false,
   onCollapsedChange,
   dir = 'ltr',
@@ -54,7 +55,7 @@ export const AppSidebar = ({
 }: AppSidebarProps) => {
   const [collapsed, setCollapsed] = useState<boolean>(defaultCollapsed);
 
-  const toggle = () => {
+  const handleToggle = () => {
     setCollapsed(prev => {
       const next = !prev;
       onCollapsedChange?.(next);
@@ -94,8 +95,7 @@ export const AppSidebar = ({
       </MenuItem>
     );
   };
-  const toggleItem = items.find(i => i.testId === 'toggle-sidebar');
-  const navItems = items.filter(i => i.testId !== 'toggle-sidebar');
+
   return (
     <Sidebar
       data-testid="app-sidebar"
@@ -128,13 +128,13 @@ export const AppSidebar = ({
           label: { textAlign: dir === 'rtl' ? 'right' : 'left' },
         }}
       >
-        {toggleItem && (
+        {toggle && (
           <MenuItem
-            icon={toggleItem.icon}
-            onClick={toggle}
-            data-testid={toggleItem.testId}
+            icon={toggle.icon}
+            onClick={handleToggle}
+            data-testid={toggle.testId}
           >
-            {!collapsed && toggleItem?.label}
+            {!collapsed && toggle?.label}
           </MenuItem>
         )}
 
@@ -154,7 +154,7 @@ export const AppSidebar = ({
           </SubMenu>
         ) : null}
 
-        {navItems.map(renderItem)}
+        {items.map(renderItem)}
       </Menu>
 
       {logoutItem && (

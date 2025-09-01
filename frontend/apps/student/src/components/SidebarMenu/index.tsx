@@ -30,8 +30,12 @@ export const SidebarMenu = () => {
 
   const handleNavigate = (path: string) => navigate(path);
 
+  const toggleItem: SidebarLink =
+  {
+    label: t('sidebar.toggleSidebar'), icon: <MenuIcon />, testId: 'toggle-sidebar'
+  };
+
   const items: SidebarLink[] = [
-    { label: t('sidebar.toggleSidebar'), icon: <MenuIcon />, testId: 'toggle-sidebar' },
     { label: t('sidebar.home'), icon: <HomeIcon />, path: '/', testId: 'sidebar-home' },
     { label: t('sidebar.signalR'), icon: <ConnectWithoutContactIcon />, path: '/signalr', testId: 'signalR' },
     { label: t('sidebar.chatAvatar'), icon: <ThreePIcon />, path: '/chat-with-avatar', testId: 'sidebar-chat-avatar' },
@@ -72,7 +76,7 @@ export const SidebarMenu = () => {
   return (
     <AppSidebar
       items={items}
-      toggleLabel={t('sidebar.toggleSidebar')}
+      toggle={toggleItem}
       dir={isHebrew ? 'rtl' : 'ltr'}
       activePath={activePath}
       onNavigate={handleNavigate}
