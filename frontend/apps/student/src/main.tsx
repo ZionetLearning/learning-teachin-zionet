@@ -1,3 +1,5 @@
+import { initAppInsights } from '../../../libs/observability/src/appInsights';
+initAppInsights('student');
 import { createRoot } from "react-dom/client";
 import { ToastContainer } from "react-toastify";
 import * as Sentry from "@sentry/react";

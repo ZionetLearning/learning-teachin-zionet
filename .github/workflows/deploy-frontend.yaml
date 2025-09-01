@@ -82,7 +82,7 @@ env:
   VITE_AZURE_OPENAI_ENDPOINT: "https://france-teachin-open-ai.openai.azure.com/"
   
   # Monitoring and tracking
-  VITE_APPINSIGHTS_CONNECTION_STRING: ""
+  VITE_APPINSIGHTS_CONNECTION_STRING: ${{ secrets.APPINSIGHTS_CONNECTION_STRING }}
   VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
   SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
@@ -134,6 +134,7 @@ jobs:
     if: inputs.run_only_tests == false
     needs: [frontend-test]
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment || 'Development' }}
     env:
       FE_DIR: frontend
     steps:
