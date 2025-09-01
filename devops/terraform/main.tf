@@ -1,3 +1,24 @@
+#########################################
+# Network Infrastructure
+#########################################
+module "network" {
+  source              = "./modules/network"
+  vnet_name           = var.vnet_name
+  address_space       = var.vnet_address_space
+  location            = var.location
+  resource_group_name = var.shared_resource_group
+
+  aks_subnet_name           = var.aks_subnet_name
+  aks_subnet_prefix        = var.aks_subnet_prefix
+  db_subnet_name            = var.db_subnet_name
+  db_subnet_prefix         = var.db_subnet_prefix
+  integration_subnet_name   = var.integration_subnet_name
+  integration_subnet_prefix = var.integration_subnet_prefix
+  management_subnet_name    = var.management_subnet_name
+  management_subnet_prefix  = var.management_subnet_prefix
+  depends_on = [ azurerm_resource_group.main ]
+}
+
 ########################################
 # 1. Azure infra: RG, AKS (conditional), Service Bus, Postgres and SignalR, Redis
 ########################################
@@ -230,3 +251,5 @@ module "clustersecretstore" {
   identity_id = "0997f44d-fadf-4be8-8dc6-202f7302f680" # your AKS managed identity clientId
   tenant_id   = "a814ee32-f813-4a36-9686-1b9268183e27"
 }
+
+
