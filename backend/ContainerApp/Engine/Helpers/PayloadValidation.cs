@@ -124,8 +124,8 @@ public static class PayloadValidation
     {
         if (req is null)
         {
-            logger.LogWarning("EngineChatRequest cannot be null.");
-            throw new NonRetryableException("EngineChatRequest cannot be null.");
+            logger.LogWarning("SentenceRequest cannot be null.");
+            throw new NonRetryableException("SentenceRequest cannot be null.");
         }
     }
 }
