@@ -71,54 +71,28 @@ jobs:
         run: |
           set -euo pipefail
           SVC="${{ inputs.service }}"
-          echo "::group::Compute paths (CWD + service)"
-          echo "CWD: $(pwd)"
-          echo "Service: ${SVC}"
-          echo "::endgroup::"
-
           case "${SVC}" in
-            # Custom mapping examples (uncomment & adjust when needed)
-            # CustomService)
-            #   SERVICE_CSProj="CustomService/src/Service.csproj"
-            #   TEST_CSProj="CustomServiceTests/ServiceTests.csproj"
-            #   ;;
             *)
               SERVICE_CSProj="${SVC}/${SVC}.csproj"
               TEST_CSProj="${SVC}ComponentTests/${SVC}ComponentTests.csproj"
               ;;
           esac
-
-          echo "::group::Computed csproj paths"
-          echo "SERVICE_CSProj=${SERVICE_CSProj}"
-          echo "TEST_CSProj=${TEST_CSProj}"
-          echo "::endgroup::"
-
-          echo "::group::Existence check"
-          if [ -f "${SERVICE_CSProj}" ]; then echo "OK: ${SERVICE_CSProj} exists"; else echo "MISSING: ${SERVICE_CSProj}"; fi
-          if [ -f "${TEST_CSProj}" ]; then echo "OK: ${TEST_CSProj} exists"; else echo "MISSING: ${TEST_CSProj}"; fi
-          echo "::endgroup::"
-
           [ -f "${SERVICE_CSProj}" ] || { echo "Service project not found: ${SERVICE_CSProj}"; exit 1; }
           [ -f "${TEST_CSProj}" ]   || { echo "Test project not found: ${TEST_CSProj}"; exit 1; }
-
           echo "service_csproj=${SERVICE_CSProj}" >> "$GITHUB_OUTPUT"
           echo "test_csproj=${TEST_CSProj}"       >> "$GITHUB_OUTPUT"
 
       - name: Restore ${{ inputs.service }}
         run: |
-          echo "Restoring: ${{ steps.paths.outputs.service_csproj }}"
           dotnet restore "${{ steps.paths.outputs.service_csproj }}"
 
       - name: Restore ${{ inputs.service }} Component Tests
         run: |
-          echo "Restoring tests: ${{ steps.paths.outputs.test_csproj }}"
           dotnet restore "${{ steps.paths.outputs.test_csproj }}"
 
       - name: Build (service + tests) - ${{ inputs.service }}
         run: |
-          echo "Building service: ${{ steps.paths.outputs.service_csproj }}"
           dotnet build "${{ steps.paths.outputs.service_csproj }}" --no-restore -c Release
-          echo "Building tests:   ${{ steps.paths.outputs.test_csproj }}"
           dotnet build "${{ steps.paths.outputs.test_csproj }}" --no-restore -c Release
 
       - name: Run tests (${{ inputs.service }})
@@ -129,8 +103,6 @@ jobs:
           if [ -z "${TFILT}" ]; then
             TFILT="FullyQualifiedName~${{ inputs.service }}ComponentTests"
           fi
-          echo "Test project: ${{ steps.paths.outputs.test_csproj }}"
-          echo "Filter: ${TFILT}"
           dotnet test "${{ steps.paths.outputs.test_csproj }}" \
             --no-build -c Release \
             --filter "${TFILT}" \
@@ -145,7 +117,3 @@ jobs:
             path: backend/ContainerApp/**/${{ inputs.service }}.trx
             if-no-files-found: warn
 
-# === How to add another service later ===
-# 1) Keep folder convention or add a case in "Compute paths".
-# 2) Add needed env vars at job-level if required.
-# 3) Calling workflow supplies one service per matrix job.
