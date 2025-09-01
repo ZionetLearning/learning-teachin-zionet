@@ -3,9 +3,14 @@ name: Run Component Tests
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+    # Keep these in sync with the filters below (one block per service)
     paths:
       - 'backend/ContainerApp/Engine/**'
       - 'backend/ContainerApp/EngineComponentTests/**'
+      - 'backend/ContainerApp/Manager/**'
+      - 'backend/ContainerApp/ManagerComponentTests/**'
+      - 'backend/ContainerApp/Accessor/**'
+      - 'backend/ContainerApp/AccessorComponentTests/**'
       - 'backend/ContainerApp/Directory.Build.props'
   workflow_dispatch:
 
@@ -14,10 +19,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  changes:
+  detect:
     runs-on: ubuntu-latest
     outputs:
-      services: ${{ steps.set-services.outputs.services }}
+      services: ${{ steps.build-matrix.outputs.services }}
     steps:
       - uses: actions/checkout@v4
 
@@ -26,55 +31,51 @@ jobs:
         uses: dorny/paths-filter@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          list-files: json
+          list-files: none
           filters: |
             engine:
               - 'backend/ContainerApp/Engine/**'
               - 'backend/ContainerApp/EngineComponentTests/**'
               - 'backend/ContainerApp/Directory.Build.props'
+            manager:
+              - 'backend/ContainerApp/Manager/**'
+              - 'backend/ContainerApp/ManagerComponentTests/**'
+              - 'backend/ContainerApp/Directory.Build.props'
+            accessor:
+              - 'backend/ContainerApp/Accessor/**'
+              - 'backend/ContainerApp/AccessorComponentTests/**'
+              - 'backend/ContainerApp/Directory.Build.props'
 
-      - name: Debug changed files
-        if: always()
-        run: |
-          echo "::group::paths-filter debug"
-          echo "engine flag: ${{ steps.filter.outputs.engine }}"
-          echo "engine files (JSON): ${{ steps.filter.outputs.engine_files }}"
-          echo "::endgroup::"
-
-      - name: Build service list
-        id: set-services
+      - name: Build changed services matrix (JSON)
+        id: build-matrix
         shell: bash
         run: |
           set -euo pipefail
-          echo "::group::Evaluating changed services"
-          SERVICES=()
+          declare -a services=()
 
-          if [ "${{ steps.filter.outputs.engine }}" = 'true' ]; then
-            echo "Engine changed ✅"
-            SERVICES+=("Engine")
+          [[ "${{ steps.filter.outputs.engine }}"  == "true" ]] && services+=("Engine")
+          [[ "${{ steps.filter.outputs.manager }}" == "true" ]] && services+=("Manager")
+          [[ "${{ steps.filter.outputs.accessor }}" == "true" ]] && services+=("Accessor")
+
+          # JSON array like ["Engine","Manager"]
+          if (( ${#services[@]} )); then
+            json=$(printf '%s\n' "${services[@]}" | jq -R . | jq -s .)
           else
-            echo "Engine not changed ❌"
+            json='[]'
           fi
 
-          if [ ${#SERVICES[@]} -eq 0 ]; then
-            JSON='[]'
-          else
-            # Build a proper JSON array: ["Engine"]
-            JSON=$(printf '%s\n' "${SERVICES[@]}" | jq -R . | jq -s .)
-          fi
+          echo "services=${json}" >> "$GITHUB_OUTPUT"
+          echo "Matrix: ${json}"
 
-          echo "Detected services array: ${SERVICES[@]}"
-          echo "Detected services JSON: ${JSON}"
-
-          # Write raw JSON to output (no extra quotes)
-          echo services=${JSON} >> "$GITHUB_OUTPUT"
-          echo "::endgroup::"
-
-  call-component-tests:
-    needs: changes
-    if: needs.changes.outputs.services != '[]'
+  run:
+    needs: detect
+    if: needs.detect.outputs.services != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.detect.outputs.services) }}
     uses: ./.github/workflows/component-tests.yml
     with:
-      services: ${{ join(fromJson(needs.changes.outputs.services), ',') }}
+      service: ${{ matrix.service }}
       testFilter: ''
     secrets: inherit
