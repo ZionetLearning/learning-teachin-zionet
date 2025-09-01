@@ -84,7 +84,6 @@ if (!string.IsNullOrEmpty(signalRConnString))
 //            .AllowCredentials();
 //    });
 //});
-
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("LocalhostFrontend", policy =>
