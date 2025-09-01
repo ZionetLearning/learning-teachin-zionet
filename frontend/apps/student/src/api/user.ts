@@ -12,12 +12,15 @@ type UserDto = User & {
 };
 
 interface UpdateUserInput {
-  email: string;
-  password: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 export interface User {
   userId: string;
+  firstName: string;
+  lastName: string;
   email: string;
 }
 
@@ -26,6 +29,8 @@ const USERS_URL = `${import.meta.env.VITE_USERS_URL}/user`;
 const mapUser = (dto: UserDto): User => ({
   userId: dto.userId,
   email: dto.email,
+  firstName: dto.firstName,
+  lastName: dto.lastName,
 });
 
 const getAllUsers = async (): Promise<User[]> => {
@@ -40,11 +45,12 @@ const updateUserByUserId = async (
   userId: string,
   userData: UpdateUserInput,
 ): Promise<User> => {
-  const body: UserDto = {
-    userId,
-    email: userData.email,
-    password: userData.password,
-  };
+  const body: Record<string, unknown> = { userId };
+  if (typeof userData.email === "string") body.email = userData.email;
+  if (typeof userData.firstName === "string")
+    body.firstName = userData.firstName;
+  if (typeof userData.lastName === "string") body.lastName = userData.lastName;
+
   const response = await axios.put(`${USERS_URL}/${userId}`, body);
   if (response.status !== 200) {
     throw new Error(response.data?.message || "Failed to update user");

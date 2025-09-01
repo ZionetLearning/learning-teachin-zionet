@@ -425,16 +425,15 @@ public class AccessorService : IAccessorService
     public async Task<UserData?> GetUserAsync(Guid userId)
     {
         var user = await _dbContext.Users.FindAsync(userId);
-        if (user == null)
-        {
-            return null;
-        }
-
-        return new UserData
-        {
-            UserId = user.UserId,
-            Email = user.Email,
-        };
+        return user == null
+            ? null
+            : new UserData
+            {
+                UserId = user.UserId,
+                Email = user.Email,
+                FirstName = user.FirstName,
+                LastName = user.LastName
+            };
     }
 
     public async Task<bool> CreateUserAsync(UserModel newUser)
@@ -458,9 +457,21 @@ public class AccessorService : IAccessorService
             return false;
         }
 
-        user.Email = updateUser.Email;
+        if (updateUser.FirstName is not null)
+        {
+            user.FirstName = updateUser.FirstName;
+        }
 
-        _dbContext.Users.Update(user);
+        if (updateUser.LastName is not null)
+        {
+            user.LastName = updateUser.LastName;
+        }
+
+        if (updateUser.Email is not null)
+        {
+            user.Email = updateUser.Email;
+        }
+
         await _dbContext.SaveChangesAsync();
         return true;
     }
@@ -520,6 +531,8 @@ public class AccessorService : IAccessorService
                 {
                     UserId = u.UserId,
                     Email = u.Email,
+                    FirstName = u.FirstName,
+                    LastName = u.LastName,
                 })
                 .ToListAsync();
 

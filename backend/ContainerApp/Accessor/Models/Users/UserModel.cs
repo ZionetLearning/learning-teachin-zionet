@@ -9,12 +9,8 @@ public class UserModel
 {
     [Key]
     public Guid UserId { get; set; }
-
-    [Required]
-    [MaxLength(100)]
+    public required string FirstName { get; set; }
+    public required string LastName { get; set; }
     public required string Email { get; set; }
-
-    [Required]
-    [MaxLength(255)]
     public required string Password { get; set; }
 }

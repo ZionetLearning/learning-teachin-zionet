@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useSendChatMessage } from "@student/api";
+import { useSignalR } from "./";
 import type { ChatRequest, ChatResponse } from "@student/api";
 
 export type ChatPosition = "left" | "right";
@@ -22,6 +23,8 @@ export const useChat = () => {
     mutateAsync: sendChatMessageAsync,
     isPending,
   } = useSendChatMessage();
+
+  const { userId } = useSignalR();
 
   const pushUser = (text: string) => {
     const userMsg: ChatMessage = {
@@ -52,6 +55,7 @@ export const useChat = () => {
       userMessage: userText,
       threadId: threadId || crypto.randomUUID(),
       chatType: "default",
+      userId: userId
     };
 
     pushUser(userText);
@@ -59,10 +63,11 @@ export const useChat = () => {
     // call API
     sendChatMessage(payload, {
       onSuccess: (data: ChatResponse) => {
+        console.log("Chat message sent successfully:", data);
         setThreadId(data.threadId);
 
-        const aiText = data.assistantMessage;
 
+        const aiText = data.assistantMessage ?? "";
         const aiMsg: ChatMessage = {
           position: "left",
           type: "text",
@@ -82,14 +87,15 @@ export const useChat = () => {
       userMessage: userText,
       threadId: threadId || crypto.randomUUID(),
       chatType: "default",
+      userId: userId
     };
 
     pushUser(userText);
 
     const data = await sendChatMessageAsync(payload);
     setThreadId(data.threadId);
-    pushAssistant(data.assistantMessage);
-    return data.assistantMessage;
+    pushAssistant(data.assistantMessage ?? "");
+    return data.assistantMessage ?? "";
   };
 
   return {
