@@ -139,6 +139,15 @@ jobs:
         run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
 
 
+      - name: Debug Event Information
+        run: |
+          echo "=== DEBUG EVENT INFO ==="
+          echo "Event name: ${{ github.event_name }}"
+          echo "Skip infra input: ${{ inputs.skip_infra_steps }}"
+          echo "Event type: ${{ github.event.action }}"
+          echo "Triggered by: ${{ github.actor }}"
+          echo "========================"
+
       - name: Create namespace
         if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
         run: |
