@@ -113,4 +113,3 @@ app.MapSubscribeHandler();
 app.MapAiEndpoints();
 
 app.Run();
-//change to activate action
