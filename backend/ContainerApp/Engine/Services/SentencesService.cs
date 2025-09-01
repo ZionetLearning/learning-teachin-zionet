@@ -42,6 +42,10 @@ public class SentencesService : ISentencesService
             {
                 return parsed;
             }
+            else
+            {
+                throw new RetryableException("Error while generating sentences. The response is empty");
+            }
         }
         else
         {
