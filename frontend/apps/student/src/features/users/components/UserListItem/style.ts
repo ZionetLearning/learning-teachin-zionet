@@ -35,7 +35,7 @@ export const useStyles = createUseStyles({
   info: {
     flex: 1,
     display: "flex",
-    flexDirection: "column",
+    justifyContent: "space-between",
     minWidth: 0,
     "& span": {
       fontSize: 14,
@@ -96,6 +96,13 @@ export const useStyles = createUseStyles({
       borderColor: "#6366f1",
       boxShadow: "0 0 0 3px rgba(99,102,241,0.25)",
       background: "#fff",
+    },
+    "&:-webkit-autofill, &:-webkit-autofill:hover, &:-webkit-autofill:focus": {
+      WebkitBoxShadow: "0 0 0 1000px #f8fafc inset",
+      boxShadow: "0 0 0 1000px #f8fafc inset",
+      WebkitTextFillColor: "#1a202c",
+      transition: "background-color 9999s ease-out, color 9999s ease-out",
+      caretColor: "#1a202c",
     },
   },
   editActions: {

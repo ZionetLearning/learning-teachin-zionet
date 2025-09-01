@@ -21,7 +21,7 @@ public static class AiEndpoints
 
     public static WebApplication MapAiEndpoints(this WebApplication app)
     {
-        var aiGroup = app.MapGroup("/ai-manager").WithTags("AI");
+        var aiGroup = app.MapGroup("/ai-manager").WithTags("AI").RequireAuthorization();
 
         #region HTTP GET
 

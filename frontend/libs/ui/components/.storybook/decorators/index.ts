@@ -1,1 +1,2 @@
-export * from './withReactQuery';
+export * from "./withReactQuery";
+export * from "./withTranslation";

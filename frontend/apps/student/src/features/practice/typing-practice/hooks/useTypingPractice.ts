@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { ExerciseState, DifficultyLevel, Exercise } from "../types";
 import { getRandomExercise, compareTexts } from "../utils";
 import { useAvatarSpeech } from "@student/hooks";
-import { CypressWindow } from "@/types";
+import { CypressWindow } from "@student/types";
 
 export const useTypingPractice = () => {
   const [exerciseState, setExerciseState] = useState<ExerciseState>({

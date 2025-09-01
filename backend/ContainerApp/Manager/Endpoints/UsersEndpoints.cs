@@ -11,11 +11,11 @@ public static class UsersEndpoints
     {
         var usersGroup = app.MapGroup("/users-manager").WithTags("Users");
 
-        usersGroup.MapGet("/user-list", GetAllUsersAsync).WithName("GetAllUsers");
-        usersGroup.MapGet("/user/{userId:guid}", GetUserAsync).WithName("GetUser");
+        usersGroup.MapGet("/user-list", GetAllUsersAsync).WithName("GetAllUsers").RequireAuthorization();
+        usersGroup.MapGet("/user/{userId:guid}", GetUserAsync).WithName("GetUser").RequireAuthorization();
         usersGroup.MapPost("/user", CreateUserAsync).WithName("CreateUser");
-        usersGroup.MapPut("/user/{userId:guid}", UpdateUserAsync).WithName("UpdateUser");
-        usersGroup.MapDelete("/user/{userId:guid}", DeleteUserAsync).WithName("DeleteUser");
+        usersGroup.MapPut("/user/{userId:guid}", UpdateUserAsync).WithName("UpdateUser").RequireAuthorization();
+        usersGroup.MapDelete("/user/{userId:guid}", DeleteUserAsync).WithName("DeleteUser").RequireAuthorization();
 
         return app;
     }
@@ -63,7 +63,9 @@ public static class UsersEndpoints
             var result = new UserData
             {
                 UserId = user.UserId,
-                Email = user.Email
+                Email = user.Email,
+                FirstName = user.FirstName,
+                LastName = user.LastName
             };
 
             logger.LogInformation("User created");

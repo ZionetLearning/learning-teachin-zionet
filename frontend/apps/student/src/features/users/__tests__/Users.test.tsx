@@ -59,8 +59,18 @@ const rq = (
   }) as UseQueryResult<User[], Error>;
 
 const sampleUsers: User[] = [
-  { userId: "u1", email: "alpha@example.com" },
-  { userId: "u2", email: "beta@example.com" },
+  {
+    userId: "u1",
+    email: "alpha@example.com",
+    firstName: "Alice",
+    lastName: "Anderson",
+  },
+  {
+    userId: "u2",
+    email: "beta@example.com",
+    firstName: "Bob",
+    lastName: "Baker",
+  },
 ];
 
 beforeEach(() => {
@@ -138,6 +148,12 @@ describe("<Users />", () => {
     fireEvent.change(screen.getByPlaceholderText(/user@example.com/i), {
       target: { value: "new@example.com" },
     });
+    fireEvent.change(screen.getByPlaceholderText(/John/i), {
+      target: { value: "NewFirst" },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/Doe/i), {
+      target: { value: "NewLast" },
+    });
     fireEvent.change(screen.getByPlaceholderText(/\*\*\*\*\*\*/i), {
       target: { value: "secret" },
     });
@@ -147,11 +163,13 @@ describe("<Users />", () => {
     await waitFor(() => expect(mutate).toHaveBeenCalledTimes(1));
     const arg = mutate.mock.calls[0][0];
     expect(arg.email).toBe("new@example.com");
-    expect(arg.passwordHash).toBe("secret");
+    expect(arg.password).toBe("secret");
+    expect(arg.firstName).toBe("NewFirst");
+    expect(arg.lastName).toBe("NewLast");
     expect(arg.userId).toBe("123e4567-e89b-12d3-a456-426614174000");
   });
 
-  it("updates a user via inline edit form", () => {
+  it("updates a user via inline edit form (partial fields only)", () => {
     const updateMutate = vi.fn();
     useGetAllUsers.mockReturnValue(rq({ data: [sampleUsers[0]] }));
     useCreateUser.mockReturnValue({ mutate: vi.fn(), isPending: false });
@@ -167,16 +185,17 @@ describe("<Users />", () => {
     render(<Users />);
     fireEvent.click(screen.getByRole("button", { name: /update/i }));
     const emailInput = screen.getByPlaceholderText("email") as HTMLInputElement;
-    const passwordInput = screen.getByPlaceholderText(
-      "new password",
-    ) as HTMLInputElement;
     fireEvent.change(emailInput, { target: { value: "changed@example.com" } });
-    fireEvent.change(passwordInput, { target: { value: "newpass" } });
+    // Provide a first name change so payload includes it while omitting lastName
+    const firstNameInput = screen.getByPlaceholderText(
+      "first name",
+    ) as HTMLInputElement;
+    fireEvent.change(firstNameInput, { target: { value: "Charlie" } });
     fireEvent.click(screen.getByRole("button", { name: /save/i }));
     expect(updateMutate).toHaveBeenCalledTimes(1);
     expect(updateMutate.mock.calls[0][0]).toEqual({
       email: "changed@example.com",
-      passwordHash: "newpass",
+      firstName: "Charlie",
     });
   });
 

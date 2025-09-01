@@ -16,10 +16,18 @@ namespace:
 cronjobs:
   statsPing:
     enabled: true
-    schedule: "*/5 * * * *"     # every 5 minutes in dev
+    schedule: "*/5 * * * *"   # every 5 minutes in dev
     target:
       mode: "service"
-      serviceName: "manager"    # your Service name
+      serviceName: "manager"
+      port: 80
+
+  refreshSessionsCleanup:
+    enabled: true
+    schedule: "30 2 * * *"   # nightly at 02:30
+    target:
+      mode: "service"
+      serviceName: "manager"
       port: 80
 
 manager:
