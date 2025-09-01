@@ -1,6 +1,7 @@
 ﻿
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace Accessor.Models.Users;
 
@@ -9,12 +10,11 @@ public class UserModel
 {
     [Key]
     public Guid UserId { get; set; }
-
-    [Required]
-    [MaxLength(100)]
+    public required string FirstName { get; set; }
+    public required string LastName { get; set; }
     public required string Email { get; set; }
-
-    [Required]
-    [MaxLength(255)]
     public required string Password { get; set; }
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public required Role Role { get; set; }
 }

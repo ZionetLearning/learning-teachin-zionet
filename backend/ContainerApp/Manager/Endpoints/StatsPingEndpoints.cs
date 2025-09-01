@@ -48,7 +48,7 @@ public static class StatsPingEndpoints
             })
             .WithName("ComputeStats")
             .WithTags("Internal")
-            .Produces(StatusCodes.Status200OK);
+            .Produces(StatusCodes.Status200OK).RequireAuthorization();
 
         // GET: latest cached stats (404 if expired / not set)
         app.MapGet("/internal/stats/latest",
@@ -76,7 +76,7 @@ public static class StatsPingEndpoints
             .WithName("GetLatestStats")
             .WithTags("Internal")
             .Produces(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound).RequireAuthorization();
 
         return app;
     }

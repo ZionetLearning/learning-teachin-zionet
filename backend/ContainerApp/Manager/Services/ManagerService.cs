@@ -240,19 +240,26 @@ public class ManagerService : IManagerService
         }
     }
 
-    public async Task<bool> CreateUserAsync(UserModel user)
+    public async Task CreateUserAsync(UserModel user)
     {
+        if (user is null)
+        {
+            _logger.LogWarning("Null user received for creation");
+            throw new ArgumentNullException(nameof(user), "User is null");
+        }
+
         try
         {
             _logger.LogInformation("Creating user with email: {Email}", user.Email);
             // Hash the password before storing
             user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
-            return await _accessorClient.CreateUserAsync(user);
+            await _accessorClient.CreateUserAsync(user);
+            _logger.LogInformation("User created successfully!");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error occurred while creating user with email: {Email}", user.Email);
-            return false;
+            throw;
         }
     }
 

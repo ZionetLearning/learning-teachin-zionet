@@ -37,6 +37,38 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
         <label
           class="label-0-2-6"
         >
+          pages.users.firstName
+          <input
+            autocomplete="given-name"
+            data-testid="users-create-first-name"
+            name="firstName"
+            placeholder="John"
+            type="text"
+            value=""
+          />
+          <span
+            class="error-0-2-7"
+          />
+        </label>
+        <label
+          class="label-0-2-6"
+        >
+          pages.users.lastName
+          <input
+            autocomplete="family-name"
+            data-testid="users-create-last-name"
+            name="lastName"
+            placeholder="Doe"
+            type="text"
+            value=""
+          />
+          <span
+            class="error-0-2-7"
+          />
+        </label>
+        <label
+          class="label-0-2-6"
+        >
           pages.users.password
           <input
             autocomplete="new-password"
@@ -90,6 +122,18 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
             >
               alpha@example.com
             </span>
+            <span
+              data-testid="users-first-name"
+              title="Alice"
+            >
+              Alice
+            </span>
+            <span
+              data-testid="users-last-name"
+              title="Anderson"
+            >
+              Anderson
+            </span>
           </div>
           <div
             class="actions-0-2-20"
@@ -125,6 +169,18 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
               title="beta@example.com"
             >
               beta@example.com
+            </span>
+            <span
+              data-testid="users-first-name"
+              title="Bob"
+            >
+              Bob
+            </span>
+            <span
+              data-testid="users-last-name"
+              title="Baker"
+            >
+              Baker
             </span>
           </div>
           <div

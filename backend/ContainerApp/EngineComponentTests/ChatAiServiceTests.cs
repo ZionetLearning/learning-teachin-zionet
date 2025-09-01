@@ -2,7 +2,9 @@
 using System.Text.RegularExpressions;
 using DotQueue;
 using Engine;
+using Engine.Constants;
 using Engine.Models.Chat;
+using Engine.Plugins;
 using Engine.Services;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -50,6 +52,39 @@ public class ChatAiServiceTests
 
     private static JsonElement EmptyHistory() =>
         JsonEl("""{"messages":[]}""");
+    private sealed class SpyClock : IDateTimeProvider
+    {
+        private int _hits;
+        public int Hits => _hits;
+        public DateTimeOffset Fixed { get; }
+
+        public SpyClock(DateTimeOffset fixedTime) => Fixed = fixedTime;
+
+        public DateTimeOffset UtcNow
+        {
+            get
+            {
+                Interlocked.Increment(ref _hits);
+                return Fixed;
+            }
+        }
+    }
+
+    private sealed class TimeInvocationSpy : IFunctionInvocationFilter
+    {
+        private int _count;
+        public int Count => _count;
+
+        public async Task OnFunctionInvocationAsync(FunctionInvocationContext context, Func<FunctionInvocationContext, Task> next)
+        {
+            if (string.Equals(context.Function.Name, PluginNames.CurrentTime, StringComparison.OrdinalIgnoreCase))
+            {
+                Interlocked.Increment(ref _count);
+            }
+
+            await next(context);
+        }
+    }
 
     public ChatAiServiceTests(TestKernelFixture fx)
     {
@@ -137,6 +172,63 @@ public class ChatAiServiceTests
 
         var answerLower = response2?.Answer?.Content.ToLowerInvariant();
         Assert.Matches(new Regex(@"\b42\b|forty[- ]?two"), answerLower);
+    }
+
+    [SkippableFact(DisplayName = "ProcessAsync: time question invokes TimePlugin")]
+    public async Task ProcessAsync_TimePlugin_IsInvoked_OnTimeQuestion()
+    {
+        var fixedUtc = new DateTimeOffset(2025, 05, 01, 12, 34, 56, TimeSpan.Zero);
+        var spyClock = new SpyClock(fixedUtc);
+        var spyFilter = new TimeInvocationSpy();
+
+        var pluginName = typeof(TimePlugin).ToPluginName();
+        try
+        {
+            _fx.Kernel.Plugins.AddFromObject(new TimePlugin(spyClock), pluginName);
+        }
+        catch
+        {
+            //if already added earlier - do not crash
+        }
+
+        _fx.Kernel.FunctionInvocationFilters.Add(spyFilter);
+
+        var localCache = new MemoryCache(new MemoryCacheOptions());
+        var ai = new ChatAiService(
+            _fx.Kernel,
+            NullLogger<ChatAiService>.Instance,
+            localCache,
+            new FakeChatTitleService(),
+            Options.Create(new MemoryCacheEntryOptions { SlidingExpiration = TimeSpan.FromMinutes(30) }),
+            new FakeRetryPolicyProvider());
+
+        var request = new ChatAiServiseRequest
+        {
+            History = EmptyHistory(),
+            UserMessage = "What time is it now?",
+            ChatType = ChatType.Default,
+            UserId = Guid.NewGuid(),
+            RequestId = Guid.NewGuid().ToString("N"),
+            ThreadId = Guid.NewGuid(),
+            TtlSeconds = 120,
+            SentAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+        };
+
+        try
+        {
+            // Act
+            var response = await ai.ChatHandlerAsync(request, CancellationToken.None);
+
+            // Assert
+            Assert.Equal(ChatAnswerStatus.Ok, response.Status);
+            Assert.True(spyFilter.Count > 0, $"Expected plugin function {PluginNames.CurrentTime} to be invoked at least once.");
+            Assert.True(spyClock.Hits > 0, "Expected IDateTimeProvider.UtcNow to be read.");
+
+        }
+        finally
+        {
+            _fx.Kernel.FunctionInvocationFilters.Remove(spyFilter);
+        }
     }
 
     [CollectionDefinition("Kernel collection")]

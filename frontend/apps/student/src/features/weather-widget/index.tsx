@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { WeatherParams } from "@/types";
+import { WeatherParams } from "@student/types";
 import { useGetWeather } from "./api";
 
 import { useStyles } from "./style";

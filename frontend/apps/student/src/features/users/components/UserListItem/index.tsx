@@ -6,13 +6,19 @@ import { toast } from "react-toastify";
 import { useDeleteUserByUserId, useUpdateUserByUserId } from "@student/api";
 import { useStyles } from "./style";
 
+interface UserListItemProps {
+  userId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+}
+
 export const UserListItem = ({
   userId,
   email,
-}: {
-  userId: string;
-  email: string;
-}) => {
+  firstName,
+  lastName,
+}: UserListItemProps) => {
   const { t } = useTranslation();
   const classes = useStyles();
   const { mutate: deleteUser, isPending } = useDeleteUserByUserId(userId);
@@ -21,7 +27,8 @@ export const UserListItem = ({
 
   const [editing, setEditing] = useState(false);
   const [emailValue, setEmailValue] = useState(email);
-  const [passwordValue, setPasswordValue] = useState("");
+  const [firstNameValue, setFirstNameValue] = useState("");
+  const [lastNameValue, setLastNameValue] = useState("");
 
   const handleDelete = () => {
     if (!confirm(t("pages.users.sureDelete", { email }))) return;
@@ -33,14 +40,16 @@ export const UserListItem = ({
 
   const beginEdit = () => {
     setEmailValue(email);
-    setPasswordValue("");
     setEditing(true);
+    setFirstNameValue(firstName);
+    setLastNameValue(lastName);
   };
 
   const cancelEdit = () => {
     setEditing(false);
     setEmailValue(email);
-    setPasswordValue("");
+    setFirstNameValue(firstName);
+    setLastNameValue(lastName);
   };
 
   const saveEdit = () => {
@@ -48,21 +57,29 @@ export const UserListItem = ({
       toast.error(t("pages.users.emailRequired"));
       return;
     }
-    if (!passwordValue.trim()) {
-      toast.error(t("pages.users.passwordRequired"));
+
+    const payload: Record<string, string> = {};
+    if (emailValue.trim() !== email) payload.email = emailValue.trim();
+    if (firstNameValue.trim() && firstNameValue.trim() !== firstName)
+      payload.firstName = firstNameValue.trim();
+    if (lastNameValue.trim() && lastNameValue.trim() !== lastName)
+      payload.lastName = lastNameValue.trim();
+
+    if (Object.keys(payload).length === 0) {
+      toast.info(t("pages.users.noChanges"));
+      setEditing(false);
       return;
     }
-    updateUser(
-      { email: emailValue.trim(), passwordHash: passwordValue },
-      {
-        onSuccess: () => {
-          toast.success(t("pages.users.userUpdated"));
-          setEditing(false);
-        },
-        onError: (e) =>
-          toast.error(e.message || t("pages.users.failedToUpdate")),
+
+    updateUser(payload, {
+      onSuccess: () => {
+        toast.success(t("pages.users.userUpdated"));
+        setEditing(false);
+        setFirstNameValue("");
+        setLastNameValue("");
       },
-    );
+      onError: (e) => toast.error(e.message || t("pages.users.failedToUpdate")),
+    });
   };
 
   const initial = email?.charAt(0)?.toUpperCase() || "?";
@@ -83,19 +100,26 @@ export const UserListItem = ({
             onChange={(e) => setEmailValue(e.target.value)}
             placeholder="email"
             type="email"
-            required
             autoComplete="email"
             data-testid="users-edit-email"
           />
           <input
             className={classes.editInput}
-            value={passwordValue}
-            onChange={(e) => setPasswordValue(e.target.value)}
-            placeholder="new password"
-            type="password"
-            required
-            autoComplete="new-password"
-            data-testid="users-edit-password"
+            value={firstNameValue}
+            onChange={(e) => setFirstNameValue(e.target.value)}
+            placeholder="first name"
+            type="text"
+            autoComplete="given-name"
+            data-testid="users-edit-first-name"
+          />
+          <input
+            className={classes.editInput}
+            value={lastNameValue}
+            onChange={(e) => setLastNameValue(e.target.value)}
+            placeholder="last name"
+            type="text"
+            autoComplete="family-name"
+            data-testid="users-edit-last-name"
           />
           <div className={classes.editActions}>
             <button
@@ -122,6 +146,12 @@ export const UserListItem = ({
           <div className={classes.info}>
             <span title={email} data-testid="users-email">
               {email}
+            </span>
+            <span title={firstName} data-testid="users-first-name">
+              {firstName}
+            </span>
+            <span title={lastName} data-testid="users-last-name">
+              {lastName}
             </span>
           </div>
           <div className={classes.actions}>

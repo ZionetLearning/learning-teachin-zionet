@@ -1,7 +1,7 @@
 import { InfiniteData, UseInfiniteQueryResult } from "@tanstack/react-query";
 import { vi } from "vitest";
 
-import { AnimeResponse } from "@/types";
+import { AnimeResponse } from "@student/types";
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (k: string) => k }),
