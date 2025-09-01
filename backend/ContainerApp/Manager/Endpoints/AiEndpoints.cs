@@ -379,18 +379,18 @@ public static class AiEndpoints
         }
         catch (OperationCanceledException)
         {
-            logger.LogWarning("Speech synthesis operation was canceled by user");
+            logger.LogWarning("Sentence generation operation was canceled by user");
             return Results.StatusCode(StatusCodes.Status499ClientClosedRequest);
         }
         catch (TimeoutException)
         {
-            logger.LogWarning("Speech synthesis operation timed out");
+            logger.LogWarning("Sentence generation operation timed out");
             return Results.Problem("Speech is too long.", statusCode: StatusCodes.Status408RequestTimeout);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error in speech synthesis manager");
-            return Results.Problem("An error occurred during speech synthesis.");
+            logger.LogError(ex, "Error in Sentence generation manager");
+            return Results.Problem("An error occurred during sentence generation.");
         }
     }
 }
