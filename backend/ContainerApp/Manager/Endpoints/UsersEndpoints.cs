@@ -47,33 +47,53 @@ public static class UsersEndpoints
     }
 
     private static async Task<IResult> CreateUserAsync(
-        [FromBody] UserModel user,
+        [FromBody] CreateUser newUser,
         [FromServices] IAccessorClient accessorClient,
         [FromServices] ILogger<UserEndpoint> logger)
     {
-        using var scope = logger.BeginScope("CreateUser {Email}:", user.Email);
+        using var scope = logger.BeginScope("CreateUser:");
 
         try
         {
-            // Hash password before storing
-            user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
-
-            var success = await accessorClient.CreateUserAsync(user);
-            if (!success)
+            // Validate role
+            if (!Enum.TryParse<Role>(newUser.Role, true, out var parsedRole))
             {
-                logger.LogWarning("User creation failed");
-                return Results.Conflict("User already exists.");
+                logger.LogWarning("User creation failed due to invalid role: {RoleInput}", newUser.Role);
+                return Results.BadRequest("Invalid role provided.");
             }
 
+            // Build the user model
+            var user = new UserModel
+            {
+                UserId = newUser.UserId,
+                Email = newUser.Email,
+                FirstName = newUser.FirstName,
+                LastName = newUser.LastName,
+                // Hash password before storing
+                Password = BCrypt.Net.BCrypt.HashPassword(newUser.Password),
+                Role = parsedRole
+            };
+
+            // Try to create user in DB via accessor
+            var success = await accessorClient.CreateUserAsync(user);
+
+            if (!success)
+            {
+                logger.LogWarning("User creation failed: {Email}", user.Email);
+                return Results.Conflict("User could not be created (may already exist or invalid data).");
+            }
+
+            // Prepare the result DTO (never return raw password)
             var result = new UserData
             {
                 UserId = user.UserId,
                 Email = user.Email,
                 FirstName = user.FirstName,
-                LastName = user.LastName
+                LastName = user.LastName,
+                Role = parsedRole
             };
 
-            logger.LogInformation("User created");
+            logger.LogInformation("User {Email} created successfully", user.Email);
             return Results.Created($"/users-manager/user/{user.UserId}", result);
         }
         catch (Exception ex)

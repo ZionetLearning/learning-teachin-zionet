@@ -116,11 +116,11 @@ public class TaskIntegrationTests(
         OutputHelper.WriteLine($"Verified task: ID={fetchedTask.Id}, Name={fetchedTask.Name}");
     }
 
-    [Theory(DisplayName = "GET /tasks-manager/task/{id} - Invalid ID should return 404 Not Found")]
+    [Theory(DisplayName = "GET /tasks-manager/task/{id} - Invalid ID should return 400 Bad Request")]
     [InlineData(-1)]
     public async Task Get_Task_By_Invalid_Id_Should_Return_NotFound(int invalidId)
     {
-        OutputHelper.WriteLine($"Running: Get_Task_By_Invalid_Id_Should_Return_NotFound for ID {invalidId}");
+        OutputHelper.WriteLine($"Running: Get_Task_By_Invalid_Id_Should_Return_BadRequest for ID {invalidId}");
 
         var response = await Client.GetAsync(ApiRoutes.TaskById(invalidId));
         response.ShouldBeBadRequest();
@@ -150,10 +150,10 @@ public class TaskIntegrationTests(
         OutputHelper.WriteLine($"Successfully updated task name to: {updated.Name}");
     }
 
-    [Fact(DisplayName = "PUT /tasks-manager/task/{id}/{name} - Invalid ID should return 404 Not Found")]
+    [Fact(DisplayName = "PUT /tasks-manager/task/{id}/{name} - Invalid ID should return 400 Bad Request")]
     public async Task Put_TaskName_With_Invalid_Id_Should_Return_NotFound()
     {
-        OutputHelper.WriteLine("Running: Put_TaskName_With_Invalid_Id_Should_Return_NotFound");
+        OutputHelper.WriteLine("Running: Put_TaskName_With_Invalid_Id_Should_Return_BadRequest");
 
         var response = await UpdateTaskNameAsync(-1, "DoesNotMatter");
         response.ShouldBeBadRequest();
@@ -175,10 +175,10 @@ public class TaskIntegrationTests(
         OutputHelper.WriteLine("Verified task deletion");
     }
 
-    [Fact(DisplayName = "DELETE /tasks-manager/task/{id} - With invalid ID should return 404")]
+    [Fact(DisplayName = "DELETE /tasks-manager/task/{id} - With invalid ID should return 400 Bad Request")]
     public async Task Delete_Task_With_Invalid_Id_Should_Return_NotFound()
     {
-        OutputHelper.WriteLine("Running: Delete_Task_With_Invalid_Id_Should_Return_NotFound");
+        OutputHelper.WriteLine("Running: Delete_Task_With_Invalid_Id_Should_Return_BadRequest");
 
         var response = await Client.DeleteAsync(ApiRoutes.TaskById(-1));
         response.ShouldBeBadRequest();

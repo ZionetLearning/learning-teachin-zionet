@@ -11,7 +11,9 @@
         "loggingIn": "Logging in…",
         "firstName": "First Name",
         "lastName": "Last Name",
-        "creatingAccount": "Creating Account..."
+        "creatingAccount": "Creating Account...",
+        "teacherDashboard": "Teacher Dashboard",
+        "studentDashboard": "Student Dashboard"
       },
       "home": {
         "title": "Welcome to our internal playground project",

@@ -15,6 +15,11 @@ cronjobs:
   statsPing:
     enabled: false
 
+  refreshSessionsCleanup:
+    enabled: true
+    schedule: "30 2 * * *"   # nightly at 02:30
+
+
 manager:
   image:
     tag: "1.0.0"                  # pin a version

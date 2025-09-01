@@ -1,20 +1,35 @@
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
+import { BrowserRouter, Route, Routes, Outlet } from "react-router-dom";
+
+import { Box } from "@mui/material";
+
+import { AuthorizationPage, RequireAuth } from "@authorization";
 import "./App.css";
+import { HomePage } from "./pages";
+
+const ProtectedLayout = () => {
+  return (
+    <RequireAuth>
+      <div data-testid="protected-layout">
+        <Box sx={{ display: "flex", height: "100vh" }}>
+          <Box sx={{ flexGrow: 1, position: "relative", overflow: "hidden" }}>
+            <Outlet />
+          </Box>
+        </Box>
+      </div>
+    </RequireAuth>
+  );
+};
 
 function App() {
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React - Teacher</h1>
-    </>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/signin" element={<AuthorizationPage />} />
+        <Route element={<ProtectedLayout />}>
+          <Route path="/" element={<HomePage />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
 

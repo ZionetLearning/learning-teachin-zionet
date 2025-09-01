@@ -5,7 +5,11 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'backend/**'
   pull_request:
+    paths:
+      - 'backend/**'
 
 jobs:
   deploy-under-test:
@@ -40,7 +44,7 @@ jobs:
   #     id-token: write
   #     contents: read
   #   with:
-  #     mode: 'drop'
+  #     mode: 'truncate'
   #     pg_database: 'appdb-test'
   #     dry_run: 'false'
   #     verify_ssl: 'true'

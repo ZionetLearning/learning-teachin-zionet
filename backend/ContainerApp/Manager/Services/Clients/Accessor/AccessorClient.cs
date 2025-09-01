@@ -42,6 +42,25 @@ public class AccessorClient(
             throw;
         }
     }
+    public async Task<int> CleanupRefreshSessionsAsync(CancellationToken ct = default)
+    {
+        _logger.LogInformation("Inside: {Method} in {Class}", nameof(CleanupRefreshSessionsAsync), nameof(AccessorClient));
+        try
+        {
+            var resp = await _daprClient.InvokeMethodAsync<CleanupResponse>(
+                HttpMethod.Post,
+                AppIds.Accessor,
+                "auth-accessor/refresh-sessions/internal/cleanup",
+                ct);
+
+            return resp?.Deleted ?? 0;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to invoke cleanup on Accessor");
+            throw;
+        }
+    }
 
     public async Task<bool> UpdateTaskName(int id, string newTaskName)
     {
@@ -184,6 +203,7 @@ public class AccessorClient(
             throw;
         }
     }
+
     public async Task<UserData?> GetUserAsync(Guid userId)
     {
         try
@@ -202,14 +222,30 @@ public class AccessorClient(
     {
         try
         {
+            _logger.LogInformation("Creating user with email: {Email}", user.Email);
+
+            // Hash the password before storing
+            user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
+
             await _daprClient.InvokeMethodAsync(HttpMethod.Post, "accessor", "users-accessor", user);
 
+            _logger.LogInformation("User {Email} created successfully", user.Email);
             return true;
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.Conflict)
+        {
+            _logger.LogWarning("Conflict: User already exists: {Email}", user.Email);
+            return false; // conflict -> user not created
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.BadRequest)
+        {
+            _logger.LogWarning("Bad request when creating user: {Email}", user.Email);
+            return false; // bad request -> invalid data
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating user {Email}", user.Email);
-            return false;
+            return false; // unexpected error
         }
     }
 
@@ -283,19 +319,19 @@ public class AccessorClient(
         }
     }
 
-    public async Task<Guid?> LoginUserAsync(LoginRequest loginRequest, CancellationToken ct = default)
+    public async Task<AuthenticatedUser?> LoginUserAsync(LoginRequest loginRequest, CancellationToken ct = default)
     {
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(LoginUserAsync), nameof(AccessorClient));
         try
         {
-            var userId = await _daprClient.InvokeMethodAsync<LoginRequest, Guid?>(
+            var response = await _daprClient.InvokeMethodAsync<LoginRequest, AuthenticatedUser?>(
                 HttpMethod.Post,
                 AppIds.Accessor,
                 "auth-accessor/login",
                 loginRequest,
                 ct
             );
-            return userId;
+            return response;
         }
         catch (InvocationException ex) when (
             ex.Response?.StatusCode == HttpStatusCode.NoContent ||
