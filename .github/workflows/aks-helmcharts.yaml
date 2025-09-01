@@ -101,9 +101,12 @@ jobs:
 
 
           # Determine if infrastructure steps should be skipped
-          # Skip for: manual dispatch (no skip_infra_steps input) OR when skip_infra_steps=true
+          # Skip for: push events (auto PR merge) OR manual dispatch (no skip_infra_steps input) OR when skip_infra_steps=true
           # Run for: CI/CD workflows (when skip_infra_steps is explicitly false)
-          if [ "${{ inputs.skip_infra_steps }}" = "" ]; then
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            echo "Push event detected, skipping infrastructure"
+            echo "skip_infra_steps=true" >> $GITHUB_OUTPUT
+          elif [ "${{ inputs.skip_infra_steps }}" = "" ]; then
             echo "Manual dispatch - no skip_infra_steps input, skipping infrastructure"
             echo "skip_infra_steps=true" >> $GITHUB_OUTPUT
           elif [ "${{ inputs.skip_infra_steps }}" = "true" ]; then
@@ -140,7 +143,6 @@ jobs:
 
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
-
 
       - name: Create namespace
         if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
@@ -224,6 +226,7 @@ jobs:
             
 
       - name: Install External Secrets Operator (with CRDs)
+        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
         run: |
           helm repo add external-secrets https://charts.external-secrets.io
           helm repo update
@@ -234,6 +237,7 @@ jobs:
             --wait --timeout 180s
 
       - name: Wait for External Secrets API
+        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
         run: |
           echo "⏳ Waiting for ExternalSecrets API..."
           for i in {1..30}; do

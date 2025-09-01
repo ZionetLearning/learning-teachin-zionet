@@ -14,7 +14,7 @@ public interface IManagerService
     Task SendUserNotificationAsync(string userId, UserNotification notification);
     Task SendUserEventAsync<T>(string userId, UserEvent<T> userEvent);
     Task<UserData?> GetUserAsync(Guid userId);
-    Task<bool> CreateUserAsync(UserModel user);
+    Task CreateUserAsync(UserModel user);
     Task<bool> UpdateUserAsync(UpdateUserModel user, Guid userId);
     Task<bool> DeleteUserAsync(Guid userId);
     Task<IEnumerable<UserData>> GetAllUsersAsync();
