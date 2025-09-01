@@ -45,7 +45,6 @@ export interface AppSidebarProps {
 export const AppSidebar = ({
   items,
   languages,
-  toggleLabel = 'Toggle sidebar',
   defaultCollapsed = false,
   onCollapsedChange,
   dir = 'ltr',
@@ -95,7 +94,8 @@ export const AppSidebar = ({
       </MenuItem>
     );
   };
-
+  const toggleItem = items.find(i => i.testId === 'toggle-sidebar');
+  const navItems = items.filter(i => i.testId !== 'toggle-sidebar');
   return (
     <Sidebar
       data-testid="app-sidebar"
@@ -128,7 +128,15 @@ export const AppSidebar = ({
           label: { textAlign: dir === 'rtl' ? 'right' : 'left' },
         }}
       >
-        <MenuItem onClick={toggle}>{!collapsed && toggleLabel}</MenuItem>
+        {toggleItem && (
+          <MenuItem
+            icon={toggleItem.icon}
+            onClick={toggle}
+            data-testid={toggleItem.testId}
+          >
+            {!collapsed && toggleItem?.label}
+          </MenuItem>
+        )}
 
         {languages?.items?.length ? (
           <SubMenu label={languages.label} icon={languages.icon} data-testid="sidebar-languages">
@@ -146,7 +154,7 @@ export const AppSidebar = ({
           </SubMenu>
         ) : null}
 
-        {items?.map((item) => renderItem(item))}
+        {navItems.map(renderItem)}
       </Menu>
 
       {logoutItem && (

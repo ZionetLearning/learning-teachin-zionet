@@ -1,7 +1,7 @@
-import * as React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AppSidebar, SidebarLink } from '@ui-components';
+import MenuIcon from "@mui/icons-material/Menu";
 import TranslateIcon from '@mui/icons-material/Translate';
 import ChatIcon from '@mui/icons-material/Chat';
 import FaceIcon from '@mui/icons-material/Face';
@@ -31,6 +31,7 @@ export const SidebarMenu = () => {
   const handleNavigate = (path: string) => navigate(path);
 
   const items: SidebarLink[] = [
+    { label: t('sidebar.toggleSidebar'), icon: <MenuIcon />, testId: 'toggle-sidebar' },
     { label: t('sidebar.home'), icon: <HomeIcon />, path: '/', testId: 'sidebar-home' },
     { label: t('sidebar.signalR'), icon: <ConnectWithoutContactIcon />, path: '/signalr', testId: 'signalR' },
     { label: t('sidebar.chatAvatar'), icon: <ThreePIcon />, path: '/chat-with-avatar', testId: 'sidebar-chat-avatar' },
@@ -82,7 +83,7 @@ export const SidebarMenu = () => {
           {
             code: 'he',
             label: t('sidebar.he'),
-            icon: <ILFlag />,
+            icon: <ILFlag style={{ width: 22, height: 16 }} />,
             active: i18n.language === 'he',
             onClick: () => i18n.changeLanguage('he'),
             testId: 'sidebar-lang-he',
@@ -90,7 +91,7 @@ export const SidebarMenu = () => {
           {
             code: 'en',
             label: t('sidebar.en'),
-            icon: <GBFlag />,
+            icon: <GBFlag style={{ width: 22, height: 16 }} />,
             active: i18n.language === 'en',
             onClick: () => i18n.changeLanguage('en'),
             testId: 'sidebar-lang-en',
