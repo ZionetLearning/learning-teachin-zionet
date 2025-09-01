@@ -4,6 +4,7 @@ using Manager.Helpers;
 using Manager.Models.Auth;
 using Manager.Models.Auth.Erros;
 using Manager.Services;
+using Manager.Services.Clients.Accessor;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Endpoints;
@@ -27,6 +28,10 @@ public static class AuthEndpoints
         authGroup.MapGet("/protected", TestAuthAsync)
             .RequireAuthorization()
             .WithName("Protected");
+
+        var maintenanceGroup = authGroup.MapGroup("/maintenance").WithTags("Maintenance");
+        maintenanceGroup.MapPost("/refresh-sessions/cleanup", RefreshSessionsCleanupAsync)
+            .WithName("Auth_RefreshSessionsCleanup");
 
         #endregion
     }
@@ -191,6 +196,25 @@ public static class AuthEndpoints
                 logger.LogError(ex, "Error during logout");
                 return Task.FromResult(Results.Problem("Auth test failed!"));
             }
+        }
+    }
+    private static async Task<IResult> RefreshSessionsCleanupAsync(
+    [FromServices] IAccessorClient accessorClient,
+    [FromServices] ILoggerFactory loggerFactory,
+    CancellationToken ct)
+    {
+        var logger = loggerFactory.CreateLogger("Maintenance.RefreshSessionsCleanup");
+
+        try
+        {
+            var deleted = await accessorClient.CleanupRefreshSessionsAsync(ct);
+            logger.LogInformation("Cleanup done; deleted={Deleted}", deleted);
+            return Results.Ok(new { deleted });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Cleanup failed");
+            return Results.Problem("Cleanup failed");
         }
     }
 

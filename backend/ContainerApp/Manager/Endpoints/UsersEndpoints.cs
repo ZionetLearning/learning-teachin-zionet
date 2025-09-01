@@ -46,13 +46,29 @@ public static class UsersEndpoints
     }
 
     private static async Task<IResult> CreateUserAsync(
-        [FromBody] UserModel user,
+        [FromBody] CreateUser newUser,
         [FromServices] IManagerService managerService,
         [FromServices] ILogger<UserEndpoint> logger)
     {
-        using var scope = logger.BeginScope("CreateUser {Email}:", user.Email);
+        using var scope = logger.BeginScope("CreateUser:");
         try
         {
+            if (!Enum.TryParse<Role>(newUser.Role, true, out var parsedRole))
+            {
+
+                return Results.BadRequest("Invalid role provided.");
+            }
+
+            var user = new UserModel
+            {
+                UserId = newUser.UserId,
+                Email = newUser.Email,
+                FirstName = newUser.FirstName,
+                LastName = newUser.LastName,
+                Password = newUser.Password,
+                Role = parsedRole
+            };
+
             await managerService.CreateUserAsync(user);
 
             var result = new UserData
@@ -61,7 +77,7 @@ public static class UsersEndpoints
                 Email = user.Email,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
-                Role = user.Role,
+                Role = parsedRole,
             };
 
             logger.LogInformation("User created");

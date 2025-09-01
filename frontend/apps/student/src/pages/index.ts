@@ -9,7 +9,6 @@ export * from "./HomePages";
 export * from "./TypingPracticePage";
 export * from "./SpeakingPracticePage";
 export * from "./WordOrderGamePage";
-export * from "./AuthorizationPage";
 export * from "./EarthquakeMapPage";
 export * from "./WeatherWidgetPage";
 export * from "./AnimeExplorerPage";

@@ -11,7 +11,7 @@ namespace IntegrationTests.Fixtures;
 
 public class TestUserFixture : IAsyncLifetime
 {
-    public UserModel TestUser { get; private set; } = null!;
+    public CreateUser TestUser { get; private set; } = null!;
     private readonly HttpClient _client;
 
     public TestUserFixture(HttpTestFixture httpFixture)
@@ -24,13 +24,21 @@ public class TestUserFixture : IAsyncLifetime
         var email = $"test-{Guid.NewGuid():N}@example.com";
         var password = $"Test-{Guid.NewGuid():N}";
 
-        TestUser = new UserModel
+
+        // Randomly assign a role for the test user
+        var roles = new[] { "Admin", "Teacher", "Student" };
+        var role = roles[new Random().Next(roles.Length)];
+
+
+
+        TestUser = new CreateUser
         {
             UserId = Guid.NewGuid(),
             Email = email,
             Password = password,
             FirstName = "Test-User-FirstName",
             LastName = "Test-User-LastName",
+            Role = role
         };
 
         // Create the test user in DB
