@@ -45,11 +45,11 @@ jobs:
 
           # JSON array like ["Engine","SomeOtherService"]
           if (( ${#services[@]} )); then
-            json=$(printf '%s\n' "${services[@]}" | jq -R . | jq -s .)
+            json=$(printf '%s\n' "${services[@]}" | jq -R . | jq -c -s .)
           else
             json='[]'
           fi
-
+      
           echo "services=${json}" >> "$GITHUB_OUTPUT"
           echo "Matrix: ${json}"
 
