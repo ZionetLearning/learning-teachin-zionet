@@ -10,6 +10,10 @@ on:
       - 'backend/ContainerApp/Directory.Build.props'
   workflow_dispatch:
 
+permissions:
+  contents: read
+  actions: write
+
 concurrency:
   group: run-component-tests-${{ github.ref }}
   cancel-in-progress: true
