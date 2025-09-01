@@ -62,28 +62,26 @@ public static class UsersEndpoints
                 return Results.BadRequest("Invalid role provided.");
             }
 
-            // Build the user model
+            // Build the user model (hash password here!)
             var user = new UserModel
             {
                 UserId = newUser.UserId,
                 Email = newUser.Email,
                 FirstName = newUser.FirstName,
                 LastName = newUser.LastName,
-                // Hash password before storing
                 Password = BCrypt.Net.BCrypt.HashPassword(newUser.Password),
                 Role = parsedRole
             };
 
-            // Try to create user in DB via accessor
+            // Send to accessor
             var success = await accessorClient.CreateUserAsync(user);
-
             if (!success)
             {
                 logger.LogWarning("User creation failed: {Email}", user.Email);
                 return Results.Conflict("User could not be created (may already exist or invalid data).");
             }
 
-            // Prepare the result DTO (never return raw password)
+            // DTO for response (never return raw password)
             var result = new UserData
             {
                 UserId = user.UserId,
