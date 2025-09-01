@@ -34,10 +34,14 @@ public class SentencesService : ISentencesService
 
         var result = await _genKernel.InvokeAsync(func, args, ct);
         var json = result.GetValue<string>();
-        var parsed = JsonSerializer.Deserialize<SentenceResponse>(json!);
-        if (parsed != null)
+        if (json != null)
         {
-            return parsed;
+            var parsed = JsonSerializer.Deserialize<SentenceResponse>(json);
+
+            if (parsed != null)
+            {
+                return parsed;
+            }
         }
         else
         {
