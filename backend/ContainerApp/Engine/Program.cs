@@ -113,3 +113,5 @@ app.MapSubscribeHandler();
 app.MapAiEndpoints();
 
 app.Run();
+
+//changes so it will run on pr
