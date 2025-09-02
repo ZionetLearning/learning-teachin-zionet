@@ -1,11 +1,15 @@
+import { ReactNode } from "react";
 import { Outlet } from "react-router-dom";
 import { Box } from "@mui/material";
-import { SidebarMenu } from "../";
 
-export const SidebarMenuLayout = () => {
+export interface SidebarMenuLayoutProps {
+  sidebarMenu: ReactNode;
+}
+
+export const SidebarMenuLayout = ({ sidebarMenu }: SidebarMenuLayoutProps) => {
   return (
     <Box sx={{ display: "flex", height: "100vh" }}>
-      <SidebarMenu />
+      {sidebarMenu}
       <Box sx={{ flexGrow: 1, position: "relative", overflow: "hidden" }}>
         <Outlet />
       </Box>
