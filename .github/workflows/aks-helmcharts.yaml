@@ -84,12 +84,6 @@ jobs:
           echo "VALUES_FILE=devops/kubernetes/charts/values.dev.yaml" >> $GITHUB_ENV
           echo "ACR_NAME=teachindevacr" >> $GITHUB_ENV
           echo "ACR_LOGIN_SERVER=teachindevacr.azurecr.io" >> $GITHUB_ENV
-          echo "OPENAI_KEY=${{ secrets.AZURE_OPENAI_API_KEY }}" >> $GITHUB_ENV
-          echo "AZURE_SPEECH_KEY=${{ secrets.AZURE_SPEECH_KEY }}" >> $GITHUB_ENV
-          echo "MANAGER_JWT_SECRET=${{ secrets.MANAGER_JWT_SECRET }}" >> $GITHUB_ENV
-          echo "MANAGER_JWT_ISSUER=${{ secrets.MANAGER_JWT_ISSUER }}" >> $GITHUB_ENV
-          echo "MANAGER_JWT_AUDIENCE=${{ secrets.MANAGER_JWT_AUDIENCE }}" >> $GITHUB_ENV
-          echo "MANAGER_JWT_REFRESH_TOKEN_HASH_KEY=${{ secrets.MANAGER_JWT_REFRESH_TOKEN_HASH_KEY }}" >> $GITHUB_ENV
 
           # Shared AKS
           echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
@@ -101,9 +95,12 @@ jobs:
 
 
           # Determine if infrastructure steps should be skipped
-          # Skip for: manual dispatch (no skip_infra_steps input) OR when skip_infra_steps=true
+          # Skip for: push events (auto PR merge) OR manual dispatch (no skip_infra_steps input) OR when skip_infra_steps=true
           # Run for: CI/CD workflows (when skip_infra_steps is explicitly false)
-          if [ "${{ inputs.skip_infra_steps }}" = "" ]; then
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            echo "Push event detected, skipping infrastructure"
+            echo "skip_infra_steps=true" >> $GITHUB_OUTPUT
+          elif [ "${{ inputs.skip_infra_steps }}" = "" ]; then
             echo "Manual dispatch - no skip_infra_steps input, skipping infrastructure"
             echo "skip_infra_steps=true" >> $GITHUB_OUTPUT
           elif [ "${{ inputs.skip_infra_steps }}" = "true" ]; then
@@ -140,7 +137,6 @@ jobs:
 
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
-
 
       - name: Create namespace
         if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
@@ -224,6 +220,7 @@ jobs:
             
 
       - name: Install External Secrets Operator (with CRDs)
+        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
         run: |
           helm repo add external-secrets https://charts.external-secrets.io
           helm repo update
@@ -234,6 +231,7 @@ jobs:
             --wait --timeout 180s
 
       - name: Wait for External Secrets API
+        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
         run: |
           echo "⏳ Waiting for ExternalSecrets API..."
           for i in {1..30}; do
@@ -263,12 +261,6 @@ jobs:
             --set global.environment="$IMAGE_TAG" \
             --set global.keyvault.clientId="$KEYVAULT_CLIENT_ID" \
             --set global.keyvault.tenantId="$KEYVAULT_TENANT_ID" \
-            --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" \
-            --set-string engine.env.AzureSpeech__SubscriptionKey="$AZURE_SPEECH_KEY" \
-            --set-string manager.env.Jwt__Secret="$MANAGER_JWT_SECRET" \
-            --set-string manager.env.Jwt__Issuer="$MANAGER_JWT_ISSUER" \
-            --set-string manager.env.Jwt__Audience="$MANAGER_JWT_AUDIENCE" \
-            --set-string manager.env.Jwt__RefreshTokenHashKey="$MANAGER_JWT_REFRESH_TOKEN_HASH_KEY" \
             --set dapr.installComponents=false \
           | grep -n '^kind: Namespace' && { echo "Namespace still rendered"; exit 1; } || echo "OK: no Namespace in chart"
 
@@ -290,12 +282,6 @@ jobs:
             --set global.environment="$IMAGE_TAG" \
             --set global.keyvault.clientId="$KEYVAULT_CLIENT_ID" \
             --set global.keyvault.tenantId="$KEYVAULT_TENANT_ID" \
-            --set-string engine.env.AzureOpenAI__ApiKey="$OPENAI_KEY" \
-            --set-string engine.env.AzureSpeech__SubscriptionKey="$AZURE_SPEECH_KEY" \
-            --set-string manager.env.Jwt__Secret="$MANAGER_JWT_SECRET" \
-            --set-string manager.env.Jwt__Issuer="$MANAGER_JWT_ISSUER" \
-            --set-string manager.env.Jwt__Audience="$MANAGER_JWT_AUDIENCE" \
-            --set-string manager.env.Jwt__RefreshTokenHashKey="$MANAGER_JWT_REFRESH_TOKEN_HASH_KEY" \
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false
 

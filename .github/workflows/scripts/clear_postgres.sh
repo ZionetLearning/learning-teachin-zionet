@@ -54,7 +54,7 @@ fi
 
 # Build the generator query (not yet the DDL, but the SELECT that produces DDL).
 FILTER="WHERE schemaname NOT IN ('pg_catalog','information_schema')"
-KEEP_LIST="'schema_migrations','flyway_schema_history'"
+KEEP_LIST="'__EFMigrationsHistory','schema_migrations','flyway_schema_history'"
 SQL="$ACTION_TEMPLATE FROM pg_tables $FILTER AND tablename NOT IN ($KEEP_LIST);"
 
 # psql -At -c:
