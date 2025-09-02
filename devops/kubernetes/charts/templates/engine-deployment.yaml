@@ -48,13 +48,19 @@ spec:
             - name: AzureOpenAI__Endpoint
               value: "{{ .Values.engine.env.AzureOpenAI__Endpoint }}"
             - name: AzureOpenAI__ApiKey
-              value: "{{ .Values.engine.env.AzureOpenAI__ApiKey }}"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.engine.secrets.app.name }}
+                  key: {{ .Values.engine.secrets.app.keys.openaiApiKey }}
             - name: AzureOpenAI__DeploymentName
               value: "{{ .Values.engine.env.AzureOpenAI__DeploymentName }}"
             - name: AzureOpenAI__ModelId
               value: "{{ .Values.engine.env.AzureOpenAI__ModelId }}"
             - name: AzureSpeech__SubscriptionKey
-              value: "{{ .Values.engine.env.AzureSpeech__SubscriptionKey }}"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.engine.secrets.app.name }}
+                  key: {{ .Values.engine.secrets.app.keys.speechKey }}
             - name: AzureSpeech__Region
               value: "{{ .Values.engine.env.AzureSpeech__Region }}"
             - name: AzureSpeech__DefaultVoice

@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Net;
 using System.Text;
 using System.Threading.RateLimiting;
@@ -5,6 +6,7 @@ using Azure.Messaging.ServiceBus;
 using DotQueue;
 using Manager.Constants;
 using Manager.Endpoints;
+using Microsoft.AspNetCore.ResponseCompression;
 using Manager.Hubs;
 using Manager.Models;
 using Manager.Models.Auth;
@@ -40,6 +42,16 @@ builder.Services.Configure<CorsSettings>(
 
 var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>()!;
 var key = Encoding.UTF8.GetBytes(jwtSettings.Secret);
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<BrotliCompressionProvider>();
+    options.Providers.Add<GzipCompressionProvider>();
+    options.MimeTypes = CompressionDefaults.CompressedMimeTypes;
+});
+
+builder.Services.Configure<BrotliCompressionProviderOptions>(o => o.Level = CompressionLevel.Fastest);
+builder.Services.Configure<GzipCompressionProviderOptions>(o => o.Level = CompressionLevel.Fastest);
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -168,7 +180,7 @@ var app = builder.Build();
 var forwardedHeaderOptions = app.Services.GetRequiredService<IOptions<ForwardedHeadersOptions>>().Value;
 app.UseForwardedHeaders(forwardedHeaderOptions);
 app.UseCors("Frontend");
-
+app.UseResponseCompression();
 app.UseCloudEvents();
 app.UseRateLimiter();
 app.UseAuthentication();

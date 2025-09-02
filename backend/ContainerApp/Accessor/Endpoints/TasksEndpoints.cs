@@ -1,5 +1,6 @@
 ﻿using Accessor.Models;
 using Accessor.Services;
+using Accessor.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Accessor.Endpoints;
@@ -50,18 +51,31 @@ public static class TasksEndpoints
         CancellationToken ct)
     {
         using var scope = logger.BeginScope("Method: {Method}, TaskId: {TaskId}", nameof(CreateTaskAsync), task.Id);
+
         try
         {
             await accessorService.CreateTaskAsync(task);
-            logger.LogInformation("Task saved successfully.");
-            return Results.Ok($"Task {task.Id} Saved");
+            return Results.Created($"/api/tasks/{task.Id}", task);
+        }
+        catch (ConflictException ex)
+        {
+            return Results.Conflict(new { error = ex.Message }); // 409
+        }
+        catch (NonRetryableException ex)
+        {
+            return Results.UnprocessableEntity(new { error = ex.Message }); // 422
+        }
+        catch (RetryableException ex)
+        {
+            return Results.Problem(detail: ex.Message, statusCode: StatusCodes.Status503ServiceUnavailable); // 503
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to save task.");
-            return Results.Problem("An error occurred while saving the task.");
+            logger.LogError(ex, "Unexpected error creating Task {TaskId}", task.Id);
+            return Results.Problem("An unexpected error occurred while saving the task."); // 500
         }
     }
+
     public static async Task<IResult> UpdateTaskNameAsync(
     [FromBody] UpdateTaskName request,
     [FromServices] IAccessorService accessorService,
