@@ -51,7 +51,6 @@ public class ManagerQueueHandler : IQueueHandler<Message>
             var response = message.Payload.Deserialize<AiResponseModel>();
             if (response is null)
             {
-                _logger.LogError("Payload deserialization returned null for AiResponseModel.");
                 throw new NonRetryableException("Payload deserialization returned null for AiResponseModel.");
             }
 
