@@ -21,7 +21,9 @@ public static class CookieHelper
         response.Cookies.Append(AuthSettings.CsrfTokenCookieName, csrfToken, new CookieOptions
         {
             HttpOnly = false, // Must be accessible to JS
-            Secure = true,
+
+            // Notice!! for now its sent over http but in prodeuxtion need to change to https !!! 
+            Secure = false,
             // In the future when have domain or frontend, consider using SameSiteMode.Lax for better CSRF protection
             SameSite = SameSiteMode.None,
             Path = AuthSettings.CookiePath,
