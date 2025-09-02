@@ -25,7 +25,7 @@ public static class CookieHelper
             // Notice!! for now its sent over http but in prodeuxtion need to change to https !!! 
             Secure = false,
             // In the future when have domain or frontend, consider using SameSiteMode.Lax for better CSRF protection
-            SameSite = SameSiteMode.None,
+            SameSite = SameSiteMode.Lax,
             Path = AuthSettings.CookiePath,
             Expires = DateTimeOffset.UtcNow.AddMinutes(AuthSettings.CsrfTokenExpiryMinutes) // Short-lived, 30 minutes
         });
