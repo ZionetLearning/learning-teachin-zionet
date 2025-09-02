@@ -12,4 +12,6 @@ output "primary_access_key" {
   sensitive = true
 }
 
-
+output "id" {
+ value = azurerm_redis_cache.this[0].id
+}
