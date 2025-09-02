@@ -1,35 +1,57 @@
 # ----------------- Base Runtime -----------------
+# This is the slim ASP.NET runtime image (no SDK, just enough to run).
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+
+# The application will live in /app inside the container
 WORKDIR /app
+
+# Expose the port your service listens on (Accessor → 5003)
 EXPOSE 5003
 
-# Install debugger dependencies
-RUN apt-get update && apt-get install -y \
-    curl \
-    unzip \
-    && rm -rf /var/lib/apt/lists/*
+# Install dependencies required for debugging (vsdbg)
+RUN apt-get update && apt-get install -y curl unzip && rm -rf /var/lib/apt/lists/*
 
-# Install vsdbg (Visual Studio Debugger)
+# Install Visual Studio Debugger (vsdbg) into /vsdbg
 RUN curl -sSL https://aka.ms/getvsdbgsh | bash /dev/stdin -v latest -l /vsdbg
 
+
 # ----------------- Build Stage -----------------
+# Use full .NET SDK image so we can restore, build, and publish.
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+
+# IMPORTANT: Change working directory to /src/Accessor instead of /src
+# This ensures PDBs reference /src/Accessor/... which matches launch.json mapping
 WORKDIR /src
 
-COPY *.csproj ./
+# Copy project file first (better Docker cache for restore)
+COPY *.csproj ./  
 RUN dotnet restore
 
-COPY . ./
-# Build in Debug configuration with debugging symbols
-RUN dotnet publish -c Debug -o /app/publish
+# Copy the rest of the source files
+COPY . ./  
+
+# Publish in Debug mode with portable PDBs
+# -c Debug → build in Debug configuration
+# DebugType=portable → ensures PDBs are portable (works cross-platform)
+# DebugSymbols=true → makes sure PDBs are included
+# EmbedAllSources=false → keep source separate (don’t embed into PDBs)
+RUN dotnet publish -c Debug -o /app/publish \
+    /p:DebugType=portable /p:DebugSymbols=true /p:EmbedAllSources=false
+
 
 # ----------------- Final Image -----------------
+# Build the final runtime image
 FROM base AS final
+
+# Application working directory
 WORKDIR /app
+
+# Copy published output (DLL + PDBs) from build stage
 COPY --from=build /app/publish .
 
-# Set environment for debugging
+# Environment variables useful for debugging
 ENV DOTNET_USE_POLLING_FILE_WATCHER=true
 ENV ASPNETCORE_LOGGING__CONSOLE__DISABLECOLORS=true
 
+# Run the service
 ENTRYPOINT ["dotnet", "Accessor.dll"]

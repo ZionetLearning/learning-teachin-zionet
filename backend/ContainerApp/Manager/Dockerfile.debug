@@ -1,30 +1,55 @@
 # ----------------- Base Runtime -----------------
-    FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
-    WORKDIR /app
-    EXPOSE 5001
-    
-    # Install debugger
-    RUN apt-get update && apt-get install -y curl unzip && rm -rf /var/lib/apt/lists/*
-    RUN curl -sSL https://aka.ms/getvsdbgsh | bash /dev/stdin -v latest -l /vsdbg
-    
-    # ----------------- Build Stage -----------------
-    FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
-    WORKDIR /src
-    
-    # (Adjust these two COPY lines to your project layout)
-    COPY *.csproj ./
-    RUN dotnet restore
-    
-    COPY . ./
-    # ⬇️ Force portable PDBs to be published
-    RUN dotnet publish -c Debug -o /app/publish \
-        /p:DebugType=portable /p:DebugSymbols=true /p:EmbedAllSources=false
-    
-    # ----------------- Final Image -----------------
-    FROM base AS final
-    WORKDIR /app
-    COPY --from=build /app/publish .
-    ENV DOTNET_USE_POLLING_FILE_WATCHER=true
-    ENV ASPNETCORE_LOGGING__CONSOLE__DISABLECOLORS=true
-    ENTRYPOINT ["dotnet", "Manager.dll"]
-    
+# This image is the "runtime only" environment (no SDK, just enough to run).
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+
+# Where the app will live inside the container
+WORKDIR /app
+
+# Expose the port Kestrel will listen on
+EXPOSE 5001
+
+# Install dependencies required for the debugger (vsdbg)
+RUN apt-get update && apt-get install -y curl unzip && rm -rf /var/lib/apt/lists/*
+RUN curl -sSL https://aka.ms/getvsdbgsh | bash /dev/stdin -v latest -l /vsdbg
+
+
+# ----------------- Build Stage -----------------
+# Use the full SDK image (so we can compile and restore NuGet packages).
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+
+# IMPORTANT: Set working directory to /src/Manager instead of /src.
+# This way PDBs will contain /src/Manager/... instead of just /src/...
+WORKDIR /src
+
+# Copy only the .csproj first (better Docker build cache for restore)
+COPY *.csproj ./   
+RUN dotnet restore
+
+# Copy the rest of the project files
+COPY . ./
+
+# Publish the app in Debug mode, including PDBs (debugging symbols).
+# -c Debug -> build with Debug config
+# DebugType=portable -> PDBs are portable (works cross-platform)
+# DebugSymbols=true -> ensures PDBs are included
+# EmbedAllSources=false -> don’t embed sources inside PDB (keeps them separate)
+RUN dotnet publish -c Debug -o /app/publish \
+    /p:DebugType=portable /p:DebugSymbols=true /p:EmbedAllSources=false
+
+
+# ----------------- Final Image -----------------
+# Start again from the slim runtime base (keeps image smaller).
+FROM base AS final
+
+# Set working directory for runtime container
+WORKDIR /app
+
+# Copy the published output (DLL + PDBs) from the build stage
+COPY --from=build /app/publish .
+
+# Set environment variables useful for debugging
+ENV DOTNET_USE_POLLING_FILE_WATCHER=true
+ENV ASPNETCORE_LOGGING__CONSOLE__DISABLECOLORS=true
+
+# The entrypoint to run the app
+ENTRYPOINT ["dotnet", "Manager.dll"]

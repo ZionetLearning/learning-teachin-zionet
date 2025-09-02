@@ -1,35 +1,53 @@
 # ----------------- Base Runtime -----------------
+# Lightweight ASP.NET runtime image (no SDK; just enough to run the app)
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+
+# App runs from /app inside the container
 WORKDIR /app
+
+# ApiGateway listens on 5280 (port mapping handled by docker-compose)
 EXPOSE 5280
 
-# Install debugger dependencies
-RUN apt-get update && apt-get install -y \
-    curl \
-    unzip \
-    && rm -rf /var/lib/apt/lists/*
+# Install dependencies needed for the Visual Studio Debugger (vsdbg)
+RUN apt-get update && apt-get install -y curl unzip && rm -rf /var/lib/apt/lists/*
 
-# Install vsdbg (Visual Studio Debugger)
+# Install vsdbg into /vsdbg
 RUN curl -sSL https://aka.ms/getvsdbgsh | bash /dev/stdin -v latest -l /vsdbg
 
+
 # ----------------- Build Stage -----------------
+# Full .NET SDK image for restore/build/publish
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+
+# IMPORTANT: Build under /src/ApiGateway so PDBs reference /src/ApiGateway/...
+# This makes source mapping in launch.json straightforward.
 WORKDIR /src
 
-COPY *.csproj ./
+# Copy project file first (improves docker layer caching for restore)
+COPY *.csproj ./  
 RUN dotnet restore
 
+# Copy the rest of the source
 COPY . ./
-# Build in Debug configuration with debugging symbols
-RUN dotnet publish -c Debug -o /app/publish
+
+# Publish in Debug with portable PDBs (symbols) for stepping & breakpoints
+RUN dotnet publish -c Debug -o /app/publish \
+    /p:DebugType=portable /p:DebugSymbols=true /p:EmbedAllSources=false
+
 
 # ----------------- Final Image -----------------
+# Build the final, slim runtime image
 FROM base AS final
+
+# Working directory where the app runs
 WORKDIR /app
+
+# Copy published output (DLLs + PDBs) from the build stage
 COPY --from=build /app/publish .
 
-# Set environment for debugging
+# Helpful env vars during debugging (optional)
 ENV DOTNET_USE_POLLING_FILE_WATCHER=true
 ENV ASPNETCORE_LOGGING__CONSOLE__DISABLECOLORS=true
 
+# Start the ApiGateway service
 ENTRYPOINT ["dotnet", "ApiGateway.dll"]
