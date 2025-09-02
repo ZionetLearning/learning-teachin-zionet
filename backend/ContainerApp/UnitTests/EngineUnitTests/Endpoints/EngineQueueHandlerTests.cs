@@ -47,15 +47,15 @@ public class EngineQueueHandlerTests
         var accessorClient = new Mock<IAccessorClient>(MockBehavior.Strict);
         var sentService = new Mock<ISentencesService>(MockBehavior.Strict);
         var log = new Mock<ILogger<EngineQueueHandler>>();
-        var sut = new EngineQueueHandler(dapr.Object, ai.Object, pub.Object, accessorClient.Object, log.Object);
-        return (dapr, ai, pub, accessorClient, log, sut);
+        var sut = new EngineQueueHandler(dapr.Object, ai.Object, pub.Object, accessorClient.Object, log.Object, sentService.Object);
+        return (dapr, ai, pub, accessorClient, sentService, log, sut);
     }
 
     [Fact]
     public async Task HandleAsync_CreateTask_Processes_TaskModel()
     {
         // Arrange
-        var (dapr, ai, pub, accessorClient, log, sut) = CreateSut();
+        var (dapr, ai, pub, accessorClient, sentService, log, sut) = CreateSut();
 
         var task = new TaskModel
         {
@@ -97,7 +97,7 @@ public class EngineQueueHandlerTests
     [Fact]
     public async Task HandleAsync_CreateTask_InvalidPayload_DoesNotCall_Dapr()
     {
-        var (dapr, ai, pub, accessorClient, log, sut) = CreateSut();
+        var (dapr, ai, pub, accessorClient, sentService, log, sut) = CreateSut();
 
         // payload = "null"
         var msg = new Message
@@ -120,7 +120,7 @@ public class EngineQueueHandlerTests
     public async Task HandleAsync_ProcessingQuestionAi_HappyPath_Calls_Ai_And_Publishes()
     {
         // Arrange
-        var (dapr, ai, pub, accessorClient, log, sut) = CreateSut();
+        var (dapr, ai, pub, accessorClient, sentService, log, sut) = CreateSut();
 
         var requestId = Guid.NewGuid().ToString();
         var threadId = Guid.NewGuid();
@@ -255,7 +255,7 @@ public class EngineQueueHandlerTests
     [Fact(Skip = "Todo: do after refactoring ai Chat for queue")]
     public async Task HandleAsync_ProcessingQuestionAi_MissingThreadId_ThrowsRetryable()
     {
-        var (dapr, ai, pub, accessorClient, log, sut) = CreateSut();
+        var (dapr, ai, pub, accessorClient, sentService, log, sut) = CreateSut();
 
         var requestId = Guid.NewGuid().ToString();
         var userId = Guid.NewGuid();
@@ -297,7 +297,7 @@ public class EngineQueueHandlerTests
     public async Task HandleAsync_ProcessingQuestionAi_AiThrows_WrappedInRetryable()
     {
         // Arrange
-        var (dapr, ai, pub, accessor, log, sut) = CreateSut();
+        var (dapr, ai, pub, accessor, sentService, log, sut) = CreateSut();
 
         var requestId = Guid.NewGuid().ToString();
         var threadId = Guid.NewGuid();
@@ -355,7 +355,7 @@ public class EngineQueueHandlerTests
     [Fact]
     public async Task HandleAsync_UnknownAction_ThrowsNonRetryable_AndSkipsWork()
     {
-        var (dapr, ai, pub, accessorClient, log, sut) = CreateSut();
+        var (dapr, ai, pub, accessorClient, sentService, log, sut) = CreateSut();
 
         var msg = new Message
         {
