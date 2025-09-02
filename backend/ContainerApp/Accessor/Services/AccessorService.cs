@@ -5,6 +5,7 @@ using Dapr.Client;
 using Microsoft.EntityFrameworkCore;
 using Accessor.Models.Users;
 using Accessor.Models.Auth;
+using Accessor.Exceptions;
 
 namespace Accessor.Services;
 public class AccessorService : IAccessorService
@@ -179,115 +180,80 @@ public class AccessorService : IAccessorService
     public async Task CreateTaskAsync(TaskModel task)
     {
         using var scope = _logger.BeginScope("TaskId: {TaskId}", task.Id);
+        _logger.LogInformation("Inside:{Method}", nameof(CreateTaskAsync));
+
+        try
         {
-            _logger.LogInformation("Inside:{Method}", nameof(CreateTaskAsync));
+            // 1. Check cache for idempotency
+            var cached = await _daprClient.GetStateAsync<TaskModel>(
+                ComponentNames.StateStore,
+                GetTaskCacheKey(task.Id));
 
-            var key = task.Id.ToString();
-            var expires = DateTime.UtcNow.AddHours(24);
-
-            var strategy = _dbContext.Database.CreateExecutionStrategy();
-
-            await strategy.ExecuteAsync(async () =>
+            if (cached is not null)
             {
-                await using var tx = await _dbContext.Database.BeginTransactionAsync();
-
-                try
+                if (!TasksAreEqual(cached, task))
                 {
-                    // --- Idempotency gate (first writer wins)
-                    var record = new IdempotencyRecord
-                    {
-                        IdempotencyKey = key,
-                        Status = IdempotencyStatus.InProgress,
-                        CreatedAtUtc = DateTimeOffset.UtcNow,
-                        ExpiresAtUtc = expires
-                    };
-
-                    _dbContext.Idempotency.Add(record);
-
-                    try
-                    {
-                        await _dbContext.SaveChangesAsync();
-                        _logger.LogDebug("Idempotency gate created for key {Key}", key);
-                    }
-                    catch (DbUpdateException ex)
-                    {
-                        _logger.LogDebug(ex, "Idempotency key {Key} already exists", key);
-
-                        var existing = await _dbContext.Idempotency
-                            .AsNoTracking()
-                            .FirstOrDefaultAsync(i => i.IdempotencyKey == key);
-
-                        if (existing is null)
-                        {
-                            _logger.LogWarning("Idempotency record vanished for {Key}, treating as processed", key);
-                            return;
-                        }
-
-                        if (existing.Status == IdempotencyStatus.Completed)
-                        {
-                            _logger.LogInformation("Duplicate request for {Key} — already completed. No-op.", key);
-                            return;
-                        }
-
-                        var notExpired = existing.ExpiresAtUtc == null || existing.ExpiresAtUtc > DateTime.UtcNow;
-                        if (notExpired)
-                        {
-                            _logger.LogInformation("Duplicate request for {Key} while in-progress. No-op.", key);
-                            return;
-                        }
-
-                        _logger.LogWarning("Stale in-progress idempotency for {Key}; proceeding.", key);
-                    }
-
-                    // --- Persist Task (unique PK/constraint on Task.Id enforces exactly-once)
-                    _dbContext.Tasks.Add(task);
-
-                    try
-                    {
-                        await _dbContext.SaveChangesAsync();
-                        _logger.LogInformation("Task {TaskId} persisted", task.Id);
-                    }
-                    catch (DbUpdateException ex)
-                    {
-                        _logger.LogWarning(ex, "Duplicate Task insert; treating as success");
-                    }
-
-                    // --- Mark idempotency as completed
-                    var gate = await _dbContext.Idempotency.FirstOrDefaultAsync(i => i.IdempotencyKey == key);
-                    if (gate != null)
-                    {
-                        gate.Status = IdempotencyStatus.Completed;
-                        await _dbContext.SaveChangesAsync();
-                    }
-
-                    await tx.CommitAsync();
-
-                    // --- Optional cache
-                    await _daprClient.SaveStateAsync(
-                        storeName: ComponentNames.StateStore,
-                        key: GetTaskCacheKey(task.Id),
-                        value: task,
-                        metadata: new Dictionary<string, string> { { "ttlInSeconds", _ttl.ToString() } });
-
-                    _logger.LogInformation("Cached task with TTL {TTL}s", _ttl);
+                    _logger.LogWarning("Conflict: Task {TaskId} already exists with different payload", task.Id);
+                    throw new ConflictException($"Task {task.Id} already exists with different payload.");
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Unexpected error saving task");
 
-                    try
-                    {
-                        await tx.RollbackAsync();
-                    }
-                    catch
-                    {
-                        // ignored
-                    }
+                _logger.LogInformation("Idempotent retry for Task {TaskId}, no-op", task.Id);
+                return; // same payload → idempotent success
+            }
 
-                    throw;
-                }
-            });
+            // 2. Insert new task
+            _dbContext.Tasks.Add(task);
+            await _dbContext.SaveChangesAsync();
+
+            _logger.LogInformation("Task {TaskId} persisted", task.Id);
+
+            // 3. Cache for retries
+            await _daprClient.SaveStateAsync(
+                storeName: ComponentNames.StateStore,
+                key: GetTaskCacheKey(task.Id),
+                value: task,
+                stateOptions: null,
+                metadata: new Dictionary<string, string> { { "ttlInSeconds", _ttl.ToString() } });
+
+            _logger.LogInformation("Cached task {TaskId} with TTL {TTL}s", task.Id, _ttl);
         }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogWarning(ex, "Duplicate Task insert for {TaskId}", task.Id);
+
+            var dbTask = await _dbContext.Tasks.FindAsync(task.Id);
+            if (dbTask is null)
+            {
+                throw;
+            }
+
+            if (!TasksAreEqual(dbTask, task))
+            {
+                _logger.LogWarning("Conflict: Task {TaskId} already exists in DB with different payload", task.Id);
+                throw new ConflictException($"Task {task.Id} already exists with different payload.");
+            }
+
+            // Ensure consistent cache
+            await _daprClient.SaveStateAsync(
+                storeName: ComponentNames.StateStore,
+                key: GetTaskCacheKey(task.Id),
+                value: dbTask,
+                stateOptions: null,
+                metadata: new Dictionary<string, string> { { "ttlInSeconds", _ttl.ToString() } });
+
+            // Idempotent no-op
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error creating Task {TaskId}", task.Id);
+            throw new RetryableException("Unexpected infrastructure error while creating task.", ex);
+        }
+    }
+
+    private bool TasksAreEqual(TaskModel a, TaskModel b)
+    {
+        // Minimal equality check for idempotency
+        return a.Id == b.Id && a.Name == b.Name;
     }
 
     public async Task<bool> UpdateTaskNameAsync(int taskId, string newName)

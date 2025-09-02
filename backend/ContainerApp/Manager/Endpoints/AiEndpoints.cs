@@ -306,10 +306,11 @@ public static class AiEndpoints
     }
 
     private static async Task<IResult> SynthesizeAsync(
-       [FromBody] SpeechRequest dto,
-       [FromServices] IEngineClient engineClient,
-       [FromServices] ILogger<SpeechEndpoints> logger,
-       CancellationToken ct)
+        [FromBody] SpeechRequest dto,
+        [FromServices] IEngineClient engineClient,
+        [FromServices] ILogger<SpeechEndpoints> logger,
+        HttpRequest req,
+        CancellationToken ct)
     {
         if (dto is null || string.IsNullOrWhiteSpace(dto.Text))
         {
@@ -321,25 +322,37 @@ public static class AiEndpoints
         try
         {
             var engineResult = await engineClient.SynthesizeAsync(dto, ct);
-
-            if (engineResult != null)
-            {
-                // Transform engine response to match frontend expectations
-                var response = new SpeechResponse
-                {
-                    AudioData = engineResult.AudioData,
-                    Visemes = engineResult.Visemes,
-                    Metadata = engineResult.Metadata,
-                };
-
-                logger.LogInformation("Speech synthesis completed successfully");
-                return Results.Ok(response);
-            }
-            else
+            if (engineResult == null)
             {
                 logger.LogError("Engine synthesis failed - service returned null");
                 return Results.Problem("Speech synthesis failed.");
             }
+
+            var wantsBinary =
+                req.Headers.Accept.Any(h => h != null && h.Contains("application/octet-stream", StringComparison.OrdinalIgnoreCase)) ||
+                req.Headers.Accept.Any(h => h != null && h.Contains("audio/", StringComparison.OrdinalIgnoreCase)) ||
+                (req.Query.TryGetValue("format", out var fmt) && string.Equals(fmt, "binary", StringComparison.OrdinalIgnoreCase));
+
+            if (wantsBinary && !string.IsNullOrWhiteSpace(engineResult.AudioData))
+            {
+                var audioBytes = Convert.FromBase64String(engineResult.AudioData);
+                var contentType = !string.IsNullOrWhiteSpace(engineResult.Metadata?.ContentType)
+                    ? engineResult.Metadata.ContentType
+                    : "audio/mpeg";
+
+                logger.LogInformation("Returning binary audio (length {Length}, type {Type})", audioBytes.Length, contentType);
+                return Results.File(audioBytes, contentType: contentType, fileDownloadName: null, enableRangeProcessing: true);
+            }
+
+            var response = new SpeechResponse
+            {
+                AudioData = engineResult.AudioData,
+                Visemes = engineResult.Visemes,
+                Metadata = engineResult.Metadata,
+            };
+
+            logger.LogInformation("Speech synthesis completed successfully");
+            return Results.Ok(response);
         }
         catch (OperationCanceledException)
         {

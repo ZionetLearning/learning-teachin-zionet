@@ -46,13 +46,25 @@ spec:
                   name: {{ .Values.manager.secrets.serviceBus.name }}
                   key: {{ .Values.manager.secrets.serviceBus.key }}
             - name: Jwt__Secret
-              value: "{{ .Values.manager.env.Jwt__Secret }}"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.manager.secrets.jwt.name }}
+                  key: {{ .Values.manager.secrets.jwt.keys.secret }}
             - name: Jwt__Issuer
-              value: "{{ .Values.manager.env.Jwt__Issuer }}"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.manager.secrets.jwt.name }}
+                  key: {{ .Values.manager.secrets.jwt.keys.issuer }}
             - name: Jwt__Audience
-              value: "{{ .Values.manager.env.Jwt__Audience }}"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.manager.secrets.jwt.name }}
+                  key: {{ .Values.manager.secrets.jwt.keys.audience }}
             - name: Jwt__RefreshTokenHashKey
-              value: "{{ .Values.manager.env.Jwt__RefreshTokenHashKey }}"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.manager.secrets.jwt.name }}
+                  key: {{ .Values.manager.secrets.jwt.keys.refresh }}
             - name: SignalR__ConnectionString
               valueFrom:
                 secretKeyRef:
