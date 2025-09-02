@@ -30,6 +30,12 @@ public static class TasksEndpoints
     {
         using var scope = logger.BeginScope("TaskId {TaskId}:", id);
 
+        if (id <= 0)
+        {
+            logger.LogWarning("Invalid task ID");
+            return Results.NotFound(new { Message = $"Task with ID {id} not found" });
+        }
+
         try
         {
             var task = await accessorClient.GetTaskAsync(id);
@@ -126,6 +132,12 @@ public static class TasksEndpoints
     {
         using var scope = logger.BeginScope("TaskId {TaskId}:", id);
 
+        if (id <= 0)
+        {
+            logger.LogWarning("Invalid task ID");
+            return Results.NotFound(new { Message = $"Task with ID {id} not found" });
+        }
+
         if (string.IsNullOrWhiteSpace(name))
         {
             logger.LogWarning("Invalid task name");
@@ -165,6 +177,12 @@ public static class TasksEndpoints
         [FromServices] ILogger<TaskEndpoint> logger)
     {
         using var scope = logger.BeginScope("TaskId {TaskId}:", id);
+
+        if (id <= 0)
+        {
+            logger.LogWarning("Invalid task ID");
+            return Results.NotFound(new { Message = $"Task with ID {id} not found" });
+        }
 
         try
         {

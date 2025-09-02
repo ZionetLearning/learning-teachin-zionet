@@ -131,33 +131,41 @@ public class ManagerEndpointsTests
     public async Task Endpoint_Returns_Correct_Status(
         string method, bool successFirst, Type okType, int notFoundStatus)
     {
-        if (method == "UpdateTaskNameAsync")
+        // Arrange: setup sequence based on method
+        var seq = method switch
         {
-            _accessor.SetupSequence(s => s.UpdateTaskName(It.IsAny<int>(), It.IsAny<string>()))
-                     .ReturnsAsync(successFirst)
-                     .ReturnsAsync(false);
+            "UpdateTaskNameAsync" => _accessor.SetupSequence(s => s.UpdateTaskName(It.IsAny<int>(), It.IsAny<string>())),
+            "DeleteTaskAsync"     => _accessor.SetupSequence(s => s.DeleteTask(It.IsAny<int>())),
+            _ => throw new ArgumentOutOfRangeException(nameof(method), method, "Unknown endpoint")
+        };
 
-            var okRes = await Invoke(method, 10, "new-name");
-            Assert.IsType(okType, okRes);
+        seq.ReturnsAsync(successFirst).ReturnsAsync(false);
 
-            var nfRes = await Invoke(method, 11, "missing");
-            var status = Assert.IsAssignableFrom<IStatusCodeHttpResult>(nfRes);
-            Assert.Equal(notFoundStatus, status.StatusCode);
-        }
-        else if (method == "DeleteTaskAsync")
-        {
-            _accessor.SetupSequence(s => s.DeleteTask(It.IsAny<int>()))
-                     .ReturnsAsync(successFirst)
-                     .ReturnsAsync(false);
-
-            var okRes = await Invoke(method, 10);
-            Assert.IsType(okType, okRes);
-
-            var nfRes = await Invoke(method, 11);
-            var status = Assert.IsAssignableFrom<IStatusCodeHttpResult>(nfRes);
-            Assert.Equal(notFoundStatus, status.StatusCode);
-        }
+        // Act + Assert: common helper for both methods
+        await AssertEndpointBehavior(method, okType, notFoundStatus);
 
         _accessor.VerifyAll();
+    }
+
+    private async Task AssertEndpointBehavior(string method, Type okType, int notFoundStatus)
+    {
+        // Successful case
+        var okRes = method switch
+        {
+            "UpdateTaskNameAsync" => await Invoke(method, 10, "new-name"),
+            "DeleteTaskAsync"     => await Invoke(method, 10),
+            _ => throw new ArgumentOutOfRangeException(nameof(method), method)
+        };
+        Assert.IsType(okType, okRes);
+
+        // Not found case
+        var nfRes = method switch
+        {
+            "UpdateTaskNameAsync" => await Invoke(method, 11, "missing"),
+            "DeleteTaskAsync"     => await Invoke(method, 11),
+            _ => throw new ArgumentOutOfRangeException(nameof(method), method)
+        };
+        var status = Assert.IsAssignableFrom<IStatusCodeHttpResult>(nfRes);
+        Assert.Equal(notFoundStatus, status.StatusCode);
     }
 }
