@@ -1,0 +1,22 @@
+﻿{
+  "type": "prompt",
+  "template_format": "semantic-kernel",
+  "description": "Generate Hebrew sentences as strict JSON",
+  "input_variables": [
+    {
+      "name": "difficulty",
+      "description": "easy|medium|hard",
+      "is_required": true
+    },
+    {
+      "name": "nikud",
+      "description": "true|false",
+      "is_required": true
+    },
+    {
+      "name": "count",
+      "description": "number > 0",
+      "is_required": true
+    }
+  ]
+}
