@@ -2,7 +2,7 @@ import type { UseQueryResult } from "@tanstack/react-query";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Users } from "../index";
-import type { User } from "@student/api";
+import type { User } from "@admin/api";
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
@@ -15,7 +15,7 @@ vi.mock("react-toastify", () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock("@student/api", () => ({
+vi.mock("@admin/api", () => ({
   useGetAllUsers: vi.fn(),
   useCreateUser: vi.fn(),
   useUpdateUserByUserId: vi.fn(),
@@ -27,7 +27,7 @@ const {
   useCreateUser,
   useUpdateUserByUserId,
   useDeleteUserByUserId,
-} = vi.mocked(await import("@student/api")) as unknown as {
+} = vi.mocked(await import("@admin/api")) as unknown as {
   useGetAllUsers: ReturnType<typeof vi.fn>;
   useCreateUser: ReturnType<typeof vi.fn>;
   useUpdateUserByUserId: ReturnType<typeof vi.fn>;
