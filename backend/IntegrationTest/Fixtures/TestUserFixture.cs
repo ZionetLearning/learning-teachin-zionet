@@ -35,7 +35,7 @@ public class TestUserFixture : IAsyncLifetime
             Password = password,
             FirstName = "Test-User-FirstName",
             LastName = "Test-User-LastName",
-            Role = "Student"
+            Role = defaultRole.ToString()
         };
 
         // Create the test user in DB
