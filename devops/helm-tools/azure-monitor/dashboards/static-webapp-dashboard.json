@@ -1,30 +1,36 @@
 {
-  "title": "Static Web App - Application Insights Dashboard (Logs_update2)",
-  "uid": "swa-appinsights-logs-v3",
+  "title": "Static Web App - Application Insights Dashboard (Logs4)",
+  "uid": "swa-appinsights-logs",
   "schemaVersion": 39,
   "editable": false,
   "refresh": "30s",
   "time": { "from": "now-24h", "to": "now" },
+  "timepicker": { "refresh_intervals": ["10s","30s","1m","5m","15m","30m","1h"] },
+  "tags": ["static-web-app","application-insights","log-analytics"],
   "templating": {
     "list": [
       {
         "name": "azure_monitor_ds",
         "type": "datasource",
         "query": "grafana-azure-monitor-datasource",
-        "refresh": 1
+        "refresh": 1,
+        "label": "Azure Monitor datasource"
       },
       {
         "name": "resource_group",
         "type": "query",
+        "label": "Resource Group",
         "datasource": { "type": "grafana-azure-monitor-datasource", "uid": "$azure_monitor_ds" },
+        "definition": "ResourceGroups()",
         "query": "ResourceGroups()",
         "refresh": 1
       },
       {
-        "name": "log_ws_id",
-        "label": "log_analytics_ws",
+        "name": "log_analytics_ws",
         "type": "query",
+        "label": "Log Analytics Workspace",
         "datasource": { "type": "grafana-azure-monitor-datasource", "uid": "$azure_monitor_ds" },
+        "definition": "ResourceIds($resource_group, Microsoft.OperationalInsights/workspaces)",
         "query": "ResourceIds($resource_group, Microsoft.OperationalInsights/workspaces)",
         "refresh": 1
       }
@@ -40,11 +46,11 @@
       "targets": [
         {
           "refId": "A",
-          "queryType": "Logs",
+          "service": "Logs",
           "resultFormat": "time_series",
           "timeColumn": "TimeGenerated",
-          "resource": "$log_ws_id",
-          "query": "AppPageViews | where $__timeFilter(TimeGenerated) | summarize total = count() by bin(TimeGenerated, 5m) | order by TimeGenerated asc"
+          "resource": "$log_analytics_ws",
+          "query": "AppPageViews\n| where $__timeFilter(TimeGenerated)\n| summarize total = count() by bin(TimeGenerated, 5m)\n| order by TimeGenerated asc"
         }
       ]
     },
@@ -57,11 +63,11 @@
       "targets": [
         {
           "refId": "A",
-          "queryType": "Logs",
+          "service": "Logs",
           "resultFormat": "time_series",
           "timeColumn": "TimeGenerated",
-          "resource": "$log_ws_id",
-          "query": "AppPageViews | where $__timeFilter(TimeGenerated) | extend u = coalesce(user_Id, UserId) | summarize users = dcount(u) by bin(TimeGenerated, 5m) | order by TimeGenerated asc"
+          "resource": "$log_analytics_ws",
+          "query": "AppPageViews\n| where $__timeFilter(TimeGenerated)\n| extend u = coalesce(user_Id, UserId)\n| summarize users = dcount(u) by bin(TimeGenerated, 5m)\n| order by TimeGenerated asc"
         }
       ]
     },
@@ -74,11 +80,11 @@
       "targets": [
         {
           "refId": "A",
-          "queryType": "Logs",
+          "service": "Logs",
           "resultFormat": "time_series",
           "timeColumn": "TimeGenerated",
-          "resource": "$log_ws_id",
-          "query": "AppPageViews | where $__timeFilter(TimeGenerated) | extend s = coalesce(session_Id, SessionId) | summarize sessions = dcount(s) by bin(TimeGenerated, 5m) | order by TimeGenerated asc"
+          "resource": "$log_analytics_ws",
+          "query": "AppPageViews\n| where $__timeFilter(TimeGenerated)\n| extend s = coalesce(session_Id, SessionId)\n| summarize sessions = dcount(s) by bin(TimeGenerated, 5m)\n| order by TimeGenerated asc"
         }
       ]
     },
@@ -91,79 +97,81 @@
       "targets": [
         {
           "refId": "A",
-          "queryType": "Logs",
+          "service": "Logs",
           "resultFormat": "time_series",
           "timeColumn": "TimeGenerated",
-          "resource": "$log_ws_id",
-          "query": "AppBrowserTimings | where $__timeFilter(TimeGenerated) | summarize avg_ms = avg(todouble(Duration)) by bin(TimeGenerated, 5m) | order by TimeGenerated asc"
+          "resource": "$log_analytics_ws",
+          "query": "AppBrowserTimings\n| where $__timeFilter(TimeGenerated)\n| summarize avg_ms = avg(todouble(Duration)) by bin(TimeGenerated, 5m)\n| order by TimeGenerated asc"
         }
       ]
     },
     {
       "id": 5,
-      "title": "Errors & Failed Requests (rate %)",
+      "title": "Errors & Failed Requests (count)",
       "type": "timeseries",
       "gridPos": { "h": 9, "w": 8, "x": 8, "y": 9 },
       "datasource": { "type": "grafana-azure-monitor-datasource", "uid": "$azure_monitor_ds" },
       "targets": [
         {
           "refId": "A",
-          "queryType": "Logs",
+          "service": "Logs",
           "resultFormat": "time_series",
           "timeColumn": "TimeGenerated",
-          "resource": "$log_ws_id",
-          "query": "AppRequests | where $__timeFilter(TimeGenerated) | summarize failed = countif(tolong(ResultCode) >= 400 or Success == false), total = count() by bin(TimeGenerated, 5m) | extend errorRate = 100.0 * todouble(failed) / todouble(total) | project TimeGenerated, errorRate | order by TimeGenerated asc"
+          "resource": "$log_analytics_ws",
+          "query": "AppRequests\n| where $__timeFilter(TimeGenerated)\n| summarize failed = countif(tolong(ResultCode) >= 400 or Success == false) by bin(TimeGenerated, 5m)\n| order by TimeGenerated asc"
         }
       ]
     },
     {
       "id": 6,
-      "title": "Active Users (1h)",
+      "title": "Active Users (last 1h)",
       "type": "stat",
       "gridPos": { "h": 9, "w": 8, "x": 16, "y": 9 },
       "datasource": { "type": "grafana-azure-monitor-datasource", "uid": "$azure_monitor_ds" },
+      "options": { "reduceOptions": { "values": false, "calcs": ["lastNotNull"] }, "orientation": "horizontal" },
       "targets": [
         {
           "refId": "A",
-          "queryType": "Logs",
+          "service": "Logs",
           "resultFormat": "table",
           "timeColumn": "TimeGenerated",
-          "resource": "$log_ws_id",
-          "query": "AppPageViews | where TimeGenerated > ago(1h) | extend u = coalesce(user_Id, UserId) | summarize active_users = dcount(u)"
+          "resource": "$log_analytics_ws",
+          "query": "AppPageViews\n| where TimeGenerated >= ago(1h)\n| extend u = coalesce(user_Id, UserId)\n| summarize active = dcount(u)\n| project active"
         }
       ]
     },
     {
       "id": 7,
-      "title": "Total Page Views (1h)",
+      "title": "Total Page Views (last 1h)",
       "type": "stat",
       "gridPos": { "h": 9, "w": 8, "x": 0, "y": 18 },
       "datasource": { "type": "grafana-azure-monitor-datasource", "uid": "$azure_monitor_ds" },
+      "options": { "reduceOptions": { "values": false, "calcs": ["lastNotNull"] }, "orientation": "horizontal" },
       "targets": [
         {
           "refId": "A",
-          "queryType": "Logs",
+          "service": "Logs",
           "resultFormat": "table",
           "timeColumn": "TimeGenerated",
-          "resource": "$log_ws_id",
-          "query": "AppPageViews | where TimeGenerated > ago(1h) | summarize total = count()"
+          "resource": "$log_analytics_ws",
+          "query": "AppPageViews\n| where TimeGenerated >= ago(1h)\n| summarize total = count()\n| project total"
         }
       ]
     },
     {
       "id": 8,
-      "title": "Exceptions (1h)",
-      "type": "stat",
+      "title": "Exceptions (1h bins)",
+      "type": "timeseries",
       "gridPos": { "h": 9, "w": 8, "x": 8, "y": 18 },
       "datasource": { "type": "grafana-azure-monitor-datasource", "uid": "$azure_monitor_ds" },
       "targets": [
         {
           "refId": "A",
-          "queryType": "Logs",
-          "resultFormat": "table",
+          "service": "Logs",
+          "resultFormat": "time_series",
           "timeColumn": "TimeGenerated",
-          "resource": "$log_ws_id",
-          "query": "AppExceptions | where TimeGenerated > ago(1h) | summarize total = count()"
+          "resource": "$log_analytics_ws",
+          "query": "AppExceptions\n| where $__timeFilter(TimeGenerated)\n| summarize total = count() by bin(TimeGenerated, 1h)\n| order by TimeGenerated asc"
         }
       ]
     },
@@ -176,11 +184,11 @@
       "targets": [
         {
           "refId": "A",
-          "queryType": "Logs",
+          "service": "Logs",
           "resultFormat": "table",
           "timeColumn": "TimeGenerated",
-          "resource": "$log_ws_id",
-          "query": "AppPageViews | where $__timeFilter(TimeGenerated) | summarize total = count() by tostring(coalesce(client_Browser, Browser)) | top 10 by total desc"
+          "resource": "$log_analytics_ws",
+          "query": "AppPageViews\n| where $__timeFilter(TimeGenerated)\n| summarize total = count() by tostring(coalesce(client_Browser, Browser))\n| top 10 by total desc"
         }
       ]
     },
@@ -193,11 +201,11 @@
       "targets": [
         {
           "refId": "A",
-          "queryType": "Logs",
+          "service": "Logs",
           "resultFormat": "table",
           "timeColumn": "TimeGenerated",
-          "resource": "$log_ws_id",
-          "query": "AppPageViews | where $__timeFilter(TimeGenerated) | summarize users = dcount(coalesce(user_Id, UserId)) by tostring(coalesce(client_CountryOrRegion, Country)) | top 10 by users desc"
+          "resource": "$log_analytics_ws",
+          "query": "AppPageViews\n| where $__timeFilter(TimeGenerated)\n| summarize users = dcount(tostring(coalesce(user_Id, UserId))) by tostring(coalesce(client_CountryOrRegion, Country))\n| top 10 by users desc\n| project client_CountryOrRegion = tostring(coalesce(client_CountryOrRegion, Country)), users"
         }
       ]
     },
@@ -210,11 +218,11 @@
       "targets": [
         {
           "refId": "A",
-          "queryType": "Logs",
+          "service": "Logs",
           "resultFormat": "table",
           "timeColumn": "TimeGenerated",
-          "resource": "$log_ws_id",
-          "query": "AppRequests | where $__timeFilter(TimeGenerated) | summarize total = count() by tostring(ResultCode) | top 10 by total desc"
+          "resource": "$log_analytics_ws",
+          "query": "AppRequests\n| where $__timeFilter(TimeGenerated)\n| summarize total = count() by tostring(ResultCode)\n| top 10 by total desc"
         }
       ]
     }
