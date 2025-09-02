@@ -1,6 +1,6 @@
 {
-  "title": "Static Web App - Application Insights Dashboard (Logs)",
-  "uid": "swa-appinsights-logs",
+  "title": "Static Web App - Application Insights Dashboard (Logs_update)",
+  "uid": "swa-appinsights-logs-v2",
   "schemaVersion": 39,
   "editable": false,
   "refresh": "30s",
@@ -24,7 +24,7 @@
         "name": "log_analytics_ws",
         "type": "query",
         "datasource": { "type": "grafana-azure-monitor-datasource", "uid": "$azure_monitor_ds" },
-        "query": "Resources(${resource_group}, Microsoft.OperationalInsights/workspaces)",
+        "query": "ResourceNames($resource_group, Microsoft.OperationalInsights/workspaces)",
         "refresh": 1
       }
     ]
@@ -40,10 +40,10 @@
         {
           "refId": "A",
           "queryType": "Logs",
-          "format": "time_series",
+          "resultFormat": "time_series",
           "timeColumn": "TimeGenerated",
           "resource": "$log_analytics_ws",
-          "query": "AppPageViews | where $__timeFilter(TimeGenerated) | summarize total=count() by bin(TimeGenerated, 5m) | order by TimeGenerated asc"
+          "query": "AppPageViews | where $__timeFilter(TimeGenerated) | summarize total = count() by bin(TimeGenerated, 5m) | order by TimeGenerated asc"
         }
       ]
     },
@@ -57,10 +57,10 @@
         {
           "refId": "A",
           "queryType": "Logs",
-          "format": "time_series",
+          "resultFormat": "time_series",
           "timeColumn": "TimeGenerated",
           "resource": "$log_analytics_ws",
-          "query": "AppPageViews | where $__timeFilter(TimeGenerated) | extend u = coalesce(user_Id, UserId) | summarize users=dcount(u) by bin(TimeGenerated, 5m) | order by TimeGenerated asc"
+          "query": "AppPageViews | where $__timeFilter(TimeGenerated) | extend u = coalesce(user_Id, UserId) | summarize users = dcount(u) by bin(TimeGenerated, 5m) | order by TimeGenerated asc"
         }
       ]
     },
@@ -74,10 +74,10 @@
         {
           "refId": "A",
           "queryType": "Logs",
-          "format": "time_series",
+          "resultFormat": "time_series",
           "timeColumn": "TimeGenerated",
           "resource": "$log_analytics_ws",
-          "query": "AppPageViews | where $__timeFilter(TimeGenerated) | extend s = coalesce(session_Id, SessionId) | summarize sessions=dcount(s) by bin(TimeGenerated, 5m) | order by TimeGenerated asc"
+          "query": "AppPageViews | where $__timeFilter(TimeGenerated) | extend s = coalesce(session_Id, SessionId) | summarize sessions = dcount(s) by bin(TimeGenerated, 5m) | order by TimeGenerated asc"
         }
       ]
     },
@@ -91,10 +91,10 @@
         {
           "refId": "A",
           "queryType": "Logs",
-          "format": "time_series",
+          "resultFormat": "time_series",
           "timeColumn": "TimeGenerated",
           "resource": "$log_analytics_ws",
-          "query": "AppBrowserTimings | where $__timeFilter(TimeGenerated) | summarize avg_ms=avg(Duration) by bin(TimeGenerated, 5m) | order by TimeGenerated asc"
+          "query": "AppBrowserTimings | where $__timeFilter(TimeGenerated) | summarize avg_ms = avg(todouble(Duration)) by bin(TimeGenerated, 5m) | order by TimeGenerated asc"
         }
       ]
     },
@@ -108,10 +108,10 @@
         {
           "refId": "A",
           "queryType": "Logs",
-          "format": "time_series",
+          "resultFormat": "time_series",
           "timeColumn": "TimeGenerated",
           "resource": "$log_analytics_ws",
-          "query": "AppRequests | where $__timeFilter(TimeGenerated) | summarize failed=countif(tolong(ResultCode) >= 400 or Success == false) by bin(TimeGenerated, 5m) | order by TimeGenerated asc"
+          "query": "AppRequests | where $__timeFilter(TimeGenerated) | summarize failed = countif(tolong(ResultCode) >= 400 or Success == false), total = count() by bin(TimeGenerated, 5m) | extend errorRate = 100.0 * todouble(failed) / todouble(total) | project TimeGenerated, errorRate | order by TimeGenerated asc"
         }
       ]
     },
@@ -125,10 +125,10 @@
         {
           "refId": "A",
           "queryType": "Logs",
-          "format": "table",
+          "resultFormat": "table",
           "timeColumn": "TimeGenerated",
           "resource": "$log_analytics_ws",
-          "query": "AppPageViews | where TimeGenerated > ago(1h) | extend u=coalesce(user_Id, UserId) | summarize active_users=dcount(u)"
+          "query": "AppPageViews | where TimeGenerated > ago(1h) | extend u = coalesce(user_Id, UserId) | summarize active_users = dcount(u)"
         }
       ]
     },
@@ -142,10 +142,10 @@
         {
           "refId": "A",
           "queryType": "Logs",
-          "format": "table",
+          "resultFormat": "table",
           "timeColumn": "TimeGenerated",
           "resource": "$log_analytics_ws",
-          "query": "AppPageViews | where TimeGenerated > ago(1h) | summarize total=count()"
+          "query": "AppPageViews | where TimeGenerated > ago(1h) | summarize total = count()"
         }
       ]
     },
@@ -159,10 +159,10 @@
         {
           "refId": "A",
           "queryType": "Logs",
-          "format": "table",
+          "resultFormat": "table",
           "timeColumn": "TimeGenerated",
           "resource": "$log_analytics_ws",
-          "query": "AppExceptions | where TimeGenerated > ago(1h) | summarize total=count()"
+          "query": "AppExceptions | where TimeGenerated > ago(1h) | summarize total = count()"
         }
       ]
     },
@@ -176,10 +176,10 @@
         {
           "refId": "A",
           "queryType": "Logs",
-          "format": "table",
+          "resultFormat": "table",
           "timeColumn": "TimeGenerated",
           "resource": "$log_analytics_ws",
-          "query": "AppBrowserTimings | where $__timeFilter(TimeGenerated) | summarize total=count() by tostring(coalesce(client_Browser, Browser)) | top 10 by total desc"
+          "query": "AppPageViews | where $__timeFilter(TimeGenerated) | summarize total = count() by tostring(coalesce(client_Browser, Browser)) | top 10 by total desc"
         }
       ]
     },
@@ -193,10 +193,10 @@
         {
           "refId": "A",
           "queryType": "Logs",
-          "format": "table",
+          "resultFormat": "table",
           "timeColumn": "TimeGenerated",
           "resource": "$log_analytics_ws",
-          "query": "AppPageViews | where $__timeFilter(TimeGenerated) | summarize total=count() by tostring(coalesce(client_CountryOrRegion, Country)) | top 10 by total desc"
+          "query": "AppPageViews | where $__timeFilter(TimeGenerated) | summarize users = dcount(coalesce(user_Id, UserId)) by tostring(coalesce(client_CountryOrRegion, Country)) | top 10 by users desc"
         }
       ]
     },
@@ -210,10 +210,10 @@
         {
           "refId": "A",
           "queryType": "Logs",
-          "format": "table",
+          "resultFormat": "table",
           "timeColumn": "TimeGenerated",
           "resource": "$log_analytics_ws",
-          "query": "AppRequests | where $__timeFilter(TimeGenerated) | summarize total=count() by tostring(ResultCode) | top 10 by total desc"
+          "query": "AppRequests | where $__timeFilter(TimeGenerated) | summarize total = count() by tostring(ResultCode) | top 10 by total desc"
         }
       ]
     }
