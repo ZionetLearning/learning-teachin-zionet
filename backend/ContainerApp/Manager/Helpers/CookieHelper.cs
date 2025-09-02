@@ -3,7 +3,9 @@
 namespace Manager.Helpers;
 public static class CookieHelper
 {
-    public static void SetCookies(HttpResponse response, string refreshToken)
+
+    // for now we return the csrfToken here but in the future we will use it in the header
+    public static string SetCookies(HttpResponse response, string refreshToken)
     {
         // -- Refresh Cookie --
         response.Cookies.Append(AuthSettings.RefreshTokenCookieName, refreshToken, new CookieOptions
@@ -29,6 +31,8 @@ public static class CookieHelper
             Path = AuthSettings.CookiePath,
             Expires = DateTimeOffset.UtcNow.AddMinutes(AuthSettings.CsrfTokenExpiryMinutes) // Short-lived, 30 minutes
         });
+
+        return csrfToken;
     }
 
     public static void ClearCookies(HttpResponse response)

@@ -53,10 +53,10 @@ public static class AuthEndpoints
                 var (accessToken, refreshToken) = await authService.LoginAsync(loginRequest, httpRequest, cancellationToken);
 
                 // Set the cookies in the response
-                CookieHelper.SetCookies(response, refreshToken);
+                var csrfToken = CookieHelper.SetCookies(response, refreshToken);
 
                 logger.LogInformation("Login successful for {Email}", loginRequest.Email);
-                return Results.Ok(new { accessToken });
+                return Results.Ok(new { accessToken, csrfToken = csrfToken });
             }
             catch (UnauthorizedAccessException ex)
             {
@@ -96,10 +96,10 @@ public static class AuthEndpoints
                 var (accessToken, newRefreshToken) = await authService.RefreshTokensAsync(request, cancellationToken);
 
                 // Set again the cookies in the response
-                CookieHelper.SetCookies(response, newRefreshToken);
+                var csrfToken = CookieHelper.SetCookies(response, newRefreshToken);
 
                 logger.LogInformation("Refresh token successful");
-                return Results.Ok(new { accessToken });
+                return Results.Ok(new { accessToken, csrfToken = csrfToken });
             }
             catch (UnauthorizedAccessException ex)
             {
