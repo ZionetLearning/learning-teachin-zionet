@@ -25,7 +25,6 @@ builder.Configuration
 builder.Services.AddDaprClient();
 builder.Services.AddControllers().AddDapr();
 
-builder.Services.AddScoped<IEngineService, EngineService>();
 builder.Services.AddScoped<IChatTitleService, ChatTitleService>();
 builder.Services.AddScoped<IChatAiService, ChatAiService>();
 builder.Services.AddScoped<IAiReplyPublisher, AiReplyPublisher>();
