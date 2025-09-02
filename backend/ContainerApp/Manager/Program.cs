@@ -1,13 +1,16 @@
 using System.Net;
 using System.Text;
+using System.Threading.RateLimiting;
 using Azure.Messaging.ServiceBus;
 using DotQueue;
 using Manager.Constants;
 using Manager.Endpoints;
 using Manager.Hubs;
+using Manager.Models;
 using Manager.Models.Auth;
 using Manager.Models.QueueMessages;
 using Manager.Services;
+using Manager.Services.Clients.Accessor;
 using Manager.Services.Clients.Engine;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -17,8 +20,6 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
-using System.Threading.RateLimiting;
-using Manager.Services.Clients.Accessor;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,6 +34,9 @@ builder.Services.Configure<AiSettings>(builder.Configuration.GetSection("Ai"));
 
 builder.Services.Configure<JwtSettings>(
     builder.Configuration.GetSection("Jwt"));
+
+builder.Services.Configure<CorsSettings>(
+    builder.Configuration.GetSection("Cors"));
 
 var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>()!;
 var key = Encoding.UTF8.GetBytes(jwtSettings.Secret);
@@ -73,26 +77,13 @@ if (!string.IsNullOrEmpty(signalRConnString))
     signalRBuilder.AddAzureSignalR(signalRConnString);
 }
 
-//builder.Services.AddCors(options =>
-//{
-//    options.AddPolicy("AllowAll", policy =>
-//    {
-//        policy
-//            .AllowAnyOrigin()
-//            .AllowAnyMethod()
-//            .AllowAnyHeader()
-//            .AllowCredentials();
-//    });
-//});
+var corsSettings = builder.Configuration.GetSection("Cors").Get<CorsSettings>();
+
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("LocalhostFrontend", policy =>
+    options.AddPolicy("Frontend", policy =>
     {
-        policy.WithOrigins(
-                "http://localhost:4000",
-                "http://localhost:4001",
-                "http://localhost:4002"
-            )
+        policy.WithOrigins(corsSettings!.AllowedOrigins)
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials(); // Required for sending/receiving cookies
@@ -176,8 +167,7 @@ var app = builder.Build();
 
 var forwardedHeaderOptions = app.Services.GetRequiredService<IOptions<ForwardedHeadersOptions>>().Value;
 app.UseForwardedHeaders(forwardedHeaderOptions);
-//app.UseCors("AllowAll");
-app.UseCors("LocalhostFrontend");
+app.UseCors("Frontend");
 
 app.UseCloudEvents();
 app.UseRateLimiter();
