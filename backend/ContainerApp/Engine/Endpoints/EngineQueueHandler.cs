@@ -1,5 +1,4 @@
 ﻿using DotQueue;
-using Engine.Constants;
 using Engine.Helpers;
 using Engine.Models;
 using Engine.Models.Chat;
@@ -7,8 +6,6 @@ using Engine.Models.QueueMessages;
 using Engine.Services;
 using Engine.Services.Clients.AccessorClient;
 using Engine.Services.Clients.AccessorClient.Models;
-using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.ChatCompletion;
 
 namespace Engine.Endpoints;
 
@@ -180,7 +177,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
             var skHistory = HistoryMapper.ToChatHistoryFromElement(snapshot.History);
             var storyForKernel = HistoryMapper.CloneToChatHistory(skHistory);
 
-            EnsureSystemMessage(storyForKernel);
+            HistoryMapper.EnsureSystemMessage(storyForKernel);
 
             storyForKernel.AddUserMessage(request.UserMessage.Trim(), DateTimeOffset.UtcNow);
 
@@ -281,16 +278,5 @@ public class EngineQueueHandler : IQueueHandler<Message>
             _logger.LogError(ex, "Transient error while processing AI chat {Action}", message.ActionName);
             throw new RetryableException("Transient error while processing AI chat.", ex);
         }
-    }
-
-    private static void EnsureSystemMessage(ChatHistory history)
-    {
-        if (history.Any(m => m.Role == AuthorRole.System))
-        {
-            return;
-        }
-
-        var systemPrompt = Prompts.Combine(Prompts.SystemDefault, Prompts.DetailedExplanation);
-        history.Insert(0, new ChatMessageContent(AuthorRole.System, systemPrompt));
     }
 }
