@@ -11,6 +11,8 @@ namespace Manager.Endpoints;
 
 public static class AuthEndpoints
 {
+    private sealed class AuthEndpoint { }
+
     public static void MapAuthEndpoints(this WebApplication app)
     {
         #region Authentication and Authorization Endpoints
@@ -39,7 +41,7 @@ public static class AuthEndpoints
     private static async Task<IResult> LoginAsync(
        [FromBody] LoginRequest loginRequest,
        [FromServices] IAuthService authService,
-       [FromServices] ILogger<ManagerService> logger,
+       [FromServices] ILogger<AuthEndpoint> logger,
        HttpRequest httpRequest,
        HttpResponse response,
        CancellationToken cancellationToken)
@@ -84,7 +86,7 @@ public static class AuthEndpoints
 
     private static async Task<IResult> RefreshTokensAsync(
         [FromServices] IAuthService authService,
-        [FromServices] ILogger<ManagerService> logger,
+        [FromServices] ILogger<AuthEndpoint> logger,
         HttpRequest request,
         HttpResponse response,
         CancellationToken cancellationToken)
@@ -127,7 +129,7 @@ public static class AuthEndpoints
 
     private static async Task<IResult> LogoutAsync(
         [FromServices] IAuthService authService,
-        [FromServices] ILogger<ManagerService> logger,
+        [FromServices] ILogger<AuthEndpoint> logger,
         HttpRequest request,
         HttpResponse response,
         CancellationToken cancellationToken)
@@ -168,7 +170,7 @@ public static class AuthEndpoints
     }
 
     private static Task<IResult> TestAuthAsync(
-        [FromServices] ILogger<ManagerService> logger,
+        [FromServices] ILogger<AuthEndpoint> logger,
         HttpContext context,
         CancellationToken cancellationToken)
     {

@@ -3,6 +3,7 @@ using Engine.Helpers;
 using Engine.Models;
 using Engine.Models.Chat;
 using Engine.Models.QueueMessages;
+using Engine.Models.Sentences;
 using Engine.Services;
 using Engine.Services.Clients.AccessorClient;
 using Engine.Services.Clients.AccessorClient.Models;
@@ -15,26 +16,33 @@ public class EngineQueueHandler : IQueueHandler<Message>
     private readonly ILogger<EngineQueueHandler> _logger;
     private readonly Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>> _handlers;
     private readonly IChatAiService _aiService;
+    private readonly ISentencesService _sentencesService;
     private readonly IAiReplyPublisher _publisher;
     private readonly IAccessorClient _accessorClient;
+    private readonly IChatTitleService _chatTitleService;
 
     public EngineQueueHandler(
         IEngineService engine,
         IChatAiService aiService,
         IAiReplyPublisher publisher,
         IAccessorClient accessorClient,
+        ISentencesService sentencesService,
+        IChatTitleService chatTitleService,
         ILogger<EngineQueueHandler> logger)
     {
         _engine = engine;
         _aiService = aiService;
         _publisher = publisher;
         _accessorClient = accessorClient;
+        _chatTitleService = chatTitleService;
         _logger = logger;
+        _sentencesService = sentencesService;
         _handlers = new Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>>
         {
             [MessageAction.CreateTask] = HandleCreateTaskAsync,
             [MessageAction.TestLongTask] = HandleTestLongTaskAsync,
-            [MessageAction.ProcessingChatMessage] = HandleProcessingChatMessageAsync
+            [MessageAction.ProcessingChatMessage] = HandleProcessingChatMessageAsync,
+            [MessageAction.GenerateSentences] = HandleSentenceGenerationAsync
 
         };
     }
@@ -171,14 +179,46 @@ public class EngineQueueHandler : IQueueHandler<Message>
 
             var snapshot = await _accessorClient.GetHistorySnapshotAsync(request.ThreadId, request.UserId, ct);
 
+            var skHistory = HistoryMapper.ToChatHistoryFromElement(snapshot.History);
+            var storyForKernel = HistoryMapper.CloneToChatHistory(skHistory);
+
+            HistoryMapper.EnsureSystemMessage(storyForKernel);
+
+            storyForKernel.AddUserMessage(request.UserMessage.Trim(), DateTimeOffset.UtcNow);
+
+            var chatName = snapshot.Name;
+            if (chatName == "New chat")
+            {
+                try
+                {
+                    chatName = await _chatTitleService.GenerateTitleAsync(storyForKernel, ct);
+
+                }
+                catch (Exception exName)
+                {
+                    _logger.LogError(exName, "Error while processing naming chat: {RequestId}", request.RequestId);
+                    chatName = DateTime.UtcNow.ToString("HHmm_dd_MM");
+
+                }
+            }
+
+            var upsertUserMessage = new UpsertHistoryRequest
+            {
+                ThreadId = request.ThreadId,
+                UserId = request.UserId,
+                Name = chatName,
+                ChatType = request.ChatType.ToString().ToLowerInvariant(),
+                History = HistoryMapper.SerializeHistory(storyForKernel)
+            };
+
+            await _accessorClient.UpsertHistorySnapshotAsync(upsertUserMessage, ct);
+
             var serviceRequest = new ChatAiServiseRequest
             {
-                History = snapshot.History,
-                UserMessage = request.UserMessage,
+                History = storyForKernel,
                 ChatType = request.ChatType,
                 ThreadId = request.ThreadId,
                 UserId = request.UserId,
-                Name = snapshot.Name,
                 RequestId = request.RequestId,
                 SentAt = request.SentAt,
                 TtlSeconds = request.TtlSeconds,
@@ -192,7 +232,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
                 {
                     RequestId = serviceRequest.RequestId,
                     Status = ChatAnswerStatus.Fail,
-                    ChatName = aiResponse.Name,
+                    ChatName = chatName,
                     ThreadId = serviceRequest.ThreadId,
                     AssistantMessage = aiResponse.Error
                 };
@@ -202,22 +242,24 @@ public class EngineQueueHandler : IQueueHandler<Message>
                 return;
             }
 
-            var upsert = new UpsertHistoryRequest
+            HistoryMapper.AppendDelta(storyForKernel, aiResponse.UpdatedHistory);
+
+            var upsertFinal = new UpsertHistoryRequest
             {
                 ThreadId = request.ThreadId,
                 UserId = request.UserId,
-                Name = aiResponse.Name,
+                Name = chatName,
                 ChatType = request.ChatType.ToString().ToLowerInvariant(),
-                History = aiResponse.UpdatedHistory
+                History = HistoryMapper.SerializeHistory(storyForKernel)
             };
 
-            await _accessorClient.UpsertHistorySnapshotAsync(upsert, ct);
+            await _accessorClient.UpsertHistorySnapshotAsync(upsertFinal, ct);
 
             var responseToManager = new EngineChatResponse
             {
                 AssistantMessage = aiResponse.Answer.Content,
                 RequestId = aiResponse.RequestId,
-                ChatName = aiResponse.Name,
+                ChatName = chatName,
                 Status = aiResponse.Status,
                 ThreadId = aiResponse.ThreadId
             };
@@ -240,6 +282,36 @@ public class EngineQueueHandler : IQueueHandler<Message>
 
             _logger.LogError(ex, "Transient error while processing AI chat {Action}", message.ActionName);
             throw new RetryableException("Transient error while processing AI chat.", ex);
+        }
+    }
+    private async Task HandleSentenceGenerationAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var payload = PayloadValidation.DeserializeOrThrow<SentenceRequest>(message, _logger);
+
+            PayloadValidation.ValidateSentenceGenerationRequest(payload, _logger);
+
+            _logger.LogDebug("Processing sentence generation");
+            var response = await _sentencesService.GenerateAsync(payload, cancellationToken);
+            var userId = payload.UserId;
+            await _publisher.SendGeneratedMessagesAsync(userId.ToString(), response, cancellationToken);
+        }
+        catch (NonRetryableException ex)
+        {
+            _logger.LogError(ex, "Non-retryable error processing message {Action}", message.ActionName);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning(ex, "Operation cancelled while processing message {Action}", message.ActionName);
+                throw new OperationCanceledException("Operation was cancelled.", ex, cancellationToken);
+            }
+
+            _logger.LogError(ex, "Transient error while processing for action {Action}", message.ActionName);
+            throw new RetryableException("Transient error while processing.", ex);
         }
     }
 }

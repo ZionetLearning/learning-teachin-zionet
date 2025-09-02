@@ -7,6 +7,7 @@ using Manager.Models.Chat;
 using Manager.Services.Clients.Engine;
 using Manager.Services.Clients.Engine.Models;
 using Manager.Services.Clients.Accessor;
+using Manager.Models.Sentences;
 
 namespace Manager.Endpoints;
 
@@ -44,6 +45,7 @@ public static class AiEndpoints
 
         // POST /ai-manager/speech/synthesize
         aiGroup.MapPost("/speech/synthesize", SynthesizeAsync).WithName("SynthesizeText");
+        aiGroup.MapPost("/sentence", SentenceGenerateAsync).WithName("GenerateSentence");
 
         #endregion
 
@@ -306,10 +308,11 @@ public static class AiEndpoints
     }
 
     private static async Task<IResult> SynthesizeAsync(
-       [FromBody] SpeechRequest dto,
-       [FromServices] IEngineClient engineClient,
-       [FromServices] ILogger<SpeechEndpoints> logger,
-       CancellationToken ct)
+        [FromBody] SpeechRequest dto,
+        [FromServices] IEngineClient engineClient,
+        [FromServices] ILogger<SpeechEndpoints> logger,
+        HttpRequest req,
+        CancellationToken ct)
     {
         if (dto is null || string.IsNullOrWhiteSpace(dto.Text))
         {
@@ -321,25 +324,37 @@ public static class AiEndpoints
         try
         {
             var engineResult = await engineClient.SynthesizeAsync(dto, ct);
-
-            if (engineResult != null)
-            {
-                // Transform engine response to match frontend expectations
-                var response = new SpeechResponse
-                {
-                    AudioData = engineResult.AudioData,
-                    Visemes = engineResult.Visemes,
-                    Metadata = engineResult.Metadata,
-                };
-
-                logger.LogInformation("Speech synthesis completed successfully");
-                return Results.Ok(response);
-            }
-            else
+            if (engineResult == null)
             {
                 logger.LogError("Engine synthesis failed - service returned null");
                 return Results.Problem("Speech synthesis failed.");
             }
+
+            var wantsBinary =
+                req.Headers.Accept.Any(h => h != null && h.Contains("application/octet-stream", StringComparison.OrdinalIgnoreCase)) ||
+                req.Headers.Accept.Any(h => h != null && h.Contains("audio/", StringComparison.OrdinalIgnoreCase)) ||
+                (req.Query.TryGetValue("format", out var fmt) && string.Equals(fmt, "binary", StringComparison.OrdinalIgnoreCase));
+
+            if (wantsBinary && !string.IsNullOrWhiteSpace(engineResult.AudioData))
+            {
+                var audioBytes = Convert.FromBase64String(engineResult.AudioData);
+                var contentType = !string.IsNullOrWhiteSpace(engineResult.Metadata?.ContentType)
+                    ? engineResult.Metadata.ContentType
+                    : "audio/mpeg";
+
+                logger.LogInformation("Returning binary audio (length {Length}, type {Type})", audioBytes.Length, contentType);
+                return Results.File(audioBytes, contentType: contentType, fileDownloadName: null, enableRangeProcessing: true);
+            }
+
+            var response = new SpeechResponse
+            {
+                AudioData = engineResult.AudioData,
+                Visemes = engineResult.Visemes,
+                Metadata = engineResult.Metadata,
+            };
+
+            logger.LogInformation("Speech synthesis completed successfully");
+            return Results.Ok(response);
         }
         catch (OperationCanceledException)
         {
@@ -355,6 +370,40 @@ public static class AiEndpoints
         {
             logger.LogError(ex, "Error in speech synthesis manager");
             return Results.Problem("An error occurred during speech synthesis.");
+        }
+    }
+    private static async Task<IResult> SentenceGenerateAsync(
+       [FromBody] SentenceRequest request,
+       [FromServices] IEngineClient engineClient,
+       [FromServices] ILogger<SpeechEndpoints> logger,
+       CancellationToken ct)
+    {
+        if (request is null)
+        {
+            return Results.BadRequest(new { error = "Request is required" });
+        }
+
+        logger.LogInformation("Received sentence generation request");
+
+        try
+        {
+            await engineClient.GenerateSentenceAsync(request);
+            return Results.Ok();
+        }
+        catch (OperationCanceledException)
+        {
+            logger.LogWarning("Sentence generation operation was canceled by user");
+            return Results.StatusCode(StatusCodes.Status499ClientClosedRequest);
+        }
+        catch (TimeoutException)
+        {
+            logger.LogWarning("Sentence generation operation timed out");
+            return Results.Problem("Sentence generation is taking too long.", statusCode: StatusCodes.Status408RequestTimeout);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error in Sentence generation manager");
+            return Results.Problem("An error occurred during sentence generation.");
         }
     }
 }
