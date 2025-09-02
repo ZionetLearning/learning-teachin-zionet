@@ -143,6 +143,15 @@ public class EngineClient : IEngineClient
                 data: request,
                 cancellationToken: cancellationToken);
 
+            if (result != null)
+            {
+                result.Metadata ??= new SpeechMetadata();
+                if (string.IsNullOrWhiteSpace(result.Metadata.ContentType))
+                {
+                    result.Metadata.ContentType = "audio/mpeg";
+                }
+            }
+
             return result;
         }
         catch (InvocationException ex) when (ex.InnerException is HttpRequestException httpEx && httpEx.Message.Contains("408"))
