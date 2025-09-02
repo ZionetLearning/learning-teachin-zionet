@@ -19,8 +19,8 @@ public class ManagerQueueHandlerTests
     {
         var ai = new Mock<IAiGatewayService>(MockBehavior.Strict);
         var logger = Mock.Of<ILogger<ManagerQueueHandler>>();
-        var managerService = Mock.Of<IManagerService>();
-        var handler = new ManagerQueueHandler(ai.Object, logger, managerService);
+        var notificationService = Mock.Of<INotificationService>();
+        var handler = new ManagerQueueHandler(ai.Object, logger, notificationService);
         return (ai, handler);
     }
 

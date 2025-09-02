@@ -15,7 +15,7 @@ public interface IAccessorClient
     Task<int> CleanupRefreshSessionsAsync(CancellationToken ct = default);
     Task<IReadOnlyList<ChatSummary>> GetChatsForUserAsync(Guid userId, CancellationToken ct = default);
     Task<UserData?> GetUserAsync(Guid userId);
-    Task CreateUserAsync(UserModel user);
+    Task<bool> CreateUserAsync(UserModel user);
     Task<bool> UpdateUserAsync(UpdateUserModel user, Guid userId);
     Task<bool> DeleteUserAsync(Guid userId);
     Task<IEnumerable<UserData>> GetAllUsersAsync(CancellationToken ct = default);
