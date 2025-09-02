@@ -191,12 +191,15 @@ services:
     container_name: apigateway-debug
     ports:
       - "5280:5280"
+    environment:
+    - ASPNETCORE_URLS=http://+:5280
+    - ASPNETCORE_ENVIRONMENT=Development
     depends_on:
       - manager
     networks:
       - microservice-net
-    volumes:
-      - ./ApiGateway:/src/ApiGateway:ro  # Mount source code for debugging
+    # volumes:
+    #   - ./ApiGateway:/src/ApiGateway:ro  # Mount source code for debugging
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5280/health"]
       interval: 10s
