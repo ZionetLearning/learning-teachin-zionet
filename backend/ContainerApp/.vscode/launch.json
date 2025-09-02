@@ -14,6 +14,7 @@
                 "quoteArgs": false
             },
             "sourceFileMap": {
+                "/src": "${workspaceFolder}/Manager",
                 "/src/Manager": "${workspaceFolder}/Manager"
             },
             "justMyCode": false,
@@ -35,6 +36,7 @@
                 "quoteArgs": false
             },
             "sourceFileMap": {
+                "/src": "${workspaceFolder}/Engine",
                 "/src/Engine": "${workspaceFolder}/Engine"
             },
             "justMyCode": false,
@@ -56,6 +58,7 @@
                 "quoteArgs": false
             },
             "sourceFileMap": {
+                "/src": "${workspaceFolder}/Accessor",
                 "/src/Accessor": "${workspaceFolder}/Accessor"
             },
             "justMyCode": false,
@@ -77,6 +80,7 @@
                 "quoteArgs": false
             },
             "sourceFileMap": {
+                "/src": "${workspaceFolder}/ApiGateway",
                 "/src/ApiGateway": "${workspaceFolder}/ApiGateway"
             },
             "justMyCode": false,
