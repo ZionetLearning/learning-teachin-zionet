@@ -1,229 +1,222 @@
 {
-  "id": null,
-  "uid": "static-webapp-ai-logs",
   "title": "Static Web App - Application Insights Dashboard (Logs)",
-  "timezone": "browser",
-  "schemaVersion": 38,
-  "version": 1,
-  "editable": true,
-  "graphTooltip": 0,
-  "style": "dark",
-  "tags": ["static-web-app", "application-insights", "log-analytics"],
+  "uid": "swa-appinsights-logs",
+  "schemaVersion": 39,
+  "editable": false,
+  "refresh": "30s",
   "time": { "from": "now-24h", "to": "now" },
-  "timepicker": { "refresh_intervals": ["10s","30s","1m","5m","15m","30m","1h"] },
-
   "templating": {
     "list": [
       {
         "name": "azure_monitor_ds",
         "type": "datasource",
         "query": "grafana-azure-monitor-datasource",
-        "current": {},
-        "hide": 0,
-        "label": "Azure Monitor datasource"
+        "refresh": 1
       },
       {
         "name": "resource_group",
         "type": "query",
-        "label": "Resource Group",
-        "datasource": { "type": "grafana-azure-monitor-datasource", "uid": "${azure_monitor_ds}" },
-        "definition": "ResourceGroups()",
+        "datasource": { "type": "grafana-azure-monitor-datasource", "uid": "$azure_monitor_ds" },
         "query": "ResourceGroups()",
-        "refresh": 1,
-        "hide": 0,
-        "includeAll": false
+        "refresh": 1
       },
       {
-        "name": "log_analytics_workspace",
+        "name": "log_analytics_ws",
         "type": "query",
-        "label": "Log Analytics Workspace",
-        "datasource": { "type": "grafana-azure-monitor-datasource", "uid": "${azure_monitor_ds}" },
-        "definition": "ResourceNames($resource_group, Microsoft.OperationalInsights/workspaces)",
-        "query": "ResourceNames($resource_group, Microsoft.OperationalInsights/workspaces)",
-        "refresh": 1,
-        "hide": 0,
-        "includeAll": false
+        "datasource": { "type": "grafana-azure-monitor-datasource", "uid": "$azure_monitor_ds" },
+        "query": "Resources(${resource_group}, Microsoft.OperationalInsights/workspaces)",
+        "refresh": 1
       }
     ]
   },
-
   "panels": [
     {
-      "type": "timeseries",
+      "id": 1,
       "title": "Page Views",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
-      "datasource": { "type": "grafana-azure-monitor-datasource", "uid": "${azure_monitor_ds}" },
-      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "type": "timeseries",
+      "gridPos": { "h": 9, "w": 8, "x": 0, "y": 0 },
+      "datasource": { "type": "grafana-azure-monitor-datasource", "uid": "$azure_monitor_ds" },
       "targets": [
         {
           "refId": "A",
+          "queryType": "Logs",
           "format": "time_series",
-          "service": "logAnalytics",
-          "resource": "$log_analytics_workspace",
           "timeColumn": "TimeGenerated",
-          "query": "AppPageViews\n| where $__timeFilter(TimeGenerated)\n| summarize total = count() by bin(TimeGenerated, 5m)\n| order by TimeGenerated asc"
+          "resource": "$log_analytics_ws",
+          "query": "AppPageViews | where $__timeFilter(TimeGenerated) | summarize total=count() by bin(TimeGenerated, 5m) | order by TimeGenerated asc"
         }
       ]
     },
-
     {
-      "type": "timeseries",
+      "id": 2,
       "title": "Unique Users",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
-      "datasource": { "type": "grafana-azure-monitor-datasource", "uid": "${azure_monitor_ds}" },
+      "type": "timeseries",
+      "gridPos": { "h": 9, "w": 8, "x": 8, "y": 0 },
+      "datasource": { "type": "grafana-azure-monitor-datasource", "uid": "$azure_monitor_ds" },
       "targets": [
         {
           "refId": "A",
+          "queryType": "Logs",
           "format": "time_series",
-          "service": "logAnalytics",
-          "resource": "$log_analytics_workspace",
           "timeColumn": "TimeGenerated",
-          "query": "AppPageViews\n| where $__timeFilter(TimeGenerated)\n| summarize unique_users = dcount(user_Id) by bin(TimeGenerated, 1h)\n| order by TimeGenerated asc"
+          "resource": "$log_analytics_ws",
+          "query": "AppPageViews | where $__timeFilter(TimeGenerated) | extend u = coalesce(user_Id, UserId) | summarize users=dcount(u) by bin(TimeGenerated, 5m) | order by TimeGenerated asc"
         }
       ]
     },
-
     {
-      "type": "timeseries",
+      "id": 3,
       "title": "User Sessions",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
-      "datasource": { "type": "grafana-azure-monitor-datasource", "uid": "${azure_monitor_ds}" },
+      "type": "timeseries",
+      "gridPos": { "h": 9, "w": 8, "x": 16, "y": 0 },
+      "datasource": { "type": "grafana-azure-monitor-datasource", "uid": "$azure_monitor_ds" },
       "targets": [
         {
           "refId": "A",
+          "queryType": "Logs",
           "format": "time_series",
-          "service": "logAnalytics",
-          "resource": "$log_analytics_workspace",
           "timeColumn": "TimeGenerated",
-          "query": "AppPageViews\n| where $__timeFilter(TimeGenerated)\n| summarize sessions = dcount(session_Id) by bin(TimeGenerated, 1h)\n| order by TimeGenerated asc"
+          "resource": "$log_analytics_ws",
+          "query": "AppPageViews | where $__timeFilter(TimeGenerated) | extend s = coalesce(session_Id, SessionId) | summarize sessions=dcount(s) by bin(TimeGenerated, 5m) | order by TimeGenerated asc"
         }
       ]
     },
-
     {
-      "type": "timeseries",
-      "title": "Errors & Failed Requests (rate %)",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
-      "datasource": { "type": "grafana-azure-monitor-datasource", "uid": "${azure_monitor_ds}" },
-      "fieldConfig": { "defaults": { "unit": "percent" }, "overrides": [] },
-      "targets": [
-        {
-          "refId": "A",
-          "format": "time_series",
-          "service": "logAnalytics",
-          "resource": "$log_analytics_workspace",
-          "timeColumn": "TimeGenerated",
-          "query": "AppRequests\n| where $__timeFilter(TimeGenerated)\n| summarize failed = countif(success == false), total = count() by bin(TimeGenerated, 5m)\n| extend errorRate = 100.0 * todouble(failed) / todouble(total)\n| project TimeGenerated, errorRate\n| order by TimeGenerated asc"
-        }
-      ]
-    },
-
-    {
-      "type": "timeseries",
+      "id": 4,
       "title": "Page Load Performance (avg ms)",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
-      "datasource": { "type": "grafana-azure-monitor-datasource", "uid": "${azure_monitor_ds}" },
-      "fieldConfig": { "defaults": { "unit": "ms" }, "overrides": [] },
-      "targets": [
-        {
-          "refId": "A",
-          "format": "time_series",
-          "service": "logAnalytics",
-          "resource": "$log_analytics_workspace",
-          "timeColumn": "TimeGenerated",
-          "query": "AppBrowserTimings\n| where $__timeFilter(TimeGenerated)\n| summarize avgLoadMs = avg(todouble(duration)) by bin(TimeGenerated, 5m)\n| project TimeGenerated, avgLoadMs\n| order by TimeGenerated asc"
-        }
-      ]
-    },
-
-    {
-      "type": "stat",
-      "title": "Active Users (last 1h)",
-      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 16 },
-      "datasource": { "type": "grafana-azure-monitor-datasource", "uid": "${azure_monitor_ds}" },
-      "targets": [
-        {
-          "refId": "A",
-          "format": "table",
-          "service": "logAnalytics",
-          "resource": "$log_analytics_workspace",
-          "timeColumn": "TimeGenerated",
-          "query": "AppPageViews\n| where TimeGenerated >= ago(1h)\n| summarize active = dcount(user_Id)\n| project active"
-        }
-      ],
-      "options": { "reduceOptions": { "values": false, "calcs": ["lastNotNull"] }, "orientation": "horizontal" }
-    },
-
-    {
-      "type": "stat",
-      "title": "Total Page Views (last 1h)",
-      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 16 },
-      "datasource": { "type": "grafana-azure-monitor-datasource", "uid": "${azure_monitor_ds}" },
-      "targets": [
-        {
-          "refId": "A",
-          "format": "table",
-          "service": "logAnalytics",
-          "resource": "$log_analytics_workspace",
-          "timeColumn": "TimeGenerated",
-          "query": "AppPageViews\n| where TimeGenerated >= ago(1h)\n| summarize total = count()\n| project total"
-        }
-      ],
-      "options": { "reduceOptions": { "values": false, "calcs": ["lastNotNull"] }, "orientation": "horizontal" }
-    },
-
-    {
       "type": "timeseries",
-      "title": "Exceptions (1h bins)",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
-      "datasource": { "type": "grafana-azure-monitor-datasource", "uid": "${azure_monitor_ds}" },
+      "gridPos": { "h": 9, "w": 8, "x": 0, "y": 9 },
+      "datasource": { "type": "grafana-azure-monitor-datasource", "uid": "$azure_monitor_ds" },
       "targets": [
         {
           "refId": "A",
+          "queryType": "Logs",
           "format": "time_series",
-          "service": "logAnalytics",
-          "resource": "$log_analytics_workspace",
           "timeColumn": "TimeGenerated",
-          "query": "AppExceptions\n| where $__timeFilter(TimeGenerated)\n| summarize total = count() by bin(TimeGenerated, 1h)\n| order by TimeGenerated asc"
+          "resource": "$log_analytics_ws",
+          "query": "AppBrowserTimings | where $__timeFilter(TimeGenerated) | summarize avg_ms=avg(Duration) by bin(TimeGenerated, 5m) | order by TimeGenerated asc"
         }
       ]
     },
-
     {
-      "type": "bargauge",
-      "title": "Browser Usage (top 10)",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
-      "datasource": { "type": "grafana-azure-monitor-datasource", "uid": "${azure_monitor_ds}" },
+      "id": 5,
+      "title": "Errors & Failed Requests",
+      "type": "timeseries",
+      "gridPos": { "h": 9, "w": 8, "x": 8, "y": 9 },
+      "datasource": { "type": "grafana-azure-monitor-datasource", "uid": "$azure_monitor_ds" },
       "targets": [
         {
           "refId": "A",
-          "format": "table",
-          "service": "logAnalytics",
-          "resource": "$log_analytics_workspace",
+          "queryType": "Logs",
+          "format": "time_series",
           "timeColumn": "TimeGenerated",
-          "query": "AppPageViews\n| where $__timeFilter(TimeGenerated)\n| summarize total = count() by client_Browser\n| top 10 by total desc\n| project client_Browser, total"
+          "resource": "$log_analytics_ws",
+          "query": "AppRequests | where $__timeFilter(TimeGenerated) | summarize failed=countif(tolong(ResultCode) >= 400 or Success == false) by bin(TimeGenerated, 5m) | order by TimeGenerated asc"
         }
-      ],
-      "options": { "displayMode": "gradient", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "values": true } },
-      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+      ]
     },
-
     {
-      "type": "bargauge",
-      "title": "Users by Country (top 10)",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
-      "datasource": { "type": "grafana-azure-monitor-datasource", "uid": "${azure_monitor_ds}" },
+      "id": 6,
+      "title": "Active Users (1h)",
+      "type": "stat",
+      "gridPos": { "h": 9, "w": 8, "x": 16, "y": 9 },
+      "datasource": { "type": "grafana-azure-monitor-datasource", "uid": "$azure_monitor_ds" },
       "targets": [
         {
           "refId": "A",
+          "queryType": "Logs",
           "format": "table",
-          "service": "logAnalytics",
-          "resource": "$log_analytics_workspace",
           "timeColumn": "TimeGenerated",
-          "query": "AppPageViews\n| where $__timeFilter(TimeGenerated)\n| summarize users = dcount(user_Id) by client_CountryOrRegion\n| top 10 by users desc\n| project client_CountryOrRegion, users"
+          "resource": "$log_analytics_ws",
+          "query": "AppPageViews | where TimeGenerated > ago(1h) | extend u=coalesce(user_Id, UserId) | summarize active_users=dcount(u)"
         }
-      ],
-      "options": { "displayMode": "basic", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "values": true } }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Total Page Views (1h)",
+      "type": "stat",
+      "gridPos": { "h": 9, "w": 8, "x": 0, "y": 18 },
+      "datasource": { "type": "grafana-azure-monitor-datasource", "uid": "$azure_monitor_ds" },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Logs",
+          "format": "table",
+          "timeColumn": "TimeGenerated",
+          "resource": "$log_analytics_ws",
+          "query": "AppPageViews | where TimeGenerated > ago(1h) | summarize total=count()"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Exceptions (1h)",
+      "type": "stat",
+      "gridPos": { "h": 9, "w": 8, "x": 8, "y": 18 },
+      "datasource": { "type": "grafana-azure-monitor-datasource", "uid": "$azure_monitor_ds" },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Logs",
+          "format": "table",
+          "timeColumn": "TimeGenerated",
+          "resource": "$log_analytics_ws",
+          "query": "AppExceptions | where TimeGenerated > ago(1h) | summarize total=count()"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "Browser Usage (Top 10)",
+      "type": "table",
+      "gridPos": { "h": 9, "w": 8, "x": 16, "y": 18 },
+      "datasource": { "type": "grafana-azure-monitor-datasource", "uid": "$azure_monitor_ds" },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Logs",
+          "format": "table",
+          "timeColumn": "TimeGenerated",
+          "resource": "$log_analytics_ws",
+          "query": "AppBrowserTimings | where $__timeFilter(TimeGenerated) | summarize total=count() by tostring(coalesce(client_Browser, Browser)) | top 10 by total desc"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "Users by Country (Top 10)",
+      "type": "table",
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 27 },
+      "datasource": { "type": "grafana-azure-monitor-datasource", "uid": "$azure_monitor_ds" },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Logs",
+          "format": "table",
+          "timeColumn": "TimeGenerated",
+          "resource": "$log_analytics_ws",
+          "query": "AppPageViews | where $__timeFilter(TimeGenerated) | summarize total=count() by tostring(coalesce(client_CountryOrRegion, Country)) | top 10 by total desc"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "title": "Requests by ResultCode",
+      "type": "table",
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 27 },
+      "datasource": { "type": "grafana-azure-monitor-datasource", "uid": "$azure_monitor_ds" },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Logs",
+          "format": "table",
+          "timeColumn": "TimeGenerated",
+          "resource": "$log_analytics_ws",
+          "query": "AppRequests | where $__timeFilter(TimeGenerated) | summarize total=count() by tostring(ResultCode) | top 10 by total desc"
+        }
+      ]
     }
-  ]
+  ],
+  "version": 1
 }
