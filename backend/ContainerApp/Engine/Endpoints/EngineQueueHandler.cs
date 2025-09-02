@@ -7,12 +7,13 @@ using Engine.Models.Sentences;
 using Engine.Services;
 using Engine.Services.Clients.AccessorClient;
 using Engine.Services.Clients.AccessorClient.Models;
+using Dapr.Client;
 
 namespace Engine.Endpoints;
 
 public class EngineQueueHandler : IQueueHandler<Message>
 {
-    private readonly IEngineService _engine;
+    private readonly DaprClient _daprClient;
     private readonly ILogger<EngineQueueHandler> _logger;
     private readonly Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>> _handlers;
     private readonly IChatAiService _aiService;
@@ -22,7 +23,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
     private readonly IChatTitleService _chatTitleService;
 
     public EngineQueueHandler(
-        IEngineService engine,
+        DaprClient daprClient,
         IChatAiService aiService,
         IAiReplyPublisher publisher,
         IAccessorClient accessorClient,
@@ -30,7 +31,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
         IChatTitleService chatTitleService,
         ILogger<EngineQueueHandler> logger)
     {
-        _engine = engine;
+        _daprClient = daprClient;
         _aiService = aiService;
         _publisher = publisher;
         _accessorClient = accessorClient;
@@ -65,12 +66,24 @@ public class EngineQueueHandler : IQueueHandler<Message>
         try
         {
             var payload = PayloadValidation.DeserializeOrThrow<TaskModel>(message, _logger);
-
             PayloadValidation.ValidateTask(payload, _logger);
 
-            _logger.LogDebug("Processing task {Id}", payload.Id);
-            await _engine.ProcessTaskAsync(payload, cancellationToken);
-            _logger.LogInformation("Task {Id} processed", payload.Id);
+            using var _ = _logger.BeginScope("Processing TaskId: {TaskId}", payload.Id);
+            _logger.LogInformation("Inside {Method}", nameof(HandleCreateTaskAsync));
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (payload is null)
+            {
+                _logger.LogWarning("Attempted to process a null task");
+                throw new ArgumentNullException(nameof(message), "Task payload cannot be null");
+            }
+
+            _logger.LogInformation("Logged task: {Name}", payload.Name);
+
+            await _daprClient.InvokeMethodAsync(HttpMethod.Post, "accessor", "tasks-accessor/task", payload, cancellationToken);
+
+            _logger.LogInformation("Task {Id} forwarded to the Accessor service", payload.Id);
         }
         catch (NonRetryableException ex)
         {
@@ -112,15 +125,27 @@ public class EngineQueueHandler : IQueueHandler<Message>
         try
         {
             var payload = PayloadValidation.DeserializeOrThrow<TaskModel>(message, _logger);
-
             PayloadValidation.ValidateTask(payload, _logger);
 
-            _logger.LogInformation("Starting long task handler for Task {Id}", payload.Id);
-
             await Task.Delay(TimeSpan.FromSeconds(80), cancellationToken);
-            await _engine.ProcessTaskAsync(payload, cancellationToken);
-            _logger.LogInformation("Task {Id} processed", payload.Id);
 
+            using var _ = _logger.BeginScope("Starting long task handler for Task {Id}", payload.Id);
+            _logger.LogInformation("Inside {Method}", nameof(HandleTestLongTaskAsync));
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (payload is null)
+            {
+                _logger.LogWarning("Attempted to process a null task");
+                throw new ArgumentNullException(nameof(message), "Task payload cannot be null");
+            }
+
+            _logger.LogInformation("Logged task: {Name}", payload.Name);
+
+            await _daprClient.InvokeMethodAsync(
+                HttpMethod.Post, "accessor", "tasks-accessor/task", payload, cancellationToken);
+
+            _logger.LogInformation("Task {Id} forwarded to the Accessor service", payload.Id);
         }
         catch (NonRetryableException ex)
         {
