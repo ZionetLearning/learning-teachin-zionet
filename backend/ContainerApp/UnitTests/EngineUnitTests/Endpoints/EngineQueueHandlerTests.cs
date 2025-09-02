@@ -36,6 +36,7 @@ public class EngineQueueHandlerTests
         Mock<IChatAiService> ai,
         Mock<IAiReplyPublisher> pub,
         Mock<IAccessorClient> accessorClient,
+        Mock<ISentencesService> sentService,
         Mock<ILogger<EngineQueueHandler>> log,
         EngineQueueHandler sut
     ) CreateSut()
@@ -44,6 +45,7 @@ public class EngineQueueHandlerTests
         var ai = new Mock<IChatAiService>(MockBehavior.Strict);
         var pub = new Mock<IAiReplyPublisher>(MockBehavior.Strict);
         var accessorClient = new Mock<IAccessorClient>(MockBehavior.Strict);
+        var sentService = new Mock<ISentencesService>(MockBehavior.Strict);
         var log = new Mock<ILogger<EngineQueueHandler>>();
         var sut = new EngineQueueHandler(dapr.Object, ai.Object, pub.Object, accessorClient.Object, log.Object);
         return (dapr, ai, pub, accessorClient, log, sut);
