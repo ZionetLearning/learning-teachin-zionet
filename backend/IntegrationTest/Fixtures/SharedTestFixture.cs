@@ -112,7 +112,7 @@ public class SharedTestFixture : IAsyncLifetime
         }
         catch (Exception ex)
         {
-            output?.WriteLine($"❌ Failed to start SignalR connection: {ex}");
+            output?.WriteLine($" Failed to start SignalR connection: {ex}");
             throw; // bubble up
         }
     }

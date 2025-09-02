@@ -10,11 +10,21 @@ using Xunit.Abstractions;
 namespace IntegrationTests.Tests.Tasks;
 
 public abstract class TaskTestBase(
+    SharedTestFixture sharedFixture,
     HttpTestFixture fixture,
     ITestOutputHelper outputHelper,
     SignalRTestFixture signalRFixture
 ) : IntegrationTestBase(fixture, outputHelper, signalRFixture)
 {
+    private readonly SharedTestFixture _shared = sharedFixture;
+
+    public override async Task InitializeAsync()
+    {
+        await _shared.GetAuthenticatedTokenAsync();
+
+        await _shared.EnsureSignalRStartedAsync(SignalRFixture, OutputHelper);
+    }
+
     protected async Task<TaskModel> CreateTaskAsync(TaskModel? task = null)
     {
         task ??= TestDataHelper.CreateRandomTask();

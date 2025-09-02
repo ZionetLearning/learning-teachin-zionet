@@ -138,13 +138,18 @@ public class AccessorClient(
 
         try
         {
-            var userId = _httpContextAccessor.HttpContext?.Request.Headers["X-User-Id"].FirstOrDefault() ?? "anonymous";
+            var userId = _httpContextAccessor.HttpContext?.User?.Identity?.Name;
+            if (string.IsNullOrWhiteSpace(userId) || !Guid.TryParse(userId, out _))
+            {
+                _logger.LogError("Missing or invalid UserId in HttpContext. Value: '{UserIdRaw}'", userId);
+                throw new InvalidOperationException("Authenticated user id is missing or not a valid GUID.");
+            }
 
             var payload = JsonSerializer.SerializeToElement(task);
             var userContextMetadata = JsonSerializer.SerializeToElement(
                 new UserContextMetadata
                 {
-                    UserId = userId,
+                    UserId = userId!,
                     MessageId = Guid.NewGuid().ToString()
                 }
             );
@@ -158,9 +163,10 @@ public class AccessorClient(
             await _daprClient.InvokeBindingAsync($"{QueueNames.AccessorQueue}-out", "create", message);
 
             _logger.LogDebug(
-                "Task {TaskId} sent to Accessor via binding '{Binding}'",
+                "Task {TaskId} sent to Accessor via binding '{Binding}' for user {UserId}",
                 task.Id,
-                QueueNames.AccessorQueue
+                QueueNames.AccessorQueue,
+                userId
             );
             return (true, "sent to queue");
         }
