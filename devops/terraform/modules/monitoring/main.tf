@@ -32,7 +32,7 @@ resource "azurerm_monitor_diagnostic_setting" "postgres" {
   }
 }
 
-# SignalR - Fixed: Use "AllLogs" instead of "ConnectivityLogs"
+# SignalR
 resource "azurerm_monitor_diagnostic_setting" "signalr" {
   name                       = "signalr-diag"
   target_resource_id         = var.signalr_id
@@ -62,13 +62,6 @@ resource "azurerm_monitor_diagnostic_setting" "redis" {
   }
 }
 
-# NOTE: Static Web App diagnostic settings are not currently supported by Azure
-# Removing this resource as it will fail with "Category 'AppLogs' is not supported"
-# 
-# Alternative: Monitor Static Web Apps through Application Insights integration
-# which is configured separately in your frontend application code
-
-# Uncomment this block if/when Azure adds support for Static Web App diagnostic settings
 resource "azurerm_monitor_diagnostic_setting" "application_insights" {
   count                      = length(var.frontend_application_insights_ids)
   name                       = "appinsights-diag-${count.index}"

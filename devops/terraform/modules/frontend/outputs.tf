@@ -22,7 +22,7 @@ output "application_insights_id" {
 }
 
 output "application_insights_app_id" {
-  value = azurerm_application_insights.frontend.app_id
+  value       = azurerm_application_insights.frontend.app_id
   description = "Use this in Grafana Azure Monitor data source"
 }
 

@@ -13,7 +13,3 @@ output "signalr_diag_id" {
 output "redis_diag_id" {
   value = azurerm_monitor_diagnostic_setting.redis.id
 }
-
-# output "frontend_diag_id" {
-#   value = azurerm_monitor_diagnostic_setting.frontend.id
-# }

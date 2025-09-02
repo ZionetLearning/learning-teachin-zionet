@@ -82,7 +82,6 @@ env:
   VITE_AZURE_OPENAI_ENDPOINT: "https://france-teachin-open-ai.openai.azure.com/"
   
   # Monitoring and tracking
-  # VITE_APPINSIGHTS_CONNECTION_STRING: ${{ secrets.VITE_APPINSIGHTS_CONNECTION_STRING }}
   VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
   SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
@@ -202,14 +201,14 @@ jobs:
         working-directory: ${{ env.FE_DIR }}
         run: |
           if ! grep -R "applicationinsights" -n dist/ >/dev/null 2>&1; then
-            echo "❌ AI SDK not found in built files."
+            echo "AI SDK not found in built files."
             exit 1
           fi
           if ! grep -R "applicationinsights.azure.com" -n dist/ >/dev/null 2>&1; then
-            echo "❌ Ingestion endpoint not found (env missing?)."
+            echo "Ingestion endpoint not found (env missing?)."
             exit 1
           fi
-          echo "✅ AI present in bundles."
+          echo "AI present in bundles."
 
       - name: Upload build artifacts
         if: |
