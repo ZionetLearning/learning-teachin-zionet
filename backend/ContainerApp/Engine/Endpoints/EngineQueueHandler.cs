@@ -1,8 +1,12 @@
 ﻿using DotQueue;
+using System.Text.Json;
+using Dapr.Client;
 using Engine.Helpers;
 using Engine.Models;
 using Engine.Models.Chat;
 using Engine.Models.QueueMessages;
+using Engine.Constants;
+using Engine.Routing;
 using Engine.Services;
 using Engine.Services.Clients.AccessorClient;
 using Engine.Services.Clients.AccessorClient.Models;
@@ -17,19 +21,28 @@ public class EngineQueueHandler : IQueueHandler<Message>
     private readonly IChatAiService _aiService;
     private readonly IAiReplyPublisher _publisher;
     private readonly IAccessorClient _accessorClient;
+    private readonly IQueueDispatcher _queueDispatcher;
+    private readonly RoutingMiddleware _routingMiddleware;
+    private readonly DaprClient _daprClient;
 
     public EngineQueueHandler(
         IEngineService engine,
         IChatAiService aiService,
         IAiReplyPublisher publisher,
         IAccessorClient accessorClient,
-        ILogger<EngineQueueHandler> logger)
+        ILogger<EngineQueueHandler> logger,
+        DaprClient daprClient,
+        IQueueDispatcher queueDispatcher,
+        RoutingMiddleware routingMiddleware)
     {
         _engine = engine;
         _aiService = aiService;
         _publisher = publisher;
         _accessorClient = accessorClient;
         _logger = logger;
+        _daprClient = daprClient;
+        _queueDispatcher = queueDispatcher;
+        _routingMiddleware = routingMiddleware;
         _handlers = new Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>>
         {
             [MessageAction.CreateTask] = HandleCreateTaskAsync,
@@ -39,17 +52,23 @@ public class EngineQueueHandler : IQueueHandler<Message>
         };
     }
 
-    public async Task HandleAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
+    public async Task HandleAsync(Message message, IReadOnlyDictionary<string, string>? metadataCallback, Func<Task> renewLock, CancellationToken cancellationToken)
     {
-        if (_handlers.TryGetValue(message.ActionName, out var handler))
-        {
-            await handler(message, renewLock, cancellationToken);
-        }
-        else
-        {
-            _logger.LogWarning("No handler for action {Action}", message.ActionName);
-            throw new NonRetryableException($"No handler for action {message.ActionName}");
-        }
+        await _routingMiddleware.HandleAsync(
+            message,
+            metadataCallback,
+            async () =>
+            {
+                if (_handlers.TryGetValue(message.ActionName, out var handler))
+                {
+                    await handler(message, renewLock, cancellationToken);
+                }
+                else
+                {
+                    _logger.LogWarning("No handler for action {Action}", message.ActionName);
+                    throw new NonRetryableException($"No handler for action {message.ActionName}");
+                }
+            });
     }
 
     private async Task HandleCreateTaskAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
@@ -62,6 +81,18 @@ public class EngineQueueHandler : IQueueHandler<Message>
 
             _logger.LogDebug("Processing task {Id}", payload.Id);
             await _engine.ProcessTaskAsync(payload, cancellationToken);
+
+            // build TaskResult
+            var result = new TaskResult(payload.Id, TaskResultStatus.Created);
+
+            var resultMessage = new Message
+            {
+                ActionName = MessageAction.TaskResult,
+                Payload = JsonSerializer.SerializeToElement(result)
+            };
+
+            await _queueDispatcher.SendAsync(QueueNames.ManagerCallbackQueue, resultMessage, cancellationToken);
+
             _logger.LogInformation("Task {Id} processed", payload.Id);
         }
         catch (NonRetryableException ex)
@@ -111,6 +142,24 @@ public class EngineQueueHandler : IQueueHandler<Message>
 
             await Task.Delay(TimeSpan.FromSeconds(80), cancellationToken);
             await _engine.ProcessTaskAsync(payload, cancellationToken);
+
+            // build TaskResult
+            var result = new TaskResult(payload.Id, TaskResultStatus.Created);
+
+            var resultMessage = new Message
+            {
+                ActionName = MessageAction.TaskResult,
+                Payload = JsonSerializer.SerializeToElement(result)
+            };
+
+            var ctx = _routingMiddleware.Accessor.Current;
+            _logger.LogInformation(
+                "[ENGINE:OUTBOUND] Forwarding TaskResult with Callback={Callback}, ReplyQueue={ReplyQueue}",
+                ctx?.CallbackMethod ?? "(none)",
+                ctx?.ReplyQueue ?? "(none)");
+
+            await _queueDispatcher.SendAsync(QueueNames.ManagerCallbackQueue, resultMessage, cancellationToken);
+
             _logger.LogInformation("Task {Id} processed", payload.Id);
 
         }

@@ -11,6 +11,8 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Text.Json;
+using Dapr.Client;
+using Engine.Routing;
 
 public class EngineQueueHandlerTests
 {
@@ -30,12 +32,12 @@ public class EngineQueueHandlerTests
     }
     // Centralized SUT + mocks factory to reduce boilerplate
     private static (
-        Mock<IEngineService> engine,
-        Mock<IChatAiService> ai,
-        Mock<IAiReplyPublisher> pub,
-        Mock<IAccessorClient> accessorClient,
-        Mock<ILogger<EngineQueueHandler>> log,
-        EngineQueueHandler sut
+    Mock<IEngineService> engine,
+    Mock<IChatAiService> ai,
+    Mock<IAiReplyPublisher> pub,
+    Mock<IAccessorClient> accessorClient,
+    Mock<ILogger<EngineQueueHandler>> log,
+    EngineQueueHandler sut
     ) CreateSut()
     {
         var engine = new Mock<IEngineService>(MockBehavior.Strict);
@@ -43,7 +45,22 @@ public class EngineQueueHandlerTests
         var pub = new Mock<IAiReplyPublisher>(MockBehavior.Strict);
         var accessorClient = new Mock<IAccessorClient>(MockBehavior.Strict);
         var log = new Mock<ILogger<EngineQueueHandler>>();
-        var sut = new EngineQueueHandler(engine.Object, ai.Object, pub.Object, accessorClient.Object, log.Object);
+        var dapr = new Mock<DaprClient>();
+        var dispatcher = new Mock<IQueueDispatcher>();
+        var routingAccessor = new Mock<IRoutingContextAccessor>();
+        var routingLogger = new Mock<ILogger<RoutingMiddleware>>();
+        var routing = new RoutingMiddleware(routingAccessor.Object, routingLogger.Object);
+
+        var sut = new EngineQueueHandler(
+            engine.Object,
+            ai.Object,
+            pub.Object,
+            accessorClient.Object,
+            log.Object,
+            dapr.Object,
+            dispatcher.Object,
+            routing);
+
         return (engine, ai, pub, accessorClient, log, sut);
     }
 
@@ -70,7 +87,7 @@ public class EngineQueueHandlerTests
         };
 
         // Act
-        await sut.HandleAsync(msg, renewLock: () => Task.CompletedTask, CancellationToken.None);
+        await sut.HandleAsync(msg, null, renewLock: () => Task.CompletedTask, CancellationToken.None);
 
         // Assert
         engine.Verify(e => e.ProcessTaskAsync(task, It.IsAny<CancellationToken>()), Times.Once);
@@ -91,7 +108,7 @@ public class EngineQueueHandlerTests
             Payload = JsonSerializer.Deserialize<JsonElement>("null")
         };
 
-        var act = () => sut.HandleAsync(msg, () => Task.CompletedTask, CancellationToken.None);
+        var act = () => sut.HandleAsync(msg, null, () => Task.CompletedTask, CancellationToken.None);
 
         await act.Should().ThrowAsync<NonRetryableException>()
                  .WithMessage("*Payload deserialization returned null*");
@@ -226,7 +243,7 @@ public class EngineQueueHandlerTests
         };
 
         // Act
-        await sut.HandleAsync(msg, () => Task.CompletedTask, CancellationToken.None);
+        await sut.HandleAsync(msg, null, () => Task.CompletedTask, CancellationToken.None);
 
         // Assert
         accessorClient.Verify(a => a.GetHistorySnapshotAsync(threadId, userId, It.IsAny<CancellationToken>()), Times.Once);
@@ -265,7 +282,7 @@ public class EngineQueueHandlerTests
             Payload = ToJsonElement(req)
         };
 
-        var act = () => sut.HandleAsync(msg, () => Task.CompletedTask, CancellationToken.None);
+        var act = () => sut.HandleAsync(msg, null, () => Task.CompletedTask, CancellationToken.None);
 
         await act.Should().ThrowAsync<RetryableException>()
           .WithMessage("*Transient error while processing AI question*");
@@ -337,7 +354,7 @@ public class EngineQueueHandlerTests
             Metadata = JsonSerializer.SerializeToElement(new { UserId = userId })
         };
 
-        var act = () => sut.HandleAsync(msg, () => Task.CompletedTask, CancellationToken.None);
+        var act = () => sut.HandleAsync(msg, null, () => Task.CompletedTask, CancellationToken.None);
         var ex = (await act.Should().ThrowAsync<RetryableException>()
                            .WithMessage("*Transient error while processing AI chat*"))
                  .Which;
@@ -362,7 +379,7 @@ public class EngineQueueHandlerTests
             Payload = JsonSerializer.Deserialize<JsonElement>("{}")
         };
 
-        var act = () => sut.HandleAsync(msg, () => Task.CompletedTask, CancellationToken.None);
+        var act = () => sut.HandleAsync(msg, null, () => Task.CompletedTask, CancellationToken.None);
 
         await act.Should().ThrowAsync<NonRetryableException>()
                  .WithMessage("*No handler for action 9999*");

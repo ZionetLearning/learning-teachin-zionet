@@ -9,6 +9,7 @@ using Manager.Models.Auth;
 using Manager.Models.QueueMessages;
 using Manager.Services;
 using Manager.Services.Clients.Engine;
+using Manager.Routing;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -89,6 +90,11 @@ builder.Services.AddScoped<IAccessorClient, AccessorClient>();
 builder.Services.AddScoped<IEngineClient, EngineClient>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ICallbackDispatcher, CallbackDispatcher>();
+builder.Services.AddScoped<IManagerCallbacks, ManagerCallbacks>();
+builder.Services.AddScoped<IRoutingContextAccessor, RoutingContextAccessor>();
+builder.Services.AddScoped<IQueueDispatcher, DaprQueueDispatcher>();
+builder.Services.AddScoped<RoutingMiddleware>();
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
