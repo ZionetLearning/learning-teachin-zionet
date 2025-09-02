@@ -1,4 +1,5 @@
 ﻿using DotQueue;
+using Engine.Constants;
 using Engine.Helpers;
 using Engine.Models;
 using Engine.Models.Chat;
@@ -6,6 +7,8 @@ using Engine.Models.QueueMessages;
 using Engine.Services;
 using Engine.Services.Clients.AccessorClient;
 using Engine.Services.Clients.AccessorClient.Models;
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.ChatCompletion;
 
 namespace Engine.Endpoints;
 
@@ -17,18 +20,21 @@ public class EngineQueueHandler : IQueueHandler<Message>
     private readonly IChatAiService _aiService;
     private readonly IAiReplyPublisher _publisher;
     private readonly IAccessorClient _accessorClient;
+    private readonly IChatTitleService _chatTitleService;
 
     public EngineQueueHandler(
         IEngineService engine,
         IChatAiService aiService,
         IAiReplyPublisher publisher,
         IAccessorClient accessorClient,
+        IChatTitleService chatTitleService,
         ILogger<EngineQueueHandler> logger)
     {
         _engine = engine;
         _aiService = aiService;
         _publisher = publisher;
         _accessorClient = accessorClient;
+        _chatTitleService = chatTitleService;
         _logger = logger;
         _handlers = new Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>>
         {
@@ -171,14 +177,46 @@ public class EngineQueueHandler : IQueueHandler<Message>
 
             var snapshot = await _accessorClient.GetHistorySnapshotAsync(request.ThreadId, request.UserId, ct);
 
+            var skHistory = HistoryMapper.ToChatHistoryFromElement(snapshot.History);
+            var storyForKernel = HistoryMapper.CloneToChatHistory(skHistory);
+
+            EnsureSystemMessage(storyForKernel);
+
+            storyForKernel.AddUserMessage(request.UserMessage.Trim(), DateTimeOffset.UtcNow);
+
+            var chatName = snapshot.Name;
+            if (chatName == "New chat")
+            {
+                try
+                {
+                    chatName = await _chatTitleService.GenerateTitleAsync(storyForKernel, ct);
+
+                }
+                catch (Exception exName)
+                {
+                    _logger.LogError(exName, "Error while processing naming chat: {RequestId}", request.RequestId);
+                    chatName = DateTime.UtcNow.ToString("HHmm_dd_MM");
+
+                }
+            }
+
+            var upsertUserMessage = new UpsertHistoryRequest
+            {
+                ThreadId = request.ThreadId,
+                UserId = request.UserId,
+                Name = chatName,
+                ChatType = request.ChatType.ToString().ToLowerInvariant(),
+                History = HistoryMapper.SerializeHistory(storyForKernel)
+            };
+
+            await _accessorClient.UpsertHistorySnapshotAsync(upsertUserMessage, ct);
+
             var serviceRequest = new ChatAiServiseRequest
             {
-                History = snapshot.History,
-                UserMessage = request.UserMessage,
+                History = storyForKernel,
                 ChatType = request.ChatType,
                 ThreadId = request.ThreadId,
                 UserId = request.UserId,
-                Name = snapshot.Name,
                 RequestId = request.RequestId,
                 SentAt = request.SentAt,
                 TtlSeconds = request.TtlSeconds,
@@ -192,7 +230,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
                 {
                     RequestId = serviceRequest.RequestId,
                     Status = ChatAnswerStatus.Fail,
-                    ChatName = aiResponse.Name,
+                    ChatName = chatName,
                     ThreadId = serviceRequest.ThreadId,
                     AssistantMessage = aiResponse.Error
                 };
@@ -202,22 +240,24 @@ public class EngineQueueHandler : IQueueHandler<Message>
                 return;
             }
 
-            var upsert = new UpsertHistoryRequest
+            HistoryMapper.AppendDelta(storyForKernel, aiResponse.UpdatedHistory);
+
+            var upsertFinal = new UpsertHistoryRequest
             {
                 ThreadId = request.ThreadId,
                 UserId = request.UserId,
-                Name = aiResponse.Name,
+                Name = chatName,
                 ChatType = request.ChatType.ToString().ToLowerInvariant(),
-                History = aiResponse.UpdatedHistory
+                History = HistoryMapper.SerializeHistory(storyForKernel)
             };
 
-            await _accessorClient.UpsertHistorySnapshotAsync(upsert, ct);
+            await _accessorClient.UpsertHistorySnapshotAsync(upsertFinal, ct);
 
             var responseToManager = new EngineChatResponse
             {
                 AssistantMessage = aiResponse.Answer.Content,
                 RequestId = aiResponse.RequestId,
-                ChatName = aiResponse.Name,
+                ChatName = chatName,
                 Status = aiResponse.Status,
                 ThreadId = aiResponse.ThreadId
             };
@@ -241,5 +281,16 @@ public class EngineQueueHandler : IQueueHandler<Message>
             _logger.LogError(ex, "Transient error while processing AI chat {Action}", message.ActionName);
             throw new RetryableException("Transient error while processing AI chat.", ex);
         }
+    }
+
+    private static void EnsureSystemMessage(ChatHistory history)
+    {
+        if (history.Any(m => m.Role == AuthorRole.System))
+        {
+            return;
+        }
+
+        var systemPrompt = Prompts.Combine(Prompts.SystemDefault, Prompts.DetailedExplanation);
+        history.Insert(0, new ChatMessageContent(AuthorRole.System, systemPrompt));
     }
 }
