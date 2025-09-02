@@ -1,6 +1,7 @@
 ﻿using DotQueue;
 using Engine.Constants;
 using Engine.Endpoints;
+using Engine.Helpers;
 using Engine.Models;
 using Engine.Models.Chat;
 using Engine.Models.QueueMessages;
@@ -9,6 +10,7 @@ using Engine.Services.Clients.AccessorClient;
 using Engine.Services.Clients.AccessorClient.Models;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
+using Microsoft.SemanticKernel.ChatCompletion;
 using Moq;
 using System.Text.Json;
 using Dapr.Client;
@@ -37,6 +39,7 @@ public class EngineQueueHandlerTests
         Mock<IAiReplyPublisher> pub,
         Mock<IAccessorClient> accessorClient,
         Mock<ISentencesService> sentService,
+        Mock<IChatTitleService> titleService,
         Mock<ILogger<EngineQueueHandler>> log,
         EngineQueueHandler sut
     ) CreateSut()
@@ -46,16 +49,18 @@ public class EngineQueueHandlerTests
         var pub = new Mock<IAiReplyPublisher>(MockBehavior.Strict);
         var accessorClient = new Mock<IAccessorClient>(MockBehavior.Strict);
         var sentService = new Mock<ISentencesService>(MockBehavior.Strict);
+        var titleService = new Mock<IChatTitleService>(MockBehavior.Strict);
         var log = new Mock<ILogger<EngineQueueHandler>>();
-        var sut = new EngineQueueHandler(dapr.Object, ai.Object, pub.Object, accessorClient.Object, log.Object, sentService.Object);
-        return (dapr, ai, pub, accessorClient, sentService, log, sut);
+
+        var sut = new EngineQueueHandler(dapr.Object, ai.Object, pub.Object, accessorClient.Object, sentService.Object, titleService.Object, log.Object);
+        return (dapr, ai, pub, accessorClient, sentService, titleService, log, sut);
     }
 
     [Fact]
     public async Task HandleAsync_CreateTask_Processes_TaskModel()
     {
         // Arrange
-        var (dapr, ai, pub, accessorClient, sentService, log, sut) = CreateSut();
+        var (dapr, ai, pub, accessorClient, sentService, titleService, log, sut) = CreateSut();
 
         var task = new TaskModel
         {
@@ -83,7 +88,7 @@ public class EngineQueueHandlerTests
     [Fact]
     public async Task HandleAsync_CreateTask_InvalidPayload_DoesNotCall_Dapr()
     {
-        var (dapr, ai, pub, accessorClient, sentService, log, sut) = CreateSut();
+        var(dapr, ai, pub, accessorClient, sentService, titleService,  log, sut) = CreateSut();
 
         // payload = "null"
         var msg = new Message
@@ -106,7 +111,8 @@ public class EngineQueueHandlerTests
     public async Task HandleAsync_ProcessingQuestionAi_HappyPath_Calls_Ai_And_Publishes()
     {
         // Arrange
-        var (dapr, ai, pub, accessorClient, sentService, log, sut) = CreateSut();
+        var (dapr, ai, pub, accessorClient, sentService, titleService, log, sut) = CreateSut();
+
 
         var requestId = Guid.NewGuid().ToString();
         var threadId = Guid.NewGuid();
@@ -137,27 +143,24 @@ public class EngineQueueHandlerTests
         accessorClient.Setup(a => a.GetHistorySnapshotAsync(threadId, userId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(snapshotFromAccessor);
 
+        var history = new ChatHistory();
+        history.AddSystemMessage("You are a helpful assistant.");
+        history.AddUserMessageNow(userMsg);
         var expectedAiReq = new ChatAiServiseRequest
         {
             RequestId = requestId,
             ThreadId = threadId,
-            UserMessage = userMsg,
             ChatType = ChatType.Default,
             UserId = userId,
             SentAt = engineReq.SentAt,
             TtlSeconds = 120,
-            History = snapshotFromAccessor.History
+            History = history
         };
 
-        var updatedHistory = Je("""
-        {
-          "messages":[
-            {"role":"system","content":"..."},
-            {"role":"user","content":"hello"},
-            {"role":"assistant","content":"world"}
-          ]
-        }
-        """);
+
+        var updatedHistory = history;
+
+        updatedHistory.AddAssistantMessage("World");
 
         var answer = new ChatMessage
         {
@@ -168,41 +171,29 @@ public class EngineQueueHandlerTests
             Content = textAnswer
         };
 
+        history.AddAssistantMessage(textAnswer);
+
         var aiResp = new ChatAiServiceResponse
         {
             RequestId = requestId,
             ThreadId = threadId,
             Status = ChatAnswerStatus.Ok,
             Answer = answer,
-            Name = chatName,
             UpdatedHistory = updatedHistory
         };
 
         ai.Setup(a => a.ChatHandlerAsync(It.Is<ChatAiServiseRequest>(r =>
                         r.RequestId == expectedAiReq.RequestId &&
                         r.ThreadId == expectedAiReq.ThreadId &&
-                        r.UserMessage == expectedAiReq.UserMessage &&
                         r.UserId == expectedAiReq.UserId &&
                         r.ChatType == expectedAiReq.ChatType &&
-                        r.History.GetRawText() == expectedAiReq.History.GetRawText()
+                        r.History[0].Content == expectedAiReq.History[0].Content
+                        &&
+                        r.History[1].Content == expectedAiReq.History[1].Content
+                        &&
+                        r.History[2].Content == expectedAiReq.History[2].Content
                     ), It.IsAny<CancellationToken>()))
           .ReturnsAsync(aiResp);
-
-        accessorClient.Setup(a => a.UpsertHistorySnapshotAsync(
-                        It.Is<UpsertHistoryRequest>(u =>
-                            u.ThreadId == threadId &&
-                            u.UserId == userId &&
-                            u.ChatType == "default" &&
-                            u.History.GetRawText() == updatedHistory.GetRawText()
-                        ),
-                        It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new HistorySnapshotDto
-                {
-                    ThreadId = threadId,
-                    UserId = userId,
-                    ChatType = "default",
-                    History = updatedHistory
-                });
 
         var engineResponse = new EngineChatResponse
         {
@@ -239,7 +230,8 @@ public class EngineQueueHandlerTests
     [Fact(Skip = "Todo: do after refactoring ai Chat for queue")]
     public async Task HandleAsync_ProcessingQuestionAi_MissingThreadId_ThrowsRetryable()
     {
-        var (dapr, ai, pub, accessorClient, sentService, log, sut) = CreateSut();
+        var (dapr, ai, pub, accessorClient, sentService, titleService, log, sut) = CreateSut();
+
 
         var requestId = Guid.NewGuid().ToString();
         var userId = Guid.NewGuid();
@@ -280,11 +272,16 @@ public class EngineQueueHandlerTests
     public async Task HandleAsync_ProcessingQuestionAi_AiThrows_WrappedInRetryable()
     {
         // Arrange
-        var (dapr, ai, pub, accessor, sentService, log, sut) = CreateSut();
+        var (dapr, ai, pub, accessor, sentService, titleService, log, sut) = CreateSut();
+
 
         var requestId = Guid.NewGuid().ToString();
         var threadId = Guid.NewGuid();
         var userId = Guid.NewGuid();
+
+        var history = new ChatHistory();
+        history.AddSystemMessage("You are a helpful assistant.");
+        history.AddUserMessageNow("boom");
 
         var engineReq = new EngineChatRequest
         {
@@ -308,9 +305,32 @@ public class EngineQueueHandlerTests
         accessor.Setup(a => a.GetHistorySnapshotAsync(threadId, userId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(snapshotFromAccessor);
 
+        accessor
+            .Setup(a => a.UpsertHistorySnapshotAsync(
+                It.IsAny<UpsertHistoryRequest>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HistorySnapshotDto
+            {
+                ThreadId = threadId,
+                UserId = userId,
+                ChatType = "default",
+                History = EmptyHistory()
+            });
+
+        var expectedAiReq = new ChatAiServiseRequest
+        {
+            RequestId = requestId,
+            ThreadId = threadId,
+            ChatType = ChatType.Default,
+            UserId = userId,
+            SentAt = engineReq.SentAt,
+            TtlSeconds = 120,
+            History = history
+        };
+
         ai.Setup(a => a.ChatHandlerAsync(It.Is<ChatAiServiseRequest>(r =>
                         r.ThreadId == threadId &&
-                        r.UserMessage == "boom"
+                        r.History[1].Content == "boom"
                     ), It.IsAny<CancellationToken>()))
           .ThrowsAsync(new InvalidOperationException("AI failed"));
 
@@ -330,14 +350,14 @@ public class EngineQueueHandlerTests
         ex.InnerException!.Message.Should().Contain("AI failed");
 
         accessor.Verify(a => a.GetHistorySnapshotAsync(threadId, userId, It.IsAny<CancellationToken>()), Times.Once);
-        accessor.Verify(a => a.UpsertHistorySnapshotAsync(It.IsAny<UpsertHistoryRequest>(), It.IsAny<CancellationToken>()), Times.Never);
         pub.VerifyNoOtherCalls();
     }
 
     [Fact]
     public async Task HandleAsync_UnknownAction_ThrowsNonRetryable_AndSkipsWork()
     {
-        var (dapr, ai, pub, accessorClient, sentService, log, sut) = CreateSut();
+        var (dapr, ai, pub, accessorClient, sentService, titleService, log, sut) = CreateSut();
+
 
         var msg = new Message
         {
