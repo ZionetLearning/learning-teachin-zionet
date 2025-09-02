@@ -245,13 +245,7 @@ public class ManagerQueueHandler : IQueueHandler<Message>
                     $"Validation failed for {nameof(SentenceResponse)}: {string.Join("; ", validationErrors)}");
             }
 
-            var userEvent = new UserEvent<SentenceResponse>
-            {
-                EventType = EventType.SentenceGeneration,
-                Payload = generatedResponse,
-            };
-
-            await _managerService.SendUserEventAsync(userId, userEvent);
+            await _notificationService.SendEventAsync(EventType.SentenceGeneration, userId, generatedResponse);
 
         }
         catch (NonRetryableException ex)
