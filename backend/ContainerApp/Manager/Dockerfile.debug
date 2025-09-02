@@ -1,35 +1,30 @@
 # ----------------- Base Runtime -----------------
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
-WORKDIR /app
-EXPOSE 5001
-
-# Install debugger dependencies
-RUN apt-get update && apt-get install -y \
-    curl \
-    unzip \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install vsdbg (Visual Studio Debugger)
-RUN curl -sSL https://aka.ms/getvsdbgsh | bash /dev/stdin -v latest -l /vsdbg
-
-# ----------------- Build Stage -----------------
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
-WORKDIR /src
-
-COPY *.csproj ./
-RUN dotnet restore
-
-COPY . ./
-# Build in Debug configuration with debugging symbols
-RUN dotnet publish -c Debug -o /app/publish
-
-# ----------------- Final Image -----------------
-FROM base AS final
-WORKDIR /app
-COPY --from=build /app/publish .
-
-# Set environment for debugging
-ENV DOTNET_USE_POLLING_FILE_WATCHER=true
-ENV ASPNETCORE_LOGGING__CONSOLE__DISABLECOLORS=true
-
-ENTRYPOINT ["dotnet", "Manager.dll"]
+    FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+    WORKDIR /app
+    EXPOSE 5001
+    
+    # Install debugger
+    RUN apt-get update && apt-get install -y curl unzip && rm -rf /var/lib/apt/lists/*
+    RUN curl -sSL https://aka.ms/getvsdbgsh | bash /dev/stdin -v latest -l /vsdbg
+    
+    # ----------------- Build Stage -----------------
+    FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+    WORKDIR /src
+    
+    # (Adjust these two COPY lines to your project layout)
+    COPY *.csproj ./
+    RUN dotnet restore
+    
+    COPY . ./
+    # ⬇️ Force portable PDBs to be published
+    RUN dotnet publish -c Debug -o /app/publish \
+        /p:DebugType=portable /p:DebugSymbols=true /p:EmbedAllSources=false
+    
+    # ----------------- Final Image -----------------
+    FROM base AS final
+    WORKDIR /app
+    COPY --from=build /app/publish .
+    ENV DOTNET_USE_POLLING_FILE_WATCHER=true
+    ENV ASPNETCORE_LOGGING__CONSOLE__DISABLECOLORS=true
+    ENTRYPOINT ["dotnet", "Manager.dll"]
+    

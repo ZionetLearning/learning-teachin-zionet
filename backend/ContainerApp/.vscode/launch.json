@@ -5,7 +5,7 @@
             "name": "Docker: Attach to Manager",
             "type": "coreclr",
             "request": "attach",
-            "processId": "${command:pickRemoteProcess}",
+            "processName": "dotnet",
             "pipeTransport": {
                 "pipeProgram": "docker",
                 "pipeArgs": ["exec", "-i", "manager-debug"],
@@ -26,7 +26,7 @@
             "name": "Docker: Attach to Engine",
             "type": "coreclr",
             "request": "attach",
-            "processId": "${command:pickRemoteProcess}",
+            "processName": "dotnet",
             "pipeTransport": {
                 "pipeProgram": "docker",
                 "pipeArgs": ["exec", "-i", "engine-debug"],
@@ -47,7 +47,7 @@
             "name": "Docker: Attach to Accessor",
             "type": "coreclr",
             "request": "attach",
-            "processId": "${command:pickRemoteProcess}",
+           "processName": "dotnet",
             "pipeTransport": {
                 "pipeProgram": "docker",
                 "pipeArgs": ["exec", "-i", "accessor-debug"],
@@ -68,7 +68,7 @@
             "name": "Docker: Attach to ApiGateway",
             "type": "coreclr",
             "request": "attach",
-            "processId": "${command:pickRemoteProcess}",
+           "processName": "dotnet",
             "pipeTransport": {
                 "pipeProgram": "docker",
                 "pipeArgs": ["exec", "-i", "apigateway-debug"],
@@ -77,30 +77,6 @@
                 "quoteArgs": false
             },
             "sourceFileMap": {
-                "/src/ApiGateway": "${workspaceFolder}/ApiGateway"
-            },
-            "justMyCode": false,
-            "requireExactSource": false,
-            "logging": {
-                "moduleLoad": false
-            }
-        },
-        {
-            "name": "Docker: Attach to All Services",
-            "type": "coreclr",
-            "request": "attach",
-            "processId": "${command:pickRemoteProcess}",
-            "pipeTransport": {
-                "pipeProgram": "docker",
-                "pipeArgs": ["exec", "-i", "manager-debug"],
-                "debuggerPath": "/vsdbg/vsdbg",
-                "pipeCwd": "${workspaceFolder}",
-                "quoteArgs": false
-            },
-            "sourceFileMap": {
-                "/src/Manager": "${workspaceFolder}/Manager",
-                "/src/Engine": "${workspaceFolder}/Engine",
-                "/src/Accessor": "${workspaceFolder}/Accessor",
                 "/src/ApiGateway": "${workspaceFolder}/ApiGateway"
             },
             "justMyCode": false,
