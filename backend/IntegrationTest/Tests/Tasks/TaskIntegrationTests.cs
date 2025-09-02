@@ -14,7 +14,7 @@ public class TaskIntegrationTests(
     SharedTestFixture sharedFixture,
     ITestOutputHelper outputHelper,
     SignalRTestFixture signalRFixture
-) : TaskTestBase(sharedFixture ,sharedFixture.HttpFixture, outputHelper, signalRFixture), IAsyncLifetime
+) : TaskTestBase(sharedFixture, sharedFixture.HttpFixture, outputHelper, signalRFixture), IAsyncLifetime
 {
     [Fact(DisplayName = "POST /tasks-manager/task - Same ID twice still returns 202 Accepted")]
     public async Task Post_Same_Id_Twice_Should_Return_Accepted()
