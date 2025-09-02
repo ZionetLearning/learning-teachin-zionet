@@ -36,6 +36,7 @@ public class EngineQueueHandlerTests
         Mock<IChatAiService> ai,
         Mock<IAiReplyPublisher> pub,
         Mock<IAccessorClient> accessorClient,
+        Mock<ISentencesService> sentService,
         Mock<IChatTitleService> titleService,
         Mock<ILogger<EngineQueueHandler>> log,
         EngineQueueHandler sut
@@ -45,18 +46,19 @@ public class EngineQueueHandlerTests
         var ai = new Mock<IChatAiService>(MockBehavior.Strict);
         var pub = new Mock<IAiReplyPublisher>(MockBehavior.Strict);
         var accessorClient = new Mock<IAccessorClient>(MockBehavior.Strict);
+        var sentService = new Mock<ISentencesService>(MockBehavior.Strict);
         var titleService = new Mock<IChatTitleService>(MockBehavior.Strict);
         var log = new Mock<ILogger<EngineQueueHandler>>();
 
-        var sut = new EngineQueueHandler(engine.Object, ai.Object, pub.Object, accessorClient.Object, titleService.Object, log.Object);
-        return (engine, ai, pub, accessorClient, titleService, log, sut);
+        var sut = new EngineQueueHandler(engine.Object, ai.Object, pub.Object, accessorClient.Object, sentService.Object, titleService.Object, log.Object);
+        return (engine, ai, pub, accessorClient, sentService, titleService, log, sut);
     }
 
     [Fact]
     public async Task HandleAsync_CreateTask_Processes_TaskModel()
     {
         // Arrange
-        var (engine, ai, pub, accessorClient, titleSrvice, log, sut) = CreateSut();
+        var (engine, ai, pub, accessorClient, sentService, titleService, log, sut) = CreateSut();
 
         var task = new TaskModel
         {
@@ -87,7 +89,7 @@ public class EngineQueueHandlerTests
     [Fact]
     public async Task HandleAsync_CreateTask_InvalidPayload_DoesNotCall_Engine()
     {
-        var (engine, ai, pub, accessorClient, titleSrvice, log,  sut) = CreateSut();
+        var(engine, ai, pub, accessorClient, sentService, titleService,  log, sut) = CreateSut();
 
         // payload = "null"
         var msg = new Message
@@ -110,7 +112,8 @@ public class EngineQueueHandlerTests
     public async Task HandleAsync_ProcessingQuestionAi_HappyPath_Calls_Ai_And_Publishes()
     {
         // Arrange
-        var (engine, ai, pub, accessorClient, titleSrvice, log, sut) = CreateSut();
+        var (engine, ai, pub, accessorClient, sentService, titleService, log, sut) = CreateSut();
+
 
         var requestId = Guid.NewGuid().ToString();
         var threadId = Guid.NewGuid();
@@ -230,7 +233,8 @@ public class EngineQueueHandlerTests
     [Fact(Skip = "Todo: do after refactoring ai Chat for queue")]
     public async Task HandleAsync_ProcessingQuestionAi_MissingThreadId_ThrowsNonRetryable_AndSkipsWork()
     {
-        var (engine, ai, pub, accessorClient, titleSrvice, log, sut) = CreateSut();
+        var (engine, ai, pub, accessorClient, sentService, titleService, log, sut) = CreateSut();
+
 
         var requestId = Guid.NewGuid().ToString();
         var userId = Guid.NewGuid();
@@ -274,7 +278,8 @@ public class EngineQueueHandlerTests
     public async Task HandleAsync_ProcessingQuestionAi_AiThrows_WrappedInRetryable()
     {
         // Arrange
-        var (engine, ai, pub, accessor, log, titleSrvice, sut) = CreateSut();
+        var (engine, ai, pub, accessor, sentService, titleService, log, sut) = CreateSut();
+
 
         var requestId = Guid.NewGuid().ToString();
         var threadId = Guid.NewGuid();
@@ -358,7 +363,8 @@ public class EngineQueueHandlerTests
     [Fact]
     public async Task HandleAsync_UnknownAction_ThrowsNonRetryable_AndSkipsWork()
     {
-        var (engine, ai, pub, accessorClient, titleSrvice, log, sut) = CreateSut();
+        var (engine, ai, pub, accessorClient, sentService, titleService, log, sut) = CreateSut();
+
 
         var msg = new Message
         {

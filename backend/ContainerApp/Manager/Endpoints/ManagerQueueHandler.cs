@@ -5,6 +5,7 @@ using Manager.Models.Chat;
 using Manager.Models.ModelValidation;
 using Manager.Models.Notifications;
 using Manager.Models.QueueMessages;
+using Manager.Models.Sentences;
 using Manager.Services;
 
 namespace Manager.Endpoints;
@@ -27,7 +28,8 @@ public class ManagerQueueHandler : IQueueHandler<Message>
         {
             [MessageAction.AnswerAi] = HandleAnswerAiAsync,
             [MessageAction.NotifyUser] = HandleNotifyUserAsync,
-            [MessageAction.ProcessingChatMessage] = HandleAIChatAnswerAsync
+            [MessageAction.ProcessingChatMessage] = HandleAIChatAnswerAsync,
+            [MessageAction.GenerateSentences] = HandleGenerateAnswer
         };
     }
 
@@ -209,6 +211,68 @@ public class ManagerQueueHandler : IQueueHandler<Message>
 
             _logger.LogError(ex, "Error processing AI chat answer");
             throw new RetryableException("Transient error while processing AI chat answer.", ex);
+        }
+    }
+    public async Task HandleGenerateAnswer(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var generatedResponse = message.Payload.Deserialize<SentenceResponse>();
+            if (generatedResponse is null)
+            {
+                _logger.LogError("Payload deserialization returned null for sentence generation.");
+                throw new NonRetryableException("Payload deserialization returned null for sentence generation.");
+            }
+
+            var userId = string.Empty;
+            if (message.Metadata.HasValue)
+            {
+                userId = JsonSerializer.Deserialize<string>(message.Metadata.Value);
+            }
+
+            if (userId is null)
+            {
+                _logger.LogWarning("Metadata is null for sentence generation action");
+                throw new NonRetryableException("Chat Metadata is required for sentence generation action.");
+            }
+
+            if (!ValidationExtensions.TryValidate(generatedResponse, out var validationErrors))
+            {
+                _logger.LogWarning("Validation failed for {Model}: {Errors}",
+                    nameof(SentenceResponse), validationErrors);
+                throw new NonRetryableException(
+                    $"Validation failed for {nameof(SentenceResponse)}: {string.Join("; ", validationErrors)}");
+            }
+
+            var userEvent = new UserEvent<SentenceResponse>
+            {
+                EventType = EventType.SentenceGeneration,
+                Payload = generatedResponse,
+            };
+
+            await _managerService.SendUserEventAsync(userId, userEvent);
+
+        }
+        catch (NonRetryableException ex)
+        {
+            _logger.LogError(ex, "Non-retryable error processing message {Action}", message.ActionName);
+            throw;
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "Invalid JSON response for {Action}", message.ActionName);
+            throw new NonRetryableException("Invalid JSON response.", ex);
+        }
+        catch (Exception ex)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning("Operation cancelled while processing message {Action}", message.ActionName);
+                throw new OperationCanceledException("Operation was cancelled.", ex, cancellationToken);
+            }
+
+            _logger.LogError(ex, "Error processing answer");
+            throw new RetryableException("Transient error while processing answer.", ex);
         }
     }
 }
