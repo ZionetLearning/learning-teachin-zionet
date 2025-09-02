@@ -68,7 +68,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(key),
 
-            NameClaimType = AuthSettings.NameClaimType
+            NameClaimType = AuthSettings.UserIdClaimType,
+            RoleClaimType = AuthSettings.RoleClaimType
         };
     });
 
