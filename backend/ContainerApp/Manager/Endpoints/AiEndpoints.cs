@@ -385,7 +385,7 @@ public static class AiEndpoints
         catch (TimeoutException)
         {
             logger.LogWarning("Sentence generation operation timed out");
-            return Results.Problem("Speech is too long.", statusCode: StatusCodes.Status408RequestTimeout);
+            return Results.Problem("Sentence generation is taking too long.", statusCode: StatusCodes.Status408RequestTimeout);
         }
         catch (Exception ex)
         {
