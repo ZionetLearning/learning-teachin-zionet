@@ -1,21 +1,43 @@
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
+import { useEffect } from "react";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { AuthorizationPage, RequireAuth } from "@authorization";
+import { SidebarMenuLayout } from "@ui-components";
+import { SidebarMenu } from "./components";
+import {
+  HomePage,
+  UsersPage,
+} from "./pages";
 import "./App.css";
 
+const ProtectedLayout = () => (
+  <RequireAuth>
+    <div data-testid="protected-layout">
+      <SidebarMenuLayout sidebarMenu={<SidebarMenu />} />
+    </div>
+  </RequireAuth>
+);
+
 function App() {
+  const { i18n } = useTranslation();
+
+  useEffect(() => {
+    document.documentElement.lang = i18n.language;
+    document.documentElement.dir = i18n.language === "he" ? "rtl" : "ltr";
+  }, [i18n.language]);
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React - Admin</h1>
-    </>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/signin" element={<AuthorizationPage />} />
+        <Route element={<ProtectedLayout />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/users" element={<UsersPage />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
 
 export default App;
+
+
