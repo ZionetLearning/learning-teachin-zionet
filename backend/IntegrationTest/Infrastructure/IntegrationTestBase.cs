@@ -99,6 +99,20 @@ public abstract class IntegrationTestBase
         return notification!;
     }
 
+    protected async Task<ReceivedNotification?> TryWaitForNotificationAsync(
+    Predicate<UserNotification> predicate,
+    TimeSpan? timeout = null)
+    {
+        try
+        {
+            return await WaitForNotificationAsync(predicate, timeout);
+        }
+        catch
+        {
+            return null; // swallow timeout, return null
+        }
+    }
+
     protected async Task<ReceivedEvent> WaitForEventAsync(
         Predicate<UserEvent<JsonElement>>? predicate = null,
         TimeSpan? timeout = null
