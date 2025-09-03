@@ -7,22 +7,20 @@ using Manager.Models.Notifications;
 using Manager.Models.QueueMessages;
 using Manager.Models.Sentences;
 using Manager.Services;
+using Manager.Common;
 
 namespace Manager.Endpoints;
 public class ManagerQueueHandler : IQueueHandler<Message>
 {
-    private readonly IAiGatewayService _aiService;
     private readonly INotificationService _notificationService;
     private readonly ILogger<ManagerQueueHandler> _logger;
     private readonly Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>> _handlers;
 
     public ManagerQueueHandler(
-        IAiGatewayService aiService,
         ILogger<ManagerQueueHandler> logger,
         INotificationService notificationService)
     {
         _notificationService = notificationService;
-        _aiService = aiService;
         _logger = logger;
         _handlers = new Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>>
         {
@@ -67,8 +65,10 @@ public class ManagerQueueHandler : IQueueHandler<Message>
                     $"Validation failed for {nameof(AiResponseModel)}: {string.Join("; ", validationErrors)}");
             }
 
-            await _aiService.SaveAnswerAsync(response, cancellationToken);
+            AiAnswerStore.Answers[response.Id] = response.Answer;
             _logger.LogInformation("Answer {Id} saved", response.Id);
+
+            await Task.CompletedTask;
         }
         catch (NonRetryableException ex)
         {

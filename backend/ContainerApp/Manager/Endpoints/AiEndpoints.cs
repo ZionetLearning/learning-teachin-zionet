@@ -1,13 +1,18 @@
 ﻿using Manager.Models;
 using Manager.Models.Speech;
 using Manager.Models.ModelValidation;
-using Manager.Services;
 using Microsoft.AspNetCore.Mvc;
 using Manager.Models.Chat;
 using Manager.Services.Clients.Engine;
 using Manager.Services.Clients.Engine.Models;
 using Manager.Services.Clients.Accessor;
 using Manager.Models.Sentences;
+using Manager.Common;
+using Manager.Constants;
+using Dapr.Client;
+using Microsoft.Extensions.Options;
+using Manager.Models.QueueMessages;
+using System.Text.Json;
 
 namespace Manager.Endpoints;
 
@@ -112,60 +117,71 @@ public static class AiEndpoints
     }
 
     private static async Task<IResult> AnswerAsync(
-    [FromRoute] string id,
-    [FromServices] IAiGatewayService aiService,
-    [FromServices] ILogger<AnswerEndpoint> log,
-    CancellationToken ct)
+        [FromRoute] string id,
+        [FromServices] ILogger<AnswerEndpoint> log,
+        CancellationToken ct)
     {
         using var scope = log.BeginScope("QuestionId: {Id}", id);
-        {
-            try
-            {
-                var ans = await aiService.GetAnswerAsync(id, ct);
-                if (ans is null)
-                {
-                    log.LogInformation("Answer not ready");
-                    return Results.NotFound(new { error = "Answer not ready" });
-                }
 
-                log.LogInformation("Answer returned");
-                return Results.Ok(new { id, answer = ans });
-            }
-            catch (Exception ex)
+        try
+        {
+            if (AiAnswerStore.Answers.TryGetValue(id, out var answer))
             {
-                log.LogError(ex, "Failed to retrieve answer");
-                return Results.Problem("AI answer retrieval failed");
+                log.LogInformation("Answer returned for {Id}", id);
+
+                return Results.Ok(new
+                {
+                    id,
+                    answer
+                });
             }
+
+            log.LogInformation("Answer not ready for {Id}", id);
+            return await Task.FromResult(Results.NotFound(new { error = "Answer not ready" }));
+        }
+        catch (Exception ex)
+        {
+            log.LogError(ex, "Failed to retrieve answer {Id}", id);
+            return await Task.FromResult(Results.Problem("AI answer retrieval failed"));
         }
     }
 
     private static async Task<IResult> QuestionAsync(
         [FromBody] AiRequestModel dto,
-        [FromServices] IAiGatewayService aiService,
+        [FromServices] DaprClient dapr,
+        [FromServices] IOptions<AiSettings> options,
         [FromServices] ILogger<QuestionEndpoint> log,
         CancellationToken ct)
     {
-        using var scope = log.BeginScope("RequestId: {RequestId}, ThreadId: {ThreadId}", dto.Id, dto.ThreadId);
+        if (!ValidationExtensions.TryValidate(dto, out var validationErrors))
         {
-            if (!ValidationExtensions.TryValidate(dto, out var validationErrors))
-            {
-                log.LogWarning("Validation failed for {Model}: {Errors}", nameof(AiRequestModel), validationErrors);
-                return Results.BadRequest(new { errors = validationErrors });
-            }
+            log.LogWarning("Validation failed for {Model}: {Errors}", nameof(AiRequestModel), validationErrors);
+            return Results.BadRequest(new { errors = validationErrors });
+        }
 
-            try
-            {
-                var threadId = dto.ThreadId;
+        var settings = options.Value;
+        var msg = AiRequestModel.Create(dto.Question, dto.ThreadId, QueueNames.ManagerCallbackQueue, ttlSeconds: settings.DefaultTtlSeconds);
 
-                var id = await aiService.SendQuestionAsync(threadId, dto.Question, ct);
-                log.LogInformation("Request {Id} (thread {Thread}) accept", id, threadId);
-                return Results.Accepted($"/ai-manager/answer/{id}", new { questionId = id, threadId });
-            }
-            catch (Exception ex)
-            {
-                log.LogError(ex, "Error sending question");
-                return Results.Problem("AI question failed");
-            }
+        log.LogInformation("Send question {Id} (TTL={Ttl})", msg.Id, msg.TtlSeconds);
+
+        var message = new Message
+        {
+            ActionName = MessageAction.ProcessingChatMessage,
+            Payload = JsonSerializer.SerializeToElement(msg)
+        };
+
+        try
+        {
+            AiAnswerStore.Answers[msg.Id] = string.Empty;
+
+            await dapr.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message, cancellationToken: ct);
+
+            return Results.Accepted($"/ai-manager/answer/{msg.Id}", new { questionId = msg.Id, threadId = dto.ThreadId });
+        }
+        catch (Exception ex)
+        {
+            log.LogError(ex, "Error sending question {Id}", msg.Id);
+            return Results.Problem("AI question failed");
         }
     }
 

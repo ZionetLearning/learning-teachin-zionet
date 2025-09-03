@@ -1,9 +1,10 @@
 ﻿using System.Text.Json;
-using Manager.Endpoints;
 using DotQueue;
+using Manager.Common;
+using Manager.Endpoints;
 using Manager.Models;
-using Manager.Models.QueueMessages;
 using Manager.Services;
+using Manager.Models.QueueMessages;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -11,17 +12,11 @@ namespace ManagerUnitTests.Endpoints;
 
 public class ManagerQueueHandlerTests
 {
-    // Centralize common setup to remove boilerplate in each test
-    private static (
-    Mock<IAiGatewayService> ai,
-    ManagerQueueHandler handler
-) CreateSut()
+    private static ManagerQueueHandler CreateSut()
     {
-        var ai = new Mock<IAiGatewayService>(MockBehavior.Strict);
         var logger = Mock.Of<ILogger<ManagerQueueHandler>>();
         var notificationService = Mock.Of<INotificationService>();
-        var handler = new ManagerQueueHandler(ai.Object, logger, notificationService);
-        return (ai, handler);
+        return new ManagerQueueHandler(logger, notificationService);
     }
 
     private static JsonElement ToJsonElement<T>(T value) =>
@@ -31,7 +26,8 @@ public class ManagerQueueHandlerTests
     public async Task HandleAnswerAi_Saves_When_Valid()
     {
         // Arrange
-        var (ai, handler) = CreateSut();
+        var handler = CreateSut();
+        AiAnswerStore.Answers.Clear();
 
         var response = new AiResponseModel
         {
@@ -46,61 +42,40 @@ public class ManagerQueueHandlerTests
             Payload = ToJsonElement(response)
         };
 
-        ai.Setup(s => s.SaveAnswerAsync(
-                It.Is<AiResponseModel>(m =>
-                    m.Id == response.Id &&
-                    m.ThreadId == response.ThreadId &&
-                    m.Answer == response.Answer),
-                It.IsAny<CancellationToken>()))
-          .Returns(Task.CompletedTask)
-          .Verifiable();
-
         // Act
         await handler.HandleAnswerAiAsync(message, () => Task.CompletedTask, CancellationToken.None);
 
         // Assert
-        ai.Verify();
-        ai.VerifyNoOtherCalls();
+        Assert.True(AiAnswerStore.Answers.ContainsKey("q-1"));
+        Assert.Equal("hey", AiAnswerStore.Answers["q-1"]);
     }
 
-    [Fact(DisplayName = "HandleAnswerAiAsync wraps failure in RetryableException for retry policy")]
-    public async Task HandleAnswerAi_Wraps_On_Error()
+    [Fact(DisplayName = "HandleAnswerAiAsync wraps failure in NonRetryableException for bad JSON")]
+    public async Task HandleAnswerAi_Wraps_On_BadJson()
     {
-        var (ai, handler) = CreateSut();
+        var handler = CreateSut();
 
-        var payload = new AiResponseModel
-        {
-            Id = "q-err",
-            ThreadId = Guid.NewGuid().ToString("N"),
-            Answer = "any"
-        };
+        // Invalid payload → missing ThreadId
+        var badJson = JsonDocument.Parse("""{"Id":"q-err"}""").RootElement;
 
         var message = new Message
         {
             ActionName = MessageAction.AnswerAi,
-            Payload = ToJsonElement(payload)
+            Payload = badJson
         };
 
-        ai.Setup(s => s.SaveAnswerAsync(It.IsAny<AiResponseModel>(), It.IsAny<CancellationToken>()))
-          .ThrowsAsync(new InvalidOperationException("boom"));
-
-        var ex = await Assert.ThrowsAsync<RetryableException>(() =>
+        var ex = await Assert.ThrowsAsync<NonRetryableException>(() =>
             handler.HandleAnswerAiAsync(message, () => Task.CompletedTask, CancellationToken.None));
 
-        Assert.IsType<InvalidOperationException>(ex.InnerException);
-        Assert.Contains("boom", ex.InnerException!.Message);
-        Assert.Contains("Transient error while saving answer", ex.Message);
-
-        ai.Verify(s => s.SaveAnswerAsync(It.IsAny<AiResponseModel>(), It.IsAny<CancellationToken>()), Times.Once);
-        ai.VerifyNoOtherCalls();
+        Assert.Contains("Invalid JSON payload", ex.Message);
     }
 
     [Fact(DisplayName = "HandleAsync routes known action; unknown action throws NonRetryable")]
     public async Task HandleAsync_Routes_Known_And_Throws_On_Unknown()
     {
-        var (ai, handler) = CreateSut();
+        var handler = CreateSut();
+        AiAnswerStore.Answers.Clear();
 
-        // known action: valid payload so it routes and calls SaveAnswerAsync once
         var ok = new AiResponseModel
         {
             Id = "x",
@@ -114,18 +89,11 @@ public class ManagerQueueHandlerTests
             Payload = ToJsonElement(ok)
         };
 
-        ai.Setup(a => a.SaveAnswerAsync(
-                It.Is<AiResponseModel>(m => m.Id == "x" && m.Answer == "ok"),
-                It.IsAny<CancellationToken>()))
-          .Returns(Task.CompletedTask)
-          .Verifiable();
-
         await handler.HandleAsync(okMsg, () => Task.CompletedTask, CancellationToken.None);
 
-        ai.Verify(a => a.SaveAnswerAsync(It.IsAny<AiResponseModel>(), It.IsAny<CancellationToken>()), Times.Once);
-        ai.VerifyNoOtherCalls();
+        Assert.True(AiAnswerStore.Answers.ContainsKey("x"));
+        Assert.Equal("ok", AiAnswerStore.Answers["x"]);
 
-        // unknown action: handler should throw NonRetryableException
         var unknownMsg = new Message
         {
             ActionName = (MessageAction)999,
