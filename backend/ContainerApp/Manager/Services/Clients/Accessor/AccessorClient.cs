@@ -141,7 +141,7 @@ public class AccessorClient(
             var userId = _httpContextAccessor.HttpContext?.User?.Identity?.Name;
             if (string.IsNullOrWhiteSpace(userId) || !Guid.TryParse(userId, out _))
             {
-                _logger.LogError("Missing or invalid UserId in HttpContext. Value: '{UserIdRaw}'", userId);
+                _logger.LogError("Missing or invalid UserId in HttpContext.");
                 throw new InvalidOperationException("Authenticated user id is missing or not a valid GUID.");
             }
 
