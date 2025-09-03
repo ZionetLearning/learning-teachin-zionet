@@ -12,13 +12,13 @@ public static class TasksEndpoints
 
     public static IEndpointRouteBuilder MapTasksEndpoints(this IEndpointRouteBuilder app)
     {
-        var tasksGroup = app.MapGroup("/tasks-manager").WithTags("Tasks").RequireAuthorization();
+        var tasksGroup = app.MapGroup("/tasks-manager").WithTags("Tasks").RequireAuthorization("AdminOrTeacherOrStudent");
 
-        tasksGroup.MapGet("/task/{id:int}", GetTaskAsync).WithName("GetTask");
-        tasksGroup.MapPost("/task", CreateTaskAsync).WithName("CreateTask");
-        tasksGroup.MapPost("/tasklong", CreateTaskLongAsync).WithName("CreateTaskLongTest");
-        tasksGroup.MapPut("/task/{id:int}/{name}", UpdateTaskNameAsync).WithName("UpdateTaskName");
-        tasksGroup.MapDelete("/task/{id:int}", DeleteTaskAsync).WithName("DeleteTask");
+        tasksGroup.MapGet("/task/{id:int}", GetTaskAsync).WithName("GetTask").RequireAuthorization("AdminOrTeacherOrStudent");
+        tasksGroup.MapPost("/task", CreateTaskAsync).WithName("CreateTask").RequireAuthorization("AdminOrTeacher");
+        tasksGroup.MapPost("/tasklong", CreateTaskLongAsync).WithName("CreateTaskLongTest").RequireAuthorization("AdminOrTeacher");
+        tasksGroup.MapPut("/task/{id:int}/{name}", UpdateTaskNameAsync).WithName("UpdateTaskName").RequireAuthorization("AdminOrTeacher");
+        tasksGroup.MapDelete("/task/{id:int}", DeleteTaskAsync).WithName("DeleteTask").RequireAuthorization("AdminOrTeacher");
 
         return app;
     }

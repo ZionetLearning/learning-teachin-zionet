@@ -1,5 +1,4 @@
-﻿using System.Security.Claims;
-using Manager.Constants;
+﻿using Manager.Constants;
 using Manager.Helpers;
 using Manager.Models.Auth;
 using Manager.Models.Auth.Erros;
@@ -28,7 +27,7 @@ public static class AuthEndpoints
         authGroup.MapPost("/logout", LogoutAsync).WithName("Logout");
 
         authGroup.MapGet("/protected", TestAuthAsync)
-            .RequireAuthorization()
+            .RequireAuthorization("AdminOrTeacherOrStudent")
             .WithName("Protected");
 
         var maintenanceGroup = authGroup.MapGroup("/maintenance").WithTags("Maintenance");
@@ -181,8 +180,8 @@ public static class AuthEndpoints
                 logger.LogInformation("You are authenticated!");
                 var user = context.User;
 
-                var userId = user.Identity?.Name; // because NameClaimType = "userid"
-                var role = user.FindFirst(ClaimTypes.Role)?.Value;
+                var userId = context.User.Identity?.Name;
+                var role = context.User.FindFirst(AuthSettings.RoleClaimType)?.Value;
 
                 logger.LogInformation("Authenticated request. UserId: {UserId}, Role: {Role}", userId, role);
 

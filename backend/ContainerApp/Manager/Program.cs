@@ -21,6 +21,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
+using Manager.Models.Users;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -72,6 +73,24 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             RoleClaimType = AuthSettings.RoleClaimType
         };
     });
+builder.Services.AddAuthorization(options =>
+{
+    // Admin can do anything
+    options.AddPolicy("AdminOnly", p =>
+        p.RequireRole(Role.Admin.ToString()));
+
+    // Admin or Teacher (student list/create/update/delete)
+    options.AddPolicy("AdminOrTeacher", p =>
+        p.RequireRole(Role.Admin.ToString(), Role.Teacher.ToString()));
+
+    // Exactly Teacher
+    options.AddPolicy("TeacherOnly", p =>
+        p.RequireRole(Role.Teacher.ToString()));
+
+    // Any authenticated role (handy for groups)
+    options.AddPolicy("AdminOrTeacherOrStudent", p =>
+        p.RequireRole(Role.Admin.ToString(), Role.Teacher.ToString(), Role.Student.ToString()));
+});
 
 // ---- Services ----
 builder.Services.AddControllers();

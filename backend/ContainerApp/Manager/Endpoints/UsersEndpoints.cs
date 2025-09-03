@@ -1,4 +1,6 @@
-﻿using Manager.Models.Users;
+﻿using System.Security.Claims;
+using Manager.Constants;
+using Manager.Models.Users;
 using Manager.Services.Clients.Accessor;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,14 +13,29 @@ public static class UsersEndpoints
     {
         var usersGroup = app.MapGroup("/users-manager").WithTags("Users");
 
-        usersGroup.MapGet("/user-list", GetAllUsersAsync).WithName("GetAllUsers").RequireAuthorization();
-        usersGroup.MapGet("/user/{userId:guid}", GetUserAsync).WithName("GetUser").RequireAuthorization();
+        usersGroup.MapGet("/user-list", GetAllUsersAsync).WithName("GetAllUsers").RequireAuthorization("AdminOrTeacher");
+        usersGroup.MapGet("/user/{userId:guid}", GetUserAsync).WithName("GetUser").RequireAuthorization("AdminOrTeacherOrStudent");
         usersGroup.MapPost("/user", CreateUserAsync).WithName("CreateUser");
-        usersGroup.MapPut("/user/{userId:guid}", UpdateUserAsync).WithName("UpdateUser").RequireAuthorization();
-        usersGroup.MapDelete("/user/{userId:guid}", DeleteUserAsync).WithName("DeleteUser").RequireAuthorization();
+        usersGroup.MapPut("/user/{userId:guid}", UpdateUserAsync).WithName("UpdateUser").RequireAuthorization("AdminOrTeacherOrStudent");
+        usersGroup.MapDelete("/user/{userId:guid}", DeleteUserAsync).WithName("DeleteUser").RequireAuthorization("AdminOrTeacherOrStudent");
 
         return app;
     }
+
+    // -------------- helpers --------------
+    private static Guid? GetCallerId(ClaimsPrincipal user)
+    {
+        var raw = user.FindFirstValue(AuthSettings.UserIdClaimType);
+        return Guid.TryParse(raw, out var id) ? id : null;
+    }
+    private static Role? GetCallerRole(ClaimsPrincipal user)
+    {
+        var raw = user.FindFirstValue(AuthSettings.RoleClaimType);
+        return Enum.TryParse<Role>(raw, out var r) ? r : null;
+    }
+    private static bool IsAdmin(ClaimsPrincipal u) => u.IsInRole(Role.Admin.ToString());
+    private static bool IsTeacher(ClaimsPrincipal u) => u.IsInRole(Role.Teacher.ToString());
+    private static bool IsStudent(ClaimsPrincipal u) => u.IsInRole(Role.Student.ToString());
 
     private static async Task<IResult> GetUserAsync(
         [FromRoute] Guid userId,
@@ -140,7 +157,7 @@ public static class UsersEndpoints
         }
     }
 
-    private static async Task<IResult> GetAllUsersAsync(
+    private static async Task<IResult> GetAllUsersAsync(// TODO: filter to only *their* students when you add ownership model
         [FromServices] IAccessorClient accessorClient,
         [FromServices] ILogger<UserEndpoint> logger)
     {
