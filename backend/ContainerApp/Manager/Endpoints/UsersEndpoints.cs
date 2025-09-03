@@ -1,4 +1,6 @@
-﻿using Manager.Models.Users;
+﻿using System.Security.Claims;
+using Manager.Constants;
+using Manager.Models.Users;
 using Manager.Services.Clients.Accessor;
 using Microsoft.AspNetCore.Mvc;
 
@@ -139,28 +141,40 @@ public static class UsersEndpoints
             return Results.Problem("Failed to delete user.");
         }
     }
-
-    private static async Task<IResult> GetAllUsersAsync(// TODO: filter to only *their* students when you add ownership model
+    private static async Task<IResult> GetAllUsersAsync(
         [FromServices] IAccessorClient accessorClient,
-        [FromServices] ILogger<UserEndpoint> logger)
+        [FromServices] ILogger<UserEndpoint> logger,
+        HttpContext http,
+        CancellationToken ct)
     {
-        using var scope = logger.BeginScope("GetAllUsers:");
+        using var scope = logger.BeginScope("GetAllUsers");
+
+        var callerRole = http.User.FindFirstValue(AuthSettings.RoleClaimType);
+        var callerIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
+
+        if (string.IsNullOrWhiteSpace(callerRole) || !Guid.TryParse(callerIdRaw, out var callerId))
+        {
+            logger.LogWarning("Missing/invalid caller context (role/userId)");
+            return Results.Unauthorized();
+        }
 
         try
         {
-            var users = await accessorClient.GetAllUsersAsync();
+            var users = await accessorClient.GetUsersForCallerAsync(callerRole, callerId, ct);
+
             if (users is null || !users.Any())
             {
-                logger.LogWarning("No users found");
+                logger.LogInformation("No users visible to {CallerId} ({Role})", callerId, callerRole);
                 return Results.NotFound("No users found.");
             }
 
-            logger.LogInformation("Retrieved {Count} users", users.Count());
+            logger.LogInformation("Returned {Count} users for {CallerId} ({Role})",
+                users.Count(), callerId, callerRole);
             return Results.Ok(users);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error retrieving users");
+            logger.LogError(ex, "Failed to retrieve users");
             return Results.Problem("Failed to retrieve users.");
         }
     }

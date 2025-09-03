@@ -423,4 +423,28 @@ public class AccessorClient(
             throw;
         }
     }
+    public async Task<IEnumerable<UserData>> GetUsersForCallerAsync(string callerRole, Guid callerId, CancellationToken ct = default)
+    {
+        _logger.LogInformation("GetUsersForCallerAsync(role={Role}, id={Id})", callerRole, callerId);
+
+        try
+        {
+            var roleQP = Uri.EscapeDataString(callerRole ?? string.Empty);
+            var path = $"users-accessor?callerRole={roleQP}&callerId={callerId:D}";
+
+            var users = await _daprClient.InvokeMethodAsync<List<UserData>>(
+                HttpMethod.Get,
+                "accessor",
+                path,
+                ct);
+
+            _logger.LogInformation("Accessor returned {Count} users for {Role}", users?.Count ?? 0, callerRole);
+            return users ?? Enumerable.Empty<UserData>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Accessor call failed for role={Role}", callerRole);
+            throw;
+        }
+    }
 }

@@ -522,4 +522,60 @@ public class AccessorService : IAccessorService
             throw;
         }
     }
+    public async Task<IEnumerable<UserData>> GetAllUsersAsync(Role? roleFilter = null, Guid? teacherId = null, CancellationToken ct = default)
+    {
+        _logger.LogInformation("GetAllUsers(roleFilter={Role}, teacherId={Teacher})",
+            roleFilter?.ToString() ?? "none", teacherId?.ToString() ?? "none");
+
+        var query = _dbContext.Users.AsNoTracking();
+
+        if (roleFilter.HasValue)
+        {
+            query = query.Where(u => u.Role == roleFilter.Value);
+        }
+
+        var users = await query
+            .Select(u => new UserData
+            {
+                UserId = u.UserId,
+                Email = u.Email,
+                FirstName = u.FirstName,
+                LastName = u.LastName,
+                Role = u.Role
+            })
+            .ToListAsync(ct);
+
+        return users;
+    }
+
+    public async Task<IEnumerable<UserData>> GetStudentsForTeacherAsync(Guid teacherId, CancellationToken ct = default)
+    {
+        _logger.LogInformation("GetStudentsForTeacher(teacherId={TeacherId})", teacherId);
+
+        var studentIds = await _dbContext.TeacherStudents
+            .AsNoTracking()
+            .Where(ts => ts.TeacherId == teacherId)
+            .Select(ts => ts.StudentId)
+            .ToListAsync(ct);
+
+        if (studentIds.Count == 0)
+        {
+            return Enumerable.Empty<UserData>();
+        }
+
+        var students = await _dbContext.Users
+            .AsNoTracking()
+            .Where(u => studentIds.Contains(u.UserId) && u.Role == Role.Student)
+            .Select(u => new UserData
+            {
+                UserId = u.UserId,
+                Email = u.Email,
+                FirstName = u.FirstName,
+                LastName = u.LastName,
+                Role = u.Role
+            })
+            .ToListAsync(ct);
+
+        return students;
+    }
 }
