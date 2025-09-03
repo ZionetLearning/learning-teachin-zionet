@@ -210,13 +210,6 @@ variable "use_shared_redis" {
   default     = true
 }
 
-#------------- Log Analytics Workspace Variables -------------
-variable "create_log_analytics" {
-  description = "Whether to create Log Analytics workspace (only for dev environment)"
-  type        = bool
-  default     = false
-}
-
 #------------- Environment Variables -------------
 variable "environment_name" {
   description = "Name of the environment (e.g., dev, staging, prod, feature-123)"

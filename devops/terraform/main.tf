@@ -125,9 +125,9 @@ locals {
 }
 
 # Monitoring - Diagnostic Settings for resources to Log Analytics
-# Log Analytics Workspace - only create when variable is true
+# Log Analytics Workspace - only create in dev environment
 resource "azurerm_log_analytics_workspace" "main" {
-  count               = var.create_log_analytics ? 1 : 0
+  count               = var.environment_name == "dev" ? 1 : 0
   name                = "${var.environment_name}-laworkspace"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
@@ -140,13 +140,13 @@ resource "azurerm_log_analytics_workspace" "main" {
   }
 }
 
-# Local value to determine which workspace to use
+# Local value to determine which workspace to use (only available in dev)
 locals {
-  log_analytics_workspace_id = var.create_log_analytics ? azurerm_log_analytics_workspace.main[0].id : null
+  log_analytics_workspace_id = var.environment_name == "dev" ? azurerm_log_analytics_workspace.main[0].id : null
 }
 
 module "monitoring" {
-  count  = var.create_log_analytics ? 1 : 0
+  count  = var.environment_name == "dev" ? 1 : 0
   source = "./modules/monitoring"
 
   log_analytics_workspace_id  = local.log_analytics_workspace_id

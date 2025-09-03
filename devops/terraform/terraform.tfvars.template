@@ -24,6 +24,3 @@ frontend_apps          = ["student", "teacher", "admin"]
 #------------- Redis Shared Instance -------------
 use_shared_redis = true  # template/test uses shared Redis instance
 
-#------------- Log Analytics Configuration -------------
-create_log_analytics = false  # stage does not create Log Analytics workspace
-
