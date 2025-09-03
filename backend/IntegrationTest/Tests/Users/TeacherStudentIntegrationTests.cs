@@ -20,7 +20,6 @@ public class TeacherStudentIntegrationTests : IAsyncLifetime
     private readonly HttpClient _client;
     private readonly ITestOutputHelper _output;
 
-    // Manager route prefix (with "profile" as requested)
     private const string ManagerUsersPrefix = "/users-manager";
 
     public TeacherStudentIntegrationTests(SharedTestFixture sharedFixture, ITestOutputHelper output)
@@ -32,13 +31,11 @@ public class TeacherStudentIntegrationTests : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        // Ensure we're authenticated as Admin (seeded test user)
         await _shared.GetAuthenticatedTokenAsync(attachToHttpClient: true);
     }
 
     public Task DisposeAsync() => Task.CompletedTask;
 
-    // ---- helpers ----
 
     private static CreateUser NewUser(Role role) => new()
     {
@@ -93,14 +90,11 @@ public class TeacherStudentIntegrationTests : IAsyncLifetime
 
     private async Task CleanupUser(Guid id)
     {
-        // Admin token required for delete; Shared fixture keeps Admin token by default.
         var del = await _client.DeleteAsync(UserRoutes.UserById(id));
-        // Don't throw if already deleted
         if (del.StatusCode != HttpStatusCode.OK && del.StatusCode != HttpStatusCode.NotFound)
             del.EnsureSuccessStatusCode();
     }
 
-    // ---- tests ----
 
     [Fact(DisplayName = "Admin can assign & unassign any student to any teacher")]
     public async Task Admin_Assign_Unassign_Flow()
