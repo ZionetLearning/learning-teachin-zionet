@@ -63,27 +63,6 @@
             "logging": {
                 "moduleLoad": false
             }
-        },
-        {
-            "name": "Docker: Attach to ApiGateway",
-            "type": "coreclr",
-            "request": "attach",
-           "processName": "dotnet",
-            "pipeTransport": {
-                "pipeProgram": "docker",
-                "pipeArgs": ["exec", "-i", "apigateway-debug"],
-                "debuggerPath": "/vsdbg/vsdbg",
-                "pipeCwd": "${workspaceFolder}",
-                "quoteArgs": false
-            },
-            "sourceFileMap": {
-                "/src": "${workspaceFolder}/ApiGateway"
-            },
-            "justMyCode": false,
-            "requireExactSource": false,
-            "logging": {
-                "moduleLoad": false
-            }
         }
     ],
     "compounds": [
@@ -93,7 +72,6 @@
                 "Docker: Attach to Manager",
                 "Docker: Attach to Engine",
                 "Docker: Attach to Accessor",
-                "Docker: Attach to ApiGateway"
             ],
             "stopAll": true,
             "preLaunchTask": "docker-compose-debug-up"
