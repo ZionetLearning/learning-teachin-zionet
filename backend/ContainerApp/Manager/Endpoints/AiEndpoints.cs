@@ -172,8 +172,6 @@ public static class AiEndpoints
 
         try
         {
-            AiAnswerStore.Answers[msg.Id] = string.Empty;
-
             await dapr.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message, cancellationToken: ct);
 
             return Results.Accepted($"/ai-manager/answer/{msg.Id}", new { questionId = msg.Id, threadId = dto.ThreadId });
