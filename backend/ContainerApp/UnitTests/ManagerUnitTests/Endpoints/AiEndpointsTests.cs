@@ -1,101 +1,179 @@
-﻿using Manager.Common;
-using Manager.Endpoints;
-using Manager.Constants;
-using Manager.Models;
+﻿using Manager.Endpoints;
+using Manager.Models.Chat;
+using Manager.Models.Sentences;
+using Manager.Models.Speech;
+using Manager.Services.Clients.Engine;
+using Manager.Services.Clients.Engine.Models;
+using Manager.Services.Clients.Accessor;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Text;
 using System.Text.Json;
 
 namespace ManagerUnitTests.Endpoints;
 
 public class AiEndpointsTests
 {
-    [Fact(DisplayName = "GET /ai/answer/{id} => 200 + body when answer exists")]
-    public async Task Answer_Returns_Ok_When_Answer_Exists()
+    [Fact(DisplayName = "GET /ai/chats/{userId} => 200 + body when chats exist")]
+    public async Task GetChats_Returns_Ok_When_Chats_Exist()
     {
-        var id = "q-123";
-        var answer = "hello";
+        var userId = Guid.NewGuid();
+        var chats = new List<ChatSummary>
+        {
+            new ChatSummary
+            {
+                ChatId = Guid.NewGuid(),
+                ChatName = "test chat",
+                ChatType = "default",
+                CreatedAt = DateTimeOffset.UtcNow,
+                UpdatedAt = DateTimeOffset.UtcNow
+            }
+        };
 
-        AiAnswerStore.Answers.Clear();
-        AiAnswerStore.Answers[id] = answer;
+        var accessor = new Mock<IAccessorClient>();
+        accessor.Setup(a => a.GetChatsForUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(chats);
+
+        var logger = Mock.Of<ILogger<object>>();
 
         var result = await PrivateInvoker.InvokePrivateEndpointAsync(
             typeof(AiEndpoints),
-            "AnswerAsync",
-            id,
-            Mock.Of<ILogger<object>>()
+            "GetChatsAsync",
+            userId,
+            accessor.Object,
+            logger,
+            CancellationToken.None
         );
 
         var ok = Assert.IsAssignableFrom<IValueHttpResult>(result);
         using var doc = JsonDocument.Parse(JsonSerializer.Serialize(ok.Value));
         var root = doc.RootElement;
-        Assert.Equal(id, root.GetProperty("id").GetString());
-        Assert.Equal(answer, root.GetProperty("answer").GetString());
+        Assert.True(root.TryGetProperty("chats", out _));
     }
 
-    [Fact(DisplayName = "GET /ai/answer/{id} => 404 when not ready")]
-    public async Task Answer_Returns_NotFound_When_NotReady()
+    [Fact(DisplayName = "GET /ai/chats/{userId} => 404 when no chats")]
+    public async Task GetChats_Returns_NotFound_When_None()
     {
-        var id = "q-404";
-        AiAnswerStore.Answers.Clear();
+        var userId = Guid.NewGuid();
+
+        var accessor = new Mock<IAccessorClient>();
+        accessor.Setup(a => a.GetChatsForUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<ChatSummary>());
+
+        var logger = Mock.Of<ILogger<object>>();
 
         var result = await PrivateInvoker.InvokePrivateEndpointAsync(
             typeof(AiEndpoints),
-            "AnswerAsync",
-            id,
-            Mock.Of<ILogger<object>>()
+            "GetChatsAsync",
+            userId,
+            accessor.Object,
+            logger,
+            CancellationToken.None
         );
 
         var status = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
         Assert.Equal(StatusCodes.Status404NotFound, status.StatusCode);
     }
 
-    [Fact(DisplayName = "POST /ai/question => 202 + location when valid")]
-    public async Task Question_Returns_Accepted_When_Valid()
+    [Fact(DisplayName = "GET /ai/chat/{chatId}/{userId} => 200 + body when history exists")]
+    public async Task GetChatHistory_Returns_Ok_When_History_Exists()
     {
-        var dto = new AiRequestModel
+        var chatId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+
+        var history = new ChatHistoryForFrontDto
         {
-            ThreadId = Guid.NewGuid().ToString("N"),
-            Question = "How are you?"
+            ChatId = chatId,
+            Name = "Test Chat",
+            ChatType = "default",
+            Messages = new List<ChatHistoryMessageDto>
+            {
+                new() { Role = "user", Text = "msg1", CreatedAt = DateTimeOffset.UtcNow }
+            }
         };
 
-        var dapr = new Mock<Dapr.Client.DaprClient>();
-        dapr.Setup(d => d.InvokeBindingAsync(
-            It.IsAny<string>(),
-            It.IsAny<string>(),
-            It.IsAny<object>(),
-            null,
-            default))
-            .Returns(Task.CompletedTask);
-
-        var options = Microsoft.Extensions.Options.Options.Create(new AiSettings
-        {
-            DefaultTtlSeconds = 60
-        });
+        var engine = new Mock<IEngineClient>();
+        engine.Setup(e => e.GetHistoryChatAsync(chatId, userId, It.IsAny<CancellationToken>()))
+              .ReturnsAsync(history);
 
         var logger = Mock.Of<ILogger<object>>();
 
         var result = await PrivateInvoker.InvokePrivateEndpointAsync(
             typeof(AiEndpoints),
-            "QuestionAsync",
+            "GetChatHistoryAsync",
+            chatId,
+            userId,
+            engine.Object,
+            logger,
+            CancellationToken.None
+        );
+
+        var ok = Assert.IsAssignableFrom<IValueHttpResult>(result);
+        using var doc = JsonDocument.Parse(JsonSerializer.Serialize(ok.Value));
+        var root = doc.RootElement;
+        Assert.Equal(chatId, root.GetProperty("ChatId").GetGuid());
+    }
+
+    [Fact(DisplayName = "POST /ai-manager/speech/synthesize => 200 + body when valid")]
+    public async Task Synthesize_Returns_Ok_When_Valid()
+    {
+        var dto = new SpeechRequest { Text = "hello", VoiceName = "he-IL-HilaNeural" };
+
+        var engineResponse = new SpeechEngineResponse
+        {
+            AudioData = Convert.ToBase64String(Encoding.UTF8.GetBytes("audio")),
+            Metadata = new SpeechMetadata { ContentType = "audio/mpeg" }
+        };
+
+        var engine = new Mock<IEngineClient>();
+        engine.Setup(e => e.SynthesizeAsync(dto, It.IsAny<CancellationToken>()))
+              .ReturnsAsync(engineResponse);
+
+        var logger = Mock.Of<ILogger<object>>();
+        var httpReq = new DefaultHttpContext().Request;
+
+        var result = await PrivateInvoker.InvokePrivateEndpointAsync(
+            typeof(AiEndpoints),
+            "SynthesizeAsync",
             dto,
-            dapr.Object,
-            options,
-            logger
+            engine.Object,
+            logger,
+            httpReq,
+            CancellationToken.None
         );
 
         var status = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
-        Assert.Equal(StatusCodes.Status202Accepted, status.StatusCode);
+        Assert.Equal(StatusCodes.Status200OK, status.StatusCode);
+    }
 
-        var location = result.GetType().GetProperty("Location")?.GetValue(result) as string;
-        Assert.Contains("/ai-manager/answer/", location);
+    [Fact(DisplayName = "POST /ai-manager/sentence => 200 when valid")]
+    public async Task Sentence_Returns_Ok_When_Valid()
+    {
+        var request = new SentenceRequest
+        {
+            UserId = Guid.NewGuid(),
+            Difficulty = Difficulty.medium,
+            Nikud = true,
+            Count = 1
+        };
 
-        var valueResult = Assert.IsAssignableFrom<IValueHttpResult>(result);
-        using var doc = JsonDocument.Parse(JsonSerializer.Serialize(valueResult.Value));
-        var root = doc.RootElement;
+        var engine = new Mock<IEngineClient>();
+        engine.Setup(e => e.GenerateSentenceAsync(request))
+            .ReturnsAsync((true, "ok"));
 
-        Assert.Equal(dto.ThreadId, root.GetProperty("threadId").GetString());
-        Assert.False(string.IsNullOrWhiteSpace(root.GetProperty("questionId").GetString()));
+        var logger = Mock.Of<ILogger<object>>();
+
+        var result = await PrivateInvoker.InvokePrivateEndpointAsync(
+            typeof(AiEndpoints),
+            "SentenceGenerateAsync",
+            request,
+            engine.Object,
+            logger,
+            CancellationToken.None
+        );
+
+        var status = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
+        Assert.Equal(StatusCodes.Status200OK, status.StatusCode);
     }
 }

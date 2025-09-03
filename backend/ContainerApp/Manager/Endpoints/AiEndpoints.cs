@@ -1,18 +1,10 @@
-﻿using Manager.Models;
-using Manager.Models.Speech;
-using Manager.Models.ModelValidation;
+﻿using Manager.Models.Speech;
 using Microsoft.AspNetCore.Mvc;
 using Manager.Models.Chat;
 using Manager.Services.Clients.Engine;
 using Manager.Services.Clients.Engine.Models;
 using Manager.Services.Clients.Accessor;
 using Manager.Models.Sentences;
-using Manager.Common;
-using Manager.Constants;
-using Dapr.Client;
-using Microsoft.Extensions.Options;
-using Manager.Models.QueueMessages;
-using System.Text.Json;
 
 namespace Manager.Endpoints;
 
@@ -30,9 +22,6 @@ public static class AiEndpoints
 
         #region HTTP GET
 
-        // GET /ai-manager/answer/{id}
-        aiGroup.MapGet("/answer/{id}", AnswerAsync).WithName("Answer");
-
         // GET /ai-manager/chats/{userId}
         aiGroup.MapGet("/chats/{userId:guid}", GetChatsAsync).WithName("GetChats");
         // GET /ai-manager/chat/{chatId:guid}/{userId:guid}
@@ -41,9 +30,6 @@ public static class AiEndpoints
         #endregion
 
         #region HTTP POST
-
-        // POST /ai-manager/question
-        aiGroup.MapPost("/question", QuestionAsync).WithName("Question");
 
         // POST /ai-manager/chat
         aiGroup.MapPost("/chat", ChatAsync).WithName("Chat");
@@ -69,7 +55,7 @@ public static class AiEndpoints
             try
             {
                 var chats = await accessorClient.GetChatsForUserAsync(userId, ct);
-                if (chats is null)
+                if (chats is null || !chats.Any())
                 {
                     log.LogInformation("chats not found");
                     return Results.NotFound(new { error = "Chats not found" });
@@ -113,73 +99,6 @@ public static class AiEndpoints
                 log.LogError(ex, "Failed to retrieve chats");
                 return Results.Problem("Get chats retrieval failed");
             }
-        }
-    }
-
-    private static async Task<IResult> AnswerAsync(
-        [FromRoute] string id,
-        [FromServices] ILogger<AnswerEndpoint> log,
-        CancellationToken ct)
-    {
-        using var scope = log.BeginScope("QuestionId: {Id}", id);
-
-        try
-        {
-            if (AiAnswerStore.Answers.TryGetValue(id, out var answer))
-            {
-                log.LogInformation("Answer returned for {Id}", id);
-
-                return Results.Ok(new
-                {
-                    id,
-                    answer
-                });
-            }
-
-            log.LogInformation("Answer not ready for {Id}", id);
-            return await Task.FromResult(Results.NotFound(new { error = "Answer not ready" }));
-        }
-        catch (Exception ex)
-        {
-            log.LogError(ex, "Failed to retrieve answer {Id}", id);
-            return await Task.FromResult(Results.Problem("AI answer retrieval failed"));
-        }
-    }
-
-    private static async Task<IResult> QuestionAsync(
-        [FromBody] AiRequestModel dto,
-        [FromServices] DaprClient dapr,
-        [FromServices] IOptions<AiSettings> options,
-        [FromServices] ILogger<QuestionEndpoint> log,
-        CancellationToken ct)
-    {
-        if (!ValidationExtensions.TryValidate(dto, out var validationErrors))
-        {
-            log.LogWarning("Validation failed for {Model}: {Errors}", nameof(AiRequestModel), validationErrors);
-            return Results.BadRequest(new { errors = validationErrors });
-        }
-
-        var settings = options.Value;
-        var msg = AiRequestModel.Create(dto.Question, dto.ThreadId, QueueNames.ManagerCallbackQueue, ttlSeconds: settings.DefaultTtlSeconds);
-
-        log.LogInformation("Send question {Id} (TTL={Ttl})", msg.Id, msg.TtlSeconds);
-
-        var message = new Message
-        {
-            ActionName = MessageAction.ProcessingChatMessage,
-            Payload = JsonSerializer.SerializeToElement(msg)
-        };
-
-        try
-        {
-            await dapr.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message, cancellationToken: ct);
-
-            return Results.Accepted($"/ai-manager/answer/{msg.Id}", new { questionId = msg.Id, threadId = dto.ThreadId });
-        }
-        catch (Exception ex)
-        {
-            log.LogError(ex, "Error sending question {Id}", msg.Id);
-            return Results.Problem("AI question failed");
         }
     }
 

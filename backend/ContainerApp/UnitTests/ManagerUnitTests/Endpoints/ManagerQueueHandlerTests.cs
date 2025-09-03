@@ -1,10 +1,11 @@
 ﻿using System.Text.Json;
 using DotQueue;
-using Manager.Common;
 using Manager.Endpoints;
-using Manager.Models;
-using Manager.Services;
+using Manager.Models.Chat;
+using Manager.Models.Notifications;
 using Manager.Models.QueueMessages;
+using Manager.Models.Sentences;
+using Manager.Services;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -12,95 +13,92 @@ namespace ManagerUnitTests.Endpoints;
 
 public class ManagerQueueHandlerTests
 {
-    private static ManagerQueueHandler CreateSut()
+    private static ManagerQueueHandler CreateSut(Mock<INotificationService>? notificationMock = null)
     {
         var logger = Mock.Of<ILogger<ManagerQueueHandler>>();
-        var notificationService = Mock.Of<INotificationService>();
+        var notificationService = notificationMock?.Object ?? Mock.Of<INotificationService>();
         return new ManagerQueueHandler(logger, notificationService);
     }
 
     private static JsonElement ToJsonElement<T>(T value) =>
         JsonSerializer.SerializeToElement(value);
 
-    [Fact(DisplayName = "HandleAnswerAiAsync => saves valid AI answer")]
-    public async Task HandleAnswerAi_Saves_When_Valid()
+    [Fact(DisplayName = "HandleNotifyUserAsync => sends notification via service")]
+    public async Task HandleNotifyUserAsync_Sends_Notification()
     {
-        // Arrange
-        var handler = CreateSut();
-        AiAnswerStore.Answers.Clear();
+        var mockNotif = new Mock<INotificationService>();
+        var handler = CreateSut(mockNotif);
 
-        var response = new AiResponseModel
-        {
-            Id = "q-1",
-            ThreadId = Guid.NewGuid().ToString("N"),
-            Answer = "hey"
-        };
+        var notification = new UserNotification { Message = "hello" };
+        var userId = Guid.NewGuid().ToString(); // string
+        var metadata = new UserContextMetadata { MessageId = "m1", UserId = userId };
 
         var message = new Message
         {
-            ActionName = MessageAction.AnswerAi,
-            Payload = ToJsonElement(response)
+            ActionName = MessageAction.NotifyUser,
+            Payload = ToJsonElement(notification),
+            Metadata = JsonSerializer.SerializeToElement(metadata)
         };
 
-        // Act
-        await handler.HandleAnswerAiAsync(message, () => Task.CompletedTask, CancellationToken.None);
+        await handler.HandleAsync(message, () => Task.CompletedTask, CancellationToken.None);
 
-        // Assert
-        Assert.True(AiAnswerStore.Answers.ContainsKey("q-1"));
-        Assert.Equal("hey", AiAnswerStore.Answers["q-1"]);
+        mockNotif.Verify(s => s.SendNotificationAsync(metadata.UserId, It.IsAny<UserNotification>()), Times.Once);
     }
 
-    [Fact(DisplayName = "HandleAnswerAiAsync wraps failure in NonRetryableException for bad JSON")]
-    public async Task HandleAnswerAi_Wraps_On_BadJson()
+    [Fact(DisplayName = "HandleAIChatAnswerAsync => sends chat event via service")]
+    public async Task HandleAIChatAnswerAsync_Sends_ChatEvent()
     {
-        var handler = CreateSut();
+        var mockNotif = new Mock<INotificationService>();
+        var handler = CreateSut(mockNotif);
 
-        // Invalid payload → missing ThreadId
-        var badJson = JsonDocument.Parse("""{"Id":"q-err"}""").RootElement;
+        var chatResponse = new AIChatResponse
+        {
+            RequestId = "req-1",
+            ChatName = "test-chat",
+            AssistantMessage = "hi",
+            ThreadId = Guid.NewGuid()
+        };
+
+        var userId = Guid.NewGuid().ToString(); // string
+        var metadata = new UserContextMetadata { UserId = userId };
 
         var message = new Message
         {
-            ActionName = MessageAction.AnswerAi,
-            Payload = badJson
+            ActionName = MessageAction.ProcessingChatMessage,
+            Payload = ToJsonElement(chatResponse),
+            Metadata = JsonSerializer.SerializeToElement(metadata)
         };
 
-        var ex = await Assert.ThrowsAsync<NonRetryableException>(() =>
-            handler.HandleAnswerAiAsync(message, () => Task.CompletedTask, CancellationToken.None));
+        await handler.HandleAsync(message, () => Task.CompletedTask, CancellationToken.None);
 
-        Assert.Contains("Invalid JSON payload", ex.Message);
+        mockNotif.Verify(s => s.SendEventAsync(EventType.ChatAiAnswer, userId, chatResponse), Times.Once);
     }
 
-    [Fact(DisplayName = "HandleAsync routes known action; unknown action throws NonRetryable")]
-    public async Task HandleAsync_Routes_Known_And_Throws_On_Unknown()
+    [Fact(DisplayName = "HandleGenerateAnswer => sends sentence event via service")]
+    public async Task HandleGenerateAnswer_Sends_SentenceEvent()
     {
-        var handler = CreateSut();
-        AiAnswerStore.Answers.Clear();
+        var mockNotif = new Mock<INotificationService>();
+        var handler = CreateSut(mockNotif);
 
-        var ok = new AiResponseModel
+        var sentenceResponse = new SentenceResponse
         {
-            Id = "x",
-            ThreadId = Guid.NewGuid().ToString("N"),
-            Answer = "ok"
+            Sentences = new List<SentenceItem>
+            {
+                new() { Text = "generated", Difficulty = "easy", Nikud = true }
+            }
         };
 
-        var okMsg = new Message
+        var userId = Guid.NewGuid().ToString(); // string
+
+        var message = new Message
         {
-            ActionName = MessageAction.AnswerAi,
-            Payload = ToJsonElement(ok)
+            ActionName = MessageAction.GenerateSentences,
+            Payload = ToJsonElement(sentenceResponse),
+            Metadata = JsonSerializer.SerializeToElement(userId)
         };
 
-        await handler.HandleAsync(okMsg, () => Task.CompletedTask, CancellationToken.None);
+        await handler.HandleAsync(message, () => Task.CompletedTask, CancellationToken.None);
 
-        Assert.True(AiAnswerStore.Answers.ContainsKey("x"));
-        Assert.Equal("ok", AiAnswerStore.Answers["x"]);
-
-        var unknownMsg = new Message
-        {
-            ActionName = (MessageAction)999,
-            Payload = JsonDocument.Parse("""{}""").RootElement.Clone()
-        };
-
-        await Assert.ThrowsAsync<NonRetryableException>(() =>
-            handler.HandleAsync(unknownMsg, () => Task.CompletedTask, CancellationToken.None));
+        mockNotif.Verify(s => s.SendEventAsync(EventType.SentenceGeneration, userId, It.IsAny<SentenceResponse>()), Times.Once);
     }
 }
