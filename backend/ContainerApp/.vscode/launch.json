@@ -47,14 +47,14 @@
             "name": "Docker: Attach to Accessor",
             "type": "coreclr",
             "request": "attach",
-           "processName": "dotnet",
-            "pipeTransport": {
-                "pipeProgram": "docker",
-                "pipeArgs": ["exec", "-i", "accessor-debug"],
-                "debuggerPath": "/vsdbg/vsdbg",
-                "pipeCwd": "${workspaceFolder}",
-                "quoteArgs": false
-            },
+            "processName": "dotnet",
+                "pipeTransport": {
+                    "pipeProgram": "docker",
+                    "pipeArgs": ["exec", "-i", "accessor-debug"],
+                    "debuggerPath": "/vsdbg/vsdbg",
+                    "pipeCwd": "${workspaceFolder}",
+                    "quoteArgs": false
+                },
             "sourceFileMap": {
                 "/src": "${workspaceFolder}/Accessor"
             },
@@ -71,7 +71,7 @@
             "configurations": [
                 "Docker: Attach to Manager",
                 "Docker: Attach to Engine",
-                "Docker: Attach to Accessor",
+                "Docker: Attach to Accessor"
             ],
             "stopAll": true,
             "preLaunchTask": "docker-compose-debug-up"
