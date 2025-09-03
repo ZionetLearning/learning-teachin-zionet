@@ -6,6 +6,8 @@ namespace Accessor.Endpoints;
 
 public static class UsersEndpoints
 {
+    private sealed class UsersEndpointsLoggerMarker { }
+
     public static IEndpointRouteBuilder MapUsersEndpoints(this IEndpointRouteBuilder app)
     {
         var usersGroup = app.MapGroup("/users-accessor").WithTags("Users");
@@ -194,46 +196,114 @@ public static class UsersEndpoints
         [FromRoute] Guid teacherId,
         [FromRoute] Guid studentId,
         [FromServices] IAccessorService service,
-        [FromServices] ILogger<IAccessorService> log,
+        [FromServices] ILogger<UsersEndpointsLoggerMarker> logger,
         CancellationToken ct)
     {
-        var ok = await service.AssignStudentToTeacherAsync(teacherId, studentId, ct);
-        if (!ok)
+        using var _ = logger.BeginScope("Method={Method}, TeacherId={TeacherId}, StudentId={StudentId}",
+            nameof(AssignAsync), teacherId, studentId);
+
+        if (teacherId == Guid.Empty || studentId == Guid.Empty)
         {
-            return Results.BadRequest(new { error = "Invalid teacher/student or assign failed" });
+            logger.LogWarning("Invalid teacherId ({TeacherId}) or studentId ({StudentId}).", teacherId, studentId);
+            return Results.BadRequest(new { error = "Invalid teacherId or studentId." });
         }
 
-        return Results.Ok(new { message = "Assigned" });
+        try
+        {
+            var ok = await service.AssignStudentToTeacherAsync(teacherId, studentId, ct);
+            if (!ok)
+            {
+                logger.LogWarning("Assign failed.");
+                return Results.BadRequest(new { error = "Invalid teacher/student or assign failed." });
+            }
+
+            return Results.Ok(new { message = "Assigned" });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to assign student to teacher.");
+            return Results.Problem("An error occurred while assigning the student.");
+        }
     }
 
     private static async Task<IResult> UnassignAsync(
         [FromRoute] Guid teacherId,
         [FromRoute] Guid studentId,
         [FromServices] IAccessorService service,
-        [FromServices] ILogger<IAccessorService> log,
+        [FromServices] ILogger<UsersEndpointsLoggerMarker> logger,
         CancellationToken ct)
     {
-        var ok = await service.UnassignStudentFromTeacherAsync(teacherId, studentId, ct);
-        return ok ? Results.Ok(new { message = "Unassigned" }) : Results.BadRequest(new { error = "Unassign failed" });
+        using var _ = logger.BeginScope("Method={Method}, TeacherId={TeacherId}, StudentId={StudentId}",
+            nameof(UnassignAsync), teacherId, studentId);
+
+        if (teacherId == Guid.Empty || studentId == Guid.Empty)
+        {
+            logger.LogWarning("Invalid teacherId ({TeacherId}) or studentId ({StudentId}).", teacherId, studentId);
+            return Results.BadRequest(new { error = "Invalid teacherId or studentId." });
+        }
+
+        try
+        {
+            var ok = await service.UnassignStudentFromTeacherAsync(teacherId, studentId, ct);
+            return ok ? Results.Ok(new { message = "Unassigned" })
+                      : Results.BadRequest(new { error = "Unassign failed." });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to unassign student from teacher.");
+            return Results.Problem("An error occurred while unassigning the student.");
+        }
     }
 
     private static async Task<IResult> ListStudentsAsync(
         [FromRoute] Guid teacherId,
         [FromServices] IAccessorService service,
-        [FromServices] ILogger<IAccessorService> log,
+        [FromServices] ILogger<UsersEndpointsLoggerMarker> logger,
         CancellationToken ct)
     {
-        var list = await service.GetStudentsForTeacherAsync(teacherId, ct);
-        return Results.Ok(list);
+        using var _ = logger.BeginScope("Method={Method}, TeacherId={TeacherId}", nameof(ListStudentsAsync), teacherId);
+
+        if (teacherId == Guid.Empty)
+        {
+            logger.LogWarning("Invalid teacherId.");
+            return Results.BadRequest(new { error = "Invalid teacherId." });
+        }
+
+        try
+        {
+            var list = await service.GetStudentsForTeacherAsync(teacherId, ct);
+            return Results.Ok(list);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to list students for teacher.");
+            return Results.Problem("An error occurred while retrieving students.");
+        }
     }
 
     private static async Task<IResult> ListTeachersAsync(
         [FromRoute] Guid studentId,
         [FromServices] IAccessorService service,
-        [FromServices] ILogger<IAccessorService> log,
+        [FromServices] ILogger<UsersEndpointsLoggerMarker> logger,
         CancellationToken ct)
     {
-        var list = await service.GetTeachersForStudentAsync(studentId, ct);
-        return Results.Ok(list);
+        using var _ = logger.BeginScope("Method={Method}, StudentId={StudentId}", nameof(ListTeachersAsync), studentId);
+
+        if (studentId == Guid.Empty)
+        {
+            logger.LogWarning("Invalid studentId.");
+            return Results.BadRequest(new { error = "Invalid studentId." });
+        }
+
+        try
+        {
+            var list = await service.GetTeachersForStudentAsync(studentId, ct);
+            return Results.Ok(list);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to list teachers for student.");
+            return Results.Problem("An error occurred while retrieving teachers.");
+        }
     }
 }

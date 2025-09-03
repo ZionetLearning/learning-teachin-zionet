@@ -9,6 +9,7 @@ namespace Manager.Endpoints;
 public static class UsersEndpoints
 {
     private sealed class UserEndpoint { }
+
     public static IEndpointRouteBuilder MapUsersEndpoints(this IEndpointRouteBuilder app)
     {
         var usersGroup = app.MapGroup("/users-manager").WithTags("Users");
@@ -192,22 +193,40 @@ public static class UsersEndpoints
         HttpContext http,
         CancellationToken ct)
     {
+        using var _ = logger.BeginScope("Method={Method}, TeacherId={TeacherId}", nameof(ListStudentsForTeacherAsync), teacherId);
+
+        if (teacherId == Guid.Empty)
+        {
+            logger.LogWarning("Invalid teacherId.");
+            return Results.BadRequest("Invalid teacherId.");
+        }
+
         var callerRole = http.User.FindFirstValue(AuthSettings.RoleClaimType);
         var callerIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
 
         if (!Guid.TryParse(callerIdRaw, out var callerId))
         {
+            logger.LogWarning("Unauthorized: missing caller id.");
             return Results.Unauthorized();
         }
 
         // Teacher can list only their own students; Admin can list any
         if (IsTeacher(callerRole) && callerId != teacherId)
         {
+            logger.LogWarning("Forbidden: teacher {CallerId} tried to list students for {TeacherId}.", callerId, teacherId);
             return Results.Forbid();
         }
 
-        var students = await accessorClient.GetStudentsForTeacherAsync(teacherId, ct);
-        return Results.Ok(students);
+        try
+        {
+            var students = await accessorClient.GetStudentsForTeacherAsync(teacherId, ct);
+            return Results.Ok(students);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to list students for teacher.");
+            return Results.Problem("Failed to retrieve students.");
+        }
     }
 
     private static async Task<IResult> AssignStudentAsync(
@@ -218,22 +237,42 @@ public static class UsersEndpoints
         HttpContext http,
         CancellationToken ct)
     {
+        using var _ = logger.BeginScope("Method={Method}, TeacherId={TeacherId}, StudentId={StudentId}",
+            nameof(AssignStudentAsync), teacherId, studentId);
+
+        if (teacherId == Guid.Empty || studentId == Guid.Empty)
+        {
+            logger.LogWarning("Invalid teacherId or studentId.");
+            return Results.BadRequest(new { error = "Invalid teacherId or studentId." });
+        }
+
         var callerRole = http.User.FindFirstValue(AuthSettings.RoleClaimType);
         var callerIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
 
         if (!Guid.TryParse(callerIdRaw, out var callerId))
         {
+            logger.LogWarning("Unauthorized: missing caller id.");
             return Results.Unauthorized();
         }
 
         // Teacher can assign only to themselves; Admin can assign anywhere
         if (IsTeacher(callerRole) && callerId != teacherId)
         {
+            logger.LogWarning("Forbidden: teacher {CallerId} tried to assign for {TeacherId}.", callerId, teacherId);
             return Results.Forbid();
         }
 
-        var ok = await accessorClient.AssignStudentToTeacherAsync(teacherId, studentId, ct);
-        return ok ? Results.Ok(new { message = "Assigned" }) : Results.BadRequest(new { error = "Assign failed" });
+        try
+        {
+            var ok = await accessorClient.AssignStudentToTeacherAsync(teacherId, studentId, ct);
+            return ok ? Results.Ok(new { message = "Assigned" })
+                      : Results.BadRequest(new { error = "Assign failed" });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to assign student to teacher.");
+            return Results.Problem("Failed to assign student.");
+        }
     }
 
     private static async Task<IResult> UnassignStudentAsync(
@@ -244,21 +283,41 @@ public static class UsersEndpoints
         HttpContext http,
         CancellationToken ct)
     {
+        using var _ = logger.BeginScope("Method={Method}, TeacherId={TeacherId}, StudentId={StudentId}",
+            nameof(UnassignStudentAsync), teacherId, studentId);
+
+        if (teacherId == Guid.Empty || studentId == Guid.Empty)
+        {
+            logger.LogWarning("Invalid teacherId or studentId.");
+            return Results.BadRequest(new { error = "Invalid teacherId or studentId." });
+        }
+
         var callerRole = http.User.FindFirstValue(AuthSettings.RoleClaimType);
         var callerIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
 
         if (!Guid.TryParse(callerIdRaw, out var callerId))
         {
+            logger.LogWarning("Unauthorized: missing caller id.");
             return Results.Unauthorized();
         }
 
         if (IsTeacher(callerRole) && callerId != teacherId)
         {
+            logger.LogWarning("Forbidden: teacher {CallerId} tried to unassign for {TeacherId}.", callerId, teacherId);
             return Results.Forbid();
         }
 
-        var ok = await accessorClient.UnassignStudentFromTeacherAsync(teacherId, studentId, ct);
-        return ok ? Results.Ok(new { message = "Unassigned" }) : Results.BadRequest(new { error = "Unassign failed" });
+        try
+        {
+            var ok = await accessorClient.UnassignStudentFromTeacherAsync(teacherId, studentId, ct);
+            return ok ? Results.Ok(new { message = "Unassigned" })
+                      : Results.BadRequest(new { error = "Unassign failed" });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to unassign student from teacher.");
+            return Results.Problem("Failed to unassign student.");
+        }
     }
 
     private static async Task<IResult> ListTeachersForStudentAsync(
@@ -267,7 +326,23 @@ public static class UsersEndpoints
         [FromServices] ILogger<UserEndpoint> logger,
         CancellationToken ct)
     {
-        var teachers = await accessorClient.GetTeachersForStudentAsync(studentId, ct);
-        return Results.Ok(teachers);
+        using var _ = logger.BeginScope("Method={Method}, StudentId={StudentId}", nameof(ListTeachersForStudentAsync), studentId);
+
+        if (studentId == Guid.Empty)
+        {
+            logger.LogWarning("Invalid studentId.");
+            return Results.BadRequest("Invalid studentId.");
+        }
+
+        try
+        {
+            var teachers = await accessorClient.GetTeachersForStudentAsync(studentId, ct);
+            return Results.Ok(teachers);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to list teachers for student.");
+            return Results.Problem("Failed to retrieve teachers.");
+        }
     }
 }
