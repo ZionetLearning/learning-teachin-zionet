@@ -96,7 +96,7 @@ builder.Services.AddCors(options =>
             .AllowAnyHeader();
     });
 });
-builder.Services.AddScoped<IManagerService, ManagerService>();
+
 builder.Services.AddScoped<IAiGatewayService, AiGatewayService>();
 builder.Services.AddScoped<IAccessorClient, AccessorClient>();
 builder.Services.AddScoped<IEngineClient, EngineClient>();

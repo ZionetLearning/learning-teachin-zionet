@@ -7,31 +7,35 @@ using Engine.Models.Sentences;
 using Engine.Services;
 using Engine.Services.Clients.AccessorClient;
 using Engine.Services.Clients.AccessorClient.Models;
+using Dapr.Client;
 
 namespace Engine.Endpoints;
 
 public class EngineQueueHandler : IQueueHandler<Message>
 {
-    private readonly IEngineService _engine;
+    private readonly DaprClient _daprClient;
     private readonly ILogger<EngineQueueHandler> _logger;
     private readonly Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>> _handlers;
     private readonly IChatAiService _aiService;
     private readonly ISentencesService _sentencesService;
     private readonly IAiReplyPublisher _publisher;
     private readonly IAccessorClient _accessorClient;
+    private readonly IChatTitleService _chatTitleService;
 
     public EngineQueueHandler(
-        IEngineService engine,
+        DaprClient daprClient,
         IChatAiService aiService,
         IAiReplyPublisher publisher,
         IAccessorClient accessorClient,
-        ILogger<EngineQueueHandler> logger,
-        ISentencesService sentencesService)
+        ISentencesService sentencesService,
+        IChatTitleService chatTitleService,
+        ILogger<EngineQueueHandler> logger)
     {
-        _engine = engine;
+        _daprClient = daprClient;
         _aiService = aiService;
         _publisher = publisher;
         _accessorClient = accessorClient;
+        _chatTitleService = chatTitleService;
         _logger = logger;
         _sentencesService = sentencesService;
         _handlers = new Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>>
@@ -62,12 +66,24 @@ public class EngineQueueHandler : IQueueHandler<Message>
         try
         {
             var payload = PayloadValidation.DeserializeOrThrow<TaskModel>(message, _logger);
-
             PayloadValidation.ValidateTask(payload, _logger);
 
-            _logger.LogDebug("Processing task {Id}", payload.Id);
-            await _engine.ProcessTaskAsync(payload, cancellationToken);
-            _logger.LogInformation("Task {Id} processed", payload.Id);
+            using var _ = _logger.BeginScope("Processing TaskId: {TaskId}", payload.Id);
+            _logger.LogInformation("Inside {Method}", nameof(HandleCreateTaskAsync));
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (payload is null)
+            {
+                _logger.LogWarning("Attempted to process a null task");
+                throw new ArgumentNullException(nameof(message), "Task payload cannot be null");
+            }
+
+            _logger.LogInformation("Logged task: {Name}", payload.Name);
+
+            await _daprClient.InvokeMethodAsync(HttpMethod.Post, "accessor", "tasks-accessor/task", payload, cancellationToken);
+
+            _logger.LogInformation("Task {Id} forwarded to the Accessor service", payload.Id);
         }
         catch (NonRetryableException ex)
         {
@@ -109,15 +125,27 @@ public class EngineQueueHandler : IQueueHandler<Message>
         try
         {
             var payload = PayloadValidation.DeserializeOrThrow<TaskModel>(message, _logger);
-
             PayloadValidation.ValidateTask(payload, _logger);
 
-            _logger.LogInformation("Starting long task handler for Task {Id}", payload.Id);
-
             await Task.Delay(TimeSpan.FromSeconds(80), cancellationToken);
-            await _engine.ProcessTaskAsync(payload, cancellationToken);
-            _logger.LogInformation("Task {Id} processed", payload.Id);
 
+            using var _ = _logger.BeginScope("Starting long task handler for Task {Id}", payload.Id);
+            _logger.LogInformation("Inside {Method}", nameof(HandleTestLongTaskAsync));
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (payload is null)
+            {
+                _logger.LogWarning("Attempted to process a null task");
+                throw new ArgumentNullException(nameof(message), "Task payload cannot be null");
+            }
+
+            _logger.LogInformation("Logged task: {Name}", payload.Name);
+
+            await _daprClient.InvokeMethodAsync(
+                HttpMethod.Post, "accessor", "tasks-accessor/task", payload, cancellationToken);
+
+            _logger.LogInformation("Task {Id} forwarded to the Accessor service", payload.Id);
         }
         catch (NonRetryableException ex)
         {
@@ -176,14 +204,46 @@ public class EngineQueueHandler : IQueueHandler<Message>
 
             var snapshot = await _accessorClient.GetHistorySnapshotAsync(request.ThreadId, request.UserId, ct);
 
+            var skHistory = HistoryMapper.ToChatHistoryFromElement(snapshot.History);
+            var storyForKernel = HistoryMapper.CloneToChatHistory(skHistory);
+
+            HistoryMapper.EnsureSystemMessage(storyForKernel);
+
+            storyForKernel.AddUserMessage(request.UserMessage.Trim(), DateTimeOffset.UtcNow);
+
+            var chatName = snapshot.Name;
+            if (chatName == "New chat")
+            {
+                try
+                {
+                    chatName = await _chatTitleService.GenerateTitleAsync(storyForKernel, ct);
+
+                }
+                catch (Exception exName)
+                {
+                    _logger.LogError(exName, "Error while processing naming chat: {RequestId}", request.RequestId);
+                    chatName = DateTime.UtcNow.ToString("HHmm_dd_MM");
+
+                }
+            }
+
+            var upsertUserMessage = new UpsertHistoryRequest
+            {
+                ThreadId = request.ThreadId,
+                UserId = request.UserId,
+                Name = chatName,
+                ChatType = request.ChatType.ToString().ToLowerInvariant(),
+                History = HistoryMapper.SerializeHistory(storyForKernel)
+            };
+
+            await _accessorClient.UpsertHistorySnapshotAsync(upsertUserMessage, ct);
+
             var serviceRequest = new ChatAiServiseRequest
             {
-                History = snapshot.History,
-                UserMessage = request.UserMessage,
+                History = storyForKernel,
                 ChatType = request.ChatType,
                 ThreadId = request.ThreadId,
                 UserId = request.UserId,
-                Name = snapshot.Name,
                 RequestId = request.RequestId,
                 SentAt = request.SentAt,
                 TtlSeconds = request.TtlSeconds,
@@ -197,7 +257,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
                 {
                     RequestId = serviceRequest.RequestId,
                     Status = ChatAnswerStatus.Fail,
-                    ChatName = aiResponse.Name,
+                    ChatName = chatName,
                     ThreadId = serviceRequest.ThreadId,
                     AssistantMessage = aiResponse.Error
                 };
@@ -207,22 +267,24 @@ public class EngineQueueHandler : IQueueHandler<Message>
                 return;
             }
 
-            var upsert = new UpsertHistoryRequest
+            HistoryMapper.AppendDelta(storyForKernel, aiResponse.UpdatedHistory);
+
+            var upsertFinal = new UpsertHistoryRequest
             {
                 ThreadId = request.ThreadId,
                 UserId = request.UserId,
-                Name = aiResponse.Name,
+                Name = chatName,
                 ChatType = request.ChatType.ToString().ToLowerInvariant(),
-                History = aiResponse.UpdatedHistory
+                History = HistoryMapper.SerializeHistory(storyForKernel)
             };
 
-            await _accessorClient.UpsertHistorySnapshotAsync(upsert, ct);
+            await _accessorClient.UpsertHistorySnapshotAsync(upsertFinal, ct);
 
             var responseToManager = new EngineChatResponse
             {
                 AssistantMessage = aiResponse.Answer.Content,
                 RequestId = aiResponse.RequestId,
-                ChatName = aiResponse.Name,
+                ChatName = chatName,
                 Status = aiResponse.Status,
                 ThreadId = aiResponse.ThreadId
             };
