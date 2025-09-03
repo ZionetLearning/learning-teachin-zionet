@@ -91,11 +91,16 @@ if (!string.IsNullOrEmpty(signalRConnString))
 
 var corsSettings = builder.Configuration.GetSection("Cors").Get<CorsSettings>();
 
+if (corsSettings is null || corsSettings.AllowedOrigins is null || corsSettings.AllowedOrigins.Length == 0)
+{
+    throw new InvalidOperationException("Cors settings are missing or invalid. Please check appsettings.json.");
+}
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Frontend", policy =>
     {
-        policy.WithOrigins(corsSettings!.AllowedOrigins)
+        policy.WithOrigins(corsSettings.AllowedOrigins)
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials(); // Required for sending/receiving cookies
