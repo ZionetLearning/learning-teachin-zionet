@@ -1,0 +1,53 @@
+# ----------------- Base Runtime -----------------
+# This is the lightweight ASP.NET runtime image (no SDK, just for running apps).
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+
+# Inside the container, our app will live in /app
+WORKDIR /app
+
+# Engine service listens on port 5002
+EXPOSE 5002
+
+# Install dependencies required for debugging
+RUN apt-get update && apt-get install -y curl unzip && rm -rf /var/lib/apt/lists/*
+
+# Install Visual Studio Debugger (vsdbg) into /vsdbg
+RUN curl -sSL https://aka.ms/getvsdbgsh | bash /dev/stdin -v latest -l /vsdbg
+
+
+# ----------------- Build Stage -----------------
+# Use the full .NET SDK image to build, restore, and publish the project
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+
+# IMPORTANT: Switch to /src/Engine so PDBs reference the correct path
+WORKDIR /src
+
+# Copy project file first (helps with caching during dotnet restore)
+COPY *.csproj ./ 
+RUN dotnet restore
+
+# Copy the rest of the source files
+COPY . ./ 
+
+# Publish in Debug mode with portable PDBs
+# Ensures debugging symbols are available in the container
+RUN dotnet publish -c Debug -o /app/publish \
+    /p:DebugType=portable /p:DebugSymbols=true /p:EmbedAllSources=false
+
+
+# ----------------- Final Image -----------------
+# Build the final runtime image from the base runtime
+FROM base AS final
+
+# Set working directory for the app
+WORKDIR /app
+
+# Copy published output (DLLs + PDBs) from the build stage
+COPY --from=build /app/publish .
+
+# Set environment variables useful for debugging
+ENV DOTNET_USE_POLLING_FILE_WATCHER=true
+ENV ASPNETCORE_LOGGING__CONSOLE__DISABLECOLORS=true
+
+# Start the Engine service
+ENTRYPOINT ["dotnet", "Engine.dll"]
