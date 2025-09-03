@@ -5,6 +5,8 @@ export interface ButtonProps {
   disabled?: boolean;
   type?: "button" | "submit" | "reset" | undefined;
   variant?: "text" | "outlined" | "contained";
+  sx?: object;
+  size?: "small" | "medium" | "large" | undefined;
   onClick?: () => void;
   
 }
@@ -15,6 +17,8 @@ export const Button = ({
   type,
   onClick,
   variant = "contained",
+  sx,
+  size = undefined
 }: ButtonProps) => {
 
   return (
@@ -22,6 +26,8 @@ export const Button = ({
       type = {type}
       variant={variant}
       disabled={disabled}
+      sx={sx ?? undefined}
+      size={size}
       onClick={onClick}
     >
       {children}
