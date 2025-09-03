@@ -17,6 +17,9 @@ export interface AuthProviderProps {
   appRole: AppRoleType;
 }
 
+const MIN_REFRESH_DELAY_MS = 5_000;
+const FALLBACK_TOKEN_EXPIRY_MS = 15 * 60 * 1000;
+
 export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
   const refreshTimerRef = useRef<number | null>(null);
   const refreshSkewMs = 60_000;
@@ -106,7 +109,7 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
   const persistSession = useCallback(
     (email: string, accessToken: string, role?: AppRoleType) => {
       const decodedExp = decodeJwtExp(accessToken);
-      const fallback = Date.now() + 15 * 60 * 1000; // 15min
+      const fallback = Date.now() + FALLBACK_TOKEN_EXPIRY_MS;
       const accessTokenExpiry =
         decodedExp && decodedExp > Date.now() ? decodedExp : fallback;
       const creds: Credentials = {
@@ -148,7 +151,7 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
       const now = Date.now();
       const target = creds.accessTokenExpiry - refreshSkewMs;
       let delay = target - now;
-      if (delay < 5_000) delay = 5_000;
+      if (delay < MIN_REFRESH_DELAY_MS) delay = MIN_REFRESH_DELAY_MS;
       refreshTimerRef.current = window.setTimeout(async () => {
         try {
           const { accessToken } = await refreshTokens();

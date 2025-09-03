@@ -3,7 +3,10 @@ export const decodeJwtExp = (token: string): number | undefined => {
     const [, payload] = token.split(".");
     if (!payload) return undefined;
     const json = JSON.parse(
-      atob(payload.replace(/-/g, "+").replace(/_/g, "/")),
+      atob(
+        payload.replace(/-/g, "+").replace(/_/g, "/") +
+          "=".repeat((4 - (payload.length % 4)) % 4),
+      ),
     );
     if (typeof json.exp === "number") {
       return json.exp * 1000;
