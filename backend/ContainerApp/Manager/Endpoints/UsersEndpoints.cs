@@ -1,6 +1,4 @@
-﻿using System.Security.Claims;
-using Manager.Constants;
-using Manager.Models.Users;
+﻿using Manager.Models.Users;
 using Manager.Services.Clients.Accessor;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,21 +19,6 @@ public static class UsersEndpoints
 
         return app;
     }
-
-    // -------------- helpers --------------
-    private static Guid? GetCallerId(ClaimsPrincipal user)
-    {
-        var raw = user.FindFirstValue(AuthSettings.UserIdClaimType);
-        return Guid.TryParse(raw, out var id) ? id : null;
-    }
-    private static Role? GetCallerRole(ClaimsPrincipal user)
-    {
-        var raw = user.FindFirstValue(AuthSettings.RoleClaimType);
-        return Enum.TryParse<Role>(raw, out var r) ? r : null;
-    }
-    private static bool IsAdmin(ClaimsPrincipal u) => u.IsInRole(Role.Admin.ToString());
-    private static bool IsTeacher(ClaimsPrincipal u) => u.IsInRole(Role.Teacher.ToString());
-    private static bool IsStudent(ClaimsPrincipal u) => u.IsInRole(Role.Student.ToString());
 
     private static async Task<IResult> GetUserAsync(
         [FromRoute] Guid userId,
