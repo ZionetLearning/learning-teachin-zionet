@@ -146,7 +146,7 @@ module "monitoring" {
   servicebus_namespace_id     = module.servicebus.namespace_id
   postgres_server_id          = module.database[0].id
   signalr_id                  = module.signalr.id
-  redis_id                    = module.redis[0].id
+  redis_id                    = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].id : module.redis[0].id
   frontend_static_web_app_id  = [for f in module.frontend : f.static_web_app_id]
 
   frontend_application_insights_ids = [for f in module.frontend : f.application_insights_id]
