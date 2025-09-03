@@ -1,80 +1,72 @@
 {
     "version": "0.2.0",
     "configurations": [
-        {
-            "name": "Docker: Attach to Manager",
-            "type": "coreclr",
-            "request": "attach",
-            "processName": "dotnet",
-            "pipeTransport": {
-                "pipeProgram": "docker",
-                "pipeArgs": ["exec", "-i", "manager-debug"],
-                "debuggerPath": "/vsdbg/vsdbg",
-                "pipeCwd": "${workspaceFolder}",
-                "quoteArgs": false
-            },
-            "sourceFileMap": {
-                "/src": "${workspaceFolder}/Manager"
-            },
-            "justMyCode": false,
-            "requireExactSource": false,
-            "logging": {
-                "moduleLoad": false
-            }
+      {
+        "name": "Docker: Attach to Manager",
+        "type": "coreclr",
+        "request": "attach",
+        "processName": "dotnet",
+        "pipeTransport": {
+          "pipeProgram": "docker",
+          "pipeArgs": ["exec", "-i", "manager-debug"],
+          "debuggerPath": "/vsdbg/vsdbg",
+          "pipeCwd": "${workspaceFolder}",
+          "quoteArgs": false
         },
-        {
-            "name": "Docker: Attach to Engine",
-            "type": "coreclr",
-            "request": "attach",
-            "processName": "dotnet",
-            "pipeTransport": {
-                "pipeProgram": "docker",
-                "pipeArgs": ["exec", "-i", "engine-debug"],
-                "debuggerPath": "/vsdbg/vsdbg",
-                "pipeCwd": "${workspaceFolder}",
-                "quoteArgs": false
-            },
-            "sourceFileMap": {
-                "/src": "${workspaceFolder}/Engine"
-            },
-            "justMyCode": false,
-            "requireExactSource": false,
-            "logging": {
-                "moduleLoad": false
-            }
+        "sourceFileMap": { "/src": "${workspaceFolder}/Manager" },
+        "justMyCode": false,
+        "requireExactSource": false,
+        "logging": { "moduleLoad": false },
+        "presentation": { "hidden": true, "group": "Docker Services", "order": 1 }
+      },
+      {
+        "name": "Docker: Attach to Engine",
+        "type": "coreclr",
+        "request": "attach",
+        "processName": "dotnet",
+        "pipeTransport": {
+          "pipeProgram": "docker",
+          "pipeArgs": ["exec", "-i", "engine-debug"],
+          "debuggerPath": "/vsdbg/vsdbg",
+          "pipeCwd": "${workspaceFolder}",
+          "quoteArgs": false
         },
-        {
-            "name": "Docker: Attach to Accessor",
-            "type": "coreclr",
-            "request": "attach",
-            "processName": "dotnet",
-                "pipeTransport": {
-                    "pipeProgram": "docker",
-                    "pipeArgs": ["exec", "-i", "accessor-debug"],
-                    "debuggerPath": "/vsdbg/vsdbg",
-                    "pipeCwd": "${workspaceFolder}",
-                    "quoteArgs": false
-                },
-            "sourceFileMap": {
-                "/src": "${workspaceFolder}/Accessor"
-            },
-            "justMyCode": false,
-            "requireExactSource": false,
-            "logging": {
-                "moduleLoad": false
-            }
-        }
+        "sourceFileMap": { "/src": "${workspaceFolder}/Engine" },
+        "justMyCode": false,
+        "requireExactSource": false,
+        "logging": { "moduleLoad": false },
+        "presentation": { "hidden": true, "group": "Docker Services", "order": 2 }
+      },
+      {
+        "name": "Docker: Attach to Accessor",
+        "type": "coreclr",
+        "request": "attach",
+        "processName": "dotnet",
+        "pipeTransport": {
+          "pipeProgram": "docker",
+          "pipeArgs": ["exec", "-i", "accessor-debug"],
+          "debuggerPath": "/vsdbg/vsdbg",
+          "pipeCwd": "${workspaceFolder}",
+          "quoteArgs": false
+        },
+        "sourceFileMap": { "/src": "${workspaceFolder}/Accessor" },
+        "justMyCode": false,
+        "requireExactSource": false,
+        "logging": { "moduleLoad": false },
+        "presentation": { "hidden": true, "group": "Docker Services", "order": 3 }
+      }
     ],
     "compounds": [
-        {
-            "name": "Debug All Docker Services",
-            "configurations": [
-                "Docker: Attach to Manager",
-                "Docker: Attach to Engine",
-                "Docker: Attach to Accessor"
-            ],
-            "stopAll": true,
-            "preLaunchTask": "docker-compose-debug-up"
-        }
+      {
+        "name": "Debug All Docker Services",
+        "configurations": [
+          "Docker: Attach to Manager",
+          "Docker: Attach to Engine",
+          "Docker: Attach to Accessor"
+        ],
+        "stopAll": true,
+        "preLaunchTask": "docker-compose-debug-up"
+      }
     ]
-}
+  }
+  
