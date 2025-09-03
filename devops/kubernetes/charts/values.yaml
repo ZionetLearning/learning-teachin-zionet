@@ -19,6 +19,7 @@ global:
   keyvault:
     clientId: ""
     tenantId: ""
+    storeName: "azure-keyvault-backend"
 
 # If empty, namespace becomes <namePrefix>
 namespace:
@@ -52,6 +53,31 @@ cronjobs:
       port:                              # defaults to .Values.manager.ports.service (80) if empty
       url: ""                           # used only when mode = "ingress"
 
+  refreshSessionsCleanup:
+    enabled: false
+    schedule: "30 2 * * *"      # every night at 02:30
+    timeZone: "Asia/Jerusalem"
+    concurrencyPolicy: Forbid
+    startingDeadlineSeconds: 300
+    successfulJobsHistoryLimit: 3
+    failedJobsHistoryLimit: 3
+    backoffLimit: 2
+
+    image:
+      repository: curlimages/curl
+      tag: "8.8.0"
+      pullPolicy: IfNotPresent
+
+    curl:
+      maxTimeSeconds: 60
+      retries: 2
+      retryDelaySeconds: 2
+
+    target:
+      mode: "service"
+      serviceName: "manager"
+      port: 80
+
 manager:
   name: manager
   labels:
@@ -81,6 +107,22 @@ manager:
     signalr:
       name: signalr-connection
       key: SignalRConnectionString
+    jwt:
+      name: manager-appsettings
+      keys:
+        secret: Jwt__Secret
+        issuer: Jwt__Issuer
+        audience: Jwt__Audience
+        refresh: Jwt__RefreshTokenHashKey
+      data:
+        - remote: manager-jwt-secret
+          key: Jwt__Secret
+        - remote: manager-jwt-issuer
+          key: Jwt__Issuer
+        - remote: manager-jwt-audience
+          key: Jwt__Audience
+        - remote: manager-jwt-refreshtokenhashkey
+          key: Jwt__RefreshTokenHashKey
   resources:
     requests:
       cpu: "100m"
@@ -119,6 +161,16 @@ engine:
     serviceBus:
       name: azure-service-bus-secret
       key: AzureServiceBusConnectionString
+    app:
+      name: engine-appsettings
+      keys:
+        openaiApiKey: AzureOpenAI__ApiKey
+        speechKey: AzureSpeech__SubscriptionKey
+      data:
+        - remote: engine-azureopenai-apikey
+          key: AzureOpenAI__ApiKey
+        - remote: engine-azurespeech-subscriptionkey
+          key: AzureSpeech__SubscriptionKey
   resources:
     requests:
       cpu: "100m"

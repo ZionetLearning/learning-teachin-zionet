@@ -82,7 +82,6 @@ env:
   VITE_AZURE_OPENAI_ENDPOINT: "https://france-teachin-open-ai.openai.azure.com/"
   
   # Monitoring and tracking
-  VITE_APPINSIGHTS_CONNECTION_STRING: ""
   VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
   SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
@@ -134,6 +133,7 @@ jobs:
     if: inputs.run_only_tests == false
     needs: [frontend-test]
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment || 'Development' }}
     env:
       FE_DIR: frontend
     steps:
@@ -164,29 +164,51 @@ jobs:
         env:
           # Build-specific environment variables (RELEASE_NAME is created in the previous step)
           RELEASE: ${{ env.RELEASE_NAME }}
+          VITE_APPINSIGHTS_CONNECTION_STRING_STUDENT: ${{ secrets.VITE_APPINSIGHTS_CONNECTION_STRING_STUDENT }}
+          VITE_APPINSIGHTS_CONNECTION_STRING_TEACHER: ${{ secrets.VITE_APPINSIGHTS_CONNECTION_STRING_TEACHER }}
+          VITE_APPINSIGHTS_CONNECTION_STRING_ADMIN:  ${{ secrets.VITE_APPINSIGHTS_CONNECTION_STRING_ADMIN  }}
         run: |
-          echo "Starting parallel builds for all frontend applications..."
-          
-          # Start all builds in parallel
-          npm run build:student &
-          STUDENT_PID=$!
-          echo "Started student build (PID: $STUDENT_PID)"
-          
-          npm run build:teacher &
-          TEACHER_PID=$!
-          echo "Started teacher build (PID: $TEACHER_PID)"
-          
-          npm run build:admin &
-          ADMIN_PID=$!
-          echo "Started admin build (PID: $ADMIN_PID)"
-          
-          # Wait for all builds to complete
+          echo "Starting parallel builds with per-app AI connection strings..."
+
+          VITE_APPINSIGHTS_CONNECTION_STRING="$VITE_APPINSIGHTS_CONNECTION_STRING_STUDENT" npm run build:student &
+          STUDENT_PID=$! && echo "Started student build (PID: $STUDENT_PID)"
+
+          VITE_APPINSIGHTS_CONNECTION_STRING="$VITE_APPINSIGHTS_CONNECTION_STRING_TEACHER" npm run build:teacher &
+          TEACHER_PID=$! && echo "Started teacher build (PID: $TEACHER_PID)"
+
+          VITE_APPINSIGHTS_CONNECTION_STRING="$VITE_APPINSIGHTS_CONNECTION_STRING_ADMIN"  npm run build:admin   &
+          ADMIN_PID=$!   && echo "Started admin build (PID: $ADMIN_PID)"
+
           echo "Waiting for all builds to complete..."
           wait $STUDENT_PID && echo "Student build completed"
-          wait $TEACHER_PID && echo "Teacher build completed" 
-          wait $ADMIN_PID && echo "Admin build completed"
-          
-          echo "🚀 All frontend applications built successfully!"
+          wait $TEACHER_PID && echo "Teacher build completed"
+          wait $ADMIN_PID   && echo "Admin build completed"
+
+          echo "🚀 All frontend applications built successfully with per-app AI!"
+
+      - name: Normalize build outputs to frontend/dist/apps/*
+        working-directory: ${{ env.FE_DIR }}
+        run: |
+          set -e
+          mkdir -p dist/apps/student dist/apps/teacher dist/apps/admin
+          if [ -d apps/student/dist ]; then rsync -a --delete apps/student/dist/ dist/apps/student/; fi
+          if [ -d apps/teacher/dist ]; then rsync -a --delete apps/teacher/dist/ dist/apps/teacher/; fi
+          if [ -d apps/admin/dist ];  then rsync -a --delete apps/admin/dist/  dist/apps/admin/;  fi
+          echo "== dist tree =="
+          find dist -maxdepth 3 -type d -print
+
+      - name: Verify AI is in bundles
+        working-directory: ${{ env.FE_DIR }}
+        run: |
+          if ! grep -R "applicationinsights" -n dist/ >/dev/null 2>&1; then
+            echo "AI SDK not found in built files."
+            exit 1
+          fi
+          if ! grep -R "applicationinsights.azure.com" -n dist/ >/dev/null 2>&1; then
+            echo "Ingestion endpoint not found (env missing?)."
+            exit 1
+          fi
+          echo "AI present in bundles."
 
       - name: Upload build artifacts
         if: |

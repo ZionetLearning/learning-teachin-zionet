@@ -18,3 +18,8 @@ output "postgres_connection_string" {
   description = "Full PostgreSQL connection string"
   sensitive   = true
 }
+
+output "id" {
+  value = azurerm_postgresql_flexible_server.this[0].id
+  description = "The ID of the PostgreSQL flexible server"
+}

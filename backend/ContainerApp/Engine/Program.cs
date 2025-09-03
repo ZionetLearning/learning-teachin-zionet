@@ -25,11 +25,11 @@ builder.Configuration
 builder.Services.AddDaprClient();
 builder.Services.AddControllers().AddDapr();
 
-builder.Services.AddScoped<IEngineService, EngineService>();
 builder.Services.AddScoped<IChatTitleService, ChatTitleService>();
 builder.Services.AddScoped<IChatAiService, ChatAiService>();
 builder.Services.AddScoped<IAiReplyPublisher, AiReplyPublisher>();
 builder.Services.AddScoped<IAccessorClient, AccessorClient>();
+builder.Services.AddScoped<ISentencesService, SentencesService>();
 builder.Services.AddSingleton<IRetryPolicyProvider, RetryPolicyProvider>();
 builder.Services.AddSingleton<IRetryPolicy, RetryPolicy>();
 builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
@@ -87,6 +87,45 @@ builder.Services.AddSingleton(sp =>
 
     return kernel;
 
+});
+
+builder.Services.AddKeyedSingleton("gen", (sp, key) =>
+{
+    var cfg = sp.GetRequiredService<IOptions<AzureOpenAiSettings>>().Value;
+
+    var kb = Kernel.CreateBuilder()
+        .AddAzureOpenAIChatCompletion(
+            deploymentName: cfg.DeploymentName,
+            endpoint: cfg.Endpoint,
+            apiKey: cfg.ApiKey);
+
+    var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("KernelGenPluginRegistration");
+
+    var dir = Path.Combine(AppContext.BaseDirectory, "Plugins", "Sentences");
+    try
+    {
+        kb.Plugins.AddFromPromptDirectory(dir, "Sentences");
+        logger.LogInformation("Prompt plugin 'Sentences' loaded from {Dir}", dir);
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Failed to load prompt plugin from {Dir}", dir);
+    }
+
+    var kernel = kb.Build();
+
+    try
+    {
+        var info = string.Join("; ", kernel.Plugins.Select(p =>
+            $"{p.Name}: [" + string.Join(", ", p.Select(f => f.Name)) + "]"));
+        logger.LogInformation("Loaded SK plugins & functions: {Info}", info);
+    }
+    catch (Exception ex)
+    {
+        logger.LogWarning(ex, "Failed to enumerate SK plugins/functions");
+    }
+
+    return kernel;
 });
 
 builder.Services.AddSingleton(_ =>

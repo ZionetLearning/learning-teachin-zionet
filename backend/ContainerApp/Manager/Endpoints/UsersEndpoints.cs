@@ -1,5 +1,5 @@
 ﻿using Manager.Models.Users;
-using Manager.Services;
+using Manager.Services.Clients.Accessor;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Endpoints;
@@ -22,13 +22,14 @@ public static class UsersEndpoints
 
     private static async Task<IResult> GetUserAsync(
         [FromRoute] Guid userId,
-        [FromServices] IManagerService managerService,
+        [FromServices] IAccessorClient accessorClient,
         [FromServices] ILogger<UserEndpoint> logger)
     {
         using var scope = logger.BeginScope("UserId {UserId}:", userId);
+
         try
         {
-            var user = await managerService.GetUserAsync(userId);
+            var user = await accessorClient.GetUserAsync(userId);
             if (user is null)
             {
                 logger.LogWarning("User not found");
@@ -46,29 +47,51 @@ public static class UsersEndpoints
     }
 
     private static async Task<IResult> CreateUserAsync(
-        [FromBody] UserModel user,
-        [FromServices] IManagerService managerService,
+        [FromBody] CreateUser newUser,
+        [FromServices] IAccessorClient accessorClient,
         [FromServices] ILogger<UserEndpoint> logger)
     {
-        using var scope = logger.BeginScope("CreateUser {Email}:", user.Email);
+        using var scope = logger.BeginScope("CreateUser:");
+
         try
         {
-            var success = await managerService.CreateUserAsync(user);
-            if (!success)
+            // Validate role
+            if (!Enum.TryParse<Role>(newUser.Role, true, out var parsedRole))
             {
-                logger.LogWarning("User creation failed");
-                return Results.Conflict("User already exists.");
+                logger.LogWarning("User creation failed due to invalid role: {RoleInput}", newUser.Role);
+                return Results.BadRequest("Invalid role provided.");
             }
 
+            // Build the user model (hash password here!)
+            var user = new UserModel
+            {
+                UserId = newUser.UserId,
+                Email = newUser.Email,
+                FirstName = newUser.FirstName,
+                LastName = newUser.LastName,
+                Password = BCrypt.Net.BCrypt.HashPassword(newUser.Password),
+                Role = parsedRole
+            };
+
+            // Send to accessor
+            var success = await accessorClient.CreateUserAsync(user);
+            if (!success)
+            {
+                logger.LogWarning("User creation failed: {Email}", user.Email);
+                return Results.Conflict("User could not be created (may already exist or invalid data).");
+            }
+
+            // DTO for response (never return raw password)
             var result = new UserData
             {
                 UserId = user.UserId,
                 Email = user.Email,
                 FirstName = user.FirstName,
-                LastName = user.LastName
+                LastName = user.LastName,
+                Role = parsedRole
             };
 
-            logger.LogInformation("User created");
+            logger.LogInformation("User {Email} created successfully", user.Email);
             return Results.Created($"/users-manager/user/{user.UserId}", result);
         }
         catch (Exception ex)
@@ -81,21 +104,15 @@ public static class UsersEndpoints
     private static async Task<IResult> UpdateUserAsync(
         [FromRoute] Guid userId,
         [FromBody] UpdateUserModel user,
-        [FromServices] IManagerService managerService,
+        [FromServices] IAccessorClient accessorClient,
         [FromServices] ILogger<UserEndpoint> logger)
     {
         using var scope = logger.BeginScope("UpdateUser {UserId}:", userId);
+
         try
         {
-            var success = await managerService.UpdateUserAsync(user, userId);
-            if (!success)
-            {
-                logger.LogWarning("User not found for update");
-                return Results.NotFound("User not found.");
-            }
-
-            logger.LogInformation("User updated");
-            return Results.Ok("User updated.");
+            var success = await accessorClient.UpdateUserAsync(user, userId);
+            return success ? Results.Ok("User updated.") : Results.NotFound("User not found.");
         }
         catch (Exception ex)
         {
@@ -106,21 +123,15 @@ public static class UsersEndpoints
 
     private static async Task<IResult> DeleteUserAsync(
         [FromRoute] Guid userId,
-        [FromServices] IManagerService managerService,
+        [FromServices] IAccessorClient accessorClient,
         [FromServices] ILogger<UserEndpoint> logger)
     {
         using var scope = logger.BeginScope("DeleteUser {UserId}:", userId);
+
         try
         {
-            var success = await managerService.DeleteUserAsync(userId);
-            if (!success)
-            {
-                logger.LogWarning("User not found for deletion");
-                return Results.NotFound("User not found.");
-            }
-
-            logger.LogInformation("User deleted");
-            return Results.Ok("User deleted.");
+            var success = await accessorClient.DeleteUserAsync(userId);
+            return success ? Results.Ok("User deleted.") : Results.NotFound("User not found.");
         }
         catch (Exception ex)
         {
@@ -130,13 +141,20 @@ public static class UsersEndpoints
     }
 
     private static async Task<IResult> GetAllUsersAsync(
-        [FromServices] IManagerService managerService,
+        [FromServices] IAccessorClient accessorClient,
         [FromServices] ILogger<UserEndpoint> logger)
     {
         using var scope = logger.BeginScope("GetAllUsers:");
+
         try
         {
-            var users = await managerService.GetAllUsersAsync();
+            var users = await accessorClient.GetAllUsersAsync();
+            if (users is null || !users.Any())
+            {
+                logger.LogWarning("No users found");
+                return Results.NotFound("No users found.");
+            }
+
             logger.LogInformation("Retrieved {Count} users", users.Count());
             return Results.Ok(users);
         }
