@@ -193,6 +193,36 @@ namespace Accessor.Migrations
 
                     b.ToTable("Users", (string)null);
                 });
+
+            modelBuilder.Entity("Accessor.Models.Prompts.PromptModel", b =>
+            {
+                b.Property<Guid>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("uuid");
+
+                b.Property<string>("Content")
+                    .IsRequired()
+                    .HasColumnType("text");
+
+                b.Property<string>("PromptKey")
+                    .IsRequired()
+                    .HasMaxLength(120)
+                    .HasColumnType("character varying(120)");
+
+                b.Property<string>("Version")
+                    .IsRequired()
+                    .HasMaxLength(50)
+                    .HasColumnType("character varying(50)");
+
+                b.HasKey("Id");
+
+                b.HasIndex("PromptKey");
+
+                b.HasIndex("PromptKey", "Version");
+
+                b.ToTable("Prompts", (string)null);
+            });
+
 #pragma warning restore 612, 618
         }
     }
