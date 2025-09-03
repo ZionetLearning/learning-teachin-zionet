@@ -1,32 +1,37 @@
-import { BrowserRouter, Route, Routes, Outlet } from "react-router-dom";
-
-import { Box } from "@mui/material";
-
+import { useEffect } from "react";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { SidebarMenuLayout } from "@ui-components";
+import { SidebarMenu } from "./components";
 import { AuthorizationPage, RequireAuth } from "@authorization";
 import "./App.css";
-import { HomePage } from "./pages";
+import { HomePage, ProfilePage } from "./pages";
+
 
 const ProtectedLayout = () => {
   return (
     <RequireAuth>
       <div data-testid="protected-layout">
-        <Box sx={{ display: "flex", height: "100vh" }}>
-          <Box sx={{ flexGrow: 1, position: "relative", overflow: "hidden" }}>
-            <Outlet />
-          </Box>
-        </Box>
+        <SidebarMenuLayout sidebarMenu={<SidebarMenu />} />
       </div>
     </RequireAuth>
   );
 };
 
 function App() {
+  const { i18n } = useTranslation();
+
+  useEffect(() => {
+    document.documentElement.lang = i18n.language;
+    document.documentElement.dir = i18n.language === "he" ? "rtl" : "ltr";
+  }, [i18n.language]);
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/signin" element={<AuthorizationPage />} />
         <Route element={<ProtectedLayout />}>
           <Route path="/" element={<HomePage />} />
+          <Route path="/profile" element={<ProfilePage />} />
         </Route>
       </Routes>
     </BrowserRouter>
