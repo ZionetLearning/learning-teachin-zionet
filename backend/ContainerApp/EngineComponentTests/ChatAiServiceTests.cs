@@ -3,13 +3,13 @@ using System.Text.RegularExpressions;
 using DotQueue;
 using Engine;
 using Engine.Constants;
+using Engine.Helpers;
 using Engine.Models.Chat;
 using Engine.Plugins;
 using Engine.Services;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Polly;
@@ -20,8 +20,6 @@ namespace EngineComponentTests;
 public class ChatAiServiceTests
 {
     private readonly TestKernelFixture _fx;
-    private readonly IMemoryCache _cache;
-    private readonly MemoryCacheEntryOptions _cacheOptions;
     private readonly ChatAiService _aiService;
     private sealed class FakeRetryPolicyProvider : IRetryPolicy
     {
@@ -89,30 +87,22 @@ public class ChatAiServiceTests
     public ChatAiServiceTests(TestKernelFixture fx)
     {
         _fx = fx;
-
-        _cache = new MemoryCache(new MemoryCacheOptions());
-        _cacheOptions = new MemoryCacheEntryOptions
-        {
-            SlidingExpiration = TimeSpan.FromMinutes(30)
-        };
-
         _aiService = new ChatAiService(
             _fx.Kernel,
             NullLogger<ChatAiService>.Instance,
-            _cache,
-            new FakeChatTitleService(),
-            Options.Create(_cacheOptions),
             new FakeRetryPolicyProvider());
     }
 
     [SkippableFact(DisplayName = "ProcessAsync: answer contains 4 or four")]
     public async Task ProcessAsync_Returns_Number4()
     {
+        var history = new ChatHistory();
+        history.AddSystemMessage("You are a helpful assistant.");
+        history.AddUserMessageNow("How much is 2 + 2?");
         var userId = Guid.NewGuid();
         var request = new ChatAiServiseRequest
         {
-            History = EmptyHistory(),
-            UserMessage = "How much is 2 + 2?",
+            History = history,
             ChatType = ChatType.Default,
             UserId = userId,
             RequestId = Guid.NewGuid().ToString("N"),
@@ -133,14 +123,16 @@ public class ChatAiServiceTests
     [SkippableFact(DisplayName = "ProcessAsync: history persists across calls")]
     public async Task ProcessAsync_Context_Persists()
     {
+        var history = new ChatHistory();
+        history.AddSystemMessage("You are a helpful assistant.");
+        history.AddUserMessageNow("Remember the number forty-two.");
+
         var threadId = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var userId = Guid.NewGuid();
-        var userMesaage = "Remember the number forty-two.";
         var request1 = new ChatAiServiseRequest
         {
-            History = EmptyHistory(),
-            UserMessage = userMesaage,
+            History = history,
             ChatType = ChatType.Default,
             UserId = userId,
             RequestId = Guid.NewGuid().ToString("N"),
@@ -153,10 +145,12 @@ public class ChatAiServiceTests
         Assert.True(response1.Status == ChatAnswerStatus.Ok);
         Assert.NotNull(response1.Answer);
 
+        history.AddAssistantMessage(response1.Answer.Content);
+        history.AddUserMessage("What number did you remember?", DateTimeOffset.UtcNow);
+
         var request2 = new ChatAiServiseRequest
         {
-            History = response1.UpdatedHistory,
-            UserMessage = "What number did you remember?",
+            History = history,
             ChatType = ChatType.Default,
             UserId = userId,
             RequestId = Guid.NewGuid().ToString("N"),
@@ -197,15 +191,15 @@ public class ChatAiServiceTests
         var ai = new ChatAiService(
             _fx.Kernel,
             NullLogger<ChatAiService>.Instance,
-            localCache,
-            new FakeChatTitleService(),
-            Options.Create(new MemoryCacheEntryOptions { SlidingExpiration = TimeSpan.FromMinutes(30) }),
             new FakeRetryPolicyProvider());
+
+        var history = new ChatHistory();
+        history.AddSystemMessage("You are a helpful assistant.");
+        history.AddUserMessageNow("What time is it now?");
 
         var request = new ChatAiServiseRequest
         {
-            History = EmptyHistory(),
-            UserMessage = "What time is it now?",
+            History = history,
             ChatType = ChatType.Default,
             UserId = Guid.NewGuid(),
             RequestId = Guid.NewGuid().ToString("N"),

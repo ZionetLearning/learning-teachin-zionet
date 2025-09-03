@@ -12,16 +12,16 @@ namespace Manager.Endpoints;
 public class ManagerQueueHandler : IQueueHandler<Message>
 {
     private readonly IAiGatewayService _aiService;
-    private readonly IManagerService _managerService;
+    private readonly INotificationService _notificationService;
     private readonly ILogger<ManagerQueueHandler> _logger;
     private readonly Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>> _handlers;
 
     public ManagerQueueHandler(
         IAiGatewayService aiService,
         ILogger<ManagerQueueHandler> logger,
-        IManagerService managerService)
+        INotificationService notificationService)
     {
-        _managerService = managerService;
+        _notificationService = notificationService;
         _aiService = aiService;
         _logger = logger;
         _handlers = new Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>>
@@ -125,7 +125,8 @@ public class ManagerQueueHandler : IQueueHandler<Message>
             }
 
             _logger.LogInformation("Processing notification {MessageId} for user {UserId}", metadata.MessageId, metadata.UserId);
-            await _managerService.SendUserNotificationAsync(metadata.UserId, notification);
+
+            await _notificationService.SendNotificationAsync(metadata.UserId, notification);
             _logger.LogInformation("Notification processed for user {UserId}", metadata.UserId);
         }
         catch (NonRetryableException ex)
@@ -188,7 +189,7 @@ public class ManagerQueueHandler : IQueueHandler<Message>
                 Payload = chatResponse,
             };
 
-            await _managerService.SendUserEventAsync(metadata.UserId, userEvent);
+            await _notificationService.SendEventAsync(userEvent.EventType, metadata.UserId, userEvent.Payload);
 
         }
         catch (NonRetryableException ex)
@@ -244,13 +245,7 @@ public class ManagerQueueHandler : IQueueHandler<Message>
                     $"Validation failed for {nameof(SentenceResponse)}: {string.Join("; ", validationErrors)}");
             }
 
-            var userEvent = new UserEvent<SentenceResponse>
-            {
-                EventType = EventType.SentenceGeneration,
-                Payload = generatedResponse,
-            };
-
-            await _managerService.SendUserEventAsync(userId, userEvent);
+            await _notificationService.SendEventAsync(EventType.SentenceGeneration, userId, generatedResponse);
 
         }
         catch (NonRetryableException ex)
