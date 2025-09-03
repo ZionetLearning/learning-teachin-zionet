@@ -44,41 +44,39 @@ public static class AuthEndpoints
        HttpResponse response,
        CancellationToken cancellationToken)
     {
-        using (logger.BeginScope("Method: {Method}", nameof(LoginAsync)))
+        using var scope = logger.BeginScope("Method: {Method}", nameof(LoginAsync));
+        try
         {
-            try
+            logger.LogInformation("Attempting login for {Email}", loginRequest.Email);
+
+            var (accessToken, refreshToken) = await authService.LoginAsync(loginRequest, httpRequest, cancellationToken);
+
+            // Set the cookies in the response
+            var csrfToken = CookieHelper.SetCookies(response, refreshToken);
+
+            logger.LogInformation("Login successful for {Email}", loginRequest.Email);
+            return Results.Ok(new { accessToken, csrfToken });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            logger.LogWarning("Unauthorized login attempt for {Email}: {Message}", loginRequest.Email, ex.Message);
+            return Results.Json(new ErrorResponse
             {
-                logger.LogInformation("Attempting login for {Email}", loginRequest.Email);
+                Status = StatusCodes.Status401Unauthorized,
+                Code = ErrorCodes.Unauthorized,
+                Message = ex.Message
+            }, statusCode: StatusCodes.Status401Unauthorized);
 
-                var (accessToken, refreshToken) = await authService.LoginAsync(loginRequest, httpRequest, cancellationToken);
-
-                // Set the cookies in the response
-                var csrfToken = CookieHelper.SetCookies(response, refreshToken);
-
-                logger.LogInformation("Login successful for {Email}", loginRequest.Email);
-                return Results.Ok(new { accessToken, csrfToken = csrfToken });
-            }
-            catch (UnauthorizedAccessException ex)
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error during login for {Email}", loginRequest.Email);
+            return Results.Json(new ErrorResponse
             {
-                logger.LogWarning("Unauthorized login attempt for {Email}: {Message}", loginRequest.Email, ex.Message);
-                return Results.Json(new ErrorResponse
-                {
-                    Status = StatusCodes.Status401Unauthorized,
-                    Code = ErrorCodes.Unauthorized,
-                    Message = ex.Message
-                }, statusCode: StatusCodes.Status401Unauthorized);
-
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error during login for {Email}", loginRequest.Email);
-                return Results.Json(new ErrorResponse
-                {
-                    Status = StatusCodes.Status500InternalServerError,
-                    Code = ErrorCodes.InternalServerError,
-                    Message = "An unexpected error occurred. Please try again later."
-                }, statusCode: StatusCodes.Status500InternalServerError);
-            }
+                Status = StatusCodes.Status500InternalServerError,
+                Code = ErrorCodes.InternalServerError,
+                Message = "An unexpected error occurred. Please try again later."
+            }, statusCode: StatusCodes.Status500InternalServerError);
         }
     }
 
@@ -89,39 +87,37 @@ public static class AuthEndpoints
         HttpResponse response,
         CancellationToken cancellationToken)
     {
-        using (logger.BeginScope("Method: {Method}", nameof(RefreshTokensAsync)))
+        using var scope = logger.BeginScope("Method: {Method}", nameof(RefreshTokensAsync));
+        try
         {
-            try
-            {
-                var (accessToken, newRefreshToken) = await authService.RefreshTokensAsync(request, cancellationToken);
+            var (accessToken, newRefreshToken) = await authService.RefreshTokensAsync(request, cancellationToken);
 
-                // Set again the cookies in the response
-                var csrfToken = CookieHelper.SetCookies(response, newRefreshToken);
+            // Set again the cookies in the response
+            var csrfToken = CookieHelper.SetCookies(response, newRefreshToken);
 
-                logger.LogInformation("Refresh token successful");
-                return Results.Ok(new { accessToken, csrfToken = csrfToken });
-            }
-            catch (UnauthorizedAccessException ex)
+            logger.LogInformation("Refresh token successful");
+            return Results.Ok(new { accessToken, csrfToken });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            logger.LogWarning(ex, "Refresh token request unauthorized");
+            return Results.Json(new ErrorResponse
             {
-                logger.LogWarning(ex, "Refresh token request unauthorized");
-                return Results.Json(new ErrorResponse
-                {
-                    Status = StatusCodes.Status401Unauthorized,
-                    Code = ErrorCodes.Unauthorized,
-                    Message = ex.Message
-                }, statusCode: StatusCodes.Status401Unauthorized);
+                Status = StatusCodes.Status401Unauthorized,
+                Code = ErrorCodes.Unauthorized,
+                Message = ex.Message
+            }, statusCode: StatusCodes.Status401Unauthorized);
 
-            }
-            catch (Exception ex)
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error refreshing token");
+            return Results.Json(new ErrorResponse
             {
-                logger.LogError(ex, "Error refreshing token");
-                return Results.Json(new ErrorResponse
-                {
-                    Status = StatusCodes.Status500InternalServerError,
-                    Code = ErrorCodes.InternalServerError,
-                    Message = "An unexpected error occurred. Please try again later."
-                }, statusCode: StatusCodes.Status500InternalServerError);
-            }
+                Status = StatusCodes.Status500InternalServerError,
+                Code = ErrorCodes.InternalServerError,
+                Message = "An unexpected error occurred. Please try again later."
+            }, statusCode: StatusCodes.Status500InternalServerError);
         }
     }
 
@@ -132,38 +128,36 @@ public static class AuthEndpoints
         HttpResponse response,
         CancellationToken cancellationToken)
     {
-        using (logger.BeginScope("Method: {Method}", nameof(LogoutAsync)))
+        using var scope = logger.BeginScope("Method: {Method}", nameof(LogoutAsync));
+        try
         {
-            try
-            {
-                await authService.LogoutAsync(request, cancellationToken);
+            await authService.LogoutAsync(request, cancellationToken);
 
-                // Clear the cookies in the response
-                CookieHelper.ClearCookies(response);
+            // Clear the cookies in the response
+            CookieHelper.ClearCookies(response);
 
-                logger.LogInformation("Logout successful");
-                return Results.Ok(new { message = "Logged out successfully" });
-            }
-            catch (UnauthorizedAccessException ex)
+            logger.LogInformation("Logout successful");
+            return Results.Ok(new { message = "Logged out successfully" });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            logger.LogWarning(ex, "Logout request unauthorized");
+            return Results.Json(new ErrorResponse
             {
-                logger.LogWarning(ex, "Logout request unauthorized");
-                return Results.Json(new ErrorResponse
-                {
-                    Status = StatusCodes.Status401Unauthorized,
-                    Code = ErrorCodes.Unauthorized,
-                    Message = ex.Message
-                }, statusCode: StatusCodes.Status401Unauthorized);
-            }
-            catch (Exception ex)
+                Status = StatusCodes.Status401Unauthorized,
+                Code = ErrorCodes.Unauthorized,
+                Message = ex.Message
+            }, statusCode: StatusCodes.Status401Unauthorized);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error during logout");
+            return Results.Json(new ErrorResponse
             {
-                logger.LogError(ex, "Error during logout");
-                return Results.Json(new ErrorResponse
-                {
-                    Status = StatusCodes.Status500InternalServerError,
-                    Code = ErrorCodes.InternalServerError,
-                    Message = ex.Message
-                }, statusCode: StatusCodes.Status500InternalServerError);
-            }
+                Status = StatusCodes.Status500InternalServerError,
+                Code = ErrorCodes.InternalServerError,
+                Message = ex.Message
+            }, statusCode: StatusCodes.Status500InternalServerError);
         }
     }
 
@@ -172,32 +166,31 @@ public static class AuthEndpoints
         HttpContext context,
         CancellationToken cancellationToken)
     {
-        using (logger.BeginScope("Method: {Method}", nameof(TestAuthAsync)))
+        using var scope = logger.BeginScope("Method: {Method}", nameof(TestAuthAsync));
+        try
         {
-            try
+            logger.LogInformation("You are authenticated!");
+            var user = context.User;
+
+            var userId = user.Identity?.Name; // because NameClaimType = "userid"
+            var role = user.FindFirst(ClaimTypes.Role)?.Value;
+
+            logger.LogInformation("Authenticated request. UserId: {UserId}, Role: {Role}", userId, role);
+
+            return Task.FromResult(Results.Ok(new
             {
-                logger.LogInformation("You are authenticated!");
-                var user = context.User;
-
-                var userId = user.Identity?.Name; // because NameClaimType = "userid"
-                var role = user.FindFirst(ClaimTypes.Role)?.Value;
-
-                logger.LogInformation("Authenticated request. UserId: {UserId}, Role: {Role}", userId, role);
-
-                return Task.FromResult(Results.Ok(new
-                {
-                    message = "You are authenticated!",
-                    userId,
-                    role
-                }));
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error during logout");
-                return Task.FromResult(Results.Problem("Auth test failed!"));
-            }
+                message = "You are authenticated!",
+                userId,
+                role
+            }));
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error during logout");
+            return Task.FromResult(Results.Problem("Auth test failed!"));
         }
     }
+
     private static async Task<IResult> RefreshSessionsCleanupAsync(
     [FromServices] IAccessorClient accessorClient,
     [FromServices] ILoggerFactory loggerFactory,

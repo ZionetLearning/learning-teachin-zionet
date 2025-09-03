@@ -24,7 +24,7 @@ public static class CookieHelper
         {
             HttpOnly = false, // Must be accessible to JS
 
-            // Notice!! for now its sent over http but in prodeuxtion need to change to https !!! 
+            // Notice!! for now its sent over http but in production need to change to https !!! 
             Secure = false,
             // In the future when have domain or frontend, consider using SameSiteMode.Lax for better CSRF protection
             SameSite = SameSiteMode.Lax,
