@@ -42,8 +42,10 @@ builder.Configuration
 
 builder.Services.AddEndpointsApiExplorer();
 
-// Add internal configuration to the application
-builder.Services.Configure<TaskCacheOptions>(builder.Configuration.GetSection("TaskCache"));
+builder.Services.AddOptions<TaskCacheOptions>()
+    .Bind(builder.Configuration.GetSection("TaskCache"))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 
 // Register Dapr client with custom JSON options
 builder.Services.AddDaprClient(client =>
