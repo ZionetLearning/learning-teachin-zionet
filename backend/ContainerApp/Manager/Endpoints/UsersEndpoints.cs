@@ -19,8 +19,15 @@ public static class UsersEndpoints
         usersGroup.MapPut("/user/{userId:guid}", UpdateUserAsync).WithName("UpdateUser").RequireAuthorization("AdminOrTeacherOrStudent");
         usersGroup.MapDelete("/user/{userId:guid}", DeleteUserAsync).WithName("DeleteUser").RequireAuthorization("AdminOrTeacherOrStudent");
 
+        usersGroup.MapGet("/teacher/{teacherId:guid}/students", ListStudentsForTeacherAsync).WithName("ListStudentsForTeacher").RequireAuthorization("AdminOrTeacher");
+        usersGroup.MapPost("/teacher/{teacherId:guid}/students/{studentId:guid}", AssignStudentAsync).WithName("AssignStudentToTeacher").RequireAuthorization("AdminOrTeacher");
+        usersGroup.MapDelete("/teacher/{teacherId:guid}/students/{studentId:guid}", UnassignStudentAsync).WithName("UnassignStudentFromTeacher").RequireAuthorization("AdminOrTeacher");
+        usersGroup.MapGet("/student/{studentId:guid}/teachers", ListTeachersForStudentAsync).WithName("ListTeachersForStudent").RequireAuthorization("AdminOnly");
+
         return app;
     }
+    private static bool IsTeacher(string? role) =>
+    string.Equals(role, Role.Teacher.ToString(), StringComparison.OrdinalIgnoreCase);
 
     private static async Task<IResult> GetUserAsync(
         [FromRoute] Guid userId,
@@ -177,5 +184,90 @@ public static class UsersEndpoints
             logger.LogError(ex, "Failed to retrieve users");
             return Results.Problem("Failed to retrieve users.");
         }
+    }
+    private static async Task<IResult> ListStudentsForTeacherAsync(
+        [FromRoute] Guid teacherId,
+        [FromServices] IAccessorClient accessorClient,
+        [FromServices] ILogger<UserEndpoint> logger,
+        HttpContext http,
+        CancellationToken ct)
+    {
+        var callerRole = http.User.FindFirstValue(AuthSettings.RoleClaimType);
+        var callerIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
+
+        if (!Guid.TryParse(callerIdRaw, out var callerId))
+        {
+            return Results.Unauthorized();
+        }
+
+        // Teacher can list only their own students; Admin can list any
+        if (IsTeacher(callerRole) && callerId != teacherId)
+        {
+            return Results.Forbid();
+        }
+
+        var students = await accessorClient.GetStudentsForTeacherAsync(teacherId, ct);
+        return Results.Ok(students);
+    }
+
+    private static async Task<IResult> AssignStudentAsync(
+        [FromRoute] Guid teacherId,
+        [FromRoute] Guid studentId,
+        [FromServices] IAccessorClient accessorClient,
+        [FromServices] ILogger<UserEndpoint> logger,
+        HttpContext http,
+        CancellationToken ct)
+    {
+        var callerRole = http.User.FindFirstValue(AuthSettings.RoleClaimType);
+        var callerIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
+
+        if (!Guid.TryParse(callerIdRaw, out var callerId))
+        {
+            return Results.Unauthorized();
+        }
+
+        // Teacher can assign only to themselves; Admin can assign anywhere
+        if (IsTeacher(callerRole) && callerId != teacherId)
+        {
+            return Results.Forbid();
+        }
+
+        var ok = await accessorClient.AssignStudentToTeacherAsync(teacherId, studentId, ct);
+        return ok ? Results.Ok(new { message = "Assigned" }) : Results.BadRequest(new { error = "Assign failed" });
+    }
+
+    private static async Task<IResult> UnassignStudentAsync(
+        [FromRoute] Guid teacherId,
+        [FromRoute] Guid studentId,
+        [FromServices] IAccessorClient accessorClient,
+        [FromServices] ILogger<UserEndpoint> logger,
+        HttpContext http,
+        CancellationToken ct)
+    {
+        var callerRole = http.User.FindFirstValue(AuthSettings.RoleClaimType);
+        var callerIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
+
+        if (!Guid.TryParse(callerIdRaw, out var callerId))
+        {
+            return Results.Unauthorized();
+        }
+
+        if (IsTeacher(callerRole) && callerId != teacherId)
+        {
+            return Results.Forbid();
+        }
+
+        var ok = await accessorClient.UnassignStudentFromTeacherAsync(teacherId, studentId, ct);
+        return ok ? Results.Ok(new { message = "Unassigned" }) : Results.BadRequest(new { error = "Unassign failed" });
+    }
+
+    private static async Task<IResult> ListTeachersForStudentAsync(
+        [FromRoute] Guid studentId,
+        [FromServices] IAccessorClient accessorClient,
+        [FromServices] ILogger<UserEndpoint> logger,
+        CancellationToken ct)
+    {
+        var teachers = await accessorClient.GetTeachersForStudentAsync(studentId, ct);
+        return Results.Ok(teachers);
     }
 }

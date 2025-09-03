@@ -26,5 +26,8 @@ public interface IAccessorClient
     Task UpdateSessionDBAsync(Guid sessionId, RotateRefreshSessionRequest rotatePayload, CancellationToken ct);
     Task DeleteSessionDBAsync(Guid sessionId, CancellationToken ct);
     Task<IEnumerable<UserData>> GetUsersForCallerAsync(string callerRole, Guid callerId, CancellationToken ct = default);
-
+    Task<bool> AssignStudentToTeacherAsync(Guid teacherId, Guid studentId, CancellationToken ct = default);
+    Task<bool> UnassignStudentFromTeacherAsync(Guid teacherId, Guid studentId, CancellationToken ct = default);
+    Task<IEnumerable<UserData>> GetStudentsForTeacherAsync(Guid teacherId, CancellationToken ct = default);
+    Task<IEnumerable<UserData>> GetTeachersForStudentAsync(Guid studentId, CancellationToken ct = default);
 }

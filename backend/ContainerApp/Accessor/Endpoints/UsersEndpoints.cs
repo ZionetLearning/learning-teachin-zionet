@@ -16,6 +16,14 @@ public static class UsersEndpoints
         usersGroup.MapPut("/{userId:guid}", UpdateUserAsync).WithName("UpdateUser");
         usersGroup.MapDelete("/{userId:guid}", DeleteUserAsync).WithName("DeleteUser");
 
+        usersGroup.MapPost("/teacher/{teacherId:guid}/students/{studentId:guid}", AssignAsync).WithName("AssignStudentToTeacher_Accessor");
+
+        usersGroup.MapDelete("/teacher/{teacherId:guid}/students/{studentId:guid}", UnassignAsync).WithName("UnassignStudentFromTeacher_Accessor");
+
+        usersGroup.MapGet("/teacher/{teacherId:guid}/students", ListStudentsAsync).WithName("ListStudentsForTeacher_Accessor");
+
+        usersGroup.MapGet("/student/{studentId:guid}/teachers", ListTeachersAsync).WithName("ListTeachersForStudent_Accessor");
+
         return app;
     }
 
@@ -126,6 +134,8 @@ public static class UsersEndpoints
     }
 
     private static async Task<IResult> GetAllUsersAsync(
+        [FromQuery] string? callerRole,
+        [FromQuery] Guid? callerId,
         [FromServices] IAccessorService service,
         [FromServices] ILogger<IAccessorService> logger,
         CancellationToken ct)
@@ -134,14 +144,96 @@ public static class UsersEndpoints
 
         try
         {
-            var users = await service.GetAllUsersAsync();
-            logger.LogInformation("Retrieved {Count} users", users.Count());
-            return Results.Ok(users);
+            // Parse role (if provided)
+            Role? roleEnum = null;
+            if (!string.IsNullOrWhiteSpace(callerRole) &&
+                Enum.TryParse<Role>(callerRole, true, out var parsed))
+            {
+                roleEnum = parsed;
+            }
+
+            // Admin or missing role → return all users
+            if (roleEnum is null || roleEnum == Role.Admin)
+            {
+                var all = await service.GetAllUsersAsync(roleFilter: null, teacherId: null, ct);
+                logger.LogInformation("Returned {Count} users (admin/all)", all.Count());
+                return Results.Ok(all);
+            }
+
+            if (callerId is null || callerId == Guid.Empty)
+            {
+                logger.LogWarning("Missing callerId for role {Role}", roleEnum);
+                return Results.BadRequest("callerId is required.");
+            }
+
+            if (roleEnum == Role.Teacher)
+            {
+                var students = await service.GetStudentsForTeacherAsync(callerId.Value, ct);
+                logger.LogInformation("Returned {Count} students for teacher {TeacherId}", students.Count(), callerId);
+                return Results.Ok(students);
+            }
+
+            if (roleEnum == Role.Student)
+            {
+                var me = await service.GetUserAsync(callerId.Value);
+                // Return just the caller as a single-item list (or empty if not found)
+                return me is null ? Results.Ok(Array.Empty<UserData>()) : Results.Ok(new[] { me });
+            }
+
+            // Unknown role (shouldn't happen)
+            return Results.BadRequest("Unsupported role.");
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to retrieve all users.");
+            logger.LogError(ex, "Failed to retrieve users.");
             return Results.Problem("An error occurred while retrieving users.");
         }
+    }
+
+    private static async Task<IResult> AssignAsync(
+        [FromRoute] Guid teacherId,
+        [FromRoute] Guid studentId,
+        [FromServices] IAccessorService service,
+        [FromServices] ILogger<IAccessorService> log,
+        CancellationToken ct)
+    {
+        var ok = await service.AssignStudentToTeacherAsync(teacherId, studentId, ct);
+        if (!ok)
+        {
+            return Results.BadRequest(new { error = "Invalid teacher/student or assign failed" });
+        }
+
+        return Results.Ok(new { message = "Assigned" });
+    }
+
+    private static async Task<IResult> UnassignAsync(
+        [FromRoute] Guid teacherId,
+        [FromRoute] Guid studentId,
+        [FromServices] IAccessorService service,
+        [FromServices] ILogger<IAccessorService> log,
+        CancellationToken ct)
+    {
+        var ok = await service.UnassignStudentFromTeacherAsync(teacherId, studentId, ct);
+        return ok ? Results.Ok(new { message = "Unassigned" }) : Results.BadRequest(new { error = "Unassign failed" });
+    }
+
+    private static async Task<IResult> ListStudentsAsync(
+        [FromRoute] Guid teacherId,
+        [FromServices] IAccessorService service,
+        [FromServices] ILogger<IAccessorService> log,
+        CancellationToken ct)
+    {
+        var list = await service.GetStudentsForTeacherAsync(teacherId, ct);
+        return Results.Ok(list);
+    }
+
+    private static async Task<IResult> ListTeachersAsync(
+        [FromRoute] Guid studentId,
+        [FromServices] IAccessorService service,
+        [FromServices] ILogger<IAccessorService> log,
+        CancellationToken ct)
+    {
+        var list = await service.GetTeachersForStudentAsync(studentId, ct);
+        return Results.Ok(list);
     }
 }

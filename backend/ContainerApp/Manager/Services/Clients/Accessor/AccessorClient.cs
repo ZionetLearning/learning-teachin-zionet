@@ -447,4 +447,85 @@ public class AccessorClient(
             throw;
         }
     }
+    public async Task<bool> AssignStudentToTeacherAsync(Guid teacherId, Guid studentId, CancellationToken ct = default)
+    {
+        try
+        {
+            await _daprClient.InvokeMethodAsync(
+                HttpMethod.Post,
+                "accessor",
+                $"users-accessor/teacher/{teacherId:D}/students/{studentId:D}",
+                ct);
+            return true;
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.Conflict)
+        {
+            _logger.LogInformation("Mapping already exists for Teacher={TeacherId}, Student={StudentId}", teacherId, studentId);
+            return true;
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.BadRequest || ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("Assign failed: {Status}", ex.Response?.StatusCode);
+            return false;
+        }
+    }
+
+    public async Task<bool> UnassignStudentFromTeacherAsync(Guid teacherId, Guid studentId, CancellationToken ct = default)
+    {
+        try
+        {
+            await _daprClient.InvokeMethodAsync(
+                HttpMethod.Delete,
+                "accessor",
+                $"users-accessor/teacher/{teacherId:D}/students/{studentId:D}",
+                ct);
+            return true;
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogInformation("Mapping not found (already removed) for Teacher={TeacherId}, Student={StudentId}", teacherId, studentId);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unassign failed");
+            return false;
+        }
+    }
+
+    public async Task<IEnumerable<UserData>> GetStudentsForTeacherAsync(Guid teacherId, CancellationToken ct = default)
+    {
+        try
+        {
+            var list = await _daprClient.InvokeMethodAsync<List<UserData>>(
+                HttpMethod.Get,
+                "accessor",
+                $"users-accessor/teacher/{teacherId:D}/students",
+                ct);
+            return list ?? Enumerable.Empty<UserData>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetStudentsForTeacher failed");
+            throw;
+        }
+    }
+
+    public async Task<IEnumerable<UserData>> GetTeachersForStudentAsync(Guid studentId, CancellationToken ct = default)
+    {
+        try
+        {
+            var list = await _daprClient.InvokeMethodAsync<List<UserData>>(
+                HttpMethod.Get,
+                "accessor",
+                $"users-accessor/student/{studentId:D}/teachers",
+                ct);
+            return list ?? Enumerable.Empty<UserData>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetTeachersForStudent failed");
+            throw;
+        }
+    }
 }
