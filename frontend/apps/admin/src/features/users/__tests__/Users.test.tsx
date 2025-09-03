@@ -30,16 +30,28 @@ vi.mock("@admin/api", () => ({
   useDeleteUserByUserId: vi.fn(),
 }));
 
-const {
-  useGetAllUsers,
-  useCreateUser,
-  useUpdateUserByUserId,
-  useDeleteUserByUserId,
-} = vi.mocked(await import("@admin/api")) as unknown as {
-  useGetAllUsers: ReturnType<typeof vi.fn>;
+vi.mock("@app-providers", async () => {
+  const actual = (await vi.importActual("@app-providers")) as Record<
+    string,
+    unknown
+  >;
+  return {
+    ...actual,
+    useCreateUser: vi.fn(),
+  };
+});
+
+const { useGetAllUsers, useUpdateUserByUserId, useDeleteUserByUserId } =
+  vi.mocked(await import("@admin/api")) as unknown as {
+    useGetAllUsers: ReturnType<typeof vi.fn>;
+    useUpdateUserByUserId: ReturnType<typeof vi.fn>;
+    useDeleteUserByUserId: ReturnType<typeof vi.fn>;
+  };
+
+const { useCreateUser } = vi.mocked(
+  await import("@app-providers"),
+) as unknown as {
   useCreateUser: ReturnType<typeof vi.fn>;
-  useUpdateUserByUserId: ReturnType<typeof vi.fn>;
-  useDeleteUserByUserId: ReturnType<typeof vi.fn>;
 };
 
 const rq = (
@@ -150,7 +162,22 @@ describe("<Users />", () => {
   });
 
   it("submits create user form", async () => {
-    const mutate = vi.fn();
+    type Vars = {
+      userId: string;
+      email: string;
+      password: string;
+      firstName: string;
+      lastName: string;
+    };
+    interface Handlers {
+      onSuccess?: () => void;
+      onError?: (e: Error) => void;
+      onSettled?: () => void;
+    }
+    const mutate = vi.fn((_: Vars, opts?: Handlers) => {
+      opts?.onSuccess?.();
+      opts?.onSettled?.();
+    });
     useGetAllUsers.mockReturnValue(rq({ data: sampleUsers }));
     useCreateUser.mockReturnValue({ mutate, isPending: false });
     useUpdateUserByUserId.mockImplementation(() => ({
@@ -175,13 +202,10 @@ describe("<Users />", () => {
     fireEvent.change(screen.getByPlaceholderText(/\*\*\*\*\*\*/i), {
       target: { value: "Secret123!" },
     });
-    fireEvent.click(
-      screen.getByRole("button", { name: "pages.users.createUser" }),
-    );
+    fireEvent.click(screen.getByTestId("users-create-submit"));
     await waitFor(() => expect(mutate).toHaveBeenCalledTimes(1));
     const arg = mutate.mock.calls[0][0];
     expect(arg.email).toBe("new@example.com");
-    // Password should match the raw input; component does not transform it.
     expect(arg.password).toBe("Secret123!");
     expect(arg.firstName).toBe("NewFirst");
     expect(arg.lastName).toBe("NewLast");
