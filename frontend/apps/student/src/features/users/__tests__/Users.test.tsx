@@ -1,16 +1,25 @@
-import type { UseQueryResult } from "@tanstack/react-query";
+import {
+  QueryClient,
+  QueryClientProvider,
+  type UseQueryResult,
+} from "@tanstack/react-query";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { Users } from "../index";
-import type { User } from "@student/api";
+import { User } from "@app-providers";
 
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({
-    t: (k: string) => k,
-    i18n: { changeLanguage: vi.fn() },
-  }),
-}));
+vi.mock("react-i18next", async () => {
+  const actual =
+    await vi.importActual<typeof import("react-i18next")>("react-i18next");
+  return {
+    ...actual,
+    useTranslation: () => ({
+      t: (k: string) => k,
+      i18n: { changeLanguage: vi.fn() },
+    }),
+  };
+});
 
 vi.mock("react-toastify", () => ({
   toast: { success: vi.fn(), error: vi.fn() },
@@ -18,21 +27,32 @@ vi.mock("react-toastify", () => ({
 
 vi.mock("@student/api", () => ({
   useGetAllUsers: vi.fn(),
-  useCreateUser: vi.fn(),
   useUpdateUserByUserId: vi.fn(),
   useDeleteUserByUserId: vi.fn(),
 }));
 
-const {
-  useGetAllUsers,
-  useCreateUser,
-  useUpdateUserByUserId,
-  useDeleteUserByUserId,
-} = vi.mocked(await import("@student/api")) as unknown as {
-  useGetAllUsers: ReturnType<typeof vi.fn>;
+vi.mock("@app-providers", async () => {
+  const actual = (await vi.importActual("@app-providers")) as Record<
+    string,
+    unknown
+  >;
+  return {
+    ...actual,
+    useCreateUser: vi.fn(),
+  } as typeof actual & { useCreateUser: ReturnType<typeof vi.fn> };
+});
+
+const { useGetAllUsers, useUpdateUserByUserId, useDeleteUserByUserId } =
+  vi.mocked(await import("@student/api")) as unknown as {
+    useGetAllUsers: ReturnType<typeof vi.fn>;
+    useUpdateUserByUserId: ReturnType<typeof vi.fn>;
+    useDeleteUserByUserId: ReturnType<typeof vi.fn>;
+  };
+
+const { useCreateUser } = vi.mocked(
+  await import("@app-providers"),
+) as unknown as {
   useCreateUser: ReturnType<typeof vi.fn>;
-  useUpdateUserByUserId: ReturnType<typeof vi.fn>;
-  useDeleteUserByUserId: ReturnType<typeof vi.fn>;
 };
 
 const rq = (
@@ -73,8 +93,19 @@ const sampleUsers: User[] = [
   },
 ];
 
+let qc: QueryClient;
+const renderUsers = () =>
+  render(
+    <QueryClientProvider client={qc}>
+      <Users />
+    </QueryClientProvider>,
+  );
+
 beforeEach(() => {
   vi.clearAllMocks();
+  qc = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
   if (globalThis.crypto && "randomUUID" in globalThis.crypto) {
     try {
       vi.spyOn(globalThis.crypto, "randomUUID").mockReturnValue(
@@ -111,14 +142,14 @@ describe("<Users />", () => {
       isPending: false,
     }));
 
-    const { asFragment } = render(<Users />);
+    const { asFragment } = renderUsers();
     expect(asFragment()).toMatchSnapshot();
   });
 
   it("renders loading state", () => {
     useGetAllUsers.mockReturnValue(rq({ isLoading: true }));
     useCreateUser.mockReturnValue({ mutate: vi.fn(), isPending: false });
-    render(<Users />);
+    renderUsers();
     expect(screen.getByText("pages.users.loadingUsers")).toBeInTheDocument();
   });
 
@@ -127,7 +158,7 @@ describe("<Users />", () => {
       rq({ error: new Error("Boom"), data: undefined }),
     );
     useCreateUser.mockReturnValue({ mutate: vi.fn(), isPending: false });
-    render(<Users />);
+    renderUsers();
     expect(screen.getByText("pages.users.userNotFound")).toBeInTheDocument();
   });
 
@@ -144,7 +175,7 @@ describe("<Users />", () => {
       isPending: false,
     }));
 
-    render(<Users />);
+    renderUsers();
     fireEvent.change(screen.getByPlaceholderText(/user@example.com/i), {
       target: { value: "new@example.com" },
     });
@@ -155,7 +186,7 @@ describe("<Users />", () => {
       target: { value: "NewLast" },
     });
     fireEvent.change(screen.getByPlaceholderText(/\*\*\*\*\*\*/i), {
-      target: { value: "secret" },
+      target: { value: "Secret123!" },
     });
     fireEvent.click(
       screen.getByRole("button", { name: "pages.users.createUser" }),
@@ -163,7 +194,8 @@ describe("<Users />", () => {
     await waitFor(() => expect(mutate).toHaveBeenCalledTimes(1));
     const arg = mutate.mock.calls[0][0];
     expect(arg.email).toBe("new@example.com");
-    expect(arg.password).toBe("secret");
+    // Password should match the raw input; component does not transform it.
+    expect(arg.password).toBe("Secret123!");
     expect(arg.firstName).toBe("NewFirst");
     expect(arg.lastName).toBe("NewLast");
     expect(arg.userId).toBe("123e4567-e89b-12d3-a456-426614174000");
@@ -182,7 +214,7 @@ describe("<Users />", () => {
       isPending: false,
     }));
 
-    render(<Users />);
+    renderUsers();
     fireEvent.click(screen.getByRole("button", { name: /update/i }));
     const emailInput = screen.getByPlaceholderText("email") as HTMLInputElement;
     fireEvent.change(emailInput, { target: { value: "changed@example.com" } });
@@ -213,7 +245,7 @@ describe("<Users />", () => {
     }));
 
     const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
-    render(<Users />);
+    renderUsers();
     fireEvent.click(screen.getByRole("button", { name: /delete/i }));
     expect(confirmSpy).toHaveBeenCalled();
     expect(deleteMutate).toHaveBeenCalledTimes(1);

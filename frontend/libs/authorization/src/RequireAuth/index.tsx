@@ -17,12 +17,12 @@ export const RequireAuth = ({ children }: { children: ReactNode }) => {
           accessToken?: string;
           accessTokenExpiry?: number;
         };
-        if (
-          !parsed.accessToken ||
-          !parsed.accessTokenExpiry ||
-          Date.now() >= parsed.accessTokenExpiry
-        ) {
+        if (!parsed.accessToken || !parsed.accessTokenExpiry) {
           logout();
+          return;
+        }
+        if (Date.now() >= parsed.accessTokenExpiry) {
+          return;
         }
       } catch (e) {
         console.warn("Error validating stored credentials", e);

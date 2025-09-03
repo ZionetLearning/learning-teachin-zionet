@@ -1,5 +1,11 @@
 import { useMutation, UseMutationOptions } from "@tanstack/react-query";
-import axios, { AxiosError } from "axios";
+import axios from "axios";
+import {
+  extractCsrf,
+  storeCsrf,
+  getCsrf,
+  clearCsrf,
+} from "@app-providers/auth";
 
 export interface LoginRequest {
   email: string;
@@ -8,53 +14,64 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   accessToken: string;
+  csrfToken?: string;
 }
 
-const buildAuthBaseUrl = (): string => {
-  const viteEnv = (
-    import.meta as unknown as {
-      env?: Record<string, string | undefined> & { VITE_AUTH_URL?: string };
-    }
-  ).env;
-  const raw = viteEnv?.VITE_AUTH_URL || "/auth";
-  return raw.replace(/\/$/, "");
+export interface RefreshTokensResponse {
+  accessToken: string;
+  csrfToken?: string;
+}
+
+export interface LogoutResponse {
+  message: string;
+}
+
+export const login = async (request: LoginRequest): Promise<LoginResponse> => {
+  const res = await axios.post<Partial<LoginResponse>>(
+    `${import.meta.env.VITE_AUTH_URL}/login`,
+    request,
+    { withCredentials: true },
+  );
+  const headerToken = (res.headers?.["X-CSRF-Token"] as string) || undefined;
+  const bodyToken = extractCsrf(res.data);
+  const csrfToken = bodyToken || headerToken;
+  if (csrfToken) storeCsrf(csrfToken);
+  if (!res.data?.accessToken)
+    throw new Error("Missing accessToken in response");
+  return { accessToken: res.data.accessToken, csrfToken };
 };
 
-export const loginApi = async (
-  request: LoginRequest,
-): Promise<LoginResponse> => {
-  const { email, password } = request;
-  const base = buildAuthBaseUrl();
-  const url = /\/auth$/i.test(base) ? `${base}/login` : `${base}/auth/login`;
-  try {
-    const { data } = await axios.post<Partial<LoginResponse>>(url, {
-      email,
-      password,
-    });
-    if (!data.accessToken) throw new Error("Missing accessToken in response");
-    return { accessToken: data.accessToken };
-  } catch (err) {
-    if (err && (err as AxiosError).isAxiosError) {
-      const axErr = err as AxiosError<unknown>;
-      const status = axErr.response?.status;
-      let serverMsg = axErr.message;
-      const respData = axErr.response?.data as unknown;
-      if (respData && typeof respData === "object") {
-        const rec = respData as Record<string, unknown>;
-        const messageVal = rec.message;
-        const errorVal = rec.error;
-        if (typeof messageVal === "string" && messageVal.trim()) {
-          serverMsg = messageVal;
-        } else if (typeof errorVal === "string" && errorVal.trim()) {
-          serverMsg = errorVal;
-        }
-      }
-      throw new Error(
-        `Login failed${status ? ` (${status})` : ""}: ${serverMsg}`,
-      );
-    }
-    throw err as Error;
-  }
+export const refreshTokens = async (): Promise<RefreshTokensResponse> => {
+  const csrf = getCsrf() || undefined;
+  const res = await axios.post<Partial<RefreshTokensResponse>>(
+    `${import.meta.env.VITE_AUTH_URL}/refresh-tokens`,
+    {},
+    {
+      withCredentials: true,
+      headers: csrf ? { "X-CSRF-Token": csrf } : undefined,
+    },
+  );
+  const headerToken = (res.headers?.["X-CSRF-Token"] as string) || undefined;
+  const bodyToken = extractCsrf(res.data);
+  const csrfToken = bodyToken || headerToken;
+  if (csrfToken) storeCsrf(csrfToken);
+  if (!res.data?.accessToken)
+    throw new Error("Missing accessToken in refresh response");
+  return { accessToken: res.data.accessToken, csrfToken };
+};
+
+export const logout = async (): Promise<LogoutResponse> => {
+  const csrf = getCsrf() || undefined;
+  const { data } = await axios.post<Partial<LogoutResponse>>(
+    `${import.meta.env.VITE_AUTH_URL}/logout`,
+    {},
+    {
+      withCredentials: true,
+      headers: csrf ? { "X-CSRF-Token": csrf } : undefined,
+    },
+  );
+  clearCsrf();
+  return { message: data?.message || "Logged out" };
 };
 
 export const useLoginMutation = (
@@ -62,7 +79,27 @@ export const useLoginMutation = (
 ) => {
   return useMutation<LoginResponse, unknown, LoginRequest>({
     mutationKey: ["auth", "login"],
-    mutationFn: loginApi,
+    mutationFn: login,
+    ...options,
+  });
+};
+
+export const useRefreshTokensMutation = (
+  options?: UseMutationOptions<RefreshTokensResponse, unknown, void, unknown>,
+) => {
+  return useMutation<RefreshTokensResponse, unknown, void>({
+    mutationKey: ["auth", "refresh"],
+    mutationFn: refreshTokens,
+    ...options,
+  });
+};
+
+export const useLogoutMutation = (
+  options?: UseMutationOptions<LogoutResponse, unknown, void, unknown>,
+) => {
+  return useMutation<LogoutResponse, unknown, void>({
+    mutationKey: ["auth", "logout"],
+    mutationFn: logout,
     ...options,
   });
 };

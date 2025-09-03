@@ -2,10 +2,11 @@ import { ErrorMessage, Field, Form, Formik } from "formik";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 
-import { useCreateUser, useGetAllUsers } from "@student/api";
+import { useGetAllUsers } from "@student/api";
 import { UserListItem } from "./components";
 import { useStyles } from "./style";
 import { CreateUserFormValues, validationSchema } from "./validation";
+import { useCreateUser } from "@app-providers";
 
 export const Users = () => {
   const { t } = useTranslation();

@@ -13,7 +13,8 @@
         "lastName": "Last Name",
         "creatingAccount": "Creating Account...",
         "teacherDashboard": "Teacher Dashboard",
-        "studentDashboard": "Student Dashboard"
+        "studentDashboard": "Student Dashboard",
+        "genericError": "Something went wrong. Please try again later."
       },
       "home": {
         "title": "Welcome to our internal playground project",

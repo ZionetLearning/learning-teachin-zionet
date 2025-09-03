@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ErrorMessage, Field, Form, Formik, FormikHelpers } from "formik";
 import { useNavigate } from "react-router-dom";
 
-import { useAuth } from "@app-providers/auth";
+import { useAuth } from "@app-providers";
 import { useStyles } from "./style";
 import {
   loginSchema,
@@ -25,6 +25,20 @@ export const AuthorizationPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [mode, setMode] = useState<AuthModeType>(authMode.login);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  const extractErrorMessage = (err: unknown): string => {
+    if (!err) return t("pages.auth.genericError");
+    if (err instanceof Error)
+      return err.message || t("pages.auth.genericError");
+    if (typeof err === "string") return err;
+    if (typeof err === "object") {
+      const rec = err as Record<string, unknown>;
+      const msg = rec.message;
+      if (typeof msg === "string" && msg.trim()) return msg;
+    }
+    return t("pages.auth.genericError");
+  };
 
   useEffect(function applyFullScreen() {
     document.body.classList.add("auth-fullscreen");
@@ -33,21 +47,23 @@ export const AuthorizationPage = () => {
     };
   }, []);
 
-  const redirectAfterLogin = useCallback(() => {
-    const to = sessionStorage.getItem("redirectAfterLogin") || "/";
-    sessionStorage.removeItem("redirectAfterLogin");
-    navigate(to, { replace: true });
-  }, [navigate]);
+  useEffect(
+    function redirectAfterLogin() {
+      if (isAuthorized) {
+        const to = sessionStorage.getItem("redirectAfterLogin") || "/";
+        sessionStorage.removeItem("redirectAfterLogin");
+        navigate(to, { replace: true });
+      }
+    },
+    [isAuthorized, navigate],
+  );
 
-  const handleAuthSuccess = () => {
-    redirectAfterLogin();
-  };
-
-  useEffect(() => {
-    if (isAuthorized) {
-      redirectAfterLogin();
-    }
-  }, [isAuthorized, redirectAfterLogin]);
+  useEffect(
+    function resetError() {
+      setAuthError(null);
+    },
+    [mode],
+  );
 
   return (
     <main className={classes.authPageBackground} data-testid="auth-page">
@@ -92,6 +108,8 @@ export const AuthorizationPage = () => {
               ) => {
                 try {
                   await login(values.email, values.password);
+                } catch (e) {
+                  setAuthError(extractErrorMessage(e));
                 } finally {
                   setSubmitting(false);
                 }
@@ -99,6 +117,14 @@ export const AuthorizationPage = () => {
             >
               {({ isSubmitting }) => (
                 <Form className={classes.authPageForm}>
+                  {authError && (
+                    <div
+                      className={classes.authPageError}
+                      data-testid="auth-error"
+                    >
+                      {authError}
+                    </div>
+                  )}
                   <div>
                     <Field
                       name="email"
@@ -149,23 +175,35 @@ export const AuthorizationPage = () => {
                 confirmPassword: "",
               }}
               validationSchema={signupSchema}
-              onSubmit={(
+              onSubmit={async (
                 values,
                 { setSubmitting }: FormikHelpers<SignupValues>,
               ) => {
-                signup({
-                  email: values.email,
-                  password: values.password,
-                  firstName: values.firstName,
-                  lastName: values.lastName,
-                  role,
-                });
-                setSubmitting(false);
-                handleAuthSuccess();
+                try {
+                  await signup({
+                    email: values.email,
+                    password: values.password,
+                    firstName: values.firstName,
+                    lastName: values.lastName,
+                    role,
+                  });
+                } catch (e) {
+                  setAuthError(extractErrorMessage(e));
+                } finally {
+                  setSubmitting(false);
+                }
               }}
             >
               {({ isSubmitting }) => (
                 <Form className={classes.authPageForm}>
+                  {authError && (
+                    <div
+                      className={classes.authPageError}
+                      data-testid="auth-error"
+                    >
+                      {authError}
+                    </div>
+                  )}
                   <div>
                     <Field
                       name="firstName"
@@ -229,11 +267,11 @@ export const AuthorizationPage = () => {
                   </div>
                   <button
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || loginStatus?.isLoading}
                     className={classes.authPageSubmit}
                     data-testid="auth-submit"
                   >
-                    {isSubmitting
+                    {isSubmitting || loginStatus?.isLoading
                       ? t("pages.auth.creatingAccount")
                       : t("pages.auth.signup")}
                   </button>
