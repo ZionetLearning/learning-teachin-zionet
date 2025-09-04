@@ -10,7 +10,6 @@ exports[`<Profile /> > renders correctly and matches snapshot 1`] = `
     >
       <div
         data-testid="typography-h4"
-        font-weight="700"
       >
         pages.profile.title
       </div>
@@ -27,7 +26,6 @@ exports[`<Profile /> > renders correctly and matches snapshot 1`] = `
           pages.profile.subTitle
         </div>
         <div
-          color="text.secondary"
           data-testid="typography-body2"
         >
           pages.profile.secondSubTitle
@@ -35,21 +33,17 @@ exports[`<Profile /> > renders correctly and matches snapshot 1`] = `
       </div>
       <div
         data-testid="mui-stack"
-        spacing="3"
       >
         <div
           data-testid="mui-box"
         >
           <div
-            color="text.primary"
             data-testid="typography-body2"
-            sx="[object Object]"
           >
             pages.profile.firstName
           </div>
           <input
             disabled=""
-            sx="[object Object]"
             type="text"
             value="John"
           />
@@ -58,15 +52,12 @@ exports[`<Profile /> > renders correctly and matches snapshot 1`] = `
           data-testid="mui-box"
         >
           <div
-            color="text.primary"
             data-testid="typography-body2"
-            sx="[object Object]"
           >
             pages.profile.lastName
           </div>
           <input
             disabled=""
-            sx="[object Object]"
             type="text"
             value="Doe"
           />
@@ -75,22 +66,17 @@ exports[`<Profile /> > renders correctly and matches snapshot 1`] = `
           data-testid="mui-box"
         >
           <div
-            color="text.primary"
             data-testid="typography-body2"
-            sx="[object Object]"
           >
             pages.profile.email
           </div>
           <input
             disabled=""
-            sx="[object Object]"
             type="text"
             value="john.doe@example.com"
           />
           <div
-            color="text.disabled"
             data-testid="typography-body2"
-            sx="[object Object]"
           >
             pages.profile.emailCannotBeChanged
           </div>
@@ -99,9 +85,7 @@ exports[`<Profile /> > renders correctly and matches snapshot 1`] = `
       <div
         data-testid="mui-box"
       >
-        <button
-          variant="contained"
-        >
+        <button>
           pages.profile.edit
         </button>
       </div>
