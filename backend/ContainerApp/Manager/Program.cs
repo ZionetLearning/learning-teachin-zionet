@@ -107,7 +107,6 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddScoped<IAiGatewayService, AiGatewayService>();
 builder.Services.AddScoped<IAccessorClient, AccessorClient>();
 builder.Services.AddScoped<IEngineClient, EngineClient>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
