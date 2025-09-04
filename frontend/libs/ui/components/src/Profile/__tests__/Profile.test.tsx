@@ -11,21 +11,19 @@ vi.mock("react-i18next", () => ({
   }),
 }));
 
-// --- Types from react (static type import) ---
 import type {
   PropsWithChildren,
-  HTMLAttributes,
   InputHTMLAttributes,
   ButtonHTMLAttributes,
 } from "react";
 
-// --- @mui/material mock (no `any`, no MUI props forwarded) ---
+// --- @mui/material mock (no `any`, no `{}` generic) ---
 vi.mock("@mui/material", () => {
-  type DivProps = HTMLAttributes<HTMLDivElement>;
   type InputProps = InputHTMLAttributes<HTMLInputElement>;
   type BtnProps = ButtonHTMLAttributes<HTMLButtonElement>;
+  type WithChildren = PropsWithChildren<unknown>;
 
-  const Box = ({ children }: PropsWithChildren<{}>) => (
+  const Box = ({ children }: WithChildren) => (
     <div data-testid="mui-box">{children}</div>
   );
 
@@ -46,7 +44,7 @@ vi.mock("@mui/material", () => {
     disabled?: boolean;
   }) => <input type="text" value={value} onChange={onChange} disabled={disabled} />;
 
-  const Stack = ({ children }: PropsWithChildren<{}>) => (
+  const Stack = ({ children }: WithChildren) => (
     <div data-testid="mui-stack">{children}</div>
   );
 
@@ -63,7 +61,7 @@ vi.mock("@mui/material", () => {
   return { Box, Typography, TextField, Stack, Button };
 });
 
-// --- Your custom Button mock (typed) ---
+// --- Your custom Button mock (typed, no `{}`) ---
 vi.mock("../Button", () => {
   type CustomBtnProps = ButtonHTMLAttributes<HTMLButtonElement> & {
     variant?: string;
@@ -82,6 +80,7 @@ vi.mock("../Button", () => {
 
   return { Button };
 });
+
 
 // ---- Under test (import after mocks) ----
 import { Profile } from "../index";
