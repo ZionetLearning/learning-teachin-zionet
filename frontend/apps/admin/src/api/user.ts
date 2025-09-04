@@ -5,7 +5,7 @@ import {
   useQueryClient,
   UseQueryResult,
 } from "@tanstack/react-query";
-import axios from "axios";
+import { apiClient as axios } from "@app-providers";
 import { mapUser, User, UserDto } from "@app-providers";
 
 interface UpdateUserInput {

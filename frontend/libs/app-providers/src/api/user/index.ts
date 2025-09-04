@@ -3,8 +3,7 @@ import {
   UseMutationResult,
   useQueryClient,
 } from "@tanstack/react-query";
-import axios from "axios";
-import { User, UserDto } from "@app-providers";
+import { apiClient as axios, User, UserDto } from "@app-providers";
 
 export const mapUser = (dto: UserDto): User => ({
   userId: dto.userId,
