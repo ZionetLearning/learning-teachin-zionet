@@ -2,7 +2,90 @@
   "Routes": [
     {
       "UpstreamPathTemplate": "/{everything}",
+      "UpstreamHttpMethod": [ "OPTIONS" ],
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "manager",
+          "Port": 5001
+        }
+      ],
+      "DownstreamPathTemplate": "/{everything}",
+      "RouteIsCaseSensitive": false
+    },
+
+    {
+      "UpstreamPathTemplate": "/auth/{everything}",
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS" ],
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "manager",
+          "Port": 5001
+        }
+      ],
+      "DownstreamPathTemplate": "/auth/{everything}",
+      "RouteIsCaseSensitive": false
+    },
+
+    {
+      "UpstreamPathTemplate": "/users-manager/user",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "manager",
+          "Port": 5001
+        }
+      ],
+      "DownstreamPathTemplate": "/users-manager/user",
+      "RouteIsCaseSensitive": false
+    },
+
+    {
+      "UpstreamPathTemplate": "/notificationHub/negotiate",
+      "UpstreamHttpMethod": [ "POST", "OPTIONS" ],
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "manager",
+          "Port": 5001
+        }
+      ],
+      "DownstreamPathTemplate": "/notificationHub/negotiate",
+      "RouteIsCaseSensitive": false
+    },
+
+    // --- NEW: no-token endpoints ---
+    {
+      "UpstreamPathTemplate": "/internal/compute-stats/ping",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "manager",
+          "Port": 5001
+        }
+      ],
+      "DownstreamPathTemplate": "/internal/compute-stats/ping",
+      "RouteIsCaseSensitive": false
+    },
+    {
+      "UpstreamPathTemplate": "/internal/stats/latest",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "manager",
+          "Port": 5001
+        }
+      ],
+      "DownstreamPathTemplate": "/internal/stats/latest",
+      "RouteIsCaseSensitive": false
+    },
+    {
+      "UpstreamPathTemplate": "/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "PATCH" ],
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
@@ -12,23 +95,13 @@
       ],
       "DownstreamPathTemplate": "/{everything}",
       "RouteIsCaseSensitive": false,
-      "RateLimitOptions": {
-        "ClientIdHeader": "ClientId",
-        "EnableRateLimiting": true,
-        "Period": "1m",
-        "PeriodTimespan": 1,
-        "Limit": 100
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "JwtBearer",
+        "AllowedScopes": []
       }
     }
   ],
   "GlobalConfiguration": {
-    "RequestIdKey": "X-Request-Id",
-    "RateLimitOptions": {
-      "ClientIdHeader": "ClientId",
-      "EnableRateLimiting": true,
-      "Period": "1m",
-      "PeriodTimespan": 1,
-      "Limit": 1000
-    }
+    "RequestIdKey": "X-Request-Id"
   }
 }
