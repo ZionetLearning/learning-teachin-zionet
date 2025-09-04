@@ -14,7 +14,7 @@ export const apiClient = axios.create({
 // Endpoints that must NOT send the bearer token
 const AUTH_SKIP_PATHS = ["/login", "/refresh-tokens", "/logout"];
 
-const safeParseCredentials = (): { accessToken?: string } | null => {
+const getAccessTokenFromStorage = (): { accessToken?: string } | null => {
   if (typeof window === "undefined") return null;
   try {
     const raw = localStorage.getItem("credentials");
@@ -32,9 +32,20 @@ apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const headers = config.headers as AxiosHeaders;
 
   const url = config.url || "";
-  const skipAuth = AUTH_SKIP_PATHS.some((p) => url.endsWith(p));
+  let pathname = "";
+  try {
+    pathname = new URL(
+      url,
+      typeof window !== "undefined"
+        ? window.location.origin
+        : "http://localhost",
+    ).pathname;
+  } catch {
+    pathname = url;
+  }
+  const skipAuth = AUTH_SKIP_PATHS.includes(pathname);
   if (!skipAuth) {
-    const token = safeParseCredentials()?.accessToken;
+    const token = getAccessTokenFromStorage()?.accessToken;
     if (token && !headers.has("Authorization")) {
       headers.set("Authorization", `Bearer ${token}`);
     }
