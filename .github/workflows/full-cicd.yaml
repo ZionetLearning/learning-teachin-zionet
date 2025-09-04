@@ -52,7 +52,7 @@ jobs:
     with:
       environment_name: ${{ github.event.inputs.environment_name }}
       environment: ${{ github.event.inputs.environment }}
-      enable_static_web_apps: ${{ github.event.inputs.enable_static_web_apps }}
+      enable_static_web_apps: ${{ github.event.inputs.enable_static_web_apps == 'true' }}
     secrets: inherit
  
   aks-kubectl-apply:
