@@ -66,7 +66,7 @@ public class AccessorEndpointsTests
     #region CreateTaskAsync
 
     [Fact]
-    public async Task CreateTaskAsync_Success_ReturnsOk()
+    public async Task CreateTaskAsync_Success_ReturnsCreated()
     {
         var svc = Svc();
         var log = Log();
@@ -76,8 +76,9 @@ public class AccessorEndpointsTests
 
         var result = await TasksEndpoints.CreateTaskAsync(model, svc.Object, log.Object, CancellationToken.None);
 
-        var ok = result.Should().BeOfType<Ok<string>>().Subject;
-        ok.Value.Should().Contain("Task 1 Saved");
+        var created = result.Should().BeOfType<Created<TaskModel>>().Subject;
+        created.Value.Should().BeEquivalentTo(model);
+
         svc.VerifyAll();
     }
 

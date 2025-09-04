@@ -1,5 +1,6 @@
 ﻿using Accessor.Models;
 using Accessor.Models.Users;
+using Accessor.Models.Auth;
 
 namespace Accessor.Services;
 
@@ -12,7 +13,7 @@ public interface IAccessorService
     Task<bool> UpdateTaskNameAsync(int taskId, string newName);
     Task CreateChatAsync(ChatHistorySnapshot chat);
     Task<List<ChatSummaryDto>> GetChatsForUserAsync(Guid userId);
-    Task<Guid?> ValidateCredentialsAsync(string email, string password);
+    Task<AuthenticatedUser?> ValidateCredentialsAsync(string email, string password);
     Task<UserData?> GetUserAsync(Guid userId);
     Task<bool> CreateUserAsync(UserModel newUser);
     Task<bool> UpdateUserAsync(UpdateUserModel updateUser, Guid userId);

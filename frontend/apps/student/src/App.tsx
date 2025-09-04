@@ -1,10 +1,9 @@
 import { useEffect } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-
 import { useTranslation } from "react-i18next";
-
 import { AuthorizationPage, RequireAuth } from "@authorization";
-import { SidebarMenuLayout } from "./components";
+import { SidebarMenuLayout } from "@ui-components";
+import { SidebarMenu } from "./components";
 import {
   AnimeExplorerPage,
   AvatarDaPage,
@@ -20,17 +19,14 @@ import {
   SignalRPage,
   SpeakingPracticePage,
   TypingPracticePage,
-  UsersPage,
   WeatherWidgetPage,
   WordOrderGamePage,
 } from "./pages";
-
 import "./App.css";
-
 const ProtectedLayout = () => (
   <RequireAuth>
     <div data-testid="protected-layout">
-      <SidebarMenuLayout />
+      <SidebarMenuLayout sidebarMenu={<SidebarMenu />} />
     </div>
   </RequireAuth>
 );
@@ -63,7 +59,6 @@ function App() {
           <Route path="/anime-explorer" element={<AnimeExplorerPage />} />
           <Route path="/country-explorer" element={<CountryExplorerPage />} />
           <Route path="/signalr" element={<SignalRPage />} />
-          <Route path="/users" element={<UsersPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

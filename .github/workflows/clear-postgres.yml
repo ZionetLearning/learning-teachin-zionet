@@ -9,7 +9,7 @@ on:
       mode:
         description: "drop = DROP TABLE (removes structure), truncate = TRUNCATE (keeps tables)"
         required: true
-        default: "drop"
+        default: "truncate"
         type: choice
         options: [drop, truncate]
 
@@ -60,7 +60,7 @@ jobs:
       PGPASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
 
       # For schedule: fall back to defaults below
-      MODE: ${{ github.event.inputs.mode || inputs.mode || 'drop' }}
+      MODE: ${{ github.event.inputs.mode || inputs.mode || 'truncate' }}
       DRY_RUN: ${{ github.event.inputs.dry_run || inputs.dry_run || 'false' }}
       VERIFY_SSL: ${{ github.event.inputs.verify_ssl || inputs.verify_ssl || 'true' }}
 

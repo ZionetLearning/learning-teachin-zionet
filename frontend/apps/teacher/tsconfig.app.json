@@ -22,6 +22,7 @@
   },
   "include": [
     "src",
+    "src/vite-env.d.ts",
     "jest.setup.ts",
     "**/*.test.ts",
     "**/*.spec.ts",

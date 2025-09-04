@@ -20,7 +20,7 @@ public interface IAccessorClient
     Task<bool> DeleteUserAsync(Guid userId);
     Task<IEnumerable<UserData>> GetAllUsersAsync(CancellationToken ct = default);
     Task<StatsSnapshot?> GetStatsSnapshotAsync(CancellationToken ct = default);
-    Task<Guid?> LoginUserAsync(LoginRequest loginRequest, CancellationToken ct = default);
+    Task<AuthenticatedUser?> LoginUserAsync(LoginRequest loginRequest, CancellationToken ct = default);
     Task SaveSessionDBAsync(RefreshSessionRequest session, CancellationToken ct = default);
     Task<RefreshSessionDto> GetSessionAsync(string oldHash, CancellationToken ct = default);
     Task UpdateSessionDBAsync(Guid sessionId, RotateRefreshSessionRequest rotatePayload, CancellationToken ct);
