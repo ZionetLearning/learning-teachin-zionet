@@ -13,6 +13,7 @@
       "DownstreamPathTemplate": "/{everything}",
       "RouteIsCaseSensitive": false
     },
+
     {
       "UpstreamPathTemplate": "/auth/{everything}",
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS" ],
@@ -26,6 +27,7 @@
       "DownstreamPathTemplate": "/auth/{everything}",
       "RouteIsCaseSensitive": false
     },
+
     {
       "UpstreamPathTemplate": "/users-manager/user",
       "UpstreamHttpMethod": [ "POST" ],
@@ -39,6 +41,7 @@
       "DownstreamPathTemplate": "/users-manager/user",
       "RouteIsCaseSensitive": false
     },
+
     {
       "UpstreamPathTemplate": "/notificationHub/negotiate",
       "UpstreamHttpMethod": [ "POST", "OPTIONS" ],
@@ -50,6 +53,34 @@
         }
       ],
       "DownstreamPathTemplate": "/notificationHub/negotiate",
+      "RouteIsCaseSensitive": false
+    },
+
+    // --- NEW: no-token endpoints ---
+    {
+      "UpstreamPathTemplate": "/internal/compute-stats/ping",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "manager",
+          "Port": 5001
+        }
+      ],
+      "DownstreamPathTemplate": "/internal/compute-stats/ping",
+      "RouteIsCaseSensitive": false
+    },
+    {
+      "UpstreamPathTemplate": "/internal/stats/latest",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "manager",
+          "Port": 5001
+        }
+      ],
+      "DownstreamPathTemplate": "/internal/stats/latest",
       "RouteIsCaseSensitive": false
     },
     {
