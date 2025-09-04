@@ -1,8 +1,8 @@
-import React from "react";
+
 import { render, screen, fireEvent } from "@testing-library/react";
 import { vi, beforeEach } from "vitest";
 
-// --- i18n mock (typed) ---
+// --- i18n mock ---
 let currentDir: "ltr" | "rtl" = "ltr";
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
@@ -17,7 +17,7 @@ import type {
   ButtonHTMLAttributes,
 } from "react";
 
-// --- @mui/material mock (no `any`, no `{}` generic) ---
+// --- @mui/material mock
 vi.mock("@mui/material", () => {
   type InputProps = InputHTMLAttributes<HTMLInputElement>;
   type BtnProps = ButtonHTMLAttributes<HTMLButtonElement>;
