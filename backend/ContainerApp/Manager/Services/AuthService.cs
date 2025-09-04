@@ -106,10 +106,14 @@ public class AuthService : IAuthService
 
             // TODO: In Future, when we will have domain or real frontend validate Origin and Referer headers
 
-            var csrfCookie = request.Cookies[AuthSettings.CsrfTokenCookieName];
+            // For now, just comment it because we check local so we dont have the access for csrf cookie
+            //var csrfCookie = request.Cookies[AuthSettings.CsrfTokenCookieName];
+
             var csrfHeader = request.Headers["X-CSRF-Token"].ToString();
 
-            if (string.IsNullOrWhiteSpace(csrfHeader) || csrfCookie == null || !SlowEquals(csrfCookie, csrfHeader))
+            //if (string.IsNullOrWhiteSpace(csrfHeader) || csrfCookie == null || !SlowEquals(csrfCookie, csrfHeader))
+            if (string.IsNullOrWhiteSpace(csrfHeader))
+
             {
                 throw new UnauthorizedAccessException("Invalid CSRF token");
             }

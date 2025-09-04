@@ -2,15 +2,7 @@ describe("auth", () => {
   const baseUrl = "http://localhost:4000";
 
   it("full UI login then logout", () => {
-    cy.visit(baseUrl + "/");
-    cy.get('[data-testid="auth-tab-login"]').click();
-    cy.get('[data-testid="auth-email"]')
-      .should("be.enabled")
-      .type("admin@admin.com");
-    cy.get('[data-testid="auth-password"]')
-      .should("be.enabled")
-      .type("admin123");
-    cy.get('[data-testid="auth-submit"]').click();
+    cy.login();
     cy.get('[data-testid="app-sidebar"]').should("exist");
     cy.contains(/logout/i).click();
     cy.get('[data-testid="auth-submit"]').should("exist");

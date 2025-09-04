@@ -14,7 +14,8 @@
         "lastName": "שם משפחה",
         "creatingAccount": "יוצר חשבון...",
         "teacherDashboard": "מורים",
-        "studentDashboard": "תלמידים"
+        "studentDashboard": "תלמידים",
+        "genericError": "משהו השתבש. אנא נסה שוב מאוחר יותר."
       },
       "home": {
         "title": "ברוכים הבאים למגרש המשחקים הפנימי שלנו",
