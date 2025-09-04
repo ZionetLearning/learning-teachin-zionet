@@ -125,8 +125,9 @@ locals {
 }
 
 # Monitoring - Diagnostic Settings for resources to Log Analytics
-# Log Analytics Workspace
+# Log Analytics Workspace - only create in dev environment
 resource "azurerm_log_analytics_workspace" "main" {
+  count               = var.environment_name == "dev" ? 1 : 0
   name                = "${var.environment_name}-laworkspace"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
@@ -139,14 +140,20 @@ resource "azurerm_log_analytics_workspace" "main" {
   }
 }
 
+# Local value to determine which workspace to use (only available in dev)
+locals {
+  log_analytics_workspace_id = var.environment_name == "dev" ? azurerm_log_analytics_workspace.main[0].id : null
+}
+
 module "monitoring" {
+  count  = var.environment_name == "dev" ? 1 : 0
   source = "./modules/monitoring"
 
-  log_analytics_workspace_id  = azurerm_log_analytics_workspace.main.id
+  log_analytics_workspace_id  = local.log_analytics_workspace_id
   servicebus_namespace_id     = module.servicebus.namespace_id
   postgres_server_id          = module.database[0].id
   signalr_id                  = module.signalr.id
-  redis_id                    = module.redis[0].id
+  redis_id                    = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].id : module.redis[0].id
   frontend_static_web_app_id  = var.enable_static_web_apps ? [for f in module.frontend : f.static_web_app_id] : []
 
   frontend_application_insights_ids = var.enable_static_web_apps ? [for f in module.frontend : f.application_insights_id] : []
@@ -245,7 +252,7 @@ module "frontend" {
   appinsights_retention_days = var.frontend_appinsights_retention_days
   appinsights_sampling_percentage = var.frontend_appinsights_sampling_percentage
   
-  log_analytics_workspace_id = azurerm_log_analytics_workspace.main.id
+  log_analytics_workspace_id = local.log_analytics_workspace_id
   
   tags = {
     Environment = var.environment_name
