@@ -147,8 +147,8 @@ jobs:
               FRONTEND_APPS_ARRAY='["student", "teacher", "admin"]'
             fi
             
-            # Replace the existing frontend_apps value
-            sed -i "s/frontend_apps = .*/frontend_apps = $FRONTEND_APPS_ARRAY/" terraform.tfvars.template
+            # Replace the existing frontend_apps value (use | delimiter to avoid bracket issues)
+            sed -i "s|frontend_apps = .*|frontend_apps = $FRONTEND_APPS_ARRAY|" terraform.tfvars.template
             
             echo "" >> terraform.tfvars.template
             echo "#------------- Dynamic Environment Configuration -------------" >> terraform.tfvars.template
