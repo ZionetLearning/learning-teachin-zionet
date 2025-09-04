@@ -48,6 +48,9 @@ on:
       deployment_token:
         required: false
         type: string
+      frontend_apps:
+        required: false
+        type: string
       run_only_tests:
         required: false
         type: boolean
@@ -223,9 +226,10 @@ jobs:
 
   deploy:
     if: |
-     github.event_name == 'push' ||
+     (github.event_name == 'push' ||
      github.event_name == 'workflow_dispatch' ||
-     github.event_name == 'workflow_call'
+     github.event_name == 'workflow_call') &&
+     (inputs.environment_name == 'dev' || inputs.frontend_apps == 'all')
     needs: [frontend-build-and-lint]
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || 'Development' }}
@@ -270,10 +274,10 @@ jobs:
           
           if [ "$SWA_COUNT" = "0" ]; then
             echo "No Static Web Apps found in resource group $RG."
-            echo "This usually means enable_static_web_apps is set to false in Terraform."
+            echo "This usually means frontend_apps is set to an empty array [] in Terraform."
             echo "Please either:"
-            echo "  1. Set enable_static_web_apps=true in Terraform and run terraform apply, OR"
-            echo "  2. Skip this frontend deployment workflow"
+            echo "  1. Set frontend_apps=[\"student\",\"teacher\",\"admin\"] in Terraform and run terraform apply, OR"
+            echo "  2. Set frontend_apps to empty string in the workflow to skip this deployment"
             exit 1
           fi
           
