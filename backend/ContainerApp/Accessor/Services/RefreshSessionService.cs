@@ -71,7 +71,7 @@ public class RefreshSessionService : IRefreshSessionService
 
             if (session != null && session.RefreshTokenHash != refreshTokenHash)
             {
-                _logger.LogError("Database returned a session, but token hash doesn't match! DB returned: {DBHash}", session.RefreshTokenHash);
+                _logger.LogError("Database returned a session, but token hash doesn't match!");
                 throw new InvalidOperationException("Mismatch between requested and returned token hash");
             }
 

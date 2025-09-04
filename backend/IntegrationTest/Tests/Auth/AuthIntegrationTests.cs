@@ -86,49 +86,27 @@ public class AuthIntegrationTests : AuthTestBase
     }
 
 
-    [Fact(DisplayName = "Refresh with invalid refresh token should fail")]
+    [Fact(DisplayName = "Refresh with invalid refresh token should return 401 Unauthorized")]
     public async Task Refresh_ShouldReturnUnauthorized()
     {
-        //var user = _sharedFixture.UserFixture.TestUser;
-
-        //var loginResponse = await LoginAsync(user.Email, user.Password);
-        //loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-
-        //var (refreshToken, csrfToken) = ExtractTokens(loginResponse);
-        //csrfToken.Should().NotBeNullOrWhiteSpace();
-
-        //var request = new HttpRequestMessage(HttpMethod.Post, AuthRoutes.Refresh)
-        //{
-        //    Headers =
-        //    {
-        //        { "X-CSRF-Token", csrfToken! },
-        //        { "Cookie", $"refreshToken=InvalidToken" }
-        //    }
-        //};
-        //var refreshResponse = await Client.SendAsync(request);
-        //refreshResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-
-        // Clear the refreshSessions
-        //var logoutResponse = await LogoutAsync(refreshToken!);
-        //logoutResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-
         var user = _sharedFixture.UserFixture.TestUser;
 
         var loginResponse = await LoginAsync(user.Email, user.Password);
         loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var (_, csrfToken) = ExtractTokens(loginResponse);
+        var (refreshToken, csrfToken) = ExtractTokens(loginResponse);
+        refreshToken.Should().NotBeNullOrWhiteSpace();
         csrfToken.Should().NotBeNullOrWhiteSpace();
 
-        // Use a fresh client with cookies disabled
+        // Create a new HttpClient that does not send stored cookies (works in HTTPS)
         var handler = new HttpClientHandler
         {
-            UseCookies = false // Prevents real cookies from being reused (like Secure cookies)
+            UseCookies = false
         };
 
         using var isolatedClient = new HttpClient(handler)
         {
-            BaseAddress = Client.BaseAddress // reuse base URL from existing client
+            BaseAddress = Client.BaseAddress
         };
 
         var request = new HttpRequestMessage(HttpMethod.Post, AuthRoutes.Refresh)
@@ -136,14 +114,19 @@ public class AuthIntegrationTests : AuthTestBase
             Headers =
         {
             { "X-CSRF-Token", csrfToken! },
-            { "Cookie", "refreshToken=InvalidToken" } // Only our fake cookie is sent
+            { "Cookie", "refreshToken=InvalidToken" }
         }
         };
 
         var refreshResponse = await isolatedClient.SendAsync(request);
+
         refreshResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+
+        var logoutResponse = await LogoutAsync(refreshToken!);
+        logoutResponse.StatusCode.Should().Be(HttpStatusCode.OK);
     }
-    
+
+
 
     [Fact(DisplayName = "Access token allows access to protected endpoint")]
     public async Task AccessToken_ShouldAllowAccessToProtectedEndpoint()
