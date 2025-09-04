@@ -48,9 +48,6 @@ on:
       deployment_token:
         required: false
         type: string
-      frontend_apps:
-        required: false
-        type: string
       run_only_tests:
         required: false
         type: boolean
@@ -226,10 +223,9 @@ jobs:
 
   deploy:
     if: |
-     (github.event_name == 'push' ||
+     github.event_name == 'push' ||
      github.event_name == 'workflow_dispatch' ||
-     github.event_name == 'workflow_call') &&
-     (inputs.environment_name == 'dev' || inputs.frontend_apps == 'all')
+     github.event_name == 'workflow_call'
     needs: [frontend-build-and-lint]
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || 'Development' }}
