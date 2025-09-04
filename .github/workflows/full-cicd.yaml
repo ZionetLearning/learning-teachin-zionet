@@ -82,7 +82,7 @@ jobs:
     secrets: inherit
  
   deploy-frontend:
-    if: ${{ github.event.inputs.enable_static_web_apps }}
+    if: ${{ github.event.inputs.environment_name == 'dev' || github.event.inputs.enable_static_web_apps }}
     needs: [terraform-apply]
     uses: ./.github/workflows/deploy-frontend.yaml
     permissions:
