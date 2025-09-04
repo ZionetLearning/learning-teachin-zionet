@@ -1,7 +1,6 @@
 ﻿using System.Text.Json;
 using DotQueue;
 using Manager.Helpers;
-using Manager.Models;
 using Manager.Models.Chat;
 using Manager.Models.ModelValidation;
 using Manager.Models.Notifications;
@@ -254,13 +253,7 @@ public class ManagerQueueHandler : IQueueHandler<Message>
 
             var split = Splitter.Split(generatedResponse);
 
-            var userEvent = new UserEvent<SplitSentenceResponse>
-            {
-                EventType = EventType.SplitSentenceGeneration,
-                Payload = split,
-            };
-
-            await _managerService.SendUserEventAsync(userId, userEvent);
+            await _notificationService.SendEventAsync(EventType.SplitSentenceGeneration, userId, split);
 
         }
         catch (NonRetryableException ex)
