@@ -126,13 +126,16 @@ jobs:
         run: |
           # Only generate template configuration for custom environments
           if [ "${{ env.TFVARS_FILE }}" = "terraform.tfvars.template" ]; then
+            # Override enable_static_web_apps with the workflow input value
+            ENABLE_SWA="${{ (inputs.environment_name || github.event.inputs.environment_name) == 'dev' || (inputs.enable_static_web_apps == 'true' || github.event.inputs.enable_static_web_apps == 'true') }}"
+            
+            # Replace the existing enable_static_web_apps value instead of appending
+            sed -i "s/enable_static_web_apps = .*/enable_static_web_apps = $ENABLE_SWA/" terraform.tfvars.template
+            
             echo "" >> terraform.tfvars.template
             echo "#------------- Dynamic Environment Configuration -------------" >> terraform.tfvars.template
             echo "environment_name = \"${{ env.environment_name }}\"" >> terraform.tfvars.template
             echo "kubernetes_namespace = \"${{ env.environment_name }}\"" >> terraform.tfvars.template
-            # Override enable_static_web_apps with the workflow input value
-            ENABLE_SWA="${{ (inputs.environment_name || github.event.inputs.environment_name) == 'dev' || (inputs.enable_static_web_apps == 'true' || github.event.inputs.enable_static_web_apps == 'true') }}"
-            echo "enable_static_web_apps = $ENABLE_SWA" >> terraform.tfvars.template
             echo "✅ Generated terraform.tfvars.template with environment: ${{ env.environment_name }}"
             echo "✅ Set enable_static_web_apps = $ENABLE_SWA"
           else
