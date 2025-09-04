@@ -13,5 +13,6 @@ public interface IAccessorClient
     Task<PromptResponse> CreatePromptAsync(CreatePromptRequest request, CancellationToken ct = default);
     Task<PromptResponse?> GetPromptAsync(string promptKey, CancellationToken ct = default);
     Task<IReadOnlyList<PromptResponse>> GetPromptVersionsAsync(string promptKey, CancellationToken ct = default);
+    Task<GetPromptsBatchResponse> GetPromptsBatchAsync(IEnumerable<string> promptKeys, CancellationToken ct = default);
 }
 

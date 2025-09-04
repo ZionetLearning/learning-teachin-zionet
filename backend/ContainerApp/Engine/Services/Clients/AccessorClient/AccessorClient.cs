@@ -164,6 +164,63 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
         }
     }
 
+    public async Task<GetPromptsBatchResponse> GetPromptsBatchAsync(IEnumerable<string> promptKeys, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(promptKeys);
+
+        var keys = promptKeys
+            .Where(k => !string.IsNullOrWhiteSpace(k))
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+
+        if (keys.Count == 0)
+        {
+            throw new ArgumentException("At least one prompt key must be provided", nameof(promptKeys));
+        }
+
+        const int maxBatch = 100;
+        if (keys.Count > maxBatch)
+        {
+            throw new ArgumentException($"Maximum {maxBatch} prompt keys allowed. Received {keys.Count}.", nameof(promptKeys));
+        }
+
+        _logger.LogInformation("Batch requesting {Count} prompts", keys.Count);
+
+        var request = new GetPromptsBatchRequest
+        {
+            PromptKeys = keys
+        };
+
+        try
+        {
+            var response = await _daprClient.InvokeMethodAsync<GetPromptsBatchRequest, GetPromptsBatchResponse>(
+                HttpMethod.Post,
+                "accessor",
+                "prompts/batch",
+                request,
+                cancellationToken: ct);
+
+            _logger.LogInformation("Batch prompt retrieval done. Found {Found} Missing {Missing}", response.Prompts.Count, response.NotFound.Count);
+            return response;
+        }
+        catch (InvocationException ex)
+        {
+            if (ex.Response?.StatusCode == HttpStatusCode.BadRequest)
+            {
+                _logger.LogWarning(ex, "Bad batch prompt request");
+                throw new ArgumentException("Invalid batch prompt request", ex);
+            }
+
+            _logger.LogError(ex, "Invocation failure for batch prompt retrieval");
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error retrieving batch prompts");
+            throw;
+        }
+    }
+
     public async Task<IReadOnlyList<PromptResponse>> GetPromptVersionsAsync(string promptKey, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(promptKey))

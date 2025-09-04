@@ -13,6 +13,7 @@ public static class PromptEndpoints
         promptGroup.MapPost("/", CreatePromptAsync).WithName("CreatePrompt");
         promptGroup.MapGet("/{promptKey}", GetPromptAsync).WithName("GetPrompt");
         promptGroup.MapGet("/{promptKey}/versions", GetPromptVersionsAsync).WithName("GetPromptVersions");
+        promptGroup.MapPost("/batch", GetPromptsBatchAsync).WithName("GetPromptsBatch"); // <-- Added
 
         return app;
     }
@@ -97,6 +98,56 @@ public static class PromptEndpoints
         {
             logger.LogError(ex, "Error retrieving versions for prompt {PromptKey}", promptKey);
             return Results.Problem("Failed to retrieve prompt versions.");
+        }
+    }
+
+    public static async Task<IResult> GetPromptsBatchAsync(
+        [FromBody] GetPromptsBatchRequest request,
+        [FromServices] IPromptService promptService,
+        [FromServices] ILogger<PromptService> logger,
+        CancellationToken cancellationToken)
+    {
+        using var scope = logger.BeginScope("Method: {Method}", nameof(GetPromptsBatchAsync));
+
+        try
+        {
+            if (request is null || request.PromptKeys is null || request.PromptKeys.Count == 0)
+            {
+                logger.LogWarning("Batch request missing prompt keys");
+                return Results.BadRequest(new { error = "PromptKeys are required." });
+            }
+
+            const int maxBatch = 100;
+            if (request.PromptKeys.Count > maxBatch)
+            {
+                return Results.BadRequest(new { error = $"Maximum {maxBatch} prompt keys allowed." });
+            }
+
+            var prompts = await promptService.GetLatestPromptsAsync(request.PromptKeys, cancellationToken);
+            var foundSet = prompts.Select(p => p.PromptKey).ToHashSet(StringComparer.Ordinal);
+            var notFound = request.PromptKeys
+                .Where(k => !string.IsNullOrWhiteSpace(k))
+                .Where(k => !foundSet.Contains(k))
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
+
+            logger.LogInformation("Batch retrieval complete. Found {Found} Missing {Missing}", prompts.Count, notFound.Count);
+
+            return Results.Ok(new GetPromptsBatchResponse
+            {
+                Prompts = prompts,
+                NotFound = notFound
+            });
+        }
+        catch (ArgumentException ex)
+        {
+            logger.LogWarning(ex, "Validation failure in batch retrieval");
+            return Results.BadRequest(new { error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Unexpected error in batch retrieval");
+            return Results.Problem("Failed to retrieve prompts batch.");
         }
     }
 }

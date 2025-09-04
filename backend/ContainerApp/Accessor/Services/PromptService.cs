@@ -108,6 +108,45 @@ public class PromptService : IPromptService
         }
     }
 
+    public async Task<List<PromptResponse>> GetLatestPromptsAsync(IEnumerable<string> promptKeys, CancellationToken cancellationToken = default)
+    {
+        if (promptKeys is null)
+        {
+            throw new ArgumentNullException(nameof(promptKeys));
+        }
+
+        var keys = promptKeys
+            .Where(k => !string.IsNullOrWhiteSpace(k))
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+
+        if (keys.Count == 0)
+        {
+            throw new ArgumentException("At least one prompt key is required.", nameof(promptKeys));
+        }
+
+        try
+        {
+            _logger.LogInformation("Batch retrieving {Count} prompt keys", keys.Count);
+
+            var latestPerKey = await _dbContext.Prompts
+                .AsNoTracking()
+                .Where(p => keys.Contains(p.PromptKey))
+                .GroupBy(p => p.PromptKey)
+                .Select(g => g.OrderByDescending(p => p.Version).First())
+                .ProjectTo<PromptResponse>(_mapper.ConfigurationProvider)
+                .ToListAsync(cancellationToken: cancellationToken);
+
+            _logger.LogInformation("Batch retrieved {Found} / {Requested} prompts", latestPerKey.Count, keys.Count);
+            return latestPerKey;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed batch retrieving prompts");
+            throw;
+        }
+    }
+
     public async Task InitializeDefaultPromptsAsync()
     {
         var defaults = new Dictionary<string, string>
@@ -124,7 +163,10 @@ public class PromptService : IPromptService
             - No quotes, emojis, hashtags, brackets, file names, or PII.
             - Title case for English; sentence case for Russian/others.
             Return STRICT JSON: {"title":"..."}
-            """
+            """,
+            ["prompts.system.default"] = "You are a helpful assistant. Maintain context. Keep your answers brief, clear and helpful.",
+            ["prompts.tone.friendly"] = "Speak in a friendly manner, as if you were speaking to a colleague.",
+            ["prompts.explanation.detailed"] = "Let's go into detail, step by step, so that even a beginner can understand."
         };
 
         try
