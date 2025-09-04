@@ -26,6 +26,11 @@ on:
           required: false
           type: string
           default: ''
+        use_keda:
+          description: 'Enable KEDA setup workflow'
+          type: boolean
+          required: false
+          default: false
           
 jobs:
   build-and-push-images:
@@ -73,6 +78,22 @@ jobs:
       environment: ${{ github.event.inputs.environment }}
       image_tag: ${{ needs.build-and-push-images.outputs.image_tag }}
       skip_infra_steps: false
+      use_keda: ${{ github.event.inputs.use_keda }}
+    secrets: inherit
+
+  keda-setup:
+    if: ${{ github.event.inputs.use_keda == true }}
+    needs: [helmcharts-setup]
+    uses: ./.github/workflows/aks-keda.yaml
+    permissions:
+      id-token: write
+      contents: read
+    with:
+      environment_name: ${{ github.event.inputs.environment_name }}
+      environment: ${{ github.event.inputs.environment }}
+      skip_infra_steps: true
+      use_chart: false
+
     secrets: inherit
  
   deploy-frontend:

@@ -248,3 +248,7 @@ dapr:
         poolTimeout: "30s"
         idleTimeout: "300s"
         maxConnAge: "30m"
+  
+  # KEDA scaler (optional)
+  keda:
+  enabled: false

@@ -30,6 +30,18 @@ spec:
       imagePullSecrets:
         - name: {{ .Values.global.imagePullSecret.name }}
       {{- end }}
+      initContainers:
+        - name: wait-for-accessor
+          image: curlimages/curl:8.5.0
+          command:
+            - sh
+            - -c
+            - |
+              # TODO
+             # until curl -s -o /dev/null -w "%{http_code}" http://{{ .Values.manager.name }}:80/{{ include "app.namespace" . }}/api/task/1 | grep -E '^(200|404)$'; do
+                echo "Waiting for accessor...";
+                sleep 2;
+              done
       containers:
         - name: {{ .Values.manager.name }}
           image: {{ include "app.image" (dict "name" .Values.manager.image.name "tag" .Values.manager.image.tag "Values" .Values) }}
@@ -83,5 +95,10 @@ spec:
   selector:
     {{ .Values.manager.labels.selectorKey }}: {{ .Values.manager.labels.selectorValue }}
   ports:
+    {{- if .Values.keda.enabled }}
+    - port: {{ .Values.manager.ports.container }}
+      targetPort: {{ .Values.manager.ports.container }}
+    {{- else }}
     - port: {{ .Values.manager.ports.service }}
       targetPort: {{ .Values.manager.ports.container }}
+    {{- end }}

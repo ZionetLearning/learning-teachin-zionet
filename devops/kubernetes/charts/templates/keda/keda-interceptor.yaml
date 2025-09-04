@@ -1,0 +1,14 @@
+{{- if .Values.keda.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: keda-interceptor
+  namespace: {{ include "app.namespace" . }}
+spec:
+  type: ExternalName
+  externalName: keda-add-ons-http-interceptor-proxy.keda.svc.cluster.local
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+{{- end }}
