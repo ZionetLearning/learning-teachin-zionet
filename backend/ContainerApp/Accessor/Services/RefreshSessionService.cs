@@ -57,24 +57,13 @@ public class RefreshSessionService : IRefreshSessionService
     {
         try
         {
-            _logger.LogInformation("finding refresh session by token hash, im refreshTokenHash:{RefreshTokenHash}\n\n\n", refreshTokenHash);
             _logger.LogInformation("Looking up refresh session by token hash");
-
-            var check = "afdsfds";
 
             var session = await _dbContext.RefreshSessions
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.RefreshTokenHash == check, cancellationToken);
+                .FirstOrDefaultAsync(x => x.RefreshTokenHash == refreshTokenHash, cancellationToken);
 
-            var allHashes = await _dbContext.RefreshSessions
-                .Select(x => x.RefreshTokenHash)
-                .ToListAsync(cancellationToken);
-
-            _logger.LogWarning("ALL refresh token hashes in DB: {Hashes}", string.Join(", ", allHashes));
-
-            _logger.LogInformation("after dbContext, im session:{Session}\n\n\n", session);
-
-            if (session == null)
+            if (session is null)
             {
                 _logger.LogWarning("No session found for given refresh token hash");
                 return null;

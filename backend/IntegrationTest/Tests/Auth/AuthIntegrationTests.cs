@@ -89,28 +89,59 @@ public class AuthIntegrationTests : AuthTestBase
     [Fact(DisplayName = "Refresh with invalid refresh token should fail")]
     public async Task Refresh_ShouldReturnUnauthorized()
     {
+        //var user = _sharedFixture.UserFixture.TestUser;
+
+        //var loginResponse = await LoginAsync(user.Email, user.Password);
+        //loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        //var (refreshToken, csrfToken) = ExtractTokens(loginResponse);
+        //csrfToken.Should().NotBeNullOrWhiteSpace();
+
+        //var request = new HttpRequestMessage(HttpMethod.Post, AuthRoutes.Refresh)
+        //{
+        //    Headers =
+        //    {
+        //        { "X-CSRF-Token", csrfToken! },
+        //        { "Cookie", $"refreshToken=InvalidToken" }
+        //    }
+        //};
+        //var refreshResponse = await Client.SendAsync(request);
+        //refreshResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+
+        // Clear the refreshSessions
+        //var logoutResponse = await LogoutAsync(refreshToken!);
+        //logoutResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
         var user = _sharedFixture.UserFixture.TestUser;
 
         var loginResponse = await LoginAsync(user.Email, user.Password);
         loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var (refreshToken, csrfToken) = ExtractTokens(loginResponse);
+        var (_, csrfToken) = ExtractTokens(loginResponse);
         csrfToken.Should().NotBeNullOrWhiteSpace();
+
+        // Use a fresh client with cookies disabled
+        var handler = new HttpClientHandler
+        {
+            UseCookies = false // Prevents real cookies from being reused (like Secure cookies)
+        };
+
+        using var isolatedClient = new HttpClient(handler)
+        {
+            BaseAddress = Client.BaseAddress // reuse base URL from existing client
+        };
 
         var request = new HttpRequestMessage(HttpMethod.Post, AuthRoutes.Refresh)
         {
             Headers =
-            {
-                { "X-CSRF-Token", csrfToken! },
-                { "Cookie", $"refreshToken=InvalidToken" }
-            }
+        {
+            { "X-CSRF-Token", csrfToken! },
+            { "Cookie", "refreshToken=InvalidToken" } // Only our fake cookie is sent
+        }
         };
-        var refreshResponse = await Client.SendAsync(request);
-        refreshResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
 
-        // Clear the refreshSessions
-        var logoutResponse = await LogoutAsync(refreshToken!);
-        logoutResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var refreshResponse = await isolatedClient.SendAsync(request);
+        refreshResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
     
 
