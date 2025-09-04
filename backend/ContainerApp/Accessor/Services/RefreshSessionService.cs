@@ -60,9 +60,17 @@ public class RefreshSessionService : IRefreshSessionService
             _logger.LogInformation("finding refresh session by token hash, im refreshTokenHash:{RefreshTokenHash}\n\n\n", refreshTokenHash);
             _logger.LogInformation("Looking up refresh session by token hash");
 
+            var check = "afdsfds";
+
             var session = await _dbContext.RefreshSessions
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.RefreshTokenHash == refreshTokenHash, cancellationToken);
+                .FirstOrDefaultAsync(x => x.RefreshTokenHash == check, cancellationToken);
+
+            var allHashes = await _dbContext.RefreshSessions
+                .Select(x => x.RefreshTokenHash)
+                .ToListAsync(cancellationToken);
+
+            _logger.LogWarning("ALL refresh token hashes in DB: {Hashes}", string.Join(", ", allHashes));
 
             _logger.LogInformation("after dbContext, im session:{Session}\n\n\n", session);
 
@@ -72,9 +80,15 @@ public class RefreshSessionService : IRefreshSessionService
                 return null;
             }
 
+            if (session != null && session.RefreshTokenHash != refreshTokenHash)
+            {
+                _logger.LogError("Database returned a session, but token hash doesn't match! DB returned: {DBHash}", session.RefreshTokenHash);
+                throw new InvalidOperationException("Mismatch between requested and returned token hash");
+            }
+
             return new RefreshSessionDto
             {
-                Id = session.Id,
+                Id = session!.Id,
                 UserId = session.UserId,
                 ExpiresAt = session.ExpiresAt,
                 DeviceFingerprintHash = session.DeviceFingerprintHash,
