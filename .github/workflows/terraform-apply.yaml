@@ -19,7 +19,6 @@ on:
       enable_static_web_apps:
         required: false
         type: boolean
-        default: true
     outputs:
       static_web_app_api_keys:
         description: "API keys for the Azure Static Web Apps"
