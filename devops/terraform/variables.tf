@@ -242,14 +242,8 @@ variable "prefix" {
 }
 
 #------------- Frontend Application Variables -------------
-variable "enable_static_web_apps" {
-  description = "Enable creation of Azure Static Web Apps for frontend applications"
-  type        = bool
-  default     = true
-}
-
 variable "frontend_apps" {
-  description = "List of frontend applications to deploy"
+  description = "List of frontend applications to deploy. Set to [] to disable Static Web Apps creation."
   type        = list(string)
   default     = ["student", "teacher", "admin"]
 }

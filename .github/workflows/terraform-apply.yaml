@@ -16,9 +16,10 @@ on:
       environment_name:
         required: true
         type: string
-      enable_static_web_apps:
+      frontend_apps:
         required: false
-        type: boolean
+        type: string
+        default: '["student", "teacher", "admin"]'
     outputs:
       static_web_app_api_keys:
         description: "API keys for the Azure Static Web Apps"
@@ -38,11 +39,11 @@ on:
         description: 'Enter custom prefix (lowercase letters & digits only). This will be used as the Kubernetes namespace and environment identifier.'
         required: true
         type: string
-      enable_static_web_apps:
-        description: 'Create Azure Static Web Apps for frontend (true/false)'
+      frontend_apps:
+        description: 'Comma-separated list of frontend apps to deploy (e.g. "student,teacher,admin"). Leave empty to skip frontend.'
         required: false
-        type: boolean
-        default: true
+        type: string
+        default: 'student,teacher,admin'
 
 jobs:
   terraform:
@@ -126,41 +127,47 @@ jobs:
         run: |
           # Only generate template configuration for custom environments
           if [ "${{ env.TFVARS_FILE }}" = "terraform.tfvars.template" ]; then
-            # Override enable_static_web_apps with the workflow input value
-            ENABLE_SWA="${{ (inputs.environment_name || github.event.inputs.environment_name) == 'dev' || (inputs.enable_static_web_apps == 'true' || github.event.inputs.enable_static_web_apps == 'true') }}"
+            # Convert frontend_apps input to array format
+            FRONTEND_APPS_INPUT="${{ inputs.frontend_apps || github.event.inputs.frontend_apps || '' }}"
             
-            # Replace the existing enable_static_web_apps value instead of appending
-            sed -i "s/enable_static_web_apps = .*/enable_static_web_apps = $ENABLE_SWA/" terraform.tfvars.template
+            if [ "${{ inputs.environment_name || github.event.inputs.environment_name }}" = "dev" ]; then
+              # Dev environment always gets all frontend apps
+              FRONTEND_APPS_ARRAY='["student", "teacher", "admin"]'
+            elif [ -n "$FRONTEND_APPS_INPUT" ]; then
+              # Convert comma-separated string to JSON array
+              FRONTEND_APPS_ARRAY=$(echo "$FRONTEND_APPS_INPUT" | sed 's/,/", "/g' | sed 's/^/["/' | sed 's/$/"]/')
+            else
+              # Empty input means no frontend apps
+              FRONTEND_APPS_ARRAY='[]'
+            fi
+            
+            # Replace the existing frontend_apps value
+            sed -i "s/frontend_apps = .*/frontend_apps = $FRONTEND_APPS_ARRAY/" terraform.tfvars.template
             
             echo "" >> terraform.tfvars.template
             echo "#------------- Dynamic Environment Configuration -------------" >> terraform.tfvars.template
             echo "environment_name = \"${{ env.environment_name }}\"" >> terraform.tfvars.template
             echo "kubernetes_namespace = \"${{ env.environment_name }}\"" >> terraform.tfvars.template
             echo "✅ Generated terraform.tfvars.template with environment: ${{ env.environment_name }}"
-            echo "✅ Set enable_static_web_apps = $ENABLE_SWA"
+            echo "✅ Set frontend_apps = $FRONTEND_APPS_ARRAY"
           else
             echo "✅ Using existing tfvars file: ${{ env.TFVARS_FILE }}"
           fi
 
           
  
-      - name: Debug - Show enable_static_web_apps values
+      - name: Debug - Show frontend_apps values
         run: |
           echo "Input values:"
-          echo "  inputs.enable_static_web_apps: ${{ inputs.enable_static_web_apps }}"
-          echo "  github.event.inputs.enable_static_web_apps: ${{ github.event.inputs.enable_static_web_apps }}"
+          echo "  inputs.frontend_apps: ${{ inputs.frontend_apps }}"
+          echo "  github.event.inputs.frontend_apps: ${{ github.event.inputs.frontend_apps }}"
           echo "  Environment name: ${{ inputs.environment_name || github.event.inputs.environment_name }}"
-          echo "  Final TF_VAR_enable_static_web_apps: ${{ (inputs.environment_name || github.event.inputs.environment_name) == 'dev' || (inputs.enable_static_web_apps == 'true' || github.event.inputs.enable_static_web_apps == 'true') }}"
 
       - name: Terraform Plan
-        env:
-          TF_VAR_enable_static_web_apps: ${{ (inputs.environment_name || github.event.inputs.environment_name) == 'dev' || (inputs.enable_static_web_apps == 'true' || github.event.inputs.enable_static_web_apps == 'true') }}
         run: terraform plan -var-file=${{ env.TFVARS_FILE }}
         working-directory: ${{ env.TF_DIR }}
 
       - name: Terraform Apply
-        env:
-          TF_VAR_enable_static_web_apps: ${{ (inputs.environment_name || github.event.inputs.environment_name) == 'dev' || (inputs.enable_static_web_apps == 'true' || github.event.inputs.enable_static_web_apps == 'true') }}
         run: terraform apply -auto-approve -var-file=${{ env.TFVARS_FILE }}
         working-directory: ${{ env.TF_DIR }}
 

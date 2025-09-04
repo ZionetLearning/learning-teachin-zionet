@@ -17,10 +17,9 @@ tenant_id              = "a814ee32-f813-4a36-9686-1b9268183e27"
 docker_registry        = "snir1551"
 
 #------------- Frontend Configuration -------------
-enable_static_web_apps = false   # Set to true to create Azure Static Web Apps, false to skip
 frontend_sku_tier      = "Free"    
 frontend_sku_size      = "Free"
-frontend_apps          = ["student", "teacher", "admin"]   
+frontend_apps          = []   # Set to [] to disable, ["student", "teacher", "admin"] to enable   
 
 #------------- Redis Shared Instance -------------
 use_shared_redis = true  # template/test uses shared Redis instance
