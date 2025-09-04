@@ -26,6 +26,11 @@ on:
           required: false
           type: string
           default: ''
+        enable_static_web_apps:
+          description: 'Create Azure Static Web Apps for frontend (true/false)'
+          required: false
+          type: boolean
+          default: true
           
 jobs:
   build-and-push-images:
@@ -47,6 +52,7 @@ jobs:
     with:
       environment_name: ${{ github.event.inputs.environment_name }}
       environment: ${{ github.event.inputs.environment }}
+      enable_static_web_apps: ${{ github.event.inputs.enable_static_web_apps }}
     secrets: inherit
  
   aks-kubectl-apply:
@@ -76,6 +82,7 @@ jobs:
     secrets: inherit
  
   deploy-frontend:
+    if: ${{ github.event.inputs.enable_static_web_apps }}
     needs: [terraform-apply]
     uses: ./.github/workflows/deploy-frontend.yaml
     permissions:

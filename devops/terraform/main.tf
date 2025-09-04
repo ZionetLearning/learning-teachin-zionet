@@ -147,9 +147,9 @@ module "monitoring" {
   postgres_server_id          = module.database[0].id
   signalr_id                  = module.signalr.id
   redis_id                    = module.redis[0].id
-  frontend_static_web_app_id  = [for f in module.frontend : f.static_web_app_id]
+  frontend_static_web_app_id  = var.enable_static_web_apps ? [for f in module.frontend : f.static_web_app_id] : []
 
-  frontend_application_insights_ids = [for f in module.frontend : f.application_insights_id]
+  frontend_application_insights_ids = var.enable_static_web_apps ? [for f in module.frontend : f.application_insights_id] : []
 
     depends_on = [
     azurerm_log_analytics_workspace.main,
@@ -234,7 +234,7 @@ resource "kubernetes_service_account" "environment" {
 }
 
 module "frontend" {
-  for_each = toset(var.frontend_apps)
+  for_each = var.enable_static_web_apps ? toset(var.frontend_apps) : toset([])
   
   source              = "./modules/frontend"
   resource_group_name = azurerm_resource_group.main.name
