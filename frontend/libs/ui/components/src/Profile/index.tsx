@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, Typography, TextField, Stack } from '@mui/material';
-import { Button } from '@ui-components';
+import { Button } from '../Button';
 
 export type ProfileProps = {
     firstName: string;

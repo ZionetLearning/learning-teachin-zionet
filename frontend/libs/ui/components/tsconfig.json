@@ -5,7 +5,11 @@
     "declaration": true,
     "declarationMap": true,
     "resolveJsonModule": true,
-    "types": ["vite/client", "node"]
+    "types": ["vitest/globals", "@testing-library/jest-dom"],
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
   },
-  "include": ["src"]
+  "include": ["src/**/*", "src/test/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

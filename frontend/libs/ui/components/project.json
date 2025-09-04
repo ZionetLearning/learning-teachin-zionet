@@ -3,11 +3,16 @@
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/ui/components/src",
   "projectType": "library",
-  "tags": ["type:ui", "scope:frontend"],
+  "tags": [
+    "type:ui",
+    "scope:frontend"
+  ],
   "targets": {
     "lint": {
       "executor": "@nx/eslint:lint",
-      "outputs": ["{options.outputFile}"],
+      "outputs": [
+        "{options.outputFile}"
+      ],
       "options": {
         "lintFilePatterns": [
           "libs/ui/components/**/*.{ts,tsx,js,jsx}"
@@ -16,12 +21,18 @@
     },
     "build": {
       "executor": "@nx/rollup:rollup",
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "options": {
         "outputPath": "dist/libs/ui/components",
         "tsConfig": "libs/ui/components/tsconfig.json",
         "entryFile": "libs/ui/components/src/index.ts",
-        "external": ["react", "react-dom", "react/jsx-runtime"],
+        "external": [
+          "react",
+          "react-dom",
+          "react/jsx-runtime"
+        ],
         "rollupConfig": "@nx/react/plugins/bundle-rollup",
         "compiler": "babel",
         "assets": [
@@ -33,6 +44,13 @@
         ]
       }
     },
+    "test": {
+      "executor": "@nx/vite:test",
+      "options": {
+        "passWithNoTests": true,
+        "reportsDirectory": "../../coverage/apps/student"
+      }
+    },
     "storybook": {
       "executor": "@nx/storybook:storybook",
       "options": {
@@ -40,7 +58,9 @@
         "port": 4600
       },
       "configurations": {
-        "ci": { "quiet": true },
+        "ci": {
+          "quiet": true
+        },
         "development": {}
       }
     }
