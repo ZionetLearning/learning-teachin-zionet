@@ -1,0 +1,23 @@
+services:
+  manager:
+    build:
+      dockerfile: Dockerfile.debug
+    container_name: manager-debug
+    volumes:
+      - ./Manager:/src/Manager:ro
+
+  engine:
+    build:
+      dockerfile: Dockerfile.debug
+    container_name: engine-debug
+    ports:
+      - 5002:5002
+    volumes:
+      - ./Engine:/src/Engine:ro
+
+  accessor:
+    build:
+      dockerfile: Dockerfile.debug
+    container_name: accessor-debug
+    volumes:
+      - ./Accessor:/src/Accessor:ro
