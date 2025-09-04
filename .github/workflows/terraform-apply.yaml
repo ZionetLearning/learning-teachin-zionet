@@ -44,7 +44,7 @@ on:
         required: false
         type: choice
         default: 'all'
-        options: 
+        options:
           - 'all'
           - 'none'
 
@@ -154,9 +154,9 @@ jobs:
             echo "#------------- Dynamic Environment Configuration -------------" >> terraform.tfvars.template
             echo "environment_name = \"${{ env.environment_name }}\"" >> terraform.tfvars.template
             echo "kubernetes_namespace = \"${{ env.environment_name }}\"" >> terraform.tfvars.template
-            echo "✅ Generated terraform.tfvars.template with environment: ${{ env.environment_name }}"
-            echo "✅ Set frontend_apps = $FRONTEND_APPS_ARRAY (from choice: $FRONTEND_APPS_INPUT)"
-            echo "📄 Final terraform.tfvars.template content:"
+            echo "Generated terraform.tfvars.template with environment: ${{ env.environment_name }}"
+            echo "Set frontend_apps = $FRONTEND_APPS_ARRAY (from choice: $FRONTEND_APPS_INPUT)"
+            echo "Final terraform.tfvars.template content:"
             cat terraform.tfvars.template
           else
             echo "✅ Using existing tfvars file: ${{ env.TFVARS_FILE }}"
@@ -164,14 +164,6 @@ jobs:
 
           
  
-      - name: Debug - Show frontend_apps values
-        run: |
-          echo "Input values:"
-          echo "  inputs.frontend_apps: ${{ inputs.frontend_apps }}"
-          echo "  github.event.inputs.frontend_apps: ${{ github.event.inputs.frontend_apps }}"
-          echo "  Environment name: ${{ inputs.environment_name || github.event.inputs.environment_name }}"
-          echo "  Choice selected: ${{ inputs.frontend_apps || github.event.inputs.frontend_apps || 'all' }}"
-
       - name: Terraform Plan
         run: terraform plan -var-file=${{ env.TFVARS_FILE }}
         working-directory: ${{ env.TF_DIR }}
