@@ -17,5 +17,6 @@ public enum MessageAction
     TestLongTask,
     ProcessingChatMessage,
     AnswerAi,
-    GenerateSentences
+    GenerateSentences,
+    GenerateSplitSentences
 }

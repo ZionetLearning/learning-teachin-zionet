@@ -39,7 +39,8 @@ public class EngineQueueHandler : IQueueHandler<Message>
             [MessageAction.CreateTask] = HandleCreateTaskAsync,
             [MessageAction.TestLongTask] = HandleTestLongTaskAsync,
             [MessageAction.ProcessingChatMessage] = HandleProcessingChatMessageAsync,
-            [MessageAction.GenerateSentences] = HandleSentenceGenerationAsync
+            [MessageAction.GenerateSentences] = HandleSentenceGenerationAsync,
+            [MessageAction.GenerateSplitSentences] = HandleSentenceGenerationAsync
 
         };
     }
@@ -258,7 +259,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
             _logger.LogDebug("Processing sentence generation");
             var response = await _sentencesService.GenerateAsync(payload, cancellationToken);
             var userId = payload.UserId;
-            await _publisher.SendGeneratedMessagesAsync(userId.ToString(), response, cancellationToken);
+            await _publisher.SendGeneratedMessagesAsync(userId.ToString(), response, message.ActionName, cancellationToken);
         }
         catch (NonRetryableException ex)
         {
