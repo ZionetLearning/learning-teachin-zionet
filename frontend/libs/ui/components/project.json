@@ -47,8 +47,8 @@
     "test": {
       "executor": "@nx/vite:test",
       "options": {
-        "passWithNoTests": true,
-        "reportsDirectory": "../../coverage/apps/student"
+        "passWithNoTests": true
+        
       }
     },
     "storybook": {
