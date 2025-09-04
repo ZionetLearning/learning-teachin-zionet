@@ -57,11 +57,14 @@ public class RefreshSessionService : IRefreshSessionService
     {
         try
         {
+            _logger.LogInformation("finding refresh session by token hash, im refreshTokenHash:{RefreshTokenHash}\n\n\n", refreshTokenHash);
             _logger.LogInformation("Looking up refresh session by token hash");
 
             var session = await _dbContext.RefreshSessions
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.RefreshTokenHash == refreshTokenHash, cancellationToken);
+
+            _logger.LogInformation("after dbContext, im session:{Session}\n\n\n", session);
 
             if (session == null)
             {
