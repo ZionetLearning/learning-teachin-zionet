@@ -195,6 +195,7 @@ app.MapAuthEndpoints();
 app.MapTasksEndpoints();
 app.MapUsersEndpoints();
 app.MapHub<NotificationHub>("/NotificationHub");
+app.MapMediaEndpoints();
 
 app.MapStatsPing();
 if (env.IsDevelopment())
