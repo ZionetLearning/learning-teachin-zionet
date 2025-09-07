@@ -17,7 +17,7 @@ public static class Splitter
         foreach (var s in input.Sentences)
         {
 
-            var cleaned = Regex.Replace(s?.Text ?? string.Empty, @"[^\p{L}\p{N}\s]", "");
+            var cleaned = Regex.Replace(s?.Text ?? string.Empty, @"[^\p{L}\p{N}\s\u0590-\u05C7]", "");
 
             var words = cleaned
                 .Split(Array.Empty<char>(), StringSplitOptions.RemoveEmptyEntries)
