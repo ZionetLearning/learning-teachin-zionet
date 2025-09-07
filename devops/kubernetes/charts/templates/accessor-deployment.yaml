@@ -26,6 +26,7 @@ spec:
         dapr.io/sidecar-cpu-limit:    "{{ .Values.global.dapr.sidecar.limits.cpu }}"
         dapr.io/sidecar-memory-limit: "{{ .Values.global.dapr.sidecar.limits.memory }}"
     spec:
+      serviceAccountName: {{ .Values.accessor.serviceAccount.name }}
       {{- if .Values.global.imagePullSecret.enabled }}
       imagePullSecrets:
         - name: {{ .Values.global.imagePullSecret.name }}
@@ -40,11 +41,6 @@ spec:
           env:
             - name: ASPNETCORE_URLS
               value: "{{ .Values.accessor.env.ASPNETCORE_URLS }}"
-            - name: ServiceBus__ConnectionString
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.accessor.secrets.serviceBus.name }}
-                  key: {{ .Values.accessor.secrets.serviceBus.key }}
             - name: ConnectionStrings__Postgres
               valueFrom:
                 secretKeyRef:

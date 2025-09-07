@@ -10,15 +10,13 @@ spec:
   version: v1
   metadata:
     - name: redisHost
-      secretKeyRef:
-        name: {{ .Values.dapr.stateStore.redis.secretName }}
-        key: {{ .Values.dapr.stateStore.redis.hostKey }}
-    - name: redisPassword
-      secretKeyRef:
-        name: {{ .Values.dapr.stateStore.redis.secretName }}
-        key: {{ .Values.dapr.stateStore.redis.passwordKey }}
+      value: "{{ .Values.redis.host }}:6380"
     - name: enableTLS
-      value: '{{ default "true" .Values.dapr.stateStore.redis.enableTLS }}'
+      value: "true"
+    - name: useEntraID
+      value: "true"
+    - name: azureClientId
+      value: "{{ .Values.global.azure.clientId }}"
     - name: dialTimeout
       value: '{{ default "30s" .Values.dapr.stateStore.redis.options.dialTimeout }}'
     - name: readTimeout
@@ -37,4 +35,3 @@ scopes:
   - {{ include "app.appIdFor" (list $ .Values.accessor.name) | quote }}
   - {{ include "app.appIdFor" (list $ .Values.manager.name)  | quote }}
   - {{ include "app.appIdFor" (list $ .Values.engine.name)   | quote }}
-

@@ -247,3 +247,39 @@ variable "frontend_apps" {
   type        = list(string)
   default     = ["student", "teacher", "admin"]
 }
+
+variable "workload_sa_bindings" {
+  description = "List of SAs to bind via Workload Identity."
+  type = list(object({
+    namespace      : string
+    serviceaccount : string
+    name_suffix    : optional(string)
+  }))
+  default = []
+}
+
+variable "servicebus_namespaces" {
+  description = "Service Bus namespaces to grant MI to."
+  type = list(object({
+    name            : string
+    resource_group  : string
+    assign_sender   : bool
+    assign_receiver : bool
+  }))
+  default = []
+}
+
+variable "enable_redis_policy" {
+  type        = bool
+  default     = false
+  description = "Set true only if your provider supports Redis access policy resources (or after we add AzAPI)."
+}
+
+variable "redis_name" {
+  type        = string
+  default     = ""
+}
+variable "redis_resource_group" {
+  type        = string
+  default     = ""
+}

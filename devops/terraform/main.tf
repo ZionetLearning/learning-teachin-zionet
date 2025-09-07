@@ -275,3 +275,19 @@ module "clustersecretstore" {
   identity_id = "0997f44d-fadf-4be8-8dc6-202f7302f680" # your AKS managed identity clientId
   tenant_id   = "a814ee32-f813-4a36-9686-1b9268183e27"
 }
+
+# === Workload Identity FICs (dynamic SAs) ===
+module "wi_fics" {
+  source          = "./modules/workload-identity-fic"
+  uami_id         = azurerm_user_assigned_identity.aks.id
+  oidc_issuer_url = azurerm_kubernetes_cluster.main.oidc_issuer_url
+
+  bindings = var.workload_sa_bindings
+}
+
+# === Service Bus RBAC (dynamic namespaces) ===
+module "sb_rbac" {
+  source      = "./modules/servicebus-mi-rbac"
+  principal_id= azurerm_user_assigned_identity.aks.principal_id
+  namespaces  = var.servicebus_namespaces
+}

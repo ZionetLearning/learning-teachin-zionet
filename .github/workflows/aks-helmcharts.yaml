@@ -135,6 +135,32 @@ jobs:
           esac
 
 
+      - name: Resolve MI values (SB namespace, Redis host, UAMI)
+        run: |
+          # 1) Service Bus namespace (pattern; override in case stmt if prod/test names differ)
+          case "$TARGET_NAMESPACE" in
+            dev)     SB_NAMESPACE="teachin-sb-dev" ;;
+            test)    SB_NAMESPACE="teachin-sb-test" ;;
+            prod)    SB_NAMESPACE="teachin-sb-prod" ;;
+            *)       SB_NAMESPACE="teachin-sb-$TARGET_NAMESPACE" ;;
+          esac
+          echo "SB_NAMESPACE=$SB_NAMESPACE" >> $GITHUB_ENV
+
+          # 2) Redis host (shared). If you have a fixed name, set it here.
+          #    If it varies, add a case like above.
+          REDIS_HOST="teachin-redis-dev.redis.cache.windows.net"
+          echo "REDIS_HOST=$REDIS_HOST" >> $GITHUB_ENV
+
+          # 3) UAMI client id (we assume your Terraform naming: <ns>-aks-uami in RG $AKS_RG)
+          UAMI_NAME="${TARGET_NAMESPACE}-aks-uami"
+          UAMI_CLIENT_ID=$(az identity show -g "$AKS_RG" -n "$UAMI_NAME" --query 'clientId' -o tsv)
+          if [ -z "$UAMI_CLIENT_ID" ] || [ "$UAMI_CLIENT_ID" = "null" ]; then
+            echo "❌ Could not resolve UAMI clientId for $UAMI_NAME in RG $AKS_RG"
+            exit 1
+          fi
+          echo "UAMI_CLIENT_ID=$UAMI_CLIENT_ID" >> $GITHUB_ENV
+
+
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
 
@@ -261,6 +287,9 @@ jobs:
             --set global.environment="$IMAGE_TAG" \
             --set global.keyvault.clientId="$KEYVAULT_CLIENT_ID" \
             --set global.keyvault.tenantId="$KEYVAULT_TENANT_ID" \
+            --set global.azure.clientId="$UAMI_CLIENT_ID" \
+            --set serviceBus.namespace="$SB_NAMESPACE" \
+            --set redis.host="$REDIS_HOST" \
             --set dapr.installComponents=false \
           | grep -n '^kind: Namespace' && { echo "Namespace still rendered"; exit 1; } || echo "OK: no Namespace in chart"
 
@@ -283,6 +312,9 @@ jobs:
             --set global.keyvault.clientId="$KEYVAULT_CLIENT_ID" \
             --set global.keyvault.tenantId="$KEYVAULT_TENANT_ID" \
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
+            --set global.azure.clientId="$UAMI_CLIENT_ID" \
+            --set serviceBus.namespace="$SB_NAMESPACE" \
+            --set redis.host="$REDIS_HOST" \
             --set dapr.installComponents=false
 
       - name: Diagnostics (on failure)
