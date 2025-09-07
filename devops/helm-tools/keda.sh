@@ -27,8 +27,8 @@ echo "Verifying installation..."
 kubectl get pods -n "$KEDA_NAMESPACE"
 
 # Apply KEDA ScaledObjects
-echo "Applying KEDA ScaledObjects..."
-kubectl apply -f ../kubernetes/charts/templates/keda --recursive
+#echo "Applying KEDA ScaledObjects..."
+#kubectl apply -f ../kubernetes/charts/templates/keda --recursive
 
 
 echo "KEDA installation complete!"
