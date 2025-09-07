@@ -73,7 +73,7 @@ jobs:
           ./keda.sh
 
   keda-deploy:
-    if: ${{ inputs.use_chart != false }}
+    if: ${{ inputs.use_chart }}
     needs: [keda]
     uses: ./.github/workflows/aks-helmcharts.yaml
     permissions:
