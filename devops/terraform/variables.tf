@@ -268,18 +268,3 @@ variable "servicebus_namespaces" {
   }))
   default = []
 }
-
-variable "enable_redis_policy" {
-  type        = bool
-  default     = false
-  description = "Set true only if your provider supports Redis access policy resources (or after we add AzAPI)."
-}
-
-variable "redis_name" {
-  type        = string
-  default     = ""
-}
-variable "redis_resource_group" {
-  type        = string
-  default     = ""
-}

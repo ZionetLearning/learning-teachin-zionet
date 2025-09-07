@@ -152,7 +152,7 @@ jobs:
           echo "REDIS_HOST=$REDIS_HOST" >> $GITHUB_ENV
 
           # 3) UAMI client id (we assume your Terraform naming: <ns>-aks-uami in RG $AKS_RG)
-          UAMI_NAME="${TARGET_NAMESPACE}-aks-uami"
+          UAMI_NAME="dev-aks-uami"
           UAMI_CLIENT_ID=$(az identity show -g "$AKS_RG" -n "$UAMI_NAME" --query 'clientId' -o tsv)
           if [ -z "$UAMI_CLIENT_ID" ] || [ "$UAMI_CLIENT_ID" = "null" ]; then
             echo "❌ Could not resolve UAMI clientId for $UAMI_NAME in RG $AKS_RG"
