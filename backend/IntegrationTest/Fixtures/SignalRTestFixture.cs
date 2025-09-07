@@ -100,10 +100,10 @@ public class SignalRTestFixture : IAsyncDisposable
     }
 
     public IReadOnlyList<ReceivedEvent> GetReceivedEvents()
-    {
+        {
         return _receivedEvents.ToList();
-    }
-
+            }
+     
     public void ClearReceivedMessages()
     {
         _receivedNotifications.Clear();
@@ -160,7 +160,6 @@ public class SignalRTestFixture : IAsyncDisposable
         return null;
     }
 
-
     private static string GetBaseUrl()
     {
         var config = new ConfigurationBuilder()
@@ -171,11 +170,11 @@ public class SignalRTestFixture : IAsyncDisposable
         var url = config["TestSettings:ApiBaseUrl"];
 
         if (string.IsNullOrWhiteSpace(url))
-    {
-        throw new InvalidOperationException(
-            "ApiBaseUrl is not set in appsettings.json under TestSettings."
-        );
-    }
+        {
+            throw new InvalidOperationException(
+                "ApiBaseUrl is not set in appsettings.json under TestSettings."
+            );
+        }
 
         return url.TrimEnd('/');
     }
