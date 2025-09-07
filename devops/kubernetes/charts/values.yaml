@@ -251,4 +251,4 @@ dapr:
   
   # KEDA scaler (optional)
   keda:
-  enabled: false
+    enabled: false
