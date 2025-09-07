@@ -87,7 +87,7 @@ module "database" {
   source = "./modules/postgresql"
 
   server_name         = "prod-pg-zionet-learning"
-  location            = var.db_location
+  location            = var.location  # Use the same location as other resources
   resource_group_name = var.use_shared_postgres ? var.shared_resource_group : azurerm_resource_group.main.name
 
   admin_username = var.admin_username
