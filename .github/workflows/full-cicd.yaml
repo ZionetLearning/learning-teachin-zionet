@@ -91,6 +91,7 @@ jobs:
         run: echo "parsed=${{ fromJSON(github.event.inputs.use_keda || 'false') }}"
 
   keda-setup:
+    if: ${{ github.event.inputs.use_keda }}
     uses: ./.github/workflows/aks-keda.yaml
     permissions:
       id-token: write
