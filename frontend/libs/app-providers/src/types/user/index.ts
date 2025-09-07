@@ -1,6 +1,7 @@
 import { AppRoleType } from "../auth";
 
 export interface CreateUserRequest {
+  userId: string;
   email: string;
   password: string;
   firstName: string;
