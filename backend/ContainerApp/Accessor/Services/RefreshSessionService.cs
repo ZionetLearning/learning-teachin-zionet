@@ -92,49 +92,6 @@ public class RefreshSessionService : IRefreshSessionService
         }
     }
 
-    public async Task<int> PurgeExpiredOrRevokedAsync(int batchSize, CancellationToken ct)
-    {
-        var total = 0;
-        var isRelational = _dbContext.Database.IsRelational();
-
-        while (true)
-        {
-            var ids = await _dbContext.RefreshSessions
-                .AsNoTracking()
-                .Where(r => r.ExpiresAt < DateTimeOffset.UtcNow || r.RevokedAt != null)
-                .OrderBy(r => r.Id)
-                .Select(r => r.Id)
-                .Take(batchSize)
-                .ToListAsync(ct);
-
-            if (ids.Count == 0)
-            {
-                break;
-            }
-
-            int deleted;
-            if (isRelational)
-            {
-                deleted = await _dbContext.RefreshSessions
-                    .Where(r => ids.Contains(r.Id))
-                    .ExecuteDeleteAsync(ct);
-            }
-            else
-            {
-                var entities = await _dbContext.RefreshSessions
-                    .Where(r => ids.Contains(r.Id))
-                    .ToListAsync(ct);
-                _dbContext.RefreshSessions.RemoveRange(entities);
-                deleted = await _dbContext.SaveChangesAsync(ct);
-            }
-
-            total += deleted;
-        }
-
-        _logger.LogInformation("RefreshSessions cleanup removed {Count} rows", total);
-        return total;
-    }
-
     public async Task RotateSessionAsync(Guid sessionId, RotateRefreshSessionRequest request, CancellationToken cancellationToken)
     {
         try
