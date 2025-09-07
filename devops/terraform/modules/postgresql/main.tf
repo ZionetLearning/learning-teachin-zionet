@@ -36,6 +36,9 @@ resource "azurerm_postgresql_flexible_server" "this" {
   # Explicitly set zone to null for Basic SKUs or remove zone entirely
   zone = null
 
+  # Disable public network access when using VNet integration
+  public_network_access_enabled = false
+
   authentication {
     password_auth_enabled         = var.password_auth_enabled
     active_directory_auth_enabled = var.active_directory_auth_enabled
