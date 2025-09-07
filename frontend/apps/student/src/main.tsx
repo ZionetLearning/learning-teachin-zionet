@@ -14,7 +14,7 @@ import "./index.css";
 import App from "./App.tsx";
 
 initAppInsights("student");
-initializeSentry();
+initializeSentry({ appName: "student" });
 
 // const HUB_URL = "http://localhost:5280/notificationHub";
 const BASE_URL = import.meta.env.VITE_BASE_URL!;
