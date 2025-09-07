@@ -231,7 +231,7 @@ jobs:
         run: |
           BACKEND_KEY="${{ env.backend_key }}"
           STORAGE_ACCOUNT="teachintfstate"
-          CONTAINER_NAME="tfstate"
+          CONTAINER_NAME="tfstate-aks"
           
           if [ "${{ env.dry_run }}" = "true" ]; then
             echo "DRY RUN: Would clean up Terraform state file: $BACKEND_KEY"
