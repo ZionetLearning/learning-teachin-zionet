@@ -66,7 +66,9 @@ public static class UsersEndpoints
 
             // Detect UI language from Accept-Language header
             var acceptLanguage = httpContext.Request.Headers["Accept-Language"].FirstOrDefault();
-            logger.LogInformation("Raw Accept-Language header received: {Header}", acceptLanguage ?? "<null>");
+            var sanitizedAcceptLanguage = acceptLanguage?.Replace("\r", string.Empty).Replace("\n", string.Empty);
+            logger.LogInformation("Raw Accept-Language header received: {Header}", sanitizedAcceptLanguage ?? "<null>");
+
             var preferredLanguage = UserDefaultsHelper.ParsePreferredLanguage(acceptLanguage);
             logger.LogInformation("Parsed PreferredLanguageCode: {PreferredLanguage}", preferredLanguage);
 
