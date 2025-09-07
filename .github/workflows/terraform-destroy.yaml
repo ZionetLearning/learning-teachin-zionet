@@ -103,20 +103,20 @@ jobs:
           
           # Protect dev environment from deletion (unless it's a dry run)
           if [ "$ENVIRONMENT_NAME" = "dev" ] && [ "$DRY_RUN" != "true" ]; then
-            echo "❌ ERROR: The 'dev' environment is protected and cannot be destroyed!"
-            echo "ℹ️ The 'dev' environment contains shared resources used by other environments."
-            echo "💡 If you need to preview what would be destroyed, use the dry-run option."
-            echo "🛡️ This is a safety measure to prevent accidental deletion of critical infrastructure."
+            echo "ERROR: The 'dev' environment is protected and cannot be destroyed!"
+            echo "The 'dev' environment contains shared resources used by other environments."
+            echo "If you need to preview what would be destroyed, use the dry-run option."
+            echo "This is a safety measure to prevent accidental deletion of critical infrastructure."
             exit 1
           fi
           
           if [ "$ENVIRONMENT_NAME" = "dev" ] && [ "$DRY_RUN" = "true" ]; then
-            echo "⚠️ WARNING: Running dry-run on protected 'dev' environment"
-            echo "🔍 This will show what would be destroyed, but dev environment is normally protected"
+            echo "WARNING: Running dry-run on protected 'dev' environment"
+            echo "This will show what would be destroyed, but dev environment is normally protected"
           fi
           
-          echo "📄 Using tfvars file: $TFVARS_FILE"
-          echo "🔍 Dry run mode: $DRY_RUN"
+          echo "Using tfvars file: $TFVARS_FILE"
+          echo "Dry run mode: $DRY_RUN"
           
           echo "environment_name=$ENVIRONMENT_NAME" >> $GITHUB_ENV
           echo "TFVARS_FILE=$TFVARS_FILE" >> $GITHUB_ENV
