@@ -42,7 +42,11 @@ public sealed class ChatTitleService : IChatTitleService
         }
 
         var prompt = await _accessorClient.GetPromptAsync(PromptsKeys.ChatTitlePrompt, ct);
-        var system = prompt!.Content ?? throw new InvalidOperationException("Prompt content is null");
+        if (prompt is null)
+        {
+            throw new InvalidOperationException("Chat title prompt not found");
+        }
+        var system = prompt.Content ?? throw new InvalidOperationException("Prompt content is null");
 
         var tmp = new ChatHistory();
         tmp.AddSystemMessage(system);
