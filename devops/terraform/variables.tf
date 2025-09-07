@@ -32,31 +32,31 @@ variable "management_subnet_prefix" {
 variable "aks_subnet_name" {
   description = "Name for AKS subnet."
   type        = string
-  default     = "aks-dev-subnet"
+  default     = "aks-subnet"
 }
 
 variable "db_subnet_name" {
   description = "Name for database subnet."
   type        = string
-  default     = "db-dev-subnet"
+  default     = "db-subnet"
 }
 
 variable "integration_subnet_name" {
   description = "Name for integration subnet."
   type        = string
-  default     = "integration-dev-subnet"
+  default     = "integration-subnet"
 }
 
 variable "management_subnet_name" {
   description = "Name for management subnet."
   type        = string
-  default     = "management-dev-subnet"
+  default     = "management-subnet"
 }
 
 variable "vnet_name" {
   description = "Name for the VNet."
   type        = string
-  default     = "dev-vnet"
+  default     = "vnet"
 }
 
 #------------- General Variables -------------
