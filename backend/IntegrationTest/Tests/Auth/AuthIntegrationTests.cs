@@ -86,7 +86,7 @@ public class AuthIntegrationTests : AuthTestBase
     }
 
 
-    [Fact(DisplayName = "Refresh with invalid refresh token should fail")]
+    [Fact(DisplayName = "Refresh with invalid refresh token should return 401 Unauthorized")]
     public async Task Refresh_ShouldReturnUnauthorized()
     {
         var user = _sharedFixture.UserFixture.TestUser;
@@ -95,24 +95,38 @@ public class AuthIntegrationTests : AuthTestBase
         loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var (refreshToken, csrfToken) = ExtractTokens(loginResponse);
+        refreshToken.Should().NotBeNullOrWhiteSpace();
         csrfToken.Should().NotBeNullOrWhiteSpace();
+
+        // Create a new HttpClient that does not send stored cookies (works in HTTPS)
+        var handler = new HttpClientHandler
+        {
+            UseCookies = false
+        };
+
+        using var isolatedClient = new HttpClient(handler)
+        {
+            BaseAddress = Client.BaseAddress
+        };
 
         var request = new HttpRequestMessage(HttpMethod.Post, AuthRoutes.Refresh)
         {
             Headers =
-            {
-                { "X-CSRF-Token", csrfToken! },
-                { "Cookie", $"refreshToken=InvalidToken" }
-            }
+        {
+            { "X-CSRF-Token", csrfToken! },
+            { "Cookie", "refreshToken=InvalidToken" }
+        }
         };
-        var refreshResponse = await Client.SendAsync(request);
+
+        var refreshResponse = await isolatedClient.SendAsync(request);
+
         refreshResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
 
-        // Clear the refreshSessions
         var logoutResponse = await LogoutAsync(refreshToken!);
         logoutResponse.StatusCode.Should().Be(HttpStatusCode.OK);
     }
-    
+
+
 
     [Fact(DisplayName = "Access token allows access to protected endpoint")]
     public async Task AccessToken_ShouldAllowAccessToProtectedEndpoint()
