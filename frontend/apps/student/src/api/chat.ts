@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import { apiClient as axios } from "@app-providers";
 import { toast } from "react-toastify";
 import { EventType } from "@app-providers/types";
 import { useSignalR } from "@student/hooks";

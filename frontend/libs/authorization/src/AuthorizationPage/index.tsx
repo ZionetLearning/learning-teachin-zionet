@@ -80,7 +80,9 @@ export const AuthorizationPage = () => {
           >
             {role === "teacher"
               ? t("pages.auth.teacherDashboard")
-              : t("pages.auth.studentDashboard")}
+              : role === "student"
+                ? t("pages.auth.studentDashboard")
+                : t("pages.auth.adminDashboard")}
           </h2>
           <div className={classes.authPageTabs}>
             {[authMode.login, authMode.signup].map((tab) => (
