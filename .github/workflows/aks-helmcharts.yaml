@@ -298,11 +298,6 @@ jobs:
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false
 
-      - name: Skip pod deployment
-        if: ${{ inputs.deploy_pods == 'no' || github.event.inputs.deploy_pods == 'no' }}
-        run: |
-          echo "⏭️ Skipping pod deployment as deploy_pods is set to 'no'"
-          echo "✅ Platform setup completed, but no application pods will be deployed"
 
       - name: Diagnostics (on failure)
         if: failure()
