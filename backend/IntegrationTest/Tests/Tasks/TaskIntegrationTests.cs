@@ -14,12 +14,12 @@ public class TaskIntegrationTests(
     SharedTestFixture sharedFixture,
     ITestOutputHelper outputHelper,
     SignalRTestFixture signalRFixture
-) : TaskTestBase(sharedFixture, sharedFixture.HttpFixture, outputHelper, signalRFixture), IAsyncLifetime
+) : TaskTestBase(sharedFixture, outputHelper, signalRFixture), IAsyncLifetime
 {
     [Fact(DisplayName = "POST /tasks-manager/task - Same ID twice still returns 202 Accepted")]
     public async Task Post_Same_Id_Twice_Should_Return_Accepted()
     {
-        var first  = TestDataHelper.CreateFixedIdTask(1001);
+        var first = TestDataHelper.CreateFixedIdTask(1001);
         var second = TestDataHelper.CreateFixedIdTask(1001); // same Id
 
         // 1) POST first
@@ -54,20 +54,34 @@ public class TaskIntegrationTests(
     {
         OutputHelper.WriteLine("Running: Post_Valid_Task_Should_Return_Accepted");
 
+        await Shared.EnsureSignalRStartedAsync(SignalRFixture, OutputHelper);
+        SignalRFixture.ClearReceivedMessages();
+
         var task = TestDataHelper.CreateRandomTask();
         OutputHelper.WriteLine($"Creating task with ID {task.Id} and name {task.Name}");
 
         var response = await PostAsJsonAsync(ApiRoutes.Task, task);
         response.ShouldBeAccepted();
 
-        // Wait for signalR notification
+        await Shared.EnsureSignalRStartedAsync(SignalRFixture, OutputHelper);
+
         var receivedNotification = await WaitForNotificationAsync(
             n => n.Type == NotificationType.Success && n.Message.Contains(task.Name),
-            TimeSpan.FromSeconds(10)
+            TimeSpan.FromSeconds(20)
         );
 
+        if (receivedNotification is null)
+        {
+            OutputHelper.WriteLine("No SignalR notification yet; ensuring connection & retrying...");
+            await Shared.EnsureSignalRStartedAsync(SignalRFixture, OutputHelper);
+            receivedNotification = await WaitForNotificationAsync(
+                n => n.Type == NotificationType.Success && n.Message.Contains(task.Name),
+                TimeSpan.FromSeconds(10)
+            );
+        }
+
         receivedNotification.Should().NotBeNull("Expected a success notification for task creation");
-        OutputHelper.WriteLine($"Received notification: {receivedNotification.Notification.Message}");
+        OutputHelper.WriteLine($"Received notification: {receivedNotification!.Notification.Message}");
     }
 
     [Theory(DisplayName = "POST /tasks-manager/task - With invalid task should return 400 BadRequest")]

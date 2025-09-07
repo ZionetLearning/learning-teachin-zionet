@@ -1,11 +1,11 @@
 import { useMutation, UseMutationOptions } from "@tanstack/react-query";
-import axios from "axios";
 import {
   extractCsrf,
   storeCsrf,
   getCsrf,
   clearCsrf,
-} from "@app-providers/auth";
+  apiClient as axios,
+} from "@app-providers";
 
 export interface LoginRequest {
   email: string;
