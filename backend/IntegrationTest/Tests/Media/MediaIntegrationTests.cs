@@ -1,12 +1,7 @@
-using System;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
 using FluentAssertions;
 using IntegrationTests.Fixtures;
 using Microsoft.CognitiveServices.Speech;
 using Microsoft.CognitiveServices.Speech.Audio;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace IntegrationTests.Tests.Media;
@@ -16,7 +11,7 @@ public class MediaIntegrationTests(
     SharedTestFixture sharedFixture,
     ITestOutputHelper outputHelper,
     SignalRTestFixture signalRFixture
-) : MediaTestBase(sharedFixture, outputHelper, signalRFixture), IAsyncLifetime
+) : MediaTestBase(sharedFixture, outputHelper, signalRFixture)
 {
     [Fact(DisplayName = "GET /media-manager/speech/token - Should return a token")]
     public async Task Get_Speech_Token_Should_Return_Token()
@@ -32,52 +27,46 @@ public class MediaIntegrationTests(
         token.Should().NotBeNullOrWhiteSpace();
 
         var region = "eastus";
+        var text = "hello world";
 
-        // 1) Create audio by synthesizing "hello world"
-        var audioConfig = await CreateSpeechAudioConfigAsync(token, region, "hello world");
-
-        // 2) Recognize that audio again with STT (loopback test)
+        // --- TTS synthesize into memory ---
         var speechConfig = SpeechConfig.FromAuthorizationToken(token, region);
-        using var recognizer = new SpeechRecognizer(speechConfig, audioConfig);
+        speechConfig.SpeechSynthesisVoiceName = "en-US-JennyNeural";
 
-        var result = await recognizer.RecognizeOnceAsync();
-
-        result.Should().NotBeNull();
-        result.Reason.Should().Be(ResultReason.RecognizedSpeech);
-        result.Text.Should().NotBeNull();
-        result.Text.Should().ContainEquivalentOf("hello world");
-    }
-
-    private static async Task<AudioConfig> CreateSpeechAudioConfigAsync(string token, string region, string text)
-    {
-        // Use the token to auth
-        var speechConfig = SpeechConfig.FromAuthorizationToken(token, region);
-        speechConfig.SpeechSynthesisVoiceName = "en-US-JennyNeural"; // pick a neural voice
-
-        // We will synthesize into a memory stream and then push to STT recognizer
         var pullStream = AudioOutputStream.CreatePullStream();
-        using var audioConfig = AudioConfig.FromStreamOutput(pullStream);
-        using var synthesizer = new SpeechSynthesizer(speechConfig, audioConfig);
+        using var synthAudioConfig = AudioConfig.FromStreamOutput(pullStream);
+        using var synthesizer = new SpeechSynthesizer(speechConfig, synthAudioConfig);
 
-        var result = await synthesizer.SpeakTextAsync(text);
-        result.Reason.Should().BeOneOf(ResultReason.SynthesizingAudioCompleted);
-        
-        // Copy audio bytes into a push stream so we can feed it back into STT recognizer
+        var ttsResult = await synthesizer.SpeakTextAsync(text);
+        ttsResult.Reason.Should().Be(ResultReason.SynthesizingAudioCompleted);
+
+        // --- feed TTS output back to STT recognizer ---
         var pushStream = AudioInputStream.CreatePushStream();
         _ = Task.Run(() =>
         {
             try
             {
-                pushStream.Write(result.AudioData);
+                pushStream.Write(ttsResult.AudioData);
                 pushStream.Close();
             }
-            catch
+            catch (Exception ex)
             {
-                /* ignore */
+                OutputHelper.WriteLine("Failed to write to push stream");
+                // Fail the test immediately if writing fails
+                throw new InvalidOperationException("Failed to write TTS audio into the STT input stream.", ex);
             }
         });
 
-        return AudioConfig.FromStreamInput(pushStream);
+        using var sttAudioConfig = AudioConfig.FromStreamInput(pushStream);
+        using var recognizer = new SpeechRecognizer(speechConfig, sttAudioConfig);
+
+        var sttResult = await recognizer.RecognizeOnceAsync();
+
+        // --- Assertions ---
+        sttResult.Should().NotBeNull();
+        sttResult.Reason.Should().Be(ResultReason.RecognizedSpeech);
+        sttResult.Text.Should().NotBeNullOrEmpty();
+        sttResult.Text.Should().ContainEquivalentOf("hello world"); // case-insensitive contain
     }
 
 }
