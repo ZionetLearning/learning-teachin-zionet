@@ -26,9 +26,13 @@ helm upgrade --install keda-http kedacore/keda-add-ons-http \
 echo "Verifying installation..."
 kubectl get pods -n "$KEDA_NAMESPACE"
 
-# Apply KEDA ScaledObjects
+# Apply KEDA ScaledObjects using helm template
 echo "Applying KEDA ScaledObjects..."
-kubectl apply -f ../kubernetes/charts/templates/keda --recursive
-
+helm template keda-objects ../kubernetes/charts/ \
+  --set keda.enabled=true \
+  --set global.namePrefix="$TARGET_NAMESPACE" \
+  --set global.environment="$IMAGE_TAG" \
+  --namespace "$TARGET_NAMESPACE" \
+  --show-only templates/keda/ | kubectl apply -f -
 
 echo "KEDA installation complete!"
