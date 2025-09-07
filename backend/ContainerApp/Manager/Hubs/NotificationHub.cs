@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
 
 namespace Manager.Hubs;
 
+[Authorize]
 public class NotificationHub : Hub<INotificationClient>
 {
     private readonly ILogger<NotificationHub> _logger;
@@ -13,7 +15,9 @@ public class NotificationHub : Hub<INotificationClient>
 
     public override async Task OnConnectedAsync()
     {
-        _logger.LogInformation("Client connected: {ConnectionId}", Context.ConnectionId);
+        _logger.LogInformation(
+            "Conn={Conn} UserIdentifier={UserId} Name={Name}",
+            Context.ConnectionId, Context.UserIdentifier, Context.User?.Identity?.Name);
         await base.OnConnectedAsync();
     }
 

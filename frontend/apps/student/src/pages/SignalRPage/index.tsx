@@ -53,7 +53,7 @@ export const SignalRPage = () => {
         <b style={{ color: status === "connected" ? "green" : "red" }}>
           {status}
         </b>
-        <br /> userId: {userId}
+        <br /> userId: {userId || "Not authenticated"}
       </Typography>
 
       <TaskForm
