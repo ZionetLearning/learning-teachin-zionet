@@ -61,26 +61,6 @@ namespace Accessor.Migrations
                     b.ToTable("ChatHistorySnapshots", (string)null);
                 });
 
-            modelBuilder.Entity("Accessor.Models.IdempotencyRecord", b =>
-                {
-                    b.Property<string>("IdempotencyKey")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset?>("ExpiresAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.HasKey("IdempotencyKey");
-
-                    b.ToTable("Idempotency", (string)null);
-                });
-
             modelBuilder.Entity("Accessor.Models.RefreshSessionsRecord", b =>
                 {
                     b.Property<Guid>("Id")

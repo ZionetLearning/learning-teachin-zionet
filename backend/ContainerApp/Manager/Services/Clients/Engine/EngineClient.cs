@@ -4,6 +4,7 @@ using Dapr.Client;
 using Manager.Constants;
 using Manager.Models;
 using Manager.Models.QueueMessages;
+using Manager.Models.Sentences;
 using Manager.Models.Speech;
 using Manager.Services.Clients.Engine.Models;
 
@@ -143,6 +144,15 @@ public class EngineClient : IEngineClient
                 data: request,
                 cancellationToken: cancellationToken);
 
+            if (result != null)
+            {
+                result.Metadata ??= new SpeechMetadata();
+                if (string.IsNullOrWhiteSpace(result.Metadata.ContentType))
+                {
+                    result.Metadata.ContentType = "audio/mpeg";
+                }
+            }
+
             return result;
         }
         catch (InvocationException ex) when (ex.InnerException is HttpRequestException httpEx && httpEx.Message.Contains("408"))
@@ -159,6 +169,30 @@ public class EngineClient : IEngineClient
         {
             _logger.LogError(ex, "Error communicating with speech engine");
             return null;
+        }
+    }
+    public async Task<(bool success, string message)> GenerateSentenceAsync(SentenceRequest request)
+    {
+        try
+        {
+            var payload = JsonSerializer.SerializeToElement(request);
+            var message = new Message
+            {
+                ActionName = MessageAction.GenerateSentences,
+                Payload = payload
+            };
+            await _daprClient.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message);
+
+            _logger.LogDebug(
+                "Generate request sent to Engine via binding '{Binding}'",
+                QueueNames.EngineQueue
+            );
+            return (true, "sent to engine");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send request for generation to Engine");
+            throw;
         }
     }
 }
