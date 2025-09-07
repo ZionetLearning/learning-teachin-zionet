@@ -60,6 +60,7 @@
     "three": "^0.178.0",
     "three-stdlib": "^2.36.0",
     "ts-node": "^10.9.2",
+    "vite-plugin-mkcert": "^1.17.8",
     "yup": "^1.6.1"
   },
   "devDependencies": {
@@ -109,7 +110,7 @@
     "vite-tsconfig-paths": "^4.3.2",
     "vitest": "^3.2.4"
   },
-    "pnpm": {
+  "pnpm": {
     "overrides": {
       "react": "18.2.0",
       "react-dom": "18.2.0"
