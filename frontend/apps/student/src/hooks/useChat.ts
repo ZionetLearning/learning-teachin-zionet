@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useSendChatMessage } from "@student/api";
-import { useSignalR } from "./";
+import { useAuth } from "@app-providers/auth";
+import { decodeJwtPayload } from "@app-providers/auth/utils";
 import type { ChatRequest, ChatResponse } from "@student/api";
 
 export type ChatPosition = "left" | "right";
@@ -17,6 +18,7 @@ export interface ChatMessage {
 export const useChat = () => {
   const [threadId, setThreadId] = useState<string | undefined>(undefined);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const { accessToken } = useAuth();
 
   const {
     mutate: sendChatMessage,
@@ -24,7 +26,12 @@ export const useChat = () => {
     isPending,
   } = useSendChatMessage();
 
-  const { userId } = useSignalR();
+  const userId = useMemo(() => {
+    if (!accessToken) return null;
+    const payload = decodeJwtPayload(accessToken);
+    if (!payload) return null;
+    return payload.userId as string;
+  }, [accessToken]);
 
   const pushUser = (text: string) => {
     const userMsg: ChatMessage = {
@@ -49,7 +56,7 @@ export const useChat = () => {
   };
 
   const sendMessage = (userText: string) => {
-    if (!userText.trim()) return;
+    if (!userText.trim() || !userId) return;
 
     const payload: ChatRequest = {
       userMessage: userText,
@@ -63,7 +70,6 @@ export const useChat = () => {
     // call API
     sendChatMessage(payload, {
       onSuccess: (data: ChatResponse) => {
-        console.log("Chat message sent successfully:", data);
         setThreadId(data.threadId);
 
 
@@ -81,7 +87,7 @@ export const useChat = () => {
   };
 
   const sendMessageAsync = async (userText: string): Promise<string> => {
-    if (!userText.trim()) return "";
+    if (!userText.trim() || !userId) return "";
 
     const payload: ChatRequest = {
       userMessage: userText,
