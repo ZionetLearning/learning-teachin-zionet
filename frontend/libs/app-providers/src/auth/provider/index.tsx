@@ -1,75 +1,178 @@
-import { ReactNode, useCallback, useEffect, useState } from "react";
+import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 
-import { AuthContext } from "@app-providers/context";
-import { AppRoleType, Credentials, SignupData } from "@app-providers/types";
+import {
+  AppRoleType,
+  AuthContext,
+  Credentials,
+  decodeJwtExp,
+  SignupData,
+  useCreateUser,
+  useLoginMutation,
+  useLogoutMutation,
+  useRefreshTokensMutation,
+} from "@app-providers";
 
 export interface AuthProviderProps {
   children: ReactNode;
   appRole: AppRoleType;
 }
 
+const MIN_REFRESH_DELAY_MS = 5_000;
+const FALLBACK_TOKEN_EXPIRY_MS = 15 * 60 * 1000;
+
 export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
-  const [credentials, setCredentials] = useState<Credentials | null>(() => {
-    let stored: Credentials = {} as Credentials;
-
-    try {
-      stored = JSON.parse(localStorage.getItem("credentials") || "{}");
-    } catch (error) {
-      console.warn("Error parsing credentials:", error);
-      logout();
+  const refreshTimerRef = useRef<number | null>(null);
+  const refreshSkewMs = 60_000;
+  const [credentials, setCredentials] = useState<Credentials | null>(
+    function getCredentialsFromLocalStorage() {
+      try {
+        const raw = localStorage.getItem("credentials");
+        if (!raw) return null;
+        const parsed = JSON.parse(raw) as Partial<
+          Credentials & { sessionExpiry?: number; password?: string }
+        >;
+        if (
+          parsed &&
+          parsed.email &&
+          parsed.accessToken &&
+          parsed.accessTokenExpiry
+        ) {
+          if (Date.now() < parsed.accessTokenExpiry) {
+            return {
+              email: parsed.email,
+              accessToken: parsed.accessToken,
+              accessTokenExpiry: parsed.accessTokenExpiry,
+              role: parsed.role,
+            };
+          } else {
+            localStorage.removeItem("credentials");
+          }
+        } else if (parsed && parsed.email && parsed.sessionExpiry) {
+          localStorage.removeItem("credentials");
+        }
+      } catch (error) {
+        console.warn("Error parsing credentials:", error);
+        localStorage.removeItem("credentials");
+      }
       return null;
-    }
-    const { email, password, sessionExpiry, role } = stored;
-    const expiry = Number(sessionExpiry);
-    if (email && password && expiry && Date.now() < expiry) {
-      return { email, password, sessionExpiry: expiry, role };
-    }
+    },
+  );
 
-    localStorage.removeItem("credentials");
-    return null;
+  const {
+    mutateAsync: loginMutation,
+    isPending: isLoggingIn,
+    error: loginError,
+  } = useLoginMutation({
+    onSuccess: (data, vars) => {
+      persistSession(vars.email, data.accessToken, appRole);
+    },
+    onError: (err) => {
+      console.error("Login error", err);
+      logout();
+    },
   });
 
-  const logout = useCallback(() => {
+  const {
+    mutateAsync: createUserMutation,
+    isPending: isCreatingUser,
+    error: createUserError,
+  } = useCreateUser();
+
+  const { mutateAsync: refreshTokens, isPending: isRefreshing } =
+    useRefreshTokensMutation();
+
+  const { mutateAsync: logoutServerMutation, isPending: isLoggingOut } =
+    useLogoutMutation();
+
+  const clearSession = useCallback(() => {
     localStorage.removeItem("credentials");
     setCredentials(null);
   }, []);
 
-  useEffect(
-    function checkAuth() {
-      if (!credentials) return;
-      const ms = credentials.sessionExpiry - Date.now();
-      if (ms <= 0) {
-        logout();
-        return;
-      }
-      const timer = setTimeout(logout, ms);
-      return () => clearTimeout(timer);
+  const login = useCallback(
+    async (email: string, password: string) => {
+      await loginMutation({ email, password });
     },
-    [credentials, logout],
+    [loginMutation],
   );
 
+  const logout = useCallback(async () => {
+    try {
+      await logoutServerMutation();
+    } catch (e) {
+      console.warn("Logout error", e);
+    } finally {
+      clearSession();
+    }
+  }, [logoutServerMutation, clearSession]);
+
   const persistSession = useCallback(
-    (email: string, password: string, role: AppRoleType) => {
-      const sessionExpiry = Date.now() + 10 * 60 * 60 * 1000; // 10h
-      const creds = { email, password, sessionExpiry, role };
+    (email: string, accessToken: string, role?: AppRoleType) => {
+      const decodedExp = decodeJwtExp(accessToken);
+      const fallback = Date.now() + FALLBACK_TOKEN_EXPIRY_MS;
+      const accessTokenExpiry =
+        decodedExp && decodedExp > Date.now() ? decodedExp : fallback;
+      const creds: Credentials = {
+        email,
+        accessToken,
+        accessTokenExpiry,
+        role,
+      };
       localStorage.setItem("credentials", JSON.stringify(creds));
       setCredentials(creds);
     },
     [],
   );
 
-  const login = useCallback(
-    (email: string, password: string) => {
-      persistSession(email, password, appRole);
+  const signup = useCallback(
+    async (data: SignupData) => {
+      await createUserMutation({
+        email: data.email,
+        password: data.password,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        role: data.role,
+      });
+      await login(data.email, data.password);
     },
-    [appRole, persistSession],
+    [createUserMutation, login],
   );
 
-  const signup = useCallback(
-    (data: SignupData) => {
-      persistSession(data.email, data.password, data.role);
+  const clearRefreshTimer = useCallback(() => {
+    if (refreshTimerRef.current !== null) {
+      clearTimeout(refreshTimerRef.current);
+      refreshTimerRef.current = null;
+    }
+  }, []);
+
+  const scheduleRefresh = useCallback(
+    (creds: Credentials) => {
+      clearRefreshTimer();
+      const now = Date.now();
+      const target = creds.accessTokenExpiry - refreshSkewMs;
+      let delay = target - now;
+      if (delay < MIN_REFRESH_DELAY_MS) delay = MIN_REFRESH_DELAY_MS;
+      refreshTimerRef.current = window.setTimeout(async () => {
+        try {
+          const { accessToken } = await refreshTokens();
+          persistSession(creds.email, accessToken, creds.role);
+        } catch {
+          clearSession();
+        }
+      }, delay);
     },
-    [persistSession],
+    [clearRefreshTimer, refreshTokens, persistSession, clearSession],
+  );
+
+  useEffect(
+    function handleRefresh() {
+      if (credentials) {
+        scheduleRefresh(credentials);
+        return () => clearRefreshTimer();
+      }
+      clearRefreshTimer();
+    },
+    [credentials, scheduleRefresh, clearRefreshTimer],
   );
 
   return (
@@ -80,6 +183,12 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
         login,
         signup,
         logout,
+        accessToken: credentials?.accessToken || null,
+        loginStatus: {
+          isLoading:
+            isLoggingIn || isCreatingUser || isRefreshing || isLoggingOut,
+          error: loginError || createUserError,
+        },
       }}
     >
       {children}

@@ -2,7 +2,7 @@ import { createUseStyles } from "react-jss";
 
 export const useStyles = createUseStyles({
   authPageBackground: {
-    height: "100%",
+    minHeight: "100vh",
     width: "100%",
     boxSizing: "border-box",
     padding: "1rem",
@@ -10,6 +10,9 @@ export const useStyles = createUseStyles({
     flexDirection: "column",
     alignItems: "center",
     background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    backgroundRepeat: "no-repeat",
+    backgroundAttachment: "fixed",
+    overflowY: "auto",
   },
   authPageHeader: {
     marginTop: "6vh",
