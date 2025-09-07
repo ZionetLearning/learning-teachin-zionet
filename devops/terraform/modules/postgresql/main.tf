@@ -21,7 +21,8 @@ resource "azurerm_postgresql_flexible_server" "this" {
     active_directory_auth_enabled = var.active_directory_auth_enabled
   }
 
-  delegated_subnet_id = var.delegated_subnet_id
+  # Connect PostgreSQL to the dedicated database subnet
+  delegated_subnet_id = var.db_subnet_id
 
   # Add lifecycle rule to prevent zone changes
   lifecycle {

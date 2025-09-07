@@ -1,28 +1,21 @@
-#------------- Shared AKS Configuration -------------
-# Using existing dev cluster to save costs
-use_shared_aks         = true   # Use shared dev cluster to save costs
-shared_aks_cluster_name     = "aks-cluster-dev"
-shared_resource_group   = "dev-zionet-learning-2025"
-#-------------------------------------- 
-environment_name       = "prod"
+#------------- AKS Configuration -------------
+use_shared_aks         = false   # If false, create aks ; if true, use shared aks 
+aks_cluster_name        = "aks-cluster-prod"
 kubernetes_namespace   = "prod"
 #------------- Resource Configuration -------------
 location               = "westeurope"
-
+environment_name       = "prod"
 #------------- Shared Posgtres  Configuration -------------
-use_shared_postgres        = true  # If false, create server (dev); if true, use shared server (non-dev)
-
+use_shared_postgres        = false  # If false, create server ; if true, use shared server 
 #------------- Azure Configuration-------------------
 subscription_id        = "90ea4c2f-1eee-4ec9-927d-ed24c563003e"
 tenant_id              = "a814ee32-f813-4a36-9686-1b9268183e27"
-
 #---- docker hub ----------------------------
 docker_registry        = "snir1551"
-
 #------------- Frontend Configuration -------------
 frontend_sku_tier      = "Free"    
 frontend_sku_size      = "Free"    
 frontend_apps          = ["student", "teacher", "admin"]
-
 #------------- Redis Shared Instance -------------
-use_shared_redis = true  # prod uses shared Redis instance
+use_shared_redis = false  # If false, create server ; if true, use shared server 
+redis_name = redis-teachin-prod

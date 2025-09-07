@@ -40,4 +40,10 @@ variable "prefix" {
   type        = string	
   description = "Prefix for naming resources"	
   default     = "dev" # or whatever you want	
+}
+
+variable "aks_subnet_id" {
+  description = "ID of the subnet where AKS nodes will be deployed"
+  type        = string
+  default     = null
 }	

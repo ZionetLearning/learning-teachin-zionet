@@ -215,12 +215,7 @@ variable "geo_redundant_backup_enabled" {
   description = "Enable geo-redundant backups for PostgreSQL"
   default     = false
 }
-# delegated_subnet_id
-variable "delegated_subnet_id" {
-  type        = string
-  description = "ID of the delegated subnet for PostgreSQL"
-  default     = null
-}
+
 # database_name
 variable "database_name" {
   type        = string

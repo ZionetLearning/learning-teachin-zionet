@@ -18,6 +18,8 @@ resource "azurerm_redis_cache" "this" {
 
   minimum_tls_version = "1.2"
   shard_count         = var.shard_count
+  
+  # Note: VNet integration removed - Basic SKU uses public endpoint with firewall rules
 
   redis_configuration {
     maxmemory_policy = "allkeys-lru"

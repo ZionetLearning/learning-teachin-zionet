@@ -9,14 +9,14 @@ module "network" {
   resource_group_name = var.shared_resource_group
 
   aks_subnet_name           = var.aks_subnet_name
-  aks_subnet_prefix        = var.aks_subnet_prefix
+  aks_subnet_prefix         = var.aks_subnet_prefix
   db_subnet_name            = var.db_subnet_name
-  db_subnet_prefix         = var.db_subnet_prefix
+  db_subnet_prefix          = var.db_subnet_prefix
   integration_subnet_name   = var.integration_subnet_name
   integration_subnet_prefix = var.integration_subnet_prefix
   management_subnet_name    = var.management_subnet_name
   management_subnet_prefix  = var.management_subnet_prefix
-  depends_on = [ azurerm_resource_group.main ]
+  depends_on                = [azurerm_resource_group.main]
 }
 
 ########################################
@@ -47,7 +47,11 @@ module "aks" {
   location            = var.location
   cluster_name        = var.aks_cluster_name
   vm_size             = var.vm_size
-  depends_on          = [azurerm_resource_group.main]
+  
+  # Connect AKS to the dedicated AKS subnet
+  aks_subnet_id       = module.network.aks_subnet_id
+  
+  depends_on          = [azurerm_resource_group.main, module.network]
 }
 
 # Local values to determine which cluster to use
@@ -97,7 +101,8 @@ module "database" {
   backup_retention_days        = var.backup_retention_days
   geo_redundant_backup_enabled = var.geo_redundant_backup_enabled
 
-  delegated_subnet_id = var.delegated_subnet_id
+  # Connect PostgreSQL to the dedicated database subnet
+  db_subnet_id = module.network.database_subnet_id
 
   environment_name = var.environment_name
   database_name    = "${var.database_name}-${var.environment_name}"
@@ -105,7 +110,7 @@ module "database" {
   use_shared_postgres = var.use_shared_postgres
   existing_server_id  = var.use_shared_postgres ? data.azurerm_postgresql_flexible_server.shared[0].id : null
 
-  depends_on = [azurerm_resource_group.main]
+  depends_on = [azurerm_resource_group.main, module.network]
 }
 
 module "signalr" {
@@ -126,16 +131,21 @@ data "azurerm_redis_cache" "shared" {
 
 # Create new Redis only if not using shared
 module "redis" {
-  count                = var.use_shared_redis ? 0 : 1
-  source               = "./modules/redis"
-  name                 = var.redis_name
-  location             = azurerm_resource_group.main.location
-  resource_group_name  = azurerm_resource_group.main.name
-  sku_name             = "Basic"
-  family               = "C"
-  capacity             = 0
-  shard_count          = 0
-  use_shared_redis     = false
+  count               = var.use_shared_redis ? 0 : 1
+  source              = "./modules/redis"
+  name                = var.redis_name
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  sku_name            = "Basic"
+  family              = "C"
+  capacity            = 0
+  shard_count         = 0
+  use_shared_redis    = false
+  
+  # Note: Redis uses public endpoint with firewall rules (Basic SKU)
+  # Private endpoint integration can be added later as separate module
+  
+  depends_on          = [azurerm_resource_group.main]
 }
 
 # Use shared Redis outputs if enabled, otherwise use module outputs
@@ -154,7 +164,7 @@ resource "azurerm_log_analytics_workspace" "main" {
   resource_group_name = azurerm_resource_group.main.name
   sku                 = "PerGB2018"
   retention_in_days   = 30
-  daily_quota_gb = 1
+  daily_quota_gb      = 1
 
   tags = {
     Environment = var.environment_name
@@ -170,16 +180,16 @@ module "monitoring" {
   count  = var.environment_name == "dev" ? 1 : 0
   source = "./modules/monitoring"
 
-  log_analytics_workspace_id  = local.log_analytics_workspace_id
-  servicebus_namespace_id     = module.servicebus.namespace_id
-  postgres_server_id          = module.database[0].id
-  signalr_id                  = module.signalr.id
-  redis_id                    = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].id : module.redis[0].id
-  frontend_static_web_app_id  = [for f in module.frontend : f.static_web_app_id]
+  log_analytics_workspace_id = local.log_analytics_workspace_id
+  servicebus_namespace_id    = module.servicebus.namespace_id
+  postgres_server_id         = module.database[0].id
+  signalr_id                 = module.signalr.id
+  redis_id                   = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].id : module.redis[0].id
+  frontend_static_web_app_id = [for f in module.frontend : f.static_web_app_id]
 
   frontend_application_insights_ids = [for f in module.frontend : f.application_insights_id]
 
-    depends_on = [
+  depends_on = [
     azurerm_log_analytics_workspace.main,
     module.servicebus,
     module.database,
@@ -261,27 +271,27 @@ resource "kubernetes_service_account" "environment" {
   depends_on = [kubernetes_namespace.environment]
 }
 
-module "frontend" {
-  for_each = toset(var.frontend_apps)
-  
-  source              = "./modules/frontend"
-  resource_group_name = azurerm_resource_group.main.name
-  location            = azurerm_resource_group.main.location
-  static_web_app_name = "${var.static_web_app_name}-${each.key}-${var.environment_name}"
-  sku_tier            = var.frontend_sku_tier
-  sku_size            = var.frontend_sku_size
-  appinsights_retention_days = var.frontend_appinsights_retention_days
-  appinsights_sampling_percentage = var.frontend_appinsights_sampling_percentage
-  
-  log_analytics_workspace_id = local.log_analytics_workspace_id
-  
-  tags = {
-    Environment = var.environment_name
-    Project     = "Frontend"
-  }
-  
-  depends_on = [azurerm_resource_group.main]
-}
+# module "frontend" {
+#   for_each = toset(var.frontend_apps)
+
+#   source                          = "./modules/frontend"
+#   resource_group_name             = azurerm_resource_group.main.name
+#   location                        = azurerm_resource_group.main.location
+#   static_web_app_name             = "${var.static_web_app_name}-${each.key}-${var.environment_name}"
+#   sku_tier                        = var.frontend_sku_tier
+#   sku_size                        = var.frontend_sku_size
+#   appinsights_retention_days      = var.frontend_appinsights_retention_days
+#   appinsights_sampling_percentage = var.frontend_appinsights_sampling_percentage
+
+#   log_analytics_workspace_id = local.log_analytics_workspace_id
+
+#   tags = {
+#     Environment = var.environment_name
+#     Project     = "Frontend"
+#   }
+
+#   depends_on = [azurerm_resource_group.main]
+# }
 
 
 # Reference the shared Key Vault instead of creating new ones
@@ -291,8 +301,8 @@ data "azurerm_key_vault" "shared" {
 }
 
 module "clustersecretstore" {
-  count       = var.environment_name == "dev" ? 1 : 0
-  source     = "./modules/clustersecretstore"
+  count       = var.environment_name == "dev" || var.environment_name == "prod" ? 1 : 0
+  source      = "./modules/clustersecretstore"
   identity_id = "0997f44d-fadf-4be8-8dc6-202f7302f680" # your AKS managed identity clientId
   tenant_id   = "a814ee32-f813-4a36-9686-1b9268183e27"
 }

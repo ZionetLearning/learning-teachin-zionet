@@ -66,9 +66,10 @@ variable "active_directory_auth_enabled" {
 #   default     = ""
 # }
 
-variable "delegated_subnet_id" {
+variable "db_subnet_id" {
   type        = string
-  description = "Delegated subnet ID if using VNet integration"
+  description = "ID of the dedicated database subnet for PostgreSQL VNet integration"
+  default     = null
 }
 
 variable "database_name" {
