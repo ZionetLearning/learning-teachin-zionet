@@ -316,6 +316,25 @@ public class AccessorClient(
         }
     }
 
+    public async Task<string> GetSpeechTokenAsync(CancellationToken ct = default)
+    {
+        _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetSpeechTokenAsync), nameof(AccessorClient));
+        try
+        {
+            var token = await _daprClient.InvokeMethodAsync<string>(
+                HttpMethod.Get,
+                AppIds.Accessor,
+                "media-accessor/speech/token",
+                ct);
+            return token ?? string.Empty;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get speech token from Accessor");
+            throw;
+        }
+    }
+
     public async Task<AuthenticatedUser?> LoginUserAsync(LoginRequest loginRequest, CancellationToken ct = default)
     {
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(LoginUserAsync), nameof(AccessorClient));

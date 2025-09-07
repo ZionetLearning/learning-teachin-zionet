@@ -31,6 +31,7 @@ builder.Services.AddQueue<Message, AccessorQueueHandler>(
 builder.Services.AddScoped<IAccessorService, AccessorService>();
 builder.Services.AddScoped<IManagerCallbackQueueService, ManagerCallbackQueueService>();
 builder.Services.AddScoped<IRefreshSessionService, RefreshSessionService>();
+builder.Services.AddScoped<ISpeechService, SpeechService>();
 
 var env = builder.Environment;
 
