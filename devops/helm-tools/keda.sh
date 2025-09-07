@@ -14,7 +14,7 @@ check_keda_pods_ready() {
     while [ $attempt -le $max_attempts ]; do
         # Count total pods and ready pods
         local total_pods=$(kubectl get pods -n "$KEDA_NAMESPACE" --no-headers 2>/dev/null | wc -l)
-        local ready_pods=$(kubectl get pods -n "$KEDA_NAMESPACE" --no-headers 2>/dev/null | grep -c "Running.*1/1\|Running.*2/2" || true)
+        local ready_pods=$(kubectl get pods -n "$KEDA_NAMESPACE" --no-headers 2>/dev/null | grep -c "1/1.*Running\|2/2.*Running" || true)
         
         echo "Attempt $attempt/$max_attempts: $ready_pods/$total_pods pods ready"
         
