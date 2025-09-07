@@ -161,6 +161,7 @@ jobs:
           echo "- Resource Group: ${{ env.environment_name }}-zionet-learning-2025"
           echo "- Kubernetes Namespace: ${{ env.environment_name }} (on shared AKS cluster)"
           echo "- Key Vault Secrets: ${{ env.environment_name }}-* (from shared Key Vault)"
+          echo "- PostgreSQL Databases: appdb-${{ env.environment_name }}* (from shared PostgreSQL server)"
           echo "- Service Bus, PostgreSQL database, Redis cache, and other Azure resources"
           echo "- Terraform state file: ${{ env.backend_key }}"
 
@@ -327,6 +328,55 @@ jobs:
             fi
           fi
 
+      - name: Clean up PostgreSQL Databases
+        run: |
+          PG_SERVER_NAME="dev-pg-zionet-learning"
+          RESOURCE_GROUP="dev-zionet-learning-2025"
+          ENVIRONMENT_PREFIX="${{ env.environment_name }}"
+          
+          if [ "${{ env.dry_run }}" = "true" ]; then
+            echo "DRY RUN: Would clean up PostgreSQL databases for environment: $ENVIRONMENT_PREFIX"
+            echo "PostgreSQL Server: $PG_SERVER_NAME"
+            
+            # List databases that would be deleted
+            echo "Databases that would be deleted:"
+            az postgres flexible-server db list --server-name "$PG_SERVER_NAME" --resource-group "$RESOURCE_GROUP" --query "[?starts_with(name, 'appdb-${ENVIRONMENT_PREFIX}')].name" -o tsv 2>/dev/null | while read db_name; do
+              if [ -n "$db_name" ]; then
+                echo "  - $db_name"
+              fi
+            done
+            
+            # Check if any databases match the pattern
+            DB_COUNT=$(az postgres flexible-server db list --server-name "$PG_SERVER_NAME" --resource-group "$RESOURCE_GROUP" --query "[?starts_with(name, 'appdb-${ENVIRONMENT_PREFIX}')] | length(@)" -o tsv 2>/dev/null || echo "0")
+            if [ "$DB_COUNT" -eq 0 ]; then
+              echo "  No databases found with pattern 'appdb-$ENVIRONMENT_PREFIX*'"
+            else
+              echo "  Found $DB_COUNT databases to delete"
+            fi
+          else
+            echo "Cleaning up PostgreSQL databases for environment: $ENVIRONMENT_PREFIX"
+            echo "PostgreSQL Server: $PG_SERVER_NAME"
+            
+            # Get list of databases that match the environment pattern
+            DATABASES_TO_DELETE=$(az postgres flexible-server db list --server-name "$PG_SERVER_NAME" --resource-group "$RESOURCE_GROUP" --query "[?starts_with(name, 'appdb-${ENVIRONMENT_PREFIX}')].name" -o tsv 2>/dev/null)
+            
+            if [ -z "$DATABASES_TO_DELETE" ]; then
+              echo "No databases found with pattern 'appdb-$ENVIRONMENT_PREFIX*' to delete"
+            else
+              echo "Found databases to delete:"
+              echo "$DATABASES_TO_DELETE" | while read db_name; do
+                if [ -n "$db_name" ]; then
+                  echo "  Deleting database: $db_name"
+                  az postgres flexible-server db delete --server-name "$PG_SERVER_NAME" --resource-group "$RESOURCE_GROUP" --database-name "$db_name" --yes 2>/dev/null && {
+                    echo "Successfully deleted: $db_name"
+                  } || {
+                    echo "Failed to delete: $db_name (may not exist or already deleted)"
+                  }
+                fi
+              done
+            fi
+          fi
+
       - name: Summary
         run: |
           if [ "${{ env.dry_run }}" = "true" ]; then
@@ -335,6 +385,7 @@ jobs:
             echo "Infrastructure (via Terraform destroy)"
             echo "Kubernetes namespace '${{ env.environment_name }}'"
             echo "Key Vault secrets with prefix '${{ env.environment_name }}-'"
+            echo "PostgreSQL databases with pattern 'appdb-${{ env.environment_name }}*'"
             echo "Terraform state file '${{ env.backend_key }}'"
             echo ""
             echo "No actual resources were destroyed - this was a preview only!"
@@ -344,6 +395,7 @@ jobs:
             echo "Infrastructure destroyed via Terraform"
             echo "Kubernetes namespace '${{ env.environment_name }}' cleaned up"
             echo "Key Vault secrets with prefix '${{ env.environment_name }}-' removed"
+            echo "PostgreSQL databases with pattern 'appdb-${{ env.environment_name }}*' removed"
             echo "Terraform state file '${{ env.backend_key }}' removed"
             echo ""
             echo "Environment '${{ env.environment_name }}' has been completely destroyed!"
