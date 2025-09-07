@@ -81,6 +81,6 @@ jobs:
     with:
       environment: ${{ inputs.environment || github.event.inputs.environment }}
       environment_name: ${{ inputs.environment_name || github.event.inputs.environment_name }}
-      skip_infra_steps: ${{ inputs.skip_infra_steps || false }}
+      skip_infra_steps: false
       use_keda: ${{ inputs.use_keda || github.event.inputs.use_keda || false }}
     secrets: inherit
