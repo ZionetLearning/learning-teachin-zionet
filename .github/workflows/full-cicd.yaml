@@ -78,11 +78,11 @@ jobs:
       environment: ${{ github.event.inputs.environment }}
       image_tag: ${{ needs.build-and-push-images.outputs.image_tag }}
       skip_infra_steps: false
-      use_keda: ${{ github.event.inputs.use_keda }}
+      use_keda: ${{ github.event.inputs.use_keda && 'true' || 'false' }}
     secrets: inherit
 
   keda-setup:
-    if: ${{ github.event.inputs.use_keda == true }}
+    if: ${{ github.event.inputs.use_keda == 'true' }}
     needs: [helmcharts-setup]
     uses: ./.github/workflows/aks-keda.yaml
     permissions:
