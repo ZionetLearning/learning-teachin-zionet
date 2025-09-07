@@ -2,8 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import * as Sentry from "@sentry/react";
-import { initializeSentry } from "@app-providers/observability";
-import { AuthProvider, initAppInsights, I18nTranslateProvider} from "@app-providers";
+import { AuthProvider, initAppInsights, I18nTranslateProvider, initializeSentry} from "@app-providers";
 import { AppRole } from "@app-providers/types";
 import App from "./App.tsx";
 
