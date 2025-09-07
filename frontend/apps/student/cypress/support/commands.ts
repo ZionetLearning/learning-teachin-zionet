@@ -20,51 +20,97 @@ const computeUsersApiBase = (): string => {
   return usersApiBase;
 };
 
+// Refactored login: use the SAME deterministic credentials every test.
+// Flow:
+// 1. Attempt login with fixed credentials.
+// 2. If login fails (user missing), switch to signup and create the user.
+// 3. Capture userId on first creation and reuse it (stored in Cypress env & createdUsers array).
+// Assumption: It's acceptable to delete this fixed user after each test; next test will recreate it.
+
 Cypress.Commands.add("login", () => {
   const appUrl = "https://localhost:4000";
-  const email = `e2e_user_${Date.now()}_${Math.floor(Math.random() * 1e6)}@example.com`;
-  const password = "Passw0rd!";
-  const record: { email: string; password: string; userId?: string } = {
-    email,
-    password,
-  };
-  createdUsers.push(record);
+  const email =
+    (Cypress.env("E2E_TEST_EMAIL") as string) || "e2e_fixed_user@example.com";
+  const password = (Cypress.env("E2E_TEST_PASSWORD") as string) || "Passw0rd!";
+
+  let record = createdUsers.find((r) => r.email === email);
+  if (!record) {
+    record = { email, password };
+    createdUsers.length = 0;
+    createdUsers.push(record);
+  }
   Cypress.env("e2eUser", record);
   computeUsersApiBase();
-  cy.log(`[e2e] Creating test user via signup: ${email}`);
+
+  cy.log(`[e2e] Login (or signup) with deterministic test user ${email}`);
+  cy.intercept("POST", "**/auth/login").as("loginRequest");
   cy.intercept("POST", "**/user").as("createUser");
+
   cy.visit(appUrl + "/");
-  cy.get('[data-testid="auth-tab-signup"]').click();
+  // Try LOGIN first.
+  cy.get('[data-testid="auth-tab-login"]').click();
   cy.get('[data-testid="auth-email"]').clear().type(email);
   cy.get('[data-testid="auth-password"]').clear().type(password);
-  cy.get('[data-testid="auth-confirm-password"]').clear().type(password);
-  cy.get('input[placeholder*="First" i]').clear().type("E2E");
-  cy.get('input[placeholder*="Last" i]').clear().type("User");
   cy.get('[data-testid="auth-submit"]').should("not.be.disabled").click();
-  cy.get('[data-testid="ps-sidebar-container-test-id"]').should("exist");
-  cy.wait("@createUser").then((intc) => {
-    const body = intc?.response?.body as { userId?: string } | undefined;
-    if (body?.userId) {
-      record.userId = body.userId;
-      cy.log(`[e2e] Captured created userId: ${body.userId}`);
+
+  cy.wait("@loginRequest").then((loginInt) => {
+    const status = loginInt?.response?.statusCode;
+    if (status === 200) {
+      cy.log(`[e2e] Logged in existing deterministic user ${email}`);
+      cy.get('[data-testid="ps-sidebar-container-test-id"]').should("exist");
+      if (!record!.userId) {
+        cy.window().then((win) => {
+          try {
+            const credsRaw = win.localStorage.getItem("credentials");
+            if (credsRaw) {
+              const parsed = JSON.parse(credsRaw);
+              if (parsed?.userId) {
+                record!.userId = parsed.userId;
+                cy.log(
+                  `[e2e] Derived userId from credentials: ${parsed.userId}`,
+                );
+              }
+            }
+          } catch {}
+        });
+      }
     } else {
-      cy.log("[e2e] Warning: userId not present in createUser response body");
+      cy.log(
+        `[e2e] Login failed with status ${status}; attempting signup for ${email}`,
+      );
+      cy.get('[data-testid="auth-tab-signup"]').click();
+      cy.get('[data-testid="auth-email"]').clear().type(email);
+      cy.get('[data-testid="auth-password"]').clear().type(password);
+      cy.get('[data-testid="auth-confirm-password"]').clear().type(password);
+      cy.get('input[placeholder*="First" i]').clear().type("E2E");
+      cy.get('input[placeholder*="Last" i]').clear().type("User");
+      cy.get('[data-testid="auth-submit"]').should("not.be.disabled").click();
+      cy.get('[data-testid="ps-sidebar-container-test-id"]').should("exist");
+      cy.wait("@createUser").then((intc) => {
+        const body = intc?.response?.body as { userId?: string } | undefined;
+        if (body?.userId) {
+          record!.userId = body.userId;
+          cy.log(`[e2e] Captured created userId: ${body.userId}`);
+        } else {
+          cy.log(
+            "[e2e] Warning: userId not present in createUser response body during signup",
+          );
+        }
+      });
     }
   });
 });
 
-export const deleteAllCreatedUsers = (verify = true) => {
+export const deleteAllCreatedUsers = () => {
   if (!createdUsers.length) return;
 
   const adminOrigin = "https://localhost:4002";
-  // Use first created user's credentials to sign into admin; delete this user last.
   const loginUser = createdUsers[0];
 
   const base =
     usersApiBase || Cypress.env("usersApiBase") || computeUsersApiBase();
   cy.log(`[e2e] Deleting ${createdUsers.length} test user(s)`);
 
-  // Login to admin origin (once) using cy.origin for cross-origin context.
   const ensureAdminLogin = () => {
     return cy
       .origin(
@@ -91,15 +137,11 @@ export const deleteAllCreatedUsers = (verify = true) => {
   };
 
   ensureAdminLogin().then(() => {
-    const deletionOrder =
-      createdUsers.length > 1
-        ? [...createdUsers.slice(1), loginUser]
-        : [...createdUsers];
-    // Perform deletions inside admin origin so its localStorage token is used.
+    const deletionOrder = [...createdUsers];
     cy.origin(
       adminOrigin,
-      { args: { deletionOrder, base, verify } },
-      async ({ deletionOrder, base, verify }) => {
+      { args: { deletionOrder, base } },
+      async ({ deletionOrder, base }) => {
         const credsRaw = localStorage.getItem("credentials");
         let token: string | undefined;
         try {
@@ -112,9 +154,6 @@ export const deleteAllCreatedUsers = (verify = true) => {
           Authorization: `Bearer ${token}`,
           Accept: "application/json, text/plain, */*",
         };
-
-        const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
         for (const u of deletionOrder) {
           if (!u.userId) {
             console.log("[e2e] Skip user without id", u.email);
@@ -136,53 +175,10 @@ export const deleteAllCreatedUsers = (verify = true) => {
           } catch (e) {
             console.warn(`[e2e] Delete error for ${u.email}:`, e);
           }
-          if (verify && ok) {
-            const attempts = 3;
-            for (let attempt = 1; attempt <= attempts; attempt++) {
-              try {
-                const listResp = await fetch(`${base}/user-list`, {
-                  headers: headersBase,
-                  credentials: "include",
-                });
-                if (!listResp.ok) break;
-                let data: any = null;
-                try {
-                  data = await listResp.json();
-                } catch {}
-                if (Array.isArray(data)) {
-                  const found = data.some(
-                    (r: any) => r?.userId === u.userId || r?.email === u.email,
-                  );
-                  if (!found) {
-                    console.log(`[e2e] Verified deletion of ${u.email}`);
-                    break;
-                  }
-                  if (attempt === attempts) {
-                    console.warn(
-                      `[e2e] WARNING: User ${u.email} still present after deletion attempts`,
-                    );
-                  } else {
-                    await sleep(300);
-                  }
-                } else {
-                  console.warn(
-                    "[e2e] Unexpected user-list response shape; skipping verification",
-                  );
-                  break;
-                }
-              } catch (e) {
-                if (attempt === attempts) {
-                  console.warn(
-                    `[e2e] Verification failed for ${u.email}: ${(e as any)?.message}`,
-                  );
-                } else {
-                  await sleep(300);
-                }
-              }
-            }
-          }
         }
       },
-    );
+    ).then(() => {
+      createdUsers.length = 0;
+    });
   });
 };

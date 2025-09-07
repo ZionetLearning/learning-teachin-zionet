@@ -5,6 +5,7 @@ Cypress.on("uncaught:exception", () => {
   return false;
 });
 
-afterEach(() => {
-  deleteAllCreatedUsers(true);
+// Run once after all tests in a spec file to remove the deterministic test user.
+after(() => {
+  deleteAllCreatedUsers();
 });
