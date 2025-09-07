@@ -46,6 +46,7 @@ public sealed class ChatTitleService : IChatTitleService
         {
             throw new InvalidOperationException("Chat title prompt not found");
         }
+
         var system = prompt.Content ?? throw new InvalidOperationException("Prompt content is null");
 
         var tmp = new ChatHistory();
