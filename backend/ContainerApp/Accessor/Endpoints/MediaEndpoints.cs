@@ -5,16 +5,15 @@ namespace Accessor.Endpoints;
 
 public static class MediaEndpoints
 {
-    public static IEndpointRouteBuilder MapMediaEndpoints(this IEndpointRouteBuilder app)
+    public static void MapMediaEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/media-accessor").WithTags("Media");
 
         group.MapGet("/speech/token", GetSpeechTokenAsync)
              .WithName("Accessor_GetSpeechToken");
-        return app;
     }
 
-    private static async Task<IResult> GetSpeechTokenAsync(
+    public static async Task<IResult> GetSpeechTokenAsync(
         [FromServices] ISpeechService speechService,
         CancellationToken ct)
     {

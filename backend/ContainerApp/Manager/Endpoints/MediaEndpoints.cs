@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Manager.Services.Clients.Accessor;
 
 namespace Manager.Endpoints;
 
@@ -6,7 +7,7 @@ public static class MediaEndpoints
 {
     private sealed class MediaEndpoint { }
 
-    public static IEndpointRouteBuilder MapMediaEndpoints(this IEndpointRouteBuilder app)
+    public static void MapMediaEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/media-manager")
             .WithTags("Media")
@@ -14,12 +15,10 @@ public static class MediaEndpoints
 
         group.MapGet("/speech/token", GetSpeechTokenAsync)
              .WithName("GetSpeechToken");
-
-        return app;
     }
 
     private static async Task<IResult> GetSpeechTokenAsync(
-        [FromServices] Manager.Services.Clients.Accessor.IAccessorClient accessorClient,
+        [FromServices] IAccessorClient accessorClient,
         [FromServices] ILogger<MediaEndpoint> logger,
         CancellationToken ct)
     {
