@@ -138,6 +138,7 @@ jobs:
         working-directory: ${{ env.TF_DIR }}
 
       - name: Get Terraform Outputs
+        if : false # Disable output retrieval for now
         id: terraform_output
         run: |
           echo "Getting terraform outputs..."

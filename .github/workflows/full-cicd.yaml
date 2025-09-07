@@ -76,6 +76,7 @@ jobs:
     secrets: inherit
  
   deploy-frontend:
+    if: false
     needs: [terraform-apply]
     uses: ./.github/workflows/deploy-frontend.yaml
     permissions:

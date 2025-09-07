@@ -56,112 +56,6 @@ flowchart TB
 ```
 
 
-```mermaid
-flowchart TB
-  %% ========= HIERARCHY INSIDE RESOURCE GROUP =========
-  subgraph RG["Resource Group: ${environment}-${rg_name}"]
-    direction TB
-
-    %% ========= VNET & SUBNETS =========
-    subgraph VNET["VNet: ${environment}-vnet  (10.10.0.0/16)"]
-      direction TB
-
-      %% Frontend
-      subgraph S1["Subnet: frontend (10.10.1.0/24)"]
-        AGW["Application Gateway (WAF)\nPublic IP"]
-        SWA["Static Web Apps\n(public service, logical)"]
-        NSG1["NSG: nsg-frontend"]
-      end
-
-      %% AKS (system/user/ingress)
-      subgraph S2["Subnets: aks-system / aks-user / aks-ingress"]
-        AKS["AKS (Private API)\nInternal Ingress (ILB)"]
-        Pods["Workloads (Pods)"]
-        NSG2["NSG: nsg-aks"]
-      end
-
-      %% App Service VNet Integration
-      subgraph S3["Subnet: appsvc-integration (10.10.21.0/24)"]
-        APPS["App Service x3\n(student/teacher/admin)\nVNet Integration"]
-        NSG3["NSG: nsg-appsvc-int"]
-      end
-
-      %% PostgreSQL Delegated Subnet
-      subgraph S4["Subnet: postgres-delegated (10.10.20.0/24)"]
-        PG[("PostgreSQL Flexible\n(Private VNet Integration)")]
-        NSG4["NSG: nsg-postgres"]
-      end
-
-      %% Private Endpoints NICs
-      subgraph S5["Subnet: pe-core (10.10.30.0/24)"]
-        PE_SB[("Private Endpoint: Service Bus")]
-        PE_REDIS[("Private Endpoint: Redis")]
-        PE_KV[("Private Endpoint: Key Vault")]
-        PE_ACR[("Private Endpoint: ACR")]
-        PE_SIG[("Private Endpoint: SignalR (optional)")]
-        NSG5["NSG: nsg-pe-core"]
-      end
-
-      %% Egress & DNS
-      NAT["NAT Gateway\n(single outbound IP)"]
-      DNS["Private DNS Zones\n(privatelink.*)"]
-    end
-
-    %% ========= PAAS RESOURCES (LOGICAL IN RG) =========
-    subgraph PAAS["PaaS Resources (in RG)"]
-      SB["Service Bus (namespace)"]
-      REDIS["Azure Cache for Redis"]
-      KV["Key Vault"]
-      ACR["Azure Container Registry"]
-      SIG["SignalR Service"]
-    end
-  end
-
-  %% ========= BINDINGS / RELATIONSHIPS =========
-  Internet([Internet]) -->|HTTPS| AGW
-  AGW -->|HTTPS| APPS
-  AGW -->|HTTPS| AKS
-
-  %% Private Endpoints map PaaS into VNet (NICs in pe-core)
-  PE_SB --- SB
-  PE_REDIS --- REDIS
-  PE_KV --- KV
-  PE_ACR --- ACR
-  PE_SIG --- SIG
-
-  %% Name resolution to private endpoints (quote the label!)
-  APPS -. "Resolve via Private DNS (privatelink.*)" .-> DNS
-  AKS  -. "Resolve via Private DNS (privatelink.*)" .-> DNS
-
-  %% Data paths (private)
-  APPS -->|PgSQL| PG
-  AKS  -->|PgSQL| PG
-  APPS --> PE_SB
-  AKS  --> PE_SB
-  APPS --> PE_REDIS
-  AKS  --> PE_REDIS
-  APPS --> PE_KV
-  AKS  --> PE_KV
-  AKS  --> PE_ACR
-  APPS --> PE_SIG
-  AKS  --> PE_SIG
-
-  %% Outbound control
-  APPS --> NAT
-  AKS  --> NAT
-
-  %% ========= STYLES =========
-  classDef public fill:#ffe8e8,stroke:#d9534f,stroke-width:1px,color:#111;
-  classDef app fill:#e7f1ff,stroke:#2e6da4,stroke-width:1px,color:#111;
-  classDef private fill:#e9f9ef,stroke:#2fa84f,stroke-width:1px,color:#111;
-  classDef infra fill:#f6f6f6,stroke:#999,color:#111;
-
-  class Internet,AGW,SWA public
-  class RG,VNET,S1,S2,S3,S4,S5 app
-  class PG,PE_SB,PE_REDIS,PE_KV,PE_ACR,PE_SIG private
-  class NAT,DNS,NSG1,NSG2,NSG3,NSG4,NSG5 infra
-```
-
 
 ---
 
@@ -290,3 +184,23 @@ flowchart TB
 
 ---
 
+
+
+┌─────────────────────────────────────────┐
+│              Virtual Network            │
+│  ┌─────────────┐  ┌─────────────┐      │
+│  │ AKS Subnet  │  │ DB Subnet   │      │
+│  │   (AKS)     │  │(PostgreSQL) │      │
+│  └─────────────┘  └─────────────┘      │
+│                                        │
+│  ┌─────────────┐  ┌─────────────┐      │
+│  │Integration  │  │ Management  │      │
+│  │   Subnet    │  │   Subnet    │      │
+│  │(Future PE)  │  │(Monitoring) │      │
+│  └─────────────┘  └─────────────┘      │
+└─────────────────────────────────────────┘
+                     ↑
+               ┌─────────────┐
+               │   Redis     │
+               │ (Public)    │
+               └─────────────┘
