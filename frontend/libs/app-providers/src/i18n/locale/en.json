@@ -14,6 +14,7 @@
         "creatingAccount": "Creating Account...",
         "teacherDashboard": "Teacher Dashboard",
         "studentDashboard": "Student Dashboard",
+        "adminDashboard": "Admin Dashboard",
         "genericError": "Something went wrong. Please try again later."
       },
       "home": {
@@ -260,6 +261,18 @@
         "firstName": "First Name",
         "lastName": "Last Name",
         "noChanges": "No changes"
+      },
+      "profile": {
+        "title": "My profile",
+        "subTitle": "Account",
+        "secondSubTitle": "Basic information",
+        "firstName": "First Name",
+        "lastName": "Last Name",
+        "email": "Email",
+        "emailCannotBeChanged": "Email cannot be changed",
+        "edit": "Edit",
+        "saveChanges": "Save changes",
+        "cancel": "Cancel"
       }
     },
     "sidebar": {
@@ -288,10 +301,11 @@
       "anime": "Anime Explorer",
       "countryExplorer": "Country Explorer",
       "signalR": "SignalR Testing",
-      "users": "Users"
-    }
-  },
-  "goBackToMenu": "Go back to Menu",
-  "logout": "Logout",
-  "somethingWentWrong": "Something went wrong..."
+      "users": "Users",
+      "profile": "Profile"
+    },
+    "goBackToMenu": "Go back to Menu",
+    "logout": "Logout",
+    "somethingWentWrong": "Something went wrong..."
+  }
 }

@@ -21,6 +21,7 @@ import {
   TypingPracticePage,
   WeatherWidgetPage,
   WordOrderGamePage,
+  ProfilePage
 } from "./pages";
 import "./App.css";
 const ProtectedLayout = () => (
@@ -59,6 +60,7 @@ function App() {
           <Route path="/anime-explorer" element={<AnimeExplorerPage />} />
           <Route path="/country-explorer" element={<CountryExplorerPage />} />
           <Route path="/signalr" element={<SignalRPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -5,7 +5,6 @@ import MenuIcon from "@mui/icons-material/Menu";
 import TranslateIcon from '@mui/icons-material/Translate';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import HomeIcon from '@mui/icons-material/Home';
-import PeopleIcon from '@mui/icons-material/People';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import GBFlag from 'country-flag-icons/react/3x2/GB';
 import ILFlag from 'country-flag-icons/react/3x2/IL';
@@ -27,7 +26,6 @@ export const SidebarMenu = () => {
 
     const items: SidebarLink[] = [
         { label: t('sidebar.home'), icon: <HomeIcon />, path: '/', testId: 'sidebar-home' },
-        { label: t('sidebar.users'), icon: <PeopleIcon />, path: '/users', testId: 'sidebar-users' },
         { label: t('sidebar.profile'), icon: <AccountCircleIcon />, path: '/profile', testId: 'sidebar-profile' },
     ];
 
