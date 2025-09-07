@@ -127,6 +127,7 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
   const signup = useCallback(
     async (data: SignupData) => {
       await createUserMutation({
+        userId: crypto.randomUUID(),
         email: data.email,
         password: data.password,
         firstName: data.firstName,

@@ -81,6 +81,7 @@ export const TaskForm = ({
 
         <Stack direction="row" spacing={1} justifyContent="flex-end">
           <Button
+            type="submit"
             disabled={isPending || disabled || !isValid}
           >
             {isPending ? t("pages.signalR.posting") : t("pages.signalR.send")}
