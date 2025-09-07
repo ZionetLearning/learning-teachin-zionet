@@ -66,14 +66,14 @@ jobs:
           az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
 
       - name: Deploy KEDA
-        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.use_keda || github.event_name == 'workflow_call' }}
+        if: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.use_keda == true) || github.event_name == 'workflow_call' }}
         run: |
           cd devops/helm-tools
           chmod +x keda.sh
           ./keda.sh
 
   keda-deploy:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.use_chart != false }}
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     uses: ./.github/workflows/aks-helmcharts.yaml
     permissions:
       id-token: write
