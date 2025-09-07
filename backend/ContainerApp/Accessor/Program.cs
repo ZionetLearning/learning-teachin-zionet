@@ -91,6 +91,8 @@ using (var scope = app.Services.CreateScope())
 {
     var startupService = scope.ServiceProvider.GetRequiredService<IAccessorService>();
     await startupService.InitializeAsync();
+    var promptStartup = scope.ServiceProvider.GetRequiredService<IPromptService>();
+    await promptStartup.InitializeDefaultPromptsAsync();
 }
 
 // Configure middleware and Dapr

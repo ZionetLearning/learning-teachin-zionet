@@ -52,8 +52,10 @@ public class AccessorDbContext : DbContext
              .HasDefaultValueSql("NOW()");
         });
 
+        // Prompts table
         modelBuilder.Entity<PromptModel>(entity =>
         {
+            entity.ToTable("Prompts");
             entity.HasKey(e => e.Id);
 
             entity.Property(e => e.PromptKey)
