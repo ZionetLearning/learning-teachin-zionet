@@ -18,4 +18,4 @@ frontend_sku_size      = "Free"
 frontend_apps          = ["student", "teacher", "admin"]
 #------------- Redis Shared Instance -------------
 use_shared_redis = false  # If false, create server ; if true, use shared server 
-redis_name = redis-teachin-prod
+redis_name = "redis-teachin-prod"
