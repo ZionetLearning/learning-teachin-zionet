@@ -5,10 +5,8 @@ using FluentAssertions;
 using IntegrationTests.Constants;
 using IntegrationTests.Fixtures;
 using IntegrationTests.Models.Auth;
-using Manager.Constants;
 using Manager.Models.Auth;
 using Manager.Models.Users;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace IntegrationTests.Tests.Users;
@@ -19,8 +17,6 @@ public class TeacherStudentIntegrationTests : IAsyncLifetime
     private readonly SharedTestFixture _shared;
     private readonly HttpClient _client;
     private readonly ITestOutputHelper _output;
-
-    private const string ManagerUsersPrefix = "/users-manager";
 
     public TeacherStudentIntegrationTests(SharedTestFixture sharedFixture, ITestOutputHelper output)
     {
@@ -35,7 +31,6 @@ public class TeacherStudentIntegrationTests : IAsyncLifetime
     }
 
     public Task DisposeAsync() => Task.CompletedTask;
-
 
     private static CreateUser NewUser(Role role) => new()
     {
@@ -79,22 +74,12 @@ public class TeacherStudentIntegrationTests : IAsyncLifetime
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
     }
 
-    private static string AssignRoute(Guid teacherId, Guid studentId) =>
-        $"{ManagerUsersPrefix}/teacher/{teacherId:D}/students/{studentId:D}";
-    private static string UnassignRoute(Guid teacherId, Guid studentId) =>
-        $"{ManagerUsersPrefix}/teacher/{teacherId:D}/students/{studentId:D}";
-    private static string ListStudentsRoute(Guid teacherId) =>
-        $"{ManagerUsersPrefix}/teacher/{teacherId:D}/students";
-    private static string ListTeachersRoute(Guid studentId) =>
-        $"{ManagerUsersPrefix}/student/{studentId:D}/teachers";
-
     private async Task CleanupUser(Guid id)
     {
         var del = await _client.DeleteAsync(UserRoutes.UserById(id));
         if (del.StatusCode != HttpStatusCode.OK && del.StatusCode != HttpStatusCode.NotFound)
             del.EnsureSuccessStatusCode();
     }
-
 
     [Fact(DisplayName = "Admin can assign & unassign any student to any teacher")]
     public async Task Admin_Assign_Unassign_Flow()
@@ -104,25 +89,25 @@ public class TeacherStudentIntegrationTests : IAsyncLifetime
         var studentId = await CreateUserAsync(Role.Student);
 
         // Assign
-        var assign = await _client.PostAsync(AssignRoute(teacherId, studentId), content: null);
+        var assign = await _client.PostAsync(MappingRoutes.Assign(teacherId, studentId), content: null);
         assign.StatusCode.Should().Be(HttpStatusCode.OK);
 
         // Idempotent assign
-        var assign2 = await _client.PostAsync(AssignRoute(teacherId, studentId), content: null);
+        var assign2 = await _client.PostAsync(MappingRoutes.Assign(teacherId, studentId), content: null);
         assign2.StatusCode.Should().Be(HttpStatusCode.OK);
 
         // List students (admin can list any)
-        var list = await _client.GetAsync(ListStudentsRoute(teacherId));
+        var list = await _client.GetAsync(MappingRoutes.ListStudents(teacherId));
         list.StatusCode.Should().Be(HttpStatusCode.OK);
         var students = await list.Content.ReadFromJsonAsync<List<UserData>>() ?? new();
         students.Should().Contain(s => s.UserId == studentId);
 
         // Unassign
-        var unassign = await _client.DeleteAsync(UnassignRoute(teacherId, studentId));
+        var unassign = await _client.DeleteAsync(MappingRoutes.Unassign(teacherId, studentId));
         unassign.StatusCode.Should().Be(HttpStatusCode.OK);
 
         // Idempotent unassign
-        var unassign2 = await _client.DeleteAsync(UnassignRoute(teacherId, studentId));
+        var unassign2 = await _client.DeleteAsync(MappingRoutes.Unassign(teacherId, studentId));
         unassign2.StatusCode.Should().Be(HttpStatusCode.OK);
 
         await CleanupUser(studentId);
@@ -132,40 +117,31 @@ public class TeacherStudentIntegrationTests : IAsyncLifetime
     [Fact(DisplayName = "Teacher can assign/unassign only to self; forbidden for other teachers")]
     public async Task Teacher_Can_Only_Manage_Self()
     {
-        // Create T1, T2, S1
         var (t1Id, t1Email, t1Pwd) = await CreateAndLogin(Role.Teacher);
         var t2Id = await CreateUserAsync(Role.Teacher);
         var s1Id = await CreateUserAsync(Role.Student);
 
-        // Login as T1
         var t1Token = await LoginAndGetTokenAsync(t1Email, t1Pwd);
         UseBearer(t1Token);
 
-        // T1 can assign S1 to T1
-        var okAssignSelf = await _client.PostAsync(AssignRoute(t1Id, s1Id), null);
+        var okAssignSelf = await _client.PostAsync(MappingRoutes.Assign(t1Id, s1Id), null);
         okAssignSelf.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        // T1 cannot assign S1 to T2
-        var forbidAssignOther = await _client.PostAsync(AssignRoute(t2Id, s1Id), null);
+        var forbidAssignOther = await _client.PostAsync(MappingRoutes.Assign(t2Id, s1Id), null);
         forbidAssignOther.StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
-        // T1 can unassign S1 from T1
-        var okUnassignSelf = await _client.DeleteAsync(UnassignRoute(t1Id, s1Id));
+        var okUnassignSelf = await _client.DeleteAsync(MappingRoutes.Unassign(t1Id, s1Id));
         okUnassignSelf.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        // T1 cannot unassign S1 from T2
-        var forbidUnassignOther = await _client.DeleteAsync(UnassignRoute(t2Id, s1Id));
+        var forbidUnassignOther = await _client.DeleteAsync(MappingRoutes.Unassign(t2Id, s1Id));
         forbidUnassignOther.StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
-        // T1 can list T1 students
-        var okListSelf = await _client.GetAsync(ListStudentsRoute(t1Id));
+        var okListSelf = await _client.GetAsync(MappingRoutes.ListStudents(t1Id));
         okListSelf.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        // T1 cannot list T2 students
-        var forbidListOther = await _client.GetAsync(ListStudentsRoute(t2Id));
+        var forbidListOther = await _client.GetAsync(MappingRoutes.ListStudents(t2Id));
         forbidListOther.StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
-        // Restore Admin token for cleanup
         var adminToken = await _shared.GetAuthenticatedTokenAsync(attachToHttpClient: false);
         UseBearer(adminToken);
 
@@ -193,16 +169,16 @@ public class TeacherStudentIntegrationTests : IAsyncLifetime
         // Use student token to try calling endpoints
         UseBearer(sToken);
 
-        var r1 = await _client.GetAsync(ListStudentsRoute(teacherId));
+        var r1 = await _client.GetAsync(MappingRoutes.ListStudents(teacherId));
         r1.StatusCode.Should().Be(HttpStatusCode.Forbidden); // policy AdminOrTeacher
 
-        var r2 = await _client.PostAsync(AssignRoute(teacherId, studentId), null);
+        var r2 = await _client.PostAsync(MappingRoutes.Assign(teacherId, studentId), null);
         r2.StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
-        var r3 = await _client.DeleteAsync(UnassignRoute(teacherId, studentId));
+        var r3 = await _client.DeleteAsync(MappingRoutes.Unassign(teacherId, studentId));
         r3.StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
-        var r4 = await _client.GetAsync(ListTeachersRoute(studentId));
+        var r4 = await _client.GetAsync(MappingRoutes.ListTeachers(studentId));
         r4.StatusCode.Should().Be(HttpStatusCode.Forbidden); // AdminOnly
 
         // Cleanup with Admin
@@ -220,17 +196,17 @@ public class TeacherStudentIntegrationTests : IAsyncLifetime
         var studentId = await CreateUserAsync(Role.Student);
 
         // Assign
-        var assign = await _client.PostAsync(AssignRoute(teacherId, studentId), null);
+        var assign = await _client.PostAsync(MappingRoutes.Assign(teacherId, studentId), null);
         assign.StatusCode.Should().Be(HttpStatusCode.OK);
 
         // Admin lists teachers for the student
-        var list = await _client.GetAsync(ListTeachersRoute(studentId));
+        var list = await _client.GetAsync(MappingRoutes.ListTeachers(studentId));
         list.StatusCode.Should().Be(HttpStatusCode.OK);
         var teachers = await list.Content.ReadFromJsonAsync<List<UserData>>() ?? new();
         teachers.Should().Contain(t => t.UserId == teacherId);
 
         // Cleanup
-        await _client.DeleteAsync(UnassignRoute(teacherId, studentId));
+        await _client.DeleteAsync(MappingRoutes.Unassign(teacherId, studentId));
         await CleanupUser(studentId);
         await CleanupUser(teacherId);
     }
