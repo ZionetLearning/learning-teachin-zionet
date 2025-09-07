@@ -1,7 +1,7 @@
 import { createRoot } from "react-dom/client";
 import { ToastContainer } from "react-toastify";
 import * as Sentry from "@sentry/react";
-import { initializeSentry } from "./sentry";
+import { initializeSentry } from "@app-providers/observability";
 import {
   ReactQueryProvider,
   I18nTranslateProvider,
