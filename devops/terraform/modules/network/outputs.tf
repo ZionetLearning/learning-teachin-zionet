@@ -7,6 +7,11 @@ output "vnet_id" {
   value       = azurerm_virtual_network.main.id
 }
 
+output "virtual_network_id" {
+  description = "ID of the Virtual Network (alias for vnet_id for compatibility)"
+  value       = azurerm_virtual_network.main.id
+}
+
 output "vnet_name" {
   description = "Name of the Virtual Network"
   value       = azurerm_virtual_network.main.name

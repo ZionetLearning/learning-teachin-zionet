@@ -83,10 +83,10 @@ data "azurerm_postgresql_flexible_server" "shared" {
 
 # Create new PostgreSQL server and database only if not using shared
 module "database" {
-  count  = var.use_shared_postgres ? 1 : 1
+  count  = var.use_shared_postgres ? 0 : 1
   source = "./modules/postgresql"
 
-  server_name         = var.database_server_name
+  server_name         = "prod-pg-zionet-learning"
   location            = var.db_location
   resource_group_name = var.use_shared_postgres ? var.shared_resource_group : azurerm_resource_group.main.name
 
@@ -106,7 +106,9 @@ module "database" {
   # Connect PostgreSQL to the dedicated database subnet
   db_subnet_id = module.network.database_subnet_id
 
-  environment_name = var.environment_name
+  # Add virtual network ID for Private DNS Zone linking
+  virtual_network_id = module.network.virtual_network_id
+
   database_name    = "${var.database_name}-${var.environment_name}"
 
   use_shared_postgres = var.use_shared_postgres

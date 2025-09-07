@@ -89,10 +89,7 @@ variable "use_shared_postgres" {
   default     = true
 }
 # Environment name to control dynamic server/database creation
-variable "environment_name" {
-  type        = string
-  description = "Name of the environment (e.g., dev, test, prod, feature-123)"
-}
+
 
 # Existing server ID for non-dev environments
 variable "existing_server_id" {
@@ -100,3 +97,10 @@ variable "existing_server_id" {
   description = "ID of the existing PostgreSQL flexible server to use for non-dev environments"
   default     = ""
 }
+
+variable "virtual_network_id" {
+  type        = string
+  description = "ID of the virtual network for Private DNS Zone linking"
+  default     = null
+}
+

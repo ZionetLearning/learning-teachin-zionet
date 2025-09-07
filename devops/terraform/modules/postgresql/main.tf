@@ -1,3 +1,23 @@
+# Private DNS Zone for PostgreSQL when using VNet integration
+resource "azurerm_private_dns_zone" "postgres" {
+  count               = var.use_shared_postgres ? 0 : 1
+  name                = "${var.server_name}.private.postgres.database.azure.com"
+  resource_group_name = var.resource_group_name
+
+
+}
+
+# Link the Private DNS Zone to the VNet
+resource "azurerm_private_dns_zone_virtual_network_link" "postgres" {
+  count                 = var.use_shared_postgres ? 0 : 1
+  name                  = "${var.server_name}-dns-link"
+  resource_group_name   = var.resource_group_name
+  private_dns_zone_name = azurerm_private_dns_zone.postgres[0].name
+  virtual_network_id    = var.virtual_network_id
+
+ 
+}
+
 resource "azurerm_postgresql_flexible_server" "this" {
   count                   = var.use_shared_postgres ? 0 : 1
   name                   = var.server_name
@@ -23,6 +43,9 @@ resource "azurerm_postgresql_flexible_server" "this" {
 
   # Connect PostgreSQL to the dedicated database subnet
   delegated_subnet_id = var.db_subnet_id
+  
+  # Set the Private DNS Zone ID for VNet integration
+  private_dns_zone_id = azurerm_private_dns_zone.postgres[0].id
 
   # Add lifecycle rule to prevent zone changes
   lifecycle {
@@ -32,6 +55,10 @@ resource "azurerm_postgresql_flexible_server" "this" {
     ]
   }
 
+  # Ensure the DNS zone and link are created first
+  depends_on = [
+    azurerm_private_dns_zone_virtual_network_link.postgres
+  ]
 }
 
 resource "azurerm_postgresql_flexible_server_database" "this" {
