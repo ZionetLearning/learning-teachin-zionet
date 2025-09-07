@@ -127,8 +127,35 @@
         "type": "loki",
         "uid": "P8E80F9AEF21F6940"
       },
+      "description": "Number of live sessions based on refresh tokens not yet expired or revoked. Tracks user engagement in near real-time",
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "dark-green",
+                "value": 0
+              },
+              {
+                "color": "#EAB839",
+                "value": 51
+              },
+              {
+                "color": "dark-red",
+                "value": 200
+              }
+            ]
+          }
+        },
         "overrides": []
       },
       "gridPos": {
@@ -139,15 +166,26 @@
       },
       "id": 1,
       "options": {
-        "dedupStrategy": "none",
-        "enableInfiniteScrolling": false,
-        "enableLogDetails": true,
-        "prettifyLogMessage": false,
-        "showCommonLabels": false,
-        "showLabels": false,
-        "showTime": true,
-        "sortOrder": "Descending",
-        "wrapLogMessage": false
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": true,
+        "text": {
+          "percentSize": 16,
+          "titleSize": 28,
+          "valueSize": 80
+        },
+        "textMode": "value",
+        "wideLayout": true
       },
       "pluginVersion": "12.1.0",
       "targets": [
@@ -157,14 +195,14 @@
             "uid": "P8E80F9AEF21F6940"
           },
           "direction": "backward",
-          "editorMode": "builder",
-          "expr": "{container=\"manager\"} |= `LoginAsync`",
+          "editorMode": "code",
+          "expr": "sum(\r\n  count_over_time({container=\"accessor\"} |= \"Refresh session created for user\" [10m])\r\n) - sum(\r\n  count_over_time({container=\"accessor\"} |= \"Refresh session deleted\" [10m])\r\n) - sum(\r\n  count_over_time({container=\"accessor\"} |= \"Cleanup removed\" [10m])\r\n)\r\n",
           "queryType": "range",
           "refId": "A"
         }
       ],
-      "title": "New panel",
-      "type": "logs"
+      "title": "Current Active Sessions",
+      "type": "stat"
     }
   ],
   "preload": false,
@@ -181,5 +219,5 @@
   "timezone": "browser",
   "title": "Authentication Monitoring & Insights",
   "uid": "738b5645-e95f-407e-b7b4-ac94a9d55bab",
-  "version": 6
+  "version": 7
 }
