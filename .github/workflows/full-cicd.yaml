@@ -91,7 +91,6 @@ jobs:
         run: echo "parsed=${{ fromJSON(github.event.inputs.use_keda || 'false') }}"
 
   keda-setup:
-    needs: [helmcharts-setup]
     uses: ./.github/workflows/aks-keda.yaml
     permissions:
       id-token: write
