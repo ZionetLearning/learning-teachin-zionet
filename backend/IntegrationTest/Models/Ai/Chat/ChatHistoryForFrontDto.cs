@@ -12,7 +12,7 @@ public class ChatHistoryForFrontDto
     public string Name { get; set; } = string.Empty;
     [JsonPropertyName("chatType")]
     public string ChatType { get; set; } = string.Empty;
-    [JsonPropertyName("chatType")]
+    [JsonPropertyName("messages")]
     public IReadOnlyList<ChatHistoryMessageDto> Messages { get; set; } = new List<ChatHistoryMessageDto>();
     
 }

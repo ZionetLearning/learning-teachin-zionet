@@ -1,9 +1,11 @@
+using IntegrationTests.Constants;
+using IntegrationTests.Models.Notification;
 using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Concurrent;
 using System.Text.Json;
-using IntegrationTests.Models.Notification;
-using IntegrationTests.Constants;
-using Microsoft.Extensions.Configuration;
+using System.Text.Json.Serialization;
 
 namespace IntegrationTests.Fixtures;
 
@@ -15,6 +17,8 @@ public class SignalRTestFixture : IAsyncDisposable
 
     private readonly string _baseUrl;
     private string? _accessToken;
+    private string? _userId;
+    public void UseUserId(string userId) => _userId = userId;
 
     public SignalRTestFixture()
     {
@@ -48,13 +52,18 @@ public class SignalRTestFixture : IAsyncDisposable
     {
         if (_connection is null)
         {
+            var userId = _userId ?? TestConstants.TestUserId;
+
             _connection = new HubConnectionBuilder()
-                .WithUrl($"{_baseUrl}/notificationHub?userId={TestConstants.TestUserId}", options =>
+                .WithUrl($"{_baseUrl}/notificationHub?userId={userId}", options =>
                 {
                     if (!string.IsNullOrEmpty(_accessToken))
-                    {
                         options.AccessTokenProvider = () => Task.FromResult(_accessToken)!;
-                    }
+                })
+                .AddJsonProtocol(o =>
+                {
+                    o.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                    o.PayloadSerializerOptions.PropertyNameCaseInsensitive = true;
                 })
                 .WithAutomaticReconnect()
                 .Build();
@@ -121,6 +130,14 @@ public class SignalRTestFixture : IAsyncDisposable
 
         return null;
     }
+
+    public async Task<ReceivedEvent?> WaitForChatAiAnswerAsync(string requestId, TimeSpan? timeout = null) =>
+    await WaitForEventAsync(
+        e => e.EventType == EventType.ChatAiAnswer &&
+             e.Payload.ValueKind == JsonValueKind.Object &&
+             e.Payload.TryGetProperty("requestId", out var rid) &&
+             rid.GetString() == requestId,
+        timeout);
 
     public async Task<ReceivedEvent?> WaitForEventAsync(
         Predicate<UserEvent<JsonElement>>? predicate = null,

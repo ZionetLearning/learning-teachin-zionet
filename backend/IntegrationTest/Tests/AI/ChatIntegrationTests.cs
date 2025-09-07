@@ -2,10 +2,10 @@
 using IntegrationTests.Constants;
 using IntegrationTests.Fixtures;
 using IntegrationTests.Helpers;
-using IntegrationTests.Models;
-using IntegrationTests.Models.Notification;
 using Manager.Models.Chat;
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using Xunit.Abstractions;
 
 namespace IntegrationTests.Tests.AI;
@@ -21,15 +21,19 @@ public class ChatIntegrationTests(
 
     public override async Task InitializeAsync()
     {
-        await _shared.GetAuthenticatedTokenAsync();
 
-        await _shared.EnsureSignalRStartedAsync(SignalRFixture, OutputHelper);
     }
 
     [Fact(DisplayName = "Chat AI integration test")]
     public async Task Post_new_chat()
     {
         var user = _shared.UserFixture.TestUser;
+
+        SignalRFixture.UseUserId(user.UserId.ToString());
+
+        await _shared.GetAuthenticatedTokenAsync();
+
+        await _shared.EnsureSignalRStartedAsync(SignalRFixture, OutputHelper);
 
         var chatId1 = Guid.NewGuid();
 
@@ -42,34 +46,51 @@ public class ChatIntegrationTests(
 
         };
 
-        var chatMessage1 = TestDataHelper.CreateFixedIdTask(1001);
-        var second = TestDataHelper.CreateFixedIdTask(1001); // same Id
-
-        // 1) POST first
         var r1 = await Client.PostAsJsonAsync(AiRoutes.PostNewMessage, chatRequest1);
-        r1.ShouldBeAccepted();
+        r1.ShouldBeOk();
 
-        // Prefer notification, but don't fail if it doesn't arrive in time
-        var received = await TryWaitForNotificationAsync(
-            n => n.Type == NotificationType.Success && n.Message.Contains(" "),
-            TimeSpan.FromSeconds(20)
-        );
+        var doc = await r1.Content.ReadFromJsonAsync<JsonElement>();
+        doc.TryGetProperty("requestId", out var ridEl).Should().BeTrue();
+        var requestId1 = ridEl.GetString();
+        requestId1.Should().NotBeNullOrWhiteSpace();
 
-        if (received is null)
-            OutputHelper.WriteLine("No SignalR notification within timeout; proceeding via HTTP polling.");
+        var received1 = await SignalRFixture.WaitForChatAiAnswerAsync(requestId1, TimeSpan.FromSeconds(30));
+        received1.Should().NotBeNull();
 
-        // 2) Confirm the first write happened (ground truth)
-        var chatHistoryAfterRequest1 = await AIChatHelper.CheckCountMessageInChatHistory(Client, chatId1, user.UserId, 3, timeoutSeconds: 60);
+        var chatHistoryAfterRequest1 = await AIChatHelper.CheckCountMessageInChatHistory(Client, chatId1, user.UserId, waitMessages:2, timeoutSeconds: 30);
 
-        chatHistoryAfterRequest1.Messages.Count.Should().Be(3);
+        chatHistoryAfterRequest1.Messages.Count.Should().Be(2);
 
-        //// 3) POST duplicate (same Id) — Manager still returns 202 Accepted
-        //var r2 = await Client.PostAsJsonAsync(ApiRoutes.Task, second);
-        //r2.ShouldBeAccepted();
+        var chatRequest2 = new ChatRequest
+        {
+            ThreadId = chatId1.ToString(),
+            UserId = user.UserId.ToString(),
+            UserMessage = "What number did you remember?",
+            ChatType = ChatType.Default
 
-        //// 4) Confirm nothing changed
-        //var after = await TaskUpdateHelper.WaitForTaskByIdAsync(Client, first.Id, timeoutSeconds: 10);
-        //after.Name.Should().Be(first.Name);
-        //after.Payload.Should().Be(first.Payload);
+        };
+
+        var r2 = await Client.PostAsJsonAsync(AiRoutes.PostNewMessage, chatRequest2);
+        r2.ShouldBeOk();
+
+        var doc2 = await r2.Content.ReadFromJsonAsync<JsonElement>();
+        doc2.TryGetProperty("requestId", out var ridEl2).Should().BeTrue();
+        var requestId2 = ridEl2.GetString();
+        requestId2.Should().NotBeNullOrWhiteSpace();
+
+        var received2 = await SignalRFixture.WaitForChatAiAnswerAsync(requestId2, TimeSpan.FromSeconds(30));
+        received2.Should().NotBeNull();
+        var msg2 = received2!.Event.Payload.GetProperty("assistantMessage").GetString() ?? "";
+
+        var regexCheck = new Regex(@"\b42\b|\bforty[-\s]?two\b", RegexOptions.IgnoreCase);
+        msg2.Should().MatchRegex(regexCheck);
+
+        var chatHistoryAfterRequest2 = await AIChatHelper.CheckCountMessageInChatHistory(Client, chatId1, user.UserId, waitMessages: 4, timeoutSeconds: 30);
+
+        chatHistoryAfterRequest2.Messages.Count.Should().Be(4);
+
+        var text = chatHistoryAfterRequest2.Messages[^1].Text ?? string.Empty;
+        text.Should().MatchRegex(regexCheck);
+
     }
 }
