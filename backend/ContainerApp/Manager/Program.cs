@@ -8,6 +8,7 @@ using DotQueue;
 using Manager.Constants;
 using Manager.Endpoints;
 using Manager.Hubs;
+using Manager.Models;
 using Manager.Models.Auth;
 using Manager.Models.QueueMessages;
 using Manager.Models.Users;
@@ -37,6 +38,9 @@ builder.Services.Configure<AiSettings>(builder.Configuration.GetSection("Ai"));
 
 builder.Services.Configure<JwtSettings>(
     builder.Configuration.GetSection("Jwt"));
+
+builder.Services.Configure<CorsSettings>(
+    builder.Configuration.GetSection("Cors"));
 
 var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>()!;
 var key = Encoding.UTF8.GetBytes(jwtSettings.Secret);
@@ -109,18 +113,24 @@ if (!string.IsNullOrEmpty(signalRConnString))
     signalRBuilder.AddAzureSignalR(signalRConnString);
 }
 
+var corsSettings = builder.Configuration.GetSection("Cors").Get<CorsSettings>();
+
+if (corsSettings is null || corsSettings.AllowedOrigins is null || corsSettings.AllowedOrigins.Length == 0)
+{
+    throw new InvalidOperationException("Cors settings are missing or invalid. Please check appsettings.json.");
+}
+
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    options.AddPolicy("Frontend", policy =>
     {
-        policy
-            .AllowAnyOrigin()
+        policy.WithOrigins(corsSettings.AllowedOrigins)
             .AllowAnyMethod()
-            .AllowAnyHeader();
+            .AllowAnyHeader()
+            .AllowCredentials(); // Required for sending/receiving cookies
     });
 });
 
-builder.Services.AddScoped<IAiGatewayService, AiGatewayService>();
 builder.Services.AddScoped<IAccessorClient, AccessorClient>();
 builder.Services.AddScoped<IEngineClient, EngineClient>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
@@ -196,7 +206,7 @@ var app = builder.Build();
 
 var forwardedHeaderOptions = app.Services.GetRequiredService<IOptions<ForwardedHeadersOptions>>().Value;
 app.UseForwardedHeaders(forwardedHeaderOptions);
-app.UseCors("AllowAll");
+app.UseCors("Frontend");
 app.UseResponseCompression();
 app.UseCloudEvents();
 app.UseRateLimiter();

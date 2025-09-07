@@ -21,9 +21,17 @@ console.warn = (...args: unknown[]) => {
 };
 
 /* ========= i18n ========= */
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (k: string) => k }),
-}));
+vi.mock("react-i18next", async () => {
+  const actual =
+    await vi.importActual<typeof import("react-i18next")>("react-i18next");
+  return {
+    ...actual,
+    useTranslation: () => ({
+      t: (k: string) => k,
+      i18n: { changeLanguage: vi.fn() },
+    }),
+  };
+});
 
 /* ===== avatar assets ===== */
 vi.mock("@features/avatar/avatar-da/assets", () => ({

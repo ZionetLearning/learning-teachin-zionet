@@ -5,11 +5,8 @@ import {
   useQueryClient,
   UseQueryResult,
 } from "@tanstack/react-query";
-import axios from "axios";
-
-type UserDto = User & {
-  password?: string;
-};
+import { apiClient as axios } from "@app-providers";
+import { mapUser, User, UserDto } from "@app-providers";
 
 interface UpdateUserInput {
   email?: string;
@@ -17,21 +14,7 @@ interface UpdateUserInput {
   lastName?: string;
 }
 
-export interface User {
-  userId: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-}
-
 const USERS_URL = `${import.meta.env.VITE_USERS_URL}/user`;
-
-const mapUser = (dto: UserDto): User => ({
-  userId: dto.userId,
-  email: dto.email,
-  firstName: dto.firstName,
-  lastName: dto.lastName,
-});
 
 const getAllUsers = async (): Promise<User[]> => {
   const response = await axios.get(`${USERS_URL}-list`);
@@ -70,33 +53,11 @@ const deleteUserByUserId = async (userId: string): Promise<void> => {
   }
 };
 
-const createUser = async (userData: Partial<UserDto>): Promise<User> => {
-  const response = await axios.post(USERS_URL, userData);
-  if (response.status !== 201) {
-    throw new Error(response.data?.message || "Failed to create user");
-  }
-  return mapUser(response.data as UserDto);
-};
-
 export const useGetAllUsers = (): UseQueryResult<User[], Error> => {
   return useQuery<User[], Error>({
     queryKey: ["users"],
     queryFn: getAllUsers,
     staleTime: 60_000,
-  });
-};
-
-export const useCreateUser = (): UseMutationResult<
-  User,
-  Error,
-  Partial<UserDto>
-> => {
-  const qc = useQueryClient();
-  return useMutation<User, Error, Partial<UserDto>>({
-    mutationFn: createUser,
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["users"] });
-    },
   });
 };
 

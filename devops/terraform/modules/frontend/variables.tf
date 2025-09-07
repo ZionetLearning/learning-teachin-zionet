@@ -40,8 +40,9 @@ variable "appinsights_sampling_percentage" {
 }
 
 variable "log_analytics_workspace_id" {
-  description = "Log Analytics Workspace ID"
+  description = "Log Analytics Workspace ID (optional)"
   type        = string
+  default     = null
 }
 
 variable "tags" {

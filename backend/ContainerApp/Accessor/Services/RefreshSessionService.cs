@@ -63,15 +63,21 @@ public class RefreshSessionService : IRefreshSessionService
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.RefreshTokenHash == refreshTokenHash, cancellationToken);
 
-            if (session == null)
+            if (session is null)
             {
                 _logger.LogWarning("No session found for given refresh token hash");
                 return null;
             }
 
+            if (session != null && session.RefreshTokenHash != refreshTokenHash)
+            {
+                _logger.LogError("Database returned a session, but token hash doesn't match!");
+                throw new InvalidOperationException("Mismatch between requested and returned token hash");
+            }
+
             return new RefreshSessionDto
             {
-                Id = session.Id,
+                Id = session!.Id,
                 UserId = session.UserId,
                 ExpiresAt = session.ExpiresAt,
                 DeviceFingerprintHash = session.DeviceFingerprintHash,
