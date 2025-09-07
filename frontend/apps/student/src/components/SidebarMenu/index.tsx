@@ -13,6 +13,7 @@ import WeatherWidgetIcon from '@mui/icons-material/Cloud';
 import ThreePIcon from '@mui/icons-material/ThreeP';
 import LiveTvIcon from '@mui/icons-material/LiveTv';
 import ConnectWithoutContactIcon from '@mui/icons-material/ConnectWithoutContact';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import FlagIcon from '@mui/icons-material/Flag';
 import GBFlag from 'country-flag-icons/react/3x2/GB';
 import ILFlag from 'country-flag-icons/react/3x2/IL';
@@ -69,6 +70,7 @@ export const SidebarMenu = () => {
     { label: t('sidebar.weather'), icon: <WeatherWidgetIcon />, path: '/weather', testId: 'sidebar-weather' },
     { label: t('sidebar.anime'), icon: <LiveTvIcon />, path: '/anime-explorer', testId: 'sidebar-anime' },
     { label: t('sidebar.countryExplorer'), icon: <FlagIcon />, path: '/country-explorer' },
+    { label: t('sidebar.profile'), icon: <AccountCircleIcon />, path: '/profile', testId: 'sidebar-profile' },
   ];
 
   return (

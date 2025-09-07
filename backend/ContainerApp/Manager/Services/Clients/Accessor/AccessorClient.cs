@@ -248,7 +248,7 @@ public class AccessorClient(
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating user {Email}", user.Email);
-            return false;
+            throw;
         }
     }
 

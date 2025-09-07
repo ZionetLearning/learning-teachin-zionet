@@ -20,6 +20,6 @@ output "postgres_connection_string" {
 }
 
 output "id" {
-  value = azurerm_postgresql_flexible_server.this[0].id
+  value = var.use_shared_postgres ? var.existing_server_id : azurerm_postgresql_flexible_server.this[0].id
   description = "The ID of the PostgreSQL flexible server"
 }
