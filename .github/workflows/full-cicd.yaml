@@ -82,7 +82,7 @@ jobs:
     secrets: inherit
 
   keda-setup:
-    if: ${{ github.event.inputs.use_keda }}
+    if: ${{ github.event.inputs.use_keda == 'true' }}
     needs: [helmcharts-setup]
     uses: ./.github/workflows/aks-keda.yaml
     permissions:
