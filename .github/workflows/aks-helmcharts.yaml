@@ -3,7 +3,7 @@ name: AKS - Update Pod Containers
 run-name: >
   🚢 Helm Deploy | Environment: ${{ 
     inputs.environment_name || github.event.inputs.environment_name || 'dev'
-  }} | GitHub Env: ${{ inputs.environment || github.event.inputs.environment }}
+  }} | GitHub Env: ${{ inputs.environment || github.event.inputs.environment }} | Deploy Pods: ${{ inputs.deploy_pods || github.event.inputs.deploy_pods || 'yes' }}
 
 on:
   workflow_dispatch:
@@ -22,6 +22,12 @@ on:
         description: 'Optional image tag (e.g., commit hash). Empty -> uses environment_name'
         required: false
         default: ''
+      deploy_pods:
+        description: 'Deploy application pods to Kubernetes?'
+        required: true
+        default: 'yes'
+        type: choice
+        options: ['yes', 'no']
 
   workflow_call:
     inputs:
@@ -39,6 +45,11 @@ on:
         required: false
         type: boolean
         default: false
+      deploy_pods:
+        required: false
+        type: string
+        default: 'yes'
+        description: 'Whether to deploy pods (yes/no)'
     outputs:
       app_url:
         description: "Ingress URL (if already created by platform setup)"
@@ -246,6 +257,7 @@ jobs:
           exit 1
 
       - name: Helm template sanity (no Namespace objects)
+        if: ${{ inputs.deploy_pods == 'yes' || github.event.inputs.deploy_pods == 'yes' }}
         run: |
           # Use image_tag if provided, otherwise fall back to TARGET_NAMESPACE
           IMAGE_TAG="${{ inputs.image_tag || github.event.inputs.image_tag }}"
@@ -265,6 +277,7 @@ jobs:
           | grep -n '^kind: Namespace' && { echo "Namespace still rendered"; exit 1; } || echo "OK: no Namespace in chart"
 
       - name: Helm upgrade/install app
+        if: ${{ inputs.deploy_pods == 'yes' || github.event.inputs.deploy_pods == 'yes' }}
         run: |
           # Use image_tag if provided, otherwise fall back to TARGET_NAMESPACE
           IMAGE_TAG="${{ inputs.image_tag || github.event.inputs.image_tag }}"
@@ -284,6 +297,12 @@ jobs:
             --set global.keyvault.tenantId="$KEYVAULT_TENANT_ID" \
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false
+
+      - name: Skip pod deployment
+        if: ${{ inputs.deploy_pods == 'no' || github.event.inputs.deploy_pods == 'no' }}
+        run: |
+          echo "⏭️ Skipping pod deployment as deploy_pods is set to 'no'"
+          echo "✅ Platform setup completed, but no application pods will be deployed"
 
       - name: Diagnostics (on failure)
         if: failure()

@@ -26,6 +26,12 @@ on:
           required: false
           type: string
           default: ''
+        deploy_pods:
+          description: 'Deploy application pods to Kubernetes?'
+          required: true
+          default: 'yes'
+          type: choice
+          options: ['yes', 'no']
           
 jobs:
   build-and-push-images:
@@ -73,6 +79,7 @@ jobs:
       environment: ${{ github.event.inputs.environment }}
       image_tag: ${{ needs.build-and-push-images.outputs.image_tag }}
       skip_infra_steps: false
+      deploy_pods: ${{ github.event.inputs.deploy_pods }}
     secrets: inherit
  
   deploy-frontend:
