@@ -6,9 +6,6 @@ run-name: >
   }} | GitHub Env: ${{ inputs.environment || github.event.inputs.environment }}
 
 on:
-  push:
-    branches:
-      - avichai/keda/update
   workflow_dispatch:
     inputs:
       environment:
@@ -41,6 +38,11 @@ on:
 jobs:
   keda:
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment || github.event.inputs.environment }}
+    permissions:
+      id-token: write
+      contents: read
+      
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
