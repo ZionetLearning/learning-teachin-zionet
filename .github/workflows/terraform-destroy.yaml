@@ -160,6 +160,7 @@ jobs:
           echo "Resources that would be destroyed:"
           echo "- Resource Group: ${{ env.environment_name }}-zionet-learning-2025"
           echo "- Kubernetes Namespace: ${{ env.environment_name }} (on shared AKS cluster)"
+          echo "- Key Vault Secrets: ${{ env.environment_name }}-* (from shared Key Vault)"
           echo "- Service Bus, PostgreSQL database, Redis cache, and other Azure resources"
           echo "- Terraform state file: ${{ env.backend_key }}"
 
@@ -277,6 +278,55 @@ jobs:
             }
           fi
 
+      - name: Clean up Key Vault Secrets
+        run: |
+          KEY_VAULT_NAME="teachin-seo-kv"
+          RESOURCE_GROUP="dev-zionet-learning-2025"
+          ENVIRONMENT_PREFIX="${{ env.environment_name }}"
+          
+          if [ "${{ env.dry_run }}" = "true" ]; then
+            echo "DRY RUN: Would clean up Key Vault secrets for environment: $ENVIRONMENT_PREFIX"
+            echo "Key Vault: $KEY_VAULT_NAME"
+            
+            # List secrets that would be deleted
+            echo "Secrets that would be deleted:"
+            az keyvault secret list --vault-name "$KEY_VAULT_NAME" --query "[?starts_with(name, '${ENVIRONMENT_PREFIX}-')].name" -o tsv 2>/dev/null | while read secret_name; do
+              if [ -n "$secret_name" ]; then
+                echo "  - $secret_name"
+              fi
+            done
+            
+            # Check if any secrets match the pattern
+            SECRET_COUNT=$(az keyvault secret list --vault-name "$KEY_VAULT_NAME" --query "[?starts_with(name, '${ENVIRONMENT_PREFIX}-')] | length(@)" -o tsv 2>/dev/null || echo "0")
+            if [ "$SECRET_COUNT" -eq 0 ]; then
+              echo "  No secrets found with prefix '$ENVIRONMENT_PREFIX-'"
+            else
+              echo "  Found $SECRET_COUNT secrets to delete"
+            fi
+          else
+            echo "Cleaning up Key Vault secrets for environment: $ENVIRONMENT_PREFIX"
+            echo "Key Vault: $KEY_VAULT_NAME"
+            
+            # Get list of secrets that match the environment prefix
+            SECRETS_TO_DELETE=$(az keyvault secret list --vault-name "$KEY_VAULT_NAME" --query "[?starts_with(name, '${ENVIRONMENT_PREFIX}-')].name" -o tsv 2>/dev/null)
+            
+            if [ -z "$SECRETS_TO_DELETE" ]; then
+              echo "No secrets found with prefix '$ENVIRONMENT_PREFIX-' to delete"
+            else
+              echo "Found secrets to delete:"
+              echo "$SECRETS_TO_DELETE" | while read secret_name; do
+                if [ -n "$secret_name" ]; then
+                  echo "  Deleting secret: $secret_name"
+                  az keyvault secret delete --vault-name "$KEY_VAULT_NAME" --name "$secret_name" 2>/dev/null && {
+                    echo "Successfully deleted: $secret_name"
+                  } || {
+                    echo "Failed to delete: $secret_name"
+                  }
+                fi
+              done
+            fi
+          fi
+
       - name: Summary
         run: |
           if [ "${{ env.dry_run }}" = "true" ]; then
@@ -284,6 +334,7 @@ jobs:
             echo "The following would have been destroyed if this was not a dry run:"
             echo "Infrastructure (via Terraform destroy)"
             echo "Kubernetes namespace '${{ env.environment_name }}'"
+            echo "Key Vault secrets with prefix '${{ env.environment_name }}-'"
             echo "Terraform state file '${{ env.backend_key }}'"
             echo ""
             echo "No actual resources were destroyed - this was a preview only!"
@@ -292,6 +343,7 @@ jobs:
             echo "Destroy Summary:"
             echo "Infrastructure destroyed via Terraform"
             echo "Kubernetes namespace '${{ env.environment_name }}' cleaned up"
+            echo "Key Vault secrets with prefix '${{ env.environment_name }}-' removed"
             echo "Terraform state file '${{ env.backend_key }}' removed"
             echo ""
             echo "Environment '${{ env.environment_name }}' has been completely destroyed!"
