@@ -1,4 +1,5 @@
 using Dapr.Client;
+using Manager.Constants;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Endpoints;
@@ -7,10 +8,7 @@ public static class MediaEndpoints
 {
     private sealed class MediaEndpoint { }
 
-    private const string AccessorAppId = "accessor"; // adjust if different
-    private const string AccessorRoute = "media-accessor/speech/token";
-
-    public static WebApplication MapMediaEndpoints(this WebApplication app)
+    public static IEndpointRouteBuilder MapMediaEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/media-manager")
             .WithTags("Media")
@@ -30,18 +28,19 @@ public static class MediaEndpoints
         try
         {
             // Invoke Accessor endpoint via Dapr service invocation
-            var result = await dapr.InvokeMethodAsync<SpeechTokenResponse>(
-                AccessorAppId,
-                AccessorRoute,
+            var token = await dapr.InvokeMethodAsync<string>(
+                HttpMethod.Get,
+                AppIds.Accessor,
+                "media-accessor/speech/token",
                 ct);
 
-            if (result is null || string.IsNullOrWhiteSpace(result.token))
+            if (token is null || string.IsNullOrWhiteSpace(token))
             {
                 logger.LogWarning("Accessor returned empty speech token");
                 return Results.Problem("Failed to retrieve speech token");
             }
 
-            return Results.Ok(result);
+            return Results.Ok(new { token = token });
         }
         catch (Exception ex)
         {

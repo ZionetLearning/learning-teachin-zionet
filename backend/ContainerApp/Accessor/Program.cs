@@ -121,4 +121,5 @@ app.MapUsersEndpoints();
 app.MapAuthEndpoints();
 app.MapRefreshSessionEndpoints();
 app.MapStatsEndpoints();
+app.MapMediaEndpoints();
 await app.RunAsync();

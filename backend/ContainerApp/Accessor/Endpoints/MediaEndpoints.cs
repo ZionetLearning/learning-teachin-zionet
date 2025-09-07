@@ -4,12 +4,13 @@ namespace Accessor.Endpoints;
 
 public static class MediaEndpoints
 {
-    public static void MapMediaEndpoints(this WebApplication app)
+    public static IEndpointRouteBuilder MapMediaEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/media-accessor").WithTags("Media");
 
         group.MapGet("/speech/token", GetSpeechTokenAsync)
              .WithName("Accessor_GetSpeechToken");
+        return app;
     }
 
     private static async Task<IResult> GetSpeechTokenAsync(
@@ -20,8 +21,8 @@ public static class MediaEndpoints
 
         try
         {
-            var region = Environment.GetEnvironmentVariable("SPEECH_REGION");
-            var key = Environment.GetEnvironmentVariable("SPEECH_KEY");
+            var region = "";
+            var key = "";
 
             if (string.IsNullOrWhiteSpace(region) || string.IsNullOrWhiteSpace(key))
             {
@@ -43,8 +44,8 @@ public static class MediaEndpoints
             }
 
             var token = await resp.Content.ReadAsStringAsync(ct);
-            logger.LogInformation("Issued speech token for region {Region}", region);
-            return Results.Ok(new { token, region });
+            logger.LogInformation("Issued speech token for region {Region}, Token : {Token}", region, token);
+            return Results.Ok(token);
         }
         catch (OperationCanceledException)
         {
