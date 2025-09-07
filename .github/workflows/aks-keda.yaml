@@ -18,6 +18,11 @@ on:
         description: 'Optional namespace/prefix (lowercase letters & digits). Empty -> dev'
         required: false
         default: ''
+      use_keda:
+        description: 'Enable KEDA for this environment'
+        type: boolean
+        required: false
+        default: true
   workflow_call:
     inputs:
       environment:
@@ -61,6 +66,7 @@ jobs:
           az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
 
       - name: Deploy KEDA
+        if: ${{ github.event.inputs.use_keda }}
         run: |
           cd devops/helm-tools
           chmod +x keda.sh
@@ -77,5 +83,5 @@ jobs:
       environment: ${{ inputs.environment || github.event.inputs.environment }}
       environment_name: ${{ inputs.environment_name || github.event.inputs.environment_name }}
       skip_infra_steps: ${{ inputs.skip_infra_steps || github.event.inputs.skip_infra_steps }}
-      use_keda: true
+      use_keda: ${{ github.event.inputs.use_keda }}
     secrets: inherit
