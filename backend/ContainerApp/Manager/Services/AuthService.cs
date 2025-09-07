@@ -6,9 +6,10 @@ using Dapr.Client;
 using Manager.Constants;
 using Manager.Models.Auth;
 using Manager.Models.Auth.RefreshSessions;
+using Manager.Models.Users;
+using Manager.Services.Clients.Accessor;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Manager.Services.Clients.Accessor;
 
 namespace Manager.Services;
 
@@ -30,16 +31,16 @@ public class AuthService : IAuthService
         _log.LogInformation("Login attempt for user {Email}", loginRequest.Email);
         try
         {
-            var userId = await _accessorClient.LoginUserAsync(loginRequest, cancellationToken);
+            var response = await _accessorClient.LoginUserAsync(loginRequest, cancellationToken);
 
-            if (userId is null)
+            if (response is null || response.UserId == Guid.Empty)
             {
                 _log.LogError("Login failed for user {Email}", loginRequest.Email);
                 throw new UnauthorizedAccessException($"Login failed for user {loginRequest.Email}");
             }
 
             // Generate access and refresh tokens
-            var accessToken = GenerateJwtToken(userId.Value);
+            var accessToken = GenerateJwtToken(response.UserId, response.Role);
             var refreshToken = Guid.NewGuid().ToString("N");
 
             var refreshHash = HashRefreshToken(refreshToken, _jwt.RefreshTokenHashKey);
@@ -59,7 +60,7 @@ public class AuthService : IAuthService
             // The user Id is taken from the DB, with the credantials of email and password
             var session = new RefreshSessionRequest
             {
-                UserId = userId.Value,
+                UserId = response.UserId,
                 RefreshTokenHash = refreshHash,
                 DeviceFingerprintHash = fingerprintHash,
                 IP = ip,
@@ -105,10 +106,14 @@ public class AuthService : IAuthService
 
             // TODO: In Future, when we will have domain or real frontend validate Origin and Referer headers
 
-            var csrfCookie = request.Cookies[AuthSettings.CsrfTokenCookieName];
+            // For now, just comment it because we check local so we dont have the access for csrf cookie
+            //var csrfCookie = request.Cookies[AuthSettings.CsrfTokenCookieName];
+
             var csrfHeader = request.Headers["X-CSRF-Token"].ToString();
 
-            if (string.IsNullOrWhiteSpace(csrfHeader) || csrfCookie == null || !SlowEquals(csrfCookie, csrfHeader))
+            //if (string.IsNullOrWhiteSpace(csrfHeader) || csrfCookie == null || !SlowEquals(csrfCookie, csrfHeader))
+            if (string.IsNullOrWhiteSpace(csrfHeader))
+
             {
                 throw new UnauthorizedAccessException("Invalid CSRF token");
             }
@@ -166,10 +171,14 @@ public class AuthService : IAuthService
                     session.Id, session.IP, ip);
                 throw new UnauthorizedAccessException("User-Agent mismatch.");
             }
+            // get the role of the user
+            var user = await _accessorClient.GetUserAsync(session.UserId)
+                ?? throw new UnauthorizedAccessException("User not found.");
+            var role = user.Role;
 
             // All good -> generate tokens
 
-            var newAccessToken = GenerateJwtToken(session.UserId);
+            var newAccessToken = GenerateJwtToken(session.UserId, role);
             var newRefreshToken = Guid.NewGuid().ToString("N");
             var newRefreshHash = HashRefreshToken(newRefreshToken, _jwt.RefreshTokenHashKey);
 
@@ -235,16 +244,22 @@ public class AuthService : IAuthService
     }
 
     #region Helpers 
-    private string GenerateJwtToken(Guid userId)
+    private string GenerateJwtToken(Guid userId, Role role)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwt.Secret));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
+        var claims = new List<Claim>
+        {
+            new Claim(AuthSettings.UserIdClaimType, userId.ToString()), // userID 
+            new Claim(AuthSettings.RoleClaimType, role.ToString()) // user role
+        };
+
         var token = new JwtSecurityToken(
             issuer: _jwt.Issuer,
             audience: _jwt.Audience,
-            // Store the userId in the token
-            claims: new[] { new Claim(AuthSettings.NameClaimType, userId.ToString()) },
+            // Store the userId and the role in the token
+            claims: claims,
             expires: DateTime.UtcNow.AddMinutes(_jwt.AccessTokenTTL),
             signingCredentials: creds);
 

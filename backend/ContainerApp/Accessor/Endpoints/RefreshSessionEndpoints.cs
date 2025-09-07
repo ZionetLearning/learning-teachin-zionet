@@ -1,6 +1,7 @@
 ﻿using Accessor.Services;
 using Accessor.Models.RefreshSessions;
 using Microsoft.AspNetCore.Mvc;
+using Accessor.Constants;
 
 namespace Accessor.Endpoints;
 
@@ -19,6 +20,9 @@ public static class RefreshSessionEndpoints
         #region HTTP POST
 
         refreshSessionGroup.MapPost("", CreateSessionAsync).WithName("CreateRefreshSession");
+
+        refreshSessionGroup.MapPost("/internal/cleanup", CleanupRefreshSessionsAsync)
+            .WithName("CleanupRefreshSessions");
 
         #endregion
 
@@ -48,7 +52,7 @@ public static class RefreshSessionEndpoints
                 var session = await refreshSessionService.FindByRefreshHashAsync(hash, cancellationToken);
                 if (session is null)
                 {
-                    logger.LogWarning("Refresh session not found for hash: {Hash}", hash);
+                    logger.LogWarning("Refresh session not found for hash password");
                     return Results.NotFound();
                 }
 
@@ -83,6 +87,26 @@ public static class RefreshSessionEndpoints
         }
     }
 
+    private static async Task<IResult> CleanupRefreshSessionsAsync(
+        [FromServices] IRefreshSessionService refreshSessionService,
+        [FromServices] ILogger<RefreshSessionService> logger,
+        CancellationToken ct)
+    {
+        using (logger.BeginScope("Method: {Method}", nameof(CleanupRefreshSessionsAsync)))
+        {
+            try
+            {
+                var deleted = await refreshSessionService.PurgeExpiredOrRevokedAsync(AuthSettings.RefreshSessionCleanupBatchSize, ct);
+                logger.LogInformation("Cleanup removed {Deleted} refresh sessions", deleted);
+                return Results.Ok(new { deleted });
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Cleanup failed");
+                return Results.Problem("Cleanup failed.");
+            }
+        }
+    }
     private static async Task<IResult> RotateSessionAsync(
         [FromRoute] Guid sessionId,
         [FromBody] RotateRefreshSessionRequest request,

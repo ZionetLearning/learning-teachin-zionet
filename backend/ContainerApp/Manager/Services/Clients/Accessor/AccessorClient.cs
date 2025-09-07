@@ -42,6 +42,25 @@ public class AccessorClient(
             throw;
         }
     }
+    public async Task<int> CleanupRefreshSessionsAsync(CancellationToken ct = default)
+    {
+        _logger.LogInformation("Inside: {Method} in {Class}", nameof(CleanupRefreshSessionsAsync), nameof(AccessorClient));
+        try
+        {
+            var resp = await _daprClient.InvokeMethodAsync<CleanupResponse>(
+                HttpMethod.Post,
+                AppIds.Accessor,
+                "auth-accessor/refresh-sessions/internal/cleanup",
+                ct);
+
+            return resp?.Deleted ?? 0;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to invoke cleanup on Accessor");
+            throw;
+        }
+    }
 
     public async Task<bool> UpdateTaskName(int id, string newTaskName)
     {
@@ -119,13 +138,18 @@ public class AccessorClient(
 
         try
         {
-            var userId = _httpContextAccessor.HttpContext?.Request.Headers["X-User-Id"].FirstOrDefault() ?? "anonymous";
+            var userId = _httpContextAccessor.HttpContext?.User?.Identity?.Name;
+            if (string.IsNullOrWhiteSpace(userId) || !Guid.TryParse(userId, out _))
+            {
+                _logger.LogError("Missing or invalid UserId in HttpContext.");
+                throw new InvalidOperationException("Authenticated user id is missing or not a valid GUID.");
+            }
 
             var payload = JsonSerializer.SerializeToElement(task);
             var userContextMetadata = JsonSerializer.SerializeToElement(
                 new UserContextMetadata
                 {
-                    UserId = userId,
+                    UserId = userId!,
                     MessageId = Guid.NewGuid().ToString()
                 }
             );
@@ -139,9 +163,10 @@ public class AccessorClient(
             await _daprClient.InvokeBindingAsync($"{QueueNames.AccessorQueue}-out", "create", message);
 
             _logger.LogDebug(
-                "Task {TaskId} sent to Accessor via binding '{Binding}'",
+                "Task {TaskId} sent to Accessor via binding '{Binding}' for user {UserId}",
                 task.Id,
-                QueueNames.AccessorQueue
+                QueueNames.AccessorQueue,
+                userId
             );
             return (true, "sent to queue");
         }
@@ -184,6 +209,7 @@ public class AccessorClient(
             throw;
         }
     }
+
     public async Task<UserData?> GetUserAsync(Guid userId)
     {
         try
@@ -202,14 +228,27 @@ public class AccessorClient(
     {
         try
         {
+            _logger.LogInformation("Creating user with email: {Email}", user.Email);
+
             await _daprClient.InvokeMethodAsync(HttpMethod.Post, "accessor", "users-accessor", user);
 
+            _logger.LogInformation("User {Email} created successfully", user.Email);
             return true;
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.Conflict)
+        {
+            _logger.LogWarning("Conflict: User already exists: {Email}", user.Email);
+            return false;
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.BadRequest)
+        {
+            _logger.LogWarning("Bad request when creating user: {Email}", user.Email);
+            return false;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating user {Email}", user.Email);
-            return false;
+            throw;
         }
     }
 
@@ -283,19 +322,19 @@ public class AccessorClient(
         }
     }
 
-    public async Task<Guid?> LoginUserAsync(LoginRequest loginRequest, CancellationToken ct = default)
+    public async Task<AuthenticatedUser?> LoginUserAsync(LoginRequest loginRequest, CancellationToken ct = default)
     {
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(LoginUserAsync), nameof(AccessorClient));
         try
         {
-            var userId = await _daprClient.InvokeMethodAsync<LoginRequest, Guid?>(
+            var response = await _daprClient.InvokeMethodAsync<LoginRequest, AuthenticatedUser?>(
                 HttpMethod.Post,
                 AppIds.Accessor,
                 "auth-accessor/login",
                 loginRequest,
                 ct
             );
-            return userId;
+            return response;
         }
         catch (InvocationException ex) when (
             ex.Response?.StatusCode == HttpStatusCode.NoContent ||

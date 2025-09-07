@@ -1,9 +1,10 @@
-﻿using System.Net.Http.Headers;
+﻿using IntegrationTests.Constants;
+using IntegrationTests.Infrastructure;
+using Manager.Constants;
+using Manager.Models.Auth; // for LoginRequest / AuthRoutes if defined there
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
-using IntegrationTests.Constants;
-using IntegrationTests.Infrastructure;
-using Manager.Models.Auth; // for LoginRequest / AuthRoutes if defined there
 using Xunit.Abstractions;
 
 namespace IntegrationTests.Fixtures;
@@ -62,6 +63,8 @@ public class SharedTestFixture : IAsyncLifetime
 
                 res.EnsureSuccessStatusCode();
 
+                var refreshToken = CookieHelper.ExtractCookieFromHeaders(res, TestConstants.RefreshToken);
+
                 var body = await res.Content.ReadAsStringAsync(ct);
                 var dto = JsonSerializer.Deserialize<IntegrationTests.Models.Auth.AccessTokenResponse>(body)
                           ?? throw new InvalidOperationException("Invalid JSON for access token.");
@@ -69,6 +72,13 @@ public class SharedTestFixture : IAsyncLifetime
                     throw new InvalidOperationException("No access token returned from login.");
 
                 _accessToken = dto.AccessToken;
+
+                // Clean up the refreshSession DB, after create the login session
+                var logoutRequest = new HttpRequestMessage(HttpMethod.Post, AuthRoutes.Logout);
+                logoutRequest.Headers.Add("Cookie", $"{AuthSettings.RefreshTokenCookieName}={refreshToken}");
+
+                var logoutResponse = await HttpFixture.Client.SendAsync(logoutRequest, ct);
+                logoutResponse.EnsureSuccessStatusCode();
             }
         }
         finally
@@ -102,7 +112,7 @@ public class SharedTestFixture : IAsyncLifetime
         }
         catch (Exception ex)
         {
-            output?.WriteLine($"❌ Failed to start SignalR connection: {ex}");
+            output?.WriteLine($" Failed to start SignalR connection: {ex}");
             throw; // bubble up
         }
     }

@@ -13,7 +13,6 @@ public class AccessorDbContext : DbContext
     // DB tables
     public DbSet<TaskModel> Tasks { get; set; } = default!;
     public DbSet<ChatHistorySnapshot> ChatHistorySnapshots { get; set; } = default!;
-    public DbSet<IdempotencyRecord> Idempotency { get; set; } = default!;
     public DbSet<RefreshSessionsRecord> RefreshSessions { get; set; } = default!;
     public DbSet<UserModel> Users { get; set; } = default!;
 
@@ -29,17 +28,6 @@ public class AccessorDbContext : DbContext
         modelBuilder.Entity<TaskModel>(e =>
         {
             e.HasKey(t => t.Id);
-        });
-
-        // Idempotency table
-        modelBuilder.Entity<IdempotencyRecord>(e =>
-        {
-            e.ToTable("Idempotency");
-            e.HasKey(i => i.IdempotencyKey);
-            e.Property(i => i.IdempotencyKey).HasMaxLength(200).IsRequired();
-            e.Property(i => i.Status).IsRequired();
-            e.Property(i => i.CreatedAtUtc).IsRequired();
-            // ExpiresAtUtc optional
         });
 
         // ChatHistorySnapshot table

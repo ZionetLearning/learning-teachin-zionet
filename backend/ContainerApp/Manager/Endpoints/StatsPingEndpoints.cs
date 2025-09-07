@@ -1,7 +1,6 @@
 ﻿using Dapr.Client;
 using Manager.Constants;
 using Manager.Models;
-using Manager.Services;
 using Manager.Services.Clients.Accessor;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,11 +8,13 @@ namespace Manager.Endpoints;
 
 public static class StatsPingEndpoints
 {
+    private sealed class StatsPingEndpoint { }
+
     public static IEndpointRouteBuilder MapStatsPing(this IEndpointRouteBuilder app)
     {
         // POST: compute & cache for 24h
         app.MapPost("/internal/compute-stats/ping",
-            async ([FromServices] ILogger<ManagerService> log,
+            async ([FromServices] ILogger<StatsPingEndpoint> log,
                    [FromServices] IAccessorClient accessorClient,
                    [FromServices] DaprClient dapr,
                    CancellationToken ct) =>
@@ -48,11 +49,11 @@ public static class StatsPingEndpoints
             })
             .WithName("ComputeStats")
             .WithTags("Internal")
-            .Produces(StatusCodes.Status200OK).RequireAuthorization();
+            .Produces(StatusCodes.Status200OK);
 
         // GET: latest cached stats (404 if expired / not set)
         app.MapGet("/internal/stats/latest",
-            async ([FromServices] ILogger<ManagerService> log,
+            async ([FromServices] ILogger<StatsPingEndpoint> log,
                    [FromServices] DaprClient dapr,
                    CancellationToken ct) =>
             {
@@ -76,7 +77,7 @@ public static class StatsPingEndpoints
             .WithName("GetLatestStats")
             .WithTags("Internal")
             .Produces(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status404NotFound).RequireAuthorization();
+            .Produces(StatusCodes.Status404NotFound);
 
         return app;
     }
