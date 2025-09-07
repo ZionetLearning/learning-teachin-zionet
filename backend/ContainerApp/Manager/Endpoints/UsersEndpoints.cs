@@ -1,5 +1,6 @@
 ﻿using Manager.Models.Users;
 using Manager.Services.Clients.Accessor;
+using Manager.Helpers;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Endpoints;
@@ -49,7 +50,8 @@ public static class UsersEndpoints
     private static async Task<IResult> CreateUserAsync(
         [FromBody] CreateUser newUser,
         [FromServices] IAccessorClient accessorClient,
-        [FromServices] ILogger<UserEndpoint> logger)
+        [FromServices] ILogger<UserEndpoint> logger,
+        HttpContext httpContext)
     {
         using var scope = logger.BeginScope("CreateUser:");
 
@@ -62,6 +64,15 @@ public static class UsersEndpoints
                 return Results.BadRequest("Invalid role provided.");
             }
 
+            // Detect UI language from Accept-Language header
+            var acceptLanguage = httpContext.Request.Headers["Accept-Language"].FirstOrDefault();
+            logger.LogInformation("Raw Accept-Language header received: {Header}", acceptLanguage ?? "<null>");
+            var preferredLanguage = UserDefaultsHelper.ParsePreferredLanguage(acceptLanguage);
+            logger.LogInformation("Parsed PreferredLanguageCode: {PreferredLanguage}", preferredLanguage);
+
+            // HebrewLevel only applies to students
+            var hebrewLevel = UserDefaultsHelper.GetDefaultHebrewLevel(parsedRole);
+
             // Build the user model (hash password here!)
             var user = new UserModel
             {
@@ -70,7 +81,9 @@ public static class UsersEndpoints
                 FirstName = newUser.FirstName,
                 LastName = newUser.LastName,
                 Password = BCrypt.Net.BCrypt.HashPassword(newUser.Password),
-                Role = parsedRole
+                Role = parsedRole,
+                PreferredLanguageCode = preferredLanguage,
+                HebrewLevelValue = hebrewLevel
             };
 
             // Send to accessor
@@ -88,7 +101,9 @@ public static class UsersEndpoints
                 Email = user.Email,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
-                Role = parsedRole
+                Role = parsedRole,
+                PreferredLanguageCode = preferredLanguage,
+                HebrewLevelValue = hebrewLevel
             };
 
             logger.LogInformation("User {Email} created successfully", user.Email);
