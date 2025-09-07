@@ -22,14 +22,6 @@ cronjobs:
       serviceName: "manager"
       port: 80
 
-  refreshSessionsCleanup:
-    enabled: true
-    schedule: "30 2 * * *"   # nightly at 02:30
-    target:
-      mode: "service"
-      serviceName: "manager"
-      port: 80
-
 manager:
   image:
     name: manager  # Required: image name for the container
