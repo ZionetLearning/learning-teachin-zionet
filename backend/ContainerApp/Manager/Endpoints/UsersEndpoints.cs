@@ -128,6 +128,35 @@ public static class UsersEndpoints
 
         try
         {
+            // Fetch current user to check role
+            var existingUser = await accessorClient.GetUserAsync(userId);
+            if (existingUser is null)
+            {
+                logger.LogWarning("User {UserId} not found", userId);
+                return Results.NotFound("User not found.");
+            }
+
+            if (user.PreferredLanguageCode.HasValue &&
+                !Enum.IsDefined(typeof(SupportedLanguage), user.PreferredLanguageCode.Value))
+            {
+                logger.LogWarning("Invalid PreferredLanguageCode provided: {Language}", user.PreferredLanguageCode);
+                return Results.BadRequest("Invalid preferred language.");
+            }
+
+            if (existingUser.Role == Role.Student &&
+                user.HebrewLevelValue.HasValue &&
+                !Enum.IsDefined(typeof(HebrewLevel), user.HebrewLevelValue.Value))
+            {
+                logger.LogWarning("Invalid HebrewLevelValue provided for student: {HebrewLevel}", user.HebrewLevelValue);
+                return Results.BadRequest("Invalid Hebrew level.");
+            }
+
+            if (existingUser.Role != Role.Student && user.HebrewLevelValue.HasValue)
+            {
+                logger.LogWarning("Non-student tried to set HebrewLevel. Role: {Role}", existingUser.Role);
+                return Results.BadRequest("Hebrew level can only be set for students.");
+            }
+
             var success = await accessorClient.UpdateUserAsync(user, userId);
             return success ? Results.Ok("User updated.") : Results.NotFound("User not found.");
         }
