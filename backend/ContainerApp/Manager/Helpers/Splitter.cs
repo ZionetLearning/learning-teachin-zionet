@@ -1,4 +1,5 @@
-﻿using Manager.Models.Sentences;
+﻿using System.Text.RegularExpressions;
+using Manager.Models.Sentences;
 
 namespace Manager.Helpers;
 
@@ -15,8 +16,11 @@ public static class Splitter
 
         foreach (var s in input.Sentences)
         {
-            var words = s?.Text?
-                .Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)
+
+            var cleaned = Regex.Replace(s?.Text ?? string.Empty, @"[^\p{L}\p{N}\s]", "");
+
+            var words = cleaned
+                .Split(Array.Empty<char>(), StringSplitOptions.RemoveEmptyEntries)
                 .ToList() ?? new List<string>();
 
             result.Sentences.Add(new SplitSentenceItem
@@ -29,20 +33,5 @@ public static class Splitter
         }
 
         return result;
-    }
-
-    public static SplitSentenceItem SplitOne(SentenceItem s)
-    {
-        var words = s?.Text?
-            .Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)
-            .ToList() ?? new List<string>();
-
-        return new SplitSentenceItem
-        {
-            Words = words,
-            Original = s?.Text ?? string.Empty,
-            Difficulty = s?.Difficulty ?? string.Empty,
-            Nikud = s?.Nikud ?? false
-        };
     }
 }
