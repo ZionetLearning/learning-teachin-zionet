@@ -11,17 +11,23 @@ public class SentencesService : ISentencesService
 {
     private readonly Kernel _genKernel;
     private readonly ILogger<SentencesService> _log;
+
     private const string EasyPath = "Constants/Words/hintsEasy.txt";
     private const string MediumPath = "Constants/Words/hintsMedium.txt";
     private const string HardPath = "Constants/Words/hintsHard.txt";
 
-    private static readonly Lazy<string[]> EasyWords = new(() => LoadList(EasyPath));
-    private static readonly Lazy<string[]> MediumWords = new(() => LoadList(MediumPath));
-    private static readonly Lazy<string[]> HardWords = new(() => LoadList(HardPath));
+    private readonly Lazy<string[]> _easyWords;
+    private readonly Lazy<string[]> _mediumWords;
+    private readonly Lazy<string[]> _hardWords;
+
     public SentencesService([FromKeyedServices("gen")] Kernel genKernel, ILogger<SentencesService> log)
     {
         _genKernel = genKernel;
         _log = log;
+
+        _easyWords = new(() => LoadList(EasyPath));
+        _mediumWords = new(() => LoadList(MediumPath));
+        _hardWords = new(() => LoadList(HardPath));
     }
 
     public async Task<SentenceResponse> GenerateAsync(SentenceRequest req, CancellationToken ct = default)
@@ -35,12 +41,14 @@ public class SentencesService : ISentencesService
             Temperature = 0.3,
             ResponseFormat = typeof(SentenceResponse)
         };
-        var hints = GetRandomHints(req.Difficulty.ToString().ToLowerInvariant(), 3);
+
+        var difficulty = req.Difficulty.ToString().ToLowerInvariant();
+        var hints = GetRandomHints(difficulty, 3);
         var hintsStr = string.Join(", ", hints);
 
         var args = new KernelArguments(exec)
         {
-            ["difficulty"] = req.Difficulty.ToString().ToLowerInvariant(),
+            ["difficulty"] = difficulty,
             ["nikud"] = req.Nikud.ToString().ToLowerInvariant(),
             ["count"] = req.Count.ToString(),
             ["hints"] = hintsStr
@@ -48,34 +56,30 @@ public class SentencesService : ISentencesService
 
         var result = await _genKernel.InvokeAsync(func, args, ct);
         var json = result.GetValue<string>();
-        if (json != null)
-        {
-            var parsed = JsonSerializer.Deserialize<SentenceResponse>(json);
 
-            if (parsed != null)
-            {
-                return parsed;
-            }
-            else
-            {
-                _log.LogError("Error while generating sentences. The response is empty");
-                throw new RetryableException("Error while generating sentences. The response is empty");
-            }
-        }
-        else
+        if (json is null)
         {
             _log.LogError("Error while generating sentences. The response is empty");
             throw new RetryableException("Error while generating sentences. The response is empty");
         }
+
+        var parsed = JsonSerializer.Deserialize<SentenceResponse>(json);
+        if (parsed is null)
+        {
+            _log.LogError("Error while generating sentences. The response is empty or invalid JSON");
+            throw new RetryableException("Error while generating sentences. The response is empty or invalid JSON");
+        }
+
+        return parsed;
     }
 
-    private static string[] GetRandomHints(string difficulty, int count)
+    private string[] GetRandomHints(string difficulty, int count)
     {
         var pool = difficulty switch
         {
-            "easy" => EasyWords.Value,
-            "medium" => MediumWords.Value,
-            "hard" => HardWords.Value,
+            "easy" => _easyWords.Value,
+            "medium" => _mediumWords.Value,
+            "hard" => _hardWords.Value,
             _ => Array.Empty<string>()
         };
 
@@ -96,17 +100,26 @@ public class SentencesService : ISentencesService
         return idx.Take(count).Select(i => pool[i]).ToArray();
     }
 
-    private static string[] LoadList(string path)
+    private string[] LoadList(string path)
     {
-        if (!File.Exists(path))
+        try
         {
+            if (!File.Exists(path))
+            {
+                _log.LogWarning("Hints file not found: {Path}", path);
+                return Array.Empty<string>();
+            }
+
+            return File.ReadAllLines(path)
+                .Select(l => l.Trim())
+                .Where(l => !string.IsNullOrWhiteSpace(l))
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+        }
+        catch (Exception ex)
+        {
+            _log.LogError(ex, "Exception while reading hints file: {Path}", path);
             return Array.Empty<string>();
         }
-
-        return File.ReadAllLines(path)
-            .Select(l => l.Trim())
-            .Where(l => !string.IsNullOrWhiteSpace(l))
-            .Distinct(StringComparer.Ordinal)
-            .ToArray();
     }
 }

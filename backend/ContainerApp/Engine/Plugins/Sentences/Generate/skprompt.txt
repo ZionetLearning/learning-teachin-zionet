@@ -18,7 +18,7 @@ Rules:
 - You MAY ignore hints entirely if they feel forced.
 - Do NOT output the hints in the JSON.
 - Use correct construct state and articles in Hebrew (e.g., “מזג האוויר”, “תחנת הרכבת”).
--Prefer correct forms with inanimate subjects (e.g., “הדלת נפתחת”, not “הדלת פותחת”).
+- Prefer correct forms with inanimate subjects (e.g., “הדלת נפתחת”, not “הדלת פותחת”).
 
 
 Difficulty:
