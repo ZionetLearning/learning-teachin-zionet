@@ -5,13 +5,15 @@ import {
   AuthContext,
   Credentials,
   decodeJwtExp,
+  decodeJwtUserId,
   SignupData,
   useCreateUser,
   useLoginMutation,
   useLogoutMutation,
   useRefreshTokensMutation,
+  UserInfo
 } from "@app-providers";
-
+import { getUserById } from "@app-providers/api";
 export interface AuthProviderProps {
   children: ReactNode;
   appRole: AppRoleType;
@@ -57,14 +59,64 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
       return null;
     },
   );
+  const user = credentials
+    ? {
+      email: credentials.email,
+      firstName: credentials.firstName ?? "",
+      lastName: credentials.lastName ?? "",
+    }
+    : null;
+
+  const setUser = useCallback((updatedUser: UserInfo) => {
+    setCredentials((prev) => {
+      if (!prev) return null;
+
+      const updatedCreds = {
+        ...prev,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+      };
+
+      localStorage.setItem("credentials", JSON.stringify(updatedCreds));
+      return updatedCreds;
+    });
+  }, []);
 
   const {
     mutateAsync: loginMutation,
     isPending: isLoggingIn,
     error: loginError,
   } = useLoginMutation({
-    onSuccess: (data, vars) => {
-      persistSession(vars.email, data.accessToken, appRole);
+    onSuccess: async (data, vars) => {
+      const userId = decodeJwtUserId(data.accessToken);
+      console.log("userId:", userId);
+      if (!userId) {
+        console.error("Missing userId in token");
+        return;
+      }
+
+      persistSession(vars.email, data.accessToken);
+
+      try {
+        const user = await getUserById(userId);
+
+        persistSession(
+          user.email,
+          data.accessToken,
+          user.role as AppRoleType,
+          user.firstName,
+          user.lastName
+        );
+
+        console.log("Login succeeded", data.accessToken);
+        console.log("Storing credentials", {
+          email: user.email,
+          accessToken: data.accessToken,
+          role: user.role,
+        });
+      } catch (err) {
+        console.error("Failed to fetch user data", err);
+      }
     },
     onError: (err) => {
       console.error("Login error", err);
@@ -107,22 +159,33 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
   }, [logoutServerMutation, clearSession]);
 
   const persistSession = useCallback(
-    (email: string, accessToken: string, role?: AppRoleType) => {
+    (
+      email: string,
+      accessToken: string,
+      role?: AppRoleType,
+      firstName?: string,
+      lastName?: string
+    ) => {
       const decodedExp = decodeJwtExp(accessToken);
       const fallback = Date.now() + FALLBACK_TOKEN_EXPIRY_MS;
       const accessTokenExpiry =
         decodedExp && decodedExp > Date.now() ? decodedExp : fallback;
+
       const creds: Credentials = {
         email,
         accessToken,
         accessTokenExpiry,
         role,
+        firstName,
+        lastName,
       };
+
       localStorage.setItem("credentials", JSON.stringify(creds));
       setCredentials(creds);
     },
     [],
   );
+
 
   const signup = useCallback(
     async (data: SignupData) => {
@@ -190,6 +253,8 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
             isLoggingIn || isCreatingUser || isRefreshing || isLoggingOut,
           error: loginError || createUserError,
         },
+        user,
+        setUser,
       }}
     >
       {children}

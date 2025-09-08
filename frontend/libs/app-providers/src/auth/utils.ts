@@ -5,7 +5,7 @@ export const decodeJwtExp = (token: string): number | undefined => {
     const json = JSON.parse(
       atob(
         payload.replace(/-/g, "+").replace(/_/g, "/") +
-          "=".repeat((4 - (payload.length % 4)) % 4),
+        "=".repeat((4 - (payload.length % 4)) % 4),
       ),
     );
     if (typeof json.exp === "number") {
@@ -60,3 +60,14 @@ export const extractCsrf = (data: unknown): string | undefined => {
   }
   return undefined;
 };
+
+export const decodeJwtUserId = (token: string): string | null => {
+  try {
+    const [, payload] = token.split(".");
+    const decoded = JSON.parse(atob(payload));
+    return decoded?.userId || null;
+  } catch (e) {
+    console.error("Failed to decode JWT:", e);
+    return null;
+  }
+}

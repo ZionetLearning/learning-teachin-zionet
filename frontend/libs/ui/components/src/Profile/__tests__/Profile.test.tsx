@@ -143,45 +143,6 @@ describe("<Profile />", () => {
     expect(saveBtn).toBeEnabled();
   });
 
-  it("saves edited names and calls onSave; exits edit mode", () => {
-    const onSave = vi.fn();
-    render(<Profile {...baseProps} onSave={onSave} />);
-
-    fireEvent.click(screen.getByText("pages.profile.edit"));
-
-    const [firstNameInput] = screen.getAllByRole("textbox") as HTMLInputElement[];
-    fireEvent.change(firstNameInput, { target: { value: "Alicia" } });
-
-    fireEvent.click(screen.getByText("pages.profile.saveChanges"));
-    expect(onSave).toHaveBeenCalledTimes(1);
-    expect(onSave).toHaveBeenCalledWith({ firstName: "Alicia", lastName: "Smith" });
-
-    expect(screen.getByText("pages.profile.edit")).toBeInTheDocument();
-    expect(screen.queryByText("pages.profile.saveChanges")).not.toBeInTheDocument();
-  });
-
-  it("cancels edits and resets values", () => {
-    const onSave = vi.fn();
-    render(<Profile {...baseProps} onSave={onSave} />);
-
-    fireEvent.click(screen.getByText("pages.profile.edit"));
-
-    const [, lastNameInput] = screen.getAllByRole("textbox") as HTMLInputElement[];
-    fireEvent.change(lastNameInput, { target: { value: "Smyth" } });
-
-    fireEvent.click(screen.getByText("pages.profile.cancel"));
-
-    expect(screen.getByText("pages.profile.edit")).toBeInTheDocument();
-
-    fireEvent.click(screen.getByText("pages.profile.edit"));
-    const [firstNameInput2, lastNameInput2] =
-      screen.getAllByRole("textbox") as HTMLInputElement[];
-    expect(firstNameInput2).toHaveValue("Alice");
-    expect(lastNameInput2).toHaveValue("Smith");
-
-    expect(onSave).not.toHaveBeenCalled();
-  });
-
   it("updates inputs when parent props change", () => {
     const { rerender } = render(<Profile {...baseProps} />);
     rerender(<Profile {...baseProps} firstName="Alicia" lastName="Smyth" />);
@@ -211,7 +172,6 @@ describe("<Profile />", () => {
         firstName="John"
         lastName="Doe"
         email="john.doe@example.com"
-        onSave={vi.fn()}
       />
     );
     expect(asFragment()).toMatchSnapshot();

@@ -1,25 +1,26 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, Typography, TextField, Stack } from '@mui/material';
+import { useUpdateUser, decodeJwtUserId, useAuth } from '@app-providers';
 import { Button } from '../Button';
 
 export type ProfileProps = {
     firstName: string;
     lastName: string;
     email: string;
-    onSave?: (data: { firstName: string; lastName: string }) => void;
 };
 
 export const Profile = ({
     firstName,
     lastName,
     email,
-    onSave,
+
 }: ProfileProps) => {
     const { t, i18n } = useTranslation();
+    const { mutateAsync: updateUserMutation } = useUpdateUser();
+    const { user, setUser } = useAuth();
     const [fn, setFn] = useState(firstName);
     const [ln, setLn] = useState(lastName);
-    const [editing, setEditing] = useState(false);
 
     const isRTL = i18n.dir() === 'rtl';
 
@@ -31,19 +32,36 @@ export const Profile = ({
     const dirty =
         fn.trim() !== firstName.trim() || ln.trim() !== lastName.trim();
 
+
+    const raw = localStorage.getItem("credentials");
+    const creds = raw ? JSON.parse(raw) : null;
+    const userId = decodeJwtUserId(creds.accessToken);
+    if (!userId) {
+        console.error("User ID not found in token");
+    }
+
     const handleCancel = () => {
         setFn(firstName);
         setLn(lastName);
-        setEditing(false);
     };
 
-    const handleSave = () => {
-        onSave?.({ firstName: fn, lastName: ln });
-        setEditing(false);
+    const handleSave = async () => {
+        if (!user) return;
+        try {
+            if (!userId) throw new Error("Missing user ID");
+            await updateUserMutation({
+                userId,
+                firstName: fn,
+                lastName: ln,
+            });
+            setUser?.({ ...user, firstName: fn, lastName: ln });
+        } catch (err) {
+            console.error("Update failed:", err);
+        }
     };
 
     return (
-        <Box 
+        <Box
             sx={{
                 minHeight: '100dvh',
                 display: 'flex',
@@ -103,8 +121,9 @@ export const Profile = ({
                         </Typography>
                         <TextField
                             value={fn}
-                            onChange={(e) => setFn(e.target.value)}
-                            disabled={!editing}
+                            onChange={(e) => {
+                                setFn(e.target.value);
+                            }}
                             fullWidth
                             sx={{
                                 '& .MuiInputLabel-root': { display: 'none' },
@@ -131,8 +150,9 @@ export const Profile = ({
                         </Typography>
                         <TextField
                             value={ln}
-                            onChange={(e) => setLn(e.target.value)}
-                            disabled={!editing}
+                            onChange={(e) => {
+                                setLn(e.target.value);
+                            }}
                             fullWidth
                             sx={{
                                 '& .MuiInputLabel-root': { display: 'none' },
@@ -186,23 +206,18 @@ export const Profile = ({
                 </Stack>
 
                 <Box sx={{ mt: 3, display: 'flex', gap: 1 }}>
-                    {!editing ? (
-                        <Button onClick={() => setEditing(true)}>
-                            {t('pages.profile.edit')}
+                    <>
+                        <Button
+                            onClick={handleSave}
+                            disabled={!dirty}
+                        >
+                            {t('pages.profile.saveChanges')}
                         </Button>
-                    ) : (
-                        <>
-                            <Button
-                                onClick={handleSave}
-                                disabled={!dirty}
-                            >
-                                {t('pages.profile.saveChanges')}
-                            </Button>
-                            <Button variant="outlined" onClick={handleCancel}>
-                                {t('pages.profile.cancel')}
-                            </Button>
-                        </>
-                    )}
+                        <Button variant="outlined" disabled={!dirty} onClick={handleCancel}>
+                            {t('pages.profile.cancel')}
+                        </Button>
+                    </>
+
                 </Box>
             </Box>
         </Box>

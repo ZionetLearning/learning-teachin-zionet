@@ -109,7 +109,7 @@
     "vite-tsconfig-paths": "^4.3.2",
     "vitest": "^3.2.4"
   },
-    "pnpm": {
+  "pnpm": {
     "overrides": {
       "react": "18.2.0",
       "react-dom": "18.2.0"

@@ -11,6 +11,8 @@ export interface Credentials {
   accessToken: string;
   accessTokenExpiry: number;
   role?: AppRoleType;
+  firstName?: string;
+  lastName?: string;
 }
 
 export interface SignupData {
