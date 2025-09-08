@@ -268,3 +268,24 @@ variable "servicebus_namespaces" {
   }))
   default = []
 }
+
+# Where the AKS cluster actually lives
+variable "aks_resource_group_name" {
+  type        = string
+  description = "Resource group name of the AKS cluster."
+  default     = "dev-zionet-learning-2025"
+}
+
+# Where the UAMI (workload identity) lives
+variable "uami_resource_group_name" {
+  type        = string
+  description = "Resource group name of the User Assigned Managed Identity used by workloads."
+  default     = "dev-zionet-learning-2025"
+}
+
+# Optional override; otherwise we derive "<environment_name>-aks-uami"
+variable "uami_name" {
+  type        = string
+  description = "Name of the UAMI used by workloads (optional)."
+  default     = null
+}

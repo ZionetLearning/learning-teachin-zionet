@@ -1,3 +1,8 @@
+# === Derive the UAMI name when not provided ===
+locals {
+  uami_name = coalesce(var.uami_name, format("%s-aks-uami", var.environment_name))
+}
+
 # Look up the UAMI by name in your main RG
 data "azurerm_user_assigned_identity" "aks" {
   name                = "${var.prefix}-aks-uami"
