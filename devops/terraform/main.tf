@@ -254,7 +254,8 @@ resource "kubernetes_service_account" "environment" {
 }
 
 module "frontend" {
-  for_each = toset(var.frontend_apps)
+  #for_each = toset(var.frontend_apps)
+  for_each = var.enable_frontend ? toset(var.frontend_apps) : toset([]) # Delete after mi is done
   
   source              = "./modules/frontend"
   resource_group_name = azurerm_resource_group.main.name

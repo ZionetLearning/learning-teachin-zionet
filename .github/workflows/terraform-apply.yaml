@@ -134,7 +134,7 @@ jobs:
         working-directory: ${{ env.TF_DIR }}
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve -var-file=${{ env.TFVARS_FILE }}
+        run: terraform apply -auto-approve -var-file=${{ env.TFVARS_FILE }} -var='enable_frontend=false' -var='frontend_apps=[]'
         working-directory: ${{ env.TF_DIR }}
 
       - name: Get Terraform Outputs

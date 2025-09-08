@@ -246,7 +246,7 @@ variable "frontend_apps" {
   description = "List of frontend applications to deploy"
   type        = list(string)
   #default     = ["student", "teacher", "admin"]
-  default     = [] # for my 'mi-test' rg - later return to what it was
+  default     = [] # Delete after mi is done (and uncomment the line above)
 }
 
 variable "workload_sa_bindings" {
@@ -289,4 +289,17 @@ variable "uami_name" {
   type        = string
   description = "Name of the UAMI used by workloads (optional)."
   default     = null
+}
+
+
+variable "enable_frontend" { # Delete after mi is done
+  description = "Whether to create frontend Static Web Apps."
+  type        = bool
+  default     = false
+}
+
+variable "frontend_apps" { # Delete after mi is done
+  description = "Frontend apps to create"
+  type        = list(string)
+  default     = []
 }
