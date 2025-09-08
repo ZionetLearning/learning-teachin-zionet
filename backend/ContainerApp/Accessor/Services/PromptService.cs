@@ -152,9 +152,7 @@ public class PromptService : IPromptService
         var defaults = new Dictionary<string, string>
         {
             ["chat.system"] = "You are a helpful assistant. Provide accurate, concise, context-aware answers.",
-            ["summarize.email"] = "Summarize the email in 2-3 sentences: purpose, key decisions, required actions.",
-            ["translate.text"] = "Translate preserving tone, intent, and formatting faithfully.",
-            ["chat.title"] = """
+            ["chat.title.generate"] = """
             You are a naming assistant. Create a short, specific chat title that captures the main topic.
             
             Rules:
