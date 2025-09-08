@@ -176,7 +176,7 @@
         "type": "loki",
         "uid": "P8E80F9AEF21F6940"
       },
-      "description": "Number of live sessions based on refresh tokens not yet expired or revoked. Tracks user engagement in near real-time",
+      "description": "Displays the number of active refresh sessions per environment.\nCalculated as: sessions created minus sessions deleted or cleaned.\nThe data reflects the selected time.\nIf no data exists for an environment, it's shown as zero.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -255,7 +255,7 @@
           },
           "direction": "backward",
           "editorMode": "code",
-          "expr": "sum by(namespace) (\r\n  count_over_time({container=\"accessor\", namespace=~\"dev|test|stage|featest\"} |= \"Refresh session created\" [24h])\r\n)\r\nor\r\nsum by(namespace) (\r\n  rate({container=\"accessor\", namespace=~\"dev|test|stage|featest\"}[24h]) * 0\r\n)\r\n",
+          "expr": "sum by(namespace) (\r\n  count_over_time({container=\"accessor\", namespace=~\"dev|test|stage|featest\"} |= \"Refresh session created\" [$__range])\r\n)\r\nor\r\nsum by(namespace) (\r\n  rate({container=\"accessor\", namespace=~\"dev|test|stage|featest\"}[$__range]) * 0\r\n)\r\n",
           "hide": true,
           "legendFormat": "",
           "queryType": "range",
@@ -268,7 +268,7 @@
           },
           "direction": "backward",
           "editorMode": "code",
-          "expr": "sum by(namespace) (\r\n  count_over_time({container=\"accessor\", namespace=~\"dev|test|stage|featest\"} |= \"Refresh session\" |= \"deleted\" [24h])\r\n)\r\nor\r\nsum by(namespace) (\r\n  rate({container=\"accessor\", namespace=~\"dev|test|stage|featest\"}[24h]) * 0\r\n)\r\n",
+          "expr": "sum by(namespace) (\r\n  count_over_time({container=\"accessor\", namespace=~\"dev|test|stage|featest\"} |= \"Refresh session\" |= \"deleted\" [$__range])\r\n)\r\nor\r\nsum by(namespace) (\r\n  rate({container=\"accessor\", namespace=~\"dev|test|stage|featest\"}[$__range]) * 0\r\n)\r\n",
           "hide": true,
           "queryType": "range",
           "refId": "B"
@@ -280,7 +280,7 @@
           },
           "direction": "backward",
           "editorMode": "code",
-          "expr": "sum by(namespace) (\r\n  count_over_time({container=\"accessor\", namespace=~\"dev|test|stage|featest\"} |= \"Cleanup removed\" |= \"refresh sessions\" [24h])\r\n)\r\nor\r\nsum by(namespace) (\r\n  rate({container=\"accessor\", namespace=~\"dev|test|stage|featest\"}[24h]) * 0\r\n)\r\n",
+          "expr": "sum by(namespace) (\r\n  count_over_time({container=\"accessor\", namespace=~\"dev|test|stage|featest\"} |= \"Cleanup removed\" |= \"refresh sessions\" [$__range])\r\n)\r\nor\r\nsum by(namespace) (\r\n  rate({container=\"accessor\", namespace=~\"dev|test|stage|featest\"}[$__range]) * 0\r\n)\r\n",
           "hide": true,
           "queryType": "range",
           "refId": "C"
@@ -316,5 +316,5 @@
   "timezone": "browser",
   "title": "Authentication Monitoring & Insights",
   "uid": "738b5645-e95f-407e-b7b4-ac94a9d55bab",
-  "version": 1
+  "version": 2
 }
