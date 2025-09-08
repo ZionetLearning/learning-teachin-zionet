@@ -1,7 +1,6 @@
 ﻿using Accessor.Constants;
 using Accessor.DB;
 using Accessor.Models;
-using Dapr.Client;
 using Microsoft.EntityFrameworkCore;
 using Accessor.Models.Users;
 using Accessor.Models.Auth;
@@ -12,21 +11,12 @@ public class AccessorService : IAccessorService
 {
     private readonly ILogger<AccessorService> _logger;
     private readonly AccessorDbContext _dbContext;
-    private readonly DaprClient _daprClient;
-    private readonly IConfiguration _configuration;
-    private readonly int _ttl;
 
     public AccessorService(AccessorDbContext dbContext,
-        ILogger<AccessorService> logger,
-        DaprClient daprClient,
-        IConfiguration configuration)
+        ILogger<AccessorService> logger)
     {
         _dbContext = dbContext;
         _logger = logger;
-        _daprClient = daprClient;
-        _configuration = configuration;
-        _ttl = int.Parse(configuration["TaskCache:TTLInSeconds"] ??
-                                                  throw new KeyNotFoundException("TaskCache:TTLInSeconds is not configured"));
     }
     public async Task InitializeAsync()
     {
@@ -64,53 +54,18 @@ public class AccessorService : IAccessorService
     public async Task<TaskModel?> GetTaskByIdAsync(int id)
     {
         using var scope = _logger.BeginScope("TaskId: {TaskId}", id);
+        _logger.LogInformation("Inside:{Method}", nameof(GetTaskByIdAsync));
+
+        try
         {
-            _logger.LogInformation("Inside:{Method}", nameof(GetTaskByIdAsync));
-            try
-            {
-                var key = GetTaskCacheKey(id);
-
-                // Try to get from Redis cache
-                var stateEntry = await _daprClient.GetStateEntryAsync<TaskModel>(ComponentNames.StateStore, key);
-
-                if (stateEntry.Value != null)
-                {
-                    _logger.LogInformation("Task found in Redis cache (ETag: {ETag})", stateEntry.ETag);
-                    return stateEntry.Value;
-                }
-
-                // If not found in cache, fetch from database
-                var task = await _dbContext.Tasks
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(t => t.Id == id);
-
-                if (task == null)
-                {
-                    _logger.LogWarning("Task not found.");
-                    return null;
-                }
-
-                // Save the task to Redis cache with ETag, if its not already cached
-                stateEntry.Value = task;
-
-                await _daprClient.SaveStateAsync(
-                    storeName: ComponentNames.StateStore,
-                    key: key,
-                    value: task,
-                    metadata: new Dictionary<string, string>
-                    {
-                    { "ttlInSeconds", _ttl.ToString() }
-                    }
-                );
-
-                _logger.LogInformation("Fetched task from DB and cached");
-                return task;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving task");
-                throw;
-            }
+            return await _dbContext.Tasks
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.Id == id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving task");
+            throw;
         }
     }
 
@@ -184,64 +139,26 @@ public class AccessorService : IAccessorService
 
         try
         {
-            // 1. Check cache for idempotency
-            var cached = await _daprClient.GetStateAsync<TaskModel>(
-                ComponentNames.StateStore,
-                GetTaskCacheKey(task.Id));
-
-            if (cached is not null)
-            {
-                if (!TasksAreEqual(cached, task))
-                {
-                    _logger.LogWarning("Conflict: Task {TaskId} already exists with different payload", task.Id);
-                    throw new ConflictException($"Task {task.Id} already exists with different payload.");
-                }
-
-                _logger.LogInformation("Idempotent retry for Task {TaskId}, no-op", task.Id);
-                return; // same payload → idempotent success
-            }
-
-            // 2. Insert new task
             _dbContext.Tasks.Add(task);
             await _dbContext.SaveChangesAsync();
-
             _logger.LogInformation("Task {TaskId} persisted", task.Id);
-
-            // 3. Cache for retries
-            await _daprClient.SaveStateAsync(
-                storeName: ComponentNames.StateStore,
-                key: GetTaskCacheKey(task.Id),
-                value: task,
-                stateOptions: null,
-                metadata: new Dictionary<string, string> { { "ttlInSeconds", _ttl.ToString() } });
-
-            _logger.LogInformation("Cached task {TaskId} with TTL {TTL}s", task.Id, _ttl);
         }
         catch (DbUpdateException ex)
         {
             _logger.LogWarning(ex, "Duplicate Task insert for {TaskId}", task.Id);
 
-            var dbTask = await _dbContext.Tasks.FindAsync(task.Id);
+            var dbTask = await _dbContext.Tasks.AsNoTracking().FirstOrDefaultAsync(t => t.Id == task.Id);
             if (dbTask is null)
             {
                 throw;
             }
 
-            if (!TasksAreEqual(dbTask, task))
+            if (dbTask.Id != task.Id || dbTask.Name != task.Name)
             {
-                _logger.LogWarning("Conflict: Task {TaskId} already exists in DB with different payload", task.Id);
                 throw new ConflictException($"Task {task.Id} already exists with different payload.");
             }
 
-            // Ensure consistent cache
-            await _daprClient.SaveStateAsync(
-                storeName: ComponentNames.StateStore,
-                key: GetTaskCacheKey(task.Id),
-                value: dbTask,
-                stateOptions: null,
-                metadata: new Dictionary<string, string> { { "ttlInSeconds", _ttl.ToString() } });
-
-            // Idempotent no-op
+            _logger.LogInformation("Idempotent retry for Task {TaskId}, no-op", task.Id);
         }
         catch (Exception ex)
         {
@@ -256,101 +173,27 @@ public class AccessorService : IAccessorService
         return a.Id == b.Id && a.Name == b.Name;
     }
 
-    public async Task<bool> UpdateTaskNameAsync(int taskId, string newName)
-    {
-        using var scope = _logger.BeginScope("TaskId: {TaskId}", taskId);
-        {
-            _logger.LogInformation("Inside:{Method}", nameof(UpdateTaskNameAsync));
-            try
-            {
-                var task = await _dbContext.Tasks.FindAsync(taskId);
-                if (task == null)
-                {
-                    _logger.LogWarning("Task not found in DB.");
-                    return false;
-                }
-
-                task.Name = newName;
-                await _dbContext.SaveChangesAsync();
-
-                var key = GetTaskCacheKey(taskId);
-
-                // Load current state from Redis
-                var stateEntry = await _daprClient.GetStateEntryAsync<TaskModel>(ComponentNames.StateStore, key);
-
-                if (stateEntry.Value == null)
-                {
-                    _logger.LogWarning("Task not found in Redis cache. Skipping cache update.");
-                    return true;
-                }
-
-                stateEntry.Value.Name = newName;
-
-                await _daprClient.SaveStateAsync(
-                   storeName: ComponentNames.StateStore,
-                   key: key,
-                   value: task,
-                   metadata: new Dictionary<string, string>
-                   {
-                    { "ttlInSeconds", _ttl.ToString() }
-                   });
-                _logger.LogInformation("Successfully cached task with TTL {TTL}s", _ttl);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to update task name.");
-                return false;
-            }
-        }
-    }
-
     public async Task<bool> DeleteTaskAsync(int taskId)
     {
         using var scope = _logger.BeginScope("TaskId: {TaskId}", taskId);
+        _logger.LogInformation("Inside:{Method}", nameof(DeleteTaskAsync));
+
+        try
         {
-            _logger.LogInformation("Inside:{Method}", nameof(DeleteTaskAsync));
-            try
+            var task = await _dbContext.Tasks.FindAsync(taskId);
+            if (task == null)
             {
-                var task = await _dbContext.Tasks.FindAsync(taskId);
-                if (task == null)
-                {
-                    _logger.LogWarning("Task not found in DB.");
-                    return false;
-                }
-                // Remove task from the database
-                _dbContext.Tasks.Remove(task);
-                await _dbContext.SaveChangesAsync();
-                _logger.LogInformation("Task deleted from DB.");
-
-                // Remove task from Redis cache
-                var key = GetTaskCacheKey(taskId);
-                var stateEntry = await _daprClient.GetStateEntryAsync<TaskModel>(ComponentNames.StateStore, key);
-
-                if (stateEntry.Value == null)
-                {
-                    _logger.LogWarning("Task not found in Redis cache. Skipping cache deletion.");
-                    return true;
-                }
-
-                var deleteSuccess = await stateEntry.TryDeleteAsync();
-
-                if (deleteSuccess)
-                {
-                    _logger.LogInformation("Task removed from Redis cache (ETag: {ETag})", stateEntry.ETag);
-                }
-                else
-                {
-                    _logger.LogWarning("ETag conflict — failed to remove task from Redis cache.");
-                }
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to delete task.");
                 return false;
             }
+
+            _dbContext.Tasks.Remove(task);
+            await _dbContext.SaveChangesAsync();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to delete task.");
+            return false;
         }
     }
 
@@ -562,28 +405,10 @@ public class AccessorService : IAccessorService
         using var scope = _logger.BeginScope("TaskId: {TaskId}", id);
         _logger.LogInformation("Inside:{Method}", nameof(GetTaskWithEtagAsync));
 
-        var key = GetTaskCacheKey(id);
-
-        var entry = await _daprClient.GetStateEntryAsync<TaskModel>(ComponentNames.StateStore, key);
-        var task = entry.Value;
-
+        var task = await _dbContext.Tasks.AsNoTracking().FirstOrDefaultAsync(t => t.Id == id);
         if (task is null)
         {
-            task = await _dbContext.Tasks.AsNoTracking().FirstOrDefaultAsync(t => t.Id == id);
-            if (task is null)
-            {
-                _logger.LogWarning("Task not found.");
-                return null;
-            }
-
-            await _daprClient.SaveStateAsync(
-                storeName: ComponentNames.StateStore,
-                key: key,
-                value: task,
-                stateOptions: null,
-                metadata: new Dictionary<string, string> { { "ttlInSeconds", _ttl.ToString() } });
-
-            _logger.LogInformation("Fetched task from DB and cached.");
+            return null;
         }
 
         var etag = await GetDbEtagAsync(id) ?? string.Empty;
@@ -600,8 +425,7 @@ public class AccessorService : IAccessorService
             var normalized = NormalizeIfMatch(ifMatch);
             if (string.IsNullOrEmpty(normalized))
             {
-                _logger.LogWarning("Missing If-Match ETag.");
-                return new UpdateTaskResult(Updated: false, NotFound: false, PreconditionFailed: true, NewEtag: null);
+                return new UpdateTaskResult(false, false, true, null);
             }
 
             var rows = await _dbContext.Database.ExecuteSqlInterpolatedAsync($@"
@@ -616,56 +440,13 @@ public class AccessorService : IAccessorService
                 var exists = await _dbContext.Tasks.AsNoTracking().AnyAsync(t => t.Id == taskId);
                 if (!exists)
                 {
-                    _logger.LogWarning("Task not found in DB.");
-                    return new UpdateTaskResult(Updated: false, NotFound: true, PreconditionFailed: false, NewEtag: null);
+                    return new UpdateTaskResult(false, true, false, null);
                 }
 
-                _logger.LogWarning("ETag mismatch (precondition failed).");
-                return new UpdateTaskResult(Updated: false, NotFound: false, PreconditionFailed: true, NewEtag: null);
+                return new UpdateTaskResult(false, false, true, null);
             }
 
             var newEtag = await GetDbEtagAsync(taskId) ?? string.Empty;
-
-            var key = GetTaskCacheKey(taskId);
-            var ttlMeta = new Dictionary<string, string> { { "ttlInSeconds", _ttl.ToString() } };
-            var opts = new StateOptions
-            {
-                Consistency = ConsistencyMode.Strong,
-                Concurrency = ConcurrencyMode.FirstWrite
-            };
-
-            for (var attempt = 0; attempt < 3; attempt++)
-            {
-                var entry = await _daprClient.GetStateEntryAsync<TaskModel>(ComponentNames.StateStore, key);
-                if (entry.Value is null)
-                {
-                    entry.Value = new TaskModel { Id = taskId, Name = newName };
-                }
-                else
-                {
-                    entry.Value.Name = newName;
-                }
-
-                var saved = await entry.TrySaveAsync(stateOptions: opts, metadata: ttlMeta);
-                if (saved)
-                {
-                    _logger.LogInformation("Cache updated with TTL {TTL}s (CAS).", _ttl);
-                    return new UpdateTaskResult(true, false, false, newEtag);
-                }
-
-                _logger.LogWarning("Cache ETag conflict for {Key}, retrying... (attempt {Attempt})", key, attempt + 1);
-            }
-
-            _logger.LogWarning("Cache update failed; deleting key {Key}.", key);
-            try
-            {
-                await _daprClient.DeleteStateAsync(ComponentNames.StateStore, key);
-            }
-            catch (Exception exDel)
-            {
-                _logger.LogWarning(exDel, "Failed to delete cache key {Key}", key);
-            }
-
             return new UpdateTaskResult(true, false, false, newEtag);
         }
         catch (Exception ex)

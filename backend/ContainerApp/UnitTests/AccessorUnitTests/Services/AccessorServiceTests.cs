@@ -42,19 +42,23 @@ public class AccessorServiceTests
     {
         var cfg = NewConfig(ttl);
         var log = Mock.Of<ILogger<AccessorService>>();
-        return new AccessorService(db, log, daprMock.Object, cfg);
+        return new AccessorService(db, log);
     }
 
     // ---------- UpdateTaskNameAsync ----------
     [Fact]
-    public async Task UpdateTaskNameAsync_Missing_ReturnsFalse()
+    public async Task UpdateTaskNameAsync_MissingIfMatch_Returns_PreconditionFailed()
     {
         var db = NewDb(Guid.NewGuid().ToString());
         var dapr = new Mock<DaprClient>(MockBehavior.Loose);
         var svc = NewService(db, dapr);
 
-        var ok = await svc.UpdateTaskNameAsync(99, "zzz");
-        ok.Should().BeFalse();
+        var result = await svc.UpdateTaskNameAsync(99, "zzz", null);
+
+        result.Updated.Should().BeFalse();
+        result.NotFound.Should().BeFalse();
+        result.PreconditionFailed.Should().BeTrue();
+        result.NewEtag.Should().BeNull();
     }
 
     // ---------- DeleteTaskAsync ----------
