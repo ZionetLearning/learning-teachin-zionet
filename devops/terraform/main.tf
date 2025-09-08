@@ -1,6 +1,6 @@
 # === Derive the UAMI name and RG where it actually lives ===
 locals {
-  uami_name = coalesce(var.uami_name, format("%s-aks-uami", var.environment_name))
+  uami_name = "dev-aks-uami"
   # UAMI lives with the AKS/shared infra RG, not the per-app RG:
   uami_rg   = var.use_shared_aks ? var.shared_resource_group : azurerm_resource_group.main.name
 }
