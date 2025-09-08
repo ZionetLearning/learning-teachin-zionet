@@ -297,9 +297,3 @@ variable "enable_frontend" { # Delete after mi is done
   type        = bool
   default     = false
 }
-
-variable "frontend_apps" { # Delete after mi is done
-  description = "Frontend apps to create"
-  type        = list(string)
-  default     = []
-}
