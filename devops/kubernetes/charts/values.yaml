@@ -204,6 +204,13 @@ accessor:
     postgres:
       name: postgres-connection
       key: PostgreSQLConnectionString
+    speech:
+      name: accessor-appsettings
+      keys:
+        secret: speechkey
+      data:
+        - remote: accessor-speech-key
+          key: Speech__Key
   resources:
     requests:
       cpu: "100m"

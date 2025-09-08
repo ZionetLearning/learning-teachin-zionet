@@ -50,6 +50,11 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.accessor.secrets.postgres.name }}
                   key: {{ .Values.accessor.secrets.postgres.key }}
+            - name: Speech__Key
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.accessor.secrets.speechkey.name }}
+                  key: {{ .Values.accessor.secrets.speechkey.key }}
           resources:
             {{- toYaml .Values.accessor.resources | nindent 12 }}
 ---

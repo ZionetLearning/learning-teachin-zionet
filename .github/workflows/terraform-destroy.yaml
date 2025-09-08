@@ -1,6 +1,6 @@
 name: Terraform Destroy (Dynamic Environment)
 run-name: >
-  🗑️ Destroy Infrastructure in ${{
+  ${{ inputs.dry_run == 'true' && '🔍 DRY RUN' || '🗑️ Destroy Infrastructure' }} in ${{
     inputs.environment_name || github.event.inputs.environment_name || 
     (inputs.environment == 'Development' && 'dev') ||
     (inputs.environment == 'Production' && 'prod') ||
@@ -28,6 +28,11 @@ on:
         description: 'Enter custom prefix (lowercase letters & digits only).\nThis will be used as the Kubernetes namespace and environment identifier.'
         required: true
         type: string
+      dry_run:
+        description: 'Dry run - show what would be destroyed without actually destroying'
+        required: false
+        default: false
+        type: boolean
 
 
 jobs:
@@ -77,6 +82,9 @@ jobs:
             ENVIRONMENT_NAME="${{ github.event.inputs.environment_name }}"
           fi       
           
+          # Set dry run mode
+          DRY_RUN="${{ inputs.dry_run || github.event.inputs.dry_run || 'false' }}"
+          
           # Choose tfvars file based on environment name
           if [ "$ENVIRONMENT_NAME" = "dev" ]; then
             TFVARS_FILE="terraform.tfvars.dev"
@@ -93,11 +101,27 @@ jobs:
             exit 1
           fi
           
-          echo "📄 Using tfvars file: $TFVARS_FILE"
+          # Protect dev environment from deletion (unless it's a dry run)
+          if [ "$ENVIRONMENT_NAME" = "dev" ] && [ "$DRY_RUN" != "true" ]; then
+            echo "ERROR: The 'dev' environment is protected and cannot be destroyed!"
+            echo "The 'dev' environment contains shared resources used by other environments."
+            echo "If you need to preview what would be destroyed, use the dry-run option."
+            echo "This is a safety measure to prevent accidental deletion of critical infrastructure."
+            exit 1
+          fi
+          
+          if [ "$ENVIRONMENT_NAME" = "dev" ] && [ "$DRY_RUN" = "true" ]; then
+            echo "WARNING: Running dry-run on protected 'dev' environment"
+            echo "This will show what would be destroyed, but dev environment is normally protected"
+          fi
+          
+          echo "Using tfvars file: $TFVARS_FILE"
+          echo "Dry run mode: $DRY_RUN"
           
           echo "environment_name=$ENVIRONMENT_NAME" >> $GITHUB_ENV
           echo "TFVARS_FILE=$TFVARS_FILE" >> $GITHUB_ENV
           echo "backend_key=${ENVIRONMENT_NAME}.terraform.tfstate" >> $GITHUB_ENV
+          echo "dry_run=$DRY_RUN" >> $GITHUB_ENV
 
       - name: Terraform Init with dynamic backend
         run: |
@@ -127,12 +151,252 @@ jobs:
 
       - name: Confirm Destroy
         run: |
-          echo "⚠️  WARNING: This will destroy all resources in the '${{ env.environment_name }}' environment!"
-          echo "Resources to be destroyed:"
-          echo "- Resource Group: ${{ env.environment_name }}-*"
-          echo "- Kubernetes Namespace: ${{ env.environment_name }}"
-          echo "- All associated Azure resources"
+          if [ "${{ env.dry_run }}" = "true" ]; then
+            echo "DRY RUN MODE - This will show what would be destroyed without actually destroying anything"
+          else
+            echo "WARNING: This will destroy all resources in the '${{ env.environment_name }}' environment!"
+          fi
+          echo ""
+          echo "Resources that would be destroyed:"
+          echo "- Resource Group: ${{ env.environment_name }}-zionet-learning-2025"
+          echo "- Kubernetes Namespace: ${{ env.environment_name }} (on shared AKS cluster)"
+          echo "- Key Vault Secrets: ${{ env.environment_name }}-* (from shared Key Vault)"
+          echo "- PostgreSQL Databases: appdb-${{ env.environment_name }}* (from shared PostgreSQL server)"
+          echo "- Service Bus, PostgreSQL database, Redis cache, and other Azure resources"
+          echo "- Terraform state file: ${{ env.backend_key }}"
 
       - name: Terraform Destroy
-        run: terraform destroy -auto-approve -var-file=${{ env.TFVARS_FILE }}
+        run: |
+          if [ "${{ env.dry_run }}" = "true" ]; then
+            echo "DRY RUN: Skipping actual terraform destroy"
+            echo "Terraform plan (destroy) completed above shows what would be destroyed"
+          else
+            echo "Executing terraform destroy..."
+            terraform destroy -auto-approve -var-file=${{ env.TFVARS_FILE }}
+          fi
         working-directory: ${{ env.TF_DIR }}
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.28.0'
+
+      - name: Set AKS context
+        run: |
+          # Connect to shared AKS cluster (used by all environments)
+          SHARED_CLUSTER_NAME="aks-cluster-dev"
+          SHARED_RESOURCE_GROUP="dev-zionet-learning-2025"
+          
+          echo "Connecting to shared AKS cluster: $SHARED_CLUSTER_NAME"
+          echo "Resource Group: $SHARED_RESOURCE_GROUP"
+          
+          az aks get-credentials --resource-group "$SHARED_RESOURCE_GROUP" --name "$SHARED_CLUSTER_NAME" --overwrite-existing 2>/dev/null && {
+            echo "Successfully connected to shared AKS cluster"
+          } || {
+            echo "Failed to connect to shared AKS cluster"
+            echo "This may prevent namespace cleanup, but continuing with other cleanup tasks..."
+          }
+
+      - name: Delete Kubernetes Namespace
+        run: |
+          NAMESPACE="${{ env.environment_name }}"
+          
+          if [ "${{ env.dry_run }}" = "true" ]; then
+            echo "DRY RUN: Would delete Kubernetes namespace: $NAMESPACE"
+            echo "This would automatically delete all resources within the namespace"
+            
+            # Show what exists in the namespace
+            if kubectl get namespace "$NAMESPACE" 2>/dev/null; then
+              echo "Namespace '$NAMESPACE' exists and contains:"
+              kubectl get all -n "$NAMESPACE" 2>/dev/null || echo "  No resources found or unable to list"
+            else
+              echo "Namespace '$NAMESPACE' not found (nothing to delete)"
+            fi
+          else
+            echo "Attempting to delete Kubernetes namespace: $NAMESPACE"
+            echo "This will automatically delete all resources within the namespace"
+            
+            # Check if namespace exists and delete it
+            if kubectl get namespace "$NAMESPACE" 2>/dev/null; then
+              echo "Found namespace '$NAMESPACE', deleting..."
+              
+              # Delete the namespace (this automatically deletes all resources within it)
+              kubectl delete namespace "$NAMESPACE" --timeout=300s
+              
+              echo "Namespace '$NAMESPACE' and all its resources deleted successfully"
+            else
+              echo "Namespace '$NAMESPACE' not found (may already be deleted)"
+            fi
+          fi
+
+      - name: Clean up Terraform State
+        run: |
+          BACKEND_KEY="${{ env.backend_key }}"
+          STORAGE_ACCOUNT="teachintfstate"
+          CONTAINER_NAME="tfstate-aks"
+          
+          if [ "${{ env.dry_run }}" = "true" ]; then
+            echo "DRY RUN: Would clean up Terraform state file: $BACKEND_KEY"
+            echo "From storage account: $STORAGE_ACCOUNT"
+            
+            # Check if state file exists
+            if az storage blob exists --account-name "$STORAGE_ACCOUNT" --container-name "$CONTAINER_NAME" --name "$BACKEND_KEY" --auth-mode login --query exists -o tsv 2>/dev/null | grep -q "true"; then
+              echo "State file '$BACKEND_KEY' exists and would be deleted"
+            else
+              echo "State file '$BACKEND_KEY' not found (nothing to delete)"
+            fi
+            
+            # Check if lock file exists
+            if az storage blob exists --account-name "$STORAGE_ACCOUNT" --container-name "$CONTAINER_NAME" --name "${BACKEND_KEY}.lock" --auth-mode login --query exists -o tsv 2>/dev/null | grep -q "true"; then
+              echo "Lock file '${BACKEND_KEY}.lock' exists and would be deleted"
+            else
+              echo "Lock file '${BACKEND_KEY}.lock' not found (nothing to delete)"
+            fi
+          else
+            echo "Cleaning up Terraform state file: $BACKEND_KEY"
+            echo "From storage account: $STORAGE_ACCOUNT"
+            
+            # Delete the state file from Azure Storage
+            az storage blob delete \
+              --account-name "$STORAGE_ACCOUNT" \
+              --container-name "$CONTAINER_NAME" \
+              --name "$BACKEND_KEY" \
+              --auth-mode login 2>/dev/null && {
+              echo "Successfully deleted state file: $BACKEND_KEY"
+            } || {
+              echo "Could not delete state file '$BACKEND_KEY' (may not exist or storage account may be deleted)"
+            }
+            
+            # Also clean up any lock files
+            az storage blob delete \
+              --account-name "$STORAGE_ACCOUNT" \
+              --container-name "$CONTAINER_NAME" \
+              --name "${BACKEND_KEY}.lock" \
+              --auth-mode login 2>/dev/null && {
+              echo "Successfully deleted lock file: ${BACKEND_KEY}.lock"
+            } || {
+              echo "No lock file found or already deleted"
+            }
+          fi
+
+      - name: Clean up Key Vault Secrets
+        run: |
+          KEY_VAULT_NAME="teachin-seo-kv"
+          RESOURCE_GROUP="dev-zionet-learning-2025"
+          ENVIRONMENT_PREFIX="${{ env.environment_name }}"
+          
+          if [ "${{ env.dry_run }}" = "true" ]; then
+            echo "DRY RUN: Would clean up Key Vault secrets for environment: $ENVIRONMENT_PREFIX"
+            echo "Key Vault: $KEY_VAULT_NAME"
+            
+            # List secrets that would be deleted
+            echo "Secrets that would be deleted:"
+            az keyvault secret list --vault-name "$KEY_VAULT_NAME" --query "[?starts_with(name, '${ENVIRONMENT_PREFIX}-')].name" -o tsv 2>/dev/null | while read secret_name; do
+              if [ -n "$secret_name" ]; then
+                echo "  - $secret_name"
+              fi
+            done
+            
+            # Check if any secrets match the pattern
+            SECRET_COUNT=$(az keyvault secret list --vault-name "$KEY_VAULT_NAME" --query "[?starts_with(name, '${ENVIRONMENT_PREFIX}-')] | length(@)" -o tsv 2>/dev/null || echo "0")
+            if [ "$SECRET_COUNT" -eq 0 ]; then
+              echo "  No secrets found with prefix '$ENVIRONMENT_PREFIX-'"
+            else
+              echo "  Found $SECRET_COUNT secrets to delete"
+            fi
+          else
+            echo "Cleaning up Key Vault secrets for environment: $ENVIRONMENT_PREFIX"
+            echo "Key Vault: $KEY_VAULT_NAME"
+            
+            # Get list of secrets that match the environment prefix
+            SECRETS_TO_DELETE=$(az keyvault secret list --vault-name "$KEY_VAULT_NAME" --query "[?starts_with(name, '${ENVIRONMENT_PREFIX}-')].name" -o tsv 2>/dev/null)
+            
+            if [ -z "$SECRETS_TO_DELETE" ]; then
+              echo "No secrets found with prefix '$ENVIRONMENT_PREFIX-' to delete"
+            else
+              echo "Found secrets to delete:"
+              echo "$SECRETS_TO_DELETE" | while read secret_name; do
+                if [ -n "$secret_name" ]; then
+                  echo "  Deleting secret: $secret_name"
+                  az keyvault secret delete --vault-name "$KEY_VAULT_NAME" --name "$secret_name" 2>/dev/null && {
+                    echo "Successfully deleted: $secret_name"
+                  } || {
+                    echo "Failed to delete: $secret_name"
+                  }
+                fi
+              done
+            fi
+          fi
+
+      - name: Clean up PostgreSQL Databases
+        run: |
+          PG_SERVER_NAME="dev-pg-zionet-learning"
+          RESOURCE_GROUP="dev-zionet-learning-2025"
+          ENVIRONMENT_PREFIX="${{ env.environment_name }}"
+          
+          if [ "${{ env.dry_run }}" = "true" ]; then
+            echo "DRY RUN: Would clean up PostgreSQL databases for environment: $ENVIRONMENT_PREFIX"
+            echo "PostgreSQL Server: $PG_SERVER_NAME"
+            
+            # List databases that would be deleted
+            echo "Databases that would be deleted:"
+            az postgres flexible-server db list --server-name "$PG_SERVER_NAME" --resource-group "$RESOURCE_GROUP" --query "[?starts_with(name, 'appdb-${ENVIRONMENT_PREFIX}')].name" -o tsv 2>/dev/null | while read db_name; do
+              if [ -n "$db_name" ]; then
+                echo "  - $db_name"
+              fi
+            done
+            
+            # Check if any databases match the pattern
+            DB_COUNT=$(az postgres flexible-server db list --server-name "$PG_SERVER_NAME" --resource-group "$RESOURCE_GROUP" --query "[?starts_with(name, 'appdb-${ENVIRONMENT_PREFIX}')] | length(@)" -o tsv 2>/dev/null || echo "0")
+            if [ "$DB_COUNT" -eq 0 ]; then
+              echo "  No databases found with pattern 'appdb-$ENVIRONMENT_PREFIX*'"
+            else
+              echo "  Found $DB_COUNT databases to delete"
+            fi
+          else
+            echo "Cleaning up PostgreSQL databases for environment: $ENVIRONMENT_PREFIX"
+            echo "PostgreSQL Server: $PG_SERVER_NAME"
+            
+            # Get list of databases that match the environment pattern
+            DATABASES_TO_DELETE=$(az postgres flexible-server db list --server-name "$PG_SERVER_NAME" --resource-group "$RESOURCE_GROUP" --query "[?starts_with(name, 'appdb-${ENVIRONMENT_PREFIX}')].name" -o tsv 2>/dev/null)
+            
+            if [ -z "$DATABASES_TO_DELETE" ]; then
+              echo "No databases found with pattern 'appdb-$ENVIRONMENT_PREFIX*' to delete"
+            else
+              echo "Found databases to delete:"
+              echo "$DATABASES_TO_DELETE" | while read db_name; do
+                if [ -n "$db_name" ]; then
+                  echo "  Deleting database: $db_name"
+                  az postgres flexible-server db delete --server-name "$PG_SERVER_NAME" --resource-group "$RESOURCE_GROUP" --database-name "$db_name" --yes 2>/dev/null && {
+                    echo "Successfully deleted: $db_name"
+                  } || {
+                    echo "Failed to delete: $db_name (may not exist or already deleted)"
+                  }
+                fi
+              done
+            fi
+          fi
+
+      - name: Summary
+        run: |
+          if [ "${{ env.dry_run }}" = "true" ]; then
+            echo "DRY RUN SUMMARY:"
+            echo "The following would have been destroyed if this was not a dry run:"
+            echo "Infrastructure (via Terraform destroy)"
+            echo "Kubernetes namespace '${{ env.environment_name }}'"
+            echo "Key Vault secrets with prefix '${{ env.environment_name }}-'"
+            echo "PostgreSQL databases with pattern 'appdb-${{ env.environment_name }}*'"
+            echo "Terraform state file '${{ env.backend_key }}'"
+            echo ""
+            echo "No actual resources were destroyed - this was a preview only!"
+            echo "Run without dry-run option to perform actual destruction."
+          else
+            echo "Destroy Summary:"
+            echo "Infrastructure destroyed via Terraform"
+            echo "Kubernetes namespace '${{ env.environment_name }}' cleaned up"
+            echo "Key Vault secrets with prefix '${{ env.environment_name }}-' removed"
+            echo "PostgreSQL databases with pattern 'appdb-${{ env.environment_name }}*' removed"
+            echo "Terraform state file '${{ env.backend_key }}' removed"
+            echo ""
+            echo "Environment '${{ env.environment_name }}' has been completely destroyed!"
+          fi
