@@ -3,7 +3,9 @@
 namespace Manager.Helpers;
 public static class CookieHelper
 {
-    public static void SetCookies(HttpResponse response, string refreshToken)
+
+    // for now we return the csrfToken here but in the future we will use it in the header
+    public static string SetCookies(HttpResponse response, string refreshToken)
     {
         // -- Refresh Cookie --
         response.Cookies.Append(AuthSettings.RefreshTokenCookieName, refreshToken, new CookieOptions
@@ -21,12 +23,16 @@ public static class CookieHelper
         response.Cookies.Append(AuthSettings.CsrfTokenCookieName, csrfToken, new CookieOptions
         {
             HttpOnly = false, // Must be accessible to JS
-            Secure = true,
+
+            // Notice!! for now its sent over http but in production need to change to https !!! 
+            Secure = false,
             // In the future when have domain or frontend, consider using SameSiteMode.Lax for better CSRF protection
-            SameSite = SameSiteMode.None,
+            SameSite = SameSiteMode.Lax,
             Path = AuthSettings.CookiePath,
             Expires = DateTimeOffset.UtcNow.AddMinutes(AuthSettings.CsrfTokenExpiryMinutes) // Short-lived, 30 minutes
         });
+
+        return csrfToken;
     }
 
     public static void ClearCookies(HttpResponse response)

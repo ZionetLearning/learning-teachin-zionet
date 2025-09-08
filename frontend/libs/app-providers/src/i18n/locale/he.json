@@ -1,4 +1,3 @@
-
 {
   "translation": {
     "pages": {
@@ -14,7 +13,9 @@
         "lastName": "שם משפחה",
         "creatingAccount": "יוצר חשבון...",
         "teacherDashboard": "מורים",
-        "studentDashboard": "תלמידים"
+        "studentDashboard": "תלמידים",
+        "adminDashboard": "מנהל מערכת",
+        "genericError": "משהו השתבש. אנא נסה שוב מאוחר יותר."
       },
       "home": {
         "title": "ברוכים הבאים למגרש המשחקים הפנימי שלנו",
@@ -229,7 +230,6 @@
         "taskName": "שם המשימה",
         "payload": "תוכן (Payload)",
         "posting": "שולח...",
-        "postiong": "שולח...",
         "send": "שלח",
         "noNotifications": "אין התראות",
         "notifications": "התראות"
@@ -261,6 +261,18 @@
         "firstName": "שם פרטי",
         "lastName": "שם משפחה",
         "noChanges": "אין שינויים"
+      },
+      "profile": {
+        "title": "הפרופיל שלי",
+        "subTitle": "חשבון",
+        "secondSubTitle": "מידע בסיסי",
+        "firstName": "שם פרטי",
+        "lastName": "שם משפחה",
+        "email": "דואר אלקטרוני",
+        "emailCannotBeChanged": "דואר אלקטרוני לא ניתן לשינוי",
+        "edit": "עריכה",
+        "saveChanges": "שמור שינויים",
+        "cancel": "ביטול"
       }
     },
     "sidebar": {
@@ -289,10 +301,11 @@
       "anime": "ספריית אנימה",
       "countryExplorer": "ספריית מדינות",
       "signalR": "בדיקת SignalR",
-      "users": "משתמשים"
-    }
-  },
-  "goBackToMenu": "חזור לתפריט",
-  "logout": "התנתק",
-  "somethingWentWrong": "משהו השתבש..."
+      "users": "משתמשים",
+      "profile": "פרופיל"
+    },
+    "goBackToMenu": "חזור לתפריט",
+    "logout": "התנתק",
+    "somethingWentWrong": "משהו השתבש..."
+  }
 }

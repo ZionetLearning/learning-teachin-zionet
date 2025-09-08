@@ -1,21 +1,15 @@
-import { useAuth } from "@app-providers";
-import reactLogo from "../assets/react.svg";
-import viteLogo from "/vite.svg";
+import { Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 
 export const HomePage = () => {
-  const { logout } = useAuth();
+  const { t } = useTranslation();
+
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React - Teacher</h1>
-      <button onClick={logout}>Logout</button>
+      <Typography variant="h4" gutterBottom>
+        {t("pages.home.title")}
+      </Typography>
+      <Typography>{t("pages.home.subTitle")}</Typography>
     </>
   );
 };

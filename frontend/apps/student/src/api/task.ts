@@ -1,7 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
-import axios from "axios";
+import { apiClient as axios } from "@app-providers";
 import { toast } from "react-toastify";
-import { useSignalR } from "@student/hooks/useSignalR";
 
 export type TaskInput = {
   id: number;
@@ -11,7 +10,6 @@ export type TaskInput = {
 
 export const usePostTask = () => {
   const TASKS_BASE_URL = import.meta.env.VITE_TASKS_URL!;
-  const { userId } = useSignalR();
 
   return useMutation<void, Error, TaskInput>({
     mutationFn: async ({ id, name, payload }) => {
@@ -24,9 +22,8 @@ export const usePostTask = () => {
         {
           headers: {
             "Content-Type": "application/json",
-            "X-User-Id": userId,
           },
-        },
+        }
       );
     },
 

@@ -29,17 +29,16 @@ public abstract class IntegrationTestBase
         SignalRFixture = signalRFixture;
     }
 
-    public virtual async Task InitializeAsync()
+    // Default: Do NOT auto-start SignalR. Subclasses that need it (after auth) should start explicitly.
+    public virtual Task InitializeAsync()
     {
-        OutputHelper.WriteLine("Starting SignalR connection...");
-        await SignalRFixture.StartAsync();
         SignalRFixture.ClearReceivedMessages();
-        OutputHelper.WriteLine("SignalR connection ready.");
+        return Task.CompletedTask;
     }
 
     public virtual async Task DisposeAsync()
     {
-        OutputHelper.WriteLine("Stopping SignalR connection...");
+        OutputHelper.WriteLine("Stopping SignalR connection (if active)...");
         await SignalRFixture.StopAsync();
     }
 

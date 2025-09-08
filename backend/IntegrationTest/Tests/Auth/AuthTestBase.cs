@@ -19,12 +19,20 @@ public abstract class AuthTestBase : IntegrationTestBase
     {
     }
 
+    // Override the base Initialize so we DO NOT start SignalR before login (Auth tests validate login/refresh/logout flows)
+    public override Task InitializeAsync()
+    {
+        // Just clear any stale in-memory messages; connection not started yet because we lack an access token.
+        SignalRFixture.ClearReceivedMessages();
+        return Task.CompletedTask;
+    }
+
     protected async Task<HttpResponseMessage> LoginAsync(string email, string password)
     {
-        var loginRequest = new LoginRequest 
-        { 
-            Email = email, 
-            Password = password 
+        var loginRequest = new LoginRequest
+        {
+            Email = email,
+            Password = password
         };
         return await Client.PostAsJsonAsync(AuthRoutes.Login, loginRequest);
     }
@@ -62,5 +70,11 @@ public abstract class AuthTestBase : IntegrationTestBase
         return request;
     }
 
-
+    // Helper for tests that DO need SignalR after a successful login.
+    protected async Task StartSignalRWithTokenAsync(string accessToken)
+    {
+        SignalRFixture.UseAccessToken(accessToken);
+        await SignalRFixture.StartAsync();
+        SignalRFixture.ClearReceivedMessages();
+    }
 }
