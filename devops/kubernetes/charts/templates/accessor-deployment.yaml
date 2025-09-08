@@ -53,8 +53,8 @@ spec:
             - name: Speech__Key
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.accessor.secrets.speechkey.name }}
-                  key: {{ .Values.accessor.secrets.speechkey.key }}
+                  name: {{ .Values.accessor.secrets.speech.name }}
+                  key: {{ .Values.accessor.secrets.speech.keys.speechKey }}
           resources:
             {{- toYaml .Values.accessor.resources | nindent 12 }}
 ---
