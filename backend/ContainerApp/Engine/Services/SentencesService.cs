@@ -90,14 +90,16 @@ public class SentencesService : ISentencesService
 
         count = Math.Min(count, pool.Length);
 
-        var idx = Enumerable.Range(0, pool.Length).ToArray();
-        for (var i = idx.Length - 1; i > 0; i--)
+        var result = new string[count];
+        var indices = Enumerable.Range(0, pool.Length).ToArray();
+        for (var i = 0; i < count; i++)
         {
-            var j = RandomNumberGenerator.GetInt32(i + 1);
-            (idx[i], idx[j]) = (idx[j], idx[i]);
+            var j = RandomNumberGenerator.GetInt32(i, pool.Length);
+            (indices[i], indices[j]) = (indices[j], indices[i]);
+            result[i] = pool[indices[i]];
         }
 
-        return idx.Take(count).Select(i => pool[i]).ToArray();
+        return result;
     }
 
     private string[] LoadList(string path)
