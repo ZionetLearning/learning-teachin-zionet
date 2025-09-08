@@ -156,15 +156,83 @@ Cypress.Commands.add("loginAdmin", () => {
 
 export const deleteCreatedUser = () => {
   if (!testUser) return;
+  const { email, password } = testUser;
   const adminOrigin = "https://localhost:4002";
-  const loginUser = testUser;
-  cy.log(`[e2e] UI-deleting deterministic test user: ${loginUser.email}`);
+  cy.log(`[e2e] Attempting UI deletion of deterministic user: ${email}`);
 
-  cy.origin(
-    adminOrigin,
-    { args: { email: loginUser.email, password: loginUser.password } },
-    ({ email, password }) => {
-      cy.visit("/");
+  cy.location("origin").then((origin) => {
+    if (origin === adminOrigin) {
+      performSameOriginDeletion(email, password);
+    } else {
+      cy.origin(
+        adminOrigin,
+        { args: { email, password } },
+        ({ email, password }) => {
+          cy.visit("/");
+          cy.get("body").then(($b) => {
+            const loggedIn =
+              $b.find('[data-testid="ps-sidebar-container-test-id"]').length >
+              0;
+            if (!loggedIn) {
+              cy.get('[data-testid="auth-email"]', { timeout: 10000 })
+                .should("exist")
+                .clear()
+                .type(email);
+              cy.get('[data-testid="auth-password"]').clear().type(password);
+              cy.get('[data-testid="auth-submit"]')
+                .should("not.be.disabled")
+                .click();
+              cy.get('[data-testid="ps-sidebar-container-test-id"]', {
+                timeout: 15000,
+              }).should("exist");
+            }
+          });
+
+          cy.get('[data-testid="sidebar-users"]', { timeout: 10000 }).click();
+          cy.get("body").then(($b) => {
+            const found = Array.from(
+              $b.find('[data-testid="users-email"]'),
+            ).some((el) => el.textContent?.trim() === email);
+            if (!found) {
+              cy.log(
+                `[e2e] Deterministic user ${email} not found; skipping delete.`,
+              );
+              return;
+            }
+            cy.contains('[data-testid="users-email"]', email)
+              .parents('li[data-testid^="users-item-"]')
+              .then(($row) => {
+                if ($row.length) {
+                  cy.on("window:confirm", () => true);
+                  cy.wrap($row)
+                    .find('[data-testid="users-delete-btn"]')
+                    .click();
+                  cy.contains('[data-testid="users-email"]', email).should(
+                    "not.exist",
+                  );
+                  cy.log(`[e2e] Deleted deterministic user ${email}`);
+                }
+              });
+          });
+
+          cy.get("body").then(($b) => {
+            if ($b.find('[data-testid="sidebar-logout"]').length) {
+              cy.get('[data-testid="sidebar-logout"]').click();
+            }
+          });
+        },
+      ).then(() => {
+        testUser = null;
+      });
+    }
+  });
+};
+
+function ensureLoggedIn(email: string, password: string) {
+  cy.get("body").then(($b) => {
+    const loggedIn =
+      $b.find('[data-testid="ps-sidebar-container-test-id"]').length > 0;
+    if (!loggedIn) {
       cy.get('[data-testid="auth-email"]', { timeout: 10000 })
         .should("exist")
         .clear()
@@ -174,37 +242,46 @@ export const deleteCreatedUser = () => {
       cy.get('[data-testid="ps-sidebar-container-test-id"]', {
         timeout: 15000,
       }).should("exist");
+    }
+  });
+}
 
-      cy.get('[data-testid="sidebar-users"]', { timeout: 10000 })
-        .should("exist")
-        .click();
-
-      cy.get('[data-testid^="users-item-"]', { timeout: 15000 }).should(
-        "exist",
-      );
-
-      cy.contains('[data-testid="users-email"]', email, { timeout: 10000 })
-        .scrollIntoView()
-        .should("be.visible")
-        .parents('li[data-testid^="users-item-"]')
-        .as("targetRow");
-
-      cy.get("@targetRow").within(() => {
-        cy.get('[data-testid="users-update-btn"]').should("exist");
-        cy.get('[data-testid="users-delete-btn"]').should("exist");
+function openUsersAndDelete(email: string) {
+  cy.get('[data-testid="sidebar-users"]', { timeout: 10000 }).click();
+  cy.get("body").then(($b) => {
+    const found = Array.from($b.find('[data-testid="users-email"]')).some(
+      (el) => el.textContent?.trim() === email,
+    );
+    if (!found) {
+      cy.log(`[e2e] Deterministic user ${email} not found; skipping delete.`);
+      return;
+    }
+    cy.contains('[data-testid="users-email"]', email)
+      .parents('li[data-testid^="users-item-"]')
+      .then(($row) => {
+        if ($row.length) {
+          cy.on("window:confirm", () => true);
+          cy.wrap($row).find('[data-testid="users-delete-btn"]').click();
+          cy.contains('[data-testid="users-email"]', email).should("not.exist");
+          cy.log(`[e2e] Deleted deterministic user ${email}`);
+        }
       });
+  });
+}
 
-      cy.on("window:confirm", () => true);
+function attemptLogout() {
+  cy.get("body").then(($b) => {
+    if ($b.find('[data-testid="sidebar-logout"]').length) {
+      cy.get('[data-testid="sidebar-logout"]').click();
+    }
+  });
+}
 
-      cy.get("@targetRow").find('[data-testid="users-delete-btn"]').click();
-
-      cy.contains('[data-testid="users-email"]', email).should("not.exist");
-
-      cy.get('[data-testid="sidebar-logout"]', { timeout: 10000 })
-        .should("exist")
-        .click();
-    },
-  ).then(() => {
+function performSameOriginDeletion(email: string, password: string) {
+  ensureLoggedIn(email, password);
+  openUsersAndDelete(email);
+  attemptLogout();
+  cy.then(() => {
     testUser = null;
   });
-};
+}
