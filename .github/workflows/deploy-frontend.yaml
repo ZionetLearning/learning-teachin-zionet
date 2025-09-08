@@ -253,6 +253,32 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Validate Static Web Apps deployment prerequisites
+        shell: bash
+        run: |
+          ENV="${{ inputs.environment_name || env.environment_name}}"
+          RG="${ENV}-zionet-learning-2025"
+          
+          # Check if resource group exists
+          if ! az group show --name "$RG" &>/dev/null; then
+            echo "Resource group $RG not found. Cannot proceed with deployment."
+            exit 1
+          fi
+          
+          # Check if any Static Web Apps exist in the resource group
+          SWA_COUNT=$(az staticwebapp list --resource-group "$RG" --query "length(@)" -o tsv 2>/dev/null || echo "0")
+          
+          if [ "$SWA_COUNT" = "0" ]; then
+            echo "No Static Web Apps found in resource group $RG."
+            echo "This usually means frontend_apps is set to an empty array [] in Terraform."
+            echo "Please either:"
+            echo "  1. Set frontend_apps=[\"student\",\"teacher\",\"admin\"] in Terraform and run terraform apply, OR"
+            echo "  2. Set frontend_apps to empty string in the workflow to skip this deployment"
+            exit 1
+          fi
+          
+          echo "Found $SWA_COUNT Static Web Apps in resource group $RG"
+
       - name: Compute resource names
         id: names
         shell: bash
