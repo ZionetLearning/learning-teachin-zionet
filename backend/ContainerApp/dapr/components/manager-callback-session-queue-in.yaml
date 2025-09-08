@@ -14,5 +14,5 @@ spec:
       value: input
     - name: disableEntityManagement
       value: "true"
-Scopes:
+scopes:
   - manager
