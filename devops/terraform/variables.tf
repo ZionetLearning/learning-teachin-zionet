@@ -243,7 +243,7 @@ variable "prefix" {
 
 #------------- Frontend Application Variables -------------
 variable "frontend_apps" {
-  description = "List of frontend applications to deploy"
+  description = "List of frontend applications to deploy. Set to [] to disable Static Web Apps creation."
   type        = list(string)
   default     = ["student", "teacher", "admin"]
 }

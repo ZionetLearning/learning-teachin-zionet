@@ -21,8 +21,6 @@ docker_registry        = "snir1551"
 
 #------------- Frontend Configuration -------------
 frontend_sku_tier      = "Free"    
-frontend_sku_size      = "Free"    
-frontend_apps          = ["student", "teacher", "admin"]
-
-#------------- Redis Shared Instance -------------
+frontend_sku_size      = "Free"
+frontend_apps          = []    # Prod uses AKS instead of Static Web Apps#------------- Redis Shared Instance -------------
 use_shared_redis = true  # prod uses shared Redis instance
