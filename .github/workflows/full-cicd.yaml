@@ -81,15 +81,6 @@ jobs:
       use_keda: ${{ fromJSON(github.event.inputs.use_keda) }}
     secrets: inherit
 
-  debug-keda-input:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Show raw use_keda value
-        run: echo "github.event.inputs.use_keda=${{ github.event.inputs.use_keda }}"
-
-      - name: Show parsed use_keda
-        run: echo "parsed=${{ fromJSON(github.event.inputs.use_keda || 'false') }}"
-
   keda-setup:
     if: inputs.use_keda == true
     uses: ./.github/workflows/aks-keda.yaml

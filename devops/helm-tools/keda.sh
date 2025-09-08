@@ -5,33 +5,16 @@ KEDA_NAMESPACE="keda"
 
 # Function to check if all KEDA pods are running and ready
 check_keda_pods_ready() {
-    echo "Checking if KEDA pods are running and ready..."
-    
-    # Wait up to 5 minutes for pods to be ready
-    local max_attempts=30
-    local attempt=1
-    
-    while [ $attempt -le $max_attempts ]; do
-        # Count total pods and ready pods
-        local total_pods=$(kubectl get pods -n "$KEDA_NAMESPACE" --no-headers 2>/dev/null | wc -l)
-        local ready_pods=$(kubectl get pods -n "$KEDA_NAMESPACE" --no-headers 2>/dev/null | grep -c "1/1.*Running\|2/2.*Running" || true)
-        
-        echo "Attempt $attempt/$max_attempts: $ready_pods/$total_pods pods ready"
-        
-        if [ $total_pods -gt 0 ] && [ $ready_pods -eq $total_pods ]; then
-            echo "All KEDA pods are running and ready!"
-            kubectl get pods -n "$KEDA_NAMESPACE"
-            return 0
-        fi
-        
-        echo "Waiting for pods to be ready..."
-        sleep 10
-        ((attempt++))
-    done
-    
-    echo "Timeout waiting for KEDA pods to be ready"
-    kubectl get pods -n "$KEDA_NAMESPACE"
-    return 1
+    echo "Waiting for all KEDA deployments to become Available..."
+    if kubectl wait --for=condition=Available deployment --all -n "$KEDA_NAMESPACE" --timeout=300s; then
+        echo "All KEDA deployments are available!"
+        kubectl get pods -n "$KEDA_NAMESPACE"
+        return 0
+    else
+        echo "Timeout waiting for KEDA deployments to be ready"
+        kubectl get pods -n "$KEDA_NAMESPACE"
+        return 1
+    fi
 }
 
 # Check if KEDA is already installed and running
