@@ -45,6 +45,8 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
               accessToken: parsed.accessToken,
               accessTokenExpiry: parsed.accessTokenExpiry,
               role: parsed.role,
+              firstName: parsed.firstName,
+              lastName: parsed.lastName,
             };
           } else {
             localStorage.removeItem("credentials");
@@ -219,7 +221,8 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
       refreshTimerRef.current = window.setTimeout(async () => {
         try {
           const { accessToken } = await refreshTokens();
-          persistSession(creds.email, accessToken, creds.role);
+          persistSession(creds.email, accessToken, creds.role, creds.firstName,
+            creds.lastName);
         } catch {
           clearSession();
         }
