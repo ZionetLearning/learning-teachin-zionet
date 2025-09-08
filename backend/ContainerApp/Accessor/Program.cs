@@ -131,6 +131,7 @@ if (env.IsDevelopment())
 // Map endpoints (routes)
 app.MapTasksEndpoints();
 app.MapChatsEndpoints();
+app.MapPromptEndpoints();
 app.MapUsersEndpoints();
 app.MapAuthEndpoints();
 app.MapRefreshSessionEndpoints();
