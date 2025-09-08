@@ -39,13 +39,22 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore IntegrationTests.csproj
 
-      - name: Ensure correct appsettings.json
+      - name: Ensure jq is installed
         run: |
-          echo '{
-            "TestSettings": {
-              "ApiBaseUrl": "https://teachin.westeurope.cloudapp.azure.com/api/${{ inputs.api_stage }}/"
-            }
-          }' > appsettings.json
+          if ! command -v jq &> /dev/null
+          then
+            echo "jq not found, installing..."
+            sudo apt-get update
+            sudo apt-get install -y jq
+          else
+            echo "jq already installed"
+          fi
+
+      - name: Update ApiBaseUrl in appsettings.json
+        run: |
+          jq --arg url "https://teachin.westeurope.cloudapp.azure.com/api/${{ inputs.api_stage }}/" \
+            '.TestSettings.ApiBaseUrl = $url' appsettings.json > tmp.json && mv tmp.json appsettings.json
+        
 
       - name: Run integration tests
         run: dotnet test IntegrationTests.csproj --verbosity normal

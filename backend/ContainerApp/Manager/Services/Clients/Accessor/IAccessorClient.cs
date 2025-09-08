@@ -25,5 +25,5 @@ public interface IAccessorClient
     Task<RefreshSessionDto> GetSessionAsync(string oldHash, CancellationToken ct = default);
     Task UpdateSessionDBAsync(Guid sessionId, RotateRefreshSessionRequest rotatePayload, CancellationToken ct);
     Task DeleteSessionDBAsync(Guid sessionId, CancellationToken ct);
-
+    Task<string> GetSpeechTokenAsync(CancellationToken ct = default);
 }

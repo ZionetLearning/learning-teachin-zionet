@@ -4,6 +4,7 @@ using System.Text.Json;
 using FluentAssertions;
 using IntegrationTests.Fixtures;
 using IntegrationTests.Models.Notification;
+using Microsoft.Extensions.Configuration;
 using Xunit.Abstractions;
 
 namespace IntegrationTests.Infrastructure;
@@ -17,6 +18,8 @@ public abstract class IntegrationTestBase
     protected readonly SignalRTestFixture SignalRFixture;
     protected readonly ITestOutputHelper OutputHelper;
     private static readonly JsonSerializerOptions CachedJsonOptions = new() { PropertyNameCaseInsensitive = true };
+    public IConfiguration Configuration { get; }
+
 
     protected IntegrationTestBase(
         HttpTestFixture httpFixture,
@@ -27,6 +30,20 @@ public abstract class IntegrationTestBase
         Client = httpFixture.Client;
         OutputHelper = testOutputHelper;
         SignalRFixture = signalRFixture;
+        try
+        {
+            Configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: true)
+                .AddJsonFile("appsettings.Development.json", optional: true)
+                .AddEnvironmentVariables()
+                .Build();
+        }
+        catch (Exception ex)
+        {
+            // Fail fast if config cannot be built
+            throw new InvalidOperationException("Failed to build test configuration.", ex);
+        }
     }
 
     // Default: Do NOT auto-start SignalR. Subclasses that need it (after auth) should start explicitly.
