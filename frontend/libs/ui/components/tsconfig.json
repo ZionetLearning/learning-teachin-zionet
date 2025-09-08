@@ -6,7 +6,7 @@
     "declarationMap": true,
     "resolveJsonModule": true,
     "types": ["vitest/globals", "@testing-library/jest-dom"],
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true
   },
