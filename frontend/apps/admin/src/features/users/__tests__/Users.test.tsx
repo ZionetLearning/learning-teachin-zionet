@@ -15,7 +15,7 @@ vi.mock("react-i18next", async () => {
     ...actual,
     useTranslation: () => ({
       t: (k: string) => k,
-      i18n: { changeLanguage: vi.fn() },
+      i18n: { changeLanguage: vi.fn(), dir: () => "ltr" },
     }),
   };
 });
