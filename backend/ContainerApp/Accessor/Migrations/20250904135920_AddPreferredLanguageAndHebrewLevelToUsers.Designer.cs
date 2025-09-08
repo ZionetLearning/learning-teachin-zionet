@@ -4,6 +4,7 @@ using System.Net;
 using Accessor.DB;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Accessor.Migrations
 {
     [DbContext(typeof(AccessorDbContext))]
-    partial class AccessorDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250904135920_AddPreferredLanguageAndHebrewLevelToUsers")]
+    partial class AddPreferredLanguageAndHebrewLevelToUsers
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -171,8 +174,8 @@ namespace Accessor.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("HebrewLevelValue")
-                        .HasColumnType("text");
+                    b.Property<int?>("HebrewLevelValue")
+                        .HasColumnType("integer");
 
                     b.Property<string>("LastName")
                         .IsRequired()
@@ -183,11 +186,8 @@ namespace Accessor.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
-                    b.Property<string>("PreferredLanguageCode")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("en");
+                    b.Property<int>("PreferredLanguageCode")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Role")
                         .IsRequired()
