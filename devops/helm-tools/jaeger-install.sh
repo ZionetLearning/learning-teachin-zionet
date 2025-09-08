@@ -10,6 +10,21 @@ echo ""
 # Apply the configuration
 if kubectl apply -f ../kubernetes/config/jaeger-isolated-namespace.yaml; then
     echo ""
+
+    # Create basic auth secret for Jaeger UI (if not exists)
+    if ! kubectl get secret jaeger-basic-auth -n observability >/dev/null 2>&1; then
+        echo "🔑 Creating Basic Auth secret for Jaeger UI..."
+        USER="jaeger-admin"
+        PASS="changeme123"
+        htpasswd -bc auth $USER $PASS
+        kubectl create secret generic jaeger-basic-auth \
+            --from-file=auth \
+            -n observability
+        rm auth
+        echo "   👉 Username: $USER | Password: $PASS"
+    fi
+
+
     echo "⏳ Waiting for Jaeger to be ready..."
     
     if kubectl wait --for=condition=available deployment/jaeger-all-in-one -n observability --timeout=300s; then
