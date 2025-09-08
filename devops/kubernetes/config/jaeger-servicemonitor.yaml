@@ -1,0 +1,28 @@
+# ServiceMonitor for Jaeger to enable Prometheus metrics scraping
+# This allows Prometheus to collect metrics from Jaeger for observability dashboards
+
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: jaeger-metrics
+  namespace: observability
+  labels:
+    app: jaeger
+    app.kubernetes.io/name: jaeger
+    app.kubernetes.io/component: all-in-one
+    release: prometheus  # Important: This label allows Prometheus to discover this ServiceMonitor
+spec:
+  selector:
+    matchLabels:
+      app: jaeger
+      app.kubernetes.io/name: jaeger
+      app.kubernetes.io/component: all-in-one
+  endpoints:
+  - port: admin  # Jaeger admin/metrics port (5778)
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 10s
+    scheme: http
+  namespaceSelector:
+    matchNames:
+    - observability

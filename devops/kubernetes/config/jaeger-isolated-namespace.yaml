@@ -36,7 +36,7 @@ spec:
     spec:
       containers:
       - name: jaeger
-        image: jaegertracing/all-in-one:1.61
+        image: jaegertracing/all-in-one:1.60
         ports:
         - containerPort: 16686
           name: ui
@@ -59,6 +59,10 @@ spec:
           value: "false"
         - name: QUERY_BASE_PATH
           value: "/jaeger"
+        - name: METRICS_BACKEND
+          value: "prometheus"
+        - name: METRICS_HTTP_ROUTE
+          value: "/metrics"
         resources:
           requests:
             memory: "128Mi"
@@ -77,6 +81,7 @@ metadata:
     app: jaeger
     app.kubernetes.io/name: jaeger
     app.kubernetes.io/component: all-in-one
+    monitoring: "true"
 spec:
   ports:
   - port: 16686
