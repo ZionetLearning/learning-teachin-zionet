@@ -56,6 +56,7 @@ variable "queue_names" {
     "manager-callback-queue",
     "engine-queue",
     "accessor-queue",
+    "manager-callback-session-queue",
   ]
 }
 
