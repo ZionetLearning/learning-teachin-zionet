@@ -245,7 +245,8 @@ variable "prefix" {
 variable "frontend_apps" {
   description = "List of frontend applications to deploy"
   type        = list(string)
-  default     = ["student", "teacher", "admin"]
+  #default     = ["student", "teacher", "admin"]
+  default     = [] # for my 'mi-test' rg - later return to what it was
 }
 
 variable "workload_sa_bindings" {
