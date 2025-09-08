@@ -65,6 +65,16 @@ jobs:
           AKS_NAME="aks-cluster-dev"
           az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
 
+      - name: Validate Kubernetes Namespace Exists
+        # This step will fail the workflow if the namespace does not exist
+        run: |
+          if kubectl get ns ${{ inputs.environment_name }} >/dev/null 2>&1; then
+            echo "Namespace '${{ inputs.environment_name }}' exists. Continuing."
+          else
+            echo "Error: Namespace '${{ inputs.environment_name }}' does not exist."
+            exit 1
+          fi
+          
       - name: Deploy KEDA
         if: inputs.use_keda == true
         run: |
