@@ -1,6 +1,9 @@
 import * as Sentry from "@sentry/react";
 
-export const initializeSentry = () => {
+export interface SentryProps {
+  appName: "student" | "teacher" | "admin";
+}
+export const initializeSentry = ({ appName }: SentryProps) => {
   const allowedOrigins = [
     /https?:\/\/teachin\.westeurope\.cloudapp\.azure\.com/,
     /https?:\/\/[a-z0-9-]+\.1\.azurestaticapps\.net/,
@@ -24,4 +27,5 @@ export const initializeSentry = () => {
       }),
     ],
   });
+  Sentry.setTag("app", appName);
 };
