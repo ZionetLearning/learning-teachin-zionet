@@ -3,6 +3,7 @@ using Dapr.Client;
 using Engine.Constants;
 using Engine.Models.Chat;
 using Engine.Models.QueueMessages;
+using Engine.Models.Sentences;
 
 namespace Engine.Services;
 
@@ -62,6 +63,40 @@ public sealed class AiReplyPublisher : IAiReplyPublisher
         catch (Exception ex)
         {
             _log.LogError(ex, "Failed to publish AI answer");
+            throw;
+        }
+    }
+    public async Task SendGeneratedMessagesAsync(string userId, SentenceResponse response, MessageAction action, CancellationToken ct = default)
+    {
+        if (response is null)
+        {
+            _log.LogWarning("Response cannot be null.");
+            return;
+        }
+
+        try
+        {
+
+            var payload = JsonSerializer.SerializeToElement(response);
+
+            var messageMetadata = JsonSerializer.SerializeToElement(userId);
+
+            var message = new Message
+            {
+                ActionName = action,
+                Payload = payload,
+                Metadata = messageMetadata
+            };
+
+            _log.LogInformation("Publishing answer to callback binding {Binding}", CallbackBindingName);
+
+            await _dapr.InvokeBindingAsync(CallbackBindingName, BindingOperation, message, cancellationToken: ct);
+
+            _log.LogDebug("Answer published successfully");
+        }
+        catch (Exception ex)
+        {
+            _log.LogError(ex, "Failed to publish answer");
             throw;
         }
     }

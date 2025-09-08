@@ -3,21 +3,26 @@ name: Run Component Tests
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+    # Keep these in sync with the filters below (one block per service)
     paths:
       - 'backend/ContainerApp/Engine/**'
       - 'backend/ContainerApp/EngineComponentTests/**'
       - 'backend/ContainerApp/Directory.Build.props'
   workflow_dispatch:
 
+permissions:
+  contents: read
+  actions: write
+
 concurrency:
   group: run-component-tests-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  changes:
+  detect:
     runs-on: ubuntu-latest
     outputs:
-      services: ${{ steps.set-services.outputs.services }}
+      services: ${{ steps.build-matrix.outputs.services }}
     steps:
       - uses: actions/checkout@v4
 
@@ -26,55 +31,41 @@ jobs:
         uses: dorny/paths-filter@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          list-files: json
+          list-files: none
           filters: |
             engine:
               - 'backend/ContainerApp/Engine/**'
               - 'backend/ContainerApp/EngineComponentTests/**'
               - 'backend/ContainerApp/Directory.Build.props'
 
-      - name: Debug changed files
-        if: always()
-        run: |
-          echo "::group::paths-filter debug"
-          echo "engine flag: ${{ steps.filter.outputs.engine }}"
-          echo "engine files (JSON): ${{ steps.filter.outputs.engine_files }}"
-          echo "::endgroup::"
-
-      - name: Build service list
-        id: set-services
+      - name: Build changed services matrix (JSON)
+        id: build-matrix
         shell: bash
         run: |
           set -euo pipefail
-          echo "::group::Evaluating changed services"
-          SERVICES=()
+          declare -a services=()
 
-          if [ "${{ steps.filter.outputs.engine }}" = 'true' ]; then
-            echo "Engine changed ✅"
-            SERVICES+=("Engine")
+          [[ "${{ steps.filter.outputs.engine }}"  == "true" ]] && services+=("Engine")
+
+          # JSON array like ["Engine","SomeOtherService"]
+          if (( ${#services[@]} )); then
+            json=$(printf '%s\n' "${services[@]}" | jq -R . | jq -c -s .)
           else
-            echo "Engine not changed ❌"
+            json='[]'
           fi
+      
+          echo "services=${json}" >> "$GITHUB_OUTPUT"
+          echo "Matrix: ${json}"
 
-          if [ ${#SERVICES[@]} -eq 0 ]; then
-            JSON='[]'
-          else
-            # Build a proper JSON array: ["Engine"]
-            JSON=$(printf '%s\n' "${SERVICES[@]}" | jq -R . | jq -s .)
-          fi
-
-          echo "Detected services array: ${SERVICES[@]}"
-          echo "Detected services JSON: ${JSON}"
-
-          # Write raw JSON to output (no extra quotes)
-          echo services=${JSON} >> "$GITHUB_OUTPUT"
-          echo "::endgroup::"
-
-  call-component-tests:
-    needs: changes
-    if: needs.changes.outputs.services != '[]'
+  run:
+    needs: detect
+    if: needs.detect.outputs.services != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.detect.outputs.services) }}
     uses: ./.github/workflows/component-tests.yml
     with:
-      services: ${{ join(fromJson(needs.changes.outputs.services), ',') }}
+      service: ${{ matrix.service }}
       testFilter: ''
     secrets: inherit

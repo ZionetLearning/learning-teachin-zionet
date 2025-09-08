@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import axios from "axios";
+import { apiClient as axios } from "@app-providers";
 
 export type VisemeEvent = {
   visemeId: number;

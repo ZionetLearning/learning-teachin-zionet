@@ -29,15 +29,15 @@ public static class AuthEndpoints
                 return Results.BadRequest("Email and password are required.");
             }
 
-            var userId = await accessorService.ValidateCredentialsAsync(request.Email, request.Password);
-            if (userId == null)
+            var response = await accessorService.ValidateCredentialsAsync(request.Email, request.Password);
+            if (response == null)
             {
                 logger.LogWarning("Invalid credentials for email: {Email}", request.Email);
                 return Results.Unauthorized();
             }
 
             logger.LogInformation("User logged in successfully.");
-            return Results.Ok(userId);
+            return Results.Ok(response);
         }
         catch (Exception ex)
         {

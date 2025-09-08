@@ -19,6 +19,7 @@ global:
   keyvault:
     clientId: ""
     tenantId: ""
+    storeName: "azure-keyvault-backend"
 
 # If empty, namespace becomes <namePrefix>
 namespace:
@@ -106,6 +107,22 @@ manager:
     signalr:
       name: signalr-connection
       key: SignalRConnectionString
+    jwt:
+      name: manager-appsettings
+      keys:
+        secret: Jwt__Secret
+        issuer: Jwt__Issuer
+        audience: Jwt__Audience
+        refresh: Jwt__RefreshTokenHashKey
+      data:
+        - remote: manager-jwt-secret
+          key: Jwt__Secret
+        - remote: manager-jwt-issuer
+          key: Jwt__Issuer
+        - remote: manager-jwt-audience
+          key: Jwt__Audience
+        - remote: manager-jwt-refreshtokenhashkey
+          key: Jwt__RefreshTokenHashKey
   resources:
     requests:
       cpu: "100m"
@@ -144,6 +161,16 @@ engine:
     serviceBus:
       name: azure-service-bus-secret
       key: AzureServiceBusConnectionString
+    app:
+      name: engine-appsettings
+      keys:
+        openaiApiKey: AzureOpenAI__ApiKey
+        speechKey: AzureSpeech__SubscriptionKey
+      data:
+        - remote: engine-azureopenai-apikey
+          key: AzureOpenAI__ApiKey
+        - remote: engine-azurespeech-subscriptionkey
+          key: AzureSpeech__SubscriptionKey
   resources:
     requests:
       cpu: "100m"
@@ -170,6 +197,7 @@ accessor:
     appPort: 5003
   env:
     ASPNETCORE_URLS: "http://+:5003"
+    Speech__Region: "eastus"
   secrets:
     serviceBus:
       name: azure-service-bus-secret
@@ -177,6 +205,13 @@ accessor:
     postgres:
       name: postgres-connection
       key: PostgreSQLConnectionString
+    speech:
+      name: accessor-appsettings
+      keys:
+        speechKey: Speech__Key
+      data:
+        - remote: accessor-speech-key
+          key: Speech__Key
   resources:
     requests:
       cpu: "100m"

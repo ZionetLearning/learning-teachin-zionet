@@ -4,6 +4,7 @@ using System.Text.Json;
 using FluentAssertions;
 using IntegrationTests.Fixtures;
 using IntegrationTests.Models.Notification;
+using Microsoft.Extensions.Configuration;
 using Xunit.Abstractions;
 
 namespace IntegrationTests.Infrastructure;
@@ -17,6 +18,8 @@ public abstract class IntegrationTestBase
     protected readonly SignalRTestFixture SignalRFixture;
     protected readonly ITestOutputHelper OutputHelper;
     private static readonly JsonSerializerOptions CachedJsonOptions = new() { PropertyNameCaseInsensitive = true };
+    public IConfiguration Configuration { get; }
+
 
     protected IntegrationTestBase(
         HttpTestFixture httpFixture,
@@ -27,19 +30,32 @@ public abstract class IntegrationTestBase
         Client = httpFixture.Client;
         OutputHelper = testOutputHelper;
         SignalRFixture = signalRFixture;
+        try
+        {
+            Configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: true)
+                .AddJsonFile("appsettings.Development.json", optional: true)
+                .AddEnvironmentVariables()
+                .Build();
+        }
+        catch (Exception ex)
+        {
+            // Fail fast if config cannot be built
+            throw new InvalidOperationException("Failed to build test configuration.", ex);
+        }
     }
 
-    public virtual async Task InitializeAsync()
+    // Default: Do NOT auto-start SignalR. Subclasses that need it (after auth) should start explicitly.
+    public virtual Task InitializeAsync()
     {
-        OutputHelper.WriteLine("Starting SignalR connection...");
-        await SignalRFixture.StartAsync();
         SignalRFixture.ClearReceivedMessages();
-        OutputHelper.WriteLine("SignalR connection ready.");
+        return Task.CompletedTask;
     }
 
     public virtual async Task DisposeAsync()
     {
-        OutputHelper.WriteLine("Stopping SignalR connection...");
+        OutputHelper.WriteLine("Stopping SignalR connection (if active)...");
         await SignalRFixture.StopAsync();
     }
 
@@ -97,6 +113,20 @@ public abstract class IntegrationTestBase
         var notification = await SignalRFixture.WaitForNotificationAsync(predicate, timeout);
         notification.Should().NotBeNull("Expected a SignalR notification");
         return notification!;
+    }
+
+    protected async Task<ReceivedNotification?> TryWaitForNotificationAsync(
+    Predicate<UserNotification> predicate,
+    TimeSpan? timeout = null)
+    {
+        try
+        {
+            return await WaitForNotificationAsync(predicate, timeout);
+        }
+        catch
+        {
+            return null; // swallow timeout, return null
+        }
     }
 
     protected async Task<ReceivedEvent> WaitForEventAsync(

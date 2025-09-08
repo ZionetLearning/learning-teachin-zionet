@@ -52,7 +52,7 @@ public static class RefreshSessionEndpoints
                 var session = await refreshSessionService.FindByRefreshHashAsync(hash, cancellationToken);
                 if (session is null)
                 {
-                    logger.LogWarning("Refresh session not found for hash: {Hash}", hash);
+                    logger.LogWarning("Refresh session not found for hash password");
                     return Results.NotFound();
                 }
 

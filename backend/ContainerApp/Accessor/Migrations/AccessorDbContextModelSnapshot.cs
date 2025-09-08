@@ -61,26 +61,6 @@ namespace Accessor.Migrations
                     b.ToTable("ChatHistorySnapshots", (string)null);
                 });
 
-            modelBuilder.Entity("Accessor.Models.IdempotencyRecord", b =>
-                {
-                    b.Property<string>("IdempotencyKey")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset?>("ExpiresAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.HasKey("IdempotencyKey");
-
-                    b.ToTable("Idempotency", (string)null);
-                });
-
             modelBuilder.Entity("Accessor.Models.RefreshSessionsRecord", b =>
                 {
                     b.Property<Guid>("Id")
@@ -191,6 +171,9 @@ namespace Accessor.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("HebrewLevelValue")
+                        .HasColumnType("text");
+
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasColumnType("text");
@@ -200,10 +183,22 @@ namespace Accessor.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
+                    b.Property<string>("PreferredLanguageCode")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("en");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.HasKey("UserId");
 
                     b.HasIndex("Email")
                         .IsUnique();
+
+                    b.HasIndex("Role");
 
                     b.ToTable("Users", (string)null);
                 });

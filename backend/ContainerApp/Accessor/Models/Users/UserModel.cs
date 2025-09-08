@@ -1,6 +1,7 @@
 ﻿
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace Accessor.Models.Users;
 
@@ -13,4 +14,13 @@ public class UserModel
     public required string LastName { get; set; }
     public required string Email { get; set; }
     public required string Password { get; set; }
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public required Role Role { get; set; }
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public SupportedLanguage PreferredLanguageCode { get; set; }
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public HebrewLevel? HebrewLevelValue { get; set; }
 }

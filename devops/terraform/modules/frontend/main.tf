@@ -7,6 +7,10 @@ resource "azurerm_static_web_app" "frontend" {
   location            = var.location
   sku_tier            = var.sku_tier
   sku_size            = var.sku_size
+
+   app_settings = {
+    "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.frontend.connection_string
+  }
   
   tags = var.tags
 }
@@ -26,6 +30,8 @@ resource "azurerm_application_insights" "frontend" {
   lifecycle {
     ignore_changes = [workspace_id]
   }
+  
+  workspace_id = var.log_analytics_workspace_id
   
   tags = var.tags
 }

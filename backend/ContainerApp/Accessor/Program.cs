@@ -2,6 +2,7 @@ using System.Text.Json;
 using Accessor.Constants;
 using Accessor.DB;
 using Accessor.Endpoints;
+using Accessor.Models;
 using Accessor.Models.QueueMessages;
 using Accessor.Services;
 using Azure.Messaging.ServiceBus;
@@ -30,6 +31,16 @@ builder.Services.AddQueue<Message, AccessorQueueHandler>(
 builder.Services.AddScoped<IAccessorService, AccessorService>();
 builder.Services.AddScoped<IManagerCallbackQueueService, ManagerCallbackQueueService>();
 builder.Services.AddScoped<IRefreshSessionService, RefreshSessionService>();
+builder.Services.AddScoped<ISpeechService, SpeechService>();
+
+builder.Services.AddHttpClient("SpeechClient", client =>
+{
+    var region = builder.Configuration["Speech:Region"];
+    var key = builder.Configuration["Speech:Key"];
+
+    client.BaseAddress = new Uri($"https://{region}.api.cognitive.microsoft.com/");
+    client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", key);
+});
 
 var env = builder.Environment;
 
@@ -41,8 +52,10 @@ builder.Configuration
 
 builder.Services.AddEndpointsApiExplorer();
 
-// Add internal configuration to the application
-builder.Configuration.AddInMemoryCollection(Accessor.InternalConfiguration.Default!);
+builder.Services.AddOptions<TaskCacheOptions>()
+    .Bind(builder.Configuration.GetSection("TaskCache"))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 
 // Register Dapr client with custom JSON options
 builder.Services.AddDaprClient(client =>
@@ -118,4 +131,5 @@ app.MapUsersEndpoints();
 app.MapAuthEndpoints();
 app.MapRefreshSessionEndpoints();
 app.MapStatsEndpoints();
+app.MapMediaEndpoints();
 await app.RunAsync();

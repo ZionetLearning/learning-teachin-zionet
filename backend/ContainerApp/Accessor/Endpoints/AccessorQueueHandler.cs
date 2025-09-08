@@ -127,6 +127,7 @@ public class AccessorQueueHandler : IQueueHandler<Message>
             }
 
             _logger.LogDebug("Creating task {Id}", taskModel.Id);
+
             await _accessorService.CreateTaskAsync(taskModel);
 
             var notification = new Notification
