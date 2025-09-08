@@ -74,7 +74,7 @@ jobs:
             echo "Error: Namespace '${{ inputs.environment_name }}' does not exist."
             exit 1
           fi
-          
+
       - name: Deploy KEDA
         if: inputs.use_keda == true
         run: |
@@ -83,6 +83,7 @@ jobs:
           ./keda.sh
 
   keda-deploy:
+    needs: keda
     if: ${{ github.event.workflow == '.github/workflows/aks-keda.yaml' }}
     uses: ./.github/workflows/aks-helmcharts.yaml
     permissions:
