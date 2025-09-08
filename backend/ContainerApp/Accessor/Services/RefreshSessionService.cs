@@ -63,17 +63,24 @@ public class RefreshSessionService : IRefreshSessionService
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.RefreshTokenHash == refreshTokenHash, cancellationToken);
 
-            if (session == null)
+            if (session is null)
             {
                 _logger.LogWarning("No session found for given refresh token hash");
                 return null;
             }
 
+            if (session != null && session.RefreshTokenHash != refreshTokenHash)
+            {
+                _logger.LogError("Database returned a session, but token hash doesn't match!");
+                throw new InvalidOperationException("Mismatch between requested and returned token hash");
+            }
+
             return new RefreshSessionDto
             {
-                Id = session.Id,
+                Id = session!.Id,
                 UserId = session.UserId,
                 ExpiresAt = session.ExpiresAt,
+                DeviceFingerprintHash = session.DeviceFingerprintHash,
                 IP = session.IP.ToString(),
                 UserAgent = session.UserAgent
             };
@@ -83,6 +90,49 @@ public class RefreshSessionService : IRefreshSessionService
             _logger.LogError(ex, "Error finding refresh session by token hash");
             throw new InvalidOperationException("Could not find refresh session", ex);
         }
+    }
+
+    public async Task<int> PurgeExpiredOrRevokedAsync(int batchSize, CancellationToken ct)
+    {
+        var total = 0;
+        var isRelational = _dbContext.Database.IsRelational();
+
+        while (true)
+        {
+            var ids = await _dbContext.RefreshSessions
+                .AsNoTracking()
+                .Where(r => r.ExpiresAt < DateTimeOffset.UtcNow || r.RevokedAt != null)
+                .OrderBy(r => r.Id)
+                .Select(r => r.Id)
+                .Take(batchSize)
+                .ToListAsync(ct);
+
+            if (ids.Count == 0)
+            {
+                break;
+            }
+
+            int deleted;
+            if (isRelational)
+            {
+                deleted = await _dbContext.RefreshSessions
+                    .Where(r => ids.Contains(r.Id))
+                    .ExecuteDeleteAsync(ct);
+            }
+            else
+            {
+                var entities = await _dbContext.RefreshSessions
+                    .Where(r => ids.Contains(r.Id))
+                    .ToListAsync(ct);
+                _dbContext.RefreshSessions.RemoveRange(entities);
+                deleted = await _dbContext.SaveChangesAsync(ct);
+            }
+
+            total += deleted;
+        }
+
+        _logger.LogInformation("RefreshSessions cleanup removed {Count} rows", total);
+        return total;
     }
 
     public async Task RotateSessionAsync(Guid sessionId, RotateRefreshSessionRequest request, CancellationToken cancellationToken)

@@ -1,27 +1,29 @@
-import "./i18n";
 import { createRoot } from "react-dom/client";
 import { ToastContainer } from "react-toastify";
 import * as Sentry from "@sentry/react";
-import { initializeSentry } from "./sentry";
 import {
   ReactQueryProvider,
   I18nTranslateProvider,
   AuthProvider,
   SignalRProvider,
-} from "./providers";
+  initAppInsights,
+  initializeSentry
+} from "@app-providers";
+import { AppRole } from "@app-providers/types";
 import "./index.css";
 import App from "./App.tsx";
 
-initializeSentry();
+initAppInsights("student");
+initializeSentry({ appName: "student" });
 
 // const HUB_URL = "http://localhost:5280/notificationHub";
-const HUB_URL =
-  "https://teachin.westeurope.cloudapp.azure.com/api/dev/notificationHub";
+const BASE_URL = import.meta.env.VITE_BASE_URL!;
+const HUB_URL = `${BASE_URL}/notificationHub`;
 
 createRoot(document.getElementById("root")!).render(
   <I18nTranslateProvider>
     <ReactQueryProvider>
-      <AuthProvider>
+      <AuthProvider appRole={AppRole.student}>
         <SignalRProvider hubUrl={HUB_URL}>
           <Sentry.ErrorBoundary fallback={<div>Something went wrong</div>}>
             <App />
@@ -32,4 +34,3 @@ createRoot(document.getElementById("root")!).render(
     </ReactQueryProvider>
   </I18nTranslateProvider>,
 );
-

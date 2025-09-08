@@ -1,11 +1,10 @@
-﻿using Manager.Models;
-using Manager.Models.Speech;
-using Manager.Models.ModelValidation;
-using Manager.Services;
+﻿using Manager.Models.Speech;
 using Microsoft.AspNetCore.Mvc;
 using Manager.Models.Chat;
 using Manager.Services.Clients.Engine;
 using Manager.Services.Clients.Engine.Models;
+using Manager.Services.Clients.Accessor;
+using Manager.Models.Sentences;
 
 namespace Manager.Endpoints;
 
@@ -19,85 +18,87 @@ public static class AiEndpoints
 
     public static WebApplication MapAiEndpoints(this WebApplication app)
     {
-        var aiGroup = app.MapGroup("/ai-manager").WithTags("AI");
+        var aiGroup = app.MapGroup("/ai-manager").WithTags("AI").RequireAuthorization();
 
         #region HTTP GET
 
-        // GET /ai-manager/answer/{id}
-        aiGroup.MapGet("/answer/{id}", AnswerAsync).WithName("Answer");
+        // GET /ai-manager/chats/{userId}
+        aiGroup.MapGet("/chats/{userId:guid}", GetChatsAsync).WithName("GetChats");
+        // GET /ai-manager/chat/{chatId:guid}/{userId:guid}
+        aiGroup.MapGet("/chat/{chatId:guid}/{userId:guid}", GetChatHistoryAsync).WithName("GetChatHistory");
 
         #endregion
 
         #region HTTP POST
-
-        // POST /ai-manager/question
-        aiGroup.MapPost("/question", QuestionAsync).WithName("Question");
 
         // POST /ai-manager/chat
         aiGroup.MapPost("/chat", ChatAsync).WithName("Chat");
 
         // POST /ai-manager/speech/synthesize
         aiGroup.MapPost("/speech/synthesize", SynthesizeAsync).WithName("SynthesizeText");
+        aiGroup.MapPost("/sentence", SentenceGenerateAsync).WithName("GenerateSentence");
+        aiGroup.MapPost("/sentence/split", SplitSentenceGenerateAsync).WithName("GenerateSplitSentence");
 
         #endregion
 
         return app;
     }
 
-    private static async Task<IResult> AnswerAsync(
-        [FromRoute] string id,
-        [FromServices] IAiGatewayService aiService,
-        [FromServices] ILogger<AnswerEndpoint> log,
+    private static async Task<IResult> GetChatsAsync(
+        [FromRoute] Guid userId,
+        [FromServices] IAccessorClient accessorClient,
+        [FromServices] ILogger<ChatPostEndpoint> log,
         CancellationToken ct)
     {
-        using var scope = log.BeginScope("QuestionId: {Id}", id);
+        using var scope = log.BeginScope("userId: {UserId}", userId);
         {
+            // TODO: Change userId from token
             try
             {
-                var ans = await aiService.GetAnswerAsync(id, ct);
-                if (ans is null)
+                var chats = await accessorClient.GetChatsForUserAsync(userId, ct);
+                if (chats is null || !chats.Any())
                 {
-                    log.LogInformation("Answer not ready");
-                    return Results.NotFound(new { error = "Answer not ready" });
+                    log.LogInformation("chats not found");
+                    return Results.NotFound(new { error = "Chats not found" });
                 }
 
-                log.LogInformation("Answer returned");
-                return Results.Ok(new { id, answer = ans });
+                log.LogInformation("Chats returned");
+                return Results.Ok(new { chats = chats });
             }
             catch (Exception ex)
             {
-                log.LogError(ex, "Failed to retrieve answer");
-                return Results.Problem("AI answer retrieval failed");
+                log.LogError(ex, "Failed to retrieve chats");
+                return Results.Problem("Get chats retrieval failed");
             }
         }
     }
 
-    private static async Task<IResult> QuestionAsync(
-        [FromBody] AiRequestModel dto,
-        [FromServices] IAiGatewayService aiService,
-        [FromServices] ILogger<QuestionEndpoint> log,
-        CancellationToken ct)
+    private static async Task<IResult> GetChatHistoryAsync(
+    [FromRoute] Guid chatId,
+    [FromRoute] Guid userId,
+    [FromServices] IEngineClient engineClient,
+    [FromServices] ILogger<ChatPostEndpoint> log,
+    CancellationToken ct)
     {
-        using var scope = log.BeginScope("RequestId: {RequestId}, ThreadId: {ThreadId}", dto.Id, dto.ThreadId);
+        using var scope = log.BeginScope("ChatId: {ChatId}, userId: {UserId}", chatId, userId);
         {
-            if (!ValidationExtensions.TryValidate(dto, out var validationErrors))
-            {
-                log.LogWarning("Validation failed for {Model}: {Errors}", nameof(AiRequestModel), validationErrors);
-                return Results.BadRequest(new { errors = validationErrors });
-            }
-
+            // TODO: Change userId from token
             try
             {
-                var threadId = dto.ThreadId;
+                var history = await engineClient.GetHistoryChatAsync(chatId, userId, ct);
+                if (history is null)
+                {
+                    log.LogInformation("chat history not found");
+                    return Results.NotFound(new { error = "Chat history not found" });
+                }
 
-                var id = await aiService.SendQuestionAsync(threadId, dto.Question, ct);
-                log.LogInformation("Request {Id} (thread {Thread}) accept", id, threadId);
-                return Results.Accepted($"/ai-manager/answer/{id}", new { questionId = id, threadId });
+                log.LogInformation("Chat histiry returned");
+                return Results.Ok(history);
             }
             catch (Exception ex)
             {
-                log.LogError(ex, "Error sending question");
-                return Results.Problem("AI question failed");
+                log.LogError(ex, "Failed to retrieve chats");
+                return Results.Problem("Get chats retrieval failed");
             }
         }
     }
@@ -119,14 +120,23 @@ public static class AiEndpoints
             return Results.BadRequest(new { error = "threadId is required" });
         }
 
-        var requestId = Guid.NewGuid().ToString("N");
-        //todo: takeUserId from token.
-        const string userId = "dev-user-001";
+        if (string.IsNullOrWhiteSpace(request.UserId))
+        {
+            return Results.BadRequest(new { error = "userId is required" });
+        }
 
-        if (!TryResolveThreadId(request.ThreadId, out var threadId, out var error))
+        var requestId = Guid.NewGuid().ToString("N");
+
+        //todo: takeUserId from token.
+
+        if (!TryResolveThreadId(request.ThreadId, out var threadId, out var errorThread))
         {
             return Results.BadRequest(new { error = "If threadId is present, it must be a GUID" });
+        }
 
+        if (!TryResolveThreadId(request.UserId, out var userId, out var errorUser))
+        {
+            return Results.BadRequest(new { error = "If userId is present, it must be a GUID" });
         }
 
         var engineRequest = new EngineChatRequest
@@ -140,9 +150,29 @@ public static class AiEndpoints
 
         try
         {
-            var engineResponse = await engine.ChatAsync(engineRequest, ct);
+            var engineResponse = await engine.ChatAsync(engineRequest);
 
-            return Results.Ok(engineResponse);
+            if (engineResponse.success)
+            {
+                log.LogInformation("Request {RequestId} (thread {Thread}) accepted", requestId, threadId);
+                return Results.Ok(new
+                {
+                    requestId
+                });
+            }
+            else
+            {
+                log.LogError("Engine chat failed - service returned failure for request {RequestId}", requestId);
+                return Results.Problem(
+                    title: "Engine chat failed",
+                    detail: "Upstream service returned an error.",
+                    statusCode: StatusCodes.Status502BadGateway,
+                    extensions: new Dictionary<string, object?>
+                    {
+                        ["upstreamStatus"] = 500,
+                        ["requestId"] = engineRequest.RequestId
+                    });
+            }
         }
         catch (Dapr.Client.InvocationException ex) when (ex.Response?.StatusCode is not null)
         {
@@ -212,10 +242,11 @@ public static class AiEndpoints
     }
 
     private static async Task<IResult> SynthesizeAsync(
-       [FromBody] SpeechRequest dto,
-       [FromServices] IEngineClient engineClient,
-       [FromServices] ILogger<SpeechEndpoints> logger,
-       CancellationToken ct)
+        [FromBody] SpeechRequest dto,
+        [FromServices] IEngineClient engineClient,
+        [FromServices] ILogger<SpeechEndpoints> logger,
+        HttpRequest req,
+        CancellationToken ct)
     {
         if (dto is null || string.IsNullOrWhiteSpace(dto.Text))
         {
@@ -227,25 +258,37 @@ public static class AiEndpoints
         try
         {
             var engineResult = await engineClient.SynthesizeAsync(dto, ct);
-
-            if (engineResult != null)
-            {
-                // Transform engine response to match frontend expectations
-                var response = new SpeechResponse
-                {
-                    AudioData = engineResult.AudioData,
-                    Visemes = engineResult.Visemes,
-                    Metadata = engineResult.Metadata,
-                };
-
-                logger.LogInformation("Speech synthesis completed successfully");
-                return Results.Ok(response);
-            }
-            else
+            if (engineResult == null)
             {
                 logger.LogError("Engine synthesis failed - service returned null");
                 return Results.Problem("Speech synthesis failed.");
             }
+
+            var wantsBinary =
+                req.Headers.Accept.Any(h => h != null && h.Contains("application/octet-stream", StringComparison.OrdinalIgnoreCase)) ||
+                req.Headers.Accept.Any(h => h != null && h.Contains("audio/", StringComparison.OrdinalIgnoreCase)) ||
+                (req.Query.TryGetValue("format", out var fmt) && string.Equals(fmt, "binary", StringComparison.OrdinalIgnoreCase));
+
+            if (wantsBinary && !string.IsNullOrWhiteSpace(engineResult.AudioData))
+            {
+                var audioBytes = Convert.FromBase64String(engineResult.AudioData);
+                var contentType = !string.IsNullOrWhiteSpace(engineResult.Metadata?.ContentType)
+                    ? engineResult.Metadata.ContentType
+                    : "audio/mpeg";
+
+                logger.LogInformation("Returning binary audio (length {Length}, type {Type})", audioBytes.Length, contentType);
+                return Results.File(audioBytes, contentType: contentType, fileDownloadName: null, enableRangeProcessing: true);
+            }
+
+            var response = new SpeechResponse
+            {
+                AudioData = engineResult.AudioData,
+                Visemes = engineResult.Visemes,
+                Metadata = engineResult.Metadata,
+            };
+
+            logger.LogInformation("Speech synthesis completed successfully");
+            return Results.Ok(response);
         }
         catch (OperationCanceledException)
         {
@@ -261,6 +304,74 @@ public static class AiEndpoints
         {
             logger.LogError(ex, "Error in speech synthesis manager");
             return Results.Problem("An error occurred during speech synthesis.");
+        }
+    }
+    private static async Task<IResult> SentenceGenerateAsync(
+       [FromBody] SentenceRequest request,
+       [FromServices] IEngineClient engineClient,
+       [FromServices] ILogger<SpeechEndpoints> logger,
+       CancellationToken ct)
+    {
+        if (request is null)
+        {
+            return Results.BadRequest(new { error = "Request is required" });
+        }
+
+        logger.LogInformation("Received sentence generation request");
+
+        try
+        {
+            await engineClient.GenerateSentenceAsync(request);
+            return Results.Ok();
+        }
+        catch (OperationCanceledException)
+        {
+            logger.LogWarning("Sentence generation operation was canceled by user");
+            return Results.StatusCode(StatusCodes.Status499ClientClosedRequest);
+        }
+        catch (TimeoutException)
+        {
+            logger.LogWarning("Sentence generation operation timed out");
+            return Results.Problem("Sentence generation is taking too long.", statusCode: StatusCodes.Status408RequestTimeout);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error in Sentence generation manager");
+            return Results.Problem("An error occurred during sentence generation.");
+        }
+    }
+    private static async Task<IResult> SplitSentenceGenerateAsync(
+       [FromBody] SentenceRequest request,
+       [FromServices] IEngineClient engineClient,
+       [FromServices] ILogger<SpeechEndpoints> logger,
+       CancellationToken ct)
+    {
+        if (request is null)
+        {
+            return Results.BadRequest(new { error = "Request is required" });
+        }
+
+        logger.LogInformation("Received split sentence generation request");
+
+        try
+        {
+            await engineClient.GenerateSplitSentenceAsync(request);
+            return Results.Ok();
+        }
+        catch (OperationCanceledException)
+        {
+            logger.LogWarning("Split sentence generation operation was canceled by user");
+            return Results.StatusCode(StatusCodes.Status499ClientClosedRequest);
+        }
+        catch (TimeoutException)
+        {
+            logger.LogWarning("Split sentence generation operation timed out");
+            return Results.Problem("Split sentence generation is taking too long.", statusCode: StatusCodes.Status408RequestTimeout);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error in split sentence generation manager");
+            return Results.Problem("An error occurred during split sentence generation.");
         }
     }
 }

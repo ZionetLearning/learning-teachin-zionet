@@ -1,41 +1,50 @@
-﻿using System.Text.Json;
-using DotQueue;
-using Engine.Constants;
+﻿using DotQueue;
 using Engine.Helpers;
 using Engine.Models;
 using Engine.Models.Chat;
+using Engine.Models.QueueMessages;
+using Engine.Models.Sentences;
 using Engine.Services;
 using Engine.Services.Clients.AccessorClient;
 using Engine.Services.Clients.AccessorClient.Models;
+using Dapr.Client;
 
 namespace Engine.Endpoints;
 
 public class EngineQueueHandler : IQueueHandler<Message>
 {
-    private readonly IEngineService _engine;
+    private readonly DaprClient _daprClient;
     private readonly ILogger<EngineQueueHandler> _logger;
     private readonly Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>> _handlers;
     private readonly IChatAiService _aiService;
+    private readonly ISentencesService _sentencesService;
     private readonly IAiReplyPublisher _publisher;
     private readonly IAccessorClient _accessorClient;
+    private readonly IChatTitleService _chatTitleService;
 
     public EngineQueueHandler(
-        IEngineService engine,
+        DaprClient daprClient,
         IChatAiService aiService,
         IAiReplyPublisher publisher,
         IAccessorClient accessorClient,
+        ISentencesService sentencesService,
+        IChatTitleService chatTitleService,
         ILogger<EngineQueueHandler> logger)
     {
-        _engine = engine;
+        _daprClient = daprClient;
         _aiService = aiService;
         _publisher = publisher;
         _accessorClient = accessorClient;
+        _chatTitleService = chatTitleService;
         _logger = logger;
+        _sentencesService = sentencesService;
         _handlers = new Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>>
         {
             [MessageAction.CreateTask] = HandleCreateTaskAsync,
             [MessageAction.TestLongTask] = HandleTestLongTaskAsync,
-            [MessageAction.ProcessingQuestionAi] = HandleProcessingQuestionAiAsync
+            [MessageAction.ProcessingChatMessage] = HandleProcessingChatMessageAsync,
+            [MessageAction.GenerateSentences] = HandleSentenceGenerationAsync,
+            [MessageAction.GenerateSplitSentences] = HandleSentenceGenerationAsync
 
         };
     }
@@ -58,12 +67,24 @@ public class EngineQueueHandler : IQueueHandler<Message>
         try
         {
             var payload = PayloadValidation.DeserializeOrThrow<TaskModel>(message, _logger);
-
             PayloadValidation.ValidateTask(payload, _logger);
 
-            _logger.LogDebug("Processing task {Id}", payload.Id);
-            await _engine.ProcessTaskAsync(payload, cancellationToken);
-            _logger.LogInformation("Task {Id} processed", payload.Id);
+            using var _ = _logger.BeginScope("Processing TaskId: {TaskId}", payload.Id);
+            _logger.LogInformation("Inside {Method}", nameof(HandleCreateTaskAsync));
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (payload is null)
+            {
+                _logger.LogWarning("Attempted to process a null task");
+                throw new ArgumentNullException(nameof(message), "Task payload cannot be null");
+            }
+
+            _logger.LogInformation("Logged task: {Name}", payload.Name);
+
+            await _daprClient.InvokeMethodAsync(HttpMethod.Post, "accessor", "tasks-accessor/task", payload, cancellationToken);
+
+            _logger.LogInformation("Task {Id} forwarded to the Accessor service", payload.Id);
         }
         catch (NonRetryableException ex)
         {
@@ -105,15 +126,27 @@ public class EngineQueueHandler : IQueueHandler<Message>
         try
         {
             var payload = PayloadValidation.DeserializeOrThrow<TaskModel>(message, _logger);
-
             PayloadValidation.ValidateTask(payload, _logger);
 
-            _logger.LogInformation("Starting long task handler for Task {Id}", payload.Id);
-
             await Task.Delay(TimeSpan.FromSeconds(80), cancellationToken);
-            await _engine.ProcessTaskAsync(payload, cancellationToken);
-            _logger.LogInformation("Task {Id} processed", payload.Id);
 
+            using var _ = _logger.BeginScope("Starting long task handler for Task {Id}", payload.Id);
+            _logger.LogInformation("Inside {Method}", nameof(HandleTestLongTaskAsync));
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (payload is null)
+            {
+                _logger.LogWarning("Attempted to process a null task");
+                throw new ArgumentNullException(nameof(message), "Task payload cannot be null");
+            }
+
+            _logger.LogInformation("Logged task: {Name}", payload.Name);
+
+            await _daprClient.InvokeMethodAsync(
+                HttpMethod.Post, "accessor", "tasks-accessor/task", payload, cancellationToken);
+
+            _logger.LogInformation("Task {Id} forwarded to the Accessor service", payload.Id);
         }
         catch (NonRetryableException ex)
         {
@@ -138,7 +171,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
         }
     }
 
-    private async Task HandleProcessingQuestionAiAsync(
+    private async Task HandleProcessingChatMessageAsync(
         Message message,
         Func<Task> renewLock,
         CancellationToken ct)
@@ -146,15 +179,14 @@ public class EngineQueueHandler : IQueueHandler<Message>
         try
         {
             var request = PayloadValidation.DeserializeOrThrow<EngineChatRequest>(message, _logger);
+            PayloadValidation.ValidateEngineChatRequest(request, _logger);
+
+            var userContext = MetadataValidation.DeserializeOrThrow<UserContextMetadata>(message, _logger);
+            MetadataValidation.ValidateUserContext(userContext, _logger);
 
             using var _ = _logger.BeginScope(new { request.RequestId, request.ThreadId });
 
-            if (string.IsNullOrWhiteSpace(request.UserMessage))
-            {
-                throw new NonRetryableException("UserMessage is required.");
-            }
-
-            if (string.IsNullOrWhiteSpace(request.UserId))
+            if (request.UserId == Guid.Empty)
             {
                 throw new NonRetryableException("UserId is required.");
             }
@@ -167,16 +199,49 @@ public class EngineQueueHandler : IQueueHandler<Message>
             var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             if (now > request.SentAt + request.TtlSeconds)
             {
-                _logger.LogWarning("Request {RequestId} is expired. Skipping.", request.RequestId);
+                _logger.LogWarning("Chat request {RequestId} expired. Skipping.", request.RequestId);
                 throw new NonRetryableException("Request TTL expired.");
             }
 
-            var snapshot = await _accessorClient.GetHistorySnapshotAsync(request.ThreadId, ct);
+            var snapshot = await _accessorClient.GetHistorySnapshotAsync(request.ThreadId, request.UserId, ct);
+
+            var skHistory = HistoryMapper.ToChatHistoryFromElement(snapshot.History);
+            var storyForKernel = HistoryMapper.CloneToChatHistory(skHistory);
+
+            HistoryMapper.EnsureSystemMessage(storyForKernel);
+
+            storyForKernel.AddUserMessage(request.UserMessage.Trim(), DateTimeOffset.UtcNow);
+
+            var chatName = snapshot.Name;
+            if (chatName == "New chat")
+            {
+                try
+                {
+                    chatName = await _chatTitleService.GenerateTitleAsync(storyForKernel, ct);
+
+                }
+                catch (Exception exName)
+                {
+                    _logger.LogError(exName, "Error while processing naming chat: {RequestId}", request.RequestId);
+                    chatName = DateTime.UtcNow.ToString("HHmm_dd_MM");
+
+                }
+            }
+
+            var upsertUserMessage = new UpsertHistoryRequest
+            {
+                ThreadId = request.ThreadId,
+                UserId = request.UserId,
+                Name = chatName,
+                ChatType = request.ChatType.ToString().ToLowerInvariant(),
+                History = HistoryMapper.SerializeHistory(storyForKernel)
+            };
+
+            await _accessorClient.UpsertHistorySnapshotAsync(upsertUserMessage, ct);
 
             var serviceRequest = new ChatAiServiseRequest
             {
-                History = snapshot.History,
-                UserMessage = request.UserMessage,
+                History = storyForKernel,
                 ChatType = request.ChatType,
                 ThreadId = request.ThreadId,
                 UserId = request.UserId,
@@ -185,45 +250,48 @@ public class EngineQueueHandler : IQueueHandler<Message>
                 TtlSeconds = request.TtlSeconds,
             };
 
-            var aiResp = await _aiService.ChatHandlerAsync(serviceRequest, ct);
+            var aiResponse = await _aiService.ChatHandlerAsync(serviceRequest, ct);
 
-            if (aiResp.Status != ChatAnswerStatus.Ok || aiResp.Answer == null)
+            if (aiResponse.Status != ChatAnswerStatus.Ok || aiResponse.Answer is null)
             {
                 var errorResponse = new EngineChatResponse
                 {
                     RequestId = serviceRequest.RequestId,
                     Status = ChatAnswerStatus.Fail,
+                    ChatName = chatName,
                     ThreadId = serviceRequest.ThreadId,
-                    AssistantMessage = aiResp.Error
+                    AssistantMessage = aiResponse.Error
                 };
 
-                await _publisher.SendReplyAsync(errorResponse, $"{QueueNames.ManagerCallbackQueue}-out", ct);
-                _logger.LogError("AI question {RequestId} failed", aiResp.RequestId);
+                await _publisher.SendReplyAsync(userContext, errorResponse, ct);
+                _logger.LogError("Chat request {RequestId} failed: {Error}", aiResponse.RequestId, aiResponse.Error);
                 return;
             }
 
-            var questionMessage = new ChatMessage
+            HistoryMapper.AppendDelta(storyForKernel, aiResponse.UpdatedHistory);
+
+            var upsertFinal = new UpsertHistoryRequest
             {
                 ThreadId = request.ThreadId,
                 UserId = request.UserId,
-                Role = MessageRole.User,
-                Content = request.UserMessage
+                Name = chatName,
+                ChatType = request.ChatType.ToString().ToLowerInvariant(),
+                History = HistoryMapper.SerializeHistory(storyForKernel)
             };
 
-            await _accessorClient.StoreMessageAsync(questionMessage, ct);
-
-            await _accessorClient.StoreMessageAsync(aiResp.Answer, ct);
+            await _accessorClient.UpsertHistorySnapshotAsync(upsertFinal, ct);
 
             var responseToManager = new EngineChatResponse
             {
-                AssistantMessage = aiResp.Answer.Content,
-                RequestId = aiResp.RequestId,
-                Status = aiResp.Status,
-                ThreadId = aiResp.ThreadId
+                AssistantMessage = aiResponse.Answer.Content,
+                RequestId = aiResponse.RequestId,
+                ChatName = chatName,
+                Status = aiResponse.Status,
+                ThreadId = aiResponse.ThreadId
             };
 
-            await _publisher.SendReplyAsync(responseToManager, $"{QueueNames.ManagerCallbackQueue}-out", ct);
-            _logger.LogInformation("AI question {RequestId} processed", aiResp.RequestId);
+            await _publisher.SendReplyAsync(userContext, responseToManager, ct);
+            _logger.LogInformation("Chat request {RequestId} processed successfully", aiResponse.RequestId);
         }
         catch (NonRetryableException ex)
         {
@@ -238,18 +306,38 @@ public class EngineQueueHandler : IQueueHandler<Message>
                 throw new OperationCanceledException("Operation was cancelled.", ex, ct);
             }
 
-            _logger.LogError(ex, "Transient error while processing AI question {Action}", message.ActionName);
-            throw new RetryableException("Transient error while processing AI question.", ex);
+            _logger.LogError(ex, "Transient error while processing AI chat {Action}", message.ActionName);
+            throw new RetryableException("Transient error while processing AI chat.", ex);
         }
     }
-
-    private static JsonElement JsonEl(string raw)
+    private async Task HandleSentenceGenerationAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
     {
-        using var doc = JsonDocument.Parse(raw);
-        return doc.RootElement.Clone();
+        try
+        {
+            var payload = PayloadValidation.DeserializeOrThrow<SentenceRequest>(message, _logger);
+
+            PayloadValidation.ValidateSentenceGenerationRequest(payload, _logger);
+
+            _logger.LogDebug("Processing sentence generation");
+            var response = await _sentencesService.GenerateAsync(payload, cancellationToken);
+            var userId = payload.UserId;
+            await _publisher.SendGeneratedMessagesAsync(userId.ToString(), response, message.ActionName, cancellationToken);
+        }
+        catch (NonRetryableException ex)
+        {
+            _logger.LogError(ex, "Non-retryable error processing message {Action}", message.ActionName);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning(ex, "Operation cancelled while processing message {Action}", message.ActionName);
+                throw new OperationCanceledException("Operation was cancelled.", ex, cancellationToken);
+            }
+
+            _logger.LogError(ex, "Transient error while processing for action {Action}", message.ActionName);
+            throw new RetryableException("Transient error while processing.", ex);
+        }
     }
-
-    private static JsonElement EmptyHistory() =>
-        JsonEl("""{"messages":[]}""");
 }
-

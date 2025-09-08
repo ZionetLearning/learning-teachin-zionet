@@ -2,6 +2,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
+using IntegrationTests.Fixtures;
 using IntegrationTests.Models.Notification;
 using Xunit.Abstractions;
 
@@ -28,17 +29,16 @@ public abstract class IntegrationTestBase
         SignalRFixture = signalRFixture;
     }
 
-    public virtual async Task InitializeAsync()
+    // Default: Do NOT auto-start SignalR. Subclasses that need it (after auth) should start explicitly.
+    public virtual Task InitializeAsync()
     {
-        OutputHelper.WriteLine("Starting SignalR connection...");
-        await SignalRFixture.StartAsync();
         SignalRFixture.ClearReceivedMessages();
-        OutputHelper.WriteLine("SignalR connection ready.");
+        return Task.CompletedTask;
     }
 
     public virtual async Task DisposeAsync()
     {
-        OutputHelper.WriteLine("Stopping SignalR connection...");
+        OutputHelper.WriteLine("Stopping SignalR connection (if active)...");
         await SignalRFixture.StopAsync();
     }
 
@@ -96,6 +96,20 @@ public abstract class IntegrationTestBase
         var notification = await SignalRFixture.WaitForNotificationAsync(predicate, timeout);
         notification.Should().NotBeNull("Expected a SignalR notification");
         return notification!;
+    }
+
+    protected async Task<ReceivedNotification?> TryWaitForNotificationAsync(
+    Predicate<UserNotification> predicate,
+    TimeSpan? timeout = null)
+    {
+        try
+        {
+            return await WaitForNotificationAsync(predicate, timeout);
+        }
+        catch
+        {
+            return null; // swallow timeout, return null
+        }
     }
 
     protected async Task<ReceivedEvent> WaitForEventAsync(

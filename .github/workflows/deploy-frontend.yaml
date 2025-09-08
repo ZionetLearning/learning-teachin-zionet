@@ -1,6 +1,6 @@
-name: Deploy Frontend to Azure Static Web Apps
+name: Deploy Frontend Apps to Azure Static Web Apps
 run-name: >
-  🚀 Deploy Frontend to environment_name: ${{
+  🚀 Deploy Frontend Apps (student, teacher, admin) to environment: ${{
     inputs.environment_name || github.event.inputs.environment_name || 'dev'
   }} | GitHub Environment: ${{ inputs.environment || github.event.inputs.environment || 'Development'}}
    
@@ -29,6 +29,11 @@ on:
         description: 'lowercase letters & digits only (env identifier) where the application is deployed'
         required: true
         type: string
+      run_only_tests:
+        description: 'Run only frontend tests'
+        required: false
+        default: true
+        type: boolean
   workflow_call:
     inputs:
       environment:
@@ -43,17 +48,92 @@ on:
       deployment_token:
         required: false
         type: string
+      run_only_tests:
+        required: false
+        type: boolean
+        default: false
     secrets:
       AZURE_STATIC_WEB_APPS_API_TOKEN:
         required: false
 
 concurrency:
-  group: deploy-frontend-${{ inputs.environment_name || github.event.inputs.environment_name || 'dev' }}
+  group: deploy-frontend-apps-${{ inputs.environment_name || github.event.inputs.environment_name || 'dev' }}
   cancel-in-progress: false
 
+env:
+  # Azure Speech SDK configuration
+  VITE_AZURE_SPEECH_KEY: ${{ secrets.VITE_AZURE_SPEECH_KEY }}
+  VITE_AZURE_REGION: "eastus"
+  
+  # External APIs
+  VITE_OPENWEATHERMAP_API_KEY: ${{ secrets.VITE_OPENWEATHERMAP_API_KEY }}
+  
+  # Backend microservices URLs
+  VITE_BASE_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev"
+  VITE_AI_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/ai-manager"
+  VITE_AUTH_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/auth"
+  VITE_TASKS_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/tasks-manager"
+  VITE_USERS_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/users-manager"
+  
+  # Azure OpenAI configuration
+  VITE_AZURE_OPENAI_KEY: ""
+  VITE_AZURE_OPENAI_DEPLOYMENT_NAME: "gpt-4.1-mini"
+  VITE_AZURE_OPENAI_API_VERSION: "2024-04-01-preview"
+  VITE_AZURE_OPENAI_ENDPOINT: "https://france-teachin-open-ai.openai.azure.com/"
+  
+  # Monitoring and tracking
+  VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+  SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+
 jobs:
-  frontend-build-and-lint:
+
+  frontend-test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [student, teacher, admin]
+    env:
+      FE_DIR: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: '${{ env.FE_DIR }}/package-lock.json'
+
+      - name: Install Dependencies
+        working-directory: ${{ env.FE_DIR }}
+        run: npm ci
+
+      - name: Run Tests for ${{ matrix.app }}
+        working-directory: ${{ env.FE_DIR }}
+        run: |
+          echo "Running tests for ${{ matrix.app }}..."
+          npx vitest run --reporter=verbose --passWithNoTests --root apps/${{ matrix.app }}
+          echo "Tests completed successfully for ${{ matrix.app }}"
+      
+      - name: Run E2E Tests (Cypress) for ${{ matrix.app }}
+        continue-on-error: true
+        working-directory: ${{ env.FE_DIR }}
+        run: |
+          echo "Running Cypress for ${{ matrix.app }}..."
+          if grep -q "\"cypress:${{ matrix.app }}\":" package.json; then
+            # Run Cypress - will show results even with some test failures
+            npm run cypress:${{ matrix.app }}:ci
+            echo "Cypress run completed for ${{ matrix.app }}"
+          else
+            echo "No cypress:${{ matrix.app }} script found in package.json - skipping"
+          fi
+
+
+  frontend-build-and-lint:
+    if: inputs.run_only_tests == false
+    needs: [frontend-test]
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment || 'Development' }}
     env:
       FE_DIR: frontend
     steps:
@@ -79,20 +159,56 @@ jobs:
           ts=$(date -u "+Release-%d-%m-%Y_%H-%M")
           echo "RELEASE_NAME=${ts}-${GITHUB_SHA::7}" >> $GITHUB_ENV
 
-      - name: Build Application
+      - name: Build All Applications (Parallel)
         working-directory: ${{ env.FE_DIR }}
         env:
-          VITE_AZURE_SPEECH_KEY: ""
-          VITE_AZURE_REGION: "eastus"
-          VITE_AZURE_OPENAI_KEY: ""
-          VITE_AZURE_OPENAI_DEPLOYMENT_NAME: "gpt-4.1-mini"
-          VITE_AZURE_OPENAI_API_VERSION: "2024-04-01-preview"
-          VITE_AZURE_OPENAI_ENDPOINT: "https://france-teachin-open-ai.openai.azure.com/"
-          VITE_APPINSIGHTS_CONNECTION_STRING: ""
-          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          # Build-specific environment variables (RELEASE_NAME is created in the previous step)
           RELEASE: ${{ env.RELEASE_NAME }}
-        run: npm run build
+          VITE_APPINSIGHTS_CONNECTION_STRING_STUDENT: ${{ secrets.VITE_APPINSIGHTS_CONNECTION_STRING_STUDENT }}
+          VITE_APPINSIGHTS_CONNECTION_STRING_TEACHER: ${{ secrets.VITE_APPINSIGHTS_CONNECTION_STRING_TEACHER }}
+          VITE_APPINSIGHTS_CONNECTION_STRING_ADMIN:  ${{ secrets.VITE_APPINSIGHTS_CONNECTION_STRING_ADMIN  }}
+        run: |
+          echo "Starting parallel builds with per-app AI connection strings..."
+
+          VITE_APPINSIGHTS_CONNECTION_STRING="$VITE_APPINSIGHTS_CONNECTION_STRING_STUDENT" npm run build:student &
+          STUDENT_PID=$! && echo "Started student build (PID: $STUDENT_PID)"
+
+          VITE_APPINSIGHTS_CONNECTION_STRING="$VITE_APPINSIGHTS_CONNECTION_STRING_TEACHER" npm run build:teacher &
+          TEACHER_PID=$! && echo "Started teacher build (PID: $TEACHER_PID)"
+
+          VITE_APPINSIGHTS_CONNECTION_STRING="$VITE_APPINSIGHTS_CONNECTION_STRING_ADMIN"  npm run build:admin   &
+          ADMIN_PID=$!   && echo "Started admin build (PID: $ADMIN_PID)"
+
+          echo "Waiting for all builds to complete..."
+          wait $STUDENT_PID && echo "Student build completed"
+          wait $TEACHER_PID && echo "Teacher build completed"
+          wait $ADMIN_PID   && echo "Admin build completed"
+
+          echo "🚀 All frontend applications built successfully with per-app AI!"
+
+      - name: Normalize build outputs to frontend/dist/apps/*
+        working-directory: ${{ env.FE_DIR }}
+        run: |
+          set -e
+          mkdir -p dist/apps/student dist/apps/teacher dist/apps/admin
+          if [ -d apps/student/dist ]; then rsync -a --delete apps/student/dist/ dist/apps/student/; fi
+          if [ -d apps/teacher/dist ]; then rsync -a --delete apps/teacher/dist/ dist/apps/teacher/; fi
+          if [ -d apps/admin/dist ];  then rsync -a --delete apps/admin/dist/  dist/apps/admin/;  fi
+          echo "== dist tree =="
+          find dist -maxdepth 3 -type d -print
+
+      - name: Verify AI is in bundles
+        working-directory: ${{ env.FE_DIR }}
+        run: |
+          if ! grep -R "applicationinsights" -n dist/ >/dev/null 2>&1; then
+            echo "AI SDK not found in built files."
+            exit 1
+          fi
+          if ! grep -R "applicationinsights.azure.com" -n dist/ >/dev/null 2>&1; then
+            echo "Ingestion endpoint not found (env missing?)."
+            exit 1
+          fi
+          echo "AI present in bundles."
 
       - name: Upload build artifacts
         if: |
@@ -116,6 +232,9 @@ jobs:
     permissions:
       id-token: write
       contents: read
+    strategy:
+      matrix:
+        app: [student, teacher, admin]
     env:
       FE_DIR: frontend
     steps:
@@ -140,11 +259,43 @@ jobs:
         run: |
           set -euo pipefail
           ENV="${{ inputs.environment_name || env.environment_name}}"
+          APP="${{ matrix.app }}"
           RG="${ENV}-zionet-learning-2025"
-          SWA_NAME="static-web-app-${ENV}"
+          
+          # Get all Static Web Apps in the resource group
+          STATIC_WEB_APPS=$(az staticwebapp list --resource-group "$RG" --query "[].{name:name, tags:tags}" -o json 2>/dev/null || echo '[]')
+          
+          if [ "$STATIC_WEB_APPS" = "[]" ]; then
+            echo "No Static Web Apps found in resource group $RG"
+            exit 1
+          fi
+          
+          # Find the Static Web App for this specific app (student/teacher/admin)
+          # Look for apps with Project:Frontend tag and Environment matching our env
+          SWA_NAME=$(echo "$STATIC_WEB_APPS" | jq -r --arg app "$APP" --arg env "$ENV" '
+            .[] | select(
+              (.tags.Project // "") == "Frontend" and 
+              (.tags.Environment // "") == $env and
+              (.name | test($app; "i"))
+            ) | .name' | head -1)
+          
+          # If no tagged app found, try to find by name pattern
+          if [ -z "$SWA_NAME" ] || [ "$SWA_NAME" = "null" ]; then
+            SWA_NAME=$(echo "$STATIC_WEB_APPS" | jq -r --arg app "$APP" '
+              .[] | select(.name | test($app; "i")) | .name' | head -1)
+          fi
+          
+          # If still no app found, list what's available and fail
+          if [ -z "$SWA_NAME" ] || [ "$SWA_NAME" = "null" ]; then
+            echo "No Static Web App found for app: $APP"
+            echo "$STATIC_WEB_APPS" | jq -r '.[] | "Available: \(.name)"'
+            exit 1
+          fi
+          
+          echo "Deploying $APP to: $SWA_NAME"
+          
           AI_NAME="${SWA_NAME}-appinsights"
           echo "rg=$RG" >> $GITHUB_OUTPUT
-          echo "rg=$RG"
           echo "swa=$SWA_NAME" >> $GITHUB_OUTPUT
           echo "ai=$AI_NAME" >> $GITHUB_OUTPUT
        
@@ -173,22 +324,34 @@ jobs:
 
 
       - name: Get App Insights connection string
-        if: ${{ !inputs.app_insights_connection_string }}
         id: ai
         shell: bash
         run: |
-          set -euo pipefail
-          CONN=$(az resource show \
-            -g "${{ steps.names.outputs.rg }}" \
-            -n "${{ steps.names.outputs.ai }}" \
-            --resource-type "Microsoft.Insights/components" \
-            --query "properties.ConnectionString" -o tsv)
-          if [ -z "$CONN" ]; then
-            echo "❌ Could not resolve Application Insights connection string."
-            exit 1
+          if [ -n "${{ inputs.app_insights_connection_string || '' }}" ]; then
+            echo "Using provided App Insights connection strings from terraform output..."
+            # Extract the connection string for the current app from the JSON object
+            CONN=$(echo '${{ inputs.app_insights_connection_string }}' | jq -r '."${{ matrix.app }}"')
+            if [ "$CONN" = "null" ] || [ -z "$CONN" ]; then
+              echo "No App Insights connection string found for app: ${{ matrix.app }}"
+              exit 1
+            fi
+            echo "::add-mask::$CONN"
+            echo "APPINSIGHTS_CONNECTION_STRING=$CONN" >> "$GITHUB_ENV"
+          else
+            echo "Fetching App Insights connection string from Azure CLI..."
+            set -euo pipefail
+            CONN=$(az resource show \
+              -g "${{ steps.names.outputs.rg }}" \
+              -n "${{ steps.names.outputs.ai }}" \
+              --resource-type "Microsoft.Insights/components" \
+              --query "properties.ConnectionString" -o tsv)
+            if [ -z "$CONN" ]; then
+              echo "Could not resolve Application Insights connection string."
+              exit 1
+            fi
+            echo "::add-mask::$CONN"
+            echo "APPINSIGHTS_CONNECTION_STRING=$CONN" >> "$GITHUB_ENV"
           fi
-          echo "::add-mask::$CONN"
-          echo "APPINSIGHTS_CONNECTION_STRING=$CONN" >> "$GITHUB_ENV"
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
@@ -197,30 +360,39 @@ jobs:
           path: ${{ env.FE_DIR }}/dist/
 
       - name: Get SWA deployment token
-        if: ${{ !inputs.deployment_token }}
         id: swatoken
         shell: bash
         run: |
-          set -euo pipefail
-          TOKEN=$(az staticwebapp secrets list \
-            --name "${{ steps.names.outputs.swa }}" \
-            --resource-group "${{ steps.names.outputs.rg }}" \
-            --query "properties.apiKey" -o tsv)
-          if [ -z "$TOKEN" ]; then
-            echo "❌ Could not fetch Static Web Apps deployment token."
-            exit 1
+          if [ -n "${{ inputs.deployment_token || '' }}" ]; then
+            # Extract the token for the current app from the JSON object
+            TOKEN=$(echo '${{ inputs.deployment_token }}' | jq -r '."${{ matrix.app }}"')
+            if [ "$TOKEN" = "null" ] || [ -z "$TOKEN" ]; then
+              echo "No deployment token found for app: ${{ matrix.app }}"
+              exit 1
+            fi
+            echo "::add-mask::$TOKEN"
+            echo "AZURE_STATIC_WEB_APPS_API_TOKEN=$TOKEN" >> "$GITHUB_ENV"
+          else
+            set -euo pipefail
+            TOKEN=$(az staticwebapp secrets list \
+              --name "${{ steps.names.outputs.swa }}" \
+              --resource-group "${{ steps.names.outputs.rg }}" \
+              --query "properties.apiKey" -o tsv)
+            if [ -z "$TOKEN" ]; then
+              echo "Could not fetch Static Web Apps deployment token."
+              exit 1
+            fi
+            echo "::add-mask::$TOKEN"
+            echo "AZURE_STATIC_WEB_APPS_API_TOKEN=$TOKEN" >> "$GITHUB_ENV"
           fi
-          echo "::add-mask::$TOKEN"
-          echo "AZURE_STATIC_WEB_APPS_API_TOKEN=$TOKEN" >> "$GITHUB_ENV"
 
       - name: Deploy to Azure Static Web Apps (Production slot)
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ inputs.deployment_token || env.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          azure_static_web_apps_api_token: ${{ env.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: "upload"
-          app_location: "${{ env.FE_DIR }}/dist"
+          app_location: "${{ env.FE_DIR }}/dist/apps/${{ matrix.app }}"
+          api_location: "" # No API
+          output_location: "" # Files are already built
           skip_app_build: true
-          production_branch: 'main'
-
-
-
+          skip_api_build: true

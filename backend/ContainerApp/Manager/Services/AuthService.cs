@@ -6,6 +6,8 @@ using Dapr.Client;
 using Manager.Constants;
 using Manager.Models.Auth;
 using Manager.Models.Auth.RefreshSessions;
+using Manager.Models.Users;
+using Manager.Services.Clients.Accessor;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -13,15 +15,15 @@ namespace Manager.Services;
 
 public class AuthService : IAuthService
 {
-    private readonly DaprClient _dapr;
     private readonly ILogger<AuthService> _log;
     private readonly JwtSettings _jwt;
+    private readonly IAccessorClient _accessorClient;
 
-    public AuthService(DaprClient dapr, ILogger<AuthService> log, IOptions<JwtSettings> jwtOptions)
+    public AuthService(ILogger<AuthService> log, IOptions<JwtSettings> jwtOptions, IAccessorClient accessorClient)
     {
-        _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
         _log = log ?? throw new ArgumentNullException(nameof(log));
         _jwt = jwtOptions?.Value ?? throw new ArgumentNullException(nameof(jwtOptions));
+        _accessorClient = accessorClient;
     }
 
     public async Task<(string, string)> LoginAsync(LoginRequest loginRequest, HttpRequest httpRequest, CancellationToken cancellationToken)
@@ -29,22 +31,16 @@ public class AuthService : IAuthService
         _log.LogInformation("Login attempt for user {Email}", loginRequest.Email);
         try
         {
-            var userId = await _dapr.InvokeMethodAsync<LoginRequest, Guid?>(
-                HttpMethod.Post,
-                "accessor",
-                "auth/login",
-                loginRequest,
-                cancellationToken
-            );
+            var response = await _accessorClient.LoginUserAsync(loginRequest, cancellationToken);
 
-            if (userId is null)
+            if (response is null || response.UserId == Guid.Empty)
             {
                 _log.LogError("Login failed for user {Email}", loginRequest.Email);
                 throw new UnauthorizedAccessException($"Login failed for user {loginRequest.Email}");
             }
 
             // Generate access and refresh tokens
-            var accessToken = GenerateJwtToken(userId.Value);
+            var accessToken = GenerateJwtToken(response.UserId, response.Role);
             var refreshToken = Guid.NewGuid().ToString("N");
 
             var refreshHash = HashRefreshToken(refreshToken, _jwt.RefreshTokenHashKey);
@@ -55,29 +51,23 @@ public class AuthService : IAuthService
             ? null
             : HashRefreshToken(fingerprint, _jwt.RefreshTokenHashKey);
 
-            var ua = string.IsNullOrWhiteSpace(httpRequest.Headers["User-Agent"])
+            var ua = string.IsNullOrWhiteSpace(httpRequest.Headers.UserAgent)
                 ? AuthSettings.UnknownIpFallback
-                : httpRequest.Headers["User-Agent"].ToString();
+                : httpRequest.Headers.UserAgent.ToString();
 
             var ip = httpRequest.HttpContext.Connection.RemoteIpAddress?.ToString() ?? AuthSettings.UnknownIpFallback;
 
             // The user Id is taken from the DB, with the credantials of email and password
             var session = new RefreshSessionRequest
             {
-                UserId = userId.Value,
+                UserId = response.UserId,
                 RefreshTokenHash = refreshHash,
                 DeviceFingerprintHash = fingerprintHash,
                 IP = ip,
                 UserAgent = ua,
             };
 
-            await _dapr.InvokeMethodAsync(
-                HttpMethod.Post,
-                "accessor",
-                "api/refresh-sessions",
-                session,
-                cancellationToken);
-
+            await _accessorClient.SaveSessionDBAsync(session, cancellationToken);
             return (accessToken, refreshToken);
         }
 
@@ -116,10 +106,14 @@ public class AuthService : IAuthService
 
             // TODO: In Future, when we will have domain or real frontend validate Origin and Referer headers
 
-            var csrfCookie = request.Cookies[AuthSettings.CsrfTokenCookieName];
+            // For now, just comment it because we check local so we dont have the access for csrf cookie
+            //var csrfCookie = request.Cookies[AuthSettings.CsrfTokenCookieName];
+
             var csrfHeader = request.Headers["X-CSRF-Token"].ToString();
 
-            if (string.IsNullOrWhiteSpace(csrfHeader) || csrfCookie == null || !SlowEquals(csrfCookie, csrfHeader))
+            //if (string.IsNullOrWhiteSpace(csrfHeader) || csrfCookie == null || !SlowEquals(csrfCookie, csrfHeader))
+            if (string.IsNullOrWhiteSpace(csrfHeader))
+
             {
                 throw new UnauthorizedAccessException("Invalid CSRF token");
             }
@@ -132,12 +126,17 @@ public class AuthService : IAuthService
             var oldHash = HashRefreshToken(oldRefreshToken, _jwt.RefreshTokenHashKey);
 
             // Get session from Accessor
-            var session = await _dapr.InvokeMethodAsync<RefreshSessionDto>(
-                HttpMethod.Get,
-                "accessor",
-                $"api/refresh-sessions/by-token-hash/{oldHash}",
-                cancellationToken
-            ) ?? throw new UnauthorizedAccessException("Invalid or mismatched session.");
+            RefreshSessionDto session;
+            try
+            {
+                session = await _accessorClient.GetSessionAsync(oldHash, cancellationToken)
+                    ?? throw new UnauthorizedAccessException("Invalid or mismatched session.");
+            }
+            catch (InvocationException ex) when (ex.InnerException is HttpRequestException httpEx && httpEx.StatusCode == HttpStatusCode.NotFound)
+            {
+                _log.LogWarning("No session found for given refresh token hash.");
+                throw new UnauthorizedAccessException("Invalid or mismatched session.", ex);
+            }
 
             // ------------------------ strat validations ------------------------
 
@@ -172,10 +171,14 @@ public class AuthService : IAuthService
                     session.Id, session.IP, ip);
                 throw new UnauthorizedAccessException("User-Agent mismatch.");
             }
+            // get the role of the user
+            var user = await _accessorClient.GetUserAsync(session.UserId)
+                ?? throw new UnauthorizedAccessException("User not found.");
+            var role = user.Role;
 
             // All good -> generate tokens
 
-            var newAccessToken = GenerateJwtToken(session.UserId);
+            var newAccessToken = GenerateJwtToken(session.UserId, role);
             var newRefreshToken = Guid.NewGuid().ToString("N");
             var newRefreshHash = HashRefreshToken(newRefreshToken, _jwt.RefreshTokenHashKey);
 
@@ -189,20 +192,15 @@ public class AuthService : IAuthService
                 IssuedAt = now
             };
 
-            // Save new session
-            await _dapr.InvokeMethodAsync(
-                HttpMethod.Put,
-                "accessor",
-                $"api/refresh-sessions/{session.Id}/rotate",
-                rotatePayload,
-                cancellationToken);
+            // Update session using accessor client
+            await _accessorClient.UpdateSessionDBAsync(session.Id, rotatePayload, cancellationToken);
 
             return (newAccessToken, newRefreshToken);
         }
         catch (UnauthorizedAccessException ex)
         {
             _log.LogError(ex, "Refresh token failed, Authorized exception.");
-            throw new UnauthorizedAccessException(ex.Message);
+            throw;
         }
         catch (Exception ex)
         {
@@ -225,8 +223,7 @@ public class AuthService : IAuthService
             var hash = HashRefreshToken(refreshToken, _jwt.RefreshTokenHashKey);
 
             // Lookup session by hash
-            var session = await _dapr.InvokeMethodAsync<RefreshSessionDto?>(
-                HttpMethod.Get, "accessor", $"api/refresh-sessions/by-token-hash/{hash}", cancellationToken);
+            var session = await _accessorClient.GetSessionAsync(hash, cancellationToken);
 
             if (session is null)
             {
@@ -235,8 +232,7 @@ public class AuthService : IAuthService
             }
 
             // Delete by sessionId
-            await _dapr.InvokeMethodAsync(
-                HttpMethod.Delete, "accessor", $"api/refresh-sessions/{session.Id}", cancellationToken);
+            await _accessorClient.DeleteSessionDBAsync(session.Id, cancellationToken);
 
             _log.LogInformation("Deleted session {SessionId}", session.Id);
         }
@@ -248,15 +244,22 @@ public class AuthService : IAuthService
     }
 
     #region Helpers 
-    private string GenerateJwtToken(Guid userId)
+    private string GenerateJwtToken(Guid userId, Role role)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwt.Secret));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
+        var claims = new List<Claim>
+        {
+            new Claim(AuthSettings.UserIdClaimType, userId.ToString()), // userID 
+            new Claim(AuthSettings.RoleClaimType, role.ToString()) // user role
+        };
+
         var token = new JwtSecurityToken(
             issuer: _jwt.Issuer,
             audience: _jwt.Audience,
-            claims: new[] { new Claim(AuthSettings.NameClaimType, userId.ToString()) },
+            // Store the userId and the role in the token
+            claims: claims,
             expires: DateTime.UtcNow.AddMinutes(_jwt.AccessTokenTTL),
             signingCredentials: creds);
 

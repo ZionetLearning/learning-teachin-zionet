@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useCallback } from "react";
 
-import { useSynthesizeSpeech } from "@/api";
-import { base64ToBlob } from "@/utils";
+import { useSynthesizeSpeech } from "@student/api";
+import { base64ToBlob } from "@student/utils";
 
 interface useAvatarSpeechOptions {
   lipsArray?: string[];
@@ -10,7 +10,7 @@ interface useAvatarSpeechOptions {
   onAudioEnd?: () => void;
 }
 
-import { CypressWindow } from "@/types";
+import { CypressWindow } from "@student/types";
 
 export const useAvatarSpeech = ({
   lipsArray = [],

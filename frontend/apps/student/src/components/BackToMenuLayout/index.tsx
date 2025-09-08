@@ -1,6 +1,6 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "@/providers/auth";
+import { useAuth } from "@app-providers/auth";
 import { useStyles } from "./style";
 
 export const BackToMenuLayout = () => {

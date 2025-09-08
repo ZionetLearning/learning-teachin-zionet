@@ -2,6 +2,8 @@ using System.Text.Json;
 using Engine.Models;
 using Engine.Models.Chat;
 using DotQueue;
+using Engine.Models.QueueMessages;
+using Engine.Models.Sentences;
 
 namespace Engine.Helpers;
 public static class PayloadValidation
@@ -81,7 +83,7 @@ public static class PayloadValidation
 
         }
 
-        if (string.IsNullOrWhiteSpace(req.UserId))
+        if (req.UserId == Guid.Empty)
         {
             Fail(logger, "UserId is required.", nameof(req.UserId));
 
@@ -117,5 +119,13 @@ public static class PayloadValidation
         }
 
         logger.LogDebug("ChatAiServiseRequest validation passed.");
+    }
+    public static void ValidateSentenceGenerationRequest(SentenceRequest req, ILogger logger)
+    {
+        if (req is null)
+        {
+            logger.LogWarning("SentenceRequest cannot be null.");
+            throw new NonRetryableException("SentenceRequest cannot be null.");
+        }
     }
 }

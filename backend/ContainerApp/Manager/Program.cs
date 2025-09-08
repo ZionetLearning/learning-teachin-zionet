@@ -1,14 +1,18 @@
+using System.IO.Compression;
 using System.Net;
 using System.Text;
+using System.Threading.RateLimiting;
 using Azure.Messaging.ServiceBus;
 using DotQueue;
 using Manager.Constants;
 using Manager.Endpoints;
+using Microsoft.AspNetCore.ResponseCompression;
 using Manager.Hubs;
+using Manager.Models;
 using Manager.Models.Auth;
 using Manager.Models.QueueMessages;
 using Manager.Services;
-using Manager.Services.Clients;
+using Manager.Services.Clients.Accessor;
 using Manager.Services.Clients.Engine;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -18,7 +22,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
-using System.Threading.RateLimiting;
+using Manager;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,8 +38,21 @@ builder.Services.Configure<AiSettings>(builder.Configuration.GetSection("Ai"));
 builder.Services.Configure<JwtSettings>(
     builder.Configuration.GetSection("Jwt"));
 
+builder.Services.Configure<CorsSettings>(
+    builder.Configuration.GetSection("Cors"));
+
 var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>()!;
 var key = Encoding.UTF8.GetBytes(jwtSettings.Secret);
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<BrotliCompressionProvider>();
+    options.Providers.Add<GzipCompressionProvider>();
+    options.MimeTypes = CompressionDefaults.CompressedMimeTypes;
+});
+
+builder.Services.Configure<BrotliCompressionProviderOptions>(o => o.Level = CompressionLevel.Fastest);
+builder.Services.Configure<GzipCompressionProviderOptions>(o => o.Level = CompressionLevel.Fastest);
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -56,7 +73,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(key),
 
-            NameClaimType = AuthSettings.NameClaimType
+            NameClaimType = AuthSettings.UserIdClaimType,
+            RoleClaimType = AuthSettings.RoleClaimType
         };
     });
 
@@ -72,18 +90,24 @@ if (!string.IsNullOrEmpty(signalRConnString))
     signalRBuilder.AddAzureSignalR(signalRConnString);
 }
 
+var corsSettings = builder.Configuration.GetSection("Cors").Get<CorsSettings>();
+
+if (corsSettings is null || corsSettings.AllowedOrigins is null || corsSettings.AllowedOrigins.Length == 0)
+{
+    throw new InvalidOperationException("Cors settings are missing or invalid. Please check appsettings.json.");
+}
+
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    options.AddPolicy("Frontend", policy =>
     {
-        policy
-            .AllowAnyOrigin()
+        policy.WithOrigins(corsSettings.AllowedOrigins)
             .AllowAnyMethod()
-            .AllowAnyHeader();
+            .AllowAnyHeader()
+            .AllowCredentials(); // Required for sending/receiving cookies
     });
 });
-builder.Services.AddScoped<IManagerService, ManagerService>();
-builder.Services.AddScoped<IAiGatewayService, AiGatewayService>();
+
 builder.Services.AddScoped<IAccessorClient, AccessorClient>();
 builder.Services.AddScoped<IEngineClient, EngineClient>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
@@ -93,7 +117,7 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 builder.Services.AddSingleton(_ =>
     new ServiceBusClient(builder.Configuration["ServiceBus:ConnectionString"]));
-builder.Services.AddSingleton<IUserIdProvider, QueryStringUserIdProvider>();
+builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
 builder.Services.AddQueue<Message, ManagerQueueHandler>(
     QueueNames.ManagerCallbackQueue,
     settings =>
@@ -159,7 +183,8 @@ var app = builder.Build();
 
 var forwardedHeaderOptions = app.Services.GetRequiredService<IOptions<ForwardedHeadersOptions>>().Value;
 app.UseForwardedHeaders(forwardedHeaderOptions);
-app.UseCors("AllowAll");
+app.UseCors("Frontend");
+app.UseResponseCompression();
 app.UseCloudEvents();
 app.UseRateLimiter();
 app.UseAuthentication();

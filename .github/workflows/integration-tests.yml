@@ -2,10 +2,22 @@ name: Integration Tests
 
 on:
   workflow_dispatch:
-  # push:
-  #   branches:
-  #     - main
-  #pull_request:
+    inputs:
+      api_stage:
+        description: "Suffix for ApiBaseUrl (test|featest)"
+        required: false
+        default: test
+        type: choice
+        options: [test, featest]
+
+  workflow_call:
+    inputs:
+      api_stage:
+        description: "Suffix for ApiBaseUrl"
+        required: false
+        type: string
+        default: test
+
 
 jobs:
   integration-tests:
@@ -31,9 +43,29 @@ jobs:
         run: |
           echo '{
             "TestSettings": {
-              "ApiBaseUrl": "https://teachin.westeurope.cloudapp.azure.com/api/test/"
+              "ApiBaseUrl": "https://teachin.westeurope.cloudapp.azure.com/api/${{ inputs.api_stage }}/"
             }
           }' > appsettings.json
 
       - name: Run integration tests
         run: dotnet test IntegrationTests.csproj --verbosity normal
+
+  #this needs to run even if the tests fail
+  # clear-db:
+  #       needs: integration-tests
+  #       if: ${{ always() }} 
+  #       uses: ./.github/workflows/clear-postgres.yml
+  #       permissions:
+  #         id-token: write
+  #         contents: read
+  #       with:
+  #         mode: 'truncate'
+  #         pg_database: 'appdb-${{ inputs.api_stage }}'
+  #         dry_run: 'false'
+  #         verify_ssl: 'true'
+  #       secrets:
+  #         POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+  #         POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+  #         AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  #         AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  #         AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}

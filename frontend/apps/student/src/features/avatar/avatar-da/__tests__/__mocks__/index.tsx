@@ -21,9 +21,17 @@ console.warn = (...args: unknown[]) => {
 };
 
 /* ========= i18n ========= */
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (k: string) => k }),
-}));
+vi.mock("react-i18next", async () => {
+  const actual =
+    await vi.importActual<typeof import("react-i18next")>("react-i18next");
+  return {
+    ...actual,
+    useTranslation: () => ({
+      t: (k: string) => k,
+      i18n: { changeLanguage: vi.fn() },
+    }),
+  };
+});
 
 /* ===== avatar assets ===== */
 vi.mock("@features/avatar/avatar-da/assets", () => ({
@@ -160,7 +168,7 @@ vi.mock("leva", () => ({
 
 /* ====== hook under test: we only need speak ====== */
 export const mockSpeak = vi.fn();
-vi.mock("@/hooks/useAvatarSpeech", () => ({
+vi.mock("@student/hooks/useAvatarSpeech", () => ({
   useAvatarSpeech: vi.fn(() => ({
     currentViseme: 0,
     speak: mockSpeak,

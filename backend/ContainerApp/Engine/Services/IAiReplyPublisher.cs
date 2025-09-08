@@ -1,8 +1,11 @@
 ﻿using Engine.Models.Chat;
+using Engine.Models.QueueMessages;
+using Engine.Models.Sentences;
 
 namespace Engine.Services;
 
 public interface IAiReplyPublisher
 {
-    Task SendReplyAsync(EngineChatResponse response, string replyToQueue, CancellationToken ct = default);
+    Task SendReplyAsync(UserContextMetadata chatMetadata, EngineChatResponse response, CancellationToken ct = default);
+    Task SendGeneratedMessagesAsync(string userId, SentenceResponse response, MessageAction action, CancellationToken ct = default);
 }

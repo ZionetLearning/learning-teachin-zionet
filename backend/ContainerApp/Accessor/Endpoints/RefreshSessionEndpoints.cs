@@ -1,6 +1,7 @@
 ﻿using Accessor.Services;
 using Accessor.Models.RefreshSessions;
 using Microsoft.AspNetCore.Mvc;
+using Accessor.Constants;
 
 namespace Accessor.Endpoints;
 
@@ -8,29 +9,32 @@ public static class RefreshSessionEndpoints
 {
     public static void MapRefreshSessionEndpoints(this WebApplication app)
     {
+        var refreshSessionGroup = app.MapGroup("/auth-accessor/refresh-sessions").WithTags("Auth");
+
         #region HTTP GET
 
-        app.MapGet("/api/refresh-sessions/by-token-hash/{hash}", FindByRefreshHashAsync).WithName("FindRefreshSessionByHash");
+        refreshSessionGroup.MapGet("/by-token-hash/{hash}", FindByRefreshHashAsync).WithName("FindRefreshSessionByHash");
 
         #endregion
 
         #region HTTP POST
 
-        app.MapPost("/api/refresh-sessions", CreateSessionAsync).WithName("CreateRefreshSession");
+        refreshSessionGroup.MapPost("", CreateSessionAsync).WithName("CreateRefreshSession");
+
+        refreshSessionGroup.MapPost("/internal/cleanup", CleanupRefreshSessionsAsync)
+            .WithName("CleanupRefreshSessions");
 
         #endregion
 
         #region HTTP PUT
 
-        app.MapPut("/api/refresh-sessions/{sessionId}/rotate", RotateSessionAsync).WithName("RotateRefreshSession");
+        refreshSessionGroup.MapPut("/{sessionId:guid}/rotate", RotateSessionAsync).WithName("RotateRefreshSession");
 
         #endregion
 
         #region HTTP DELETE
 
-        app.MapDelete("/api/refresh-sessions/{sessionId}", DeleteSessionAsync).WithName("DeleteRefreshSession");
-
-        //app.MapDelete("/api/refresh-sessions/by-user/{userId}", DeleteAllUserSessionsAsync).WithName("DeleteAllUserRefreshSessions");
+        refreshSessionGroup.MapDelete("/{sessionId:guid}", DeleteSessionAsync).WithName("DeleteRefreshSession");
 
         #endregion
     }
@@ -48,7 +52,7 @@ public static class RefreshSessionEndpoints
                 var session = await refreshSessionService.FindByRefreshHashAsync(hash, cancellationToken);
                 if (session is null)
                 {
-                    logger.LogWarning("Refresh session not found for hash: {Hash}", hash);
+                    logger.LogWarning("Refresh session not found for hash password");
                     return Results.NotFound();
                 }
 
@@ -83,6 +87,26 @@ public static class RefreshSessionEndpoints
         }
     }
 
+    private static async Task<IResult> CleanupRefreshSessionsAsync(
+        [FromServices] IRefreshSessionService refreshSessionService,
+        [FromServices] ILogger<RefreshSessionService> logger,
+        CancellationToken ct)
+    {
+        using (logger.BeginScope("Method: {Method}", nameof(CleanupRefreshSessionsAsync)))
+        {
+            try
+            {
+                var deleted = await refreshSessionService.PurgeExpiredOrRevokedAsync(AuthSettings.RefreshSessionCleanupBatchSize, ct);
+                logger.LogInformation("Cleanup removed {Deleted} refresh sessions", deleted);
+                return Results.Ok(new { deleted });
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Cleanup failed");
+                return Results.Problem("Cleanup failed.");
+            }
+        }
+    }
     private static async Task<IResult> RotateSessionAsync(
         [FromRoute] Guid sessionId,
         [FromBody] RotateRefreshSessionRequest request,

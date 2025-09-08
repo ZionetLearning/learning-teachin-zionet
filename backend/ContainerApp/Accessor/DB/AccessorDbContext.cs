@@ -12,19 +12,14 @@ public class AccessorDbContext : DbContext
 
     // DB tables
     public DbSet<TaskModel> Tasks { get; set; } = default!;
-    public DbSet<ChatThread> ChatThreads { get; set; } = default!;
-    public DbSet<ChatMessage> ChatMessages { get; set; } = default!;
     public DbSet<ChatHistorySnapshot> ChatHistorySnapshots { get; set; } = default!;
-    public DbSet<IdempotencyRecord> Idempotency { get; set; } = default!;
     public DbSet<RefreshSessionsRecord> RefreshSessions { get; set; } = default!;
     public DbSet<UserModel> Users { get; set; } = default!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // User table configuration
-        modelBuilder.Entity<UserModel>()
-            .HasIndex(u => u.Email)
-            .IsUnique();
+        // Users table
+        modelBuilder.ApplyConfiguration(new UsersConfiguration());
 
         // Refresh Sessions table
         modelBuilder.ApplyConfiguration(new RefreshSessionConfiguration());
@@ -33,28 +28,6 @@ public class AccessorDbContext : DbContext
         modelBuilder.Entity<TaskModel>(e =>
         {
             e.HasKey(t => t.Id);
-        });
-
-        // ChatThread -> ChatMessage relationship with cascade delete
-        modelBuilder.Entity<ChatThread>()
-            .HasMany(t => t.Messages)
-            .WithOne(m => m.Thread)
-            .HasForeignKey(m => m.ThreadId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        // Index on ChatMessage.ThreadId
-        modelBuilder.Entity<ChatMessage>()
-            .HasIndex(m => m.ThreadId);
-
-        // Idempotency table
-        modelBuilder.Entity<IdempotencyRecord>(e =>
-        {
-            e.ToTable("Idempotency");
-            e.HasKey(i => i.IdempotencyKey);
-            e.Property(i => i.IdempotencyKey).HasMaxLength(200).IsRequired();
-            e.Property(i => i.Status).IsRequired();
-            e.Property(i => i.CreatedAtUtc).IsRequired();
-            // ExpiresAtUtc optional
         });
 
         // ChatHistorySnapshot table

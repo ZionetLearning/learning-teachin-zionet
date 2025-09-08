@@ -4,6 +4,8 @@ using Accessor.Models;
 using Dapr.Client;
 using Microsoft.EntityFrameworkCore;
 using Accessor.Models.Users;
+using Accessor.Models.Auth;
+using Accessor.Exceptions;
 
 namespace Accessor.Services;
 public class AccessorService : IAccessorService
@@ -111,6 +113,7 @@ public class AccessorService : IAccessorService
             }
         }
     }
+
     public async Task<StatsSnapshot> ComputeStatsAsync(CancellationToken ct = default)
     {
         try
@@ -119,51 +122,51 @@ public class AccessorService : IAccessorService
             var from15m = nowUtc.AddMinutes(-StatsWindow.ActiveUsersMinutes);
             var from5m = nowUtc.AddMinutes(-StatsWindow.MessagesLast5m);
 
-            var totalThreads = await _dbContext.ChatThreads
+            var totalThreads = await _dbContext.ChatHistorySnapshots
                 .AsNoTracking()
                 .LongCountAsync(ct);
 
-            var totalUniqueUsersByThread = await _dbContext.ChatThreads
+            var totalUniqueUsersByThread = await _dbContext.ChatHistorySnapshots
                 .AsNoTracking()
                 .Select(t => t.UserId)
                 .Distinct()
                 .LongCountAsync(ct);
 
-            var totalMessages = await _dbContext.ChatMessages
-                .AsNoTracking()
-                .LongCountAsync(ct);
+            //var totalMessages = await _dbContext.ChatMessages
+            //    .AsNoTracking()
+            //    .LongCountAsync(ct);
 
-            var totalUniqueUsersByMessage = await _dbContext.ChatMessages
+            //var totalUniqueUsersByMessage = await _dbContext.ChatMessages
+            //    .AsNoTracking()
+            //    .Select(m => m.UserId)
+            //    .Distinct()
+            //    .LongCountAsync(ct);
+
+            var activeUsersLast15m = await _dbContext.ChatHistorySnapshots
                 .AsNoTracking()
+                .Where(m => m.UpdatedAt >= from15m)
                 .Select(m => m.UserId)
                 .Distinct()
                 .LongCountAsync(ct);
 
-            var activeUsersLast15m = await _dbContext.ChatMessages
-                .AsNoTracking()
-                .Where(m => m.Timestamp >= from15m)
-                .Select(m => m.UserId)
-                .Distinct()
-                .LongCountAsync(ct);
+            //var messagesLast5m = await _dbContext.ChatMessages
+            //    .AsNoTracking()
+            //    .Where(m => m.Timestamp >= from5m)
+            //    .LongCountAsync(ct);
 
-            var messagesLast5m = await _dbContext.ChatMessages
-                .AsNoTracking()
-                .Where(m => m.Timestamp >= from5m)
-                .LongCountAsync(ct);
-
-            var messagesLast15m = await _dbContext.ChatMessages
-                .AsNoTracking()
-                .Where(m => m.Timestamp >= from15m)
-                .LongCountAsync(ct);
+            //var messagesLast15m = await _dbContext.ChatMessages
+            //    .AsNoTracking()
+            //    .Where(m => m.Timestamp >= from15m)
+            //    .LongCountAsync(ct);
 
             return new StatsSnapshot(
                 TotalThreads: totalThreads,
                 TotalUniqueUsersByThread: totalUniqueUsersByThread,
-                TotalMessages: totalMessages,
-                TotalUniqueUsersByMessage: totalUniqueUsersByMessage,
+                TotalMessages: 0,
+                TotalUniqueUsersByMessage: 0,
                 ActiveUsersLast15m: activeUsersLast15m,
-                MessagesLast5m: messagesLast5m,
-                MessagesLast15m: messagesLast15m,
+                MessagesLast5m: 0,
+                MessagesLast15m: 0,
                 GeneratedAtUtc: nowUtc
             );
         }
@@ -173,118 +176,84 @@ public class AccessorService : IAccessorService
             throw;
         }
     }
+
     public async Task CreateTaskAsync(TaskModel task)
     {
         using var scope = _logger.BeginScope("TaskId: {TaskId}", task.Id);
+        _logger.LogInformation("Inside:{Method}", nameof(CreateTaskAsync));
+
+        try
         {
-            _logger.LogInformation("Inside:{Method}", nameof(CreateTaskAsync));
+            // 1. Check cache for idempotency
+            var cached = await _daprClient.GetStateAsync<TaskModel>(
+                ComponentNames.StateStore,
+                GetTaskCacheKey(task.Id));
 
-            var key = task.Id.ToString();
-            var expires = DateTime.UtcNow.AddHours(24);
-
-            var strategy = _dbContext.Database.CreateExecutionStrategy();
-
-            await strategy.ExecuteAsync(async () =>
+            if (cached is not null)
             {
-                await using var tx = await _dbContext.Database.BeginTransactionAsync();
-
-                try
+                if (!TasksAreEqual(cached, task))
                 {
-                    // --- Idempotency gate (first writer wins)
-                    var record = new IdempotencyRecord
-                    {
-                        IdempotencyKey = key,
-                        Status = IdempotencyStatus.InProgress,
-                        CreatedAtUtc = DateTimeOffset.UtcNow,
-                        ExpiresAtUtc = expires
-                    };
-
-                    _dbContext.Idempotency.Add(record);
-
-                    try
-                    {
-                        await _dbContext.SaveChangesAsync();
-                        _logger.LogDebug("Idempotency gate created for key {Key}", key);
-                    }
-                    catch (DbUpdateException ex)
-                    {
-                        _logger.LogDebug(ex, "Idempotency key {Key} already exists", key);
-
-                        var existing = await _dbContext.Idempotency
-                            .AsNoTracking()
-                            .FirstOrDefaultAsync(i => i.IdempotencyKey == key);
-
-                        if (existing is null)
-                        {
-                            _logger.LogWarning("Idempotency record vanished for {Key}, treating as processed", key);
-                            return;
-                        }
-
-                        if (existing.Status == IdempotencyStatus.Completed)
-                        {
-                            _logger.LogInformation("Duplicate request for {Key} — already completed. No-op.", key);
-                            return;
-                        }
-
-                        var notExpired = existing.ExpiresAtUtc == null || existing.ExpiresAtUtc > DateTime.UtcNow;
-                        if (notExpired)
-                        {
-                            _logger.LogInformation("Duplicate request for {Key} while in-progress. No-op.", key);
-                            return;
-                        }
-
-                        _logger.LogWarning("Stale in-progress idempotency for {Key}; proceeding.", key);
-                    }
-
-                    // --- Persist Task (unique PK/constraint on Task.Id enforces exactly-once)
-                    _dbContext.Tasks.Add(task);
-
-                    try
-                    {
-                        await _dbContext.SaveChangesAsync();
-                        _logger.LogInformation("Task {TaskId} persisted", task.Id);
-                    }
-                    catch (DbUpdateException ex)
-                    {
-                        _logger.LogWarning(ex, "Duplicate Task insert; treating as success");
-                    }
-
-                    // --- Mark idempotency as completed
-                    var gate = await _dbContext.Idempotency.FirstOrDefaultAsync(i => i.IdempotencyKey == key);
-                    if (gate != null)
-                    {
-                        gate.Status = IdempotencyStatus.Completed;
-                        await _dbContext.SaveChangesAsync();
-                    }
-
-                    await tx.CommitAsync();
-
-                    // --- Optional cache
-                    await _daprClient.SaveStateAsync(
-                        storeName: ComponentNames.StateStore,
-                        key: GetTaskCacheKey(task.Id),
-                        value: task,
-                        metadata: new Dictionary<string, string> { { "ttlInSeconds", _ttl.ToString() } });
-
-                    _logger.LogInformation("Cached task with TTL {TTL}s", _ttl);
+                    _logger.LogWarning("Conflict: Task {TaskId} already exists with different payload", task.Id);
+                    throw new ConflictException($"Task {task.Id} already exists with different payload.");
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Unexpected error saving task");
 
-                    try
-                    {
-                        await tx.RollbackAsync();
-                    }
-                    catch
-                    {
-                        // ignored
-                    }
+                _logger.LogInformation("Idempotent retry for Task {TaskId}, no-op", task.Id);
+                return; // same payload → idempotent success
+            }
 
-                    throw;
-                }
-            });
+            // 2. Insert new task
+            _dbContext.Tasks.Add(task);
+            await _dbContext.SaveChangesAsync();
+
+            _logger.LogInformation("Task {TaskId} persisted", task.Id);
+
+            // 3. Cache for retries
+            await _daprClient.SaveStateAsync(
+                storeName: ComponentNames.StateStore,
+                key: GetTaskCacheKey(task.Id),
+                value: task,
+                stateOptions: null,
+                metadata: new Dictionary<string, string> { { "ttlInSeconds", _ttl.ToString() } });
+
+            _logger.LogInformation("Cached task {TaskId} with TTL {TTL}s", task.Id, _ttl);
         }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogWarning(ex, "Duplicate Task insert for {TaskId}", task.Id);
+
+            var dbTask = await _dbContext.Tasks.FindAsync(task.Id);
+            if (dbTask is null)
+            {
+                throw;
+            }
+
+            if (!TasksAreEqual(dbTask, task))
+            {
+                _logger.LogWarning("Conflict: Task {TaskId} already exists in DB with different payload", task.Id);
+                throw new ConflictException($"Task {task.Id} already exists with different payload.");
+            }
+
+            // Ensure consistent cache
+            await _daprClient.SaveStateAsync(
+                storeName: ComponentNames.StateStore,
+                key: GetTaskCacheKey(task.Id),
+                value: dbTask,
+                stateOptions: null,
+                metadata: new Dictionary<string, string> { { "ttlInSeconds", _ttl.ToString() } });
+
+            // Idempotent no-op
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error creating Task {TaskId}", task.Id);
+            throw new RetryableException("Unexpected infrastructure error while creating task.", ex);
+        }
+    }
+
+    private bool TasksAreEqual(TaskModel a, TaskModel b)
+    {
+        // Minimal equality check for idempotency
+        return a.Id == b.Id && a.Name == b.Name;
     }
 
     public async Task<bool> UpdateTaskNameAsync(int taskId, string newName)
@@ -387,69 +356,23 @@ public class AccessorService : IAccessorService
 
     private static string GetTaskCacheKey(int taskId) => $"task:{taskId}";
 
-    public async Task<ChatThread?> GetThreadByIdAsync(Guid threadId)
+    public async Task CreateChatAsync(ChatHistorySnapshot chat)
     {
-        return await _dbContext.ChatThreads.FindAsync(threadId);
-    }
-
-    public async Task CreateThreadAsync(ChatThread thread)
-    {
-        _dbContext.ChatThreads.Add(thread);
+        _dbContext.ChatHistorySnapshots.Add(chat);
         await _dbContext.SaveChangesAsync();
     }
 
-    public async Task<List<ThreadSummaryDto>> GetThreadsForUserAsync(string userId)
+    public async Task<List<ChatSummaryDto>> GetChatsForUserAsync(Guid userId)
     {
-        return await _dbContext.ChatThreads
+        return await _dbContext.ChatHistorySnapshots
             .AsNoTracking() // read-only path
             .Where(t => t.UserId == userId)
             .OrderByDescending(t => t.UpdatedAt)
-            .Select(t => new ThreadSummaryDto(t.ThreadId, t.ChatName, t.ChatType, t.CreatedAt, t.UpdatedAt))
+            .Select(t => new ChatSummaryDto(t.ThreadId, t.Name, t.ChatType, t.CreatedAt, t.UpdatedAt))
             .ToListAsync();
     }
 
-    public async Task AddMessageAsync(ChatMessage message)
-    {
-        // 1) Look up the parent thread
-        var thread = await _dbContext.ChatThreads.FindAsync(message.ThreadId);
-
-        message.Timestamp = message.Timestamp.ToUniversalTime();
-        // 2) If missing, insert it first
-        if (thread is null)
-        {
-            thread = new ChatThread
-            {
-                ThreadId = message.ThreadId,
-                UserId = message.UserId,
-                ChatType = "default",
-                CreatedAt = message.Timestamp,
-                UpdatedAt = message.Timestamp
-            };
-            _dbContext.ChatThreads.Add(thread);
-        }
-        else
-        {
-            // 3) If it exists, just bump the timestamp
-            thread.UpdatedAt = message.Timestamp;
-        }
-
-        // 4) Now it's safe to add the child message
-        _dbContext.ChatMessages.Add(message);
-
-        // 5) Commit both inserts/updates in one SaveChanges
-        await _dbContext.SaveChangesAsync();
-    }
-
-    public async Task<IEnumerable<ChatMessage>> GetMessagesByThreadAsync(Guid threadId)
-    {
-        return await _dbContext.ChatMessages
-            .AsNoTracking()
-            .Where(m => m.ThreadId == threadId)
-            .OrderBy(m => m.Timestamp)
-            .ToListAsync();
-    }
-
-    public async Task<Guid?> ValidateCredentialsAsync(string email, string password)
+    public async Task<AuthenticatedUser?> ValidateCredentialsAsync(string email, string password)
     {
         var user = await _dbContext.Users
             .Where(u => u.Email == email)
@@ -460,28 +383,33 @@ public class AccessorService : IAccessorService
             return null;
         }
 
-        if (user.PasswordHash != password)
+        if (!BCrypt.Net.BCrypt.Verify(password, user.Password))
         {
             return null;
         }
 
-        return user.UserId;
-    }
-
-    public async Task<UserModel?> GetUserAsync(Guid userId)
-    {
-        var user = await _dbContext.Users.FindAsync(userId);
-        if (user == null)
-        {
-            return null;
-        }
-
-        return new UserModel
+        var response = new AuthenticatedUser
         {
             UserId = user.UserId,
-            Email = user.Email,
-            PasswordHash = user.PasswordHash
+            Role = user.Role
         };
+
+        return response;
+    }
+
+    public async Task<UserData?> GetUserAsync(Guid userId)
+    {
+        var user = await _dbContext.Users.FindAsync(userId);
+        return user == null
+            ? null
+            : new UserData
+            {
+                UserId = user.UserId,
+                Email = user.Email,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Role = user.Role
+            };
     }
 
     public async Task<bool> CreateUserAsync(UserModel newUser)
@@ -492,14 +420,7 @@ public class AccessorService : IAccessorService
             return false;
         }
 
-        var user = new UserModel
-        {
-            UserId = newUser.UserId,
-            Email = newUser.Email,
-            PasswordHash = newUser.PasswordHash
-        };
-
-        _dbContext.Users.Add(user);
+        _dbContext.Users.Add(newUser);
         await _dbContext.SaveChangesAsync();
         return true;
     }
@@ -512,10 +433,21 @@ public class AccessorService : IAccessorService
             return false;
         }
 
-        user.Email = updateUser.Email;
-        user.PasswordHash = updateUser.PasswordHash; // Again, hash in real apps
+        if (updateUser.FirstName is not null)
+        {
+            user.FirstName = updateUser.FirstName;
+        }
 
-        _dbContext.Users.Update(user);
+        if (updateUser.LastName is not null)
+        {
+            user.LastName = updateUser.LastName;
+        }
+
+        if (updateUser.Email is not null)
+        {
+            user.Email = updateUser.Email;
+        }
+
         await _dbContext.SaveChangesAsync();
         return true;
     }
@@ -539,6 +471,7 @@ public class AccessorService : IAccessorService
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.ThreadId == threadId);
     }
+
     public async Task UpsertHistorySnapshotAsync(ChatHistorySnapshot snapshot)
     {
         var existing = await _dbContext.ChatHistorySnapshots.FirstOrDefaultAsync(x => x.ThreadId == snapshot.ThreadId);
@@ -554,6 +487,7 @@ public class AccessorService : IAccessorService
         {
             existing.UserId = snapshot.UserId;
             existing.ChatType = snapshot.ChatType;
+            existing.Name = snapshot.Name;
             existing.History = snapshot.History;
             existing.UpdatedAt = now;
         }
@@ -573,6 +507,9 @@ public class AccessorService : IAccessorService
                 {
                     UserId = u.UserId,
                     Email = u.Email,
+                    FirstName = u.FirstName,
+                    LastName = u.LastName,
+                    Role = u.Role
                 })
                 .ToListAsync();
 

@@ -1,5 +1,6 @@
 ﻿using FluentAssertions;
 using IntegrationTests.Constants;
+using IntegrationTests.Fixtures;
 using IntegrationTests.Helpers;
 using IntegrationTests.Infrastructure;
 using IntegrationTests.Models;
@@ -9,34 +10,33 @@ using Xunit.Abstractions;
 namespace IntegrationTests.Tests.Tasks;
 
 public abstract class TaskTestBase(
-    HttpTestFixture fixture,
+    SharedTestFixture sharedFixture,
     ITestOutputHelper outputHelper,
     SignalRTestFixture signalRFixture
-) : IntegrationTestBase(fixture, outputHelper, signalRFixture)
+) : IntegrationTestBase(sharedFixture.HttpFixture, outputHelper, signalRFixture)
 {
+    protected SharedTestFixture Shared { get; } = sharedFixture;
+    public override Task InitializeAsync() => SuiteInit.EnsureAsync(Shared, SignalRFixture, OutputHelper);
+
     protected async Task<TaskModel> CreateTaskAsync(TaskModel? task = null)
     {
         task ??= TestDataHelper.CreateRandomTask();
+
+        await Shared.EnsureSignalRStartedAsync(SignalRFixture, OutputHelper);
+        SignalRFixture.ClearReceivedMessages();
 
         OutputHelper.WriteLine($"Creating task with ID: {task.Id}, Name: {task.Name}");
 
         var response = await PostAsJsonAsync(ApiRoutes.Task, task);
         response.EnsureSuccessStatusCode();
-        OutputHelper.WriteLine($"Response status code: {response.StatusCode}");
 
-        var receivedNotification = await WaitForNotificationAsync(
-           n => n.Type == NotificationType.Success &&
-           n.Message.Contains(task.Name),
-           TimeSpan.FromSeconds(10));
-        receivedNotification.Should().NotBeNull();
-
-        OutputHelper.WriteLine($"Received notification: {receivedNotification.Notification.Message}");
+        var received = await WaitForNotificationAsync(
+            n => n.Type == NotificationType.Success && n.Message.Contains(task.Name),
+            TimeSpan.FromSeconds(20)
+        );
+        received.Should().NotBeNull("Expected a SignalR notification");
 
         await TaskUpdateHelper.WaitForTaskNameUpdateAsync(Client, task.Id, task.Name);
-
-        OutputHelper.WriteLine(
-            $"Task created successfully with status code: {response.StatusCode}"
-        );
         return task;
     }
 

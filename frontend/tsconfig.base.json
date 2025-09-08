@@ -6,6 +6,16 @@
     "jsx": "react-jsx",
     "strict": true,
     "baseUrl": ".",
-    "paths": {}
+    "paths": {
+      "@student/*": ["apps/student/src/*"],
+      "@teacher/*": ["apps/teacher/src/*"],
+      "@admin/*": ["apps/admin/src/*"],
+      "@ui-components/*": ["libs/ui/components/src/*"],
+      "@ui-components": ["libs/ui/components/src/index.ts"],
+      "@app-providers": ["libs/app-providers/src/index.ts"],
+      "@app-providers/*": ["libs/app-providers/src/*"],
+      "@authorization": ["libs/authorization/src/index.ts"],
+      "@authorization/*": ["libs/authorization/src/*"],
+    }
   }
 }

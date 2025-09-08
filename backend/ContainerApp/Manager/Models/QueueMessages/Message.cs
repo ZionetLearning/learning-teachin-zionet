@@ -16,7 +16,9 @@ public enum MessageAction
     CreateTask,
     UpdateTask,
     TestLongTask,
-    ProcessingQuestionAi,
     AnswerAi,
-    NotifyUser
+    ProcessingChatMessage,
+    NotifyUser,
+    GenerateSentences,
+    GenerateSplitSentences
 }

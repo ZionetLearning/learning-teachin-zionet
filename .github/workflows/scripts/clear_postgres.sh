@@ -1,30 +1,17 @@
 #!/usr/bin/env bash
-# Shebang: tells the system to run this script with the bash interpreter found via /usr/bin/env.
-# set -euo pipefail:
-#   -e : exit immediately if any command (non‑ignored) exits with non‑zero status.
-#   -u : treat use of unset variables as an error and exit.
-#   -o pipefail : a pipeline fails if any command in the pipeline fails (not just the last).
 set -euo pipefail
 
-# echo: builtin to print text to stdout.
 echo "[clear_postgres] Starting"
 
-# Parameter assertions using POSIX parameter expansion:
-# : is the no-op builtin (does nothing, used here only to trigger expansion).
-# "${VAR:?message}" causes the shell to exit with the message if VAR is unset or null.
 : "${PGHOST:?PGHOST required}"
 : "${PGDATABASE:?PGDATABASE required}"
 : "${PGUSER:?PGUSER required}"
 : "${PGPASSWORD:?PGPASSWORD required}"
-: "${PGPORT:?PGPORT required}"
+#: "${PGPORT:?PGPORT required}"
 : "${MODE:?MODE required}"
 : "${DRY_RUN:?DRY_RUN required}"
 : "${VERIFY_SSL:?VERIFY_SSL required}"
 
-# if [[ condition ]]; then ... fi:
-#   [[ ... ]] is bash's extended test command.
-#   == string comparison.
-# export: marks a variable to be inherited by child processes (psql will see PGSSLMODE).
 if [[ "${VERIFY_SSL}" == "true" ]]; then
   export PGSSLMODE=require
   echo "[clear_postgres] SSL mode: require"
@@ -67,7 +54,7 @@ fi
 
 # Build the generator query (not yet the DDL, but the SELECT that produces DDL).
 FILTER="WHERE schemaname NOT IN ('pg_catalog','information_schema')"
-KEEP_LIST="'schema_migrations','flyway_schema_history'"
+KEEP_LIST="'__EFMigrationsHistory','schema_migrations','flyway_schema_history'"
 SQL="$ACTION_TEMPLATE FROM pg_tables $FILTER AND tablename NOT IN ($KEEP_LIST);"
 
 # psql -At -c:

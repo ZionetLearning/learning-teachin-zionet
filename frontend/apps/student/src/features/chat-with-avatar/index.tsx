@@ -1,9 +1,9 @@
 import { useEffect, useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { useAvatarSpeech, useChat } from "@/hooks";
-import { ReactChatElements } from "@/components";
-import avatar from "@/assets/avatar.svg";
-import { lipsArray } from "@/assets/lips";
+import { useAvatarSpeech, useChat } from "@student/hooks";
+import { ReactChatElements } from "@student/components";
+import avatar from "@student/assets/avatar.svg";
+import { lipsArray } from "@student/assets/lips";
 import { useStyles } from "./style";
 
 export const ChatWithAvatar = () => {
