@@ -25,7 +25,7 @@ interface DropdownProps {
   "data-testid"?: string;
 }
 
-export function Dropdown({
+export const Dropdown = ({
   name,
   label,
   options,
@@ -35,7 +35,7 @@ export function Dropdown({
   helperText,
   disabled,
   ...rest
-}: DropdownProps) {
+}: DropdownProps) => {
   const classes = useStyles();
 
   const labelId = name ? `${name}-label` : undefined;
@@ -70,4 +70,4 @@ export function Dropdown({
       {helperText ? <FormHelperText>{helperText}</FormHelperText> : null}
     </FormControl>
   );
-}
+};
