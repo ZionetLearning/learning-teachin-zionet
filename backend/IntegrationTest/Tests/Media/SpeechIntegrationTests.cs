@@ -7,7 +7,7 @@ using Xunit.Abstractions;
 namespace IntegrationTests.Tests.Media;
 
 [Collection("Shared test collection")]
-public class MediaIntegrationTests(
+public class SpeechIntegrationTests(
     SharedTestFixture sharedFixture,
     ITestOutputHelper outputHelper,
     SignalRTestFixture signalRFixture
@@ -26,7 +26,7 @@ public class MediaIntegrationTests(
         var token = await GetSpeechTokenAsync();
         token.Should().NotBeNullOrWhiteSpace();
 
-        var region = "eastus";
+        var region = Configuration["TestSettings:SpeechRegion"];
         var text = "hello world";
 
         // --- TTS synthesize into memory ---

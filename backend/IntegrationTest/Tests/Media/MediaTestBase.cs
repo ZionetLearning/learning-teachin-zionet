@@ -1,6 +1,7 @@
 using System.Text.Json;
 using IntegrationTests.Fixtures;
 using IntegrationTests.Infrastructure;
+using Microsoft.Extensions.Configuration;
 using Xunit.Abstractions;
 
 namespace IntegrationTests.Tests.Media;
