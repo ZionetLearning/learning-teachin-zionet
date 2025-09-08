@@ -522,4 +522,156 @@ public class AccessorService : IAccessorService
             throw;
         }
     }
+    private static string NormalizeIfMatch(string? ifMatch)
+    {
+        if (string.IsNullOrWhiteSpace(ifMatch))
+        {
+            return string.Empty;
+        }
+
+        var s = ifMatch.Trim();
+        if (s.StartsWith("W/"))
+        {
+            s = s[2..].Trim();
+        }
+
+        return s.Trim('"');
+    }
+
+    private async Task<string?> GetDbEtagAsync(int id, CancellationToken ct = default)
+    {
+        await using var conn = _dbContext.Database.GetDbConnection();
+        if (conn.State != System.Data.ConnectionState.Open)
+        {
+            await conn.OpenAsync(ct);
+        }
+
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = @"select xmin::text from ""Tasks"" where ""Id"" = @id";
+        var p = cmd.CreateParameter();
+        p.ParameterName = "id";
+        p.Value = id;
+        cmd.Parameters.Add(p);
+
+        var result = await cmd.ExecuteScalarAsync(ct);
+        return result?.ToString();
+    }
+
+    public async Task<(TaskModel Task, string ETag)?> GetTaskWithEtagAsync(int id)
+    {
+        using var scope = _logger.BeginScope("TaskId: {TaskId}", id);
+        _logger.LogInformation("Inside:{Method}", nameof(GetTaskWithEtagAsync));
+
+        var key = GetTaskCacheKey(id);
+
+        var entry = await _daprClient.GetStateEntryAsync<TaskModel>(ComponentNames.StateStore, key);
+        var task = entry.Value;
+
+        if (task is null)
+        {
+            task = await _dbContext.Tasks.AsNoTracking().FirstOrDefaultAsync(t => t.Id == id);
+            if (task is null)
+            {
+                _logger.LogWarning("Task not found.");
+                return null;
+            }
+
+            await _daprClient.SaveStateAsync(
+                storeName: ComponentNames.StateStore,
+                key: key,
+                value: task,
+                stateOptions: null,
+                metadata: new Dictionary<string, string> { { "ttlInSeconds", _ttl.ToString() } });
+
+            _logger.LogInformation("Fetched task from DB and cached.");
+        }
+
+        var etag = await GetDbEtagAsync(id) ?? string.Empty;
+        return (task, etag);
+    }
+
+    public async Task<UpdateTaskResult> UpdateTaskNameAsync(int taskId, string newName, string? ifMatch)
+    {
+        using var scope = _logger.BeginScope("TaskId: {TaskId}", taskId);
+        _logger.LogInformation("Inside:{Method}", nameof(UpdateTaskNameAsync));
+
+        try
+        {
+            var normalized = NormalizeIfMatch(ifMatch);
+            if (string.IsNullOrEmpty(normalized))
+            {
+                _logger.LogWarning("Missing If-Match ETag.");
+                return new UpdateTaskResult(Updated: false, NotFound: false, PreconditionFailed: true, NewEtag: null);
+            }
+
+            var rows = await _dbContext.Database.ExecuteSqlInterpolatedAsync($@"
+            update ""Tasks""
+               set ""Name"" = {newName}
+             where ""Id"" = {taskId}
+               and (""xmin""::text) = {normalized}
+        ");
+
+            if (rows == 0)
+            {
+                var exists = await _dbContext.Tasks.AsNoTracking().AnyAsync(t => t.Id == taskId);
+                if (!exists)
+                {
+                    _logger.LogWarning("Task not found in DB.");
+                    return new UpdateTaskResult(Updated: false, NotFound: true, PreconditionFailed: false, NewEtag: null);
+                }
+
+                _logger.LogWarning("ETag mismatch (precondition failed).");
+                return new UpdateTaskResult(Updated: false, NotFound: false, PreconditionFailed: true, NewEtag: null);
+            }
+
+            var newEtag = await GetDbEtagAsync(taskId) ?? string.Empty;
+
+            var key = GetTaskCacheKey(taskId);
+            var ttlMeta = new Dictionary<string, string> { { "ttlInSeconds", _ttl.ToString() } };
+            var opts = new StateOptions
+            {
+                Consistency = ConsistencyMode.Strong,
+                Concurrency = ConcurrencyMode.FirstWrite
+            };
+
+            for (var attempt = 0; attempt < 3; attempt++)
+            {
+                var entry = await _daprClient.GetStateEntryAsync<TaskModel>(ComponentNames.StateStore, key);
+                if (entry.Value is null)
+                {
+                    entry.Value = new TaskModel { Id = taskId, Name = newName };
+                }
+                else
+                {
+                    entry.Value.Name = newName;
+                }
+
+                var saved = await entry.TrySaveAsync(stateOptions: opts, metadata: ttlMeta);
+                if (saved)
+                {
+                    _logger.LogInformation("Cache updated with TTL {TTL}s (CAS).", _ttl);
+                    return new UpdateTaskResult(true, false, false, newEtag);
+                }
+
+                _logger.LogWarning("Cache ETag conflict for {Key}, retrying... (attempt {Attempt})", key, attempt + 1);
+            }
+
+            _logger.LogWarning("Cache update failed; deleting key {Key}.", key);
+            try
+            {
+                await _daprClient.DeleteStateAsync(ComponentNames.StateStore, key);
+            }
+            catch (Exception exDel)
+            {
+                _logger.LogWarning(exDel, "Failed to delete cache key {Key}", key);
+            }
+
+            return new UpdateTaskResult(true, false, false, newEtag);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update task name.");
+            return new UpdateTaskResult(false, false, false, null);
+        }
+    }
 }

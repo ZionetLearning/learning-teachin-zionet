@@ -37,7 +37,13 @@ public class AccessorQueueHandlerTests
         var payload = new TaskModel { Id = 10, Name = "new-name" };
         var msg = MakeMessage(MessageAction.UpdateTask, payload);
 
-        svc.Setup(s => s.UpdateTaskNameAsync(10, "new-name")).ReturnsAsync(true);
+        svc.Setup(s => s.UpdateTaskNameAsync(10, "new-name", null))
+           .ReturnsAsync(new UpdateTaskResult(
+               Updated: true,
+               NotFound: false,
+               PreconditionFailed: false,
+               NewEtag: "456"
+           ));
 
         var renewed = false;
         Func<Task> renew = () => { renewed = true; return Task.CompletedTask; };

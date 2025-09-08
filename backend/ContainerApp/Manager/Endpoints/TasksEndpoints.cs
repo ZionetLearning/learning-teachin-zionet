@@ -26,7 +26,8 @@ public static class TasksEndpoints
     private static async Task<IResult> GetTaskAsync(
         [FromRoute] int id,
         [FromServices] IAccessorClient accessorClient,
-        [FromServices] ILogger<TaskEndpoint> logger)
+        [FromServices] ILogger<TaskEndpoint> logger,
+        HttpResponse response)
     {
         using var scope = logger.BeginScope("TaskId {TaskId}:", id);
 
@@ -38,10 +39,16 @@ public static class TasksEndpoints
 
         try
         {
-            var task = await accessorClient.GetTaskAsync(id);
+            var (task, etag) = await accessorClient.GetTaskWithEtagAsync(id);
+
             if (task is not null)
             {
-                logger.LogInformation("Successfully retrieved task");
+                if (!string.IsNullOrWhiteSpace(etag))
+                {
+                    response.Headers.ETag = $"\"{etag}\""; // mirror ETag to FE
+                }
+
+                logger.LogInformation("Successfully retrieved task (ETag forwarded).");
                 return Results.Ok(task);
             }
 
@@ -127,8 +134,10 @@ public static class TasksEndpoints
     private static async Task<IResult> UpdateTaskNameAsync(
         [FromRoute] int id,
         [FromRoute] string name,
+        [FromHeader(Name = "If-Match")] string? ifMatch, // NEW: accept If-Match from FE
         [FromServices] IAccessorClient accessorClient,
-        [FromServices] ILogger<TaskEndpoint> logger)
+        [FromServices] ILogger<TaskEndpoint> logger,
+        HttpResponse response)
     {
         using var scope = logger.BeginScope("TaskId {TaskId}:", id);
 
@@ -150,19 +159,36 @@ public static class TasksEndpoints
             return Results.BadRequest("Task name too long");
         }
 
+        if (string.IsNullOrWhiteSpace(ifMatch))
+        {
+            logger.LogWarning("Missing If-Match header");
+            return Results.StatusCode(StatusCodes.Status428PreconditionRequired); // 428 Precondition Required
+        }
+
         try
         {
             logger.LogInformation("Attempting to update task name");
-            var success = await accessorClient.UpdateTaskName(id, name);
+            var result = await accessorClient.UpdateTaskNameAsync(id, name, ifMatch!);
 
-            if (success)
+            if (result.NotFound)
             {
-                logger.LogInformation("Successfully updated task name");
-                return Results.Ok("Task name updated");
+                logger.LogWarning("Task not found for update");
+                return Results.NotFound("Task not found");
             }
 
-            logger.LogWarning("Task not found for update");
-            return Results.NotFound("Task not found");
+            if (result.PreconditionFailed)
+            {
+                logger.LogWarning("Precondition failed (ETag mismatch)");
+                return Results.StatusCode(StatusCodes.Status412PreconditionFailed);
+            }
+
+            if (!string.IsNullOrWhiteSpace(result.NewEtag))
+            {
+                response.Headers.ETag = $"\"{result.NewEtag}\"";
+            }
+
+            logger.LogInformation("Successfully updated task name");
+            return Results.Ok("Task name updated");
         }
         catch (Exception ex)
         {
