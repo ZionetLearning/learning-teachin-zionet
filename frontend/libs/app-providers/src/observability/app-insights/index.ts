@@ -36,7 +36,7 @@ export const initAppInsights = (appName: string) => {
 
   ai = new ApplicationInsights({
     config: {
-      correlationHeaderExcludedDomains: ["api.jikan.moe"],
+      correlationHeaderExcludedDomains: ["api.jikan.moe", "raw.githack.com"],
       connectionString: cs,
       enableAutoRouteTracking: true,
       enableCorsCorrelation: true,

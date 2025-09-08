@@ -1,5 +1,5 @@
 import "./commands";
-import { deleteAllCreatedUsers } from "./commands";
+import { deleteCreatedUser } from "./commands";
 
 Cypress.on("uncaught:exception", () => {
   return false;
@@ -7,5 +7,5 @@ Cypress.on("uncaught:exception", () => {
 
 // Run once after all tests in a spec file to remove the deterministic test user.
 after(() => {
-  deleteAllCreatedUsers();
+  deleteCreatedUser();
 });
