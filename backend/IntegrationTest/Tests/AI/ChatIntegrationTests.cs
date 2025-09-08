@@ -37,25 +37,23 @@ public class ChatIntegrationTests(
 
         var chatId1 = Guid.NewGuid();
 
-        var chatRequest1 = new ChatRequest
+        var (req1, ev1, msg1, chatName1) = await PostChatAndWaitAsync(new ChatRequest
         {
             ThreadId = chatId1.ToString(),
             UserId = user.UserId.ToString(),
             UserMessage = "Remember number 42",
             ChatType = ChatType.Default
+        }, TimeSpan.FromSeconds(30));
 
-        };
+        chatName1.Should().NotBeNullOrWhiteSpace();
+        chatName1.Should().NotBe("New chat");
 
-        var r1 = await Client.PostAsJsonAsync(AiRoutes.PostNewMessage, chatRequest1);
-        r1.ShouldBeOk();
+        var fallbackTitlePattern = new Regex(@"^\d{4}_\d{2}_\d{2}$");
+        fallbackTitlePattern.IsMatch(chatName1).Should().BeFalse($"_chatTitleService.GenerateTitleAsync not work properly. Name was: {chatName1}");
 
-        var doc = await r1.Content.ReadFromJsonAsync<JsonElement>();
-        doc.TryGetProperty("requestId", out var ridEl).Should().BeTrue();
-        var requestId1 = ridEl.GetString();
-        requestId1.Should().NotBeNullOrWhiteSpace();
+        var history1 = await AIChatHelper.CheckCountMessageInChatHistory(Client, chatId1, user.UserId, 2, 30);
+        history1.Messages.Count.Should().Be(2);
 
-        var received1 = await SignalRFixture.WaitForChatAiAnswerAsync(requestId1, TimeSpan.FromSeconds(30));
-        received1.Should().NotBeNull();
 
         var chatHistoryAfterRequest1 = await AIChatHelper.CheckCountMessageInChatHistory(Client, chatId1, user.UserId, waitMessages:2, timeoutSeconds: 30);
 
@@ -70,17 +68,15 @@ public class ChatIntegrationTests(
 
         };
 
-        var r2 = await Client.PostAsJsonAsync(AiRoutes.PostNewMessage, chatRequest2);
-        r2.ShouldBeOk();
+        var (req2, ev2, msg2, chatName2) = await PostChatAndWaitAsync(new ChatRequest
+        {
+            ThreadId = chatId1.ToString(),
+            UserId = user.UserId.ToString(),
+            UserMessage = "What number did you remember?",
+            ChatType = ChatType.Default
+        }, TimeSpan.FromSeconds(30));
 
-        var doc2 = await r2.Content.ReadFromJsonAsync<JsonElement>();
-        doc2.TryGetProperty("requestId", out var ridEl2).Should().BeTrue();
-        var requestId2 = ridEl2.GetString();
-        requestId2.Should().NotBeNullOrWhiteSpace();
-
-        var received2 = await SignalRFixture.WaitForChatAiAnswerAsync(requestId2, TimeSpan.FromSeconds(30));
-        received2.Should().NotBeNull();
-        var msg2 = received2!.Event.Payload.GetProperty("assistantMessage").GetString() ?? "";
+        chatName2.Should().Be(chatName1);
 
         var regexCheck = new Regex(@"\b42\b|\bforty[-\s]?two\b", RegexOptions.IgnoreCase);
         msg2.Should().MatchRegex(regexCheck);
@@ -92,5 +88,26 @@ public class ChatIntegrationTests(
         var text = chatHistoryAfterRequest2.Messages[^1].Text ?? string.Empty;
         text.Should().MatchRegex(regexCheck);
 
+        var (req3, ev3, msg3, chatName3) = await PostChatAndWaitAsync(new ChatRequest
+        {
+            ThreadId = chatId1.ToString(),
+            UserId = user.UserId.ToString(),
+            UserMessage = "Give me the current time in ISO-8601 (UTC). Return only the timestamp.",
+            ChatType = ChatType.Default
+        }, TimeSpan.FromSeconds(30));
+
+        chatName3.Should().Be(chatName1);
+
+        DateTimeOffset parsed;
+        DateTimeOffset.TryParseExact(
+            msg3.Trim(),
+            "O",
+            formatProvider: null,
+            System.Globalization.DateTimeStyles.AssumeUniversal | System.Globalization.DateTimeStyles.AdjustToUniversal,
+            out parsed
+        ).Should().BeTrue("assistantMessage about time must be ISO-8601 (O format)");
+
+        var delta = (DateTimeOffset.UtcNow - parsed).Duration();
+        delta.Should().BeLessThan(TimeSpan.FromSeconds(300), "time should come from TimePlugin/clock");
     }
 }

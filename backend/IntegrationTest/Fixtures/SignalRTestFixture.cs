@@ -52,10 +52,9 @@ public class SignalRTestFixture : IAsyncDisposable
     {
         if (_connection is null)
         {
-            var userId = _userId ?? TestConstants.TestUserId;
 
             _connection = new HubConnectionBuilder()
-                .WithUrl($"{_baseUrl}/notificationHub?userId={userId}", options =>
+                .WithUrl($"{_baseUrl}/notificationHub", options =>
                 {
                     if (!string.IsNullOrEmpty(_accessToken))
                         options.AccessTokenProvider = () => Task.FromResult(_accessToken)!;
@@ -130,14 +129,6 @@ public class SignalRTestFixture : IAsyncDisposable
 
         return null;
     }
-
-    public async Task<ReceivedEvent?> WaitForChatAiAnswerAsync(string requestId, TimeSpan? timeout = null) =>
-    await WaitForEventAsync(
-        e => e.EventType == EventType.ChatAiAnswer &&
-             e.Payload.ValueKind == JsonValueKind.Object &&
-             e.Payload.TryGetProperty("requestId", out var rid) &&
-             rid.GetString() == requestId,
-        timeout);
 
     public async Task<ReceivedEvent?> WaitForEventAsync(
         Predicate<UserEvent<JsonElement>>? predicate = null,
