@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import viteTsConfigPaths from "vite-tsconfig-paths";
+import mkcert from "vite-plugin-mkcert";
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -16,6 +17,7 @@ export default defineConfig({
   plugins: [
     react(), // point the paths plugin to the **workspace root** (tsconfig.base.json lives there)
     viteTsConfigPaths({ root: path.resolve(__dirname, "../../") }),
+    mkcert(),
   ],
   resolve: {
     alias: {

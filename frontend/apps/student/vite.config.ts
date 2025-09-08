@@ -4,6 +4,7 @@ import { sentryVitePlugin } from "@sentry/vite-plugin";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import viteTsConfigPaths from "vite-tsconfig-paths";
+import mkcert from "vite-plugin-mkcert";
 
 const r = (...x: string[]) =>
   path.resolve(__dirname, "..", "..", ...x).replace(/\\/g, "/");
@@ -32,6 +33,7 @@ export default defineConfig({
       applicationKey: "teach-in-app", // for thirdPartyErrorFilterIntegration
       debug: true,
     }),
+    mkcert(),
   ],
   resolve: {
     alias: {

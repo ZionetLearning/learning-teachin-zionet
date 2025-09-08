@@ -66,7 +66,7 @@ public sealed class AiReplyPublisher : IAiReplyPublisher
             throw;
         }
     }
-    public async Task SendGeneratedMessagesAsync(string userId, SentenceResponse response, CancellationToken ct = default)
+    public async Task SendGeneratedMessagesAsync(string userId, SentenceResponse response, MessageAction action, CancellationToken ct = default)
     {
         if (response is null)
         {
@@ -83,7 +83,7 @@ public sealed class AiReplyPublisher : IAiReplyPublisher
 
             var message = new Message
             {
-                ActionName = MessageAction.GenerateSentences,
+                ActionName = action,
                 Payload = payload,
                 Metadata = messageMetadata
             };
