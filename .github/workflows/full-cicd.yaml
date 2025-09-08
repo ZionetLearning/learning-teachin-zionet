@@ -91,7 +91,7 @@ jobs:
         run: echo "parsed=${{ fromJSON(github.event.inputs.use_keda || 'false') }}"
 
   keda-setup:
-    if: ${{ github.event.inputs.use_keda }}
+    if: inputs.use_keda == true
     uses: ./.github/workflows/aks-keda.yaml
     permissions:
       id-token: write
@@ -101,7 +101,6 @@ jobs:
       environment: ${{ github.event.inputs.environment }}
       skip_infra_steps: true
       use_chart: false
-
     secrets: inherit
  
   deploy-frontend:
