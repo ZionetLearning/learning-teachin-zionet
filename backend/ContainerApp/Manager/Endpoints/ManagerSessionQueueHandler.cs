@@ -3,30 +3,31 @@ using Manager.Models.QueueMessages;
 
 namespace Manager.Endpoints;
 
-public class ManagerSessionQueueHandler : IQueueHandler<Message>
+public class ManagerSessionQueueHandler : IQueueHandler<SessionQueueMessage>
 {
-    private readonly ILogger<ManagerQueueHandler> _logger;
-    private readonly Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>> _handlers;
+    private readonly ILogger<ManagerSessionQueueHandler> _logger;
+    private readonly Dictionary<MessageSessionAction, Func<SessionQueueMessage, Func<Task>, IReadOnlyDictionary<string, string>?, CancellationToken, Task>> _handlers;
 
-    public ManagerSessionQueueHandler(ILogger<ManagerQueueHandler> logger)
+    public ManagerSessionQueueHandler(ILogger<ManagerSessionQueueHandler> logger)
     {
         _logger = logger;
-        _handlers = new Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>>
+        _handlers = new Dictionary<MessageSessionAction, Func<SessionQueueMessage, Func<Task>, IReadOnlyDictionary<string, string>?, CancellationToken, Task>>
         {
-            //[MessageAction.SpeechToTextStream] = HandleSpeechToTextStreamAsync
+            // Dummy handlers for future actions
+            [MessageSessionAction.ChatStream] = (msg, renew, metadata, ct) => Task.CompletedTask,
         };
     }
 
-    public async Task HandleAsync(Message message, IReadOnlyDictionary<string, string>? metadataCallback, Func<Task> renewLock, CancellationToken cancellationToken)
+    public async Task HandleAsync(SessionQueueMessage message, IReadOnlyDictionary<string, string>? metadataCallback, Func<Task> renewLock, CancellationToken cancellationToken)
     {
         if (_handlers.TryGetValue(message.ActionName, out var handler))
         {
-            await handler(message, renewLock, cancellationToken);
+            await handler(message, renewLock, metadataCallback, cancellationToken);
+            return;
         }
-        else
-        {
-            _logger.LogWarning("No handler for action {Action}", message.ActionName);
-            throw new NonRetryableException($"No handler for action {message.ActionName}");
-        }
+
+        _logger.LogWarning("No handler for action {Action}", message.ActionName);
+
+        throw new NonRetryableException($"No handler for action {message.ActionName}");
     }
 }

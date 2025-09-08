@@ -28,7 +28,7 @@ public class ManagerQueueHandler : IQueueHandler<Message>
         };
     }
 
-    public async Task HandleAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
+    public async Task HandleAsync(Message message, IReadOnlyDictionary<string, string>? metadataCallback, Func<Task> renewLock, CancellationToken cancellationToken)
     {
         if (_handlers.TryGetValue(message.ActionName, out var handler))
         {
