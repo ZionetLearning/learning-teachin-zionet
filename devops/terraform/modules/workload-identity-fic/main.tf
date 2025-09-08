@@ -12,12 +12,17 @@ variable "oidc_issuer_url" {
   type        = string
 }
 
+variable "resource_group_name" {
+  description = "Resource group of the UAMI (parent of the FIC)."
+  type        = string
+}
+
 variable "bindings" {
   description = "List of { namespace, serviceaccount, name_suffix? } to bind."
   type = list(object({
     namespace      : string
     serviceaccount : string
-    name_suffix    : optional(string) # optional friendly suffix for the FIC name
+    name_suffix    : optional(string)
   }))
 }
 
@@ -32,7 +37,7 @@ resource "azurerm_federated_identity_credential" "fic" {
   for_each            = local.map
   name                = "${replace(each.value.namespace, "/", "-")}-${each.value.serviceaccount}-${coalesce(each.value.name_suffix, "fic")}"
   parent_id           = var.uami_id
-  resource_group_name = "" # filled by Azure from parent_id; leaving empty works across providers
+  resource_group_name = var.resource_group_name
   issuer              = var.oidc_issuer_url
   audience            = ["api://AzureADTokenExchange"]
   subject             = "system:serviceaccount:${each.value.namespace}:${each.value.serviceaccount}"

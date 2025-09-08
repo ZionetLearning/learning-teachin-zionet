@@ -1,3 +1,15 @@
+# Look up the UAMI by name in your main RG
+data "azurerm_user_assigned_identity" "aks" {
+  name                = "${var.prefix}-aks-uami"
+  resource_group_name = var.resource_group_name
+}
+
+# Look up the AKS cluster to get the OIDC issuer URL
+data "azurerm_kubernetes_cluster" "main" {
+  name                = var.cluster_name
+  resource_group_name = var.resource_group_name
+}
+
 ########################################
 # 1. Azure infra: RG, AKS (conditional), Service Bus, Postgres and SignalR, Redis
 ########################################
@@ -278,16 +290,16 @@ module "clustersecretstore" {
 
 # === Workload Identity FICs (dynamic SAs) ===
 module "wi_fics" {
-  source          = "./modules/workload-identity-fic"
-  uami_id         = azurerm_user_assigned_identity.aks.id
-  oidc_issuer_url = azurerm_kubernetes_cluster.main.oidc_issuer_url
+  source              = "./modules/workload-identity-fic"
+  uami_id             = data.azurerm_user_assigned_identity.aks.id
+  oidc_issuer_url     = data.azurerm_kubernetes_cluster.main.oidc_issuer_url
+  resource_group_name = var.resource_group_name
 
   bindings = var.workload_sa_bindings
 }
 
-# === Service Bus RBAC (dynamic namespaces) ===
 module "sb_rbac" {
-  source      = "./modules/servicebus-mi-rbac"
-  principal_id= azurerm_user_assigned_identity.aks.principal_id
-  namespaces  = var.servicebus_namespaces
+  source       = "./modules/servicebus-mi-rbac"
+  principal_id = data.azurerm_user_assigned_identity.aks.principal_id
+  namespaces   = var.servicebus_namespaces
 }
