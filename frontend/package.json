@@ -19,7 +19,9 @@
     "cypress:student": "nx run student:cypress-open",
     "cypress:student:ci": "nx run student:cypress-open:ci",
     "test:student": "nx run student:test -- --reporter=verbose",
+    "test:admin": "nx run admin:test -- --reporter=verbose",
     "test-fix:student": "nx run student:test -- -u",
+    "test-fix:admin": "nx run admin:test -- -u",
     "storybook:student": "nx run student:storybook"
   },
   "private": true,
@@ -109,7 +111,7 @@
     "vite-tsconfig-paths": "^4.3.2",
     "vitest": "^3.2.4"
   },
-    "pnpm": {
+  "pnpm": {
     "overrides": {
       "react": "18.2.0",
       "react-dom": "18.2.0"

@@ -195,4 +195,28 @@ public class EngineClient : IEngineClient
             throw;
         }
     }
+    public async Task<(bool success, string message)> GenerateSplitSentenceAsync(SentenceRequest request)
+    {
+        try
+        {
+            var payload = JsonSerializer.SerializeToElement(request);
+            var message = new Message
+            {
+                ActionName = MessageAction.GenerateSplitSentences,
+                Payload = payload
+            };
+            await _daprClient.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message);
+
+            _logger.LogDebug(
+                "Generate request sent to Engine via binding '{Binding}'",
+                QueueNames.EngineQueue
+            );
+            return (true, "sent to engine");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send request for generation to Engine");
+            throw;
+        }
+    }
 }

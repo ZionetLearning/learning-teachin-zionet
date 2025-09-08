@@ -1,5 +1,6 @@
 ﻿using Manager.Models.Users;
 using Manager.Services.Clients.Accessor;
+using Manager.Helpers;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Endpoints;
@@ -49,7 +50,8 @@ public static class UsersEndpoints
     private static async Task<IResult> CreateUserAsync(
         [FromBody] CreateUser newUser,
         [FromServices] IAccessorClient accessorClient,
-        [FromServices] ILogger<UserEndpoint> logger)
+        [FromServices] ILogger<UserEndpoint> logger,
+        HttpContext httpContext)
     {
         using var scope = logger.BeginScope("CreateUser:");
 
@@ -62,6 +64,17 @@ public static class UsersEndpoints
                 return Results.BadRequest("Invalid role provided.");
             }
 
+            // Detect UI language from Accept-Language header
+            var acceptLanguage = httpContext.Request.Headers["Accept-Language"].FirstOrDefault();
+            var sanitizedAcceptLanguage = acceptLanguage?.Replace("\r", string.Empty).Replace("\n", string.Empty);
+            logger.LogInformation("Raw Accept-Language header received: {Header}", sanitizedAcceptLanguage ?? "<null>");
+
+            var preferredLanguage = UserDefaultsHelper.ParsePreferredLanguage(acceptLanguage);
+            logger.LogInformation("Parsed PreferredLanguageCode: {PreferredLanguage}", preferredLanguage);
+
+            // HebrewLevel only applies to students
+            var hebrewLevel = UserDefaultsHelper.GetDefaultHebrewLevel(parsedRole);
+
             // Build the user model (hash password here!)
             var user = new UserModel
             {
@@ -70,7 +83,9 @@ public static class UsersEndpoints
                 FirstName = newUser.FirstName,
                 LastName = newUser.LastName,
                 Password = BCrypt.Net.BCrypt.HashPassword(newUser.Password),
-                Role = parsedRole
+                Role = parsedRole,
+                PreferredLanguageCode = preferredLanguage,
+                HebrewLevelValue = hebrewLevel
             };
 
             // Send to accessor
@@ -88,7 +103,9 @@ public static class UsersEndpoints
                 Email = user.Email,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
-                Role = parsedRole
+                Role = parsedRole,
+                PreferredLanguageCode = preferredLanguage,
+                HebrewLevelValue = hebrewLevel
             };
 
             logger.LogInformation("User {Email} created successfully", user.Email);
@@ -111,6 +128,35 @@ public static class UsersEndpoints
 
         try
         {
+            // Fetch current user to check role
+            var existingUser = await accessorClient.GetUserAsync(userId);
+            if (existingUser is null)
+            {
+                logger.LogWarning("User {UserId} not found", userId);
+                return Results.NotFound("User not found.");
+            }
+
+            if (user.PreferredLanguageCode.HasValue &&
+                !Enum.IsDefined(typeof(SupportedLanguage), user.PreferredLanguageCode.Value))
+            {
+                logger.LogWarning("Invalid PreferredLanguageCode provided: {Language}", user.PreferredLanguageCode);
+                return Results.BadRequest("Invalid preferred language.");
+            }
+
+            if (existingUser.Role == Role.Student &&
+                user.HebrewLevelValue.HasValue &&
+                !Enum.IsDefined(typeof(HebrewLevel), user.HebrewLevelValue.Value))
+            {
+                logger.LogWarning("Invalid HebrewLevelValue provided for student: {HebrewLevel}", user.HebrewLevelValue);
+                return Results.BadRequest("Invalid Hebrew level.");
+            }
+
+            if (existingUser.Role != Role.Student && user.HebrewLevelValue.HasValue)
+            {
+                logger.LogWarning("Non-student tried to set HebrewLevel. Role: {Role}", existingUser.Role);
+                return Results.BadRequest("Hebrew level can only be set for students.");
+            }
+
             var success = await accessorClient.UpdateUserAsync(user, userId);
             return success ? Results.Ok("User updated.") : Results.NotFound("User not found.");
         }
