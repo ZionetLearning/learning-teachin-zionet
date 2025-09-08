@@ -22,6 +22,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
+using Manager;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -116,7 +117,7 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 builder.Services.AddSingleton(_ =>
     new ServiceBusClient(builder.Configuration["ServiceBus:ConnectionString"]));
-builder.Services.AddSingleton<IUserIdProvider, QueryStringUserIdProvider>();
+builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
 builder.Services.AddQueue<Message, ManagerQueueHandler>(
     QueueNames.ManagerCallbackQueue,
     settings =>
@@ -195,6 +196,7 @@ app.MapAuthEndpoints();
 app.MapTasksEndpoints();
 app.MapUsersEndpoints();
 app.MapHub<NotificationHub>("/NotificationHub");
+app.MapMediaEndpoints();
 
 app.MapStatsPing();
 if (env.IsDevelopment())

@@ -2,8 +2,14 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import * as Sentry from "@sentry/react";
-import { AuthProvider, initAppInsights, I18nTranslateProvider, ReactQueryProvider, initializeSentry } from "@app-providers";
-import { AppRole } from "@app-providers/types";
+import {
+  AppRole,
+  AuthProvider,
+  initAppInsights,
+  I18nTranslateProvider,
+  initializeSentry,
+  ReactQueryProvider,
+} from "@app-providers";
 import App from "./App.tsx";
 
 initAppInsights("teacher");

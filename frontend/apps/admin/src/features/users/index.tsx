@@ -1,15 +1,22 @@
-import { ErrorMessage, Field, Form, Formik } from "formik";
+import { ErrorMessage, Field, FieldProps, Form, Formik } from "formik";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 
 import { useGetAllUsers } from "@admin/api";
 import { UserListItem } from "./components";
-import { useStyles } from "./style";
 import { CreateUserFormValues, validationSchema } from "./validation";
 import { useCreateUser } from "@app-providers";
+import { AppRole, AppRoleType } from "@app-providers/types";
+import { Dropdown } from "@ui-components";
+import { useStyles } from "./style";
 
 export const Users = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const classes = useStyles();
+
+  const dir = i18n.dir();
+  const isRtl = dir === "rtl";
+
   const {
     data: users,
     isLoading: isUsersLoading,
@@ -23,13 +30,20 @@ export const Users = () => {
     password: "",
     firstName: "",
     lastName: "",
+    role: AppRole.student,
   };
 
-  const classes = useStyles();
+  const roleOptions = (Object.values(AppRole) as AppRoleType[]).map((r) => ({
+    label: t(`roles.${r}`),
+    value: r,
+  }));
 
   return (
     <div className={classes.root} data-testid="users-page">
-      <div className={classes.formContainer}>
+      <div
+        className={classes.formContainer}
+        style={{ textAlign: isRtl ? "right" : "left" }}
+      >
         <h2 className={classes.sectionTitle}>{t("pages.users.createUsers")}</h2>
         <Formik
           initialValues={initialValues}
@@ -42,6 +56,7 @@ export const Users = () => {
                 password: values.password,
                 firstName: values.firstName,
                 lastName: values.lastName,
+                role: values.role,
               },
               {
                 onSuccess: () => {
@@ -96,6 +111,22 @@ export const Users = () => {
                 <span className={classes.error}>
                   <ErrorMessage name="lastName" />
                 </span>
+              </label>
+              <label className={classes.label}>
+                {t("pages.users.role")}
+                <Field name="role">
+                  {({ field, form, meta }: FieldProps<string>) => (
+                    <Dropdown
+                      name="role"
+                      options={roleOptions}
+                      value={field.value}
+                      onChange={(val) => form.setFieldValue(field.name, val)}
+                      error={meta.touched && !!meta.error}
+                      helperText={meta.touched ? meta.error : ""}
+                      data-testid="users-create-role"
+                    />
+                  )}
+                </Field>
               </label>
               <label className={classes.label}>
                 {t("pages.users.password")}

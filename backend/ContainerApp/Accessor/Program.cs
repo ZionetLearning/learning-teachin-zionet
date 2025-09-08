@@ -31,6 +31,16 @@ builder.Services.AddQueue<Message, AccessorQueueHandler>(
 builder.Services.AddScoped<IAccessorService, AccessorService>();
 builder.Services.AddScoped<IManagerCallbackQueueService, ManagerCallbackQueueService>();
 builder.Services.AddScoped<IRefreshSessionService, RefreshSessionService>();
+builder.Services.AddScoped<ISpeechService, SpeechService>();
+
+builder.Services.AddHttpClient("SpeechClient", client =>
+{
+    var region = builder.Configuration["Speech:Region"];
+    var key = builder.Configuration["Speech:Key"];
+
+    client.BaseAddress = new Uri($"https://{region}.api.cognitive.microsoft.com/");
+    client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", key);
+});
 
 var env = builder.Environment;
 
@@ -121,4 +131,5 @@ app.MapUsersEndpoints();
 app.MapAuthEndpoints();
 app.MapRefreshSessionEndpoints();
 app.MapStatsEndpoints();
+app.MapMediaEndpoints();
 await app.RunAsync();

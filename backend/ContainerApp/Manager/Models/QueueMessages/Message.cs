@@ -19,5 +19,6 @@ public enum MessageAction
     AnswerAi,
     ProcessingChatMessage,
     NotifyUser,
-    GenerateSentences
+    GenerateSentences,
+    GenerateSplitSentences
 }
