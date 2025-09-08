@@ -155,19 +155,82 @@ Cypress.Commands.add("loginAdmin", () => {
 });
 
 export const deleteCreatedUser = () => {
-  if (!testUser) return;
-  const { email, password } = testUser;
-  const adminOrigin = "https://localhost:4002";
-  cy.log(`[e2e] Attempting UI deletion of deterministic user: ${email}`);
+  if (!testUser) {
+    return cy.log("[e2e] No deterministic test user to delete.");
+  }
 
-  cy.location("origin").then((origin) => {
+  const { email: targetEmail, password: targetPassword } = testUser;
+  const adminOrigin = "https://localhost:4002";
+
+  cy.log(`[e2e] Deleting deterministic user '${targetEmail}'.`);
+
+  const runDeletion = () => {
+    // Ensure logged in
+    cy.get("body").then(($b) => {
+      const loggedIn =
+        $b.find('[data-testid="ps-sidebar-container-test-id"]').length > 0;
+      if (!loggedIn) {
+        cy.get('[data-testid="auth-email"]', { timeout: 10000 })
+          .should("exist")
+          .clear()
+          .type(targetEmail);
+        cy.get('[data-testid="auth-password"]').clear().type(targetPassword);
+        cy.get('[data-testid="auth-submit"]').should("not.be.disabled").click();
+        cy.get('[data-testid="ps-sidebar-container-test-id"]', {
+          timeout: 15000,
+        }).should("exist");
+      }
+    });
+
+    cy.get('[data-testid="sidebar-users"]', { timeout: 15000 }).click();
+    cy.get("body", { timeout: 15000 }).should("exist");
+
+    cy.get("body").then(($b) => {
+      const found = Array.from($b.find('[data-testid="users-email"]')).some(
+        (el) => el.textContent?.trim() === targetEmail,
+      );
+      if (!found) {
+        cy.log(`[e2e] User '${targetEmail}' not present; nothing to delete.`);
+        return;
+      }
+    });
+
+    cy.contains('[data-testid="users-email"]', targetEmail)
+      .parents('li[data-testid^="users-item-"]')
+      .then(($row) => {
+        if ($row.length) {
+          cy.on("window:confirm", () => true);
+          cy.wrap($row).find('[data-testid="users-delete-btn"]').click();
+        }
+      });
+
+    cy.contains('[data-testid="users-email"]', targetEmail).should("not.exist");
+    cy.log(`[e2e] Deleted deterministic user '${targetEmail}'.`);
+
+    cy.get("body").then(($b) => {
+      const logoutBtn = $b.find('[data-testid="sidebar-logout"]');
+      if (logoutBtn.length) {
+        cy.wrap(logoutBtn).click();
+        cy.log("[e2e] Logged out after deletion.");
+      }
+    });
+  };
+
+  return cy.location("origin").then((origin) => {
     if (origin === adminOrigin) {
-      performSameOriginDeletion(email, password);
-    } else {
-      cy.origin(
+      runDeletion();
+      return cy.then(() => {
+        testUser = null;
+        cy.log("[e2e] Cleared cached testUser after deletion (same-origin).");
+      });
+    }
+
+    return cy
+      .origin(
         adminOrigin,
-        { args: { email, password } },
-        ({ email, password }) => {
+        { args: { targetEmail, targetPassword } },
+        ({ targetEmail, targetPassword }) => {
+          // inside origin context
           cy.visit("/");
           cy.get("body").then(($b) => {
             const loggedIn =
@@ -177,8 +240,10 @@ export const deleteCreatedUser = () => {
               cy.get('[data-testid="auth-email"]', { timeout: 10000 })
                 .should("exist")
                 .clear()
-                .type(email);
-              cy.get('[data-testid="auth-password"]').clear().type(password);
+                .type(targetEmail);
+              cy.get('[data-testid="auth-password"]')
+                .clear()
+                .type(targetPassword);
               cy.get('[data-testid="auth-submit"]')
                 .should("not.be.disabled")
                 .click();
@@ -187,101 +252,43 @@ export const deleteCreatedUser = () => {
               }).should("exist");
             }
           });
-
-          cy.get('[data-testid="sidebar-users"]', { timeout: 10000 }).click();
+          cy.get('[data-testid="sidebar-users"]', { timeout: 15000 }).click();
+          cy.get("body", { timeout: 15000 }).should("exist");
           cy.get("body").then(($b) => {
             const found = Array.from(
               $b.find('[data-testid="users-email"]'),
-            ).some((el) => el.textContent?.trim() === email);
+            ).some((el) => el.textContent?.trim() === targetEmail);
             if (!found) {
               cy.log(
-                `[e2e] Deterministic user ${email} not found; skipping delete.`,
+                `[e2e] User '${targetEmail}' not present; nothing to delete.`,
               );
               return;
             }
-            cy.contains('[data-testid="users-email"]', email)
-              .parents('li[data-testid^="users-item-"]')
-              .then(($row) => {
-                if ($row.length) {
-                  cy.on("window:confirm", () => true);
-                  cy.wrap($row)
-                    .find('[data-testid="users-delete-btn"]')
-                    .click();
-                  cy.contains('[data-testid="users-email"]', email).should(
-                    "not.exist",
-                  );
-                  cy.log(`[e2e] Deleted deterministic user ${email}`);
-                }
-              });
           });
-
+          cy.contains('[data-testid="users-email"]', targetEmail)
+            .parents('li[data-testid^="users-item-"]')
+            .then(($row) => {
+              if ($row.length) {
+                cy.on("window:confirm", () => true);
+                cy.wrap($row).find('[data-testid="users-delete-btn"]').click();
+              }
+            });
+          cy.contains('[data-testid="users-email"]', targetEmail).should(
+            "not.exist",
+          );
+          cy.log(`[e2e] Deleted deterministic user '${targetEmail}'.`);
           cy.get("body").then(($b) => {
-            if ($b.find('[data-testid="sidebar-logout"]').length) {
-              cy.get('[data-testid="sidebar-logout"]').click();
+            const logoutBtn = $b.find('[data-testid="sidebar-logout"]');
+            if (logoutBtn.length) {
+              cy.wrap(logoutBtn).click();
+              cy.log("[e2e] Logged out after deletion.");
             }
           });
         },
-      ).then(() => {
+      )
+      .then(() => {
         testUser = null;
+        cy.log("[e2e] Cleared cached testUser after deletion (cross-origin).");
       });
-    }
   });
 };
-
-function ensureLoggedIn(email: string, password: string) {
-  cy.get("body").then(($b) => {
-    const loggedIn =
-      $b.find('[data-testid="ps-sidebar-container-test-id"]').length > 0;
-    if (!loggedIn) {
-      cy.get('[data-testid="auth-email"]', { timeout: 10000 })
-        .should("exist")
-        .clear()
-        .type(email);
-      cy.get('[data-testid="auth-password"]').clear().type(password);
-      cy.get('[data-testid="auth-submit"]').should("not.be.disabled").click();
-      cy.get('[data-testid="ps-sidebar-container-test-id"]', {
-        timeout: 15000,
-      }).should("exist");
-    }
-  });
-}
-
-function openUsersAndDelete(email: string) {
-  cy.get('[data-testid="sidebar-users"]', { timeout: 10000 }).click();
-  cy.get("body").then(($b) => {
-    const found = Array.from($b.find('[data-testid="users-email"]')).some(
-      (el) => el.textContent?.trim() === email,
-    );
-    if (!found) {
-      cy.log(`[e2e] Deterministic user ${email} not found; skipping delete.`);
-      return;
-    }
-    cy.contains('[data-testid="users-email"]', email)
-      .parents('li[data-testid^="users-item-"]')
-      .then(($row) => {
-        if ($row.length) {
-          cy.on("window:confirm", () => true);
-          cy.wrap($row).find('[data-testid="users-delete-btn"]').click();
-          cy.contains('[data-testid="users-email"]', email).should("not.exist");
-          cy.log(`[e2e] Deleted deterministic user ${email}`);
-        }
-      });
-  });
-}
-
-function attemptLogout() {
-  cy.get("body").then(($b) => {
-    if ($b.find('[data-testid="sidebar-logout"]').length) {
-      cy.get('[data-testid="sidebar-logout"]').click();
-    }
-  });
-}
-
-function performSameOriginDeletion(email: string, password: string) {
-  ensureLoggedIn(email, password);
-  openUsersAndDelete(email);
-  attemptLogout();
-  cy.then(() => {
-    testUser = null;
-  });
-}
