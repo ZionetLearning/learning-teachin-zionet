@@ -1,9 +1,9 @@
-describe("Users Page Flow", () => {
+describe("Users Page Flow (admin app @4002)", () => {
   const createdUserIds: string[] = [];
   let usersApiBase: string | undefined;
 
   beforeEach(() => {
-    cy.login();
+    cy.loginAdmin();
     cy.contains(/Users/i).click();
     cy.get('[data-testid="users-page"]').should("exist");
     cy.intercept("POST", "**/user").as("createUser");
@@ -15,15 +15,31 @@ describe("Users Page Flow", () => {
   afterEach(() => {
     if (!createdUserIds.length) return;
     const idsToDelete = [...createdUserIds];
-    createdUserIds.length = 0;
-    if (!usersApiBase) return;
+    cy.get("body").then(($b) => {
+      if ($b.find('[data-testid="users-page"]').length === 0) {
+        cy.contains(/Users/i).click();
+        cy.get('[data-testid="users-page"]').should("exist");
+      }
+    });
     idsToDelete.forEach((id) => {
-      cy.request({
-        method: "DELETE",
-        url: `${usersApiBase}/user/${id}`,
-        failOnStatusCode: false,
+      const rowSelector = `[data-testid="users-item-${id}"]`;
+      cy.get("body").then(($b) => {
+        if ($b.find(rowSelector).length) {
+          cy.window().then((win) => {
+            cy.stub(win, "confirm").returns(true);
+          });
+          cy.get(rowSelector).within(() => {
+            cy.get('[data-testid="users-delete-btn"]').click();
+          });
+          cy.wait("@deleteUser")
+            .its("response.statusCode")
+            .should("be.oneOf", [200, 204]);
+        } else {
+          cy.log(`[cleanup] user ${id} not found in UI (already deleted?)`);
+        }
       });
     });
+    createdUserIds.length = 0;
   });
 
   it("shows create form and list (may be empty)", () => {
