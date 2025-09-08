@@ -73,7 +73,7 @@ jobs:
           ./keda.sh
 
   keda-deploy:
-    if: ${{ contains(github.workflow_ref, github.event.workflow) }}
+    if: ${{ github.event.workflow == '.github/workflows/aks-keda.yaml' }}
     uses: ./.github/workflows/aks-helmcharts.yaml
     permissions:
       id-token: write
