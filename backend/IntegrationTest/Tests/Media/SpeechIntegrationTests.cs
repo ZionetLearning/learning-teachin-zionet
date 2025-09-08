@@ -24,9 +24,13 @@ public class SpeechIntegrationTests(
     public async Task Token_Allows_TTS_And_STT_Roundtrip()
     {
         var token = await GetSpeechTokenAsync();
+        //log the token for debugging (it is short-lived)
+        OutputHelper.WriteLine($"Obtained speech token: {token}");
         token.Should().NotBeNullOrWhiteSpace();
 
         var region = Configuration["TestSettings:SpeechRegion"];
+        region.Should().NotBeNullOrWhiteSpace("TestSettings:SpeechRegion must be set in config.");
+        OutputHelper.WriteLine($"Using speech region: {region}");
         var text = "hello world";
 
         // --- TTS synthesize into memory ---
