@@ -1,12 +1,14 @@
-# === Derive the UAMI name when not provided ===
+# === Derive the UAMI name and RG where it actually lives ===
 locals {
   uami_name = coalesce(var.uami_name, format("%s-aks-uami", var.environment_name))
+  # UAMI lives with the AKS/shared infra RG, not the per-app RG:
+  uami_rg   = var.use_shared_aks ? var.shared_resource_group : azurerm_resource_group.main.name
 }
 
-# Look up the UAMI by name in your main RG
+# Look up the UAMI by its real name and RG
 data "azurerm_user_assigned_identity" "aks" {
-  name                = "${var.prefix}-aks-uami"
-  resource_group_name = var.resource_group_name
+  name                = local.uami_name
+  resource_group_name = local.uami_rg
 }
 
 ########################################
@@ -292,10 +294,10 @@ module "wi_fics" {
   source              = "./modules/workload-identity-fic"
   uami_id             = data.azurerm_user_assigned_identity.aks.id
   oidc_issuer_url     = data.azurerm_kubernetes_cluster.main.oidc_issuer_url
-  resource_group_name = var.resource_group_name
-
-  bindings = var.workload_sa_bindings
+  resource_group_name = local.uami_rg
+  bindings            = var.workload_sa_bindings
 }
+
 
 module "sb_rbac" {
   source       = "./modules/servicebus-mi-rbac"
