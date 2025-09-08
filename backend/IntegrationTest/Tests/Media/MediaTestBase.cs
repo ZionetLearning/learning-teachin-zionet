@@ -18,7 +18,7 @@ public abstract class MediaTestBase(
     protected async Task<string> GetSpeechTokenAsync()
     {
         // Calls the endpoint mapped in MediaEndpoints: GET /media-manager/speech/token
-        var response = await Client.GetAsync("/media-manager/speech/token");
+        var response = await Client.GetAsync("media-manager/speech/token");
         response.EnsureSuccessStatusCode();
 
         await using var stream = await response.Content.ReadAsStreamAsync();

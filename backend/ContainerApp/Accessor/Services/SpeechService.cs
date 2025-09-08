@@ -4,28 +4,20 @@ public class SpeechService : ISpeechService
 {
     private readonly ILogger<SpeechService> _logger;
     private readonly IConfiguration _configuration;
+    private readonly IHttpClientFactory _httpClientFactory;
 
-    public SpeechService(ILogger<SpeechService> logger, IConfiguration configuration)
+    public SpeechService(ILogger<SpeechService> logger, IConfiguration configuration, IHttpClientFactory httpClientFactory)
     {
         _logger = logger;
         _configuration = configuration;
+        _httpClientFactory = httpClientFactory;
     }
 
     public async Task<string> GetSpeechTokenAsync(CancellationToken ct = default)
     {
         try
         {
-            var region = _configuration["Speech:Region"];
-            var key = _configuration["Speech:Key"];
-
-            if (string.IsNullOrWhiteSpace(region) || string.IsNullOrWhiteSpace(key))
-            {
-                _logger.LogWarning("Speech credentials missing (Speech:Region/SPEECH_REGION or Speech:Key/SPEECH_KEY)");
-                throw new InvalidOperationException("Speech service not configured");
-            }
-
-            using var http = new HttpClient { BaseAddress = new Uri($"https://{region}.api.cognitive.microsoft.com/") };
-            http.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", key);
+            var http = _httpClientFactory.CreateClient("SpeechClient");
 
             using var resp = await http.PostAsync("sts/v1.0/issueToken", content: null, ct);
             if (!resp.IsSuccessStatusCode)
@@ -36,7 +28,6 @@ public class SpeechService : ISpeechService
             }
 
             var token = await resp.Content.ReadAsStringAsync(ct);
-            _logger.LogInformation("Issued speech token for region {Region}", region);
             return token;
         }
         catch (OperationCanceledException)

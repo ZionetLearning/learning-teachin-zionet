@@ -33,6 +33,15 @@ builder.Services.AddScoped<IManagerCallbackQueueService, ManagerCallbackQueueSer
 builder.Services.AddScoped<IRefreshSessionService, RefreshSessionService>();
 builder.Services.AddScoped<ISpeechService, SpeechService>();
 
+builder.Services.AddHttpClient("SpeechClient", client =>
+{
+    var region = builder.Configuration["Speech:Region"];
+    var key = builder.Configuration["Speech:Key"];
+
+    client.BaseAddress = new Uri($"https://{region}.api.cognitive.microsoft.com/");
+    client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", key);
+});
+
 var env = builder.Environment;
 
 builder.Configuration
