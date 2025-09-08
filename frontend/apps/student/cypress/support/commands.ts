@@ -1,7 +1,18 @@
 /// <reference types="cypress" />
 
-let testUser: { email: string; password: string; userId?: string } | null =
-  null;
+interface TestUser {
+  email: string;
+  password: string;
+  userId?: string;
+}
+
+let testUser: TestUser | null = null;
+
+function userExistsInList($body: JQuery<HTMLElement>, email: string): boolean {
+  return Array.from($body.find('[data-testid="users-email"]')).some(
+    (el) => el.textContent?.trim() === email,
+  );
+}
 
 // Optional type augmentation (kept minimal to avoid conflicts)
 declare global {
@@ -186,9 +197,7 @@ export const deleteCreatedUser = () => {
     cy.get("body", { timeout: 15000 }).should("exist");
 
     cy.get("body").then(($b) => {
-      const found = Array.from($b.find('[data-testid="users-email"]')).some(
-        (el) => el.textContent?.trim() === targetEmail,
-      );
+      const found = userExistsInList($b, targetEmail);
       if (!found) {
         cy.log(`[e2e] User '${targetEmail}' not present; nothing to delete.`);
         return;
