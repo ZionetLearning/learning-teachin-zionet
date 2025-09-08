@@ -23,11 +23,9 @@ public static class CookieHelper
         response.Cookies.Append(AuthSettings.CsrfTokenCookieName, csrfToken, new CookieOptions
         {
             HttpOnly = false, // Must be accessible to JS
-
-            // Notice!! for now its sent over http but in production need to change to https !!! 
             Secure = true,
             // In the future when have domain or frontend, consider using SameSiteMode.Lax for better CSRF protection
-            SameSite = SameSiteMode.Lax,
+            SameSite = SameSiteMode.None,
             Path = AuthSettings.CookiePath,
             Expires = DateTimeOffset.UtcNow.AddMinutes(AuthSettings.CsrfTokenExpiryMinutes) // Short-lived, 30 minutes
         });
