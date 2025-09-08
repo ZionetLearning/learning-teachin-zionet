@@ -4,12 +4,6 @@ data "azurerm_user_assigned_identity" "aks" {
   resource_group_name = var.resource_group_name
 }
 
-# Look up the AKS cluster to get the OIDC issuer URL
-data "azurerm_kubernetes_cluster" "main" {
-  name                = var.cluster_name
-  resource_group_name = var.resource_group_name
-}
-
 ########################################
 # 1. Azure infra: RG, AKS (conditional), Service Bus, Postgres and SignalR, Redis
 ########################################
