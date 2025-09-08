@@ -260,7 +260,8 @@
         "password": "Password",
         "firstName": "First Name",
         "lastName": "Last Name",
-        "noChanges": "No changes"
+        "noChanges": "No changes",
+        "role": "Role"
       },
       "profile": {
         "title": "My profile",
@@ -306,6 +307,11 @@
     },
     "goBackToMenu": "Go back to Menu",
     "logout": "Logout",
-    "somethingWentWrong": "Something went wrong..."
+    "somethingWentWrong": "Something went wrong...",
+    "roles": {
+      "admin": "Admin",
+      "teacher": "Teacher",
+      "student": "Student"
+    }
   }
 }
