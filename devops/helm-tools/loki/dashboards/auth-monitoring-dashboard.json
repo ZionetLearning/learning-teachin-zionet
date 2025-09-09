@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 38,
+  "id": 54,
   "links": [],
   "panels": [
     {
@@ -26,7 +26,7 @@
         "type": "loki",
         "uid": "P8E80F9AEF21F6940"
       },
-      "description": "Detect spikes or unexpected drops in login activity",
+      "description": "Tracks login attempts per $__interval across environments. Automatically adjusts to the selected time range, helping identify spikes, drops, or anomalies in user authentication behavior.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -39,16 +39,16 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
-            "barWidthFactor": 0.9,
+            "barWidthFactor": 0.5,
             "drawStyle": "bars",
-            "fillOpacity": 0,
-            "gradientMode": "opacity",
+            "fillOpacity": 15,
+            "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "viz": false
             },
-            "insertNulls": false,
+            "insertNulls": 3600000,
             "lineInterpolation": "smooth",
             "lineStyle": {
               "fill": "solid"
@@ -58,11 +58,11 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "auto",
-            "spanNulls": false,
+            "showPoints": "never",
+            "spanNulls": true,
             "stacking": {
               "group": "A",
-              "mode": "none"
+              "mode": "normal"
             },
             "thresholdsStyle": {
               "mode": "off"
@@ -128,9 +128,17 @@
           {
             "matcher": {
               "id": "byName",
-              "options": ""
+              "options": "{namespace=\"sessionqueue\"}"
             },
-            "properties": []
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
           }
         ]
       },
@@ -141,6 +149,7 @@
         "y": 0
       },
       "id": 2,
+      "maxDataPoints": 20,
       "options": {
         "legend": {
           "calcs": [],
@@ -163,12 +172,12 @@
           },
           "direction": "backward",
           "editorMode": "code",
-          "expr": "sum by(namespace) (\r\n  count_over_time({container=\"manager\"} |= \"Attempting login\" [1m])\r\n)\r\n",
+          "expr": "sum by(namespace) (\r\n  count_over_time({container=\"manager\"} |= \"Attempting login\"[$__auto])\r\n)\r\n",
           "queryType": "range",
           "refId": "A"
         }
       ],
-      "title": "Login Attempts per Minute",
+      "title": "Login Attempts Over Time",
       "type": "timeseries"
     },
     {
@@ -316,5 +325,5 @@
   "timezone": "browser",
   "title": "Authentication Monitoring & Insights",
   "uid": "738b5645-e95f-407e-b7b4-ac94a9d55bab",
-  "version": 2
+  "version": 1
 }

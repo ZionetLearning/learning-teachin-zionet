@@ -128,6 +128,17 @@ builder.Services.AddQueue<Message, ManagerQueueHandler>(
         settings.MaxRetryAttempts = 3;
         settings.RetryDelaySeconds = 2;
     });
+builder.Services.AddSessionQueue<SessionQueueMessage, ManagerSessionQueueHandler>(
+    QueueNames.ManagerCallbackSessionQueue,
+    settings =>
+    {
+        settings.MaxConcurrentCalls = 5;
+        settings.PrefetchCount = 10;
+        settings.ProcessingDelayMs = 200;
+        settings.MaxRetryAttempts = 3;
+        settings.RetryDelaySeconds = 2;
+    });
+
 // This is required for the Scalar UI to have an option to setup an authentication token
 builder.Services.AddOpenApi(
     "v1",

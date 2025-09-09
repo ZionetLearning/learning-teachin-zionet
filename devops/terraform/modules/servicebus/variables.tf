@@ -29,6 +29,12 @@ variable "queue_names" {
   default     = []
 }
 
+variable "session_enabled_queues" {
+  description = "List of queues that require session support"
+  type        = list(string)
+  default     = []
+}
+
 variable "topic_names" {
   description = "List of topics to create"
   type        = list(string)
