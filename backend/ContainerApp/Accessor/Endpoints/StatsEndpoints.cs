@@ -27,9 +27,9 @@ public static class StatsEndpoints
             .Produces<StatsSnapshot>(StatusCodes.Status200OK);
 
         //Healthcheck endpoint
-        app.MapGet("/health",
-            () => Results.Ok(new { status = "Healthy" }))
-            .WithName("Health")
-            .WithTags("Internal");
+        //app.MapGet("/health",
+          //  () => Results.Ok(new { status = "Healthy" }))
+            //.WithName("Health")
+            //.WithTags("Internal");
     }
 }

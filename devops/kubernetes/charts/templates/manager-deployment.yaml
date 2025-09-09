@@ -30,17 +30,17 @@ spec:
       imagePullSecrets:
         - name: {{ .Values.global.imagePullSecret.name }}
       {{- end }}
-      initContainers:
-        - name: wait-for-accessor
-          image: curlimages/curl:8.5.0
-          command:
-            - sh
-            - -c
-            - |
-              until curl -s -o /dev/null -w "%{http_code}" http://{{ .Values.accessor.name }}:80/health | grep -E '^(200)$'; do
-                echo "Waiting for accessor...";
-                sleep 2;
-              done
+      # initContainers:
+      #   - name: wait-for-accessor
+      #     image: curlimages/curl:8.5.0
+      #     command:
+      #       - sh
+      #       - -c
+      #       - |
+      #         until curl -s -o /dev/null -w "%{http_code}" http://{{ .Values.accessor.name }}:80/health | grep -E '^(200)$'; do
+      #           echo "Waiting for accessor...";
+      #           sleep 2;
+      #         done
       containers:
         - name: {{ .Values.manager.name }}
           image: {{ include "app.image" (dict "name" .Values.manager.image.name "tag" .Values.manager.image.tag "Values" .Values) }}
