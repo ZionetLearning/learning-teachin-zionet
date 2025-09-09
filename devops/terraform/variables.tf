@@ -56,7 +56,14 @@ variable "queue_names" {
     "manager-callback-queue",
     "engine-queue",
     "accessor-queue",
+    "manager-callback-session-queue",
   ]
+}
+
+variable "session_enabled_queues" {
+  description = "List of queues that require session support"
+  type        = list(string)
+  default     = ["manager-callback-session-queue"]
 }
 
 #------------- Docker Hub (or ACR) Variables --------------------

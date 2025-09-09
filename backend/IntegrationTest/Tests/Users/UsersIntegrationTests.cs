@@ -19,14 +19,13 @@ public class UsersIntegrationTests(
     [Fact(DisplayName = "POST /users-manager/user - Duplicate email should return 409 Conflict")]
     public async Task CreateUser_DuplicateEmail_Should_Return_Conflict()
     {
-        var user1 = TestDataHelper.CreateUserWithFixedEmail();
-        var user2 = TestDataHelper.CreateUserWithFixedEmail(); // same email, different Guid
+        var email = $"dup_{Guid.NewGuid()}@test.com"; // unique per run
+        var user1 = TestDataHelper.CreateUserWithFixedEmail(email);
+        var user2 = TestDataHelper.CreateUserWithFixedEmail(email); // same email
 
-        // First create succeeds
         var r1 = await Client.PostAsJsonAsync(ApiRoutes.User, user1);
         r1.ShouldBeCreated();
 
-        // Second should fail
         var r2 = await Client.PostAsJsonAsync(ApiRoutes.User, user2);
         r2.ShouldBeConflict();
     }

@@ -38,16 +38,16 @@ public static class TestDataHelper
             Role = role
         };
     }
-    public static CreateUser CreateUserWithFixedEmail(string email = "duplicate@test.com", string role = "student")
+    public static CreateUser CreateUserWithFixedEmail(string? email = null)
     {
         return new CreateUser
         {
             UserId = Guid.NewGuid(),
-            Email = email, // always same email
+            Email = email ?? $"dup_{Guid.NewGuid()}@test.com",
             FirstName = "Test",
             LastName = "User",
-            Password = "Passw0rd!",
-            Role = role
+            Password = "123456",
+            Role = "student"
         };
     }
 }
