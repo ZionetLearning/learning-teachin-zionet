@@ -380,6 +380,12 @@ public static class AiEndpoints
             await engineClient.GenerateSplitSentenceAsync(request);
             return Results.Ok();
         }
+        catch (InvalidOperationException ex) when (ex.Data.Contains("Tag") &&
+                                          Equals(ex.Data["Tag"], "MissingOrInvalidUserId"))
+        {
+            logger.LogWarning(ex, "Invalid or missing UserId");
+            return Results.Problem("Invalid or missing UserId", statusCode: StatusCodes.Status403Forbidden);
+        }
         catch (OperationCanceledException)
         {
             logger.LogWarning("Split sentence generation operation was canceled by user");
@@ -403,7 +409,9 @@ public static class AiEndpoints
         if (!Guid.TryParse(raw, out var userId))
         {
             logger.LogError("Missing or invalid UserId in HttpContext. Raw: {RawUserId}", raw);
-            throw new InvalidOperationException("Authenticated user id is missing or not a valid GUID.");
+            var ex = new InvalidOperationException("Authenticated user id is missing or not a valid GUID.");
+            ex.Data["Tag"] = "MissingOrInvalidUserId";
+            throw ex;
         }
 
         return userId;
