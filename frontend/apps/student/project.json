@@ -64,7 +64,7 @@
       },
       "configurations": {
         "ci": {
-          "devServerTarget": ["student:serve:development", "admin:serve:development", "teacher:serve:development"],
+          "devServerTarget": "student:serve:development",
           "watch": false
         },
         "local": {
