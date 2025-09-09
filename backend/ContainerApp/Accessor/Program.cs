@@ -4,6 +4,7 @@ using Accessor.DB;
 using Accessor.Endpoints;
 using Accessor.Models;
 using Accessor.Models.QueueMessages;
+using Accessor.Options;
 using Accessor.Services;
 using Accessor.Services.Interfaces;
 using Azure.Messaging.ServiceBus;
@@ -49,12 +50,15 @@ builder.Services.AddHttpClient("SpeechClient", client =>
     client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", key);
 });
 
+builder.Services.AddScoped<IPromptService, PromptService>();
+
 var env = builder.Environment;
 
 builder.Configuration
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
     .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
     .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
+    .AddJsonFile("prompts.defaults.json", optional: true, reloadOnChange: true)
     .AddEnvironmentVariables();
 
 builder.Services.AddEndpointsApiExplorer();
@@ -62,6 +66,10 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOptions<TaskCacheOptions>()
     .Bind(builder.Configuration.GetSection("TaskCache"))
     .ValidateDataAnnotations()
+    .ValidateOnStart();
+
+builder.Services.AddOptions<PromptsOptions>()
+    .Bind(builder.Configuration.GetSection("Prompts"))
     .ValidateOnStart();
 
 // Register Dapr client with custom JSON options
@@ -107,6 +115,8 @@ using (var scope = app.Services.CreateScope())
 {
     var initializer = scope.ServiceProvider.GetRequiredService<DatabaseInitializer>();
     await initializer.InitializeAsync();
+    var promptStartup = scope.ServiceProvider.GetRequiredService<IPromptService>();
+    await promptStartup.InitializeDefaultPromptsAsync();
 }
 
 // Configure middleware and Dapr
@@ -134,6 +144,7 @@ if (env.IsDevelopment())
 // Map endpoints (routes)
 app.MapTasksEndpoints();
 app.MapChatsEndpoints();
+app.MapPromptEndpoints();
 app.MapUsersEndpoints();
 app.MapAuthEndpoints();
 app.MapRefreshSessionEndpoints();

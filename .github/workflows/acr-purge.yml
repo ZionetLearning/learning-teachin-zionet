@@ -34,7 +34,7 @@ jobs:
       - name: Purge old tags for ${{ matrix.repo }}
         run: |
           REPO="${{ matrix.repo }}"
-          KEEP_ALWAYS=("latest" "dev" "prod")
+          KEEP_ALWAYS=("latest" "dev" "prod" "stage")
 
           echo "Cleaning repo: $REPO"
 
