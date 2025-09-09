@@ -4,6 +4,7 @@ using Accessor.Endpoints;
 using Accessor.Models;
 using Accessor.Models.QueueMessages;
 using Accessor.Services;
+using Accessor.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -15,11 +16,11 @@ public class AccessorQueueHandler_Invalid_Approval
     [MemberData(nameof(BadMessages))]
     public async Task Invalid_Message_Shapes_ErrorContract_Is_Approved(Message msg, string tag)
     {
-        var svc = new Mock<IAccessorService>(MockBehavior.Strict);
+        var taskService = new Mock<ITaskService>(MockBehavior.Strict);
         var log = new Mock<ILogger<AccessorQueueHandler>>();
         var managerCallbackSvc = new Mock<IManagerCallbackQueueService>(MockBehavior.Strict);
 
-        var handler = new AccessorQueueHandler(svc.Object, managerCallbackSvc.Object, log.Object);
+        var handler = new AccessorQueueHandler(taskService.Object, managerCallbackSvc.Object, log.Object);
 
         Exception? ex = null;
         try
@@ -45,7 +46,8 @@ public class AccessorQueueHandler_Invalid_Approval
             additionalInfo: $"QueueHandler_{tag}"
         );
 
-        svc.VerifyNoOtherCalls();
+        taskService.VerifyNoOtherCalls();
+        managerCallbackSvc.VerifyNoOtherCalls();
     }
 
     public static IEnumerable<object[]> BadMessages()
