@@ -1,11 +1,9 @@
-﻿using FluentAssertions;
-using IntegrationTests.Constants;
+﻿using IntegrationTests.Constants;
 using IntegrationTests.Fixtures;
 using IntegrationTests.Infrastructure;
 using IntegrationTests.Models.Auth;
 using Manager.Constants;
 using Manager.Models.Auth;
-using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Xunit.Abstractions;
