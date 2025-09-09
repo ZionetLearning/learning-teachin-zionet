@@ -1,4 +1,10 @@
+import { useMemo, useState } from "react";
+
+import ClearIcon from "@mui/icons-material/Clear";
+import SearchIcon from "@mui/icons-material/Search";
 import {
+  IconButton,
+  InputAdornment,
   Paper,
   Table,
   TableBody,
@@ -6,6 +12,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TextField,
 } from "@mui/material";
 import { ErrorMessage, Field, FieldProps, Form, Formik } from "formik";
 import { useTranslation } from "react-i18next";
@@ -34,6 +41,8 @@ export const Users = () => {
 
   const { mutate: createUser, isPending: isCreatingUser } = useCreateUser();
 
+  const [search, setSearch] = useState("");
+
   const initialValues: CreateUserFormValues = {
     email: "",
     password: "",
@@ -42,10 +51,23 @@ export const Users = () => {
     role: AppRole.student,
   };
 
-  const roleOptions = (Object.values(AppRole) as AppRoleType[]).map((r) => ({
-    label: t(`roles.${r}`),
-    value: r,
-  }));
+  const roleOptions = useMemo(() => {
+    return (Object.values(AppRole) as AppRoleType[]).map((r) => ({
+      label: t(`roles.${r}`),
+      value: r,
+    }));
+  }, [t]);
+
+  const filteredUsers = useMemo(() => {
+    if (!users) return [];
+    const q = search.trim().toLowerCase();
+    if (!q) return users;
+    return users.filter((u) =>
+      [u.email, u.firstName, u.lastName, u.role].some((field) =>
+        field.toLowerCase().includes(q),
+      ),
+    );
+  }, [users, search]);
 
   return (
     <div className={classes.root} data-testid="users-page">
@@ -187,12 +209,49 @@ export const Users = () => {
                     {t("pages.users.actions")}
                   </TableCell>
                 </TableRow>
+                <TableRow>
+                  <TableCell colSpan={5} className={classes.searchCell}>
+                    <TextField
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder={t("pages.users.searchPlaceholder")}
+                      size="small"
+                      fullWidth
+                      slotProps={{
+                        htmlInput: {
+                          "data-testid": "users-search-input",
+                        },
+                        input: {
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <SearchIcon fontSize="small" />
+                            </InputAdornment>
+                          ),
+                          endAdornment: search ? (
+                            <InputAdornment position="end">
+                              <IconButton
+                                size="small"
+                                aria-label={t("pages.users.clear")}
+                                onClick={() => setSearch("")}
+                                data-testid="users-search-clear"
+                              >
+                                <ClearIcon fontSize="small" />
+                              </IconButton>
+                            </InputAdornment>
+                          ) : null,
+                        },
+                      }}
+                      className={classes.searchField}
+                      dir={dir}
+                    />
+                  </TableCell>
+                </TableRow>
               </TableHead>
               <TableBody>
-                {users?.map((u) => (
+                {filteredUsers.map((u) => (
                   <UserListItem key={u.userId} user={u} />
                 ))}
-                {(!users || users.length === 0) && (
+                {filteredUsers.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={5}>
                       {t("pages.users.noUsersFound")}

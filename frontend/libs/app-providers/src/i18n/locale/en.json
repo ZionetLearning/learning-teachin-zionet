@@ -262,7 +262,9 @@
         "lastName": "Last Name",
         "noChanges": "No changes",
         "role": "Role",
-        "actions": "Actions"
+        "actions": "Actions",
+        "searchPlaceholder": "Search by email, first name, last name...",
+        "clear": "Clear"
       },
       "profile": {
         "title": "My profile",

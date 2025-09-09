@@ -262,7 +262,9 @@
         "lastName": "שם משפחה",
         "noChanges": "אין שינויים",
         "role": "תפקיד",
-        "actions": "פעולות"
+        "actions": "פעולות",
+        "searchPlaceholder": "חפש לפי אימייל, שם פרטי, שם משפחה...",
+        "clear": "נקה"
       },
       "profile": {
         "title": "הפרופיל שלי",

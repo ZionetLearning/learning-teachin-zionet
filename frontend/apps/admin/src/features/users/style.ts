@@ -136,4 +136,28 @@ export const useStyles = createUseStyles({
     formContainer: { maxWidth: "100%" },
     listContainer: { maxWidth: "100%" },
   },
+  searchCell: {
+    padding: "8px 12px",
+    background: "#fff",
+  },
+  searchField: {
+    "& .MuiOutlinedInput-root": {
+      height: 32,
+      borderRadius: 8,
+      background: "#f8fafc",
+    },
+    "& .MuiOutlinedInput-input": {
+      padding: "4px 8px",
+      fontSize: 13,
+      lineHeight: 1.2,
+    },
+    "& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus":
+      {
+        WebkitBoxShadow: "0 0 0 1000px #f8fafc inset",
+        boxShadow: "0 0 0 1000px #f8fafc inset",
+        WebkitTextFillColor: "#1f2937",
+        caretColor: "#1f2937",
+        transition: "background-color 9999s ease-out, color 9999s ease-out",
+      },
+  },
 });
