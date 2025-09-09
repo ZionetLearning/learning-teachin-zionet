@@ -43,7 +43,7 @@ export const useAzureSpeechToken = () => {
   return useQuery<AzureSpeechTokenResponse, Error>({
     queryKey: ["azureSpeechToken"],
     queryFn: async () => {
-      const res = await axios.post<AzureSpeechTokenResponse>(`${AI_BASE_URL}/speech/token`);
+      const res = await axios.get<AzureSpeechTokenResponse>(`${AI_BASE_URL}/speech/token`);
       return res.data;
     }
   });
