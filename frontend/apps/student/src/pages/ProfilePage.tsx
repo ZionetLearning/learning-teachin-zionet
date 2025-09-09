@@ -6,6 +6,7 @@ export const ProfilePage = () => {
   return (
     <Profile firstName={user?.firstName ?? ""}
       lastName={user?.lastName ?? ""}
-      email={user?.email ?? ""} />
+      email={user?.email ?? ""}
+      userId={user?.userId ?? ""} />
   );
 }

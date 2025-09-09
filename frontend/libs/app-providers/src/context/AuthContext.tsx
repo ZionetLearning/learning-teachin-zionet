@@ -5,6 +5,7 @@ export interface UserInfo {
   firstName: string;
   lastName: string;
   email: string;
+  userId?: string;
 }
 export interface AuthContextValue {
   isAuthorized: boolean;

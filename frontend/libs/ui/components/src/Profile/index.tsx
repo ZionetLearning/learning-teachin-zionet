@@ -1,27 +1,29 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, Typography, TextField, Stack } from '@mui/material';
-import { useUpdateUser, decodeJwtUserId, useAuth } from '@app-providers';
+import { useUpdateUserByUserId, useAuth } from '@app-providers';
 import { Button } from '../Button';
 
 export type ProfileProps = {
     firstName: string;
     lastName: string;
     email: string;
+    userId?: string;
 };
 
 export const Profile = ({
     firstName,
     lastName,
     email,
+    userId = ""
 
 }: ProfileProps) => {
     const { t, i18n } = useTranslation();
-    const { mutateAsync: updateUserMutation } = useUpdateUser();
+
     const { user, setUser } = useAuth();
     const [fn, setFn] = useState(firstName);
     const [ln, setLn] = useState(lastName);
-
+    const { mutateAsync: updateUserMutation } = useUpdateUserByUserId(userId);
     const isRTL = i18n.dir() === 'rtl';
 
     useEffect(() => {
@@ -32,14 +34,6 @@ export const Profile = ({
     const dirty =
         fn.trim() !== firstName.trim() || ln.trim() !== lastName.trim();
 
-
-    const raw = localStorage.getItem("credentials");
-    const creds = raw ? JSON.parse(raw) : null;
-    const userId = decodeJwtUserId(creds.accessToken);
-    if (!userId) {
-        console.error("User ID not found in token");
-    }
-
     const handleCancel = () => {
         setFn(firstName);
         setLn(lastName);
@@ -48,12 +42,12 @@ export const Profile = ({
     const handleSave = async () => {
         if (!user) return;
         try {
-            if (!userId) throw new Error("Missing user ID");
-            await updateUserMutation({
-                userId,
-                firstName: fn,
-                lastName: ln,
-            });
+            await updateUserMutation(
+                {
+                    email: email,
+                    firstName: fn,
+                    lastName: ln,
+                });
             setUser?.({ ...user, firstName: fn, lastName: ln });
         } catch (err) {
             console.error("Update failed:", err);

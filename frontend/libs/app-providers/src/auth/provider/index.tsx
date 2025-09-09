@@ -66,6 +66,7 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
       email: credentials.email,
       firstName: credentials.firstName ?? "",
       lastName: credentials.lastName ?? "",
+      userId: decodeJwtUserId(credentials.accessToken) ?? ""
     }
     : null;
 

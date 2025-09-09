@@ -1,23 +1,20 @@
 import {
   useMutation,
   UseMutationResult,
+  useQuery,
   useQueryClient,
+  UseQueryResult,
 } from "@tanstack/react-query";
+
 import { apiClient as axios, User, UserDto } from "@app-providers";
 
-export interface UserData {
-  userId: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: string;
+
+interface UpdateUserInput {
+  email?: string;
+  firstName?: string;
+  lastName?: string;
 }
 
-export interface UpdateUserInput {
-  userId: string;
-  firstName: string;
-  lastName: string;
-}
 
 export const mapUser = (dto: UserDto): User => ({
   userId: dto.userId,
@@ -50,56 +47,55 @@ export const useCreateUser = (): UseMutationResult<
   });
 };
 
-export const useUpdateUser = (): UseMutationResult<
-  void,
-  Error,
-  UpdateUserInput
-> => {
-  const qc = useQueryClient();
-  return useMutation<void, Error, UpdateUserInput>({
-    mutationFn: updateUser,
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["users"] });
-    },
-  });
-};
 
-export const getUserById = async (userId: string): Promise<UserData> => {
-  const raw = localStorage.getItem("credentials");
-  const token = raw ? JSON.parse(raw).accessToken : null;
-
-  if (!token) throw new Error("Missing access token in localStorage");
-
-  const { data } = await axios.get<UserData>(
-    `${import.meta.env.VITE_USERS_URL}/user/${userId}`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
+export const getUserById = async (userId: string): Promise<UserDto> => {
+  const { data } = await axios.get<UserDto>(
+    `${import.meta.env.VITE_USERS_URL}/user/${userId}`
   );
 
   return data;
 };
 
-export const updateUser = async ({
-  userId,
-  firstName,
-  lastName,
-}: UpdateUserInput): Promise<void> => {
-  const raw = localStorage.getItem("credentials");
-  const token = raw ? JSON.parse(raw).accessToken : null;
 
-  if (!token) throw new Error("Missing access token in localStorage");
+export const updateUserByUserId = async (
+  userId: string,
+  userData: UpdateUserInput,
+): Promise<User> => {
+  const body: Record<string, unknown> = { userId };
+  if (typeof userData.email === "string") body.email = userData.email;
+  if (typeof userData.firstName === "string")
+    body.firstName = userData.firstName;
+  if (typeof userData.lastName === "string") body.lastName = userData.lastName;
 
-  await axios.put(
-    `${import.meta.env.VITE_USERS_URL}/user/${userId}`,
-    { firstName, lastName },
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
+  const response = await axios.put(`${USERS_URL}/${userId}`, body);
+  if (response.status !== 200) {
+    throw new Error(response.data?.message || "Failed to update user");
+  }
+  return mapUser(response.data as UserDto);
 };
 
+export const useGetUserById = (
+  userId: string | undefined
+): UseQueryResult<UserDto, Error> => {
+  return useQuery<UserDto, Error>({
+    queryKey: ["user", userId],
+    queryFn: () => {
+      if (!userId) throw new Error("Missing userId");
+      return getUserById(userId);
+    },
+    enabled: !!userId, // only runs if userId is truthy
+    staleTime: 5_000,
+  });
+};
+
+export const useUpdateUserByUserId = (
+  userId: string,
+): UseMutationResult<User, Error, UpdateUserInput> => {
+  const qc = useQueryClient();
+  return useMutation<User, Error, UpdateUserInput>({
+    mutationFn: (data) => updateUserByUserId(userId, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["users"] });
+    },
+  });
+};
