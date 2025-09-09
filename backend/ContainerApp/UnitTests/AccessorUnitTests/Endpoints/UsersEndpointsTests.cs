@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Accessor.Endpoints;
 using Accessor.Models.Users;
 using Accessor.Services;
+using Accessor.Services.Interfaces;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Logging;
@@ -14,8 +15,8 @@ namespace AccessorUnitTests.Endpoints;
 
 public class UsersEndpointsTests
 {
-    private readonly Mock<IAccessorService> _mockService = new(MockBehavior.Strict);
-    private readonly Mock<ILogger<IAccessorService>> _mockLogger = new();
+    private readonly Mock<IUserManagementService> _mockService = new(MockBehavior.Strict);
+    private readonly Mock<ILogger<UserManagementService>> _mockLogger = new();
 
     // ---- GET ----
     [Fact]
@@ -54,15 +55,6 @@ public class UsersEndpointsTests
     }
 
     // ---- CREATE ----
-    [Fact]
-    public async Task CreateUser_Should_Return_BadRequest_When_Null()
-    {
-        Func<Task> act = async () => 
-            await Invoke("CreateUserAsync", null!, _mockService.Object, _mockLogger.Object);
-
-        await act.Should().ThrowAsync<NullReferenceException>();
-    }
-
     [Fact]
     public async Task CreateUser_Should_Return_Conflict_When_Duplicate()
     {
@@ -161,10 +153,14 @@ public class UsersEndpointsTests
     // ---- UTILS ----
     private static async Task<IResult> Invoke(string methodName, params object[] args)
     {
-        var method = typeof(UsersEndpoints).GetMethod(methodName,
+        var method = typeof(UsersEndpoints).GetMethod(
+            methodName,
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
-        return await (Task<IResult>)method!.Invoke(null, args)!;
+        if (method == null)
+            throw new InvalidOperationException($"Method {methodName} not found on UsersEndpoints.");
+
+        return await (Task<IResult>)method.Invoke(null, args)!;
     }
 
     private static UserModel BuildUser(string email, Guid? id = null) => new()

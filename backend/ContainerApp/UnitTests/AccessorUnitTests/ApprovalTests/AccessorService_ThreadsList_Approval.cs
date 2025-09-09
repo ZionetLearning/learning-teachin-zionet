@@ -47,8 +47,8 @@ public class AccessorService_ThreadsList_Approval
         await db.SaveChangesAsync();
 
         var dapr = new Mock<DaprClient>(MockBehavior.Loose);
-        var log = Mock.Of<ILogger<AccessorService>>();
-        var svc = new AccessorService(db, log, dapr.Object, Cfg());
+        var log = Mock.Of<ILogger<ChatHistoryService>>();
+        var svc = new ChatHistoryService(db, log);
 
         var list = await svc.GetChatsForUserAsync(userId1);
 

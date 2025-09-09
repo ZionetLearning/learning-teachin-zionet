@@ -1,5 +1,6 @@
 ﻿using Accessor.Models.Users;
 using Accessor.Services;
+using Accessor.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Accessor.Endpoints;
@@ -21,8 +22,8 @@ public static class UsersEndpoints
 
     private static async Task<IResult> GetUserAsync(
         [FromRoute] Guid userId,
-        [FromServices] IAccessorService service,
-        [FromServices] ILogger<IAccessorService> logger)
+        [FromServices] IUserManagementService userService,
+        [FromServices] ILogger<UserManagementService> logger)
     {
         using var scope = logger.BeginScope("Method: {Method}, UserId: {UserId}", nameof(GetUserAsync), userId);
 
@@ -34,7 +35,7 @@ public static class UsersEndpoints
 
         try
         {
-            var user = await service.GetUserAsync(userId);
+            var user = await userService.GetUserAsync(userId);
             return user is not null ? Results.Ok(user) : Results.NotFound();
         }
         catch (Exception ex)
@@ -46,8 +47,8 @@ public static class UsersEndpoints
 
     private static async Task<IResult> CreateUserAsync(
         [FromBody] UserModel user,
-        [FromServices] IAccessorService service,
-        [FromServices] ILogger<IAccessorService> logger)
+        [FromServices] IUserManagementService userService,
+        [FromServices] ILogger<UserManagementService> logger)
     {
         using var scope = logger.BeginScope("Method: {Method}, UserId: {UserId}", nameof(CreateUserAsync), user.UserId);
         if (user is null)
@@ -58,7 +59,7 @@ public static class UsersEndpoints
 
         try
         {
-            var created = await service.CreateUserAsync(user);
+            var created = await userService.CreateUserAsync(user);
             return created
                 ? Results.Created($"/users-accessor/{user.UserId}", user)
                 : Results.Conflict("User with the same email already exists.");
@@ -73,8 +74,8 @@ public static class UsersEndpoints
     private static async Task<IResult> UpdateUserAsync(
         [FromRoute] Guid userId,
         [FromBody] UpdateUserModel user,
-        [FromServices] IAccessorService service,
-        [FromServices] ILogger<IAccessorService> logger)
+        [FromServices] IUserManagementService userService,
+        [FromServices] ILogger<UserManagementService> logger)
     {
         using var scope = logger.BeginScope("Method: {Method}, UserId: {UserId}", nameof(UpdateUserAsync), userId);
         if (user is null)
@@ -91,7 +92,7 @@ public static class UsersEndpoints
 
         try
         {
-            var updated = await service.UpdateUserAsync(user, userId);
+            var updated = await userService.UpdateUserAsync(user, userId);
             return updated ? Results.Ok("User updated") : Results.NotFound("User not found");
         }
         catch (Exception ex)
@@ -103,8 +104,8 @@ public static class UsersEndpoints
 
     private static async Task<IResult> DeleteUserAsync(
         [FromRoute] Guid userId,
-        [FromServices] IAccessorService service,
-        [FromServices] ILogger<IAccessorService> logger)
+        [FromServices] IUserManagementService userService,
+        [FromServices] ILogger<UserManagementService> logger)
     {
         using var scope = logger.BeginScope("Method: {Method}, UserId: {UserId}", nameof(DeleteUserAsync), userId);
         if (userId == Guid.Empty)
@@ -115,7 +116,7 @@ public static class UsersEndpoints
 
         try
         {
-            var deleted = await service.DeleteUserAsync(userId);
+            var deleted = await userService.DeleteUserAsync(userId);
             return deleted ? Results.Ok("User deleted") : Results.NotFound("User not found");
         }
         catch (Exception ex)
@@ -126,16 +127,16 @@ public static class UsersEndpoints
     }
 
     private static async Task<IResult> GetAllUsersAsync(
-        [FromServices] IAccessorService service,
-        [FromServices] ILogger<IAccessorService> logger,
+        [FromServices] IUserManagementService userService,
+        [FromServices] ILogger<UserManagementService> logger,
         CancellationToken ct)
     {
         using var scope = logger.BeginScope("Method: {Method}", nameof(GetAllUsersAsync));
 
         try
         {
-            var users = await service.GetAllUsersAsync();
-            logger.LogInformation("Retrieved {Count} users", users.Count());
+            var users = await userService.GetAllUsersAsync();
+            logger.LogInformation("Retrieved {Count} users", users.Count);
             return Results.Ok(users);
         }
         catch (Exception ex)

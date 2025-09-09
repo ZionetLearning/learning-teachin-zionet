@@ -1,5 +1,6 @@
 ﻿using Dapr.Client;
 using Accessor.Constants;
+using Accessor.Services.Interfaces;
 
 namespace Accessor.Services;
 

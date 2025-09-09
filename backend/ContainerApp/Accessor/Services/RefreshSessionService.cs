@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using Accessor.DB;
 using Accessor.Models;
+using Accessor.Services.Interfaces;
 using Accessor.Models.RefreshSessions;
 using Microsoft.EntityFrameworkCore;
 

@@ -1,5 +1,6 @@
 ﻿using Accessor.Models;
 using Accessor.Services;
+using Accessor.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Accessor.Endpoints;
@@ -17,8 +18,8 @@ public static class AuthEndpoints
 
     private static async Task<IResult> LoginUserAsync(
         [FromBody] LoginRequest request,
-        [FromServices] IAccessorService accessorService,
-        [FromServices] ILogger<AccessorService> logger)
+        [FromServices] IUserManagementService userService,
+        [FromServices] ILogger<UserManagementService> logger)
     {
         using var scope = logger.BeginScope("Handler: {Handler}, Email: {Email}", nameof(LoginUserAsync), request.Email);
         try
@@ -29,7 +30,7 @@ public static class AuthEndpoints
                 return Results.BadRequest("Email and password are required.");
             }
 
-            var response = await accessorService.ValidateCredentialsAsync(request.Email, request.Password);
+            var response = await userService.ValidateCredentialsAsync(request.Email, request.Password);
             if (response == null)
             {
                 logger.LogWarning("Invalid credentials for email: {Email}", request.Email);

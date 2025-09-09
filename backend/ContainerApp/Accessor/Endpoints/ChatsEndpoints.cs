@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using Accessor.Models;
 using Accessor.Services;
+using Accessor.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Accessor.Endpoints;
@@ -25,8 +26,8 @@ public static class ChatsEndpoints
 
     private static async Task<IResult> UpsertHistorySnapshotAsync(
         [FromBody] UpsertHistoryRequest body,
-        [FromServices] IAccessorService accessorService,
-        [FromServices] ILogger<AccessorService> logger)
+        [FromServices] IChatHistoryService chatService,
+        [FromServices] ILogger<ChatHistoryService> logger)
     {
         using var _ = logger.BeginScope("Handler: {Handler}, ThreadId: {ThreadId}", nameof(UpsertHistorySnapshotAsync), body.ThreadId);
 
@@ -47,7 +48,7 @@ public static class ChatsEndpoints
                 return Results.BadRequest(new { error = "history (raw SK ChatHistory) is required." });
             }
 
-            var existing = await accessorService.GetHistorySnapshotAsync(body.ThreadId);
+            var existing = await chatService.GetHistorySnapshotAsync(body.ThreadId);
 
             var snapshot = new ChatHistorySnapshot
             {
@@ -60,7 +61,7 @@ public static class ChatsEndpoints
                 UpdatedAt = DateTimeOffset.UtcNow
             };
 
-            await accessorService.UpsertHistorySnapshotAsync(snapshot);
+            await chatService.UpsertHistorySnapshotAsync(snapshot);
 
             var historyForResponse = body.History.Clone();
 
@@ -86,14 +87,14 @@ public static class ChatsEndpoints
     private static async Task<IResult> GetHistorySnapshotAsync(
         Guid threadId,
         Guid userId,
-        [FromServices] IAccessorService accessorService,
-        [FromServices] ILogger<AccessorService> logger)
+        [FromServices] IChatHistoryService chatService,
+        [FromServices] ILogger<ChatHistoryService> logger)
     {
         using var _ = logger.BeginScope("Handler: {Handler}, ThreadId: {ThreadId}", nameof(GetHistorySnapshotAsync), threadId);
 
         try
         {
-            var snapshot = await accessorService.GetHistorySnapshotAsync(threadId);
+            var snapshot = await chatService.GetHistorySnapshotAsync(threadId);
             if (snapshot is null)
             {
                 snapshot = new ChatHistorySnapshot
@@ -106,7 +107,7 @@ public static class ChatsEndpoints
                     CreatedAt = DateTimeOffset.UtcNow,
                     UpdatedAt = DateTimeOffset.UtcNow
                 };
-                await accessorService.CreateChatAsync(snapshot);
+                await chatService.CreateChatAsync(snapshot);
                 logger.LogInformation("Created new chat {ChatId}", threadId);
 
                 using var empty = JsonDocument.Parse("""{"messages":[]}""");
@@ -144,13 +145,13 @@ public static class ChatsEndpoints
 
     private static async Task<IResult> GetChatsForUserAsync(
         Guid userId,
-        [FromServices] IAccessorService accessorService,
-        [FromServices] ILogger<AccessorService> logger)
+        [FromServices] IChatHistoryService chatService,
+        [FromServices] ILogger<ChatHistoryService> logger)
     {
         using var scope = logger.BeginScope("Handler: {Handler}, UserId: {UserId}", nameof(GetChatsForUserAsync), userId);
         try
         {
-            var chats = await accessorService.GetChatsForUserAsync(userId);
+            var chats = await chatService.GetChatsForUserAsync(userId);
             logger.LogInformation("Retrieved chats for user");
             return Results.Ok(chats);
         }
