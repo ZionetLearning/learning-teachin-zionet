@@ -237,6 +237,7 @@ describe("<Users />", () => {
     fireEvent.click(screen.getByRole("button", { name: /save/i }));
     expect(updateMutate).toHaveBeenCalledTimes(1);
     expect(updateMutate.mock.calls[0][0]).toEqual({
+      userId: "u1",
       email: "changed@example.com",
       firstName: "Charlie",
     });
