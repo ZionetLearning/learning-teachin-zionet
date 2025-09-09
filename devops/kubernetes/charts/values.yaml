@@ -20,6 +20,9 @@ global:
     clientId: ""
     tenantId: ""
     storeName: "azure-keyvault-backend"
+  servicebus:
+    namespace: ""  # Will be set to something like "dev-servicebus-zionet-learning.servicebus.windows.net"
+    clientId: ""   # Will be set by CI/CD from Terraform managed identity
 
 # If empty, namespace becomes <namePrefix>
 namespace:
@@ -101,9 +104,6 @@ manager:
     Jwt__Audience: ""
     Jwt__RefreshTokenHashKey: ""
   secrets:
-    serviceBus:
-      name: azure-service-bus-secret
-      key: AzureServiceBusConnectionString
     signalr:
       name: signalr-connection
       key: SignalRConnectionString
@@ -158,9 +158,6 @@ engine:
     AzureSpeech__DefaultVoice: "he-IL-HilaNeural"
     AzureSpeech__TimeoutSeconds: "70"
   secrets:
-    serviceBus:
-      name: azure-service-bus-secret
-      key: AzureServiceBusConnectionString
     app:
       name: engine-appsettings
       keys:
@@ -199,9 +196,6 @@ accessor:
     ASPNETCORE_URLS: "http://+:5003"
     Speech__Region: "eastus"
   secrets:
-    serviceBus:
-      name: azure-service-bus-secret
-      key: AzureServiceBusConnectionString
     postgres:
       name: postgres-connection
       key: PostgreSQLConnectionString
@@ -221,10 +215,8 @@ accessor:
       memory: "512Mi"
 
 dapr:
-  # Shared connection for Service Bus components
-  connection:
-    secretName: azure-service-bus-secret
-    secretKey:  AzureServiceBusConnectionString
+  # Service Bus now uses Managed Identity (no connection string secret needed)
+  # Configuration is handled via global.servicebus.namespace and global.servicebus.clientId
 
   # Prefix queue names with global.namePrefix (e.g., test123-queue)
   prefixEntityNames: false

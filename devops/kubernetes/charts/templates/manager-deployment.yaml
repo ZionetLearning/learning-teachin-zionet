@@ -40,11 +40,6 @@ spec:
           env:
             - name: ASPNETCORE_URLS
               value: "{{ .Values.manager.env.ASPNETCORE_URLS }}"
-            - name: ServiceBus__ConnectionString
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.manager.secrets.serviceBus.name }}
-                  key: {{ .Values.manager.secrets.serviceBus.key }}
             - name: Jwt__Secret
               valueFrom:
                 secretKeyRef:

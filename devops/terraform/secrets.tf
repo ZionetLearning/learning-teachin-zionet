@@ -1,11 +1,6 @@
 ########################
-# Service Bus secret
+# Service Bus now uses Managed Identity (no connection string secret needed)
 ########################
-resource "azurerm_key_vault_secret" "azure_service_bus" {
-  name         = "${var.environment_name}-azure-service-bus-secret"
-  value        = module.servicebus.connection_string
-  key_vault_id = data.azurerm_key_vault.shared.id
-}
 
 ########################
 # PostgreSQL secret

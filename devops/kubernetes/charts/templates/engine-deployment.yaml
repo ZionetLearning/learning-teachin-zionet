@@ -40,11 +40,6 @@ spec:
           env:
             - name: ASPNETCORE_URLS
               value: "{{ .Values.engine.env.ASPNETCORE_URLS }}"
-            - name: ServiceBus__ConnectionString
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.engine.secrets.serviceBus.name }}
-                  key: {{ .Values.engine.secrets.serviceBus.key }}
             - name: AzureOpenAI__Endpoint
               value: "{{ .Values.engine.env.AzureOpenAI__Endpoint }}"
             - name: AzureOpenAI__ApiKey

@@ -44,11 +44,6 @@ output "use_shared_aks" {
 }
 
 # Connection strings for application deployment
-output "servicebus_connection_string" {
-  value     = module.servicebus.connection_string
-  sensitive = true
-}
-
 output "postgres_connection_string" {
   value     = var.use_shared_postgres ? format("Host=%s;Database=%s;Username=%s;Password=%s;SslMode=Require", data.azurerm_postgresql_flexible_server.shared[0].fqdn, "${var.database_name}-${var.environment_name}", var.admin_username, var.admin_password) : module.database[0].postgres_connection_string
   sensitive = true
@@ -67,6 +62,17 @@ output "redis_hostname" {
 output "redis_primary_access_key" {
   value     = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].primary_access_key : module.redis[0].primary_access_key
   sensitive = true
+}
+
+# Service Bus and Managed Identity outputs
+output "servicebus_namespace_fqdn" {
+  description = "Service Bus namespace FQDN for Managed Identity access"
+  value       = "${module.servicebus.namespace_name}.servicebus.windows.net"
+}
+
+output "managed_identity_client_id" {
+  description = "Client ID of the user-assigned managed identity for Service Bus access"
+  value       = azurerm_user_assigned_identity.app.client_id
 }
 
 # Frontend outputs

@@ -262,11 +262,10 @@ module "frontend" {
   depends_on = [azurerm_resource_group.main]
 }
 
-
 # Reference the shared Key Vault instead of creating new ones
 data "azurerm_key_vault" "shared" {
   name                = "teachin-seo-kv"
-  resource_group_name = "dev-zionet-learning-2025"
+  resource_group_name = var.shared_resource_group
 }
 
 module "clustersecretstore" {
@@ -274,4 +273,29 @@ module "clustersecretstore" {
   source     = "./modules/clustersecretstore"
   identity_id = "0997f44d-fadf-4be8-8dc6-202f7302f680" # your AKS managed identity clientId
   tenant_id   = "a814ee32-f813-4a36-9686-1b9268183e27"
+}
+
+# Create user-assigned managed identity for Service Bus access
+resource "azurerm_user_assigned_identity" "app" {
+  name                = "${var.environment_name}-app-identity"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+
+  tags = {
+    Environment = var.environment_name
+    Purpose     = "ServiceBus-ManagedIdentity"
+  }
+}
+
+# Assign Service Bus roles to the managed identity (replacing connection string secret)
+resource "azurerm_role_assignment" "servicebus_sender" {
+  scope                = module.servicebus.namespace_id
+  role_definition_name = "Azure Service Bus Data Sender"
+  principal_id         = azurerm_user_assigned_identity.app.principal_id
+}
+
+resource "azurerm_role_assignment" "servicebus_receiver" {
+  scope                = module.servicebus.namespace_id
+  role_definition_name = "Azure Service Bus Data Receiver"
+  principal_id         = azurerm_user_assigned_identity.app.principal_id
 }

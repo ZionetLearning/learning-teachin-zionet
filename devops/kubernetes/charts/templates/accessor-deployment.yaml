@@ -40,11 +40,6 @@ spec:
           env:
             - name: ASPNETCORE_URLS
               value: "{{ .Values.accessor.env.ASPNETCORE_URLS }}"
-            - name: ServiceBus__ConnectionString
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.accessor.secrets.serviceBus.name }}
-                  key: {{ .Values.accessor.secrets.serviceBus.key }}
             - name: ConnectionStrings__Postgres
               valueFrom:
                 secretKeyRef:

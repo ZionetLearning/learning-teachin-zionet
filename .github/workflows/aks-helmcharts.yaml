@@ -134,6 +134,15 @@ jobs:
               ;;
           esac
 
+          # Key Vault access for other secrets (not Service Bus)
+          echo "KEYVAULT_CLIENT_ID=0997f44d-fadf-4be8-8dc6-202f7302f680" >> $GITHUB_ENV
+          echo "KEYVAULT_TENANT_ID=a814ee32-f813-4a36-9686-1b9268183e27" >> $GITHUB_ENV
+          
+          # Service Bus Managed Identity (from Terraform outputs)
+          # TODO: Get these from Terraform outputs instead of hardcoding
+          echo "SERVICEBUS_NAMESPACE=${TARGET_NAMESPACE}-servicebus-zionet-learning.servicebus.windows.net" >> $GITHUB_ENV
+          echo "SERVICEBUS_CLIENT_ID=0997f44d-fadf-4be8-8dc6-202f7302f680" >> $GITHUB_ENV
+
 
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
@@ -282,6 +291,8 @@ jobs:
             --set global.environment="$IMAGE_TAG" \
             --set global.keyvault.clientId="$KEYVAULT_CLIENT_ID" \
             --set global.keyvault.tenantId="$KEYVAULT_TENANT_ID" \
+            --set global.servicebus.namespace="$SERVICEBUS_NAMESPACE" \
+            --set global.servicebus.clientId="$SERVICEBUS_CLIENT_ID" \
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false
 

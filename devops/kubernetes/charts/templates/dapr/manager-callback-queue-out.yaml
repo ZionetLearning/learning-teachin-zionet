@@ -7,16 +7,16 @@ spec:
   type: bindings.azure.servicebusqueues
   version: v1
   metadata:
-    - name: connectionString
-      secretKeyRef:
-        name: {{ .Values.accessor.secrets.serviceBus.name }}
-        key: {{ .Values.accessor.secrets.serviceBus.key }}
+    - name: namespace
+      value: "{{ .Values.global.servicebus.namespace }}"
     - name: queueName
       value: "manager-callback-queue"
     - name: direction
       value: output
     - name: disableEntityManagement
       value: "true"
+    - name: azureClientId
+      value: "{{ .Values.global.servicebus.clientId }}"
 scopes:
   - {{ .Values.engine.dapr.appId  | default .Values.engine.name  | quote }}
   - {{ .Values.accessor.dapr.appId  | default .Values.accessor.name  | quote }}
