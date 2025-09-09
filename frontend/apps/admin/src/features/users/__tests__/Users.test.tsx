@@ -54,6 +54,8 @@ const { useCreateUser } = vi.mocked(
   useCreateUser: ReturnType<typeof vi.fn>;
 };
 
+const updateMutate = vi.fn();
+
 const rq = (
   over: Partial<UseQueryResult<User[], Error>>,
 ): UseQueryResult<User[], Error> =>
@@ -132,14 +134,12 @@ describe("<Users />", () => {
   it("matches snapshot (with users)", () => {
     useGetAllUsers.mockReturnValue(rq({ data: sampleUsers }));
     useCreateUser.mockReturnValue({ mutate: vi.fn(), isPending: false });
-    useUpdateUserByUserId.mockImplementation(() => ({
-      mutate: vi.fn(),
-      isPending: false,
-    }));
-    useDeleteUserByUserId.mockImplementation(() => ({
-      mutate: vi.fn(),
-      isPending: false,
-    }));
+    useUpdateUserByUserId.mockImplementation(() => {
+      return {
+        mutate: updateMutate,
+        isPending: false,
+      };
+    });
 
     const { asFragment } = renderUsers();
     expect(asFragment()).toMatchSnapshot();
@@ -180,10 +180,12 @@ describe("<Users />", () => {
     });
     useGetAllUsers.mockReturnValue(rq({ data: sampleUsers }));
     useCreateUser.mockReturnValue({ mutate, isPending: false });
-    useUpdateUserByUserId.mockImplementation(() => ({
-      mutate: vi.fn(),
-      isPending: false,
-    }));
+    useUpdateUserByUserId.mockImplementation(() => {
+      return {
+        mutate: updateMutate,
+        isPending: false,
+      };
+    });
     useDeleteUserByUserId.mockImplementation(() => ({
       mutate: vi.fn(),
       isPending: false,
@@ -216,10 +218,12 @@ describe("<Users />", () => {
     const updateMutate = vi.fn();
     useGetAllUsers.mockReturnValue(rq({ data: [sampleUsers[0]] }));
     useCreateUser.mockReturnValue({ mutate: vi.fn(), isPending: false });
-    useUpdateUserByUserId.mockImplementation(() => ({
-      mutate: updateMutate,
-      isPending: false,
-    }));
+    useUpdateUserByUserId.mockImplementation(() => {
+      return {
+        mutate: updateMutate,
+        isPending: false,
+      };
+    });
     useDeleteUserByUserId.mockImplementation(() => ({
       mutate: vi.fn(),
       isPending: false,
@@ -247,10 +251,12 @@ describe("<Users />", () => {
     const deleteMutate = vi.fn();
     useGetAllUsers.mockReturnValue(rq({ data: [sampleUsers[0]] }));
     useCreateUser.mockReturnValue({ mutate: vi.fn(), isPending: false });
-    useUpdateUserByUserId.mockImplementation(() => ({
-      mutate: vi.fn(),
-      isPending: false,
-    }));
+    useUpdateUserByUserId.mockImplementation(() => {
+      return {
+        mutate: updateMutate,
+        isPending: false,
+      };
+    });
     useDeleteUserByUserId.mockImplementation(() => ({
       mutate: deleteMutate,
       isPending: false,
