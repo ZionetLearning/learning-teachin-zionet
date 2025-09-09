@@ -29,7 +29,7 @@
               "LockDuration": "PT1M",
               "MaxDeliveryCount": 3,
               "RequiresDuplicateDetection": false,
-              "RequiresSession": true
+              "RequiresSession": false
             }
           },
           {
