@@ -44,7 +44,7 @@ module "servicebus" {
   namespace_name      = "${var.environment_name}-${var.servicebus_namespace}"
   sku                 = var.servicebus_sku
   queue_names         = var.queue_names
-  session_enabled_queues = ["manager-callback-session-queue"]
+  session_enabled_queues = var.session_enabled_queues
   depends_on          = [azurerm_resource_group.main]
 }
 #--------------------PostgreSQL-----------------------

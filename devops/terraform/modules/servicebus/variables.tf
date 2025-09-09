@@ -32,7 +32,7 @@ variable "queue_names" {
 variable "session_enabled_queues" {
   description = "List of queues that require session support"
   type        = list(string)
-  default     = ["manager-callback-queue", "engine-queue"]
+  default     = []
 }
 
 variable "topic_names" {

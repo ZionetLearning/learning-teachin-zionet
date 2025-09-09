@@ -60,6 +60,12 @@ variable "queue_names" {
   ]
 }
 
+variable "session_enabled_queues" {
+  description = "List of queues that require session support"
+  type        = list(string)
+  default     = ["manager-callback-session-queue"]
+}
+
 #------------- Docker Hub (or ACR) Variables --------------------
 variable "docker_registry" {
   description = "Container registry/org used in deployment YAMLs"
