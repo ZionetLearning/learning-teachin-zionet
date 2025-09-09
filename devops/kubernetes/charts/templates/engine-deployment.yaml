@@ -26,6 +26,7 @@ spec:
         dapr.io/sidecar-cpu-limit:    "{{ .Values.global.dapr.sidecar.limits.cpu }}"
         dapr.io/sidecar-memory-limit: "{{ .Values.global.dapr.sidecar.limits.memory }}"
     spec:
+      serviceAccountName: default
       {{- if .Values.global.imagePullSecret.enabled }}
       imagePullSecrets:
         - name: {{ .Values.global.imagePullSecret.name }}

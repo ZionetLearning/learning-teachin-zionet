@@ -150,14 +150,6 @@ jobs:
             --query clientId -o tsv 2>/dev/null || echo "0997f44d-fadf-4be8-8dc6-202f7302f680")
           echo "SERVICEBUS_CLIENT_ID=$MANAGED_IDENTITY_CLIENT_ID" >> $GITHUB_ENV
           
-          # Debug output
-          echo "🔍 Debug Service Bus Config:"
-          echo "  ENVIRONMENT_NAME: $ENVIRONMENT_NAME"
-          echo "  CURRENT_NAMESPACE: $CURRENT_NAMESPACE"
-          echo "  SERVICEBUS_NAMESPACE: ${CURRENT_NAMESPACE}-servicebus-zionet-learning.servicebus.windows.net"
-          echo "  SERVICEBUS_CLIENT_ID: $MANAGED_IDENTITY_CLIENT_ID"
-
-
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
 
@@ -288,6 +280,26 @@ jobs:
             --set global.servicebus.clientId="$SERVICEBUS_CLIENT_ID" \
             --set dapr.installComponents=false \
           | grep -n '^kind: Namespace' && { echo "Namespace still rendered"; exit 1; } || echo "OK: no Namespace in chart"
+
+      - name: Setup Azure Workload Identity for managed identity
+        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
+        run: |
+          # Get the OIDC issuer URL from AKS cluster
+          AKS_OIDC_ISSUER=$(az aks show \
+            --resource-group $AKS_RG \
+            --name $AKS_NAME \
+            --query "oidcIssuerProfile.issuerUrl" -o tsv)
+          echo "OIDC Issuer: $AKS_OIDC_ISSUER"
+          
+          # Create federated identity credential for cross-RG access
+          az identity federated-credential create \
+            --name "${TARGET_NAMESPACE}-federated-credential" \
+            --identity-name "${TARGET_NAMESPACE}-app-identity" \
+            --resource-group "${TARGET_NAMESPACE}-zionet-learning-2025" \
+            --issuer "$AKS_OIDC_ISSUER" \
+            --subject "system:serviceaccount:${TARGET_NAMESPACE}:default" \
+            --audience "api://AzureADTokenExchange" \
+            --only-show-errors || echo "Federated credential already exists or failed"
 
       - name: Assign Service Bus roles to managed identity
         if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
