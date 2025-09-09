@@ -83,12 +83,14 @@ const sampleUsers: User[] = [
     email: "alpha@example.com",
     firstName: "Alice",
     lastName: "Anderson",
+    role: "student",
   },
   {
     userId: "u2",
     email: "beta@example.com",
     firstName: "Bob",
     lastName: "Baker",
+    role: "student",
   },
 ];
 
@@ -190,16 +192,16 @@ describe("<Users />", () => {
     }));
 
     renderUsers();
-    fireEvent.change(screen.getByPlaceholderText(/user@example.com/i), {
+    fireEvent.change(screen.getByTestId("users-create-email"), {
       target: { value: "new@example.com" },
     });
-    fireEvent.change(screen.getByPlaceholderText(/John/i), {
+    fireEvent.change(screen.getByTestId("users-create-first-name"), {
       target: { value: "NewFirst" },
     });
-    fireEvent.change(screen.getByPlaceholderText(/Doe/i), {
+    fireEvent.change(screen.getByTestId("users-create-last-name"), {
       target: { value: "NewLast" },
     });
-    fireEvent.change(screen.getByPlaceholderText(/\*\*\*\*\*\*/i), {
+    fireEvent.change(screen.getByTestId("users-create-password"), {
       target: { value: "Secret123!" },
     });
     fireEvent.click(screen.getByTestId("users-create-submit"));
@@ -226,15 +228,17 @@ describe("<Users />", () => {
     }));
 
     renderUsers();
-    fireEvent.click(screen.getByRole("button", { name: /update/i }));
-    const emailInput = screen.getByPlaceholderText("email") as HTMLInputElement;
+    fireEvent.click(screen.getByTestId("users-update-btn"));
+    const emailInput = screen.getByTestId(
+      "users-edit-email",
+    ) as HTMLInputElement;
     fireEvent.change(emailInput, { target: { value: "changed@example.com" } });
     // Provide a first name change so payload includes it while omitting lastName
-    const firstNameInput = screen.getByPlaceholderText(
-      "first name",
+    const firstNameInput = screen.getByTestId(
+      "users-edit-first-name",
     ) as HTMLInputElement;
     fireEvent.change(firstNameInput, { target: { value: "Charlie" } });
-    fireEvent.click(screen.getByRole("button", { name: /save/i }));
+    fireEvent.click(screen.getByTestId("users-edit-save"));
     expect(updateMutate).toHaveBeenCalledTimes(1);
     expect(updateMutate.mock.calls[0][0]).toEqual({
       email: "changed@example.com",
@@ -257,7 +261,7 @@ describe("<Users />", () => {
 
     const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
     renderUsers();
-    fireEvent.click(screen.getByRole("button", { name: /delete/i }));
+    fireEvent.click(screen.getByTestId("users-delete-btn"));
     expect(confirmSpy).toHaveBeenCalled();
     expect(deleteMutate).toHaveBeenCalledTimes(1);
     confirmSpy.mockRestore();

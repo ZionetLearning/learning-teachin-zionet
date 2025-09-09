@@ -165,107 +165,270 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
       >
         pages.users.users
       </h2>
-      <ul
-        class="list-0-2-8"
-        data-testid="users-list"
+      <div
+        class="MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation1 MuiTableContainer-root css-y2ff7i-MuiPaper-root-MuiTableContainer-root"
+        data-testid="users-table"
+        style="--Paper-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);"
       >
-        <li
-          class="listItem-0-2-12"
-          data-testid="users-item-u1"
+        <table
+          class="MuiTable-root MuiTable-stickyHeader css-pvu7mv-MuiTable-root"
         >
-          <div
-            class="avatar-0-2-13"
+          <thead
+            class="MuiTableHead-root css-1a7iywq-MuiTableHead-root"
           >
-            A
-          </div>
-          <div
-            class="info-0-2-14"
+            <tr
+              class="MuiTableRow-root MuiTableRow-head css-1xtozoh-MuiTableRow-root"
+            >
+              <th
+                class="MuiTableCell-root MuiTableCell-head MuiTableCell-stickyHeader MuiTableCell-alignCenter MuiTableCell-sizeSmall css-1vbpkd4-MuiTableCell-root"
+                scope="col"
+              >
+                pages.users.email
+              </th>
+              <th
+                class="MuiTableCell-root MuiTableCell-head MuiTableCell-stickyHeader MuiTableCell-alignCenter MuiTableCell-sizeSmall css-1vbpkd4-MuiTableCell-root"
+                scope="col"
+              >
+                pages.users.firstName
+              </th>
+              <th
+                class="MuiTableCell-root MuiTableCell-head MuiTableCell-stickyHeader MuiTableCell-alignCenter MuiTableCell-sizeSmall css-1vbpkd4-MuiTableCell-root"
+                scope="col"
+              >
+                pages.users.lastName
+              </th>
+              <th
+                class="MuiTableCell-root MuiTableCell-head MuiTableCell-stickyHeader MuiTableCell-alignCenter MuiTableCell-sizeSmall css-1vbpkd4-MuiTableCell-root"
+                scope="col"
+              >
+                pages.users.role
+              </th>
+              <th
+                class="MuiTableCell-root MuiTableCell-head MuiTableCell-stickyHeader MuiTableCell-alignCenter MuiTableCell-sizeSmall css-1vbpkd4-MuiTableCell-root"
+                scope="col"
+              >
+                pages.users.actions
+              </th>
+            </tr>
+          </thead>
+          <tbody
+            class="MuiTableBody-root css-gmh7jj-MuiTableBody-root"
           >
-            <span
-              data-testid="users-email"
-              title="alpha@example.com"
+            <tr
+              class="MuiTableRow-root MuiTableRow-hover tableRow-0-2-24 css-1xtozoh-MuiTableRow-root"
+              data-testid="users-row-u1"
             >
-              alpha@example.com
-            </span>
-            <span
-              data-testid="users-first-name"
-              title="Alice"
+              <td
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-25 css-jiabcu-MuiTableCell-root"
+                width="28%"
+              >
+                <span
+                  data-testid="users-email"
+                  title="alpha@example.com"
+                >
+                  alpha@example.com
+                </span>
+              </td>
+              <td
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-25 css-jiabcu-MuiTableCell-root"
+              >
+                <span
+                  data-testid="users-first-name"
+                  title="Alice"
+                >
+                  Alice
+                </span>
+              </td>
+              <td
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-25 css-jiabcu-MuiTableCell-root"
+              >
+                <span
+                  data-testid="users-last-name"
+                  title="Anderson"
+                >
+                  Anderson
+                </span>
+              </td>
+              <td
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-25 dropdownCell-0-2-26 css-jiabcu-MuiTableCell-root"
+                width="16%"
+              >
+                <span
+                  class="roleBadge-0-2-28 roleStudent-0-2-29"
+                  data-testid="users-role-badge"
+                >
+                  roles.student
+                </span>
+              </td>
+              <td
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-alignCenter MuiTableCell-sizeSmall tableCell-0-2-25 css-wsxt5g-MuiTableCell-root"
+                width="20%"
+              >
+                <div
+                  class="actions-0-2-21"
+                >
+                  <span
+                    aria-label="pages.users.update"
+                    class=""
+                    data-mui-internal-clone-element="true"
+                  >
+                    <button
+                      aria-label="pages.users.update"
+                      class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium updateButton-0-2-16 btnBase-0-2-15 css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
+                      data-testid="users-update-btn"
+                      tabindex="0"
+                      type="button"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-1umw9bq-MuiSvgIcon-root"
+                        data-testid="EditIcon"
+                        focusable="false"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.996.996 0 0 0-1.41 0l-1.83 1.83 3.75 3.75z"
+                        />
+                      </svg>
+                    </button>
+                  </span>
+                  <span
+                    aria-label="pages.users.delete"
+                    class=""
+                    data-mui-internal-clone-element="true"
+                  >
+                    <button
+                      aria-label="pages.users.delete"
+                      class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium deleteButton-0-2-17 btnBase-0-2-15 css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
+                      data-testid="users-delete-btn"
+                      tabindex="0"
+                      type="button"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-1umw9bq-MuiSvgIcon-root"
+                        data-testid="DeleteIcon"
+                        focusable="false"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6zM19 4h-3.5l-1-1h-5l-1 1H5v2h14z"
+                        />
+                      </svg>
+                    </button>
+                  </span>
+                </div>
+              </td>
+            </tr>
+            <tr
+              class="MuiTableRow-root MuiTableRow-hover tableRow-0-2-24 css-1xtozoh-MuiTableRow-root"
+              data-testid="users-row-u2"
             >
-              Alice
-            </span>
-            <span
-              data-testid="users-last-name"
-              title="Anderson"
-            >
-              Anderson
-            </span>
-          </div>
-          <div
-            class="actions-0-2-21"
-          >
-            <button
-              class="updateButton-0-2-16 btnBase-0-2-15"
-              data-testid="users-update-btn"
-            >
-              pages.users.update
-            </button>
-            <button
-              class="deleteButton-0-2-17 btnBase-0-2-15"
-              data-testid="users-delete-btn"
-            >
-              pages.users.delete
-            </button>
-          </div>
-        </li>
-        <li
-          class="listItem-0-2-12"
-          data-testid="users-item-u2"
-        >
-          <div
-            class="avatar-0-2-13"
-          >
-            B
-          </div>
-          <div
-            class="info-0-2-14"
-          >
-            <span
-              data-testid="users-email"
-              title="beta@example.com"
-            >
-              beta@example.com
-            </span>
-            <span
-              data-testid="users-first-name"
-              title="Bob"
-            >
-              Bob
-            </span>
-            <span
-              data-testid="users-last-name"
-              title="Baker"
-            >
-              Baker
-            </span>
-          </div>
-          <div
-            class="actions-0-2-21"
-          >
-            <button
-              class="updateButton-0-2-16 btnBase-0-2-15"
-              data-testid="users-update-btn"
-            >
-              pages.users.update
-            </button>
-            <button
-              class="deleteButton-0-2-17 btnBase-0-2-15"
-              data-testid="users-delete-btn"
-            >
-              pages.users.delete
-            </button>
-          </div>
-        </li>
-      </ul>
+              <td
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-25 css-jiabcu-MuiTableCell-root"
+                width="28%"
+              >
+                <span
+                  data-testid="users-email"
+                  title="beta@example.com"
+                >
+                  beta@example.com
+                </span>
+              </td>
+              <td
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-25 css-jiabcu-MuiTableCell-root"
+              >
+                <span
+                  data-testid="users-first-name"
+                  title="Bob"
+                >
+                  Bob
+                </span>
+              </td>
+              <td
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-25 css-jiabcu-MuiTableCell-root"
+              >
+                <span
+                  data-testid="users-last-name"
+                  title="Baker"
+                >
+                  Baker
+                </span>
+              </td>
+              <td
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-25 dropdownCell-0-2-26 css-jiabcu-MuiTableCell-root"
+                width="16%"
+              >
+                <span
+                  class="roleBadge-0-2-28 roleStudent-0-2-29"
+                  data-testid="users-role-badge"
+                >
+                  roles.student
+                </span>
+              </td>
+              <td
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-alignCenter MuiTableCell-sizeSmall tableCell-0-2-25 css-wsxt5g-MuiTableCell-root"
+                width="20%"
+              >
+                <div
+                  class="actions-0-2-21"
+                >
+                  <span
+                    aria-label="pages.users.update"
+                    class=""
+                    data-mui-internal-clone-element="true"
+                  >
+                    <button
+                      aria-label="pages.users.update"
+                      class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium updateButton-0-2-16 btnBase-0-2-15 css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
+                      data-testid="users-update-btn"
+                      tabindex="0"
+                      type="button"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-1umw9bq-MuiSvgIcon-root"
+                        data-testid="EditIcon"
+                        focusable="false"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.996.996 0 0 0-1.41 0l-1.83 1.83 3.75 3.75z"
+                        />
+                      </svg>
+                    </button>
+                  </span>
+                  <span
+                    aria-label="pages.users.delete"
+                    class=""
+                    data-mui-internal-clone-element="true"
+                  >
+                    <button
+                      aria-label="pages.users.delete"
+                      class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium deleteButton-0-2-17 btnBase-0-2-15 css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
+                      data-testid="users-delete-btn"
+                      tabindex="0"
+                      type="button"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-1umw9bq-MuiSvgIcon-root"
+                        data-testid="DeleteIcon"
+                        focusable="false"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6zM19 4h-3.5l-1-1h-5l-1 1H5v2h14z"
+                        />
+                      </svg>
+                    </button>
+                  </span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </DocumentFragment>

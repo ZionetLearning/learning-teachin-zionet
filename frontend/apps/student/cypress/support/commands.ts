@@ -205,11 +205,19 @@ export const deleteCreatedUser = () => {
     });
 
     cy.contains('[data-testid="users-email"]', targetEmail)
-      .parents('li[data-testid^="users-item-"]')
+      .closest('tr[data-testid^="users-row-"]')
       .then(($row) => {
         if ($row.length) {
+          const testId = $row.attr("data-testid");
           cy.on("window:confirm", () => true);
-          cy.wrap($row).find('[data-testid="users-delete-btn"]').click();
+          cy.wrap($row)
+            .find('[data-testid="users-delete-btn"]')
+            .click({ force: true });
+          if (testId) {
+            cy.get(`[data-testid="${testId}"]`, { timeout: 10000 }).should(
+              "not.exist",
+            );
+          }
         }
       });
 
@@ -275,11 +283,19 @@ export const deleteCreatedUser = () => {
             }
           });
           cy.contains('[data-testid="users-email"]', targetEmail)
-            .parents('li[data-testid^="users-item-"]')
+            .closest('tr[data-testid^="users-row-"]')
             .then(($row) => {
               if ($row.length) {
+                const testId = $row.attr("data-testid");
                 cy.on("window:confirm", () => true);
-                cy.wrap($row).find('[data-testid="users-delete-btn"]').click();
+                cy.wrap($row)
+                  .find('[data-testid="users-delete-btn"]')
+                  .click({ force: true });
+                if (testId) {
+                  cy.get(`[data-testid="${testId}"]`, {
+                    timeout: 10000,
+                  }).should("not.exist");
+                }
               }
             });
           cy.contains('[data-testid="users-email"]', targetEmail).should(

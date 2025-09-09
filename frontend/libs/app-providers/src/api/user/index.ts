@@ -3,13 +3,14 @@ import {
   UseMutationResult,
   useQueryClient,
 } from "@tanstack/react-query";
-import { apiClient as axios, User, UserDto } from "@app-providers";
+import { apiClient as axios, toAppRole, User, UserDto } from "@app-providers";
 
 export const mapUser = (dto: UserDto): User => ({
   userId: dto.userId,
   email: dto.email,
   firstName: dto.firstName,
   lastName: dto.lastName,
+  role: toAppRole(dto.role),
 });
 
 export const USERS_URL = `${import.meta.env.VITE_USERS_URL}/user`;

@@ -261,7 +261,8 @@
         "firstName": "שם פרטי",
         "lastName": "שם משפחה",
         "noChanges": "אין שינויים",
-        "role": "תפקיד"
+        "role": "תפקיד",
+        "actions": "פעולות"
       },
       "profile": {
         "title": "הפרופיל שלי",

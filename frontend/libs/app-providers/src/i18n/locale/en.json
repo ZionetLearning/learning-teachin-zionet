@@ -261,7 +261,8 @@
         "firstName": "First Name",
         "lastName": "Last Name",
         "noChanges": "No changes",
-        "role": "Role"
+        "role": "Role",
+        "actions": "Actions"
       },
       "profile": {
         "title": "My profile",

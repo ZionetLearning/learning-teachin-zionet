@@ -1,14 +1,23 @@
+import {
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+} from "@mui/material";
 import { ErrorMessage, Field, FieldProps, Form, Formik } from "formik";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 
 import { useGetAllUsers } from "@admin/api";
-import { UserListItem } from "./components";
-import { CreateUserFormValues, validationSchema } from "./validation";
 import { useCreateUser } from "@app-providers";
 import { AppRole, AppRoleType } from "@app-providers/types";
 import { Dropdown } from "@ui-components";
+import { UserListItem } from "./components";
 import { useStyles } from "./style";
+import { CreateUserFormValues, validationSchema } from "./validation";
 
 export const Users = () => {
   const { t, i18n } = useTranslation();
@@ -161,20 +170,39 @@ export const Users = () => {
         {getUsersError && (
           <p style={{ color: "#c00" }}>{t("pages.users.userNotFound")}</p>
         )}
-        <ul className={classes.list} data-testid="users-list">
-          {users?.map((user) => (
-            <UserListItem
-              key={user.userId}
-              userId={user.userId}
-              email={user.email}
-              firstName={user.firstName}
-              lastName={user.lastName}
-            />
-          ))}
-          {!isUsersLoading && users?.length === 0 && !getUsersError && (
-            <li>{t("pages.users.noUsersFound")}</li>
-          )}
-        </ul>
+        {!isUsersLoading && !getUsersError && (
+          <TableContainer component={Paper} data-testid="users-table">
+            <Table size="small" stickyHeader>
+              <TableHead>
+                <TableRow>
+                  <TableCell align="center">{t("pages.users.email")}</TableCell>
+                  <TableCell align="center">
+                    {t("pages.users.firstName")}
+                  </TableCell>
+                  <TableCell align="center">
+                    {t("pages.users.lastName")}
+                  </TableCell>
+                  <TableCell align="center">{t("pages.users.role")}</TableCell>
+                  <TableCell align="center">
+                    {t("pages.users.actions")}
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {users?.map((u) => (
+                  <UserListItem key={u.userId} user={u} />
+                ))}
+                {(!users || users.length === 0) && (
+                  <TableRow>
+                    <TableCell colSpan={5}>
+                      {t("pages.users.noUsersFound")}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
       </div>
     </div>
   );

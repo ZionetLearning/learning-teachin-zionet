@@ -5,13 +5,14 @@ import {
   useQueryClient,
   UseQueryResult,
 } from "@tanstack/react-query";
-import { apiClient as axios } from "@app-providers";
+import { AppRoleType, apiClient as axios } from "@app-providers";
 import { mapUser, User, UserDto } from "@app-providers";
 
 interface UpdateUserInput {
   email?: string;
   firstName?: string;
   lastName?: string;
+  role?: AppRoleType;
 }
 
 const USERS_URL = `${import.meta.env.VITE_USERS_URL}/user`;
@@ -33,6 +34,7 @@ const updateUserByUserId = async (
   if (typeof userData.firstName === "string")
     body.firstName = userData.firstName;
   if (typeof userData.lastName === "string") body.lastName = userData.lastName;
+  if (typeof userData.role === "string") body.role = userData.role;
 
   const response = await axios.put(`${USERS_URL}/${userId}`, body);
   if (response.status !== 200) {
