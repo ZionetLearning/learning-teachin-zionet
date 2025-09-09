@@ -302,7 +302,7 @@ data "azurerm_key_vault" "shared" {
 module "clustersecretstore" {
   count       = var.environment_name == "dev" || var.environment_name == "prod" ? 1 : 0
   source      = "./modules/clustersecretstore"
-  identity_id = "0997f44d-fadf-4be8-8dc6-202f7302f680" # your AKS managed identity clientId
+  identity_id = "586b1ea2-54f6-4f73-b362-7f7f08e8fb6d" # AKS cluster actual managed identity clientId
   tenant_id   = "a814ee32-f813-4a36-9686-1b9268183e27"
 }
 
