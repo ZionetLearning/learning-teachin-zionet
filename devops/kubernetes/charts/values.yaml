@@ -8,11 +8,11 @@ global:
     configName: dapr-config
     sidecar:
       requests:
-        cpu: "100m"
-        memory: "128Mi"
+        cpu: "50m"
+        memory: "64Mi"
       limits:
         cpu: "200m"
-        memory: "256Mi"
+        memory: "128Mi"
   imagePullSecret:
     enabled: false
     name: ""
@@ -126,7 +126,7 @@ manager:
   resources:
     requests:
       cpu: "100m"
-      memory: "100Mi"
+      memory: "256Mi"
     limits:
       cpu: "500m"
       memory: "512Mi"
@@ -174,7 +174,7 @@ engine:
   resources:
     requests:
       cpu: "100m"
-      memory: "100Mi"
+      memory: "256Mi"
     limits:
       cpu: "500m"
       memory: "512Mi"
@@ -215,7 +215,7 @@ accessor:
   resources:
     requests:
       cpu: "100m"
-      memory: "100Mi"
+      memory: "256Mi"
     limits:
       cpu: "500m"
       memory: "512Mi"
