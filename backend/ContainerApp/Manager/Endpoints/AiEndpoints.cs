@@ -1,10 +1,10 @@
-﻿using Manager.Models.Speech;
-using Microsoft.AspNetCore.Mvc;
-using Manager.Models.Chat;
+﻿using Manager.Models.Chat;
+using Manager.Models.Sentences;
+using Manager.Models.Speech;
+using Manager.Services.Clients.Accessor;
 using Manager.Services.Clients.Engine;
 using Manager.Services.Clients.Engine.Models;
-using Manager.Services.Clients.Accessor;
-using Manager.Models.Sentences;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Endpoints;
 
@@ -307,12 +307,13 @@ public static class AiEndpoints
         }
     }
     private static async Task<IResult> SentenceGenerateAsync(
-       [FromBody] SentenceRequest request,
+       [FromBody] SentenceRequestDto dto,
        [FromServices] IEngineClient engineClient,
        [FromServices] ILogger<SpeechEndpoints> logger,
+       HttpContext httpContext,
        CancellationToken ct)
     {
-        if (request is null)
+        if (dto is null)
         {
             return Results.BadRequest(new { error = "Request is required" });
         }
@@ -321,6 +322,21 @@ public static class AiEndpoints
 
         try
         {
+            var userId = httpContext?.User?.Identity?.Name;
+            if (string.IsNullOrWhiteSpace(userId) || !Guid.TryParse(userId, out _))
+            {
+                logger.LogError("Missing or invalid UserId in HttpContext.");
+                throw new InvalidOperationException("Authenticated user id is missing or not a valid GUID.");
+            }
+
+            var request = new SentenceRequest
+            {
+                Difficulty = dto.Difficulty,
+                Nikud = dto.Nikud,
+                Count = dto.Count,
+                UserId = Guid.Parse(userId)
+            };
+
             await engineClient.GenerateSentenceAsync(request);
             return Results.Ok();
         }
@@ -341,12 +357,13 @@ public static class AiEndpoints
         }
     }
     private static async Task<IResult> SplitSentenceGenerateAsync(
-       [FromBody] SentenceRequest request,
+       [FromBody] SentenceRequestDto dto,
        [FromServices] IEngineClient engineClient,
        [FromServices] ILogger<SpeechEndpoints> logger,
+       HttpContext httpContext,
        CancellationToken ct)
     {
-        if (request is null)
+        if (dto is null)
         {
             return Results.BadRequest(new { error = "Request is required" });
         }
@@ -355,6 +372,21 @@ public static class AiEndpoints
 
         try
         {
+            var userId = httpContext?.User?.Identity?.Name;
+            if (string.IsNullOrWhiteSpace(userId) || !Guid.TryParse(userId, out _))
+            {
+                logger.LogError("Missing or invalid UserId in HttpContext.");
+                throw new InvalidOperationException("Authenticated user id is missing or not a valid GUID.");
+            }
+
+            var request = new SentenceRequest
+            {
+                Difficulty = dto.Difficulty,
+                Nikud = dto.Nikud,
+                Count = dto.Count,
+                UserId = Guid.Parse(userId)
+            };
+
             await engineClient.GenerateSplitSentenceAsync(request);
             return Results.Ok();
         }
