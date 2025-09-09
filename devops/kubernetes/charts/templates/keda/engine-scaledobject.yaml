@@ -8,7 +8,7 @@ spec:
   scaleTargetRef:
     name: {{ .Values.engine.name }}
   minReplicaCount: 1
-  maxReplicaCount: 1
+  maxReplicaCount: 5
   pollingInterval: 1
   triggers:
     - type: kubernetes-workload
