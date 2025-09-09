@@ -311,6 +311,12 @@ vi.mock("@app-providers/api/user", () => ({
   useUpdateUserByUserId: vi.fn(),
 }));
 
+Object.defineProperty(global, 'crypto', {
+  value: {
+    randomUUID: vi.fn(() => '123e4567-e89b-12d3-a456-426614174000')
+  }
+});
+
 import { useGetAllUsers, useDeleteUserByUserId } from "@admin/api";
 import { useCreateUser, useUpdateUserByUserId } from "@app-providers/api/user";
 
