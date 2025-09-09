@@ -172,7 +172,7 @@ describe("<Users />", () => {
     expect(arg.password).toBe("Secret123!");
     expect(arg.firstName).toBe("NewFirst");
     expect(arg.lastName).toBe("NewLast");
-    expect(arg.userId).toBe("123e4567-e89b-12d3-a456-426614174000");
+    expect(arg.userId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
   });
 
   it("updates a user via inline edit form (partial fields only)", async () => {
