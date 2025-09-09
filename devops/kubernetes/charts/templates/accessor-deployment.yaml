@@ -30,35 +30,7 @@ spec:
       imagePullSecrets:
         - name: {{ .Values.global.imagePullSecret.name }}
       {{- end }}
-      {{- if and .Values.global.dapr.enabled .Values.initContainers.waitForDapr.enabled }}
-      initContainers:
-        - name: wait-for-dapr
-          image: busybox:1.36
-          imagePullPolicy: IfNotPresent
-          command: ["sh"]
-          args:
-            - -c
-            - |
-              echo "[Accessor] Waiting for Dapr system to be ready..."
-              
-              # Wait for Dapr API to be accessible
-              echo "[Accessor] Checking Dapr API (dapr-api.dapr-system:80)..."
-              until nc -z dapr-api.dapr-system.svc.cluster.local 80; do
-                echo "Dapr API not ready, waiting 5s..."
-                sleep 5
-              done
-              
-              # Wait for Dapr placement service
-              echo "[Accessor] Checking Dapr placement (dapr-placement-server.dapr-system:50005)..."
-              until nc -z dapr-placement-server.dapr-system.svc.cluster.local 50005; do
-                echo "Dapr placement not ready, waiting 5s..."
-                sleep 5
-              done
-              
-              echo "✅ [Accessor] Dapr system is ready! Starting accessor pod..."
-          resources:
-            {{- toYaml .Values.initContainers.waitForDapr.resources | nindent 12 }}
-      {{- end }}
+
       containers:
         - name: {{ .Values.accessor.name }}
           image: {{ include "app.image" (dict "name" .Values.accessor.image.name "tag" .Values.accessor.image.tag "Values" .Values) }}
@@ -66,6 +38,18 @@ spec:
           ports:
             - containerPort: {{ .Values.accessor.ports.container }}
               protocol: TCP
+          {{- if .Values.global.dapr.enabled }}
+          readinessProbe:
+            httpGet:
+              path: /v1.0/healthz
+              port: 3500  # Dapr sidecar port
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 30  # Allow 150 seconds (30 * 5) for Dapr to be ready
+          {{- end }}
           env:
             - name: ASPNETCORE_URLS
               value: "{{ .Values.accessor.env.ASPNETCORE_URLS }}"

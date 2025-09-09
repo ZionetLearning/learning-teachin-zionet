@@ -21,19 +21,6 @@ global:
     tenantId: ""
     storeName: "azure-keyvault-backend"
 
-# Init containers for application startup dependencies
-initContainers:
-  waitForDapr:
-    enabled: true                       # Enable init containers to wait for Dapr system readiness
-    # Resources for the wait-for-dapr init container
-    resources:
-      requests:
-        cpu: "10m"
-        memory: "16Mi"
-      limits:
-        cpu: "25m"
-        memory: "32Mi"
-
 # If empty, namespace becomes <namePrefix>
 namespace:
   create: true
