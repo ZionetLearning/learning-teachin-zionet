@@ -322,19 +322,14 @@ public static class AiEndpoints
 
         try
         {
-            var userId = httpContext?.User?.Identity?.Name;
-            if (string.IsNullOrWhiteSpace(userId) || !Guid.TryParse(userId, out _))
-            {
-                logger.LogError("Missing or invalid UserId in HttpContext.");
-                throw new InvalidOperationException("Authenticated user id is missing or not a valid GUID.");
-            }
+            var userId = GetUserId(httpContext, logger);
 
             var request = new SentenceRequest
             {
                 Difficulty = dto.Difficulty,
                 Nikud = dto.Nikud,
                 Count = dto.Count,
-                UserId = Guid.Parse(userId)
+                UserId = userId
             };
 
             await engineClient.GenerateSentenceAsync(request);
@@ -372,19 +367,14 @@ public static class AiEndpoints
 
         try
         {
-            var userId = httpContext?.User?.Identity?.Name;
-            if (string.IsNullOrWhiteSpace(userId) || !Guid.TryParse(userId, out _))
-            {
-                logger.LogError("Missing or invalid UserId in HttpContext.");
-                throw new InvalidOperationException("Authenticated user id is missing or not a valid GUID.");
-            }
+            var userId = GetUserId(httpContext, logger);
 
             var request = new SentenceRequest
             {
                 Difficulty = dto.Difficulty,
                 Nikud = dto.Nikud,
                 Count = dto.Count,
-                UserId = Guid.Parse(userId)
+                UserId = userId
             };
 
             await engineClient.GenerateSplitSentenceAsync(request);
@@ -405,5 +395,17 @@ public static class AiEndpoints
             logger.LogError(ex, "Error in split sentence generation manager");
             return Results.Problem("An error occurred during split sentence generation.");
         }
+    }
+    private static Guid GetUserId(HttpContext httpContext, ILogger logger)
+    {
+        var raw = httpContext?.User?.Identity?.Name;
+
+        if (!Guid.TryParse(raw, out var userId))
+        {
+            logger.LogError("Missing or invalid UserId in HttpContext. Raw: {RawUserId}", raw);
+            throw new InvalidOperationException("Authenticated user id is missing or not a valid GUID.");
+        }
+
+        return userId;
     }
 }
