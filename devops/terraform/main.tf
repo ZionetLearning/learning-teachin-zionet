@@ -18,15 +18,15 @@ module "network" {
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
 
-  aks_subnet_name           = "${var.environment_name}-${var.aks_subnet_name}"
-  aks_subnet_prefix         = var.aks_subnet_prefix
-  db_subnet_name            = "${var.environment_name}-${var.db_subnet_name}" 
-  db_subnet_prefix          = var.db_subnet_prefix
-  integration_subnet_name   = "${var.environment_name}-${var.integration_subnet_name}"
-  integration_subnet_prefix = var.integration_subnet_prefix
-  management_subnet_name    = "${var.environment_name}-${var.management_subnet_name}"
-  management_subnet_prefix  = var.management_subnet_prefix
-  depends_on                = [azurerm_resource_group.main]
+  aks_subnet_name   = "${var.environment_name}-${var.aks_subnet_name}"
+  aks_subnet_prefix = var.aks_subnet_prefix
+  # db_subnet_name            = "${var.environment_name}-${var.db_subnet_name}" 
+  # db_subnet_prefix          = var.db_subnet_prefix
+  # integration_subnet_name   = "${var.environment_name}-${var.integration_subnet_name}"
+  # integration_subnet_prefix = var.integration_subnet_prefix
+  # management_subnet_name    = "${var.environment_name}-${var.management_subnet_name}"
+  # management_subnet_prefix  = var.management_subnet_prefix
+  depends_on = [azurerm_resource_group.main]
 }
 
 ########################################
@@ -49,11 +49,11 @@ module "aks" {
   location            = var.location
   cluster_name        = var.aks_cluster_name
   vm_size             = var.vm_size
-  
+
   # Connect AKS to the dedicated AKS subnet
-  aks_subnet_id       = module.network.aks_subnet_id
-  
-  depends_on          = [azurerm_resource_group.main, module.network]
+  aks_subnet_id = module.network.aks_subnet_id
+
+  depends_on = [azurerm_resource_group.main, module.network]
 }
 
 # Local values to determine which cluster to use
@@ -87,7 +87,7 @@ module "database" {
   source = "./modules/postgresql"
 
   server_name         = "prod-pg-zionet-learning"
-  location            = var.location  # Use the same location as other resources
+  location            = var.db_location
   resource_group_name = var.use_shared_postgres ? var.shared_resource_group : azurerm_resource_group.main.name
 
   admin_username = var.admin_username
@@ -103,18 +103,13 @@ module "database" {
   backup_retention_days        = var.backup_retention_days
   geo_redundant_backup_enabled = var.geo_redundant_backup_enabled
 
-  # Connect PostgreSQL to the dedicated database subnet
-  db_subnet_id = module.network.database_subnet_id
 
-  # Add virtual network ID for Private DNS Zone linking
-  virtual_network_id = module.network.virtual_network_id
-
-  database_name    = "${var.database_name}-${var.environment_name}"
+  database_name = "${var.database_name}-${var.environment_name}"
 
   use_shared_postgres = var.use_shared_postgres
   existing_server_id  = var.use_shared_postgres ? data.azurerm_postgresql_flexible_server.shared[0].id : null
 
-  depends_on = [azurerm_resource_group.main, module.network]
+  depends_on = [azurerm_resource_group.main]
 }
 
 module "signalr" {
@@ -145,11 +140,11 @@ module "redis" {
   capacity            = 0
   shard_count         = 0
   use_shared_redis    = var.use_shared_redis
-  
+
   # Note: Redis uses public endpoint with firewall rules (Basic SKU)
   # Private endpoint integration can be added later as separate module
-  
-  depends_on          = [azurerm_resource_group.main]
+
+  depends_on = [azurerm_resource_group.main]
 }
 
 # Use shared Redis outputs if enabled, otherwise use module outputs

@@ -47,47 +47,47 @@ resource "azurerm_subnet" "aks" {
   # }
 }
 
-#--------------------- Database Subnet ---------------------
-# Dedicated subnet for database services (PostgreSQL, etc.)
-# This subnet should be delegated to database services for private connectivity
-resource "azurerm_subnet" "database" {
-  name                 = var.db_subnet_name
-  resource_group_name  = var.resource_group_name
-  virtual_network_name = azurerm_virtual_network.main.name
-  address_prefixes     = [var.db_subnet_prefix]
+# #--------------------- Database Subnet ---------------------
+# # Dedicated subnet for database services (PostgreSQL, etc.)
+# # This subnet should be delegated to database services for private connectivity
+# resource "azurerm_subnet" "database" {
+#   name                 = var.db_subnet_name
+#   resource_group_name  = var.resource_group_name
+#   virtual_network_name = azurerm_virtual_network.main.name
+#   address_prefixes     = [var.db_subnet_prefix]
 
-  # Delegation for PostgreSQL Flexible Server
-  delegation {
-    name = "postgresql-delegation"
-    service_delegation {
-      name    = "Microsoft.DBforPostgreSQL/flexibleServers"
-      actions = [
-        "Microsoft.Network/virtualNetworks/subnets/join/action",
-      ]
-    }
-  }
-}
+#   # Delegation for PostgreSQL Flexible Server
+#   delegation {
+#     name = "postgresql-delegation"
+#     service_delegation {
+#       name    = "Microsoft.DBforPostgreSQL/flexibleServers"
+#       actions = [
+#         "Microsoft.Network/virtualNetworks/subnets/join/action",
+#       ]
+#     }
+#   }
+# }
 
-#--------------------- Integration Subnet ---------------------
-# Subnet for integration services and private endpoints
-# This subnet will host private endpoints for various Azure services
-resource "azurerm_subnet" "integration" {
-  name                 = var.integration_subnet_name
-  resource_group_name  = var.resource_group_name
-  virtual_network_name = azurerm_virtual_network.main.name
-  address_prefixes     = [var.integration_subnet_prefix]
+# #--------------------- Integration Subnet ---------------------
+# # Subnet for integration services and private endpoints
+# # This subnet will host private endpoints for various Azure services
+# resource "azurerm_subnet" "integration" {
+#   name                 = var.integration_subnet_name
+#   resource_group_name  = var.resource_group_name
+#   virtual_network_name = azurerm_virtual_network.main.name
+#   address_prefixes     = [var.integration_subnet_prefix]
 
-  # Disable private endpoint network policies to allow private endpoints
-  # Note: This is the correct attribute name for azurerm provider 4.x
-  private_endpoint_network_policies = "Disabled"
-}
+#   # Disable private endpoint network policies to allow private endpoints
+#   # Note: This is the correct attribute name for azurerm provider 4.x
+#   private_endpoint_network_policies = "Disabled"
+# }
 
-#--------------------- Management Subnet ---------------------
-# Subnet for management and monitoring services
-# This subnet can host jump boxes, monitoring tools, etc.
-resource "azurerm_subnet" "management" {
-  name                 = var.management_subnet_name
-  resource_group_name  = var.resource_group_name
-  virtual_network_name = azurerm_virtual_network.main.name
-  address_prefixes     = [var.management_subnet_prefix]
-}
+# #--------------------- Management Subnet ---------------------
+# # Subnet for management and monitoring services
+# # This subnet can host jump boxes, monitoring tools, etc.
+# resource "azurerm_subnet" "management" {
+#   name                 = var.management_subnet_name
+#   resource_group_name  = var.resource_group_name
+#   virtual_network_name = azurerm_virtual_network.main.name
+#   address_prefixes     = [var.management_subnet_prefix]
+# }

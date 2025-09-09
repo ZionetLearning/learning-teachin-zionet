@@ -1,22 +1,6 @@
-# Private DNS Zone for PostgreSQL when using VNet integration
-resource "azurerm_private_dns_zone" "postgres" {
-  count               = var.use_shared_postgres ? 0 : 1
-  name                = "${var.server_name}.private.postgres.database.azure.com"
-  resource_group_name = var.resource_group_name
-
-
-}
-
-# Link the Private DNS Zone to the VNet
-resource "azurerm_private_dns_zone_virtual_network_link" "postgres" {
-  count                 = var.use_shared_postgres ? 0 : 1
-  name                  = "${var.server_name}-dns-link"
-  resource_group_name   = var.resource_group_name
-  private_dns_zone_name = azurerm_private_dns_zone.postgres[0].name
-  virtual_network_id    = var.virtual_network_id
-
- 
-}
+# PostgreSQL Flexible Server with Public Endpoint
+# This configuration uses public endpoints with firewall rules for security
+# VNet integration can be added later as needed
 
 resource "azurerm_postgresql_flexible_server" "this" {
   count                   = var.use_shared_postgres ? 0 : 1
@@ -36,19 +20,18 @@ resource "azurerm_postgresql_flexible_server" "this" {
   # Explicitly set zone to null for Basic SKUs or remove zone entirely
   zone = null
 
-  # Disable public network access when using VNet integration
-  public_network_access_enabled = false
+
+  # # Enable public network access for simplified connectivity
+  # public_network_access_enabled = true
 
   authentication {
     password_auth_enabled         = var.password_auth_enabled
     active_directory_auth_enabled = var.active_directory_auth_enabled
   }
 
-  # Connect PostgreSQL to the dedicated database subnet
-  delegated_subnet_id = var.db_subnet_id
-  
-  # Set the Private DNS Zone ID for VNet integration
-  private_dns_zone_id = azurerm_private_dns_zone.postgres[0].id
+  # Note: Not using VNet integration for now - keeping it simple
+  # delegated_subnet_id = null
+  # private_dns_zone_id = null
 
   # Add lifecycle rule to prevent zone changes
   lifecycle {
@@ -57,12 +40,18 @@ resource "azurerm_postgresql_flexible_server" "this" {
       high_availability
     ]
   }
-
-  # Ensure the DNS zone and link are created first
-  depends_on = [
-    azurerm_private_dns_zone_virtual_network_link.postgres
-  ]
 }
+
+# # Create firewall rule to allow access from Azure services
+# resource "azurerm_postgresql_flexible_server_firewall_rule" "allow_azure_services" {
+#   count            = var.use_shared_postgres ? 0 : 1
+#   name             = "AllowAzureServices"
+#   server_id        = azurerm_postgresql_flexible_server.this[0].id
+#   start_ip_address = "0.0.0.0"
+#   end_ip_address   = "0.0.0.0"
+# }
+
+
 
 resource "azurerm_postgresql_flexible_server_database" "this" {
   name      = var.database_name

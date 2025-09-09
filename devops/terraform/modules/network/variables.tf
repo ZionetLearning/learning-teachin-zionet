@@ -41,47 +41,47 @@ variable "aks_subnet_prefix" {
   }
 }
 
-variable "db_subnet_name" {
-  description = "Name of the database subnet"
-  type        = string
-}
+# variable "db_subnet_name" {
+#   description = "Name of the database subnet"
+#   type        = string
+# }
 
-variable "db_subnet_prefix" {
-  description = "Address prefix for the database subnet"
-  type        = string
-  validation {
-    condition     = can(cidrhost(var.db_subnet_prefix, 0))
-    error_message = "Database subnet prefix must be a valid CIDR block."
-  }
-}
+# variable "db_subnet_prefix" {
+#   description = "Address prefix for the database subnet"
+#   type        = string
+#   validation {
+#     condition     = can(cidrhost(var.db_subnet_prefix, 0))
+#     error_message = "Database subnet prefix must be a valid CIDR block."
+#   }
+# }
 
-variable "integration_subnet_name" {
-  description = "Name of the integration subnet"
-  type        = string
-}
+# variable "integration_subnet_name" {
+#   description = "Name of the integration subnet"
+#   type        = string
+# }
 
-variable "integration_subnet_prefix" {
-  description = "Address prefix for the integration subnet"
-  type        = string
-  validation {
-    condition     = can(cidrhost(var.integration_subnet_prefix, 0))
-    error_message = "Integration subnet prefix must be a valid CIDR block."
-  }
-}
+# variable "integration_subnet_prefix" {
+#   description = "Address prefix for the integration subnet"
+#   type        = string
+#   validation {
+#     condition     = can(cidrhost(var.integration_subnet_prefix, 0))
+#     error_message = "Integration subnet prefix must be a valid CIDR block."
+#   }
+# }
 
-variable "management_subnet_name" {
-  description = "Name of the management subnet"
-  type        = string
-}
+# variable "management_subnet_name" {
+#   description = "Name of the management subnet"
+#   type        = string
+# }
 
-variable "management_subnet_prefix" {
-  description = "Address prefix for the management subnet"
-  type        = string
-  validation {
-    condition     = can(cidrhost(var.management_subnet_prefix, 0))
-    error_message = "Management subnet prefix must be a valid CIDR block."
-  }
-}
+# variable "management_subnet_prefix" {
+#   description = "Address prefix for the management subnet"
+#   type        = string
+#   validation {
+#     condition     = can(cidrhost(var.management_subnet_prefix, 0))
+#     error_message = "Management subnet prefix must be a valid CIDR block."
+#   }
+# }
 
 #--------------------- Optional Variables ---------------------
 variable "tags" {
