@@ -152,6 +152,23 @@ public class PromptService : IPromptService
         }
     }
 
+    public async Task<PromptResponse?> GetPromptByVersionAsync(string promptKey, string version, CancellationToken cancellationToken = default)
+    {
+        ValidatePromptKey(promptKey);
+
+        if (string.IsNullOrWhiteSpace(version))
+        {
+            throw new ArgumentException("Version is required.", nameof(version));
+        }
+
+        var entity = await _dbContext.Prompts
+            .AsNoTracking()
+            .Where(p => p.PromptKey == promptKey && p.Version == version)
+            .SingleOrDefaultAsync(cancellationToken);
+
+        return entity is null ? null : _mapper.Map<PromptResponse>(entity);
+    }
+
     public async Task InitializeDefaultPromptsAsync()
     {
         var defaults = _promptsOptions.Value.Defaults ?? new Dictionary<string, string>();

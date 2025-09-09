@@ -13,7 +13,8 @@ public static class PromptEndpoints
         promptGroup.MapPost("/", CreatePromptAsync).WithName("CreatePrompt");
         promptGroup.MapGet("/{promptKey}", GetPromptAsync).WithName("GetPrompt");
         promptGroup.MapGet("/{promptKey}/versions", GetPromptVersionsAsync).WithName("GetPromptVersions");
-        promptGroup.MapPost("/batch", GetPromptsBatchAsync).WithName("GetPromptsBatch"); // <-- Added
+        promptGroup.MapGet("/{promptKey}/versions/{version}", GetPromptVersionAsync).WithName("GetPromptVersion");
+        promptGroup.MapPost("/batch", GetPromptsBatchAsync).WithName("GetPromptsBatch");
 
         return app;
     }
@@ -148,6 +149,40 @@ public static class PromptEndpoints
         {
             logger.LogError(ex, "Unexpected error in batch retrieval");
             return Results.Problem("Failed to retrieve prompts batch.");
+        }
+    }
+
+    public static async Task<IResult> GetPromptVersionAsync(
+        [FromRoute] string promptKey,
+        [FromRoute] string version,
+        [FromServices] IPromptService promptService,
+        [FromServices] ILogger<PromptService> logger,
+        CancellationToken cancellationToken)
+    {
+        using var scope = logger.BeginScope("Method: {Method}, PromptKey: {PromptKey}, Version: {Version}", nameof(GetPromptVersionAsync), promptKey, version);
+
+        try
+        {
+            if (string.IsNullOrWhiteSpace(promptKey) || string.IsNullOrWhiteSpace(version))
+            {
+                logger.LogWarning("Invalid request for specific prompt version.");
+                return Results.BadRequest(new { error = "PromptKey and Version are required." });
+            }
+
+            var prompt = await promptService.GetPromptByVersionAsync(promptKey, version, cancellationToken);
+            if (prompt is null)
+            {
+                logger.LogInformation("Prompt {PromptKey} version {Version} not found.", promptKey, version);
+                return Results.NotFound(new { error = $"Prompt '{promptKey}' with version '{version}' not found." });
+            }
+
+            logger.LogInformation("Retrieved prompt {PromptKey} version {Version}", promptKey, version);
+            return Results.Ok(prompt);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error retrieving prompt {PromptKey} version {Version}", promptKey, version);
+            return Results.Problem("Failed to retrieve prompt version.");
         }
     }
 }

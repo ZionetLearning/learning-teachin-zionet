@@ -41,6 +41,7 @@ public partial class CreatePrompts : Migration
             name: "IX_Prompts_PromptKey_Version_DESC",
             table: "Prompts",
             columns: columns,
+            unique: true,
             descending: descending
         );
 

@@ -8,5 +8,6 @@ public interface IPromptService
     Task<PromptResponse?> GetLatestPromptAsync(string promptKey, CancellationToken cancellationToken = default);
     Task<List<PromptResponse>> GetAllVersionsAsync(string promptKey, CancellationToken cancellationToken = default);
     Task<List<PromptResponse>> GetLatestPromptsAsync(IEnumerable<string> promptKeys, CancellationToken cancellationToken = default); // <-- Added
+    Task<PromptResponse?> GetPromptByVersionAsync(string promptKey, string version, CancellationToken cancellationToken = default);
     Task InitializeDefaultPromptsAsync();
 }
