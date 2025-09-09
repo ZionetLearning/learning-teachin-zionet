@@ -139,9 +139,15 @@ jobs:
           echo "KEYVAULT_TENANT_ID=a814ee32-f813-4a36-9686-1b9268183e27" >> $GITHUB_ENV
           
           # Service Bus Managed Identity (from Terraform outputs)
-          # TODO: Get these from Terraform outputs instead of hardcoding
+          # Get the actual managed identity client ID from Terraform (for now using hardcoded)
           echo "SERVICEBUS_NAMESPACE=${TARGET_NAMESPACE}-servicebus-zionet-learning.servicebus.windows.net" >> $GITHUB_ENV
-          echo "SERVICEBUS_CLIENT_ID=0997f44d-fadf-4be8-8dc6-202f7302f680" >> $GITHUB_ENV
+          
+          # Get managed identity client ID from the resource group
+          MANAGED_IDENTITY_CLIENT_ID=$(az identity show \
+            --resource-group "${TARGET_NAMESPACE}-zionet-learning-2025" \
+            --name "${TARGET_NAMESPACE}-app-identity" \
+            --query clientId -o tsv 2>/dev/null || echo "0997f44d-fadf-4be8-8dc6-202f7302f680")
+          echo "SERVICEBUS_CLIENT_ID=$MANAGED_IDENTITY_CLIENT_ID" >> $GITHUB_ENV
 
 
       - name: Get AKS credentials
