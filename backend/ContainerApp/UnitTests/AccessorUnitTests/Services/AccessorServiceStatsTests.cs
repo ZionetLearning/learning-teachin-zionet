@@ -48,7 +48,7 @@ public class AccessorServiceStatsTests
         var dapr = new Mock<DaprClient>(MockBehavior.Loose);
         var log = Mock.Of<ILogger<AccessorService>>();
         var cfg = NewConfig();
-        return new AccessorService(db, log, dapr.Object, cfg);
+        return new AccessorService(db, log);
     }
 
     [Fact]

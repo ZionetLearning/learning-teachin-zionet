@@ -137,7 +137,7 @@ public class TaskIntegrationTests(
         response.ShouldBeNotFound();
     }
 
-    [Fact(DisplayName = "PUT /tasks-manager/task/{id}/{name} - Valid update should return 200 OK")]
+    [Fact(DisplayName = "PUT /tasks-manager/task/{id}/{name} - Valid update should return 200 OK and new ETag")]
     public async Task Put_TaskName_With_Valid_Id_Should_Update_Name()
     {
         OutputHelper.WriteLine("Running: Put_TaskName_With_Valid_Id_Should_Update_Name");
@@ -145,20 +145,43 @@ public class TaskIntegrationTests(
         var task = await CreateTaskAsync();
         var newName = "Updated-Name";
 
-        await TaskUpdateHelper.WaitForTaskByIdAsync(Client, task.Id);
-
+        var (before, etagBefore) = await GetTaskWithEtagAsync(task.Id);
+        etagBefore.Should().NotBeNullOrEmpty("GET should forward an ETag");
         OutputHelper.WriteLine($"Updating task {task.Id} name to '{newName}'");
 
-        var response = await UpdateTaskNameAsync(task.Id, newName);
-        response.ShouldBeOk();
+        var updateResponse = await UpdateTaskNameAsync(task.Id, newName, etagBefore);
+        updateResponse.ShouldBeOk();
 
-        await TaskUpdateHelper.WaitForTaskNameUpdateAsync(Client, task.Id, newName);
+        var etagAfter = updateResponse.Headers.ETag?.Tag ?? updateResponse.Headers.ETag?.ToString();
+        etagAfter.Should().NotBeNullOrEmpty("PUT should return a fresh ETag on success");
+        etagAfter.Should().NotBe(etagBefore, "ETag must change after update");
 
-        var getResponse = await Client.GetAsync(ApiRoutes.TaskById(task.Id));
-        var updated = await ReadAsJsonAsync<TaskModel>(getResponse);
+        var (after, etagFromGet) = await GetTaskWithEtagAsync(task.Id);
+        after.Name.Should().Be(newName);
+        etagFromGet.Should().Be(etagAfter, "GET should reflect the latest ETag after update");
+    }
 
-        updated!.Name.Should().Be(newName);
-        OutputHelper.WriteLine($"Successfully updated task name to: {updated.Name}");
+    [Fact(DisplayName = "PUT /tasks-manager/task/{id}/{name} - Missing If-Match returns 428")]
+    public async Task Put_TaskName_Without_IfMatch_Returns_428()
+    {
+        var task = await CreateTaskAsync();
+        var req = new HttpRequestMessage(HttpMethod.Put, ApiRoutes.UpdateTaskName(task.Id, "NoHeader"));
+        var resp = await Client.SendAsync(req);
+
+        resp.StatusCode.Should().Be(System.Net.HttpStatusCode.PreconditionRequired); // 428
+    }
+
+    [Fact(DisplayName = "PUT /tasks-manager/task/{id}/{name} - Stale If-Match returns 412")]
+    public async Task Put_TaskName_With_Stale_IfMatch_Returns_412()
+    {
+        var task = await CreateTaskAsync();
+
+        var (before, etag1) = await GetTaskWithEtagAsync(task.Id);
+        var respOk = await UpdateTaskNameAsync(task.Id, "Intermediate-Update", etag1);
+        respOk.ShouldBeOk();
+
+        var resp412 = await UpdateTaskNameAsync(task.Id, "Should-412", etag1);
+        resp412.StatusCode.Should().Be(System.Net.HttpStatusCode.PreconditionFailed);
     }
 
     [Fact(DisplayName = "PUT /tasks-manager/task/{id}/{name} - Invalid ID should return 404 Not Found")]
@@ -166,7 +189,7 @@ public class TaskIntegrationTests(
     {
         OutputHelper.WriteLine("Running: Put_TaskName_With_Invalid_Id_Should_Return_NotFound");
 
-        var response = await UpdateTaskNameAsync(-1, "DoesNotMatter");
+        var response = await UpdateTaskNameAsync(-1, "DoesNotMatter", "\"dummy-etag\"");
         response.ShouldBeNotFound();
     }
 

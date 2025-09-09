@@ -22,36 +22,52 @@ public class ManagerEndpointsTests
         Name = name,
         Payload = "{}"
     };
-    private Task<IResult> Invoke(string method, int id, string? name = null) =>
-        method switch
+    private Task<IResult> Invoke(string method, int id, string? name = null, string? ifMatch = null)
+    {
+        var http = new DefaultHttpContext();
+
+        return method switch
         {
             "UpdateTaskNameAsync" => PrivateInvoker.InvokePrivateEndpointAsync(
                                         typeof(TasksEndpoints),
                                         "UpdateTaskNameAsync",
-                                        id, name!, _accessor.Object, _log.Object),
+                                        id,
+                                        name!,
+                                        ifMatch,
+                                        _accessor.Object,
+                                        _log.Object,
+                                        http.Response),
             "DeleteTaskAsync" => PrivateInvoker.InvokePrivateEndpointAsync(
                                         typeof(TasksEndpoints),
                                         "DeleteTaskAsync",
-                                        id, _accessor.Object, _log.Object),
+                                        id,
+                                        _accessor.Object,
+                                        _log.Object),
             _ => throw new ArgumentOutOfRangeException(nameof(method), method, "Unknown endpoint")
         };
+    }
 
-   [Fact(DisplayName = "GET /task/{id} => 200 when found")]
+    [Fact(DisplayName = "GET /task/{id} => 200 when found")]
     public async Task GetTask_Returns_Ok_When_Found()
     {
         var task = MakeTask(7, "X");
-        _accessor.Setup(s => s.GetTaskAsync(7)).ReturnsAsync(task);
+        _accessor.Setup(s => s.GetTaskWithEtagAsync(7, It.IsAny<CancellationToken>()))
+                 .ReturnsAsync((task, "abc"));
 
+        var http = new DefaultHttpContext();
         var result = await PrivateInvoker.InvokePrivateEndpointAsync(
             typeof(TasksEndpoints),
             "GetTaskAsync",
             7,
             _accessor.Object,
-            _log.Object);
+            _log.Object,
+            http.Response
+        );
 
         var ok = Assert.IsType<Ok<TaskModel>>(result);
         Assert.Equal(7, ok.Value!.Id);
         Assert.Equal("X", ok.Value!.Name);
+        Assert.Equal("\"abc\"", http.Response.Headers.ETag.ToString());
 
         _accessor.VerifyAll();
     }
@@ -59,14 +75,18 @@ public class ManagerEndpointsTests
     [Fact(DisplayName = "GET /task/{id} => 404 when missing")]
     public async Task GetTask_Returns_NotFound_When_Missing()
     {
-        _accessor.Setup(s => s.GetTaskAsync(999)).ReturnsAsync((TaskModel?)null);
+        _accessor.Setup(s => s.GetTaskWithEtagAsync(999, It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(((TaskModel? Task, string? ETag))(null, null));
 
+        var http = new DefaultHttpContext();
         var result = await PrivateInvoker.InvokePrivateEndpointAsync(
             typeof(TasksEndpoints),
             "GetTaskAsync",
             999,
             _accessor.Object,
-            _log.Object);
+            _log.Object,
+            http.Response
+        );
 
         var status = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
         Assert.Equal(StatusCodes.Status404NotFound, status.StatusCode);
@@ -131,15 +151,37 @@ public class ManagerEndpointsTests
     public async Task Endpoint_Returns_Correct_Status(
         string method, bool successFirst, Type okType, int notFoundStatus)
     {
-        // Arrange: setup sequence based on method
-        var seq = method switch
+        switch (method)
         {
-            "UpdateTaskNameAsync" => _accessor.SetupSequence(s => s.UpdateTaskName(It.IsAny<int>(), It.IsAny<string>())),
-            "DeleteTaskAsync"     => _accessor.SetupSequence(s => s.DeleteTask(It.IsAny<int>())),
-            _ => throw new ArgumentOutOfRangeException(nameof(method), method, "Unknown endpoint")
-        };
+            case "UpdateTaskNameAsync":
+                _accessor
+                    .SetupSequence(s => s.UpdateTaskNameAsync(
+                        It.IsAny<int>(),
+                        It.IsAny<string>(),
+                        It.IsAny<string>(),
+                        It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new Manager.Models.UpdateTaskNameResult(
+                        Updated: successFirst,
+                        NotFound: !successFirst,
+                        PreconditionFailed: false,
+                        NewEtag: successFirst ? "etag-2" : null))
+                    .ReturnsAsync(new Manager.Models.UpdateTaskNameResult(
+                        Updated: false,
+                        NotFound: true,
+                        PreconditionFailed: false,
+                        NewEtag: null));
+                break;
 
-        seq.ReturnsAsync(successFirst).ReturnsAsync(false);
+            case "DeleteTaskAsync":
+                _accessor
+                    .SetupSequence(s => s.DeleteTask(It.IsAny<int>()))
+                    .ReturnsAsync(successFirst)
+                    .ReturnsAsync(false);
+                break;
+
+            default:
+                throw new ArgumentOutOfRangeException(nameof(method), method, "Unknown endpoint");
+        }
 
         // Act + Assert: common helper for both methods
         await AssertEndpointBehavior(method, okType, notFoundStatus);
@@ -152,17 +194,17 @@ public class ManagerEndpointsTests
         // Successful case
         var okRes = method switch
         {
-            "UpdateTaskNameAsync" => await Invoke(method, 10, "new-name"),
-            "DeleteTaskAsync"     => await Invoke(method, 10),
+            "UpdateTaskNameAsync" => await Invoke(method, 10, "new-name", "\"etag-1\""),
+            "DeleteTaskAsync" => await Invoke(method, 10),
             _ => throw new ArgumentOutOfRangeException(nameof(method), method)
         };
         Assert.IsType(okType, okRes);
 
         // Not found case
-        var nfRes = method switch
+        IResult nfRes = method switch
         {
-            "UpdateTaskNameAsync" => await Invoke(method, 11, "missing"),
-            "DeleteTaskAsync"     => await Invoke(method, 11),
+            "UpdateTaskNameAsync" => await Invoke(method, 11, "missing", "\"etag-1\""),
+            "DeleteTaskAsync" => await Invoke(method, 11),
             _ => throw new ArgumentOutOfRangeException(nameof(method), method)
         };
         var status = Assert.IsAssignableFrom<IStatusCodeHttpResult>(nfRes);
