@@ -12,6 +12,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dapr", "dapr", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 	ProjectSection(SolutionItems) = preProject
 		dapr\config.yaml = dapr\config.yaml
+		dapr\components\manager-callback-session-queue-out.yaml = dapr\components\manager-callback-session-queue-out.yaml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "components", "components", "{F0FF105B-41F5-4E9B-B432-5CDE99DEE70E}"
@@ -22,6 +23,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "components", "components", 
 		dapr\components\engine-queue-out.yaml = dapr\components\engine-queue-out.yaml
 		dapr\components\manager-callback-queue-in.yaml = dapr\components\manager-callback-queue-in.yaml
 		dapr\components\manager-callback-queue-out.yaml = dapr\components\manager-callback-queue-out.yaml
+		dapr\components\manager-callback-session-queue-out.yaml = dapr\components\manager-callback-session-queue-out.yaml
 		dapr\components\statestore.yaml = dapr\components\statestore.yaml
 	EndProjectSection
 EndProject
@@ -30,12 +32,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ComponentTests", "ComponentTests", "{DF2F1EB2-307F-466A-A7AF-72E7C386066E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UnitTests", "UnitTests", "{CCE68049-BAEB-48AA-A291-5456FD33A27A}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SignalREmulator", "SignalREmulator", "{8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}"
-	ProjectSection(SolutionItems) = preProject
-		SignalREmulator\Dockerfile = SignalREmulator\Dockerfile
-		SignalREmulator\settings.json = SignalREmulator\settings.json
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiGateway", "ApiGateway\ApiGateway.csproj", "{A4C0CE41-1930-4320-9007-57B3797C7704}"
 EndProject
@@ -51,6 +47,11 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AccessorUnitTests", "UnitTests\AccessorUnitTests\AccessorUnitTests.csproj", "{09F5B390-FFDE-4000-AB39-9B20CAC4D54D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EngineUnitTests", "UnitTests\EngineUnitTests\EngineUnitTests.csproj", "{ED15AA72-120F-4EF4-91F3-FB57C675EF48}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "servicebus-emulator", "servicebus-emulator", "{3AEDEE9F-440B-4FC1-B57C-EB8181E18E60}"
+	ProjectSection(SolutionItems) = preProject
+		servicebus-emulator\config.json = servicebus-emulator\config.json
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
