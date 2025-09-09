@@ -27,7 +27,7 @@ public class ChatService : IChatService
             .Where(c => c.UserId == userId)
             .Select(c => new ChatSummaryDto(
                 c.ThreadId,
-                c.Name ?? string.Empty, // in case Name is nullable
+                c.Name ?? string.Empty,
                 c.ChatType ?? string.Empty,
                 c.CreatedAt,
                 c.UpdatedAt))

@@ -29,7 +29,7 @@ public class AccessorStatsEndpointsTests
         builder.Services.AddLogging(x => x.AddDebug());
 
         var app = builder.Build();
-        app.MapStatsEndpoints(); // extension method now depends on IStatsService
+        app.MapStatsEndpoints();
 
         app.RunAsync(); // start test server
         return app.GetTestClient();

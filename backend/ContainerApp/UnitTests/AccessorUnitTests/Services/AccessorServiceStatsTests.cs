@@ -75,7 +75,7 @@ public class AccessorServiceStatsTests
             ThreadId = Guid.NewGuid(),
             UserId = user2,
             ChatType = "default",
-            History = "{}", // <-- required
+            History = "{}",
             CreatedAt = now.AddHours(-2),
             UpdatedAt = now.AddMinutes(-10) // active within 15m
         };

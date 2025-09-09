@@ -15,8 +15,6 @@ public class AccessorEndpointsTests
 {
     private static Mock<ITaskService> TaskSvc() => new(MockBehavior.Strict);
     private static Mock<IChatService> ChatSvc() => new(MockBehavior.Strict);
-
-    // Logger generic type points to service, not endpoint
     private static Mock<ILogger<TaskService>> TaskLog() => new();
     private static Mock<ILogger<ChatService>> ChatLog() => new();
 

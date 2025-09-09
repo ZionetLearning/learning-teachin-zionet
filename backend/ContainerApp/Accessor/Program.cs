@@ -31,7 +31,6 @@ builder.Services.AddQueue<Message, AccessorQueueHandler>(
         settings.RetryDelaySeconds = 5;
     });
 
-// Services
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IUserService, UserService>();
