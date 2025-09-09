@@ -1,10 +1,6 @@
 ﻿using FluentAssertions;
-using IntegrationTests.Constants;
 using IntegrationTests.Fixtures;
-using IntegrationTests.Helpers;
 using Manager.Models.Chat;
-using System.Net.Http.Json;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 using Xunit.Abstractions;
 
@@ -19,17 +15,10 @@ public class ChatIntegrationTests(
 {
     private readonly SharedTestFixture _shared = sharedFixture;
 
-    public override async Task InitializeAsync()
-    {
-
-    }
-
     [Fact(DisplayName = "Chat AI integration test")]
     public async Task Post_new_chat()
     {
         var user = _shared.UserFixture.TestUser;
-
-        SignalRFixture.UseUserId(user.UserId.ToString());
 
         await _shared.GetAuthenticatedTokenAsync();
 

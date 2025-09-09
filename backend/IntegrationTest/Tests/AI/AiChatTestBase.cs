@@ -1,9 +1,7 @@
 ﻿using FluentAssertions;
 using IntegrationTests.Constants;
 using IntegrationTests.Fixtures;
-using IntegrationTests.Helpers;
 using IntegrationTests.Infrastructure;
-using IntegrationTests.Models;
 using IntegrationTests.Models.Notification;
 using Manager.Models.Chat;
 using System.Net.Http.Json;
@@ -19,41 +17,6 @@ public abstract class AiChatTestBase(
     SignalRTestFixture signalRFixture
 ) : IntegrationTestBase(fixture, outputHelper, signalRFixture)
 {
-    protected async Task<TaskModel> CreateTaskAsync(TaskModel? task = null)
-    {
-        task ??= TestDataHelper.CreateRandomTask();
-
-        OutputHelper.WriteLine($"Creating task with ID: {task.Id}, Name: {task.Name}");
-
-        var response = await PostAsJsonAsync(ApiRoutes.Task, task);
-        response.EnsureSuccessStatusCode();
-        OutputHelper.WriteLine($"Response status code: {response.StatusCode}");
-
-        var receivedNotification = await WaitForNotificationAsync(
-           n => n.Type == NotificationType.Success &&
-           n.Message.Contains(task.Name),
-           TimeSpan.FromSeconds(10));
-        receivedNotification.Should().NotBeNull();
-
-        OutputHelper.WriteLine($"Received notification: {receivedNotification.Notification.Message}");
-
-        await TaskUpdateHelper.WaitForTaskNameUpdateAsync(Client, task.Id, task.Name);
-
-        OutputHelper.WriteLine(
-            $"Task created successfully with status code: {response.StatusCode}"
-        );
-        return task;
-    }
-
-    protected async Task<HttpResponseMessage> UpdateTaskNameAsync(int id, string newName)
-    {
-        OutputHelper.WriteLine($"Updating task ID {id} with new name: {newName}");
-
-        var response = await Client.PutAsync(ApiRoutes.UpdateTaskName(id, newName), null);
-
-        OutputHelper.WriteLine($"Update response status: {response.StatusCode}");
-        return response;
-    }
 
     protected async Task<(string RequestId, ReceivedEvent Event, string AssistantMessage, string ChatName)>
         PostChatAndWaitAsync(ChatRequest request, TimeSpan? timeout = null)
@@ -78,22 +41,6 @@ public abstract class AiChatTestBase(
         var chatName = nameEl.GetString() ?? string.Empty;
 
         return (requestId!, ev!, msg, chatName);
-    }
-
-    protected static string? GetAssistantMessage(ReceivedEvent ev) =>
-        ev.Event.Payload.TryGetProperty("assistantMessage", out var msgEl)
-            ? msgEl.GetString()
-            : null;
-
-    protected static bool TryGetPayloadProp(ReceivedEvent ev, string name, out JsonElement value)
-    {
-        var p = ev.Event.Payload;
-        if (p.ValueKind == JsonValueKind.Object && p.TryGetProperty(name, out value))
-            return true;
-        var alt = char.IsLower(name[0])
-            ? char.ToUpperInvariant(name[0]) + name.Substring(1)
-            : char.ToLowerInvariant(name[0]) + name.Substring(1);
-        return p.TryGetProperty(alt, out value);
     }
 
     public async Task<ReceivedEvent?> WaitForChatAiAnswerAsync(string requestId, TimeSpan? timeout = null) =>

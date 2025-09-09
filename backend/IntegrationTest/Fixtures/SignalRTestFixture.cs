@@ -17,8 +17,6 @@ public class SignalRTestFixture : IAsyncDisposable
 
     private readonly string _baseUrl;
     private string? _accessToken;
-    private string? _userId;
-    public void UseUserId(string userId) => _userId = userId;
 
     public SignalRTestFixture()
     {
