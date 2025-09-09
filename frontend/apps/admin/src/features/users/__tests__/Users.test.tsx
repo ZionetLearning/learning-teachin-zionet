@@ -110,27 +110,21 @@ beforeEach(() => {
   qc = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  if (globalThis.crypto && "randomUUID" in globalThis.crypto) {
-    try {
-      vi.spyOn(globalThis.crypto, "randomUUID").mockReturnValue(
-        "123e4567-e89b-12d3-a456-426614174000",
-      );
-    } catch {
-      const existing = globalThis.crypto as Crypto;
-      Object.defineProperty(globalThis, "crypto", {
-        value: {
-          ...existing,
-          randomUUID: () => "123e4567-e89b-12d3-a456-426614174000",
-        },
-        configurable: true,
-      });
-    }
-  } else {
-    Object.defineProperty(globalThis, "crypto", {
-      value: { randomUUID: () => "123e4567-e89b-12d3-a456-426614174000" },
-      configurable: true,
-    });
-  }
+
+  useDeleteUserByUserId.mockImplementation(() => ({
+    mutate: vi.fn(),
+    isPending: false,
+  }));
+
+  useUpdateUserByUserId.mockImplementation(() => ({
+    mutate: vi.fn(),
+    isPending: false,
+  }));
+
+  useCreateUser.mockReturnValue({
+    mutate: vi.fn(),
+    isPending: false,
+  });
 });
 
 describe("<Users />", () => {
@@ -188,11 +182,11 @@ describe("<Users />", () => {
         isPending: false,
       };
     });
-    useDeleteUserByUserId.mockImplementation(() => ({
+    /*useDeleteUserByUserId.mockImplementation(() => ({
       mutate: vi.fn(),
       isPending: false,
     }));
-
+*/
     renderUsers();
     fireEvent.change(screen.getByPlaceholderText(/user@example.com/i), {
       target: { value: "new@example.com" },
@@ -226,10 +220,10 @@ describe("<Users />", () => {
         isPending: false,
       };
     });
-    useDeleteUserByUserId.mockImplementation(() => ({
+    /*useDeleteUserByUserId.mockImplementation(() => ({
       mutate: vi.fn(),
       isPending: false,
-    }));
+    }));*/
 
     renderUsers();
 
@@ -267,10 +261,10 @@ describe("<Users />", () => {
         isPending: false,
       };
     });
-    useDeleteUserByUserId.mockImplementation(() => ({
+    /*useDeleteUserByUserId.mockImplementation(() => ({
       mutate: deleteMutate,
       isPending: false,
-    }));
+    }));*/
 
     const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
     renderUsers();
