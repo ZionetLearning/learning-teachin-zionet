@@ -54,10 +54,10 @@ output "postgres_connection_string" {
   sensitive = true
 }
 
-output "signalr_connection_string" {
-  value     = module.signalr.primary_connection_string
-  sensitive = true
-}
+# output "signalr_connection_string" {
+#   value     = module.signalr.primary_connection_string
+#   sensitive = true
+# }
 
 
 output "redis_hostname" {
