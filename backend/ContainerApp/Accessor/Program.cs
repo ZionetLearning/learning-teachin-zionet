@@ -6,6 +6,7 @@ using Accessor.Models;
 using Accessor.Models.QueueMessages;
 using Accessor.Options;
 using Accessor.Services;
+using Accessor.Services.Interfaces;
 using Azure.Messaging.ServiceBus;
 using DotQueue;
 using Microsoft.EntityFrameworkCore;
@@ -29,7 +30,12 @@ builder.Services.AddQueue<Message, AccessorQueueHandler>(
         settings.MaxRetryAttempts = 3;
         settings.RetryDelaySeconds = 5;
     });
-builder.Services.AddScoped<IAccessorService, AccessorService>();
+
+builder.Services.AddScoped<ITaskService, TaskService>();
+builder.Services.AddScoped<IChatService, ChatService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IStatsService, StatsService>();
+builder.Services.AddScoped<DatabaseInitializer>();
 builder.Services.AddScoped<IManagerCallbackQueueService, ManagerCallbackQueueService>();
 builder.Services.AddScoped<IRefreshSessionService, RefreshSessionService>();
 builder.Services.AddScoped<ISpeechService, SpeechService>();
@@ -106,8 +112,8 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-    var startupService = scope.ServiceProvider.GetRequiredService<IAccessorService>();
-    await startupService.InitializeAsync();
+    var initializer = scope.ServiceProvider.GetRequiredService<DatabaseInitializer>();
+    await initializer.InitializeAsync();
     var promptStartup = scope.ServiceProvider.GetRequiredService<IPromptService>();
     await promptStartup.InitializeDefaultPromptsAsync();
 }

@@ -18,13 +18,12 @@ public class AccessorServiceTests
     {
         var options = new DbContextOptionsBuilder<AccessorDbContext>()
             .UseInMemoryDatabase(name)
-             .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
+            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .EnableSensitiveDataLogging()
             .Options;
 
         return new AccessorDbContext(options);
     }
-
 
     // ---------- Config / Service ----------
     private static IConfiguration NewConfig(int ttl = 123) =>
@@ -35,14 +34,14 @@ public class AccessorServiceTests
             })
             .Build();
 
-    private static AccessorService NewService(
+    private static TaskService NewTaskService(
         AccessorDbContext db,
         Mock<DaprClient> daprMock,
         int ttl = 123)
     {
         var cfg = NewConfig(ttl);
-        var log = Mock.Of<ILogger<AccessorService>>();
-        return new AccessorService(db, log, daprMock.Object, cfg);
+        var log = Mock.Of<ILogger<TaskService>>();
+        return new TaskService(db, log, daprMock.Object, cfg);
     }
 
     // ---------- UpdateTaskNameAsync ----------
@@ -51,7 +50,7 @@ public class AccessorServiceTests
     {
         var db = NewDb(Guid.NewGuid().ToString());
         var dapr = new Mock<DaprClient>(MockBehavior.Loose);
-        var svc = NewService(db, dapr);
+        var svc = NewTaskService(db, dapr);
 
         var ok = await svc.UpdateTaskNameAsync(99, "zzz");
         ok.Should().BeFalse();
@@ -63,7 +62,7 @@ public class AccessorServiceTests
     {
         var db = NewDb(Guid.NewGuid().ToString());
         var dapr = new Mock<DaprClient>(MockBehavior.Loose);
-        var svc = NewService(db, dapr);
+        var svc = NewTaskService(db, dapr);
 
         var ok = await svc.DeleteTaskAsync(404);
         ok.Should().BeFalse();
