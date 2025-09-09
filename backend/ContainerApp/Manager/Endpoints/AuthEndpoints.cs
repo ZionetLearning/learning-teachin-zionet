@@ -39,19 +39,41 @@ public static class AuthEndpoints
     }
     #region Handlers
     private static async Task<IResult> LoginAsync(
-       [FromBody] LoginRequest loginRequest,
-       [FromServices] IAuthService authService,
-       [FromServices] ILogger<AuthEndpoint> logger,
-       HttpRequest httpRequest,
-       HttpResponse response,
-       CancellationToken cancellationToken)
+   [FromBody] LoginRequest loginRequest,
+   [FromServices] IAuthService authService,
+   [FromServices] ILogger<AuthEndpoint> logger,
+   HttpRequest httpRequest,
+   HttpResponse response,
+   CancellationToken cancellationToken)
     {
         using var scope = logger.BeginScope("Method: {Method}", nameof(LoginAsync));
         try
         {
             logger.LogInformation("Attempting login for {Email}", loginRequest.Email);
 
-            var (accessToken, refreshToken) = await authService.LoginAsync(loginRequest, httpRequest, cancellationToken);
+            const int maxRetries = 3;
+            var delay = TimeSpan.FromMilliseconds(200);
+            (string accessToken, string refreshToken) result = default!;
+
+            for (int attempt = 1; attempt <= maxRetries; attempt++)
+            {
+                try
+                {
+                    result = await authService.LoginAsync(loginRequest, httpRequest, cancellationToken);
+                    break; // success
+                }
+                catch (Exception ex) when (attempt < maxRetries)
+                {
+                    logger.LogWarning(ex,
+                        "Login attempt {Attempt}/{MaxRetries} failed for {Email}, retrying after {Delay}ms",
+                        attempt, maxRetries, loginRequest.Email, delay.TotalMilliseconds);
+
+                    await Task.Delay(delay, cancellationToken);
+                    delay = TimeSpan.FromMilliseconds(delay.TotalMilliseconds * 2); // exponential backoff
+                }
+            }
+
+            var (accessToken, refreshToken) = result;
 
             // Set the cookies in the response
             var csrfToken = CookieHelper.SetCookies(response, refreshToken);
