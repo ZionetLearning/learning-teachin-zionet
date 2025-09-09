@@ -12,9 +12,10 @@ public class SentencesService : ISentencesService
     private readonly Kernel _genKernel;
     private readonly ILogger<SentencesService> _log;
 
-    private const string EasyPath = "Constants/Words/hintsEasy.txt";
-    private const string MediumPath = "Constants/Words/hintsMedium.txt";
-    private const string HardPath = "Constants/Words/hintsHard.txt";
+    private static readonly string ContentRoot = AppContext.BaseDirectory;
+    private static readonly string EasyPath = Path.Combine(ContentRoot, "Constants", "Words", "hintsEasy.txt");
+    private static readonly string MediumPath = Path.Combine(ContentRoot, "Constants", "Words", "hintsMedium.txt");
+    private static readonly string HardPath = Path.Combine(ContentRoot, "Constants", "Words", "hintsHard.txt");
 
     private readonly Lazy<string[]> _easyWords;
     private readonly Lazy<string[]> _mediumWords;
@@ -50,7 +51,7 @@ public class SentencesService : ISentencesService
         {
             ["difficulty"] = difficulty,
             ["nikud"] = req.Nikud.ToString().ToLowerInvariant(),
-            ["count"] = req.Count.ToString(),
+            ["count"] = req.Count.ToString(System.Globalization.CultureInfo.InvariantCulture),
             ["hints"] = hintsStr
         };
 
@@ -112,7 +113,7 @@ public class SentencesService : ISentencesService
                 return Array.Empty<string>();
             }
 
-            return File.ReadAllLines(path)
+            return File.ReadAllLines(path, System.Text.Encoding.UTF8)
                 .Select(l => l.Trim())
                 .Where(l => !string.IsNullOrWhiteSpace(l))
                 .Distinct(StringComparer.Ordinal)
