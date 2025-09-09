@@ -1,4 +1,6 @@
-﻿using DotQueue;
+﻿using System.Diagnostics;
+using Dapr.Client;
+using DotQueue;
 using Engine.Helpers;
 using Engine.Models;
 using Engine.Models.Chat;
@@ -7,7 +9,6 @@ using Engine.Models.Sentences;
 using Engine.Services;
 using Engine.Services.Clients.AccessorClient;
 using Engine.Services.Clients.AccessorClient.Models;
-using Dapr.Client;
 
 namespace Engine.Endpoints;
 
@@ -176,15 +177,17 @@ public class EngineQueueHandler : IQueueHandler<Message>
         Func<Task> renewLock,
         CancellationToken ct)
     {
+        var sw = Stopwatch.StartNew();
+        EngineChatRequest? request = null;
         try
         {
-            var request = PayloadValidation.DeserializeOrThrow<EngineChatRequest>(message, _logger);
+            request = PayloadValidation.DeserializeOrThrow<EngineChatRequest>(message, _logger);
             PayloadValidation.ValidateEngineChatRequest(request, _logger);
 
             var userContext = MetadataValidation.DeserializeOrThrow<UserContextMetadata>(message, _logger);
             MetadataValidation.ValidateUserContext(userContext, _logger);
 
-            using var _ = _logger.BeginScope(new { request.RequestId, request.ThreadId });
+            using var _ = _logger.BeginScope(new { request.RequestId, request.ThreadId, request.UserId });
 
             if (request.UserId == Guid.Empty)
             {
@@ -308,6 +311,18 @@ public class EngineQueueHandler : IQueueHandler<Message>
 
             _logger.LogError(ex, "Transient error while processing AI chat {Action}", message.ActionName);
             throw new RetryableException("Transient error while processing AI chat.", ex);
+        }
+        finally
+        {
+            sw.Stop();
+            if (request is not null)
+            {
+                _logger.LogInformation("Chat request {RequestId} chatId {ThreadId} userId {UserId} finished in {ElapsedMs} ms",
+                    request.RequestId,
+                    request.ThreadId,
+                    request.UserId,
+                    sw.ElapsedMilliseconds);
+            }
         }
     }
     private async Task HandleSentenceGenerationAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
