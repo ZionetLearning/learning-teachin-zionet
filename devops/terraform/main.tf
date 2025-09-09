@@ -286,19 +286,3 @@ resource "azurerm_user_assigned_identity" "app" {
     Purpose     = "ServiceBus-ManagedIdentity"
   }
 }
-
-# Assign Service Bus roles to the managed identity (replacing connection string secret)
-# Note: Requires User Access Administrator role for the Terraform service principal
-resource "azurerm_role_assignment" "servicebus_sender" {
-  count                = var.assign_servicebus_roles ? 1 : 0
-  scope                = module.servicebus.namespace_id
-  role_definition_name = "Azure Service Bus Data Sender"
-  principal_id         = azurerm_user_assigned_identity.app.principal_id
-}
-
-resource "azurerm_role_assignment" "servicebus_receiver" {
-  count                = var.assign_servicebus_roles ? 1 : 0
-  scope                = module.servicebus.namespace_id
-  role_definition_name = "Azure Service Bus Data Receiver"
-  principal_id         = azurerm_user_assigned_identity.app.principal_id
-}

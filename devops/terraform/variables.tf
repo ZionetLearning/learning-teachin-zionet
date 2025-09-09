@@ -247,10 +247,3 @@ variable "frontend_apps" {
   type        = list(string)
   default     = ["student", "teacher", "admin"]
 }
-
-#------------- Service Bus Managed Identity Variables -------------
-variable "assign_servicebus_roles" {
-  description = "Whether to assign Service Bus roles to the managed identity. Requires User Access Administrator role."
-  type        = bool
-  default     = true
-}

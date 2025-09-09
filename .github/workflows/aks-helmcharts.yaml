@@ -66,16 +66,6 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Ensure Terraform service principal has role assignment permissions
-        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
-        run: |
-          # Grant User Access Administrator role to Terraform service principal (idempotent)
-          az role assignment create \
-            --assignee "${{ secrets.AZURE_CLIENT_ID }}" \
-            --role "User Access Administrator" \
-            --scope "/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}" \
-            --only-show-errors || echo "Role already assigned or insufficient permissions"
-
       - name: Set up variables
         id: setup
         run: |
@@ -282,6 +272,31 @@ jobs:
             --set global.keyvault.tenantId="$KEYVAULT_TENANT_ID" \
             --set dapr.installComponents=false \
           | grep -n '^kind: Namespace' && { echo "Namespace still rendered"; exit 1; } || echo "OK: no Namespace in chart"
+
+      - name: Assign Service Bus roles to managed identity
+        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
+        run: |
+          # Get the managed identity details from the resource group
+          MANAGED_IDENTITY_PRINCIPAL_ID=$(az identity show \
+            --resource-group "${TARGET_NAMESPACE}-zionet-learning-2025" \
+            --name "${TARGET_NAMESPACE}-app-identity" \
+            --query principalId -o tsv)
+          
+          SERVICEBUS_NAMESPACE_ID="/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/${TARGET_NAMESPACE}-zionet-learning-2025/providers/Microsoft.ServiceBus/namespaces/${TARGET_NAMESPACE}-servicebus-zionet-learning"
+          
+          # Assign Service Bus Data Sender role
+          az role assignment create \
+            --assignee "$MANAGED_IDENTITY_PRINCIPAL_ID" \
+            --role "Azure Service Bus Data Sender" \
+            --scope "$SERVICEBUS_NAMESPACE_ID" \
+            --only-show-errors || echo "Sender role already assigned or failed"
+          
+          # Assign Service Bus Data Receiver role  
+          az role assignment create \
+            --assignee "$MANAGED_IDENTITY_PRINCIPAL_ID" \
+            --role "Azure Service Bus Data Receiver" \
+            --scope "$SERVICEBUS_NAMESPACE_ID" \
+            --only-show-errors || echo "Receiver role already assigned or failed"
 
       - name: Helm upgrade/install app
         run: |
