@@ -121,15 +121,50 @@ jobs:
         run: |
           echo "Running Cypress for ${{ matrix.app }}..."
           if grep -q "\"cypress:${{ matrix.app }}\":" package.json; then
-            # Check if backend is available before running Cypress
-            echo "Checking if backend is available on localhost:4002..."
-            if curl -f -s --connect-timeout 5 https://localhost:4002/ >/dev/null 2>&1; then
-              echo "Backend detected, running Cypress tests..."
-              npm run cypress:${{ matrix.app }}:ci
-              echo "Cypress run completed for ${{ matrix.app }}"
+            # Determine which ports to check based on the app
+            case "${{ matrix.app }}" in
+              "student")
+                MAIN_PORT=4000
+                ADMIN_PORT=4002
+                echo "Checking if student app is available on localhost:$MAIN_PORT and admin app on localhost:$ADMIN_PORT..."
+                ;;
+              "teacher")
+                MAIN_PORT=4001
+                ADMIN_PORT=4002
+                echo "Checking if teacher app is available on localhost:$MAIN_PORT and admin app on localhost:$ADMIN_PORT..."
+                ;;
+              "admin")
+                MAIN_PORT=4002
+                ADMIN_PORT=4002
+                echo "Checking if admin app is available on localhost:$MAIN_PORT..."
+                ;;
+              *)
+                MAIN_PORT=4000
+                ADMIN_PORT=4002
+                echo "Checking if app is available on localhost:$MAIN_PORT..."
+                ;;
+            esac
+            
+            # Check main app availability
+            if curl -f -s --connect-timeout 5 https://localhost:$MAIN_PORT/ >/dev/null 2>&1; then
+              # Check admin app availability if different from main app
+              if [ "$MAIN_PORT" != "$ADMIN_PORT" ]; then
+                if curl -f -s --connect-timeout 5 https://localhost:$ADMIN_PORT/ >/dev/null 2>&1; then
+                  echo "Both main app (port $MAIN_PORT) and admin app (port $ADMIN_PORT) detected, running Cypress tests..."
+                  npm run cypress:${{ matrix.app }}:ci
+                  echo "Cypress run completed for ${{ matrix.app }}"
+                else
+                  echo "Main app available but admin app not available on localhost:$ADMIN_PORT - skipping Cypress tests"
+                  echo "Cypress tests require both main app and admin app to be running for user management"
+                fi
+              else
+                echo "App detected on port $MAIN_PORT, running Cypress tests..."
+                npm run cypress:${{ matrix.app }}:ci
+                echo "Cypress run completed for ${{ matrix.app }}"
+              fi
             else
-              echo "Backend not available on localhost:4002 - skipping Cypress tests"
-              echo "To run Cypress tests, ensure the backend server is running on port 4002"
+              echo "Main app not available on localhost:$MAIN_PORT - skipping Cypress tests"
+              echo "To run Cypress tests, ensure the frontend apps are running on the correct ports"
             fi
           else
             echo "No cypress:${{ matrix.app }} script found in package.json - skipping"
