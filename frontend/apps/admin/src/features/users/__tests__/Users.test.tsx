@@ -34,12 +34,6 @@ vi.mock("@app-providers/api/user", () => ({
   useUpdateUserByUserId: vi.fn(),
 }));
 
-Object.defineProperty(global, 'crypto', {
-  value: {
-    randomUUID: vi.fn(() => '123e4567-e89b-12d3-a456-426614174000')
-  }
-});
-
 import { useGetAllUsers, useDeleteUserByUserId } from "@admin/api";
 import { useCreateUser, useUpdateUserByUserId } from "@app-providers/api/user";
 
@@ -138,7 +132,18 @@ describe("<Users />", () => {
   });
 
   it("submits create user form", async () => {
-    const mutate = vi.fn((_: any, opts?: any) => {
+    const mutate = vi.fn((userData: {
+      userId: string;
+      email: string;
+      password: string;
+      firstName: string;
+      lastName: string;
+      role: string;
+    }, opts?: {
+      onSuccess?: () => void;
+      onError?: (error: Error) => void;
+      onSettled?: () => void;
+    }) => {
       opts?.onSuccess?.();
       opts?.onSettled?.();
     });
