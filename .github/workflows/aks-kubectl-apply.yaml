@@ -81,6 +81,7 @@ jobs:
           ./dapr-control-plane.sh
 
       - name: Setup ingress controller
+        if: false
         run: |
           cd devops/helm-tools
           chmod +x setup-ingress-controller.sh
