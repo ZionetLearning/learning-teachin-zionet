@@ -7,7 +7,7 @@ metadata:
 spec:
   scaleTargetRef:
     name: {{ .Values.engine.name }}
-  minReplicaCount: 0
+  minReplicaCount: 1
   maxReplicaCount: 1
   pollingInterval: 1
   triggers:
