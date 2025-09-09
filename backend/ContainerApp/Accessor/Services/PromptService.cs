@@ -4,6 +4,8 @@ using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Accessor.DB;
 using Accessor.Models.Prompts;
+using Accessor.Options;
+using Microsoft.Extensions.Options;
 
 namespace Accessor.Services;
 
@@ -12,15 +14,18 @@ public class PromptService : IPromptService
     private readonly ILogger<PromptService> _logger;
     private readonly AccessorDbContext _dbContext;
     private readonly IMapper _mapper;
+    private readonly IOptions<PromptsOptions> _promptsOptions;
 
     public PromptService(
         ILogger<PromptService> logger,
         AccessorDbContext dbContext,
-        IMapper mapper)
+        IMapper mapper,
+        IOptions<PromptsOptions> promptsOptions)
     {
         _logger = logger;
         _dbContext = dbContext;
         _mapper = mapper;
+        _promptsOptions = promptsOptions;
     }
 
     public async Task<PromptResponse> CreatePromptAsync(CreatePromptRequest request, CancellationToken cancellationToken = default)
@@ -149,23 +154,13 @@ public class PromptService : IPromptService
 
     public async Task InitializeDefaultPromptsAsync()
     {
-        var defaults = new Dictionary<string, string>
+        var defaults = _promptsOptions.Value.Defaults ?? new Dictionary<string, string>();
+
+        if (defaults.Count == 0)
         {
-            ["chat.system"] = "You are a helpful assistant. Provide accurate, concise, context-aware answers.",
-            ["chat.title.generate"] = """
-            You are a naming assistant. Create a short, specific chat title that captures the main topic.
-            
-            Rules:
-            - Language: match the user's recent messages language.
-            - ≤ 6 words, ≤ 50 characters.
-            - No quotes, emojis, hashtags, brackets, file names, or PII.
-            - Title case for English; sentence case for Russian/others.
-            Return STRICT JSON: {"title":"..."}
-            """,
-            ["prompts.system.default"] = "You are a helpful assistant. Maintain context. Keep your answers brief, clear and helpful.",
-            ["prompts.tone.friendly"] = "Speak in a friendly manner, as if you were speaking to a colleague.",
-            ["prompts.explanation.detailed"] = "Let's go into detail, step by step, so that even a beginner can understand."
-        };
+            _logger.LogInformation("No default prompts configured; skipping initialization");
+            return;
+        }
 
         try
         {

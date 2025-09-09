@@ -4,6 +4,7 @@ using Accessor.DB;
 using Accessor.Endpoints;
 using Accessor.Models;
 using Accessor.Models.QueueMessages;
+using Accessor.Options;
 using Accessor.Services;
 using Azure.Messaging.ServiceBus;
 using DotQueue;
@@ -50,6 +51,7 @@ builder.Configuration
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
     .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
     .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
+    .AddJsonFile("prompts.defaults.json", optional: true, reloadOnChange: true)
     .AddEnvironmentVariables();
 
 builder.Services.AddEndpointsApiExplorer();
@@ -57,6 +59,10 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOptions<TaskCacheOptions>()
     .Bind(builder.Configuration.GetSection("TaskCache"))
     .ValidateDataAnnotations()
+    .ValidateOnStart();
+
+builder.Services.AddOptions<PromptsOptions>()
+    .Bind(builder.Configuration.GetSection("Prompts"))
     .ValidateOnStart();
 
 // Register Dapr client with custom JSON options
