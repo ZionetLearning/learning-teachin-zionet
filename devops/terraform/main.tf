@@ -112,14 +112,14 @@ module "database" {
   depends_on = [azurerm_resource_group.main]
 }
 
-module "signalr" {
-  source              = "./modules/signalr"
-  resource_group_name = azurerm_resource_group.main.name
-  location            = var.location
-  signalr_name        = "${var.signalr_name}-${var.environment_name}"
-  sku_name            = var.signalr_sku_name
-  sku_capacity        = var.signalr_sku_capacity
-}
+# module "signalr" {
+#   source              = "./modules/signalr"
+#   resource_group_name = azurerm_resource_group.main.name
+#   location            = var.location
+#   signalr_name        = "${var.signalr_name}-${var.environment_name}"
+#   sku_name            = var.signalr_sku_name
+#   sku_capacity        = var.signalr_sku_capacity
+# }
 
 # ------------- Shared Redis -----------------------
 data "azurerm_redis_cache" "shared" {
