@@ -1,0 +1,22 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: manager-callback-session-queue-out
+  namespace: {{ include "app.namespace" . }}
+spec:
+  type: bindings.azure.servicebusqueues
+  version: v1
+  metadata:
+    - name: connectionString
+      secretKeyRef:
+        name: {{ .Values.accessor.secrets.serviceBus.name }}
+        key: {{ .Values.accessor.secrets.serviceBus.key }}
+    - name: queueName
+      value: "manager-callback-session-queue"
+    - name: direction
+      value: output
+    - name: disableEntityManagement
+      value: "true"
+scopes:
+  - {{ .Values.engine.dapr.appId  | default .Values.engine.name  | quote }}
+  - {{ .Values.accessor.dapr.appId  | default .Values.accessor.name  | quote }}

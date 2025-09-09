@@ -30,6 +30,7 @@ resource "azurerm_servicebus_queue" "this" {
   namespace_id = azurerm_servicebus_namespace.this.id
 
   max_size_in_megabytes = 1024
+  requires_session     = contains(var.session_enabled_queues, each.value)
 }
 
 # Optional – create topics from list
