@@ -12,7 +12,7 @@ spec:
     port: {{ .Values.manager.ports.container }}
     service: manager
   replicas:
-    min: 1               # Scale to zero when unused
+    min: 0               # Scale to zero when unused
     max: 5               # Maximum replicas
   scaledownPeriod: 200    # How long to wait before scaling down (seconds)
 {{- end }}
