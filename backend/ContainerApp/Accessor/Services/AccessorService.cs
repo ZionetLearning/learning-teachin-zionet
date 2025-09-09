@@ -431,51 +431,42 @@ public class AccessorService : IAccessorService
             var normalized = NormalizeIfMatch(ifMatch);
             if (string.IsNullOrEmpty(normalized))
             {
-                // Missing precondition
                 return new UpdateTaskResult(false, false, true, null);
             }
 
             // xmin is uint in PostgreSQL
             if (!uint.TryParse(normalized, out var etagXmin))
             {
-                // Malformed If-Match
                 return new UpdateTaskResult(false, false, true, null);
             }
 
-            // Attach a stub entity and set original concurrency token (shadow 'xmin')
             var entity = new TaskModel { Id = taskId };
             _dbContext.Attach(entity);
 
-            // Tell EF what we believe the current xmin is (from If-Match)
             _dbContext.Entry(entity).Property<uint>("xmin").OriginalValue = etagXmin;
 
-            // Apply the change
             entity.Name = newName;
             _dbContext.Entry(entity).Property(e => e.Name).IsModified = true;
 
-            // This will emit: UPDATE "Tasks" SET "Name" = @p WHERE "Id" = @id AND "xmin" = @orig
             var rows = await _dbContext.SaveChangesAsync();
 
             if (rows == 0)
             {
-                // Very rare with concurrency tokens; fall back to distinguish 404 vs 412
                 var exists = await _dbContext.Tasks.AsNoTracking().AnyAsync(t => t.Id == taskId);
                 return exists
-                    ? new UpdateTaskResult(false, false, true, null)     // 412 Precondition Failed
-                    : new UpdateTaskResult(false, true, false, null);    // 404 Not Found
+                    ? new UpdateTaskResult(false, false, true, null)
+                    : new UpdateTaskResult(false, true, false, null);
             }
 
-            // Success → fetch fresh ETag
             var newEtag = await GetDbEtagAsync(taskId) ?? string.Empty;
             return new UpdateTaskResult(true, false, false, newEtag);
         }
         catch (DbUpdateConcurrencyException)
         {
-            // Concurrency conflict or missing row; check existence
             var exists = await _dbContext.Tasks.AsNoTracking().AnyAsync(t => t.Id == taskId);
             return exists
-                ? new UpdateTaskResult(false, false, true, null)      // 412
-                : new UpdateTaskResult(false, true, false, null);     // 404
+                ? new UpdateTaskResult(false, false, true, null)
+                : new UpdateTaskResult(false, true, false, null);
         }
         catch (Exception ex)
         {
