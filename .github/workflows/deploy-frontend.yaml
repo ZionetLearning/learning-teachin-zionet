@@ -74,6 +74,7 @@ env:
   VITE_AUTH_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/auth"
   VITE_TASKS_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/tasks-manager"
   VITE_USERS_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/users-manager"
+  VITE_MEDIA_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/media-manager"
   
   # Azure OpenAI configuration
   VITE_AZURE_OPENAI_KEY: ""
