@@ -395,23 +395,15 @@ public class AccessorService : IAccessorService
         return s.Trim('"');
     }
 
-    private async Task<string?> GetDbEtagAsync(int id, CancellationToken ct = default)
+    public async Task<string?> GetDbEtagAsync(int id, CancellationToken ct = default)
     {
-        await using var conn = _dbContext.Database.GetDbConnection();
-        if (conn.State != System.Data.ConnectionState.Open)
-        {
-            await conn.OpenAsync(ct);
-        }
+        var xmin = await _dbContext.Tasks
+            .AsNoTracking()
+            .Where(t => t.Id == id)
+            .Select(t => (uint?)EF.Property<uint>(t, "xmin"))
+            .SingleOrDefaultAsync(ct);
 
-        await using var cmd = conn.CreateCommand();
-        cmd.CommandText = @"select xmin::text from ""Tasks"" where ""Id"" = @id";
-        var p = cmd.CreateParameter();
-        p.ParameterName = "id";
-        p.Value = id;
-        cmd.Parameters.Add(p);
-
-        var result = await cmd.ExecuteScalarAsync(ct);
-        return result?.ToString();
+        return xmin?.ToString();
     }
 
     public async Task<(TaskModel Task, string ETag)?> GetTaskWithEtagAsync(int id)
@@ -439,29 +431,51 @@ public class AccessorService : IAccessorService
             var normalized = NormalizeIfMatch(ifMatch);
             if (string.IsNullOrEmpty(normalized))
             {
+                // Missing precondition
                 return new UpdateTaskResult(false, false, true, null);
             }
 
-            var rows = await _dbContext.Database.ExecuteSqlInterpolatedAsync($@"
-            update ""Tasks""
-               set ""Name"" = {newName}
-             where ""Id"" = {taskId}
-               and (""xmin""::text) = {normalized}
-        ");
+            // xmin is uint in PostgreSQL
+            if (!uint.TryParse(normalized, out var etagXmin))
+            {
+                // Malformed If-Match
+                return new UpdateTaskResult(false, false, true, null);
+            }
+
+            // Attach a stub entity and set original concurrency token (shadow 'xmin')
+            var entity = new TaskModel { Id = taskId };
+            _dbContext.Attach(entity);
+
+            // Tell EF what we believe the current xmin is (from If-Match)
+            _dbContext.Entry(entity).Property<uint>("xmin").OriginalValue = etagXmin;
+
+            // Apply the change
+            entity.Name = newName;
+            _dbContext.Entry(entity).Property(e => e.Name).IsModified = true;
+
+            // This will emit: UPDATE "Tasks" SET "Name" = @p WHERE "Id" = @id AND "xmin" = @orig
+            var rows = await _dbContext.SaveChangesAsync();
 
             if (rows == 0)
             {
+                // Very rare with concurrency tokens; fall back to distinguish 404 vs 412
                 var exists = await _dbContext.Tasks.AsNoTracking().AnyAsync(t => t.Id == taskId);
-                if (!exists)
-                {
-                    return new UpdateTaskResult(false, true, false, null);
-                }
-
-                return new UpdateTaskResult(false, false, true, null);
+                return exists
+                    ? new UpdateTaskResult(false, false, true, null)     // 412 Precondition Failed
+                    : new UpdateTaskResult(false, true, false, null);    // 404 Not Found
             }
 
+            // Success → fetch fresh ETag
             var newEtag = await GetDbEtagAsync(taskId) ?? string.Empty;
             return new UpdateTaskResult(true, false, false, newEtag);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            // Concurrency conflict or missing row; check existence
+            var exists = await _dbContext.Tasks.AsNoTracking().AnyAsync(t => t.Id == taskId);
+            return exists
+                ? new UpdateTaskResult(false, false, true, null)      // 412
+                : new UpdateTaskResult(false, true, false, null);     // 404
         }
         catch (Exception ex)
         {

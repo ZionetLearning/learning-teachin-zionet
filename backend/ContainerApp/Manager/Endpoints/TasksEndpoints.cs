@@ -45,7 +45,7 @@ public static class TasksEndpoints
             {
                 if (!string.IsNullOrWhiteSpace(etag))
                 {
-                    response.Headers.ETag = $"\"{etag}\""; // mirror ETag to FE
+                    response.Headers.ETag = $"\"{etag}\"";
                 }
 
                 logger.LogInformation("Successfully retrieved task (ETag forwarded).");
@@ -134,7 +134,7 @@ public static class TasksEndpoints
     private static async Task<IResult> UpdateTaskNameAsync(
         [FromRoute] int id,
         [FromRoute] string name,
-        [FromHeader(Name = "If-Match")] string? ifMatch, // NEW: accept If-Match from FE
+        [FromHeader(Name = "If-Match")] string? ifMatch,
         [FromServices] IAccessorClient accessorClient,
         [FromServices] ILogger<TaskEndpoint> logger,
         HttpResponse response)
@@ -162,7 +162,7 @@ public static class TasksEndpoints
         if (string.IsNullOrWhiteSpace(ifMatch))
         {
             logger.LogWarning("Missing If-Match header");
-            return Results.StatusCode(StatusCodes.Status428PreconditionRequired); // 428 Precondition Required
+            return Results.StatusCode(StatusCodes.Status428PreconditionRequired);
         }
 
         try

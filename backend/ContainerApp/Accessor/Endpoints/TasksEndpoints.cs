@@ -13,7 +13,7 @@ public static class TasksEndpoints
 
         tasksGroup.MapGet("/task/{id:int}", GetTaskByIdAsync).WithName("GetTaskById");
         tasksGroup.MapPost("/task", CreateTaskAsync).WithName("CreateTask");
-        tasksGroup.MapPatch("/task", UpdateTaskNameAsync).WithName("UpdateTaskName"); // <— added
+        tasksGroup.MapPatch("/task", UpdateTaskNameAsync).WithName("UpdateTaskName");
         tasksGroup.MapDelete("/task/{taskId:int}", DeleteTaskAsync).WithName("DeleteTask");
 
         return app;
@@ -99,7 +99,7 @@ public static class TasksEndpoints
 
             if (result.PreconditionFailed)
             {
-                return Results.StatusCode(StatusCodes.Status412PreconditionFailed); // ETag mismatch
+                return Results.StatusCode(StatusCodes.Status412PreconditionFailed);
             }
 
             if (!string.IsNullOrEmpty(result.NewEtag))
