@@ -1,6 +1,8 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { HubConnection, HubConnectionBuilder } from "@microsoft/signalr";
 import { SignalRContext } from "@app-providers/context";
+import { useAuth } from "@app-providers/auth";
+import { decodeJwtPayload } from "@app-providers/auth/utils";
 import type {
   SignalRContextType,
   SignalRProviderProps,
@@ -10,19 +12,20 @@ import type {
   Status,
 } from "@app-providers/types";
 
-const createUserId = (): string => {
-  return (
-    crypto?.randomUUID?.() ??
-    Array.from(new Uint8Array(16), (b) => b.toString(16).padStart(2, "0")).join(
-      "",
-    )
-  );
-};
-
 export const SignalRProvider = ({ hubUrl, children }: SignalRProviderProps) => {
   const [status, setStatus] = useState<Status>("idle");
-  const [userId] = useState(() => createUserId());
+  const { accessToken } = useAuth();
   const connRef = useRef<HubConnection | null>(null);
+
+  const userId = useMemo(() => {
+    if (!accessToken) return null;
+    const payload = decodeJwtPayload(accessToken);
+    if (!payload) return null;
+    
+    const extractedUserId = payload.userId as string;
+           
+    return extractedUserId;
+  }, [accessToken]);
 
   // Store event handlers for different event types
   const handlersRef = useRef<Map<string, Set<(data: unknown) => void>>>(
@@ -137,15 +140,23 @@ export const SignalRProvider = ({ hubUrl, children }: SignalRProviderProps) => {
   );
 
   useEffect(() => {
+    if (!accessToken || !userId) {
+      setStatus("idle");
+      return;
+    }
+
     let isMounted = true;
     const pendingRequests = pendingRequestsRef.current;
 
     const connection = new HubConnectionBuilder()
-      .withUrl(`${hubUrl}?userId=${userId}`, {
-        withCredentials: false,
+      .withUrl(hubUrl, {
+        accessTokenFactory: () => {
+          return accessToken || "";
+        },
+        withCredentials: true,
       })
       .withAutomaticReconnect()
-      .build();
+      .build(); 
 
     connection.onreconnecting(() => isMounted && setStatus("reconnecting"));
     connection.onreconnected(() => isMounted && setStatus("connected"));
@@ -207,13 +218,13 @@ export const SignalRProvider = ({ hubUrl, children }: SignalRProviderProps) => {
       connRef.current = null;
       c?.stop().catch(() => {});
     };
-  }, [hubUrl, userId, handleEvent, checkPendingRequests]);
+  }, [hubUrl, accessToken, userId, handleEvent, checkPendingRequests]);
 
   const value = useMemo<SignalRContextType>(
     () => ({
       connection: connRef.current,
       status,
-      userId,
+      userId: userId ?? "",
       subscribe,
       waitForResponse,
     }),

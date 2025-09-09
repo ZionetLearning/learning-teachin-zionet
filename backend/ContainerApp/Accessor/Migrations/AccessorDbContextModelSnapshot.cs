@@ -188,6 +188,9 @@ namespace Accessor.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("HebrewLevelValue")
+                        .HasColumnType("text");
+
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasColumnType("text");
@@ -196,6 +199,12 @@ namespace Accessor.Migrations
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
+
+                    b.Property<string>("PreferredLanguageCode")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("en");
 
                     b.Property<string>("Role")
                         .IsRequired()

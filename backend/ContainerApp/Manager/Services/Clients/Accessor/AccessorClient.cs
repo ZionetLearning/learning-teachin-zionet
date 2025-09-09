@@ -138,13 +138,18 @@ public class AccessorClient(
 
         try
         {
-            var userId = _httpContextAccessor.HttpContext?.Request.Headers["X-User-Id"].FirstOrDefault() ?? "anonymous";
+            var userId = _httpContextAccessor.HttpContext?.User?.Identity?.Name;
+            if (string.IsNullOrWhiteSpace(userId) || !Guid.TryParse(userId, out _))
+            {
+                _logger.LogError("Missing or invalid UserId in HttpContext.");
+                throw new InvalidOperationException("Authenticated user id is missing or not a valid GUID.");
+            }
 
             var payload = JsonSerializer.SerializeToElement(task);
             var userContextMetadata = JsonSerializer.SerializeToElement(
                 new UserContextMetadata
                 {
-                    UserId = userId,
+                    UserId = userId!,
                     MessageId = Guid.NewGuid().ToString()
                 }
             );
@@ -158,9 +163,10 @@ public class AccessorClient(
             await _daprClient.InvokeBindingAsync($"{QueueNames.AccessorQueue}-out", "create", message);
 
             _logger.LogDebug(
-                "Task {TaskId} sent to Accessor via binding '{Binding}'",
+                "Task {TaskId} sent to Accessor via binding '{Binding}' for user {UserId}",
                 task.Id,
-                QueueNames.AccessorQueue
+                QueueNames.AccessorQueue,
+                userId
             );
             return (true, "sent to queue");
         }
@@ -312,6 +318,25 @@ public class AccessorClient(
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get stats snapshot from Accessor");
+            throw;
+        }
+    }
+
+    public async Task<string> GetSpeechTokenAsync(CancellationToken ct = default)
+    {
+        _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetSpeechTokenAsync), nameof(AccessorClient));
+        try
+        {
+            var token = await _daprClient.InvokeMethodAsync<string>(
+                HttpMethod.Get,
+                AppIds.Accessor,
+                "media-accessor/speech/token",
+                ct);
+            return token ?? string.Empty;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get speech token from Accessor");
             throw;
         }
     }

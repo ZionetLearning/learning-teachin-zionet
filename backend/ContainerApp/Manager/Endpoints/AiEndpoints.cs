@@ -37,6 +37,7 @@ public static class AiEndpoints
         // POST /ai-manager/speech/synthesize
         aiGroup.MapPost("/speech/synthesize", SynthesizeAsync).WithName("SynthesizeText");
         aiGroup.MapPost("/sentence", SentenceGenerateAsync).WithName("GenerateSentence");
+        aiGroup.MapPost("/sentence/split", SplitSentenceGenerateAsync).WithName("GenerateSplitSentence");
 
         #endregion
 
@@ -337,6 +338,40 @@ public static class AiEndpoints
         {
             logger.LogError(ex, "Error in Sentence generation manager");
             return Results.Problem("An error occurred during sentence generation.");
+        }
+    }
+    private static async Task<IResult> SplitSentenceGenerateAsync(
+       [FromBody] SentenceRequest request,
+       [FromServices] IEngineClient engineClient,
+       [FromServices] ILogger<SpeechEndpoints> logger,
+       CancellationToken ct)
+    {
+        if (request is null)
+        {
+            return Results.BadRequest(new { error = "Request is required" });
+        }
+
+        logger.LogInformation("Received split sentence generation request");
+
+        try
+        {
+            await engineClient.GenerateSplitSentenceAsync(request);
+            return Results.Ok();
+        }
+        catch (OperationCanceledException)
+        {
+            logger.LogWarning("Split sentence generation operation was canceled by user");
+            return Results.StatusCode(StatusCodes.Status499ClientClosedRequest);
+        }
+        catch (TimeoutException)
+        {
+            logger.LogWarning("Split sentence generation operation timed out");
+            return Results.Problem("Split sentence generation is taking too long.", statusCode: StatusCodes.Status408RequestTimeout);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error in split sentence generation manager");
+            return Results.Problem("An error occurred during split sentence generation.");
         }
     }
 }

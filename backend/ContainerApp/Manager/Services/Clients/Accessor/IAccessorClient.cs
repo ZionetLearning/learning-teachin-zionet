@@ -30,4 +30,5 @@ public interface IAccessorClient
     Task<bool> UnassignStudentFromTeacherAsync(Guid teacherId, Guid studentId, CancellationToken ct = default);
     Task<IEnumerable<UserData>> GetStudentsForTeacherAsync(Guid teacherId, CancellationToken ct = default);
     Task<IEnumerable<UserData>> GetTeachersForStudentAsync(Guid studentId, CancellationToken ct = default);
+    Task<string> GetSpeechTokenAsync(CancellationToken ct = default);
 }

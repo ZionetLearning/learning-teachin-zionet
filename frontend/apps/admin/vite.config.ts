@@ -1,10 +1,11 @@
 /// <reference types="vitest/config" />
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import path from 'node:path';
-import viteTsConfigPaths from 'vite-tsconfig-paths';
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import path from "node:path";
+import viteTsConfigPaths from "vite-tsconfig-paths";
+import mkcert from "vite-plugin-mkcert";
 
-const r = (...x: string[]) => path.resolve(__dirname, '..', '..', ...x);
+const r = (...x: string[]) => path.resolve(__dirname, "..", "..", ...x);
 
 export default defineConfig({
   root: __dirname,
@@ -16,18 +17,19 @@ export default defineConfig({
   plugins: [
     react(),
     // point to the workspace tsconfig.base.json so aliases like @ui/components work
-    viteTsConfigPaths({ projects: [r('tsconfig.base.json')] }),
+    viteTsConfigPaths({ projects: [r("tsconfig.base.json")] }),
+    mkcert(),
   ],
   resolve: {
     alias: {
-      '@admin': path.resolve(__dirname, 'src'),
+      "@admin": path.resolve(__dirname, "src"),
     },
   },
   test: {
-    environment: 'jsdom',   
+    environment: "jsdom",
     globals: true,
-    setupFiles: './src/test/setup.ts',
+    setupFiles: "./src/test/setup.ts",
     css: true,
-    exclude: ['node_modules', 'dist', '**/*.jest.{test,spec}.{ts,tsx,js,jsx}'],
+    exclude: ["node_modules", "dist", "**/*.jest.{test,spec}.{ts,tsx,js,jsx}"],
   },
 });
