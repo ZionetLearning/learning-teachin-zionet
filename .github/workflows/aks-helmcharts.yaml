@@ -148,6 +148,12 @@ jobs:
             --name "${TARGET_NAMESPACE}-app-identity" \
             --query clientId -o tsv 2>/dev/null || echo "0997f44d-fadf-4be8-8dc6-202f7302f680")
           echo "SERVICEBUS_CLIENT_ID=$MANAGED_IDENTITY_CLIENT_ID" >> $GITHUB_ENV
+          
+          # Debug output
+          echo "🔍 Debug Service Bus Config:"
+          echo "  TARGET_NAMESPACE: $TARGET_NAMESPACE"
+          echo "  SERVICEBUS_NAMESPACE: ${TARGET_NAMESPACE}-servicebus-zionet-learning.servicebus.windows.net"
+          echo "  SERVICEBUS_CLIENT_ID: $MANAGED_IDENTITY_CLIENT_ID"
 
 
       - name: Get AKS credentials
@@ -276,6 +282,8 @@ jobs:
             --set global.environment="$IMAGE_TAG" \
             --set global.keyvault.clientId="$KEYVAULT_CLIENT_ID" \
             --set global.keyvault.tenantId="$KEYVAULT_TENANT_ID" \
+            --set global.servicebus.namespace="$SERVICEBUS_NAMESPACE" \
+            --set global.servicebus.clientId="$SERVICEBUS_CLIENT_ID" \
             --set dapr.installComponents=false \
           | grep -n '^kind: Namespace' && { echo "Namespace still rendered"; exit 1; } || echo "OK: no Namespace in chart"
 
