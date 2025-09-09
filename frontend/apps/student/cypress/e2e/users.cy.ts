@@ -1,11 +1,18 @@
-describe("Users Page Flow", () => {
+describe("Users Page Flow (admin app @4002)", () => {
   const createdUserIds: string[] = [];
   let usersApiBase: string | undefined;
 
+  const selectRole = (role: string) => {
+    cy.get('[data-testid="users-create-role"]').click();
+    cy.get(`li[data-value="${role}"]`).should("be.visible").click();
+    cy.get(`li[data-value="${role}"]`).should("not.exist");
+  };
+
   beforeEach(() => {
-    cy.login();
+    cy.loginAdmin();
     cy.contains(/Users/i).click();
     cy.get('[data-testid="users-page"]').should("exist");
+    cy.get('[data-testid="users-list"]').should("exist");
     cy.intercept("POST", "**/user").as("createUser");
     cy.intercept("PUT", "**/user/*").as("updateUser");
     cy.intercept("DELETE", "**/user/*").as("deleteUser");
@@ -15,15 +22,31 @@ describe("Users Page Flow", () => {
   afterEach(() => {
     if (!createdUserIds.length) return;
     const idsToDelete = [...createdUserIds];
-    createdUserIds.length = 0;
-    if (!usersApiBase) return;
+    cy.get("body").then(($b) => {
+      if ($b.find('[data-testid="users-page"]').length === 0) {
+        cy.contains(/Users/i).click();
+        cy.get('[data-testid="users-page"]').should("exist");
+      }
+    });
     idsToDelete.forEach((id) => {
-      cy.request({
-        method: "DELETE",
-        url: `${usersApiBase}/user/${id}`,
-        failOnStatusCode: false,
+      const rowSelector = `[data-testid="users-item-${id}"]`;
+      cy.get("body").then(($b) => {
+        if ($b.find(rowSelector).length) {
+          cy.window().then((win) => {
+            cy.stub(win, "confirm").returns(true);
+          });
+          cy.get(rowSelector).within(() => {
+            cy.get('[data-testid="users-delete-btn"]').click();
+          });
+          cy.wait("@deleteUser")
+            .its("response.statusCode")
+            .should("be.oneOf", [200, 204]);
+        } else {
+          cy.log(`[cleanup] user ${id} not found in UI (already deleted?)`);
+        }
       });
     });
+    createdUserIds.length = 0;
   });
 
   it("shows create form and list (may be empty)", () => {
@@ -42,6 +65,7 @@ describe("Users Page Flow", () => {
     cy.get('[data-testid="users-create-email"]').clear().type(email);
     cy.get('[data-testid="users-create-first-name"]').clear().type("Test");
     cy.get('[data-testid="users-create-last-name"]').clear().type("User");
+    selectRole("student");
     cy.get('[data-testid="users-create-password"]').clear().type("Passw0rd!");
     cy.get('[data-testid="users-create-submit"]').click();
 
@@ -62,6 +86,7 @@ describe("Users Page Flow", () => {
     cy.get('[data-testid="users-create-email"]').clear().type(originalEmail);
     cy.get('[data-testid="users-create-first-name"]').clear().type("Edit");
     cy.get('[data-testid="users-create-last-name"]').clear().type("User");
+    selectRole("student");
     cy.get('[data-testid="users-create-password"]').clear().type("Passw0rd!");
     cy.get('[data-testid="users-create-submit"]').click();
     cy.wait("@createUser").then((interception) => {
@@ -104,56 +129,41 @@ describe("Users Page Flow", () => {
     });
   });
 
-  it("can delete a user (first one)", () => {
-    cy.get("body").then(($b) => {
-      const item = $b.find('[data-testid^="users-item-"]').first();
-      if (!item.length) {
-        cy.log("No users to delete; creating one first");
-        const email = `deluser_${Date.now()}@example.com`;
-        cy.get('[data-testid="users-create-email"]').clear().type(email);
-        cy.get('[data-testid="users-create-first-name"]').clear().type("Del");
-        cy.get('[data-testid="users-create-last-name"]').clear().type("User");
-        cy.get('[data-testid="users-create-password"]')
-          .clear()
-          .type("Passw0rd!");
-        cy.get('[data-testid="users-create-submit"]').click();
-        cy.wait("@createUser").then((interception) => {
-          if (interception?.request?.url) {
-            usersApiBase = interception.request.url.replace(/\/user$/i, "");
-          }
-          const body = interception?.response?.body as
-            | UserApiPayload
-            | undefined;
-          const newId = body?.userId;
-          if (newId) createdUserIds.push(newId);
-        });
+  it("can delete a newly created user", () => {
+    const email = `deluser_${Date.now()}@example.com`;
+    cy.get('[data-testid="users-create-email"]').clear().type(email);
+    cy.get('[data-testid="users-create-first-name"]').clear().type("Del");
+    cy.get('[data-testid="users-create-last-name"]').clear().type("User");
+    selectRole("student");
+    cy.get('[data-testid="users-create-password"]').clear().type("Passw0rd!");
+    cy.get('[data-testid="users-create-submit"]').click();
+    cy.wait("@createUser").then((interception) => {
+      if (interception?.request?.url) {
+        usersApiBase = interception.request.url.replace(/\/user$/i, "");
       }
+      const body = interception?.response?.body as UserApiPayload | undefined;
+      const newId = body?.userId;
+      if (newId) createdUserIds.push(newId);
     });
-
-    cy.get('[data-testid^="users-item-"]').first().as("firstItem");
-    cy.get("@firstItem")
-      .find('[data-testid="users-email"]')
-      .invoke("text")
-      .then((textBefore) => {
-        cy.get("@firstItem")
-          .invoke("attr", "data-testid")
-          .then((attr) => {
-            const id = attr?.replace("users-item-", "");
-            cy.window().then((win) => {
-              cy.stub(win, "confirm").returns(true);
-            });
-            cy.get("@firstItem")
-              .find('[data-testid="users-delete-btn"]')
-              .click();
-            cy.wait("@deleteUser");
-            if (id) {
-              const idx = createdUserIds.indexOf(id);
-              if (idx >= 0) createdUserIds.splice(idx, 1);
-            }
-          });
-        cy.contains('[data-testid="users-email"]', textBefore.trim()).should(
-          "not.exist",
-        );
+    cy.wait("@getUsers");
+    // Locate the specific email row and delete it
+    cy.contains('[data-testid="users-email"]', email, { timeout: 10000 })
+      .parents('li[data-testid^="users-item-"]')
+      .as("targetRow");
+    cy.get("@targetRow")
+      .invoke("attr", "data-testid")
+      .then((attr) => {
+        const id = attr?.replace("users-item-", "");
+        cy.window().then((win) => {
+          cy.stub(win, "confirm").returns(true);
+        });
+        cy.get("@targetRow").find('[data-testid="users-delete-btn"]').click();
+        cy.wait("@deleteUser");
+        if (id) {
+          const idx = createdUserIds.indexOf(id);
+          if (idx >= 0) createdUserIds.splice(idx, 1);
+        }
       });
+    cy.contains('[data-testid="users-email"]', email).should("not.exist");
   });
 });

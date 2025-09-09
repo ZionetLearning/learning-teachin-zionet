@@ -251,7 +251,9 @@ public class AccessorService : IAccessorService
                 Email = user.Email,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
-                Role = user.Role
+                Role = user.Role,
+                PreferredLanguageCode = user.PreferredLanguageCode,
+                HebrewLevelValue = user.HebrewLevelValue
             };
     }
 
@@ -289,6 +291,16 @@ public class AccessorService : IAccessorService
         if (updateUser.Email is not null)
         {
             user.Email = updateUser.Email;
+        }
+
+        if (updateUser.PreferredLanguageCode is not null)
+        {
+            user.PreferredLanguageCode = updateUser.PreferredLanguageCode.Value;
+        }
+
+        if (updateUser.HebrewLevelValue is not null)
+        {
+            user.HebrewLevelValue = updateUser.HebrewLevelValue;
         }
 
         await _dbContext.SaveChangesAsync();
@@ -352,7 +364,9 @@ public class AccessorService : IAccessorService
                     Email = u.Email,
                     FirstName = u.FirstName,
                     LastName = u.LastName,
-                    Role = u.Role
+                    Role = u.Role,
+                    PreferredLanguageCode = u.PreferredLanguageCode,
+                    HebrewLevelValue = u.HebrewLevelValue
                 })
                 .ToListAsync();
 

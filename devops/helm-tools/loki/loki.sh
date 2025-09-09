@@ -10,23 +10,40 @@ helm repo update
 echo "2. Namespace"
 kubectl get ns $NAMESPACE >/dev/null 2>&1 || kubectl create ns $NAMESPACE
 
-echo "3. Dashboard ConfigMap"
+echo "3. Dashboard ConfigMaps"
 kubectl apply -f ./pod-logs-dashboard.yaml
 
-echo "4. Loki + Promtail (Grafana comes from Terraform)"
+echo "4. Create Grafana dashboard ConfigMaps"
+for file in dashboards/*.json; do
+  DASH_NAME=$(basename "$file" .json)
+  kubectl apply -f - <<EOF
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dashboard-$DASH_NAME
+  namespace: $NAMESPACE
+  labels:
+    grafana_dashboard: "1"
+data:
+  $DASH_NAME.json: |
+$(sed 's/^/    /' "$file")
+EOF
+done
+
+echo "5. Loki + Promtail (Grafana comes from Terraform)"
 helm upgrade --install loki-stack grafana/loki-stack \
   -n $NAMESPACE \
   -f ./values-loki.yaml \
   --set grafana.enabled=false \
   --wait
 
-echo "5. Wait for Grafana service to be ready"
+echo "6. Wait for Grafana service to be ready"
 kubectl wait --namespace "$NAMESPACE" \
   --for=condition=Ready pod \
   --selector=app.kubernetes.io/name=grafana \
   --timeout=120s
 
-echo "6. Create Loki datasource ConfigMap"
+echo "7. Create Loki datasource ConfigMap"
 kubectl apply -f - <<EOF
 apiVersion: v1
 kind: ConfigMap
