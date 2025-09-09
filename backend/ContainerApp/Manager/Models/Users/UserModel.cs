@@ -12,4 +12,6 @@ public class UserModel
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public Role Role { get; set; }
+    public SupportedLanguage PreferredLanguageCode { get; set; } = SupportedLanguage.en;
+    public HebrewLevel? HebrewLevelValue { get; set; } // only for students
 }

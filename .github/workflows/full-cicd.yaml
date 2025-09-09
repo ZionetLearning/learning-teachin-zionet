@@ -26,6 +26,14 @@ on:
           required: false
           type: string
           default: ''
+        frontend_apps:
+          description: 'Select frontend deployment option'
+          required: false
+          type: choice
+          default: 'all'
+          options: 
+            - 'all'
+            - 'none'
         use_keda:
           description: 'Enable KEDA setup workflow'
           type: boolean
@@ -52,6 +60,7 @@ jobs:
     with:
       environment_name: ${{ github.event.inputs.environment_name }}
       environment: ${{ github.event.inputs.environment }}
+      frontend_apps: ${{ github.event.inputs.frontend_apps }}
     secrets: inherit
  
   aks-kubectl-apply:
@@ -95,6 +104,7 @@ jobs:
     secrets: inherit
  
   deploy-frontend:
+    if: ${{ github.event.inputs.environment_name == 'dev' || github.event.inputs.frontend_apps == 'all' }}
     needs: [terraform-apply]
     uses: ./.github/workflows/deploy-frontend.yaml
     permissions:
@@ -106,5 +116,3 @@ jobs:
       deployment_token: ${{ needs.terraform-apply.outputs.static_web_app_api_keys }}
       app_insights_connection_string: ${{ needs.terraform-apply.outputs.application_insights_connection_strings }}
     secrets: inherit
- 
- 

@@ -260,7 +260,8 @@
         "password": "סיסמה",
         "firstName": "שם פרטי",
         "lastName": "שם משפחה",
-        "noChanges": "אין שינויים"
+        "noChanges": "אין שינויים",
+        "role": "תפקיד"
       },
       "profile": {
         "title": "הפרופיל שלי",
@@ -306,6 +307,11 @@
     },
     "goBackToMenu": "חזור לתפריט",
     "logout": "התנתק",
-    "somethingWentWrong": "משהו השתבש..."
+    "somethingWentWrong": "משהו השתבש...",
+    "roles": {
+      "admin": "מנהל מערכת",
+      "teacher": "מורה",
+      "student": "תלמיד"
+    }
   }
 }

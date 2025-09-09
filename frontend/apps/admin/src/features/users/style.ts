@@ -100,6 +100,7 @@ export const useStyles = createUseStyles({
         fontWeight: 600,
         letterSpacing: 0.3,
         color: "#1a202c",
+        textAlign: "center"
     },
     submitButton: {
         marginTop: "0.4rem",

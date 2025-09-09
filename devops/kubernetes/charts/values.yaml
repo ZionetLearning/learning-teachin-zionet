@@ -197,6 +197,7 @@ accessor:
     appPort: 5003
   env:
     ASPNETCORE_URLS: "http://+:5003"
+    Speech__Region: "eastus"
   secrets:
     serviceBus:
       name: azure-service-bus-secret
@@ -204,6 +205,13 @@ accessor:
     postgres:
       name: postgres-connection
       key: PostgreSQLConnectionString
+    speech:
+      name: accessor-appsettings
+      keys:
+        speechKey: Speech__Key
+      data:
+        - remote: accessor-speech-key
+          key: Speech__Key
   resources:
     requests:
       cpu: "100m"

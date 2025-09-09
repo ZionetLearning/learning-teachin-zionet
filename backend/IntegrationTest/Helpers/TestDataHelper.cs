@@ -1,6 +1,5 @@
-﻿//using Microsoft.EntityFrameworkCore;
-using IntegrationTests.Models;
-//using IntegrationTests.DB;
+﻿using IntegrationTests.Models;
+using Manager.Models.Users;
 using System.Security.Cryptography;
 
 public static class TestDataHelper
@@ -26,4 +25,29 @@ public static class TestDataHelper
         Name = $"Task-{id}",
         Payload = $"Payload-{id}"
     };
+
+    public static CreateUser CreateUser(string role = "student", string? email = null)
+    {
+        return new CreateUser
+        {
+            UserId = Guid.NewGuid(),
+            Email = email ?? $"user_{Guid.NewGuid():N}@test.com",
+            FirstName = "Test",
+            LastName = "User",
+            Password = "Passw0rd!",
+            Role = role
+        };
+    }
+    public static CreateUser CreateUserWithFixedEmail(string? email = null)
+    {
+        return new CreateUser
+        {
+            UserId = Guid.NewGuid(),
+            Email = email ?? $"dup_{Guid.NewGuid()}@test.com",
+            FirstName = "Test",
+            LastName = "User",
+            Password = "123456",
+            Role = "student"
+        };
+    }
 }
