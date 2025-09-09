@@ -7,7 +7,7 @@ metadata:
 spec:
   scaleTargetRef:
     name: {{ .Values.accessor.name }}
-  minReplicaCount: 0
+  minReplicaCount: 1
   maxReplicaCount: 5
   pollingInterval: 1
   triggers:
