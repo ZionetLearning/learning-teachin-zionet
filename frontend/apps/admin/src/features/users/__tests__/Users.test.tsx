@@ -214,7 +214,7 @@ describe("<Users />", () => {
     expect(arg.userId).toBe("123e4567-e89b-12d3-a456-426614174000");
   });
 
-  it("updates a user via inline edit form (partial fields only)", () => {
+  it("updates a user via inline edit form (partial fields only)", async () => {
     const updateMutate = vi.fn();
     useGetAllUsers.mockReturnValue(rq({ data: [sampleUsers[0]] }));
     useCreateUser.mockReturnValue({ mutate: vi.fn(), isPending: false });
@@ -230,16 +230,23 @@ describe("<Users />", () => {
     }));
 
     renderUsers();
-    fireEvent.click(screen.getByRole("button", { name: /update/i }));
-    const emailInput = screen.getByPlaceholderText("email") as HTMLInputElement;
-    fireEvent.change(emailInput, { target: { value: "changed@example.com" } });
-    // Provide a first name change so payload includes it while omitting lastName
-    const firstNameInput = screen.getByPlaceholderText(
-      "first name",
-    ) as HTMLInputElement;
-    fireEvent.change(firstNameInput, { target: { value: "Charlie" } });
-    fireEvent.click(screen.getByRole("button", { name: /save/i }));
-    expect(updateMutate).toHaveBeenCalledTimes(1);
+
+    // open the row editor (guaranteed button)
+    fireEvent.click(screen.getByTestId("users-update-btn"));
+
+    // edit the row inputs (guaranteed inputs)
+    fireEvent.change(screen.getByTestId("users-edit-email"), {
+      target: { value: "changed@example.com" },
+    });
+    fireEvent.change(screen.getByTestId("users-edit-first-name"), {
+      target: { value: "Charlie" },
+    });
+
+    // submit the row editor form (guaranteed button)
+    fireEvent.click(screen.getByTestId("users-edit-save"));
+
+    // the mutate call is sync in your impl, but waitFor makes this robust
+    await waitFor(() => expect(updateMutate).toHaveBeenCalledTimes(1));
     expect(updateMutate.mock.calls[0][0]).toEqual({
       userId: "u1",
       email: "changed@example.com",
