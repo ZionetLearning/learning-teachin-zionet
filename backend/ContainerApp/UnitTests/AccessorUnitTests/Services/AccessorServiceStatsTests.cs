@@ -89,7 +89,7 @@ public class AccessorServiceStatsTests
 
         snap.TotalThreads.Should().Be(2);
         snap.TotalUniqueUsersByThread.Should().Be(2);
-        snap.TotalMessages.Should().Be(0); // you don’t have ChatMessages table yet
+        snap.TotalMessages.Should().Be(0);
         snap.TotalUniqueUsersByMessage.Should().Be(0);
         snap.ActiveUsersLast15m.Should().Be(1); // user2 active recently
         snap.MessagesLast5m.Should().Be(0);

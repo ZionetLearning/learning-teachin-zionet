@@ -160,7 +160,11 @@ public class UsersEndpointsTests
         if (method == null)
             throw new InvalidOperationException($"Method {methodName} not found on UsersEndpoints.");
 
-        return await (Task<IResult>)method.Invoke(null, args)!;
+        var result = method.Invoke(null, args);
+        if (result == null)
+            throw new InvalidOperationException($"Method {methodName} returned null.");
+
+        return await (Task<IResult>)result;
     }
 
     private static UserModel BuildUser(string email, Guid? id = null) => new()
