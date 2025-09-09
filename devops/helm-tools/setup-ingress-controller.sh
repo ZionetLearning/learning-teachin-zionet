@@ -4,9 +4,12 @@ set -e
 NAMESPACE="devops-ingress-nginx"
 RELEASE_NAME="ingress-nginx"
 STATIC_IP_NAME="ingress-controller-static-ip"
-MC_RG="MC_dev-zionet-learning-2025_aks-cluster-dev_westeurope"
+# Use environment variable from GitHub Actions, fallback to dev for local testing
+MC_RG="${MC_AKS_RG:-MC_dev-zionet-learning-2025_aks-cluster-dev_westeurope}"
 LOCATION="westeurope"
 DNS_LABEL="teachin"
+
+echo "Using managed resource group: $MC_RG"
 
 
 echo "0. Uninstalling existing ingress-nginx Helm release (if present)..."
@@ -43,6 +46,7 @@ kubectl get ns "$NAMESPACE" >/dev/null 2>&1 || kubectl create ns "$NAMESPACE"
 echo "4. Installing ingress-nginx Helm chart..."
 helm upgrade --install "$RELEASE_NAME" ingress-nginx/ingress-nginx \
   --namespace "$NAMESPACE" \
+  --timeout 10m \
   --set controller.replicaCount=1 \
   --set controller.nodeSelector."kubernetes\.io/os"=linux \
   --set defaultBackend.nodeSelector."kubernetes\.io/os"=linux \

@@ -87,6 +87,7 @@ jobs:
           ./setup-ingress-controller.sh
 
       - name: Add Grafana
+        if: false
         run: |
           cd devops/helm-tools
           chmod +x grafana.sh
@@ -100,21 +101,25 @@ jobs:
       #     ./setup-https.sh
 
       - name: Apply Grafana ingress (only)
+        if: false
         run: kubectl apply -f "$K8S_DIR/ingress/grafana-ingress.yaml"
 
       - name: Add Prometheus
+        if: false
         run: |
           cd devops/helm-tools/prometheus
           chmod +x prometheus.sh
           ./prometheus.sh
 
       - name: Add Loki (logs stack)
+        if: false
         run: |
           cd devops/helm-tools/loki
           chmod +x loki.sh
           ./loki.sh
     
       - name: Configure Azure Monitor datasource in Grafana
+        if: false
         run: |
           cd devops/helm-tools/azure-monitor
           chmod +x azure-monitor.sh
