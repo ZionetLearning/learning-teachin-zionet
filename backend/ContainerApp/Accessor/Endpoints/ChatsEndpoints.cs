@@ -26,8 +26,8 @@ public static class ChatsEndpoints
 
     private static async Task<IResult> UpsertHistorySnapshotAsync(
         [FromBody] UpsertHistoryRequest body,
-        [FromServices] IChatHistoryService chatService,
-        [FromServices] ILogger<ChatHistoryService> logger)
+        [FromServices] IChatService chatService,
+        [FromServices] ILogger<ChatService> logger)
     {
         using var _ = logger.BeginScope("Handler: {Handler}, ThreadId: {ThreadId}", nameof(UpsertHistorySnapshotAsync), body.ThreadId);
 
@@ -87,8 +87,8 @@ public static class ChatsEndpoints
     private static async Task<IResult> GetHistorySnapshotAsync(
         Guid threadId,
         Guid userId,
-        [FromServices] IChatHistoryService chatService,
-        [FromServices] ILogger<ChatHistoryService> logger)
+        [FromServices] IChatService chatService,
+        [FromServices] ILogger<ChatService> logger)
     {
         using var _ = logger.BeginScope("Handler: {Handler}, ThreadId: {ThreadId}", nameof(GetHistorySnapshotAsync), threadId);
 
@@ -145,8 +145,8 @@ public static class ChatsEndpoints
 
     private static async Task<IResult> GetChatsForUserAsync(
         Guid userId,
-        [FromServices] IChatHistoryService chatService,
-        [FromServices] ILogger<ChatHistoryService> logger)
+        [FromServices] IChatService chatService,
+        [FromServices] ILogger<ChatService> logger)
     {
         using var scope = logger.BeginScope("Handler: {Handler}, UserId: {UserId}", nameof(GetChatsForUserAsync), userId);
         try

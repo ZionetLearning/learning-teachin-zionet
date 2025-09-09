@@ -26,10 +26,10 @@ public class AccessorServiceStatsTests
         return new AccessorDbContext(options);
     }
 
-    private static StatisticsService NewService(AccessorDbContext db)
+    private static StatsService NewService(AccessorDbContext db)
     {
-        var log = Mock.Of<ILogger<StatisticsService>>();
-        return new StatisticsService(db, log);
+        var log = Mock.Of<ILogger<StatsService>>();
+        return new StatsService(db, log);
     }
 
     [Fact]

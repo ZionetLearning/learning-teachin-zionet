@@ -3,7 +3,7 @@ using Accessor.Models.Users;
 
 namespace Accessor.Services.Interfaces;
 
-public interface IUserManagementService
+public interface IUserService
 {
     Task<AuthenticatedUser?> ValidateCredentialsAsync(string email, string password);
     Task<UserData?> GetUserAsync(Guid userId);

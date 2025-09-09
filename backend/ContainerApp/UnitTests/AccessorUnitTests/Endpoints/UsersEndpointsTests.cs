@@ -15,8 +15,8 @@ namespace AccessorUnitTests.Endpoints;
 
 public class UsersEndpointsTests
 {
-    private readonly Mock<IUserManagementService> _mockService = new(MockBehavior.Strict);
-    private readonly Mock<ILogger<UserManagementService>> _mockLogger = new();
+    private readonly Mock<IUserService> _mockService = new(MockBehavior.Strict);
+    private readonly Mock<ILogger<UserService>> _mockLogger = new();
 
     // ---- GET ----
     [Fact]

@@ -16,9 +16,9 @@ namespace AccessorUnitTests.Endpoints;
 
 public class AccessorStatsEndpointsTests
 {
-    private static HttpClient BuildClientReturning(StatsSnapshot snapshot, out Mock<IStatisticsService> svcMock)
+    private static HttpClient BuildClientReturning(StatsSnapshot snapshot, out Mock<IStatsService> svcMock)
     {
-        svcMock = new Mock<IStatisticsService>(MockBehavior.Strict);
+        svcMock = new Mock<IStatsService>(MockBehavior.Strict);
         svcMock.Setup(s => s.ComputeStatsAsync(It.IsAny<CancellationToken>()))
                .ReturnsAsync(snapshot);
 
@@ -29,7 +29,7 @@ public class AccessorStatsEndpointsTests
         builder.Services.AddLogging(x => x.AddDebug());
 
         var app = builder.Build();
-        app.MapStatsEndpoints(); // extension method now depends on IStatisticsService
+        app.MapStatsEndpoints(); // extension method now depends on IStatsService
 
         app.RunAsync(); // start test server
         return app.GetTestClient();

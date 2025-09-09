@@ -33,9 +33,9 @@ builder.Services.AddQueue<Message, AccessorQueueHandler>(
 
 // Services
 builder.Services.AddScoped<ITaskService, TaskService>();
-builder.Services.AddScoped<IChatHistoryService, ChatHistoryService>();
-builder.Services.AddScoped<IUserManagementService, UserManagementService>();
-builder.Services.AddScoped<IStatisticsService, StatisticsService>();
+builder.Services.AddScoped<IChatService, ChatService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IStatsService, StatsService>();
 builder.Services.AddScoped<DatabaseInitializer>();
 builder.Services.AddScoped<IManagerCallbackQueueService, ManagerCallbackQueueService>();
 builder.Services.AddScoped<IRefreshSessionService, RefreshSessionService>();
@@ -111,7 +111,6 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 
 var app = builder.Build();
 
-//DatabaseInitializer
 using (var scope = app.Services.CreateScope())
 {
     var initializer = scope.ServiceProvider.GetRequiredService<DatabaseInitializer>();

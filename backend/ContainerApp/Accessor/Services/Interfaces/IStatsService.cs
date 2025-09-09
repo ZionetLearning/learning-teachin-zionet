@@ -2,7 +2,7 @@ using Accessor.Models;
 
 namespace Accessor.Services.Interfaces;
 
-public interface IStatisticsService
+public interface IStatsService
 {
     Task<StatsSnapshot> ComputeStatsAsync(CancellationToken ct = default);
 }

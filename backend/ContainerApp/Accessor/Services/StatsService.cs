@@ -6,12 +6,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Accessor.Services;
 
-public class StatisticsService : IStatisticsService
+public class StatsService : IStatsService
 {
     private readonly AccessorDbContext _db;
-    private readonly ILogger<StatisticsService> _logger;
+    private readonly ILogger<StatsService> _logger;
 
-    public StatisticsService(AccessorDbContext db, ILogger<StatisticsService> logger)
+    public StatsService(AccessorDbContext db, ILogger<StatsService> logger)
     {
         _db = db;
         _logger = logger;

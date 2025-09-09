@@ -14,11 +14,11 @@ namespace AccessorUnitTests.Endpoints;
 public class AccessorEndpointsTests
 {
     private static Mock<ITaskService> TaskSvc() => new(MockBehavior.Strict);
-    private static Mock<IChatHistoryService> ChatSvc() => new(MockBehavior.Strict);
+    private static Mock<IChatService> ChatSvc() => new(MockBehavior.Strict);
 
     // Logger generic type points to service, not endpoint
     private static Mock<ILogger<TaskService>> TaskLog() => new();
-    private static Mock<ILogger<ChatHistoryService>> ChatLog() => new();
+    private static Mock<ILogger<ChatService>> ChatLog() => new();
 
     #region GetTaskByIdAsync
 
@@ -205,7 +205,7 @@ public class AccessorEndpointsTests
     }
 
     private static Task<IResult> InvokeUpsertHistorySnapshotAsync(
-        UpsertHistoryRequest body, IChatHistoryService s, ILogger<ChatHistoryService> l)
+        UpsertHistoryRequest body, IChatService s, ILogger<ChatService> l)
         => (Task<IResult>)typeof(ChatsEndpoints)
             .GetMethod("UpsertHistorySnapshotAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
             .Invoke(null, new object[] { body, s, l })!;
@@ -215,7 +215,7 @@ public class AccessorEndpointsTests
     #region GetHistorySnapshotAsync
 
     private static Task<IResult> InvokeGetHistorySnapshotAsync(
-        Guid threadId, Guid userId, IChatHistoryService s, ILogger<ChatHistoryService> l)
+        Guid threadId, Guid userId, IChatService s, ILogger<ChatService> l)
         => (Task<IResult>)typeof(ChatsEndpoints)
             .GetMethod("GetHistorySnapshotAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
             .Invoke(null, new object[] { threadId, userId, s, l })!;
@@ -239,7 +239,7 @@ public class AccessorEndpointsTests
         svc.VerifyAll();
     }
 
-    private static Task<IResult> InvokeGetThreadsForUserAsync(Guid user, IChatHistoryService s, ILogger<ChatHistoryService> l)
+    private static Task<IResult> InvokeGetThreadsForUserAsync(Guid user, IChatService s, ILogger<ChatService> l)
         => (Task<IResult>)typeof(ChatsEndpoints)
             .GetMethod("GetChatsForUserAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
             .Invoke(null, new object[] { user, s, l })!;

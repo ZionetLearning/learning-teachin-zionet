@@ -6,12 +6,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Accessor.Services;
 
-public class UserManagementService : IUserManagementService
+public class UserService : IUserService
 {
-    private readonly ILogger<UserManagementService> _logger;
+    private readonly ILogger<UserService> _logger;
     private readonly AccessorDbContext _db;
 
-    public UserManagementService(AccessorDbContext db, ILogger<UserManagementService> logger)
+    public UserService(AccessorDbContext db, ILogger<UserService> logger)
     {
         _db = db;
         _logger = logger;

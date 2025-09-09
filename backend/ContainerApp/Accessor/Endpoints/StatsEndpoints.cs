@@ -10,8 +10,8 @@ public static class StatsEndpoints
     public static void MapStatsEndpoints(this WebApplication app)
     {
         app.MapGet("/internal-accessor/stats/snapshot",
-            async ([FromServices] IStatisticsService statsService,
-                   [FromServices] ILogger<StatisticsService> logger, CancellationToken ct) =>
+            async ([FromServices] IStatsService statsService,
+                   [FromServices] ILogger<StatsService> logger, CancellationToken ct) =>
             {
                 var snap = await statsService.ComputeStatsAsync(ct);
                 if (snap is null)

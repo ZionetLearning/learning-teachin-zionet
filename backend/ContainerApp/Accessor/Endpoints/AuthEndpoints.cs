@@ -18,8 +18,8 @@ public static class AuthEndpoints
 
     private static async Task<IResult> LoginUserAsync(
         [FromBody] LoginRequest request,
-        [FromServices] IUserManagementService userService,
-        [FromServices] ILogger<UserManagementService> logger)
+        [FromServices] IUserService userService,
+        [FromServices] ILogger<UserService> logger)
     {
         using var scope = logger.BeginScope("Handler: {Handler}, Email: {Email}", nameof(LoginUserAsync), request.Email);
         try

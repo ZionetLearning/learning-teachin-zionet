@@ -2,7 +2,7 @@ using Accessor.Models;
 
 namespace Accessor.Services.Interfaces;
 
-public interface IChatHistoryService
+public interface IChatService
 {
     Task CreateChatAsync(ChatHistorySnapshot chat);
     Task<List<ChatSummaryDto>> GetChatsForUserAsync(Guid userId);

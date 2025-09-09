@@ -5,12 +5,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Accessor.Services;
 
-public class ChatHistoryService : IChatHistoryService
+public class ChatService : IChatService
 {
     private readonly AccessorDbContext _db;
-    private readonly ILogger<ChatHistoryService> _logger;
+    private readonly ILogger<ChatService> _logger;
 
-    public ChatHistoryService(AccessorDbContext db, ILogger<ChatHistoryService> logger)
+    public ChatService(AccessorDbContext db, ILogger<ChatService> logger)
     {
         _db = db;
         _logger = logger;

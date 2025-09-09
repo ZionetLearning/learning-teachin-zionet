@@ -22,8 +22,8 @@ public static class UsersEndpoints
 
     private static async Task<IResult> GetUserAsync(
         [FromRoute] Guid userId,
-        [FromServices] IUserManagementService userService,
-        [FromServices] ILogger<UserManagementService> logger)
+        [FromServices] IUserService userService,
+        [FromServices] ILogger<UserService> logger)
     {
         using var scope = logger.BeginScope("Method: {Method}, UserId: {UserId}", nameof(GetUserAsync), userId);
 
@@ -47,8 +47,8 @@ public static class UsersEndpoints
 
     private static async Task<IResult> CreateUserAsync(
         [FromBody] UserModel user,
-        [FromServices] IUserManagementService userService,
-        [FromServices] ILogger<UserManagementService> logger)
+        [FromServices] IUserService userService,
+        [FromServices] ILogger<UserService> logger)
     {
         using var scope = logger.BeginScope("Method: {Method}, UserId: {UserId}", nameof(CreateUserAsync), user.UserId);
         if (user is null)
@@ -74,8 +74,8 @@ public static class UsersEndpoints
     private static async Task<IResult> UpdateUserAsync(
         [FromRoute] Guid userId,
         [FromBody] UpdateUserModel user,
-        [FromServices] IUserManagementService userService,
-        [FromServices] ILogger<UserManagementService> logger)
+        [FromServices] IUserService userService,
+        [FromServices] ILogger<UserService> logger)
     {
         using var scope = logger.BeginScope("Method: {Method}, UserId: {UserId}", nameof(UpdateUserAsync), userId);
         if (user is null)
@@ -104,8 +104,8 @@ public static class UsersEndpoints
 
     private static async Task<IResult> DeleteUserAsync(
         [FromRoute] Guid userId,
-        [FromServices] IUserManagementService userService,
-        [FromServices] ILogger<UserManagementService> logger)
+        [FromServices] IUserService userService,
+        [FromServices] ILogger<UserService> logger)
     {
         using var scope = logger.BeginScope("Method: {Method}, UserId: {UserId}", nameof(DeleteUserAsync), userId);
         if (userId == Guid.Empty)
@@ -127,8 +127,8 @@ public static class UsersEndpoints
     }
 
     private static async Task<IResult> GetAllUsersAsync(
-        [FromServices] IUserManagementService userService,
-        [FromServices] ILogger<UserManagementService> logger,
+        [FromServices] IUserService userService,
+        [FromServices] ILogger<UserService> logger,
         CancellationToken ct)
     {
         using var scope = logger.BeginScope("Method: {Method}", nameof(GetAllUsersAsync));
