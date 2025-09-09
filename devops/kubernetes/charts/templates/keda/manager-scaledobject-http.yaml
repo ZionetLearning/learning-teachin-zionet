@@ -13,6 +13,6 @@ spec:
     service: manager
   replicas:
     min: 0               # Scale to zero when unused
-    max: 1               # Maximum replicas
+    max: 2               # Maximum replicas
   scaledownPeriod: 200    # How long to wait before scaling down (seconds)
 {{- end }}
