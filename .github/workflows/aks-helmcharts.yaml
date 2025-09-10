@@ -147,7 +147,11 @@ jobs:
           MANAGED_IDENTITY_CLIENT_ID=$(az identity show \
             --resource-group "${CURRENT_NAMESPACE}-zionet-learning-2025" \
             --name "${CURRENT_NAMESPACE}-app-identity" \
-            --query clientId -o tsv 2>/dev/null || echo "${{ secrets.KEYVAULT_CLIENT_ID }}")
+            --query clientId -o tsv 2>/dev/null)
+          if [ -z "$MANAGED_IDENTITY_CLIENT_ID" ]; then
+            echo "WARNING: Managed identity not found for namespace '${CURRENT_NAMESPACE}'. Falling back to KEYVAULT_CLIENT_ID." >&2
+            MANAGED_IDENTITY_CLIENT_ID="${{ secrets.KEYVAULT_CLIENT_ID }}"
+          fi
           echo "SERVICEBUS_CLIENT_ID=$MANAGED_IDENTITY_CLIENT_ID" >> $GITHUB_ENV
           
       - name: Get AKS credentials
