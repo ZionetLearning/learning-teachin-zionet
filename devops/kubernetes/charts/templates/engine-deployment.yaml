@@ -44,11 +44,11 @@ spec:
               path: /v1.0/healthz
               port: 3500  # Dapr sidecar port
               scheme: HTTP
-            initialDelaySeconds: 10
-            periodSeconds: 5
-            timeoutSeconds: 3
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
             successThreshold: 1
-            failureThreshold: 30  # Allow 150 seconds (30 * 5) for Dapr to be ready
+            failureThreshold: 60  # Allow 600 seconds (60 * 10) for Dapr to be ready
           {{- end }}
           env:
             - name: ASPNETCORE_URLS
