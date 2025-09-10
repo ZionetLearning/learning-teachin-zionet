@@ -86,10 +86,8 @@ export const UserListItem = ({
 
     updateUser(payload, {
       onSuccess: () => {
-        toast.success(t("pages.users.userUpdated"));
         setEditing(false);
       },
-      onError: (e) => toast.error(e.message || t("pages.users.failedToUpdate")),
     });
   };
 

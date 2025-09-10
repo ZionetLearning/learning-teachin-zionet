@@ -186,30 +186,35 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
                 <th
                   class="MuiTableCell-root MuiTableCell-head MuiTableCell-alignCenter MuiTableCell-sizeSmall css-m4o53m-MuiTableCell-root"
                   scope="col"
+                  width="28%"
                 >
                   pages.users.email
                 </th>
                 <th
                   class="MuiTableCell-root MuiTableCell-head MuiTableCell-alignCenter MuiTableCell-sizeSmall css-m4o53m-MuiTableCell-root"
                   scope="col"
+                  width="18%"
                 >
                   pages.users.firstName
                 </th>
                 <th
                   class="MuiTableCell-root MuiTableCell-head MuiTableCell-alignCenter MuiTableCell-sizeSmall css-m4o53m-MuiTableCell-root"
                   scope="col"
+                  width="18%"
                 >
                   pages.users.lastName
                 </th>
                 <th
                   class="MuiTableCell-root MuiTableCell-head MuiTableCell-alignCenter MuiTableCell-sizeSmall css-m4o53m-MuiTableCell-root"
                   scope="col"
+                  width="16%"
                 >
                   pages.users.role
                 </th>
                 <th
                   class="MuiTableCell-root MuiTableCell-head MuiTableCell-alignCenter MuiTableCell-sizeSmall css-m4o53m-MuiTableCell-root"
                   scope="col"
+                  width="20%"
                 >
                   pages.users.actions
                 </th>
@@ -295,6 +300,9 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
                     width="28%"
                   >
                     <span
+                      aria-label="alpha@example.com"
+                      class="email-0-2-36"
+                      data-mui-internal-clone-element="true"
                       data-testid="users-email"
                       title="alpha@example.com"
                     >
@@ -303,6 +311,7 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
                   </td>
                   <td
                     class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-33 css-jiabcu-MuiTableCell-root"
+                    width="18%"
                   >
                     <span
                       data-testid="users-first-name"
@@ -313,6 +322,7 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
                   </td>
                   <td
                     class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-33 css-jiabcu-MuiTableCell-root"
+                    width="18%"
                   >
                     <span
                       data-testid="users-last-name"
@@ -326,7 +336,7 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
                     width="16%"
                   >
                     <span
-                      class="roleBadge-0-2-36 roleStudent-0-2-37"
+                      class="roleBadge-0-2-37 roleStudent-0-2-38"
                       data-testid="users-role-badge"
                     >
                       roles.student
@@ -401,6 +411,9 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
                     width="28%"
                   >
                     <span
+                      aria-label="beta@example.com"
+                      class="email-0-2-36"
+                      data-mui-internal-clone-element="true"
                       data-testid="users-email"
                       title="beta@example.com"
                     >
@@ -409,6 +422,7 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
                   </td>
                   <td
                     class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-33 css-jiabcu-MuiTableCell-root"
+                    width="18%"
                   >
                     <span
                       data-testid="users-first-name"
@@ -419,6 +433,7 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
                   </td>
                   <td
                     class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-33 css-jiabcu-MuiTableCell-root"
+                    width="18%"
                   >
                     <span
                       data-testid="users-last-name"
@@ -432,7 +447,7 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
                     width="16%"
                   >
                     <span
-                      class="roleBadge-0-2-36 roleStudent-0-2-37"
+                      class="roleBadge-0-2-37 roleStudent-0-2-38"
                       data-testid="users-role-badge"
                     >
                       roles.student
@@ -514,7 +529,7 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
             />
             <p
               class="MuiTablePagination-selectLabel css-s09cke-MuiTablePagination-selectLabel"
-              id=":rb:"
+              id=":rd:"
             >
               pages.users.rowsPerPage
             </p>
@@ -524,9 +539,9 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
               <div
                 aria-expanded="false"
                 aria-haspopup="listbox"
-                aria-labelledby=":rb: :ra:"
+                aria-labelledby=":rd: :rc:"
                 class="MuiSelect-select MuiTablePagination-select MuiSelect-standard MuiInputBase-input css-18zjd9i-MuiNativeSelect-root-MuiSelect-select-MuiInputBase-input"
-                id=":ra:"
+                id=":rc:"
                 role="combobox"
                 tabindex="0"
               >
