@@ -230,7 +230,7 @@ jobs:
             --wait --timeout 180s
 
       - name: Wait for External Secrets API
-        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
+        if: false
         run: |
           echo "⏳ Waiting for ExternalSecrets API..."
           for i in {1..30}; do
