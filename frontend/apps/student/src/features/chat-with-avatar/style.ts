@@ -6,11 +6,28 @@ export const useStyles = createUseStyles({
     height: "550px",
     margin: "0 auto",
     border: "1px solid #ccc",
-    padding: 10,
-    overflowY: "auto",
+    borderRadius: "10px",
     display: "flex",
     flexDirection: "column",
+    position: "relative",
+    overflowY: "auto",
   },
+
+  mainContent: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    padding: "10px",
+    transition: "margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+    backgroundColor: "#fafafa",
+  },
+
+  mainContentShifted: {
+    "@media (min-width: 769px)": {
+      marginLeft: "320px",
+    },
+  },
+
   wrapper: {
     position: "relative",
     width: "220px",
@@ -49,5 +66,7 @@ export const useStyles = createUseStyles({
   avatar: {
     width: "100%",
     height: "100%",
+    borderRadius: "50%",
+    objectFit: "cover",
   },
 });
