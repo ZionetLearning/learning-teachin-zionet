@@ -152,12 +152,12 @@ jobs:
                 return 0
               fi
               
-              echo "⏳ Waiting for $app_name (port $port)... attempt $((attempt + 1))/$max_attempts"
+              echo "Waiting for $app_name (port $port)... attempt $((attempt + 1))/$max_attempts"
               sleep 5
               attempt=$((attempt + 1))
             done
             
-            echo "❌ $app_name (port $port) failed to start after $((max_attempts * 5)) seconds"
+            echo "$app_name (port $port) failed to start after $((max_attempts * 5)) seconds"
             return 1
           }
           
