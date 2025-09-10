@@ -297,7 +297,7 @@ jobs:
             --identity-name "${TARGET_NAMESPACE}-app-identity" \
             --resource-group "${TARGET_NAMESPACE}-zionet-learning-2025" \
             --issuer "$AKS_OIDC_ISSUER" \
-            --subject "system:serviceaccount:${TARGET_NAMESPACE}:default" \
+            --subject "system:serviceaccount:${TARGET_NAMESPACE}:${TARGET_NAMESPACE}-workload-identity" \
             --audience "api://AzureADTokenExchange" \
             --only-show-errors || echo "Federated credential already exists or failed"
 
