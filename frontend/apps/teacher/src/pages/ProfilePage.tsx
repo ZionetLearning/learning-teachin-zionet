@@ -5,7 +5,7 @@ export const ProfilePage = () => {
   const { user } = useAuth();
 
   if (!user) {
-    return <div>Loading...</div>; // or a spinner, or redirect to login
+    return <div>Loading...</div>;
   }
   return <Profile user={user} />;
 };

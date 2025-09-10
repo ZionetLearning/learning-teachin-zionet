@@ -25,7 +25,6 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
   const refreshTimerRef = useRef<number | null>(null);
   const refreshSkewMs = 60_000;
 
-  // Only persist token + expiry
   const [credentials, setCredentials] = useState<Credentials | null>(() => {
     try {
       const raw = localStorage.getItem("credentials");
@@ -40,6 +39,7 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
           email: parsed.email!,
           accessToken: parsed.accessToken,
           accessTokenExpiry: parsed.accessTokenExpiry,
+          role: parsed.role,
         };
       }
       localStorage.removeItem("credentials");
@@ -67,7 +67,7 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
     error: loginError,
   } = useLoginMutation({
     onSuccess: async (data, vars) => {
-      persistSession(vars.email, data.accessToken);
+      persistSession(vars.email, data.accessToken, appRole);
     },
     onError: (err) => {
       console.error("Login error", err);
@@ -80,8 +80,10 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
     isPending: isCreatingUser,
     error: createUserError,
   } = useCreateUser();
+
   const { mutateAsync: refreshTokens, isPending: isRefreshing } =
     useRefreshTokensMutation();
+
   const { mutateAsync: logoutServerMutation, isPending: isLoggingOut } =
     useLogoutMutation();
 
@@ -107,16 +109,24 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
     }
   }, [logoutServerMutation, clearSession]);
 
-  const persistSession = useCallback((email: string, accessToken: string) => {
-    const decodedExp = decodeJwtExp(accessToken);
-    const fallback = Date.now() + FALLBACK_TOKEN_EXPIRY_MS;
-    const accessTokenExpiry =
-      decodedExp && decodedExp > Date.now() ? decodedExp : fallback;
+  const persistSession = useCallback(
+    (email: string, accessToken: string, role?: AppRoleType) => {
+      const decodedExp = decodeJwtExp(accessToken);
+      const fallback = Date.now() + FALLBACK_TOKEN_EXPIRY_MS;
+      const accessTokenExpiry =
+        decodedExp && decodedExp > Date.now() ? decodedExp : fallback;
 
-    const creds: Credentials = { email, accessToken, accessTokenExpiry };
-    localStorage.setItem("credentials", JSON.stringify(creds));
-    setCredentials(creds);
-  }, []);
+      const creds: Credentials = {
+        email,
+        accessToken,
+        accessTokenExpiry,
+        role,
+      };
+      localStorage.setItem("credentials", JSON.stringify(creds));
+      setCredentials(creds);
+    },
+    [],
+  );
 
   const signup = useCallback(
     async (data: SignupData) => {
@@ -171,7 +181,7 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
     <AuthContext.Provider
       value={{
         isAuthorized: credentials !== null,
-        role: userData?.role ?? appRole,
+        role: userData?.role || credentials?.role || appRole,
         login,
         signup,
         logout,
