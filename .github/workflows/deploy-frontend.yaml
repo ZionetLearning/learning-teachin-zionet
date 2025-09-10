@@ -116,18 +116,18 @@ jobs:
           npx vitest run --reporter=verbose --passWithNoTests --root apps/${{ matrix.app }}
           echo "Tests completed successfully for ${{ matrix.app }}"
       
-      # - name: Run E2E Tests (Cypress) for ${{ matrix.app }}
-      #   continue-on-error: true
-      #   working-directory: ${{ env.FE_DIR }}
-      #   run: |
-      #     echo "Running Cypress for ${{ matrix.app }}..."
-      #     if grep -q "\"cypress:${{ matrix.app }}\":" package.json; then
-      #       # Run Cypress - will show results even with some test failures
-      #       npm run cypress:${{ matrix.app }}:ci
-      #       echo "Cypress run completed for ${{ matrix.app }}"
-      #     else
-      #       echo "No cypress:${{ matrix.app }} script found in package.json - skipping"
-      #     fi
+      - name: Run E2E Tests (Cypress) for ${{ matrix.app }}
+        continue-on-error: true
+        working-directory: ${{ env.FE_DIR }}
+        run: |
+          echo "Running Cypress for ${{ matrix.app }}..."
+          if grep -q "\"cypress:${{ matrix.app }}\":" package.json; then
+            # Run Cypress - will show results even with some test failures
+            npm run cypress:${{ matrix.app }}:ci
+            echo "Cypress run completed for ${{ matrix.app }}"
+          else
+            echo "No cypress:${{ matrix.app }} script found in package.json - skipping"
+          fi
 
 
   frontend-build-and-lint:
