@@ -54,6 +54,7 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
   const userId = credentials
     ? (decodeJwtUserId(credentials.accessToken) ?? undefined)
     : undefined;
+
   const {
     data: userData,
     isLoading: isUserLoading,
@@ -184,14 +185,7 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
             isUserLoading,
           error: loginError || createUserError || userError,
         },
-        user: userData
-          ? {
-              email: userData.email,
-              firstName: userData.firstName,
-              lastName: userData.lastName,
-              userId: userData.userId,
-            }
-          : null,
+        user: userData ?? null,
       }}
     >
       {children}

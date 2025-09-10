@@ -1,46 +1,58 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Typography, TextField, Stack } from "@mui/material";
-import { useUpdateUserByUserId, useAuth } from "@app-providers";
+import { useUpdateUserByUserId, User } from "@app-providers";
 import { Button } from "../Button";
 import { useStyles } from "./style";
 
-export const Profile = () => {
+export const Profile = ({ user }: { user: User }) => {
   const { t, i18n } = useTranslation();
+  const isRTL = i18n.dir() === "rtl";
   const classes = useStyles();
 
-  const { user } = useAuth();
   const { mutateAsync: updateUserMutation } = useUpdateUserByUserId(
     user?.userId ?? "",
   );
 
-  const [fn, setFn] = useState<string>("");
-  const [ln, setLn] = useState<string>("");
-  const isRTL = i18n.dir() === "rtl";
+  const [userDetails, setUserDetails] = useState({
+    firstName: user?.firstName ?? "",
+    lastName: user?.lastName ?? "",
+  });
 
   useEffect(() => {
-    if (user?.firstName !== undefined) setFn(user.firstName);
-    if (user?.lastName !== undefined) setLn(user.lastName);
+    setUserDetails({
+      firstName: user?.firstName ?? "",
+      lastName: user?.lastName ?? "",
+    });
   }, [user?.firstName, user?.lastName, user?.userId]);
 
-  if (!user) return null;
-
-  const dirty =
-    fn.trim() !== (user?.firstName ?? "").trim() ||
-    ln.trim() !== (user?.lastName ?? "").trim();
+  const handleChange =
+    (field: "firstName" | "lastName") =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setUserDetails((prev) => ({
+        ...prev,
+        [field]: e.target.value,
+      }));
+    };
 
   const handleCancel = () => {
-    setFn(user?.firstName ?? "");
-    setLn(user?.lastName ?? "");
+    setUserDetails({
+      firstName: user?.firstName ?? "",
+      lastName: user?.lastName ?? "",
+    });
   };
 
   const handleSave = async () => {
     await updateUserMutation({
       email: user.email,
-      firstName: fn.trim(),
-      lastName: ln.trim(),
+      firstName: userDetails.firstName.trim(),
+      lastName: userDetails.lastName.trim(),
     });
   };
+
+  const dirty =
+    userDetails.firstName.trim() !== (user?.firstName ?? "").trim() ||
+    userDetails.lastName.trim() !== (user?.lastName ?? "").trim();
 
   return (
     <div className={classes.container}>
@@ -68,10 +80,8 @@ export const Profile = () => {
               {t("pages.profile.firstName")}
             </Typography>
             <TextField
-              value={fn}
-              onChange={(e) => {
-                setFn(e.target.value);
-              }}
+              value={userDetails.firstName}
+              onChange={handleChange("firstName")}
               fullWidth
               className={isRTL ? classes.textFieldRTL : classes.textFieldLTR}
             />
@@ -86,10 +96,8 @@ export const Profile = () => {
               {t("pages.profile.lastName")}
             </Typography>
             <TextField
-              value={ln}
-              onChange={(e) => {
-                setLn(e.target.value);
-              }}
+              value={userDetails.lastName}
+              onChange={handleChange("lastName")}
               fullWidth
               className={isRTL ? classes.textFieldRTL : classes.textFieldLTR}
             />
