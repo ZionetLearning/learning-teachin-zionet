@@ -11,16 +11,16 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
       style="text-align: left;"
     >
       <h2
-        class="sectionTitle-0-2-9"
+        class="sectionTitle-0-2-15"
       >
         pages.users.createUsers
       </h2>
       <form
         action="#"
-        class="form-0-2-5"
+        class="form-0-2-6"
       >
         <label
-          class="label-0-2-6"
+          class="label-0-2-7"
         >
           pages.users.email
           <input
@@ -32,11 +32,11 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
             value=""
           />
           <span
-            class="error-0-2-7"
+            class="error-0-2-13"
           />
         </label>
         <label
-          class="label-0-2-6"
+          class="label-0-2-7"
         >
           pages.users.firstName
           <input
@@ -48,11 +48,11 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
             value=""
           />
           <span
-            class="error-0-2-7"
+            class="error-0-2-13"
           />
         </label>
         <label
-          class="label-0-2-6"
+          class="label-0-2-7"
         >
           pages.users.lastName
           <input
@@ -64,15 +64,15 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
             value=""
           />
           <span
-            class="error-0-2-7"
+            class="error-0-2-13"
           />
         </label>
         <label
-          class="label-0-2-6"
+          class="label-0-2-7"
         >
           pages.users.role
           <div
-            class="MuiFormControl-root MuiFormControl-fullWidth wrapper-0-2-13 css-ytlejw-MuiFormControl-root"
+            class="MuiFormControl-root MuiFormControl-fullWidth wrapper-0-2-19 css-ytlejw-MuiFormControl-root"
           >
             <label
               class="MuiFormLabel-root MuiInputLabel-root MuiInputLabel-formControl MuiInputLabel-animated MuiInputLabel-shrink MuiInputLabel-outlined MuiFormLabel-colorPrimary MuiFormLabel-filled MuiInputLabel-root MuiInputLabel-formControl MuiInputLabel-animated MuiInputLabel-shrink MuiInputLabel-outlined css-113d811-MuiFormLabel-root-MuiInputLabel-root"
@@ -132,7 +132,7 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
           </div>
         </label>
         <label
-          class="label-0-2-6"
+          class="label-0-2-7"
         >
           pages.users.password
           <input
@@ -144,11 +144,11 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
             value=""
           />
           <span
-            class="error-0-2-7"
+            class="error-0-2-13"
           />
         </label>
         <button
-          class="submitButton-0-2-10"
+          class="submitButton-0-2-16"
           data-testid="users-create-submit"
           type="submit"
         >
@@ -161,337 +161,447 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
       data-testid="users-list-container"
     >
       <h2
-        class="sectionTitle-0-2-9"
+        class="sectionTitle-0-2-15"
       >
         pages.users.users
       </h2>
       <div
-        class="MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation1 MuiTableContainer-root css-y2ff7i-MuiPaper-root-MuiTableContainer-root"
-        data-testid="users-table"
-        style="--Paper-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);"
+        class="tableArea-0-2-5"
+        data-testid="users-table-area"
       >
-        <table
-          class="MuiTable-root MuiTable-stickyHeader css-pvu7mv-MuiTable-root"
+        <div
+          class="tableShell-0-2-8"
+          data-testid="users-table-shell"
         >
-          <thead
-            class="MuiTableHead-root css-1a7iywq-MuiTableHead-root"
+          <table
+            aria-label="users header"
+            class="MuiTable-root headerTable-0-2-9 css-1xwxv7r-MuiTable-root"
           >
-            <tr
-              class="MuiTableRow-root MuiTableRow-head css-1xtozoh-MuiTableRow-root"
+            <thead
+              class="MuiTableHead-root css-1a7iywq-MuiTableHead-root"
             >
-              <th
-                class="MuiTableCell-root MuiTableCell-head MuiTableCell-stickyHeader MuiTableCell-alignCenter MuiTableCell-sizeSmall css-1vbpkd4-MuiTableCell-root"
-                scope="col"
+              <tr
+                class="MuiTableRow-root MuiTableRow-head css-1xtozoh-MuiTableRow-root"
               >
-                pages.users.email
-              </th>
-              <th
-                class="MuiTableCell-root MuiTableCell-head MuiTableCell-stickyHeader MuiTableCell-alignCenter MuiTableCell-sizeSmall css-1vbpkd4-MuiTableCell-root"
-                scope="col"
-              >
-                pages.users.firstName
-              </th>
-              <th
-                class="MuiTableCell-root MuiTableCell-head MuiTableCell-stickyHeader MuiTableCell-alignCenter MuiTableCell-sizeSmall css-1vbpkd4-MuiTableCell-root"
-                scope="col"
-              >
-                pages.users.lastName
-              </th>
-              <th
-                class="MuiTableCell-root MuiTableCell-head MuiTableCell-stickyHeader MuiTableCell-alignCenter MuiTableCell-sizeSmall css-1vbpkd4-MuiTableCell-root"
-                scope="col"
-              >
-                pages.users.role
-              </th>
-              <th
-                class="MuiTableCell-root MuiTableCell-head MuiTableCell-stickyHeader MuiTableCell-alignCenter MuiTableCell-sizeSmall css-1vbpkd4-MuiTableCell-root"
-                scope="col"
-              >
-                pages.users.actions
-              </th>
-            </tr>
-            <tr
-              class="MuiTableRow-root MuiTableRow-head css-1xtozoh-MuiTableRow-root"
+                <th
+                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-alignCenter MuiTableCell-sizeSmall css-m4o53m-MuiTableCell-root"
+                  scope="col"
+                >
+                  pages.users.email
+                </th>
+                <th
+                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-alignCenter MuiTableCell-sizeSmall css-m4o53m-MuiTableCell-root"
+                  scope="col"
+                >
+                  pages.users.firstName
+                </th>
+                <th
+                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-alignCenter MuiTableCell-sizeSmall css-m4o53m-MuiTableCell-root"
+                  scope="col"
+                >
+                  pages.users.lastName
+                </th>
+                <th
+                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-alignCenter MuiTableCell-sizeSmall css-m4o53m-MuiTableCell-root"
+                  scope="col"
+                >
+                  pages.users.role
+                </th>
+                <th
+                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-alignCenter MuiTableCell-sizeSmall css-m4o53m-MuiTableCell-root"
+                  scope="col"
+                >
+                  pages.users.actions
+                </th>
+              </tr>
+            </thead>
+          </table>
+          <div
+            class="searchBar-0-2-10"
+            data-testid="users-search-bar"
+          >
+            <div
+              class="MuiFormControl-root MuiFormControl-fullWidth MuiTextField-root searchField-0-2-17 css-cmpglg-MuiFormControl-root-MuiTextField-root"
+              dir="ltr"
             >
-              <th
-                class="MuiTableCell-root MuiTableCell-head MuiTableCell-stickyHeader MuiTableCell-sizeSmall searchCell-0-2-11 css-9iq4h1-MuiTableCell-root"
-                colspan="5"
-                scope="col"
+              <div
+                class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-sizeSmall MuiInputBase-adornedStart css-ot336b-MuiInputBase-root-MuiOutlinedInput-root"
               >
                 <div
-                  class="MuiFormControl-root MuiFormControl-fullWidth MuiTextField-root searchField-0-2-12 css-cmpglg-MuiFormControl-root-MuiTextField-root"
-                  dir="ltr"
+                  class="MuiInputAdornment-root MuiInputAdornment-positionStart MuiInputAdornment-outlined MuiInputAdornment-sizeSmall css-1nowbqt-MuiInputAdornment-root"
                 >
-                  <div
-                    class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-sizeSmall MuiInputBase-adornedStart css-ot336b-MuiInputBase-root-MuiOutlinedInput-root"
+                  <span
+                    aria-hidden="true"
+                    class="notranslate"
+                  >
+                    ​
+                  </span>
+                  <svg
+                    aria-hidden="true"
+                    class="MuiSvgIcon-root MuiSvgIcon-fontSizeSmall css-120dh41-MuiSvgIcon-root"
+                    data-testid="SearchIcon"
+                    focusable="false"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"
+                    />
+                  </svg>
+                </div>
+                <input
+                  aria-invalid="false"
+                  class="MuiInputBase-input MuiOutlinedInput-input MuiInputBase-inputSizeSmall MuiInputBase-inputAdornedStart css-1q55ijt-MuiInputBase-input-MuiOutlinedInput-input"
+                  data-testid="users-search-input"
+                  id=":r1:"
+                  placeholder="pages.users.searchPlaceholder"
+                  type="text"
+                  value=""
+                />
+                <fieldset
+                  aria-hidden="true"
+                  class="MuiOutlinedInput-notchedOutline css-18p5xg2-MuiNotchedOutlined-root-MuiOutlinedInput-notchedOutline"
+                >
+                  <legend
+                    class="css-1nf2c5d-MuiNotchedOutlined-root"
+                  >
+                    <span
+                      aria-hidden="true"
+                      class="notranslate"
+                    >
+                      ​
+                    </span>
+                  </legend>
+                </fieldset>
+              </div>
+            </div>
+          </div>
+          <div
+            class="rowsScroll-0-2-11"
+            data-testid="users-rows-scroll"
+          >
+            <table
+              aria-label="users body"
+              class="MuiTable-root bodyTable-0-2-12 css-1xwxv7r-MuiTable-root"
+            >
+              <tbody
+                class="MuiTableBody-root css-gmh7jj-MuiTableBody-root"
+              >
+                <tr
+                  class="MuiTableRow-root MuiTableRow-hover tableRow-0-2-32 css-1xtozoh-MuiTableRow-root"
+                  data-testid="users-row-u1"
+                >
+                  <td
+                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-33 css-jiabcu-MuiTableCell-root"
+                    width="28%"
+                  >
+                    <span
+                      data-testid="users-email"
+                      title="alpha@example.com"
+                    >
+                      alpha@example.com
+                    </span>
+                  </td>
+                  <td
+                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-33 css-jiabcu-MuiTableCell-root"
+                  >
+                    <span
+                      data-testid="users-first-name"
+                      title="Alice"
+                    >
+                      Alice
+                    </span>
+                  </td>
+                  <td
+                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-33 css-jiabcu-MuiTableCell-root"
+                  >
+                    <span
+                      data-testid="users-last-name"
+                      title="Anderson"
+                    >
+                      Anderson
+                    </span>
+                  </td>
+                  <td
+                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-33 dropdownCell-0-2-34 css-jiabcu-MuiTableCell-root"
+                    width="16%"
+                  >
+                    <span
+                      class="roleBadge-0-2-36 roleStudent-0-2-37"
+                      data-testid="users-role-badge"
+                    >
+                      roles.student
+                    </span>
+                  </td>
+                  <td
+                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-alignCenter MuiTableCell-sizeSmall tableCell-0-2-33 css-wsxt5g-MuiTableCell-root"
+                    width="20%"
                   >
                     <div
-                      class="MuiInputAdornment-root MuiInputAdornment-positionStart MuiInputAdornment-outlined MuiInputAdornment-sizeSmall css-1nowbqt-MuiInputAdornment-root"
+                      class="actions-0-2-29"
                     >
                       <span
-                        aria-hidden="true"
-                        class="notranslate"
+                        aria-label="pages.users.update"
+                        class=""
+                        data-mui-internal-clone-element="true"
                       >
-                        ​
-                      </span>
-                      <svg
-                        aria-hidden="true"
-                        class="MuiSvgIcon-root MuiSvgIcon-fontSizeSmall css-120dh41-MuiSvgIcon-root"
-                        data-testid="SearchIcon"
-                        focusable="false"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"
-                        />
-                      </svg>
-                    </div>
-                    <input
-                      aria-invalid="false"
-                      class="MuiInputBase-input MuiOutlinedInput-input MuiInputBase-inputSizeSmall MuiInputBase-inputAdornedStart css-1q55ijt-MuiInputBase-input-MuiOutlinedInput-input"
-                      data-testid="users-search-input"
-                      id=":r1:"
-                      placeholder="pages.users.searchPlaceholder"
-                      type="text"
-                      value=""
-                    />
-                    <fieldset
-                      aria-hidden="true"
-                      class="MuiOutlinedInput-notchedOutline css-18p5xg2-MuiNotchedOutlined-root-MuiOutlinedInput-notchedOutline"
-                    >
-                      <legend
-                        class="css-1nf2c5d-MuiNotchedOutlined-root"
-                      >
-                        <span
-                          aria-hidden="true"
-                          class="notranslate"
+                        <button
+                          aria-label="pages.users.update"
+                          class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium updateButton-0-2-24 btnBase-0-2-23 css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
+                          data-testid="users-update-btn"
+                          tabindex="0"
+                          type="button"
                         >
-                          ​
-                        </span>
-                      </legend>
-                    </fieldset>
-                  </div>
-                </div>
-              </th>
-            </tr>
-          </thead>
-          <tbody
-            class="MuiTableBody-root css-gmh7jj-MuiTableBody-root"
+                          <svg
+                            aria-hidden="true"
+                            class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-1umw9bq-MuiSvgIcon-root"
+                            data-testid="EditIcon"
+                            focusable="false"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.996.996 0 0 0-1.41 0l-1.83 1.83 3.75 3.75z"
+                            />
+                          </svg>
+                        </button>
+                      </span>
+                      <span
+                        aria-label="pages.users.delete"
+                        class=""
+                        data-mui-internal-clone-element="true"
+                      >
+                        <button
+                          aria-label="pages.users.delete"
+                          class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium deleteButton-0-2-25 btnBase-0-2-23 css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
+                          data-testid="users-delete-btn"
+                          tabindex="0"
+                          type="button"
+                        >
+                          <svg
+                            aria-hidden="true"
+                            class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-1umw9bq-MuiSvgIcon-root"
+                            data-testid="DeleteIcon"
+                            focusable="false"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6zM19 4h-3.5l-1-1h-5l-1 1H5v2h14z"
+                            />
+                          </svg>
+                        </button>
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+                <tr
+                  class="MuiTableRow-root MuiTableRow-hover tableRow-0-2-32 css-1xtozoh-MuiTableRow-root"
+                  data-testid="users-row-u2"
+                >
+                  <td
+                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-33 css-jiabcu-MuiTableCell-root"
+                    width="28%"
+                  >
+                    <span
+                      data-testid="users-email"
+                      title="beta@example.com"
+                    >
+                      beta@example.com
+                    </span>
+                  </td>
+                  <td
+                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-33 css-jiabcu-MuiTableCell-root"
+                  >
+                    <span
+                      data-testid="users-first-name"
+                      title="Bob"
+                    >
+                      Bob
+                    </span>
+                  </td>
+                  <td
+                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-33 css-jiabcu-MuiTableCell-root"
+                  >
+                    <span
+                      data-testid="users-last-name"
+                      title="Baker"
+                    >
+                      Baker
+                    </span>
+                  </td>
+                  <td
+                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-33 dropdownCell-0-2-34 css-jiabcu-MuiTableCell-root"
+                    width="16%"
+                  >
+                    <span
+                      class="roleBadge-0-2-36 roleStudent-0-2-37"
+                      data-testid="users-role-badge"
+                    >
+                      roles.student
+                    </span>
+                  </td>
+                  <td
+                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-alignCenter MuiTableCell-sizeSmall tableCell-0-2-33 css-wsxt5g-MuiTableCell-root"
+                    width="20%"
+                  >
+                    <div
+                      class="actions-0-2-29"
+                    >
+                      <span
+                        aria-label="pages.users.update"
+                        class=""
+                        data-mui-internal-clone-element="true"
+                      >
+                        <button
+                          aria-label="pages.users.update"
+                          class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium updateButton-0-2-24 btnBase-0-2-23 css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
+                          data-testid="users-update-btn"
+                          tabindex="0"
+                          type="button"
+                        >
+                          <svg
+                            aria-hidden="true"
+                            class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-1umw9bq-MuiSvgIcon-root"
+                            data-testid="EditIcon"
+                            focusable="false"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.996.996 0 0 0-1.41 0l-1.83 1.83 3.75 3.75z"
+                            />
+                          </svg>
+                        </button>
+                      </span>
+                      <span
+                        aria-label="pages.users.delete"
+                        class=""
+                        data-mui-internal-clone-element="true"
+                      >
+                        <button
+                          aria-label="pages.users.delete"
+                          class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium deleteButton-0-2-25 btnBase-0-2-23 css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
+                          data-testid="users-delete-btn"
+                          tabindex="0"
+                          type="button"
+                        >
+                          <svg
+                            aria-hidden="true"
+                            class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-1umw9bq-MuiSvgIcon-root"
+                            data-testid="DeleteIcon"
+                            focusable="false"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6zM19 4h-3.5l-1-1h-5l-1 1H5v2h14z"
+                            />
+                          </svg>
+                        </button>
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div
+          class="MuiTablePagination-root paginationBar-0-2-18 css-7mt0f-MuiTablePagination-root"
+          data-testid="users-pagination"
+        >
+          <div
+            class="MuiToolbar-root MuiToolbar-gutters MuiToolbar-regular MuiTablePagination-toolbar css-1gak8h1-MuiToolbar-root-MuiTablePagination-toolbar"
           >
-            <tr
-              class="MuiTableRow-root MuiTableRow-hover tableRow-0-2-26 css-1xtozoh-MuiTableRow-root"
-              data-testid="users-row-u1"
+            <div
+              class="MuiTablePagination-spacer css-1wtxofq-MuiTablePagination-spacer"
+            />
+            <p
+              class="MuiTablePagination-selectLabel css-s09cke-MuiTablePagination-selectLabel"
+              id=":rb:"
             >
-              <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-27 css-jiabcu-MuiTableCell-root"
-                width="28%"
-              >
-                <span
-                  data-testid="users-email"
-                  title="alpha@example.com"
-                >
-                  alpha@example.com
-                </span>
-              </td>
-              <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-27 css-jiabcu-MuiTableCell-root"
-              >
-                <span
-                  data-testid="users-first-name"
-                  title="Alice"
-                >
-                  Alice
-                </span>
-              </td>
-              <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-27 css-jiabcu-MuiTableCell-root"
-              >
-                <span
-                  data-testid="users-last-name"
-                  title="Anderson"
-                >
-                  Anderson
-                </span>
-              </td>
-              <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-27 dropdownCell-0-2-28 css-jiabcu-MuiTableCell-root"
-                width="16%"
-              >
-                <span
-                  class="roleBadge-0-2-30 roleStudent-0-2-31"
-                  data-testid="users-role-badge"
-                >
-                  roles.student
-                </span>
-              </td>
-              <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-alignCenter MuiTableCell-sizeSmall tableCell-0-2-27 css-wsxt5g-MuiTableCell-root"
-                width="20%"
-              >
-                <div
-                  class="actions-0-2-23"
-                >
-                  <span
-                    aria-label="pages.users.update"
-                    class=""
-                    data-mui-internal-clone-element="true"
-                  >
-                    <button
-                      aria-label="pages.users.update"
-                      class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium updateButton-0-2-18 btnBase-0-2-17 css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
-                      data-testid="users-update-btn"
-                      tabindex="0"
-                      type="button"
-                    >
-                      <svg
-                        aria-hidden="true"
-                        class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-1umw9bq-MuiSvgIcon-root"
-                        data-testid="EditIcon"
-                        focusable="false"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.996.996 0 0 0-1.41 0l-1.83 1.83 3.75 3.75z"
-                        />
-                      </svg>
-                    </button>
-                  </span>
-                  <span
-                    aria-label="pages.users.delete"
-                    class=""
-                    data-mui-internal-clone-element="true"
-                  >
-                    <button
-                      aria-label="pages.users.delete"
-                      class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium deleteButton-0-2-19 btnBase-0-2-17 css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
-                      data-testid="users-delete-btn"
-                      tabindex="0"
-                      type="button"
-                    >
-                      <svg
-                        aria-hidden="true"
-                        class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-1umw9bq-MuiSvgIcon-root"
-                        data-testid="DeleteIcon"
-                        focusable="false"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6zM19 4h-3.5l-1-1h-5l-1 1H5v2h14z"
-                        />
-                      </svg>
-                    </button>
-                  </span>
-                </div>
-              </td>
-            </tr>
-            <tr
-              class="MuiTableRow-root MuiTableRow-hover tableRow-0-2-26 css-1xtozoh-MuiTableRow-root"
-              data-testid="users-row-u2"
+              pages.users.rowsPerPage
+            </p>
+            <div
+              class="MuiInputBase-root MuiInputBase-colorPrimary MuiTablePagination-select MuiSelect-root MuiTablePagination-input css-oegngy-MuiInputBase-root-MuiTablePagination-select"
             >
-              <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-27 css-jiabcu-MuiTableCell-root"
-                width="28%"
+              <div
+                aria-expanded="false"
+                aria-haspopup="listbox"
+                aria-labelledby=":rb: :ra:"
+                class="MuiSelect-select MuiTablePagination-select MuiSelect-standard MuiInputBase-input css-18zjd9i-MuiNativeSelect-root-MuiSelect-select-MuiInputBase-input"
+                id=":ra:"
+                role="combobox"
+                tabindex="0"
               >
-                <span
-                  data-testid="users-email"
-                  title="beta@example.com"
-                >
-                  beta@example.com
-                </span>
-              </td>
-              <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-27 css-jiabcu-MuiTableCell-root"
+                10
+              </div>
+              <input
+                aria-hidden="true"
+                aria-invalid="false"
+                class="MuiSelect-nativeInput css-j0riat-MuiSelect-nativeInput"
+                tabindex="-1"
+                value="10"
+              />
+              <svg
+                aria-hidden="true"
+                class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium MuiSelect-icon MuiTablePagination-selectIcon MuiSelect-iconStandard css-ug7h84-MuiSvgIcon-root-MuiNativeSelect-root-MuiSelect-icon"
+                data-testid="ArrowDropDownIcon"
+                focusable="false"
+                viewBox="0 0 24 24"
               >
-                <span
-                  data-testid="users-first-name"
-                  title="Bob"
-                >
-                  Bob
-                </span>
-              </td>
-              <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-27 css-jiabcu-MuiTableCell-root"
+                <path
+                  d="M7 10l5 5 5-5z"
+                />
+              </svg>
+            </div>
+            <p
+              class="MuiTablePagination-displayedRows css-11cfq65-MuiTablePagination-displayedRows"
+            >
+              1-2 pages.users.of 2
+            </p>
+            <div
+              class="MuiTablePaginationActions-root MuiTablePagination-actions css-sjsoon-MuiTablePaginationActions-root"
+            >
+              <button
+                aria-label="Go to previous page"
+                class="MuiButtonBase-root Mui-disabled MuiIconButton-root Mui-disabled MuiIconButton-colorInherit MuiIconButton-sizeMedium css-h7cjts-MuiButtonBase-root-MuiIconButton-root"
+                disabled=""
+                tabindex="-1"
+                title="Go to previous page"
+                type="button"
               >
-                <span
-                  data-testid="users-last-name"
-                  title="Baker"
+                <svg
+                  aria-hidden="true"
+                  class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-1umw9bq-MuiSvgIcon-root"
+                  data-testid="KeyboardArrowLeftIcon"
+                  focusable="false"
+                  viewBox="0 0 24 24"
                 >
-                  Baker
-                </span>
-              </td>
-              <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-27 dropdownCell-0-2-28 css-jiabcu-MuiTableCell-root"
-                width="16%"
+                  <path
+                    d="M15.41 16.09l-4.58-4.59 4.58-4.59L14 5.5l-6 6 6 6z"
+                  />
+                </svg>
+              </button>
+              <button
+                aria-label="Go to next page"
+                class="MuiButtonBase-root Mui-disabled MuiIconButton-root Mui-disabled MuiIconButton-colorInherit MuiIconButton-sizeMedium css-h7cjts-MuiButtonBase-root-MuiIconButton-root"
+                disabled=""
+                tabindex="-1"
+                title="Go to next page"
+                type="button"
               >
-                <span
-                  class="roleBadge-0-2-30 roleStudent-0-2-31"
-                  data-testid="users-role-badge"
+                <svg
+                  aria-hidden="true"
+                  class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-1umw9bq-MuiSvgIcon-root"
+                  data-testid="KeyboardArrowRightIcon"
+                  focusable="false"
+                  viewBox="0 0 24 24"
                 >
-                  roles.student
-                </span>
-              </td>
-              <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-alignCenter MuiTableCell-sizeSmall tableCell-0-2-27 css-wsxt5g-MuiTableCell-root"
-                width="20%"
-              >
-                <div
-                  class="actions-0-2-23"
-                >
-                  <span
-                    aria-label="pages.users.update"
-                    class=""
-                    data-mui-internal-clone-element="true"
-                  >
-                    <button
-                      aria-label="pages.users.update"
-                      class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium updateButton-0-2-18 btnBase-0-2-17 css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
-                      data-testid="users-update-btn"
-                      tabindex="0"
-                      type="button"
-                    >
-                      <svg
-                        aria-hidden="true"
-                        class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-1umw9bq-MuiSvgIcon-root"
-                        data-testid="EditIcon"
-                        focusable="false"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.996.996 0 0 0-1.41 0l-1.83 1.83 3.75 3.75z"
-                        />
-                      </svg>
-                    </button>
-                  </span>
-                  <span
-                    aria-label="pages.users.delete"
-                    class=""
-                    data-mui-internal-clone-element="true"
-                  >
-                    <button
-                      aria-label="pages.users.delete"
-                      class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium deleteButton-0-2-19 btnBase-0-2-17 css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
-                      data-testid="users-delete-btn"
-                      tabindex="0"
-                      type="button"
-                    >
-                      <svg
-                        aria-hidden="true"
-                        class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-1umw9bq-MuiSvgIcon-root"
-                        data-testid="DeleteIcon"
-                        focusable="false"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6zM19 4h-3.5l-1-1h-5l-1 1H5v2h14z"
-                        />
-                      </svg>
-                    </button>
-                  </span>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                  <path
+                    d="M8.59 16.34l4.58-4.59-4.58-4.59L10 5.75l6 6-6 6z"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>

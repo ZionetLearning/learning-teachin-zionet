@@ -35,6 +35,13 @@ export const useStyles = createUseStyles({
     flexDirection: "column",
     minHeight: 0,
   },
+  tableArea: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    minHeight: 0,
+    overflow: "hidden",
+  },
   form: {
     display: "flex",
     flexDirection: "column",
@@ -75,6 +82,50 @@ export const useStyles = createUseStyles({
         },
     },
   },
+  // New separated table shell layout
+  tableShell: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    minHeight: 0,
+    border: "1px solid #e5e7eb",
+    borderRadius: 8,
+    background: "#fff",
+    overflow: "hidden",
+  },
+  headerTable: {
+    tableLayout: "fixed",
+    width: "100%",
+    borderCollapse: "separate",
+    borderSpacing: 0,
+    "& th": {
+      background: "#f8fafc",
+      fontWeight: 600,
+      color: "#1f2937",
+      borderBottom: "1px solid #e5e7eb",
+    },
+  },
+  searchBar: {
+    padding: "8px 12px 6px",
+    borderBottom: "1px solid #e5e7eb",
+    background: "#fff",
+  },
+  rowsScroll: {
+    flex: 1,
+    minHeight: 0,
+    overflowY: "auto",
+    scrollbarGutter: "stable",
+  },
+  bodyTable: {
+    tableLayout: "fixed",
+    width: "100%",
+    borderCollapse: "separate",
+    borderSpacing: 0,
+    "& td": {
+      borderBottom: "1px solid #f1f5f9",
+    },
+  },
+
   error: {
     color: "#c00",
     fontSize: 11,
@@ -136,10 +187,6 @@ export const useStyles = createUseStyles({
     formContainer: { maxWidth: "100%" },
     listContainer: { maxWidth: "100%" },
   },
-  searchCell: {
-    padding: "8px 12px",
-    background: "#fff",
-  },
   searchField: {
     "& .MuiOutlinedInput-root": {
       height: 32,
@@ -159,5 +206,10 @@ export const useStyles = createUseStyles({
         caretColor: "#1f2937",
         transition: "background-color 9999s ease-out, color 9999s ease-out",
       },
+  },
+  paginationBar: {
+    padding: "4px 12px",
+    borderTop: "1px solid #e5e7eb",
+    background: "#fff",
   },
 });
