@@ -1,4 +1,6 @@
-﻿using DotQueue;
+﻿using Dapr.Client;
+using DotQueue;
+using Engine.Constants;
 using Engine.Helpers;
 using Engine.Models;
 using Engine.Models.Chat;
@@ -7,7 +9,8 @@ using Engine.Models.Sentences;
 using Engine.Services;
 using Engine.Services.Clients.AccessorClient;
 using Engine.Services.Clients.AccessorClient.Models;
-using Dapr.Client;
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.ChatCompletion;
 
 namespace Engine.Endpoints;
 
@@ -172,9 +175,9 @@ public class EngineQueueHandler : IQueueHandler<Message>
     }
 
     private async Task HandleProcessingChatMessageAsync(
-        Message message,
-        Func<Task> renewLock,
-        CancellationToken ct)
+           Message message,
+           Func<Task> renewLock,
+           CancellationToken ct)
     {
         try
         {
@@ -208,7 +211,11 @@ public class EngineQueueHandler : IQueueHandler<Message>
             var skHistory = HistoryMapper.ToChatHistoryFromElement(snapshot.History);
             var storyForKernel = HistoryMapper.CloneToChatHistory(skHistory);
 
-            HistoryMapper.EnsureSystemMessage(storyForKernel);
+            if (!storyForKernel.Any(m => m.Role == AuthorRole.System))
+            {
+                var systemPrompt = await GetOrLoadSystemPromptAsync(ct);
+                storyForKernel.Insert(0, new ChatMessageContent(AuthorRole.System, systemPrompt));
+            }
 
             storyForKernel.AddUserMessage(request.UserMessage.Trim(), DateTimeOffset.UtcNow);
 
@@ -218,13 +225,11 @@ public class EngineQueueHandler : IQueueHandler<Message>
                 try
                 {
                     chatName = await _chatTitleService.GenerateTitleAsync(storyForKernel, ct);
-
                 }
                 catch (Exception exName)
                 {
                     _logger.LogError(exName, "Error while processing naming chat: {RequestId}", request.RequestId);
                     chatName = DateTime.UtcNow.ToString("HHmm_dd_MM");
-
                 }
             }
 
@@ -310,6 +315,43 @@ public class EngineQueueHandler : IQueueHandler<Message>
             throw new RetryableException("Transient error while processing AI chat.", ex);
         }
     }
+
+    private async Task<string> GetOrLoadSystemPromptAsync(CancellationToken ct)
+    {
+
+        var keys = new[] { PromptsKeys.SystemDefault, PromptsKeys.DetailedExplanation };
+        var fallback = "You are a helpful assistant. Keep answers concise.";
+
+        try
+        {
+            var batch = await _accessorClient.GetPromptsBatchAsync(keys, ct);
+            var map = batch.Prompts.ToDictionary(p => p.PromptKey, p => p.Content, StringComparer.Ordinal);
+
+            var combined = string.Join(
+                "\n\n",
+                keys.Select(k => map.TryGetValue(k, out var v) ? v : null)
+                    .Where(v => !string.IsNullOrWhiteSpace(v)));
+
+            if (string.IsNullOrWhiteSpace(combined))
+            {
+                _logger.LogWarning("System prompt batch returned empty; using fallback.");
+                combined = fallback;
+            }
+
+            if (batch.NotFound?.Count > 0)
+            {
+                _logger.LogWarning("Missing prompt keys: {Keys}", string.Join(",", batch.NotFound));
+            }
+
+            return combined;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed retrieving system prompts; using fallback.");
+            return fallback;
+        }
+    }
+
     private async Task HandleSentenceGenerationAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
     {
         try

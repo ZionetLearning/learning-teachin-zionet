@@ -1,5 +1,6 @@
 ﻿using Accessor.Models;
 using Accessor.Services;
+using Accessor.Services.Interfaces;
 using Accessor.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,13 +22,13 @@ public static class TasksEndpoints
     // ---- handlers (moved from AccessorEndpoints) ----
     public static async Task<IResult> GetTaskByIdAsync(
         int id,
-        [FromServices] IAccessorService accessorService,
-        [FromServices] ILogger<AccessorService> logger)
+        [FromServices] ITaskService taskService,
+        [FromServices] ILogger<TaskService> logger)
     {
         using var scope = logger.BeginScope("Method: {Method}, TaskId: {TaskId}", nameof(GetTaskByIdAsync), id);
         try
         {
-            var task = await accessorService.GetTaskByIdAsync(id);
+            var task = await taskService.GetTaskByIdAsync(id);
             if (task != null)
             {
                 logger.LogInformation("Successfully retrieved task.");
@@ -46,15 +47,15 @@ public static class TasksEndpoints
 
     public static async Task<IResult> CreateTaskAsync(
         [FromBody] TaskModel task,
-        [FromServices] IAccessorService accessorService,
-        [FromServices] ILogger<AccessorService> logger,
+        [FromServices] ITaskService taskService,
+        [FromServices] ILogger<TaskService> logger,
         CancellationToken ct)
     {
         using var scope = logger.BeginScope("Method: {Method}, TaskId: {TaskId}", nameof(CreateTaskAsync), task.Id);
 
         try
         {
-            await accessorService.CreateTaskAsync(task);
+            await taskService.CreateTaskAsync(task);
             return Results.Created($"/api/tasks/{task.Id}", task);
         }
         catch (ConflictException ex)
@@ -77,14 +78,14 @@ public static class TasksEndpoints
     }
 
     public static async Task<IResult> UpdateTaskNameAsync(
-    [FromBody] UpdateTaskName request,
-    [FromServices] IAccessorService accessorService,
-    [FromServices] ILogger<AccessorService> logger)
+        [FromBody] UpdateTaskName request,
+        [FromServices] ITaskService taskService,
+        [FromServices] ILogger<TaskService> logger)
     {
         using var scope = logger.BeginScope("Method: {Method}, TaskId: {TaskId}, NewName: {NewName}", nameof(UpdateTaskNameAsync), request.Id, request.Name);
         try
         {
-            var success = await accessorService.UpdateTaskNameAsync(request.Id, request.Name);
+            var success = await taskService.UpdateTaskNameAsync(request.Id, request.Name);
             if (!success)
             {
                 logger.LogWarning("Task not found.");
@@ -103,13 +104,13 @@ public static class TasksEndpoints
 
     public static async Task<IResult> DeleteTaskAsync(
         int taskId,
-        [FromServices] IAccessorService accessorService,
-        [FromServices] ILogger<AccessorService> logger)
+        [FromServices] ITaskService taskService,
+        [FromServices] ILogger<TaskService> logger)
     {
         using var scope = logger.BeginScope("Method: {Method}, TaskId: {TaskId}", nameof(DeleteTaskAsync), taskId);
         try
         {
-            var deleted = await accessorService.DeleteTaskAsync(taskId);
+            var deleted = await taskService.DeleteTaskAsync(taskId);
             if (!deleted)
             {
                 logger.LogWarning("Task not found.");

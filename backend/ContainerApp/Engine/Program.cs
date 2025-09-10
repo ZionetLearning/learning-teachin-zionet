@@ -12,6 +12,8 @@ using Microsoft.SemanticKernel;
 using DotQueue;
 using Engine;
 using Engine.Models.QueueMessages;
+using Engine.Options;
+
 var builder = WebApplication.CreateBuilder(args);
 
 var env = builder.Environment;
@@ -21,6 +23,10 @@ builder.Configuration
     .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
     .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
     .AddEnvironmentVariables();
+
+builder.Services.Configure<PromptKeyOptions>(builder.Configuration.GetSection("Prompts:Keys"));
+var promptKeyOptions = builder.Configuration.GetSection("Prompts:Keys").Get<PromptKeyOptions>() ?? new();
+PromptsKeys.Configure(promptKeyOptions);
 
 builder.Services.AddDaprClient();
 builder.Services.AddControllers().AddDapr();
