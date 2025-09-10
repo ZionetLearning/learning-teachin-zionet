@@ -5,6 +5,7 @@ using AutoMapper.QueryableExtensions;
 using Accessor.DB;
 using Accessor.Models.Prompts;
 using Accessor.Options;
+using Accessor.Services.Interfaces;
 using Microsoft.Extensions.Options;
 
 namespace Accessor.Services;

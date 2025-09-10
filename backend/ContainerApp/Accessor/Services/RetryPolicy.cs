@@ -1,4 +1,5 @@
 ﻿using Polly;
+using Accessor.Services.Interfaces;
 
 namespace Accessor.Services;
 
