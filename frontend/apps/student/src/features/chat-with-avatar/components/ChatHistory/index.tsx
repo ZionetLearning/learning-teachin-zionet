@@ -36,8 +36,8 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({
       const diffTime = now.getTime() - date.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-      if (diffDays === 1) return t("pages.chatHistory.dateFormat.today");
-      if (diffDays === 2) return t("pages.chatHistory.dateFormat.yesterday");  
+      if (diffDays < 1) return t("pages.chatHistory.dateFormat.today");
+      if (diffDays === 1) return t("pages.chatHistory.dateFormat.yesterday");  
       if (diffDays <= 7) return t("pages.chatHistory.dateFormat.daysAgo", { count: diffDays });
       return date.toLocaleDateString();
     } catch {
