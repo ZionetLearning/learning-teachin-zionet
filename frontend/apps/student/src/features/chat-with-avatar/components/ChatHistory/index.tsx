@@ -51,19 +51,21 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({
 
   return (
     <>
-      {/* Sidebar Toggle Button */}
-      <button
-        onClick={onToggleSidebar}
-        className={classes.sidebarToggle}
-        title={t("pages.chatHistory.toggleButton.title")}
-        aria-label={t("pages.chatHistory.toggleButton.ariaLabel")}
-      >
-        <span className={classes.hamburgerIcon}>
-          <span></span>
-          <span></span>
-          <span></span>
-        </span>
-      </button>
+      {/* Sidebar Toggle Button - only show when sidebar is closed */}
+      {!showSidebar && (
+        <button
+          onClick={onToggleSidebar}
+          className={classes.sidebarToggle}
+          title={t("pages.chatHistory.toggleButton.title")}
+          aria-label={t("pages.chatHistory.toggleButton.ariaLabel")}
+        >
+          <span className={classes.hamburgerIcon}>
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </button>
+      )}
 
       {/* Chat History Sidebar */}
       <div className={`${classes.sidebar} ${showSidebar ? classes.sidebarOpen : ''}`}>
