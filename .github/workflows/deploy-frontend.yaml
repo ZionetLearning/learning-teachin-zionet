@@ -174,7 +174,6 @@ jobs:
           echo "All applications are ready for E2E testing"
 
       - name: Run E2E Tests (Cypress) for ${{ matrix.app }}
-        continue-on-error: true
         working-directory: ${{ env.FE_DIR }}
         run: |
           echo "Running Cypress for ${{ matrix.app }}..."
