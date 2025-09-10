@@ -158,7 +158,7 @@ jobs:
           echo "Helm release status check complete."
 
       - name: Wait for external IP for ingress controller
-        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
+        if: false
         run: |
           echo "Waiting for external IP for ingress-nginx-controller..."
           for i in {1..30}; do
@@ -174,7 +174,7 @@ jobs:
           echo "Failed to get ingress IP."; exit 1
 
       - name: Add ingress IP to PostgreSQL firewall
-        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
+        if: false
         run: |
           INGRESS_IP=$(kubectl -n devops-ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
           az postgres flexible-server firewall-rule create \
@@ -230,7 +230,7 @@ jobs:
             --wait --timeout 180s
 
       - name: Wait for External Secrets API
-        if: false
+        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
         run: |
           echo "⏳ Waiting for ExternalSecrets API..."
           for i in {1..30}; do
