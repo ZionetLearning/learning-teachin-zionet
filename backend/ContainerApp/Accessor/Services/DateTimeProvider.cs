@@ -1,4 +1,6 @@
-﻿namespace Accessor.Services;
+﻿using Accessor.Services.Interfaces;
+
+namespace Accessor.Services;
 
 public sealed class DateTimeProvider : IDateTimeProvider
 {

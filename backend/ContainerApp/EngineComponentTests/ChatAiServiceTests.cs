@@ -173,12 +173,13 @@ public class ChatAiServiceTests
     {
         var fixedUtc = new DateTimeOffset(2025, 05, 01, 12, 34, 56, TimeSpan.Zero);
         var spyClock = new SpyClock(fixedUtc);
-        var spyFilter = new TimeInvocationSpy();
+        var logger = NullLogger<TimePlugin>.Instance;
 
+        var spyFilter = new TimeInvocationSpy();
         var pluginName = typeof(TimePlugin).ToPluginName();
         try
         {
-            _fx.Kernel.Plugins.AddFromObject(new TimePlugin(spyClock), pluginName);
+            _fx.Kernel.Plugins.AddFromObject(new TimePlugin(spyClock, logger), pluginName);
         }
         catch
         {

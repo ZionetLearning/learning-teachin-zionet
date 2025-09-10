@@ -82,6 +82,17 @@ export const extractCsrf = (data: unknown): string | undefined => {
   return undefined;
 };
 
+export const decodeJwtUserId = (token: string): string | null => {
+  try {
+    const [, payload] = token.split(".");
+    const decoded = JSON.parse(atob(payload));
+    return decoded?.userId || null;
+  } catch (e) {
+    console.error("Failed to decode JWT:", e);
+    return null;
+  }
+};
+
 export const roleNumberToAppRole: Record<number, AppRoleType> = {
   0: "student",
   1: "teacher",

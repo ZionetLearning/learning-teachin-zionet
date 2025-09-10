@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiClient as axios } from "@app-providers";
 
 export type VisemeEvent = {
@@ -21,6 +21,10 @@ export type SynthesizerRequest = {
   rate?: number;
 };
 
+export type AzureSpeechTokenResponse = {
+  token: string;
+};
+
 export const useSynthesizeSpeech = () => {
   const AI_BASE_URL = import.meta.env.VITE_AI_URL!;
   return useMutation<SynthesizeResponse, Error, SynthesizerRequest>({
@@ -31,5 +35,18 @@ export const useSynthesizeSpeech = () => {
       );
       return response.data;
     },
+  });
+};
+
+export const useAzureSpeechToken = () => {
+  const AI_BASE_URL = import.meta.env.VITE_MEDIA_URL!;
+  return useQuery<AzureSpeechTokenResponse, Error>({
+    queryKey: ["azureSpeechToken"],
+    queryFn: async () => {
+      const res = await axios.get<AzureSpeechTokenResponse>(`${AI_BASE_URL}/speech/token`);
+      return res.data;
+    },
+    staleTime: 540000, // 9 minutes
+    refetchInterval: 540000, // 9 minutes
   });
 };

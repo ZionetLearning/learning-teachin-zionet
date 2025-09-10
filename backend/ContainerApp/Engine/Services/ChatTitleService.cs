@@ -1,4 +1,6 @@
 ﻿using System.Text.Json;
+using Engine.Constants;
+using Engine.Services.Clients.AccessorClient;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
@@ -11,15 +13,17 @@ public sealed class ChatTitleService : IChatTitleService
     private readonly Kernel _kernel;
     private readonly IChatCompletionService _chat;
     private readonly IAsyncPolicy<ChatMessageContent> _kernelPolicy;
+    private readonly IAccessorClient _accessorClient;
 
     private const int TailMessages = 6;
     private const int TitleMaxLen = 64;
 
-    public ChatTitleService(Kernel kernel, IRetryPolicy retryPolicy, ILogger<ChatTitleService> log)
+    public ChatTitleService(Kernel kernel, IRetryPolicy retryPolicy, ILogger<ChatTitleService> log, IAccessorClient accessorClient)
     {
         _kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
         _chat = _kernel.GetRequiredService<IChatCompletionService>();
         _kernelPolicy = retryPolicy.CreateKernelPolicy(log);
+        _accessorClient = accessorClient ?? throw new ArgumentNullException(nameof(accessorClient));
     }
 
     public async Task<string> GenerateTitleAsync(ChatHistory history, CancellationToken ct = default)
@@ -37,16 +41,13 @@ public sealed class ChatTitleService : IChatTitleService
 
         }
 
-        var system = """
-You are a naming assistant. Create a short, specific chat title that captures the main topic.
+        var prompt = await _accessorClient.GetPromptAsync(PromptsKeys.ChatTitlePrompt, ct);
+        if (prompt is null)
+        {
+            throw new InvalidOperationException("Chat title prompt not found");
+        }
 
-Rules:
-- Language: match the user's recent messages language.
-- ≤ 6 words, ≤ 50 characters.
-- No quotes, emojis, hashtags, brackets, file names, or PII.
-- Title case for English; sentence case for Russian/others.
-Return STRICT JSON: {"title":"..."}
-""";
+        var system = prompt.Content ?? throw new InvalidOperationException("Prompt content is null");
 
         var tmp = new ChatHistory();
         tmp.AddSystemMessage(system);

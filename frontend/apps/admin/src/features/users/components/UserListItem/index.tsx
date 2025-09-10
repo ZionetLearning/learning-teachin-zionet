@@ -14,7 +14,8 @@ import {
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 
-import { useDeleteUserByUserId, useUpdateUserByUserId } from "@admin/api";
+import { useDeleteUserByUserId } from "@admin/api";
+import { useUpdateUserByUserId } from "@app-providers";
 import { AppRole, AppRoleType, User } from "@app-providers";
 import { Dropdown } from "@ui-components";
 import { useStyles } from "./style";
