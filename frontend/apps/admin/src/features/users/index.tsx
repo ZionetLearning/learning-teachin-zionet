@@ -43,7 +43,6 @@ export const Users = () => {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  // Sticky logic removed: layout now separates header/search from scrollable rows.
 
   useEffect(
     function resetOnSearch() {
