@@ -10,9 +10,12 @@ using Accessor.Services.Interfaces;
 using Azure.Messaging.ServiceBus;
 using DotQueue;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http.Timeouts; // <-- Added for RequestTimeouts
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// ---------- Services & configuration ----------
 
 builder.Services.AddSingleton(sp =>
   new ServiceBusClient(builder.Configuration["ServiceBus:ConnectionString"]));
@@ -71,10 +74,10 @@ builder.Services.AddOptions<PromptsOptions>()
     .Bind(builder.Configuration.GetSection("Prompts"))
     .ValidateOnStart();
 
-// Register Dapr client with custom JSON options
+// ---------- Dapr client: JSON + Global timeout ----------
 builder.Services.AddDaprClient((serviceProvider, daprBuilder) =>
 {
-    // Configure serialization options as before
+    // Keep your JSON settings
     daprBuilder.UseJsonSerializationOptions(new JsonSerializerOptions
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -82,15 +85,13 @@ builder.Services.AddDaprClient((serviceProvider, daprBuilder) =>
         Converters = { new UtcDateTimeOffsetConverter() }
     });
 
-    // Fetch your timeout from config (e.g., appsettings.json or environment variable)
+    // One place to control timeout across all Dapr calls
     var config = serviceProvider.GetRequiredService<IConfiguration>();
     var timeoutSeconds = config.GetValue<int?>("Timeouts:DaprClientSeconds") ?? 30;
-
-    // Apply that timeout globally
-    daprBuilder.UseTimeout(TimeSpan.FromSeconds(timeoutSeconds)); // sets Dapr call timeout globally
+    daprBuilder.UseTimeout(TimeSpan.FromSeconds(timeoutSeconds)); // global Dapr call timeout
 });
 
-// Configure PostgreSQL
+// ---------- PostgreSQL ----------
 builder.Services.AddDbContext<AccessorDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres"), npgsqlOptions =>
     {
@@ -100,7 +101,7 @@ builder.Services.AddDbContext<AccessorDbContext>(options =>
             errorCodesToAdd: null);
     }));
 
-// This is required for the Scalar UI to have an option to setup an authentication token
+// ---------- OpenAPI / Scalar ----------
 builder.Services.AddOpenApi(
     "v1",
     options =>
@@ -116,19 +117,38 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new UtcDateTimeOffsetConverter());
 });
 
+// ---------- Request timeouts (GLOBAL) ----------
+var requestTtlSeconds = builder.Configuration.GetValue<int?>("Timeouts:RequestSeconds") ?? 30;
+builder.Services.AddRequestTimeouts(options =>
+{
+    options.DefaultPolicy = new RequestTimeoutPolicy
+    {
+        Timeout = TimeSpan.FromSeconds(requestTtlSeconds),
+        TimeoutStatusCode = StatusCodes.Status408RequestTimeout
+        // You can add WriteTimeoutResponse here if you want custom body
+    };
+});
+
+// ---------- Build ----------
 var app = builder.Build();
 
+// ---------- DB + prompt init ----------
 using (var scope = app.Services.CreateScope())
 {
     var initializer = scope.ServiceProvider.GetRequiredService<DatabaseInitializer>();
     await initializer.InitializeAsync();
+
     var promptStartup = scope.ServiceProvider.GetRequiredService<IPromptService>();
     await promptStartup.InitializeDefaultPromptsAsync();
 }
 
-// Configure middleware and Dapr
+// ---------- Middleware pipeline ----------
 app.UseCloudEvents();
 app.MapSubscribeHandler();
+
+// Enable request timeouts BEFORE mapping endpoints
+app.UseRequestTimeouts();
+
 if (env.IsDevelopment())
 {
     app.MapOpenApi();
@@ -139,17 +159,12 @@ if (env.IsDevelopment())
         options.DefaultHttpClient = new(ScalarTarget.CSharp, ScalarClient.HttpClient);
         options.ShowSidebar = true;
         options.PersistentAuthentication = true;
-        // here we can setup a default token
-        //options.AddPreferredSecuritySchemes("Bearer")
-        // .AddHttpAuthentication("Bearer", auth =>
-        // {
-        //     auth.Token = "Some Auth Token...";
-        // });
-
+        // Example to pre-configure auth if needed:
+        // options.AddPreferredSecuritySchemes("Bearer");
     });
 }
-// Map endpoints (routes)
-app.UseRequestTimeouts();
+
+// ---------- Endpoints ----------
 app.MapTasksEndpoints();
 app.MapChatsEndpoints();
 app.MapPromptEndpoints();
@@ -158,4 +173,5 @@ app.MapAuthEndpoints();
 app.MapRefreshSessionEndpoints();
 app.MapStatsEndpoints();
 app.MapMediaEndpoints();
+
 await app.RunAsync();
