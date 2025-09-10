@@ -8,12 +8,12 @@ import {
   decodeJwtUserId,
   SignupData,
   useCreateUser,
+  getUserById,
   useLoginMutation,
   useLogoutMutation,
   useRefreshTokensMutation,
   UserInfo
 } from "@app-providers";
-import { getUserById } from "@app-providers/api";
 export interface AuthProviderProps {
   children: ReactNode;
   appRole: AppRoleType;
