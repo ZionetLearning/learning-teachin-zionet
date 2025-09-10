@@ -1,5 +1,6 @@
 ﻿using Accessor.Models;
 using Accessor.Services;
+using Accessor.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Accessor.Endpoints;
@@ -9,10 +10,10 @@ public static class StatsEndpoints
     public static void MapStatsEndpoints(this WebApplication app)
     {
         app.MapGet("/internal-accessor/stats/snapshot",
-            async ([FromServices] IAccessorService svc,
-                   [FromServices] ILogger<AccessorService> logger, CancellationToken ct) =>
+            async ([FromServices] IStatsService statsService,
+                   [FromServices] ILogger<StatsService> logger, CancellationToken ct) =>
             {
-                var snap = await svc.ComputeStatsAsync(ct);
+                var snap = await statsService.ComputeStatsAsync(ct);
                 if (snap is null)
                 {
                     logger.LogWarning("ComputeStatsAsync returned null snapshot");

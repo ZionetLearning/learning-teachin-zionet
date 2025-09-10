@@ -1,3 +1,5 @@
+using Accessor.Services.Interfaces;
+
 namespace Accessor.Services;
 
 public class SpeechService : ISpeechService

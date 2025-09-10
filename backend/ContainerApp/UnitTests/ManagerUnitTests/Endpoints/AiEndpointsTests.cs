@@ -2,12 +2,13 @@
 using Manager.Models.Chat;
 using Manager.Models.Sentences;
 using Manager.Models.Speech;
+using Manager.Services.Clients.Accessor;
 using Manager.Services.Clients.Engine;
 using Manager.Services.Clients.Engine.Models;
-using Manager.Services.Clients.Accessor;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 
@@ -157,19 +158,34 @@ public class AiEndpointsTests
             Nikud = true,
             Count = 1
         };
+        var dto = new SentenceRequestDto
+        {
+            Difficulty = request.Difficulty,
+            Nikud = request.Nikud,
+            Count = request.Count
+        };
 
         var engine = new Mock<IEngineClient>();
         engine.Setup(e => e.GenerateSentenceAsync(request))
             .ReturnsAsync((true, "ok"));
 
         var logger = Mock.Of<ILogger<object>>();
+        var httpContext = new DefaultHttpContext();
+
+        var identity = new ClaimsIdentity(
+            new[] { new Claim(ClaimTypes.Name, request.UserId.ToString()) },
+            authenticationType: "TestAuth"
+        );
+
+        httpContext.User = new ClaimsPrincipal(identity);
 
         var result = await PrivateInvoker.InvokePrivateEndpointAsync(
             typeof(AiEndpoints),
             "SentenceGenerateAsync",
-            request,
+            dto,
             engine.Object,
             logger,
+            httpContext,
             CancellationToken.None
         );
 

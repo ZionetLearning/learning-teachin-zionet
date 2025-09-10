@@ -44,6 +44,7 @@ module "servicebus" {
   namespace_name      = "${var.environment_name}-${var.servicebus_namespace}"
   sku                 = var.servicebus_sku
   queue_names         = var.queue_names
+  session_enabled_queues = var.session_enabled_queues
   depends_on          = [azurerm_resource_group.main]
 }
 #--------------------PostgreSQL-----------------------
@@ -154,9 +155,9 @@ module "monitoring" {
   postgres_server_id          = module.database[0].id
   signalr_id                  = module.signalr.id
   redis_id                    = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].id : module.redis[0].id
-  frontend_static_web_app_id  = [for f in module.frontend : f.static_web_app_id]
+  frontend_static_web_app_id  = length(var.frontend_apps) > 0 ? [for f in module.frontend : f.static_web_app_id] : []
 
-  frontend_application_insights_ids = [for f in module.frontend : f.application_insights_id]
+  frontend_application_insights_ids = length(var.frontend_apps) > 0 ? [for f in module.frontend : f.application_insights_id] : []
 
     depends_on = [
     azurerm_log_analytics_workspace.main,

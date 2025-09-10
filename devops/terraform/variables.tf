@@ -56,7 +56,14 @@ variable "queue_names" {
     "manager-callback-queue",
     "engine-queue",
     "accessor-queue",
+    "manager-callback-session-queue",
   ]
+}
+
+variable "session_enabled_queues" {
+  description = "List of queues that require session support"
+  type        = list(string)
+  default     = ["manager-callback-session-queue"]
 }
 
 #------------- Docker Hub (or ACR) Variables --------------------
@@ -244,7 +251,7 @@ variable "prefix" {
 
 #------------- Frontend Application Variables -------------
 variable "frontend_apps" {
-  description = "List of frontend applications to deploy"
+  description = "List of frontend applications to deploy. Set to [] to disable Static Web Apps creation."
   type        = list(string)
   default     = ["student", "teacher", "admin"]
 }

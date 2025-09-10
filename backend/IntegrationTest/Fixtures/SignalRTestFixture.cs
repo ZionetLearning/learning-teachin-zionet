@@ -1,9 +1,11 @@
+using IntegrationTests.Constants;
+using IntegrationTests.Models.Notification;
 using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Concurrent;
 using System.Text.Json;
-using IntegrationTests.Models.Notification;
-using IntegrationTests.Constants;
-using Microsoft.Extensions.Configuration;
+using System.Text.Json.Serialization;
 
 namespace IntegrationTests.Fixtures;
 
@@ -48,13 +50,17 @@ public class SignalRTestFixture : IAsyncDisposable
     {
         if (_connection is null)
         {
+
             _connection = new HubConnectionBuilder()
                 .WithUrl($"{_baseUrl}/notificationHub", options =>
                 {
                     if (!string.IsNullOrEmpty(_accessToken))
-                    {
                         options.AccessTokenProvider = () => Task.FromResult(_accessToken)!;
-                    }
+                })
+                .AddJsonProtocol(o =>
+                {
+                    o.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                    o.PayloadSerializerOptions.PropertyNameCaseInsensitive = true;
                 })
                 .WithAutomaticReconnect()
                 .Build();
