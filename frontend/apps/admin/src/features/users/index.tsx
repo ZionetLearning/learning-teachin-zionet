@@ -212,14 +212,14 @@ export const Users = () => {
           )}
         </Formik>
       </div>
-      <div className={classes.listContainer} data-testid="users-list-container">
+      <div className={classes.listContainer} data-testid="users-list">
         <h2 className={classes.sectionTitle}>{t("pages.users.users")}</h2>
         {isUsersLoading && <p>{t("pages.users.loadingUsers")}</p>}
         {getUsersError && (
           <p style={{ color: "#c00" }}>{t("pages.users.userNotFound")}</p>
         )}
         {!isUsersLoading && !getUsersError && (
-          <div className={classes.tableArea} data-testid="users-table-area">
+          <div className={classes.tableArea} data-testid="users-table">
             <div className={classes.tableShell} data-testid="users-table-shell">
               <Table
                 size="small"
