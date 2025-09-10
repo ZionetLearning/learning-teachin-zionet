@@ -135,8 +135,8 @@ jobs:
           esac
 
           # Key Vault access for other secrets (not Service Bus)
-          echo "KEYVAULT_CLIENT_ID=0997f44d-fadf-4be8-8dc6-202f7302f680" >> $GITHUB_ENV
-          echo "KEYVAULT_TENANT_ID=a814ee32-f813-4a36-9686-1b9268183e27" >> $GITHUB_ENV
+          echo "KEYVAULT_CLIENT_ID=${{ secrets.KEYVAULT_CLIENT_ID }}" >> $GITHUB_ENV
+          echo "KEYVAULT_TENANT_ID=${{ secrets.KEYVAULT_TENANT_ID }}" >> $GITHUB_ENV
           
           # Service Bus Managed Identity (from Terraform outputs)
           # Use ENVIRONMENT_NAME directly since TARGET_NAMESPACE env var isn't available in same step
@@ -147,7 +147,7 @@ jobs:
           MANAGED_IDENTITY_CLIENT_ID=$(az identity show \
             --resource-group "${CURRENT_NAMESPACE}-zionet-learning-2025" \
             --name "${CURRENT_NAMESPACE}-app-identity" \
-            --query clientId -o tsv 2>/dev/null || echo "0997f44d-fadf-4be8-8dc6-202f7302f680")
+            --query clientId -o tsv 2>/dev/null || echo "${{ secrets.KEYVAULT_CLIENT_ID }}")
           echo "SERVICEBUS_CLIENT_ID=$MANAGED_IDENTITY_CLIENT_ID" >> $GITHUB_ENV
           
       - name: Get AKS credentials
