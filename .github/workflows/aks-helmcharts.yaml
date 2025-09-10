@@ -206,7 +206,8 @@ jobs:
             exit 1
           fi
 
-          AKS_EGRESS_IP=$(az resource show --ids $OUTBOUND_IP_ID --query "properties.ipAddress" -o tsv)
+          # Use network show command with explicit API version to avoid API version issues
+          AKS_EGRESS_IP=$(az network public-ip show --ids $OUTBOUND_IP_ID --query "ipAddress" -o tsv)
 
           echo "AKS outbound IP: $AKS_EGRESS_IP"
 
