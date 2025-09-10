@@ -72,14 +72,22 @@ builder.Services.AddOptions<PromptsOptions>()
     .ValidateOnStart();
 
 // Register Dapr client with custom JSON options
-builder.Services.AddDaprClient(client =>
+builder.Services.AddDaprClient((serviceProvider, daprBuilder) =>
 {
-    client.UseJsonSerializationOptions(new JsonSerializerOptions
+    // Configure serialization options as before
+    daprBuilder.UseJsonSerializationOptions(new JsonSerializerOptions
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         PropertyNameCaseInsensitive = true,
         Converters = { new UtcDateTimeOffsetConverter() }
     });
+
+    // Fetch your timeout from config (e.g., appsettings.json or environment variable)
+    var config = serviceProvider.GetRequiredService<IConfiguration>();
+    var timeoutSeconds = config.GetValue<int?>("Timeouts:DaprClientSeconds") ?? 30;
+
+    // Apply that timeout globally
+    daprBuilder.UseTimeout(TimeSpan.FromSeconds(timeoutSeconds)); // sets Dapr call timeout globally
 });
 
 // Configure PostgreSQL
@@ -141,6 +149,7 @@ if (env.IsDevelopment())
     });
 }
 // Map endpoints (routes)
+app.UseRequestTimeouts();
 app.MapTasksEndpoints();
 app.MapChatsEndpoints();
 app.MapPromptEndpoints();
