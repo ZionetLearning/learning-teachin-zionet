@@ -81,8 +81,7 @@ variable "signalr_name" {
 
 variable "signalr_sku_name" {
   type    = string
-  # default = "Free_F1"
-  default = "Standard_S1" ## limited for 5 free so just for testing new RG for 1 hour it will cost ~3-7 cents, return to above after finish task
+  default = "Free_F1"
 }
 
 variable "signalr_sku_capacity" {
