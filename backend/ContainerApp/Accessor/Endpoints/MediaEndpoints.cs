@@ -1,4 +1,4 @@
-using Accessor.Services;
+using Accessor.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Accessor.Endpoints;
