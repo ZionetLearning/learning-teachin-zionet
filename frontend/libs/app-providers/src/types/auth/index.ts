@@ -1,7 +1,7 @@
 export const AppRole = {
   student: "student",
   teacher: "teacher",
-  admin: "admin"
+  admin: "admin",
 } as const;
 
 export type AppRoleType = (typeof AppRole)[keyof typeof AppRole];
@@ -11,8 +11,6 @@ export interface Credentials {
   accessToken: string;
   accessTokenExpiry: number;
   role?: AppRoleType;
-  firstName?: string;
-  lastName?: string;
 }
 
 export interface SignupData {

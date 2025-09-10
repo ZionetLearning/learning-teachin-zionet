@@ -1,5 +1,4 @@
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
-
 import {
   AppRoleType,
   AuthContext,
@@ -8,12 +7,12 @@ import {
   decodeJwtUserId,
   SignupData,
   useCreateUser,
-  getUserById,
   useLoginMutation,
   useLogoutMutation,
   useRefreshTokensMutation,
-  UserInfo
+  useGetUserById,
 } from "@app-providers";
+
 export interface AuthProviderProps {
   children: ReactNode;
   appRole: AppRoleType;
@@ -25,65 +24,41 @@ const FALLBACK_TOKEN_EXPIRY_MS = 15 * 60 * 1000;
 export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
   const refreshTimerRef = useRef<number | null>(null);
   const refreshSkewMs = 60_000;
-  const [credentials, setCredentials] = useState<Credentials | null>(
-    function getCredentialsFromLocalStorage() {
-      try {
-        const raw = localStorage.getItem("credentials");
-        if (!raw) return null;
-        const parsed = JSON.parse(raw) as Partial<
-          Credentials & { sessionExpiry?: number; password?: string }
-        >;
-        if (
-          parsed &&
-          parsed.email &&
-          parsed.accessToken &&
-          parsed.accessTokenExpiry
-        ) {
-          if (Date.now() < parsed.accessTokenExpiry) {
-            return {
-              email: parsed.email,
-              accessToken: parsed.accessToken,
-              accessTokenExpiry: parsed.accessTokenExpiry,
-              role: parsed.role,
-              firstName: parsed.firstName,
-              lastName: parsed.lastName,
-            };
-          } else {
-            localStorage.removeItem("credentials");
-          }
-        } else if (parsed && parsed.email && parsed.sessionExpiry) {
-          localStorage.removeItem("credentials");
-        }
-      } catch (error) {
-        console.warn("Error parsing credentials:", error);
-        localStorage.removeItem("credentials");
+
+  // Only persist token + expiry
+  const [credentials, setCredentials] = useState<Credentials | null>(() => {
+    try {
+      const raw = localStorage.getItem("credentials");
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as Partial<Credentials>;
+      if (
+        parsed.accessToken &&
+        parsed.accessTokenExpiry &&
+        Date.now() < parsed.accessTokenExpiry
+      ) {
+        return {
+          email: parsed.email!,
+          accessToken: parsed.accessToken,
+          accessTokenExpiry: parsed.accessTokenExpiry,
+        };
       }
+      localStorage.removeItem("credentials");
       return null;
-    },
-  );
-  const user = credentials
-    ? {
-      email: credentials.email,
-      firstName: credentials.firstName ?? "",
-      lastName: credentials.lastName ?? "",
-      userId: decodeJwtUserId(credentials.accessToken) ?? ""
+    } catch {
+      localStorage.removeItem("credentials");
+      return null;
     }
-    : null;
+  });
 
-  const setUser = useCallback((updatedUser: UserInfo) => {
-    setCredentials((prev) => {
-      if (!prev) return null;
-
-      const updatedCreds = {
-        ...prev,
-        firstName: updatedUser.firstName,
-        lastName: updatedUser.lastName,
-      };
-
-      localStorage.setItem("credentials", JSON.stringify(updatedCreds));
-      return updatedCreds;
-    });
-  }, []);
+  // derive userId from JWT
+  const userId = credentials
+    ? (decodeJwtUserId(credentials.accessToken) ?? undefined)
+    : undefined;
+  const {
+    data: userData,
+    isLoading: isUserLoading,
+    error: userError,
+  } = useGetUserById(userId);
 
   const {
     mutateAsync: loginMutation,
@@ -91,35 +66,7 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
     error: loginError,
   } = useLoginMutation({
     onSuccess: async (data, vars) => {
-      const userId = decodeJwtUserId(data.accessToken);
-      console.log("userId:", userId);
-      if (!userId) {
-        console.error("Missing userId in token");
-        return;
-      }
-
       persistSession(vars.email, data.accessToken);
-
-      try {
-        const user = await getUserById(userId);
-
-        persistSession(
-          user.email,
-          data.accessToken,
-          user.role as AppRoleType,
-          user.firstName,
-          user.lastName
-        );
-
-        console.log("Login succeeded", data.accessToken);
-        console.log("Storing credentials", {
-          email: user.email,
-          accessToken: data.accessToken,
-          role: user.role,
-        });
-      } catch (err) {
-        console.error("Failed to fetch user data", err);
-      }
     },
     onError: (err) => {
       console.error("Login error", err);
@@ -132,10 +79,8 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
     isPending: isCreatingUser,
     error: createUserError,
   } = useCreateUser();
-
   const { mutateAsync: refreshTokens, isPending: isRefreshing } =
     useRefreshTokensMutation();
-
   const { mutateAsync: logoutServerMutation, isPending: isLoggingOut } =
     useLogoutMutation();
 
@@ -161,34 +106,16 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
     }
   }, [logoutServerMutation, clearSession]);
 
-  const persistSession = useCallback(
-    (
-      email: string,
-      accessToken: string,
-      role?: AppRoleType,
-      firstName?: string,
-      lastName?: string
-    ) => {
-      const decodedExp = decodeJwtExp(accessToken);
-      const fallback = Date.now() + FALLBACK_TOKEN_EXPIRY_MS;
-      const accessTokenExpiry =
-        decodedExp && decodedExp > Date.now() ? decodedExp : fallback;
+  const persistSession = useCallback((email: string, accessToken: string) => {
+    const decodedExp = decodeJwtExp(accessToken);
+    const fallback = Date.now() + FALLBACK_TOKEN_EXPIRY_MS;
+    const accessTokenExpiry =
+      decodedExp && decodedExp > Date.now() ? decodedExp : fallback;
 
-      const creds: Credentials = {
-        email,
-        accessToken,
-        accessTokenExpiry,
-        role,
-        firstName,
-        lastName,
-      };
-
-      localStorage.setItem("credentials", JSON.stringify(creds));
-      setCredentials(creds);
-    },
-    [],
-  );
-
+    const creds: Credentials = { email, accessToken, accessTokenExpiry };
+    localStorage.setItem("credentials", JSON.stringify(creds));
+    setCredentials(creds);
+  }, []);
 
   const signup = useCallback(
     async (data: SignupData) => {
@@ -222,8 +149,7 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
       refreshTimerRef.current = window.setTimeout(async () => {
         try {
           const { accessToken } = await refreshTokens();
-          persistSession(creds.email, accessToken, creds.role, creds.firstName,
-            creds.lastName);
+          persistSession(creds.email, accessToken);
         } catch {
           clearSession();
         }
@@ -232,33 +158,40 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
     [clearRefreshTimer, refreshTokens, persistSession, clearSession],
   );
 
-  useEffect(
-    function handleRefresh() {
-      if (credentials) {
-        scheduleRefresh(credentials);
-        return () => clearRefreshTimer();
-      }
-      clearRefreshTimer();
-    },
-    [credentials, scheduleRefresh, clearRefreshTimer],
-  );
+  useEffect(() => {
+    if (credentials) {
+      scheduleRefresh(credentials);
+      return () => clearRefreshTimer();
+    }
+    clearRefreshTimer();
+  }, [credentials, scheduleRefresh, clearRefreshTimer]);
 
   return (
     <AuthContext.Provider
       value={{
         isAuthorized: credentials !== null,
-        role: credentials?.role || appRole,
+        role: userData?.role ?? appRole,
         login,
         signup,
         logout,
-        accessToken: credentials?.accessToken || null,
+        accessToken: credentials?.accessToken ?? null,
         loginStatus: {
           isLoading:
-            isLoggingIn || isCreatingUser || isRefreshing || isLoggingOut,
-          error: loginError || createUserError,
+            isLoggingIn ||
+            isCreatingUser ||
+            isRefreshing ||
+            isLoggingOut ||
+            isUserLoading,
+          error: loginError || createUserError || userError,
         },
-        user,
-        setUser,
+        user: userData
+          ? {
+              email: userData.email,
+              firstName: userData.firstName,
+              lastName: userData.lastName,
+              userId: userData.userId,
+            }
+          : null,
       }}
     >
       {children}

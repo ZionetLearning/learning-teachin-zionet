@@ -6,6 +6,7 @@ export interface UserInfo {
   lastName: string;
   email: string;
   userId?: string;
+  role?: AppRoleType;
 }
 export interface AuthContextValue {
   isAuthorized: boolean;
@@ -16,7 +17,6 @@ export interface AuthContextValue {
   accessToken?: string | null;
   loginStatus?: { isLoading: boolean; error: unknown };
   user?: UserInfo | null;
-  setUser?: (user: UserInfo) => void;
 }
 
 export const AuthContext = createContext<AuthContextValue | undefined>(
