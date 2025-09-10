@@ -7,7 +7,7 @@ spec:
   type: bindings.azure.servicebusqueues
   version: v1
   metadata:
-    - name: namespace
+    - name: namespaceName
       value: "{{ .Values.global.servicebus.namespace }}"
     - name: queueName
       value: "accessor-queue"
