@@ -112,12 +112,18 @@ export const UserListItem = ({
             fullWidth
           />
         ) : (
-          <span title={email} data-testid="users-email">
-            {email}
-          </span>
+          <Tooltip title={email} placement="top">
+            <span
+              title={email}
+              className={classes.email}
+              data-testid="users-email"
+            >
+              {email}
+            </span>
+          </Tooltip>
         )}
       </TableCell>
-      <TableCell className={classes.tableCell}>
+      <TableCell className={classes.tableCell} width="18%">
         {editing ? (
           <TextField
             size="small"
@@ -135,7 +141,7 @@ export const UserListItem = ({
           </span>
         )}
       </TableCell>
-      <TableCell className={classes.tableCell}>
+      <TableCell className={classes.tableCell} width="18%">
         {editing ? (
           <TextField
             size="small"

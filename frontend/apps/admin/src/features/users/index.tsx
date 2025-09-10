@@ -228,19 +228,19 @@ export const Users = () => {
               >
                 <TableHead>
                   <TableRow>
-                    <TableCell align="center">
+                    <TableCell align="center" width="28%">
                       {t("pages.users.email")}
                     </TableCell>
-                    <TableCell align="center">
+                    <TableCell align="center" width="18%">
                       {t("pages.users.firstName")}
                     </TableCell>
-                    <TableCell align="center">
+                    <TableCell align="center" width="18%">
                       {t("pages.users.lastName")}
                     </TableCell>
-                    <TableCell align="center">
+                    <TableCell align="center" width="16%">
                       {t("pages.users.role")}
                     </TableCell>
-                    <TableCell align="center">
+                    <TableCell align="center" width="20%">
                       {t("pages.users.actions")}
                     </TableCell>
                   </TableRow>

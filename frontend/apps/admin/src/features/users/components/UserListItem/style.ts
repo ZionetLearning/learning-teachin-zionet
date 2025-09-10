@@ -154,4 +154,11 @@ export const useStyles = createUseStyles({
       backgroundColor: "#f8fafc",
     },
   },
+  email: {
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    display: "inline-block",
+    maxWidth: 200,
+  },
 });
