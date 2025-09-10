@@ -161,13 +161,15 @@ jobs:
             return 1
           }
           
-          # Check each application
-          check_app_ready 4000 "student" &
-          check_app_ready 4001 "teacher" &  
-          check_app_ready 4002 "admin" &
+          # Check each application sequentially to avoid wait issues
+          echo "Checking student app readiness..."
+          check_app_ready 4000 "student"
           
-          # Wait for all checks to complete
-          wait
+          echo "Checking teacher app readiness..."
+          check_app_ready 4001 "teacher"
+          
+          echo "Checking admin app readiness..."
+          check_app_ready 4002 "admin"
           
           echo "All applications are ready for E2E testing"
 
