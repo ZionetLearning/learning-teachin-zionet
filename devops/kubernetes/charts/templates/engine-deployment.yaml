@@ -42,7 +42,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /v1.0/healthz
-              port: 3500  # Dapr sidecar port
+              port: 3501  # Dapr management port
               scheme: HTTP
             initialDelaySeconds: 30
             periodSeconds: 10
