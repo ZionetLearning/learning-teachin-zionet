@@ -41,19 +41,7 @@ variable "aks_subnet_prefix" {
   }
 }
 
-# variable "db_subnet_name" {
-#   description = "Name of the database subnet"
-#   type        = string
-# }
 
-# variable "db_subnet_prefix" {
-#   description = "Address prefix for the database subnet"
-#   type        = string
-#   validation {
-#     condition     = can(cidrhost(var.db_subnet_prefix, 0))
-#     error_message = "Database subnet prefix must be a valid CIDR block."
-#   }
-# }
 
 # variable "integration_subnet_name" {
 #   description = "Name of the integration subnet"
@@ -102,4 +90,27 @@ variable "dns_servers" {
   description = "List of DNS servers for the VNet"
   type        = list(string)
   default     = []
+}
+
+#--------------------- Database VNet Variables ---------------------
+variable "db_vnet_name" {
+  description = "Name of the database Virtual Network"
+  type        = string
+  default     = ""
+}
+variable "db_vnet_address_space" {
+  description = "Address space for the database Virtual Network"
+  type        = list(string)
+}
+variable "db_vnet_location" {
+  description = "Azure region for the database VNet (can be different from main VNet)"
+  type        = string
+}
+variable "db_subnet_name" {
+  description = "Name of the database subnet"
+  type        = string
+}
+variable "db_subnet_prefix" {
+  description = "Address prefix for the database subnet"
+  type        = string
 }

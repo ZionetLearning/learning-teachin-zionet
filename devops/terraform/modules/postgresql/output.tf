@@ -23,3 +23,13 @@ output "id" {
   value = var.use_shared_postgres ? var.existing_server_id : azurerm_postgresql_flexible_server.this[0].id
   description = "The ID of the PostgreSQL flexible server"
 }
+
+output "private_dns_zone_id" {
+  value       = var.use_shared_postgres ? null : azurerm_private_dns_zone.postgres[0].id
+  description = "ID of the private DNS zone for PostgreSQL"
+}
+
+output "private_dns_zone_name" {
+  value       = var.use_shared_postgres ? null : azurerm_private_dns_zone.postgres[0].name
+  description = "Name of the private DNS zone for PostgreSQL"
+}

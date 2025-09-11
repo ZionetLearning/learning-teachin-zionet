@@ -1,4 +1,9 @@
 #--------------- VNet Variables ---------------
+variable "vnet_name" {
+  description = "Name for the VNet."
+  type        = string
+  default     = "vnet"
+}
 variable "vnet_address_space" {
   description = "The address space for the VNet."
   type        = list(string)
@@ -11,54 +16,59 @@ variable "aks_subnet_prefix" {
   default     = "10.10.1.0/24"
 }
 
-variable "db_subnet_prefix" {
-  description = "Address prefix for database subnet."
-  type        = string
-  default     = "10.10.2.0/24"
-}
-
-variable "integration_subnet_prefix" {
-  description = "Address prefix for integration subnet."
-  type        = string
-  default     = "10.10.3.0/24"
-}
-
-variable "management_subnet_prefix" {
-  description = "Address prefix for management subnet."
-  type        = string
-  default     = "10.10.4.0/24"
-}
-
 variable "aks_subnet_name" {
   description = "Name for AKS subnet."
   type        = string
   default     = "aks-subnet"
 }
 
+# variable "integration_subnet_name" {
+#   description = "Name for integration subnet."
+#   type        = string
+#   default     = "integration-subnet"
+# }
+
+# variable "management_subnet_name" {
+#   description = "Name for management subnet."
+#   type        = string
+#   default     = "management-subnet"
+# }
+
+# variable "integration_subnet_prefix" {
+#   description = "Address prefix for integration subnet."
+#   type        = string
+#   default     = "10.10.3.0/24"
+# }
+
+# variable "management_subnet_prefix" {
+#   description = "Address prefix for management subnet."
+#   type        = string
+#   default     = "10.10.4.0/24"
+# }
+
+
+#------------- Database VNet Variables -------------
+variable "db_vnet_name" {
+  description = "Name of the database Virtual Network"
+  type        = string
+  default     = "db-vnet"
+}
+variable "db_vnet_address_space" {
+  description = "Address space for the database Virtual Network"
+  type        = list(string)
+  default     = ["10.20.0.0/16"]
+}
 variable "db_subnet_name" {
-  description = "Name for database subnet."
+  description = "Name of the database subnet"
   type        = string
   default     = "db-subnet"
 }
 
-variable "integration_subnet_name" {
-  description = "Name for integration subnet."
+variable "db_subnet_prefix" {
+  description = "Address prefix for the database subnet"
   type        = string
-  default     = "integration-subnet"
+  default     = "10.20.1.0/24"
 }
-
-variable "management_subnet_name" {
-  description = "Name for management subnet."
-  type        = string
-  default     = "management-subnet"
-}
-
-variable "vnet_name" {
-  description = "Name for the VNet."
-  type        = string
-  default     = "vnet"
-}
-
 #------------- General Variables -------------
 variable "resource_group_name" {
   description = "Name of the resource group"
@@ -303,3 +313,4 @@ variable "frontend_apps" {
   type        = list(string)
   default     = ["student", "teacher", "admin"]
 }
+

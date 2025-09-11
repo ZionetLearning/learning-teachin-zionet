@@ -72,6 +72,18 @@ variable "db_subnet_id" {
   default     = null
 }
 
+variable "private_dns_zone_id" {
+  type        = string
+  description = "ID of the private DNS zone for PostgreSQL"
+  default     = null
+}
+
+variable "virtual_network_id" {
+  type        = string
+  description = "ID of the virtual network for Private DNS Zone linking"
+  default     = null
+}
+
 variable "database_name" {
   type        = string
   description = "Name of the PostgreSQL database"
@@ -96,11 +108,5 @@ variable "existing_server_id" {
   type        = string
   description = "ID of the existing PostgreSQL flexible server to use for non-dev environments"
   default     = ""
-}
-
-variable "virtual_network_id" {
-  type        = string
-  description = "ID of the virtual network for Private DNS Zone linking"
-  default     = null
 }
 

@@ -18,14 +18,17 @@ module "network" {
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
 
+  # AKS subnet configuration
   aks_subnet_name   = "${var.environment_name}-${var.aks_subnet_name}"
   aks_subnet_prefix = var.aks_subnet_prefix
-  # db_subnet_name            = "${var.environment_name}-${var.db_subnet_name}" 
-  # db_subnet_prefix          = var.db_subnet_prefix
-  # integration_subnet_name   = "${var.environment_name}-${var.integration_subnet_name}"
-  # integration_subnet_prefix = var.integration_subnet_prefix
-  # management_subnet_name    = "${var.environment_name}-${var.management_subnet_name}"
-  # management_subnet_prefix  = var.management_subnet_prefix
+
+  # Database VNet configuration
+  db_vnet_name          = "${var.environment_name}-${var.db_vnet_name}"
+  db_vnet_address_space = var.db_vnet_address_space
+  db_vnet_location      = var.db_location
+  db_subnet_name        = "${var.environment_name}-${var.db_subnet_name}"
+  db_subnet_prefix      = var.db_subnet_prefix
+
   depends_on = [azurerm_resource_group.main]
 }
 
@@ -103,13 +106,16 @@ module "database" {
   backup_retention_days        = var.backup_retention_days
   geo_redundant_backup_enabled = var.geo_redundant_backup_enabled
 
-
   database_name = "${var.database_name}-${var.environment_name}"
+
+  # Private networking configuration
+  db_subnet_id       = module.network.database_subnet_id
+  virtual_network_id = module.network.database_vnet_id
 
   use_shared_postgres = var.use_shared_postgres
   existing_server_id  = var.use_shared_postgres ? data.azurerm_postgresql_flexible_server.shared[0].id : null
 
-  depends_on = [azurerm_resource_group.main]
+  depends_on = [azurerm_resource_group.main, module.network]
 }
 
 module "signalr" {

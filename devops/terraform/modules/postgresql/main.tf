@@ -1,7 +1,33 @@
-# PostgreSQL Flexible Server with Public Endpoint
-# This configuration uses public endpoints with firewall rules for security
-# VNet integration can be added later as needed
+# Private DNS Zone for PostgreSQL Flexible Server
+# This enables private name resolution across VNet peering
+resource "azurerm_private_dns_zone" "postgres" {
+  count               = var.use_shared_postgres ? 0 : 1
+  name                = "privatelink.postgres.database.azure.com"
+  resource_group_name = var.resource_group_name
 
+  tags = {
+    Environment = "Production"
+    Purpose     = "PostgreSQL Private DNS"
+  }
+}
+
+# Link Private DNS Zone to Database VNet
+resource "azurerm_private_dns_zone_virtual_network_link" "postgres_db_vnet" {
+  count                 = var.use_shared_postgres ? 0 : 1
+  name                  = "postgres-db-vnet-link"
+  resource_group_name   = var.resource_group_name
+  private_dns_zone_name = azurerm_private_dns_zone.postgres[0].name
+  virtual_network_id    = var.virtual_network_id
+  registration_enabled  = false
+
+  tags = {
+    Environment = "Production"
+    Purpose     = "PostgreSQL DNS Link"
+  }
+}
+
+# PostgreSQL Flexible Server with Private VNet Integration
+# This configuration uses private endpoints with delegated subnet
 resource "azurerm_postgresql_flexible_server" "this" {
   count                   = var.use_shared_postgres ? 0 : 1
   name                   = var.server_name
@@ -17,21 +43,20 @@ resource "azurerm_postgresql_flexible_server" "this" {
   backup_retention_days        = var.backup_retention_days
   geo_redundant_backup_enabled = var.geo_redundant_backup_enabled
 
-  # Explicitly set zone to null for Basic SKUs or remove zone entirely
+  # Explicitly set zone to null for Basic SKUs
   zone = null
 
+  # Private networking configuration
+  delegated_subnet_id = var.db_subnet_id
+  private_dns_zone_id = azurerm_private_dns_zone.postgres[0].id
 
-  # # Enable public network access for simplified connectivity
-  # public_network_access_enabled = true
+  # Disable public network access for security
+  public_network_access_enabled = false
 
   authentication {
     password_auth_enabled         = var.password_auth_enabled
     active_directory_auth_enabled = var.active_directory_auth_enabled
   }
-
-  # Note: Not using VNet integration for now - keeping it simple
-  # delegated_subnet_id = null
-  # private_dns_zone_id = null
 
   # Add lifecycle rule to prevent zone changes
   lifecycle {
@@ -40,6 +65,10 @@ resource "azurerm_postgresql_flexible_server" "this" {
       high_availability
     ]
   }
+
+  depends_on = [
+    azurerm_private_dns_zone_virtual_network_link.postgres_db_vnet
+  ]
 }
 
 # # Create firewall rule to allow access from Azure services

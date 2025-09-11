@@ -1,7 +1,6 @@
 # Network Module - Main Resources
 # This module creates the core network infrastructure with VNet and subnets
 # Following Azure and Terraform best practices for network segmentation
-
 #--------------------- Virtual Network ---------------------
 resource "azurerm_virtual_network" "main" {
   name                = var.vnet_name
@@ -47,26 +46,72 @@ resource "azurerm_subnet" "aks" {
   # }
 }
 
-# #--------------------- Database Subnet ---------------------
-# # Dedicated subnet for database services (PostgreSQL, etc.)
-# # This subnet should be delegated to database services for private connectivity
-# resource "azurerm_subnet" "database" {
-#   name                 = var.db_subnet_name
-#   resource_group_name  = var.resource_group_name
-#   virtual_network_name = azurerm_virtual_network.main.name
-#   address_prefixes     = [var.db_subnet_prefix]
+#--------------------- Database VNet ---------------------
+# Separate VNet for database services in different region
+resource "azurerm_virtual_network" "database" {
+  name                = var.db_vnet_name
+  location            = var.db_vnet_location
+  resource_group_name = var.resource_group_name
+  address_space       = var.db_vnet_address_space
 
-#   # Delegation for PostgreSQL Flexible Server
-#   delegation {
-#     name = "postgresql-delegation"
-#     service_delegation {
-#       name    = "Microsoft.DBforPostgreSQL/flexibleServers"
-#       actions = [
-#         "Microsoft.Network/virtualNetworks/subnets/join/action",
-#       ]
-#     }
-#   }
-# }
+  # Optional DNS servers configuration
+  dns_servers = length(var.dns_servers) > 0 ? var.dns_servers : null
+
+  tags = merge(var.tags, {
+    Name = var.db_vnet_name
+    Type = "Database Virtual Network"
+  })
+}
+
+#--------------------- Database Subnet ---------------------
+# Dedicated subnet for database services (PostgreSQL, etc.)
+# This subnet is delegated to database services for private connectivity
+resource "azurerm_subnet" "database" {
+  name                 = var.db_subnet_name
+  resource_group_name  = var.resource_group_name
+  virtual_network_name = azurerm_virtual_network.database.name
+  address_prefixes     = [var.db_subnet_prefix]
+
+  # Delegation for PostgreSQL Flexible Server - > RESERVED FOR POSTGRESQL ONLY
+  delegation {
+    name = "postgresql-delegation"
+    service_delegation {
+      name    = "Microsoft.DBforPostgreSQL/flexibleServers"
+      actions = [
+        "Microsoft.Network/virtualNetworks/subnets/join/action",
+      ]
+    }
+  }
+}
+
+#--------------------- VNet Peering ---------------------
+# Bidirectional peering between main VNet and database VNet
+# This enables communication between AKS and database across regions
+resource "azurerm_virtual_network_peering" "main_to_database" {
+  name                      = "${var.vnet_name}-to-${var.db_vnet_name}"
+  resource_group_name       = var.resource_group_name
+  virtual_network_name      = azurerm_virtual_network.main.name
+  remote_virtual_network_id = azurerm_virtual_network.database.id
+
+  allow_virtual_network_access = true
+  allow_forwarded_traffic      = true
+  allow_gateway_transit        = false
+  use_remote_gateways          = false
+}
+
+resource "azurerm_virtual_network_peering" "database_to_main" {
+  name                      = "${var.db_vnet_name}-to-${var.vnet_name}"
+  resource_group_name       =  var.resource_group_name
+  virtual_network_name      = azurerm_virtual_network.database.name
+  remote_virtual_network_id = azurerm_virtual_network.main.id
+
+  allow_virtual_network_access = true
+  allow_forwarded_traffic      = true
+  allow_gateway_transit        = false
+  use_remote_gateways          = false
+}
+
+
 
 # #--------------------- Integration Subnet ---------------------
 # # Subnet for integration services and private endpoints

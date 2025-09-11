@@ -48,6 +48,54 @@ output "aks_subnet_address_prefixes" {
   value       = azurerm_subnet.aks.address_prefixes
 }
 
+#--------------------- Database VNet Outputs ---------------------
+output "database_vnet_id" {
+  description = "ID of the database Virtual Network"
+  value       = azurerm_virtual_network.database.id
+}
+
+output "database_vnet_name" {
+  description = "Name of the database Virtual Network"
+  value       = azurerm_virtual_network.database.name
+}
+
+output "database_vnet_address_space" {
+  description = "Address space of the database Virtual Network"
+  value       = azurerm_virtual_network.database.address_space
+}
+
+output "database_vnet_location" {
+  description = "Location of the database Virtual Network"
+  value       = azurerm_virtual_network.database.location
+}
+
+#--------------------- Database Subnet Outputs ---------------------
+output "database_subnet_id" {
+  description = "ID of the database subnet"
+  value       = azurerm_subnet.database.id
+}
+
+output "database_subnet_name" {
+  description = "Name of the database subnet"
+  value       = azurerm_subnet.database.name
+}
+
+output "database_subnet_address_prefixes" {
+  description = "Address prefixes of the database subnet"
+  value       = azurerm_subnet.database.address_prefixes
+}
+
+#--------------------- VNet Peering Outputs ---------------------
+output "main_to_database_peering_id" {
+  description = "ID of the main to database VNet peering"
+  value       = azurerm_virtual_network_peering.main_to_database.id
+}
+
+output "database_to_main_peering_id" {
+  description = "ID of the database to main VNet peering"
+  value       = azurerm_virtual_network_peering.database_to_main.id
+}
+
 # #--------------------- Database Subnet Outputs (Commented out - using public endpoints) ---------------------
 # output "database_subnet_id" {
 #   description = "ID of the database subnet"
@@ -96,23 +144,19 @@ output "aks_subnet_address_prefixes" {
 #   value       = azurerm_subnet.management.address_prefixes
 # }
 
-#--------------------- All Subnets Summary (Updated for AKS-only) ---------------------
+#--------------------- All Subnets Summary ---------------------
 output "all_subnet_ids" {
   description = "Map of all subnet IDs for easy reference"
   value = {
-    aks = azurerm_subnet.aks.id
-    # database    = azurerm_subnet.database.id
-    # integration = azurerm_subnet.integration.id
-    # management  = azurerm_subnet.management.id
+    aks      = azurerm_subnet.aks.id
+    database = azurerm_subnet.database.id
   }
 }
 
 output "all_subnet_names" {
   description = "Map of all subnet names for easy reference"
   value = {
-    aks = azurerm_subnet.aks.name
-    # database    = azurerm_subnet.database.name
-    # integration = azurerm_subnet.integration.name
-    # management  = azurerm_subnet.management.name
+    aks      = azurerm_subnet.aks.name
+    database = azurerm_subnet.database.name
   }
 }
