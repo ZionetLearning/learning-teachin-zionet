@@ -1,1 +1,1 @@
-export { useHebrewSentence } from "./useHebrewSentence";
+export * from "./useHebrewSentence";
