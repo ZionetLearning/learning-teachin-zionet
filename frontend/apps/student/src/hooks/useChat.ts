@@ -1,8 +1,8 @@
-import { useState, useMemo } from "react";
-import { useSendChatMessage } from "@student/api";
+import { useState, useMemo, useCallback } from "react";
+import { useSendChatMessage, useGetAllChats, useGetChatHistory } from "@student/api";
 import { useAuth } from "@app-providers/auth";
 import { decodeJwtPayload } from "@app-providers/auth/utils";
-import type { ChatRequest, ChatResponse } from "@student/api";
+import type { SendMessageRequest, SendMessageResponse } from "@student/types";
 
 export type ChatPosition = "left" | "right";
 export type ChatSender = "user" | "system";
@@ -15,9 +15,16 @@ export interface ChatMessage {
   date: Date;
 }
 
+interface ChatHistoryMessage {
+  role: "user" | "assistant" | "system";
+  text: string;
+  createdAt?: string | number | Date | null;
+}
+
 export const useChat = () => {
   const [threadId, setThreadId] = useState<string | undefined>(undefined);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [shouldLoadHistory, setShouldLoadHistory] = useState(false);
   const { accessToken } = useAuth();
 
   const {
@@ -32,6 +39,22 @@ export const useChat = () => {
     if (!payload) return null;
     return payload.userId as string;
   }, [accessToken]);
+
+  const {
+    data: allChats,
+    isLoading: isLoadingChats,
+    refetch: refetchChats,
+  } = useGetAllChats(userId || "");
+
+
+  const {
+    data: chatHistory,
+    isLoading: isLoadingHistory,
+    refetch: refetchHistory,
+  } = useGetChatHistory(
+    shouldLoadHistory ? threadId || "" : "", 
+    shouldLoadHistory ? userId || "" : ""
+  );
 
   const pushUser = (text: string) => {
     const userMsg: ChatMessage = {
@@ -55,10 +78,40 @@ export const useChat = () => {
     setMessages((prev) => [...prev, aiMsg]);
   };
 
+  const loadChatHistory = (chatId: string) => {
+    if (!userId) return;
+    setMessages([]);
+    setThreadId(chatId);
+    setShouldLoadHistory(true);
+  };
+
+  const loadHistoryIntoMessages = useCallback(() => {
+    if (!chatHistory?.messages) return;
+    
+    const convertedMessages: ChatMessage[] = (chatHistory.messages as ChatHistoryMessage[]).map(
+      (msg: ChatHistoryMessage): ChatMessage => ({
+      position: msg.role === "user" ? "right" : "left",
+      type: "text",
+      sender: msg.role === "user" ? "user" : "system",
+      text: msg.text,
+      date: msg.createdAt ? new Date(msg.createdAt) : new Date(),
+      })
+    );
+    
+    setMessages(convertedMessages);
+    setShouldLoadHistory(false);
+  }, [chatHistory?.messages]);
+
+  const startNewChat = () => {
+    setThreadId(undefined);
+    setMessages([]);
+    setShouldLoadHistory(false);
+  };
+
   const sendMessage = (userText: string) => {
     if (!userText.trim() || !userId) return;
 
-    const payload: ChatRequest = {
+    const payload: SendMessageRequest = {
       userMessage: userText,
       threadId: threadId || crypto.randomUUID(),
       chatType: "default",
@@ -67,21 +120,15 @@ export const useChat = () => {
 
     pushUser(userText);
 
-    // call API
     sendChatMessage(payload, {
-      onSuccess: (data: ChatResponse) => {
+      onSuccess: (data: SendMessageResponse) => {
         setThreadId(data.threadId);
-
-
         const aiText = data.assistantMessage ?? "";
-        const aiMsg: ChatMessage = {
-          position: "left",
-          type: "text",
-          sender: "system",
-          text: aiText,
-          date: new Date(),
-        };
-        setMessages((prev) => [...prev, aiMsg]);
+        pushAssistant(aiText);
+        
+        if (!threadId) {
+          refetchChats();
+        }
       },
     });
   };
@@ -89,7 +136,7 @@ export const useChat = () => {
   const sendMessageAsync = async (userText: string): Promise<string> => {
     if (!userText.trim() || !userId) return "";
 
-    const payload: ChatRequest = {
+    const payload: SendMessageRequest = {
       userMessage: userText,
       threadId: threadId || crypto.randomUUID(),
       chatType: "default",
@@ -101,6 +148,11 @@ export const useChat = () => {
     const data = await sendChatMessageAsync(payload);
     setThreadId(data.threadId);
     pushAssistant(data.assistantMessage ?? "");
+    
+    if (!threadId) {
+      refetchChats();
+    }
+    
     return data.assistantMessage ?? "";
   };
 
@@ -111,5 +163,16 @@ export const useChat = () => {
     loading: isPending,
     threadId,
     setMessages,
+    
+    allChats,
+    isLoadingChats,
+    chatHistory,
+    isLoadingHistory,
+    loadChatHistory,
+    loadHistoryIntoMessages,
+    startNewChat,
+    
+    refetchChats,
+    refetchHistory,
   };
 };
