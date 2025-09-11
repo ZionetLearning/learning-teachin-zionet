@@ -259,7 +259,13 @@ dapr:
   
   # KEDA scaler (optional)
   keda:
-    enabled: false
+    enabled: true
+    httpAddOn:
+      interceptor:
+        proxy:
+          readTimeout: 120s
+          responseHeaderTimeout: 120s
+          idleTimeout: 120s
 
   serviceAccount:
   create: false
