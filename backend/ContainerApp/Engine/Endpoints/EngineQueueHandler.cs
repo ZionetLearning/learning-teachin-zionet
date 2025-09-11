@@ -180,6 +180,11 @@ public class EngineQueueHandler : IQueueHandler<Message>
            Func<Task> renewLock,
            CancellationToken ct)
     {
+        long getHistoryTime = 0;
+        long addOrCheckSystemPromptTime = 0;
+        long addOrCheckChatNameTime = 0;
+        long afterChatServiseTime = 0;
+
         var sw = Stopwatch.StartNew();
         EngineChatRequest? request = null;
         try
@@ -211,6 +216,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
 
             var snapshot = await _accessorClient.GetHistorySnapshotAsync(request.ThreadId, request.UserId, ct);
 
+            getHistoryTime = sw.ElapsedMilliseconds;
             var skHistory = HistoryMapper.ToChatHistoryFromElement(snapshot.History);
             var storyForKernel = HistoryMapper.CloneToChatHistory(skHistory);
 
@@ -219,6 +225,8 @@ public class EngineQueueHandler : IQueueHandler<Message>
                 var systemPrompt = await GetOrLoadSystemPromptAsync(ct);
                 storyForKernel.Insert(0, new ChatMessageContent(AuthorRole.System, systemPrompt));
             }
+
+            addOrCheckSystemPromptTime = sw.ElapsedMilliseconds;
 
             storyForKernel.AddUserMessage(request.UserMessage.Trim(), DateTimeOffset.UtcNow);
 
@@ -235,6 +243,8 @@ public class EngineQueueHandler : IQueueHandler<Message>
                     chatName = DateTime.UtcNow.ToString("HHmm_dd_MM");
                 }
             }
+
+            addOrCheckChatNameTime = sw.ElapsedMilliseconds;
 
             var upsertUserMessage = new UpsertHistoryRequest
             {
@@ -259,6 +269,8 @@ public class EngineQueueHandler : IQueueHandler<Message>
             };
 
             var aiResponse = await _aiService.ChatHandlerAsync(serviceRequest, ct);
+
+            afterChatServiseTime = sw.ElapsedMilliseconds;
 
             if (aiResponse.Status != ChatAnswerStatus.Ok || aiResponse.Answer is null)
             {
@@ -322,10 +334,17 @@ public class EngineQueueHandler : IQueueHandler<Message>
             sw.Stop();
             if (request is not null)
             {
-                _logger.LogInformation("Chat request {RequestId} chatId {ThreadId} userId {UserId} finished in {ElapsedMs} ms",
+
+                _logger.LogInformation("Chat request {RequestId} chatId {ThreadId} userId {UserId}, " +
+                    "getHistoryTime {GetHistoryTime} ms, addOrCheckSystemPromptTime {AddOrCheckSystemPromptTime} ms, addOrCheckChatNameTime {AddOrCheckChatNameTime}  ms, " +
+                    "afterChatServiseTime {AfterChatServiseTime} ms, finished in {ElapsedMs} ms",
                     request.RequestId,
                     request.ThreadId,
                     request.UserId,
+                    getHistoryTime,
+                    addOrCheckSystemPromptTime,
+                    addOrCheckChatNameTime,
+                    afterChatServiseTime,
                     sw.ElapsedMilliseconds);
             }
         }
