@@ -319,6 +319,13 @@
       "admin": "Admin",
       "teacher": "Teacher",
       "student": "Student"
+    },
+    "hebrewLevels": {
+      "title": "Hebrew Level",
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced",
+      "fluent": "Fluent"
     }
   }
 }

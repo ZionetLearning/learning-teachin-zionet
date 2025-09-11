@@ -319,6 +319,13 @@
       "admin": "מנהל מערכת",
       "teacher": "מורה",
       "student": "תלמיד"
+    },
+    "hebrewLevels": {
+      "title": "רמת עברית",
+      "beginner": "מתחיל",
+      "intermediate": "בינוני",
+      "advanced": "מתקדם",
+      "fluent": "שוטף"
     }
   }
 }
