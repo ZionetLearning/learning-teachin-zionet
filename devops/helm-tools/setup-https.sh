@@ -1,9 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
-NAMESPACE="prod"  # Changed from "devops-logs" to "prod"
+NAMESPACE="devops-logs"
 EMAIL="snir1552@gmail.com"
-DOMAIN="teachinprod.westeurope.cloudapp.azure.com"
+DOMAIN="teachin.westeurope.cloudapp.azure.com"
 
 echo "1. Installing cert-manager..."
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.0/cert-manager.yaml
@@ -27,8 +27,8 @@ for i in {1..5}; do
   sleep 10
 done
 
-# echo "4. Applying the HTTPS-enabled grafana ingress..."
-# kubectl apply -f ../kubernetes/ingress/grafana-ingress.yaml
+echo "4. Applying the HTTPS-enabled grafana ingress..."
+kubectl apply -f ../kubernetes/ingress/grafana-ingress.yaml
 
 echo "5. Waiting for certificate to be issued..."
 echo "This may take 1-2 minutes..."
