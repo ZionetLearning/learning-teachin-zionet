@@ -26,13 +26,13 @@ public class AuthService : IAuthService
         _accessorClient = accessorClient;
     }
 
-    public async Task<(string, string)> LoginAsync(LoginRequest loginRequest, HttpRequest httpRequest, CancellationToken cancellationToken)
+    public async Task<(string, string)> LoginAsync(LoginRequest loginRequest, HttpRequest httpRequest)
     {
         _log.LogInformation("Login attempt for user {Email}", loginRequest.Email);
         try
         {
             _log.LogInformation("Calling accessor with timeout 30s...");
-            var response = await _accessorClient.LoginUserAsync(loginRequest, CancellationToken.None);
+            var response = await _accessorClient.LoginUserAsync(loginRequest);
             _log.LogInformation("Accessor call finished");
 
             if (response is null || response.UserId == Guid.Empty)
@@ -69,7 +69,7 @@ public class AuthService : IAuthService
                 UserAgent = ua,
             };
 
-            await _accessorClient.SaveSessionDBAsync(session, CancellationToken.None);
+            await _accessorClient.SaveSessionDBAsync(session);
             return (accessToken, refreshToken);
         }
 
