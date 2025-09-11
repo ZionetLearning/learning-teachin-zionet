@@ -48,6 +48,15 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({
     }
   };
 
+  const sortedChats = React.useMemo(() => {
+    if (!allChats) return [];
+    return [...allChats].sort((a, b) => {
+      const dateA = new Date(a.updatedAt).getTime();
+      const dateB = new Date(b.updatedAt).getTime();
+      return dateB - dateA; // Latest first (descending order)
+    });
+  }, [allChats]);
+
   const truncateText = (text: string, maxLength: number = 35) => {
     return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
   };
@@ -100,9 +109,9 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({
             </div>
           ) : (
             <>
-              {allChats && allChats.length > 0 ? (
+              {sortedChats && sortedChats.length > 0 ? (
                 <div className={classes.chatItems}>
-                  {allChats.map((chat) => (
+                  {sortedChats.map((chat) => (
                     <div
                       key={chat.chatId}
                       onClick={() => onChatSelect(chat.chatId)}
