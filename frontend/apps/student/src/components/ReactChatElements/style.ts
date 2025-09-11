@@ -1,6 +1,11 @@
 import { createUseStyles } from "react-jss";
 
 export const useStyles = createUseStyles({
+  chatContainer: {
+    display: "flex",
+    flexDirection: "column",
+    height: "100%",
+  },
   messagesList: {
     height: "500px",
     overflowX: "auto",

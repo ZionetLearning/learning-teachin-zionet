@@ -54,7 +54,7 @@ export const ReactChatElements = ({
   }, [messages]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div className={classes.chatContainer}>
       <div
         className={
           avatarMode ? classes.messagesListAvatar : classes.messagesList
