@@ -97,7 +97,7 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task<(string accessToken, string refreshToken)> RefreshTokensAsync(HttpRequest request, CancellationToken cancellationToken)
+    public async Task<(string accessToken, string refreshToken)> RefreshTokensAsync(HttpRequest request)
     {
         _log.LogInformation("Token refresh attempt");
         try
@@ -131,7 +131,7 @@ public class AuthService : IAuthService
             RefreshSessionDto session;
             try
             {
-                session = await _accessorClient.GetSessionAsync(oldHash, cancellationToken)
+                session = await _accessorClient.GetSessionAsync(oldHash)
                     ?? throw new UnauthorizedAccessException("Invalid or mismatched session.");
             }
             catch (InvocationException ex) when (ex.InnerException is HttpRequestException httpEx && httpEx.StatusCode == HttpStatusCode.NotFound)
@@ -195,7 +195,7 @@ public class AuthService : IAuthService
             };
 
             // Update session using accessor client
-            await _accessorClient.UpdateSessionDBAsync(session.Id, rotatePayload, cancellationToken);
+            await _accessorClient.UpdateSessionDBAsync(session.Id, rotatePayload);
 
             return (newAccessToken, newRefreshToken);
         }
@@ -211,7 +211,7 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task LogoutAsync(HttpRequest request, CancellationToken cancellationToken)
+    public async Task LogoutAsync(HttpRequest request)
     {
         try
         {
@@ -225,7 +225,7 @@ public class AuthService : IAuthService
             var hash = HashRefreshToken(refreshToken, _jwt.RefreshTokenHashKey);
 
             // Lookup session by hash
-            var session = await _accessorClient.GetSessionAsync(hash, cancellationToken);
+            var session = await _accessorClient.GetSessionAsync(hash);
 
             if (session is null)
             {
@@ -234,7 +234,7 @@ public class AuthService : IAuthService
             }
 
             // Delete by sessionId
-            await _accessorClient.DeleteSessionDBAsync(session.Id, cancellationToken);
+            await _accessorClient.DeleteSessionDBAsync(session.Id);
 
             _log.LogInformation("Deleted session {SessionId}", session.Id);
         }
