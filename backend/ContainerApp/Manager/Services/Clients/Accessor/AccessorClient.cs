@@ -27,7 +27,7 @@ public class AccessorClient(
         try
         {
             var task = await _daprClient.InvokeMethodAsync<TaskModel?>(
-                HttpMethod.Get, "accessor", $"tasks-accessor/task/{id}");
+                HttpMethod.Get, AppIds.Accessor, $"tasks-accessor/task/{id}");
             _logger.LogDebug("Received task {TaskId} from Accessor service", id);
             return task;
         }
@@ -111,7 +111,7 @@ public class AccessorClient(
         );
         try
         {
-            await _daprClient.InvokeMethodAsync(HttpMethod.Delete, "accessor", $"tasks-accessor/task/{id}");
+            await _daprClient.InvokeMethodAsync(HttpMethod.Delete, AppIds.Accessor, $"tasks-accessor/task/{id}");
             _logger.LogDebug("Task {TaskId} deletion request sent to Accessor service", id);
 
             return true;
@@ -189,7 +189,7 @@ public class AccessorClient(
         try
         {
             var chats = await _daprClient.InvokeMethodAsync<List<ChatSummary>>(
-                HttpMethod.Get, "accessor", $"chats-accessor/{userId}", cancellationToken: ct);
+                HttpMethod.Get, AppIds.Accessor, $"chats-accessor/{userId}", cancellationToken: ct);
 
             return chats ?? new List<ChatSummary>();
         }
@@ -215,7 +215,7 @@ public class AccessorClient(
         try
         {
             return await _daprClient.InvokeMethodAsync<UserData?>(
-                HttpMethod.Get, "accessor", $"users-accessor/{userId}");
+                HttpMethod.Get, AppIds.Accessor, $"users-accessor/{userId}");
         }
         catch (Exception ex)
         {
@@ -230,7 +230,7 @@ public class AccessorClient(
         {
             _logger.LogInformation("Creating user with email: {Email}", user.Email);
 
-            await _daprClient.InvokeMethodAsync(HttpMethod.Post, "accessor", "users-accessor", user);
+            await _daprClient.InvokeMethodAsync(HttpMethod.Post, AppIds.Accessor, "users-accessor", user);
 
             _logger.LogInformation("User {Email} created successfully", user.Email);
             return true;
@@ -256,7 +256,7 @@ public class AccessorClient(
     {
         try
         {
-            await _daprClient.InvokeMethodAsync(HttpMethod.Put, "accessor", $"users-accessor/{userId}", user);
+            await _daprClient.InvokeMethodAsync(HttpMethod.Put, AppIds.Accessor, $"users-accessor/{userId}", user);
             return true;
         }
         catch (Exception ex)
@@ -270,7 +270,7 @@ public class AccessorClient(
     {
         try
         {
-            await _daprClient.InvokeMethodAsync(HttpMethod.Delete, "accessor", $"users-accessor/{userId}");
+            await _daprClient.InvokeMethodAsync(HttpMethod.Delete, AppIds.Accessor, $"users-accessor/{userId}");
             return true;
         }
         catch (Exception ex)
@@ -287,7 +287,7 @@ public class AccessorClient(
         try
         {
             var users = await _daprClient.InvokeMethodAsync<List<UserData>>(
-                HttpMethod.Get, "accessor", "users-accessor", ct);
+                HttpMethod.Get, AppIds.Accessor, "users-accessor", ct);
 
             _logger.LogInformation("Retrieved {Count} users from accessor", users?.Count ?? 0);
             return users ?? Enumerable.Empty<UserData>();
@@ -448,44 +448,49 @@ public class AccessorClient(
             throw;
         }
     }
-    public async Task<IEnumerable<UserData>> GetUsersForCallerAsync(string callerRole, Guid callerId, CancellationToken ct = default)
+    // GetUsersForCallerAsync now accepts a DTO
+    public async Task<IEnumerable<UserData>> GetUsersForCallerAsync(CallerContextDto context, CancellationToken ct = default)
     {
-        _logger.LogInformation("GetUsersForCallerAsync(role={Role}, id={Id})", callerRole, callerId);
+        _logger.LogInformation("GetUsersForCallerAsync(role={Role}, id={Id})", context?.CallerRole, context?.CallerId);
 
         try
         {
-            var roleQP = Uri.EscapeDataString(callerRole ?? string.Empty);
+            // keep same GET+query behavior; just source values from DTO
+            var roleQP = Uri.EscapeDataString(context?.CallerRole ?? string.Empty);
+            var callerId = context?.CallerId ?? Guid.Empty;
             var path = $"users-accessor?callerRole={roleQP}&callerId={callerId:D}";
 
             var users = await _daprClient.InvokeMethodAsync<List<UserData>>(
                 HttpMethod.Get,
-                "accessor",
+                AppIds.Accessor,
                 path,
                 ct);
 
-            _logger.LogInformation("Accessor returned {Count} users for {Role}", users?.Count ?? 0, callerRole);
+            _logger.LogInformation("Accessor returned {Count} users for {Role}", users?.Count ?? 0, context?.CallerRole);
             return users ?? Enumerable.Empty<UserData>();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Accessor call failed for role={Role}", callerRole);
+            _logger.LogError(ex, "Accessor call failed for role={Role}", context?.CallerRole);
             throw;
         }
     }
-    public async Task<bool> AssignStudentToTeacherAsync(Guid teacherId, Guid studentId, CancellationToken ct = default)
+
+    // AssignStudentToTeacherAsync now accepts a DTO
+    public async Task<bool> AssignStudentToTeacherAsync(TeacherStudentMapDto map, CancellationToken ct = default)
     {
         try
         {
             await _daprClient.InvokeMethodAsync(
                 HttpMethod.Post,
-                "accessor",
-                $"users-accessor/teacher/{teacherId:D}/students/{studentId:D}",
+                AppIds.Accessor,
+                $"users-accessor/teacher/{map.TeacherId:D}/students/{map.StudentId:D}",
                 ct);
             return true;
         }
         catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.Conflict)
         {
-            _logger.LogInformation("Mapping already exists for Teacher={TeacherId}, Student={StudentId}", teacherId, studentId);
+            _logger.LogInformation("Mapping already exists for Teacher={TeacherId}, Student={StudentId}", map.TeacherId, map.StudentId);
             return true;
         }
         catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.BadRequest || ex.Response?.StatusCode == HttpStatusCode.NotFound)
@@ -495,20 +500,21 @@ public class AccessorClient(
         }
     }
 
-    public async Task<bool> UnassignStudentFromTeacherAsync(Guid teacherId, Guid studentId, CancellationToken ct = default)
+    // UnassignStudentFromTeacherAsync now accepts a DTO
+    public async Task<bool> UnassignStudentFromTeacherAsync(TeacherStudentMapDto map, CancellationToken ct = default)
     {
         try
         {
             await _daprClient.InvokeMethodAsync(
                 HttpMethod.Delete,
-                "accessor",
-                $"users-accessor/teacher/{teacherId:D}/students/{studentId:D}",
+                AppIds.Accessor,
+                $"users-accessor/teacher/{map.TeacherId:D}/students/{map.StudentId:D}",
                 ct);
             return true;
         }
         catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
         {
-            _logger.LogInformation("Mapping not found (already removed) for Teacher={TeacherId}, Student={StudentId}", teacherId, studentId);
+            _logger.LogInformation("Mapping not found (already removed) for Teacher={TeacherId}, Student={StudentId}", map.TeacherId, map.StudentId);
             return true;
         }
         catch (Exception ex)
@@ -524,7 +530,7 @@ public class AccessorClient(
         {
             var list = await _daprClient.InvokeMethodAsync<List<UserData>>(
                 HttpMethod.Get,
-                "accessor",
+                AppIds.Accessor,
                 $"users-accessor/teacher/{teacherId:D}/students",
                 ct);
             return list ?? Enumerable.Empty<UserData>();
@@ -542,7 +548,7 @@ public class AccessorClient(
         {
             var list = await _daprClient.InvokeMethodAsync<List<UserData>>(
                 HttpMethod.Get,
-                "accessor",
+                AppIds.Accessor,
                 $"users-accessor/student/{studentId:D}/teachers",
                 ct);
             return list ?? Enumerable.Empty<UserData>();

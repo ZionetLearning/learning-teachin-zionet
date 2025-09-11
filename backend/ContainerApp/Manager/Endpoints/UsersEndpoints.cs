@@ -214,7 +214,9 @@ public static class UsersEndpoints
 
         try
         {
-            var users = await accessorClient.GetUsersForCallerAsync(callerRole, callerId, ct);
+            var users = await accessorClient.GetUsersForCallerAsync(
+                new CallerContextDto { CallerRole = callerRole, CallerId = callerId },
+                ct);
 
             if (users is null || !users.Any())
             {
@@ -310,7 +312,9 @@ public static class UsersEndpoints
 
         try
         {
-            var ok = await accessorClient.AssignStudentToTeacherAsync(teacherId, studentId, ct);
+            var ok = await accessorClient.AssignStudentToTeacherAsync(
+                new TeacherStudentMapDto { TeacherId = teacherId, StudentId = studentId },
+                ct);
             return ok ? Results.Ok(new { message = "Assigned" })
                       : Results.BadRequest(new { error = "Assign failed" });
         }
@@ -355,7 +359,9 @@ public static class UsersEndpoints
 
         try
         {
-            var ok = await accessorClient.UnassignStudentFromTeacherAsync(teacherId, studentId, ct);
+            var ok = await accessorClient.UnassignStudentFromTeacherAsync(
+                new TeacherStudentMapDto { TeacherId = teacherId, StudentId = studentId },
+                ct);
             return ok ? Results.Ok(new { message = "Unassigned" })
                       : Results.BadRequest(new { error = "Unassign failed" });
         }
