@@ -176,13 +176,6 @@ public static class UsersEndpoints
                 return Results.Ok(students);
             }
 
-            if (roleEnum == Role.Student)
-            {
-                var me = await service.GetUserAsync(callerId.Value);
-                // Return just the caller as a single-item list (or empty if not found)
-                return me is null ? Results.Ok(Array.Empty<UserData>()) : Results.Ok(new[] { me });
-            }
-
             // Unknown role (shouldn't happen)
             return Results.BadRequest("Unsupported role.");
         }
@@ -215,6 +208,7 @@ public static class UsersEndpoints
             if (!ok)
             {
                 logger.LogWarning("Assign failed.");
+                logger.LogInformation("Student {StudentId} assigned to teacher {TeacherId}.", studentId, teacherId);
                 return Results.BadRequest(new { error = "Invalid teacher/student or assign failed." });
             }
 
@@ -246,8 +240,18 @@ public static class UsersEndpoints
         try
         {
             var ok = await service.UnassignStudentFromTeacherAsync(teacherId, studentId, ct);
-            return ok ? Results.Ok(new { message = "Unassigned" })
-                      : Results.BadRequest(new { error = "Unassign failed." });
+            if (ok)
+            {
+                logger.LogInformation("Successfully unassigned student {StudentId} from teacher {TeacherId}.",
+                    studentId, teacherId);
+                return Results.Ok(new { message = "Unassigned" });
+            }
+            else
+            {
+                logger.LogWarning("Unassign failed: student {StudentId} was not unassigned from teacher {TeacherId}.",
+                    studentId, teacherId);
+                return Results.BadRequest(new { error = "Unassign failed." });
+            }
         }
         catch (Exception ex)
         {
@@ -273,7 +277,9 @@ public static class UsersEndpoints
         try
         {
             var list = await service.GetStudentsForTeacherAsync(teacherId, ct);
-            return Results.Ok(list);
+
+            logger.LogInformation("Returned {Count} students for teacher {TeacherId}", list?.Count() ?? 0, teacherId);
+            return Results.Ok(list ?? Enumerable.Empty<UserData>());
         }
         catch (Exception ex)
         {
@@ -299,6 +305,14 @@ public static class UsersEndpoints
         try
         {
             var list = await service.GetTeachersForStudentAsync(studentId, ct);
+
+            if (list is null || !list.Any())
+            {
+                logger.LogInformation("No teachers found for student {StudentId}", studentId);
+                return Results.NotFound(new { message = "No teachers found for this student." });
+            }
+
+            logger.LogInformation("Returned {Count} teachers for student {StudentId}", list.Count(), studentId);
             return Results.Ok(list);
         }
         catch (Exception ex)
