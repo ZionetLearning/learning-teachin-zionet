@@ -10,7 +10,7 @@ metadata:
     app: jaeger
     app.kubernetes.io/name: jaeger
     app.kubernetes.io/component: all-in-one
-    release: prometheus  # Important: This label allows Prometheus to discover this ServiceMonitor
+    release: prom-stack  # Important: This label allows Prometheus to discover this ServiceMonitor
 spec:
   selector:
     matchLabels:
