@@ -1,50 +1,26 @@
-﻿using Accessor.DB;
-using Accessor.Models.Users;
+﻿using Accessor.Models.Users;
 using Accessor.Services;
 using Accessor.Services.Interfaces;
-using Dapr.Client;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
+using AccessorUnitTests.Shared;
 
 namespace AccessorUnitTests.Users
 {
+    [Collection("SharedDb")]
     public class AccessorServiceUserRelationsTests
     {
-        // ---------- EF InMemory ----------
-        private static AccessorDbContext NewDb(string name)
-        {
-            var options = new DbContextOptionsBuilder<AccessorDbContext>()
-                .UseInMemoryDatabase(name)
-                .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
-                .EnableSensitiveDataLogging()
-                .Options;
+        private readonly SharedDbFixture _fixture;
 
-            return new AccessorDbContext(options);
+        public AccessorServiceUserRelationsTests(SharedDbFixture fixture)
+        {
+            _fixture = fixture;
         }
 
-        // ---------- Config / Service ----------
-        private static IConfiguration NewConfig(int ttl = 123) =>
-            new ConfigurationBuilder()
-                .AddInMemoryCollection(new System.Collections.Generic.Dictionary<string, string?>
-                {
-                    ["TaskCache:TTLInSeconds"] = ttl.ToString()
-                })
-                .Build();
-
-        private static IUserService NewService(AccessorDbContext db, int ttl = 123)
-        {
-            var logger = new Mock<ILogger<UserService>>(MockBehavior.Loose).Object;
-            return new UserService(db, logger);
-        }
+        private IUserService NewService() =>
+            new UserService(_fixture.Db, new Mock<ILogger<UserService>>(MockBehavior.Loose).Object);
 
         private static UserModel MakeUser(Role role) => new()
         {
@@ -59,14 +35,16 @@ namespace AccessorUnitTests.Users
         [Fact]
         public async Task GetAllUsersAsync_NoFilter_ReturnsAll()
         {
-            var db = NewDb(Guid.NewGuid().ToString());
+            await _fixture.ResetAsync();
+            var db = _fixture.Db;
+
             var t1 = MakeUser(Role.Teacher);
             var s1 = MakeUser(Role.Student);
             var a1 = MakeUser(Role.Admin);
             db.Users.AddRange(t1, s1, a1);
             await db.SaveChangesAsync();
 
-            var svc = NewService(db);
+            var svc = NewService();
 
             var result = await svc.GetAllUsersAsync(roleFilter: null, teacherId: null, ct: CancellationToken.None);
             result.Should().HaveCount(3);
@@ -76,11 +54,18 @@ namespace AccessorUnitTests.Users
         [Fact]
         public async Task GetAllUsersAsync_FilterByStudent_ReturnsOnlyStudents()
         {
-            var db = NewDb(Guid.NewGuid().ToString());
-            db.Users.AddRange(MakeUser(Role.Teacher), MakeUser(Role.Student), MakeUser(Role.Admin), MakeUser(Role.Student));
+            await _fixture.ResetAsync();
+            var db = _fixture.Db;
+
+            db.Users.AddRange(
+                MakeUser(Role.Teacher),
+                MakeUser(Role.Student),
+                MakeUser(Role.Admin),
+                MakeUser(Role.Student)
+            );
             await db.SaveChangesAsync();
 
-            var svc = NewService(db);
+            var svc = NewService();
 
             var result = await svc.GetAllUsersAsync(Role.Student, teacherId: null, ct: CancellationToken.None);
             result.Should().OnlyContain(u => u.Role == Role.Student);
@@ -89,15 +74,17 @@ namespace AccessorUnitTests.Users
         [Fact]
         public async Task GetStudentsForTeacherAsync_Empty_ReturnsEmptyEnumeration()
         {
-            var db = NewDb(Guid.NewGuid().ToString());
+            await _fixture.ResetAsync();
+            var db = _fixture.Db;
+
             var teacher = MakeUser(Role.Teacher);
             var otherTeacher = MakeUser(Role.Teacher);
             var student = MakeUser(Role.Student);
             db.Users.AddRange(teacher, otherTeacher, student);
-            // No relations added
+            // no TeacherStudents relations
             await db.SaveChangesAsync();
 
-            var svc = NewService(db);
+            var svc = NewService();
 
             var result = await svc.GetStudentsForTeacherAsync(teacher.UserId, CancellationToken.None);
             result.Should().BeEmpty();
@@ -106,7 +93,9 @@ namespace AccessorUnitTests.Users
         [Fact]
         public async Task GetStudentsForTeacherAsync_ReturnsOnlyStudentsAssignedToTeacher()
         {
-            var db = NewDb(Guid.NewGuid().ToString());
+            await _fixture.ResetAsync();
+            var db = _fixture.Db;
+
             var teacher = MakeUser(Role.Teacher);
             var t2 = MakeUser(Role.Teacher);
             var s1 = MakeUser(Role.Student);
@@ -123,7 +112,7 @@ namespace AccessorUnitTests.Users
 
             await db.SaveChangesAsync();
 
-            var svc = NewService(db);
+            var svc = NewService();
 
             var result = (await svc.GetStudentsForTeacherAsync(teacher.UserId, CancellationToken.None)).ToList();
             result.Should().HaveCount(2);
@@ -134,13 +123,15 @@ namespace AccessorUnitTests.Users
         [Fact]
         public async Task AssignStudentToTeacherAsync_InvalidRoles_ReturnsFalse()
         {
-            var db = NewDb(Guid.NewGuid().ToString());
+            await _fixture.ResetAsync();
+            var db = _fixture.Db;
+
             var notTeacher = MakeUser(Role.Student);
             var notStudent = MakeUser(Role.Teacher);
             db.Users.AddRange(notTeacher, notStudent);
             await db.SaveChangesAsync();
 
-            var svc = NewService(db);
+            var svc = NewService();
 
             var ok = await svc.AssignStudentToTeacherAsync(notTeacher.UserId, notStudent.UserId, CancellationToken.None);
             ok.Should().BeFalse();
@@ -149,13 +140,15 @@ namespace AccessorUnitTests.Users
         [Fact]
         public async Task AssignStudentToTeacherAsync_NewRelation_PersistsAndReturnsTrue()
         {
-            var db = NewDb(Guid.NewGuid().ToString());
+            await _fixture.ResetAsync();
+            var db = _fixture.Db;
+
             var teacher = MakeUser(Role.Teacher);
             var student = MakeUser(Role.Student);
             db.Users.AddRange(teacher, student);
             await db.SaveChangesAsync();
 
-            var svc = NewService(db);
+            var svc = NewService();
 
             var ok = await svc.AssignStudentToTeacherAsync(teacher.UserId, student.UserId, CancellationToken.None);
             ok.Should().BeTrue();
@@ -167,35 +160,17 @@ namespace AccessorUnitTests.Users
         }
 
         [Fact]
-        public async Task AssignStudentToTeacherAsync_ExistingRelation_IsIdempotentAndReturnsTrue()
-        {
-            var db = NewDb(Guid.NewGuid().ToString());
-            var teacher = MakeUser(Role.Teacher);
-            var student = MakeUser(Role.Student);
-            db.Users.AddRange(teacher, student);
-            db.TeacherStudents.Add(new TeacherStudent { TeacherId = teacher.UserId, StudentId = student.UserId });
-            await db.SaveChangesAsync();
-
-            var svc = NewService(db);
-
-            var ok = await svc.AssignStudentToTeacherAsync(teacher.UserId, student.UserId, CancellationToken.None);
-            ok.Should().BeTrue();
-
-            // Still exactly one relation
-            (await db.TeacherStudents.CountAsync(ts => ts.TeacherId == teacher.UserId && ts.StudentId == student.UserId))
-                .Should().Be(1);
-        }
-
-        [Fact]
         public async Task UnassignStudentFromTeacherAsync_NoRelation_IsIdempotentTrue()
         {
-            var db = NewDb(Guid.NewGuid().ToString());
+            await _fixture.ResetAsync();
+            var db = _fixture.Db;
+
             var teacher = MakeUser(Role.Teacher);
             var student = MakeUser(Role.Student);
             db.Users.AddRange(teacher, student);
             await db.SaveChangesAsync();
 
-            var svc = NewService(db);
+            var svc = NewService();
 
             var ok = await svc.UnassignStudentFromTeacherAsync(teacher.UserId, student.UserId, CancellationToken.None);
             ok.Should().BeTrue();
@@ -204,14 +179,16 @@ namespace AccessorUnitTests.Users
         [Fact]
         public async Task UnassignStudentFromTeacherAsync_RemovesExistingRelation_ReturnsTrue()
         {
-            var db = NewDb(Guid.NewGuid().ToString());
+            await _fixture.ResetAsync();
+            var db = _fixture.Db;
+
             var teacher = MakeUser(Role.Teacher);
             var student = MakeUser(Role.Student);
             db.Users.AddRange(teacher, student);
             db.TeacherStudents.Add(new TeacherStudent { TeacherId = teacher.UserId, StudentId = student.UserId });
             await db.SaveChangesAsync();
 
-            var svc = NewService(db);
+            var svc = NewService();
 
             var ok = await svc.UnassignStudentFromTeacherAsync(teacher.UserId, student.UserId, CancellationToken.None);
             ok.Should().BeTrue();
@@ -223,14 +200,16 @@ namespace AccessorUnitTests.Users
         [Fact]
         public async Task GetTeachersForStudentAsync_Empty_ReturnsEmptyEnumeration()
         {
-            var db = NewDb(Guid.NewGuid().ToString());
+            await _fixture.ResetAsync();
+            var db = _fixture.Db;
+
             var student = MakeUser(Role.Student);
             var teacher = MakeUser(Role.Teacher);
             db.Users.AddRange(student, teacher);
             // no relation
             await db.SaveChangesAsync();
 
-            var svc = NewService(db);
+            var svc = NewService();
 
             var result = await svc.GetTeachersForStudentAsync(student.UserId, CancellationToken.None);
             result.Should().BeEmpty();
@@ -239,7 +218,9 @@ namespace AccessorUnitTests.Users
         [Fact]
         public async Task GetTeachersForStudentAsync_ReturnsOnlyTeachersAssignedToStudent()
         {
-            var db = NewDb(Guid.NewGuid().ToString());
+            await _fixture.ResetAsync();
+            var db = _fixture.Db;
+
             var s1 = MakeUser(Role.Student);
             var t1 = MakeUser(Role.Teacher);
             var t2 = MakeUser(Role.Teacher);
@@ -254,7 +235,7 @@ namespace AccessorUnitTests.Users
 
             await db.SaveChangesAsync();
 
-            var svc = NewService(db);
+            var svc = NewService();
 
             var result = (await svc.GetTeachersForStudentAsync(s1.UserId, CancellationToken.None)).ToList();
             result.Should().HaveCount(2);

@@ -15,16 +15,16 @@ public static class UsersEndpoints
     {
         var usersGroup = app.MapGroup("/users-manager").WithTags("Users");
 
-        usersGroup.MapGet("/user-list", GetAllUsersAsync).WithName("GetAllUsers").RequireAuthorization("AdminOrTeacher");
-        usersGroup.MapGet("/user/{userId:guid}", GetUserAsync).WithName("GetUser").RequireAuthorization("AdminOrTeacherOrStudent");
+        usersGroup.MapGet("/user-list", GetAllUsersAsync).WithName("GetAllUsers").RequireAuthorization(PolicyNames.AdminOrTeacher);
+        usersGroup.MapGet("/user/{userId:guid}", GetUserAsync).WithName("GetUser").RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
         usersGroup.MapPost("/user", CreateUserAsync).WithName("CreateUser");
-        usersGroup.MapPut("/user/{userId:guid}", UpdateUserAsync).WithName("UpdateUser").RequireAuthorization("AdminOrTeacherOrStudent");
-        usersGroup.MapDelete("/user/{userId:guid}", DeleteUserAsync).WithName("DeleteUser").RequireAuthorization("AdminOrTeacherOrStudent");
+        usersGroup.MapPut("/user/{userId:guid}", UpdateUserAsync).WithName("UpdateUser").RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
+        usersGroup.MapDelete("/user/{userId:guid}", DeleteUserAsync).WithName("DeleteUser").RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
 
-        usersGroup.MapGet("/teacher/{teacherId:guid}/students", ListStudentsForTeacherAsync).WithName("ListStudentsForTeacher").RequireAuthorization("AdminOrTeacher");
-        usersGroup.MapPost("/teacher/{teacherId:guid}/students/{studentId:guid}", AssignStudentAsync).WithName("AssignStudentToTeacher").RequireAuthorization("AdminOrTeacher");
-        usersGroup.MapDelete("/teacher/{teacherId:guid}/students/{studentId:guid}", UnassignStudentAsync).WithName("UnassignStudentFromTeacher").RequireAuthorization("AdminOrTeacher");
-        usersGroup.MapGet("/student/{studentId:guid}/teachers", ListTeachersForStudentAsync).WithName("ListTeachersForStudent").RequireAuthorization("AdminOnly");
+        usersGroup.MapGet("/teacher/{teacherId:guid}/students", ListStudentsForTeacherAsync).WithName("ListStudentsForTeacher").RequireAuthorization(PolicyNames.AdminOrTeacher);
+        usersGroup.MapPost("/teacher/{teacherId:guid}/students/{studentId:guid}", AssignStudentAsync).WithName("AssignStudentToTeacher").RequireAuthorization(PolicyNames.AdminOrTeacher);
+        usersGroup.MapDelete("/teacher/{teacherId:guid}/students/{studentId:guid}", UnassignStudentAsync).WithName("UnassignStudentFromTeacher").RequireAuthorization(PolicyNames.AdminOrTeacher);
+        usersGroup.MapGet("/student/{studentId:guid}/teachers", ListTeachersForStudentAsync).WithName("ListTeachersForStudent").RequireAuthorization(PolicyNames.AdminOnly);
 
         return app;
     }
@@ -206,9 +206,15 @@ public static class UsersEndpoints
         var callerRole = http.User.FindFirstValue(AuthSettings.RoleClaimType);
         var callerIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
 
-        if (string.IsNullOrWhiteSpace(callerRole) || !Guid.TryParse(callerIdRaw, out var callerId))
+        if (string.IsNullOrWhiteSpace(callerRole))
         {
-            logger.LogWarning("Missing/invalid caller context (role/userId)");
+            logger.LogWarning("Unauthorized: missing role.");
+            return Results.Unauthorized();
+        }
+
+        if (!Guid.TryParse(callerIdRaw, out var callerId))
+        {
+            logger.LogWarning("Unauthorized: missing or invalid callerId.");
             return Results.Unauthorized();
         }
 
@@ -252,9 +258,15 @@ public static class UsersEndpoints
         var callerRole = http.User.FindFirstValue(AuthSettings.RoleClaimType);
         var callerIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
 
+        if (string.IsNullOrWhiteSpace(callerRole))
+        {
+            logger.LogWarning("Unauthorized: missing role.");
+            return Results.Unauthorized();
+        }
+
         if (!Guid.TryParse(callerIdRaw, out var callerId))
         {
-            logger.LogWarning("Unauthorized: missing caller id.");
+            logger.LogWarning("Unauthorized: missing or invalid callerId.");
             return Results.Unauthorized();
         }
 
@@ -345,9 +357,15 @@ public static class UsersEndpoints
         var callerRole = http.User.FindFirstValue(AuthSettings.RoleClaimType);
         var callerIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
 
-        if (!Guid.TryParse(callerIdRaw, out var callerId))
+        if (string.IsNullOrWhiteSpace(callerRole))
         {
-            logger.LogWarning("Unauthorized: missing caller id.");
+            logger.LogWarning("Unauthorized: missing or empty caller role.");
+            return Results.Unauthorized();
+        }
+
+        if (!Guid.TryParse(callerIdRaw, out var callerId) || callerId == Guid.Empty)
+        {
+            logger.LogWarning("Unauthorized: missing or invalid caller id.");
             return Results.Unauthorized();
         }
 

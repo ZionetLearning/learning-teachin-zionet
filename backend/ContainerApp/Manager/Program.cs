@@ -86,19 +86,19 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization(options =>
 {
     // Admin can do anything
-    options.AddPolicy("AdminOnly", p =>
+    options.AddPolicy(PolicyNames.AdminOnly, p =>
         p.RequireRole(Role.Admin.ToString()));
 
     // Admin or Teacher (student list/create/update/delete)
-    options.AddPolicy("AdminOrTeacher", p =>
+    options.AddPolicy(PolicyNames.AdminOrTeacher, p =>
         p.RequireRole(Role.Admin.ToString(), Role.Teacher.ToString()));
 
     // Exactly Teacher
-    options.AddPolicy("TeacherOnly", p =>
+    options.AddPolicy(PolicyNames.TeacherOnly, p =>
         p.RequireRole(Role.Teacher.ToString()));
 
     // Any authenticated role (handy for groups)
-    options.AddPolicy("AdminOrTeacherOrStudent", p =>
+    options.AddPolicy(PolicyNames.AdminOrTeacherOrStudent, p =>
         p.RequireRole(Role.Admin.ToString(), Role.Teacher.ToString(), Role.Student.ToString()));
 });
 

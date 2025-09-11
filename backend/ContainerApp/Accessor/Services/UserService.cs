@@ -1,8 +1,9 @@
+using Accessor.DB;
 using Accessor.Models.Auth;
 using Accessor.Models.Users;
-using Accessor.DB;
 using Accessor.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace Accessor.Services;
 
@@ -213,7 +214,6 @@ public class UserService : IUserService
 
         try
         {
-            // Validate roles
             var teacherOk = await _db.Users.AnyAsync(u => u.UserId == teacherId && u.Role == Role.Teacher, ct);
             if (!teacherOk)
             {
@@ -221,14 +221,11 @@ public class UserService : IUserService
                 return false;
             }
 
-            var exists = await _db.TeacherStudents
-                .AnyAsync(ts => ts.TeacherId == teacherId && ts.StudentId == studentId, ct);
-
-            if (exists)
+            var studentOk = await _db.Users.AnyAsync(u => u.UserId == studentId && u.Role == Role.Student, ct);
+            if (!studentOk)
             {
-                _logger.LogInformation("AssignStudentToTeacher: relation already exists (teacherId={TeacherId}, studentId={StudentId})",
-                    teacherId, studentId);
-                return true;
+                _logger.LogWarning("AssignStudentToTeacher: student not found or not a Student (studentId={StudentId})", studentId);
+                return false;
             }
 
             _db.TeacherStudents.Add(new TeacherStudent { TeacherId = teacherId, StudentId = studentId });
@@ -238,11 +235,23 @@ public class UserService : IUserService
                 teacherId, studentId);
             return true;
         }
-        catch (Exception ex)
+        catch (DbUpdateException ex)
         {
+            if (IsUniqueViolation(ex))
+            {
+                _logger.LogInformation("AssignStudentToTeacher: mapping already existed (teacherId={TeacherId}, studentId={StudentId})",
+                    teacherId, studentId);
+                return true;
+            }
+
             _logger.LogError(ex, "AssignStudentToTeacher FAILED (teacherId={TeacherId}, studentId={StudentId})", teacherId, studentId);
             throw;
         }
+    }
+
+    private static bool IsUniqueViolation(DbUpdateException ex)
+    {
+        return ex.InnerException is PostgresException pg && pg.SqlState == "23505";
     }
 
     public async Task<bool> UnassignStudentFromTeacherAsync(Guid teacherId, Guid studentId, CancellationToken ct = default)
