@@ -24,5 +24,4 @@ public static class AIChatHelper
 
         throw new TimeoutException($"Timed out waiting new messages for chat {chatId}.");
     }
-
 }
