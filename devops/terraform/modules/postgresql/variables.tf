@@ -80,7 +80,13 @@ variable "private_dns_zone_id" {
 
 variable "virtual_network_id" {
   type        = string
-  description = "ID of the virtual network for Private DNS Zone linking"
+  description = "ID of the database virtual network for Private DNS Zone linking"
+  default     = null
+}
+
+variable "aks_virtual_network_id" {
+  type        = string
+  description = "ID of the AKS virtual network for Private DNS Zone linking"
   default     = null
 }
 

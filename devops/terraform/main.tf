@@ -109,8 +109,9 @@ module "database" {
   database_name = "${var.database_name}-${var.environment_name}"
 
   # Private networking configuration
-  db_subnet_id       = module.network.database_subnet_id
-  virtual_network_id = module.network.database_vnet_id
+  db_subnet_id           = module.network.database_subnet_id
+  virtual_network_id     = module.network.database_vnet_id
+  aks_virtual_network_id = module.network.vnet_id
 
   use_shared_postgres = var.use_shared_postgres
   existing_server_id  = var.use_shared_postgres ? data.azurerm_postgresql_flexible_server.shared[0].id : null

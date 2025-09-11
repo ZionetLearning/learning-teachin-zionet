@@ -26,6 +26,21 @@ resource "azurerm_private_dns_zone_virtual_network_link" "postgres_db_vnet" {
   }
 }
 
+# Link Private DNS Zone to AKS VNet for cross-region name resolution
+resource "azurerm_private_dns_zone_virtual_network_link" "postgres_aks_vnet" {
+  count                 = var.use_shared_postgres ? 0 : 1
+  name                  = "postgres-aks-vnet-link"
+  resource_group_name   = var.resource_group_name
+  private_dns_zone_name = azurerm_private_dns_zone.postgres[0].name
+  virtual_network_id    = var.aks_virtual_network_id
+  registration_enabled  = false
+
+  tags = {
+    Environment = "Production"
+    Purpose     = "PostgreSQL DNS Link for AKS"
+  }
+}
+
 # PostgreSQL Flexible Server with Private VNet Integration
 # This configuration uses private endpoints with delegated subnet
 resource "azurerm_postgresql_flexible_server" "this" {
@@ -67,7 +82,8 @@ resource "azurerm_postgresql_flexible_server" "this" {
   }
 
   depends_on = [
-    azurerm_private_dns_zone_virtual_network_link.postgres_db_vnet
+    azurerm_private_dns_zone_virtual_network_link.postgres_db_vnet,
+    azurerm_private_dns_zone_virtual_network_link.postgres_aks_vnet
   ]
 }
 
