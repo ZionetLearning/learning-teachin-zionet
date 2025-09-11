@@ -85,12 +85,13 @@ public static class AuthEndpoints
         [FromServices] IAuthService authService,
         [FromServices] ILogger<AuthEndpoint> logger,
         HttpRequest request,
-        HttpResponse response)
+        HttpResponse response,
+        CancellationToken cancellationToken)
     {
         using var scope = logger.BeginScope("Method: {Method}", nameof(RefreshTokensAsync));
         try
         {
-            var (accessToken, newRefreshToken) = await authService.RefreshTokensAsync(request);
+            var (accessToken, newRefreshToken) = await authService.RefreshTokensAsync(request, cancellationToken);
 
             // Set again the cookies in the response
             var csrfToken = CookieHelper.SetCookies(response, newRefreshToken);
@@ -125,12 +126,13 @@ public static class AuthEndpoints
         [FromServices] IAuthService authService,
         [FromServices] ILogger<AuthEndpoint> logger,
         HttpRequest request,
-        HttpResponse response)
+        HttpResponse response,
+        CancellationToken cancellationToken)
     {
         using var scope = logger.BeginScope("Method: {Method}", nameof(LogoutAsync));
         try
         {
-            await authService.LogoutAsync(request);
+            await authService.LogoutAsync(request, cancellationToken);
 
             // Clear the cookies in the response
             CookieHelper.ClearCookies(response);
@@ -162,7 +164,8 @@ public static class AuthEndpoints
 
     private static Task<IResult> TestAuthAsync(
         [FromServices] ILogger<AuthEndpoint> logger,
-        HttpContext context)
+        HttpContext context,
+        CancellationToken cancellationToken)
     {
         using var scope = logger.BeginScope("Method: {Method}", nameof(TestAuthAsync));
         try
@@ -191,7 +194,8 @@ public static class AuthEndpoints
 
     private static async Task<IResult> RefreshSessionsCleanupAsync(
     [FromServices] IAccessorClient accessorClient,
-    [FromServices] ILoggerFactory loggerFactory)
+    [FromServices] ILoggerFactory loggerFactory,
+    CancellationToken ct)
     {
         var logger = loggerFactory.CreateLogger("Maintenance.RefreshSessionsCleanup");
 

@@ -31,9 +31,7 @@ public class AuthService : IAuthService
         _log.LogInformation("Login attempt for user {Email}", loginRequest.Email);
         try
         {
-            _log.LogInformation("Calling accessor with timeout 30s...");
             var response = await _accessorClient.LoginUserAsync(loginRequest);
-            _log.LogInformation("Accessor call finished");
 
             if (response is null || response.UserId == Guid.Empty)
             {
@@ -97,7 +95,7 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task<(string accessToken, string refreshToken)> RefreshTokensAsync(HttpRequest request)
+    public async Task<(string accessToken, string refreshToken)> RefreshTokensAsync(HttpRequest request, CancellationToken cancellationToken)
     {
         _log.LogInformation("Token refresh attempt");
         try
@@ -131,7 +129,7 @@ public class AuthService : IAuthService
             RefreshSessionDto session;
             try
             {
-                session = await _accessorClient.GetSessionAsync(oldHash)
+                session = await _accessorClient.GetSessionAsync(oldHash, cancellationToken)
                     ?? throw new UnauthorizedAccessException("Invalid or mismatched session.");
             }
             catch (InvocationException ex) when (ex.InnerException is HttpRequestException httpEx && httpEx.StatusCode == HttpStatusCode.NotFound)
@@ -195,7 +193,7 @@ public class AuthService : IAuthService
             };
 
             // Update session using accessor client
-            await _accessorClient.UpdateSessionDBAsync(session.Id, rotatePayload);
+            await _accessorClient.UpdateSessionDBAsync(session.Id, rotatePayload, cancellationToken);
 
             return (newAccessToken, newRefreshToken);
         }
@@ -211,7 +209,7 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task LogoutAsync(HttpRequest request)
+    public async Task LogoutAsync(HttpRequest request, CancellationToken cancellationToken)
     {
         try
         {
@@ -225,7 +223,7 @@ public class AuthService : IAuthService
             var hash = HashRefreshToken(refreshToken, _jwt.RefreshTokenHashKey);
 
             // Lookup session by hash
-            var session = await _accessorClient.GetSessionAsync(hash);
+            var session = await _accessorClient.GetSessionAsync(hash, cancellationToken);
 
             if (session is null)
             {
@@ -234,7 +232,7 @@ public class AuthService : IAuthService
             }
 
             // Delete by sessionId
-            await _accessorClient.DeleteSessionDBAsync(session.Id);
+            await _accessorClient.DeleteSessionDBAsync(session.Id, cancellationToken);
 
             _log.LogInformation("Deleted session {SessionId}", session.Id);
         }
