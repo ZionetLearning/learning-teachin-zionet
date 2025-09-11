@@ -1,4 +1,4 @@
-import { locateUserRowByEmail } from "../support/commands";
+import { locateUserRowByEmail, addCreatedEmail } from "../support/commands";
 
 describe("Users Page Flow (admin app @4002)", () => {
   const TEST_EMAIL = "e2e_users_fixed_user@example.com";
@@ -115,7 +115,10 @@ describe("Users Page Flow (admin app @4002)", () => {
     cy.get('[data-testid="users-create-password"]').clear().type(TEST_PASSWORD);
     cy.get('[data-testid="users-create-submit"]').click();
 
-    cy.wait("@createUser");
+    cy.wait("@createUser").then((intc) => {
+      const created = (intc?.request?.body as any)?.email || email;
+      addCreatedEmail(created);
+    });
     cy.wait("@getUsers");
 
     searchFor(email);
@@ -175,7 +178,10 @@ describe("Users Page Flow (admin app @4002)", () => {
     cy.get('[data-testid="users-create-submit"]').click();
     cy.wait("@createUser")
       .its("response.statusCode")
-      .should("be.oneOf", [200, 201]);
+      .should("be.oneOf", [200, 201])
+      .then((status) => {
+        addCreatedEmail(baseEmail);
+      });
     cy.wait("@getUsers");
 
     locateUserRowByEmail(baseEmail).then((rowOrNull) => {

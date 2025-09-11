@@ -7,7 +7,9 @@ interface TestUser {
 }
 
 let testUser: TestUser | null = null;
-
+const createdEmails = new Set<string>();
+const APP_URL = "https://localhost:4000";
+const ADMIN_URL = "https://localhost:4002";
 const waitForUsersList = () => {
   cy.get('[data-testid="users-table"]', { timeout: 15000 }).should("exist");
 };
@@ -82,177 +84,44 @@ declare global {
   }
 }
 
-Cypress.Commands.add("login", () => {
-  const appUrl = "https://localhost:4000";
-  const email =
-    (Cypress.env("E2E_TEST_EMAIL") as string) || "e2e_fixed_user@example.com";
-  const password = (Cypress.env("E2E_TEST_PASSWORD") as string) || "Passw0rd!";
+const markCreated = (email: string) => {
+  createdEmails.add(email);
+  cy.log(`[e2e] Marked as created this run: ${email}`);
+};
 
-  if (!testUser || testUser.email !== email) {
-    testUser = { email, password };
-  }
-  Cypress.env("e2eUser", testUser);
-
-  cy.log(`[e2e] Login (or signup) with deterministic test user ${email}`);
-  cy.intercept("POST", "**/auth/login").as("loginRequest");
-  cy.intercept("POST", "**/user").as("createUser");
-
-  cy.visit(appUrl + "/");
-  // Try LOGIN first.
-  cy.get('[data-testid="auth-tab-login"]').click();
-  cy.get('[data-testid="auth-email"]').clear().type(email);
-  cy.get('[data-testid="auth-password"]').clear().type(password);
-  cy.get('[data-testid="auth-submit"]').should("not.be.disabled").click();
-
-  cy.wait("@loginRequest").then((loginInt) => {
-    const status = loginInt?.response?.statusCode;
-    if (status === 200) {
-      cy.log(`[e2e] Logged in existing deterministic user ${email}`);
-      cy.get('[data-testid="ps-sidebar-container-test-id"]').should("exist");
-      if (!testUser!.userId) {
-        cy.window().then((win) => {
-          try {
-            const credsRaw = win.localStorage.getItem("credentials");
-            if (credsRaw) {
-              const parsed = JSON.parse(credsRaw);
-              if (parsed?.userId) {
-                testUser!.userId = parsed.userId;
-                cy.log(
-                  `[e2e] Derived userId from credentials: ${parsed.userId}`,
-                );
-              }
-            }
-          } catch {}
-        });
-      }
-    } else {
-      cy.log(
-        `[e2e] Login failed with status ${status}; attempting signup for ${email}`,
-      );
-      cy.get('[data-testid="auth-tab-signup"]').click();
-      cy.get('[data-testid="auth-email"]').clear().type(email);
-      cy.get('[data-testid="auth-password"]').clear().type(password);
-      cy.get('[data-testid="auth-confirm-password"]').clear().type(password);
-      cy.get('input[placeholder*="First" i]').clear().type("E2E");
-      cy.get('input[placeholder*="Last" i]').clear().type("User");
-      cy.get('[data-testid="auth-submit"]').should("not.be.disabled").click();
-      cy.get('[data-testid="ps-sidebar-container-test-id"]').should("exist");
-      cy.wait("@createUser").then((intc) => {
-        const body = intc?.response?.body as { userId?: string } | undefined;
-        if (body?.userId) {
-          testUser!.userId = body.userId;
-          cy.log(`[e2e] Captured created userId: ${body.userId}`);
-        } else {
-          cy.log(
-            "[e2e] Warning: userId not present in createUser response body during signup",
-          );
-        }
-      });
-    }
-  });
-});
-
-// Admin login (exact same logic as login(), but targets port 4002 and admin credentials)
-Cypress.Commands.add("loginAdmin", () => {
-  const appUrl = "https://localhost:4002";
-  const email =
-    (Cypress.env("ADMIN_EMAIL") as string) ||
-    (Cypress.env("TEACHER_EMAIL") as string) ||
-    "admin_fixed_user@example.com";
-  const password =
-    (Cypress.env("ADMIN_PASSWORD") as string) ||
-    (Cypress.env("TEACHER_PASSWORD") as string) ||
-    "Passw0rd!";
-
-  if (!testUser || testUser.email !== email) {
-    testUser = { email, password };
-  }
-  Cypress.env("e2eAdminUser", testUser);
-
-  cy.log(`[e2e] Admin login (or signup) deterministic user ${email}`);
-  cy.intercept("POST", "**/auth/login").as("loginRequest");
-  cy.intercept("POST", "**/user").as("createUser");
-
-  cy.visit(appUrl + "/");
-  cy.get('[data-testid="auth-tab-login"]').click();
-  cy.get('[data-testid="auth-email"]').clear().type(email);
-  cy.get('[data-testid="auth-password"]').clear().type(password);
-  cy.get('[data-testid="auth-submit"]').should("not.be.disabled").click();
-
-  cy.wait("@loginRequest").then((loginInt) => {
-    const status = loginInt?.response?.statusCode;
-    if (status === 200) {
-      cy.log(`[e2e] Admin logged in existing deterministic user ${email}`);
-      cy.get('[data-testid="ps-sidebar-container-test-id"]').should("exist");
-      if (!testUser!.userId) {
-        cy.window().then((win) => {
-          try {
-            const credsRaw = win.localStorage.getItem("credentials");
-            if (credsRaw) {
-              const parsed = JSON.parse(credsRaw);
-              if (parsed?.userId) {
-                testUser!.userId = parsed.userId;
-                cy.log(`[e2e] Derived admin userId: ${parsed.userId}`);
-              }
-            }
-          } catch {}
-        });
-      }
-    } else {
-      cy.log(`[e2e] Admin login failed ${status}; attempting signup ${email}`);
-      cy.get('[data-testid="auth-tab-signup"]').click();
-      cy.get('[data-testid="auth-email"]').clear().type(email);
-      cy.get('[data-testid="auth-password"]').clear().type(password);
-      cy.get('[data-testid="auth-confirm-password"]').clear().type(password);
-      cy.get('input[placeholder*="First" i]').clear().type("Admin");
-      cy.get('input[placeholder*="Last" i]').clear().type("User");
-      cy.get('[data-testid="auth-submit"]').should("not.be.disabled").click();
-      cy.get('[data-testid="ps-sidebar-container-test-id"]').should("exist");
-      cy.wait("@createUser").then((intc) => {
-        const body = intc?.response?.body as { userId?: string } | undefined;
-        if (body?.userId) {
-          testUser!.userId = body.userId;
-          cy.log(`[e2e] Captured created admin userId: ${body.userId}`);
-        } else {
-          cy.log(
-            "[e2e] Warning: admin userId not present in createUser response",
-          );
-        }
-      });
-    }
-  });
-});
-
-export const deleteCreatedUser = () => {
-  if (!testUser) return cy.log("[e2e] No deterministic test user to delete.");
-
-  const { email: targetEmail, password: targetPassword } = testUser;
-  const adminOrigin = "https://localhost:4002";
-
-  const runDeletion = () => {
-    // Ensure logged in
+const deleteOneByEmailUI = (
+  email: string,
+  adminCreds: { email: string; password: string },
+) => {
+  const ensureLoggedIn = () => {
     cy.get("body").then(($b) => {
       const loggedIn =
         $b.find('[data-testid="ps-sidebar-container-test-id"]').length > 0;
       if (!loggedIn) {
-        cy.get('[data-testid="auth-email"]', { timeout: 10000 })
+        cy.get('[data-testid="auth-email"]', { timeout: 12000 })
           .should("exist")
           .clear()
-          .type(targetEmail);
-        cy.get('[data-testid="auth-password"]').clear().type(targetPassword);
+          .type(adminCreds.email);
+        cy.get('[data-testid="auth-password"]')
+          .clear()
+          .type(adminCreds.password);
         cy.get('[data-testid="auth-submit"]').should("not.be.disabled").click();
         cy.get('[data-testid="ps-sidebar-container-test-id"]', {
           timeout: 15000,
         }).should("exist");
       }
     });
+  };
 
-    cy.get('[data-testid="sidebar-users"]', { timeout: 15000 }).click();
-    cy.get('[data-testid="users-page"]', { timeout: 15000 }).should("exist");
+  const goToUsersAndDelete = () => {
+    cy.get('[data-testid="sidebar-users"]', { timeout: 20000 }).click();
+    cy.get('[data-testid="users-page"]', { timeout: 25000 }).should("exist");
+    waitForUsersList();
+    setRowsPerPageAll();
 
-    locateUserRowByEmail(targetEmail).then((rowOrNull) => {
+    locateUserRowByEmail(email).then((rowOrNull) => {
       if (!rowOrNull) {
-        cy.log(`[e2e] User '${targetEmail}' not present; nothing to delete.`);
+        cy.log(`[e2e] User '${email}' not present; nothing to delete.`);
         return;
       }
 
@@ -263,38 +132,37 @@ export const deleteCreatedUser = () => {
       cy.wrap($row)
         .find('[data-testid="users-delete-btn"]')
         .click({ force: true });
+      cy.get("body", { timeout: 15000 }).then(($b) => {
+        const stillOnUsersPage =
+          $b.find('[data-testid="users-page"]').length > 0;
 
-      if (testId)
-        cy.get(`[data-testid="${testId}"]`, { timeout: 10000 }).should(
-          "not.exist",
-        );
-
-      searchFor(targetEmail);
-      cy.contains('[data-testid="users-email"]', targetEmail).should(
-        "not.exist",
-      );
-      clearSearch();
-    });
-
-    cy.get("body").then(($b) => {
-      if ($b.find('[data-testid="sidebar-logout"]').length)
-        cy.get('[data-testid="sidebar-logout"]').click();
-    });
-
-    cy.then(() => {
-      testUser = null;
-      cy.log("[e2e] Cleared cached testUser after deletion.");
+        if (stillOnUsersPage) {
+          if (testId) {
+            cy.get(`[data-testid="${testId}"]`, { timeout: 10000 }).should(
+              "not.exist",
+            );
+          }
+          searchFor(email);
+          cy.contains('[data-testid="users-email"]', email).should("not.exist");
+          clearSearch();
+        } else {
+          cy.get('[data-testid="auth-page"]', { timeout: 20000 }).should(
+            "exist",
+          );
+        }
+      });
     });
   };
 
   return cy.location("origin").then((origin) => {
-    if (origin === adminOrigin) {
-      runDeletion();
+    if (origin === ADMIN_URL) {
+      ensureLoggedIn();
+      goToUsersAndDelete();
     } else {
       cy.origin(
-        adminOrigin,
-        { args: { targetEmail, targetPassword } },
-        ({ targetEmail, targetPassword }) => {
+        ADMIN_URL,
+        { args: { email, adminCreds } },
+        ({ email, adminCreds }) => {
           const waitForUsersList = () =>
             cy
               .get('[data-testid="users-table"]', { timeout: 15000 })
@@ -351,17 +219,17 @@ export const deleteCreatedUser = () => {
 
           cy.visit("/");
           cy.get("body").then(($b) => {
-            if (
-              $b.find('[data-testid="ps-sidebar-container-test-id"]').length ===
-              0
-            ) {
-              cy.get('[data-testid="auth-email"]', { timeout: 10000 })
+            const loggedIn =
+              $b.find('[data-testid="ps-sidebar-container-test-id"]').length >
+              0;
+            if (!loggedIn) {
+              cy.get('[data-testid="auth-email"]', { timeout: 12000 })
                 .should("exist")
                 .clear()
-                .type(targetEmail);
+                .type(adminCreds.email);
               cy.get('[data-testid="auth-password"]')
                 .clear()
-                .type(targetPassword);
+                .type(adminCreds.password);
               cy.get('[data-testid="auth-submit"]')
                 .should("not.be.disabled")
                 .click();
@@ -377,13 +245,12 @@ export const deleteCreatedUser = () => {
           );
           waitForUsersList();
 
-          locateUserRowByEmail(targetEmail).then((rowOrNull) => {
+          locateUserRowByEmail(email).then((rowOrNull) => {
             if (!rowOrNull) {
-              cy.log(
-                `[e2e] User '${targetEmail}' not present; nothing to delete.`,
-              );
+              cy.log(`[e2e] User '${email}' not present; nothing to delete.`);
               return;
             }
+
             const $row = rowOrNull as unknown as JQuery<HTMLElement>;
             const testId = $row.attr("data-testid");
 
@@ -396,18 +263,174 @@ export const deleteCreatedUser = () => {
                 "not.exist",
               );
 
-            searchFor(targetEmail);
-            cy.contains('[data-testid="users-email"]', targetEmail).should(
+            searchFor(email);
+            cy.contains('[data-testid="users-email"]', email).should(
               "not.exist",
             );
             clearSearch();
           });
         },
       );
-      cy.then(() => {
-        testUser = null;
-        cy.log("[e2e] Cleared cached testUser after deletion (cross-origin).");
-      });
     }
   });
 };
+
+export const deleteAllCreatedUsers = () => {
+  if (createdEmails.size === 0) {
+    cy.log("[e2e] No created users to delete.");
+    return;
+  }
+
+  const adminEmail =
+    (Cypress.env("ADMIN_EMAIL") as string) ||
+    (Cypress.env("TEACHER_EMAIL") as string) ||
+    "admin_fixed_user@example.com";
+  const adminPassword =
+    (Cypress.env("ADMIN_PASSWORD") as string) ||
+    (Cypress.env("TEACHER_PASSWORD") as string) ||
+    "Passw0rd!";
+
+  const adminCreds = { email: adminEmail, password: adminPassword };
+
+  cy.log(
+    `[e2e] Deleting ${createdEmails.size} created user(s) via admin UI...`,
+  );
+
+  Array.from(createdEmails).forEach((email) => {
+    deleteOneByEmailUI(email, adminCreds);
+  });
+
+  cy.then(() => {
+    createdEmails.clear();
+    testUser = null;
+    cy.log("[e2e] Cleared createdEmails + testUser after cleanup.");
+  });
+};
+
+export const deleteCreatedUser = () => deleteAllCreatedUsers();
+
+Cypress.Commands.add("login", () => {
+  const email =
+    (Cypress.env("E2E_TEST_EMAIL") as string) || "e2e_fixed_user@example.com";
+  const password = (Cypress.env("E2E_TEST_PASSWORD") as string) || "Passw0rd!";
+
+  if (!testUser || testUser.email !== email) testUser = { email, password };
+  Cypress.env("e2eUser", testUser);
+
+  cy.log(`[e2e] Login (or signup) with deterministic test user ${email}`);
+  cy.intercept("POST", "**/auth/login").as("loginRequest");
+  cy.intercept("POST", "**/user").as("createUser");
+
+  cy.visit(APP_URL + "/");
+  cy.get('[data-testid="auth-tab-login"]').click();
+  cy.get('[data-testid="auth-email"]').clear().type(email);
+  cy.get('[data-testid="auth-password"]').clear().type(password);
+  cy.get('[data-testid="auth-submit"]').should("not.be.disabled").click();
+
+  cy.wait("@loginRequest").then((loginInt) => {
+    const status = loginInt?.response?.statusCode;
+    if (status === 200) {
+      cy.log(`[e2e] Logged in existing deterministic user ${email}`);
+      cy.get('[data-testid="ps-sidebar-container-test-id"]').should("exist");
+      if (!testUser!.userId) {
+        cy.window().then((win) => {
+          try {
+            const credsRaw = win.localStorage.getItem("credentials");
+            if (credsRaw) {
+              const parsed = JSON.parse(credsRaw);
+              if (parsed?.userId) testUser!.userId = parsed.userId;
+            }
+          } catch {}
+        });
+      }
+    } else {
+      cy.log(
+        `[e2e] Login failed with status ${status}; attempting signup for ${email}`,
+      );
+      cy.get('[data-testid="auth-tab-signup"]').click();
+      cy.get('[data-testid="auth-email"]').clear().type(email);
+      cy.get('[data-testid="auth-password"]').clear().type(password);
+      cy.get('[data-testid="auth-confirm-password"]').clear().type(password);
+      cy.get('input[placeholder*="First" i]').clear().type("E2E");
+      cy.get('input[placeholder*="Last" i]').clear().type("User");
+      cy.get('[data-testid="auth-submit"]').should("not.be.disabled").click();
+      cy.get('[data-testid="ps-sidebar-container-test-id"]').should("exist");
+
+      markCreated(email);
+
+      cy.wait("@createUser").then((intc) => {
+        const body = intc?.response?.body as { userId?: string } | undefined;
+        if (body?.userId) testUser!.userId = body.userId;
+      });
+    }
+  });
+});
+
+Cypress.Commands.add("loginAdmin", () => {
+  const email =
+    (Cypress.env("ADMIN_EMAIL") as string) ||
+    (Cypress.env("TEACHER_EMAIL") as string) ||
+    "admin_fixed_user@example.com";
+  const password =
+    (Cypress.env("ADMIN_PASSWORD") as string) ||
+    (Cypress.env("TEACHER_PASSWORD") as string) ||
+    "Passw0rd!";
+
+  if (!testUser || testUser.email !== email) testUser = { email, password };
+  Cypress.env("e2eAdminUser", testUser);
+
+  cy.log(`[e2e] Admin login (or signup) deterministic user ${email}`);
+  cy.intercept("POST", "**/auth/login").as("loginRequest");
+  cy.intercept("POST", "**/user").as("createUser");
+
+  cy.visit(ADMIN_URL + "/");
+  cy.get('[data-testid="auth-tab-login"]').click();
+  cy.get('[data-testid="auth-email"]').clear().type(email);
+  cy.get('[data-testid="auth-password"]').clear().type(password);
+  cy.get('[data-testid="auth-submit"]').should("not.be.disabled").click();
+
+  cy.wait("@loginRequest").then((loginInt) => {
+    const status = loginInt?.response?.statusCode;
+    if (status === 200) {
+      cy.log(`[e2e] Admin logged in existing deterministic user ${email}`);
+      cy.get('[data-testid="ps-sidebar-container-test-id"]').should("exist");
+      if (!testUser!.userId) {
+        cy.window().then((win) => {
+          try {
+            const credsRaw = win.localStorage.getItem("credentials");
+            if (credsRaw) {
+              const parsed = JSON.parse(credsRaw);
+              if (parsed?.userId) testUser!.userId = parsed.userId;
+            }
+          } catch {}
+        });
+      }
+    } else {
+      cy.log(`[e2e] Admin login failed ${status}; attempting signup ${email}`);
+      cy.get('[data-testid="auth-tab-signup"]').click();
+      cy.get('[data-testid="auth-email"]').clear().type(email);
+      cy.get('[data-testid="auth-password"]').clear().type(password);
+      cy.get('[data-testid="auth-confirm-password"]').clear().type(password);
+      cy.get('input[placeholder*="First" i]').clear().type("Admin");
+      cy.get('input[placeholder*="Last" i]').clear().type("User");
+      cy.get('[data-testid="auth-submit"]').should("not.be.disabled").click();
+      cy.get('[data-testid="ps-sidebar-container-test-id"]').should("exist");
+
+      markCreated(email);
+
+      cy.wait("@createUser").then((intc) => {
+        const body = intc?.response?.body as { userId?: string } | undefined;
+        if (body?.userId) testUser!.userId = body.userId;
+      });
+    }
+  });
+});
+
+export const addCreatedEmail = (email: string | undefined | null) => {
+  if (email && typeof email === "string") {
+    createdEmails.add(email);
+    cy.log(`[e2e] Tracked created user: ${email}`);
+  }
+};
+
+export { createdEmails };
