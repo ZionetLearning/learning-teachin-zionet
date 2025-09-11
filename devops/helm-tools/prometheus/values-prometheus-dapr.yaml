@@ -2,7 +2,7 @@
 prometheus:
   prometheusSpec:
     # Resource settings
-    retention: "2d"
+    retention: "8h"
     resources:
       requests:
         memory: "256Mi"
@@ -40,8 +40,17 @@ prometheus:
             target_label: kubernetes_namespace
           - source_labels: [__meta_kubernetes_pod_name]
             target_label: kubernetes_pod_name
-        scrape_interval: 30s
+        scrape_interval: 300s # memory saver: update interval to 5 minutes
         scrape_timeout: 10s
+        metric_relabel_configs: # memory saver: drop noisy series
+          # Keep only essential Dapr metrics
+          - source_labels: [__name__]
+            regex: "dapr_http_server_request_duration_seconds.*|dapr_grpc_io_server_duration_seconds.*|dapr_runtime_state_calls_total|dapr_runtime_state_duration_seconds.*|dapr_runtime_pubsub_messages_published_total|dapr_runtime_pubsub_messages_received_total|dapr_runtime_actor_calls_total|dapr_runtime_actor_duration_seconds.*"
+            action: keep
+          # Drop everything else
+          - source_labels: [__name__]
+            regex: ".*"
+            action: drop
         
       # Dapr placement service metrics
       - job_name: 'dapr-placement'

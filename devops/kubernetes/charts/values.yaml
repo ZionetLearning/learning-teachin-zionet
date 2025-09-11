@@ -126,7 +126,7 @@ manager:
   resources:
     requests:
       cpu: "100m"
-      memory: "256Mi"
+      memory: "128Mi"
     limits:
       cpu: "500m"
       memory: "512Mi"
@@ -174,7 +174,7 @@ engine:
   resources:
     requests:
       cpu: "100m"
-      memory: "256Mi"
+      memory: "128Mi"
     limits:
       cpu: "500m"
       memory: "512Mi"
@@ -215,7 +215,7 @@ accessor:
   resources:
     requests:
       cpu: "100m"
-      memory: "256Mi"
+      memory: "128Mi"
     limits:
       cpu: "500m"
       memory: "512Mi"
