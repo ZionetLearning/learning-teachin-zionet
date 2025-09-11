@@ -17,6 +17,7 @@ public class AccessorDbContext : DbContext
     public DbSet<RefreshSessionsRecord> RefreshSessions { get; set; } = default!;
     public DbSet<UserModel> Users { get; set; } = default!;
     public DbSet<PromptModel> Prompts { get; set; } = default!;
+    public DbSet<TeacherStudent> TeacherStudents { get; set; } = default!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -50,6 +51,13 @@ public class AccessorDbContext : DbContext
 
             e.Property(x => x.UpdatedAt)
              .HasDefaultValueSql("NOW()");
+        });
+        modelBuilder.Entity<TeacherStudent>(e =>
+        {
+            e.ToTable("TeacherStudents");
+            e.HasKey(x => new { x.TeacherId, x.StudentId });
+            e.HasIndex(x => x.TeacherId);
+            e.HasIndex(x => x.StudentId);
         });
 
         // Prompts table

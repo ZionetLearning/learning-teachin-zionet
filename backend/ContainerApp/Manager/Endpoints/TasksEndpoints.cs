@@ -1,4 +1,5 @@
-﻿using Manager.Models;
+﻿using Manager.Constants;
+using Manager.Models;
 using Manager.Models.ModelValidation;
 using Manager.Services.Clients.Accessor;
 using Manager.Services.Clients.Engine;
@@ -12,13 +13,13 @@ public static class TasksEndpoints
 
     public static IEndpointRouteBuilder MapTasksEndpoints(this IEndpointRouteBuilder app)
     {
-        var tasksGroup = app.MapGroup("/tasks-manager").WithTags("Tasks").RequireAuthorization();
+        var tasksGroup = app.MapGroup("/tasks-manager").WithTags("Tasks").RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
 
-        tasksGroup.MapGet("/task/{id:int}", GetTaskAsync).WithName("GetTask");
-        tasksGroup.MapPost("/task", CreateTaskAsync).WithName("CreateTask");
-        tasksGroup.MapPost("/tasklong", CreateTaskLongAsync).WithName("CreateTaskLongTest");
-        tasksGroup.MapPut("/task/{id:int}/{name}", UpdateTaskNameAsync).WithName("UpdateTaskName");
-        tasksGroup.MapDelete("/task/{id:int}", DeleteTaskAsync).WithName("DeleteTask");
+        tasksGroup.MapGet("/task/{id:int}", GetTaskAsync).WithName("GetTask").RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
+        tasksGroup.MapPost("/task", CreateTaskAsync).WithName("CreateTask").RequireAuthorization(PolicyNames.AdminOrTeacher);
+        tasksGroup.MapPost("/tasklong", CreateTaskLongAsync).WithName("CreateTaskLongTest").RequireAuthorization(PolicyNames.AdminOrTeacher);
+        tasksGroup.MapPut("/task/{id:int}/{name}", UpdateTaskNameAsync).WithName("UpdateTaskName").RequireAuthorization(PolicyNames.AdminOrTeacher);
+        tasksGroup.MapDelete("/task/{id:int}", DeleteTaskAsync).WithName("DeleteTask").RequireAuthorization(PolicyNames.AdminOrTeacher);
 
         return app;
     }

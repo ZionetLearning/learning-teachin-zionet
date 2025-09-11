@@ -26,7 +26,7 @@ public class TestUserFixture : IAsyncLifetime
         var password = $"Test-{Guid.NewGuid():N}";
 
         // For now, the default role is Student
-        Role defaultRole = Role.Student;
+        Role defaultRole = Role.Admin;
 
         TestUser = new CreateUser
         {

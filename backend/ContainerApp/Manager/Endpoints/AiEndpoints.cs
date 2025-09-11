@@ -1,4 +1,5 @@
-﻿using Manager.Models.Chat;
+﻿using Manager.Constants;
+using Manager.Models.Chat;
 using Manager.Models.Sentences;
 using Manager.Models.Speech;
 using Manager.Services.Clients.Accessor;
@@ -18,7 +19,7 @@ public static class AiEndpoints
 
     public static WebApplication MapAiEndpoints(this WebApplication app)
     {
-        var aiGroup = app.MapGroup("/ai-manager").WithTags("AI").RequireAuthorization();
+        var aiGroup = app.MapGroup("/ai-manager").WithTags("AI").RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
 
         #region HTTP GET
 

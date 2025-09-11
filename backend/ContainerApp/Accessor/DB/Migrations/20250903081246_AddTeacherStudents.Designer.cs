@@ -4,17 +4,20 @@ using System.Net;
 using Accessor.DB;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Accessor.Migrations
+namespace Accessor.DB.Migrations
 {
     [DbContext(typeof(AccessorDbContext))]
-    partial class AccessorDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250903081246_AddTeacherStudents")]
+    partial class AddTeacherStudents
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -59,35 +62,6 @@ namespace Accessor.Migrations
                     b.HasKey("ThreadId");
 
                     b.ToTable("ChatHistorySnapshots", (string)null);
-                });
-
-            modelBuilder.Entity("Accessor.Models.Prompts.PromptModel", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("PromptKey")
-                        .IsRequired()
-                        .HasMaxLength(120)
-                        .HasColumnType("character varying(120)");
-
-                    b.Property<string>("Version")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PromptKey");
-
-                    b.HasIndex("PromptKey", "Version");
-
-                    b.ToTable("Prompts", (string)null);
                 });
 
             modelBuilder.Entity("Accessor.Models.RefreshSessionsRecord", b =>
@@ -217,9 +191,6 @@ namespace Accessor.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("HebrewLevelValue")
-                        .HasColumnType("text");
-
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasColumnType("text");
@@ -228,12 +199,6 @@ namespace Accessor.Migrations
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
-
-                    b.Property<string>("PreferredLanguageCode")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("en");
 
                     b.Property<string>("Role")
                         .IsRequired()
