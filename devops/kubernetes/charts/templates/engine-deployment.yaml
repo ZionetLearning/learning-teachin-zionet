@@ -39,7 +39,7 @@ spec:
             - containerPort: {{ .Values.engine.ports.container }}
               protocol: TCP
           {{- if .Values.global.dapr.enabled }}
-          readinessProbe:
+          startupProbe:
             httpGet:
               path: /v1.0/healthz
               port: 3501  # Dapr management port
