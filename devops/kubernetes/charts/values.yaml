@@ -8,11 +8,11 @@ global:
     configName: dapr-config
     sidecar:
       requests:
-        cpu: "50m"
-        memory: "64Mi"
+        cpu: "100m"
+        memory: "128Mi"
       limits:
         cpu: "200m"
-        memory: "128Mi"
+        memory: "256Mi"
   imagePullSecret:
     enabled: false
     name: ""
@@ -260,3 +260,8 @@ dapr:
   # KEDA scaler (optional)
   keda:
     enabled: false
+
+  serviceAccount:
+  create: false
+  name: ""
+  annotations: {}
