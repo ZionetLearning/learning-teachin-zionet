@@ -157,6 +157,12 @@ public static class UsersEndpoints
                 return Results.BadRequest("Hebrew level can only be set for students.");
             }
 
+            if (user.Role.HasValue && existingUser.Role != Role.Admin)
+            {
+                logger.LogWarning("Non-admin attempted to change role. CurrentRole: {Role}", existingUser.Role);
+                return Results.Forbid();
+            }
+
             var success = await accessorClient.UpdateUserAsync(user, userId);
             return success ? Results.Ok("User updated.") : Results.NotFound("User not found.");
         }
