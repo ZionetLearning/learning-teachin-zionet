@@ -2,6 +2,7 @@ using Accessor.DB.Configurations;
 using Accessor.Models;
 using Microsoft.EntityFrameworkCore;
 using Accessor.Models.Users;
+using Accessor.Models.Prompts;
 
 namespace Accessor.DB;
 
@@ -15,6 +16,7 @@ public class AccessorDbContext : DbContext
     public DbSet<ChatHistorySnapshot> ChatHistorySnapshots { get; set; } = default!;
     public DbSet<RefreshSessionsRecord> RefreshSessions { get; set; } = default!;
     public DbSet<UserModel> Users { get; set; } = default!;
+    public DbSet<PromptModel> Prompts { get; set; } = default!;
     public DbSet<TeacherStudent> TeacherStudents { get; set; } = default!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -56,6 +58,28 @@ public class AccessorDbContext : DbContext
             e.HasKey(x => new { x.TeacherId, x.StudentId });
             e.HasIndex(x => x.TeacherId);
             e.HasIndex(x => x.StudentId);
+        });
+
+        // Prompts table
+        modelBuilder.Entity<PromptModel>(entity =>
+        {
+            entity.ToTable("Prompts");
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.PromptKey)
+                .IsRequired()
+                .HasMaxLength(120);
+
+            entity.Property(e => e.Version)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(e => e.Content)
+                .IsRequired();
+
+            entity.HasIndex(e => new { e.PromptKey, e.Version });
+
+            entity.HasIndex(e => e.PromptKey);
         });
 
         base.OnModelCreating(modelBuilder);

@@ -36,6 +36,7 @@ export const SidebarMenu = () => {
   };
 
   const items: SidebarLink[] = [
+    { label: t('sidebar.profile'), icon: <AccountCircleIcon />, path: '/profile', testId: 'sidebar-profile' },
     { label: t('sidebar.home'), icon: <HomeIcon />, path: '/', testId: 'sidebar-home' },
     { label: t('sidebar.signalR'), icon: <ConnectWithoutContactIcon />, path: '/signalr', testId: 'signalR' },
     { label: t('sidebar.chatAvatar'), icon: <ThreePIcon />, path: '/chat-with-avatar', testId: 'sidebar-chat-avatar' },
@@ -70,7 +71,6 @@ export const SidebarMenu = () => {
     { label: t('sidebar.weather'), icon: <WeatherWidgetIcon />, path: '/weather', testId: 'sidebar-weather' },
     { label: t('sidebar.anime'), icon: <LiveTvIcon />, path: '/anime-explorer', testId: 'sidebar-anime' },
     { label: t('sidebar.countryExplorer'), icon: <FlagIcon />, path: '/country-explorer' },
-    { label: t('sidebar.profile'), icon: <AccountCircleIcon />, path: '/profile', testId: 'sidebar-profile' },
   ];
 
   return (

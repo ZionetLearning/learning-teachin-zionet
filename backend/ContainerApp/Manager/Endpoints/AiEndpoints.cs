@@ -1,10 +1,10 @@
-﻿using Manager.Models.Speech;
-using Microsoft.AspNetCore.Mvc;
-using Manager.Models.Chat;
+﻿using Manager.Models.Chat;
+using Manager.Models.Sentences;
+using Manager.Models.Speech;
+using Manager.Services.Clients.Accessor;
 using Manager.Services.Clients.Engine;
 using Manager.Services.Clients.Engine.Models;
-using Manager.Services.Clients.Accessor;
-using Manager.Models.Sentences;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Endpoints;
 
@@ -307,12 +307,13 @@ public static class AiEndpoints
         }
     }
     private static async Task<IResult> SentenceGenerateAsync(
-       [FromBody] SentenceRequest request,
+       [FromBody] SentenceRequestDto dto,
        [FromServices] IEngineClient engineClient,
        [FromServices] ILogger<SpeechEndpoints> logger,
+       HttpContext httpContext,
        CancellationToken ct)
     {
-        if (request is null)
+        if (dto is null)
         {
             return Results.BadRequest(new { error = "Request is required" });
         }
@@ -321,6 +322,16 @@ public static class AiEndpoints
 
         try
         {
+            var userId = GetUserId(httpContext, logger);
+
+            var request = new SentenceRequest
+            {
+                Difficulty = dto.Difficulty,
+                Nikud = dto.Nikud,
+                Count = dto.Count,
+                UserId = userId
+            };
+
             await engineClient.GenerateSentenceAsync(request);
             return Results.Ok();
         }
@@ -341,12 +352,13 @@ public static class AiEndpoints
         }
     }
     private static async Task<IResult> SplitSentenceGenerateAsync(
-       [FromBody] SentenceRequest request,
+       [FromBody] SentenceRequestDto dto,
        [FromServices] IEngineClient engineClient,
        [FromServices] ILogger<SpeechEndpoints> logger,
+       HttpContext httpContext,
        CancellationToken ct)
     {
-        if (request is null)
+        if (dto is null)
         {
             return Results.BadRequest(new { error = "Request is required" });
         }
@@ -355,8 +367,24 @@ public static class AiEndpoints
 
         try
         {
+            var userId = GetUserId(httpContext, logger);
+
+            var request = new SentenceRequest
+            {
+                Difficulty = dto.Difficulty,
+                Nikud = dto.Nikud,
+                Count = dto.Count,
+                UserId = userId
+            };
+
             await engineClient.GenerateSplitSentenceAsync(request);
             return Results.Ok();
+        }
+        catch (InvalidOperationException ex) when (ex.Data.Contains("Tag") &&
+                                          Equals(ex.Data["Tag"], "MissingOrInvalidUserId"))
+        {
+            logger.LogWarning(ex, "Invalid or missing UserId");
+            return Results.Problem("Invalid or missing UserId", statusCode: StatusCodes.Status403Forbidden);
         }
         catch (OperationCanceledException)
         {
@@ -373,5 +401,19 @@ public static class AiEndpoints
             logger.LogError(ex, "Error in split sentence generation manager");
             return Results.Problem("An error occurred during split sentence generation.");
         }
+    }
+    private static Guid GetUserId(HttpContext httpContext, ILogger logger)
+    {
+        var raw = httpContext?.User?.Identity?.Name;
+
+        if (!Guid.TryParse(raw, out var userId))
+        {
+            logger.LogError("Missing or invalid UserId in HttpContext. Raw: {RawUserId}", raw);
+            var ex = new InvalidOperationException("Authenticated user id is missing or not a valid GUID.");
+            ex.Data["Tag"] = "MissingOrInvalidUserId";
+            throw ex;
+        }
+
+        return userId;
     }
 }

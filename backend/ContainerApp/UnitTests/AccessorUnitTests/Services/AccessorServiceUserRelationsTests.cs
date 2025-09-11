@@ -1,10 +1,7 @@
-﻿using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Accessor.DB;
+﻿using Accessor.DB;
 using Accessor.Models.Users;
 using Accessor.Services;
+using Accessor.Services.Interfaces;
 using Dapr.Client;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +9,10 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace AccessorUnitTests.Users
@@ -39,12 +40,10 @@ namespace AccessorUnitTests.Users
                 })
                 .Build();
 
-        private static AccessorService NewService(AccessorDbContext db, int ttl = 123)
+        private static IUserService NewService(AccessorDbContext db, int ttl = 123)
         {
-            var log = Mock.Of<ILogger<AccessorService>>();
-            var dapr = new Mock<DaprClient>(MockBehavior.Loose);
-            var cfg = NewConfig(ttl);
-            return new AccessorService(db, log, dapr.Object, cfg);
+            var logger = new Mock<ILogger<UserService>>(MockBehavior.Loose).Object;
+            return new UserService(db, logger);
         }
 
         private static UserModel MakeUser(Role role) => new()
