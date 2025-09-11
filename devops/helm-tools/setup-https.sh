@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-NAMESPACE="devops-logs"
+NAMESPACE="prod"  # Changed from "devops-logs" to "prod"
 EMAIL="snir1552@gmail.com"
 DOMAIN="teachinprod.westeurope.cloudapp.azure.com"
 
