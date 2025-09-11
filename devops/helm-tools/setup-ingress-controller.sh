@@ -38,7 +38,7 @@ helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx || true
 helm repo update
 
 echo "3. Creating namespace $NAMESPACE (if not exists)..."
-kubectl get ns "$NAMESPACE" >/dev/null 2>&1 || kubectl create ns "$NAMESPACE"
+kubectl create ns "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 
 echo "4. Installing ingress-nginx Helm chart..."
 helm upgrade --install "$RELEASE_NAME" ingress-nginx/ingress-nginx \
