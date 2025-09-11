@@ -15,6 +15,12 @@ export interface ChatMessage {
   date: Date;
 }
 
+interface ChatHistoryMessage {
+  role: "user" | "assistant" | "system";
+  text: string;
+  createdAt?: string | number | Date | null;
+}
+
 export const useChat = () => {
   const [threadId, setThreadId] = useState<string | undefined>(undefined);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -82,12 +88,6 @@ export const useChat = () => {
   const loadHistoryIntoMessages = useCallback(() => {
     if (!chatHistory?.messages) return;
     
-    interface ChatHistoryMessage {
-      role: "user" | "assistant" | "system";
-      text: string;
-      createdAt?: string | number | Date | null;
-    }
-
     const convertedMessages: ChatMessage[] = (chatHistory.messages as ChatHistoryMessage[]).map(
       (msg: ChatHistoryMessage): ChatMessage => ({
       position: msg.role === "user" ? "right" : "left",

@@ -97,6 +97,7 @@ export const ChatWithAvatar = () => {
 
       {/* Main Chat Area */}
       <div className={`${classes.mainContent} ${showSidebar ? classes.mainContentShifted : ''}`}>
+        {/* Avatar Section */}
         <div className={classes.wrapper}>
           <img
             src={avatar}
@@ -109,15 +110,19 @@ export const ChatWithAvatar = () => {
             className={classes.lipsImage}
           />
         </div>
-        <ReactChatElements
-          loading={loading}
-          messages={messages}
-          avatarMode
-          value={text}
-          onChange={setText}
-          handleSendMessage={handleSend}
-          handlePlay={() => speak(lastSpokenTextRef.current ?? "")}
-        />
+        
+        {/* Chat Messages and Input */}
+        <div className={classes.chatElementsWrapper}>
+          <ReactChatElements
+            loading={loading}
+            messages={messages}
+            avatarMode
+            value={text}
+            onChange={setText}
+            handleSendMessage={handleSend}
+            handlePlay={() => speak(lastSpokenTextRef.current ?? "")}
+          />
+        </div>
       </div>
     </div>
   );

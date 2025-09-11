@@ -33,11 +33,28 @@ export const ReactChatElements = ({
   useEffect(() => {
     const el = listRef.current;
     if (!el) return;
-    el.scrollTop = el.scrollHeight;
+    
+    const scrollToBottom = () => {
+      el.scrollTo({
+        top: el.scrollHeight,
+        behavior: 'smooth'
+      });
+    };
+    
+    scrollToBottom();
+    
+    const timeoutId = setTimeout(() => {
+      el.scrollTo({
+        top: el.scrollHeight,
+        behavior: 'auto'
+      });
+    }, 100);
+    
+    return () => clearTimeout(timeoutId);
   }, [messages]);
 
   return (
-    <>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div
         className={
           avatarMode ? classes.messagesListAvatar : classes.messagesList
@@ -146,6 +163,6 @@ export const ReactChatElements = ({
           }
         />
       </div>
-    </>
+    </div>
   );
 };

@@ -2,24 +2,26 @@ import { createUseStyles } from "react-jss";
 
 export const useStyles = createUseStyles({
   chatWrapper: {
-    maxWidth: "800px",
-    height: "550px",
-    margin: "0 auto",
+    maxWidth: "900px",
+    height: "570px",
+    margin: "0 auto 30px auto", 
     border: "1px solid #ccc",
     borderRadius: "10px",
     display: "flex",
-    flexDirection: "column",
+    flexDirection: "row", 
     position: "relative",
-    overflowY: "auto",
+    overflow: "hidden",
   },
 
   mainContent: {
     flex: 1,
     display: "flex",
     flexDirection: "column",
-    padding: "10px",
     transition: "margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
     backgroundColor: "#fafafa",
+    height: "100%",
+    overflow: "hidden",
+    minHeight: 0,
   },
 
   mainContentShifted: {
@@ -32,7 +34,16 @@ export const useStyles = createUseStyles({
     position: "relative",
     width: "220px",
     height: "220px",
-    margin: "0 auto",
+    margin: "20px auto",
+    flexShrink: 0,
+  },
+  
+  chatElementsWrapper: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    minHeight: 0,
+    overflow: "hidden",
   },
   button: {
     marginTop: "10px",

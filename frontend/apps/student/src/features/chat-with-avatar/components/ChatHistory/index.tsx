@@ -1,4 +1,7 @@
 import React from "react";
+import { IconButton } from "@mui/material";
+import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
+import MenuIcon from "@mui/icons-material/Menu";
 import { useTranslation } from "react-i18next";
 import { Chat } from "@student/types";
 import { useStyles } from "./style";
@@ -53,18 +56,14 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({
     <>
       {/* Sidebar Toggle Button - only show when sidebar is closed */}
       {!showSidebar && (
-        <button
+        <IconButton
           onClick={onToggleSidebar}
           className={classes.sidebarToggle}
           title={t("pages.chatHistory.toggleButton.title")}
           aria-label={t("pages.chatHistory.toggleButton.ariaLabel")}
         >
-          <span className={classes.hamburgerIcon}>
-            <span></span>
-            <span></span>
-            <span></span>
-          </span>
-        </button>
+          <MenuIcon />
+        </IconButton>
       )}
 
       {/* Chat History Sidebar */}
@@ -127,9 +126,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({
                         </div>
                       </div>
                       <div className={classes.chatIcon}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M8 12h8M8 8h8M8 16h5M4 6v12c0 1.1.9 2 2 2h12c0-1.1-.9-2-2-2H6V6c0-1.1.9-2 2-2h12c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                        </svg>
+                        <ChatBubbleOutlineIcon fontSize="small" />
                       </div>
                     </div>
                   ))}
@@ -137,11 +134,10 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({
               ) : (
                 <div className={classes.emptyState}>
                   <div className={classes.emptyIcon}>
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4v6l4-6h8c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
-                    </svg>
+                     <div className={classes.emptyTitle}>
+                    <ChatBubbleOutlineIcon fontSize="small" />
+                    {t("pages.chatHistory.emptyState.title")}
                   </div>
-                  <div className={classes.emptyTitle}>
                     {t("pages.chatHistory.emptyState.title")}
                   </div>
                   <div className={classes.emptyDescription}>

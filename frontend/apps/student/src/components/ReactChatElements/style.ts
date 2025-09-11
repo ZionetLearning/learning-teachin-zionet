@@ -29,7 +29,6 @@ export const useStyles = createUseStyles({
     },
   },
   inputContainer: {
-    position: "relative",
     flexShrink: 0,
     padding: 6,
   },
