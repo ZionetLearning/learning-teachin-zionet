@@ -32,7 +32,7 @@ public class AuthService : IAuthService
         try
         {
             _log.LogInformation("Calling accessor with timeout 30s...");
-            var response = await _accessorClient.LoginUserAsync(loginRequest, cancellationToken);
+            var response = await _accessorClient.LoginUserAsync(loginRequest, cancellationToken.None);
             _log.LogInformation("Accessor call finished");
 
             if (response is null || response.UserId == Guid.Empty)
