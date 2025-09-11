@@ -1,48 +1,48 @@
-# {{- if .Values.cronjobs.refreshSessionsCleanup.enabled }}
-# apiVersion: batch/v1
-# kind: CronJob
-# metadata:
-#   name: {{ .Release.Name }}-refresh-sessions-cleanup
-#   namespace: {{ .Release.Namespace }}
-#   labels:
-#     app.kubernetes.io/part-of: {{ .Release.Name }}
-#     app.kubernetes.io/component: refresh-sessions-cron
-# spec:
-#   schedule: {{ .Values.cronjobs.refreshSessionsCleanup.schedule | quote }}
-#   {{- if .Values.cronjobs.refreshSessionsCleanup.timeZone }}
-#   timeZone: {{ .Values.cronjobs.refreshSessionsCleanup.timeZone | quote }}
-#   {{- end }}
-#   concurrencyPolicy: {{ .Values.cronjobs.refreshSessionsCleanup.concurrencyPolicy | default "Forbid" | quote }}
-#   startingDeadlineSeconds: {{ .Values.cronjobs.refreshSessionsCleanup.startingDeadlineSeconds | default 300 }}
-#   successfulJobsHistoryLimit: {{ .Values.cronjobs.refreshSessionsCleanup.successfulJobsHistoryLimit | default 3 }}
-#   failedJobsHistoryLimit: {{ .Values.cronjobs.refreshSessionsCleanup.failedJobsHistoryLimit | default 3 }}
-#   jobTemplate:
-#     spec:
-#       backoffLimit: {{ .Values.cronjobs.refreshSessionsCleanup.backoffLimit | default 2 }}
-#       template:
-#         spec:
-#           restartPolicy: Never
-#           containers:
-#             - name: refresher
-#               image: "{{ .Values.cronjobs.refreshSessionsCleanup.image.repository }}:{{ .Values.cronjobs.refreshSessionsCleanup.image.tag }}"
-#               imagePullPolicy: {{ .Values.cronjobs.refreshSessionsCleanup.image.pullPolicy | default "IfNotPresent" }}
-#               args:
-#                 - "-sS"
-#                 - "--fail"
-#                 - "--max-time"
-#                 - "{{ .Values.cronjobs.refreshSessionsCleanup.curl.maxTimeSeconds | default 60 }}"
-#                 - "--retry"
-#                 - "{{ .Values.cronjobs.refreshSessionsCleanup.curl.retries | default 2 }}"
-#                 - "--retry-delay"
-#                 - "{{ .Values.cronjobs.refreshSessionsCleanup.curl.retryDelaySeconds | default 2 }}"
-#                 - "-X"
-#                 - "POST"
-#                 {{- $t := .Values.cronjobs.refreshSessionsCleanup.target -}}
-#                 {{- $svc := default .Values.manager.name $t.serviceName -}}
-#                 {{- $port := default .Values.manager.ports.service $t.port -}}
-#                 {{- if eq (default "service" $t.mode) "service" }}
-#                 - "http://{{ $svc }}.{{ .Release.Namespace }}.svc.cluster.local:{{ $port }}/internal/maintenance/refresh-sessions/cleanup"
-#                 {{- else }}
-#                 - "{{ $t.url }}"
-#                 {{- end }}
-# {{- end }}
+{{- if .Values.cronjobs.refreshSessionsCleanup.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}-refresh-sessions-cleanup
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/part-of: {{ .Release.Name }}
+    app.kubernetes.io/component: refresh-sessions-cron
+spec:
+  schedule: {{ .Values.cronjobs.refreshSessionsCleanup.schedule | quote }}
+  {{- if .Values.cronjobs.refreshSessionsCleanup.timeZone }}
+  timeZone: {{ .Values.cronjobs.refreshSessionsCleanup.timeZone | quote }}
+  {{- end }}
+  concurrencyPolicy: {{ .Values.cronjobs.refreshSessionsCleanup.concurrencyPolicy | default "Forbid" | quote }}
+  startingDeadlineSeconds: {{ .Values.cronjobs.refreshSessionsCleanup.startingDeadlineSeconds | default 300 }}
+  successfulJobsHistoryLimit: {{ .Values.cronjobs.refreshSessionsCleanup.successfulJobsHistoryLimit | default 3 }}
+  failedJobsHistoryLimit: {{ .Values.cronjobs.refreshSessionsCleanup.failedJobsHistoryLimit | default 3 }}
+  jobTemplate:
+    spec:
+      backoffLimit: {{ .Values.cronjobs.refreshSessionsCleanup.backoffLimit | default 2 }}
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: refresher
+              image: "{{ .Values.cronjobs.refreshSessionsCleanup.image.repository }}:{{ .Values.cronjobs.refreshSessionsCleanup.image.tag }}"
+              imagePullPolicy: {{ .Values.cronjobs.refreshSessionsCleanup.image.pullPolicy | default "IfNotPresent" }}
+              args:
+                - "-sS"
+                - "--fail"
+                - "--max-time"
+                - "{{ .Values.cronjobs.refreshSessionsCleanup.curl.maxTimeSeconds | default 60 }}"
+                - "--retry"
+                - "{{ .Values.cronjobs.refreshSessionsCleanup.curl.retries | default 2 }}"
+                - "--retry-delay"
+                - "{{ .Values.cronjobs.refreshSessionsCleanup.curl.retryDelaySeconds | default 2 }}"
+                - "-X"
+                - "POST"
+                {{- $t := .Values.cronjobs.refreshSessionsCleanup.target -}}
+                {{- $svc := default .Values.manager.name $t.serviceName -}}
+                {{- $port := default .Values.manager.ports.service $t.port -}}
+                {{- if eq (default "service" $t.mode) "service" }}
+                - "http://{{ $svc }}.{{ .Release.Namespace }}.svc.cluster.local:{{ $port }}/internal/maintenance/refresh-sessions/cleanup"
+                {{- else }}
+                - "{{ $t.url }}"
+                {{- end }}
+{{- end }}
