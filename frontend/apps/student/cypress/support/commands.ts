@@ -52,16 +52,12 @@ export const locateUserRowByEmail = (email: string) => {
   searchFor(email);
 
   return cy.get("body").then(($b) => {
-    const exists = Array.from($b.find('[data-testid="users-email"]')).some(
-      (el) => el.textContent?.trim() === email,
-    );
-
-    if (exists) {
-      return cy
-        .get('[data-testid="users-email"]', { timeout: 10000 })
-        .filter((_, el) => el.textContent?.trim() === email)
-        .first()
-        .closest('tr[data-testid^="users-row-"]');
+    const $match = $b
+      .find('[data-testid="users-email"]')
+      .filter((_, el) => el.textContent?.trim() === email);
+    if ($match.length) {
+      const $row = $match.first().closest('tr[data-testid^="users-row-"]');
+      return cy.wrap($row as JQuery<HTMLElement>);
     }
 
     clearSearch();
@@ -69,34 +65,22 @@ export const locateUserRowByEmail = (email: string) => {
     waitForUsersList();
 
     return cy.get("body").then(($b2) => {
-      const existsAll = Array.from(
-        $b2.find('[data-testid="users-email"]'),
-      ).some((el) => el.textContent?.trim() === email);
-      if (!existsAll) return null;
-
-      return cy
-        .get('[data-testid="users-email"]', { timeout: 10000 })
-        .filter((_, el) => el.textContent?.trim() === email)
-        .first()
-        .closest('tr[data-testid^="users-row-"]');
+      const $match2 = $b2
+        .find('[data-testid="users-email"]')
+        .filter((_, el) => el.textContent?.trim() === email);
+      if (!$match2.length) return cy.wrap(null);
+      const $row2 = $match2.first().closest('tr[data-testid^="users-row-"]');
+      return cy.wrap($row2 as JQuery<HTMLElement>);
     });
   });
 };
-
-// Optional type augmentation (kept minimal to avoid conflicts)
-declare global {
-  namespace Cypress {
-    interface Chainable {
-      login(): Chainable<void>;
-      loginAdmin(): Chainable<void>;
-    }
-  }
-}
 
 const markCreated = (email: string) => {
   createdEmails.add(email);
   cy.log(`[e2e] Marked as created this run: ${email}`);
 };
+
+export const addCreatedEmail = (email: string) => markCreated(email);
 
 const deleteOneByEmailUI = (
   email: string,
@@ -305,7 +289,13 @@ export const deleteAllCreatedUsers = () => {
     `[e2e] Deleting ${createdEmails.size} created user(s) via admin UI...`,
   );
 
-  Array.from(createdEmails).forEach((email) => {
+  const emails = Array.from(createdEmails);
+  const nonAdmin = emails.filter((e) => e !== adminEmail);
+  const ordered = emails.includes(adminEmail)
+    ? [...nonAdmin, adminEmail]
+    : nonAdmin;
+
+  cy.wrap(ordered).each((email: string) => {
     deleteOneByEmailUI(email, adminCreds);
   });
 
@@ -385,6 +375,8 @@ Cypress.Commands.add("loginAdmin", () => {
 
   if (!testUser || testUser.email !== email) testUser = { email, password };
   Cypress.env("e2eAdminUser", testUser);
+
+  addCreatedEmail(email);
 
   cy.log(`[e2e] Admin login (or signup) deterministic user ${email}`);
   cy.intercept("POST", "**/auth/login").as("loginRequest");
