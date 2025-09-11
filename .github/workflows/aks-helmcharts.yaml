@@ -172,49 +172,49 @@ jobs:
           done
           echo "Failed to get ingress IP."; exit 1
 
-      - name: Add ingress IP to PostgreSQL firewall
-        run: |
-          INGRESS_IP=$(kubectl -n devops-ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-          az postgres flexible-server firewall-rule create \
-            --resource-group $PG_RG \
-            --name $PG_DB \
-            --rule-name allow-ingress-controller \
-            --start-ip-address $INGRESS_IP \
-            --end-ip-address $INGRESS_IP
+      # - name: Add ingress IP to PostgreSQL firewall
+      #   run: |
+      #     INGRESS_IP=$(kubectl -n devops-ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+      #     az postgres flexible-server firewall-rule create \
+      #       --resource-group $PG_RG \
+      #       --name $PG_DB \
+      #       --rule-name allow-ingress-controller \
+      #       --start-ip-address $INGRESS_IP \
+      #       --end-ip-address $INGRESS_IP
 
-      - name: Add AKS outbound IP to PostgreSQL firewall
-        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
-        run: |
-          # Try NAT Gateway first, else fallback to Load Balancer
-          OUTBOUND_IP_ID=$(az aks show \
-            --resource-group $AKS_RG \
-            --name $AKS_NAME \
-            --query "networkProfile.natGatewayProfile.effectiveOutboundIPs[0].id" -o tsv 2>/dev/null || true)
+      # - name: Add AKS outbound IP to PostgreSQL firewall
+      #   if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
+      #   run: |
+      #     # Try NAT Gateway first, else fallback to Load Balancer
+      #     OUTBOUND_IP_ID=$(az aks show \
+      #       --resource-group $AKS_RG \
+      #       --name $AKS_NAME \
+      #       --query "networkProfile.natGatewayProfile.effectiveOutboundIPs[0].id" -o tsv 2>/dev/null || true)
 
-          if [ -z "$OUTBOUND_IP_ID" ] || [ "$OUTBOUND_IP_ID" = "null" ]; then
-            echo "No NAT Gateway found, checking Load Balancer outbound IP..."
-            OUTBOUND_IP_ID=$(az aks show \
-              --resource-group $AKS_RG \
-              --name $AKS_NAME \
-              --query "networkProfile.loadBalancerProfile.effectiveOutboundIPs[0].id" -o tsv)
-          fi
+      #     if [ -z "$OUTBOUND_IP_ID" ] || [ "$OUTBOUND_IP_ID" = "null" ]; then
+      #       echo "No NAT Gateway found, checking Load Balancer outbound IP..."
+      #       OUTBOUND_IP_ID=$(az aks show \
+      #         --resource-group $AKS_RG \
+      #         --name $AKS_NAME \
+      #         --query "networkProfile.loadBalancerProfile.effectiveOutboundIPs[0].id" -o tsv)
+      #     fi
 
-          if [ -z "$OUTBOUND_IP_ID" ] || [ "$OUTBOUND_IP_ID" = "null" ]; then
-            echo "Could not detect outbound IP ID for AKS cluster."
-            exit 1
-          fi
+      #     if [ -z "$OUTBOUND_IP_ID" ] || [ "$OUTBOUND_IP_ID" = "null" ]; then
+      #       echo "Could not detect outbound IP ID for AKS cluster."
+      #       exit 1
+      #     fi
 
-          # Use network show command with explicit API version to avoid API version issues
-          AKS_EGRESS_IP=$(az network public-ip show --ids $OUTBOUND_IP_ID --query "ipAddress" -o tsv)
+      #     # Use network show command with explicit API version to avoid API version issues
+      #     AKS_EGRESS_IP=$(az network public-ip show --ids $OUTBOUND_IP_ID --query "ipAddress" -o tsv)
 
-          echo "AKS outbound IP: $AKS_EGRESS_IP"
+      #     echo "AKS outbound IP: $AKS_EGRESS_IP"
 
-          az postgres flexible-server firewall-rule create \
-            --resource-group $PG_RG \
-            --name $PG_DB \
-            --rule-name allow-aks-egress \
-            --start-ip-address $AKS_EGRESS_IP \
-            --end-ip-address $AKS_EGRESS_IP
+      #     az postgres flexible-server firewall-rule create \
+      #       --resource-group $PG_RG \
+      #       --name $PG_DB \
+      #       --rule-name allow-aks-egress \
+      #       --start-ip-address $AKS_EGRESS_IP \
+      #       --end-ip-address $AKS_EGRESS_IP
             
 
       - name: Install External Secrets Operator (with CRDs)
