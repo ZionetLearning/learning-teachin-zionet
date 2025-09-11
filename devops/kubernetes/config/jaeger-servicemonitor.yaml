@@ -18,7 +18,7 @@ spec:
       app.kubernetes.io/name: jaeger
       app.kubernetes.io/component: all-in-one
   endpoints:
-  - port: admin  # Jaeger admin/metrics port (5778)
+  - port: admin-http  # Jaeger admin/metrics port (14269)
     path: /metrics
     interval: 30s
     scrapeTimeout: 10s

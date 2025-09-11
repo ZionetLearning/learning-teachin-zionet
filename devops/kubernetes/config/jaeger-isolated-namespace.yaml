@@ -50,6 +50,8 @@ spec:
           name: agent-binary
         - containerPort: 5778
           name: admin
+        - containerPort: 14269
+          name: admin-http
         env:
         - name: COLLECTOR_ZIPKIN_HOST_PORT
           value: ":9411"
@@ -63,6 +65,8 @@ spec:
           value: "prometheus"
         - name: METRICS_HTTP_ROUTE
           value: "/metrics"
+        - name: ADMIN_HTTP_HOST_PORT
+          value: ":14269"
         resources:
           requests:
             memory: "128Mi"
@@ -104,6 +108,9 @@ spec:
   - port: 5778
     targetPort: 5778
     name: admin
+  - port: 14269
+    targetPort: 14269
+    name: admin-http
   - port: 9411
     targetPort: 9411
     name: zipkin
