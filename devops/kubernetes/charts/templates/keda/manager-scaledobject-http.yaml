@@ -7,6 +7,8 @@ metadata:
 spec:
   hosts:
   - teachin.westeurope.cloudapp.azure.com
+  advanced:
+    responseHeaderTimeout: 120s
   scaleTargetRef:
     name: {{ .Values.manager.name }}
     port: {{ .Values.manager.ports.container }}
