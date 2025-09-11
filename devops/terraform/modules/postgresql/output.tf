@@ -1,6 +1,6 @@
 output "postgres_fqdn" {
-  value       = var.use_shared_postgres ? "" : azurerm_postgresql_flexible_server.this[0].fqdn
-  description = "Fully qualified domain name of the PostgreSQL server"
+  value       = var.use_shared_postgres ? "" : "${azurerm_postgresql_flexible_server.this[0].name}.privatelink.postgres.database.azure.com"
+  description = "Private fully qualified domain name of the PostgreSQL server"
 }
 
 output "postgres_admin_username" {
@@ -14,8 +14,14 @@ output "postgres_database_name" {
 }
 
 output "postgres_connection_string" {
-  value = var.use_shared_postgres ? "" : format("Host=%s;Database=%s;Username=%s;Password=%s;SslMode=Require", azurerm_postgresql_flexible_server.this[0].fqdn, var.database_name, azurerm_postgresql_flexible_server.this[0].administrator_login, var.admin_password)
-  description = "Full PostgreSQL connection string"
+  value = var.use_shared_postgres ? "" : format("Host=%s;Database=%s;Username=%s;Password=%s;SslMode=Require", 
+    # Use private FQDN for VNet-integrated PostgreSQL
+    "${azurerm_postgresql_flexible_server.this[0].name}.privatelink.postgres.database.azure.com", 
+    var.database_name, 
+    azurerm_postgresql_flexible_server.this[0].administrator_login, 
+    var.admin_password
+  )
+  description = "Full PostgreSQL connection string with private FQDN"
   sensitive   = true
 }
 
