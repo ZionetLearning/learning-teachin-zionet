@@ -22,61 +22,61 @@ global:
     storeName: "azure-keyvault-backend"
 
 # If empty, namespace becomes <namePrefix>
-namespace:
-  create: true
-  name: ""
-cronjobs:
-  statsPing:
-    enabled: false                      # OFF by default (safe)
-    schedule: "*/5 * * * *"             # every 5 minutes (default)
-    timeZone: "Etc/UTC"                 # optional
-    concurrencyPolicy: Forbid
-    startingDeadlineSeconds: 120
-    successfulJobsHistoryLimit: 3
-    failedJobsHistoryLimit: 3
-    backoffLimit: 2
+# namespace:
+#   create: true
+#   name: ""
+# cronjobs:
+#   statsPing:
+#     enabled: false                      # OFF by default (safe)
+#     schedule: "*/5 * * * *"             # every 5 minutes (default)
+#     timeZone: "Etc/UTC"                 # optional
+#     concurrencyPolicy: Forbid
+#     startingDeadlineSeconds: 120
+#     successfulJobsHistoryLimit: 3
+#     failedJobsHistoryLimit: 3
+#     backoffLimit: 2
 
-    image:
-      repository: curlimages/curl       # official curl image
-      tag: "8.8.0"
-      pullPolicy: IfNotPresent
+#     image:
+#       repository: curlimages/curl       # official curl image
+#       tag: "8.8.0"
+#       pullPolicy: IfNotPresent
 
-    curl:
-      maxTimeSeconds: 60
-      retries: 2
-      retryDelaySeconds: 2
+#     curl:
+#       maxTimeSeconds: 60
+#       retries: 2
+#       retryDelaySeconds: 2
 
-    # How to reach Manager from inside the cluster
-    target:
-      mode: "service"                   # "service" (in-cluster) or "ingress"
-      serviceName: ""                   # defaults to .Values.manager.name (manager) if empty
-      port:                              # defaults to .Values.manager.ports.service (80) if empty
-      url: ""                           # used only when mode = "ingress"
+#     # How to reach Manager from inside the cluster
+#     target:
+#       mode: "service"                   # "service" (in-cluster) or "ingress"
+#       serviceName: ""                   # defaults to .Values.manager.name (manager) if empty
+#       port:                              # defaults to .Values.manager.ports.service (80) if empty
+#       url: ""                           # used only when mode = "ingress"
 
-  refreshSessionsCleanup:
-    enabled: false
-    schedule: "30 2 * * *"      # every night at 02:30
-    timeZone: "Asia/Jerusalem"
-    concurrencyPolicy: Forbid
-    startingDeadlineSeconds: 300
-    successfulJobsHistoryLimit: 3
-    failedJobsHistoryLimit: 3
-    backoffLimit: 2
+#   refreshSessionsCleanup:
+#     enabled: false
+#     schedule: "30 2 * * *"      # every night at 02:30
+#     timeZone: "Asia/Jerusalem"
+#     concurrencyPolicy: Forbid
+#     startingDeadlineSeconds: 300
+#     successfulJobsHistoryLimit: 3
+#     failedJobsHistoryLimit: 3
+#     backoffLimit: 2
 
-    image:
-      repository: curlimages/curl
-      tag: "8.8.0"
-      pullPolicy: IfNotPresent
+#     image:
+#       repository: curlimages/curl
+#       tag: "8.8.0"
+#       pullPolicy: IfNotPresent
 
-    curl:
-      maxTimeSeconds: 60
-      retries: 2
-      retryDelaySeconds: 2
+#     curl:
+#       maxTimeSeconds: 60
+#       retries: 2
+#       retryDelaySeconds: 2
 
-    target:
-      mode: "service"
-      serviceName: "manager"
-      port: 80
+#     target:
+#       mode: "service"
+#       serviceName: "manager"
+#       port: 80
 
 manager:
   name: manager
