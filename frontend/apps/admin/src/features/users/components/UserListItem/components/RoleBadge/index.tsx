@@ -12,12 +12,13 @@ export const RoleBadge = ({
   const classes = useStyles();
   const { t } = useTranslation();
 
-  const cls =
-    role === "student"
-      ? classes.roleStudent
-      : role === "teacher"
-        ? classes.roleTeacher
-        : classes.roleAdmin;
+  const roleClassMap = {
+    student: classes.roleStudent,
+    admin: classes.roleAdmin,
+    teacher: classes.roleTeacher,
+  };
+
+  const cls = roleClassMap[role] || classes.roleTeacher;
 
   return (
     <span className={`${classes.roleBadge} ${cls}`} {...rest}>
