@@ -5,12 +5,13 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { toast } from "react-toastify";
-import { apiClient as axios, User, UserDto } from "@app-providers";
+import { apiClient as axios, toAppRole, User, UserDto } from "@app-providers";
 
 interface UpdateUserInput {
   email?: string;
   firstName?: string;
   lastName?: string;
+  role?: string;
 }
 
 export const mapUser = (dto: UserDto): User => ({
@@ -18,6 +19,7 @@ export const mapUser = (dto: UserDto): User => ({
   email: dto.email,
   firstName: dto.firstName,
   lastName: dto.lastName,
+  role: toAppRole(dto.role),
 });
 
 export const USERS_URL = `${import.meta.env.VITE_USERS_URL}/user`;
@@ -61,6 +63,7 @@ export const updateUserByUserId = async (
   if (typeof userData.firstName === "string")
     body.firstName = userData.firstName;
   if (typeof userData.lastName === "string") body.lastName = userData.lastName;
+  if (typeof userData.role === "string") body.role = userData.role;
 
   const response = await axios.put(`${USERS_URL}/${userId}`, body);
   if (response.status !== 200) {
@@ -99,7 +102,7 @@ export const useUpdateUserByUserId = (
         firstName: updated.firstName,
         lastName: updated.lastName,
         email: updated.email,
-        role: existingUser?.role, // Preserve the role
+        role: existingUser?.role || "student", // Preserve the role or default to student
       };
       // Update the cache with the correct structure
       qc.setQueryData(["user", userId], updatedUserDto);

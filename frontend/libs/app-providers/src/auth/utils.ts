@@ -1,3 +1,5 @@
+import { AppRoleType } from "@app-providers";
+
 export const decodeJwtExp = (token: string): number | undefined => {
   try {
     const [, payload] = token.split(".");
@@ -5,7 +7,7 @@ export const decodeJwtExp = (token: string): number | undefined => {
     const json = JSON.parse(
       atob(
         payload.replace(/-/g, "+").replace(/_/g, "/") +
-        "=".repeat((4 - (payload.length % 4)) % 4),
+          "=".repeat((4 - (payload.length % 4)) % 4),
       ),
     );
     if (typeof json.exp === "number") {
@@ -17,7 +19,9 @@ export const decodeJwtExp = (token: string): number | undefined => {
   return undefined;
 };
 
-export const decodeJwtPayload = (token: string): Record<string, unknown> | undefined => {
+export const decodeJwtPayload = (
+  token: string,
+): Record<string, unknown> | undefined => {
   try {
     const [, payload] = token.split(".");
     if (!payload) return undefined;
@@ -87,4 +91,17 @@ export const decodeJwtUserId = (token: string): string | null => {
     console.error("Failed to decode JWT:", e);
     return null;
   }
-}
+};
+
+export const roleNumberToAppRole: Record<number, AppRoleType> = {
+  0: "student",
+  1: "teacher",
+  2: "admin",
+};
+
+export const toAppRole = (n: unknown): AppRoleType => {
+  if (typeof n === "number" && n in roleNumberToAppRole) {
+    return roleNumberToAppRole[n];
+  }
+  return "student";
+};
