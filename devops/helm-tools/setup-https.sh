@@ -3,7 +3,7 @@ set -euo pipefail
 
 NAMESPACE="devops-logs"
 EMAIL="snir1552@gmail.com"
-DOMAIN="teachin.westeurope.cloudapp.azure.com"
+DOMAIN="teachinprod.westeurope.cloudapp.azure.com"
 
 echo "1. Installing cert-manager..."
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.0/cert-manager.yaml
