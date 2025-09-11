@@ -69,7 +69,7 @@ public class AuthService : IAuthService
                 UserAgent = ua,
             };
 
-            await _accessorClient.SaveSessionDBAsync(session, cancellationToken);
+            await _accessorClient.SaveSessionDBAsync(session, CancellationToken.None);
             return (accessToken, refreshToken);
         }
 
