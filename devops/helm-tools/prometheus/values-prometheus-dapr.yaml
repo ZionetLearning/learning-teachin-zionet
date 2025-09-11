@@ -2,7 +2,7 @@
 prometheus:
   prometheusSpec:
     # Resource settings
-    retention: "8h"
+    retention: "2d"
     resources:
       requests:
         memory: "256Mi"
