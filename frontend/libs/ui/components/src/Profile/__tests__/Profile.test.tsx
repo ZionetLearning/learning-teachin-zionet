@@ -102,6 +102,7 @@ const user = {
   firstName: "Alice",
   lastName: "Smith",
   email: "alice@example.com",
+  role: "student" as const,
 };
 
 beforeEach(() => {

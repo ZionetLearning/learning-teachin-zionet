@@ -40,8 +40,12 @@ import { useCreateUser, useUpdateUserByUserId } from "@app-providers/api/user";
 // Type the mocked functions properly
 const mockUseGetAllUsers = useGetAllUsers as ReturnType<typeof vi.fn>;
 const mockUseCreateUser = useCreateUser as ReturnType<typeof vi.fn>;
-const mockUseUpdateUserByUserId = useUpdateUserByUserId as ReturnType<typeof vi.fn>;
-const mockUseDeleteUserByUserId = useDeleteUserByUserId as ReturnType<typeof vi.fn>;
+const mockUseUpdateUserByUserId = useUpdateUserByUserId as ReturnType<
+  typeof vi.fn
+>;
+const mockUseDeleteUserByUserId = useDeleteUserByUserId as ReturnType<
+  typeof vi.fn
+>;
 
 const updateMutate = vi.fn();
 const deleteMutate = vi.fn();
@@ -75,12 +79,14 @@ const sampleUsers: User[] = [
     email: "alpha@example.com",
     firstName: "Alice",
     lastName: "Anderson",
+    role: "student",
   },
   {
     userId: "u2",
     email: "beta@example.com",
     firstName: "Bob",
     lastName: "Baker",
+    role: "student",
   },
 ];
 
@@ -132,36 +138,41 @@ describe("<Users />", () => {
   });
 
   it("submits create user form", async () => {
-    const mutate = vi.fn((userData: {
-      userId: string;
-      email: string;
-      password: string;
-      firstName: string;
-      lastName: string;
-      role: string;
-    }, opts?: {
-      onSuccess?: () => void;
-      onError?: (error: Error) => void;
-      onSettled?: () => void;
-    }) => {
-      opts?.onSuccess?.();
-      opts?.onSettled?.();
-    });
+    const mutate = vi.fn(
+      (
+        userData: {
+          userId: string;
+          email: string;
+          password: string;
+          firstName: string;
+          lastName: string;
+          role: string;
+        },
+        opts?: {
+          onSuccess?: () => void;
+          onError?: (error: Error) => void;
+          onSettled?: () => void;
+        },
+      ) => {
+        opts?.onSuccess?.();
+        opts?.onSettled?.();
+      },
+    );
 
     mockUseCreateUser.mockReturnValue({ mutate, isPending: false });
 
     renderUsers();
 
-    fireEvent.change(screen.getByPlaceholderText(/user@example.com/i), {
+    fireEvent.change(screen.getByTestId("users-create-email"), {
       target: { value: "new@example.com" },
     });
-    fireEvent.change(screen.getByPlaceholderText(/John/i), {
+    fireEvent.change(screen.getByTestId("users-create-first-name"), {
       target: { value: "NewFirst" },
     });
-    fireEvent.change(screen.getByPlaceholderText(/Doe/i), {
+    fireEvent.change(screen.getByTestId("users-create-last-name"), {
       target: { value: "NewLast" },
     });
-    fireEvent.change(screen.getByPlaceholderText(/\*\*\*\*\*\*/i), {
+    fireEvent.change(screen.getByTestId("users-create-password"), {
       target: { value: "Secret123!" },
     });
 
@@ -172,7 +183,9 @@ describe("<Users />", () => {
     expect(arg.password).toBe("Secret123!");
     expect(arg.firstName).toBe("NewFirst");
     expect(arg.lastName).toBe("NewLast");
-    expect(arg.userId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+    expect(arg.userId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+    );
   });
 
   it("updates a user via inline edit form (partial fields only)", async () => {
