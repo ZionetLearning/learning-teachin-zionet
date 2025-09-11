@@ -40,8 +40,8 @@ public class ManagerQueueHandlerTests
             Metadata = JsonSerializer.SerializeToElement(metadata)
         };
 
-        await handler.HandleAsync(message, () => Task.CompletedTask, CancellationToken.None);
-
+        await handler.HandleAsync(message, null, () => Task.CompletedTask, CancellationToken.None);
+        
         mockNotif.Verify(s => s.SendNotificationAsync(metadata.UserId, It.IsAny<UserNotification>()), Times.Once);
     }
 
@@ -69,7 +69,7 @@ public class ManagerQueueHandlerTests
             Metadata = JsonSerializer.SerializeToElement(metadata)
         };
 
-        await handler.HandleAsync(message, () => Task.CompletedTask, CancellationToken.None);
+        await handler.HandleAsync(message, null, () => Task.CompletedTask, CancellationToken.None);
 
         mockNotif.Verify(s => s.SendEventAsync(EventType.ChatAiAnswer, userId, chatResponse), Times.Once);
     }
@@ -97,7 +97,7 @@ public class ManagerQueueHandlerTests
             Metadata = JsonSerializer.SerializeToElement(userId)
         };
 
-        await handler.HandleAsync(message, () => Task.CompletedTask, CancellationToken.None);
+        await handler.HandleAsync(message, null, () => Task.CompletedTask, CancellationToken.None);
 
         mockNotif.Verify(s => s.SendEventAsync(EventType.SentenceGeneration, userId, It.IsAny<SentenceResponse>()), Times.Once);
     }
