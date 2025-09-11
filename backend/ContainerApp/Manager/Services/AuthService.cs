@@ -31,19 +31,9 @@ public class AuthService : IAuthService
         _log.LogInformation("Login attempt for user {Email}", loginRequest.Email);
         try
         {
-            _log.LogInformation(">>> Calling Accessor.LoginUserAsync at {Time}", DateTime.UtcNow);
-
-            var sw = System.Diagnostics.Stopwatch.StartNew();
-
-            
-            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            cts.CancelAfter(TimeSpan.FromSeconds(100));
-
-           
-            var response = await _accessorClient.LoginUserAsync(loginRequest, cts.Token);
-
-            sw.Stop();
-            _log.LogInformation("<<< Accessor responded in {Elapsed} ms", sw.ElapsedMilliseconds);
+            _log.LogInformation("Calling accessor with timeout 30s...");
+            var response = await _accessorClient.LoginUserAsync(loginRequest, cancellationToken);
+            _log.LogInformation("Accessor call finished");
 
             if (response is null || response.UserId == Guid.Empty)
             {
@@ -60,8 +50,8 @@ public class AuthService : IAuthService
             // Collect session fingerprint data
             var fingerprint = httpRequest.Headers["x-fingerprint"].ToString();
             var fingerprintHash = string.IsNullOrWhiteSpace(fingerprint)
-                ? null
-                : HashRefreshToken(fingerprint, _jwt.RefreshTokenHashKey);
+            ? null
+            : HashRefreshToken(fingerprint, _jwt.RefreshTokenHashKey);
 
             var ua = string.IsNullOrWhiteSpace(httpRequest.Headers.UserAgent)
                 ? AuthSettings.UnknownIpFallback
