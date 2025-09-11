@@ -27,8 +27,8 @@ for i in {1..5}; do
   sleep 10
 done
 
-echo "4. Applying the HTTPS-enabled grafana ingress..."
-kubectl apply -f ../kubernetes/ingress/grafana-ingress.yaml
+# echo "4. Applying the HTTPS-enabled grafana ingress..."
+# kubectl apply -f ../kubernetes/ingress/grafana-ingress.yaml
 
 echo "5. Waiting for certificate to be issued..."
 echo "This may take 1-2 minutes..."
