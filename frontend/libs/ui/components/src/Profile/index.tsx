@@ -1,210 +1,147 @@
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Box, Typography, TextField, Stack } from '@mui/material';
-import { Button } from '../Button';
+import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import { Typography, TextField, Stack } from "@mui/material";
+import { useUpdateUserByUserId, User } from "@app-providers";
+import { Button } from "../Button";
+import { useStyles } from "./style";
 
-export type ProfileProps = {
-    firstName: string;
-    lastName: string;
-    email: string;
-    onSave?: (data: { firstName: string; lastName: string }) => void;
-};
+export const Profile = ({ user }: { user: User }) => {
+  const { t, i18n } = useTranslation();
+  const isRTL = i18n.dir() === "rtl";
+  const classes = useStyles();
 
-export const Profile = ({
-    firstName,
-    lastName,
-    email,
-    onSave,
-}: ProfileProps) => {
-    const { t, i18n } = useTranslation();
-    const [fn, setFn] = useState(firstName);
-    const [ln, setLn] = useState(lastName);
-    const [editing, setEditing] = useState(false);
+  const { mutateAsync: updateUserMutation } = useUpdateUserByUserId(
+    user?.userId ?? "",
+  );
 
-    const isRTL = i18n.dir() === 'rtl';
+  const [userDetails, setUserDetails] = useState({
+    firstName: user?.firstName ?? "",
+    lastName: user?.lastName ?? "",
+  });
 
-    useEffect(() => {
-        setFn(firstName);
-        setLn(lastName);
-    }, [firstName, lastName]);
+  useEffect(() => {
+    setUserDetails({
+      firstName: user?.firstName ?? "",
+      lastName: user?.lastName ?? "",
+    });
+  }, [user?.firstName, user?.lastName, user?.userId]);
 
-    const dirty =
-        fn.trim() !== firstName.trim() || ln.trim() !== lastName.trim();
-
-    const handleCancel = () => {
-        setFn(firstName);
-        setLn(lastName);
-        setEditing(false);
+  const handleChange =
+    (field: "firstName" | "lastName") =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setUserDetails((prev) => ({
+        ...prev,
+        [field]: e.target.value,
+      }));
     };
 
-    const handleSave = () => {
-        onSave?.({ firstName: fn, lastName: ln });
-        setEditing(false);
-    };
+  const handleCancel = () => {
+    setUserDetails({
+      firstName: user?.firstName ?? "",
+      lastName: user?.lastName ?? "",
+    });
+  };
 
-    return (
-        <Box 
-            sx={{
-                minHeight: '100dvh',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                p: 2,
-                '@media (min-width: 600px)': {
-                    px: 4,
-                },
-                '@media (min-width: 900px)': {
-                    px: 8,
-                },
-                '@media (min-width: 1200px)': {
-                    px: 40,
-                }
-            }}
-        >
-            <Box sx={{ mb: 2 }}>
-                <Typography variant="h4" fontWeight={700}>
-                    {t('pages.profile.title')}
-                </Typography>
-            </Box>
+  const handleSave = async () => {
+    await updateUserMutation({
+      email: user.email,
+      firstName: userDetails.firstName.trim(),
+      lastName: userDetails.lastName.trim(),
+    });
+  };
 
-            <Box
-                sx={{
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    borderRadius: 3,
-                    p: 3,
-                    bgcolor: 'background.paper',
-                    maxWidth: 600,
-                    mx: 'auto',
-                    width: '100%'
-                }}
+  const dirty =
+    userDetails.firstName.trim() !== (user?.firstName ?? "").trim() ||
+    userDetails.lastName.trim() !== (user?.lastName ?? "").trim();
+
+  return (
+    <div className={classes.container}>
+      <div className={classes.titleContainer}>
+        <Typography variant="h4" className={classes.title}>
+          {t("pages.profile.title")}
+        </Typography>
+      </div>
+
+      <div className={classes.formCard}>
+        <div className={classes.formHeader}>
+          <Typography variant="h6">{t("pages.profile.subTitle")}</Typography>
+          <Typography variant="body2" color="text.secondary">
+            {t("pages.profile.secondSubTitle")}
+          </Typography>
+        </div>
+
+        <Stack spacing={3}>
+          <div className={classes.fieldContainer}>
+            <Typography
+              variant="body2"
+              color="text.primary"
+              className={isRTL ? classes.fieldLabelRTL : classes.fieldLabelLTR}
             >
-                <Box sx={{ mb: 3 }}>
-                    <Typography variant="h6">
-                        {t('pages.profile.subTitle')}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        {t('pages.profile.secondSubTitle')}
-                    </Typography>
-                </Box>
+              {t("pages.profile.firstName")}
+            </Typography>
+            <TextField
+              value={userDetails.firstName}
+              onChange={handleChange("firstName")}
+              fullWidth
+              className={isRTL ? classes.textFieldRTL : classes.textFieldLTR}
+            />
+          </div>
 
-                <Stack spacing={3}>
-                    <Box>
-                        <Typography
-                            variant="body2"
-                            color="text.primary"
-                            sx={{
-                                mb: 0.3,
-                                textAlign: isRTL ? 'right' : 'left',
-                                fontWeight: 300
-                            }}
-                        >
-                            {t('pages.profile.firstName')}
-                        </Typography>
-                        <TextField
-                            value={fn}
-                            onChange={(e) => setFn(e.target.value)}
-                            disabled={!editing}
-                            fullWidth
-                            sx={{
-                                '& .MuiInputLabel-root': { display: 'none' },
-                                '& .MuiInputBase-root': {
-                                    direction: isRTL ? 'rtl' : 'ltr',
-                                },
-                                '&.Mui-disabled': { color: 'text.disabled' },
-                                '&.Mui-error': { color: 'error.main' },
-                            }}
-                        />
-                    </Box>
+          <div className={classes.fieldContainer}>
+            <Typography
+              variant="body2"
+              color="text.primary"
+              className={isRTL ? classes.fieldLabelRTL : classes.fieldLabelLTR}
+            >
+              {t("pages.profile.lastName")}
+            </Typography>
+            <TextField
+              value={userDetails.lastName}
+              onChange={handleChange("lastName")}
+              fullWidth
+              className={isRTL ? classes.textFieldRTL : classes.textFieldLTR}
+            />
+          </div>
 
-                    <Box>
-                        <Typography
-                            variant="body2"
-                            color="text.primary"
-                            sx={{
-                                mb: 0.3,
-                                textAlign: isRTL ? 'right' : 'left',
-                                fontWeight: 300
-                            }}
-                        >
-                            {t('pages.profile.lastName')}
-                        </Typography>
-                        <TextField
-                            value={ln}
-                            onChange={(e) => setLn(e.target.value)}
-                            disabled={!editing}
-                            fullWidth
-                            sx={{
-                                '& .MuiInputLabel-root': { display: 'none' },
-                                '& .MuiInputBase-root': {
-                                    direction: isRTL ? 'rtl' : 'ltr',
-                                },
-                                '&.Mui-disabled': { color: 'text.disabled' },
-                                '&.Mui-error': { color: 'error.main' },
-                            }}
-                        />
-                    </Box>
+          <div className={classes.fieldContainer}>
+            <Typography
+              variant="body2"
+              color="text.primary"
+              className={
+                isRTL ? classes.emailFieldLabelRTL : classes.emailFieldLabelLTR
+              }
+            >
+              {t("pages.profile.email")}
+            </Typography>
+            <TextField
+              value={user?.email}
+              disabled
+              fullWidth
+              className={isRTL ? classes.textFieldRTL : classes.textFieldLTR}
+            />
+            <Typography
+              variant="body2"
+              color="text.disabled"
+              className={
+                isRTL
+                  ? classes.emailDisabledNoteRTL
+                  : classes.emailDisabledNoteLTR
+              }
+            >
+              {t("pages.profile.emailCannotBeChanged")}
+            </Typography>
+          </div>
+        </Stack>
 
-                    <Box>
-                        <Typography
-                            variant="body2"
-                            color="text.primary"
-                            sx={{
-                                mb: 0.3,
-                                textAlign: isRTL ? 'right' : 'left',
-                                fontWeight: 100
-                            }}
-                        >
-                            {t('pages.profile.email')}
-                        </Typography>
-                        <TextField
-                            value={email}
-                            disabled
-                            fullWidth
-                            sx={{
-                                '& .MuiInputLabel-root': { display: 'none' },
-                                '& .MuiInputBase-root': {
-                                    direction: isRTL ? 'rtl' : 'ltr',
-                                },
-                                '&.Mui-disabled': { color: 'text.disabled' },
-                                '&.Mui-error': { color: 'error.main' },
-                            }}
-                        />
-                        <Typography
-                            variant="body2"
-                            color="text.disabled"
-                            sx={{
-                                mt: 0.5,
-                                textAlign: isRTL ? 'right' : 'left',
-                                fontWeight: 100,
-                                fontSize: '0.75rem'
-                            }}
-                        >
-                            {t('pages.profile.emailCannotBeChanged')}
-                        </Typography>
-                    </Box>
-                </Stack>
-
-                <Box sx={{ mt: 3, display: 'flex', gap: 1 }}>
-                    {!editing ? (
-                        <Button onClick={() => setEditing(true)}>
-                            {t('pages.profile.edit')}
-                        </Button>
-                    ) : (
-                        <>
-                            <Button
-                                onClick={handleSave}
-                                disabled={!dirty}
-                            >
-                                {t('pages.profile.saveChanges')}
-                            </Button>
-                            <Button variant="outlined" onClick={handleCancel}>
-                                {t('pages.profile.cancel')}
-                            </Button>
-                        </>
-                    )}
-                </Box>
-            </Box>
-        </Box>
-    );
+        <div className={classes.buttonContainer}>
+          <Button onClick={handleSave} disabled={!dirty}>
+            {t("pages.profile.saveChanges")}
+          </Button>
+          <Button variant="outlined" disabled={!dirty} onClick={handleCancel}>
+            {t("pages.profile.cancel")}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 };
