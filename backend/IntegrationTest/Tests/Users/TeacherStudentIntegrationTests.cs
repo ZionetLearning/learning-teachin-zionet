@@ -17,12 +17,14 @@ public class TeacherStudentIntegrationTests : IAsyncLifetime
     private readonly SharedTestFixture _shared;
     private readonly HttpClient _client;
     private readonly ITestOutputHelper _output;
+    private readonly TestUserHelper _users;
 
     public TeacherStudentIntegrationTests(SharedTestFixture sharedFixture, ITestOutputHelper output)
     {
         _shared = sharedFixture;
         _client = sharedFixture.HttpFixture.Client;
         _output = output;
+        _users = new TestUserHelper(_client);
     }
 
     public async Task InitializeAsync()
@@ -32,61 +34,12 @@ public class TeacherStudentIntegrationTests : IAsyncLifetime
 
     public Task DisposeAsync() => Task.CompletedTask;
 
-    private static CreateUser NewUser(Role role) => new()
-    {
-        UserId = Guid.NewGuid(),
-        Email = $"{role.ToString().ToLower()}-{Guid.NewGuid():N}@example.com",
-        Password = "Test123!",
-        FirstName = role.ToString(),
-        LastName = "Auto",
-        Role = role.ToString()
-    };
-
-    private async Task<Guid> CreateUserAsync(Role role)
-    {
-        var u = NewUser(role);
-        var res = await _client.PostAsJsonAsync(UserRoutes.UserBase, u);
-        res.EnsureSuccessStatusCode();
-        return u.UserId;
-    }
-
-    private async Task<string> LoginAndGetTokenAsync(string email, string password)
-    {
-        var res = await _client.PostAsJsonAsync(AuthRoutes.Login, new LoginRequest { Email = email, Password = password });
-        res.EnsureSuccessStatusCode();
-        var body = await res.Content.ReadAsStringAsync();
-        var dto = JsonSerializer.Deserialize<AccessTokenResponse>(body) ?? throw new InvalidOperationException("Invalid JSON");
-        return dto.AccessToken;
-    }
-
-    private async Task<(Guid id, string email, string password)> CreateAndLogin(Role role)
-    {
-        var u = NewUser(role);
-        var res = await _client.PostAsJsonAsync(UserRoutes.UserBase, u);
-        res.EnsureSuccessStatusCode();
-        var token = await LoginAndGetTokenAsync(u.Email, u.Password);
-        return (u.UserId, u.Email, u.Password);
-    }
-
-    private void UseBearer(string token)
-    {
-        _client.DefaultRequestHeaders.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-    }
-
-    private async Task CleanupUser(Guid id)
-    {
-        var del = await _client.DeleteAsync(UserRoutes.UserById(id));
-        if (del.StatusCode != HttpStatusCode.OK && del.StatusCode != HttpStatusCode.NotFound)
-            del.EnsureSuccessStatusCode();
-    }
-
     [Fact(DisplayName = "Admin can assign & unassign any student to any teacher")]
     public async Task Admin_Assign_Unassign_Flow()
     {
         // Create teacher & student
-        var teacherId = await CreateUserAsync(Role.Teacher);
-        var studentId = await CreateUserAsync(Role.Student);
+        var teacherId = await _users.CreateUserAsync(Role.Teacher);
+        var studentId = await _users.CreateUserAsync(Role.Student);
 
         // Assign
         var assign = await _client.PostAsync(MappingRoutes.Assign(teacherId, studentId), content: null);
@@ -110,19 +63,19 @@ public class TeacherStudentIntegrationTests : IAsyncLifetime
         var unassign2 = await _client.DeleteAsync(MappingRoutes.Unassign(teacherId, studentId));
         unassign2.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        await CleanupUser(studentId);
-        await CleanupUser(teacherId);
+        await _users.CleanupUser(studentId);
+        await _users.CleanupUser(teacherId);
     }
 
     [Fact(DisplayName = "Teacher can assign/unassign only to self; forbidden for other teachers")]
     public async Task Teacher_Can_Only_Manage_Self()
     {
-        var (t1Id, t1Email, t1Pwd) = await CreateAndLogin(Role.Teacher);
-        var t2Id = await CreateUserAsync(Role.Teacher);
-        var s1Id = await CreateUserAsync(Role.Student);
+        var (t1Id, t1Email, t1Pwd) = await _users.CreateAndLogin(Role.Teacher);
+        var t2Id = await _users.CreateUserAsync(Role.Teacher);
+        var s1Id = await _users.CreateUserAsync(Role.Student);
 
-        var t1Token = await LoginAndGetTokenAsync(t1Email, t1Pwd);
-        UseBearer(t1Token);
+        var t1Token = await _users.LoginAndGetTokenAsync(t1Email, t1Pwd);
+        _users.UseBearer(t1Token);
 
         var okAssignSelf = await _client.PostAsync(MappingRoutes.Assign(t1Id, s1Id), null);
         okAssignSelf.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -143,31 +96,31 @@ public class TeacherStudentIntegrationTests : IAsyncLifetime
         forbidListOther.StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
         var adminToken = await _shared.GetAuthenticatedTokenAsync(attachToHttpClient: false);
-        UseBearer(adminToken);
+        _users.UseBearer(adminToken);
 
-        await CleanupUser(s1Id);
-        await CleanupUser(t2Id);
-        await CleanupUser(t1Id);
+        await _users.CleanupUser(s1Id);
+        await _users.CleanupUser(t2Id);
+        await _users.CleanupUser(t1Id);
     }
 
     [Fact(DisplayName = "Student cannot access mapping endpoints")]
     public async Task Student_Cannot_Access_Mapping_Endpoints()
     {
         // Create a student user and login
-        var s = NewUser(Role.Student);
+        var s = TestUserHelper.NewUser(Role.Student);
         var res = await _client.PostAsJsonAsync(UserRoutes.UserBase, s);
         res.EnsureSuccessStatusCode();
-        var sToken = await LoginAndGetTokenAsync(s.Email, s.Password);
-        UseBearer(sToken);
+        var sToken = await _users.LoginAndGetTokenAsync(s.Email, s.Password);
+        _users.UseBearer(sToken);
 
         // Create a teacher + another student (using Admin token)
         var adminToken = await _shared.GetAuthenticatedTokenAsync(attachToHttpClient: false);
-        UseBearer(adminToken);
-        var teacherId = await CreateUserAsync(Role.Teacher);
-        var studentId = await CreateUserAsync(Role.Student);
+        _users.UseBearer(adminToken);
+        var teacherId = await _users.CreateUserAsync(Role.Teacher);
+        var studentId = await _users.CreateUserAsync(Role.Student);
 
         // Use student token to try calling endpoints
-        UseBearer(sToken);
+        _users.UseBearer(sToken);
 
         var r1 = await _client.GetAsync(MappingRoutes.ListStudents(teacherId));
         r1.StatusCode.Should().Be(HttpStatusCode.Forbidden); // policy AdminOrTeacher
@@ -182,18 +135,18 @@ public class TeacherStudentIntegrationTests : IAsyncLifetime
         r4.StatusCode.Should().Be(HttpStatusCode.Forbidden); // AdminOnly
 
         // Cleanup with Admin
-        UseBearer(adminToken);
-        await CleanupUser(studentId);
-        await CleanupUser(teacherId);
-        await CleanupUser(s.UserId);
+        _users.UseBearer(adminToken);
+        await _users.CleanupUser(studentId);
+        await _users.CleanupUser(teacherId);
+        await _users.CleanupUser(s.UserId);
     }
 
     [Fact(DisplayName = "Admin can list teachers for a given student")]
     public async Task Admin_List_Teachers_For_Student()
     {
         // Create teacher + student
-        var teacherId = await CreateUserAsync(Role.Teacher);
-        var studentId = await CreateUserAsync(Role.Student);
+        var teacherId = await _users.CreateUserAsync(Role.Teacher);
+        var studentId = await _users.CreateUserAsync(Role.Student);
 
         // Assign
         var assign = await _client.PostAsync(MappingRoutes.Assign(teacherId, studentId), null);
@@ -207,7 +160,7 @@ public class TeacherStudentIntegrationTests : IAsyncLifetime
 
         // Cleanup
         await _client.DeleteAsync(MappingRoutes.Unassign(teacherId, studentId));
-        await CleanupUser(studentId);
-        await CleanupUser(teacherId);
+        await _users.CleanupUser(studentId);
+        await _users.CleanupUser(teacherId);
     }
 }
