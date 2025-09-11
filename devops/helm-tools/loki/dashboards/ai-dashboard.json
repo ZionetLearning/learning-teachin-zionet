@@ -1,0 +1,1241 @@
+{
+    "annotations": {
+        "list": [
+            {
+                "builtIn": 1,
+                "datasource": {
+                    "type": "grafana",
+                    "uid": "-- Grafana --"
+                },
+                "enable": true,
+                "hide": true,
+                "iconColor": "rgba(0, 211, 255, 1)",
+                "name": "Annotations & Alerts",
+                "type": "dashboard"
+            }
+        ]
+    },
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 0,
+    "id": 23,
+    "links": [],
+    "panels": [
+        {
+            "datasource": {
+                "type": "loki",
+                "uid": "P8E80F9AEF21F6940"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "fieldMinMax": false,
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": 0
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 3,
+                "w": 4,
+                "x": 0,
+                "y": 0
+            },
+            "id": 5,
+            "interval": "1h",
+            "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                    "calcs": [
+                        "last"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.1.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "loki",
+                        "uid": "P8E80F9AEF21F6940"
+                    },
+                    "direction": "backward",
+                    "editorMode": "code",
+                    "expr": "count by (namespace) (\r\n sum by (namespace, user) (\r\n count_over_time((\r\n {app=\"engine\", namespace=~\"${namespace:regex}\"}\r\n |= \"Chat request\" |= \" finished in \"\r\n | regexp \"userId (?P<uid>[0-9A-Fa-f-]{32,36})\"\r\n | label_format user=\"{{.uid}}\"\r\n )[$__range])\r\n )\r\n)",
+                    "hide": false,
+                    "legendFormat": "{{namespace}}",
+                    "queryType": "range",
+                    "refId": "B"
+                }
+            ],
+            "title": "👥Number of users",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "loki",
+                "uid": "P8E80F9AEF21F6940"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": 0
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 3,
+                "w": 3,
+                "x": 4,
+                "y": 0
+            },
+            "id": 7,
+            "options": {
+                "colorMode": "none",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                    "calcs": [
+                        "max"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.1.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "loki",
+                        "uid": "P8E80F9AEF21F6940"
+                    },
+                    "direction": "backward",
+                    "editorMode": "code",
+                    "expr": "sum by (namespace) (\r\n (\r\n sum by (namespace, chat) (\r\n count_over_time((\r\n {app=\"engine\", namespace=~\"${namespace:regex}\"} \r\n |= \"Chat request\" |= \" finished in \"\r\n | regexp \"chatId (?P<cid>[0-9A-Fa-f-]{36})\"\r\n | label_format chat=\"{{.cid}}\"\r\n )[1h])\r\n ) > 0\r\n )\r\n)",
+                    "legendFormat": "{{namespace}}",
+                    "queryType": "range",
+                    "refId": "A"
+                }
+            ],
+            "title": "🗪 Unique chats",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "loki",
+                "uid": "P8E80F9AEF21F6940"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": true,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "barWidthFactor": 0.6,
+                        "drawStyle": "line",
+                        "fillOpacity": 27,
+                        "gradientMode": "scheme",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": 3600000,
+                        "lineInterpolation": "smooth",
+                        "lineStyle": {
+                            "fill": "solid"
+                        },
+                        "lineWidth": 2,
+                        "pointSize": 3,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "fieldMinMax": false,
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": 0
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Time"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "green",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "All time"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "dark-green",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "llm — dev"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "super-light-green",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "overall — test"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "dark-orange",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "llm — test"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "super-light-orange",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Finish (dev)"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "dark-green",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Finish (test)"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "dark-yellow",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Get history (dev)"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "super-light-green",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Get history (test)"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "super-light-yellow",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Call LLM (dev)"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "semi-dark-green",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Call LLM (test)"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "semi-dark-yellow",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "check ChatName (dev)"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "green",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "check ChatName (test)"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "yellow",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Check System Prompt (dev)"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "light-green",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Check System Prompt (test)"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "light-orange",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 14,
+                "w": 9,
+                "x": 7,
+                "y": 0
+            },
+            "id": 3,
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "median",
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "hideZeros": false,
+                    "mode": "single",
+                    "sort": "asc"
+                }
+            },
+            "pluginVersion": "12.1.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "loki",
+                        "uid": "P8E80F9AEF21F6940"
+                    },
+                    "direction": "backward",
+                    "editorMode": "code",
+                    "expr": "(\r\n sum by (namespace, kind) (\r\n avg_over_time((\r\n {app=\"engine\", namespace=~\"${namespace:regex}\"} |= \" finished in \"\r\n | regexp \"finished in (?P<ms>[0-9]+)\\\\s*ms\"\r\n | label_format kind=\"overall\"\r\n | unwrap ms\r\n )[$__auto])\r\n )\r\n) / 1000\r\n",
+                    "hide": false,
+                    "legendFormat": "Finish ({{namespace}})",
+                    "queryType": "range",
+                    "refId": "A",
+                    "step": ""
+                },
+                {
+                    "datasource": {
+                        "type": "loki",
+                        "uid": "P8E80F9AEF21F6940"
+                    },
+                    "direction": "backward",
+                    "editorMode": "code",
+                    "expr": "(\r\n sum by (namespace, kind) (\r\n avg_over_time((\r\n {app=\"engine\", namespace=~\"${namespace:regex}\"} |= \"afterChatServiseTime\"\r\n | regexp \"afterChatServiseTime (?P<ms>[0-9]+)\\\\s*ms\"\r\n | label_format kind=\"afterChatService\"\r\n | unwrap ms\r\n )[$__auto])\r\n )\r\n) / 1000",
+                    "hide": false,
+                    "legendFormat": "Call LLM ({{namespace}})",
+                    "queryType": "range",
+                    "refId": "B",
+                    "step": ""
+                },
+                {
+                    "datasource": {
+                        "type": "loki",
+                        "uid": "P8E80F9AEF21F6940"
+                    },
+                    "direction": "backward",
+                    "editorMode": "code",
+                    "expr": "(\r\n sum by (namespace, kind) (\r\n avg_over_time((\r\n {app=\"engine\", namespace=~\"${namespace:regex}\"} |= \"addOrCheckChatNameTime\"\r\n | regexp \"addOrCheckChatNameTime (?P<ms>[0-9]+)\\\\s*ms\"\r\n | label_format kind=\"chatName\"\r\n | unwrap ms\r\n )[$__auto])\r\n )\r\n) / 1000\r\n",
+                    "hide": false,
+                    "legendFormat": "check ChatName ({{namespace}})",
+                    "queryType": "range",
+                    "refId": "C"
+                },
+                {
+                    "datasource": {
+                        "type": "loki",
+                        "uid": "P8E80F9AEF21F6940"
+                    },
+                    "direction": "backward",
+                    "editorMode": "code",
+                    "expr": "(\r\n sum by (namespace, kind) (\r\n avg_over_time((\r\n {app=\"engine\", namespace=~\"${namespace:regex}\"} |= \"addOrCheckSystemPromptTime\"\r\n | regexp \"addOrCheckSystemPromptTime (?P<ms>[0-9]+)\\\\s*ms\"\r\n | label_format kind=\"systemPrompt\"\r\n | unwrap ms\r\n )[$__auto])\r\n )\r\n) / 1000\r\n",
+                    "hide": false,
+                    "legendFormat": "Check System Prompt ({{namespace}})",
+                    "queryType": "range",
+                    "refId": "D"
+                },
+                {
+                    "datasource": {
+                        "type": "loki",
+                        "uid": "P8E80F9AEF21F6940"
+                    },
+                    "direction": "backward",
+                    "editorMode": "code",
+                    "expr": "(\r\n sum by (namespace, kind) (\r\n avg_over_time((\r\n {app=\"engine\", namespace=~\"${namespace:regex}\"} |= \"addOrCheckSystemPromptTime\"\r\n | regexp \"addOrCheckSystemPromptTime (?P<ms>[0-9]+)\\\\s*ms\"\r\n | label_format kind=\"systemPrompt\"\r\n | unwrap ms\r\n )[$__auto])\r\n )\r\n) / 1000",
+                    "hide": false,
+                    "legendFormat": "Get history ({{namespace}})",
+                    "queryType": "range",
+                    "refId": "E"
+                }
+            ],
+            "title": "⌛Duration of call",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "uid": "P8E80F9AEF21F6940"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": 0
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 3,
+                "w": 7,
+                "x": 0,
+                "y": 3
+            },
+            "id": 4,
+            "options": {
+                "colorMode": "none",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                    "calcs": [
+                        "max"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "text": {},
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "12.1.0",
+            "targets": [
+                {
+                    "direction": "backward",
+                    "editorMode": "code",
+                    "expr": "sum by (namespace, plugin) (\r\n count_over_time((\r\n {app=\"engine\", namespace=~\"${namespace:regex}\"} \r\n |= \"Plugin \" |= \" executed\"\r\n | regexp \"Plugin (?P<plugin>[A-Za-z0-9_.-]+) executed\"\r\n | label_format plugin=\"{{.plugin}}\"\r\n )[$__auto])\r\n)",
+                    "legendFormat": "🕰️TimePlugin {{namespace}}",
+                    "queryType": "range",
+                    "refId": "A"
+                }
+            ],
+            "title": "⚒️Plugins used",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "loki",
+                "uid": "P8E80F9AEF21F6940"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "fillOpacity": 80,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "lineWidth": 1,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": 0
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 7,
+                "x": 0,
+                "y": 6
+            },
+            "id": 8,
+            "options": {
+                "barRadius": 0,
+                "barWidth": 0.97,
+                "fullHighlight": false,
+                "groupWidth": 0.7,
+                "legend": {
+                    "calcs": [
+                        "sum"
+                    ],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "orientation": "auto",
+                "showValue": "always",
+                "stacking": "none",
+                "tooltip": {
+                    "hideZeros": false,
+                    "mode": "single",
+                    "sort": "none"
+                },
+                "xTickLabelRotation": 0,
+                "xTickLabelSpacing": 200
+            },
+            "pluginVersion": "12.1.0",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "loki",
+                        "uid": "P8E80F9AEF21F6940"
+                    },
+                    "direction": "backward",
+                    "editorMode": "code",
+                    "expr": "sum by (namespace, kind) (\r\n  count_over_time((\r\n    {app=\"engine\", namespace=~\"${namespace:regex}\"} \r\n    |= \"processed successfully\"\r\n    | label_format kind=\"success\"\r\n  )[$__auto])\r\n)\r\n",
+                    "legendFormat": "✅success {{namespace}}",
+                    "queryType": "range",
+                    "refId": "A"
+                },
+                {
+                    "datasource": {
+                        "type": "loki",
+                        "uid": "P8E80F9AEF21F6940"
+                    },
+                    "direction": "backward",
+                    "editorMode": "code",
+                    "expr": "sum by (namespace, kind) (\r\n  count_over_time((\r\n    {app=\"engine\", namespace=~\"${namespace:regex}\"} \r\n    |= \"failed:\"\r\n    | label_format kind=\"fail\"\r\n  )[$__auto])\r\n)",
+                    "hide": false,
+                    "legendFormat": "❌fail{{namespace}}",
+                    "queryType": "range",
+                    "refId": "B"
+                }
+            ],
+            "title": "📞Call to chatService",
+            "type": "barchart"
+        },
+        {
+            "datasource": {
+                "type": "grafana-azure-monitor-datasource",
+                "uid": "P1EB995EACC6832D3"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "fillOpacity": 80,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "lineWidth": 1,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": 0
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "All calls"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "blue",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Success"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "semi-dark-green",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Total Errors france-teachin-open-ai"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "dark-red",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Error"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "dark-red",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 7,
+                "x": 0,
+                "y": 14
+            },
+            "id": 2,
+            "options": {
+                "barRadius": 0,
+                "barWidth": 0.97,
+                "fullHighlight": false,
+                "groupWidth": 0.7,
+                "legend": {
+                    "calcs": [
+                        "sum"
+                    ],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "orientation": "auto",
+                "showValue": "always",
+                "stacking": "none",
+                "tooltip": {
+                    "hideZeros": false,
+                    "maxWidth": -1,
+                    "mode": "single",
+                    "sort": "none"
+                },
+                "xTickLabelRotation": 0,
+                "xTickLabelSpacing": 200
+            },
+            "pluginVersion": "12.1.0",
+            "targets": [
+                {
+                    "azureMonitor": {
+                        "aggregation": "Total",
+                        "alias": "All calls",
+                        "allowedTimeGrainsMs": [
+                            60000,
+                            300000,
+                            900000,
+                            1800000,
+                            3600000,
+                            21600000,
+                            43200000,
+                            86400000
+                        ],
+                        "dimensionFilters": [],
+                        "metricName": "TotalCalls",
+                        "metricNamespace": "microsoft.cognitiveservices/accounts",
+                        "region": "francecentral",
+                        "resources": [
+                            {
+                                "metricNamespace": "Microsoft.CognitiveServices/accounts",
+                                "region": "francecentral",
+                                "resourceGroup": "azure-open-ai-playground",
+                                "resourceName": "france-teachin-open-ai",
+                                "subscription": "90ea4c2f-1eee-4ec9-927d-ed24c563003e"
+                            }
+                        ],
+                        "timeGrain": "PT1H",
+                        "top": ""
+                    },
+                    "datasource": {
+                        "type": "grafana-azure-monitor-datasource",
+                        "uid": "P1EB995EACC6832D3"
+                    },
+                    "queryType": "Azure Monitor",
+                    "refId": "A",
+                    "subscription": "90ea4c2f-1eee-4ec9-927d-ed24c563003e"
+                },
+                {
+                    "azureMonitor": {
+                        "aggregation": "Total",
+                        "alias": "Success",
+                        "allowedTimeGrainsMs": [
+                            60000,
+                            300000,
+                            900000,
+                            1800000,
+                            3600000,
+                            21600000,
+                            43200000,
+                            86400000
+                        ],
+                        "dimensionFilters": [],
+                        "metricName": "SuccessfulCalls",
+                        "metricNamespace": "microsoft.cognitiveservices/accounts",
+                        "region": "francecentral",
+                        "resources": [
+                            {
+                                "metricNamespace": "Microsoft.CognitiveServices/accounts",
+                                "region": "francecentral",
+                                "resourceGroup": "azure-open-ai-playground",
+                                "resourceName": "france-teachin-open-ai",
+                                "subscription": "90ea4c2f-1eee-4ec9-927d-ed24c563003e"
+                            }
+                        ],
+                        "timeGrain": "PT1H"
+                    },
+                    "datasource": {
+                        "type": "grafana-azure-monitor-datasource",
+                        "uid": "P1EB995EACC6832D3"
+                    },
+                    "hide": false,
+                    "queryType": "Azure Monitor",
+                    "refId": "B",
+                    "subscription": "90ea4c2f-1eee-4ec9-927d-ed24c563003e"
+                },
+                {
+                    "azureMonitor": {
+                        "aggregation": "Total",
+                        "alias": "Error",
+                        "allowedTimeGrainsMs": [
+                            60000,
+                            300000,
+                            900000,
+                            1800000,
+                            3600000,
+                            21600000,
+                            43200000,
+                            86400000
+                        ],
+                        "dimensionFilters": [],
+                        "metricName": "TotalErrors",
+                        "metricNamespace": "microsoft.cognitiveservices/accounts",
+                        "region": "francecentral",
+                        "resources": [
+                            {
+                                "metricNamespace": "Microsoft.CognitiveServices/accounts",
+                                "region": "francecentral",
+                                "resourceGroup": "azure-open-ai-playground",
+                                "resourceName": "france-teachin-open-ai",
+                                "subscription": "90ea4c2f-1eee-4ec9-927d-ed24c563003e"
+                            }
+                        ],
+                        "timeGrain": "PT1H"
+                    },
+                    "datasource": {
+                        "type": "grafana-azure-monitor-datasource",
+                        "uid": "P1EB995EACC6832D3"
+                    },
+                    "hide": false,
+                    "queryType": "Azure Monitor",
+                    "refId": "C",
+                    "subscription": "90ea4c2f-1eee-4ec9-927d-ed24c563003e"
+                },
+                {
+                    "azureMonitor": {
+                        "allowedTimeGrainsMs": [],
+                        "timeGrain": "auto"
+                    },
+                    "datasource": {
+                        "type": "grafana-azure-monitor-datasource",
+                        "uid": "P1EB995EACC6832D3"
+                    },
+                    "hide": false,
+                    "queryType": "Azure Monitor",
+                    "refId": "D"
+                }
+            ],
+            "title": "📞All calls to LLM",
+            "type": "barchart"
+        },
+        {
+            "datasource": {
+                "type": "grafana-azure-monitor-datasource",
+                "uid": "P1EB995EACC6832D3"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": true,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "fillOpacity": 87,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "lineWidth": 0,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": 0
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Output tokens"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "dark-red",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 9,
+                "x": 7,
+                "y": 14
+            },
+            "id": 1,
+            "options": {
+                "barRadius": 0.25,
+                "barWidth": 0.99,
+                "fullHighlight": false,
+                "groupWidth": 0.98,
+                "legend": {
+                    "calcs": [
+                        "sum"
+                    ],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "orientation": "vertical",
+                "showValue": "always",
+                "stacking": "none",
+                "text": {},
+                "tooltip": {
+                    "hideZeros": false,
+                    "mode": "single",
+                    "sort": "none"
+                },
+                "xField": "Time",
+                "xTickLabelRotation": 0,
+                "xTickLabelSpacing": 200
+            },
+            "pluginVersion": "12.1.0",
+            "targets": [
+                {
+                    "azureMonitor": {
+                        "aggregation": "Total",
+                        "alias": "Input",
+                        "allowedTimeGrainsMs": [
+                            60000,
+                            300000,
+                            900000,
+                            1800000,
+                            3600000,
+                            21600000,
+                            43200000,
+                            86400000
+                        ],
+                        "dimensionFilters": [
+                            {
+                                "dimension": "ModelDeploymentName",
+                                "filters": [
+                                    "gpt-4.1-mini"
+                                ],
+                                "operator": "eq"
+                            },
+                            {
+                                "dimension": "ApiName",
+                                "filters": [
+                                    "OpenAI"
+                                ],
+                                "operator": "eq"
+                            }
+                        ],
+                        "metricName": "ProcessedPromptTokens",
+                        "metricNamespace": "microsoft.cognitiveservices/accounts",
+                        "region": "francecentral",
+                        "resources": [
+                            {
+                                "metricNamespace": "Microsoft.CognitiveServices/accounts",
+                                "region": "francecentral",
+                                "resourceGroup": "azure-open-ai-playground",
+                                "resourceName": "france-teachin-open-ai",
+                                "subscription": "90ea4c2f-1eee-4ec9-927d-ed24c563003e"
+                            }
+                        ],
+                        "timeGrain": "PT1H",
+                        "top": ""
+                    },
+                    "datasource": {
+                        "type": "grafana-azure-monitor-datasource",
+                        "uid": "P1EB995EACC6832D3"
+                    },
+                    "hide": false,
+                    "queryType": "Azure Monitor",
+                    "refId": "A",
+                    "subscription": "90ea4c2f-1eee-4ec9-927d-ed24c563003e"
+                },
+                {
+                    "azureMonitor": {
+                        "aggregation": "Total",
+                        "alias": "Output tokens",
+                        "allowedTimeGrainsMs": [
+                            60000,
+                            300000,
+                            900000,
+                            1800000,
+                            3600000,
+                            21600000,
+                            43200000,
+                            86400000
+                        ],
+                        "dimensionFilters": [],
+                        "metricName": "GeneratedTokens",
+                        "metricNamespace": "microsoft.cognitiveservices/accounts",
+                        "region": "francecentral",
+                        "resources": [
+                            {
+                                "metricNamespace": "Microsoft.CognitiveServices/accounts",
+                                "region": "francecentral",
+                                "resourceGroup": "azure-open-ai-playground",
+                                "resourceName": "france-teachin-open-ai",
+                                "subscription": "90ea4c2f-1eee-4ec9-927d-ed24c563003e"
+                            }
+                        ],
+                        "timeGrain": "PT1H",
+                        "top": ""
+                    },
+                    "datasource": {
+                        "type": "grafana-azure-monitor-datasource",
+                        "uid": "P1EB995EACC6832D3"
+                    },
+                    "hide": false,
+                    "queryType": "Azure Monitor",
+                    "refId": "B",
+                    "subscription": "90ea4c2f-1eee-4ec9-927d-ed24c563003e"
+                }
+            ],
+            "title": "🪙All tokens",
+            "type": "barchart"
+        }
+    ],
+    "preload": false,
+    "schemaVersion": 41,
+    "tags": [],
+    "templating": {
+        "list": [
+            {
+                "allValue": "dev|test|stage|featest",
+                "current": {
+                    "text": "All",
+                    "value": [
+                        "$__all"
+                    ]
+                },
+                "datasource": {
+                    "type": "loki",
+                    "uid": "P8E80F9AEF21F6940"
+                },
+                "definition": "",
+                "includeAll": true,
+                "multi": true,
+                "name": "namespace",
+                "options": [],
+                "query": {
+                    "label": "namespace",
+                    "refId": "LokiVariableQueryEditor-VariableQuery",
+                    "stream": "{app=\"engine\"} ",
+                    "type": 1
+                },
+                "refresh": 1,
+                "regex": "^(dev|test|stage|featest)$",
+                "type": "query"
+            }
+        ]
+    },
+    "time": {
+        "from": "now-24h",
+        "to": "now"
+    },
+    "timepicker": {},
+    "timezone": "browser",
+    "title": "AI dashboard",
+    "uid": "ed0747b1-1c8e-4fbc-9066-deb56a52b76e",
+    "version": 12
+}
