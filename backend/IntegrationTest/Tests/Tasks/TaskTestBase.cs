@@ -30,27 +30,12 @@ public abstract class TaskTestBase(
         var response = await PostAsJsonAsync(ApiRoutes.Task, task);
         response.EnsureSuccessStatusCode();
 
-        var notifyTask = WaitForNotificationAsync(
-            n =>
-                n.Type == NotificationType.Success &&
-                (n.Message?.Contains(task.Name, StringComparison.OrdinalIgnoreCase) == true
-                 || n.Message?.Contains(task.Id.ToString(), StringComparison.OrdinalIgnoreCase) == true),
+        var received = await WaitForNotificationAsync(
+            n => n.Type == NotificationType.Success && n.Message.Contains(task.Name),
             TimeSpan.FromSeconds(20)
+
         );
-
-        var apiVisibleTask = TaskUpdateHelper.WaitForTaskByIdAsync(Client, task.Id);
-
-        var winner = await Task.WhenAny(notifyTask, apiVisibleTask);
-
-        if (winner == notifyTask)
-        {
-            var received = await notifyTask;
-            received.Should().NotBeNull("Expected a SignalR notification or API visibility");
-        }
-        else
-        {
-            OutputHelper.WriteLine("Notification not observed in time; proceeded after API confirmed task existence.");
-        }
+        received.Should().NotBeNull("Expected a SignalR notification");
 
         await TaskUpdateHelper.WaitForTaskNameUpdateAsync(Client, task.Id, task.Name);
         return task;
