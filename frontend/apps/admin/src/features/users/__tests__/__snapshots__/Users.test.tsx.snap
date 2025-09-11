@@ -11,16 +11,16 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
       style="text-align: left;"
     >
       <h2
-        class="sectionTitle-0-2-15"
+        class="sectionTitle-0-2-4"
       >
         pages.users.createUsers
       </h2>
       <form
         action="#"
-        class="form-0-2-6"
+        class="form-0-2-5"
       >
         <label
-          class="label-0-2-7"
+          class="label-0-2-6"
         >
           pages.users.email
           <input
@@ -32,11 +32,11 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
             value=""
           />
           <span
-            class="error-0-2-13"
+            class="error-0-2-7"
           />
         </label>
         <label
-          class="label-0-2-7"
+          class="label-0-2-6"
         >
           pages.users.firstName
           <input
@@ -48,11 +48,11 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
             value=""
           />
           <span
-            class="error-0-2-13"
+            class="error-0-2-7"
           />
         </label>
         <label
-          class="label-0-2-7"
+          class="label-0-2-6"
         >
           pages.users.lastName
           <input
@@ -64,15 +64,15 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
             value=""
           />
           <span
-            class="error-0-2-13"
+            class="error-0-2-7"
           />
         </label>
         <label
-          class="label-0-2-7"
+          class="label-0-2-6"
         >
           pages.users.role
           <div
-            class="MuiFormControl-root MuiFormControl-fullWidth wrapper-0-2-19 css-ytlejw-MuiFormControl-root"
+            class="MuiFormControl-root MuiFormControl-fullWidth wrapper-0-2-9 css-ytlejw-MuiFormControl-root"
           >
             <label
               class="MuiFormLabel-root MuiInputLabel-root MuiInputLabel-formControl MuiInputLabel-animated MuiInputLabel-shrink MuiInputLabel-outlined MuiFormLabel-colorPrimary MuiFormLabel-filled MuiInputLabel-root MuiInputLabel-formControl MuiInputLabel-animated MuiInputLabel-shrink MuiInputLabel-outlined css-113d811-MuiFormLabel-root-MuiInputLabel-root"
@@ -132,7 +132,7 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
           </div>
         </label>
         <label
-          class="label-0-2-7"
+          class="label-0-2-6"
         >
           pages.users.password
           <input
@@ -144,11 +144,11 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
             value=""
           />
           <span
-            class="error-0-2-13"
+            class="error-0-2-7"
           />
         </label>
         <button
-          class="submitButton-0-2-16"
+          class="submitButton-0-2-8"
           data-testid="users-create-submit"
           type="submit"
         >
@@ -157,25 +157,25 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
       </form>
     </div>
     <div
-      class="listContainer-0-2-4 cardBase-0-2-2"
+      class="listContainer-0-2-11 cardBase-0-2-10"
       data-testid="users-list"
     >
       <h2
-        class="sectionTitle-0-2-15"
+        class="sectionTitle-0-2-12"
       >
         pages.users.users
       </h2>
       <div
-        class="tableArea-0-2-5"
+        class="tableArea-0-2-13"
         data-testid="users-table"
       >
         <div
-          class="tableShell-0-2-8"
+          class="tableShell-0-2-14"
           data-testid="users-table-shell"
         >
           <table
             aria-label="users header"
-            class="MuiTable-root headerTable-0-2-9 css-1xwxv7r-MuiTable-root"
+            class="MuiTable-root headerTable-0-2-15 css-1xwxv7r-MuiTable-root"
           >
             <thead
               class="MuiTableHead-root css-1a7iywq-MuiTableHead-root"
@@ -222,7 +222,7 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
             </thead>
           </table>
           <div
-            class="searchBar-0-2-10"
+            class="searchBar-0-2-16"
             data-testid="users-search-bar"
           >
             <div
@@ -281,27 +281,27 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
             </div>
           </div>
           <div
-            class="rowsScroll-0-2-11"
+            class="rowsScroll-0-2-18"
             data-testid="users-rows-scroll"
           >
             <table
               aria-label="users body"
-              class="MuiTable-root bodyTable-0-2-12 css-1xwxv7r-MuiTable-root"
+              class="MuiTable-root bodyTable-0-2-19 css-1xwxv7r-MuiTable-root"
             >
               <tbody
                 class="MuiTableBody-root css-gmh7jj-MuiTableBody-root"
               >
                 <tr
-                  class="MuiTableRow-root MuiTableRow-hover tableRow-0-2-32 css-1xtozoh-MuiTableRow-root"
+                  class="MuiTableRow-root MuiTableRow-hover tableRow-0-2-33 css-1xtozoh-MuiTableRow-root"
                   data-testid="users-row-u1"
                 >
                   <td
-                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-33 css-jiabcu-MuiTableCell-root"
+                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-34 css-jiabcu-MuiTableCell-root"
                     width="28%"
                   >
                     <span
                       aria-label="alpha@example.com"
-                      class="email-0-2-36"
+                      class="email-0-2-37"
                       data-mui-internal-clone-element="true"
                       data-testid="users-email"
                       title="alpha@example.com"
@@ -310,7 +310,7 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
                     </span>
                   </td>
                   <td
-                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-33 css-jiabcu-MuiTableCell-root"
+                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-34 css-jiabcu-MuiTableCell-root"
                     width="18%"
                   >
                     <span
@@ -321,7 +321,7 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
                     </span>
                   </td>
                   <td
-                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-33 css-jiabcu-MuiTableCell-root"
+                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-34 css-jiabcu-MuiTableCell-root"
                     width="18%"
                   >
                     <span
@@ -332,22 +332,22 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
                     </span>
                   </td>
                   <td
-                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-33 dropdownCell-0-2-34 css-jiabcu-MuiTableCell-root"
+                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-34 dropdownCell-0-2-35 css-jiabcu-MuiTableCell-root"
                     width="16%"
                   >
                     <span
-                      class="roleBadge-0-2-37 roleStudent-0-2-38"
+                      class="roleBadge-0-2-38 roleStudent-0-2-39"
                       data-testid="users-role-badge"
                     >
                       roles.student
                     </span>
                   </td>
                   <td
-                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-alignCenter MuiTableCell-sizeSmall tableCell-0-2-33 css-wsxt5g-MuiTableCell-root"
+                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-alignCenter MuiTableCell-sizeSmall tableCell-0-2-34 css-wsxt5g-MuiTableCell-root"
                     width="20%"
                   >
                     <div
-                      class="actions-0-2-29"
+                      class="actions-0-2-30"
                     >
                       <span
                         aria-label="pages.users.update"
@@ -356,7 +356,7 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
                       >
                         <button
                           aria-label="pages.users.update"
-                          class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium updateButton-0-2-24 btnBase-0-2-23 css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
+                          class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium updateButton-0-2-25 btnBase-0-2-24 css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
                           data-testid="users-update-btn"
                           tabindex="0"
                           type="button"
@@ -381,7 +381,7 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
                       >
                         <button
                           aria-label="pages.users.delete"
-                          class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium deleteButton-0-2-25 btnBase-0-2-23 css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
+                          class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium deleteButton-0-2-26 btnBase-0-2-24 css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
                           data-testid="users-delete-btn"
                           tabindex="0"
                           type="button"
@@ -403,16 +403,16 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
                   </td>
                 </tr>
                 <tr
-                  class="MuiTableRow-root MuiTableRow-hover tableRow-0-2-32 css-1xtozoh-MuiTableRow-root"
+                  class="MuiTableRow-root MuiTableRow-hover tableRow-0-2-33 css-1xtozoh-MuiTableRow-root"
                   data-testid="users-row-u2"
                 >
                   <td
-                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-33 css-jiabcu-MuiTableCell-root"
+                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-34 css-jiabcu-MuiTableCell-root"
                     width="28%"
                   >
                     <span
                       aria-label="beta@example.com"
-                      class="email-0-2-36"
+                      class="email-0-2-37"
                       data-mui-internal-clone-element="true"
                       data-testid="users-email"
                       title="beta@example.com"
@@ -421,7 +421,7 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
                     </span>
                   </td>
                   <td
-                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-33 css-jiabcu-MuiTableCell-root"
+                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-34 css-jiabcu-MuiTableCell-root"
                     width="18%"
                   >
                     <span
@@ -432,7 +432,7 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
                     </span>
                   </td>
                   <td
-                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-33 css-jiabcu-MuiTableCell-root"
+                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-34 css-jiabcu-MuiTableCell-root"
                     width="18%"
                   >
                     <span
@@ -443,22 +443,22 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
                     </span>
                   </td>
                   <td
-                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-33 dropdownCell-0-2-34 css-jiabcu-MuiTableCell-root"
+                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall tableCell-0-2-34 dropdownCell-0-2-35 css-jiabcu-MuiTableCell-root"
                     width="16%"
                   >
                     <span
-                      class="roleBadge-0-2-37 roleStudent-0-2-38"
+                      class="roleBadge-0-2-38 roleStudent-0-2-39"
                       data-testid="users-role-badge"
                     >
                       roles.student
                     </span>
                   </td>
                   <td
-                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-alignCenter MuiTableCell-sizeSmall tableCell-0-2-33 css-wsxt5g-MuiTableCell-root"
+                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-alignCenter MuiTableCell-sizeSmall tableCell-0-2-34 css-wsxt5g-MuiTableCell-root"
                     width="20%"
                   >
                     <div
-                      class="actions-0-2-29"
+                      class="actions-0-2-30"
                     >
                       <span
                         aria-label="pages.users.update"
@@ -467,7 +467,7 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
                       >
                         <button
                           aria-label="pages.users.update"
-                          class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium updateButton-0-2-24 btnBase-0-2-23 css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
+                          class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium updateButton-0-2-25 btnBase-0-2-24 css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
                           data-testid="users-update-btn"
                           tabindex="0"
                           type="button"
@@ -492,7 +492,7 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
                       >
                         <button
                           aria-label="pages.users.delete"
-                          class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium deleteButton-0-2-25 btnBase-0-2-23 css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
+                          class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium deleteButton-0-2-26 btnBase-0-2-24 css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
                           data-testid="users-delete-btn"
                           tabindex="0"
                           type="button"
@@ -518,7 +518,7 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
           </div>
         </div>
         <div
-          class="MuiTablePagination-root paginationBar-0-2-18 css-7mt0f-MuiTablePagination-root"
+          class="MuiTablePagination-root paginationBar-0-2-20 css-7mt0f-MuiTablePagination-root"
           data-testid="users-pagination"
         >
           <div
