@@ -28,7 +28,7 @@ manager:
   # Consider adding resource limits here if you introduce them in templates
   ingress:
     enabled: true
-    host: teachin.westeurope.cloudapp.azure.com
+    host: teachinprod.westeurope.cloudapp.azure.com
     basePath: /api
     tls:
       enabled: true

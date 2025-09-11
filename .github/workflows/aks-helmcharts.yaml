@@ -81,7 +81,7 @@ jobs:
 
           echo "K8S_DIR=devops/kubernetes/" >> $GITHUB_ENV
           echo "CHART_DIR=devops/kubernetes/charts" >> $GITHUB_ENV
-          echo "VALUES_FILE=devops/kubernetes/charts/values.dev.yaml" >> $GITHUB_ENV
+          echo "VALUES_FILE=devops/kubernetes/charts/values.prod.yaml" >> $GITHUB_ENV
           echo "DOCKER_REGISTRY=${{ secrets.DOCKERHUB_USERNAME }}" >> $GITHUB_ENV
 
           # Shared AKS
