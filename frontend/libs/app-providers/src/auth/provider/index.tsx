@@ -1,15 +1,16 @@
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
-
 import {
   AppRoleType,
   AuthContext,
   Credentials,
   decodeJwtExp,
+  decodeJwtUserId,
   SignupData,
   useCreateUser,
   useLoginMutation,
   useLogoutMutation,
   useRefreshTokensMutation,
+  useGetUserById,
 } from "@app-providers";
 
 export interface AuthProviderProps {
@@ -23,47 +24,49 @@ const FALLBACK_TOKEN_EXPIRY_MS = 15 * 60 * 1000;
 export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
   const refreshTimerRef = useRef<number | null>(null);
   const refreshSkewMs = 60_000;
-  const [credentials, setCredentials] = useState<Credentials | null>(
-    function getCredentialsFromLocalStorage() {
-      try {
-        const raw = localStorage.getItem("credentials");
-        if (!raw) return null;
-        const parsed = JSON.parse(raw) as Partial<
-          Credentials & { sessionExpiry?: number; password?: string }
-        >;
-        if (
-          parsed &&
-          parsed.email &&
-          parsed.accessToken &&
-          parsed.accessTokenExpiry
-        ) {
-          if (Date.now() < parsed.accessTokenExpiry) {
-            return {
-              email: parsed.email,
-              accessToken: parsed.accessToken,
-              accessTokenExpiry: parsed.accessTokenExpiry,
-              role: parsed.role,
-            };
-          } else {
-            localStorage.removeItem("credentials");
-          }
-        } else if (parsed && parsed.email && parsed.sessionExpiry) {
-          localStorage.removeItem("credentials");
-        }
-      } catch (error) {
-        console.warn("Error parsing credentials:", error);
-        localStorage.removeItem("credentials");
+
+  const [credentials, setCredentials] = useState<Credentials | null>(() => {
+    try {
+      const raw = localStorage.getItem("credentials");
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as Partial<Credentials>;
+      if (
+        parsed.accessToken &&
+        parsed.accessTokenExpiry &&
+        Date.now() < parsed.accessTokenExpiry
+      ) {
+        return {
+          email: parsed.email!,
+          accessToken: parsed.accessToken,
+          accessTokenExpiry: parsed.accessTokenExpiry,
+          role: parsed.role,
+        };
       }
+      localStorage.removeItem("credentials");
       return null;
-    },
-  );
+    } catch {
+      localStorage.removeItem("credentials");
+      return null;
+    }
+  });
+
+  // derive userId from JWT
+  const userId = credentials
+    ? (decodeJwtUserId(credentials.accessToken) ?? undefined)
+    : undefined;
+
+  const {
+    data: userData,
+    isLoading: isUserLoading,
+    error: userError,
+  } = useGetUserById(userId);
 
   const {
     mutateAsync: loginMutation,
     isPending: isLoggingIn,
     error: loginError,
   } = useLoginMutation({
-    onSuccess: (data, vars) => {
+    onSuccess: async (data, vars) => {
       persistSession(vars.email, data.accessToken, appRole);
     },
     onError: (err) => {
@@ -112,6 +115,7 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
       const fallback = Date.now() + FALLBACK_TOKEN_EXPIRY_MS;
       const accessTokenExpiry =
         decodedExp && decodedExp > Date.now() ? decodedExp : fallback;
+
       const creds: Credentials = {
         email,
         accessToken,
@@ -156,7 +160,7 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
       refreshTimerRef.current = window.setTimeout(async () => {
         try {
           const { accessToken } = await refreshTokens();
-          persistSession(creds.email, accessToken, creds.role);
+          persistSession(creds.email, accessToken);
         } catch {
           clearSession();
         }
@@ -165,31 +169,33 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
     [clearRefreshTimer, refreshTokens, persistSession, clearSession],
   );
 
-  useEffect(
-    function handleRefresh() {
-      if (credentials) {
-        scheduleRefresh(credentials);
-        return () => clearRefreshTimer();
-      }
-      clearRefreshTimer();
-    },
-    [credentials, scheduleRefresh, clearRefreshTimer],
-  );
+  useEffect(() => {
+    if (credentials) {
+      scheduleRefresh(credentials);
+      return () => clearRefreshTimer();
+    }
+    clearRefreshTimer();
+  }, [credentials, scheduleRefresh, clearRefreshTimer]);
 
   return (
     <AuthContext.Provider
       value={{
         isAuthorized: credentials !== null,
-        role: credentials?.role || appRole,
+        role: userData?.role || credentials?.role || appRole,
         login,
         signup,
         logout,
-        accessToken: credentials?.accessToken || null,
+        accessToken: credentials?.accessToken ?? null,
         loginStatus: {
           isLoading:
-            isLoggingIn || isCreatingUser || isRefreshing || isLoggingOut,
-          error: loginError || createUserError,
+            isLoggingIn ||
+            isCreatingUser ||
+            isRefreshing ||
+            isLoggingOut ||
+            isUserLoading,
+          error: loginError || createUserError || userError,
         },
+        user: userData ?? null,
       }}
     >
       {children}

@@ -294,7 +294,14 @@
         "firstName": "First Name",
         "lastName": "Last Name",
         "noChanges": "No changes",
-        "role": "Role"
+        "role": "Role",
+        "actions": "Actions",
+        "searchPlaceholder": "Search by email, first name, last name...",
+        "clear": "Clear",
+        "rowsPerPage": "Rows per page:",
+        "page": "Page:",
+        "of": "of",
+        "all": "All"
       },
       "profile": {
         "title": "My profile",
