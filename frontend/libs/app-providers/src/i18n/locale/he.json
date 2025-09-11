@@ -261,7 +261,14 @@
         "firstName": "שם פרטי",
         "lastName": "שם משפחה",
         "noChanges": "אין שינויים",
-        "role": "תפקיד"
+        "role": "תפקיד",
+        "actions": "פעולות",
+        "searchPlaceholder": "חפש לפי אימייל, שם פרטי, שם משפחה...",
+        "clear": "נקה",
+        "rowsPerPage": "שורות בעמוד:",
+        "page": "עמוד:",
+        "of": "של",
+        "all": "הכל"
       },
       "profile": {
         "title": "הפרופיל שלי",
