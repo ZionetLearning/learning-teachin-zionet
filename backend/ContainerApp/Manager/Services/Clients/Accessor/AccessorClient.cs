@@ -27,7 +27,7 @@ public class AccessorClient(
         try
         {
             var task = await _daprClient.InvokeMethodAsync<TaskModel?>(
-                HttpMethod.Get, "accessor", $"tasks-accessor/task/{id}");
+                HttpMethod.Get, AppIds.Accessor, $"tasks-accessor/task/{id}");
             _logger.LogDebug("Received task {TaskId} from Accessor service", id);
             return task;
         }
@@ -111,7 +111,7 @@ public class AccessorClient(
         );
         try
         {
-            await _daprClient.InvokeMethodAsync(HttpMethod.Delete, "accessor", $"tasks-accessor/task/{id}");
+            await _daprClient.InvokeMethodAsync(HttpMethod.Delete, AppIds.Accessor, $"tasks-accessor/task/{id}");
             _logger.LogDebug("Task {TaskId} deletion request sent to Accessor service", id);
 
             return true;
@@ -189,7 +189,7 @@ public class AccessorClient(
         try
         {
             var chats = await _daprClient.InvokeMethodAsync<List<ChatSummary>>(
-                HttpMethod.Get, "accessor", $"chats-accessor/{userId}", cancellationToken: ct);
+                HttpMethod.Get, AppIds.Accessor, $"chats-accessor/{userId}", cancellationToken: ct);
 
             return chats ?? new List<ChatSummary>();
         }
@@ -215,7 +215,7 @@ public class AccessorClient(
         try
         {
             return await _daprClient.InvokeMethodAsync<UserData?>(
-                HttpMethod.Get, "accessor", $"users-accessor/{userId}");
+                HttpMethod.Get, AppIds.Accessor, $"users-accessor/{userId}");
         }
         catch (Exception ex)
         {
@@ -230,7 +230,7 @@ public class AccessorClient(
         {
             _logger.LogInformation("Creating user with email: {Email}", user.Email);
 
-            await _daprClient.InvokeMethodAsync(HttpMethod.Post, "accessor", "users-accessor", user);
+            await _daprClient.InvokeMethodAsync(HttpMethod.Post, AppIds.Accessor, "users-accessor", user);
 
             _logger.LogInformation("User {Email} created successfully", user.Email);
             return true;
@@ -256,7 +256,7 @@ public class AccessorClient(
     {
         try
         {
-            await _daprClient.InvokeMethodAsync(HttpMethod.Put, "accessor", $"users-accessor/{userId}", user);
+            await _daprClient.InvokeMethodAsync(HttpMethod.Put, AppIds.Accessor, $"users-accessor/{userId}", user);
             return true;
         }
         catch (Exception ex)
@@ -270,7 +270,7 @@ public class AccessorClient(
     {
         try
         {
-            await _daprClient.InvokeMethodAsync(HttpMethod.Delete, "accessor", $"users-accessor/{userId}");
+            await _daprClient.InvokeMethodAsync(HttpMethod.Delete, AppIds.Accessor, $"users-accessor/{userId}");
             return true;
         }
         catch (Exception ex)
@@ -287,7 +287,7 @@ public class AccessorClient(
         try
         {
             var users = await _daprClient.InvokeMethodAsync<List<UserData>>(
-                HttpMethod.Get, "accessor", "users-accessor", ct);
+                HttpMethod.Get, AppIds.Accessor, "users-accessor", ct);
 
             _logger.LogInformation("Retrieved {Count} users from accessor", users?.Count ?? 0);
             return users ?? Enumerable.Empty<UserData>();

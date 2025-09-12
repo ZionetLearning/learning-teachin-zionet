@@ -1,6 +1,7 @@
-﻿using Manager.Models.Users;
-using Manager.Services.Clients.Accessor;
+﻿using System.Security.Claims;
 using Manager.Helpers;
+using Manager.Models.Users;
+using Manager.Services.Clients.Accessor;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Endpoints;
@@ -122,7 +123,8 @@ public static class UsersEndpoints
         [FromRoute] Guid userId,
         [FromBody] UpdateUserModel user,
         [FromServices] IAccessorClient accessorClient,
-        [FromServices] ILogger<UserEndpoint> logger)
+        [FromServices] ILogger<UserEndpoint> logger,
+        HttpContext http)
     {
         using var scope = logger.BeginScope("UpdateUser {UserId}:", userId);
 
@@ -155,6 +157,21 @@ public static class UsersEndpoints
             {
                 logger.LogWarning("Non-student tried to set HebrewLevel. Role: {Role}", existingUser.Role);
                 return Results.BadRequest("Hebrew level can only be set for students.");
+            }
+
+            // Only Admins can change role of another user
+            var callerRole = http.User.FindFirst(ClaimTypes.Role)?.Value;
+
+            if (!Enum.TryParse<Role>(callerRole, ignoreCase: true, out var parsedCallerRole))
+            {
+                logger.LogWarning("Could not determine caller role.");
+                return Results.Forbid();
+            }
+
+            if (user.Role.HasValue && parsedCallerRole != Role.Admin)
+            {
+                logger.LogWarning("Non-admin attempted to change role. Caller role: {CallerRole}", parsedCallerRole);
+                return Results.Forbid();
             }
 
             var success = await accessorClient.UpdateUserAsync(user, userId);

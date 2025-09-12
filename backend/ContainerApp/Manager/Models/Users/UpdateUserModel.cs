@@ -1,4 +1,6 @@
 ﻿
+using System.Text.Json.Serialization;
+
 namespace Manager.Models.Users;
 
 public class UpdateUserModel
@@ -8,4 +10,7 @@ public class UpdateUserModel
     public string? Email { get; set; }
     public SupportedLanguage? PreferredLanguageCode { get; set; }
     public HebrewLevel? HebrewLevelValue { get; set; }
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public Role? Role { get; set; }
 }

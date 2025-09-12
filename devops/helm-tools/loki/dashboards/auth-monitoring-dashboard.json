@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 54,
+  "id": 2,
   "links": [],
   "panels": [
     {
@@ -173,6 +173,7 @@
           "direction": "backward",
           "editorMode": "code",
           "expr": "sum by(namespace) (\r\n  count_over_time({container=\"manager\"} |= \"Attempting login\"[$__auto])\r\n)\r\n",
+          "legendFormat": "{{namespace}}",
           "queryType": "range",
           "refId": "A"
         }
