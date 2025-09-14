@@ -1,6 +1,6 @@
 ﻿using Accessor.Models.RefreshSessions;
 
-namespace Accessor.Services;
+namespace Accessor.Services.Interfaces;
 
 public interface IRefreshSessionService
 {

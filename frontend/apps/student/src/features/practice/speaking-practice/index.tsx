@@ -6,6 +6,7 @@ import { comparePhrases, phrases, phrasesWithNikud } from "./utils";
 
 import { useStyles } from "./style";
 import { useAvatarSpeech } from "@student/hooks";
+import { useAzureSpeechToken } from "@student/api";
 
 const Feedback = {
   Perfect: "Perfect!",
@@ -28,8 +29,10 @@ export const SpeakingPractice = () => {
   const recognizerRef = useRef<sdk.SpeechRecognizer | null>(null); // for speech recognition from microphone
   const audioConfigRef = useRef<sdk.AudioConfig | null>(null); // for audio input/output from microphone/speaker
 
-  const speechConfig = sdk.SpeechConfig.fromSubscription(
-    import.meta.env.VITE_AZURE_SPEECH_KEY!,
+  //use useAzureSpeechToken here to get token and set it to speechConfig
+  const { data: azureSpeechToken } = useAzureSpeechToken();
+  const speechConfig = sdk.SpeechConfig.fromAuthorizationToken(
+    azureSpeechToken?.token ?? "",
     import.meta.env.VITE_AZURE_REGION!,
   );
 

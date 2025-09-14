@@ -2,23 +2,23 @@
 using DotQueue;
 using Accessor.Models;
 using Accessor.Models.QueueMessages;
-using Accessor.Services;
+using Accessor.Services.Interfaces;
 
 namespace Accessor.Endpoints;
 
 public class AccessorQueueHandler : IQueueHandler<Message>
 {
-    private readonly IAccessorService _accessorService;
+    private readonly ITaskService _taskService;
     private readonly IManagerCallbackQueueService _managerCallbackQueueService;
     private readonly ILogger<AccessorQueueHandler> _logger;
     private readonly Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>> _handlers;
 
     public AccessorQueueHandler(
-        IAccessorService accessorService,
+        ITaskService taskService,
         IManagerCallbackQueueService managerCallbackQueueService,
         ILogger<AccessorQueueHandler> logger)
     {
-        _accessorService = accessorService;
+        _taskService = taskService;
         _managerCallbackQueueService = managerCallbackQueueService;
         _logger = logger;
         _handlers = new Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>>
@@ -65,7 +65,7 @@ public class AccessorQueueHandler : IQueueHandler<Message>
             }
 
             _logger.LogDebug("Processing task {Id}", payload.Id);
-            var result = await _accessorService.UpdateTaskNameAsync(
+            var result = await _taskService.UpdateTaskNameAsync(
                 payload.Id,
                 payload.Name,
                 ifMatch: null
@@ -132,7 +132,7 @@ public class AccessorQueueHandler : IQueueHandler<Message>
 
             _logger.LogDebug("Creating task {Id}", taskModel.Id);
 
-            await _accessorService.CreateTaskAsync(taskModel);
+            await _taskService.CreateTaskAsync(taskModel);
 
             var notification = new Notification
             {

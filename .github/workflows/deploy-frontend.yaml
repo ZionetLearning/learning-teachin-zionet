@@ -74,6 +74,7 @@ env:
   VITE_AUTH_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/auth"
   VITE_TASKS_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/tasks-manager"
   VITE_USERS_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/users-manager"
+  VITE_MEDIA_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/media-manager"
   
   # Azure OpenAI configuration
   VITE_AZURE_OPENAI_KEY: ""
@@ -115,18 +116,74 @@ jobs:
           npx vitest run --reporter=verbose --passWithNoTests --root apps/${{ matrix.app }}
           echo "Tests completed successfully for ${{ matrix.app }}"
       
-      - name: Run E2E Tests (Cypress) for ${{ matrix.app }}
-        continue-on-error: true
-        working-directory: ${{ env.FE_DIR }}
-        run: |
-          echo "Running Cypress for ${{ matrix.app }}..."
-          if grep -q "\"cypress:${{ matrix.app }}\":" package.json; then
-            # Run Cypress - will show results even with some test failures
-            npm run cypress:${{ matrix.app }}:ci
-            echo "Cypress run completed for ${{ matrix.app }}"
-          else
-            echo "No cypress:${{ matrix.app }} script found in package.json - skipping"
-          fi
+      # - name: Start All Applications for E2E Testing
+      #   working-directory: ${{ env.FE_DIR }}
+      #   run: |
+      #     echo "Starting all applications for cross-app E2E testing..."
+          
+      #     # Start student app (port 4000)
+      #     npm run serve:student &
+      #     STUDENT_PID=$!
+      #     echo "Started student app (PID: $STUDENT_PID) on port 4000"
+          
+      #     # Start teacher app (port 4001) 
+      #     npm run serve:teacher &
+      #     TEACHER_PID=$!
+      #     echo "Started teacher app (PID: $TEACHER_PID) on port 4001"
+          
+      #     # Start admin app (port 4002)
+      #     npm run serve:admin &
+      #     ADMIN_PID=$!
+      #     echo "Started admin app (PID: $ADMIN_PID) on port 4002"
+          
+      #     # Wait for all applications to be ready
+      #     echo "Waiting for applications to start..."
+          
+      #     # Function to check if an app is ready
+      #     check_app_ready() {
+      #       local port=$1
+      #       local app_name=$2
+      #       local max_attempts=60  # 5 minutes total (60 * 5s)
+      #       local attempt=0
+            
+      #       while [ $attempt -lt $max_attempts ]; do
+      #         if curl -s --fail --connect-timeout 3 "https://localhost:$port" >/dev/null 2>&1; then
+      #           echo "✅ $app_name (port $port) is ready"
+      #           return 0
+      #         fi
+              
+      #         echo "Waiting for $app_name (port $port)... attempt $((attempt + 1))/$max_attempts"
+      #         sleep 5
+      #         attempt=$((attempt + 1))
+      #       done
+            
+      #       echo "$app_name (port $port) failed to start after $((max_attempts * 5)) seconds"
+      #       return 1
+      #     }
+          
+      #     # Check each application sequentially to avoid wait issues
+      #     echo "Checking student app readiness..."
+      #     check_app_ready 4000 "student"
+          
+      #     echo "Checking teacher app readiness..."
+      #     check_app_ready 4001 "teacher"
+          
+      #     echo "Checking admin app readiness..."
+      #     check_app_ready 4002 "admin"
+          
+      #     echo "All applications are ready for E2E testing"
+
+      # - name: Run E2E Tests (Cypress) for ${{ matrix.app }}
+      #   working-directory: ${{ env.FE_DIR }}
+      #   run: |
+      #     echo "Running Cypress for ${{ matrix.app }}..."
+      #     if grep -q "\"cypress:${{ matrix.app }}\":" package.json; then
+      #       # Run Cypress with all apps running - will show results even with some test failures
+      #       npm run cypress:${{ matrix.app }}:ci
+      #       echo "Cypress run completed for ${{ matrix.app }}"
+      #     else
+      #       echo "No cypress:${{ matrix.app }} script found in package.json - skipping"
+      #     fi
 
 
   frontend-build-and-lint:

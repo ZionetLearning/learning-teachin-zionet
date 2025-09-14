@@ -1,9 +1,9 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
-using System.Threading.Tasks;
 using Accessor.Endpoints;
 using Accessor.Models;
 using Accessor.Services;
+using Accessor.Services.Interfaces;
 using FluentAssertions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
@@ -16,10 +16,10 @@ namespace AccessorUnitTests.Endpoints;
 
 public class AccessorStatsEndpointsTests
 {
-    private static HttpClient BuildClientReturning(StatsSnapshot snapshot, out Mock<IAccessorService> svcMock)
+    private static HttpClient BuildClientReturning(StatsSnapshot snapshot, out Mock<IStatsService> svcMock)
     {
-        svcMock = new Mock<IAccessorService>(MockBehavior.Strict);
-        svcMock.Setup(s => s.ComputeStatsAsync(It.IsAny<System.Threading.CancellationToken>()))
+        svcMock = new Mock<IStatsService>(MockBehavior.Strict);
+        svcMock.Setup(s => s.ComputeStatsAsync(It.IsAny<CancellationToken>()))
                .ReturnsAsync(snapshot);
 
         var builder = WebApplication.CreateBuilder();
@@ -29,13 +29,13 @@ public class AccessorStatsEndpointsTests
         builder.Services.AddLogging(x => x.AddDebug());
 
         var app = builder.Build();
-        app.MapStatsEndpoints(); // your extension method
+        app.MapStatsEndpoints();
 
         app.RunAsync(); // start test server
         return app.GetTestClient();
     }
 
-    [Fact(DisplayName = "GET /internal/stats/snapshot => 200 + body")]
+    [Fact(DisplayName = "GET /internal-accessor/stats/snapshot => 200 + body")]
     public async Task Snapshot_Returns_Ok_With_Snapshot()
     {
         var expected = new StatsSnapshot(
@@ -46,7 +46,7 @@ public class AccessorStatsEndpointsTests
             ActiveUsersLast15m: 2,
             MessagesLast5m: 1,
             MessagesLast15m: 3,
-            GeneratedAtUtc: System.DateTimeOffset.UtcNow);
+            GeneratedAtUtc: DateTimeOffset.UtcNow);
 
         var client = BuildClientReturning(expected, out var svc);
 

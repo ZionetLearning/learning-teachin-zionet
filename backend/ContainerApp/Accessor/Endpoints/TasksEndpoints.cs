@@ -1,5 +1,6 @@
 ﻿using Accessor.Models;
 using Accessor.Services;
+using Accessor.Services.Interfaces;
 using Accessor.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 
@@ -22,21 +23,27 @@ public static class TasksEndpoints
     // ---- handlers (moved from AccessorEndpoints) ----
     public static async Task<IResult> GetTaskByIdAsync(
         int id,
-        [FromServices] IAccessorService accessorService,
-        [FromServices] ILogger<AccessorService> logger,
-        HttpResponse response)
+        [FromServices] ITaskService taskService,
+        [FromServices] ILogger<TaskService> logger,
+        HttpResponse response) // <-- add this
     {
         using var scope = logger.BeginScope("Method: {Method}, TaskId: {TaskId}", nameof(GetTaskByIdAsync), id);
+
         try
         {
-            var res = await accessorService.GetTaskWithEtagAsync(id);
+            var res = await taskService.GetTaskWithEtagAsync(id);
             if (res is null)
             {
                 logger.LogWarning("Task not found.");
                 return Results.NotFound($"Task with ID {id} not found.");
             }
 
-            response.Headers.ETag = $"\"{res.Value.ETag}\"";
+            // Ensure the ETag is quoted, per RFC 7232
+            if (!string.IsNullOrWhiteSpace(res.Value.ETag))
+            {
+                response.Headers.ETag = $"\"{res.Value.ETag}\"";
+            }
+
             logger.LogInformation("Successfully retrieved task with ETag.");
             return Results.Ok(res.Value.Task);
         }
@@ -49,15 +56,15 @@ public static class TasksEndpoints
 
     public static async Task<IResult> CreateTaskAsync(
         [FromBody] TaskModel task,
-        [FromServices] IAccessorService accessorService,
-        [FromServices] ILogger<AccessorService> logger,
+        [FromServices] ITaskService taskService,
+        [FromServices] ILogger<TaskService> logger,
         CancellationToken ct)
     {
         using var scope = logger.BeginScope("Method: {Method}, TaskId: {TaskId}", nameof(CreateTaskAsync), task.Id);
 
         try
         {
-            await accessorService.CreateTaskAsync(task);
+            await taskService.CreateTaskAsync(task);
             return Results.Created($"/api/tasks/{task.Id}", task);
         }
         catch (ConflictException ex)
@@ -82,14 +89,14 @@ public static class TasksEndpoints
     public static async Task<IResult> UpdateTaskNameAsync(
         [FromBody] UpdateTaskName request,
         [FromHeader(Name = "If-Match")] string? ifMatch,
-        [FromServices] IAccessorService accessorService,
-        [FromServices] ILogger<AccessorService> logger,
+        [FromServices] ITaskService taskService,
+        [FromServices] ILogger<TaskService> logger,
         HttpResponse response)
     {
         using var scope = logger.BeginScope("Method: {Method}, TaskId: {TaskId}, NewName: {NewName}", nameof(UpdateTaskNameAsync), request.Id, request.Name);
         try
         {
-            var result = await accessorService.UpdateTaskNameAsync(request.Id, request.Name, ifMatch);
+            var result = await taskService.UpdateTaskNameAsync(request.Id, request.Name, ifMatch);
 
             if (result.NotFound)
             {
@@ -119,13 +126,13 @@ public static class TasksEndpoints
 
     public static async Task<IResult> DeleteTaskAsync(
         int taskId,
-        [FromServices] IAccessorService accessorService,
-        [FromServices] ILogger<AccessorService> logger)
+        [FromServices] ITaskService taskService,
+        [FromServices] ILogger<TaskService> logger)
     {
         using var scope = logger.BeginScope("Method: {Method}, TaskId: {TaskId}", nameof(DeleteTaskAsync), taskId);
         try
         {
-            var deleted = await accessorService.DeleteTaskAsync(taskId);
+            var deleted = await taskService.DeleteTaskAsync(taskId);
             if (!deleted)
             {
                 return Results.NotFound($"Task with ID {taskId} not found.");

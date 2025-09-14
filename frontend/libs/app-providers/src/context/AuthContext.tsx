@@ -1,6 +1,5 @@
 import { createContext } from "react";
-
-import { AppRoleType, SignupData } from "@app-providers/types";
+import { AppRoleType, SignupData, UserDto } from "@app-providers/types";
 
 export interface AuthContextValue {
   isAuthorized: boolean;
@@ -10,6 +9,7 @@ export interface AuthContextValue {
   logout: () => void;
   accessToken?: string | null;
   loginStatus?: { isLoading: boolean; error: unknown };
+  user: UserDto | null;
 }
 
 export const AuthContext = createContext<AuthContextValue | undefined>(
