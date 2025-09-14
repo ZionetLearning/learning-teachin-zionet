@@ -2,6 +2,7 @@ using System.IO.Compression;
 using System.Net;
 using System.Text;
 using System.Threading.RateLimiting;
+using Azure.Identity;
 using Azure.Messaging.ServiceBus;
 using DotQueue;
 using Manager.Constants;
@@ -93,7 +94,13 @@ if (!string.IsNullOrEmpty(signalREndpoint))
     // Use Managed Identity (Kubernetes/Production)
     signalRBuilder.AddAzureSignalR(options =>
     {
-        options.Endpoints = new[] { new Microsoft.Azure.SignalR.ServiceEndpoint(signalREndpoint) };
+        options.Endpoints = new[] {
+            new Microsoft.Azure.SignalR.ServiceEndpoint(
+                signalREndpoint,
+                Microsoft.Azure.SignalR.EndpointType.Primary,
+                null,
+                new DefaultAzureCredential())
+        };
     });
 }
 else if (!string.IsNullOrEmpty(signalRConnString))
