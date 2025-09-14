@@ -76,6 +76,39 @@
         "avatar": "אווטאר",
         "lips": "שפתיים"
       },
+      "chatHistory": {
+        "title": "היסטוריית צ'אט",
+        "toggleButton": {
+          "title": "פתח/סגר היסטוריית צ'אט",
+          "ariaLabel": "פתח או סגר את סרגל היסטוריית הצ'אט"
+        },
+        "closeButton": {
+          "title": "סגור היסטוריית צ'אט",
+          "ariaLabel": "סגור את סרגל היסטוריית הצ'אט"
+        },
+        "newChatButton": {
+          "title": "התחל שיחה חדשה",
+          "text": "צ'אט חדש"
+        },
+        "untitledChat": "צ'אט ללא שם",
+        "dateFormat": {
+          "today": "היום",
+          "yesterday": "אתמול",
+          "daysAgo": "לפני {{count}} ימים",
+          "unknown": "תאריך לא ידוע"
+        },
+        "loading": {
+          "chats": "טוען צ'אטים...",
+          "history": "טוען היסטוריית צ'אט..."
+        },
+        "emptyState": {
+          "title": "אין שיחות עדיין",
+          "description": "התחל צ'אט חדש כדי לראות את היסטוריית השיחות שלך כאן."
+        },
+        "overlay": {
+          "ariaLabel": "לחץ לסגירת היסטוריית הצ'אט"
+        }
+      },
       "avatarOu": {
         "avatarOuPage": "אווטאר - אוריאל",
         "ouAvatar": "Ou Avatar",
