@@ -8,7 +8,9 @@ PROXY_NAMESPACE="db-proxy"
 kubectl create namespace "$PROXY_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 
 # Deploy/upgrade the proxy using Helm with inline values (no values.yaml dependency)
-helm upgrade --install postgres-proxy devops/kubernetes/charts \
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD/../../..")"
+CHART_PATH="$REPO_ROOT/devops/kubernetes/charts"
+helm upgrade --install postgres-proxy "$CHART_PATH" \
   --namespace "$PROXY_NAMESPACE" \
   --set namespace.name="$PROXY_NAMESPACE" \
   --set namespace.create=false \
