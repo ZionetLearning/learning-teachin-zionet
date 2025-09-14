@@ -47,6 +47,8 @@ public class TaskIntegrationTests(
         var after = await TaskUpdateHelper.WaitForTaskByIdAsync(Client, first.Id, timeoutSeconds: 10);
         after.Name.Should().Be(first.Name);
         after.Payload.Should().Be(first.Payload);
+        await Client.DeleteAsync(ApiRoutes.TaskById(first.Id));
+        await TaskUpdateHelper.WaitForTaskDeletionAsync(Client, first.Id);
     }
 
     [Fact(DisplayName = "POST /tasks-manager/task - With valid task should return 202 Accepted")]
@@ -82,6 +84,8 @@ public class TaskIntegrationTests(
 
         receivedNotification.Should().NotBeNull("Expected a success notification for task creation");
         OutputHelper.WriteLine($"Received notification: {receivedNotification!.Notification.Message}");
+        await Client.DeleteAsync(ApiRoutes.TaskById(task.Id));
+        await TaskUpdateHelper.WaitForTaskDeletionAsync(Client, task.Id);
     }
 
     [Theory(DisplayName = "POST /tasks-manager/task - With invalid task should return 400 BadRequest")]
@@ -108,6 +112,8 @@ public class TaskIntegrationTests(
         // 2) POST second with same Id but different payload — Manager doesn’t check, still Accepted
         var r2 = await Client.PostAsJsonAsync(ApiRoutes.Task, second);
         r2.ShouldBeAccepted();
+        await Client.DeleteAsync(ApiRoutes.TaskById(first.Id));
+        await TaskUpdateHelper.WaitForTaskDeletionAsync(Client, first.Id);
     }
 
     [Fact(DisplayName = "GET /tasks-manager/task/{id} - With valid ID should return task")]
@@ -125,6 +131,9 @@ public class TaskIntegrationTests(
         fetchedTask.Payload.Should().Be(task.Payload);
 
         OutputHelper.WriteLine($"Verified task: ID={fetchedTask.Id}, Name={fetchedTask.Name}");
+        await Client.DeleteAsync(ApiRoutes.TaskById(task.Id));
+        await TaskUpdateHelper.WaitForTaskDeletionAsync(Client, task.Id);
+
     }
 
     [Theory(DisplayName = "GET /tasks-manager/task/{id} - Invalid ID should return 404 Not Found")]
@@ -159,6 +168,8 @@ public class TaskIntegrationTests(
 
         updated!.Name.Should().Be(newName);
         OutputHelper.WriteLine($"Successfully updated task name to: {updated.Name}");
+        await Client.DeleteAsync(ApiRoutes.TaskById(task.Id));
+        await TaskUpdateHelper.WaitForTaskDeletionAsync(Client, task.Id);
     }
 
     [Fact(DisplayName = "PUT /tasks-manager/task/{id}/{name} - Invalid ID should return 404 Not Found")]
