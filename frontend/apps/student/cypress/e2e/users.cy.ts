@@ -1,7 +1,6 @@
 import { locateUserRowByEmail, addCreatedEmail } from "../support/commands";
 
 describe("Users Page Flow (admin app @4002)", () => {
-  // Deterministic credentials shared across tests (no Date.now)
   const TEST_EMAIL = "e2e_users_fixed_user@example.com";
   const UPDATED_EMAIL = "e2e_users_fixed_user+updated@example.com";
   const TEST_PASSWORD = "Passw0rd!";
@@ -155,11 +154,8 @@ describe("Users Page Flow (admin app @4002)", () => {
   });
 
   it("can edit a user inline (deterministic)", () => {
-    // ensure clean state
     deleteUserIfExistsByEmail(TEST_EMAIL);
-    // create deterministic user first
     createDeterministicUser(TEST_EMAIL);
-    // update email deterministically
     const updatedEmail = UPDATED_EMAIL;
     addCreatedEmail(updatedEmail);
     locateUserRowByEmail(TEST_EMAIL).then((rowOrNull) => {
@@ -178,10 +174,8 @@ describe("Users Page Flow (admin app @4002)", () => {
   });
 
   it("can delete a newly created user (deterministic)", () => {
-    // ensure clean state and create
     deleteUserIfExistsByEmail(TEST_EMAIL);
     createDeterministicUser(TEST_EMAIL);
-    // delete via UI
     locateUserRowByEmail(TEST_EMAIL).then((rowOrNull) => {
       expect(rowOrNull, "row to delete should be found").to.exist;
       cy.on("window:confirm", () => true);

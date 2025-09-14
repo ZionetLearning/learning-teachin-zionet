@@ -40,12 +40,6 @@ const clearSearch = () => {
   });
 };
 
-const setRowsPerPageAll = () => {
-  cy.get('[data-testid="users-pagination"] select', { timeout: 10000 })
-    .should("be.visible")
-    .select("-1");
-};
-
 export const locateUserRowByEmail = (email: string) => {
   waitForUsersList();
 
@@ -61,7 +55,6 @@ export const locateUserRowByEmail = (email: string) => {
     }
 
     clearSearch();
-    setRowsPerPageAll();
     waitForUsersList();
 
     return cy.get("body").then(($b2) => {
@@ -110,7 +103,6 @@ const deleteOneByEmailUI = (
     cy.get('[data-testid="sidebar-users"]', { timeout: 20000 }).click();
     cy.get('[data-testid="users-page"]', { timeout: 25000 }).should("exist");
     waitForUsersList();
-    setRowsPerPageAll();
 
     locateUserRowByEmail(email).then((rowOrNull) => {
       if (!rowOrNull) {
@@ -269,11 +261,6 @@ const deleteOneByEmailUI = (
 };
 
 export const deleteAllCreatedUsers = () => {
-  if (createdEmails.size === 0) {
-    cy.log("[e2e] No created users to delete.");
-    return;
-  }
-
   const adminEmail =
     (Cypress.env("ADMIN_EMAIL") as string) ||
     (Cypress.env("TEACHER_EMAIL") as string) ||
@@ -285,15 +272,21 @@ export const deleteAllCreatedUsers = () => {
 
   const adminCreds = { email: adminEmail, password: adminPassword };
 
-  cy.log(
-    `[e2e] Deleting ${createdEmails.size} created user(s) via admin UI...`,
-  );
-
-  const emails = Array.from(createdEmails);
+  const deletionSet = new Set<string>(createdEmails);
+  const defaultTestEmail =
+    (Cypress.env("E2E_TEST_EMAIL") as string) || "e2e_fixed_user@example.com";
+  deletionSet.add(defaultTestEmail);
+  deletionSet.add(adminEmail);
+  const emails = Array.from(deletionSet);
   const nonAdmin = emails.filter((e) => e !== adminEmail);
-  const ordered = emails.includes(adminEmail)
-    ? [...nonAdmin, adminEmail]
-    : nonAdmin;
+  const ordered = [...nonAdmin, adminEmail];
+
+  if (ordered.length === 0) {
+    cy.log("[e2e] No users to delete.");
+    return;
+  }
+
+  cy.log(`[e2e] Deleting ${ordered.length} user(s) via admin UI...`);
 
   cy.wrap(ordered).each((email: string) => {
     deleteOneByEmailUI(email, adminCreds);

@@ -112,11 +112,7 @@ export const UserListItem = ({
           />
         ) : (
           <Tooltip title={email} placement="top">
-            <span
-              title={email}
-              className={classes.email}
-              data-testid="users-email"
-            >
+            <span className={classes.email} data-testid="users-email">
               {email}
             </span>
           </Tooltip>
