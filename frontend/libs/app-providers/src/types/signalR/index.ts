@@ -72,10 +72,6 @@ export interface SentenceItem {
   nikud: boolean;
 }
 
-export interface SentenceGeneratedPayload {
-  sentences: SentenceItem[];
-}
-
 // Split sentence types
 export interface SplitSentenceItem {
   words: string[];
@@ -92,10 +88,6 @@ export interface SplitSentenceGeneratedPayload {
 export type UserEventUnion =
   | { eventType: typeof EventType.ChatAiAnswer; payload: ChatAiAnswerPayload }
   | { eventType: typeof EventType.SystemMessage; payload: SystemMessagePayload }
-  | {
-      eventType: typeof EventType.SentenceGeneration;
-      payload: SentenceGeneratedPayload;
-    }
   | {
       eventType: typeof EventType.SplitSentenceGeneration;
       payload: SplitSentenceGeneratedPayload;
