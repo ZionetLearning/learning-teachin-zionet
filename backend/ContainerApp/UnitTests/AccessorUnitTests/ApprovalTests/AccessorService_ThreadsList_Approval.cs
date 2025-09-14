@@ -23,9 +23,6 @@ public class AccessorService_ThreadsList_Approval
         return new AccessorDbContext(opts);
     }
 
-    private static IConfiguration Cfg() =>
-        new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["TaskCache:TTLInSeconds"] = "123" }).Build();
-
     [Fact(Skip = "Fix ApprovalSetup.VerifyJsonClean:  ApprovalSetup needs fixing")]
     public async Task GetThreadsForUser_Snapshot_Projection_And_Order()
     {
