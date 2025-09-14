@@ -8,4 +8,5 @@ public class UpdateUserModel
     public string? Email { get; set; }
     public SupportedLanguage? PreferredLanguageCode { get; set; }
     public HebrewLevel? HebrewLevelValue { get; set; }
+    public List<string>? Interests { get; set; }
 }

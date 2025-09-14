@@ -23,4 +23,5 @@ public class UserModel
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public HebrewLevel? HebrewLevelValue { get; set; }
+    public required List<string> Interests { get; set; }
 }

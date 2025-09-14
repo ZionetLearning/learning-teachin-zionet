@@ -10,4 +10,5 @@ public class UserData
     public required Role Role { get; set; }
     public SupportedLanguage PreferredLanguageCode { get; set; }
     public HebrewLevel? HebrewLevelValue { get; set; }
+    public List<string> Interests { get; set; } = [];
 }

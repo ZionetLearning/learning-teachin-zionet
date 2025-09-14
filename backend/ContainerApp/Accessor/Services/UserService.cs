@@ -60,7 +60,8 @@ public class UserService : IUserService
                 LastName = u.LastName,
                 Role = u.Role,
                 PreferredLanguageCode = u.PreferredLanguageCode,
-                HebrewLevelValue = u.HebrewLevelValue
+                HebrewLevelValue = u.HebrewLevelValue,
+                Interests = u.Interests
             })
             .ToListAsync();
 
@@ -108,6 +109,11 @@ public class UserService : IUserService
         if (updateUser.HebrewLevelValue is not null)
         {
             user.HebrewLevelValue = updateUser.HebrewLevelValue;
+        }
+
+        if (updateUser.Interests is not null)
+        {
+            user.Interests = updateUser.Interests;
         }
 
         await _db.SaveChangesAsync();
