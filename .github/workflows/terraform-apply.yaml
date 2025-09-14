@@ -101,6 +101,8 @@ jobs:
             TFVARS_FILE="terraform.tfvars.dev"
           elif [ "$ENVIRONMENT_NAME" = "prod" ]; then
             TFVARS_FILE="terraform.tfvars.prod"
+          elif [ "$ENVIRONMENT_NAME" = "podsstart" ]; then
+            TFVARS_FILE="terraform.tfvars.podsstart"
           else
             # Custom environments use template
             TFVARS_FILE="terraform.tfvars.template"
