@@ -147,8 +147,8 @@ jobs:
           echo "🔍 Fixing PostgreSQL private FQDN for environment: $ENVIRONMENT_NAME"
           
           # Make script executable and run with environment-specific parameters
-          chmod +x ./devops/fix-postgres-private-fqdn.sh
-          ./devops/fix-postgres-private-fqdn.sh \
+          chmod +x ./.github/workflows/scripts/fix-postgres-private-fqdn.sh
+          ./.github/workflows/scripts/fix-postgres-private-fqdn.sh \
             "$ENVIRONMENT_NAME" \
             "${ENVIRONMENT_NAME}-zionet-learning-2025" \
             "privatelink.postgres.database.azure.com" \

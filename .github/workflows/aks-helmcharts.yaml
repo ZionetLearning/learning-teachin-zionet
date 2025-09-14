@@ -137,6 +137,28 @@ jobs:
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
 
+      - name: Get PostgreSQL FQDN from Key Vault
+        run: |
+          echo "🔍 Getting PostgreSQL FQDN from Key Vault..."
+          
+          # Get the connection string from Key Vault (already updated by terraform-apply)
+          CONNECTION_STRING=$(az keyvault secret show \
+            --vault-name teachin-seo-kv \
+            --name "${TARGET_NAMESPACE}-postgres-connection" \
+            --query 'value' \
+            --output tsv)
+          
+          # Extract host from connection string
+          POSTGRES_PRIVATE_FQDN=$(echo "$CONNECTION_STRING" | grep -o 'Host=[^;]*' | cut -d'=' -f2)
+          
+          if [ -z "$POSTGRES_PRIVATE_FQDN" ]; then
+            echo "❌ Error: Could not extract PostgreSQL FQDN from Key Vault secret"
+            exit 1
+          fi
+          
+          echo "✅ Found PostgreSQL FQDN from Key Vault: $POSTGRES_PRIVATE_FQDN"
+          echo "POSTGRES_PRIVATE_FQDN=$POSTGRES_PRIVATE_FQDN" >> $GITHUB_ENV
+
       - name: Create namespace
         if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
         run: |
@@ -260,6 +282,7 @@ jobs:
             --set global.keyvault.clientId="$KEYVAULT_CLIENT_ID" \
             --set global.keyvault.tenantId="$KEYVAULT_TENANT_ID" \
             --set dapr.installComponents=false \
+            --set postgresProxy.target.host="$POSTGRES_PRIVATE_FQDN" \
           | grep -n '^kind: Namespace' && { echo "Namespace still rendered"; exit 1; } || echo "OK: no Namespace in chart"
 
       - name: Helm upgrade/install app
@@ -281,7 +304,25 @@ jobs:
             --set global.keyvault.clientId="$KEYVAULT_CLIENT_ID" \
             --set global.keyvault.tenantId="$KEYVAULT_TENANT_ID" \
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
-            --set dapr.installComponents=false
+            --set dapr.installComponents=false \
+            --set postgresProxy.target.host="$POSTGRES_PRIVATE_FQDN"
+
+      - name: Verify postgres-proxy deployment
+        run: |
+          echo "🔍 Verifying postgres-proxy deployment..."
+          
+          # Wait for postgres-proxy pod to be ready
+          kubectl wait --for=condition=ready pod -l app=postgres-proxy -n "$TARGET_NAMESPACE" --timeout=120s
+          
+          # Check if service is created
+          kubectl get service -l app=postgres-proxy -n "$TARGET_NAMESPACE"
+          
+          # Show postgres-proxy logs
+          echo "📋 Postgres-proxy logs:"
+          kubectl logs -l app=postgres-proxy -n "$TARGET_NAMESPACE" --tail=10 || echo "No logs yet"
+          
+          echo "✅ Postgres-proxy verification complete"
+          echo "📝 FQDN used: $POSTGRES_PRIVATE_FQDN"
 
       - name: Diagnostics (on failure)
         if: failure()

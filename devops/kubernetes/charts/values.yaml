@@ -212,6 +212,42 @@ accessor:
       cpu: "500m"
       memory: "512Mi"
 
+postgresProxy:
+  enabled: true  # Can be disabled for environments that don't need it
+  name: postgres-proxy
+  labels:
+    selectorKey: app
+    selectorValue: postgres-proxy
+  image:
+    name: alpine/socat
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  ports:
+    container: 5432
+    service: 5432
+  service:
+    type: ClusterIP
+  # PostgreSQL target configuration
+  # Note: target.host is set dynamically by CI/CD workflow from Key Vault
+  # The port defaults to 5432 but can be overridden if needed
+  target:
+    host: ""  # Set dynamically by --set postgresProxy.target.host="$POSTGRES_PRIVATE_FQDN"
+    port: 5432
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+    limits:
+      cpu: "100m"
+      memory: "128Mi"
+  probes:
+    liveness:
+      initialDelaySeconds: 30
+      periodSeconds: 10
+    readiness:
+      initialDelaySeconds: 10
+      periodSeconds: 5
+
 dapr:
   # Shared connection for Service Bus components
   connection:

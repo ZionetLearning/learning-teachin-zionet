@@ -1,0 +1,65 @@
+{{- if .Values.postgresProxy.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "chart.fullname" . }}-{{ .Values.postgresProxy.name }}
+  namespace: {{ include "chart.namespace" . }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+    {{ .Values.postgresProxy.labels.selectorKey }}: {{ .Values.postgresProxy.labels.selectorValue }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{ .Values.postgresProxy.labels.selectorKey }}: {{ .Values.postgresProxy.labels.selectorValue }}
+  template:
+    metadata:
+      labels:
+        {{ .Values.postgresProxy.labels.selectorKey }}: {{ .Values.postgresProxy.labels.selectorValue }}
+        {{- include "chart.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: {{ .Values.postgresProxy.name }}
+        image: "{{ .Values.postgresProxy.image.name }}:{{ .Values.postgresProxy.image.tag }}"
+        imagePullPolicy: {{ .Values.postgresProxy.image.pullPolicy }}
+        command: ["socat"]
+        args: 
+        - "TCP-LISTEN:{{ .Values.postgresProxy.ports.container }},fork,reuseaddr"
+        - "TCP:{{ .Values.postgresProxy.target.host }}:{{ .Values.postgresProxy.target.port }}"
+        env:
+        - name: PROXY_TARGET
+          value: "{{ .Values.postgresProxy.target.host }}:{{ .Values.postgresProxy.target.port }}"
+        ports:
+        - containerPort: {{ .Values.postgresProxy.ports.container }}
+          name: postgres
+        resources:
+          {{- toYaml .Values.postgresProxy.resources | nindent 10 }}
+        livenessProbe:
+          tcpSocket:
+            port: {{ .Values.postgresProxy.ports.container }}
+          initialDelaySeconds: {{ .Values.postgresProxy.probes.liveness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.postgresProxy.probes.liveness.periodSeconds }}
+        readinessProbe:
+          tcpSocket:
+            port: {{ .Values.postgresProxy.ports.container }}
+          initialDelaySeconds: {{ .Values.postgresProxy.probes.readiness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.postgresProxy.probes.readiness.periodSeconds }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "chart.fullname" . }}-{{ .Values.postgresProxy.name }}-svc
+  namespace: {{ include "chart.namespace" . }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+    {{ .Values.postgresProxy.labels.selectorKey }}: {{ .Values.postgresProxy.labels.selectorValue }}
+spec:
+  selector:
+    {{ .Values.postgresProxy.labels.selectorKey }}: {{ .Values.postgresProxy.labels.selectorValue }}
+  ports:
+  - name: postgres
+    port: {{ .Values.postgresProxy.ports.service }}
+    targetPort: {{ .Values.postgresProxy.ports.container }}
+    protocol: TCP
+  type: {{ .Values.postgresProxy.service.type }}
+{{- end }}
