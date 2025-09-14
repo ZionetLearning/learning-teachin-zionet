@@ -66,7 +66,11 @@ public class AccessorQueueHandler : IQueueHandler<Message>
             }
 
             _logger.LogDebug("Processing task {Id}", payload.Id);
-            await _taskService.UpdateTaskNameAsync(payload.Id, payload.Name);
+            var result = await _taskService.UpdateTaskNameAsync(
+                payload.Id,
+                payload.Name,
+                ifMatch: null
+            );
             _logger.LogInformation("Task {Id} processed", payload.Id);
         }
         catch (DotQueue.NonRetryableException ex)
