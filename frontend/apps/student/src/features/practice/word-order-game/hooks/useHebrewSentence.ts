@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import {
   useFetchSentences,
-  useFetchSplitSentences,
+  useGenerateSplitSentences,
   SentenceItem,
   SplitSentenceItem,
 } from "@student/api";
@@ -40,7 +40,7 @@ export const useHebrewSentence = (config: UseHebrewSentenceConfig = {}) => {
     mutateAsync: fetchSplitSentences,
     isPending: splitLoading,
     error: splitError,
-  } = useFetchSplitSentences();
+  } = useGenerateSplitSentences();
 
   // Default configuration
   const defaultConfig = {

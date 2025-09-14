@@ -9,7 +9,7 @@ import {
 import { useSignalR } from "@student/hooks";
 
 export type SentenceRequest = {
-  difficulty: number; // 0=easy, 1=medium, 2=hard
+  difficulty: 0 | 1 | 2; // 0=easy, 1=medium, 2=hard
   nikud: boolean; // Hebrew diacritics
   count: number; // number of sentences to generate
 };
@@ -75,17 +75,9 @@ export const useFetchSentences = () => {
         },
       );
 
-      try {
-        // Make the API call
-        const response = await axios.post(
-          `${AI_BASE_URL}/sentence`,
-          requestBody,
-        );
-        console.log("API response:", response.status, response.data);
-      } catch (apiError) {
-        console.error("API call failed:", apiError);
-        throw apiError;
-      }
+      // Make the API call
+      const response = await axios.post(`${AI_BASE_URL}/sentence`, requestBody);
+      console.log("API response:", response.status, response.data);
 
       console.log("Waiting for SignalR response");
       console.log("Waiting for event type:", EventType.SentenceGeneration);
@@ -104,7 +96,7 @@ export const useFetchSentences = () => {
 };
 
 // Hook for fetching split sentences
-export const useFetchSplitSentences = () => {
+export const useGenerateSplitSentences = () => {
   const AI_BASE_URL = import.meta.env.VITE_AI_URL!;
   const { subscribe } = useSignalR();
 
@@ -149,17 +141,12 @@ export const useFetchSplitSentences = () => {
         },
       );
 
-      try {
-        // Make the API call
-        const response = await axios.post(
-          `${AI_BASE_URL}/sentence/split`,
-          requestBody,
-        );
-        console.log("API response:", response.status, response.data);
-      } catch (apiError) {
-        console.error("API call failed:", apiError);
-        throw apiError;
-      }
+      // Make the API call
+      const response = await axios.post(
+        `${AI_BASE_URL}/sentence/split`,
+        requestBody,
+      );
+      console.log("API response:", response.status, response.data);
 
       console.log("Waiting for SignalR response");
       console.log("Waiting for event type:", EventType.SplitSentenceGeneration);
