@@ -322,17 +322,17 @@ public class AccessorClient(
         }
     }
 
-    public async Task<string> GetSpeechTokenAsync(CancellationToken ct = default)
+    public async Task<SpeechTokenResponse> GetSpeechTokenAsync(CancellationToken ct = default)
     {
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetSpeechTokenAsync), nameof(AccessorClient));
         try
         {
-            var token = await _daprClient.InvokeMethodAsync<string>(
+            var speechTokenResponse = await _daprClient.InvokeMethodAsync<SpeechTokenResponse>(
                 HttpMethod.Get,
                 AppIds.Accessor,
                 "media-accessor/speech/token",
                 ct);
-            return token ?? string.Empty;
+            return speechTokenResponse;
         }
         catch (Exception ex)
         {
@@ -448,4 +448,10 @@ public class AccessorClient(
             throw;
         }
     }
+}
+
+public record SpeechTokenResponse
+{
+    public required string Token { get; init; }
+    public required string Region { get; init; }
 }

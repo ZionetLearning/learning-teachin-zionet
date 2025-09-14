@@ -19,14 +19,14 @@ public class MediaEndpointsTests
     public async Task GetSpeechToken_ReturnsOk_WithToken()
     {
         var svc = Svc();
-
-        const string token = "abc123";
-        svc.Setup(s => s.GetSpeechTokenAsync(CancellationToken.None)).ReturnsAsync(token);
+        
+        var speechTokenResponse = new SpeechTokenResponse { Token = "abc123", Region = "eastus" };
+        svc.Setup(s => s.GetSpeechTokenAsync(CancellationToken.None)).ReturnsAsync(speechTokenResponse);
 
         var result = await MediaEndpoints.GetSpeechTokenAsync(svc.Object, CancellationToken.None);
 
-        var ok = result.Should().BeOfType<Ok<string>>().Subject;
-        ok.Value.Should().Be(token);
+        var ok = result.Should().BeOfType<Ok<SpeechTokenResponse>>().Subject;
+        ok.Value.Should().Be(speechTokenResponse);
         svc.VerifyAll();
     }
 

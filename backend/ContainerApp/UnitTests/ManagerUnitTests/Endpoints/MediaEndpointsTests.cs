@@ -35,9 +35,11 @@ public class MediaEndpointsTests
     [Fact]
     public async Task GetSpeechToken_ReturnsOk_WithWrappedToken()
     {
+        var speechTokenResponse = new SpeechTokenResponse { Token = "abc123", Region = "eastus" };
+        
         _accessorClient.Reset();
         _accessorClient.Setup(a => a.GetSpeechTokenAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync("tok123");
+            .ReturnsAsync(speechTokenResponse);
 
         var result = await PrivateInvoker.InvokePrivateEndpointAsync(
             typeof(MediaEndpoints),
@@ -56,7 +58,7 @@ public class MediaEndpointsTests
     {
         _accessorClient.Reset();
         _accessorClient.Setup(a => a.GetSpeechTokenAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync("");
+            .ThrowsAsync(new Exception("failure"));
 
         var result = await PrivateInvoker.InvokePrivateEndpointAsync(
             typeof(MediaEndpoints),

@@ -15,13 +15,13 @@ public class SpeechService : ISpeechService
         _httpClientFactory = httpClientFactory;
     }
 
-    public async Task<string> GetSpeechTokenAsync(CancellationToken ct = default)
+    public async Task<SpeechTokenResponse> GetSpeechTokenAsync(CancellationToken ct = default)
     {
         try
         {
             var http = _httpClientFactory.CreateClient("SpeechClient");
 
-            using var resp = await http.PostAsync("sts/v1.0/issueToken", content: null, ct);
+            using var resp = await http.PostAsync("sts/v1.0/issueToken", content: null, ct); // the key and region are in the client config in Program.cs
             if (!resp.IsSuccessStatusCode)
             {
                 _logger.LogError("Speech token request failed with {Status}", resp.StatusCode);
@@ -30,7 +30,14 @@ public class SpeechService : ISpeechService
             }
 
             var token = await resp.Content.ReadAsStringAsync(ct);
-            return token;
+            var region = _configuration["Speech:Region"];
+            if (!string.IsNullOrWhiteSpace(token) && !string.IsNullOrWhiteSpace(region))
+            {
+                return new SpeechTokenResponse { Token = token, Region = region };
+            }
+
+            _logger.LogError("token response or region was empty \n token:'{Token}' \n region:'{Region}'", token, region);
+            throw new InvalidOperationException("Speech token response was empty");
         }
         catch (OperationCanceledException)
         {
@@ -52,4 +59,10 @@ public class SpeechService : ISpeechService
             throw;
         }
     }
+}
+
+public record SpeechTokenResponse
+{
+    public required string Token { get; init; }
+    public required string Region { get; init; }
 }

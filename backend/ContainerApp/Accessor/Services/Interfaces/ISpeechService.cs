@@ -7,5 +7,5 @@ public interface ISpeechService
     /// </summary>
     /// <param name="ct">Cancellation token</param>
     /// <returns>JWT token string</returns>
-    Task<string> GetSpeechTokenAsync(CancellationToken ct = default);
+    Task<SpeechTokenResponse> GetSpeechTokenAsync(CancellationToken ct = default);
 }
