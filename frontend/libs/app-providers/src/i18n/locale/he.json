@@ -310,6 +310,7 @@
         "firstName": "שם פרטי",
         "lastName": "שם משפחה",
         "email": "דואר אלקטרוני",
+        "preferredLanguage": "שפה מועדפת",
         "emailCannotBeChanged": "דואר אלקטרוני לא ניתן לשינוי",
         "edit": "עריכה",
         "saveChanges": "שמור שינויים",
@@ -352,6 +353,17 @@
       "admin": "מנהל מערכת",
       "teacher": "מורה",
       "student": "תלמיד"
+    },
+    "hebrewLevels": {
+      "title": "רמת עברית",
+      "beginner": "מתחיל",
+      "intermediate": "בינוני",
+      "advanced": "מתקדם",
+      "fluent": "שוטף"
+    },
+    "languages": {
+      "hebrew": "עברית",
+      "english": "אנגלית"
     }
   }
 }

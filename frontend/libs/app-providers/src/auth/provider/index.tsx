@@ -1,4 +1,5 @@
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   AppRoleType,
   AuthContext,
@@ -22,6 +23,8 @@ const MIN_REFRESH_DELAY_MS = 5_000;
 const FALLBACK_TOKEN_EXPIRY_MS = 15 * 60 * 1000;
 
 export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
+  const { i18n } = useTranslation();
+
   const refreshTimerRef = useRef<number | null>(null);
   const refreshSkewMs = 60_000;
 
@@ -176,6 +179,17 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
     }
     clearRefreshTimer();
   }, [credentials, scheduleRefresh, clearRefreshTimer]);
+
+  // the backend takes automatically user's system's language when signing up
+  // theres also an option in the profile to select the preffered language
+  // so we update the i18n language when user data is loaded (the website will be in englsih / hebrew)
+  useEffect(() => {
+    const userLanguage = userData?.preferredLanguageCode || "en";
+
+    if (i18n.language !== userLanguage) {
+      i18n.changeLanguage(userLanguage);
+    }
+  }, [userData?.preferredLanguageCode, i18n]);
 
   return (
     <AuthContext.Provider

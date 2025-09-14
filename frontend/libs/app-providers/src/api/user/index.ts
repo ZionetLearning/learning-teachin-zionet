@@ -5,13 +5,22 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { toast } from "react-toastify";
-import { apiClient as axios, toAppRole, User, UserDto } from "@app-providers";
+import {
+  apiClient as axios,
+  toAppRole,
+  User,
+  UserDto,
+  HebrewLevelValue,
+  PreferredLanguageCode,
+} from "@app-providers";
 
 interface UpdateUserInput {
   email?: string;
   firstName?: string;
   lastName?: string;
   role?: string;
+  hebrewLevelValue: HebrewLevelValue;
+  preferredLanguageCode: PreferredLanguageCode;
 }
 
 export const mapUser = (dto: UserDto): User => ({
@@ -20,6 +29,7 @@ export const mapUser = (dto: UserDto): User => ({
   firstName: dto.firstName,
   lastName: dto.lastName,
   role: toAppRole(dto.role),
+  hebrewLevelValue: dto.hebrewLevelValue,
 });
 
 export const USERS_URL = `${import.meta.env.VITE_USERS_URL}/user`;
@@ -58,12 +68,10 @@ export const updateUserByUserId = async (
   userId: string,
   userData: UpdateUserInput,
 ): Promise<User> => {
-  const body: Record<string, unknown> = { userId };
-  if (typeof userData.email === "string") body.email = userData.email;
-  if (typeof userData.firstName === "string")
-    body.firstName = userData.firstName;
-  if (typeof userData.lastName === "string") body.lastName = userData.lastName;
-  if (typeof userData.role === "string") body.role = userData.role;
+  const body = {
+    userId,
+    ...userData,
+  };
 
   const response = await axios.put(`${USERS_URL}/${userId}`, body);
   if (response.status !== 200) {
@@ -103,6 +111,8 @@ export const useUpdateUserByUserId = (
         lastName: updated.lastName,
         email: updated.email,
         role: existingUser?.role || "student", // Preserve the role or default to student
+        hebrewLevelValue: updated.hebrewLevelValue,
+        preferredLanguageCode: updated.preferredLanguageCode,
       };
       // Update the cache with the correct structure
       qc.setQueryData(["user", userId], updatedUserDto);
