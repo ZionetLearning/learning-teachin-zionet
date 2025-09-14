@@ -1,4 +1,4 @@
-import { AppRoleType } from "@app-providers";
+import { APP_ROLES, AppRole, AppRoleType } from "@app-providers";
 
 export const decodeJwtExp = (token: string): number | undefined => {
   try {
@@ -96,8 +96,14 @@ export const decodeJwtUserId = (token: string): string | null => {
 export const toAppRole = (
   v: string | number | null | undefined,
 ): AppRoleType => {
-  if (typeof v === "string") return v.trim().toLowerCase() as AppRoleType;
-  if (typeof v === "number")
-    return (["student", "teacher", "admin"][v] ?? "student") as AppRoleType;
-  return "student";
+  if (typeof v === "string") {
+    const role = v.trim().toLowerCase();
+    return (
+      APP_ROLES.includes(role as AppRoleType) ? role : AppRole.student
+    ) as AppRoleType;
+  }
+  if (typeof v === "number") {
+    return APP_ROLES[v] ?? AppRole.student;
+  }
+  return AppRole.student;
 };
