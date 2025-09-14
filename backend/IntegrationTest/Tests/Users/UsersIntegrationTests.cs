@@ -8,12 +8,12 @@ using Xunit.Abstractions;
 
 namespace IntegrationTests.Tests.Users;
 
-[Collection("Shared test collection")]
+[Collection("Minimal test collection")]
 public class UsersIntegrationTests(
-    SharedTestFixture sharedFixture,
+    MinimalSharedTestFixture minimalFixture,
     ITestOutputHelper outputHelper,
     SignalRTestFixture signalRFixture
-) : UsersTestBase(sharedFixture, outputHelper, signalRFixture)
+) : UsersTestBase(minimalFixture, outputHelper, signalRFixture)
 {
     [Fact(DisplayName = "POST /users-manager/user - Duplicate email should return 409 Conflict")]
     public async Task CreateUser_DuplicateEmail_Should_Return_Conflict()
@@ -73,6 +73,7 @@ public class UsersIntegrationTests(
     [Fact(DisplayName = "GET /users-manager/user/{id} - With invalid ID should return 404")]
     public async Task GetUser_By_Invalid_Id_Should_Return_NotFound()
     {
+        var (user, _) = await CreateAndLoginUserAsync();
         var response = await Client.GetAsync(ApiRoutes.UserById(Guid.NewGuid()));
         response.ShouldBeNotFound();
     }

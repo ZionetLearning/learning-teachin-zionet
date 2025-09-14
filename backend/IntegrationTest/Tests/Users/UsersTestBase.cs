@@ -11,16 +11,15 @@ using Xunit.Abstractions;
 namespace IntegrationTests.Tests.Users;
 
 public abstract class UsersTestBase(
-    SharedTestFixture sharedFixture,
+    MinimalSharedTestFixture minimalFixture,
     ITestOutputHelper outputHelper,
     SignalRTestFixture signalRFixture
-) : IntegrationTestBase(sharedFixture.HttpFixture, outputHelper, signalRFixture), IAsyncLifetime
+) : IntegrationTestBase(minimalFixture.HttpFixture, outputHelper, signalRFixture), IAsyncLifetime
 {
-    protected SharedTestFixture Shared { get; } = sharedFixture;
+    protected MinimalSharedTestFixture Shared { get; } = minimalFixture;
     private readonly List<Guid> _createdUserIds = new();
 
-    public override Task InitializeAsync() =>
-        SuiteInit.EnsureAsync(Shared, SignalRFixture, OutputHelper);
+    public Task InitializeAsync() => Task.CompletedTask;
 
     public Task DisposeAsync() => CleanupAsync();
 
