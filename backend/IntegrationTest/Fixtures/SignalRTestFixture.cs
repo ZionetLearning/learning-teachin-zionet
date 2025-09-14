@@ -36,7 +36,7 @@ public class SignalRTestFixture : IAsyncDisposable
             });
         });
 
-        _connection.On<UserEvent<JsonElement>>("ReceiveEvent", evt =>
+        _connection!.On<UserEvent<JsonElement>>("ReceiveEvent", evt =>
         {
             _receivedEvents.Enqueue(new ReceivedEvent
             {
