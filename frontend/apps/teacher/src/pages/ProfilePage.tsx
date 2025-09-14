@@ -1,6 +1,11 @@
+import { useAuth } from "@app-providers";
 import { Profile } from "@ui-components";
+
 export const ProfilePage = () => {
-  return (
-      <Profile firstName="John" lastName="Doe" email="John.Doe@example.com"/>
-  );
-}
+  const { user } = useAuth();
+
+  if (!user) {
+    return <div>Loading...</div>;
+  }
+  return <Profile user={user} />;
+};

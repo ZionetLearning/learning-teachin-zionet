@@ -1,4 +1,5 @@
-﻿using Dapr.Client;
+﻿using System.Diagnostics;
+using Dapr.Client;
 using DotQueue;
 using Engine.Constants;
 using Engine.Helpers;
@@ -179,15 +180,22 @@ public class EngineQueueHandler : IQueueHandler<Message>
            Func<Task> renewLock,
            CancellationToken ct)
     {
+        long getHistoryTime = 0;
+        long addOrCheckSystemPromptTime = 0;
+        long addOrCheckChatNameTime = 0;
+        long afterChatServiseTime = 0;
+
+        var sw = Stopwatch.StartNew();
+        EngineChatRequest? request = null;
         try
         {
-            var request = PayloadValidation.DeserializeOrThrow<EngineChatRequest>(message, _logger);
+            request = PayloadValidation.DeserializeOrThrow<EngineChatRequest>(message, _logger);
             PayloadValidation.ValidateEngineChatRequest(request, _logger);
 
             var userContext = MetadataValidation.DeserializeOrThrow<UserContextMetadata>(message, _logger);
             MetadataValidation.ValidateUserContext(userContext, _logger);
 
-            using var _ = _logger.BeginScope(new { request.RequestId, request.ThreadId });
+            using var _ = _logger.BeginScope(new { request.RequestId, request.ThreadId, request.UserId });
 
             if (request.UserId == Guid.Empty)
             {
@@ -208,6 +216,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
 
             var snapshot = await _accessorClient.GetHistorySnapshotAsync(request.ThreadId, request.UserId, ct);
 
+            getHistoryTime = sw.ElapsedMilliseconds;
             var skHistory = HistoryMapper.ToChatHistoryFromElement(snapshot.History);
             var storyForKernel = HistoryMapper.CloneToChatHistory(skHistory);
 
@@ -216,6 +225,8 @@ public class EngineQueueHandler : IQueueHandler<Message>
                 var systemPrompt = await GetOrLoadSystemPromptAsync(ct);
                 storyForKernel.Insert(0, new ChatMessageContent(AuthorRole.System, systemPrompt));
             }
+
+            addOrCheckSystemPromptTime = sw.ElapsedMilliseconds;
 
             storyForKernel.AddUserMessage(request.UserMessage.Trim(), DateTimeOffset.UtcNow);
 
@@ -232,6 +243,8 @@ public class EngineQueueHandler : IQueueHandler<Message>
                     chatName = DateTime.UtcNow.ToString("HHmm_dd_MM");
                 }
             }
+
+            addOrCheckChatNameTime = sw.ElapsedMilliseconds;
 
             var upsertUserMessage = new UpsertHistoryRequest
             {
@@ -256,6 +269,8 @@ public class EngineQueueHandler : IQueueHandler<Message>
             };
 
             var aiResponse = await _aiService.ChatHandlerAsync(serviceRequest, ct);
+
+            afterChatServiseTime = sw.ElapsedMilliseconds;
 
             if (aiResponse.Status != ChatAnswerStatus.Ok || aiResponse.Answer is null)
             {
@@ -313,6 +328,25 @@ public class EngineQueueHandler : IQueueHandler<Message>
 
             _logger.LogError(ex, "Transient error while processing AI chat {Action}", message.ActionName);
             throw new RetryableException("Transient error while processing AI chat.", ex);
+        }
+        finally
+        {
+            sw.Stop();
+            if (request is not null)
+            {
+
+                _logger.LogInformation("Chat request {RequestId} chatId {ThreadId} userId {UserId}, " +
+                    "getHistoryTime {GetHistoryTime} ms, addOrCheckSystemPromptTime {AddOrCheckSystemPromptTime} ms, addOrCheckChatNameTime {AddOrCheckChatNameTime}  ms, " +
+                    "afterChatServiseTime {AfterChatServiseTime} ms, finished in {ElapsedMs} ms",
+                    request.RequestId,
+                    request.ThreadId,
+                    request.UserId,
+                    getHistoryTime,
+                    addOrCheckSystemPromptTime,
+                    addOrCheckChatNameTime,
+                    afterChatServiseTime,
+                    sw.ElapsedMilliseconds);
+            }
         }
     }
 
