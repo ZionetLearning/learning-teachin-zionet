@@ -277,6 +277,7 @@
         "firstName": "First Name",
         "lastName": "Last Name",
         "email": "Email",
+        "preferredLanguage": "Preferred Language",
         "emailCannotBeChanged": "Email cannot be changed",
         "edit": "Edit",
         "saveChanges": "Save changes",
@@ -326,6 +327,10 @@
       "intermediate": "Intermediate",
       "advanced": "Advanced",
       "fluent": "Fluent"
+    },
+    "languages": {
+      "hebrew": "Hebrew",
+      "english": "English"
     }
   }
 }

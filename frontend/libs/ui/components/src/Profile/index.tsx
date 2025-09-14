@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Typography, TextField, Stack } from "@mui/material";
+import { useUpdateUserByUserId, toAppRole } from "@app-providers";
 import {
-  useUpdateUserByUserId,
   User,
   HebrewLevelValue,
-  toAppRole,
-} from "@app-providers";
+  PreferredLanguageCode,
+} from "@app-providers/types";
 import { useStyles } from "./style";
 import { Dropdown, Button } from "@ui-components";
 
@@ -23,6 +23,7 @@ export const Profile = ({ user }: { user: User }) => {
     firstName: user?.firstName ?? "",
     lastName: user?.lastName ?? "",
     hebrewLevelValue: user?.hebrewLevelValue ?? "beginner",
+    preferredLanguageCode: user?.preferredLanguageCode ?? "en",
   });
 
   useEffect(() => {
@@ -30,8 +31,15 @@ export const Profile = ({ user }: { user: User }) => {
       firstName: user?.firstName ?? "",
       lastName: user?.lastName ?? "",
       hebrewLevelValue: user?.hebrewLevelValue ?? "beginner",
+      preferredLanguageCode: user?.preferredLanguageCode ?? "en",
     });
-  }, [user?.firstName, user?.hebrewLevelValue, user?.lastName, user.userId]);
+  }, [
+    user?.firstName,
+    user?.hebrewLevelValue,
+    user?.lastName,
+    user?.preferredLanguageCode,
+    user.userId,
+  ]);
 
   const handleTextChange =
     (field: "firstName" | "lastName") =>
@@ -49,11 +57,19 @@ export const Profile = ({ user }: { user: User }) => {
     }));
   };
 
+  const handleLanguageChange = (val: string) => {
+    setUserDetails((prev) => ({
+      ...prev,
+      preferredLanguageCode: val as PreferredLanguageCode,
+    }));
+  };
+
   const handleCancel = () => {
     setUserDetails({
       firstName: user?.firstName ?? "",
       lastName: user?.lastName ?? "",
       hebrewLevelValue: user?.hebrewLevelValue ?? "beginner",
+      preferredLanguageCode: user?.preferredLanguageCode ?? "en",
     });
   };
 
@@ -63,19 +79,26 @@ export const Profile = ({ user }: { user: User }) => {
       firstName: userDetails.firstName.trim(),
       lastName: userDetails.lastName.trim(),
       hebrewLevelValue: userDetails.hebrewLevelValue,
+      preferredLanguageCode: userDetails.preferredLanguageCode,
     });
   };
 
   const dirty =
     userDetails.firstName.trim() !== (user?.firstName ?? "").trim() ||
     userDetails.lastName.trim() !== (user?.lastName ?? "").trim() ||
-    userDetails.hebrewLevelValue !== (user?.hebrewLevelValue ?? "beginner");
+    userDetails.hebrewLevelValue !== (user?.hebrewLevelValue ?? "beginner") ||
+    userDetails.preferredLanguageCode !== (user?.preferredLanguageCode ?? "en");
 
   const hebrewLevelOptions = [
     { value: "beginner", label: t("hebrewLevels.beginner") },
     { value: "intermediate", label: t("hebrewLevels.intermediate") },
     { value: "advanced", label: t("hebrewLevels.advanced") },
     { value: "fluent", label: t("hebrewLevels.fluent") },
+  ];
+
+  const languageOptions = [
+    { value: "he", label: t("languages.hebrew") },
+    { value: "en", label: t("languages.english") },
   ];
 
   return (
@@ -157,6 +180,24 @@ export const Profile = ({ user }: { user: User }) => {
                   />
                 </div>
               )}
+
+              <div className={classes.fieldContainer}>
+                <Typography
+                  variant="body2"
+                  color="text.primary"
+                  className={
+                    isRTL ? classes.fieldLabelRTL : classes.fieldLabelLTR
+                  }
+                >
+                  {t("pages.profile.preferredLanguage")}
+                </Typography>
+                <Dropdown
+                  name="preferredLanguage"
+                  options={languageOptions}
+                  value={userDetails.preferredLanguageCode}
+                  onChange={handleLanguageChange}
+                />
+              </div>
 
               {t("pages.profile.email")}
             </Typography>
