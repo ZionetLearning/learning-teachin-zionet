@@ -14,5 +14,6 @@ spec:
   replicas:
     min: 0               # Scale to zero when unused
     max: 1               # Maximum replicas
+  pollingInterval: 15   # Check every 15 seconds
   scaledownPeriod: 500    # How long to wait before scaling down (seconds)
 {{- end }}
