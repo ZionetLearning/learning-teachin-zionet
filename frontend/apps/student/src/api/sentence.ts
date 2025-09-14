@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import {
   EventType,
   SplitSentenceGeneratedPayload,
+  UserEventUnion
 } from "@app-providers";
 
 import { useSignalR } from "@student/hooks";
@@ -38,7 +39,7 @@ export const useGenerateSplitSentences = () => {
           }, 30000);
 
           // Subscribe to SignalR events
-          unsubscribe = subscribe("ReceiveEvent", (event: any) => {
+          unsubscribe = subscribe("ReceiveEvent", (event: UserEventUnion) => {
             // Check if this is our split sentence event
             if (event.eventType === EventType.SplitSentenceGeneration) {
               // Clean up when we get our response
