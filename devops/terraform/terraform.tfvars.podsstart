@@ -1,0 +1,25 @@
+#------------- Shared AKS Configuration -------------
+environment_name       = "podsstart"
+use_shared_aks         = false  # dev still uses its own cluster
+kubernetes_namespace   = "podsstart"
+aks_cluster_name       = "aks-cluster-podsstart"
+#------------- Resource Configuration -------------
+location               = "westeurope"
+
+#------------- Shared Postgres Configuration -------------
+use_shared_postgres        = false  # If false, create server (dev); if true, use shared server (non-dev)
+
+#------------- Azure Configuration-------------------
+subscription_id        = "90ea4c2f-1eee-4ec9-927d-ed24c563003e"
+tenant_id              = "a814ee32-f813-4a36-9686-1b9268183e27"
+
+#---- docker hub ----------------------------
+docker_registry        = "snir1551"
+
+#------------- Frontend Configuration -------------
+frontend_sku_tier      = "Free"
+frontend_sku_size      = "Free"
+frontend_apps          = ["student", "teacher", "admin"]    # Dev environment uses Static Web Apps
+
+#------------- Redis Shared Instance -------------
+use_shared_redis = false  # dev uses its own Redis instance
