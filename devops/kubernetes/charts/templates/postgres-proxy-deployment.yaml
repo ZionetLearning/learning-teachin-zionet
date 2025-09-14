@@ -2,10 +2,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "chart.fullname" . }}-{{ .Values.postgresProxy.name }}
-  namespace: {{ include "chart.namespace" . }}
+  name: {{ include "app.join" (list (include "app.prefix" .) .Values.postgresProxy.name) }}
+  namespace: {{ include "app.namespace" . }}
   labels:
-    {{- include "chart.labels" . | nindent 4 }}
     {{ .Values.postgresProxy.labels.selectorKey }}: {{ .Values.postgresProxy.labels.selectorValue }}
 spec:
   replicas: 1
@@ -16,7 +15,6 @@ spec:
     metadata:
       labels:
         {{ .Values.postgresProxy.labels.selectorKey }}: {{ .Values.postgresProxy.labels.selectorValue }}
-        {{- include "chart.selectorLabels" . | nindent 8 }}
     spec:
       containers:
       - name: {{ .Values.postgresProxy.name }}
@@ -48,10 +46,9 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "chart.fullname" . }}-{{ .Values.postgresProxy.name }}-svc
-  namespace: {{ include "chart.namespace" . }}
+  name: {{ include "app.join" (list (include "app.prefix" .) .Values.postgresProxy.name) }}-svc
+  namespace: {{ include "app.namespace" . }}
   labels:
-    {{- include "chart.labels" . | nindent 4 }}
     {{ .Values.postgresProxy.labels.selectorKey }}: {{ .Values.postgresProxy.labels.selectorValue }}
 spec:
   selector:
