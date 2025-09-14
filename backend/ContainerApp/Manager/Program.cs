@@ -227,6 +227,12 @@ app.MapHub<NotificationHub>("/NotificationHub");
 app.MapMediaEndpoints();
 
 app.MapStatsPing();
+
+// Simple health check endpoint for Kubernetes probes
+app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTimeOffset.UtcNow }))
+    .WithName("HealthCheck")
+    .WithTags("Health")
+    .Produces(StatusCodes.Status200OK);
 if (env.IsDevelopment())
 {
     app.MapOpenApi();

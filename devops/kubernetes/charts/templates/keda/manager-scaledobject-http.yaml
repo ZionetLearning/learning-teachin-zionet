@@ -12,8 +12,11 @@ spec:
     port: {{ .Values.manager.ports.container }}
     service: manager
   replicas:
-    min: 0               # Scale to zero when unused
+    min: 0               # Keep at least 1 replica to avoid cold starts
     max: 10               # Maximum replicas
-  pollingInterval: 15   # Check every 15 seconds
-  scaledownPeriod: 500    # How long to wait before scaling down (seconds)
+  pollingInterval: 5    # Check every 5 seconds (more responsive)
+  scaledownPeriod: 300    # How long to wait before scaling down (5 minutes)
+  targetPendingRequests: 10
+  scaleUpCooldownPeriod: 30
+  scaleDownCooldownPeriod: 60
 {{- end }}

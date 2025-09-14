@@ -263,9 +263,17 @@ dapr:
     httpAddOn:
       interceptor:
         proxy:
-          readTimeout: 120s
-          responseHeaderTimeout: 120s
-          idleTimeout: 120s
+          readTimeout: 30s
+          responseHeaderTimeout: 30s
+          idleTimeout: 30s
+          dialTimeout: 5s
+          keepAliveTimeout: 30s
+        scaleToZero:
+          responseTimeout: 10s
+        targetPendingRequests: 10
+        retryPolicy:
+          maxRetries: 3
+          retryDelay: 100ms
 
   serviceAccount:
   create: false
