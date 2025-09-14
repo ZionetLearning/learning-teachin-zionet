@@ -3,6 +3,7 @@ using DotQueue;
 using Accessor.Models;
 using Accessor.Models.QueueMessages;
 using Accessor.Services.Interfaces;
+using Accessor.Exceptions;
 
 namespace Accessor.Endpoints;
 
@@ -37,7 +38,7 @@ public class AccessorQueueHandler : IQueueHandler<Message>
         else
         {
             _logger.LogWarning("No handler for action {Action}", message.ActionName);
-            throw new NonRetryableException($"No handler for action {message.ActionName}");
+            throw new DotQueue.NonRetryableException($"No handler for action {message.ActionName}");
         }
     }
 
@@ -49,26 +50,30 @@ public class AccessorQueueHandler : IQueueHandler<Message>
             if (payload is null)
             {
                 _logger.LogWarning("Invalid payload for UpdateTask");
-                throw new NonRetryableException("Payload deserialization returned null for TaskModel.");
+                throw new DotQueue.NonRetryableException("Payload deserialization returned null for TaskModel.");
             }
 
             if (payload.Id <= 0)
             {
                 _logger.LogWarning("Task Id must be a positive integer. Actual: {Id}", payload.Id);
-                throw new NonRetryableException("Task Id must be a positive integer.");
+                throw new DotQueue.NonRetryableException("Task Id must be a positive integer.");
             }
 
             if (string.IsNullOrWhiteSpace(payload.Name))
             {
                 _logger.LogWarning("Task Name is required.");
-                throw new NonRetryableException("Task Name is required.");
+                throw new DotQueue.NonRetryableException("Task Name is required.");
             }
 
             _logger.LogDebug("Processing task {Id}", payload.Id);
-            await _taskService.UpdateTaskNameAsync(payload.Id, payload.Name);
+            var result = await _taskService.UpdateTaskNameAsync(
+                payload.Id,
+                payload.Name,
+                ifMatch: null
+            );
             _logger.LogInformation("Task {Id} processed", payload.Id);
         }
-        catch (NonRetryableException ex)
+        catch (DotQueue.NonRetryableException ex)
         {
             _logger.LogError(ex, "Non-retryable error processing message {Action}", message.ActionName);
             throw;
@@ -76,7 +81,7 @@ public class AccessorQueueHandler : IQueueHandler<Message>
         catch (JsonException ex)
         {
             _logger.LogError(ex, "Invalid JSON payload for {Action}", message.ActionName);
-            throw new NonRetryableException("Invalid JSON payload.", ex);
+            throw new DotQueue.NonRetryableException("Invalid JSON payload.", ex);
         }
         catch (Exception ex)
         {
@@ -87,19 +92,20 @@ public class AccessorQueueHandler : IQueueHandler<Message>
             }
 
             _logger.LogError(ex, "Transient error while updating task for action {Action}", message.ActionName);
-            throw new RetryableException("Transient error while updating task.", ex);
+            throw new DotQueue.RetryableException("Transient error while updating task.", ex);
         }
     }
 
     private async Task HandleCreateTaskAsync(Message message, Func<Task> func, CancellationToken cancellationToken)
     {
+        TaskModel? taskModel = null;
         try
         {
-            var taskModel = message.Payload.Deserialize<TaskModel>();
+            taskModel = message.Payload.Deserialize<TaskModel>();
             if (taskModel is null)
             {
                 _logger.LogWarning("Invalid taskModel for CreateTask");
-                throw new NonRetryableException("Payload deserialization returned null for TaskModel.");
+                throw new DotQueue.NonRetryableException("Payload deserialization returned null for TaskModel.");
             }
 
             UserContextMetadata? metadata = null;
@@ -111,19 +117,19 @@ public class AccessorQueueHandler : IQueueHandler<Message>
             if (metadata is null)
             {
                 _logger.LogWarning("Metadata is null for CreateTask action");
-                throw new NonRetryableException("User Metadata is required for CreateTask action.");
+                throw new DotQueue.NonRetryableException("User Metadata is required for CreateTask action.");
             }
 
             if (taskModel.Id <= 0)
             {
                 _logger.LogWarning("Task Id must be a positive integer. Actual: {Id}", taskModel.Id);
-                throw new NonRetryableException("Task Id must be a positive integer.");
+                throw new DotQueue.NonRetryableException("Task Id must be a positive integer.");
             }
 
             if (string.IsNullOrWhiteSpace(taskModel.Name))
             {
                 _logger.LogWarning("Task Name is required.");
-                throw new NonRetryableException("Task Name is required.");
+                throw new DotQueue.NonRetryableException("Task Name is required.");
             }
 
             _logger.LogDebug("Creating task {Id}", taskModel.Id);
@@ -147,15 +153,20 @@ public class AccessorQueueHandler : IQueueHandler<Message>
 
             _logger.LogInformation("Task {Id} created", taskModel.Id);
         }
-        catch (NonRetryableException ex)
+        catch (DotQueue.NonRetryableException ex)
         {
             _logger.LogError(ex, "Non-retryable error processing message {Action}", message.ActionName);
             throw;
         }
+        catch (ConflictException ex)
+        {
+            _logger.LogWarning(ex, "Conflict creating task {Id}: {Message}", taskModel?.Id, ex.Message);
+            throw new DotQueue.NonRetryableException(ex.Message, ex);
+        }
         catch (JsonException ex)
         {
             _logger.LogError(ex, "Invalid JSON taskModel for {Action}", message.ActionName);
-            throw new NonRetryableException("Invalid JSON taskModel.", ex);
+            throw new DotQueue.NonRetryableException("Invalid JSON taskModel.", ex);
         }
         catch (Exception ex)
         {
@@ -166,7 +177,7 @@ public class AccessorQueueHandler : IQueueHandler<Message>
             }
 
             _logger.LogError(ex, "Transient error while creating task for action {Action}", message.ActionName);
-            throw new RetryableException("Transient error while creating task.", ex);
+            throw new DotQueue.RetryableException("Transient error while creating task.", ex);
         }
     }
 }

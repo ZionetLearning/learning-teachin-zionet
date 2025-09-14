@@ -310,6 +310,7 @@
         "firstName": "First Name",
         "lastName": "Last Name",
         "email": "Email",
+        "preferredLanguage": "Preferred Language",
         "emailCannotBeChanged": "Email cannot be changed",
         "edit": "Edit",
         "saveChanges": "Save changes",
@@ -352,6 +353,17 @@
       "admin": "Admin",
       "teacher": "Teacher",
       "student": "Student"
+    },
+    "hebrewLevels": {
+      "title": "Hebrew Level",
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced",
+      "fluent": "Fluent"
+    },
+    "languages": {
+      "hebrew": "Hebrew",
+      "english": "English"
     }
   }
 }

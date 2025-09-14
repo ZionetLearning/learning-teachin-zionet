@@ -1,9 +1,14 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Typography, TextField, Stack } from "@mui/material";
-import { useUpdateUserByUserId, User } from "@app-providers";
-import { Button } from "../Button";
+import { useUpdateUserByUserId, toAppRole } from "@app-providers";
+import {
+  User,
+  HebrewLevelValue,
+  PreferredLanguageCode,
+} from "@app-providers/types";
 import { useStyles } from "./style";
+import { Dropdown, Button } from "@ui-components";
 
 export const Profile = ({ user }: { user: User }) => {
   const { t, i18n } = useTranslation();
@@ -17,16 +22,26 @@ export const Profile = ({ user }: { user: User }) => {
   const [userDetails, setUserDetails] = useState({
     firstName: user?.firstName ?? "",
     lastName: user?.lastName ?? "",
+    hebrewLevelValue: user?.hebrewLevelValue ?? "beginner",
+    preferredLanguageCode: user?.preferredLanguageCode ?? "en",
   });
 
   useEffect(() => {
     setUserDetails({
       firstName: user?.firstName ?? "",
       lastName: user?.lastName ?? "",
+      hebrewLevelValue: user?.hebrewLevelValue ?? "beginner",
+      preferredLanguageCode: user?.preferredLanguageCode ?? "en",
     });
-  }, [user?.firstName, user?.lastName, user?.userId]);
+  }, [
+    user?.firstName,
+    user?.hebrewLevelValue,
+    user?.lastName,
+    user?.preferredLanguageCode,
+    user.userId,
+  ]);
 
-  const handleChange =
+  const handleTextChange =
     (field: "firstName" | "lastName") =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setUserDetails((prev) => ({
@@ -35,10 +50,26 @@ export const Profile = ({ user }: { user: User }) => {
       }));
     };
 
+  const handleDropdownChange = (field: "hebrewLevelValue") => (val: string) => {
+    setUserDetails((prev) => ({
+      ...prev,
+      [field]: val as HebrewLevelValue,
+    }));
+  };
+
+  const handleLanguageChange = (val: string) => {
+    setUserDetails((prev) => ({
+      ...prev,
+      preferredLanguageCode: val as PreferredLanguageCode,
+    }));
+  };
+
   const handleCancel = () => {
     setUserDetails({
       firstName: user?.firstName ?? "",
       lastName: user?.lastName ?? "",
+      hebrewLevelValue: user?.hebrewLevelValue ?? "beginner",
+      preferredLanguageCode: user?.preferredLanguageCode ?? "en",
     });
   };
 
@@ -47,12 +78,28 @@ export const Profile = ({ user }: { user: User }) => {
       email: user.email,
       firstName: userDetails.firstName.trim(),
       lastName: userDetails.lastName.trim(),
+      hebrewLevelValue: userDetails.hebrewLevelValue,
+      preferredLanguageCode: userDetails.preferredLanguageCode,
     });
   };
 
   const dirty =
     userDetails.firstName.trim() !== (user?.firstName ?? "").trim() ||
-    userDetails.lastName.trim() !== (user?.lastName ?? "").trim();
+    userDetails.lastName.trim() !== (user?.lastName ?? "").trim() ||
+    userDetails.hebrewLevelValue !== (user?.hebrewLevelValue ?? "beginner") ||
+    userDetails.preferredLanguageCode !== (user?.preferredLanguageCode ?? "en");
+
+  const hebrewLevelOptions = [
+    { value: "beginner", label: t("hebrewLevels.beginner") },
+    { value: "intermediate", label: t("hebrewLevels.intermediate") },
+    { value: "advanced", label: t("hebrewLevels.advanced") },
+    { value: "fluent", label: t("hebrewLevels.fluent") },
+  ];
+
+  const languageOptions = [
+    { value: "he", label: t("languages.hebrew") },
+    { value: "en", label: t("languages.english") },
+  ];
 
   return (
     <div className={classes.container}>
@@ -81,7 +128,7 @@ export const Profile = ({ user }: { user: User }) => {
             </Typography>
             <TextField
               value={userDetails.firstName}
-              onChange={handleChange("firstName")}
+              onChange={handleTextChange("firstName")}
               fullWidth
               className={isRTL ? classes.textFieldRTL : classes.textFieldLTR}
             />
@@ -97,7 +144,7 @@ export const Profile = ({ user }: { user: User }) => {
             </Typography>
             <TextField
               value={userDetails.lastName}
-              onChange={handleChange("lastName")}
+              onChange={handleTextChange("lastName")}
               fullWidth
               className={isRTL ? classes.textFieldRTL : classes.textFieldLTR}
             />
@@ -111,6 +158,47 @@ export const Profile = ({ user }: { user: User }) => {
                 isRTL ? classes.emailFieldLabelRTL : classes.emailFieldLabelLTR
               }
             >
+              {/* Conditionally render Hebrew Level for student role */}
+              {toAppRole(user?.role) === "student" && (
+                <div className={classes.fieldContainer}>
+                  <Typography
+                    variant="body2"
+                    color="text.primary"
+                    className={
+                      isRTL ? classes.fieldLabelRTL : classes.fieldLabelLTR
+                    }
+                  >
+                    {t("hebrewLevels.title")}
+                  </Typography>
+                  <Dropdown
+                    name="hebrewLevel"
+                    options={hebrewLevelOptions}
+                    value={userDetails.hebrewLevelValue}
+                    onChange={(val) =>
+                      handleDropdownChange("hebrewLevelValue")(val)
+                    }
+                  />
+                </div>
+              )}
+
+              <div className={classes.fieldContainer}>
+                <Typography
+                  variant="body2"
+                  color="text.primary"
+                  className={
+                    isRTL ? classes.fieldLabelRTL : classes.fieldLabelLTR
+                  }
+                >
+                  {t("pages.profile.preferredLanguage")}
+                </Typography>
+                <Dropdown
+                  name="preferredLanguage"
+                  options={languageOptions}
+                  value={userDetails.preferredLanguageCode}
+                  onChange={handleLanguageChange}
+                />
+              </div>
+
               {t("pages.profile.email")}
             </Typography>
             <TextField
