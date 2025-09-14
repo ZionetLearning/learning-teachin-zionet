@@ -137,6 +137,24 @@ jobs:
         run: terraform apply -auto-approve -var-file=${{ env.TFVARS_FILE }}
         working-directory: ${{ env.TF_DIR }}
 
+      # Fix PostgreSQL Private FQDN Issue
+      # Azure auto-generates DNS records for VNet-integrated PostgreSQL servers
+      # This step updates Key Vault with the correct auto-generated FQDN
+      - name: Fix PostgreSQL Private FQDN
+        env:
+          ENVIRONMENT_NAME: ${{ env.environment_name }}
+        run: |
+          echo "🔍 Fixing PostgreSQL private FQDN for environment: $ENVIRONMENT_NAME"
+          
+          # Make script executable and run with environment-specific parameters
+          chmod +x ./devops/fix-postgres-private-fqdn.sh
+          ./devops/fix-postgres-private-fqdn.sh \
+            "$ENVIRONMENT_NAME" \
+            "${ENVIRONMENT_NAME}-zionet-learning-2025" \
+            "privatelink.postgres.database.azure.com" \
+            "teachin-seo-kv" \
+            "${ENVIRONMENT_NAME}-postgres-connection" || echo "⚠️ PostgreSQL FQDN fix failed - may not be needed for this environment"
+
       - name: Get Terraform Outputs
         if : false # Disable output retrieval for now
         id: terraform_output
