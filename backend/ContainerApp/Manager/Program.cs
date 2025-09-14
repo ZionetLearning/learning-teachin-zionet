@@ -84,9 +84,21 @@ builder.Services.AddControllers();
 builder.Services.AddControllers().AddDapr();
 var signalRBuilder = builder.Services.AddSignalR();
 
+// SignalR configuration - modular approach for local vs cloud
 var signalRConnString = builder.Configuration["SignalR:ConnectionString"];
-if (!string.IsNullOrEmpty(signalRConnString))
+var signalREndpoint = builder.Configuration["SignalR:Endpoint"];
+
+if (!string.IsNullOrEmpty(signalREndpoint))
 {
+    // Use Managed Identity (Kubernetes/Production)
+    signalRBuilder.AddAzureSignalR(options =>
+    {
+        options.Endpoints = new[] { new Microsoft.Azure.SignalR.ServiceEndpoint(signalREndpoint) };
+    });
+}
+else if (!string.IsNullOrEmpty(signalRConnString))
+{
+    // Fallback to connection string (local development)
     signalRBuilder.AddAzureSignalR(signalRConnString);
 }
 

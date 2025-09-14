@@ -22,13 +22,8 @@ resource "azurerm_key_vault_secret" "postgres_connection" {
 }
 
 ########################
-# SignalR secret
+# SignalR now uses Managed Identity (no connection string secret needed)
 ########################
-resource "azurerm_key_vault_secret" "signalr_connection" {
-  name         = "${var.environment_name}-signalr-connection"
-  value        = module.signalr.primary_connection_string
-  key_vault_id = data.azurerm_key_vault.shared.id
-}
 
 ########################
 # Redis secret

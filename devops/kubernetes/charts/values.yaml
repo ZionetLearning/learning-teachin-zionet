@@ -23,6 +23,9 @@ global:
   servicebus:
     namespace: ""  # Will be set to something like "dev-servicebus-zionet-learning.servicebus.windows.net"
     clientId: ""   # Will be set by CI/CD from Terraform managed identity
+  signalr:
+    endpoint: ""   # Will be set to something like "https://dev-signalr-teachin.service.signalr.net"
+    clientId: ""   # Will be set by CI/CD from Terraform managed identity
 
 # If empty, namespace becomes <namePrefix>
 namespace:

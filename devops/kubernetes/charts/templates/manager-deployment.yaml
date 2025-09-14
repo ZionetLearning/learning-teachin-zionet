@@ -61,11 +61,8 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.manager.secrets.jwt.name }}
                   key: {{ .Values.manager.secrets.jwt.keys.refresh }}
-            - name: SignalR__ConnectionString
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.manager.secrets.signalr.name }}
-                  key: {{ .Values.manager.secrets.signalr.key }}
+            - name: SignalR__Endpoint
+              value: "{{ .Values.global.signalr.endpoint }}"
           resources:
             {{- toYaml .Values.manager.resources | nindent 12 }}
 ---

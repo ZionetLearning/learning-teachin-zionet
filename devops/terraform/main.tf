@@ -284,6 +284,6 @@ resource "azurerm_user_assigned_identity" "app" {
 
   tags = {
     Environment = var.environment_name
-    Purpose     = "ServiceBus-ManagedIdentity"
+    Purpose     = "ServiceBus-SignalR-ManagedIdentity"
   }
 }

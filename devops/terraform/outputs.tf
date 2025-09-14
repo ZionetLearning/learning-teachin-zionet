@@ -70,6 +70,11 @@ output "servicebus_namespace_fqdn" {
   value       = "${module.servicebus.namespace_name}.servicebus.windows.net"
 }
 
+output "signalr_hostname" {
+  description = "SignalR service hostname for Managed Identity access"
+  value       = module.signalr.hostname
+}
+
 output "managed_identity_client_id" {
   description = "Client ID of the user-assigned managed identity for Service Bus access"
   value       = azurerm_user_assigned_identity.app.client_id

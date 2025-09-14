@@ -11,3 +11,8 @@ output "primary_connection_string_base64" {
 output "id" {
   value = azurerm_signalr_service.this.id
 }
+
+output "hostname" {
+  description = "SignalR service hostname"
+  value       = azurerm_signalr_service.this.hostname
+}

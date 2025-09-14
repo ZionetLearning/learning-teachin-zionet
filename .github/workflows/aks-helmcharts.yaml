@@ -154,6 +154,10 @@ jobs:
           fi
           echo "SERVICEBUS_CLIENT_ID=$MANAGED_IDENTITY_CLIENT_ID" >> $GITHUB_ENV
           
+          # SignalR Managed Identity (from Terraform outputs)
+          echo "SIGNALR_ENDPOINT=https://${CURRENT_NAMESPACE}-signalr-teachin.service.signalr.net" >> $GITHUB_ENV
+          echo "SIGNALR_CLIENT_ID=$MANAGED_IDENTITY_CLIENT_ID" >> $GITHUB_ENV
+          
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
 
@@ -282,6 +286,8 @@ jobs:
             --set global.keyvault.tenantId="$KEYVAULT_TENANT_ID" \
             --set global.servicebus.namespace="$SERVICEBUS_NAMESPACE" \
             --set global.servicebus.clientId="$SERVICEBUS_CLIENT_ID" \
+            --set global.signalr.endpoint="$SIGNALR_ENDPOINT" \
+            --set global.signalr.clientId="$SIGNALR_CLIENT_ID" \
             --set dapr.installComponents=false \
           | grep -n '^kind: Namespace' && { echo "Namespace still rendered"; exit 1; } || echo "OK: no Namespace in chart"
 
@@ -330,6 +336,24 @@ jobs:
             --scope "$SERVICEBUS_NAMESPACE_ID" \
             --only-show-errors || echo "Receiver role already assigned or failed"
 
+      - name: Assign SignalR roles to managed identity
+        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
+        run: |
+          # Get the managed identity details from the resource group
+          MANAGED_IDENTITY_PRINCIPAL_ID=$(az identity show \
+            --resource-group "${TARGET_NAMESPACE}-zionet-learning-2025" \
+            --name "${TARGET_NAMESPACE}-app-identity" \
+            --query principalId -o tsv)
+          
+          SIGNALR_RESOURCE_ID="/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/${TARGET_NAMESPACE}-zionet-learning-2025/providers/Microsoft.SignalRService/SignalR/${TARGET_NAMESPACE}-signalr-teachin"
+          
+          # Assign SignalR App Server role
+          az role assignment create \
+            --assignee "$MANAGED_IDENTITY_PRINCIPAL_ID" \
+            --role "SignalR App Server" \
+            --scope "$SIGNALR_RESOURCE_ID" \
+            --only-show-errors || echo "SignalR App Server role already assigned or failed"
+
       - name: Helm upgrade/install app
         run: |
           # Use image_tag if provided, otherwise fall back to TARGET_NAMESPACE
@@ -350,6 +374,8 @@ jobs:
             --set global.keyvault.tenantId="$KEYVAULT_TENANT_ID" \
             --set global.servicebus.namespace="$SERVICEBUS_NAMESPACE" \
             --set global.servicebus.clientId="$SERVICEBUS_CLIENT_ID" \
+            --set global.signalr.endpoint="$SIGNALR_ENDPOINT" \
+            --set global.signalr.clientId="$SIGNALR_CLIENT_ID" \
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false
 
