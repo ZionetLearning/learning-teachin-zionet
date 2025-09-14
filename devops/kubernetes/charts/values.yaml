@@ -226,7 +226,7 @@ postgresProxy:
     container: 5432
     service: 5432
   service:
-    type: ClusterIP
+    type: LoadBalancer
   # PostgreSQL target configuration
   # Note: target.host is set dynamically by CI/CD workflow from Key Vault
   # The port defaults to 5432 but can be overridden if needed
