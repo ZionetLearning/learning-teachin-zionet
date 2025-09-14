@@ -57,10 +57,10 @@ data "azurerm_postgresql_flexible_server" "shared" {
 
 # Create new PostgreSQL server and database only if not using shared
 module "database" {
-  count  = var.use_shared_postgres ? 1 : 1
+  count  = var.use_shared_postgres ? 0 : 1
   source = "./modules/postgresql"
 
-  server_name         = var.database_server_name
+  server_name         = "podsstart-pg-zionet-learning"
   location            = var.db_location
   resource_group_name = var.use_shared_postgres ? var.shared_resource_group : azurerm_resource_group.main.name
 
@@ -271,7 +271,7 @@ data "azurerm_key_vault" "shared" {
 }
 
 module "clustersecretstore" {
-  count       = var.environment_name == "dev" ? 1 : 0
+  count       = var.environment_name == "dev" || var.environment_name == "podsstart" ? 1 : 0
   source     = "./modules/clustersecretstore"
   identity_id = "0997f44d-fadf-4be8-8dc6-202f7302f680" # your AKS managed identity clientId
   tenant_id   = "a814ee32-f813-4a36-9686-1b9268183e27"
