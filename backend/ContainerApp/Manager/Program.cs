@@ -96,9 +96,7 @@ if (!string.IsNullOrEmpty(signalREndpoint))
     {
         options.Endpoints = new[] {
             new Microsoft.Azure.SignalR.ServiceEndpoint(
-                signalREndpoint,
-                Microsoft.Azure.SignalR.EndpointType.Primary,
-                null,
+                new Uri(signalREndpoint),
                 new DefaultAzureCredential())
         };
     });
