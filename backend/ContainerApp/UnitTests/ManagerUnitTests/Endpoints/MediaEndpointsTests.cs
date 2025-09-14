@@ -49,8 +49,10 @@ public class MediaEndpointsTests
 
         var (status, body) = await ExecuteAsync(result);
         status.Should().Be((int)HttpStatusCode.OK);
-        body.Should().Contain("tok123");
+        body.Should().Contain("abc123");
         body.Should().Contain("token");
+        body.Should().Contain("region");
+        body.Should().Contain("eastus");
     }
 
     [Fact]
