@@ -263,17 +263,14 @@ dapr:
     httpAddOn:
       interceptor:
         proxy:
-          readTimeout: 30s
-          responseHeaderTimeout: 30s
-          idleTimeout: 30s
-          dialTimeout: 5s
-          keepAliveTimeout: 30s
+          readTimeout: 60s
+          responseHeaderTimeout: 60s
+          idleTimeout: 60s
+          dialTimeout: 10s
+          keepAliveTimeout: 60s
         scaleToZero:
-          responseTimeout: 10s
-        targetPendingRequests: 10
-        retryPolicy:
-          maxRetries: 3
-          retryDelay: 100ms
+          responseTimeout: 60s  # Wait longer for pods to become ready
+        targetPendingRequests: 1
 
   serviceAccount:
   create: false

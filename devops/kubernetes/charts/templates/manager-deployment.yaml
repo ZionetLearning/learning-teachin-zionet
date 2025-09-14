@@ -102,10 +102,10 @@ spec:
             httpGet:
               path: /health
               port: {{ .Values.manager.ports.container }}
-            initialDelaySeconds: 10
-            periodSeconds: 5
+            initialDelaySeconds: 5   # Start checking sooner
+            periodSeconds: 2         # Check more frequently
             timeoutSeconds: 3
-            failureThreshold: 30
+            failureThreshold: 30     # Allow up to 1 minute for startup (30 * 2s)
           resources:
             {{- toYaml .Values.manager.resources | nindent 12 }}
 ---

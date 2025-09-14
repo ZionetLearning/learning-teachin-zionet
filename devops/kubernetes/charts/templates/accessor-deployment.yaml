@@ -56,6 +56,30 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.accessor.secrets.speech.name }}
                   key: {{ .Values.accessor.secrets.speech.keys.speechKey }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.accessor.ports.container }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.accessor.ports.container }}
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.accessor.ports.container }}
+            initialDelaySeconds: 5
+            periodSeconds: 2
+            timeoutSeconds: 3
+            failureThreshold: 30
           resources:
             {{- toYaml .Values.accessor.resources | nindent 12 }}
 ---

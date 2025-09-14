@@ -174,4 +174,10 @@ app.MapRefreshSessionEndpoints();
 app.MapStatsEndpoints();
 app.MapMediaEndpoints();
 
+// Simple health check endpoint for Kubernetes probes
+app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTimeOffset.UtcNow }))
+    .WithName("HealthCheck")
+    .WithTags("Health")
+    .Produces(StatusCodes.Status200OK);
+
 await app.RunAsync();
