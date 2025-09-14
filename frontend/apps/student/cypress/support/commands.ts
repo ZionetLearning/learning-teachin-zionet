@@ -104,7 +104,6 @@ export const deleteAllCreatedUsers = () => {
 
   cy.location("origin").then((origin) => {
     if (origin === ADMIN_URL) {
-      // Same-origin batch deletion
       const ensureAdminLoggedInSame = () => {
         cy.get("body").then(($b) => {
           const loggedIn =
@@ -133,7 +132,7 @@ export const deleteAllCreatedUsers = () => {
                 $b2.find('[data-testid="ps-sidebar-container-test-id"]')
                   .length > 0;
               if (hasSidebar) return;
-              if (attempt >= 8) {
+              if (attempt >= 3) {
                 if ($b2.find('[data-testid="auth-tab-signup"]').length) {
                   cy.get('[data-testid="auth-tab-signup"]').click();
                 }
@@ -168,40 +167,59 @@ export const deleteAllCreatedUsers = () => {
       cy.get('[data-testid="sidebar-users"]', { timeout: 20000 }).click();
       cy.get('[data-testid="users-page"]', { timeout: 25000 }).should("exist");
       waitForUsersList();
-      cy.wrap(ordered).each((email: string) => {
-        locateUserRowByEmail(email).then((rowOrNull) => {
-          if (!rowOrNull) {
-            cy.log(`[e2e] User '${email}' not present; nothing to delete.`);
-            return;
-          }
-          const $row = rowOrNull as unknown as JQuery<HTMLElement>;
-          const testId = $row.attr("data-testid");
-          cy.on("window:confirm", () => true);
-          cy.wrap($row)
-            .find('[data-testid="users-delete-btn"]')
-            .click({ force: true });
-          cy.get("body", { timeout: 15000 }).then(($b) => {
-            const stillOnUsersPage =
-              $b.find('[data-testid="users-page"]').length > 0;
-            if (stillOnUsersPage) {
-              if (testId) {
-                cy.get(`[data-testid=\"${testId}\"]`, {
-                  timeout: 10000,
-                }).should("not.exist");
-              }
-              searchFor(email);
-              cy.contains('[data-testid=\"users-email\"]', email).should(
-                "not.exist",
-              );
-              clearSearch();
-            } else {
-              cy.get('[data-testid="auth-page"]', { timeout: 20000 }).should(
-                "exist",
-              );
+      cy.wrap(ordered)
+        .each((email: string) => {
+          locateUserRowByEmail(email).then((rowOrNull) => {
+            if (!rowOrNull) {
+              cy.log(`[e2e] User '${email}' not present; nothing to delete.`);
+              return;
             }
+            const $row = rowOrNull as unknown as JQuery<HTMLElement>;
+            const testId = $row.attr("data-testid");
+            cy.on("window:confirm", () => true);
+            cy.wrap($row)
+              .find('[data-testid="users-delete-btn"]')
+              .click({ force: true });
+            cy.get("body", { timeout: 15000 }).then(($b) => {
+              const stillOnUsersPage =
+                $b.find('[data-testid="users-page"]').length > 0;
+              if (stillOnUsersPage) {
+                if (testId) {
+                  cy.get(`[data-testid=\"${testId}\"]`, {
+                    timeout: 10000,
+                  }).should("not.exist");
+                }
+                searchFor(email);
+                cy.contains('[data-testid=\"users-email\"]', email).should(
+                  "not.exist",
+                );
+                clearSearch();
+              } else {
+                cy.get('[data-testid="auth-page"]', { timeout: 20000 }).should(
+                  "exist",
+                );
+              }
+            });
+          });
+        })
+        .then(() => {
+          cy.get("body").then(($b) => {
+            const onAuth =
+              $b.find('[data-testid="auth-page"]').length > 0 ||
+              $b.find('[data-testid="auth-email"]').length > 0;
+            if (onAuth) return;
+            cy.log("[e2e] Forcing logout after cleanup (same-origin)");
+            cy.window().then((win) => {
+              try {
+                win.localStorage.clear();
+              } catch {}
+            });
+            cy.visit(ADMIN_URL + "/");
+            cy.get('[data-testid="auth-page"]', { timeout: 20000 }).should(
+              "exist",
+            );
           });
         });
-      });
     } else {
       cy.origin(
         ADMIN_URL,
@@ -242,7 +260,7 @@ export const deleteAllCreatedUsers = () => {
                     $b2.find('[data-testid=\"ps-sidebar-container-test-id\"]')
                       .length > 0;
                   if (hasSidebar) return;
-                  if (attempt >= 8) {
+                  if (attempt >= 3) {
                     if ($b2.find('[data-testid=\"auth-tab-signup\"]').length) {
                       cy.get('[data-testid=\"auth-tab-signup\"]').click();
                     }
@@ -332,40 +350,61 @@ export const deleteAllCreatedUsers = () => {
             "exist",
           );
 
-          cy.wrap(emails).each((email: string) => {
-            locateUserRowByEmailInner(email).then((rowOrNull) => {
-              if (!rowOrNull) {
-                cy.log(`[e2e] User '${email}' not present; nothing to delete.`);
-                return;
-              }
-              const $row = rowOrNull as unknown as JQuery<HTMLElement>;
-              const testId = $row.attr("data-testid");
-              cy.on("window:confirm", () => true);
-              cy.wrap($row)
-                .find('[data-testid=\"users-delete-btn\"]')
-                .click({ force: true });
-              cy.get("body", { timeout: 15000 }).then(($b) => {
-                const stillOnUsersPage =
-                  $b.find('[data-testid=\"users-page\"]').length > 0;
-                if (stillOnUsersPage) {
-                  if (testId) {
-                    cy.get(`[data-testid=\"${testId}\"]`, {
-                      timeout: 10000,
-                    }).should("not.exist");
-                  }
-                  searchForInner(email);
-                  cy.contains('[data-testid=\"users-email\"]', email).should(
-                    "not.exist",
+          cy.wrap(emails)
+            .each((email: string) => {
+              locateUserRowByEmailInner(email).then((rowOrNull) => {
+                if (!rowOrNull) {
+                  cy.log(
+                    `[e2e] User '${email}' not present; nothing to delete.`,
                   );
-                  clearSearchInner();
-                } else {
-                  cy.get('[data-testid=\"auth-page\"]', {
-                    timeout: 20000,
-                  }).should("exist");
+                  return;
                 }
+                const $row = rowOrNull as unknown as JQuery<HTMLElement>;
+                const testId = $row.attr("data-testid");
+                cy.on("window:confirm", () => true);
+                cy.wrap($row)
+                  .find('[data-testid=\"users-delete-btn\"]')
+                  .click({ force: true });
+                cy.get("body", { timeout: 15000 }).then(($b) => {
+                  const stillOnUsersPage =
+                    $b.find('[data-testid=\"users-page\"]').length > 0;
+                  if (stillOnUsersPage) {
+                    if (testId) {
+                      cy.get(`[data-testid=\"${testId}\"]`, {
+                        timeout: 10000,
+                      }).should("not.exist");
+                    }
+                    searchForInner(email);
+                    cy.contains('[data-testid=\"users-email\"]', email).should(
+                      "not.exist",
+                    );
+                    clearSearchInner();
+                  } else {
+                    cy.get('[data-testid=\"auth-page\"]', {
+                      timeout: 20000,
+                    }).should("exist");
+                  }
+                });
+              });
+            })
+            .then(() => {
+              cy.get("body").then(($b) => {
+                const onAuth =
+                  $b.find('[data-testid=\"auth-page\"]')?.length > 0 ||
+                  $b.find('[data-testid=\"auth-email\"]')?.length > 0;
+                if (onAuth) return;
+                cy.log("[e2e] Forcing logout after cleanup (cross-origin)");
+                cy.window().then((win) => {
+                  try {
+                    win.localStorage.clear();
+                  } catch {}
+                });
+                cy.visit("/");
+                cy.get('[data-testid=\"auth-page\"]', {
+                  timeout: 20000,
+                }).should("exist");
               });
             });
-          });
         },
       );
     }
