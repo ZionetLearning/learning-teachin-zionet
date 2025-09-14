@@ -282,7 +282,6 @@ jobs:
             --set global.keyvault.clientId="$KEYVAULT_CLIENT_ID" \
             --set global.keyvault.tenantId="$KEYVAULT_TENANT_ID" \
             --set dapr.installComponents=false \
-            --set postgresProxy.target.host="$POSTGRES_PRIVATE_FQDN" \
           | grep -n '^kind: Namespace' && { echo "Namespace still rendered"; exit 1; } || echo "OK: no Namespace in chart"
 
       - name: Helm upgrade/install app
@@ -305,24 +304,7 @@ jobs:
             --set global.keyvault.tenantId="$KEYVAULT_TENANT_ID" \
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false \
-            --set postgresProxy.target.host="$POSTGRES_PRIVATE_FQDN"
 
-      - name: Verify postgres-proxy deployment
-        run: |
-          echo "🔍 Verifying postgres-proxy deployment..."
-          
-          # Wait for postgres-proxy pod to be ready
-          kubectl wait --for=condition=ready pod -l app=postgres-proxy -n "$TARGET_NAMESPACE" --timeout=120s
-          
-          # Check if service is created
-          kubectl get service -l app=postgres-proxy -n "$TARGET_NAMESPACE"
-          
-          # Show postgres-proxy logs
-          echo "📋 Postgres-proxy logs:"
-          kubectl logs -l app=postgres-proxy -n "$TARGET_NAMESPACE" --tail=10 || echo "No logs yet"
-          
-          echo "✅ Postgres-proxy verification complete"
-          echo "📝 FQDN used: $POSTGRES_PRIVATE_FQDN"
 
       - name: Diagnostics (on failure)
         if: failure()

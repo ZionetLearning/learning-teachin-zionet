@@ -80,6 +80,12 @@ jobs:
           chmod +x dapr-control-plane.sh
           ./dapr-control-plane.sh
 
+      - name: Add postgres-proxy
+        run: |
+          cd devops/helm-tools
+          chmod +x postgres-proxy.sh
+          ./postgres-proxy.sh
+
       - name: Setup ingress controller
         run: |
           cd devops/helm-tools
