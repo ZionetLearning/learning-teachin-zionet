@@ -47,6 +47,8 @@ public class TaskIntegrationTests(
         var after = await TaskUpdateHelper.WaitForTaskByIdAsync(Client, first.Id, timeoutSeconds: 10);
         after.Name.Should().Be(first.Name);
         after.Payload.Should().Be(first.Payload);
+        await Client.DeleteAsync(ApiRoutes.TaskById(first.Id));
+        await TaskUpdateHelper.WaitForTaskDeletionAsync(Client, first.Id);
     }
 
     [Fact(DisplayName = "POST /tasks-manager/task - With valid task should return 202 Accepted")]
@@ -82,6 +84,8 @@ public class TaskIntegrationTests(
 
         receivedNotification.Should().NotBeNull("Expected a success notification for task creation");
         OutputHelper.WriteLine($"Received notification: {receivedNotification!.Notification.Message}");
+        await Client.DeleteAsync(ApiRoutes.TaskById(task.Id));
+        await TaskUpdateHelper.WaitForTaskDeletionAsync(Client, task.Id);
     }
 
     [Theory(DisplayName = "POST /tasks-manager/task - With invalid task should return 400 BadRequest")]
@@ -97,17 +101,34 @@ public class TaskIntegrationTests(
     [Fact(DisplayName = "POST /tasks-manager/task - Same ID with different payload should still return 202 Accepted")]
     public async Task Post_Same_Id_With_Different_Payload_Should_Return_Accepted()
     {
-        var first = TestDataHelper.CreateFixedIdTask(2002);
-        var second = TestDataHelper.CreateFixedIdTask(2002);
+        var first = TestDataHelper.CreateFixedIdTask(23458);
+        var second = TestDataHelper.CreateFixedIdTask(23458);
         second.Name = first.Name + "_changed"; // different payload
 
-        // 1) POST first
         var r1 = await Client.PostAsJsonAsync(ApiRoutes.Task, first);
         r1.ShouldBeAccepted();
 
-        // 2) POST second with same Id but different payload — Manager doesn’t check, still Accepted
         var r2 = await Client.PostAsJsonAsync(ApiRoutes.Task, second);
         r2.ShouldBeAccepted();
+
+        var materialized = await TaskUpdateHelper.WaitForTaskByIdAsync(Client, first.Id, timeoutSeconds: 30);
+
+        await Task.Delay(500);
+
+        var del = await Client.DeleteAsync(ApiRoutes.TaskById(first.Id));
+        del.ShouldBeOk();
+
+        try
+        {
+            await TaskUpdateHelper.WaitForTaskDeletionAsync(Client, first.Id, timeoutSeconds: 20);
+        }
+        catch (TimeoutException)
+        {
+            await Task.Delay(500);
+            var del2 = await Client.DeleteAsync(ApiRoutes.TaskById(first.Id));
+            del2.ShouldBeOk();
+            await TaskUpdateHelper.WaitForTaskDeletionAsync(Client, first.Id, timeoutSeconds: 20);
+        }
     }
 
     [Fact(DisplayName = "GET /tasks-manager/task/{id} - With valid ID should return task")]
@@ -125,6 +146,9 @@ public class TaskIntegrationTests(
         fetchedTask.Payload.Should().Be(task.Payload);
 
         OutputHelper.WriteLine($"Verified task: ID={fetchedTask.Id}, Name={fetchedTask.Name}");
+        await Client.DeleteAsync(ApiRoutes.TaskById(task.Id));
+        await TaskUpdateHelper.WaitForTaskDeletionAsync(Client, task.Id);
+
     }
 
     [Theory(DisplayName = "GET /tasks-manager/task/{id} - Invalid ID should return 404 Not Found")]
