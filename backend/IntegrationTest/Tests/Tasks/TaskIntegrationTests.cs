@@ -5,7 +5,6 @@ using IntegrationTests.Helpers;
 using IntegrationTests.Models;
 using IntegrationTests.Models.Notification;
 using System.Net.Http.Json;
-using System.Threading.Tasks;
 using Xunit.Abstractions;
 
 namespace IntegrationTests.Tests.Tasks;
