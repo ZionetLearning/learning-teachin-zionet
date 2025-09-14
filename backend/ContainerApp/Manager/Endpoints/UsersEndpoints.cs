@@ -2,6 +2,7 @@
 using Manager.Helpers;
 using Manager.Models.Users;
 using Manager.Services.Clients.Accessor;
+//using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Endpoints;
@@ -124,12 +125,33 @@ public static class UsersEndpoints
         [FromBody] UpdateUserModel user,
         [FromServices] IAccessorClient accessorClient,
         [FromServices] ILogger<UserEndpoint> logger,
-        HttpContext http)
+        HttpContext httpContext)
     {
         using var scope = logger.BeginScope("UpdateUser {UserId}:", userId);
 
         try
         {
+            if (httpContext?.User == null)
+            {
+                logger.LogWarning("Access denied: missing or unauthenticated user context.");
+                return Results.Unauthorized();
+            }
+
+            var callerRole = httpContext.User.FindFirst(ClaimTypes.Role)?.Value;
+            if (string.IsNullOrWhiteSpace(callerRole))
+            {
+                logger.LogWarning("Access denied: no role claim found in user context.");
+                return Results.Forbid();
+            }
+
+            if (!Enum.TryParse<Role>(callerRole, ignoreCase: true, out var parsedCallerRole))
+            {
+                logger.LogWarning("Could not determine caller role.");
+                return Results.Forbid();
+            }
+
+            logger.LogInformation("Caller authenticated with role: {CallerRole}", callerRole);
+
             // Fetch current user to check role
             var existingUser = await accessorClient.GetUserAsync(userId);
             if (existingUser is null)
@@ -160,14 +182,6 @@ public static class UsersEndpoints
             }
 
             // Only Admins can change role of another user
-            var callerRole = http.User.FindFirst(ClaimTypes.Role)?.Value;
-
-            if (!Enum.TryParse<Role>(callerRole, ignoreCase: true, out var parsedCallerRole))
-            {
-                logger.LogWarning("Could not determine caller role.");
-                return Results.Forbid();
-            }
-
             if (user.Role.HasValue && parsedCallerRole != Role.Admin)
             {
                 logger.LogWarning("Non-admin attempted to change role. Caller role: {CallerRole}", parsedCallerRole);

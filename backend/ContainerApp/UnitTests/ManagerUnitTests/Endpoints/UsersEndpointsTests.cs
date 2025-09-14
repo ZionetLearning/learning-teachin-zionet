@@ -1,5 +1,3 @@
-using System;
-using System.Threading.Tasks;
 using FluentAssertions;
 using Manager.Endpoints;
 using Manager.Models.Users;
@@ -8,6 +6,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System;
+using System.Security.Claims;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace ManagerUnitTests.Endpoints;
@@ -102,7 +103,13 @@ public class UsersEndpointsTests
 
         var update = new UpdateUserModel { PreferredLanguageCode = SupportedLanguage.he };
 
-        var result = await Invoke("UpdateUserAsync", userId, update, _mockAccessor.Object, _mockLogger.Object);
+        var httpContext = new DefaultHttpContext
+        {
+            User = new ClaimsPrincipal(
+        new ClaimsIdentity([new Claim(ClaimTypes.Role, "Admin")], "TestAuth"))
+        };
+
+        var result = await Invoke("UpdateUserAsync", userId, update, _mockAccessor.Object, _mockLogger.Object, httpContext);
 
         var status = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
         status.StatusCode.Should().Be(StatusCodes.Status404NotFound);
@@ -117,8 +124,13 @@ public class UsersEndpointsTests
         _mockAccessor.Setup(a => a.GetUserAsync(userId)).ReturnsAsync(MakeUserData(Role.Student, "lang@test.com", userId));
 
         var update = new UpdateUserModel { PreferredLanguageCode = (SupportedLanguage)999 };
+        var httpContext = new DefaultHttpContext
+        {
+            User = new ClaimsPrincipal(
+       new ClaimsIdentity([new Claim(ClaimTypes.Role, "Admin")], "TestAuth"))
+        };
 
-        var result = await Invoke("UpdateUserAsync", userId, update, _mockAccessor.Object, _mockLogger.Object);
+        var result = await Invoke("UpdateUserAsync", userId, update, _mockAccessor.Object, _mockLogger.Object, httpContext);
 
         var status = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
         status.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
@@ -133,8 +145,13 @@ public class UsersEndpointsTests
         _mockAccessor.Setup(a => a.GetUserAsync(userId)).ReturnsAsync(MakeUserData(Role.Teacher, "teach@test.com", userId));
 
         var update = new UpdateUserModel { HebrewLevelValue = HebrewLevel.fluent };
+        var httpContext = new DefaultHttpContext
+        {
+            User = new ClaimsPrincipal(
+       new ClaimsIdentity([new Claim(ClaimTypes.Role, "Admin")], "TestAuth"))
+        };
 
-        var result = await Invoke("UpdateUserAsync", userId, update, _mockAccessor.Object, _mockLogger.Object);
+        var result = await Invoke("UpdateUserAsync", userId, update, _mockAccessor.Object, _mockLogger.Object, httpContext);
 
         var status = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
         status.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
@@ -151,7 +168,14 @@ public class UsersEndpointsTests
 
         var update = new UpdateUserModel { PreferredLanguageCode = SupportedLanguage.he };
 
-        var result = await Invoke("UpdateUserAsync", userId, update, _mockAccessor.Object, _mockLogger.Object);
+        // Build fake HttpContext with an Admin role
+        var httpContext = new DefaultHttpContext
+        {
+            User = new ClaimsPrincipal(
+       new ClaimsIdentity([new Claim(ClaimTypes.Role, "Admin")], "TestAuth"))
+        };
+
+        var result = await Invoke("UpdateUserAsync", userId, update, _mockAccessor.Object, _mockLogger.Object, httpContext);
 
         var status = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
         status.StatusCode.Should().Be(StatusCodes.Status200OK);
