@@ -169,7 +169,7 @@ public class AccessorQueueHandler : IQueueHandler<Message>
             if (cancellationToken.IsCancellationRequested)
             {
                 _logger.LogWarning(ex, "Operation cancelled while processing {Action}", message.ActionName);
-                throw new OperationCanceledException("Operation wasCancelled.", ex, cancellationToken);
+                throw new OperationCanceledException("Operation was cancelled.", ex, cancellationToken);
             }
 
             _logger.LogError(ex, "Transient error while creating task for action {Action}", message.ActionName);
