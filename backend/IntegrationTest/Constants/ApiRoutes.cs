@@ -12,4 +12,7 @@ public static class ApiRoutes
     public const string User = "users-manager/user";
     public static string UserById(Guid userId) => $"users-manager/user/{userId}";
     public const string UserList = "users-manager/user-list";
+
+    // -------- Auth --------
+    public const string Login = "auth/login";
 }

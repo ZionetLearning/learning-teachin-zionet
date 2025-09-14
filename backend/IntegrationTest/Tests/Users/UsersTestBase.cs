@@ -1,9 +1,12 @@
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using IntegrationTests.Constants;
 using IntegrationTests.Fixtures;
 using IntegrationTests.Infrastructure;
+using IntegrationTests.Models.Auth;
+using Manager.Models.Auth;
 using Manager.Models.Users;
 using Xunit.Abstractions;
-using System.Net.Http.Json;
 
 namespace IntegrationTests.Tests.Users;
 
@@ -11,10 +14,24 @@ public abstract class UsersTestBase(
     SharedTestFixture sharedFixture,
     ITestOutputHelper outputHelper,
     SignalRTestFixture signalRFixture
-) : IntegrationTestBase(sharedFixture.HttpFixture, outputHelper, signalRFixture)
+) : IntegrationTestBase(sharedFixture.HttpFixture, outputHelper, signalRFixture), IAsyncLifetime
 {
     protected SharedTestFixture Shared { get; } = sharedFixture;
-    public override Task InitializeAsync() => SuiteInit.EnsureAsync(Shared, SignalRFixture, OutputHelper);
+    private readonly List<Guid> _createdUserIds = new();
+
+    public override Task InitializeAsync() =>
+        SuiteInit.EnsureAsync(Shared, SignalRFixture, OutputHelper);
+
+    public Task DisposeAsync() => CleanupAsync();
+
+    private async Task CleanupAsync()
+    {
+        foreach (var id in _createdUserIds)
+        {
+            await Client.DeleteAsync(ApiRoutes.UserById(id));
+        }
+        _createdUserIds.Clear();
+    }
 
     /// <summary>
     /// Creates a user via POST and returns the created user data.
@@ -31,11 +48,39 @@ public abstract class UsersTestBase(
         response.EnsureSuccessStatusCode();
 
         var created = await ReadAsJsonAsync<UserData>(response);
+        _createdUserIds.Add(created!.UserId);
         return created!;
     }
 
     /// <summary>
-    /// Builds a request with an optional Accept-Language header.
+    /// Creates and logs in a user, returning both the user and its token.
+    /// </summary>
+    protected async Task<(UserData user, string token)> CreateAndLoginUserAsync(
+        string role = "student",
+        string? email = null)
+    {
+        var user = await CreateUserAsync(role, email);
+
+        var loginRequest = new LoginRequest
+        {
+            Email = user.Email,
+            Password = TestDataHelper.DefaultPassword // make sure DefaultPassword = "Passw0rd!"
+        };
+
+        var response = await Client.PostAsJsonAsync(ApiRoutes.Login, loginRequest);
+        response.EnsureSuccessStatusCode();
+
+        var tokenResponse = await ReadAsJsonAsync<AccessTokenResponse>(response);
+        var token = tokenResponse!.AccessToken;
+
+        Client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", token);
+
+        return (user, token);
+    }
+
+    /// <summary>
+    /// Builds a POST request with optional Accept-Language header.
     /// </summary>
     protected HttpRequestMessage BuildRequest(string url, object body, string? acceptLanguage = null)
     {

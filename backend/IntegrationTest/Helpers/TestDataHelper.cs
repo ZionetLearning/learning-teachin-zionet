@@ -6,6 +6,8 @@ public static class TestDataHelper
 {
     // Reserve a high range to avoid collisions with “real” data
     private const int MinTestId = 1_000_000;
+    // Shared password for all test users
+    public const string DefaultPassword = "Passw0rd!";
 
     public static TaskModel CreateRandomTask()
     {
@@ -46,7 +48,7 @@ public static class TestDataHelper
             Email = email ?? $"dup_{Guid.NewGuid()}@test.com",
             FirstName = "Test",
             LastName = "User",
-            Password = "123456",
+            Password = DefaultPassword,
             Role = "student"
         };
     }
