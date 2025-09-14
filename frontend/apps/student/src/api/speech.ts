@@ -23,8 +23,10 @@ export type SynthesizerRequest = {
 
 export type AzureSpeechTokenResponse = {
   token: string;
+  region?: string;
 };
 
+//this hook returns a mutation function that takes in text and returns synthesized speech data
 export const useSynthesizeSpeech = () => {
   const AI_BASE_URL = import.meta.env.VITE_AI_URL!;
   return useMutation<SynthesizeResponse, Error, SynthesizerRequest>({
@@ -48,5 +50,7 @@ export const useAzureSpeechToken = () => {
     },
     staleTime: 540000, // 9 minutes
     refetchInterval: 540000, // 9 minutes
+    // refetchOnWindowFocus: false, // avoid surprise re-fetches
+    // retry: 2, // soften transient network hiccups
   });
 };
