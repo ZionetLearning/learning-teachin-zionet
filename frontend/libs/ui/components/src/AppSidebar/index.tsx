@@ -5,9 +5,9 @@ export interface SidebarLink {
   label: React.ReactNode;
   icon?: React.ReactNode;
   path?: string;
-  onClick?: () => void;
   testId?: string;
   children?: SidebarLink[];
+  onClick?: () => void;
 }
 
 export interface LanguageItem {
