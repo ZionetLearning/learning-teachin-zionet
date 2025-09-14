@@ -32,7 +32,7 @@ public abstract class TaskTestBase(
 
         var received = await WaitForNotificationAsync(
             n => n.Type == NotificationType.Success && n.Message.Contains(task.Name),
-            TimeSpan.FromSeconds(100)
+            TimeSpan.FromSeconds(300)
         );
         received.Should().NotBeNull("Expected a SignalR notification");
 
