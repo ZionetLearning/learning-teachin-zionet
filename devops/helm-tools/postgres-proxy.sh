@@ -11,6 +11,7 @@ kubectl create namespace "$PROXY_NAMESPACE" --dry-run=client -o yaml | kubectl a
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD/../../..")"
 CHART_PATH="$REPO_ROOT/devops/kubernetes/charts"
 helm upgrade --install postgres-proxy "$CHART_PATH" \
+  --set manager.ingress.enabled=false \
   --namespace "$PROXY_NAMESPACE" \
   --set namespace.name="$PROXY_NAMESPACE" \
   --set namespace.create=false \
