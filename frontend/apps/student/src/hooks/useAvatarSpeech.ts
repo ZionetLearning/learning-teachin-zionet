@@ -31,54 +31,67 @@ export const useAvatarSpeech = ({
   const timeoutsRef = useRef<NodeJS.Timeout[]>([]);
   const visemeTimelineRef = useRef<Array<{ visemeId: number; offsetMs: number }>>([]);
 
-  const visemeMap = useMemo(() => {
-    return lipsArray.reduce((acc, path, index) => {
-      acc[index] = path;
-      return acc;
-    }, {} as Record<number, string>);
-  }, [lipsArray]);
+  const visemeMap = useMemo(() =>
+      lipsArray.reduce((acc, path, index) => {
+        acc[index] = path;
+        return acc;
+      }, {} as Record<number, string>),
+    [lipsArray]
+  );
 
   const clearTimeouts = useCallback(() => {
     timeoutsRef.current.forEach(clearTimeout);
     timeoutsRef.current = [];
   }, []);
 
-  useEffect(() => {
-    return () => {
-      try {
-        synthesizerRef.current?.close();
-      } catch {
-        /* ignore */
-      }
-      synthesizerRef.current = null;
-      clearTimeouts();
-      speakerDestRef.current = null;
-    };
-  }, [clearTimeouts]);
-
-  const stop = useCallback(async () => {
+  const closeSynthAndDest = useCallback(() => {
     try {
-      synthesizerRef.current?.close(); // JS SDK: close() cancels/stops
+      synthesizerRef.current?.close();
     } catch {
       /* ignore */
-    } finally {
-      setIsPlaying(false);
-      setCurrentViseme(0);
-      onAudioEnd?.();
     }
-  }, [onAudioEnd]);
+    synthesizerRef.current = null;
 
-  const safeVolume = (v: number) => Math.min(Math.max(v, 0), 1);
+    try {
+      speakerDestRef.current?.close();
+    } catch {
+      /* ignore */
+    }
+    speakerDestRef.current = null;
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      closeSynthAndDest();
+      clearTimeouts();
+    };
+  }, [clearTimeouts, closeSynthAndDest]);
+
+  const stop = useCallback(async () => {
+    closeSynthAndDest();
+    setIsPlaying(false);
+    setCurrentViseme(0);
+    onAudioEnd?.();
+  }, [closeSynthAndDest, onAudioEnd]);
+
+  const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
   const toggleMute = useCallback(() => {
     setIsMuted((prev) => {
       const next = !prev;
       if (speakerDestRef.current) {
-        speakerDestRef.current.volume = next ? 0 : safeVolume(volume);
+        speakerDestRef.current.volume = next ? 0 : clamp01(volume);
       }
       return next;
     });
   }, [volume]);
+
+  // Keep volume in sync if it changes mid-utterance
+  useEffect(() => {
+    if (speakerDestRef.current) {
+      speakerDestRef.current.volume = isMuted ? 0 : clamp01(volume);
+    }
+  }, [isMuted, volume]);
 
   const speak = useCallback(
     async (text: string, voiceName?: string) => {
@@ -117,61 +130,65 @@ export const useAvatarSpeech = ({
         return;
       }
 
-      // Real SDK
+      // Real SDK path
       if (isPlaying) {
         await stop();
         return;
       }
 
       try {
-        // Ensure token & region (prefer API’s region; fallback to env)
+        // Resolve token & region (prefer API; fallback to env)
         let token = tokenData?.token;
-        let region: string | undefined = (tokenData as unknown as { region?: string })?.region ?? SPEECH_REGION;
+        let region: string | undefined =
+          (tokenData as unknown as { region?: string })?.region ?? SPEECH_REGION;
 
         if (!token || !region) {
           const r = await refetch();
-          token = r.data?.token;
-          region = (r.data as unknown as { region?: string })?.region ?? SPEECH_REGION;
+          token = r.data?.token ?? token;
+          region =
+            (r.data as unknown as { region?: string })?.region ?? region ?? SPEECH_REGION;
         }
-        if (!token || !region) throw new Error("Speech token/region unavailable.");
-
-        // Create or reuse a speaker destination for volume/mute
-        if (!speakerDestRef.current) {
-          const dest = new SpeechSDK.SpeakerAudioDestination();
-          dest.onAudioStart = () => {
-            onAudioStart?.();
-            setIsPlaying(true);
-          };
-          dest.onAudioEnd = () => {
-            setIsPlaying(false);
-            setCurrentViseme(0);
-            onAudioEnd?.();
-          };
-          dest.volume = isMuted ? 0 : safeVolume(volume);
-          speakerDestRef.current = dest;
-        } else {
-          speakerDestRef.current.volume = isMuted ? 0 : safeVolume(volume);
+        if (!token || !region) {
+          throw new Error("Speech token/region unavailable.");
         }
 
-        // Replace previous synthesizer
-        try {
-          synthesizerRef.current?.close();
-        } catch {
-          /* ignore */
-        }
-        synthesizerRef.current = null;
+        // Always start fresh to avoid MSE 'updating' issues
+        closeSynthAndDest();
+
+        const dest = new SpeechSDK.SpeakerAudioDestination();
+        dest.onAudioStart = () => {
+          onAudioStart?.();
+          setIsPlaying(true);
+        };
+        dest.onAudioEnd = () => {
+          setIsPlaying(false);
+          setCurrentViseme(0);
+          onAudioEnd?.();
+          // release media resources after playback
+          try {
+            dest.close();
+          } catch {
+            /* ignore */
+          }
+          if (speakerDestRef.current === dest) speakerDestRef.current = null;
+        };
+        dest.volume = isMuted ? 0 : clamp01(volume);
+        speakerDestRef.current = dest;
 
         const speechConfig = SpeechSDK.SpeechConfig.fromAuthorizationToken(token, region);
         if (voiceName) speechConfig.speechSynthesisVoiceName = voiceName;
 
-        // Enable visemes
-        speechConfig.setProperty("SpeechServiceConnection_SynthVoiceVisemeEvent", "true");
+        // Enable viseme events
+        speechConfig.setProperty(
+          "SpeechServiceConnection_SynthVoiceVisemeEvent",
+          "true"
+        );
 
-        const audioConfig = SpeechSDK.AudioConfig.fromSpeakerOutput(speakerDestRef.current);
+        const audioConfig = SpeechSDK.AudioConfig.fromSpeakerOutput(dest);
         const synthesizer = new SpeechSDK.SpeechSynthesizer(speechConfig, audioConfig);
         synthesizerRef.current = synthesizer;
 
-        // Events (lowerCamelCase in JS SDK)
+        // JS SDK events are lowerCamelCase
         synthesizer.visemeReceived = (
           _s: SpeechSDK.SpeechSynthesizer,
           e: SpeechSDK.SpeechSynthesisVisemeEventArgs
@@ -190,6 +207,7 @@ export const useAvatarSpeech = ({
           setIsPlaying(false);
           setCurrentViseme(0);
           onAudioEnd?.();
+          closeSynthAndDest();
         };
 
         synthesizer.SynthesisCanceled = async (
@@ -202,6 +220,7 @@ export const useAvatarSpeech = ({
           if (e.result.errorDetails && e.result.errorDetails.toLowerCase().includes("token")) {
             await refetch(); // refresh for next call
           }
+          closeSynthAndDest();
         };
 
         await new Promise<void>((resolve, reject) => {
@@ -220,9 +239,21 @@ export const useAvatarSpeech = ({
         setIsPlaying(false);
         setCurrentViseme(0);
         onAudioEnd?.();
+        closeSynthAndDest();
       }
     },
-    [clearTimeouts, isPlaying, onAudioEnd, onAudioStart, refetch, tokenData, stop, volume, isMuted]
+    [
+      clearTimeouts,
+      closeSynthAndDest,
+      isPlaying,
+      onAudioEnd,
+      onAudioStart,
+      refetch,
+      tokenData, // Option B: depend on the whole object
+      stop,
+      volume,
+      isMuted,
+    ]
   );
 
   return {
