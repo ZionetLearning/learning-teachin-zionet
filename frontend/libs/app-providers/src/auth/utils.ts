@@ -93,15 +93,11 @@ export const decodeJwtUserId = (token: string): string | null => {
   }
 };
 
-export const roleNumberToAppRole: Record<number, AppRoleType> = {
-  0: "student",
-  1: "teacher",
-  2: "admin",
-};
-
-export const toAppRole = (n: unknown): AppRoleType => {
-  if (typeof n === "number" && n in roleNumberToAppRole) {
-    return roleNumberToAppRole[n];
-  }
+export const toAppRole = (
+  v: string | number | null | undefined,
+): AppRoleType => {
+  if (typeof v === "string") return v.trim().toLowerCase() as AppRoleType;
+  if (typeof v === "number")
+    return (["student", "teacher", "admin"][v] ?? "student") as AppRoleType;
   return "student";
 };
