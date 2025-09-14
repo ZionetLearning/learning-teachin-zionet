@@ -392,7 +392,6 @@ public class AccessorClient(
 
     public async Task<RefreshSessionDto> GetSessionAsync(string oldHash, CancellationToken ct)
     {
-        _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetSessionAsync), nameof(AccessorClient));
         try
         {
             var session = await _daprClient.InvokeMethodAsync<RefreshSessionDto>(
