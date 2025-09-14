@@ -1,4 +1,4 @@
-import { deleteCreatedUser } from "../support/commands";
+import { addCreatedEmail } from "../support/commands";
 
 describe("auth", () => {
   const baseUrl = "https://localhost:4000";
@@ -29,17 +29,19 @@ describe("auth", () => {
     });
   });
 
-  it("signup creates session using same deterministic credentials as Users and cleans up", () => {
-    Cypress.env("E2E_TEST_EMAIL", "e2e_users_fixed_user@example.com");
-    Cypress.env("E2E_TEST_PASSWORD", "Passw0rd!");
+  it("signup creates session using same deterministic credentials as Users and registers for centralized cleanup", () => {
+    const EMAIL = "e2e_users_fixed_user@example.com";
+    const PASSWORD = "Passw0rd!";
+    Cypress.env("E2E_TEST_EMAIL", EMAIL);
+    Cypress.env("E2E_TEST_PASSWORD", PASSWORD);
+
+    addCreatedEmail(EMAIL);
 
     cy.login();
 
     cy.get('[data-testid="app-sidebar"]').should("exist");
     cy.reload();
     cy.get('[data-testid="app-sidebar"]').should("exist");
-
-    deleteCreatedUser();
   });
 
   it("protected route redirects to auth when not logged in", () => {
