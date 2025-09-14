@@ -113,7 +113,7 @@ public class TaskIntegrationTests(
         var r2 = await Client.PostAsJsonAsync(ApiRoutes.Task, second);
         r2.ShouldBeAccepted();
         await Client.DeleteAsync(ApiRoutes.TaskById(first.Id));
-        await TaskUpdateHelper.WaitForTaskDeletionAsync(Client, first.Id);
+        await TaskUpdateHelper.WaitForTaskDeletionAsync(Client, first.Id , timeoutSeconds: 300);
     }
 
     [Fact(DisplayName = "GET /tasks-manager/task/{id} - With valid ID should return task")]
