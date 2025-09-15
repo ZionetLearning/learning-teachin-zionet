@@ -4,7 +4,7 @@
 # This script fixes the PostgreSQL connection string for private networking
 # Azure auto-generates DNS records for VNet-integrated PostgreSQL servers
 
-set -e
+set -euo pipefail
 
 # Configuration - can be overridden by environment variables or parameters
 ENVIRONMENT_NAME="${1:-${ENVIRONMENT_NAME:-prod}}"
@@ -12,6 +12,13 @@ RESOURCE_GROUP="${2:-${RESOURCE_GROUP:-${ENVIRONMENT_NAME}-zionet-learning-2025}
 DNS_ZONE="${3:-${DNS_ZONE:-privatelink.postgres.database.azure.com}}"
 KEY_VAULT="${4:-${KEY_VAULT:-teachin-seo-kv}}"
 SECRET_NAME="${5:-${SECRET_NAME:-${ENVIRONMENT_NAME}-postgres-connection}}"
+
+K8S_SECRET_NAME="${K8S_SECRET_NAME:-postgres-connection}"
+K8S_NAMESPACE="${K8S_NAMESPACE:-$ENVIRONMENT_NAME}
+
+
+trap 'if [ -n "${GITHUB_OUTPUT:-}" ]; then echo "POSTGRES_PRIVATE_FQDN=" >> "$GITHUB_OUTPUT"; fi' ERR
+
 
 echo "🔍 Fetching auto-generated PostgreSQL private FQDN..."
 echo "📋 Environment: $ENVIRONMENT_NAME"
@@ -42,14 +49,26 @@ CURRENT_CONNECTION=$(az keyvault secret show \
   --query 'value' \
   --output tsv)
 
+if [ -z "${CURRENT_CONNECTION}" ]; then
+  echo "❌ Error: Secret '$SECRET_NAME' not found or empty in Key Vault '$KEY_VAULT'"
+  exit 1
+fi
+
+
 # Replace the host in the connection string
 # Extract database, username, password from current string
-DATABASE=$(echo "$CURRENT_CONNECTION" | grep -o 'Database=[^;]*' | cut -d'=' -f2)
-USERNAME=$(echo "$CURRENT_CONNECTION" | grep -o 'Username=[^;]*' | cut -d'=' -f2)
-PASSWORD=$(echo "$CURRENT_CONNECTION" | grep -o 'Password=[^;]*' | cut -d'=' -f2)
+DATABASE=$(echo "$CURRENT_CONNECTION" | grep -o 'Database=[^;]*' | cut -d'=' -f2 || true)
+USERNAME=$(echo "$CURRENT_CONNECTION" | grep -o 'Username=[^;]*' | cut -d'=' -f2 || true)
+PASSWORD=$(echo "$CURRENT_CONNECTION" | grep -o 'Password=[^;]*' | cut -d'=' -f2 || true)
+SSL_MODE=$(echo "$CURRENT_CONNECTION" | grep -o 'SslMode=[^;]*' | cut -d'=' -f2 || true)
+
+if [ -z "${SSL_MODE}" ]; then
+  SSL_MODE="Require"
+fi
+
 
 # Build new connection string with correct private FQDN
-NEW_CONNECTION="Host=${PRIVATE_FQDN};Database=${DATABASE};Username=${USERNAME};Password=${PASSWORD};SslMode=Require"
+NEW_CONNECTION="Host=${PRIVATE_FQDN};Database=${DATABASE};Username=${USERNAME};Password=${PASSWORD};SslMode=${SSL_MODE}"
 
 # Update Key Vault secret
 az keyvault secret set \
@@ -61,17 +80,22 @@ az keyvault secret set \
 echo "✅ Updated Key Vault secret with private FQDN"
 
 # Force External Secrets to refresh (if in Kubernetes environment)
-if command -v kubectl &> /dev/null; then
-  echo "🔄 Refreshing Kubernetes secret..."
-  kubectl delete secret postgres-connection -n prod --ignore-not-found=true
-  
-  # Wait for External Secrets to recreate
+if command -v kubectl &>/dev/null; then
+  echo "🔄 Refreshing Kubernetes secret '${K8S_SECRET_NAME}' in namespace '${K8S_NAMESPACE}'..."
+  kubectl delete secret "${K8S_SECRET_NAME}" -n "${K8S_NAMESPACE}" --ignore-not-found=true
+
   echo "⏳ Waiting for External Secrets to sync..."
   sleep 10
-  
-  kubectl get secret postgres-connection -n prod &> /dev/null && \
-    echo "✅ Kubernetes secret refreshed successfully" || \
-    echo "⚠️  Warning: Kubernetes secret not found - External Secrets may need time to sync"
+
+  if kubectl get secret "${K8S_SECRET_NAME}" -n "${K8S_NAMESPACE}" &>/dev/null; then
+    echo "✅ Kubernetes secret refreshed successfully"
+  else
+    echo "⚠️  Warning: Kubernetes secret not found yet - External Secrets may need more time to sync"
+  fi
+fi
+
+if [ -n "${GITHUB_OUTPUT:-}" ]; then
+  echo "POSTGRES_PRIVATE_FQDN=$PRIVATE_FQDN" >> "$GITHUB_OUTPUT"
 fi
 
 echo "🎉 PostgreSQL private FQDN fix completed!"

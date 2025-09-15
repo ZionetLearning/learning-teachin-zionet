@@ -27,6 +27,9 @@ on:
       environment_name:
         required: false
         type: string
+      POSTGRES_PRIVATE_FQDN:
+        required: true
+        type: string  
     outputs:
       ingress_url:
         description: "http://<ingress external IP>"
@@ -81,10 +84,13 @@ jobs:
           ./dapr-control-plane.sh
 
       - name: Add postgres-proxy
+        if: ${{ inputs.POSTGRES_PRIVATE_FQDN != '' }}
         run: |
           cd devops/helm-tools
           chmod +x postgres-proxy.sh
           ./postgres-proxy.sh
+        env:
+          POSTGRES_PRIVATE_FQDN: ${{ inputs.POSTGRES_PRIVATE_FQDN }}
 
       - name: Setup ingress controller
         run: |

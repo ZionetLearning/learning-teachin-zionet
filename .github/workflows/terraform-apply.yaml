@@ -23,6 +23,10 @@ on:
       application_insights_connection_strings:
         description: "Connection strings for Application Insights per frontend app"
         value: ${{ jobs.terraform.outputs.application_insights_connection_strings }}
+      POSTGRES_PRIVATE_FQDN:
+        description: "Private FQDN for Azure PostgreSQL"
+        value: ${{ jobs.terraform.outputs.POSTGRES_PRIVATE_FQDN }}
+
   workflow_dispatch:
     inputs:
       environment:
@@ -47,6 +51,7 @@ jobs:
     outputs:
       static_web_app_api_keys: ${{ steps.terraform_output.outputs.static_web_app_api_keys }}
       application_insights_connection_strings: ${{ steps.terraform_output.outputs.application_insights_connection_strings }}
+      POSTGRES_PRIVATE_FQDN: ${{ steps.fix_postgres_fqdn.outputs.POSTGRES_PRIVATE_FQDN }}
 
     env:
       ARM_USE_OIDC: "true" # tell provider to use the OIDC token
@@ -141,28 +146,28 @@ jobs:
       # Azure auto-generates DNS records for VNet-integrated PostgreSQL servers
       # This step updates Key Vault with the correct auto-generated FQDN
       - name: Fix PostgreSQL Private FQDN
+        id: fix_postgres_fqdn
         env:
           ENVIRONMENT_NAME: ${{ env.environment_name }}
         run: |
           echo "🔍 Fixing PostgreSQL private FQDN for environment: $ENVIRONMENT_NAME"
-          
-          # Make script executable and run with environment-specific parameters
           chmod +x ./.github/workflows/scripts/fix-postgres-private-fqdn.sh
           ./.github/workflows/scripts/fix-postgres-private-fqdn.sh \
             "$ENVIRONMENT_NAME" \
             "${ENVIRONMENT_NAME}-zionet-learning-2025" \
             "privatelink.postgres.database.azure.com" \
             "teachin-seo-kv" \
-            "${ENVIRONMENT_NAME}-postgres-connection" || echo "⚠️ PostgreSQL FQDN fix failed - may not be needed for this environment"
+            "${ENVIRONMENT_NAME}-postgres-connection"
 
       - name: Get Terraform Outputs
-        if : false # Disable output retrieval for now
+        if: false
         id: terraform_output
         run: |
           echo "Getting terraform outputs..."
-          STATIC_WEB_APP_API_KEYS=$(terraform output -json static_web_app_api_keys)
-          APP_INSIGHTS_CONN_STRINGS=$(terraform output -json application_insights_connection_strings)
           
-          echo "static_web_app_api_keys=$STATIC_WEB_APP_API_KEYS" >> "$GITHUB_OUTPUT"
-          echo "application_insights_connection_strings=$APP_INSIGHTS_CONN_STRINGS" >> "$GITHUB_OUTPUT"
+          # STATIC_WEB_APP_API_KEYS=$(terraform output -json static_web_app_api_keys)
+          # APP_INSIGHTS_CONN_STRINGS=$(terraform output -json application_insights_connection_strings)
+          
+          # echo "static_web_app_api_keys=$STATIC_WEB_APP_API_KEYS" >> "$GITHUB_OUTPUT"
+          # echo "application_insights_connection_strings=$APP_INSIGHTS_CONN_STRINGS" >> "$GITHUB_OUTPUT"
         working-directory: ${{ env.TF_DIR }}
