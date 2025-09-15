@@ -46,6 +46,10 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.accessor.secrets.postgres.name }}
                   key: {{ .Values.accessor.secrets.postgres.key }}
+            - name: POSTGRES_ENDPOINT
+              value: "{{ .Values.global.postgres.endpoint }}"
+            - name: POSTGRES_CLIENT_ID
+              value: "{{ .Values.global.postgres.clientId }}"
             - name: Speech__Key
               valueFrom:
                 secretKeyRef:

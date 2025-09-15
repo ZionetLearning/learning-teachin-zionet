@@ -7,9 +7,12 @@ using Accessor.Models.QueueMessages;
 using Accessor.Options;
 using Accessor.Services;
 using Accessor.Services.Interfaces;
+using Azure.Core;
+using Azure.Identity;
 using Azure.Messaging.ServiceBus;
 using DotQueue;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -82,15 +85,73 @@ builder.Services.AddDaprClient(client =>
     });
 });
 
-// Configure PostgreSQL
-builder.Services.AddDbContext<AccessorDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres"), npgsqlOptions =>
+// Configure PostgreSQL with Managed Identity support
+string? postgresEndpoint = builder.Configuration["POSTGRES_ENDPOINT"];
+string? postgresClientId = builder.Configuration["POSTGRES_CLIENT_ID"];
+
+NpgsqlDataSource? dataSource = null;
+if (!string.IsNullOrEmpty(postgresEndpoint) && !string.IsNullOrEmpty(postgresClientId))
+{
+    // Use Managed Identity for PostgreSQL authentication
+    var connectionBuilder = new NpgsqlConnectionStringBuilder(postgresEndpoint);
+    connectionBuilder.SslMode = SslMode.Require;
+    connectionBuilder.Password = null; // Remove any password
+    
+    Console.WriteLine($"PostgreSQL: Using Managed Identity authentication");
+    Console.WriteLine($"PostgreSQL: Endpoint: {postgresEndpoint}");
+    Console.WriteLine($"PostgreSQL: Client ID: {postgresClientId}");
+    
+    var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionBuilder.ToString());
+    dataSourceBuilder.UsePeriodicPasswordProvider(async (_, ct) =>
     {
-        npgsqlOptions.EnableRetryOnFailure(
-            maxRetryCount: 5,
-            maxRetryDelay: TimeSpan.FromSeconds(5),
-            errorCodesToAdd: null);
-    }));
+        try
+        {
+            var credential = new DefaultAzureCredential(new DefaultAzureCredentialOptions
+            {
+                ManagedIdentityClientId = postgresClientId
+            });
+            
+            var accessToken = await credential.GetTokenAsync(
+                new TokenRequestContext(["https://ossrdbms-aad.database.windows.net/.default"]), ct);
+            
+            Console.WriteLine($"PostgreSQL: Successfully obtained access token, expires: {accessToken.ExpiresOn}");
+            return accessToken.Token;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"PostgreSQL: Failed to get access token: {ex.Message}");
+            throw;
+        }
+    }, TimeSpan.FromMinutes(55), TimeSpan.FromSeconds(10));
+    
+    dataSource = dataSourceBuilder.Build();
+}
+
+if (dataSource != null)
+{
+    // Use Managed Identity data source
+    builder.Services.AddDbContext<AccessorDbContext>(options =>
+        options.UseNpgsql(dataSource, npgsqlOptions =>
+        {
+            npgsqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(5),
+                errorCodesToAdd: null);
+        }));
+}
+else
+{
+    // Fallback to connection string
+    Console.WriteLine("PostgreSQL: Using connection string authentication");
+    builder.Services.AddDbContext<AccessorDbContext>(options =>
+        options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres"), npgsqlOptions =>
+        {
+            npgsqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(5),
+                errorCodesToAdd: null);
+        }));
+}
 
 // This is required for the Scalar UI to have an option to setup an authentication token
 builder.Services.AddOpenApi(

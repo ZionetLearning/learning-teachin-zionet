@@ -26,6 +26,9 @@ global:
   signalr:
     endpoint: ""   # Will be set to something like "https://dev-signalr-teachin.service.signalr.net"
     clientId: ""   # Will be set by CI/CD from Terraform managed identity
+  postgres:
+    endpoint: ""   # Will be set to something like "Host=dev-pg-zionet-learning.postgres.database.azure.com;Database=appdb-dev;Username=dev-app-identity@dev-pg-zionet-learning"
+    clientId: ""   # Will be set by CI/CD from Terraform managed identity
 
 # If empty, namespace becomes <namePrefix>
 namespace:

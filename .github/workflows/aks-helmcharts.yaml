@@ -158,6 +158,10 @@ jobs:
           echo "SIGNALR_ENDPOINT=https://${CURRENT_NAMESPACE}-signalr-teachin.service.signalr.net" >> $GITHUB_ENV
           echo "SIGNALR_CLIENT_ID=$MANAGED_IDENTITY_CLIENT_ID" >> $GITHUB_ENV
           
+          # PostgreSQL Managed Identity (from Terraform outputs)
+          echo "POSTGRES_ENDPOINT=Host=dev-pg-zionet-learning.postgres.database.azure.com;Database=appdb-${CURRENT_NAMESPACE};Username=${CURRENT_NAMESPACE}-app-identity@dev-pg-zionet-learning" >> $GITHUB_ENV
+          echo "POSTGRES_CLIENT_ID=$MANAGED_IDENTITY_CLIENT_ID" >> $GITHUB_ENV
+          
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
 
@@ -288,6 +292,8 @@ jobs:
             --set global.servicebus.clientId="$SERVICEBUS_CLIENT_ID" \
             --set global.signalr.endpoint="$SIGNALR_ENDPOINT" \
             --set global.signalr.clientId="$SIGNALR_CLIENT_ID" \
+            --set global.postgres.endpoint="$POSTGRES_ENDPOINT" \
+            --set global.postgres.clientId="$POSTGRES_CLIENT_ID" \
             --set dapr.installComponents=false \
           | grep -n '^kind: Namespace' && { echo "Namespace still rendered"; exit 1; } || echo "OK: no Namespace in chart"
 
@@ -354,6 +360,75 @@ jobs:
             --scope "$SIGNALR_RESOURCE_ID" \
             --only-show-errors || echo "SignalR App Server role already assigned or failed"
 
+      - name: Setup PostgreSQL Managed Identity access
+        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
+        run: |
+          # Get the managed identity details from the resource group
+          MANAGED_IDENTITY_PRINCIPAL_ID=$(az identity show \
+            --resource-group "${TARGET_NAMESPACE}-zionet-learning-2025" \
+            --name "${TARGET_NAMESPACE}-app-identity" \
+            --query principalId -o tsv)
+          
+          # Set the managed identity as PostgreSQL AD administrator (this enables Azure AD auth)
+          echo "Setting ${TARGET_NAMESPACE}-app-identity as PostgreSQL AD admin"
+          az postgres flexible-server ad-admin create \
+            --resource-group "dev-zionet-learning-2025" \
+            --server-name "dev-pg-zionet-learning" \
+            --display-name "${TARGET_NAMESPACE}-app-identity" \
+            --object-id "$MANAGED_IDENTITY_PRINCIPAL_ID" \
+            --type User || echo "AD admin already set or failed"
+            
+          # Install psql client for database user creation
+          sudo apt-get update -y && sudo apt-get install -y postgresql-client
+          
+          # Get GitHub runner IP and create temporary firewall rule
+          RUNNER_IP=$(curl -s https://api.ipify.org)
+          RULE="gha-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          az postgres flexible-server firewall-rule create \
+            --resource-group "dev-zionet-learning-2025" \
+            --name "dev-pg-zionet-learning" \
+            --rule-name "$RULE" \
+            --start-ip-address "$RUNNER_IP" \
+            --end-ip-address "$RUNNER_IP"
+            
+          # Create managed identity user in the database
+          PGPASSWORD="${{ secrets.POSTGRES_PASSWORD }}" psql \
+            -h "dev-pg-zionet-learning.postgres.database.azure.com" \
+            -U "${{ secrets.POSTGRES_USER }}" \
+            -d "appdb-${TARGET_NAMESPACE}" \
+            -c "CREATE ROLE \"${TARGET_NAMESPACE}-app-identity@dev-pg-zionet-learning\" WITH LOGIN;" || echo "User may already exist"
+            
+          PGPASSWORD="${{ secrets.POSTGRES_PASSWORD }}" psql \
+            -h "dev-pg-zionet-learning.postgres.database.azure.com" \
+            -U "${{ secrets.POSTGRES_USER }}" \
+            -d "appdb-${TARGET_NAMESPACE}" \
+            -c "GRANT CONNECT ON DATABASE \"appdb-${TARGET_NAMESPACE}\" TO \"${TARGET_NAMESPACE}-app-identity@dev-pg-zionet-learning\";"
+            
+          PGPASSWORD="${{ secrets.POSTGRES_PASSWORD }}" psql \
+            -h "dev-pg-zionet-learning.postgres.database.azure.com" \
+            -U "${{ secrets.POSTGRES_USER }}" \
+            -d "appdb-${TARGET_NAMESPACE}" \
+            -c "GRANT USAGE, CREATE ON SCHEMA public TO \"${TARGET_NAMESPACE}-app-identity@dev-pg-zionet-learning\";"
+            
+          PGPASSWORD="${{ secrets.POSTGRES_PASSWORD }}" psql \
+            -h "dev-pg-zionet-learning.postgres.database.azure.com" \
+            -U "${{ secrets.POSTGRES_USER }}" \
+            -d "appdb-${TARGET_NAMESPACE}" \
+            -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO \"${TARGET_NAMESPACE}-app-identity@dev-pg-zionet-learning\";"
+            
+          PGPASSWORD="${{ secrets.POSTGRES_PASSWORD }}" psql \
+            -h "dev-pg-zionet-learning.postgres.database.azure.com" \
+            -U "${{ secrets.POSTGRES_USER }}" \
+            -d "appdb-${TARGET_NAMESPACE}" \
+            -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO \"${TARGET_NAMESPACE}-app-identity@dev-pg-zionet-learning\";"
+            
+          # Remove temporary firewall rule
+          az postgres flexible-server firewall-rule delete \
+            --resource-group "dev-zionet-learning-2025" \
+            --name "dev-pg-zionet-learning" \
+            --rule-name "$RULE" \
+            --yes
+
       - name: Helm upgrade/install app
         run: |
           # Use image_tag if provided, otherwise fall back to TARGET_NAMESPACE
@@ -376,6 +451,8 @@ jobs:
             --set global.servicebus.clientId="$SERVICEBUS_CLIENT_ID" \
             --set global.signalr.endpoint="$SIGNALR_ENDPOINT" \
             --set global.signalr.clientId="$SIGNALR_CLIENT_ID" \
+            --set global.postgres.endpoint="$POSTGRES_ENDPOINT" \
+            --set global.postgres.clientId="$POSTGRES_CLIENT_ID" \
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false
 
