@@ -27,5 +27,10 @@ public interface IAccessorClient
     Task<RefreshSessionDto> GetSessionAsync(string oldHash, CancellationToken ct = default);
     Task UpdateSessionDBAsync(Guid sessionId, RotateRefreshSessionRequest rotatePayload, CancellationToken ct);
     Task DeleteSessionDBAsync(Guid sessionId, CancellationToken ct);
+    Task<IEnumerable<UserData>> GetUsersForCallerAsync(CallerContextDto context, CancellationToken ct = default);
+    Task<bool> AssignStudentToTeacherAsync(TeacherStudentMapDto map, CancellationToken ct = default);
+    Task<bool> UnassignStudentFromTeacherAsync(TeacherStudentMapDto map, CancellationToken ct = default);
+    Task<IEnumerable<UserData>> GetStudentsForTeacherAsync(Guid teacherId, CancellationToken ct = default);
+    Task<IEnumerable<UserData>> GetTeachersForStudentAsync(Guid studentId, CancellationToken ct = default);
     Task<SpeechTokenResponse> GetSpeechTokenAsync(CancellationToken ct = default);
 }
