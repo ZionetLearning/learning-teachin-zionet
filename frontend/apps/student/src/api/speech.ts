@@ -45,12 +45,12 @@ export const useAzureSpeechToken = () => {
   return useQuery<AzureSpeechTokenResponse, Error>({
     queryKey: ["azureSpeechToken"],
     queryFn: async () => {
-      const res = await axios.get<AzureSpeechTokenResponse>(`${AI_BASE_URL}/speech/token`);
+      const res = await axios.get<AzureSpeechTokenResponse>(
+        `${AI_BASE_URL}/speech/token`,
+      );
       return res.data;
     },
     staleTime: 540000, // 9 minutes
     refetchInterval: 540000, // 9 minutes
-    // refetchOnWindowFocus: false, // avoid surprise re-fetches
-    // retry: 2, // soften transient network hiccups
   });
 };
