@@ -2,7 +2,6 @@
 using Accessor.Endpoints;
 using Accessor.Models;
 using Accessor.Models.QueueMessages;
-using Accessor.Services;
 using Accessor.Services.Interfaces;
 using DotQueue;
 using FluentAssertions;
@@ -35,7 +34,14 @@ public class AccessorQueueHandlerTests
         var payload = new TaskModel { Id = 10, Name = "new-name" };
         var msg = MakeMessage(MessageAction.UpdateTask, payload);
 
-        taskSvc.Setup(s => s.UpdateTaskNameAsync(10, "new-name")).ReturnsAsync(true);
+        taskSvc.Setup(s => s.UpdateTaskNameAsync(10, "new-name", null))
+              .ReturnsAsync(new UpdateTaskResult(
+                  Updated: true,
+                  NotFound: false,
+                  PreconditionFailed: false,
+                  NewEtag: "456"
+              ));
+
 
         var renewed = false;
         Func<Task> renew = () => { renewed = true; return Task.CompletedTask; };
