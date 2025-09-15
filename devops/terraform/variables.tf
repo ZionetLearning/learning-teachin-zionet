@@ -148,7 +148,7 @@ variable "password_auth_enabled" {
 variable "active_directory_auth_enabled" {
   type        = bool
   description = "Enable Active Directory authentication for PostgreSQL"
-  default     = false
+  default     = true
 }
 # backup_retention_days
 variable "backup_retention_days" {
