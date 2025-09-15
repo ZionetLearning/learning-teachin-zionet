@@ -185,6 +185,12 @@ jobs:
             echo "ℹ️ Manual trigger - current status: $FINAL_STATUS"
           fi
 
+      - name: Get AKS credentials
+        if: steps.determine_action.outputs.action == 'START'
+        run: |
+          echo "🔗 Getting AKS credentials for kubectl access..."
+          az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
+
       - name: Wait for dapr-system to be ready
         if: steps.determine_action.outputs.action == 'START'
         run: |
