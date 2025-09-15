@@ -12,6 +12,9 @@ interface useAvatarSpeechOptions {
 }
 
 const SPEECH_REGION = import.meta.env.VITE_AZURE_REGION as string | undefined;
+const VISEME_LATENCY_MS = 40; // tweak 20–70 if needed
+const FALLBACK_VISEMES = [3, 5, 8, 10, 0]; // used only if no visemes arrive
+const FALLBACK_STEP_MS = 60;
 
 export const useAvatarSpeech = ({
   lipsArray = [],
@@ -23,20 +26,32 @@ export const useAvatarSpeech = ({
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [isMuted, setIsMuted] = useState<boolean>(false);
 
-  const { data: tokenData, refetch, isFetching: isFetchingToken, error } = useAzureSpeechToken();
+  const {
+    data: tokenData,
+    refetch,
+    isFetching: isFetchingToken,
+    error,
+  } = useAzureSpeechToken();
 
   const synthesizerRef = useRef<SpeechSDK.SpeechSynthesizer | null>(null);
   const speakerDestRef = useRef<SpeechSDK.SpeakerAudioDestination | null>(null);
 
   const timeoutsRef = useRef<NodeJS.Timeout[]>([]);
-  const visemeTimelineRef = useRef<Array<{ visemeId: number; offsetMs: number }>>([]);
+  const visemeTimelineRef = useRef<
+    Array<{ visemeId: number; offsetMs: number }>
+  >([]);
+  const playbackStartMsRef = useRef<number | null>(null);
 
-  const visemeMap = useMemo(() =>
-      lipsArray.reduce((acc, path, index) => {
-        acc[index] = path;
-        return acc;
-      }, {} as Record<number, string>),
-    [lipsArray]
+  const visemeMap = useMemo(
+    () =>
+      lipsArray.reduce(
+        (acc, path, index) => {
+          acc[index] = path;
+          return acc;
+        },
+        {} as Record<number, string>,
+      ),
+    [lipsArray],
   );
 
   const clearTimeouts = useCallback(() => {
@@ -44,14 +59,18 @@ export const useAvatarSpeech = ({
     timeoutsRef.current = [];
   }, []);
 
-  const closeSynthAndDest = useCallback(() => {
+  const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
+
+  const closeSynth = useCallback(() => {
     try {
       synthesizerRef.current?.close();
     } catch {
       /* ignore */
     }
     synthesizerRef.current = null;
+  }, []);
 
+  const closeDest = useCallback(() => {
     try {
       speakerDestRef.current?.close();
     } catch {
@@ -60,21 +79,25 @@ export const useAvatarSpeech = ({
     speakerDestRef.current = null;
   }, []);
 
-  useEffect(() => {
-    return () => {
-      closeSynthAndDest();
-      clearTimeouts();
-    };
-  }, [clearTimeouts, closeSynthAndDest]);
-
-  const stop = useCallback(async () => {
-    closeSynthAndDest();
+  const hardReset = useCallback(() => {
+    clearTimeouts();
+    closeSynth();
+    closeDest();
+    playbackStartMsRef.current = null;
     setIsPlaying(false);
     setCurrentViseme(0);
-    onAudioEnd?.();
-  }, [closeSynthAndDest, onAudioEnd]);
+  }, [clearTimeouts, closeDest, closeSynth]);
 
-  const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
+  useEffect(() => {
+    return () => {
+      hardReset();
+    };
+  }, [hardReset]);
+
+  const stop = useCallback(async () => {
+    hardReset();
+    onAudioEnd?.();
+  }, [hardReset, onAudioEnd]);
 
   const toggleMute = useCallback(() => {
     setIsMuted((prev) => {
@@ -86,149 +109,188 @@ export const useAvatarSpeech = ({
     });
   }, [volume]);
 
-  // Keep volume in sync if it changes mid-utterance
   useEffect(() => {
     if (speakerDestRef.current) {
       speakerDestRef.current.volume = isMuted ? 0 : clamp01(volume);
     }
   }, [isMuted, volume]);
 
+  // Schedule a single viseme at absolute offset from playback start
+  const scheduleViseme = useCallback((visemeId: number, offsetMs: number) => {
+    const startedAt = playbackStartMsRef.current;
+    if (startedAt == null) {
+      // Not started yet — buffer; will be scheduled on onAudioStart
+      visemeTimelineRef.current.push({ visemeId, offsetMs });
+      return;
+    }
+    const elapsed = performance.now() - startedAt;
+    const delay = Math.max(0, offsetMs - elapsed + VISEME_LATENCY_MS);
+    const to = setTimeout(() => {
+      if (!speakerDestRef.current) return;
+      setCurrentViseme(visemeId);
+    }, delay);
+    timeoutsRef.current.push(to);
+  }, []);
+
+  const scheduleBufferedVisemes = useCallback(() => {
+    // If service didn’t send visemes, drive a tiny fallback to keep lips alive
+    if (visemeTimelineRef.current.length === 0) {
+      FALLBACK_VISEMES.forEach((v, i) =>
+        scheduleViseme(v, i * FALLBACK_STEP_MS),
+      );
+      return;
+    }
+    for (const { visemeId, offsetMs } of visemeTimelineRef.current) {
+      scheduleViseme(visemeId, offsetMs);
+    }
+  }, [scheduleViseme]);
+
   const speak = useCallback(
     async (text: string, voiceName?: string) => {
       if (!text.trim()) return;
 
-      // Cypress simulation (no network/Azure)
+      // Cypress deterministic fake
       if (typeof window !== "undefined" && (window as CypressWindow).Cypress) {
         if (isPlaying) {
           await stop();
           return;
         }
-        clearTimeouts();
-        setCurrentViseme(0);
-        setIsPlaying(false);
-
+        hardReset();
         const startTimeout = setTimeout(() => {
           onAudioStart?.();
           setIsPlaying(true);
-          const visemes = [3, 5, 8, 10, 0];
+          playbackStartMsRef.current = performance.now();
+
+          // Use the same fallback pattern so tests are predictable
           visemeTimelineRef.current = [];
-          visemes.forEach((v, i) => {
-            const to = setTimeout(() => {
-              setCurrentViseme(v);
-              visemeTimelineRef.current.push({ visemeId: v, offsetMs: i * 60 });
-            }, i * 60);
-            timeoutsRef.current.push(to);
-          });
-          const endTimeout = setTimeout(() => {
-            setCurrentViseme(0);
-            setIsPlaying(false);
-            onAudioEnd?.();
-          }, visemes.length * 60 + 120);
+          FALLBACK_VISEMES.forEach((v, i) =>
+            scheduleViseme(v, i * FALLBACK_STEP_MS),
+          );
+
+          const endTimeout = setTimeout(
+            () => {
+              setCurrentViseme(0);
+              setIsPlaying(false);
+              playbackStartMsRef.current = null;
+              onAudioEnd?.();
+            },
+            FALLBACK_VISEMES.length * FALLBACK_STEP_MS +
+              120 +
+              VISEME_LATENCY_MS,
+          );
           timeoutsRef.current.push(endTimeout);
         }, 10);
         timeoutsRef.current.push(startTimeout);
         return;
       }
 
-      // Real SDK path
       if (isPlaying) {
         await stop();
-        return;
+        // continue into a fresh speak immediately after stop
       }
 
       try {
-        // Resolve token & region (prefer API; fallback to env)
-        let token = tokenData?.token;
+        // Resolve token & region
+        let token = tokenData?.token as string | undefined;
         let region: string | undefined =
-          (tokenData as unknown as { region?: string })?.region ?? SPEECH_REGION;
+          (tokenData as unknown as { region?: string })?.region ??
+          SPEECH_REGION;
 
         if (!token || !region) {
           const r = await refetch();
           token = r.data?.token ?? token;
           region =
-            (r.data as unknown as { region?: string })?.region ?? region ?? SPEECH_REGION;
+            (r.data as unknown as { region?: string })?.region ??
+            region ??
+            SPEECH_REGION;
         }
-        if (!token || !region) {
+        if (!token || !region)
           throw new Error("Speech token/region unavailable.");
-        }
 
-        // Always start fresh to avoid MSE 'updating' issues
-        closeSynthAndDest();
+        // Fresh baseline every call
+        hardReset();
+        visemeTimelineRef.current = [];
 
+        // Destination drives real playback lifecycle
         const dest = new SpeechSDK.SpeakerAudioDestination();
-        dest.onAudioStart = () => {
-          onAudioStart?.();
-          setIsPlaying(true);
-        };
-        dest.onAudioEnd = () => {
-          setIsPlaying(false);
-          setCurrentViseme(0);
-          onAudioEnd?.();
-          // release media resources after playback
-          try {
-            dest.close();
-          } catch {
-            /* ignore */
-          }
-          if (speakerDestRef.current === dest) speakerDestRef.current = null;
-        };
         dest.volume = isMuted ? 0 : clamp01(volume);
         speakerDestRef.current = dest;
 
-        const speechConfig = SpeechSDK.SpeechConfig.fromAuthorizationToken(token, region);
+        dest.onAudioStart = () => {
+          onAudioStart?.();
+          setIsPlaying(true);
+          playbackStartMsRef.current = performance.now();
+          clearTimeouts();
+          scheduleBufferedVisemes();
+        };
+
+        dest.onAudioEnd = () => {
+          setIsPlaying(false);
+          setCurrentViseme(0);
+          playbackStartMsRef.current = null;
+          onAudioEnd?.();
+          closeDest(); // release speaker
+        };
+
+        const speechConfig = SpeechSDK.SpeechConfig.fromAuthorizationToken(
+          token,
+          region,
+        );
         if (voiceName) speechConfig.speechSynthesisVoiceName = voiceName;
 
-        // Enable viseme events
+        // Ensure viseme events are emitted
         speechConfig.setProperty(
           "SpeechServiceConnection_SynthVoiceVisemeEvent",
-          "true"
+          "true",
         );
 
         const audioConfig = SpeechSDK.AudioConfig.fromSpeakerOutput(dest);
-        const synthesizer = new SpeechSDK.SpeechSynthesizer(speechConfig, audioConfig);
+        const synthesizer = new SpeechSDK.SpeechSynthesizer(
+          speechConfig,
+          audioConfig,
+        );
         synthesizerRef.current = synthesizer;
 
-        // JS SDK events are lowerCamelCase
+        // Buffer or schedule visemes as they arrive
         synthesizer.visemeReceived = (
           _s: SpeechSDK.SpeechSynthesizer,
-          e: SpeechSDK.SpeechSynthesisVisemeEventArgs
+          e: SpeechSDK.SpeechSynthesisVisemeEventArgs,
         ) => {
           const offsetMs = e.audioOffset / 10000; // 100ns -> ms
-          setCurrentViseme(e.visemeId);
-          visemeTimelineRef.current.push({ visemeId: e.visemeId, offsetMs });
+          scheduleViseme(e.visemeId, offsetMs);
         };
 
-        synthesizer.synthesisStarted = () => {
-          onAudioStart?.();
-          setIsPlaying(true);
-        };
-
+        // Close synth on completion/cancel so the next call can start cleanly
         synthesizer.synthesisCompleted = () => {
-          setIsPlaying(false);
-          setCurrentViseme(0);
-          onAudioEnd?.();
-          closeSynthAndDest();
+          closeSynth();
+          // dest.onAudioEnd will fire when speaker drains
         };
 
         synthesizer.SynthesisCanceled = async (
           _s: SpeechSDK.SpeechSynthesizer,
-          e: SpeechSDK.SpeechSynthesisEventArgs
+          e: SpeechSDK.SpeechSynthesisEventArgs,
         ) => {
-          setIsPlaying(false);
-          setCurrentViseme(0);
-          onAudioEnd?.();
-          if (e.result.errorDetails && e.result.errorDetails.toLowerCase().includes("token")) {
-            await refetch(); // refresh for next call
+          if (e.result?.errorDetails?.toLowerCase().includes("token")) {
+            await refetch(); // prep for next call
           }
-          closeSynthAndDest();
+          closeSynth();
+          // Let dest.onAudioEnd handle the rest if audio had started.
+          // If audio never started, do a soft reset:
+          if (!playbackStartMsRef.current) {
+            setIsPlaying(false);
+            setCurrentViseme(0);
+            onAudioEnd?.();
+            closeDest();
+          }
         };
 
+        // Kick off synthesis (this resolves when synthesis finishes, not playback)
         await new Promise<void>((resolve, reject) => {
           try {
             synthesizer.speakTextAsync(
               text,
               () => resolve(),
-              (err) => reject(err)
+              (err) => reject(err),
             );
           } catch (err) {
             reject(err as unknown);
@@ -236,24 +298,28 @@ export const useAvatarSpeech = ({
         });
       } catch (err) {
         console.error("Speech synthesis error:", err);
-        setIsPlaying(false);
-        setCurrentViseme(0);
+        // Full cleanup so the *next* call works
+        hardReset();
         onAudioEnd?.();
-        closeSynthAndDest();
       }
     },
     [
+      clamp01,
       clearTimeouts,
-      closeSynthAndDest,
+      closeDest,
+      closeSynth,
+      hardReset,
+      isMuted,
       isPlaying,
       onAudioEnd,
       onAudioStart,
       refetch,
-      tokenData, // Option B: depend on the whole object
+      scheduleBufferedVisemes,
+      scheduleViseme,
       stop,
+      tokenData,
       volume,
-      isMuted,
-    ]
+    ],
   );
 
   return {
