@@ -6,6 +6,24 @@ on:
     - cron: '0 4 * * 0-4'
     # 19:30 Israel time = 16:30 UTC (STOP: Sunday-Saturday)
     - cron: '30 16 * * 0-6'
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        default: 'START'
+        type: choice
+        options:
+          - START
+          - STOP
+      cluster:
+        description: 'AKS cluster to target'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - podsstart
 
 jobs:
   scheduled-operation:
@@ -19,30 +37,45 @@ jobs:
       - name: Determine action based on schedule
         id: determine_action
         run: |
-          # Get current time in Israel timezone
-          ISRAEL_TIME=$(TZ='Asia/Jerusalem' date '+%Y-%m-%d %H:%M:%S %Z')
-          ISRAEL_HOUR=$(TZ='Asia/Jerusalem' date '+%H')
-          DAY_OF_WEEK=$(TZ='Asia/Jerusalem' date '+%u')  # 1=Monday, 7=Sunday
-          DAY_NAME=$(TZ='Asia/Jerusalem' date '+%A')
-          
-          echo "Current Israel time: $ISRAEL_TIME"
-          echo "Day of week: $DAY_OF_WEEK ($DAY_NAME)"
-          
-          # Determine if this is morning or evening schedule based on hour
-          if [[ $ISRAEL_HOUR -ge 3 && $ISRAEL_HOUR -le 12 ]]; then
-            # Morning schedule (around 8:30 AM Israel time)
-            echo "Morning schedule detected - START action"
-            echo "action=START" >> $GITHUB_OUTPUT
-            echo "schedule_type=morning" >> $GITHUB_OUTPUT
-          elif [[ $ISRAEL_HOUR -ge 16 && $ISRAEL_HOUR -le 22 ]]; then
-            # Evening schedule (around 7:30 PM Israel time)  
-            echo "Evening schedule detected - STOP action"
-            echo "action=STOP" >> $GITHUB_OUTPUT
-            echo "schedule_type=evening" >> $GITHUB_OUTPUT
-          else
-            echo "Unknown schedule time - defaulting to manual trigger"
-            echo "action=MANUAL" >> $GITHUB_OUTPUT
+          # Check if this is a manual dispatch
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            ACTION="${{ inputs.action }}"
+            CLUSTER="${{ inputs.cluster }}"
+            echo "Manual dispatch detected"
+            echo "Action: $ACTION"
+            echo "Cluster: $CLUSTER"
+            echo "action=$ACTION" >> $GITHUB_OUTPUT
+            echo "cluster=$CLUSTER" >> $GITHUB_OUTPUT
             echo "schedule_type=manual" >> $GITHUB_OUTPUT
+          else
+            # Get current time in Israel timezone
+            ISRAEL_TIME=$(TZ='Asia/Jerusalem' date '+%Y-%m-%d %H:%M:%S %Z')
+            ISRAEL_HOUR=$(TZ='Asia/Jerusalem' date '+%H')
+            DAY_OF_WEEK=$(TZ='Asia/Jerusalem' date '+%u')  # 1=Monday, 7=Sunday
+            DAY_NAME=$(TZ='Asia/Jerusalem' date '+%A')
+            
+            echo "Current Israel time: $ISRAEL_TIME"
+            echo "Day of week: $DAY_OF_WEEK ($DAY_NAME)"
+            
+            # Automatic schedule - always use dev cluster
+            echo "cluster=dev" >> $GITHUB_OUTPUT
+            
+            # Determine if this is morning or evening schedule based on hour
+            if [[ $ISRAEL_HOUR -ge 3 && $ISRAEL_HOUR -le 12 ]]; then
+              # Morning schedule (around 8:30 AM Israel time)
+              echo "Morning schedule detected - START action"
+              echo "action=START" >> $GITHUB_OUTPUT
+              echo "schedule_type=morning" >> $GITHUB_OUTPUT
+            elif [[ $ISRAEL_HOUR -ge 16 && $ISRAEL_HOUR -le 22 ]]; then
+              # Evening schedule (around 7:30 PM Israel time)  
+              echo "Evening schedule detected - STOP action"
+              echo "action=STOP" >> $GITHUB_OUTPUT
+              echo "schedule_type=evening" >> $GITHUB_OUTPUT
+            else
+              echo "Unknown schedule time - defaulting to manual trigger"
+              echo "action=MANUAL" >> $GITHUB_OUTPUT
+              echo "schedule_type=manual" >> $GITHUB_OUTPUT
+            fi
           fi
 
       - name: Azure Login via OIDC
@@ -54,13 +87,23 @@ jobs:
 
       - name: Set up variables
         run: |
-          echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
-          echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
+          CLUSTER="${{ steps.determine_action.outputs.cluster }}"
+          echo "Selected cluster: $CLUSTER"
+          
+          if [[ "$CLUSTER" == "podsstart" ]]; then
+            echo "AKS_RG=podsstart-zionet-learning-2025" >> $GITHUB_ENV
+            echo "AKS_NAME=aks-cluster-podsstart" >> $GITHUB_ENV
+          else
+            # Default to dev cluster
+            echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
+            echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
+          fi
 
       - name: Check current cluster status
         run: |
           STATUS=$(az aks show --resource-group $AKS_RG --name $AKS_NAME --query "powerState.code" -o tsv)
-          echo "Current AKS cluster status: $STATUS"
+          CLUSTER="${{ steps.determine_action.outputs.cluster }}"
+          echo "Current AKS cluster status ($CLUSTER): $STATUS"
           
           ACTION="${{ steps.determine_action.outputs.action }}"
           
@@ -70,20 +113,36 @@ jobs:
             echo "⚠️ Cluster is already stopped"
           fi
 
-      - name: Start AKS cluster (Morning Schedule)
+      - name: Start AKS cluster
         if: steps.determine_action.outputs.action == 'START'
         run: |
-          echo "🚀 Starting AKS cluster: $AKS_NAME (morning schedule - 7:00 AM Israel time)"
+          CLUSTER="${{ steps.determine_action.outputs.cluster }}"
+          SCHEDULE_TYPE="${{ steps.determine_action.outputs.schedule_type }}"
+          
+          if [[ "$SCHEDULE_TYPE" == "manual" ]]; then
+            echo "🚀 Starting AKS cluster: $AKS_NAME ($CLUSTER - manual dispatch)"
+          else
+            echo "🚀 Starting AKS cluster: $AKS_NAME ($CLUSTER - scheduled startup)"
+          fi
+          
           START_TIME=$(date +%s)
           az aks start --resource-group $AKS_RG --name $AKS_NAME
           END_TIME=$(date +%s)
           DURATION=$((END_TIME - START_TIME))
           echo "✅ AKS cluster start completed in ${DURATION} seconds"
 
-      - name: Stop AKS cluster (Evening Schedule)
+      - name: Stop AKS cluster
         if: steps.determine_action.outputs.action == 'STOP'
         run: |
-          echo "🛑 Stopping AKS cluster: $AKS_NAME (evening schedule - 7:30 PM Israel time)"
+          CLUSTER="${{ steps.determine_action.outputs.cluster }}"
+          SCHEDULE_TYPE="${{ steps.determine_action.outputs.schedule_type }}"
+          
+          if [[ "$SCHEDULE_TYPE" == "manual" ]]; then
+            echo "🛑 Stopping AKS cluster: $AKS_NAME ($CLUSTER - manual dispatch)"
+          else
+            echo "🛑 Stopping AKS cluster: $AKS_NAME ($CLUSTER - scheduled shutdown)"
+          fi
+          
           START_TIME=$(date +%s)
           az aks stop --resource-group $AKS_RG --name $AKS_NAME
           END_TIME=$(date +%s)
@@ -132,11 +191,21 @@ jobs:
           echo "Waiting for dapr-system pods..."
           kubectl wait --for=condition=Ready pod -n dapr-system --all --timeout=180s
 
-      - name: Restart deployments in dev, test and stage
+      - name: Restart deployments in relevant namespaces
         if: steps.determine_action.outputs.action == 'START'
         run: |
-          for ns in dev test stage; do
-            echo "🔄 Restarting deployments in namespace: $ns"
-            kubectl rollout restart deployment -n $ns
-            kubectl rollout status deployment -n $ns --timeout=180s
-          done
+          CLUSTER="${{ steps.determine_action.outputs.cluster }}"
+          
+          if [[ "$CLUSTER" == "podsstart" ]]; then
+            # For podsstart cluster, restart the podsstart namespace
+            echo "🔄 Restarting deployments in namespace: podsstart"
+            kubectl rollout restart deployment -n podsstart
+            kubectl rollout status deployment -n podsstart --timeout=180s
+          else
+            # For dev cluster, restart dev, test and stage namespaces
+            for ns in dev test stage; do
+              echo "🔄 Restarting deployments in namespace: $ns"
+              kubectl rollout restart deployment -n $ns
+              kubectl rollout status deployment -n $ns --timeout=180s
+            done
+          fi
