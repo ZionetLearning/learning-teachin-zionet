@@ -371,10 +371,11 @@ jobs:
           
           # Enable Azure AD authentication on PostgreSQL server first
           echo "Enabling Azure AD authentication on PostgreSQL server"
-          az postgres flexible-server update \
+          az postgres flexible-server parameter set \
             --resource-group "dev-zionet-learning-2025" \
-            --name "dev-pg-zionet-learning" \
-            --auth-config "activeDirectoryAuth=Enabled" || echo "AD auth already enabled or failed"
+            --server-name "dev-pg-zionet-learning" \
+            --name "azure.enable_auth" \
+            --value "on" || echo "AD auth already enabled or failed"
           
           # Wait a moment for the setting to take effect
           sleep 10
