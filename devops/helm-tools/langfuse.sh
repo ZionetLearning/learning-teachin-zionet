@@ -1,22 +1,16 @@
 #!/bin/bash
 
 # Deploy Langfuse - AI observability platform
-# Resource-optimized configuration based on official minimal installation
-
 set -e
 
 echo "🔍 Setting up Langfuse (Resource-Optimized)..."
 
-# Use TARGET_NAMESPACE if set, otherwise default to dev
 NAMESPACE="${TARGET_NAMESPACE:-dev}"
 echo "🎯 Deploying Langfuse for namespace: $NAMESPACE"
 
-# Add the Langfuse Helm repository
-echo "📦 Adding Langfuse Helm repository..."
-helm repo add langfuse https://cbeneke.github.io/langfuse-k8s || true
+helm repo add langfuse https://langfuse.github.io/langfuse-k8s || true
 helm repo update
 
-# Check if Langfuse is already installed
 if helm list -n devops-tools | grep -q "langfuse"; then
     echo "📊 Upgrading existing Langfuse installation..."
     ACTION="upgrade"
@@ -25,11 +19,14 @@ else
     ACTION="install"
 fi
 
-# Create namespace if it doesn't exist (Langfuse goes to devops-tools, not target namespace)
 kubectl create namespace devops-tools --dry-run=client -o yaml | kubectl apply -f -
 
-# Deploy/upgrade Langfuse with resource-constrained configuration
-# All components are required but configured with minimal resources
+if [ "$ACTION" = "install" ]; then
+    kubectl delete pvc --all -n devops-tools --ignore-not-found=true
+    echo "⏳ Waiting for PVCs to be cleaned up..."
+    sleep 10
+fi
+
 helm $ACTION langfuse langfuse/langfuse \
     --namespace devops-tools \
     --set langfuse.nextauth.url="https://teachin.westeurope.cloudapp.azure.com/langfuse" \
@@ -39,28 +36,33 @@ helm $ACTION langfuse langfuse/langfuse \
     --set langfuse.nextauth.secret.secretKeyRef.key="NEXTAUTH_SECRET" \
     --set langfuse.resources.requests.cpu="100m" \
     --set langfuse.resources.requests.memory="256Mi" \
-    --set langfuse.resources.limits.cpu="300m" \
+    --set langfuse.resources.limits.cpu="500m" \
     --set langfuse.resources.limits.memory="512Mi" \
-    --set langfuse.worker.replicas=0 \
+    --set langfuse.worker.replicas=1 \
+    --set langfuse.worker.resources.requests.cpu="50m" \
+    --set langfuse.worker.resources.requests.memory="128Mi" \
+    --set langfuse.worker.resources.limits.cpu="200m" \
+    --set langfuse.worker.resources.limits.memory="256Mi" \
     --set postgresql.deploy=false \
     --set postgresql.host="dev-pg-zionet-learning.postgres.database.azure.com" \
     --set postgresql.port=5432 \
-    --set postgresql.auth.database="langfuse-dev" \
+    --set postgresql.auth.database="langfuse-$NAMESPACE" \
     --set postgresql.auth.existingSecret="langfuse-secrets" \
     --set postgresql.auth.secretKeys.userPasswordKey="DATABASE_PASSWORD" \
-    --set postgresql.auth.username="zionet_learning" \
+    --set postgresql.auth.username="postgres" \
     --set clickhouse.auth.existingSecret="langfuse-secrets" \
     --set clickhouse.auth.existingSecretKey="CLICKHOUSE_PASSWORD" \
     --set clickhouse.resourcesPreset="nano" \
     --set clickhouse.replicaCount=1 \
-    --set clickhouse.resources.requests.cpu="200m" \
-    --set clickhouse.resources.requests.memory="512Mi" \
-    --set clickhouse.resources.limits.cpu="400m" \
-    --set clickhouse.resources.limits.memory="1Gi" \
-    --set clickhouse.zookeeper.resources.requests.cpu="100m" \
-    --set clickhouse.zookeeper.resources.requests.memory="256Mi" \
-    --set clickhouse.zookeeper.resources.limits.cpu="200m" \
-    --set clickhouse.zookeeper.resources.limits.memory="512Mi" \
+    --set clickhouse.resources.requests.cpu="100m" \
+    --set clickhouse.resources.requests.memory="256Mi" \
+    --set clickhouse.resources.limits.cpu="200m" \
+    --set clickhouse.resources.limits.memory="512Mi" \
+    --set clickhouse.zookeeper.resources.requests.cpu="50m" \
+    --set clickhouse.zookeeper.resources.requests.memory="128Mi" \
+    --set clickhouse.zookeeper.resources.limits.cpu="100m" \
+    --set clickhouse.zookeeper.resources.limits.memory="256Mi" \
+    --set clickhouse.zookeeper.replicaCount=1 \
     --set redis.auth.existingSecret="langfuse-secrets" \
     --set redis.auth.existingSecretPasswordKey="REDIS_PASSWORD" \
     --set redis.primary.resources.requests.cpu="50m" \
@@ -75,14 +77,20 @@ helm $ACTION langfuse langfuse/langfuse \
     --set s3.resources.requests.memory="128Mi" \
     --set s3.resources.limits.cpu="100m" \
     --set s3.resources.limits.memory="256Mi" \
+    --set langfuse.additionalEnv[0].name="LANGFUSE_LOG_LEVEL" \
+    --set-string langfuse.additionalEnv[0].value="debug" \
+    --set langfuse.web.startupProbe.enabled=true \
+    --set langfuse.web.startupProbe.initialDelaySeconds=30 \
+    --set langfuse.web.startupProbe.periodSeconds=10 \
+    --set langfuse.web.startupProbe.timeoutSeconds=10 \
+    --set langfuse.web.startupProbe.failureThreshold=30 \
+    --set langfuse.web.livenessProbe.initialDelaySeconds=60 \
+    --set langfuse.web.livenessProbe.timeoutSeconds=10 \
+    --set langfuse.web.readinessProbe.initialDelaySeconds=60 \
+    --set langfuse.web.readinessProbe.timeoutSeconds=10 \
     --wait \
-    --timeout=10m
+    --timeout=15m
 
 echo "✅ Langfuse deployed successfully!"
 
-# Wait for pods to be ready
-echo "⏳ Waiting for Langfuse pods to be ready..."
 kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=langfuse -n devops-tools --timeout=600s
-
-echo "🎉 Langfuse is ready!"
-echo "📊 Langfuse will be available at: https://teachin.westeurope.cloudapp.azure.com/langfuse"
