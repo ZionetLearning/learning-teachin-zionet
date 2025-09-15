@@ -2,6 +2,7 @@ using FluentAssertions;
 using IntegrationTests.Constants;
 using IntegrationTests.Fixtures;
 using IntegrationTests.Helpers;
+using Manager.Models.Auth;
 using Manager.Models.Users;
 using System.Net;
 using System.Net.Http.Headers;
@@ -225,14 +226,49 @@ public class UsersIntegrationTests(
     [Fact(DisplayName = "PUT /users-manager/user/{id} - non admin cannot change user role")]
     public async Task UpdateUser_RoleChange_ByNotAdmin_ShouldFail()
     {
-        var user = await CreateUserAsync(role: "student");
-        OutputHelper.WriteLine($"Created user with ID: {user.UserId} and role: student");
+        var teacher = await CreateUserAsync(role: "teacher");
 
-        // Send update request as admin to change role to "teacher"
-        var update = new UpdateUserModel { Role = Role.Teacher };
+        var student = new CreateUser
+        {
+            UserId = Guid.NewGuid(),
+            FirstName = "NonAdmin",
+            LastName = "User",
+            Email = $"student_{Guid.NewGuid():N}@test.com",
+            Password = "Student123!",
+            Role = "student"
+        };
 
-        var response = await Client.PutAsJsonAsync(ApiRoutes.UserById(user.UserId), update);
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        var createStudentResponse = await Client.PostAsJsonAsync(ApiRoutes.User, student);
+        createStudentResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        // Log in as studnet
+        var loginRequest = new LoginRequest
+        {
+            Email = student.Email,
+            Password = student.Password
+        };
+
+        var loginResponse = await Client.PostAsJsonAsync(AuthRoutes.Login, loginRequest);
+        loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var loginContent = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
+        loginContent!.AccessToken.Should().NotBeNullOrWhiteSpace();
+
+        var nonAdminClient = new HttpClient
+        {
+            BaseAddress = Client.BaseAddress
+        };
+        nonAdminClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", loginContent.AccessToken);
+
+        // Attempt to change another user's role
+        var update = new UpdateUserModel
+        {
+            Role = Role.Admin
+        };
+
+        var updateResponse = await nonAdminClient.PutAsJsonAsync(ApiRoutes.UserById(teacher.UserId), update);
+        updateResponse.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
     [Fact(DisplayName = "PUT /users-manager/user/{id} - admin user updates student role")]
@@ -286,7 +322,7 @@ public class UsersIntegrationTests(
         var updateResponse = await adminClient.PutAsJsonAsync(ApiRoutes.UserById(student.UserId), update);
         updateResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        // Step 6: Confirm the role change
+        // Confirm the role change
         var getResponse = await adminClient.GetAsync(ApiRoutes.UserById(student.UserId));
         var updatedStudent = await ReadAsJsonAsync<UserData>(getResponse);
         updatedStudent!.Role.Should().Be(Role.Teacher);

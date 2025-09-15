@@ -304,7 +304,6 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
                       class="email-0-2-37"
                       data-mui-internal-clone-element="true"
                       data-testid="users-email"
-                      title="alpha@example.com"
                     >
                       alpha@example.com
                     </span>
@@ -415,7 +414,6 @@ exports[`<Users /> > matches snapshot (with users) 1`] = `
                       class="email-0-2-37"
                       data-mui-internal-clone-element="true"
                       data-testid="users-email"
-                      title="beta@example.com"
                     >
                       beta@example.com
                     </span>

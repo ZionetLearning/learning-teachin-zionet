@@ -15,7 +15,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 
 import { useDeleteUserByUserId } from "@admin/api";
-import { useUpdateUserByUserId } from "@app-providers";
+import { UpdateUserInput, useUpdateUserByUserId } from "@app-providers";
 import { AppRole, AppRoleType, User } from "@app-providers";
 import { Dropdown } from "@ui-components";
 import { useStyles } from "./style";
@@ -70,7 +70,7 @@ export const UserListItem = ({
       return;
     }
 
-    const payload: Record<string, string> = {};
+    const payload: Partial<UpdateUserInput> = {};
     if (emailValue.trim() !== email) payload.email = emailValue.trim();
     if (firstNameValue.trim() && firstNameValue.trim() !== firstName)
       payload.firstName = firstNameValue.trim();
@@ -112,11 +112,7 @@ export const UserListItem = ({
           />
         ) : (
           <Tooltip title={email} placement="top">
-            <span
-              title={email}
-              className={classes.email}
-              data-testid="users-email"
-            >
+            <span className={classes.email} data-testid="users-email">
               {email}
             </span>
           </Tooltip>

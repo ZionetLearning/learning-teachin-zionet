@@ -10,6 +10,7 @@ using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Xunit;
+using Manager.Constants;
 
 namespace ManagerUnitTests.Endpoints;
 
@@ -106,7 +107,7 @@ public class UsersEndpointsTests
         var httpContext = new DefaultHttpContext
         {
             User = new ClaimsPrincipal(
-        new ClaimsIdentity([new Claim(ClaimTypes.Role, "Admin")], "TestAuth"))
+        new ClaimsIdentity([new Claim(AuthSettings.RoleClaimType, "Admin")], "TestAuth"))
         };
 
         var result = await Invoke("UpdateUserAsync", userId, update, _mockAccessor.Object, _mockLogger.Object, httpContext);
@@ -127,7 +128,7 @@ public class UsersEndpointsTests
         var httpContext = new DefaultHttpContext
         {
             User = new ClaimsPrincipal(
-       new ClaimsIdentity([new Claim(ClaimTypes.Role, "Admin")], "TestAuth"))
+       new ClaimsIdentity([new Claim(AuthSettings.RoleClaimType, "Admin")], "TestAuth"))
         };
 
         var result = await Invoke("UpdateUserAsync", userId, update, _mockAccessor.Object, _mockLogger.Object, httpContext);
@@ -148,7 +149,7 @@ public class UsersEndpointsTests
         var httpContext = new DefaultHttpContext
         {
             User = new ClaimsPrincipal(
-       new ClaimsIdentity([new Claim(ClaimTypes.Role, "Admin")], "TestAuth"))
+       new ClaimsIdentity([new Claim(AuthSettings.RoleClaimType, "Admin")], "TestAuth"))
         };
 
         var result = await Invoke("UpdateUserAsync", userId, update, _mockAccessor.Object, _mockLogger.Object, httpContext);
@@ -172,7 +173,7 @@ public class UsersEndpointsTests
         var httpContext = new DefaultHttpContext
         {
             User = new ClaimsPrincipal(
-       new ClaimsIdentity([new Claim(ClaimTypes.Role, "Admin")], "TestAuth"))
+       new ClaimsIdentity([new Claim(AuthSettings.RoleClaimType, "Admin")], "TestAuth"))
         };
 
         var result = await Invoke("UpdateUserAsync", userId, update, _mockAccessor.Object, _mockLogger.Object, httpContext);

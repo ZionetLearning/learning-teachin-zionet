@@ -14,13 +14,13 @@ import {
   PreferredLanguageCode,
 } from "@app-providers";
 
-interface UpdateUserInput {
+export interface UpdateUserInput {
   email?: string;
   firstName?: string;
   lastName?: string;
   role?: string;
-  hebrewLevelValue: HebrewLevelValue;
-  preferredLanguageCode: PreferredLanguageCode;
+  hebrewLevelValue?: HebrewLevelValue;
+  preferredLanguageCode?: PreferredLanguageCode;
 }
 
 export const mapUser = (dto: UserDto): User => ({
