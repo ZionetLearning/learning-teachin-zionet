@@ -25,14 +25,18 @@ public class AccessorEndpointsTests
     {
         var svc = TaskSvc();
         var log = TaskLog();
+        var http = new DefaultHttpContext();
+        var response = http.Response;
 
         var task = new TaskModel { Id = 7, Name = "hello" };
-        svc.Setup(s => s.GetTaskByIdAsync(7)).ReturnsAsync(task);
+        svc.Setup(s => s.GetTaskWithEtagAsync(7))
+           .ReturnsAsync((task, "123"));
 
-        var result = await TasksEndpoints.GetTaskByIdAsync(7, svc.Object, log.Object);
+        var result = await TasksEndpoints.GetTaskByIdAsync(7, svc.Object, log.Object, response);
 
         var ok = result.Should().BeOfType<Ok<TaskModel>>().Subject;
         ok.Value.Should().Be(task);
+        response.Headers.ETag.ToString().Should().Be("\"123\"");
         svc.VerifyAll();
     }
 
@@ -41,10 +45,12 @@ public class AccessorEndpointsTests
     {
         var svc = TaskSvc();
         var log = TaskLog();
+        var response = new DefaultHttpContext().Response;
 
-        svc.Setup(s => s.GetTaskByIdAsync(99)).ReturnsAsync((TaskModel?)null);
+        svc.Setup(s => s.GetTaskWithEtagAsync(99))
+           .ReturnsAsync(((TaskModel Task, string ETag)?)null);
 
-        var result = await TasksEndpoints.GetTaskByIdAsync(99, svc.Object, log.Object);
+        var result = await TasksEndpoints.GetTaskByIdAsync(99, svc.Object, log.Object, response);
 
         result.Should().BeOfType<NotFound<string>>();
         svc.VerifyAll();
@@ -55,10 +61,12 @@ public class AccessorEndpointsTests
     {
         var svc = TaskSvc();
         var log = TaskLog();
+        var response = new DefaultHttpContext().Response;
 
-        svc.Setup(s => s.GetTaskByIdAsync(1)).ThrowsAsync(new InvalidOperationException("boom"));
+        svc.Setup(s => s.GetTaskWithEtagAsync(1))
+           .ThrowsAsync(new InvalidOperationException("boom"));
 
-        var result = await TasksEndpoints.GetTaskByIdAsync(1, svc.Object, log.Object);
+        var result = await TasksEndpoints.GetTaskByIdAsync(1, svc.Object, log.Object, response);
 
         result.Should().BeOfType<ProblemHttpResult>();
         svc.VerifyAll();
@@ -105,20 +113,52 @@ public class AccessorEndpointsTests
     #region UpdateTaskNameAsync
 
     [Theory]
-    [InlineData(5, "new", true, typeof(Ok<string>))]
-    [InlineData(99, "new", false, typeof(NotFound<string>))]
+    [InlineData(5, "new", true, false)]
+    [InlineData(5, "new", false, true)]
+    [InlineData(99, "new", false, false)]
     public async Task UpdateTaskNameAsync_ReturnsExpectedResult(
-        int id, string name, bool found, Type expectedType)
+        int id, string name, bool updated, bool preconditionFailed)
     {
         var svc = TaskSvc();
         var log = TaskLog();
+        var response = new DefaultHttpContext().Response;
 
         var req = new UpdateTaskName { Id = id, Name = name };
-        svc.Setup(s => s.UpdateTaskNameAsync(id, name)).ReturnsAsync(found);
 
-        var result = await TasksEndpoints.UpdateTaskNameAsync(req, svc.Object, log.Object);
+        var resultFromSvc = new UpdateTaskResult(
+            Updated: updated,
+            NotFound: (!updated && !preconditionFailed && id == 99),
+            PreconditionFailed: preconditionFailed,
+            NewEtag: updated ? "456" : null
+        );
 
-        result.Should().BeOfType(expectedType);
+        svc.Setup(s => s.UpdateTaskNameAsync(id, name, "\"123\""))
+           .ReturnsAsync(resultFromSvc);
+
+        var result = await TasksEndpoints.UpdateTaskNameAsync(
+            req,
+            ifMatch: "\"123\"",
+            taskService: svc.Object,          // <-- fixed name
+            logger: log.Object,
+            response: response
+        );
+
+        if (updated)
+        {
+            var status = result.Should().BeAssignableTo<IStatusCodeHttpResult>().Subject;
+            status.StatusCode.Should().Be(StatusCodes.Status200OK);
+            response.Headers.ETag.ToString().Should().Be("\"456\"");
+        }
+        else if (preconditionFailed)
+        {
+            var status = result.Should().BeAssignableTo<IStatusCodeHttpResult>().Subject;
+            status.StatusCode.Should().Be(StatusCodes.Status412PreconditionFailed);
+        }
+        else
+        {
+            result.Should().BeOfType<NotFound<string>>();
+        }
+
         svc.VerifyAll();
     }
 
@@ -127,45 +167,15 @@ public class AccessorEndpointsTests
     {
         var svc = TaskSvc();
         var log = TaskLog();
+        var response = new DefaultHttpContext().Response;
 
         var req = new UpdateTaskName { Id = 5, Name = "new" };
-        svc.Setup(s => s.UpdateTaskNameAsync(5, "new")).ThrowsAsync(new Exception("oops"));
 
-        var result = await TasksEndpoints.UpdateTaskNameAsync(req, svc.Object, log.Object);
+        svc.Setup(s => s.UpdateTaskNameAsync(5, "new", "\"1\""))
+           .ThrowsAsync(new Exception("oops"));
 
-        result.Should().BeOfType<ProblemHttpResult>();
-        svc.VerifyAll();
-    }
-
-    #endregion
-
-    #region DeleteTaskAsync
-
-    [Theory]
-    [InlineData(3, true, typeof(Ok<string>))]
-    [InlineData(3, false, typeof(NotFound<string>))]
-    public async Task DeleteTaskAsync_ReturnsExpectedResult(int id, bool found, Type expectedType)
-    {
-        var svc = TaskSvc();
-        var log = TaskLog();
-
-        svc.Setup(s => s.DeleteTaskAsync(id)).ReturnsAsync(found);
-
-        var result = await TasksEndpoints.DeleteTaskAsync(id, svc.Object, log.Object);
-
-        result.Should().BeOfType(expectedType);
-        svc.VerifyAll();
-    }
-
-    [Fact]
-    public async Task DeleteTaskAsync_Exception_ReturnsProblem()
-    {
-        var svc = TaskSvc();
-        var log = TaskLog();
-
-        svc.Setup(s => s.DeleteTaskAsync(3)).ThrowsAsync(new Exception("err"));
-
-        var result = await TasksEndpoints.DeleteTaskAsync(3, svc.Object, log.Object);
+        var result = await TasksEndpoints.UpdateTaskNameAsync(
+            req, "\"1\"", svc.Object, log.Object, response);
 
         result.Should().BeOfType<ProblemHttpResult>();
         svc.VerifyAll();

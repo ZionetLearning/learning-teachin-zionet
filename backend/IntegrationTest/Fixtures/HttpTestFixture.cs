@@ -7,7 +7,7 @@ namespace IntegrationTests.Fixtures;
 public class HttpTestFixture : IDisposable
 {
     public HttpClient Client { get; }
-    private readonly HttpTestFixture _http;
+    private readonly HttpTestFixture? _http;
 
     public HttpTestFixture()
     {
@@ -37,7 +37,7 @@ public class HttpTestFixture : IDisposable
             .Build();
     public async Task<string> AuthenticateAndGetTokenAsync(string email, string password)
     {
-        var response = await _http.Client.PostAsJsonAsync("/auth/login", new { email, password });
+        var response = await Client.PostAsJsonAsync("/auth/login", new { email, password }); // Use Client directly
         response.EnsureSuccessStatusCode();
 
         var loginResult = await response.Content.ReadFromJsonAsync<LoginResponse>();
