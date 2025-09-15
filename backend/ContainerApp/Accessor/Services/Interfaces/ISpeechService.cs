@@ -1,3 +1,5 @@
+using Accessor.Models.Speech;
+
 namespace Accessor.Services.Interfaces;
 
 public interface ISpeechService

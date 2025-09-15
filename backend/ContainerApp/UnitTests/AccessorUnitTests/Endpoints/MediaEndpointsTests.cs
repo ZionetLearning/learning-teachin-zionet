@@ -1,7 +1,7 @@
 using System.Net;
 using Accessor.Endpoints;
 using Accessor.Models;
-using Accessor.Services;
+using Accessor.Models.Speech;
 using Accessor.Services.Interfaces;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;

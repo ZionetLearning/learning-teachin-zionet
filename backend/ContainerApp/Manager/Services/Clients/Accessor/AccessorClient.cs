@@ -10,6 +10,7 @@ using Manager.Models.Auth.RefreshSessions;
 using Manager.Models.Chat;
 using Manager.Models.QueueMessages;
 using Manager.Models.Users;
+using Manager.Services.Clients.Accessor.Models;
 
 namespace Manager.Services.Clients.Accessor;
 
@@ -641,10 +642,4 @@ public class AccessorClient(
             throw;
         }
     }
-}
-
-public record SpeechTokenResponse
-{
-    public required string Token { get; init; }
-    public required string Region { get; init; }
 }

@@ -3,6 +3,7 @@ using Manager.Models.Auth;
 using Manager.Models.Auth.RefreshSessions;
 using Manager.Models.Chat;
 using Manager.Models.Users;
+using Manager.Services.Clients.Accessor.Models;
 
 namespace Manager.Services.Clients.Accessor;
 
