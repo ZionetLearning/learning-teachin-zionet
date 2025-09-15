@@ -32,6 +32,7 @@ public class AccessorServiceStatsTests
         return new StatsService(db, log);
     }
 
+
     [Fact]
     public async Task ComputeStatsAsync_EmptyDb_ReturnsZeros()
     {

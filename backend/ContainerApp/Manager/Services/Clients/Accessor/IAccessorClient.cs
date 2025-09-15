@@ -8,6 +8,8 @@ namespace Manager.Services.Clients.Accessor;
 
 public interface IAccessorClient
 {
+    Task<(TaskModel? Task, string? ETag)> GetTaskWithEtagAsync(int id, CancellationToken ct = default);
+    Task<UpdateTaskNameResult> UpdateTaskNameAsync(int id, string newTaskName, string ifMatch, CancellationToken ct = default);
     Task<bool> UpdateTaskName(int id, string newTaskName);
     Task<bool> DeleteTask(int id);
     Task<(bool success, string message)> PostTaskAsync(TaskModel task);
@@ -25,5 +27,10 @@ public interface IAccessorClient
     Task<RefreshSessionDto> GetSessionAsync(string oldHash, CancellationToken ct = default);
     Task UpdateSessionDBAsync(Guid sessionId, RotateRefreshSessionRequest rotatePayload, CancellationToken ct);
     Task DeleteSessionDBAsync(Guid sessionId, CancellationToken ct);
+    Task<IEnumerable<UserData>> GetUsersForCallerAsync(CallerContextDto context, CancellationToken ct = default);
+    Task<bool> AssignStudentToTeacherAsync(TeacherStudentMapDto map, CancellationToken ct = default);
+    Task<bool> UnassignStudentFromTeacherAsync(TeacherStudentMapDto map, CancellationToken ct = default);
+    Task<IEnumerable<UserData>> GetStudentsForTeacherAsync(Guid teacherId, CancellationToken ct = default);
+    Task<IEnumerable<UserData>> GetTeachersForStudentAsync(Guid studentId, CancellationToken ct = default);
     Task<string> GetSpeechTokenAsync(CancellationToken ct = default);
 }
