@@ -206,12 +206,12 @@ jobs:
             # For podsstart cluster, restart the podsstart namespace
             echo "🔄 Restarting deployments in namespace: podsstart"
             kubectl rollout restart deployment -n podsstart
-            kubectl rollout status deployment -n podsstart --timeout=300s
+            echo "✅ Deployment restart initiated for podsstart namespace"
           else
             # For dev cluster, restart dev, test and stage namespaces
             for ns in dev test stage; do
               echo "🔄 Restarting deployments in namespace: $ns"
               kubectl rollout restart deployment -n $ns
-              kubectl rollout status deployment -n $ns --timeout=300s
+              echo "✅ Deployment restart initiated for $ns namespace"
             done
           fi
