@@ -24,14 +24,15 @@ public static class MediaEndpoints
     {
         try
         {
-            var token = await accessorClient.GetSpeechTokenAsync(ct);
-            if (string.IsNullOrWhiteSpace(token))
+            var speechTokenResponse = await accessorClient.GetSpeechTokenAsync(ct);
+            if (!string.IsNullOrWhiteSpace(speechTokenResponse.Token))
             {
-                logger.LogWarning("Accessor returned empty speech token");
-                return Results.Problem("Failed to retrieve speech token");
+                return Results.Ok(speechTokenResponse);
             }
 
-            return Results.Ok(new { token });
+            logger.LogError("Accessor returned empty speech token");
+            return Results.Problem("Failed to retrieve speech token");
+
         }
         catch (Exception ex)
         {

@@ -10,6 +10,7 @@ using Manager.Models.Auth.RefreshSessions;
 using Manager.Models.Chat;
 using Manager.Models.QueueMessages;
 using Manager.Models.Users;
+using Manager.Services.Clients.Accessor.Models;
 
 namespace Manager.Services.Clients.Accessor;
 
@@ -324,17 +325,17 @@ public class AccessorClient(
         }
     }
 
-    public async Task<string> GetSpeechTokenAsync(CancellationToken ct = default)
+    public async Task<SpeechTokenResponse> GetSpeechTokenAsync(CancellationToken ct = default)
     {
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetSpeechTokenAsync), nameof(AccessorClient));
         try
         {
-            var token = await _daprClient.InvokeMethodAsync<string>(
+            var speechTokenResponse = await _daprClient.InvokeMethodAsync<SpeechTokenResponse>(
                 HttpMethod.Get,
                 AppIds.Accessor,
                 "media-accessor/speech/token",
                 ct);
-            return token ?? string.Empty;
+            return speechTokenResponse;
         }
         catch (Exception ex)
         {
