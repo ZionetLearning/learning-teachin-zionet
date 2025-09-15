@@ -3,7 +3,6 @@ using Manager.Constants;
 using Manager.Helpers;
 using Manager.Models.Users;
 using Manager.Services.Clients.Accessor;
-//using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Endpoints;
