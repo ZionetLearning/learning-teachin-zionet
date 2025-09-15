@@ -1,6 +1,6 @@
-﻿using Manager.Models.Chat;
+﻿using Manager.Constants;
+using Manager.Models.Chat;
 using Manager.Models.Sentences;
-using Manager.Models.Speech;
 using Manager.Services.Clients.Accessor;
 using Manager.Services.Clients.Engine;
 using Manager.Services.Clients.Engine.Models;
@@ -18,24 +18,18 @@ public static class AiEndpoints
 
     public static WebApplication MapAiEndpoints(this WebApplication app)
     {
-        var aiGroup = app.MapGroup("/ai-manager").WithTags("AI").RequireAuthorization();
+        var aiGroup = app.MapGroup("/ai-manager").WithTags("AI").RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
 
         #region HTTP GET
 
-        // GET /ai-manager/chats/{userId}
         aiGroup.MapGet("/chats/{userId:guid}", GetChatsAsync).WithName("GetChats");
-        // GET /ai-manager/chat/{chatId:guid}/{userId:guid}
         aiGroup.MapGet("/chat/{chatId:guid}/{userId:guid}", GetChatHistoryAsync).WithName("GetChatHistory");
 
         #endregion
 
         #region HTTP POST
 
-        // POST /ai-manager/chat
         aiGroup.MapPost("/chat", ChatAsync).WithName("Chat");
-
-        // POST /ai-manager/speech/synthesize
-        aiGroup.MapPost("/speech/synthesize", SynthesizeAsync).WithName("SynthesizeText");
         aiGroup.MapPost("/sentence", SentenceGenerateAsync).WithName("GenerateSentence");
         aiGroup.MapPost("/sentence/split", SplitSentenceGenerateAsync).WithName("GenerateSplitSentence");
 
@@ -241,77 +235,12 @@ public static class AiEndpoints
         return true;
     }
 
-    private static async Task<IResult> SynthesizeAsync(
-        [FromBody] SpeechRequest dto,
-        [FromServices] IEngineClient engineClient,
-        [FromServices] ILogger<SpeechEndpoints> logger,
-        HttpRequest req,
-        CancellationToken ct)
-    {
-        if (dto is null || string.IsNullOrWhiteSpace(dto.Text))
-        {
-            return Results.BadRequest(new { error = "Text is required" });
-        }
-
-        logger.LogInformation("Received speech synthesis request for text length: {Length}", dto.Text.Length);
-
-        try
-        {
-            var engineResult = await engineClient.SynthesizeAsync(dto, ct);
-            if (engineResult == null)
-            {
-                logger.LogError("Engine synthesis failed - service returned null");
-                return Results.Problem("Speech synthesis failed.");
-            }
-
-            var wantsBinary =
-                req.Headers.Accept.Any(h => h != null && h.Contains("application/octet-stream", StringComparison.OrdinalIgnoreCase)) ||
-                req.Headers.Accept.Any(h => h != null && h.Contains("audio/", StringComparison.OrdinalIgnoreCase)) ||
-                (req.Query.TryGetValue("format", out var fmt) && string.Equals(fmt, "binary", StringComparison.OrdinalIgnoreCase));
-
-            if (wantsBinary && !string.IsNullOrWhiteSpace(engineResult.AudioData))
-            {
-                var audioBytes = Convert.FromBase64String(engineResult.AudioData);
-                var contentType = !string.IsNullOrWhiteSpace(engineResult.Metadata?.ContentType)
-                    ? engineResult.Metadata.ContentType
-                    : "audio/mpeg";
-
-                logger.LogInformation("Returning binary audio (length {Length}, type {Type})", audioBytes.Length, contentType);
-                return Results.File(audioBytes, contentType: contentType, fileDownloadName: null, enableRangeProcessing: true);
-            }
-
-            var response = new SpeechResponse
-            {
-                AudioData = engineResult.AudioData,
-                Visemes = engineResult.Visemes,
-                Metadata = engineResult.Metadata,
-            };
-
-            logger.LogInformation("Speech synthesis completed successfully");
-            return Results.Ok(response);
-        }
-        catch (OperationCanceledException)
-        {
-            logger.LogWarning("Speech synthesis operation was canceled by user");
-            return Results.StatusCode(StatusCodes.Status499ClientClosedRequest);
-        }
-        catch (TimeoutException)
-        {
-            logger.LogWarning("Speech synthesis operation timed out");
-            return Results.Problem("Speech is too long.", statusCode: StatusCodes.Status408RequestTimeout);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error in speech synthesis manager");
-            return Results.Problem("An error occurred during speech synthesis.");
-        }
-    }
     private static async Task<IResult> SentenceGenerateAsync(
-       [FromBody] SentenceRequestDto dto,
-       [FromServices] IEngineClient engineClient,
-       [FromServices] ILogger<SpeechEndpoints> logger,
-       HttpContext httpContext,
-       CancellationToken ct)
+   [FromBody] SentenceRequestDto dto,
+   [FromServices] IEngineClient engineClient,
+   [FromServices] ILogger<SpeechEndpoints> logger,
+   HttpContext httpContext,
+   CancellationToken ct)
     {
         if (dto is null)
         {
