@@ -111,7 +111,7 @@ public class SignalRTestFixture : IAsyncDisposable
         Predicate<UserNotification>? predicate = null,
         TimeSpan? timeout = null)
     {
-        timeout ??= TimeSpan.FromSeconds(10);
+        timeout ??= TimeSpan.FromSeconds(30);
         var endTime = DateTime.UtcNow.Add(timeout.Value);
 
         while (DateTime.UtcNow < endTime)

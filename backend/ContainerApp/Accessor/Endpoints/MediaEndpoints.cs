@@ -19,8 +19,8 @@ public static class MediaEndpoints
     {
         try
         {
-            var token = await speechService.GetSpeechTokenAsync(ct);
-            return Results.Ok(token);
+            var speechTokenData = await speechService.GetSpeechTokenAsync(ct);
+            return Results.Ok(speechTokenData);
         }
         catch (OperationCanceledException)
         {
