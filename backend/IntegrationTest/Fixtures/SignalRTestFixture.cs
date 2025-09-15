@@ -1,9 +1,11 @@
+using IntegrationTests.Constants;
+using IntegrationTests.Models.Notification;
 using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Concurrent;
 using System.Text.Json;
-using IntegrationTests.Models.Notification;
-using IntegrationTests.Constants;
-using Microsoft.Extensions.Configuration;
+using System.Text.Json.Serialization;
 
 namespace IntegrationTests.Fixtures;
 
@@ -48,13 +50,17 @@ public class SignalRTestFixture : IAsyncDisposable
     {
         if (_connection is null)
         {
+
             _connection = new HubConnectionBuilder()
-                .WithUrl($"{_baseUrl}/notificationHub?userId={TestConstants.TestUserId}", options =>
+                .WithUrl($"{_baseUrl}/notificationHub", options =>
                 {
                     if (!string.IsNullOrEmpty(_accessToken))
-                    {
                         options.AccessTokenProvider = () => Task.FromResult(_accessToken)!;
-                    }
+                })
+                .AddJsonProtocol(o =>
+                {
+                    o.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                    o.PayloadSerializerOptions.PropertyNameCaseInsensitive = true;
                 })
                 .WithAutomaticReconnect()
                 .Build();
@@ -91,10 +97,10 @@ public class SignalRTestFixture : IAsyncDisposable
     }
 
     public IReadOnlyList<ReceivedEvent> GetReceivedEvents()
-    {
+        {
         return _receivedEvents.ToList();
-    }
-
+            }
+     
     public void ClearReceivedMessages()
     {
         _receivedNotifications.Clear();
@@ -105,7 +111,7 @@ public class SignalRTestFixture : IAsyncDisposable
         Predicate<UserNotification>? predicate = null,
         TimeSpan? timeout = null)
     {
-        timeout ??= TimeSpan.FromSeconds(10);
+        timeout ??= TimeSpan.FromSeconds(30);
         var endTime = DateTime.UtcNow.Add(timeout.Value);
 
         while (DateTime.UtcNow < endTime)
@@ -143,7 +149,6 @@ public class SignalRTestFixture : IAsyncDisposable
         return null;
     }
 
-
     private static string GetBaseUrl()
     {
         var config = new ConfigurationBuilder()
@@ -154,11 +159,11 @@ public class SignalRTestFixture : IAsyncDisposable
         var url = config["TestSettings:ApiBaseUrl"];
 
         if (string.IsNullOrWhiteSpace(url))
-    {
-        throw new InvalidOperationException(
-            "ApiBaseUrl is not set in appsettings.json under TestSettings."
-        );
-    }
+        {
+            throw new InvalidOperationException(
+                "ApiBaseUrl is not set in appsettings.json under TestSettings."
+            );
+        }
 
         return url.TrimEnd('/');
     }

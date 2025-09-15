@@ -61,6 +61,35 @@ namespace Accessor.Migrations
                     b.ToTable("ChatHistorySnapshots", (string)null);
                 });
 
+            modelBuilder.Entity("Accessor.Models.Prompts.PromptModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PromptKey")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("Version")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PromptKey");
+
+                    b.HasIndex("PromptKey", "Version");
+
+                    b.ToTable("Prompts", (string)null);
+                });
+
             modelBuilder.Entity("Accessor.Models.RefreshSessionsRecord", b =>
                 {
                     b.Property<Guid>("Id")
@@ -156,6 +185,23 @@ namespace Accessor.Migrations
                     b.ToTable("Tasks");
                 });
 
+            modelBuilder.Entity("Accessor.Models.Users.TeacherStudent", b =>
+                {
+                    b.Property<Guid>("TeacherId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("StudentId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("TeacherId", "StudentId");
+
+                    b.HasIndex("StudentId");
+
+                    b.HasIndex("TeacherId");
+
+                    b.ToTable("TeacherStudents", (string)null);
+                });
+
             modelBuilder.Entity("Accessor.Models.Users.UserModel", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -171,6 +217,9 @@ namespace Accessor.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("HebrewLevelValue")
+                        .HasColumnType("text");
+
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasColumnType("text");
@@ -179,6 +228,12 @@ namespace Accessor.Migrations
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
+
+                    b.Property<string>("PreferredLanguageCode")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("en");
 
                     b.Property<string>("Role")
                         .IsRequired()

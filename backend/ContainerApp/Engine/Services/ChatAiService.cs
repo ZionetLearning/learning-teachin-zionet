@@ -1,5 +1,5 @@
-﻿using Engine.Models.Chat;
-using Engine.Helpers;
+﻿using Engine.Helpers;
+using Engine.Models.Chat;
 using Engine.Services.Clients.AccessorClient.Models;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
@@ -30,8 +30,8 @@ public sealed class ChatAiService : IChatAiService
 
     public async Task<ChatAiServiceResponse> ChatHandlerAsync(ChatAiServiseRequest request, CancellationToken ct = default)
     {
-        _log.LogInformation("AI processing thread {ThreadId}", request.ThreadId);
-
+        _log.LogInformation("ChatAI request started {RequestId} for User {UserId}, Thread {ThreadId}, Type {ChatType}, TTL {TtlSeconds}",
+    request.RequestId, request.UserId, request.ThreadId, request.ChatType, request.TtlSeconds);
         var response = new ChatAiServiceResponse
         {
             RequestId = request.RequestId,
@@ -62,6 +62,8 @@ public sealed class ChatAiService : IChatAiService
             var result = await _kernelPolicy.ExecuteAsync(
                 async ct2 => await _chat.GetChatMessageContentAsync(request.History, settings, _kernel, ct2),
                 ct);
+
+            _log.LogInformation("LLM request {RequestId} finished model {Model}", request.RequestId, settings.ModelId);
 
             if (string.IsNullOrWhiteSpace(result?.Content))
             {

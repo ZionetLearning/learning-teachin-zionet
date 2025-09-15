@@ -1,3 +1,5 @@
+import { APP_ROLES, AppRole, AppRoleType } from "@app-providers";
+
 export const decodeJwtExp = (token: string): number | undefined => {
   try {
     const [, payload] = token.split(".");
@@ -13,6 +15,25 @@ export const decodeJwtExp = (token: string): number | undefined => {
     }
   } catch (e) {
     console.warn("Failed to decode JWT expiration", e);
+  }
+  return undefined;
+};
+
+export const decodeJwtPayload = (
+  token: string,
+): Record<string, unknown> | undefined => {
+  try {
+    const [, payload] = token.split(".");
+    if (!payload) return undefined;
+    const json = JSON.parse(
+      atob(
+        payload.replace(/-/g, "+").replace(/_/g, "/") +
+          "=".repeat((4 - (payload.length % 4)) % 4),
+      ),
+    );
+    return json;
+  } catch (e) {
+    console.warn("Failed to decode JWT payload", e);
   }
   return undefined;
 };
@@ -59,4 +80,30 @@ export const extractCsrf = (data: unknown): string | undefined => {
     return typeof v === "string" ? v : undefined;
   }
   return undefined;
+};
+
+export const decodeJwtUserId = (token: string): string | null => {
+  try {
+    const [, payload] = token.split(".");
+    const decoded = JSON.parse(atob(payload));
+    return decoded?.userId || null;
+  } catch (e) {
+    console.error("Failed to decode JWT:", e);
+    return null;
+  }
+};
+
+export const toAppRole = (
+  v: string | number | null | undefined,
+): AppRoleType => {
+  if (typeof v === "string") {
+    const role = v.trim().toLowerCase();
+    return (
+      APP_ROLES.includes(role as AppRoleType) ? role : AppRole.student
+    ) as AppRoleType;
+  }
+  if (typeof v === "number") {
+    return APP_ROLES[v] ?? AppRole.student;
+  }
+  return AppRole.student;
 };

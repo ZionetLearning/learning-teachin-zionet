@@ -5,7 +5,6 @@ using Manager.Constants;
 using Manager.Models;
 using Manager.Models.QueueMessages;
 using Manager.Models.Sentences;
-using Manager.Models.Speech;
 using Manager.Services.Clients.Engine.Models;
 
 namespace Manager.Services.Clients.Engine;
@@ -131,46 +130,6 @@ public class EngineClient : IEngineClient
             throw;
         }
     }
-
-    public async Task<SpeechEngineResponse?> SynthesizeAsync(SpeechRequest request, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            _logger.LogInformation("Forwarding speech synthesis request to engine");
-
-            var result = await _daprClient.InvokeMethodAsync<SpeechRequest, SpeechEngineResponse>(
-                appId: AppIds.Engine,
-                methodName: "speech/synthesize",
-                data: request,
-                cancellationToken: cancellationToken);
-
-            if (result != null)
-            {
-                result.Metadata ??= new SpeechMetadata();
-                if (string.IsNullOrWhiteSpace(result.Metadata.ContentType))
-                {
-                    result.Metadata.ContentType = "audio/mpeg";
-                }
-            }
-
-            return result;
-        }
-        catch (InvocationException ex) when (ex.InnerException is HttpRequestException httpEx && httpEx.Message.Contains("408"))
-        {
-            _logger.LogWarning("Speech synthesis request timed out (408)");
-            throw new TimeoutException("Speech synthesis request timed out", ex);
-        }
-        catch (InvocationException ex) when (ex.InnerException is HttpRequestException httpEx && httpEx.Message.Contains("499"))
-        {
-            _logger.LogWarning("Speech synthesis request was canceled by client (499)");
-            throw new OperationCanceledException("Speech synthesis request was canceled by client", ex);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error communicating with speech engine");
-            return null;
-        }
-    }
     public async Task<(bool success, string message)> GenerateSentenceAsync(SentenceRequest request)
     {
         try
@@ -179,6 +138,30 @@ public class EngineClient : IEngineClient
             var message = new Message
             {
                 ActionName = MessageAction.GenerateSentences,
+                Payload = payload
+            };
+            await _daprClient.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message);
+
+            _logger.LogDebug(
+                "Generate request sent to Engine via binding '{Binding}'",
+                QueueNames.EngineQueue
+            );
+            return (true, "sent to engine");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send request for generation to Engine");
+            throw;
+        }
+    }
+    public async Task<(bool success, string message)> GenerateSplitSentenceAsync(SentenceRequest request)
+    {
+        try
+        {
+            var payload = JsonSerializer.SerializeToElement(request);
+            var message = new Message
+            {
+                ActionName = MessageAction.GenerateSplitSentences,
                 Payload = payload
             };
             await _daprClient.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message);

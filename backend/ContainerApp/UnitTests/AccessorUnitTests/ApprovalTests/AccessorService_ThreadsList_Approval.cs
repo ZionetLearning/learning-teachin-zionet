@@ -23,9 +23,6 @@ public class AccessorService_ThreadsList_Approval
         return new AccessorDbContext(opts);
     }
 
-    private static IConfiguration Cfg() =>
-        new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["TaskCache:TTLInSeconds"] = "123" }).Build();
-
     [Fact(Skip = "Fix ApprovalSetup.VerifyJsonClean:  ApprovalSetup needs fixing")]
     public async Task GetThreadsForUser_Snapshot_Projection_And_Order()
     {
@@ -47,8 +44,8 @@ public class AccessorService_ThreadsList_Approval
         await db.SaveChangesAsync();
 
         var dapr = new Mock<DaprClient>(MockBehavior.Loose);
-        var log = Mock.Of<ILogger<AccessorService>>();
-        var svc = new AccessorService(db, log, dapr.Object, Cfg());
+        var log = Mock.Of<ILogger<ChatService>>();
+        var svc = new ChatService(db, log);
 
         var list = await svc.GetChatsForUserAsync(userId1);
 

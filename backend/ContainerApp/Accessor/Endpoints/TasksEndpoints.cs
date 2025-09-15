@@ -1,5 +1,6 @@
 ﻿using Accessor.Models;
 using Accessor.Services;
+using Accessor.Services.Interfaces;
 using Accessor.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,6 +14,7 @@ public static class TasksEndpoints
 
         tasksGroup.MapGet("/task/{id:int}", GetTaskByIdAsync).WithName("GetTaskById");
         tasksGroup.MapPost("/task", CreateTaskAsync).WithName("CreateTask");
+        tasksGroup.MapPatch("/task", UpdateTaskNameAsync).WithName("UpdateTaskName");
         tasksGroup.MapDelete("/task/{taskId:int}", DeleteTaskAsync).WithName("DeleteTask");
 
         return app;
@@ -21,21 +23,29 @@ public static class TasksEndpoints
     // ---- handlers (moved from AccessorEndpoints) ----
     public static async Task<IResult> GetTaskByIdAsync(
         int id,
-        [FromServices] IAccessorService accessorService,
-        [FromServices] ILogger<AccessorService> logger)
+        [FromServices] ITaskService taskService,
+        [FromServices] ILogger<TaskService> logger,
+        HttpResponse response) // <-- add this
     {
         using var scope = logger.BeginScope("Method: {Method}, TaskId: {TaskId}", nameof(GetTaskByIdAsync), id);
+
         try
         {
-            var task = await accessorService.GetTaskByIdAsync(id);
-            if (task != null)
+            var res = await taskService.GetTaskWithEtagAsync(id);
+            if (res is null)
             {
-                logger.LogInformation("Successfully retrieved task.");
-                return Results.Ok(task);
+                logger.LogWarning("Task not found.");
+                return Results.NotFound($"Task with ID {id} not found.");
             }
 
-            logger.LogWarning("Task not found.");
-            return Results.NotFound($"Task with ID {id} not found.");
+            // Ensure the ETag is quoted, per RFC 7232
+            if (!string.IsNullOrWhiteSpace(res.Value.ETag))
+            {
+                response.Headers.ETag = $"\"{res.Value.ETag}\"";
+            }
+
+            logger.LogInformation("Successfully retrieved task with ETag.");
+            return Results.Ok(res.Value.Task);
         }
         catch (Exception ex)
         {
@@ -46,15 +56,15 @@ public static class TasksEndpoints
 
     public static async Task<IResult> CreateTaskAsync(
         [FromBody] TaskModel task,
-        [FromServices] IAccessorService accessorService,
-        [FromServices] ILogger<AccessorService> logger,
+        [FromServices] ITaskService taskService,
+        [FromServices] ILogger<TaskService> logger,
         CancellationToken ct)
     {
         using var scope = logger.BeginScope("Method: {Method}, TaskId: {TaskId}", nameof(CreateTaskAsync), task.Id);
 
         try
         {
-            await accessorService.CreateTaskAsync(task);
+            await taskService.CreateTaskAsync(task);
             return Results.Created($"/api/tasks/{task.Id}", task);
         }
         catch (ConflictException ex)
@@ -77,22 +87,35 @@ public static class TasksEndpoints
     }
 
     public static async Task<IResult> UpdateTaskNameAsync(
-    [FromBody] UpdateTaskName request,
-    [FromServices] IAccessorService accessorService,
-    [FromServices] ILogger<AccessorService> logger)
+        [FromBody] UpdateTaskName request,
+        [FromHeader(Name = "If-Match")] string? ifMatch,
+        [FromServices] ITaskService taskService,
+        [FromServices] ILogger<TaskService> logger,
+        HttpResponse response)
     {
         using var scope = logger.BeginScope("Method: {Method}, TaskId: {TaskId}, NewName: {NewName}", nameof(UpdateTaskNameAsync), request.Id, request.Name);
         try
         {
-            var success = await accessorService.UpdateTaskNameAsync(request.Id, request.Name);
-            if (!success)
+            var result = await taskService.UpdateTaskNameAsync(request.Id, request.Name, ifMatch);
+
+            if (result.NotFound)
             {
                 logger.LogWarning("Task not found.");
                 return Results.NotFound($"Task with ID {request.Id} not found.");
             }
 
+            if (result.PreconditionFailed)
+            {
+                return Results.StatusCode(StatusCodes.Status412PreconditionFailed);
+            }
+
+            if (!string.IsNullOrEmpty(result.NewEtag))
+            {
+                response.Headers.ETag = $"\"{result.NewEtag}\"";
+            }
+
             logger.LogInformation("Task updated successfully.");
-            return Results.Ok($"Task {request.Id} updated successfully.");
+            return Results.Ok(new { id = request.Id, name = request.Name });
         }
         catch (Exception ex)
         {
@@ -103,16 +126,15 @@ public static class TasksEndpoints
 
     public static async Task<IResult> DeleteTaskAsync(
         int taskId,
-        [FromServices] IAccessorService accessorService,
-        [FromServices] ILogger<AccessorService> logger)
+        [FromServices] ITaskService taskService,
+        [FromServices] ILogger<TaskService> logger)
     {
         using var scope = logger.BeginScope("Method: {Method}, TaskId: {TaskId}", nameof(DeleteTaskAsync), taskId);
         try
         {
-            var deleted = await accessorService.DeleteTaskAsync(taskId);
+            var deleted = await taskService.DeleteTaskAsync(taskId);
             if (!deleted)
             {
-                logger.LogWarning("Task not found.");
                 return Results.NotFound($"Task with ID {taskId} not found.");
             }
 

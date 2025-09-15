@@ -2,6 +2,8 @@ using Accessor.DB.Configurations;
 using Accessor.Models;
 using Microsoft.EntityFrameworkCore;
 using Accessor.Models.Users;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Accessor.Models.Prompts;
 
 namespace Accessor.DB;
 
@@ -15,6 +17,14 @@ public class AccessorDbContext : DbContext
     public DbSet<ChatHistorySnapshot> ChatHistorySnapshots { get; set; } = default!;
     public DbSet<RefreshSessionsRecord> RefreshSessions { get; set; } = default!;
     public DbSet<UserModel> Users { get; set; } = default!;
+    public DbSet<PromptModel> Prompts { get; set; } = default!;
+    public DbSet<TeacherStudent> TeacherStudents { get; set; } = default!;
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
+        base.OnConfiguring(optionsBuilder);
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -24,10 +34,14 @@ public class AccessorDbContext : DbContext
         // Refresh Sessions table
         modelBuilder.ApplyConfiguration(new RefreshSessionConfiguration());
 
-        // TaskModel – ensure Id is unique/PK
+        // TaskModel – primary key + map Postgres system column `xmin` as a shadow concurrency token
         modelBuilder.Entity<TaskModel>(e =>
         {
             e.HasKey(t => t.Id);
+            e.Property<uint>("xmin")
+             .HasColumnName("xmin")
+             .IsConcurrencyToken()
+             .ValueGeneratedOnAddOrUpdate();
         });
 
         // ChatHistorySnapshot table
@@ -48,6 +62,35 @@ public class AccessorDbContext : DbContext
 
             e.Property(x => x.UpdatedAt)
              .HasDefaultValueSql("NOW()");
+        });
+        modelBuilder.Entity<TeacherStudent>(e =>
+        {
+            e.ToTable("TeacherStudents");
+            e.HasKey(x => new { x.TeacherId, x.StudentId });
+            e.HasIndex(x => x.TeacherId);
+            e.HasIndex(x => x.StudentId);
+        });
+
+        // Prompts table
+        modelBuilder.Entity<PromptModel>(entity =>
+        {
+            entity.ToTable("Prompts");
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.PromptKey)
+                .IsRequired()
+                .HasMaxLength(120);
+
+            entity.Property(e => e.Version)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(e => e.Content)
+                .IsRequired();
+
+            entity.HasIndex(e => new { e.PromptKey, e.Version });
+
+            entity.HasIndex(e => e.PromptKey);
         });
 
         base.OnModelCreating(modelBuilder);

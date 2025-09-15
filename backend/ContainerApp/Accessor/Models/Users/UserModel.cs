@@ -17,4 +17,10 @@ public class UserModel
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public required Role Role { get; set; }
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public SupportedLanguage PreferredLanguageCode { get; set; }
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public HebrewLevel? HebrewLevelValue { get; set; }
 }

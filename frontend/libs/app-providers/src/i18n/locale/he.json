@@ -14,6 +14,7 @@
         "creatingAccount": "יוצר חשבון...",
         "teacherDashboard": "מורים",
         "studentDashboard": "תלמידים",
+        "adminDashboard": "מנהל מערכת",
         "genericError": "משהו השתבש. אנא נסה שוב מאוחר יותר."
       },
       "home": {
@@ -74,6 +75,39 @@
         "typeMessage": "הקלד הודעה…",
         "avatar": "אווטאר",
         "lips": "שפתיים"
+      },
+      "chatHistory": {
+        "title": "היסטוריית צ'אט",
+        "toggleButton": {
+          "title": "פתח/סגר היסטוריית צ'אט",
+          "ariaLabel": "פתח או סגר את סרגל היסטוריית הצ'אט"
+        },
+        "closeButton": {
+          "title": "סגור היסטוריית צ'אט",
+          "ariaLabel": "סגור את סרגל היסטוריית הצ'אט"
+        },
+        "newChatButton": {
+          "title": "התחל שיחה חדשה",
+          "text": "צ'אט חדש"
+        },
+        "untitledChat": "צ'אט ללא שם",
+        "dateFormat": {
+          "today": "היום",
+          "yesterday": "אתמול",
+          "daysAgo": "לפני {{count}} ימים",
+          "unknown": "תאריך לא ידוע"
+        },
+        "loading": {
+          "chats": "טוען צ'אטים...",
+          "history": "טוען היסטוריית צ'אט..."
+        },
+        "emptyState": {
+          "title": "אין שיחות עדיין",
+          "description": "התחל צ'אט חדש כדי לראות את היסטוריית השיחות שלך כאן."
+        },
+        "overlay": {
+          "ariaLabel": "לחץ לסגירת היסטוריית הצ'אט"
+        }
       },
       "avatarOu": {
         "avatarOuPage": "אווטאר - אוריאל",
@@ -259,7 +293,15 @@
         "password": "סיסמה",
         "firstName": "שם פרטי",
         "lastName": "שם משפחה",
-        "noChanges": "אין שינויים"
+        "noChanges": "אין שינויים",
+        "role": "תפקיד",
+        "actions": "פעולות",
+        "searchPlaceholder": "חפש לפי אימייל, שם פרטי, שם משפחה...",
+        "clear": "נקה",
+        "rowsPerPage": "שורות בעמוד:",
+        "page": "עמוד:",
+        "of": "של",
+        "all": "הכל"
       },
       "profile": {
         "title": "הפרופיל שלי",
@@ -268,6 +310,7 @@
         "firstName": "שם פרטי",
         "lastName": "שם משפחה",
         "email": "דואר אלקטרוני",
+        "preferredLanguage": "שפה מועדפת",
         "emailCannotBeChanged": "דואר אלקטרוני לא ניתן לשינוי",
         "edit": "עריכה",
         "saveChanges": "שמור שינויים",
@@ -305,6 +348,22 @@
     },
     "goBackToMenu": "חזור לתפריט",
     "logout": "התנתק",
-    "somethingWentWrong": "משהו השתבש..."
+    "somethingWentWrong": "משהו השתבש...",
+    "roles": {
+      "admin": "מנהל מערכת",
+      "teacher": "מורה",
+      "student": "תלמיד"
+    },
+    "hebrewLevels": {
+      "title": "רמת עברית",
+      "beginner": "מתחיל",
+      "intermediate": "בינוני",
+      "advanced": "מתקדם",
+      "fluent": "שוטף"
+    },
+    "languages": {
+      "hebrew": "עברית",
+      "english": "אנגלית"
+    }
   }
 }

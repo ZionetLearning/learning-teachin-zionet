@@ -1,5 +1,4 @@
 ﻿using System.Text.Json;
-using Engine.Constants;
 using Engine.Models.Chat;
 using Engine.Services.Clients.AccessorClient.Models;
 using Microsoft.SemanticKernel;
@@ -426,17 +425,6 @@ public static class HistoryMapper
     {
         var envelope = new HistoryEnvelope { Messages = history.ToList() };
         return ToJsonElementCompat(envelope);
-    }
-
-    public static void EnsureSystemMessage(ChatHistory history)
-    {
-        if (history.Any(m => m.Role == AuthorRole.System))
-        {
-            return;
-        }
-
-        var systemPrompt = Prompts.Combine(Prompts.SystemDefault, Prompts.DetailedExplanation);
-        history.Insert(0, new ChatMessageContent(AuthorRole.System, systemPrompt));
     }
 }
 

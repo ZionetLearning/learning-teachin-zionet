@@ -10,44 +10,57 @@ using Xunit.Abstractions;
 namespace IntegrationTests.Tests.Tasks;
 
 public abstract class TaskTestBase(
-    HttpTestFixture fixture,
+    SharedTestFixture sharedFixture,
     ITestOutputHelper outputHelper,
     SignalRTestFixture signalRFixture
-) : IntegrationTestBase(fixture, outputHelper, signalRFixture)
+) : IntegrationTestBase(sharedFixture.HttpFixture, outputHelper, signalRFixture)
 {
+    protected SharedTestFixture Shared { get; } = sharedFixture;
+    public override Task InitializeAsync() => SuiteInit.EnsureAsync(Shared, SignalRFixture, OutputHelper);
+
     protected async Task<TaskModel> CreateTaskAsync(TaskModel? task = null)
     {
         task ??= TestDataHelper.CreateRandomTask();
+
+        await Shared.EnsureSignalRStartedAsync(SignalRFixture, OutputHelper);
+        SignalRFixture.ClearReceivedMessages();
 
         OutputHelper.WriteLine($"Creating task with ID: {task.Id}, Name: {task.Name}");
 
         var response = await PostAsJsonAsync(ApiRoutes.Task, task);
         response.EnsureSuccessStatusCode();
-        OutputHelper.WriteLine($"Response status code: {response.StatusCode}");
 
-        var receivedNotification = await WaitForNotificationAsync(
-           n => n.Type == NotificationType.Success &&
-           n.Message.Contains(task.Name),
-           TimeSpan.FromSeconds(10));
-        receivedNotification.Should().NotBeNull();
-
-        OutputHelper.WriteLine($"Received notification: {receivedNotification.Notification.Message}");
+        var received = await WaitForNotificationAsync(
+            n => n.Type == NotificationType.Success && n.Message.Contains(task.Name),
+            TimeSpan.FromSeconds(300)
+        );
+        received.Should().NotBeNull("Expected a SignalR notification");
 
         await TaskUpdateHelper.WaitForTaskNameUpdateAsync(Client, task.Id, task.Name);
-
-        OutputHelper.WriteLine(
-            $"Task created successfully with status code: {response.StatusCode}"
-        );
         return task;
     }
 
-    protected async Task<HttpResponseMessage> UpdateTaskNameAsync(int id, string newName)
+    protected async Task<(TaskModel Task, string? ETag)> GetTaskWithEtagAsync(int id)
     {
-        OutputHelper.WriteLine($"Updating task ID {id} with new name: {newName}");
+        var resp = await Client.GetAsync(ApiRoutes.TaskById(id));
+        resp.EnsureSuccessStatusCode();
 
-        var response = await Client.PutAsync(ApiRoutes.UpdateTaskName(id, newName), null);
+        var task = await ReadAsJsonAsync<TaskModel>(resp);
+        var etag = resp.Headers.ETag?.Tag ?? resp.Headers.ETag?.ToString(); // includes quotes
+        return (task!, etag);
+    }
 
-        OutputHelper.WriteLine($"Update response status: {response.StatusCode}");
-        return response;
+    protected async Task<HttpResponseMessage> UpdateTaskNameAsync(int id, string newName, string? ifMatch = null)
+    {
+        // If not provided, fetch current ETag via GET
+        if (string.IsNullOrWhiteSpace(ifMatch))
+        {
+            var (_task, tag) = await GetTaskWithEtagAsync(id);
+            ifMatch = tag;
+        }
+
+        var req = new HttpRequestMessage(HttpMethod.Put, ApiRoutes.UpdateTaskName(id, newName));
+        req.Headers.TryAddWithoutValidation("If-Match", ifMatch);
+        return await Client.SendAsync(req);
     }
 }

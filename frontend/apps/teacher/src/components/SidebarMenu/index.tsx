@@ -25,8 +25,8 @@ export const SidebarMenu = () => {
     };
 
     const items: SidebarLink[] = [
-        { label: t('sidebar.home'), icon: <HomeIcon />, path: '/', testId: 'sidebar-home' },
         { label: t('sidebar.profile'), icon: <AccountCircleIcon />, path: '/profile', testId: 'sidebar-profile' },
+        { label: t('sidebar.home'), icon: <HomeIcon />, path: '/', testId: 'sidebar-home' },
     ];
 
     return (

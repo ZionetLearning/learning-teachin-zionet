@@ -125,3 +125,18 @@ jobs:
           elif [[ "$ACTION" == "MANUAL" ]]; then
             echo "ℹ️ Manual trigger - current status: $FINAL_STATUS"
           fi
+
+      - name: Wait for dapr-system to be ready
+        if: steps.determine_action.outputs.action == 'START'
+        run: |
+          echo "Waiting for dapr-system pods..."
+          kubectl wait --for=condition=Ready pod -n dapr-system --all --timeout=180s
+
+      - name: Restart deployments in dev, test and stage
+        if: steps.determine_action.outputs.action == 'START'
+        run: |
+          for ns in dev test stage; do
+            echo "🔄 Restarting deployments in namespace: $ns"
+            kubectl rollout restart deployment -n $ns
+            kubectl rollout status deployment -n $ns --timeout=180s
+          done

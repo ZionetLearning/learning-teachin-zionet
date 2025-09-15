@@ -30,6 +30,15 @@ public class UsersConfiguration : IEntityTypeConfiguration<UserModel>
             .HasConversion<string>() // Store enum as string
             .IsRequired();
 
+        builder.Property(u => u.PreferredLanguageCode)
+            .HasConversion<string>() // enum → string
+            .HasDefaultValue(SupportedLanguage.en) // default if not set
+            .IsRequired();
+
+        builder.Property(u => u.HebrewLevelValue)
+            .HasConversion<string>() // nullable enum → string
+            .IsRequired(false); // optional
+
         builder.HasIndex(u => u.Email)
             .IsUnique();
 

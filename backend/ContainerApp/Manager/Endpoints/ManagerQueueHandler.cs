@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using DotQueue;
+using Manager.Helpers;
 using Manager.Models.Chat;
 using Manager.Models.ModelValidation;
 using Manager.Models.Notifications;
@@ -24,11 +25,12 @@ public class ManagerQueueHandler : IQueueHandler<Message>
         {
             [MessageAction.NotifyUser] = HandleNotifyUserAsync,
             [MessageAction.ProcessingChatMessage] = HandleAIChatAnswerAsync,
-            [MessageAction.GenerateSentences] = HandleGenerateAnswer
+            [MessageAction.GenerateSentences] = HandleGenerateAnswer,
+            [MessageAction.GenerateSplitSentences] = HandleGenerateSplitAnswer
         };
     }
 
-    public async Task HandleAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
+    public async Task HandleAsync(Message message, IReadOnlyDictionary<string, string>? metadataCallback, Func<Task> renewLock, CancellationToken cancellationToken)
     {
         if (_handlers.TryGetValue(message.ActionName, out var handler))
         {
@@ -194,6 +196,64 @@ public class ManagerQueueHandler : IQueueHandler<Message>
             }
 
             await _notificationService.SendEventAsync(EventType.SentenceGeneration, userId, generatedResponse);
+
+        }
+        catch (NonRetryableException ex)
+        {
+            _logger.LogError(ex, "Non-retryable error processing message {Action}", message.ActionName);
+            throw;
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "Invalid JSON response for {Action}", message.ActionName);
+            throw new NonRetryableException("Invalid JSON response.", ex);
+        }
+        catch (Exception ex)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning("Operation cancelled while processing message {Action}", message.ActionName);
+                throw new OperationCanceledException("Operation was cancelled.", ex, cancellationToken);
+            }
+
+            _logger.LogError(ex, "Error processing answer");
+            throw new RetryableException("Transient error while processing answer.", ex);
+        }
+    }
+    public async Task HandleGenerateSplitAnswer(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var generatedResponse = message.Payload.Deserialize<SentenceResponse>();
+            if (generatedResponse is null)
+            {
+                _logger.LogError("Payload deserialization returned null for sentence generation.");
+                throw new NonRetryableException("Payload deserialization returned null for sentence generation.");
+            }
+
+            var userId = string.Empty;
+            if (message.Metadata.HasValue)
+            {
+                userId = JsonSerializer.Deserialize<string>(message.Metadata.Value);
+            }
+
+            if (userId is null)
+            {
+                _logger.LogWarning("Metadata is null for sentence generation action");
+                throw new NonRetryableException("Chat Metadata is required for sentence generation action.");
+            }
+
+            if (!ValidationExtensions.TryValidate(generatedResponse, out var validationErrors))
+            {
+                _logger.LogWarning("Validation failed for {Model}: {Errors}",
+                    nameof(SentenceResponse), validationErrors);
+                throw new NonRetryableException(
+                    $"Validation failed for {nameof(SentenceResponse)}: {string.Join("; ", validationErrors)}");
+            }
+
+            var split = Splitter.Split(generatedResponse);
+
+            await _notificationService.SendEventAsync(EventType.SplitSentenceGeneration, userId, split);
 
         }
         catch (NonRetryableException ex)

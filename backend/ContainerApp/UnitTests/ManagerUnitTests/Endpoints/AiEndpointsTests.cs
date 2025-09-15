@@ -1,13 +1,13 @@
 ﻿using Manager.Endpoints;
 using Manager.Models.Chat;
 using Manager.Models.Sentences;
-using Manager.Models.Speech;
+using Manager.Services.Clients.Accessor;
 using Manager.Services.Clients.Engine;
 using Manager.Services.Clients.Engine.Models;
-using Manager.Services.Clients.Accessor;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 
@@ -115,38 +115,6 @@ public class AiEndpointsTests
         Assert.Equal(chatId, root.GetProperty("ChatId").GetGuid());
     }
 
-    [Fact(DisplayName = "POST /ai-manager/speech/synthesize => 200 + body when valid")]
-    public async Task Synthesize_Returns_Ok_When_Valid()
-    {
-        var dto = new SpeechRequest { Text = "hello", VoiceName = "he-IL-HilaNeural" };
-
-        var engineResponse = new SpeechEngineResponse
-        {
-            AudioData = Convert.ToBase64String(Encoding.UTF8.GetBytes("audio")),
-            Metadata = new SpeechMetadata { ContentType = "audio/mpeg" }
-        };
-
-        var engine = new Mock<IEngineClient>();
-        engine.Setup(e => e.SynthesizeAsync(dto, It.IsAny<CancellationToken>()))
-              .ReturnsAsync(engineResponse);
-
-        var logger = Mock.Of<ILogger<object>>();
-        var httpReq = new DefaultHttpContext().Request;
-
-        var result = await PrivateInvoker.InvokePrivateEndpointAsync(
-            typeof(AiEndpoints),
-            "SynthesizeAsync",
-            dto,
-            engine.Object,
-            logger,
-            httpReq,
-            CancellationToken.None
-        );
-
-        var status = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
-        Assert.Equal(StatusCodes.Status200OK, status.StatusCode);
-    }
-
     [Fact(DisplayName = "POST /ai-manager/sentence => 200 when valid")]
     public async Task Sentence_Returns_Ok_When_Valid()
     {
@@ -157,19 +125,34 @@ public class AiEndpointsTests
             Nikud = true,
             Count = 1
         };
+        var dto = new SentenceRequestDto
+        {
+            Difficulty = request.Difficulty,
+            Nikud = request.Nikud,
+            Count = request.Count
+        };
 
         var engine = new Mock<IEngineClient>();
         engine.Setup(e => e.GenerateSentenceAsync(request))
             .ReturnsAsync((true, "ok"));
 
         var logger = Mock.Of<ILogger<object>>();
+        var httpContext = new DefaultHttpContext();
+
+        var identity = new ClaimsIdentity(
+            new[] { new Claim(ClaimTypes.Name, request.UserId.ToString()) },
+            authenticationType: "TestAuth"
+        );
+
+        httpContext.User = new ClaimsPrincipal(identity);
 
         var result = await PrivateInvoker.InvokePrivateEndpointAsync(
             typeof(AiEndpoints),
             "SentenceGenerateAsync",
-            request,
+            dto,
             engine.Object,
             logger,
+            httpContext,
             CancellationToken.None
         );
 
