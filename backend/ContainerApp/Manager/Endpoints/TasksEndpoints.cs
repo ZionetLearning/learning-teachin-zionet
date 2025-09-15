@@ -1,4 +1,5 @@
-﻿using Manager.Models;
+﻿using Manager.Constants;
+using Manager.Models;
 using Manager.Models.ModelValidation;
 using Manager.Services.Clients.Accessor;
 using Manager.Services.Clients.Engine;
@@ -12,13 +13,13 @@ public static class TasksEndpoints
 
     public static IEndpointRouteBuilder MapTasksEndpoints(this IEndpointRouteBuilder app)
     {
-        var tasksGroup = app.MapGroup("/tasks-manager").WithTags("Tasks").RequireAuthorization();
+        var tasksGroup = app.MapGroup("/tasks-manager").WithTags("Tasks").RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
 
-        tasksGroup.MapGet("/task/{id:int}", GetTaskAsync).WithName("GetTask");
-        tasksGroup.MapPost("/task", CreateTaskAsync).WithName("CreateTask");
-        tasksGroup.MapPost("/tasklong", CreateTaskLongAsync).WithName("CreateTaskLongTest");
-        tasksGroup.MapPut("/task/{id:int}/{name}", UpdateTaskNameAsync).WithName("UpdateTaskName");
-        tasksGroup.MapDelete("/task/{id:int}", DeleteTaskAsync).WithName("DeleteTask");
+        tasksGroup.MapGet("/task/{id:int}", GetTaskAsync).WithName("GetTask").RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
+        tasksGroup.MapPost("/task", CreateTaskAsync).WithName("CreateTask").RequireAuthorization(PolicyNames.AdminOrTeacher);
+        tasksGroup.MapPost("/tasklong", CreateTaskLongAsync).WithName("CreateTaskLongTest").RequireAuthorization(PolicyNames.AdminOrTeacher);
+        tasksGroup.MapPut("/task/{id:int}/{name}", UpdateTaskNameAsync).WithName("UpdateTaskName").RequireAuthorization(PolicyNames.AdminOrTeacher);
+        tasksGroup.MapDelete("/task/{id:int}", DeleteTaskAsync).WithName("DeleteTask").RequireAuthorization(PolicyNames.AdminOrTeacher);
 
         return app;
     }
@@ -26,7 +27,8 @@ public static class TasksEndpoints
     private static async Task<IResult> GetTaskAsync(
         [FromRoute] int id,
         [FromServices] IAccessorClient accessorClient,
-        [FromServices] ILogger<TaskEndpoint> logger)
+        [FromServices] ILogger<TaskEndpoint> logger,
+        HttpResponse response)
     {
         using var scope = logger.BeginScope("TaskId {TaskId}:", id);
 
@@ -38,10 +40,16 @@ public static class TasksEndpoints
 
         try
         {
-            var task = await accessorClient.GetTaskAsync(id);
+            var (task, etag) = await accessorClient.GetTaskWithEtagAsync(id);
+
             if (task is not null)
             {
-                logger.LogInformation("Successfully retrieved task");
+                if (!string.IsNullOrWhiteSpace(etag))
+                {
+                    response.Headers.ETag = $"\"{etag}\"";
+                }
+
+                logger.LogInformation("Successfully retrieved task (ETag forwarded).");
                 return Results.Ok(task);
             }
 
@@ -127,8 +135,10 @@ public static class TasksEndpoints
     private static async Task<IResult> UpdateTaskNameAsync(
         [FromRoute] int id,
         [FromRoute] string name,
+        [FromHeader(Name = "If-Match")] string? ifMatch,
         [FromServices] IAccessorClient accessorClient,
-        [FromServices] ILogger<TaskEndpoint> logger)
+        [FromServices] ILogger<TaskEndpoint> logger,
+        HttpResponse response)
     {
         using var scope = logger.BeginScope("TaskId {TaskId}:", id);
 
@@ -150,19 +160,36 @@ public static class TasksEndpoints
             return Results.BadRequest("Task name too long");
         }
 
+        if (string.IsNullOrWhiteSpace(ifMatch))
+        {
+            logger.LogWarning("Missing If-Match header");
+            return Results.StatusCode(StatusCodes.Status428PreconditionRequired);
+        }
+
         try
         {
             logger.LogInformation("Attempting to update task name");
-            var success = await accessorClient.UpdateTaskName(id, name);
+            var result = await accessorClient.UpdateTaskNameAsync(id, name, ifMatch!);
 
-            if (success)
+            if (result.NotFound)
             {
-                logger.LogInformation("Successfully updated task name");
-                return Results.Ok("Task name updated");
+                logger.LogWarning("Task not found for update");
+                return Results.NotFound("Task not found");
             }
 
-            logger.LogWarning("Task not found for update");
-            return Results.NotFound("Task not found");
+            if (result.PreconditionFailed)
+            {
+                logger.LogWarning("Precondition failed (ETag mismatch)");
+                return Results.StatusCode(StatusCodes.Status412PreconditionFailed);
+            }
+
+            if (!string.IsNullOrWhiteSpace(result.NewEtag))
+            {
+                response.Headers.ETag = $"\"{result.NewEtag}\"";
+            }
+
+            logger.LogInformation("Successfully updated task name");
+            return Results.Ok("Task name updated");
         }
         catch (Exception ex)
         {

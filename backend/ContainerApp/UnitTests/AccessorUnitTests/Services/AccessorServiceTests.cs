@@ -46,14 +46,18 @@ public class AccessorServiceTests
 
     // ---------- UpdateTaskNameAsync ----------
     [Fact]
-    public async Task UpdateTaskNameAsync_Missing_ReturnsFalse()
+    public async Task UpdateTaskNameAsync_MissingIfMatch_Returns_PreconditionFailed()
     {
         var db = NewDb(Guid.NewGuid().ToString());
         var dapr = new Mock<DaprClient>(MockBehavior.Loose);
         var svc = NewTaskService(db, dapr);
 
-        var ok = await svc.UpdateTaskNameAsync(99, "zzz");
-        ok.Should().BeFalse();
+        var result = await svc.UpdateTaskNameAsync(99, "zzz", null);
+
+        result.Updated.Should().BeFalse();
+        result.NotFound.Should().BeFalse();
+        result.PreconditionFailed.Should().BeTrue();
+        result.NewEtag.Should().BeNull();
     }
 
     // ---------- DeleteTaskAsync ----------

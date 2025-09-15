@@ -28,7 +28,7 @@ public static class AuthEndpoints
         authGroup.MapPost("/logout", LogoutAsync).WithName("Logout");
 
         authGroup.MapGet("/protected", TestAuthAsync)
-            .RequireAuthorization()
+            .RequireAuthorization("AdminOrTeacherOrStudent")
             .WithName("Protected");
 
         var maintenanceGroup = authGroup.MapGroup("/maintenance").WithTags("Maintenance");
