@@ -111,6 +111,11 @@ public class UserService : IUserService
             user.HebrewLevelValue = updateUser.HebrewLevelValue;
         }
 
+        if (updateUser.Role is not null)
+        {
+            user.Role = updateUser.Role.Value;
+        }
+
         await _db.SaveChangesAsync();
         return true;
     }
