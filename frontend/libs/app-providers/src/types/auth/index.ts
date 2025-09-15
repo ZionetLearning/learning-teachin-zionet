@@ -20,3 +20,5 @@ export interface SignupData {
   lastName: string;
   role: AppRoleType;
 }
+
+export const APP_ROLES: AppRoleType[] = Object.values(AppRole);
