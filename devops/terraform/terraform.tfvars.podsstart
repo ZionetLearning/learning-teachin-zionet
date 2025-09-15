@@ -23,3 +23,4 @@ frontend_apps          = []    # Dev environment uses Static Web Apps
 
 #------------- Redis Shared Instance -------------
 use_shared_redis = false  # dev uses its own Redis instance
+redis_name = "redis-teachin-podsstart"
