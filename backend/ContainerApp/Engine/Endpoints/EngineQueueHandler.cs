@@ -10,6 +10,7 @@ using Engine.Models.Sentences;
 using Engine.Services;
 using Engine.Services.Clients.AccessorClient;
 using Engine.Services.Clients.AccessorClient.Models;
+//using Microsoft.CognitiveServices.Speech.Transcription;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 
@@ -226,6 +227,17 @@ public class EngineQueueHandler : IQueueHandler<Message>
                 storyForKernel.Insert(0, new ChatMessageContent(AuthorRole.System, systemPrompt));
             }
 
+            // Inject user interests
+            var userInterests = await _accessorClient.GetUserInterestsAsync(request.UserId, ct);
+
+            if (userInterests?.Any() == true)
+            {
+                var interestsPrompt = BuildInterestsPrompt(userInterests);
+
+                // Insert before user message so AI sees it as instruction
+                storyForKernel.Insert(0, new ChatMessageContent(AuthorRole.System, interestsPrompt));
+            }
+
             addOrCheckSystemPromptTime = sw.ElapsedMilliseconds;
 
             storyForKernel.AddUserMessage(request.UserMessage.Trim(), DateTimeOffset.UtcNow);
@@ -415,5 +427,10 @@ public class EngineQueueHandler : IQueueHandler<Message>
             _logger.LogError(ex, "Transient error while processing for action {Action}", message.ActionName);
             throw new RetryableException("Transient error while processing.", ex);
         }
+    }
+    private static string BuildInterestsPrompt(IEnumerable<string> interests)
+    {
+        return $"The user is interested in: {string.Join(", ", interests)}. " +
+               $"Please personalize your responses, examples, and explanations to match these topics.";
     }
 }

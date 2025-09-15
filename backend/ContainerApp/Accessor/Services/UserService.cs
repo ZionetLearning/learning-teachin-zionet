@@ -47,7 +47,8 @@ public class UserService : IUserService
             LastName = user.LastName,
             Role = user.Role,
             PreferredLanguageCode = user.PreferredLanguageCode,
-            HebrewLevelValue = user.HebrewLevelValue
+            HebrewLevelValue = user.HebrewLevelValue,
+            Interests = user.Interests
         };
     }
 
@@ -134,6 +135,7 @@ public class UserService : IUserService
         await _db.SaveChangesAsync();
         return true;
     }
+
     public async Task<IEnumerable<UserData>> GetAllUsersAsync(Role? roleFilter = null, Guid? teacherId = null, CancellationToken ct = default)
     {
         _logger.LogInformation("GetAllUsers START (roleFilter={Role}, teacherId={Teacher})",
@@ -156,7 +158,8 @@ public class UserService : IUserService
                     Email = u.Email,
                     FirstName = u.FirstName,
                     LastName = u.LastName,
-                    Role = u.Role
+                    Role = u.Role,
+                    Interests = u.Interests
                 })
                 .ToListAsync(ct);
 
@@ -330,6 +333,39 @@ public class UserService : IUserService
         catch (Exception ex)
         {
             _logger.LogError(ex, "GetTeachersForStudent FAILED (studentId={StudentId})", studentId);
+            throw;
+        }
+    }
+
+    public async Task<List<string>> GetUserInterestsAsync(Guid userId)
+    {
+        _logger.LogInformation("GetUserInterests START (userId={UserId})", userId);
+        try
+        {
+            if (userId == Guid.Empty)
+            {
+                _logger.LogWarning("Invalid userId provided.");
+                return [];
+            }
+
+            var interests = await _db.Users
+                .AsNoTracking()
+                .Where(u => u.UserId == userId)
+                .Select(u => u.Interests)
+                .FirstOrDefaultAsync();
+
+            if (interests == null)
+            {
+                _logger.LogWarning("User not found or has no interests (userId={UserId})", userId);
+                return [];
+            }
+
+            _logger.LogInformation("GetUserInterests END (userId={UserId}), {Count} interests", userId, interests.Count);
+            return interests;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetUserInterests FAILED (userId={UserId})", userId);
             throw;
         }
     }
