@@ -17,13 +17,10 @@ on:
           - START
           - STOP
       cluster:
-        description: 'AKS cluster to target'
+        description: 'AKS cluster name (e.g., dev, podsstart)'
         required: true
         default: 'dev'
-        type: choice
-        options:
-          - dev
-          - podsstart
+        type: string
 
 jobs:
   scheduled-operation:
@@ -90,14 +87,12 @@ jobs:
           CLUSTER="${{ steps.determine_action.outputs.cluster }}"
           echo "Selected cluster: $CLUSTER"
           
-          if [[ "$CLUSTER" == "podsstart" ]]; then
-            echo "AKS_RG=podsstart-zionet-learning-2025" >> $GITHUB_ENV
-            echo "AKS_NAME=aks-cluster-podsstart" >> $GITHUB_ENV
-          else
-            # Default to dev cluster
-            echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
-            echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
-          fi
+          # Construct resource group and cluster name based on cluster input
+          echo "AKS_RG=${CLUSTER}-zionet-learning-2025" >> $GITHUB_ENV
+          echo "AKS_NAME=aks-cluster-${CLUSTER}" >> $GITHUB_ENV
+          
+          echo "Resource Group: ${CLUSTER}-zionet-learning-2025"
+          echo "Cluster Name: aks-cluster-${CLUSTER}"
 
       - name: Check current cluster status
         run: |
@@ -202,16 +197,16 @@ jobs:
         run: |
           CLUSTER="${{ steps.determine_action.outputs.cluster }}"
           
-          if [[ "$CLUSTER" == "podsstart" ]]; then
-            # For podsstart cluster, restart the podsstart namespace
-            echo "🔄 Restarting deployments in namespace: podsstart"
-            kubectl rollout restart deployment -n podsstart
-            echo "✅ Deployment restart initiated for podsstart namespace"
-          else
+          if [[ "$CLUSTER" == "dev" ]]; then
             # For dev cluster, restart dev, test and stage namespaces
             for ns in dev test stage; do
               echo "🔄 Restarting deployments in namespace: $ns"
               kubectl rollout restart deployment -n $ns
               echo "✅ Deployment restart initiated for $ns namespace"
             done
+          else
+            # For any other cluster, restart the cluster's own namespace
+            echo "🔄 Restarting deployments in namespace: $CLUSTER"
+            kubectl rollout restart deployment -n $CLUSTER
+            echo "✅ Deployment restart initiated for $CLUSTER namespace"
           fi
