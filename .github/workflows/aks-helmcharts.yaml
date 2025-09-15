@@ -369,13 +369,8 @@ jobs:
             --name "${TARGET_NAMESPACE}-app-identity" \
             --query principalId -o tsv)
           
-          # Enable Azure AD authentication on PostgreSQL server first
-          echo "Enabling Azure AD authentication on PostgreSQL server"
-          az postgres flexible-server parameter set \
-            --resource-group "dev-zionet-learning-2025" \
-            --server-name "dev-pg-zionet-learning" \
-            --name "azure.enable_auth" \
-            --value "on" || echo "AD auth already enabled or failed"
+          # Azure AD authentication is already enabled via Portal
+          echo "Azure AD authentication is already enabled on PostgreSQL server"
           
           # Wait a moment for the setting to take effect
           sleep 10
@@ -396,7 +391,7 @@ jobs:
             # Get access token
             ACCESS_TOKEN=$(az account get-access-token --query accessToken -o tsv)
             
-            # Use REST API to set AD admin
+            # Use REST API to set AD admin with correct endpoint
             curl -X PUT \
               -H "Authorization: Bearer $ACCESS_TOKEN" \
               -H "Content-Type: application/json" \
@@ -408,7 +403,7 @@ jobs:
                   \"tenantId\": \"${{ secrets.AZURE_TENANT_ID }}\"
                 }
               }" \
-              "https://management.azure.com/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/dev-zionet-learning-2025/providers/Microsoft.DBforPostgreSQL/flexibleServers/dev-pg-zionet-learning/administrators/ActiveDirectory?api-version=2022-12-01" \
+              "https://management.azure.com/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/dev-zionet-learning-2025/providers/Microsoft.DBforPostgreSQL/flexibleServers/dev-pg-zionet-learning/administrators/$MANAGED_IDENTITY_PRINCIPAL_ID?api-version=2022-12-01" \
               || echo "REST API also failed"
           }
             
