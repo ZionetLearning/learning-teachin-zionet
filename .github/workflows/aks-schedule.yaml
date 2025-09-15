@@ -180,33 +180,33 @@ jobs:
             echo "ℹ️ Manual trigger - current status: $FINAL_STATUS"
           fi
 
-      - name: Get AKS credentials
-        if: steps.determine_action.outputs.action == 'START'
-        run: |
-          echo "🔗 Getting AKS credentials for kubectl access..."
-          az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
+      # - name: Get AKS credentials
+      #   if: steps.determine_action.outputs.action == 'START'
+      #   run: |
+      #     echo "🔗 Getting AKS credentials for kubectl access..."
+      #     az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
 
-      - name: Wait for dapr-system to be ready
-        if: steps.determine_action.outputs.action == 'START'
-        run: |
-          echo "Waiting for dapr-system pods..."
-          kubectl wait --for=condition=Ready pod -n dapr-system --all --timeout=180s
+      # - name: Wait for dapr-system to be ready
+      #   if: steps.determine_action.outputs.action == 'START'
+      #   run: |
+      #     echo "Waiting for dapr-system pods..."
+      #     kubectl wait --for=condition=Ready pod -n dapr-system --all --timeout=180s
 
-      - name: Restart deployments in relevant namespaces
-        if: steps.determine_action.outputs.action == 'START'
-        run: |
-          CLUSTER="${{ steps.determine_action.outputs.cluster }}"
+      # - name: Restart deployments in relevant namespaces
+      #   if: steps.determine_action.outputs.action == 'START'
+      #   run: |
+      #     CLUSTER="${{ steps.determine_action.outputs.cluster }}"
           
-          if [[ "$CLUSTER" == "dev" ]]; then
-            # For dev cluster, restart dev, test and stage namespaces
-            for ns in dev test stage; do
-              echo "🔄 Restarting deployments in namespace: $ns"
-              kubectl rollout restart deployment -n $ns
-              echo "✅ Deployment restart initiated for $ns namespace"
-            done
-          else
-            # For any other cluster, restart the cluster's own namespace
-            echo "🔄 Restarting deployments in namespace: $CLUSTER"
-            kubectl rollout restart deployment -n $CLUSTER
-            echo "✅ Deployment restart initiated for $CLUSTER namespace"
-          fi
+      #     if [[ "$CLUSTER" == "dev" ]]; then
+      #       # For dev cluster, restart dev, test and stage namespaces
+      #       for ns in dev test stage; do
+      #         echo "🔄 Restarting deployments in namespace: $ns"
+      #         kubectl rollout restart deployment -n $ns
+      #         echo "✅ Deployment restart initiated for $ns namespace"
+      #       done
+      #     else
+      #       # For any other cluster, restart the cluster's own namespace
+      #       echo "🔄 Restarting deployments in namespace: $CLUSTER"
+      #       kubectl rollout restart deployment -n $CLUSTER
+      #       echo "✅ Deployment restart initiated for $CLUSTER namespace"
+      #     fi
