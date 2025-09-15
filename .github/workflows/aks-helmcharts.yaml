@@ -222,16 +222,16 @@ jobs:
             --end-ip-address $AKS_EGRESS_IP
             
 
-      - name: Install External Secrets Operator (with CRDs)
-        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
-        run: |
-          helm repo add external-secrets https://charts.external-secrets.io
-          helm repo update
-          helm upgrade --install external-secrets external-secrets/external-secrets \
-            --namespace external-secrets \
-            --create-namespace \
-            --set installCRDs=true \
-            --wait --timeout 180s
+      # - name: Install External Secrets Operator (with CRDs)
+      #   if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
+      #   run: |
+      #     helm repo add external-secrets https://charts.external-secrets.io
+      #     helm repo update
+      #     helm upgrade --install external-secrets external-secrets/external-secrets \
+      #       --namespace external-secrets \
+      #       --create-namespace \
+      #       --set installCRDs=true \
+      #       --wait --timeout 180s
 
       - name: Wait for External Secrets API
         if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
