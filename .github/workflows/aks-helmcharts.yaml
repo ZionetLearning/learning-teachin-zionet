@@ -380,14 +380,37 @@ jobs:
           # Wait a moment for the setting to take effect
           sleep 10
           
-          # Set the managed identity as PostgreSQL AD administrator
+          # Set the managed identity as PostgreSQL AD administrator using REST API
           echo "Setting ${TARGET_NAMESPACE}-app-identity as PostgreSQL AD admin"
+          
+          # Try the regular command first
           az postgres flexible-server microsoft-entra-admin create \
             --resource-group "dev-zionet-learning-2025" \
             --server-name "dev-pg-zionet-learning" \
             --display-name "${TARGET_NAMESPACE}-app-identity" \
             --object-id "$MANAGED_IDENTITY_PRINCIPAL_ID" \
-            --type User || echo "AD admin already set or failed"
+            --type User && echo "AD admin set successfully" || {
+            
+            echo "Regular command failed, trying REST API approach..."
+            
+            # Get access token
+            ACCESS_TOKEN=$(az account get-access-token --query accessToken -o tsv)
+            
+            # Use REST API to set AD admin
+            curl -X PUT \
+              -H "Authorization: Bearer $ACCESS_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"properties\": {
+                  \"administratorType\": \"ActiveDirectory\",
+                  \"login\": \"${TARGET_NAMESPACE}-app-identity\",
+                  \"sid\": \"$MANAGED_IDENTITY_PRINCIPAL_ID\",
+                  \"tenantId\": \"${{ secrets.AZURE_TENANT_ID }}\"
+                }
+              }" \
+              "https://management.azure.com/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/dev-zionet-learning-2025/providers/Microsoft.DBforPostgreSQL/flexibleServers/dev-pg-zionet-learning/administrators/ActiveDirectory?api-version=2022-12-01" \
+              || echo "REST API also failed"
+          }
             
           # Install psql client for database user creation
           sudo apt-get update -y && sudo apt-get install -y postgresql-client
