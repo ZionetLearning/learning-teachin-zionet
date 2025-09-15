@@ -369,9 +369,19 @@ jobs:
             --name "${TARGET_NAMESPACE}-app-identity" \
             --query principalId -o tsv)
           
-          # Set the managed identity as PostgreSQL AD administrator (this enables Azure AD auth)
+          # Enable Azure AD authentication on PostgreSQL server first
+          echo "Enabling Azure AD authentication on PostgreSQL server"
+          az postgres flexible-server update \
+            --resource-group "dev-zionet-learning-2025" \
+            --name "dev-pg-zionet-learning" \
+            --auth-config "activeDirectoryAuth=Enabled" || echo "AD auth already enabled or failed"
+          
+          # Wait a moment for the setting to take effect
+          sleep 10
+          
+          # Set the managed identity as PostgreSQL AD administrator
           echo "Setting ${TARGET_NAMESPACE}-app-identity as PostgreSQL AD admin"
-          az postgres flexible-server ad-admin create \
+          az postgres flexible-server microsoft-entra-admin create \
             --resource-group "dev-zionet-learning-2025" \
             --server-name "dev-pg-zionet-learning" \
             --display-name "${TARGET_NAMESPACE}-app-identity" \
