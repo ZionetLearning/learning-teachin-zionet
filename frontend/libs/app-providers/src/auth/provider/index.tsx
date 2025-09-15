@@ -12,6 +12,7 @@ import {
   useLogoutMutation,
   useRefreshTokensMutation,
   useGetUserById,
+  decodeJwtRole,
 } from "@app-providers";
 
 export interface AuthProviderProps {
@@ -42,7 +43,11 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
           email: parsed.email!,
           accessToken: parsed.accessToken,
           accessTokenExpiry: parsed.accessTokenExpiry,
-          role: parsed.role,
+          role:
+            parsed.role ??
+            (parsed.accessToken
+              ? decodeJwtRole(parsed.accessToken)
+              : undefined),
         };
       }
       localStorage.removeItem("credentials");
@@ -70,7 +75,8 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
     error: loginError,
   } = useLoginMutation({
     onSuccess: async (data, vars) => {
-      persistSession(vars.email, data.accessToken, appRole);
+      const tokenRole = decodeJwtRole(data.accessToken);
+      persistSession(vars.email, data.accessToken, tokenRole);
     },
     onError: (err) => {
       console.error("Login error", err);
@@ -163,7 +169,8 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
       refreshTimerRef.current = window.setTimeout(async () => {
         try {
           const { accessToken } = await refreshTokens();
-          persistSession(creds.email, accessToken);
+          const tokenRole = decodeJwtRole(accessToken) ?? creds.role;
+          persistSession(creds.email, accessToken, tokenRole);
         } catch {
           clearSession();
         }
@@ -195,7 +202,8 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
     <AuthContext.Provider
       value={{
         isAuthorized: credentials !== null,
-        role: userData?.role || credentials?.role || appRole,
+        role: credentials?.role ?? (userData?.role as AppRoleType | undefined),
+        appRole,
         login,
         signup,
         logout,

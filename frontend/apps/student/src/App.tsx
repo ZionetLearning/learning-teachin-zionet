@@ -21,11 +21,12 @@ import {
   TypingPracticePage,
   WeatherWidgetPage,
   WordOrderGamePage,
-  ProfilePage
+  ProfilePage,
 } from "./pages";
 import "./App.css";
+import { AppRole } from "@app-providers";
 const ProtectedLayout = () => (
-  <RequireAuth>
+  <RequireAuth allowedRoles={[AppRole.student, AppRole.admin]}>
     <div data-testid="protected-layout">
       <SidebarMenuLayout sidebarMenu={<SidebarMenu />} />
     </div>
@@ -42,7 +43,14 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/signin" element={<AuthorizationPage />} />
+        <Route
+          path="/signin"
+          element={
+            <AuthorizationPage
+              allowedRoles={[AppRole.student, AppRole.admin]}
+            />
+          }
+        />
         <Route element={<ProtectedLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/chat/yo" element={<ChatYoPage />} />

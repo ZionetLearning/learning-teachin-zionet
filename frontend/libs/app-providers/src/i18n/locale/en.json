@@ -15,7 +15,8 @@
         "teacherDashboard": "Teacher Dashboard",
         "studentDashboard": "Student Dashboard",
         "adminDashboard": "Admin Dashboard",
-        "genericError": "Something went wrong. Please try again later."
+        "genericError": "Something went wrong. Please try again later.",
+        "forbiddenRole": "You do not have permission to access this page."
       },
       "home": {
         "title": "Welcome to our internal playground project",
