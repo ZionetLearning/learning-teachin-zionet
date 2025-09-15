@@ -62,7 +62,7 @@ namespace IntegrationTests.Tests.AI
             Assert.All(res.Sentences, s =>
             {
                 Assert.Equal(request.Difficulty.ToString(), s.Difficulty);
-                Assert.Equal(request.Nikud,s.Nikud);
+                Assert.Equal(request.Nikud, s.Nikud);
             });
         }
         [Theory]
