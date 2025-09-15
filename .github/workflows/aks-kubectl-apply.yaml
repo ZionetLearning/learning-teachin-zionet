@@ -102,20 +102,6 @@ jobs:
       - name: Apply Grafana ingress (only)
         run: kubectl apply -f "$K8S_DIR/ingress/grafana-ingress.yaml"
 
-      - name: Add Langfuse (dev only)
-        if: ${{ inputs.environment_name == 'dev' || github.event.inputs.environment_name == 'dev' }}
-        run: |
-          # Apply Langfuse secrets first
-          kubectl apply -f "$K8S_DIR/manifests/langfuse-secrets.yaml"
-          
-          # Deploy Langfuse
-          cd devops/helm-tools
-          chmod +x langfuse.sh
-          ./langfuse.sh
-          
-          # Apply Langfuse ingress
-          kubectl apply -f "$K8S_DIR/ingress/langfuse-ingress.yaml"
-
       - name: Add Prometheus
         run: |
           cd devops/helm-tools/prometheus

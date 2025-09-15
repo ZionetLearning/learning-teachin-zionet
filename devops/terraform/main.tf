@@ -90,7 +90,7 @@ module "database" {
 
 # Langfuse database on the same PostgreSQL server
 module "langfuse_database" {
-  count  = var.use_shared_postgres ? 1 : 1
+  count  = 1
   source = "./modules/postgresql"
 
   server_name         = var.database_server_name

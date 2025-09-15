@@ -285,6 +285,21 @@ jobs:
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false
 
+      - name: Deploy Langfuse (if enabled)
+        run: |
+          echo "🔍 Deploying Langfuse..."
+          
+          # Deploy Langfuse using helm script
+          cd devops/helm-tools
+          chmod +x langfuse.sh
+          export TARGET_NAMESPACE="$TARGET_NAMESPACE"
+          ./langfuse.sh
+          
+          # Apply Langfuse ingress
+          kubectl apply -f "../kubernetes/ingress/langfuse-ingress.yaml"
+          
+          echo "✅ Langfuse deployed successfully"
+
       - name: Diagnostics (on failure)
         if: failure()
         run: |

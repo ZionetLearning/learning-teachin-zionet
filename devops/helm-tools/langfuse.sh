@@ -7,12 +7,9 @@ set -e
 
 echo "🔍 Setting up Langfuse (Resource-Optimized)..."
 
-# Check if we're in dev environment only
+# Use TARGET_NAMESPACE if set, otherwise default to dev
 NAMESPACE="${TARGET_NAMESPACE:-dev}"
-if [[ "$NAMESPACE" != "dev" ]]; then
-    echo "❌ Langfuse is only supported for dev environment. Current: $NAMESPACE"
-    exit 0
-fi
+echo "🎯 Deploying Langfuse for namespace: $NAMESPACE"
 
 # Add the Langfuse Helm repository
 echo "📦 Adding Langfuse Helm repository..."
@@ -28,7 +25,7 @@ else
     ACTION="install"
 fi
 
-# Create namespace if it doesn't exist
+# Create namespace if it doesn't exist (Langfuse goes to devops-tools, not target namespace)
 kubectl create namespace devops-tools --dry-run=client -o yaml | kubectl apply -f -
 
 # Deploy/upgrade Langfuse with resource-constrained configuration
