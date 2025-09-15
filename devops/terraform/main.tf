@@ -270,9 +270,9 @@ data "azurerm_key_vault" "shared" {
   resource_group_name = "dev-zionet-learning-2025"
 }
 
-module "clustersecretstore" {
-  count       = var.environment_name == "dev" || var.environment_name == "podsstart" ? 1 : 0
-  source     = "./modules/clustersecretstore"
-  identity_id = "0997f44d-fadf-4be8-8dc6-202f7302f680" # your AKS managed identity clientId
-  tenant_id   = "a814ee32-f813-4a36-9686-1b9268183e27"
-}
+# module "clustersecretstore" {
+#   count       = var.environment_name == "dev" || var.environment_name == "podsstart" ? 1 : 0
+#   source     = "./modules/clustersecretstore"
+#   identity_id = "0997f44d-fadf-4be8-8dc6-202f7302f680" # your AKS managed identity clientId
+#   tenant_id   = "a814ee32-f813-4a36-9686-1b9268183e27"
+# }
