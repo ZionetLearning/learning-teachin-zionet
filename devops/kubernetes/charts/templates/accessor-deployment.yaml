@@ -50,13 +50,32 @@ spec:
               value: "{{ .Values.global.postgres.endpoint }}"
             - name: POSTGRES_CLIENT_ID
               value: "{{ .Values.global.postgres.clientId }}"
+            - name: AZURE_CLIENT_ID
+              value: "{{ .Values.global.postgres.clientId }}"
+            - name: AZURE_TENANT_ID
+              value: "{{ .Values.global.keyvault.tenantId }}"
+            - name: AZURE_FEDERATED_TOKEN_FILE
+              value: "/var/run/secrets/azure/tokens/azure-identity-token"
             - name: Speech__Key
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.accessor.secrets.speech.name }}
                   key: {{ .Values.accessor.secrets.speech.keys.speechKey }}
+          volumeMounts:
+            - name: azure-identity-token
+              mountPath: /var/run/secrets/azure/tokens
+              readOnly: true
           resources:
             {{- toYaml .Values.accessor.resources | nindent 12 }}
+      volumes:
+        - name: azure-identity-token
+          projected:
+            defaultMode: 420
+            sources:
+            - serviceAccountToken:
+                audience: api://AzureADTokenExchange
+                expirationSeconds: 3600
+                path: azure-identity-token
 ---
 apiVersion: v1
 kind: Service

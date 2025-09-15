@@ -106,10 +106,14 @@ if (!string.IsNullOrEmpty(postgresEndpoint) && !string.IsNullOrEmpty(postgresCli
     {
         try
         {
-            var credential = new DefaultAzureCredential(new DefaultAzureCredentialOptions
-            {
-                ManagedIdentityClientId = postgresClientId
-            });
+            // Try WorkloadIdentityCredential first (for AKS with Azure Workload Identity)
+            var credential = new ChainedTokenCredential(
+                new WorkloadIdentityCredential(new WorkloadIdentityCredentialOptions
+                {
+                    ClientId = postgresClientId
+                }),
+                new ManagedIdentityCredential(postgresClientId)
+            );
             
             var accessToken = await credential.GetTokenAsync(
                 new TokenRequestContext(["https://ossrdbms-aad.database.windows.net/.default"]), ct);
