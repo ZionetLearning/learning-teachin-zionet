@@ -273,6 +273,6 @@ data "azurerm_key_vault" "shared" {
 module "clustersecretstore" {
   count       = var.environment_name == "dev" || var.environment_name == "podsstart" ? 1 : 0
   source     = "./modules/clustersecretstore"
-  identity_id = "03efb144-c8e1-4dfc-b44b-f61d7375d024" # your AKS managed identity clientId
+  identity_id = "823bf5ae-0502-43b0-a6bd-028f9987b9f0" # your AKS managed identity clientId
   tenant_id   = "a814ee32-f813-4a36-9686-1b9268183e27"
 }
