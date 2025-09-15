@@ -79,8 +79,9 @@ az keyvault secret set \
 
 echo "✅ Updated Key Vault secret with private FQDN"
 
-# Force External Secrets to refresh (if in Kubernetes environment)
-if command -v kubectl &>/dev/null; then
+
+# Force External Secrets to refresh (if in Kubernetes environment and context is set)
+if command -v kubectl &>/dev/null && kubectl config current-context &>/dev/null; then
   echo "🔄 Refreshing Kubernetes secret '${K8S_SECRET_NAME}' in namespace '${K8S_NAMESPACE}'..."
   kubectl delete secret "${K8S_SECRET_NAME}" -n "${K8S_NAMESPACE}" --ignore-not-found=true
 
