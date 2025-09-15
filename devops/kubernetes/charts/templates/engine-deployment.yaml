@@ -38,18 +38,18 @@ spec:
           ports:
             - containerPort: {{ .Values.engine.ports.container }}
               protocol: TCP
-          {{- if .Values.global.dapr.enabled }}
-          startupProbe:
-            httpGet:
-              path: /v1.0/healthz
-              port: 3501  # Dapr management port
-              scheme: HTTP
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            timeoutSeconds: 5
-            successThreshold: 1
-            failureThreshold: 60  # Allow 600 seconds (60 * 10) for Dapr to be ready
-          {{- end }}
+          # {{- if .Values.global.dapr.enabled }}
+          # startupProbe:
+          #   httpGet:
+          #     path: /v1.0/healthz
+          #     port: 3501  # Dapr management port
+          #     scheme: HTTP
+          #   initialDelaySeconds: 30
+          #   periodSeconds: 10
+          #   timeoutSeconds: 5
+          #   successThreshold: 1
+          #   failureThreshold: 60  # Allow 600 seconds (60 * 10) for Dapr to be ready
+          # {{- end }}
           env:
             - name: ASPNETCORE_URLS
               value: "{{ .Values.engine.env.ASPNETCORE_URLS }}"
