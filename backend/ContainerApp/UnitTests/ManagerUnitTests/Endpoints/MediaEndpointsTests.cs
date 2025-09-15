@@ -2,6 +2,7 @@ using System.Net;
 using FluentAssertions;
 using Manager.Endpoints;
 using Manager.Services.Clients.Accessor;
+using Manager.Services.Clients.Accessor.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
