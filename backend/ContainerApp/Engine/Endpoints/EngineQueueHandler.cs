@@ -221,21 +221,13 @@ public class EngineQueueHandler : IQueueHandler<Message>
             var skHistory = HistoryMapper.ToChatHistoryFromElement(snapshot.History);
             var storyForKernel = HistoryMapper.CloneToChatHistory(skHistory);
 
-            if (!storyForKernel.Any(m => m.Role == AuthorRole.System))
-            {
-                var systemPrompt = await GetOrLoadSystemPromptAsync(ct);
-                storyForKernel.Insert(0, new ChatMessageContent(AuthorRole.System, systemPrompt));
-            }
-
             // Inject user interests
             var userInterests = await _accessorClient.GetUserInterestsAsync(request.UserId, ct);
 
-            if (userInterests?.Any() == true)
+            if (!storyForKernel.Any(m => m.Role == AuthorRole.System))
             {
-                var interestsPrompt = BuildInterestsPrompt(userInterests);
-
-                // Insert before user message so AI sees it as instruction
-                storyForKernel.Insert(0, new ChatMessageContent(AuthorRole.System, interestsPrompt));
+                var systemPrompt = await GetOrLoadSystemPromptAsync(userInterests, ct);
+                storyForKernel.Insert(0, new ChatMessageContent(AuthorRole.System, systemPrompt));
             }
 
             addOrCheckSystemPromptTime = sw.ElapsedMilliseconds;
@@ -362,14 +354,24 @@ public class EngineQueueHandler : IQueueHandler<Message>
         }
     }
 
-    private async Task<string> GetOrLoadSystemPromptAsync(CancellationToken ct)
+    private async Task<string> GetOrLoadSystemPromptAsync(List<string>? userInterests, CancellationToken ct)
     {
 
         var keys = new[] { PromptsKeys.SystemDefault, PromptsKeys.DetailedExplanation };
         var fallback = "You are a helpful assistant. Keep answers concise.";
+        var hasInterests = userInterests is not null && userInterests.Count > 0;
+        var includeInterestPrompt = false;
 
         try
         {
+            // Add interest-based prompt 50% of the time if user has interests
+            //if (hasInterests && Random.Shared.NextDouble() < 0.5)
+            if (hasInterests)
+            {
+                keys = [.. keys, PromptsKeys.Interests];
+                includeInterestPrompt = true;
+            }
+
             var batch = await _accessorClient.GetPromptsBatchAsync(keys, ct);
             var map = batch.Prompts.ToDictionary(p => p.PromptKey, p => p.Content, StringComparer.Ordinal);
 
@@ -378,10 +380,16 @@ public class EngineQueueHandler : IQueueHandler<Message>
                 keys.Select(k => map.TryGetValue(k, out var v) ? v : null)
                     .Where(v => !string.IsNullOrWhiteSpace(v)));
 
+            if (includeInterestPrompt && hasInterests && !string.IsNullOrWhiteSpace(combined))
+            {
+                var joined = string.Join(", ", userInterests!);
+                combined = combined.Replace("{{interests}}", joined);
+            }
+
             if (string.IsNullOrWhiteSpace(combined))
             {
                 _logger.LogWarning("System prompt batch returned empty; using fallback.");
-                combined = fallback;
+                return fallback;
             }
 
             if (batch.NotFound?.Count > 0)
@@ -428,9 +436,22 @@ public class EngineQueueHandler : IQueueHandler<Message>
             throw new RetryableException("Transient error while processing.", ex);
         }
     }
-    private static string BuildInterestsPrompt(IEnumerable<string> interests)
+
+    private static string BuildInterestsPrompt(List<string> interests)
     {
-        return $"The user is interested in: {string.Join(", ", interests)}. " +
-               $"Please personalize your responses, examples, and explanations to match these topics.";
+        var cleaned = interests
+            .Where(i => !string.IsNullOrWhiteSpace(i))
+            .Select(i => i.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var formatted = string.Join(", ", cleaned);
+
+        return $"You are a professional assistant. The user has the following interests: [{formatted}].\n" +
+               "When generating responses, explanations, or suggestions:\n" +
+               "- Prioritize topics related to the user's interests.\n" +
+               "- Use examples, analogies, and recommendations aligned with these interests.\n" +
+               "- If possible, connect general topics to the user's interests contextually.\n" +
+               "Ignore this instruction only if it conflicts with safety or system guidelines.";
     }
 }

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Endpoints;
 
+// To do check inside the update user when update user interests its only student!
 public static class UsersEndpoints
 {
     private sealed class UserEndpoint { }
