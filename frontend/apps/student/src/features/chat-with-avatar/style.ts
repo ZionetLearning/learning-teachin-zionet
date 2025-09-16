@@ -11,13 +11,16 @@ export const useStyles = createUseStyles({
     flexDirection: "row", 
     position: "relative",
     overflow: "hidden",
+    "[dir='rtl'] &": {
+      direction: "rtl",
+    },
   },
 
   mainContent: {
     flex: 1,
     display: "flex",
     flexDirection: "column",
-    transition: "margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+    transition: "margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
     backgroundColor: "#fafafa",
     height: "100%",
     overflow: "hidden",
@@ -27,6 +30,10 @@ export const useStyles = createUseStyles({
   mainContentShifted: {
     "@media (min-width: 769px)": {
       marginLeft: "320px",
+      "[dir='rtl'] &": {
+        marginLeft: 0,
+        marginRight: "320px",
+      },
     },
   },
 

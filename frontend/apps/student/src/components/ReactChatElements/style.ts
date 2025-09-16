@@ -11,12 +11,18 @@ export const useStyles = createUseStyles({
     overflowX: "auto",
     overflowY: "auto",
     marginBottom: 10,
+    "[dir='rtl'] &": {
+      direction: "rtl",
+    },
   },
   messagesListAvatar: {
     flex: 1,
     overflowY: "auto",
     overflowX: "hidden",
     marginBottom: 10,
+    "[dir='rtl'] &": {
+      direction: "rtl",
+    },
   },
   messageBox: {
     "& .rce-mbox-right-notch": {
@@ -24,10 +30,38 @@ export const useStyles = createUseStyles({
     },
     "& .rce-container-mbox-right": {
       flexDirection: "row-reverse",
+      "[dir='rtl'] &": {
+        flexDirection: "row",
+      },
+    },
+    "& .rce-container-mbox-left": {
+      "[dir='rtl'] &": {
+        flexDirection: "row-reverse",
+      },
     },
     "& .rce-mbox-right .rce-mbox-title": {
       textAlign: "right",
       justifyContent: "flex-end",
+      "[dir='rtl'] &": {
+        textAlign: "left",
+        justifyContent: "flex-start",
+      },
+    },
+    "& .rce-mbox-left .rce-mbox-title": {
+      "[dir='rtl'] &": {
+        textAlign: "right",
+        justifyContent: "flex-end",
+      },
+    },
+    "& .rce-mbox-body": {
+      "[dir='rtl'] &": {
+        textAlign: "right",
+      },
+    },
+    "& .rce-mbox-text": {
+      "[dir='rtl'] &": {
+        textAlign: "right",
+      },
     },
     "& svg": {
       display: "none !important",
@@ -36,13 +70,24 @@ export const useStyles = createUseStyles({
   inputContainer: {
     flexShrink: 0,
     padding: 6,
+    "[dir='rtl'] &": {
+      direction: "rtl",
+    },
   },
   input: {
     border: "1px solid #ddd",
     borderRadius: "0%",
     paddingLeft: "6px",
+    "[dir='rtl'] &": {
+      paddingLeft: 0,
+      paddingRight: "6px",
+      textAlign: "right",
+    },
     "& input": {
       color: "black",
+      "[dir='rtl'] &": {
+        textAlign: "right",
+      },
       "@media (prefers-color-scheme: dark)": {
         color: "white",
       },
@@ -55,8 +100,14 @@ export const useStyles = createUseStyles({
     border: "1px solid #ccc",
     borderRadius: 5,
     boxSizing: "border-box",
+    "[dir='rtl'] &": {
+      textAlign: "right",
+    },
     "& input": {
       color: "black",
+      "[dir='rtl'] &": {
+        textAlign: "right",
+      },
       "@media (prefers-color-scheme: dark)": {
         color: "white",
       },
