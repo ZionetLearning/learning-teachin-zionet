@@ -1,4 +1,6 @@
-﻿using Engine.Helpers;
+﻿using System.Runtime.CompilerServices;
+using System.Text;
+using Engine.Helpers;
 using Engine.Models.Chat;
 using Engine.Services.Clients.AccessorClient.Models;
 using Microsoft.SemanticKernel;
@@ -93,5 +95,98 @@ public sealed class ChatAiService : IChatAiService
             return response;
         }
     }
-}
 
+    public async IAsyncEnumerable<ChatAiStreamDelta> ChatStreamAsync(
+    ChatAiServiseRequest request,
+    [EnumeratorCancellation] CancellationToken ct = default)
+    {
+        var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        if (now > request.SentAt + request.TtlSeconds)
+        {
+            yield return new ChatAiStreamDelta { RequestId = request.RequestId, ThreadId = request.ThreadId, UserId = request.UserId, Sequence = 0, IsFinal = true, Stage = "expired" };
+            yield break;
+        }
+
+        var settings = new AzureOpenAIPromptExecutionSettings
+        {
+            FunctionChoiceBehavior = FunctionChoiceBehavior.Auto()
+        };
+
+        var seq = 0;
+        var sb = new StringBuilder();
+        StreamingChatMessageContent? lastPart = null;
+
+        await foreach (var part in
+            _chat.GetStreamingChatMessageContentsAsync(request.History, settings, _kernel, ct))
+        {
+            if (ct.IsCancellationRequested)
+            {
+                yield break;
+            }
+
+            lastPart = part;
+
+            foreach (var t in part.Items.OfType<StreamingTextContent>())
+            {
+                if (!string.IsNullOrEmpty(t.Text))
+                {
+                    sb.Append(t.Text);
+                    yield return new ChatAiStreamDelta
+                    {
+                        RequestId = request.RequestId,
+                        ThreadId = request.ThreadId,
+                        UserId = request.UserId,
+                        Sequence = seq++,
+                        Delta = t.Text,
+                        Stage = "model",
+                        IsFinal = false
+                    };
+                }
+            }
+
+            foreach (var call in part.Items.OfType<StreamingFunctionCallUpdateContent>())
+            {
+                yield return new ChatAiStreamDelta
+                {
+                    RequestId = request.RequestId,
+                    ThreadId = request.ThreadId,
+                    UserId = request.UserId,
+                    Sequence = seq++,
+                    ToolCall = call.Name,
+                    Stage = "tool",
+                    IsFinal = false
+                };
+            }
+        }
+
+        var accumulated = sb.ToString();
+
+        var finalMessage = new ChatMessageContent(
+            AuthorRole.Assistant,
+            accumulated,
+            modelId: lastPart?.ModelId ?? string.Empty
+        );
+
+        if (lastPart?.Metadata is not null)
+        {
+            finalMessage.Metadata = new Dictionary<string, object?>(lastPart.Metadata);
+        }
+
+        request.History.Add(finalMessage);
+
+        var updatedHistory = HistoryMapper.CloneToChatHistory(request.History);
+
+        yield return new ChatAiStreamDelta
+        {
+            RequestId = request.RequestId,
+            ThreadId = request.ThreadId,
+            UserId = request.UserId,
+            Sequence = seq++,
+            Delta = accumulated,
+            IsFinal = true,
+            Stage = "final",
+            UpdatedHistory = updatedHistory
+        };
+
+    }
+}

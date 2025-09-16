@@ -13,6 +13,7 @@ public sealed class AiReplyPublisher : IAiReplyPublisher
     private readonly ILogger<AiReplyPublisher> _log;
     private const string BindingOperation = "create";
     private const string CallbackBindingName = $"{QueueNames.ManagerCallbackQueue}-out";
+    private const string CallbackBindingSessionName = $"{QueueNames.ManagerCallbackSessionQueue}-out";
 
     public AiReplyPublisher(DaprClient dapr, ILogger<AiReplyPublisher> log)
     {
@@ -97,6 +98,53 @@ public sealed class AiReplyPublisher : IAiReplyPublisher
         catch (Exception ex)
         {
             _log.LogError(ex, "Failed to publish answer");
+            throw;
+        }
+    }
+
+    public async Task SendStreamAsync(
+    UserContextMetadata chatMetadata,
+    EngineChatStreamResponse chunk,
+    CancellationToken ct = default)
+    {
+        if (chunk is null)
+        {
+            _log.LogWarning("Stream chunk cannot be null.");
+            return;
+        }
+
+        using var _ = _log.BeginScope("RequestId: {RequestId}", chunk.RequestId);
+
+        try
+        {
+            var payload = JsonSerializer.SerializeToElement(chunk);
+            var messageMetadata = JsonSerializer.SerializeToElement(chatMetadata);
+
+            var sessionMsg = new SessionQueueMessage
+            {
+                ActionName = MessageSessionAction.ChatStream,
+                Frame = chunk.IsFinal ? FrameKind.Last : FrameKind.Chunk,
+                SessionId = chunk.ThreadId.ToString(),
+                UserId = chunk.UserId,
+                Sequence = chunk.Sequence,
+                CorrelationId = chunk.RequestId,
+                Payload = JsonSerializer.SerializeToElement(chunk),
+                Metadata = JsonSerializer.SerializeToElement(chatMetadata),
+                CreatedAt = DateTimeOffset.UtcNow,
+                TtlSeconds = 60
+            };
+
+            var queueMetadata = new Dictionary<string, string>
+            {
+                ["SessionId"] = chunk.ThreadId.ToString()
+            };
+
+            _log.LogInformation("Publishing stream message to binding {Binding}", CallbackBindingSessionName);
+            await _dapr.InvokeBindingAsync(CallbackBindingSessionName, BindingOperation, sessionMsg, queueMetadata, cancellationToken: ct);
+        }
+        catch (Exception ex)
+        {
+            _log.LogError(ex, "Failed to publish stream delta");
             throw;
         }
     }
