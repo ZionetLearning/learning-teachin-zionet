@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useStyles } from "./style";
 import { Speaker } from "../Speaker";
@@ -6,9 +6,11 @@ import { useHebrewSentence } from "../../hooks";
 import { useAvatarSpeech } from "@student/hooks";
 import { DifficultyLevel } from "@student/types";
 import { GameConfigModal, GameConfig, GameOverModal } from "../modals";
-import { Button, Box, Typography } from "@mui/material";
-import { Settings } from "@mui/icons-material";
 import { WelcomeScreen } from "../WelcomeScreen";
+import { GameHeaderSettings } from "../GameHeaderSettings";
+import { ChosenWordsArea } from "../ChosenWordsArea";
+import { WordsBank } from "../WordsBank";
+import { SideButtons } from "../SideButtons";
 
 export const Game = () => {
   const { t, i18n } = useTranslation();
@@ -84,22 +86,22 @@ export const Game = () => {
     speak(sentence);
   };
 
-  const handleNextClick = async () => {
-    stop();
+const handleNextClick = useCallback(async () => {
+  stop();
 
-    const result = await fetchSentence();
+  const result = await fetchSentence();
 
-    // Check if we've completed all sentences
-    if (!result || !result.sentence) {
-      // Game is over - show game over modal
-      setGameOverModalOpen(true);
-      return;
-    }
-    setChosen([]);
-    if (result.words && result.words.length > 0) {
-      setShuffledSentence(shuffleDistinct(result.words));
-    }
-  };
+  // Check if we've completed all sentences
+  if (!result || !result.sentence) {
+    setGameOverModalOpen(true);
+    return;
+  }
+
+  setChosen([]);
+  if (result.words && result.words.length > 0) {
+    setShuffledSentence(shuffleDistinct(result.words));
+  }
+}, [stop, fetchSentence]);
 
   const handleGameOverPlayAgain = () => {
     setGameOverModalOpen(false);
@@ -195,39 +197,14 @@ export const Game = () => {
     <>
       <div className={classes.gameContainer}>
         {/* Game Header with Settings */}
-        <Box className={classes.gameHeader}>
-          <Box className={classes.gameHeaderInfo}>
-            <Typography variant="body2" color="text.secondary">
-              {t("pages.wordOrderGame.current.difficulty")}:{" "}
-              {getDifficultyLabel(gameConfig.difficulty)}
-              {" | "}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {t("pages.wordOrderGame.current.nikud")}:{" "}
-              {gameConfig.nikud
-                ? t("pages.wordOrderGame.yes")
-                : t("pages.wordOrderGame.no")}
-              {" | "}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {t("pages.wordOrderGame.current.sentence")}:{" "}
-              {currentSentenceIndex + 1}/{sentenceCount}
-            </Typography>
-          </Box>
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<Settings />}
-            className={
-              classes.settingsButton +
-              " " +
-              (isHebrew ? classes.settingsButtonHebrew : "")
-            }
-            onClick={handleConfigChange}
-          >
-            {t("pages.wordOrderGame.settings")}
-          </Button>
-        </Box>
+        <GameHeaderSettings
+          gameConfig={gameConfig}
+          currentSentenceIndex={currentSentenceIndex}
+          sentenceCount={sentenceCount}
+          isHebrew={isHebrew}
+          handleConfigChange={handleConfigChange}
+          getDifficultyLabel={getDifficultyLabel}
+        />
 
         <div className={classes.gameLogic}>
           <div className={classes.speakersContainer}>
@@ -241,55 +218,24 @@ export const Game = () => {
             )}
           </div>
 
-          <div className={classes.answerArea} dir="rtl">
-            <div className={classes.dashLine} />
-            <div className={classes.dashLineWithWords} data-testid="wog-chosen">
-              {chosen.map((w, i) => (
-                <button
-                  key={`c-${w}-${i}`}
-                  className={classes.chosenWord}
-                  onClick={() => handleUnchooseWord(i, w)}
-                >
-                  {w}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className={classes.wordsBank} dir="rtl" data-testid="wog-bank">
-            {loading && <div>{t("pages.wordOrderGame.loading")}</div>}
-            {error && <div style={{ color: "red" }}>{error}</div>}
-            {!loading &&
-              !error &&
-              shuffledSentence.map((w, i) => (
-                <button
-                  key={`b-${w}-${i}`}
-                  className={classes.bankWord}
-                  onClick={() => handleChooseWord(w)}
-                >
-                  {w}
-                </button>
-              ))}
-          </div>
+          <ChosenWordsArea
+            chosenWords={chosen}
+            handleUnchooseWord={handleUnchooseWord}
+          />
+          <WordsBank
+            loading={loading}
+            error={error}
+            shuffledSentence={shuffledSentence}
+            handleChooseWord={handleChooseWord}
+          />
         </div>
-
-        <div className={classes.sideButtons}>
-          <button data-testid="wog-reset" onClick={handleReset}>
-            {t("pages.wordOrderGame.reset")}
-          </button>
-          <button data-testid="wog-check" onClick={handleCheck}>
-            {t("pages.wordOrderGame.check")}
-          </button>
-          <button
-            data-testid="wog-next"
-            disabled={loading}
-            onClick={handleNextClick}
-          >
-            {t("pages.wordOrderGame.next")}
-          </button>
-        </div>
+        <SideButtons
+          loading={loading}
+          handleNextClick={handleNextClick}
+          handleCheck={handleCheck}
+          handleReset={handleReset}
+        />
       </div>
-
       {/* Configuration Modal */}
       <GameConfigModal
         open={configModalOpen}
