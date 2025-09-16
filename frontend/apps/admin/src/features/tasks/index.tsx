@@ -12,6 +12,7 @@ export const Tasks = () => {
 
   const [selectedTask, setSelectedTask] = useState<TaskModel | null>(null);
   const [actionMode, setActionMode] = useState<TaskActionMode>('create');
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const handleTaskSelect = useCallback((task: TaskModel, mode: TaskActionMode) => {
     setSelectedTask(task);
@@ -33,6 +34,10 @@ export const Tasks = () => {
     setActionMode('create');
   }, []);
 
+  const handleRefreshTaskList = useCallback(() => {
+    setRefreshTrigger(prev => prev + 1);
+  }, []);
+
   return (
     <div className={classes.root} data-testid="tasks-page">
       <TaskForm
@@ -42,10 +47,12 @@ export const Tasks = () => {
         onTaskCreated={handleTaskCreated}
         onTaskUpdated={handleTaskUpdated}
         onCancel={handleTaskDeselect}
+        onRefreshTaskList={handleRefreshTaskList}
       />
       <TasksList
         dir={dir}
         onTaskSelect={handleTaskSelect}
+        refreshTrigger={refreshTrigger}
       />
     </div>
   );

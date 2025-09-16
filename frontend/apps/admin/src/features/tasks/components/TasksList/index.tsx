@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   IconButton,
   InputAdornment,
@@ -20,18 +20,21 @@ import {
 } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
-import { useGetAllTasks, useDeleteTask } from "../../../../api";
+import { useQueryClient } from "@tanstack/react-query";
+import { useGetAllTasks, useDeleteTask, taskKeys } from "../../../../api";
 import { TaskActionMode, TaskModel } from "../../../../types";
 import { useStyles } from "./style";
 
 interface TasksListProps {
   dir: "ltr" | "rtl";
   onTaskSelect: (task: TaskModel, mode: TaskActionMode) => void;
+  refreshTrigger: number;
 }
 
-export const TasksList = ({ dir, onTaskSelect }: TasksListProps) => {
+export const TasksList = ({ dir, onTaskSelect, refreshTrigger }: TasksListProps) => {
   const { t } = useTranslation();
   const classes = useStyles();
+  const queryClient = useQueryClient();
 
   const {
     data: tasks,
@@ -40,6 +43,13 @@ export const TasksList = ({ dir, onTaskSelect }: TasksListProps) => {
   } = useGetAllTasks();
 
   const { mutate: deleteTask, isPending: isDeletingTask } = useDeleteTask();
+
+  // Listen for refresh trigger changes and invalidate queries
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+    }
+  }, [refreshTrigger, queryClient]);
 
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);

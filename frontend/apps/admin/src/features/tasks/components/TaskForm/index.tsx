@@ -2,10 +2,12 @@ import { useEffect, useMemo, useCallback } from "react";
 import { ErrorMessage, Field, Form, Formik } from "formik";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
+import { useQueryClient } from "@tanstack/react-query";
 import { 
   useCreateTask,
   useUpdateTaskName,
-  useGetTaskById 
+  useGetTaskById,
+  taskKeys
 } from "../../../../api";
 import { useSignalR } from "../../../../hooks";
 import { TaskActionMode, TaskModel } from "../../../../types";
@@ -24,6 +26,7 @@ interface TaskFormProps {
   onTaskCreated: () => void;
   onTaskUpdated: () => void;
   onCancel: () => void;
+  onRefreshTaskList: () => void;
 }
 
 export const TaskForm = ({
@@ -33,9 +36,11 @@ export const TaskForm = ({
   onTaskCreated,
   onTaskUpdated,
   onCancel,
+  onRefreshTaskList,
 }: TaskFormProps) => {
   const { t } = useTranslation();
   const classes = useStyles();
+  const queryClient = useQueryClient();
 
   const { mutate: createTask, isPending: isCreatingTask } = useCreateTask();
   const { mutate: updateTaskName, isPending: isUpdating } = useUpdateTaskName();
@@ -48,15 +53,16 @@ export const TaskForm = ({
 
   const handleTaskNotification = useCallback((notification: UserNotification) => {
     if (notification.type === 'Success' && notification.message.includes('Task created')) {
-
       toast.success(notification.message);
+      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+      onRefreshTaskList();
     } else if (notification.type === 'Success' && notification.message.includes('Task updated')) {
       toast.success(notification.message);
+      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
     } else if (notification.type === 'Error' && notification.message.includes('Task')) {
-
       toast.error(notification.message);
     }
-  }, []);
+  }, [queryClient, onRefreshTaskList]);
 
   useEffect(() => {
     if (signalRStatus === 'connected') {
