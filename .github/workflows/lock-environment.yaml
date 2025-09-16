@@ -28,7 +28,7 @@ jobs:
 
             ISSUE=$(gh issue list \
               --repo "$REPO" \
-              --search "LOCK: featest" \
+              --label "lock-featest" \
               --state open \
               --json number \
               --jq '.[0].number' 2>/dev/null || echo "")
@@ -42,7 +42,7 @@ jobs:
               --repo "$REPO" \
               --title "LOCK: featest" \
               --body "locked_by=$USER\nlocked_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-              --label "lock"
+              --label "lock-featest"
 
             echo "✅ featest is now locked by $USER"
 
@@ -51,7 +51,7 @@ jobs:
 
             ISSUE=$(gh issue list \
               --repo "$REPO" \
-              --search "LOCK: featest" \
+              --label "lock-featest" \
               --state open \
               --json number \
               --jq '.[0].number' 2>/dev/null || echo "")
