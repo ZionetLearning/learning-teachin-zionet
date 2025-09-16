@@ -1,0 +1,59 @@
+name: Lock / Unlock Featest
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Lock or Unlock the featest environment"
+        required: true
+        type: choice
+        options: [lock, unlock]
+
+jobs:
+  manage-lock:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - name: Manage lock state
+        run: |
+          ACTION=${{ github.event.inputs.action }}
+          USER=${GITHUB_ACTOR}
+
+          if [ "$ACTION" = "lock" ]; then
+            echo "🔒 Locking featest by $USER"
+
+            gh api \
+              --method PATCH \
+              -H "Accept: application/vnd.github+json" \
+              /repos/${{ github.repository }}/actions/variables/FEATEST_LOCKED \
+              -f value="true"
+
+            gh api \
+              --method PATCH \
+              -H "Accept: application/vnd.github+json" \
+              /repos/${{ github.repository }}/actions/variables/FEATEST_LOCKED_BY \
+              -f value="$USER"
+
+            echo "✅ featest is now locked by $USER"
+
+          elif [ "$ACTION" = "unlock" ]; then
+            echo "🔓 Unlocking featest by $USER"
+
+            gh api \
+              --method PATCH \
+              -H "Accept: application/vnd.github+json" \
+              /repos/${{ github.repository }}/actions/variables/FEATEST_LOCKED \
+              -f value="false"
+
+            gh api \
+              --method PATCH \
+              -H "Accept: application/vnd.github+json" \
+              /repos/${{ github.repository }}/actions/variables/FEATEST_LOCKED_BY \
+              -f value=""
+
+            echo "✅ featest is now unlocked by $USER"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
