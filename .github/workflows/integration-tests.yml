@@ -9,6 +9,10 @@ on:
         default: test
         type: choice
         options: [test, featest]
+      tests:
+        description: "Optional: test names (comma/newline separated). e.g. Test1,Namespace.Test2,Class.Test3"
+        required: false
+        default: ""
 
   workflow_call:
     inputs:
@@ -17,7 +21,11 @@ on:
         required: false
         type: string
         default: test
-
+      tests:
+        description: "Optional: test names (comma/newline separated)"
+        required: false
+        type: string
+        default: ""
 
 jobs:
   integration-tests:
@@ -54,10 +62,34 @@ jobs:
         run: |
           jq --arg url "https://teachin.westeurope.cloudapp.azure.com/api/${{ inputs.api_stage }}/" \
             '.TestSettings.ApiBaseUrl = $url' appsettings.json > tmp.json && mv tmp.json appsettings.json
-        
+
+      - name: Build test filter from names
+        id: build-filter
+        run: |
+          NAMES="${{ inputs.tests }}"
+          # Normalize separators: newlines/semicolons/spaces -> commas
+          NAMES=$(printf '%s' "$NAMES" | tr '\n;' ',' | sed 's/[[:space:]]\+/,/g' | sed 's/,,*/,/g' | sed 's/^,\|,$//g')
+          FILTER=""
+          IFS=',' read -ra arr <<< "$NAMES"
+          for name in "${arr[@]}"; do
+            n=$(echo "$name" | xargs)  # trim
+            [ -z "$n" ] && continue
+            # Match either FQN (class.method or namespace.class.method) OR DisplayName
+            expr="(FullyQualifiedName~$n|DisplayName~$n)"
+            if [ -z "$FILTER" ]; then FILTER="$expr"; else FILTER="$FILTER|$expr"; fi
+          done
+          echo "filter=$FILTER" >> "$GITHUB_OUTPUT"
 
       - name: Run integration tests
-        run: dotnet test IntegrationTests.csproj --verbosity normal
+        run: |
+          if [ -n "${{ steps.build-filter.outputs.filter }}" ]; then
+            echo "Running only tests matching filter: ${{ steps.build-filter.outputs.filter }}"
+            dotnet test IntegrationTests.csproj --verbosity normal --filter "${{ steps.build-filter.outputs.filter }}"
+          else
+            echo "Running all tests"
+            dotnet test IntegrationTests.csproj --verbosity normal
+          fi
+
 
   #this needs to run even if the tests fail
   # clear-db:

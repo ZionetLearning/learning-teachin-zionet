@@ -160,7 +160,22 @@ public class TaskService : ITaskService
         var etag = await GetDbEtagAsync(id) ?? string.Empty;
         return (task, etag);
     }
+    public async Task<IReadOnlyList<TaskSummaryDto>> GetAllTaskSummariesAsync(CancellationToken ct = default)
+    {
+        using var scope = _logger.BeginScope("List all task summaries");
+        _logger.LogInformation("Inside:{Method}", nameof(GetAllTaskSummariesAsync));
 
+        var list = await _db.Tasks
+            .AsNoTracking()
+            .Select(t => new TaskSummaryDto
+            {
+                Id = t.Id,
+                Name = t.Name
+            })
+            .ToListAsync(ct);
+
+        return list;
+    }
     public async Task<UpdateTaskResult> UpdateTaskNameAsync(int taskId, string newName, string? ifMatch)
     {
         using var scope = _logger.BeginScope("TaskId: {TaskId}", taskId);

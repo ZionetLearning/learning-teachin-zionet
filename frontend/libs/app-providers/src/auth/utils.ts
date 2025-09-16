@@ -107,3 +107,9 @@ export const toAppRole = (
   }
   return AppRole.student;
 };
+
+export const decodeJwtRole = (token: string): AppRoleType | undefined => {
+  const payload = decodeJwtPayload(token);
+  const r = typeof payload?.role === "string" ? payload.role : undefined;
+  return toAppRole(r);
+};

@@ -7,7 +7,7 @@ import {
   AuthProvider,
   SignalRProvider,
   initAppInsights,
-  initializeSentry
+  initializeSentry,
 } from "@app-providers";
 import { AppRole } from "@app-providers/types";
 import "./index.css";
@@ -28,7 +28,7 @@ createRoot(document.getElementById("root")!).render(
           <Sentry.ErrorBoundary fallback={<div>Something went wrong</div>}>
             <App />
             <ToastContainer />
-          </Sentry.ErrorBoundary>{" "}
+          </Sentry.ErrorBoundary>
         </SignalRProvider>
       </AuthProvider>
     </ReactQueryProvider>

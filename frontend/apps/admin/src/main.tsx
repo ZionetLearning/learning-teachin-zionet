@@ -7,7 +7,7 @@ import {
   AuthProvider,
   SignalRProvider,
   initAppInsights,
-  initializeSentry
+  initializeSentry,
 } from "@app-providers";
 import { AppRole } from "@app-providers/types";
 import "./index.css";
@@ -26,9 +26,9 @@ createRoot(document.getElementById("root")!).render(
       <AuthProvider appRole={AppRole.admin}>
         <SignalRProvider hubUrl={HUB_URL}>
           <Sentry.ErrorBoundary fallback={<div>Something went wrong</div>}>
-          <App />
-          <ToastContainer />
-          </Sentry.ErrorBoundary>{" "}
+            <App />
+            <ToastContainer />
+          </Sentry.ErrorBoundary>
         </SignalRProvider>
       </AuthProvider>
     </ReactQueryProvider>

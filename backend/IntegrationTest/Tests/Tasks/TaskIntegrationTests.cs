@@ -130,6 +130,41 @@ public class TaskIntegrationTests(
             await TaskUpdateHelper.WaitForTaskDeletionAsync(Client, first.Id, timeoutSeconds: 20);
         }
     }
+    [Fact(DisplayName = "GET /tasks-manager/tasks - Returns only Id and Name for each task")]
+    public async Task Get_Tasks_List_Should_Return_Summaries_Only()
+    {
+        // Arrange: create two tasks
+        var t1 = await CreateTaskAsync();
+        var t2 = await CreateTaskAsync();
+
+        // ensure both materialized
+        _ = await TaskUpdateHelper.WaitForTaskByIdAsync(Client, t1.Id, timeoutSeconds: 30);
+        _ = await TaskUpdateHelper.WaitForTaskByIdAsync(Client, t2.Id, timeoutSeconds: 30);
+
+        // Act
+        var resp = await Client.GetAsync(ApiRoutes.TasksList);
+        resp.EnsureSuccessStatusCode();
+
+        var list = await resp.Content.ReadFromJsonAsync<List<TaskSummaryDto>>();
+        list.Should().NotBeNull();
+        list!.Should().NotBeEmpty();
+
+        // Assert: our two tasks exist in list and contain only Id + Name
+        var i1 = list.FirstOrDefault(x => x.Id == t1.Id);
+        var i2 = list.FirstOrDefault(x => x.Id == t2.Id);
+
+        i1.Should().NotBeNull("newly created task 1 must be in the list");
+        i2.Should().NotBeNull("newly created task 2 must be in the list");
+
+        i1!.Name.Should().Be(t1.Name);
+        i2!.Name.Should().Be(t2.Name);
+
+        // Clean up
+        (await Client.DeleteAsync(ApiRoutes.TaskById(t1.Id))).EnsureSuccessStatusCode();
+        (await Client.DeleteAsync(ApiRoutes.TaskById(t2.Id))).EnsureSuccessStatusCode();
+        await TaskUpdateHelper.WaitForTaskDeletionAsync(Client, t1.Id);
+        await TaskUpdateHelper.WaitForTaskDeletionAsync(Client, t2.Id);
+    }
 
     [Fact(DisplayName = "GET /tasks-manager/task/{id} - With valid ID should return task")]
     public async Task Get_Task_By_Valid_Id_Should_Return_Task()
