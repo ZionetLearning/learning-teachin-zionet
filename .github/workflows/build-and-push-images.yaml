@@ -25,10 +25,13 @@ jobs:
     steps:
       - name: Set image tag
         id: set-tag
+        env:
+          ENV_TAG: ${{ inputs.environment_name }}
         run: |
           SHORT_SHA="${{ github.sha }}"
           SHORT_SHA="${SHORT_SHA:0:7}"
-          echo "image_tag=${SHORT_SHA}" >> $GITHUB_OUTPUT
+          FULL_TAG="${ENV_TAG}-${SHORT_SHA}"
+          echo "image_tag=${FULL_TAG}" >> $GITHUB_OUTPUT
 
   build_and_push:
     needs: generate_tag
