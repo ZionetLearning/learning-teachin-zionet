@@ -41,7 +41,10 @@ helm $ACTION langfuse langfuse/langfuse \
   --set postgresql.deploy=false \
   --set postgresql.host="dev-pg-zionet-learning.postgres.database.azure.com" \
   --set postgresql.port=5432 \
+  --set postgresql.auth.database="langfuse-${ENVIRONMENT_NAME}" \
   --set postgresql.auth.existingSecret="langfuse-secrets" \
+  --set postgresql.auth.secretKeys.usernameKey="DATABASE_USERNAME" \
+  --set postgresql.auth.secretKeys.userPasswordKey="DATABASE_PASSWORD" \
   --set clickhouse.auth.existingSecret="langfuse-secrets" \
   --set clickhouse.auth.existingSecretKey="CLICKHOUSE_PASSWORD" \
   --set clickhouse.resourcesPreset="nano" \
@@ -57,25 +60,28 @@ helm $ACTION langfuse langfuse/langfuse \
   --set clickhouse.zookeeper.replicaCount=1 \
   --set redis.auth.existingSecret="langfuse-secrets" \
   --set redis.auth.existingSecretPasswordKey="REDIS_PASSWORD" \
-  --set redis.primary.resources.requests.cpu="50m" \
-  --set redis.primary.resources.requests.memory="64Mi" \
-  --set redis.primary.resources.limits.cpu="100m" \
-  --set redis.primary.resources.limits.memory="128Mi" \
   --set s3.auth.existingSecret="langfuse-secrets" \
   --set s3.auth.rootUserSecretKey="S3_USER" \
   --set s3.auth.rootPasswordSecretKey="S3_PASSWORD" \
   --set s3.bucket="langfuse-bucket" \
-  --set s3.resources.requests.cpu="50m" \
-  --set s3.resources.requests.memory="128Mi" \
-  --set s3.resources.limits.cpu="100m" \
-  --set s3.resources.limits.memory="256Mi" \
+  --set langfuse.resources.requests.cpu="100m" \
+  --set langfuse.resources.requests.memory="256Mi" \
+  --set langfuse.resources.limits.cpu="500m" \
+  --set langfuse.resources.limits.memory="512Mi" \
+  --set langfuse.worker.replicas=1 \
+  --set langfuse.worker.resources.requests.cpu="50m" \
+  --set langfuse.worker.resources.requests.memory="128Mi" \
+  --set langfuse.worker.resources.limits.cpu="200m" \
+  --set langfuse.worker.resources.limits.memory="256Mi" \
   --set langfuse.additionalEnv[0].name="LANGFUSE_LOG_LEVEL" \
   --set-string langfuse.additionalEnv[0].value="debug" \
+  --set langfuse.additionalEnv[1].name="LANGFUSE_AUTO_POSTGRES_MIGRATION_DISABLED" \
+  --set-string langfuse.additionalEnv[1].value="true" \
   --timeout=5m
 
-echo "✅ Chart installed with web=0. Running migrations..."
+echo "✅ Chart applied with web=0. Running Prisma migrations as a Job..."
 
-# Run migration job
+# --- Phase 1.5: run Prisma migrations once, with the same secrets env as the app ---
 cat <<EOF | kubectl apply -f -
 apiVersion: batch/v1
 kind: Job
@@ -100,9 +106,9 @@ EOF
 kubectl wait --for=condition=complete job/langfuse-migrate -n "$NAMESPACE" --timeout=300s
 kubectl delete job langfuse-migrate -n "$NAMESPACE" --ignore-not-found
 
-echo "✅ Migrations applied. Scaling web up..."
+echo "✅ Migrations applied."
 
-# Phase 2: scale web back to 1 replica
+# --- Phase 2: scale web back up to actually serve traffic ---
 helm upgrade langfuse langfuse/langfuse \
   --namespace "$NAMESPACE" \
   --set langfuse.replicas=1 \
