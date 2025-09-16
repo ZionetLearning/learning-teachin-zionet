@@ -31,7 +31,7 @@ jobs:
               --search "LOCK: featest" \
               --state open \
               --json number \
-              --jq '.[0].number' || true)
+              --jq '.[0].number' 2>/dev/null || echo "")
 
             if [ -n "$ISSUE" ]; then
               echo "❌ featest is already locked (issue #$ISSUE)"
@@ -54,7 +54,7 @@ jobs:
               --search "LOCK: featest" \
               --state open \
               --json number \
-              --jq '.[0].number' || true)
+              --jq '.[0].number' 2>/dev/null || echo "")
 
             if [ -z "$ISSUE" ]; then
               echo "ℹ️ featest is not locked"
