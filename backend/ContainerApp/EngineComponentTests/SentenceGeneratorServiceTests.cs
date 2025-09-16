@@ -1,7 +1,5 @@
-﻿using System.Text.Json;
-using DotQueue;
+﻿using DotQueue;
 using Engine;
-using Engine.Constants;
 using Engine.Models.Sentences;
 using Engine.Services;
 using Microsoft.Extensions.Logging;
@@ -31,48 +29,6 @@ public class SentenceGeneratorServiceTests
             _noOpKernel;
     }
 
-    private static JsonElement JsonEl(string raw)
-    {
-        using var doc = JsonDocument.Parse(raw);
-        return doc.RootElement.Clone();
-    }
-
-    private static JsonElement EmptyHistory() =>
-        JsonEl("""{"messages":[]}""");
-    private sealed class SpyClock : IDateTimeProvider
-    {
-        private int _hits;
-        public int Hits => _hits;
-        public DateTimeOffset Fixed { get; }
-
-        public SpyClock(DateTimeOffset fixedTime) => Fixed = fixedTime;
-
-        public DateTimeOffset UtcNow
-        {
-            get
-            {
-                Interlocked.Increment(ref _hits);
-                return Fixed;
-            }
-        }
-    }
-
-    private sealed class TimeInvocationSpy : IFunctionInvocationFilter
-    {
-        private int _count;
-        public int Count => _count;
-
-        public async Task OnFunctionInvocationAsync(FunctionInvocationContext context, Func<FunctionInvocationContext, Task> next)
-        {
-            if (string.Equals(context.Function.Name, PluginNames.CurrentTime, StringComparison.OrdinalIgnoreCase))
-            {
-                Interlocked.Increment(ref _count);
-            }
-
-            await next(context);
-        }
-    }
-
     public SentenceGeneratorServiceTests(TestKernelPluginFix fx)
     {
         _fx = fx;
@@ -81,8 +37,8 @@ public class SentenceGeneratorServiceTests
             NullLogger<SentencesService>.Instance);
     }
 
-    [SkippableFact(DisplayName = "ProcessAsync: answer contains one sentence")]
-    public async Task ProcessAsync_Returns_One_Sentence()
+    [SkippableFact(DisplayName = "GenerateAsync: answer contains one sentence")]
+    public async Task GenerateAsync_Returns_One_Sentence()
     {
         var userId = Guid.NewGuid();
         var request = new SentenceRequest
@@ -95,6 +51,25 @@ public class SentenceGeneratorServiceTests
 
         var response = await _sentenceService.GenerateAsync(request, CancellationToken.None);
         Assert.Equal(request.Count, response.Sentences.Count);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(5)]
+    [InlineData(10)]
+    public async Task GenerateAsync_Returns_Requested_Count(int count)
+    {
+        var req = new SentenceRequest
+        {
+            UserId = Guid.NewGuid(),
+            Count = count,
+            Difficulty = Difficulty.medium,
+            Nikud = false
+        };
+
+        var res = await _sentenceService.GenerateAsync(req, CancellationToken.None);
+
+        Assert.Equal(count, res.Sentences.Count);
     }
 
     [CollectionDefinition("Plugins collection")]
