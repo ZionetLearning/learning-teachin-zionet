@@ -3,19 +3,26 @@
 # Deploy Langfuse - AI observability platform
 set -euo pipefail
 
-NAMESPACE="${1:-langfuse}"
-echo "🎯 Deploying Langfuse into fixed namespace: $NAMESPACE"
+# Namespace is fixed
+NAMESPACE="devops-tools"
+# Environment name (used for DB suffix), default to "dev"
+ENVIRONMENT_NAME="${1:-dev}"
+
+echo "🎯 Deploying Langfuse into namespace: $NAMESPACE (DB suffix: $ENVIRONMENT_NAME)"
 
 helm repo add langfuse https://langfuse.github.io/langfuse-k8s || true
 helm repo update
 
 kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 
-if helm list -n "$NAMESPACE" | grep -q "langfuse"; then
+RELEASE_STATUS=$(helm status langfuse -n "$NAMESPACE" -o json 2>/dev/null | jq -r '.info.status' || echo "not-found")
+
+if [[ "$RELEASE_STATUS" == "deployed" ]]; then
     echo "📊 Upgrading existing Langfuse installation..."
     ACTION="upgrade"
 else
-    echo "📊 Installing Langfuse..."
+    echo "📊 Installing fresh Langfuse..."
+    helm uninstall langfuse -n "$NAMESPACE" --keep-history=false || true
     ACTION="install"
     # clean PVCs on first install to avoid conflicts
     kubectl delete pvc --all -n "$NAMESPACE" --ignore-not-found=true
@@ -41,7 +48,7 @@ helm $ACTION langfuse langfuse/langfuse \
   --set postgresql.deploy=false \
   --set postgresql.host="dev-pg-zionet-learning.postgres.database.azure.com" \
   --set postgresql.port=5432 \
-  --set postgresql.auth.database="langfuse-${NAMESPACE}" \
+  --set postgresql.auth.database="langfuse-${ENVIRONMENT_NAME}" \
   --set postgresql.auth.existingSecret="langfuse-secrets" \
   --set postgresql.auth.secretKeys.userPasswordKey="DATABASE_PASSWORD" \
   --set postgresql.auth.username="postgres" \
