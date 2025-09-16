@@ -24,7 +24,7 @@ createRoot(document.getElementById("root")!).render(
             <App />
           </Sentry.ErrorBoundary>
         </StrictMode>
-      </AuthProvider>,
+      </AuthProvider>
     </ReactQueryProvider>
-  </I18nTranslateProvider>
+  </I18nTranslateProvider>,
 );
