@@ -16,13 +16,13 @@ import {
   Clear as ClearIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Visibility as ViewIcon,
 } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { useQueryClient } from "@tanstack/react-query";
+import { apiClient as axios } from "@app-providers";
 import { useGetAllTasks, useDeleteTask, taskKeys } from "../../../../api";
-import { TaskActionMode, TaskModel } from "../../../../types";
+import { TaskActionMode, TaskModel, TaskSummaryDto } from "../../../../types";
 import { useStyles } from "./style";
 
 interface TasksListProps {
@@ -53,13 +53,14 @@ export const TasksList = ({ dir, onTaskSelect, refreshTrigger }: TasksListProps)
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [deletingTaskId, setDeletingTaskId] = useState<number | null>(null);
+  const [loadingTaskId, setLoadingTaskId] = useState<number | null>(null);
 
   const filteredTasks = useMemo(() => {
     if (!tasks) return [];
     const q = search.trim().toLowerCase();
     if (!q) return tasks;
     return tasks.filter((task) =>
-      [task.id.toString(), task.name, task.payload].some((field) =>
+      [task.id.toString(), task.name].some((field) =>
         field.toLowerCase().includes(q)
       )
     );
@@ -80,7 +81,7 @@ export const TasksList = ({ dir, onTaskSelect, refreshTrigger }: TasksListProps)
     setPage(0);
   };
 
-  const handleDeleteTask = (task: TaskModel) => {
+  const handleDeleteTask = (task: TaskSummaryDto) => {
     if (window.confirm(t("pages.tasks.confirmDelete", { name: task.name }))) {
       setDeletingTaskId(task.id);
       deleteTask(task.id, {
@@ -94,6 +95,39 @@ export const TasksList = ({ dir, onTaskSelect, refreshTrigger }: TasksListProps)
           setDeletingTaskId(null);
         },
       });
+    }
+  };
+
+  // Convert TaskSummaryDto to TaskModel for actions that need full task data
+  const handleTaskAction = async (task: TaskSummaryDto, mode: TaskActionMode) => {
+    setLoadingTaskId(task.id);
+    
+    try {
+      // Use axios to get full task details with ETag
+      const response = await axios.get(`${import.meta.env.VITE_TASKS_URL}/task/${task.id}`);
+      
+      if (response.status !== 200) {
+        throw new Error(response.data?.message || "Failed to fetch task");
+      }
+      
+      const fullTaskData = response.data as TaskModel;
+      // ETag is available in response.headers.etag if needed by parent component
+      
+      onTaskSelect(fullTaskData, mode);
+      
+    } catch (error) {
+      console.error('Error fetching full task details:', error);
+      toast.error(t("pages.tasks.loadTasksFailed"));
+      
+      // Fallback: create a minimal TaskModel for the action
+      const fallbackTask: TaskModel = {
+        id: task.id,
+        name: task.name,
+        payload: "" // Empty payload as fallback
+      };
+      onTaskSelect(fallbackTask, mode);
+    } finally {
+      setLoadingTaskId(null);
     }
   };
 
@@ -120,14 +154,11 @@ export const TasksList = ({ dir, onTaskSelect, refreshTrigger }: TasksListProps)
             >
               <TableHead>
                 <TableRow>
-                  <TableCell align="center" width="10%">
+                  <TableCell align="center" width="15%">
                     {t("pages.tasks.taskId")}
                   </TableCell>
-                  <TableCell align="center" width="25%">
+                  <TableCell align="center" width="60%">
                     {t("pages.tasks.taskName")}
-                  </TableCell>
-                  <TableCell align="center" width="40%">
-                    {t("pages.tasks.taskPayload")}
                   </TableCell>
                   <TableCell align="center" width="25%">
                     {t("pages.tasks.actions")}
@@ -181,6 +212,8 @@ export const TasksList = ({ dir, onTaskSelect, refreshTrigger }: TasksListProps)
                     <TableRow
                       key={task.id}
                       className={classes.tableRow}
+                      onClick={() => handleTaskAction(task, 'view')}
+                      style={{ cursor: 'pointer' }}
                       data-testid={`task-row-${task.id}`}
                     >
                       <TableCell align="center">
@@ -193,27 +226,18 @@ export const TasksList = ({ dir, onTaskSelect, refreshTrigger }: TasksListProps)
                       </TableCell>
                       <TableCell align="left">
                         <div className={classes.taskName}>
-                          {truncateText(task.name, 30)}
-                        </div>
-                      </TableCell>
-                      <TableCell align="left">
-                        <div className={classes.taskPayload}>
-                          {truncateText(task.payload, 60)}
+                          {truncateText(task.name, 50)}
                         </div>
                       </TableCell>
                       <TableCell align="center">
                         <div className={classes.actionsContainer}>
                           <IconButton
                             size="small"
-                            onClick={() => onTaskSelect(task, 'view')}
-                            title={t("pages.tasks.viewTask")}
-                            data-testid={`task-view-${task.id}`}
-                          >
-                            <ViewIcon fontSize="small" />
-                          </IconButton>
-                          <IconButton
-                            size="small"
-                            onClick={() => onTaskSelect(task, 'edit')}
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent row click
+                              handleTaskAction(task, 'edit');
+                            }}
+                            disabled={loadingTaskId === task.id}
                             title={t("pages.tasks.editTask")}
                             data-testid={`task-edit-${task.id}`}
                           >
@@ -221,7 +245,10 @@ export const TasksList = ({ dir, onTaskSelect, refreshTrigger }: TasksListProps)
                           </IconButton>
                           <IconButton
                             size="small"
-                            onClick={() => handleDeleteTask(task)}
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent row click
+                              handleDeleteTask(task);
+                            }}
                             disabled={isDeletingTask && deletingTaskId === task.id}
                             title={t("pages.tasks.deleteTask")}
                             color="error"
@@ -235,7 +262,7 @@ export const TasksList = ({ dir, onTaskSelect, refreshTrigger }: TasksListProps)
                   ))}
                   {filteredTasks.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={4} align="center">
+                      <TableCell colSpan={3} align="center">
                         {search 
                           ? t("pages.tasks.noTasksFound") 
                           : t("pages.tasks.noTasks")

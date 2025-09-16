@@ -4,6 +4,11 @@ export interface TaskModel {
   payload: string;
 }
 
+export interface TaskSummaryDto {
+  id: number;
+  name: string;
+}
+
 export interface CreateTaskInput {
   id?: number;
   name: string;
@@ -34,6 +39,6 @@ export interface TaskValidationErrors {
 
 export type TaskActionMode = 'create' | 'edit' | 'view';
 
-export interface TasksListItem extends TaskModel {
+export interface TasksListItem extends TaskSummaryDto {
   isLoading?: boolean;
 }

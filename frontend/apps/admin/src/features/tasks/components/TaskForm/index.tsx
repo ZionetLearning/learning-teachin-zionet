@@ -183,7 +183,7 @@ export const TaskForm = ({
                 as="textarea"
                 name="payload"
                 placeholder={t("pages.tasks.taskPayloadPlaceholder")}
-                disabled={isEditing || isViewing || isFormDisabled}
+                disabled={isViewing || isFormDisabled || isEditing}
                 rows={4}
                 data-testid="task-form-payload"
               />

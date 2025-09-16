@@ -8,6 +8,7 @@ import {
 import { apiClient as axios } from "@app-providers";
 import {
   TaskModel,
+  TaskSummaryDto,
   CreateTaskInput,
   TaskWithETag,
 } from "../types";
@@ -23,16 +24,12 @@ export const taskKeys = {
 };
 
 // API Functions
-const getAllTasks = async (): Promise<TaskModel[]> => {
-  // Note: This endpoint might need to be implemented in the backend
-  // For now, we'll return an empty array as a placeholder
-  // TODO: Implement /tasks endpoint in backend for listing all tasks
-  // In a real scenario, this would be: 
-  // const response = await axios.get(`${TASKS_BASE_URL}s`); // note the 's' for plural
-  // return response.data as TaskModel[];
-  
-  console.warn("getAllTasks: Backend endpoint not implemented yet, returning empty array");
-  return [];
+const getAllTasks = async (): Promise<TaskSummaryDto[]> => {
+  const response = await axios.get(`${TASKS_BASE_URL}s`);
+  if (response.status !== 200) {
+    throw new Error(response.data?.message || "Failed to fetch tasks");
+  }
+  return response.data as TaskSummaryDto[];
 };
 
 const getTaskById = async (id: number): Promise<TaskWithETag> => {
@@ -90,8 +87,8 @@ const deleteTask = async (id: number): Promise<void> => {
   }
 };
 
-export const useGetAllTasks = (): UseQueryResult<TaskModel[], Error> => {
-  return useQuery<TaskModel[], Error>({
+export const useGetAllTasks = (): UseQueryResult<TaskSummaryDto[], Error> => {
+  return useQuery<TaskSummaryDto[], Error>({
     queryKey: taskKeys.lists(),
     queryFn: getAllTasks,
     staleTime: 30_000, // 30 seconds

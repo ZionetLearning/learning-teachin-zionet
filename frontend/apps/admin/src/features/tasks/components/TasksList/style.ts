@@ -65,11 +65,16 @@ export const useStyles = createUseStyles({
     },
   },
   tableRow: {
+    cursor: 'pointer',
+    transition: 'background-color 0.2s ease',
     "&:hover": {
-      backgroundColor: "#f8f9fa",
+      backgroundColor: "#e3f2fd",
     },
     "&:nth-child(even)": {
       backgroundColor: "#fafafa",
+    },
+    "&:nth-child(even):hover": {
+      backgroundColor: "#e3f2fd",
     },
   },
   taskName: {
