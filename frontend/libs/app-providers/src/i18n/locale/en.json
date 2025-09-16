@@ -166,14 +166,58 @@
         "replay": "🔄 Replay"
       },
       "wordOrderGame": {
+        "config": {
+          "title": "Game Configuration",
+          "subtitle": "Choose your preferences for the word order game",
+          "difficulty": "Difficulty Level",
+          "difficultyDesc": {
+            "easy": "Simple sentences with basic vocabulary",
+            "medium": "Moderate sentences with everyday language",
+            "hard": "Complex sentences with advanced vocabulary"
+          },
+          "options": "Game Options",
+          "nikud": "Include Nikud (Hebrew vowel marks)",
+          "nikudDesc": "Show diacritical marks to help with pronunciation",
+          "sentenceCount": "Number of Sentences",
+          "sentenceCountDesc": "How many sentences to generate (1-10)",
+          "startGame": "Start Game"
+        },
+        "difficulty": {
+          "easy": "Easy",
+          "medium": "Medium",
+          "hard": "Hard"
+        },
+        "welcome": {
+          "description": "Choose your difficulty level and preferences to get started.",
+          "configure": "Configure Game"
+        },
+        "current": {
+          "difficulty": "Difficulty",
+          "nikud": "Nikud",
+          "sentences": "Sentences",
+          "sentence": "Sentence"
+        },
+        "gameOver": {
+          "title": "Game Complete!",
+          "congratulations": "Congratulations!",
+          "completed": "You have completed all {{count}} sentences.",
+          "whatNext": "What would you like to do next?",
+          "playAgain": "Play Again",
+          "changeSettings": "Change Settings"
+        },
         "title": "Word Order Game",
         "subTitle": "Arrange the words in the correct order",
+        "settings": "Settings",
         "loading": "Loading...",
         "reset": "Reset",
         "check": "Check",
         "next": "Next",
         "playAudio": "Play audio",
-        "playAudioSlowly": "Play audio slowly (0.6x)"
+        "playAudioSlowly": "Play audio slowly (0.6x)",
+        "cancel": "Cancel",
+        "close": "Close",
+        "yes": "Yes",
+        "no": "No"
       },
       "earthquakeMap": {
         "title": "Earthquake Map",

@@ -4,7 +4,8 @@ export const useStyles = createUseStyles({
     display: "flex",
     flexDirection: "row",
     justifyContent: "center",
-    gap: "0px",
+    //alignItems: "center",
+    gap: "100px",
   },
   speakersContainer: {
     display: "flex",
@@ -17,7 +18,8 @@ export const useStyles = createUseStyles({
     display: "flex",
     flexDirection: "column",
     gap: "40px",
-    paddingLeft: "200px",
+    paddingLeft: "0px",
+    alignSelf: "center"
   },
   answerArea: {
     display: "flex",
