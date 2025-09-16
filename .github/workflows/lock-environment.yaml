@@ -54,3 +54,24 @@ jobs:
               --label "lock-featest"
 
             echo "✅ featest is now locked by $USER"
+
+          elif [ "$ACTION" = "unlock" ]; then
+            echo "🔓 Unlocking featest by $USER"
+
+            ISSUE=$(gh issue list \
+              --repo "$REPO" \
+              --label "lock-featest" \
+              --state open \
+              --json number \
+              --jq '.[0].number' 2>/dev/null || echo "")
+
+            if [ -z "$ISSUE" ]; then
+              echo "ℹ️ featest is not locked"
+              exit 0
+            fi
+
+            gh issue close "$ISSUE" --repo "$REPO" -c "Unlocked by $USER"
+            echo "✅ featest is now unlocked by $USER"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
