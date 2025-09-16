@@ -10,7 +10,7 @@ on:
         type: choice
         options: [test, featest]
       tests:
-        description: "Optional: test names (comma/newline separated). e.g. Get_Speech_Token_Should_Return_Token"
+        description: "Optional: test names (comma/newline separated). e.g. Test1,Namespace.Test2,Class.Test3"
         required: false
         default: ""
 
