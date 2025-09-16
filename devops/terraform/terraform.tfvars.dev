@@ -23,3 +23,8 @@ frontend_apps          = ["student", "teacher", "admin"]    # Dev environment us
 
 #------------- Redis Shared Instance -------------
 use_shared_redis = false  # dev uses its own Redis instance
+#-------------- Network -------------------------
+use_existing_network = false
+
+# Example existing networks map (empty here because dev creates network)
+existing_networks = {}

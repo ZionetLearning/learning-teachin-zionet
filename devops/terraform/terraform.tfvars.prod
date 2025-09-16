@@ -19,3 +19,6 @@ frontend_apps          = ["student", "teacher", "admin"]
 #------------- Redis Shared Instance -------------
 use_shared_redis = false  # If false, create server ; if true, use shared server 
 redis_name = "redis-teachin-prod"
+#-------------- Network -------------------------
+use_existing_network = false
+ # prod will create its own VNet (default behavior)

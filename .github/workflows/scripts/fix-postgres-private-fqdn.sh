@@ -7,7 +7,7 @@
 set -euo pipefail
 
 # Configuration - can be overridden by environment variables or parameters
-ENVIRONMENT_NAME="${1:-${ENVIRONMENT_NAME:-prod}}"
+ENVIRONMENT_NAME="${1:-${ENVIRONMENT_NAME:-dev}}"
 RESOURCE_GROUP="${2:-${RESOURCE_GROUP:-${ENVIRONMENT_NAME}-zionet-learning-2025}}"
 DNS_ZONE="${3:-${DNS_ZONE:-privatelink.postgres.database.azure.com}}"
 KEY_VAULT="${4:-${KEY_VAULT:-teachin-seo-kv}}"
@@ -100,5 +100,3 @@ if [ -n "${GITHUB_OUTPUT:-}" ]; then
 fi
 
 echo "🎉 PostgreSQL private FQDN fix completed!"
-echo "📝 Private FQDN: $PRIVATE_FQDN"
-echo "🔑 Key Vault secret updated: $SECRET_NAME"

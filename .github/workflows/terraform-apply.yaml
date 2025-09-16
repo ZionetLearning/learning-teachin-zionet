@@ -63,7 +63,7 @@ jobs:
     outputs:
       static_web_app_api_keys: ${{ steps.terraform_output.outputs.static_web_app_api_keys }}
       application_insights_connection_strings: ${{ steps.terraform_output.outputs.application_insights_connection_strings }}
-      POSTGRES_PRIVATE_FQDN: ${{ steps.fix_postgres_fqdn.outputs.POSTGRES_PRIVATE_FQDN }}
+      POSTGRES_PRIVATE_FQDN: ${{ steps.postgres_fqdn.outputs.POSTGRES_PRIVATE_FQDN }}
 
     env:
       ARM_USE_OIDC: "true" # tell provider to use the OIDC token
@@ -177,11 +177,10 @@ jobs:
         run: terraform apply -auto-approve -var-file=${{ env.TFVARS_FILE }}
         working-directory: ${{ env.TF_DIR }}
 
-      # Fix PostgreSQL Private FQDN Issue
       # Azure auto-generates DNS records for VNet-integrated PostgreSQL servers
       # This step updates Key Vault with the correct auto-generated FQDN
-      - name: Fix PostgreSQL Private FQDN
-        id: fix_postgres_fqdn
+      - name: PostgreSQL Private FQDN
+        id: postgres_fqdn
         env:
           ENVIRONMENT_NAME: ${{ env.environment_name }}
         run: |
@@ -195,14 +194,13 @@ jobs:
             "${ENVIRONMENT_NAME}-postgres-connection"
 
       - name: Get Terraform Outputs
-        if: false
         id: terraform_output
         run: |
           echo "Getting terraform outputs..."
           
-          # STATIC_WEB_APP_API_KEYS=$(terraform output -json static_web_app_api_keys)
-          # APP_INSIGHTS_CONN_STRINGS=$(terraform output -json application_insights_connection_strings)
+          STATIC_WEB_APP_API_KEYS=$(terraform output -json static_web_app_api_keys)
+          APP_INSIGHTS_CONN_STRINGS=$(terraform output -json application_insights_connection_strings)
           
-          # echo "static_web_app_api_keys=$STATIC_WEB_APP_API_KEYS" >> "$GITHUB_OUTPUT"
-          # echo "application_insights_connection_strings=$APP_INSIGHTS_CONN_STRINGS" >> "$GITHUB_OUTPUT"
+          echo "static_web_app_api_keys=$STATIC_WEB_APP_API_KEYS" >> "$GITHUB_OUTPUT"
+          echo "application_insights_connection_strings=$APP_INSIGHTS_CONN_STRINGS" >> "$GITHUB_OUTPUT"
         working-directory: ${{ env.TF_DIR }}

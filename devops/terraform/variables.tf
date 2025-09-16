@@ -21,31 +21,25 @@ variable "aks_subnet_name" {
   type        = string
   default     = "aks-subnet"
 }
+variable "use_existing_network" {
+  description = "Whether to use an existing network instead of creating a new one."
+  type        = bool
+  default     = false
+}
 
-# variable "integration_subnet_name" {
-#   description = "Name for integration subnet."
-#   type        = string
-#   default     = "integration-subnet"
-# }
-
-# variable "management_subnet_name" {
-#   description = "Name for management subnet."
-#   type        = string
-#   default     = "management-subnet"
-# }
-
-# variable "integration_subnet_prefix" {
-#   description = "Address prefix for integration subnet."
-#   type        = string
-#   default     = "10.10.3.0/24"
-# }
-
-# variable "management_subnet_prefix" {
-#   description = "Address prefix for management subnet."
-#   type        = string
-#   default     = "10.10.4.0/24"
-# }
-
+# Map of existing networks keyed by environment name (dev/prod).
+variable "existing_networks" {
+  description = "Map of existing network definitions keyed by environment (e.g., dev, prod). Each value is an object with vnet/subnet names and RGs."
+  type = map(object({
+    vnet_name       = string
+    vnet_rg         = string
+    aks_subnet_name = string
+    db_vnet_name    = string
+    db_vnet_rg      = string
+    db_subnet_name  = string
+  }))
+  default = {}
+}
 
 #------------- Database VNet Variables -------------
 variable "db_vnet_name" {

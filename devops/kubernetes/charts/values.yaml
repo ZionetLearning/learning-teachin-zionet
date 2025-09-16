@@ -220,7 +220,6 @@ accessor:
       cpu: "500m"
       memory: "512Mi"
 
-
 dapr:
   # Shared connection for Service Bus components
   connection:

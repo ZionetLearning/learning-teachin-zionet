@@ -86,8 +86,7 @@ jobs:
     secrets: inherit
  
   deploy-frontend:
-    if: false
-    # if: ${{ github.event.inputs.environment_name == 'dev' || github.event.inputs.frontend_apps == 'all' }}
+    if: ${{ github.event.inputs.environment_name == 'dev' || github.event.inputs.frontend_apps == 'all' }}
     needs: [terraform-apply]
     uses: ./.github/workflows/deploy-frontend.yaml
     permissions:

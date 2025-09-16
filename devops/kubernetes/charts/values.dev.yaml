@@ -10,7 +10,7 @@ global:
 
 namespace:
   create: true
-  name: prod
+  name: dev
 
 
 cronjobs:
@@ -68,4 +68,3 @@ accessor:
     # tag will be set dynamically via global.environment by CI/CD
   env:
     ASPNETCORE_URLS: "http://+:5003"
-
