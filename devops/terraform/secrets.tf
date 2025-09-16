@@ -108,3 +108,15 @@ resource "azurerm_key_vault_secret" "langfuse_s3_password" {
   value        = "minio-password-change-in-production"
   key_vault_id = data.azurerm_key_vault.shared.id
 }
+
+resource "azurerm_key_vault_secret" "langfuse_db_url" {
+  name         = "${var.environment_name}-langfuse-db-url"
+  value        = "postgresql://${var.admin_username}:${var.admin_password}@${var.database_server_name}.postgres.database.azure.com:5432/langfuse-${var.environment_name}?schema=public&sslmode=require"
+  key_vault_id = data.azurerm_key_vault.shared.id
+}
+
+resource "azurerm_key_vault_secret" "langfuse_direct_url" {
+  name         = "${var.environment_name}-langfuse-direct-url"
+  value        = "postgresql://${var.admin_username}:${var.admin_password}@${var.database_server_name}.postgres.database.azure.com:5432/langfuse-${var.environment_name}?schema=public&sslmode=require"
+  key_vault_id = data.azurerm_key_vault.shared.id
+}
