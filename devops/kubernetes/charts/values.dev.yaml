@@ -10,7 +10,8 @@ global:
 
 namespace:
   create: true
-  name: dev
+  #name: dev
+  name: ""
 
 
 cronjobs:
