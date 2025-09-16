@@ -298,7 +298,7 @@ jobs:
           # Deploy Langfuse using helm script
           cd devops/helm-tools
           chmod +x langfuse.sh
-          ./langfuse.sh
+          ./langfuse.sh $TARGET_NAMESPACE
 
           # Apply Langfuse ingress
           kubectl apply -f "../kubernetes/ingress/langfuse-ingress.yaml"

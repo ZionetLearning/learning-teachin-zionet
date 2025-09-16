@@ -3,7 +3,7 @@
 # Deploy Langfuse - AI observability platform
 set -euo pipefail
 
-NAMESPACE="devops-tools"
+NAMESPACE="${1:-langfuse}"
 echo "🎯 Deploying Langfuse into fixed namespace: $NAMESPACE"
 
 helm repo add langfuse https://langfuse.github.io/langfuse-k8s || true
@@ -41,7 +41,7 @@ helm $ACTION langfuse langfuse/langfuse \
   --set postgresql.deploy=false \
   --set postgresql.host="dev-pg-zionet-learning.postgres.database.azure.com" \
   --set postgresql.port=5432 \
-  --set postgresql.auth.database="langfuse-$NAMESPACE" \
+  --set postgresql.auth.database="langfuse-${NAMESPACE}" \
   --set postgresql.auth.existingSecret="langfuse-secrets" \
   --set postgresql.auth.secretKeys.userPasswordKey="DATABASE_PASSWORD" \
   --set postgresql.auth.username="postgres" \
@@ -74,17 +74,46 @@ helm $ACTION langfuse langfuse/langfuse \
   --set s3.resources.limits.memory="256Mi" \
   --set langfuse.additionalEnv[0].name="LANGFUSE_LOG_LEVEL" \
   --set-string langfuse.additionalEnv[0].value="debug" \
-  --set langfuse.web.startupProbe.enabled=true \
-  --set langfuse.web.startupProbe.initialDelaySeconds=30 \
-  --set langfuse.web.startupProbe.periodSeconds=10 \
-  --set langfuse.web.startupProbe.timeoutSeconds=10 \
-  --set langfuse.web.startupProbe.failureThreshold=30 \
-  --set langfuse.web.livenessProbe.initialDelaySeconds=60 \
-  --set langfuse.web.livenessProbe.timeoutSeconds=10 \
-  --set langfuse.web.readinessProbe.initialDelaySeconds=60 \
-  --set langfuse.web.readinessProbe.timeoutSeconds=10 \
-  --wait \
-  --timeout=15m
+  --timeout=5m
 
-echo "✅ Langfuse deployed successfully!"
-kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=langfuse -n "$NAMESPACE" --timeout=600s
+echo "✅ Helm finished. Now applying migrations..."
+
+# Create migration job
+cat <<EOF | kubectl apply -f -
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: langfuse-migrate
+  namespace: $NAMESPACE
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: migrate
+        image: langfuse/langfuse:3.108.0
+        command: ["sh", "-c"]
+        args: ["echo '🔄 Running Prisma migrations...'; npx prisma migrate deploy --schema=packages/shared/prisma/schema.prisma"]
+        envFrom:
+        - secretRef:
+            name: langfuse-secrets
+EOF
+
+# Wait for migration job to complete
+kubectl wait --for=condition=complete job/langfuse-migrate -n "$NAMESPACE" --timeout=300s || {
+  echo "❌ Migration job failed, check logs with:"
+  echo "kubectl logs job/langfuse-migrate -n $NAMESPACE"
+  exit 1
+}
+
+# Cleanup migration job (optional)
+kubectl delete job langfuse-migrate -n "$NAMESPACE" --ignore-not-found
+
+echo "✅ Migrations applied successfully."
+
+# Rollout checks
+kubectl rollout status deploy/langfuse-web -n "$NAMESPACE" --timeout=300s || true
+kubectl rollout status deploy/langfuse-worker -n "$NAMESPACE" --timeout=300s || true
+
+echo "🎉 Langfuse deployed and ready."
