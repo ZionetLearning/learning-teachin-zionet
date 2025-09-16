@@ -10,9 +10,6 @@ export const validationSchema = Yup.object({
     .required("Required"),
 });
 
-export const createValidationSchema = validationSchema;
-export const editValidationSchema = validationSchema;
-
 export interface CreateTaskFormValues {
   id?: string;
   name: string;
