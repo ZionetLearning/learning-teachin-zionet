@@ -10,7 +10,7 @@ on:
         options: [lock, unlock]
 
 permissions:
-  issues: write   # 👈 חשוב – הרשאה לניהול issues
+  issues: write
 
 jobs:
   manage-lock:
