@@ -5,12 +5,16 @@ import { Speaker } from "../Speaker";
 import { useHebrewSentence } from "../../hooks";
 import { useAvatarSpeech } from "@student/hooks";
 import { DifficultyLevel } from "@student/types";
-import { GameConfigModal, GameConfig, GameOverModal } from "../modals";
-import { WelcomeScreen } from "../WelcomeScreen";
-import { GameHeaderSettings } from "../GameHeaderSettings";
-import { ChosenWordsArea } from "../ChosenWordsArea";
-import { WordsBank } from "../WordsBank";
-import { SideButtons } from "../SideButtons";
+import {
+  GameConfigModal,
+  GameConfig,
+  GameOverModal,
+  WelcomeScreen,
+  GameHeaderSettings,
+  ChosenWordsArea,
+  WordsBank,
+  SideButtons,
+} from "../";
 
 export const Game = () => {
   const { t, i18n } = useTranslation();
@@ -86,22 +90,22 @@ export const Game = () => {
     speak(sentence);
   };
 
-const handleNextClick = useCallback(async () => {
-  stop();
+  const handleNextClick = useCallback(async () => {
+    stop();
 
-  const result = await fetchSentence();
+    const result = await fetchSentence();
 
-  // Check if we've completed all sentences
-  if (!result || !result.sentence) {
-    setGameOverModalOpen(true);
-    return;
-  }
+    // Check if we've completed all sentences
+    if (!result || !result.sentence) {
+      setGameOverModalOpen(true);
+      return;
+    }
 
-  setChosen([]);
-  if (result.words && result.words.length > 0) {
-    setShuffledSentence(shuffleDistinct(result.words));
-  }
-}, [stop, fetchSentence]);
+    setChosen([]);
+    if (result.words && result.words.length > 0) {
+      setShuffledSentence(shuffleDistinct(result.words));
+    }
+  }, [stop, fetchSentence]);
 
   const handleGameOverPlayAgain = () => {
     setGameOverModalOpen(false);
