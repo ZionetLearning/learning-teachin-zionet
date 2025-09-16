@@ -100,23 +100,7 @@ export const useStyles = createUseStyles({
     flexDirection: "row",
     gap: "5px",
   },
-  welcomeContainer: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "start",
-    minHeight: "60vh",
-    textAlign: "center",
-    gap: "24px",
-  },
-  welcomeText: {
-    maxWidth: 600,
-    paddingTop: 64,
-    fontSize: 18,
-  },
-  welcomeButton: {
-    minWidth: 200,
-  },
+
   gameHeader: {
     display: "flex",
     justifyContent: "space-between",

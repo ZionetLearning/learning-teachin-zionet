@@ -8,6 +8,7 @@ import { DifficultyLevel } from "@student/types";
 import { GameConfigModal, GameConfig, GameOverModal } from "../modals";
 import { Button, Box, Typography } from "@mui/material";
 import { Settings } from "@mui/icons-material";
+import { WelcomeScreen } from "../WelcomeScreen";
 
 export const Game = () => {
   const { t, i18n } = useTranslation();
@@ -32,12 +33,7 @@ export const Game = () => {
     currentSentenceIndex,
   } = useHebrewSentence(gameConfig || undefined);
 
-  const {
-    speak,
-    stop,
-    isLoading: speechLoading,
-    error: speechError,
-  } = useAvatarSpeech({});
+  const { speak, stop, isLoading: speechLoading } = useAvatarSpeech({});
 
   // Show config modal on first load
   useEffect(() => {
@@ -58,10 +54,8 @@ export const Game = () => {
   useEffect(() => {
     const handleNewSentence = () => {
       if (!sentence || words.length === 0) {
-        console.log("No sentence or words available:", { sentence, words });
         return;
       }
-      console.log("New sentence loaded:", sentence, "Words:", words);
       setChosen([]);
       setShuffledSentence(shuffleDistinct(words));
     };
@@ -84,15 +78,9 @@ export const Game = () => {
   };
 
   const handlePlay = () => {
-    if (!sentence || sentence.trim() === "") {
-      console.log("No sentence to play:", sentence);
+    if (!sentence || sentence.trim() === "" || speechLoading) {
       return;
     }
-    if (speechLoading) {
-      console.log("Speech is still loading, please wait");
-      return;
-    }
-    console.log("Playing sentence:", sentence);
     speak(sentence);
   };
 
@@ -194,32 +182,12 @@ export const Game = () => {
   // Show welcome screen if game hasn't started yet
   if (!gameStarted || !gameConfig) {
     return (
-      <>
-        <Box className={classes.welcomeContainer}>
-          <Typography
-            className={classes.welcomeText}
-            variant="body1"
-            color="text.secondary"
-          >
-            {t("pages.wordOrderGame.welcome.description")}
-          </Typography>
-          <Button
-            className={classes.welcomeButton}
-            variant="contained"
-            size="large"
-            onClick={() => setConfigModalOpen(true)}
-          >
-            {t("pages.wordOrderGame.welcome.configure")}
-          </Button>
-        </Box>
-
-        <GameConfigModal
-          open={configModalOpen}
-          onClose={() => setConfigModalOpen(false)}
-          onConfirm={handleConfigConfirm}
-          getDifficultyLevelLabel={getDifficultyLabel}
-        />
-      </>
+      <WelcomeScreen
+        configModalOpen={configModalOpen}
+        setConfigModalOpen={setConfigModalOpen}
+        handleConfigConfirm={handleConfigConfirm}
+        getDifficultyLabel={getDifficultyLabel}
+      />
     );
   }
 
@@ -250,7 +218,11 @@ export const Game = () => {
             variant="outlined"
             size="small"
             startIcon={<Settings />}
-            className={classes.settingsButton + ' ' + (isHebrew ? classes.settingsButtonHebrew : '')}
+            className={
+              classes.settingsButton +
+              " " +
+              (isHebrew ? classes.settingsButtonHebrew : "")
+            }
             onClick={handleConfigChange}
           >
             {t("pages.wordOrderGame.settings")}
@@ -259,10 +231,14 @@ export const Game = () => {
 
         <div className={classes.gameLogic}>
           <div className={classes.speakersContainer}>
-            <Speaker
-              onClick={() => handlePlay()}
-              //disabled={!sentence || sentence.trim() === "" || speechLoading}
-            />
+            {speechLoading ? (
+              <div>{t("pages.wordOrderGame.loading")}</div>
+            ) : (
+              <Speaker
+                onClick={() => handlePlay()}
+                disabled={!sentence || sentence.trim() === "" || speechLoading}
+              />
+            )}
           </div>
 
           <div className={classes.answerArea} dir="rtl">
