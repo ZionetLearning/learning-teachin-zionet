@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { ErrorMessage, Field, Form, Formik, FormikHelpers } from "formik";
 import { useNavigate } from "react-router-dom";
 
-import { useAuth } from "@app-providers";
+import { AppRoleType, useAuth } from "@app-providers";
 import { useStyles } from "./style";
 import {
   loginSchema,
@@ -19,9 +19,14 @@ const authMode = {
 
 type AuthModeType = (typeof authMode)[keyof typeof authMode];
 
-export const AuthorizationPage = () => {
+interface AuthorizationPageProps {
+  allowedRoles: AppRoleType[];
+}
+
+export const AuthorizationPage = ({ allowedRoles }: AuthorizationPageProps) => {
   const classes = useStyles();
-  const { login, signup, role, isAuthorized, loginStatus } = useAuth();
+  const { login, logout, signup, role, isAuthorized, loginStatus, appRole } =
+    useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [mode, setMode] = useState<AuthModeType>(authMode.login);
@@ -49,13 +54,18 @@ export const AuthorizationPage = () => {
 
   useEffect(
     function redirectAfterLogin() {
-      if (isAuthorized) {
-        const to = sessionStorage.getItem("redirectAfterLogin") || "/";
-        sessionStorage.removeItem("redirectAfterLogin");
-        navigate(to, { replace: true });
+      if (!isAuthorized) return;
+      if (!role) return;
+      if (!allowedRoles.includes(role)) {
+        setAuthError(t("pages.auth.forbiddenRole"));
+        logout();
+        return;
       }
+      const to = sessionStorage.getItem("redirectAfterLogin") || "/";
+      sessionStorage.removeItem("redirectAfterLogin");
+      navigate(to, { replace: true });
     },
-    [isAuthorized, navigate],
+    [allowedRoles, isAuthorized, navigate, role, t, logout],
   );
 
   useEffect(
@@ -74,16 +84,16 @@ export const AuthorizationPage = () => {
       </header>
       <div className={classes.authPageContent}>
         <div className={classes.authPageContainer}>
-          <h2
+          <div
             className={classes.authPageSubtitle}
             data-testid="auth-role-heading"
           >
-            {role === "teacher"
+            {appRole === "teacher"
               ? t("pages.auth.teacherDashboard")
-              : role === "student"
+              : appRole === "student"
                 ? t("pages.auth.studentDashboard")
                 : t("pages.auth.adminDashboard")}
-          </h2>
+          </div>
           <div className={classes.authPageTabs}>
             {[authMode.login, authMode.signup].map((tab) => (
               <button
@@ -98,7 +108,11 @@ export const AuthorizationPage = () => {
               </button>
             ))}
           </div>
-
+          {authError && (
+            <div className={classes.authPageError} data-testid="auth-error">
+              {authError}
+            </div>
+          )}
           {mode === authMode.login ? (
             <Formik<LoginValues>
               key="login"
@@ -119,14 +133,6 @@ export const AuthorizationPage = () => {
             >
               {({ isSubmitting }) => (
                 <Form className={classes.authPageForm}>
-                  {authError && (
-                    <div
-                      className={classes.authPageError}
-                      data-testid="auth-error"
-                    >
-                      {authError}
-                    </div>
-                  )}
                   <div>
                     <Field
                       name="email"
@@ -187,7 +193,7 @@ export const AuthorizationPage = () => {
                     password: values.password,
                     firstName: values.firstName,
                     lastName: values.lastName,
-                    role,
+                    role: appRole,
                   });
                 } catch (e) {
                   setAuthError(extractErrorMessage(e));
