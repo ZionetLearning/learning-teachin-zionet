@@ -13,6 +13,7 @@ using DotQueue;
 using Engine;
 using Engine.Models.QueueMessages;
 using Engine.Options;
+using Engine.Constants.Chat;
 
 var builder = WebApplication.CreateBuilder(args);
 

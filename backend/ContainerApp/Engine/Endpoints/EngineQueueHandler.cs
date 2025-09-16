@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics;
 using Dapr.Client;
 using DotQueue;
-using Engine.Constants;
 using Engine.Helpers;
 using Engine.Models;
 using Engine.Models.Chat;
@@ -10,9 +9,9 @@ using Engine.Models.Sentences;
 using Engine.Services;
 using Engine.Services.Clients.AccessorClient;
 using Engine.Services.Clients.AccessorClient.Models;
-//using Microsoft.CognitiveServices.Speech.Transcription;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
+using Engine.Constants.Chat;
 
 namespace Engine.Endpoints;
 
@@ -235,7 +234,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
             storyForKernel.AddUserMessage(request.UserMessage.Trim(), DateTimeOffset.UtcNow);
 
             var chatName = snapshot.Name;
-            if (chatName == "New chat")
+            if (chatName == ChatConstants.NewChatName)
             {
                 try
                 {
@@ -365,8 +364,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
         try
         {
             // Add interest-based prompt 50% of the time if user has interests
-            //if (hasInterests && Random.Shared.NextDouble() < 0.5)
-            if (hasInterests)
+            if (hasInterests && Random.Shared.NextDouble() < 0.5)
             {
                 keys = [.. keys, PromptsKeys.Interests];
                 includeInterestPrompt = true;
@@ -435,23 +433,5 @@ public class EngineQueueHandler : IQueueHandler<Message>
             _logger.LogError(ex, "Transient error while processing for action {Action}", message.ActionName);
             throw new RetryableException("Transient error while processing.", ex);
         }
-    }
-
-    private static string BuildInterestsPrompt(List<string> interests)
-    {
-        var cleaned = interests
-            .Where(i => !string.IsNullOrWhiteSpace(i))
-            .Select(i => i.Trim())
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        var formatted = string.Join(", ", cleaned);
-
-        return $"You are a professional assistant. The user has the following interests: [{formatted}].\n" +
-               "When generating responses, explanations, or suggestions:\n" +
-               "- Prioritize topics related to the user's interests.\n" +
-               "- Use examples, analogies, and recommendations aligned with these interests.\n" +
-               "- If possible, connect general topics to the user's interests contextually.\n" +
-               "Ignore this instruction only if it conflicts with safety or system guidelines.";
     }
 }
