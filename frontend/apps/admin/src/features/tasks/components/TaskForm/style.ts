@@ -131,4 +131,21 @@ export const useStyles = createUseStyles({
       boxShadow: "0 4px 12px rgba(149,165,166,0.3)",
     },
   },
+  createNewButton: {
+    flex: 1,
+    padding: "0.875rem 1.5rem",
+    backgroundColor: "#27ae60",
+    color: "white",
+    border: "none",
+    borderRadius: "8px",
+    fontSize: "1rem",
+    fontWeight: 600,
+    cursor: "pointer",
+    transition: "all 0.3s ease",
+    "&:hover": {
+      backgroundColor: "#229954",
+      transform: "translateY(-2px)",
+      boxShadow: "0 4px 12px rgba(39,174,96,0.3)",
+    },
+  },
 });

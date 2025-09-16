@@ -27,6 +27,7 @@ interface TaskFormProps {
   onTaskUpdated: () => void;
   onCancel: () => void;
   onRefreshTaskList: () => void;
+  onCreateNew: () => void;
 }
 
 export const TaskForm = ({
@@ -37,6 +38,7 @@ export const TaskForm = ({
   onTaskUpdated,
   onCancel,
   onRefreshTaskList,
+  onCreateNew,
 }: TaskFormProps) => {
   const { t } = useTranslation();
   const classes = useStyles();
@@ -212,17 +214,30 @@ export const TaskForm = ({
               )}
 
               {(isEditing || isViewing) && (
-                <button
-                  className={classes.cancelButton}
-                  type="button"
-                  onClick={() => {
-                    onCancel();
-                    resetForm();
-                  }}
-                  data-testid="task-form-cancel"
-                >
-                  {isViewing ? t("pages.tasks.close") : t("pages.tasks.cancel")}
-                </button>
+                <>
+                  <button
+                    className={classes.createNewButton}
+                    type="button"
+                    onClick={() => {
+                      onCreateNew();
+                      resetForm();
+                    }}
+                    data-testid="task-form-create-new"
+                  >
+                    + {t("pages.tasks.createTask")}
+                  </button>
+                  <button
+                    className={classes.cancelButton}
+                    type="button"
+                    onClick={() => {
+                      onCancel();
+                      resetForm();
+                    }}
+                    data-testid="task-form-cancel"
+                  >
+                    {isViewing ? t("pages.tasks.close") : t("pages.tasks.cancel")}
+                  </button>
+                </>
               )}
             </div>
           </Form>

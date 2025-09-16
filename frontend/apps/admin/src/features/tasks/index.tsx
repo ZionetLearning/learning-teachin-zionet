@@ -34,6 +34,11 @@ export const Tasks = () => {
     setActionMode('create');
   }, []);
 
+  const handleCreateNew = useCallback(() => {
+    setSelectedTask(null);
+    setActionMode('create');
+  }, []);
+
   const handleRefreshTaskList = useCallback(() => {
     setRefreshTrigger(prev => prev + 1);
   }, []);
@@ -48,6 +53,7 @@ export const Tasks = () => {
         onTaskUpdated={handleTaskUpdated}
         onCancel={handleTaskDeselect}
         onRefreshTaskList={handleRefreshTaskList}
+        onCreateNew={handleCreateNew}
       />
       <TasksList
         dir={dir}
