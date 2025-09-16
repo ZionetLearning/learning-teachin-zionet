@@ -16,12 +16,21 @@ jobs:
   manage-lock:
     runs-on: ubuntu-latest
     steps:
+      - name: Ensure "locked" label exists
+        run: |
+          gh label create locked \
+            --repo "${{ github.repository }}" \
+            --description "Marks environment as locked" \
+            --color FF0000 || true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
       - name: Ensure lock issue exists
         id: find-issue
         run: |
           REPO=${{ github.repository }}
 
-          # חפש אם קיים issue בשם "LOCK: featest"
+          # חפש אם כבר קיים issue בשם "LOCK: featest"
           ISSUE=$(gh issue list \
             --repo "$REPO" \
             --search "LOCK: featest" \
@@ -30,12 +39,11 @@ jobs:
 
           if [ -z "$ISSUE" ]; then
             echo "⚠️ No issue found, creating one..."
-            ISSUE=$(gh issue create \
+            URL=$(gh issue create \
               --repo "$REPO" \
               --title "LOCK: featest" \
-              --body "Initial lock issue placeholder" \
-              --json number \
-              --jq '.number')
+              --body "Initial lock issue placeholder")
+            ISSUE=$(basename "$URL")
           fi
 
           echo "issue_number=$ISSUE" >> $GITHUB_OUTPUT
