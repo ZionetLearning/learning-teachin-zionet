@@ -52,16 +52,4 @@ await WaitForEventAsync(
          rid.GetString() == requestId,
     timeout);
 
-
-    public async Task UpdateUserInterestsAsync(Guid userId, IEnumerable<string> interests, CancellationToken ct = default)
-    {
-        var payload = new UpdateUserModel
-        {
-            Role = Role.Student
-        };
-
-        var response = await Client.PutAsJsonAsync($"users-manager/user/{userId}", payload, ct);
-
-        response.EnsureSuccessStatusCode();
-    }
 }
