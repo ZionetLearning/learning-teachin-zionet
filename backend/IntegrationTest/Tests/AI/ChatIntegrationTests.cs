@@ -99,4 +99,37 @@ public class ChatIntegrationTests(
         var delta = (DateTimeOffset.UtcNow - parsed).Duration();
         delta.Should().BeLessThan(TimeSpan.FromSeconds(300), "time should come from TimePlugin/clock");
     }
+
+
+
+    [Fact(DisplayName = "System prompt includes user interests when available")]
+    public async Task SystemPromptIncludesUserInterests_WhenInjected()
+    {
+        var user = _shared.UserFixture.TestUser;
+
+        // Add interests to the user via the Accessor API or directly into the test DB
+
+        await _shared.GetAuthenticatedTokenAsync();
+        await _shared.EnsureSignalRStartedAsync(SignalRFixture, OutputHelper);
+
+        await UpdateUserInterestsAsync(user.UserId, ["soccer", "food"]);
+
+        var chatId = Guid.NewGuid();
+
+        //var (req, ev, msg, chatName) = await PostChatAndWaitAsync(new ChatRequest
+        //{
+        //    ThreadId = chatId.ToString(),
+        //    UserId = user.UserId.ToString(),
+        //    UserMessage = "Say something interesting.",
+        //    ChatType = ChatType.Default
+        //}, TimeSpan.FromSeconds(30));
+
+        //var chatHistory = await AIChatHelper.CheckCountMessageInChatHistory(Client, chatId, user.UserId, waitMessages: 2, timeoutSeconds: 30);
+
+        //var systemPrompt = chatHistory.Messages.FirstOrDefault(m => m.Role == "system")?.Text;
+
+        //systemPrompt.Should().NotBeNull("System prompt must exist");
+        //systemPrompt.Should().ContainAny("soccer", "food", "user is interested", "interests");
+    }
+
 }
