@@ -29,10 +29,10 @@ helm $ACTION langfuse langfuse/langfuse \
   --set langfuse.salt.secretKeyRef.key="SALT" \
   --set langfuse.nextauth.secret.secretKeyRef.name="langfuse-secrets" \
   --set langfuse.nextauth.secret.secretKeyRef.key="NEXTAUTH_SECRET" \
-  --set langfuse.resources.requests.cpu="100m" \
-  --set langfuse.resources.requests.memory="256Mi" \
-  --set langfuse.resources.limits.cpu="500m" \
-  --set langfuse.resources.limits.memory="512Mi" \
+  --set langfuse.resources.requests.cpu="250m" \
+  --set langfuse.resources.requests.memory="512Mi" \
+  --set langfuse.resources.limits.cpu="1000m" \
+  --set langfuse.resources.limits.memory="1Gi" \
   --set langfuse.worker.replicas=1 \
   --set langfuse.worker.resources.requests.cpu="50m" \
   --set langfuse.worker.resources.requests.memory="128Mi" \
@@ -64,10 +64,6 @@ helm $ACTION langfuse langfuse/langfuse \
   --set s3.auth.rootUserSecretKey="S3_USER" \
   --set s3.auth.rootPasswordSecretKey="S3_PASSWORD" \
   --set s3.bucket="langfuse-bucket" \
-  --set langfuse.resources.requests.cpu="100m" \
-  --set langfuse.resources.requests.memory="256Mi" \
-  --set langfuse.resources.limits.cpu="500m" \
-  --set langfuse.resources.limits.memory="512Mi" \
   --set langfuse.worker.replicas=1 \
   --set langfuse.worker.resources.requests.cpu="50m" \
   --set langfuse.worker.resources.requests.memory="128Mi" \
