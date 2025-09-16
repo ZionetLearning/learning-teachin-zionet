@@ -1,8 +1,8 @@
 ﻿using System.Security.Claims;
 using Manager.Constants;
+using Manager.Helpers;
 using Manager.Models.Users;
 using Manager.Services.Clients.Accessor;
-using Manager.Helpers;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Endpoints;
@@ -132,12 +132,34 @@ public static class UsersEndpoints
         [FromRoute] Guid userId,
         [FromBody] UpdateUserModel user,
         [FromServices] IAccessorClient accessorClient,
-        [FromServices] ILogger<UserEndpoint> logger)
+        [FromServices] ILogger<UserEndpoint> logger,
+        HttpContext httpContext)
     {
         using var scope = logger.BeginScope("UpdateUser {UserId}:", userId);
 
         try
         {
+            if (httpContext?.User == null)
+            {
+                logger.LogWarning("Access denied: missing or unauthenticated user context.");
+                return Results.Unauthorized();
+            }
+
+            var callerRole = httpContext.User.FindFirst(AuthSettings.RoleClaimType)?.Value;
+            if (string.IsNullOrWhiteSpace(callerRole))
+            {
+                logger.LogWarning("Access denied: no role claim found in user context.");
+                return Results.Forbid();
+            }
+
+            if (!Enum.TryParse<Role>(callerRole, ignoreCase: true, out var parsedCallerRole))
+            {
+                logger.LogWarning("Could not determine caller role.");
+                return Results.Forbid();
+            }
+
+            logger.LogInformation("Caller authenticated with role: {CallerRole}", callerRole);
+
             // Fetch current user to check role
             var existingUser = await accessorClient.GetUserAsync(userId);
             if (existingUser is null)
@@ -165,6 +187,13 @@ public static class UsersEndpoints
             {
                 logger.LogWarning("Non-student tried to set HebrewLevel. Role: {Role}", existingUser.Role);
                 return Results.BadRequest("Hebrew level can only be set for students.");
+            }
+
+            // Only Admins can change role of another user
+            if (user.Role.HasValue && parsedCallerRole != Role.Admin)
+            {
+                logger.LogWarning("Non-admin attempted to change role. Caller role: {CallerRole}", parsedCallerRole);
+                return Results.Forbid();
             }
 
             var success = await accessorClient.UpdateUserAsync(user, userId);
@@ -195,6 +224,7 @@ public static class UsersEndpoints
             return Results.Problem("Failed to delete user.");
         }
     }
+
     private static async Task<IResult> GetAllUsersAsync(
         [FromServices] IAccessorClient accessorClient,
         [FromServices] ILogger<UserEndpoint> logger,

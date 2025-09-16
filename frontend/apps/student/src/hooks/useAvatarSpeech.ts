@@ -11,7 +11,6 @@ interface useAvatarSpeechOptions {
   onAudioEnd?: () => void;
 }
 
-const SPEECH_REGION = import.meta.env.VITE_AZURE_REGION as string | undefined;
 const VISEME_LATENCY_MS = 40; // tweak 20–70 if needed
 const FALLBACK_VISEMES = [3, 5, 8, 10, 0]; // used only if no visemes arrive
 const FALLBACK_STEP_MS = 60;
@@ -190,23 +189,6 @@ export const useAvatarSpeech = ({
       }
 
       try {
-        // Resolve token & region
-        let token = tokenData?.token as string | undefined;
-        let region: string | undefined =
-          (tokenData as unknown as { region?: string })?.region ??
-          SPEECH_REGION;
-
-        if (!token || !region) {
-          const r = await refetch();
-          token = r.data?.token ?? token;
-          region =
-            (r.data as unknown as { region?: string })?.region ??
-            region ??
-            SPEECH_REGION;
-        }
-        if (!token || !region)
-          throw new Error("Speech token/region unavailable.");
-
         // Fresh baseline every call
         hardReset();
         visemeTimelineRef.current = [];
@@ -233,8 +215,8 @@ export const useAvatarSpeech = ({
         };
 
         const speechConfig = SpeechSDK.SpeechConfig.fromAuthorizationToken(
-          token,
-          region,
+          tokenData?.token as string,
+          tokenData?.region as string,
         );
         if (voiceName) speechConfig.speechSynthesisVoiceName = voiceName;
 
