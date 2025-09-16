@@ -9,4 +9,5 @@ public interface ITaskService
     Task CreateTaskAsync(TaskModel task);
     Task<UpdateTaskResult> UpdateTaskNameAsync(int taskId, string newName, string? ifMatch);
     Task<bool> DeleteTaskAsync(int taskId);
+    Task<IReadOnlyList<TaskSummaryDto>> GetAllTaskSummariesAsync(CancellationToken ct = default);
 }
