@@ -1,4 +1,4 @@
-name: Lock / Unlock Featest
+name: Lock / Unlock Featest (via Issue)
 
 on:
   workflow_dispatch:
@@ -9,9 +9,8 @@ on:
         type: choice
         options: [lock, unlock]
 
-permissions:   # 👈 חשוב שזה יהיה ברמת ה־workflow
-  contents: write
-  actions: write
+permissions:
+  issues: write   # 👈 חשוב – הרשאה לניהול issues
 
 jobs:
   manage-lock:
@@ -25,35 +24,40 @@ jobs:
           if [ "$ACTION" = "lock" ]; then
             echo "🔒 Locking featest by $USER"
 
-            gh api \
-              --method PATCH \
-              -H "Accept: application/vnd.github+json" \
-              /repos/${{ github.repository }}/actions/variables/FEATEST_LOCKED \
-              -f value="true"
+            # Check if already locked
+            ISSUE=$(gh issue list \
+              --search "LOCK: featest" \
+              --state open \
+              --json number \
+              --jq '.[0].number' || true)
 
-            gh api \
-              --method PATCH \
-              -H "Accept: application/vnd.github+json" \
-              /repos/${{ github.repository }}/actions/variables/FEATEST_LOCKED_BY \
-              -f value="$USER"
+            if [ -n "$ISSUE" ]; then
+              echo "❌ featest is already locked (issue #$ISSUE)"
+              exit 1
+            fi
+
+            gh issue create \
+              --title "LOCK: featest" \
+              --body "locked_by=$USER\nlocked_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+              --label "lock"
 
             echo "✅ featest is now locked by $USER"
 
           elif [ "$ACTION" = "unlock" ]; then
             echo "🔓 Unlocking featest by $USER"
 
-            gh api \
-              --method PATCH \
-              -H "Accept: application/vnd.github+json" \
-              /repos/${{ github.repository }}/actions/variables/FEATEST_LOCKED \
-              -f value="false"
+            ISSUE=$(gh issue list \
+              --search "LOCK: featest" \
+              --state open \
+              --json number \
+              --jq '.[0].number' || true)
 
-            gh api \
-              --method PATCH \
-              -H "Accept: application/vnd.github+json" \
-              /repos/${{ github.repository }}/actions/variables/FEATEST_LOCKED_BY \
-              -f value="noone"
+            if [ -z "$ISSUE" ]; then
+              echo "ℹ️ featest is not locked"
+              exit 0
+            fi
 
+            gh issue close "$ISSUE" -c "Unlocked by $USER"
             echo "✅ featest is now unlocked by $USER"
           fi
         env:
