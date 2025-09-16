@@ -9,6 +9,10 @@ on:
         default: test
         type: choice
         options: [test, featest]
+      test_filter:
+        description: "Optional: run only tests matching this filter (e.g. FullyQualifiedName~MyNamespace.MyTest)"
+        required: false
+        default: ""
 
   workflow_call:
     inputs:
@@ -17,7 +21,11 @@ on:
         required: false
         type: string
         default: test
-
+      test_filter:
+        description: "Optional: run only tests matching this filter"
+        required: false
+        type: string
+        default: ""
 
 jobs:
   integration-tests:
@@ -54,10 +62,17 @@ jobs:
         run: |
           jq --arg url "https://teachin.westeurope.cloudapp.azure.com/api/${{ inputs.api_stage }}/" \
             '.TestSettings.ApiBaseUrl = $url' appsettings.json > tmp.json && mv tmp.json appsettings.json
-        
 
       - name: Run integration tests
-        run: dotnet test IntegrationTests.csproj --verbosity normal
+        run: |
+          if [ -n "${{ inputs.test_filter }}" ]; then
+            echo "Running only tests matching filter: ${{ inputs.test_filter }}"
+            dotnet test IntegrationTests.csproj --verbosity normal --filter "${{ inputs.test_filter }}"
+          else
+            echo "Running all tests"
+            dotnet test IntegrationTests.csproj --verbosity normal
+          fi
+
 
   #this needs to run even if the tests fail
   # clear-db:
