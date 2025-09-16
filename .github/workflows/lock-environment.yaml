@@ -1,4 +1,4 @@
-name: Lock / Unlock Featest (via Issue)
+name: Lock / Unlock Featest (Single Issue)
 
 on:
   workflow_dispatch:
@@ -16,12 +16,29 @@ jobs:
   manage-lock:
     runs-on: ubuntu-latest
     steps:
-      - name: Ensure lock label exists
+      - name: Ensure lock issue exists
+        id: find-issue
         run: |
-          gh label create lock-featest \
-            --repo "${{ github.repository }}" \
-            --description "Lock for featest environment" \
-            --color FF0000 || true
+          REPO=${{ github.repository }}
+
+          # חפש אם קיים issue בשם "LOCK: featest"
+          ISSUE=$(gh issue list \
+            --repo "$REPO" \
+            --search "LOCK: featest" \
+            --json number \
+            --jq '.[0].number' 2>/dev/null || echo "")
+
+          if [ -z "$ISSUE" ]; then
+            echo "⚠️ No issue found, creating one..."
+            ISSUE=$(gh issue create \
+              --repo "$REPO" \
+              --title "LOCK: featest" \
+              --body "Initial lock issue placeholder" \
+              --json number \
+              --jq '.number')
+          fi
+
+          echo "issue_number=$ISSUE" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
@@ -31,46 +48,22 @@ jobs:
           ACTION=${{ github.event.inputs.action }}
           USER=${GITHUB_ACTOR}
           REPO=${{ github.repository }}
+          ISSUE=${{ steps.find-issue.outputs.issue_number }}
 
           if [ "$ACTION" = "lock" ]; then
             echo "🔒 Locking featest by $USER"
-
-            ISSUE=$(gh issue list \
+            gh issue edit "$ISSUE" \
               --repo "$REPO" \
-              --label "lock-featest" \
-              --state open \
-              --json number \
-              --jq '.[0].number' 2>/dev/null || echo "")
-
-            if [ -n "$ISSUE" ]; then
-              echo "❌ featest is already locked (issue #$ISSUE)"
-              exit 1
-            fi
-
-            gh issue create \
-              --repo "$REPO" \
-              --title "LOCK: featest" \
-              --body "locked_by=$USER\nlocked_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-              --label "lock-featest"
-
+              --add-label "locked" \
+              --body "locked_by=$USER\nlocked_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
             echo "✅ featest is now locked by $USER"
 
           elif [ "$ACTION" = "unlock" ]; then
             echo "🔓 Unlocking featest by $USER"
-
-            ISSUE=$(gh issue list \
+            gh issue edit "$ISSUE" \
               --repo "$REPO" \
-              --label "lock-featest" \
-              --state open \
-              --json number \
-              --jq '.[0].number' 2>/dev/null || echo "")
-
-            if [ -z "$ISSUE" ]; then
-              echo "ℹ️ featest is not locked"
-              exit 0
-            fi
-
-            gh issue close "$ISSUE" --repo "$REPO" -c "Unlocked by $USER"
+              --remove-label "locked" \
+              --body "Unlocked by $USER at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
             echo "✅ featest is now unlocked by $USER"
           fi
         env:
