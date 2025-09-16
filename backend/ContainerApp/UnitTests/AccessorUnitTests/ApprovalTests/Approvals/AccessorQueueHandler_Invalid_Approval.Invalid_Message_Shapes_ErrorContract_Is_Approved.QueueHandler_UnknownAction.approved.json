@@ -4,6 +4,6 @@
     
   "exceptionType":  "DotQueue.NonRetryableException",
     
-  "message":  "No handler for action 9999"
+  "message":  "No handler registered for action 9999"
 
 }

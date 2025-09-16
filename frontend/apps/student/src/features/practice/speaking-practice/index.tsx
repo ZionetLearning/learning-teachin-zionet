@@ -33,7 +33,7 @@ export const SpeakingPractice = () => {
   const { data: azureSpeechToken } = useAzureSpeechToken();
   const speechConfig = sdk.SpeechConfig.fromAuthorizationToken(
     azureSpeechToken?.token ?? "",
-    import.meta.env.VITE_AZURE_REGION!,
+    azureSpeechToken?.region ?? "",
   );
 
   speechConfig.speechSynthesisVoiceName = "he-IL-HilaNeural";
