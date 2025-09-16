@@ -43,8 +43,6 @@ export const TasksList = ({ dir, onTaskSelect, refreshTrigger }: TasksListProps)
   } = useGetAllTasks();
 
   const { mutate: deleteTask, isPending: isDeletingTask } = useDeleteTask();
-
-  // Listen for refresh trigger changes and invalidate queries
   useEffect(() => {
     if (refreshTrigger > 0) {
       queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
