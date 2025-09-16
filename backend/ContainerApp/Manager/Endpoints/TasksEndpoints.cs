@@ -16,6 +16,7 @@ public static class TasksEndpoints
         var tasksGroup = app.MapGroup("/tasks-manager").WithTags("Tasks").RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
 
         tasksGroup.MapGet("/task/{id:int}", GetTaskAsync).WithName("GetTask").RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
+        tasksGroup.MapGet("/tasks", GetTasksAsync).WithName("GetTasks").RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
         tasksGroup.MapPost("/task", CreateTaskAsync).WithName("CreateTask").RequireAuthorization(PolicyNames.AdminOrTeacher);
         tasksGroup.MapPost("/tasklong", CreateTaskLongAsync).WithName("CreateTaskLongTest").RequireAuthorization(PolicyNames.AdminOrTeacher);
         tasksGroup.MapPut("/task/{id:int}/{name}", UpdateTaskNameAsync).WithName("UpdateTaskName").RequireAuthorization(PolicyNames.AdminOrTeacher);
@@ -132,6 +133,23 @@ public static class TasksEndpoints
         }
     }
 
+    private static async Task<IResult> GetTasksAsync(
+    [FromServices] IAccessorClient accessorClient,
+    [FromServices] ILogger<TaskEndpoint> logger)
+    {
+        using var scope = logger.BeginScope("List all tasks");
+        try
+        {
+            var items = await accessorClient.GetTasksWithEtagsAsync();
+            logger.LogInformation("Retrieved {Count} tasks", items?.Count ?? 0);
+            return Results.Ok(items);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error while retrieving tasks list");
+            return Results.Problem("An error occurred while retrieving tasks.");
+        }
+    }
     private static async Task<IResult> UpdateTaskNameAsync(
         [FromRoute] int id,
         [FromRoute] string name,

@@ -9,4 +9,5 @@ public static class TestConstants
     public const string SetCookie = "Set-Cookie";
     public const string UserId = "userId";
     public const string Role = "role";
+    public const string ListRoute = "/tasks-manager/tasks";
 }

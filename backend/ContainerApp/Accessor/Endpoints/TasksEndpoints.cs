@@ -13,6 +13,7 @@ public static class TasksEndpoints
         var tasksGroup = app.MapGroup("/tasks-accessor").WithTags("Tasks");
 
         tasksGroup.MapGet("/task/{id:int}", GetTaskByIdAsync).WithName("GetTaskById");
+        tasksGroup.MapGet("/tasks", GetAllTasksAsync).WithName("GetAllTasks");
         tasksGroup.MapPost("/task", CreateTaskAsync).WithName("CreateTask");
         tasksGroup.MapPatch("/task", UpdateTaskNameAsync).WithName("UpdateTaskName");
         tasksGroup.MapDelete("/task/{taskId:int}", DeleteTaskAsync).WithName("DeleteTask");
@@ -54,6 +55,24 @@ public static class TasksEndpoints
         }
     }
 
+    public static async Task<IResult> GetAllTasksAsync(
+    [FromServices] ITaskService taskService,
+    [FromServices] ILogger<TaskService> logger,
+    CancellationToken ct)
+    {
+        using var scope = logger.BeginScope("Method: {Method}", nameof(GetAllTasksAsync));
+        try
+        {
+            var list = await taskService.GetAllTasksWithEtagsAsync(ct);
+            // returns [{ task, eTag }, ...]
+            return Results.Ok(list);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Unhandled error while retrieving tasks list.");
+            return Results.Problem("An error occurred while fetching the tasks list.");
+        }
+    }
     public static async Task<IResult> CreateTaskAsync(
         [FromBody] TaskModel task,
         [FromServices] ITaskService taskService,

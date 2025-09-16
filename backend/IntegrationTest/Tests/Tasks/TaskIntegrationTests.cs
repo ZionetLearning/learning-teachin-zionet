@@ -130,7 +130,80 @@ public class TaskIntegrationTests(
             await TaskUpdateHelper.WaitForTaskDeletionAsync(Client, first.Id, timeoutSeconds: 20);
         }
     }
+    [Fact(DisplayName = "GET /tasks-manager/tasks - Returns all tasks with per-item ETags")]
+    public async Task Get_Tasks_List_Should_Return_All_With_Etags()
+    {
+        // Arrange: create two tasks
+        var t1 = await CreateTaskAsync();
+        var t2 = await CreateTaskAsync();
 
+        // (optional) ensure both materialized via helper
+        var m1 = await TaskUpdateHelper.WaitForTaskByIdAsync(Client, t1.Id, timeoutSeconds: 30);
+        var m2 = await TaskUpdateHelper.WaitForTaskByIdAsync(Client, t2.Id, timeoutSeconds: 30);
+
+        // Act
+        var resp = await Client.GetAsync(TestConstants.ListRoute);
+        resp.EnsureSuccessStatusCode();
+
+        var list = await resp.Content.ReadFromJsonAsync<List<TaskWithEtagDto>>();
+        list.Should().NotBeNull();
+        list!.Should().NotBeEmpty();
+
+        // Assert: our two tasks exist in list and have ETags
+        var i1 = list.FirstOrDefault(x => x.Task.Id == t1.Id);
+        var i2 = list.FirstOrDefault(x => x.Task.Id == t2.Id);
+
+        i1.Should().NotBeNull("newly created task 1 must be in the list");
+        i2.Should().NotBeNull("newly created task 2 must be in the list");
+
+        i1!.ETag.Should().NotBeNullOrWhiteSpace("each item must carry an ETag");
+        i2!.ETag.Should().NotBeNullOrWhiteSpace();
+
+        // Clean up
+        (await Client.DeleteAsync(ApiRoutes.TaskById(t1.Id))).EnsureSuccessStatusCode();
+        (await Client.DeleteAsync(ApiRoutes.TaskById(t2.Id))).EnsureSuccessStatusCode();
+        await TaskUpdateHelper.WaitForTaskDeletionAsync(Client, t1.Id);
+        await TaskUpdateHelper.WaitForTaskDeletionAsync(Client, t2.Id);
+    }
+
+    [Fact(DisplayName = "GET /tasks-manager/tasks - Reflects fresh ETag after a single-item update")]
+    public async Task Get_Tasks_List_Should_Reflect_Etag_After_Update()
+    {
+        // Arrange: create one task
+        var task = await CreateTaskAsync();
+
+        // Baseline: get current list and pull our item's ETag
+        var beforeResp = await Client.GetAsync(TestConstants.ListRoute);
+        beforeResp.EnsureSuccessStatusCode();
+        var beforeList = await beforeResp.Content.ReadFromJsonAsync<List<TaskWithEtagDto>>();
+        beforeList.Should().NotBeNull();
+        var beforeItem = beforeList!.FirstOrDefault(x => x.Task.Id == task.Id);
+        beforeItem.Should().NotBeNull("created task must appear in list");
+        var etagBefore = beforeItem!.ETag;
+        etagBefore.Should().NotBeNullOrWhiteSpace();
+
+        // Act: update the task name with If-Match
+        var newName = task.Name + "-updated";
+        var updateResp = await UpdateTaskNameAsync(task.Id, newName, ifMatch: null /* auto-fetches in helper */);
+        updateResp.EnsureSuccessStatusCode();
+
+        // Re-query list
+        var afterResp = await Client.GetAsync(TestConstants.ListRoute);
+        afterResp.EnsureSuccessStatusCode();
+        var afterList = await afterResp.Content.ReadFromJsonAsync<List<TaskWithEtagDto>>();
+        afterList.Should().NotBeNull();
+
+        // Assert: item exists, name updated (via eventual consistency helpers), and ETag changed
+        var afterItem = afterList!.FirstOrDefault(x => x.Task.Id == task.Id);
+        afterItem.Should().NotBeNull();
+        afterItem!.Task.Name.Should().Be(newName);
+        afterItem.ETag.Should().NotBeNullOrWhiteSpace();
+        afterItem.ETag.Should().NotBe(etagBefore, "rowversion/xmin should advance after update");
+
+        // Clean up
+        (await Client.DeleteAsync(ApiRoutes.TaskById(task.Id))).EnsureSuccessStatusCode();
+        await TaskUpdateHelper.WaitForTaskDeletionAsync(Client, task.Id);
+    }
     [Fact(DisplayName = "GET /tasks-manager/task/{id} - With valid ID should return task")]
     public async Task Get_Task_By_Valid_Id_Should_Return_Task()
     {
