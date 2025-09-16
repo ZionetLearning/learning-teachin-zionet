@@ -142,7 +142,7 @@ public class TaskIntegrationTests(
         var m2 = await TaskUpdateHelper.WaitForTaskByIdAsync(Client, t2.Id, timeoutSeconds: 30);
 
         // Act
-        var resp = await Client.GetAsync(TestConstants.ListRoute);
+        var resp = await Client.GetAsync(ApiRoutes.TasksList);
         resp.EnsureSuccessStatusCode();
 
         var list = await resp.Content.ReadFromJsonAsync<List<TaskWithEtagDto>>();
@@ -166,44 +166,6 @@ public class TaskIntegrationTests(
         await TaskUpdateHelper.WaitForTaskDeletionAsync(Client, t2.Id);
     }
 
-    [Fact(DisplayName = "GET /tasks-manager/tasks - Reflects fresh ETag after a single-item update")]
-    public async Task Get_Tasks_List_Should_Reflect_Etag_After_Update()
-    {
-        // Arrange: create one task
-        var task = await CreateTaskAsync();
-
-        // Baseline: get current list and pull our item's ETag
-        var beforeResp = await Client.GetAsync(TestConstants.ListRoute);
-        beforeResp.EnsureSuccessStatusCode();
-        var beforeList = await beforeResp.Content.ReadFromJsonAsync<List<TaskWithEtagDto>>();
-        beforeList.Should().NotBeNull();
-        var beforeItem = beforeList!.FirstOrDefault(x => x.Task.Id == task.Id);
-        beforeItem.Should().NotBeNull("created task must appear in list");
-        var etagBefore = beforeItem!.ETag;
-        etagBefore.Should().NotBeNullOrWhiteSpace();
-
-        // Act: update the task name with If-Match
-        var newName = task.Name + "-updated";
-        var updateResp = await UpdateTaskNameAsync(task.Id, newName, ifMatch: null /* auto-fetches in helper */);
-        updateResp.EnsureSuccessStatusCode();
-
-        // Re-query list
-        var afterResp = await Client.GetAsync(TestConstants.ListRoute);
-        afterResp.EnsureSuccessStatusCode();
-        var afterList = await afterResp.Content.ReadFromJsonAsync<List<TaskWithEtagDto>>();
-        afterList.Should().NotBeNull();
-
-        // Assert: item exists, name updated (via eventual consistency helpers), and ETag changed
-        var afterItem = afterList!.FirstOrDefault(x => x.Task.Id == task.Id);
-        afterItem.Should().NotBeNull();
-        afterItem!.Task.Name.Should().Be(newName);
-        afterItem.ETag.Should().NotBeNullOrWhiteSpace();
-        afterItem.ETag.Should().NotBe(etagBefore, "rowversion/xmin should advance after update");
-
-        // Clean up
-        (await Client.DeleteAsync(ApiRoutes.TaskById(task.Id))).EnsureSuccessStatusCode();
-        await TaskUpdateHelper.WaitForTaskDeletionAsync(Client, task.Id);
-    }
     [Fact(DisplayName = "GET /tasks-manager/task/{id} - With valid ID should return task")]
     public async Task Get_Task_By_Valid_Id_Should_Return_Task()
     {

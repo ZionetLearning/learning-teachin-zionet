@@ -6,4 +6,5 @@ public class AiRoutes
     public static string GetHistory(Guid chatId, Guid userId) => $"ai-manager/chat/{chatId}/{userId}";
 
     public const string GetChats = "ai-manager/chats";
+    public const string TasksList = "tasks-manager/tasks";
 }
