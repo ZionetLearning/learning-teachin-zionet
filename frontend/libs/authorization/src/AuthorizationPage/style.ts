@@ -110,7 +110,7 @@ export const useStyles = createUseStyles({
   authPageError: {
     color: "red",
     fontSize: "0.85rem",
-    minHeight: "1.125rem",
+    minHeight: "1.3rem",
   },
   authPageSubmit: {
     padding: "0.75rem",
