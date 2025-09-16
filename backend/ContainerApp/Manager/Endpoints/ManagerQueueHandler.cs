@@ -9,41 +9,27 @@ using Manager.Models.Sentences;
 using Manager.Services;
 
 namespace Manager.Endpoints;
-public class ManagerQueueHandler : IQueueHandler<Message>
+public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
 {
     private readonly INotificationService _notificationService;
     private readonly ILogger<ManagerQueueHandler> _logger;
-    private readonly Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>> _handlers;
+    protected override MessageAction GetAction(Message message) => message.ActionName;
+
+    protected override void Configure(RouteBuilder routes) => routes
+        .On(MessageAction.NotifyUser, HandleNotifyUserAsync)
+        .On(MessageAction.ProcessingChatMessage, HandleAIChatAnswerAsync)
+        .On(MessageAction.GenerateSentences, HandleGenerateAnswer)
+        .On(MessageAction.GenerateSplitSentences, HandleGenerateSplitAnswer);
 
     public ManagerQueueHandler(
         ILogger<ManagerQueueHandler> logger,
-        INotificationService notificationService)
+        INotificationService notificationService) : base(logger)
     {
         _notificationService = notificationService;
         _logger = logger;
-        _handlers = new Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>>
-        {
-            [MessageAction.NotifyUser] = HandleNotifyUserAsync,
-            [MessageAction.ProcessingChatMessage] = HandleAIChatAnswerAsync,
-            [MessageAction.GenerateSentences] = HandleGenerateAnswer,
-            [MessageAction.GenerateSplitSentences] = HandleGenerateSplitAnswer
-        };
     }
 
-    public async Task HandleAsync(Message message, IReadOnlyDictionary<string, string>? metadataCallback, Func<Task> renewLock, CancellationToken cancellationToken)
-    {
-        if (_handlers.TryGetValue(message.ActionName, out var handler))
-        {
-            await handler(message, renewLock, cancellationToken);
-        }
-        else
-        {
-            _logger.LogWarning("No handler for action {Action}", message.ActionName);
-            throw new NonRetryableException($"No handler for action {message.ActionName}");
-        }
-    }
-
-    public async Task HandleNotifyUserAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
+    public async Task HandleNotifyUserAsync(Message message, IReadOnlyDictionary<string, string>? metadata, Func<Task> renewLock, CancellationToken cancellationToken)
     {
         try
         {
@@ -54,13 +40,13 @@ public class ManagerQueueHandler : IQueueHandler<Message>
                 throw new NonRetryableException("Payload deserialization returned null for UserNotification.");
             }
 
-            UserContextMetadata? metadata = null;
+            UserContextMetadata? userContextMetadata = null;
             if (message.Metadata.HasValue)
             {
-                metadata = JsonSerializer.Deserialize<UserContextMetadata>(message.Metadata.Value);
+                userContextMetadata = JsonSerializer.Deserialize<UserContextMetadata>(message.Metadata.Value);
             }
 
-            if (metadata is null)
+            if (userContextMetadata is null)
             {
                 _logger.LogWarning("Metadata is null for NotifyUser action");
                 throw new NonRetryableException("User Metadata is required for NotifyUser action.");
@@ -74,10 +60,10 @@ public class ManagerQueueHandler : IQueueHandler<Message>
                     $"Validation failed for {nameof(UserNotification)}: {string.Join("; ", validationErrors)}");
             }
 
-            _logger.LogInformation("Processing notification {MessageId} for user {UserId}", metadata.MessageId, metadata.UserId);
+            _logger.LogInformation("Processing notification {MessageId} for user {UserId}", userContextMetadata.MessageId, userContextMetadata.UserId);
 
-            await _notificationService.SendNotificationAsync(metadata.UserId, notification);
-            _logger.LogInformation("Notification processed for user {UserId}", metadata.UserId);
+            await _notificationService.SendNotificationAsync(userContextMetadata.UserId, notification);
+            _logger.LogInformation("Notification processed for user {UserId}", userContextMetadata.UserId);
         }
         catch (NonRetryableException ex)
         {
@@ -102,7 +88,7 @@ public class ManagerQueueHandler : IQueueHandler<Message>
         }
     }
 
-    public async Task HandleAIChatAnswerAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
+    public async Task HandleAIChatAnswerAsync(Message message, IReadOnlyDictionary<string, string>? metadata, Func<Task> renewLock, CancellationToken cancellationToken)
     {
         try
         {
@@ -113,13 +99,13 @@ public class ManagerQueueHandler : IQueueHandler<Message>
                 throw new NonRetryableException("Payload deserialization returned null for EngineChatResponse.");
             }
 
-            UserContextMetadata? metadata = null;
+            UserContextMetadata? userContextMetadata = null;
             if (message.Metadata.HasValue)
             {
-                metadata = JsonSerializer.Deserialize<UserContextMetadata>(message.Metadata.Value);
+                userContextMetadata = JsonSerializer.Deserialize<UserContextMetadata>(message.Metadata.Value);
             }
 
-            if (metadata is null)
+            if (userContextMetadata is null)
             {
                 _logger.LogWarning("Metadata is null for ProcessingChatMessage action");
                 throw new NonRetryableException("Chat Metadata is required for ProcessingChatMessage action.");
@@ -139,7 +125,7 @@ public class ManagerQueueHandler : IQueueHandler<Message>
                 Payload = chatResponse,
             };
 
-            await _notificationService.SendEventAsync(userEvent.EventType, metadata.UserId, userEvent.Payload);
+            await _notificationService.SendEventAsync(userEvent.EventType, userContextMetadata.UserId, userEvent.Payload);
 
         }
         catch (NonRetryableException ex)
@@ -164,7 +150,7 @@ public class ManagerQueueHandler : IQueueHandler<Message>
             throw new RetryableException("Transient error while processing AI chat answer.", ex);
         }
     }
-    public async Task HandleGenerateAnswer(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
+    public async Task HandleGenerateAnswer(Message message, IReadOnlyDictionary<string, string>? metadata, Func<Task> renewLock, CancellationToken cancellationToken)
     {
         try
         {
@@ -220,7 +206,7 @@ public class ManagerQueueHandler : IQueueHandler<Message>
             throw new RetryableException("Transient error while processing answer.", ex);
         }
     }
-    public async Task HandleGenerateSplitAnswer(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
+    public async Task HandleGenerateSplitAnswer(Message message, IReadOnlyDictionary<string, string>? metadata, Func<Task> renewLock, CancellationToken cancellationToken)
     {
         try
         {
