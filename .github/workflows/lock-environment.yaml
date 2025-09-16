@@ -10,21 +10,24 @@ on:
         options: [lock, unlock]
 
 permissions:
-  issues: write
+  issues: write   # 👈 חובה
 
 jobs:
   manage-lock:
     runs-on: ubuntu-latest
     steps:
+      - name: Check gh CLI
+        run: gh --version
+
       - name: Manage lock state
         run: |
+          set -x
           ACTION=${{ github.event.inputs.action }}
           USER=${GITHUB_ACTOR}
 
           if [ "$ACTION" = "lock" ]; then
             echo "🔒 Locking featest by $USER"
 
-            # Check if already locked
             ISSUE=$(gh issue list \
               --search "LOCK: featest" \
               --state open \
