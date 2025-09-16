@@ -66,6 +66,8 @@ jobs:
             echo "TARGET_NAMESPACE=dev" >> $GITHUB_ENV
             echo "RESOLVED_TARGET=dev" >> $GITHUB_ENV
           fi
+          echo TARGET_NAMESPACE=$TARGET_NAMESPACE
+          echo RESOLVED_TARGET=$RESOLVED_TARGET 
 
           echo "K8S_DIR=devops/kubernetes/" >> $GITHUB_ENV
           echo "CHART_DIR=devops/kubernetes/charts" >> $GITHUB_ENV
@@ -75,6 +77,7 @@ jobs:
           else
               main_val=dev
           fi
+          echo "MAIN_VAL=$main_val" 
           
           #---------------- AKS ------------------------
           echo "AKS_RG=${main_val}-zionet-learning-2025" >> $GITHUB_ENV
