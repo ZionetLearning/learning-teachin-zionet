@@ -394,8 +394,11 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
             PayloadValidation.ValidateSentenceGenerationRequest(payload, _logger);
 
+            // inject user interests
+            var userInterests = await _accessorClient.GetUserInterestsAsync(payload.UserId, cancellationToken);
+
             _logger.LogDebug("Processing sentence generation");
-            var response = await _sentencesService.GenerateAsync(payload, cancellationToken);
+            var response = await _sentencesService.GenerateAsync(payload, userInterests, cancellationToken);
             var userId = payload.UserId;
             await _publisher.SendGeneratedMessagesAsync(userId.ToString(), response, message.ActionName, cancellationToken);
         }
