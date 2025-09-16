@@ -292,13 +292,10 @@ jobs:
           # Ensure devops-tools namespace exists
           kubectl create namespace devops-tools --dry-run=client -o yaml | kubectl apply -f -
 
-          # Apply ExternalSecret directly (no sed hack needed)
-          kubectl apply -f devops/kubernetes/secrets/externalsecret-langfuse.yaml
-
           # Deploy Langfuse using helm script
           cd devops/helm-tools
           chmod +x langfuse.sh
-          ./langfuse.sh
+          ./langfuse.sh $TARGET_NAMESPACE
 
           # Apply Langfuse ingress
           kubectl apply -f "../kubernetes/ingress/langfuse-ingress.yaml"
