@@ -16,6 +16,7 @@ public sealed class TestKernelPluginFix : IAsyncLifetime
         var endpoint = cfg["AzureOpenAI:Endpoint"];
         var apiKey = cfg["AzureOpenAI:ApiKey"];
         var deployment = cfg["AzureOpenAI:DeploymentName"];
+        var path = "Plugins/Sentences";
 
         if (string.IsNullOrWhiteSpace(endpoint) ||
             string.IsNullOrWhiteSpace(apiKey) ||
@@ -24,7 +25,7 @@ public sealed class TestKernelPluginFix : IAsyncLifetime
             throw new SkipException("No Azure OpenAI config -> skip 'gen' AI tests");
         }
 
-        var pluginDir = ResolvePluginsDir("Plugins/Sentences");
+        var pluginDir = ResolvePluginsDir(path);
         if (pluginDir is null || !Directory.Exists(pluginDir))
         {
             throw new SkipException($"Prompt plugin directory not found: {pluginDir ?? "(null)"}");
