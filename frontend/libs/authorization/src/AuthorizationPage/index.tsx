@@ -84,7 +84,7 @@ export const AuthorizationPage = ({ allowedRoles }: AuthorizationPageProps) => {
       </header>
       <div className={classes.authPageContent}>
         <div className={classes.authPageContainer}>
-          <h2
+          <div
             className={classes.authPageSubtitle}
             data-testid="auth-role-heading"
           >
@@ -93,7 +93,7 @@ export const AuthorizationPage = ({ allowedRoles }: AuthorizationPageProps) => {
               : appRole === "student"
                 ? t("pages.auth.studentDashboard")
                 : t("pages.auth.adminDashboard")}
-          </h2>
+          </div>
           <div className={classes.authPageTabs}>
             {[authMode.login, authMode.signup].map((tab) => (
               <button
@@ -108,7 +108,11 @@ export const AuthorizationPage = ({ allowedRoles }: AuthorizationPageProps) => {
               </button>
             ))}
           </div>
-
+          {authError && (
+            <div className={classes.authPageError} data-testid="auth-error">
+              {authError}
+            </div>
+          )}
           {mode === authMode.login ? (
             <Formik<LoginValues>
               key="login"
@@ -129,14 +133,6 @@ export const AuthorizationPage = ({ allowedRoles }: AuthorizationPageProps) => {
             >
               {({ isSubmitting }) => (
                 <Form className={classes.authPageForm}>
-                  {authError && (
-                    <div
-                      className={classes.authPageError}
-                      data-testid="auth-error"
-                    >
-                      {authError}
-                    </div>
-                  )}
                   <div>
                     <Field
                       name="email"
