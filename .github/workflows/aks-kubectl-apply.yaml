@@ -56,18 +56,22 @@ jobs:
 
       - name: Set up variables
         run: |
-          ENVIRONMENT_NAME="${{ inputs.environment_name || github.event.inputs.environment_name }}"
 
+          ENVIRONMENT_NAME="${{ inputs.environment_name || github.event.inputs.environment_name }}"
           if [ -n "$ENVIRONMENT_NAME" ]; then
             [[ "$ENVIRONMENT_NAME" =~ ^[a-z0-9]+$ ]] || { echo "environment_name must be ^[a-z0-9]+$"; exit 1; }
-            echo "TARGET_NAMESPACE=$ENVIRONMENT_NAME" >> $GITHUB_ENV
-            echo "RESOLVED_TARGET=custom($ENVIRONMENT_NAME)" >> $GITHUB_ENV
+            TARGET_NAMESPACE="$ENVIRONMENT_NAME"
+            RESOLVED_TARGET="custom($ENVIRONMENT_NAME)"
+            echo "TARGET_NAMESPACE=$TARGET_NAMESPACE" >> $GITHUB_ENV
+            echo "RESOLVED_TARGET=$RESOLVED_TARGET" >> $GITHUB_ENV
           else
-            echo "TARGET_NAMESPACE=dev" >> $GITHUB_ENV
-            echo "RESOLVED_TARGET=dev" >> $GITHUB_ENV
+            TARGET_NAMESPACE="dev"
+            RESOLVED_TARGET="dev"
+            echo "TARGET_NAMESPACE=$TARGET_NAMESPACE" >> $GITHUB_ENV
+            echo "RESOLVED_TARGET=$RESOLVED_TARGET" >> $GITHUB_ENV
           fi
           echo TARGET_NAMESPACE=$TARGET_NAMESPACE
-          echo RESOLVED_TARGET=$RESOLVED_TARGET 
+          echo RESOLVED_TARGET=$RESOLVED_TARGET
 
           echo "K8S_DIR=devops/kubernetes/" >> $GITHUB_ENV
           echo "CHART_DIR=devops/kubernetes/charts" >> $GITHUB_ENV
