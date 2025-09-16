@@ -9,36 +9,58 @@ variable "vnet_address_space" {
   type        = list(string)
   default     = ["10.10.0.0/16"]
 }
-
 variable "aks_subnet_prefix" {
   description = "Address prefix for AKS subnet."
   type        = string
   default     = "10.10.1.0/24"
 }
-
 variable "aks_subnet_name" {
   description = "Name for AKS subnet."
   type        = string
   default     = "aks-subnet"
 }
+
 variable "use_existing_network" {
   description = "Whether to use an existing network instead of creating a new one."
   type        = bool
   default     = false
+  validation {
+    condition = var.use_existing_network == false || (
+      var.existing_network_rg != null &&
+      var.existing_vnet_name != null &&
+      var.existing_aks_subnet_name != null &&
+      var.existing_db_vnet_name != null &&
+      var.existing_db_subnet_name != null
+    )
+    error_message = "When use_existing_network=true you must set existing_network_rg, existing_vnet_name, existing_aks_subnet_name, existing_db_vnet_name, existing_db_subnet_name."
+  }
 }
 
-# Map of existing networks keyed by environment name (dev/prod).
-variable "existing_networks" {
-  description = "Map of existing network definitions keyed by environment (e.g., dev, prod). Each value is an object with vnet/subnet names and RGs."
-  type = map(object({
-    vnet_name       = string
-    vnet_rg         = string
-    aks_subnet_name = string
-    db_vnet_name    = string
-    db_vnet_rg      = string
-    db_subnet_name  = string
-  }))
-  default = {}
+# Reuse path identifiers
+variable "existing_network_rg" {
+  description = "RG of existing networks"
+  type        = string
+  default     = null
+}
+variable "existing_vnet_name" {
+  description = "Existing main VNet name"
+  type        = string
+  default     = null
+}
+variable "existing_aks_subnet_name" {
+  description = "Existing AKS subnet name"
+  type        = string
+  default     = null
+}
+variable "existing_db_vnet_name" {
+  description = "Existing DB VNet name"
+  type        = string
+  default     = null
+}
+variable "existing_db_subnet_name" {
+  description = "Existing DB subnet name"
+  type        = string
+  default     = null
 }
 
 #------------- Database VNet Variables -------------
@@ -57,7 +79,6 @@ variable "db_subnet_name" {
   type        = string
   default     = "db-subnet"
 }
-
 variable "db_subnet_prefix" {
   description = "Address prefix for the database subnet"
   type        = string

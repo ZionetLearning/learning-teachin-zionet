@@ -13,19 +13,26 @@ resource "azurerm_resource_group" "main" {
 #########################################
 
 
+# only build/resolve network for dev/prod
+locals {
+  enable_network = contains(["dev", "prod"], var.environment_name)
+}
+
+# CREATE new network (dev/prod) when not reusing
 module "network" {
-  count               = local.use_existing_network_effective ? 0 : 1
-  source              = "./modules/network"
+  count  = local.enable_network && !var.use_existing_network ? 1 : 0
+  source = "./modules/network"
+
   vnet_name           = "${var.environment_name}-${var.vnet_name}"
   address_space       = var.vnet_address_space
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
 
-  # AKS subnet configuration
+  # AKS subnet
   aks_subnet_name   = "${var.environment_name}-${var.aks_subnet_name}"
   aks_subnet_prefix = var.aks_subnet_prefix
 
-  # Database VNet configuration
+  # DB VNet + subnet
   db_vnet_name          = "${var.environment_name}-${var.db_vnet_name}"
   db_vnet_address_space = var.db_vnet_address_space
   db_vnet_location      = var.db_location
@@ -35,75 +42,60 @@ module "network" {
   depends_on = [azurerm_resource_group.main]
 }
 
-# Consolidated lookups for existing VNets/subnets when reusing network
+# REUSE existing network (dev/prod) when requested
+data "azurerm_virtual_network" "existing_main" {
+  count               = local.enable_network && var.use_existing_network ? 1 : 0
+  name                = var.existing_vnet_name
+  resource_group_name = var.existing_network_rg
+}
+
+data "azurerm_subnet" "existing_aks" {
+  count                = local.enable_network && var.use_existing_network ? 1 : 0
+  name                 = var.existing_aks_subnet_name
+  virtual_network_name = data.azurerm_virtual_network.existing_main[0].name
+  resource_group_name  = var.existing_network_rg
+}
+
+data "azurerm_virtual_network" "existing_db" {
+  count               = local.enable_network && var.use_existing_network ? 1 : 0
+  name                = var.existing_db_vnet_name
+  resource_group_name = var.existing_network_rg
+}
+
+data "azurerm_subnet" "existing_db_subnet" {
+  count                = local.enable_network && var.use_existing_network ? 1 : 0
+  name                 = var.existing_db_subnet_name
+  virtual_network_name = data.azurerm_virtual_network.existing_db[0].name
+  resource_group_name  = var.existing_network_rg
+}
+
+# Canonical IDs used by all consumers (AKS / Postgres etc.)
 locals {
-  # Effective rule: dev and prod create their own VNet; all other environments reuse the dev VNet
-  use_existing_network_effective = contains(["dev", "prod"], var.environment_name) ? false : true
+  vnet_id = local.enable_network ? (
+    var.use_existing_network
+    ? data.azurerm_virtual_network.existing_main[0].id
+    : module.network[0].vnet_id
+  ) : null
 
-  # pick the existing network definition for the current environment (or fall back to dev) only when effective flag is true
-  selected_existing_net = local.use_existing_network_effective ? lookup(var.existing_networks, var.environment_name, lookup(var.existing_networks, "dev", null)) : null
+  aks_subnet_id = local.enable_network ? (
+    var.use_existing_network
+    ? data.azurerm_subnet.existing_aks[0].id
+    : module.network[0].aks_subnet_id
+  ) : null
 
-  existing_vnets_map = local.selected_existing_net != null ? merge(
-    local.selected_existing_net.vnet_name != "" ? { (local.selected_existing_net.vnet_name) = { name = local.selected_existing_net.vnet_name, rg = local.selected_existing_net.vnet_rg } } : {},
-    local.selected_existing_net.db_vnet_name != "" ? { (local.selected_existing_net.db_vnet_name) = { name = local.selected_existing_net.db_vnet_name, rg = local.selected_existing_net.db_vnet_rg } } : {}
-  ) : {}
+  database_vnet_id = local.enable_network ? (
+    var.use_existing_network
+    ? data.azurerm_virtual_network.existing_db[0].id
+    : module.network[0].database_vnet_id
+  ) : null
 
-  existing_subnets_map = local.selected_existing_net != null ? merge(
-    local.selected_existing_net.aks_subnet_name != "" ? { (local.selected_existing_net.aks_subnet_name) = { name = local.selected_existing_net.aks_subnet_name, vnet = local.selected_existing_net.vnet_name, rg = local.selected_existing_net.vnet_rg } } : {},
-    local.selected_existing_net.db_subnet_name != "" ? { (local.selected_existing_net.db_subnet_name) = { name = local.selected_existing_net.db_subnet_name, vnet = (local.selected_existing_net.db_vnet_name != "" ? local.selected_existing_net.db_vnet_name : local.selected_existing_net.vnet_name), rg = (local.selected_existing_net.db_vnet_rg != "" ? local.selected_existing_net.db_vnet_rg : local.selected_existing_net.vnet_rg) } } : {}
-  ) : {}
-
-  # Validation: fail fast with a clear error when reuse is required but essential fields are missing
-  validate_existing_network_config = local.use_existing_network_effective ? (
-    local.selected_existing_net == null ? error("use_existing_network is true for this environment but no entry found in var.existing_networks (and no dev fallback). Provide an existing_networks entry for this environment or for 'dev'.") : (
-      # Check required name fields are non-empty when reuse is requested
-      (
-        (
-          local.selected_existing_net.vnet_name == "" && local.selected_existing_net.db_vnet_name == "" 
-        ) ? error("existing_networks entry must include at least one vnet_name or db_vnet_name for the selected environment when reusing network") : true
-      ) && (
-        (
-          local.selected_existing_net.aks_subnet_name == "" && local.selected_existing_net.db_subnet_name == ""
-        ) ? error("existing_networks entry must include at least one subnet name (aks_subnet_name or db_subnet_name) for the selected environment when reusing network") : true
-      )
-    )
-  ) : true
+  database_subnet_id = local.enable_network ? (
+    var.use_existing_network
+    ? data.azurerm_subnet.existing_db_subnet[0].id
+    : module.network[0].database_subnet_id
+  ) : null
 }
 
-data "azurerm_virtual_network" "existing" {
-  for_each = local.existing_vnets_map
-  name                = each.value.name
-  resource_group_name = each.value.rg
-}
-
-data "azurerm_subnet" "existing" {
-  for_each = local.existing_subnets_map
-  name                 = each.value.name
-  virtual_network_name = each.value.vnet
-  resource_group_name  = each.value.rg
-}
-
-locals {
-  # Prefer data lookups keyed by real resource names when use_existing_network is true
-  vnet_id = local.use_existing_network_effective ? (
-    length(local.existing_vnets_map) > 0 ? (
-      # pick the default vnet (the one matching selected_existing_net.vnet_name) if present, otherwise first available
-      contains(keys(local.existing_vnets_map), local.selected_existing_net.vnet_name) ? data.azurerm_virtual_network.existing[local.selected_existing_net.vnet_name].id : values(data.azurerm_virtual_network.existing)[0].id
-    ) : module.network[0].vnet_id
-  ) : module.network[0].vnet_id
-
-  aks_subnet_id = local.use_existing_network_effective ? (
-    contains(keys(local.existing_subnets_map), local.selected_existing_net.aks_subnet_name) ? data.azurerm_subnet.existing[local.selected_existing_net.aks_subnet_name].id : (length(data.azurerm_subnet.existing) > 0 ? values(data.azurerm_subnet.existing)[0].id : module.network[0].aks_subnet_id)
-  ) : module.network[0].aks_subnet_id
-
-  database_vnet_id = local.use_existing_network_effective ? (
-    local.selected_existing_net.db_vnet_name != "" && contains(keys(local.existing_vnets_map), local.selected_existing_net.db_vnet_name) ? data.azurerm_virtual_network.existing[local.selected_existing_net.db_vnet_name].id : module.network[0].database_vnet_id
-  ) : module.network[0].database_vnet_id
-
-  database_subnet_id = local.use_existing_network_effective ? (
-    local.selected_existing_net.db_subnet_name != "" && contains(keys(local.existing_subnets_map), local.selected_existing_net.db_subnet_name) ? data.azurerm_subnet.existing[local.selected_existing_net.db_subnet_name].id : module.network[0].database_subnet_id
-  ) : module.network[0].database_subnet_id
-}
 
 ########################################
 # 1. Azure infra: RG, AKS (conditional), Service Bus, Postgres and SignalR, Redis
@@ -141,14 +133,14 @@ locals {
 }
 
 module "servicebus" {
-  source              = "./modules/servicebus"
-  resource_group_name = azurerm_resource_group.main.name
-  location            = var.location
-  namespace_name      = "${var.environment_name}-${var.servicebus_namespace}"
-  sku                 = var.servicebus_sku
-  queue_names         = var.queue_names
+  source                 = "./modules/servicebus"
+  resource_group_name    = azurerm_resource_group.main.name
+  location               = var.location
+  namespace_name         = "${var.environment_name}-${var.servicebus_namespace}"
+  sku                    = var.servicebus_sku
+  queue_names            = var.queue_names
   session_enabled_queues = var.session_enabled_queues
-  depends_on          = [azurerm_resource_group.main]
+  depends_on             = [azurerm_resource_group.main]
 }
 #--------------------PostgreSQL-----------------------
 ## Shared PostgreSQL server (created only once, in main RG)

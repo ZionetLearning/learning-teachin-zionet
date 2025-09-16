@@ -1,17 +1,14 @@
-#------------- Shared AKS Configuration -------------
+#------------- Resource Configuration -------------
+location               = "westeurope"
 environment_name       = "dev"
+subscription_id        = "90ea4c2f-1eee-4ec9-927d-ed24c563003e"
+tenant_id              = "a814ee32-f813-4a36-9686-1b9268183e27"
+#------------- Shared AKS Configuration -------------
 use_shared_aks         = false  # dev still uses its own cluster
 kubernetes_namespace   = "dev"
 aks_cluster_name       = "aks-cluster-dev"
-#------------- Resource Configuration -------------
-location               = "westeurope"
-
 #------------- Shared Postgres Configuration -------------
 use_shared_postgres        = false  # If false, create server (dev); if true, use shared server (non-dev)
-
-#------------- Azure Configuration-------------------
-subscription_id        = "90ea4c2f-1eee-4ec9-927d-ed24c563003e"
-tenant_id              = "a814ee32-f813-4a36-9686-1b9268183e27"
 
 #---- docker hub ----------------------------
 docker_registry        = "snir1551"
@@ -25,6 +22,9 @@ frontend_apps          = ["student", "teacher", "admin"]    # Dev environment us
 use_shared_redis = false  # dev uses its own Redis instance
 #-------------- Network -------------------------
 use_existing_network = false
-
-# Example existing networks map (empty here because dev creates network)
-existing_networks = {}
+# If you want to reuse instead, flip to true and set:
+# existing_network_rg       = "dev-zionet-learning-2025"
+# existing_vnet_name        = "dev-vnet"
+# existing_aks_subnet_name  = "dev-aks-subnet"
+# existing_db_vnet_name     = "dev-db-vnet"
+# existing_db_subnet_name   = "dev-db-subnet"

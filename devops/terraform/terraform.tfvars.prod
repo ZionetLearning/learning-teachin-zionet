@@ -1,15 +1,15 @@
+
+#------------- Resource Configuration -------------
+location               = "westeurope"
+environment_name       = "prod"
+subscription_id        = "90ea4c2f-1eee-4ec9-927d-ed24c563003e"
+tenant_id              = "a814ee32-f813-4a36-9686-1b9268183e27"
 #------------- AKS Configuration -------------
 use_shared_aks         = false   # If false, create aks ; if true, use shared aks 
 aks_cluster_name        = "aks-cluster-prod"
 kubernetes_namespace   = "prod"
-#------------- Resource Configuration -------------
-location               = "westeurope"
-environment_name       = "prod"
 #------------- Shared Posgtres  Configuration -------------
 use_shared_postgres        = false  # If false, create server ; if true, use shared server 
-#------------- Azure Configuration-------------------
-subscription_id        = "90ea4c2f-1eee-4ec9-927d-ed24c563003e"
-tenant_id              = "a814ee32-f813-4a36-9686-1b9268183e27"
 #---- docker hub ----------------------------
 docker_registry        = "snir1551"
 #------------- Frontend Configuration -------------
@@ -20,5 +20,12 @@ frontend_apps          = ["student", "teacher", "admin"]
 use_shared_redis = false  # If false, create server ; if true, use shared server 
 redis_name = "redis-teachin-prod"
 #-------------- Network -------------------------
+# Networking (PROD uses network; choose create vs reuse)
 use_existing_network = false
- # prod will create its own VNet (default behavior)
+# If reusing:
+# existing_network_rg       = "prod-zionet-learning-2025"
+# existing_vnet_name        = "prod-vnet"
+# existing_aks_subnet_name  = "prod-aks-subnet"
+# existing_db_vnet_name     = "prod-db-vnet"
+# existing_db_subnet_name   = "prod-db-subnet"
+

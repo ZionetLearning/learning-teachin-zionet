@@ -23,17 +23,6 @@ frontend_apps          = []   # Set to [] to disable, ["student", "teacher", "ad
 
 #------------- Redis Shared Instance -------------
 use_shared_redis = true  # template/test uses shared Redis instance
-#-------------- Network -------------------------
-use_existing_network = true
-# Default example: template uses the dev existing network
-existing_networks = {
-	dev = {
-		vnet_name       = "dev-vnet"
-		vnet_rg         = "dev-zionet-learning-2025"
-		aks_subnet_name = "aks-subnet"
-		db_vnet_name    = "dev-db-vnet"
-		db_vnet_rg      = "dev-zionet-learning-2025"
-		db_subnet_name  = "db-subnet"
-	}
-}
+
+
 
