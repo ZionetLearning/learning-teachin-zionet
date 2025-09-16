@@ -9,12 +9,13 @@ on:
         type: choice
         options: [lock, unlock]
 
+permissions:   # 👈 חשוב שזה יהיה ברמת ה־workflow
+  contents: write
+  actions: write
+
 jobs:
   manage-lock:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      actions: write
     steps:
       - name: Manage lock state
         run: |
@@ -51,7 +52,7 @@ jobs:
               --method PATCH \
               -H "Accept: application/vnd.github+json" \
               /repos/${{ github.repository }}/actions/variables/FEATEST_LOCKED_BY \
-              -f value=""
+              -f value="noone"
 
             echo "✅ featest is now unlocked by $USER"
           fi
