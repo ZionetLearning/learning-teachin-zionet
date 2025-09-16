@@ -18,6 +18,7 @@ import {
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { DifficultyLevel } from "@student/types";
+import { useStyles } from "./style";
 
 export interface GameConfig {
   difficulty: DifficultyLevel;
@@ -29,6 +30,7 @@ interface GameConfigModalProps {
   open: boolean;
   onClose: () => void;
   onConfirm: (config: GameConfig) => void;
+  getDifficultyLevelLabel: (level: DifficultyLevel) => string;
   initialConfig?: GameConfig;
 }
 
@@ -36,13 +38,16 @@ export const GameConfigModal = ({
   open,
   onClose,
   onConfirm,
+  getDifficultyLevelLabel,
   initialConfig = {
     difficulty: 1,
     nikud: true,
     count: 3,
   },
 }: GameConfigModalProps) => {
+  
   const { t } = useTranslation();
+  const classes = useStyles();
   const [config, setConfig] = useState<GameConfig>(initialConfig);
 
   const handleDifficultyChange = (
@@ -76,43 +81,28 @@ export const GameConfigModal = ({
     onClose();
   };
 
-  const getDifficultyLabel = (difficulty: DifficultyLevel) => {
-    switch (difficulty) {
-      case 0:
-        return t("pages.wordOrderGame.difficulty.easy");
-      case 1:
-        return t("pages.wordOrderGame.difficulty.medium");
-      case 2:
-        return t("pages.wordOrderGame.difficulty.hard");
-      default:
-        return t("pages.wordOrderGame.difficulty.medium");
-    }
-  };
-
   return (
     <Dialog
+      className={classes.gameConfigModal}
       open={open}
       onClose={onClose}
       maxWidth="sm"
       fullWidth
-      PaperProps={{
-        sx: { borderRadius: 2 },
-      }}
     >
       <DialogTitle>
         <Typography variant="h5" component="div">
           {t("pages.wordOrderGame.config.title")}
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+        <Typography variant="body2" color="text.secondary" className={classes.modalTitle}>
           {t("pages.wordOrderGame.config.subtitle")}
         </Typography>
       </DialogTitle>
 
       <DialogContent>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 3, pt: 1 }}>
+        <Box className={classes.modalContent}>
           {/* Difficulty Selection */}
           <FormControl component="fieldset">
-            <FormLabel component="legend" sx={{ mb: 1 }}>
+            <FormLabel component="legend" className={classes.formLabel}>
               <Typography variant="subtitle1" fontWeight="medium">
                 {t("pages.wordOrderGame.config.difficulty")}
               </Typography>
@@ -127,7 +117,7 @@ export const GameConfigModal = ({
                 label={
                   <Box>
                     <Typography variant="body1">
-                      {getDifficultyLabel(0)}
+                      {getDifficultyLevelLabel(0)}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
                       {t("pages.wordOrderGame.config.difficultyDesc.easy")}
@@ -141,7 +131,7 @@ export const GameConfigModal = ({
                 label={
                   <Box>
                     <Typography variant="body1">
-                      {getDifficultyLabel(1)}
+                      {getDifficultyLevelLabel(1)}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
                       {t("pages.wordOrderGame.config.difficultyDesc.medium")}
@@ -155,7 +145,7 @@ export const GameConfigModal = ({
                 label={
                   <Box>
                     <Typography variant="body1">
-                      {getDifficultyLabel(2)}
+                      {getDifficultyLevelLabel(2)}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
                       {t("pages.wordOrderGame.config.difficultyDesc.hard")}
@@ -168,7 +158,7 @@ export const GameConfigModal = ({
 
           {/* Nikud Option */}
           <FormControl component="fieldset">
-            <FormLabel component="legend" sx={{ mb: 1 }}>
+            <FormLabel component="legend" className={classes.formLabel}>
               <Typography variant="subtitle1" fontWeight="medium">
                 {t("pages.wordOrderGame.config.options")}
               </Typography>
@@ -197,7 +187,7 @@ export const GameConfigModal = ({
 
           {/* Sentence Count */}
           <FormControl>
-            <FormLabel sx={{ mb: 1 }}>
+            <FormLabel className={classes.formLabel}>
               <Typography variant="subtitle1" fontWeight="medium">
                 {t("pages.wordOrderGame.config.sentenceCount")}
               </Typography>
@@ -208,13 +198,13 @@ export const GameConfigModal = ({
               onChange={handleCountChange}
               helperText={t("pages.wordOrderGame.config.sentenceCountDesc")}
               size="small"
-              sx={{ maxWidth: 200 }}
+              className={classes.sentenceCountField}
             />
           </FormControl>
         </Box>
       </DialogContent>
 
-      <DialogActions sx={{ px: 3, pb: 3 }}>
+      <DialogActions className={classes.modalActions}>
         <Button onClick={onClose} color="inherit">
           {t("pages.wordOrderGame.cancel")}
         </Button>
@@ -222,7 +212,7 @@ export const GameConfigModal = ({
           onClick={handleConfirm}
           variant="contained"
           color="primary"
-          sx={{ minWidth: 120 }}
+          className={classes.startGameButton}
         >
           {t("pages.wordOrderGame.config.startGame")}
         </Button>

@@ -9,7 +9,7 @@ import {
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { Celebration, Settings, Replay } from "@mui/icons-material";
-
+import { useStyles } from "./style";
 interface GameOverModalProps {
   open: boolean;
   onClose: () => void;
@@ -26,10 +26,9 @@ export const GameOverModal = ({
   totalSentences,
 }: GameOverModalProps) => {
   const { t, i18n } = useTranslation();
-
+  const classes = useStyles();
   // Determine if current language is Hebrew (RTL)
   const isHebrew = i18n.language === "he" || i18n.language === "heb";
-  const direction = isHebrew ? "rtl" : "ltr";
 
   return (
     <Dialog
@@ -37,15 +36,10 @@ export const GameOverModal = ({
       onClose={onClose}
       maxWidth="sm"
       fullWidth
-      sx={{
-        "& .MuiDialog-paper": {
-          borderRadius: 2,
-          direction: direction,
-        },
-      }}
+      className={isHebrew ? classes.gameOverModalRtl : classes.gameOverModalLtr}
     >
       <DialogTitle>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+        <Box className={classes.gameOverTitle}>
           <Celebration color="primary" />
           <Typography variant="h5" component="div">
             {t("pages.wordOrderGame.gameOver.title")}
@@ -54,11 +48,15 @@ export const GameOverModal = ({
       </DialogTitle>
 
       <DialogContent>
-        <Box sx={{ textAlign: "center", py: 2 }}>
+        <Box className={classes.gameOverContent}>
           <Typography variant="h6" gutterBottom>
             {t("pages.wordOrderGame.gameOver.congratulations")}
           </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+          <Typography
+            variant="body1"
+            color="text.secondary"
+            className={classes.gameOverCompletedText}
+          >
             {t("pages.wordOrderGame.gameOver.completed", {
               count: totalSentences,
             })}
@@ -70,27 +68,18 @@ export const GameOverModal = ({
       </DialogContent>
 
       <DialogActions
-        sx={{
-          px: 3,
-          pb: 3,
-          gap: 1,
-          direction: direction,
-          justifyContent: "flex-start",
-        }}
+        className={
+          isHebrew ? classes.gameOverActionsRtl : classes.gameOverActionsLtr
+        }
       >
         {isHebrew ? (
-          // Hebrew: Use endIcon and push icons to the right edge
           <>
             <Button
               onClick={onPlayAgain}
               variant="contained"
               color="primary"
               startIcon={<Replay />}
-              sx={{
-                gap: 1.5,
-                justifyContent: "space-between",
-                "& .MuiButton-startIcon": { marginRight: -1.2 },
-              }}
+              className={classes.gameOverButtonHebrew}
             >
               {t("pages.wordOrderGame.gameOver.playAgain")}
             </Button>
@@ -98,11 +87,7 @@ export const GameOverModal = ({
               onClick={onChangeSettings}
               variant="outlined"
               startIcon={<Settings />}
-              sx={{
-                gap: 1.5,
-                justifyContent: "space-between",
-                "& .MuiButton-startIcon": { marginRight: -1.2 },
-              }}
+              className={classes.gameOverButtonHebrew}
             >
               {t("pages.wordOrderGame.gameOver.changeSettings")}
             </Button>
@@ -111,19 +96,13 @@ export const GameOverModal = ({
             </Button>
           </>
         ) : (
-          // English: Use startIcon and push icons to the left edge
           <>
             <Button
               onClick={onPlayAgain}
               variant="contained"
               color="primary"
               startIcon={<Replay />}
-              sx={{
-
-                gap: 1.5,
-                justifyContent: "space-between",
-                "& .MuiButton-startIcon": { marginRight: "auto" },
-              }}
+              className={classes.gameOverButtonEnglish}
             >
               {t("pages.wordOrderGame.gameOver.playAgain")}
             </Button>
@@ -131,12 +110,7 @@ export const GameOverModal = ({
               onClick={onChangeSettings}
               variant="outlined"
               startIcon={<Settings />}
-              sx={{
-                px: 1.5,
-                gap: 1.5,
-                justifyContent: "space-between",
-                "& .MuiButton-startIcon": { marginRight: "auto" },
-              }}
+              className={classes.gameOverButtonEnglish}
             >
               {t("pages.wordOrderGame.gameOver.changeSettings")}
             </Button>

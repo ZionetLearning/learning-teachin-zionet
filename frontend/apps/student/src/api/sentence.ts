@@ -4,15 +4,15 @@ import { toast } from "react-toastify";
 import {
   EventType,
   SplitSentenceGeneratedPayload,
-  UserEventUnion
+  UserEventUnion,
 } from "@app-providers";
 
 import { useSignalR } from "@student/hooks";
 
 export type SentenceRequest = {
-  difficulty: 0 | 1 | 2; // 0=easy, 1=medium, 2=hard
-  nikud: boolean; // Hebrew diacritics
-  count: number; // number of sentences to generate
+  difficulty: 0 | 1 | 2;
+  nikud: boolean;
+  count: number;
 };
 
 // Hook for fetching split sentences
@@ -57,7 +57,6 @@ export const useGenerateSplitSentences = () => {
         requestBody,
       );
 
-      // Wait for SignalR response (React Query will catch any errors automatically)
       const splitSentenceResponse = await responsePromise;
       return splitSentenceResponse;
     },

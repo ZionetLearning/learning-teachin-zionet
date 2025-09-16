@@ -4,7 +4,6 @@ export const useStyles = createUseStyles({
     display: "flex",
     flexDirection: "row",
     justifyContent: "center",
-    //alignItems: "center",
     gap: "100px",
   },
   speakersContainer: {
@@ -19,7 +18,7 @@ export const useStyles = createUseStyles({
     flexDirection: "column",
     gap: "40px",
     paddingLeft: "0px",
-    alignSelf: "center"
+    alignSelf: "center",
   },
   answerArea: {
     display: "flex",
@@ -100,5 +99,43 @@ export const useStyles = createUseStyles({
     display: "flex",
     flexDirection: "row",
     gap: "5px",
+  },
+  welcomeContainer: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "start",
+    minHeight: "60vh",
+    textAlign: "center",
+    gap: "24px",
+  },
+  welcomeText: {
+    maxWidth: 600,
+    paddingTop: 64,
+    fontSize: 18,
+  },
+  welcomeButton: {
+    minWidth: 200,
+  },
+  gameHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+    paddingHorizontal: 8,
+    gap: 16,
+  },
+  gameHeaderInfo: {
+    flexDirection: "column",
+  },
+  settingsButton: {
+    minWidth: 100,
+    whiteSpace: "nowrap",
+    gap: 12,
+  },
+  settingsButtonHebrew: {
+    "& .MuiButton-startIcon": {
+      marginRight: "-17.6px",
+    },
   },
 });
