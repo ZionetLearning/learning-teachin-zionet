@@ -15,8 +15,6 @@ public static class MediaEndpoints
 
         group.MapGet("/speech/token", GetSpeechTokenAsync)
              .WithName("GetSpeechToken");
-
-        group.MapGet("/health", () => AdditionalMediaEndpoints);
     }
 
     private static async Task<IResult> GetSpeechTokenAsync(
@@ -41,11 +39,5 @@ public static class MediaEndpoints
             logger.LogError(ex, "Error invoking Accessor speech token endpoint");
             return Results.Problem("Failed to retrieve speech token");
         }
-    }
-
-    //add additional media endpoints here as needed
-    private static void AdditionalMediaEndpoints()
-    {
-        // Placeholder for future media-related endpoints
     }
 }
