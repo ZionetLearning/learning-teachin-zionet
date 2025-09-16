@@ -167,7 +167,41 @@ jobs:
             echo "✅ Using existing tfvars file: ${{ env.TFVARS_FILE }}"
           fi
 
-          
+      - name: Migrate state module.network -> module.network[0]
+        working-directory: ${{ env.TF_DIR }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "🔎 Checking for old state addresses under 'module.network.'"
+          # If the state is empty or the prefix doesn't exist, don't fail
+          OLD_ADDRS="$(terraform state list 2>/dev/null | grep '^module\.network\.' || true)"
+
+          if [ -z "$OLD_ADDRS" ]; then
+            echo "✅ No old addresses to migrate."
+            exit 0
+          fi
+
+          echo "📦 Found old addresses to migrate:"
+          echo "$OLD_ADDRS"
+
+          # For each old address, move to module.network[0].*
+          while IFS= read -r addr; do
+            [ -z "$addr" ] && continue
+            new_addr="${addr/module.network/module.network[0]}"
+
+            # Skip if already moved
+            if terraform state list 2>/dev/null | grep -q "^${new_addr}$"; then
+              echo "↪️  Already migrated: $addr -> $new_addr (skipping)"
+              continue
+            fi
+
+            echo "🚚 Moving: $addr -> $new_addr"
+            terraform state mv "$addr" "$new_addr"
+          done <<< "$OLD_ADDRS"
+
+          echo "✅ Migration complete."
+    
  
       - name: Terraform Plan
         run: terraform plan -var-file=${{ env.TFVARS_FILE }}
