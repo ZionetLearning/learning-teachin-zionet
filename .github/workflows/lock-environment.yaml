@@ -30,7 +30,7 @@ jobs:
         run: |
           REPO=${{ github.repository }}
 
-          # חפש אם כבר קיים issue בשם "LOCK: featest"
+          # "LOCK: featest"
           ISSUE=$(gh issue list \
             --repo "$REPO" \
             --search "LOCK: featest" \
@@ -60,18 +60,26 @@ jobs:
 
           if [ "$ACTION" = "lock" ]; then
             echo "🔒 Locking featest by $USER"
+
+            BODY=$(echo -e "locked_by=$USER\nlocked_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)")
+
             gh issue edit "$ISSUE" \
               --repo "$REPO" \
               --add-label "locked" \
-              --body "locked_by=$USER\nlocked_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+              --body "$BODY"
+
             echo "✅ featest is now locked by $USER"
 
           elif [ "$ACTION" = "unlock" ]; then
             echo "🔓 Unlocking featest by $USER"
+
+            BODY=$(echo -e "Unlocked by $USER\nunlocked_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)")
+
             gh issue edit "$ISSUE" \
               --repo "$REPO" \
               --remove-label "locked" \
-              --body "Unlocked by $USER at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+              --body "$BODY"
+
             echo "✅ featest is now unlocked by $USER"
           fi
         env:
