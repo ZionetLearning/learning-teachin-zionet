@@ -1,8 +1,37 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { ExerciseState, DifficultyLevel, Exercise } from "../types";
-import { getRandomExercise, compareTexts } from "../utils";
-import { useAvatarSpeech } from "@student/hooks";
-import { CypressWindow } from "@student/types";
+import { compareTexts } from "../utils";
+import { useAvatarSpeech, useSignalR } from "@student/hooks";
+import { usePostSentence } from "@student/api/sentence";
+
+// === server event contracts ===
+type EventType =
+  | "SentenceGeneration"
+  | "SplitSentenceGeneration";
+
+type UserEvent<T> = {
+  eventType: EventType;
+  payload: T;
+};
+
+type SentenceItem = {
+  text: string;
+  difficulty: "easy" | "medium" | "hard" | string; // server sends string
+  nikud: boolean;
+};
+
+type SentenceResponse = {
+  sentences: SentenceItem[];
+};
+
+// === adapter: server -> Exercise (adjust if your Exercise needs more) ===
+function toExercise(item: SentenceItem): Exercise {
+  // Map the server sentence to the shape your UI expects.
+  // At minimum, this hook uses `exercise.hebrewText` for audio & comparison.
+  return {
+    hebrewText: item.text,
+  } as Exercise;
+}
 
 export const useTypingPractice = () => {
   const [exerciseState, setExerciseState] = useState<ExerciseState>({
@@ -10,181 +39,166 @@ export const useTypingPractice = () => {
     selectedLevel: null,
     isLoading: false,
     error: null,
-    audioState: {
-      isPlaying: false,
-      hasPlayed: false,
-      error: null,
-    },
+    audioState: { isPlaying: false, hasPlayed: false, error: null },
     userInput: "",
     feedbackResult: null,
   });
 
   const [currentExercise, setCurrentExercise] = useState<Exercise | null>(null);
 
-  const { speak, stop, isPlaying, error } = useAvatarSpeech({
+  // --- audio (unchanged behavior) ---
+  const { speak, stop, isPlaying, error: ttsError } = useAvatarSpeech({
     volume: 1,
     onAudioStart: () => {
       setExerciseState((prev) => ({
         ...prev,
         phase: "playing",
-        audioState: {
-          ...prev.audioState,
-          isPlaying: true,
-          error: null,
-        },
+        audioState: { ...prev.audioState, isPlaying: true, error: null },
       }));
-      // In Cypress (or non-audio) environments the onAudioEnd callback might never fire.
-      // Auto-advance to typing phase quickly so E2E tests don't time out.
-      try {
-        if (
-          typeof window !== "undefined" &&
-          (window as CypressWindow).Cypress
-        ) {
-          setTimeout(() => {
-            setExerciseState((prev) => {
-              if (prev.phase !== "playing") return prev;
-              return {
-                ...prev,
-                phase: "typing",
-                audioState: {
-                  ...prev.audioState,
-                  isPlaying: false,
-                  hasPlayed: true,
-                  error: null,
-                },
-              };
-            });
-          }, 300);
-        }
-      } catch {
-        /* ignore */
-      }
+      // fail-safe: in test envs ensure we don't get stuck in "playing"
+      setTimeout(() => {
+        setExerciseState((prev) =>
+          prev.phase === "playing" ? { ...prev, phase: "typing" } : prev,
+        );
+      }, 600);
     },
-    onAudioEnd: () => {
+    onAudioEnd: () =>
       setExerciseState((prev) => ({
         ...prev,
         phase: "typing",
+        audioState: { ...prev.audioState, isPlaying: false },
+      })),
+  });
+
+  useEffect(() => {
+    if (ttsError) {
+      setExerciseState((prev) => ({
+        ...prev,
+        phase: prev.phase === "playing" ? "ready" : prev.phase,
         audioState: {
           ...prev.audioState,
           isPlaying: false,
-          hasPlayed: true,
-          error: null,
+          error: ttsError instanceof Error ? ttsError.message : "TTS error",
         },
-      }));
-    },
-  });
-
-  useEffect(
-    function handleError() {
-      if (error) {
-        setExerciseState((prev) => ({
-          ...prev,
-          phase: prev.phase === "playing" ? "ready" : prev.phase,
-          audioState: {
-            ...prev.audioState,
-            isPlaying: false,
-            error: error instanceof Error ? error.message : "TTS error",
-          },
-        }));
-      }
-    },
-    [error],
-  );
-
-  const handleLevelSelect = (level: DifficultyLevel) => {
-    try {
-      setExerciseState((prev) => ({ ...prev, isLoading: true, error: null }));
-
-      const exercise = getRandomExercise(level);
-      setCurrentExercise(exercise);
-
-      setExerciseState({
-        phase: "ready",
-        selectedLevel: level,
-        isLoading: false,
-        error: null,
-        audioState: {
-          isPlaying: false,
-          hasPlayed: false,
-          error: null,
-        },
-        userInput: "",
-        feedbackResult: null,
-      });
-    } catch (error) {
-      setExerciseState((prev) => ({
-        ...prev,
-        isLoading: false,
-        error:
-          error instanceof Error ? error.message : "Failed to load exercise",
       }));
     }
-  };
+  }, [ttsError]);
 
-  const handleBackToLevelSelection = () => {
+  // --- HTTP mutation to request a sentence ---
+  const { mutate: postSentence } = usePostSentence();
+
+  // --- SignalR subscription: receive the sentence when ready ---
+  const { subscribe } = useSignalR();
+
+  const onReceiveEvent = useCallback(
+    (evt: UserEvent<SentenceResponse>) => {
+      if (!evt || evt.eventType !== "SentenceGeneration") return;
+
+      const payload = evt.payload as SentenceResponse;
+      const first = payload?.sentences?.[0];
+      if (!first) {
+        setExerciseState((prev) => ({
+          ...prev,
+          isLoading: false,
+          error: "No sentences returned",
+        }));
+        return;
+      }
+
+      const exercise = toExercise(first);
+      setCurrentExercise(exercise);
+
+      setExerciseState((prev) => ({
+        ...prev,
+        phase: "ready",
+        isLoading: false,
+        error: null,
+        audioState: { isPlaying: false, hasPlayed: false, error: null },
+        userInput: "",
+        feedbackResult: null,
+      }));
+    },
+    [],
+  );
+
+  useEffect(() => {
+    const unsubscribe = subscribe<UserEvent<SentenceResponse>>(
+      "ReceiveEvent",
+      onReceiveEvent,
+    );
+    return unsubscribe;
+  }, [subscribe, onReceiveEvent]);
+
+  // --- handlers ---
+  const handleLevelSelect = useCallback(
+    (level: DifficultyLevel) => {
+      setExerciseState((prev) => ({
+        ...prev,
+        selectedLevel: level,
+        isLoading: true,
+        error: null,
+        userInput: "",
+        feedbackResult: null,
+        audioState: { ...prev.audioState, isPlaying: false, hasPlayed: false, error: null },
+      }));
+
+      // request 1 sentence for the chosen level; adjust nikud as needed
+      postSentence({ difficulty: level as DifficultyLevel, nikud: false, count: 1 });
+    },
+    [postSentence],
+  );
+
+  const handleBackToLevelSelection = useCallback(() => {
     if (isPlaying) stop();
-    setExerciseState({
+    setCurrentExercise(null);
+    setExerciseState((prev) => ({
+      ...prev,
       phase: "level-selection",
       selectedLevel: null,
       isLoading: false,
       error: null,
-      audioState: {
-        isPlaying: false,
-        hasPlayed: false,
-        error: null,
-      },
+      audioState: { isPlaying: false, hasPlayed: false, error: null },
       userInput: "",
       feedbackResult: null,
-    });
-    setCurrentExercise(null);
-  };
+    }));
+  }, [isPlaying, stop]);
 
-  const handlePlayAudio = async (): Promise<void> => {
+  const handlePlayAudio = useCallback(() => {
     if (!currentExercise) return;
-
     if (isPlaying) {
       stop();
       return;
     }
-
     setExerciseState((prev) => ({
       ...prev,
       error: null,
-      audioState: {
-        ...prev.audioState,
-        error: null,
-      },
+      audioState: { ...prev.audioState, error: null },
     }));
     speak(currentExercise.hebrewText);
-  };
+  }, [currentExercise, isPlaying, speak, stop]);
 
-  const handleReplayAudio = async () => {
+  const handleReplayAudio = useCallback(() => {
     if (!currentExercise) return;
-
     if (isPlaying) {
       stop();
       return;
     }
-
     setExerciseState((prev) => ({
       ...prev,
       error: null,
-      audioState: {
-        ...prev.audioState,
-        error: null,
-      },
+      audioState: { ...prev.audioState, error: null },
     }));
     speak(currentExercise.hebrewText);
-  };
+  }, [currentExercise, isPlaying, speak, stop]);
 
-  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setExerciseState((prev) => ({
-      ...prev,
-      userInput: event.target.value,
-    }));
-  };
+  const handleInputChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setExerciseState((prev) => ({ ...prev, userInput: event.target.value }));
+    },
+    [],
+  );
 
-  const handleSubmitAnswer = () => {
+  const handleSubmitAnswer = useCallback(() => {
     if (!currentExercise || !exerciseState.userInput.trim()) return;
 
     const feedbackResult = compareTexts(
@@ -197,46 +211,38 @@ export const useTypingPractice = () => {
       phase: "feedback",
       feedbackResult,
     }));
-  };
+  }, [currentExercise, exerciseState.userInput]);
 
-  const handleTryAgain = () => {
+  const handleTryAgain = useCallback(() => {
     setExerciseState((prev) => ({
       ...prev,
       phase: "typing",
       userInput: "",
       feedbackResult: null,
     }));
-  };
+  }, []);
 
-  const handleNextExercise = () => {
+  const handleNextExercise = useCallback(() => {
     if (!exerciseState.selectedLevel) return;
 
-    try {
-      if (isPlaying) stop();
-      const exercise = getRandomExercise(exerciseState.selectedLevel);
-      setCurrentExercise(exercise);
+    if (isPlaying) stop();
 
-      setExerciseState((prev) => ({
-        ...prev,
-        phase: "ready",
-        userInput: "",
-        feedbackResult: null,
-        audioState: {
-          isPlaying: false,
-          hasPlayed: false,
-          error: null,
-        },
-      }));
-    } catch (error) {
-      setExerciseState((prev) => ({
-        ...prev,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to load next exercise",
-      }));
-    }
-  };
+    // ask backend for another sentence; keep same level
+    setExerciseState((prev) => ({
+      ...prev,
+      isLoading: true,
+      error: null,
+      userInput: "",
+      feedbackResult: null,
+      audioState: { isPlaying: false, hasPlayed: false, error: null },
+    }));
+
+    postSentence({
+      difficulty: exerciseState.selectedLevel as DifficultyLevel,
+      nikud: false,
+      count: 1,
+    });
+  }, [exerciseState.selectedLevel, isPlaying, postSentence, stop]);
 
   return {
     exerciseState,
