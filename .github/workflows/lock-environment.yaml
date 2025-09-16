@@ -10,25 +10,24 @@ on:
         options: [lock, unlock]
 
 permissions:
-  issues: write   # 👈 חובה
+  issues: write
 
 jobs:
   manage-lock:
     runs-on: ubuntu-latest
     steps:
-      - name: Check gh CLI
-        run: gh --version
-
       - name: Manage lock state
         run: |
           set -x
           ACTION=${{ github.event.inputs.action }}
           USER=${GITHUB_ACTOR}
+          REPO=${{ github.repository }}
 
           if [ "$ACTION" = "lock" ]; then
             echo "🔒 Locking featest by $USER"
 
             ISSUE=$(gh issue list \
+              --repo "$REPO" \
               --search "LOCK: featest" \
               --state open \
               --json number \
@@ -40,6 +39,7 @@ jobs:
             fi
 
             gh issue create \
+              --repo "$REPO" \
               --title "LOCK: featest" \
               --body "locked_by=$USER\nlocked_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
               --label "lock"
@@ -50,6 +50,7 @@ jobs:
             echo "🔓 Unlocking featest by $USER"
 
             ISSUE=$(gh issue list \
+              --repo "$REPO" \
               --search "LOCK: featest" \
               --state open \
               --json number \
@@ -60,7 +61,7 @@ jobs:
               exit 0
             fi
 
-            gh issue close "$ISSUE" -c "Unlocked by $USER"
+            gh issue close "$ISSUE" --repo "$REPO" -c "Unlocked by $USER"
             echo "✅ featest is now unlocked by $USER"
           fi
         env:
