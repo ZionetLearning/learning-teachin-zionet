@@ -7,42 +7,22 @@ using Accessor.Exceptions;
 
 namespace Accessor.Endpoints;
 
-public class AccessorQueueHandler : IQueueHandler<Message>
+public class AccessorQueueHandler(
+    ITaskService taskService,
+    IManagerCallbackQueueService managerCallbackQueueService,
+    ILogger<AccessorQueueHandler> logger) : RoutedQueueHandler<Message, MessageAction>(logger)
 {
-    private readonly ITaskService _taskService;
-    private readonly IManagerCallbackQueueService _managerCallbackQueueService;
-    private readonly ILogger<AccessorQueueHandler> _logger;
-    private readonly Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>> _handlers;
+    protected override MessageAction GetAction(Message message) => message.ActionName;
 
-    public AccessorQueueHandler(
-        ITaskService taskService,
-        IManagerCallbackQueueService managerCallbackQueueService,
-        ILogger<AccessorQueueHandler> logger)
-    {
-        _taskService = taskService;
-        _managerCallbackQueueService = managerCallbackQueueService;
-        _logger = logger;
-        _handlers = new Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>>
-        {
-            [MessageAction.UpdateTask] = HandleUpdateTaskAsync,
-            [MessageAction.CreateTask] = HandleCreateTaskAsync
-        };
-    }
+    protected override void Configure(RouteBuilder routes) => routes
+        .On(MessageAction.UpdateTask, HandleUpdateTaskAsync)
+        .On(MessageAction.CreateTask, HandleCreateTaskAsync);
 
-    public async Task HandleAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
-    {
-        if (_handlers.TryGetValue(message.ActionName, out var handler))
-        {
-            await handler(message, renewLock, cancellationToken);
-        }
-        else
-        {
-            _logger.LogWarning("No handler for action {Action}", message.ActionName);
-            throw new DotQueue.NonRetryableException($"No handler for action {message.ActionName}");
-        }
-    }
+    private readonly ITaskService _taskService = taskService;
+    private readonly IManagerCallbackQueueService _managerCallbackQueueService = managerCallbackQueueService;
+    private readonly ILogger<AccessorQueueHandler> _logger = logger;
 
-    private async Task HandleUpdateTaskAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
+    private async Task HandleUpdateTaskAsync(Message message, IReadOnlyDictionary<string, string>? metadata, Func<Task> renewLock, CancellationToken cancellationToken)
     {
         try
         {
@@ -96,7 +76,7 @@ public class AccessorQueueHandler : IQueueHandler<Message>
         }
     }
 
-    private async Task HandleCreateTaskAsync(Message message, Func<Task> func, CancellationToken cancellationToken)
+    private async Task HandleCreateTaskAsync(Message message, IReadOnlyDictionary<string, string>? metadata, Func<Task> renewLock, CancellationToken cancellationToken)
     {
         TaskModel? taskModel = null;
         try
@@ -108,13 +88,13 @@ public class AccessorQueueHandler : IQueueHandler<Message>
                 throw new DotQueue.NonRetryableException("Payload deserialization returned null for TaskModel.");
             }
 
-            UserContextMetadata? metadata = null;
+            UserContextMetadata? userContextMetadata = null;
             if (message.Metadata.HasValue)
             {
-                metadata = JsonSerializer.Deserialize<UserContextMetadata>(message.Metadata.Value);
+                userContextMetadata = JsonSerializer.Deserialize<UserContextMetadata>(message.Metadata.Value);
             }
 
-            if (metadata is null)
+            if (userContextMetadata is null)
             {
                 _logger.LogWarning("Metadata is null for CreateTask action");
                 throw new DotQueue.NonRetryableException("User Metadata is required for CreateTask action.");

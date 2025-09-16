@@ -3,6 +3,7 @@ using Manager.Models.Auth;
 using Manager.Models.Auth.RefreshSessions;
 using Manager.Models.Chat;
 using Manager.Models.Users;
+using Manager.Services.Clients.Accessor.Models;
 
 namespace Manager.Services.Clients.Accessor;
 
@@ -32,5 +33,5 @@ public interface IAccessorClient
     Task<bool> UnassignStudentFromTeacherAsync(TeacherStudentMapDto map, CancellationToken ct = default);
     Task<IEnumerable<UserData>> GetStudentsForTeacherAsync(Guid teacherId, CancellationToken ct = default);
     Task<IEnumerable<UserData>> GetTeachersForStudentAsync(Guid studentId, CancellationToken ct = default);
-    Task<string> GetSpeechTokenAsync(CancellationToken ct = default);
+    Task<SpeechTokenResponse> GetSpeechTokenAsync(CancellationToken ct = default);
 }

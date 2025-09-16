@@ -2,7 +2,6 @@ using Azure.Messaging.ServiceBus;
 using Engine.Constants;
 using Engine.Endpoints;
 using Engine.Models;
-using Engine.Models.Speech;
 using Engine.Plugins;
 using Engine.Services;
 using Engine.Services.Clients.AccessorClient;
@@ -41,7 +40,6 @@ builder.Services.AddSingleton<IRetryPolicyProvider, RetryPolicyProvider>();
 builder.Services.AddSingleton<IRetryPolicy, RetryPolicy>();
 builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
 builder.Services.AddSingleton<ISemanticKernelPlugin, TimePlugin>();
-builder.Services.AddSingleton<ISpeechSynthesisService, AzureSpeechSynthesisService>();
 
 builder.Services.AddMemoryCache();
 builder.Services
@@ -60,9 +58,6 @@ builder.Services
         !string.IsNullOrWhiteSpace(s.Endpoint) &&
         !string.IsNullOrWhiteSpace(s.DeploymentName),
         "Azure OpenAI settings are incomplete");
-
-builder.Services.Configure<AzureSpeechSettings>(
-    builder.Configuration.GetSection(AzureSpeechSettings.SectionName));
 
 builder.Services.AddSingleton(sp =>
 {

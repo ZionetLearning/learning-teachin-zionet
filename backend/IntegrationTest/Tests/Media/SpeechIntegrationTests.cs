@@ -16,25 +16,24 @@ public class SpeechIntegrationTests(
     [Fact(DisplayName = "GET /media-manager/speech/token - Should return a token")]
     public async Task Get_Speech_Token_Should_Return_Token()
     {
-        var token = await GetSpeechTokenAsync();
-        token.Should().NotBeNullOrWhiteSpace();
+        var tokenData = await GetSpeechTokenDataAsync();
+        tokenData.Token.Should().NotBeNullOrWhiteSpace();
+        tokenData.Region.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact(DisplayName = "Upload TTS audio using token, then feed to STT recognizer")]
     public async Task Token_Allows_TTS_And_STT_Roundtrip()
     {
-        var token = await GetSpeechTokenAsync();
+        var tokenData = await GetSpeechTokenDataAsync();
         //log the token for debugging (it is short-lived)
-        OutputHelper.WriteLine($"Obtained speech token: {token}");
-        token.Should().NotBeNullOrWhiteSpace();
-
-        var region = Configuration["TestSettings:SpeechRegion"];
-        region.Should().NotBeNullOrWhiteSpace("TestSettings:SpeechRegion must be set in config.");
-        OutputHelper.WriteLine($"Using speech region: {region}");
+        OutputHelper.WriteLine($"Obtained speech token: {tokenData}");
+        tokenData.Token.Should().NotBeNullOrWhiteSpace();
+        tokenData.Region.Should().NotBeNullOrWhiteSpace();
+        
         var text = "hello world";
 
         // --- TTS synthesize into memory ---
-        var speechConfig = SpeechConfig.FromAuthorizationToken(token, region);
+        var speechConfig = SpeechConfig.FromAuthorizationToken(tokenData.Token, tokenData.Region);
         speechConfig.SpeechSynthesisVoiceName = "en-US-JennyNeural";
 
         var pullStream = AudioOutputStream.CreatePullStream();

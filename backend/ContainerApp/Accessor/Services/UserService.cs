@@ -113,6 +113,11 @@ public class UserService : IUserService
             user.HebrewLevelValue = updateUser.HebrewLevelValue;
         }
 
+        if (updateUser.Role is not null)
+        {
+            user.Role = updateUser.Role.Value;
+        }
+
         if (updateUser.Interests is not null)
         {
             user.Interests = updateUser.Interests;

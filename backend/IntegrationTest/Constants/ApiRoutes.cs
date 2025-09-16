@@ -12,4 +12,10 @@ public static class ApiRoutes
     public const string User = "users-manager/user";
     public static string UserById(Guid userId) => $"users-manager/user/{userId}";
     public const string UserList = "users-manager/user-list";
+
+    //---------Sentences--------
+
+    public const string Sentences = "ai-manager/sentence";
+    public const string SplitSentences = "ai-manager/sentence/split";
+
 }

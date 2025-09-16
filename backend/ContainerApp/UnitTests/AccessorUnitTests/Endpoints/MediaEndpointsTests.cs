@@ -1,7 +1,7 @@
 using System.Net;
 using Accessor.Endpoints;
 using Accessor.Models;
-using Accessor.Services;
+using Accessor.Models.Speech;
 using Accessor.Services.Interfaces;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
@@ -19,14 +19,14 @@ public class MediaEndpointsTests
     public async Task GetSpeechToken_ReturnsOk_WithToken()
     {
         var svc = Svc();
-
-        const string token = "abc123";
-        svc.Setup(s => s.GetSpeechTokenAsync(CancellationToken.None)).ReturnsAsync(token);
+        
+        var speechTokenResponse = new SpeechTokenResponse { Token = "abc123", Region = "eastus" };
+        svc.Setup(s => s.GetSpeechTokenAsync(CancellationToken.None)).ReturnsAsync(speechTokenResponse);
 
         var result = await MediaEndpoints.GetSpeechTokenAsync(svc.Object, CancellationToken.None);
 
-        var ok = result.Should().BeOfType<Ok<string>>().Subject;
-        ok.Value.Should().Be(token);
+        var ok = result.Should().BeOfType<Ok<SpeechTokenResponse>>().Subject;
+        ok.Value.Should().Be(speechTokenResponse);
         svc.VerifyAll();
     }
 
