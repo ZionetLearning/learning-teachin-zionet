@@ -3,6 +3,7 @@ using Manager.Models.Auth;
 using Manager.Models.Auth.RefreshSessions;
 using Manager.Models.Chat;
 using Manager.Models.Users;
+using Manager.Models.Games;
 using Manager.Services.Clients.Accessor.Models;
 
 namespace Manager.Services.Clients.Accessor;
@@ -34,4 +35,8 @@ public interface IAccessorClient
     Task<IEnumerable<UserData>> GetStudentsForTeacherAsync(Guid teacherId, CancellationToken ct = default);
     Task<IEnumerable<UserData>> GetTeachersForStudentAsync(Guid studentId, CancellationToken ct = default);
     Task<SpeechTokenResponse> GetSpeechTokenAsync(CancellationToken ct = default);
+    Task<SubmitAttemptResult> SubmitAttemptAsync(SubmitAttemptRequest request, CancellationToken ct = default);
+    Task<IEnumerable<object>> GetHistoryAsync(Guid studentId, bool summary, CancellationToken ct = default);
+    Task<IEnumerable<MistakeDto>> GetMistakesAsync(Guid studentId, CancellationToken ct = default);
+    Task<IEnumerable<SummaryHistoryWithStudentDto>> GetAllHistoriesAsync(CancellationToken ct = default);
 }

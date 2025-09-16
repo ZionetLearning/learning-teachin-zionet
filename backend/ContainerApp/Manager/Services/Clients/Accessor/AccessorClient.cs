@@ -10,6 +10,7 @@ using Manager.Models.Auth.RefreshSessions;
 using Manager.Models.Chat;
 using Manager.Models.QueueMessages;
 using Manager.Models.Users;
+using Manager.Models.Games;
 using Manager.Services.Clients.Accessor.Models;
 
 namespace Manager.Services.Clients.Accessor;
@@ -640,6 +641,90 @@ public class AccessorClient(
         {
             _logger.LogError(ex, "Failed to PATCH update task {TaskId} at Accessor", id);
             throw;
+        }
+    }
+
+    public async Task<SubmitAttemptResult> SubmitAttemptAsync(SubmitAttemptRequest request, CancellationToken ct = default)
+    {
+        try
+        {
+            _logger.LogInformation("Forwarding SubmitAttempt to Accessor. StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}", request.StudentId, request.GameType, request.Difficulty);
+
+            var result = await _daprClient.InvokeMethodAsync<SubmitAttemptRequest, SubmitAttemptResult>(
+                HttpMethod.Post, AppIds.Accessor, "games-accessor/attempt", request, ct
+            );
+
+            _logger.LogInformation("Received SubmitAttemptResult from Accessor. StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}, Success={IsSuccess}, AttemptNumber={AttemptNumber}", result.StudentId, result.GameType, result.Difficulty, result.IsSuccess, result.AttemptNumber);
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to forward SubmitAttempt to Accessor. StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}", request.StudentId, request.GameType, request.Difficulty);
+            throw; // rethrow so Manager endpoint can handle with Results.Problem()
+        }
+    }
+
+    public async Task<IEnumerable<object>> GetHistoryAsync(Guid studentId, bool summary, CancellationToken ct = default)
+    {
+        try
+        {
+            _logger.LogInformation("Requesting history from Accessor. StudentId={StudentId}, Summary={Summary}", studentId, summary);
+
+            var result = await _daprClient.InvokeMethodAsync<IEnumerable<object>>(
+                HttpMethod.Get, AppIds.Accessor, $"games-accessor/history/{studentId}?summary={summary}", cancellationToken: ct
+            ) ?? Enumerable.Empty<object>();
+
+            _logger.LogInformation("Received history from Accessor. StudentId={StudentId}, Summary={Summary}, Count={Count}", studentId, summary, result.Count());
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get history from Accessor. StudentId={StudentId}, Summary={Summary}", studentId, summary);
+            return Enumerable.Empty<object>();
+        }
+    }
+
+    public async Task<IEnumerable<MistakeDto>> GetMistakesAsync(Guid studentId, CancellationToken ct = default)
+    {
+        try
+        {
+            _logger.LogInformation("Requesting mistakes from Accessor. StudentId={StudentId}", studentId);
+
+            var result = await _daprClient.InvokeMethodAsync<IEnumerable<MistakeDto>>(
+                HttpMethod.Get, AppIds.Accessor, $"games-accessor/mistakes/{studentId}", cancellationToken: ct
+            ) ?? Enumerable.Empty<MistakeDto>();
+
+            _logger.LogInformation("Received mistakes from Accessor. StudentId={StudentId}, Count={Count}", studentId, result.Count());
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get mistakes from Accessor. StudentId={StudentId}", studentId);
+            return Enumerable.Empty<MistakeDto>();
+        }
+    }
+
+    public async Task<IEnumerable<SummaryHistoryWithStudentDto>> GetAllHistoriesAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            _logger.LogInformation("Requesting all histories from Accessor");
+
+            var result = await _daprClient.InvokeMethodAsync<IEnumerable<SummaryHistoryWithStudentDto>>(
+                HttpMethod.Get, AppIds.Accessor, "games-accessor/all-history", cancellationToken: ct
+            ) ?? Enumerable.Empty<SummaryHistoryWithStudentDto>();
+
+            _logger.LogInformation("Received all histories from Accessor. Count={Count}", result.Count());
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get all histories from Accessor");
+            return Enumerable.Empty<SummaryHistoryWithStudentDto>();
         }
     }
 }

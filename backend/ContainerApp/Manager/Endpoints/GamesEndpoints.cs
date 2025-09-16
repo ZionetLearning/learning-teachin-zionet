@@ -1,0 +1,160 @@
+using System.Security.Claims;
+using Manager.Constants;
+using Manager.Models.Users;
+using Manager.Models.Games;
+using Manager.Services.Clients.Accessor;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Manager.Endpoints;
+
+public static class GamesEndpoints
+{
+    private sealed class GameEndpoint { }
+
+    public static IEndpointRouteBuilder MapGamesEndpoints(this IEndpointRouteBuilder app)
+    {
+        var gamesGroup = app.MapGroup("/games-manager").WithTags("Games");
+
+        gamesGroup.MapPost("/attempt", SubmitAttemptAsync)
+            .RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
+
+        gamesGroup.MapGet("/history/{studentId:guid}", GetHistoryAsync)
+            .RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
+
+        gamesGroup.MapGet("/mistakes/{studentId:guid}", GetMistakesAsync)
+            .RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
+
+        gamesGroup.MapGet("/all-history", GetAllHistoriesAsync)
+            .RequireAuthorization(PolicyNames.AdminOrTeacher);
+
+        return app;
+    }
+
+    private static async Task<IResult> SubmitAttemptAsync(
+        [FromBody] SubmitAttemptRequest request,
+        [FromServices] IAccessorClient accessorClient,
+        HttpContext http,
+        ILogger<GameEndpoint> logger,
+        CancellationToken ct)
+    {
+        try
+        {
+            var callerRole = http.User.FindFirstValue(AuthSettings.RoleClaimType);
+            var callerIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
+
+            logger.LogInformation("SubmitAttempt called by role={Role}, callerId={CallerId}, studentId={StudentId}, gameType={GameType}, difficulty={Difficulty}", callerRole, callerIdRaw, request.StudentId, request.GameType, request.Difficulty);
+
+            if (callerRole?.Equals(Role.Student.ToString(), StringComparison.OrdinalIgnoreCase) == true &&
+                Guid.TryParse(callerIdRaw, out var callerId) && callerId != request.StudentId)
+            {
+                logger.LogWarning("Forbidden attempt: Student {CallerId} tried to submit attempt for Student {StudentId}", callerId, request.StudentId);
+                return Results.Forbid();
+            }
+
+            var result = await accessorClient.SubmitAttemptAsync(request, ct);
+
+            logger.LogInformation("Attempt submitted successfully for StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}, Success={IsSuccess}, AttemptNumber={AttemptNumber}", result.StudentId, result.GameType, result.Difficulty, result.IsSuccess, result.AttemptNumber);
+
+            return Results.Ok(result);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex,
+                "Error while submitting attempt for StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}",
+                request.StudentId, request.GameType, request.Difficulty
+            );
+            return Results.Problem("Failed to submit attempt. Please try again later.");
+        }
+    }
+
+    private static async Task<IResult> GetHistoryAsync(
+        [FromRoute] Guid studentId,
+        [FromQuery] bool summary,
+        [FromServices] IAccessorClient accessorClient,
+        HttpContext http,
+        ILogger<GameEndpoint> logger,
+        CancellationToken ct)
+    {
+        try
+        {
+            var callerRole = http.User.FindFirstValue(AuthSettings.RoleClaimType);
+            var callerIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
+
+            if (callerRole?.Equals(Role.Student.ToString(), StringComparison.OrdinalIgnoreCase) == true &&
+                Guid.TryParse(callerIdRaw, out var callerId) && callerId != studentId)
+            {
+                logger.LogWarning("Forbidden history access: Student {CallerId} tried to view Student {StudentId}", callerId, studentId);
+                return Results.Forbid();
+            }
+
+            logger.LogInformation("Fetching history for StudentId={StudentId}, Summary={Summary}", studentId, summary);
+
+            var result = await accessorClient.GetHistoryAsync(studentId, summary, ct);
+
+            logger.LogInformation("History fetched successfully for StudentId={StudentId}, Count={Count}", studentId, result.Count());
+
+            return Results.Ok(result);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error fetching history for StudentId={StudentId}", studentId);
+            return Results.Problem("Failed to fetch history. Please try again later.");
+        }
+    }
+
+    private static async Task<IResult> GetMistakesAsync(
+        [FromRoute] Guid studentId,
+        [FromServices] IAccessorClient accessorClient,
+        HttpContext http,
+        ILogger<GameEndpoint> logger,
+        CancellationToken ct)
+    {
+        try
+        {
+            var callerRole = http.User.FindFirstValue(AuthSettings.RoleClaimType);
+            var callerIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
+
+            if (callerRole?.Equals(Role.Student.ToString(), StringComparison.OrdinalIgnoreCase) == true &&
+                Guid.TryParse(callerIdRaw, out var callerId) && callerId != studentId)
+            {
+                logger.LogWarning("Forbidden mistakes access: Student {CallerId} tried to view Student {StudentId}", callerId, studentId);
+                return Results.Forbid();
+            }
+
+            logger.LogInformation("Fetching mistakes for StudentId={StudentId}", studentId);
+
+            var result = await accessorClient.GetMistakesAsync(studentId, ct);
+
+            logger.LogInformation("Mistakes fetched successfully for StudentId={StudentId}, Count={Count}", studentId, result.Count());
+
+            return Results.Ok(result);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error fetching mistakes for StudentId={StudentId}", studentId);
+            return Results.Problem("Failed to fetch mistakes. Please try again later.");
+        }
+    }
+
+    private static async Task<IResult> GetAllHistoriesAsync(
+        [FromServices] IAccessorClient accessorClient,
+        ILogger<GameEndpoint> logger,
+        CancellationToken ct)
+    {
+        try
+        {
+            logger.LogInformation("Fetching all histories...");
+
+            var result = await accessorClient.GetAllHistoriesAsync(ct);
+
+            logger.LogInformation("Fetched all histories successfully. Count={Count}", result.Count());
+
+            return Results.Ok(result);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error fetching all histories");
+            return Results.Problem("Failed to fetch all histories. Please try again later.");
+        }
+    }
+}
