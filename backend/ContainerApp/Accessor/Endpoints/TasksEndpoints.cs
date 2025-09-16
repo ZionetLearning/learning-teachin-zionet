@@ -56,15 +56,14 @@ public static class TasksEndpoints
     }
 
     public static async Task<IResult> GetAllTasksAsync(
-    [FromServices] ITaskService taskService,
-    [FromServices] ILogger<TaskService> logger,
-    CancellationToken ct)
+        [FromServices] ITaskService taskService,
+        [FromServices] ILogger<TaskService> logger,
+        CancellationToken ct)
     {
         using var scope = logger.BeginScope("Method: {Method}", nameof(GetAllTasksAsync));
         try
         {
-            var list = await taskService.GetAllTasksWithEtagsAsync(ct);
-            // returns [{ task, eTag }, ...]
+            var list = await taskService.GetAllTaskSummariesAsync(ct);
             return Results.Ok(list);
         }
         catch (Exception ex)

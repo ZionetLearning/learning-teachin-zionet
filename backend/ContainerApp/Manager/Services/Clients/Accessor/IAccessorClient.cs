@@ -34,5 +34,5 @@ public interface IAccessorClient
     Task<IEnumerable<UserData>> GetStudentsForTeacherAsync(Guid teacherId, CancellationToken ct = default);
     Task<IEnumerable<UserData>> GetTeachersForStudentAsync(Guid studentId, CancellationToken ct = default);
     Task<SpeechTokenResponse> GetSpeechTokenAsync(CancellationToken ct = default);
-    Task<IReadOnlyList<TaskWithEtagDto>> GetTasksWithEtagsAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<TaskSummaryDto>> GetTaskSummariesAsync(CancellationToken ct = default);
 }

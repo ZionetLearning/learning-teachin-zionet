@@ -160,30 +160,21 @@ public class TaskService : ITaskService
         var etag = await GetDbEtagAsync(id) ?? string.Empty;
         return (task, etag);
     }
-    public async Task<IReadOnlyList<TaskWithEtag>> GetAllTasksWithEtagsAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<TaskSummaryDto>> GetAllTaskSummariesAsync(CancellationToken ct = default)
     {
-        using var scope = _logger.BeginScope("List all tasks");
-        _logger.LogInformation("Inside:{Method}", nameof(GetAllTasksWithEtagsAsync));
+        using var scope = _logger.BeginScope("List all task summaries");
+        _logger.LogInformation("Inside:{Method}", nameof(GetAllTaskSummariesAsync));
 
-        // fetch both the row (task) and its xmin in one roundtrip
-        var rows = await _db.Tasks
+        var list = await _db.Tasks
             .AsNoTracking()
-            .Select(t => new
+            .Select(t => new TaskSummaryDto
             {
-                Task = t,
-                Xmin = EF.Property<uint>(t, "xmin")
+                Id = t.Id,
+                Name = t.Name
             })
             .ToListAsync(ct);
 
-        var result = rows
-            .Select(x => new TaskWithEtag
-            {
-                Task = x.Task,
-                ETag = x.Xmin.ToString()
-            })
-            .ToList();
-
-        return result;
+        return list;
     }
     public async Task<UpdateTaskResult> UpdateTaskNameAsync(int taskId, string newName, string? ifMatch)
     {

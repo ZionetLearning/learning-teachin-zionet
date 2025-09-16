@@ -134,13 +134,13 @@ public static class TasksEndpoints
     }
 
     private static async Task<IResult> GetTasksAsync(
-    [FromServices] IAccessorClient accessorClient,
-    [FromServices] ILogger<TaskEndpoint> logger)
+        [FromServices] IAccessorClient accessorClient,
+        [FromServices] ILogger<TaskEndpoint> logger)
     {
         using var scope = logger.BeginScope("List all tasks");
         try
         {
-            var items = await accessorClient.GetTasksWithEtagsAsync();
+            var items = await accessorClient.GetTaskSummariesAsync();
             logger.LogInformation("Retrieved {Count} tasks", items?.Count ?? 0);
             return Results.Ok(items);
         }
