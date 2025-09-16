@@ -24,16 +24,6 @@ variable "use_existing_network" {
   description = "Whether to use an existing network instead of creating a new one."
   type        = bool
   default     = false
-  validation {
-    condition = var.use_existing_network == false || (
-      var.existing_network_rg != null &&
-      var.existing_vnet_name != null &&
-      var.existing_aks_subnet_name != null &&
-      var.existing_db_vnet_name != null &&
-      var.existing_db_subnet_name != null
-    )
-    error_message = "When use_existing_network=true you must set existing_network_rg, existing_vnet_name, existing_aks_subnet_name, existing_db_vnet_name, existing_db_subnet_name."
-  }
 }
 
 # Reuse path identifiers
