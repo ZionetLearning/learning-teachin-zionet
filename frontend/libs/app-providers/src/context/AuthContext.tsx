@@ -3,7 +3,8 @@ import { AppRoleType, SignupData, UserDto } from "@app-providers/types";
 
 export interface AuthContextValue {
   isAuthorized: boolean;
-  role: AppRoleType;
+  role?: AppRoleType;
+  appRole: AppRoleType;
   login: (email: string, password: string) => Promise<void> | void;
   signup: (data: SignupData) => void;
   logout: () => void;

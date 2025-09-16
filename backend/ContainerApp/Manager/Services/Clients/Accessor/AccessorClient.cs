@@ -598,7 +598,31 @@ public class AccessorClient(
             throw;
         }
     }
+    public async Task<IReadOnlyList<TaskSummaryDto>> GetTaskSummariesAsync(CancellationToken ct = default)
+    {
+        _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetTaskSummariesAsync), nameof(AccessorClient));
+        try
+        {
+            var list = await _daprClient.InvokeMethodAsync<List<TaskSummaryDto>>(
+                HttpMethod.Get,
+                AppIds.Accessor,
+                "tasks-accessor/tasks",
+                ct);
 
+            _logger.LogInformation("Accessor returned {Count} task summaries", list?.Count ?? 0);
+            return list ?? new List<TaskSummaryDto>();
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("Accessor returned 404 for tasks list");
+            return Array.Empty<TaskSummaryDto>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get tasks list from Accessor");
+            throw;
+        }
+    }
     public async Task<UpdateTaskNameResult> UpdateTaskNameAsync(int id, string newTaskName, string ifMatch, CancellationToken ct = default)
     {
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(UpdateTaskNameAsync), nameof(AccessorClient));
