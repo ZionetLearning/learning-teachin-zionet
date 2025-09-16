@@ -4,15 +4,54 @@ on:
   schedule:
     - cron: "0 16 * * *"
   workflow_dispatch:
+    inputs:
+      repositories:
+        description: 'Repositories to purge (comma-separated: manager,engine,accessor or "all")'
+        required: false
+        default: 'all'
+        type: string
+      dry_run:
+        description: 'Dry run - show what would be deleted without actually deleting'
+        required: false
+        default: false
+        type: boolean
+      keep_recent_count:
+        description: 'Number of recent tags to keep'
+        required: false
+        default: '5'
+        type: string
 
 jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      repositories: ${{ steps.set-repos.outputs.repositories }}
+    steps:
+      - name: Set repositories to process
+        id: set-repos
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            INPUT_REPOS="${{ inputs.repositories }}"
+            if [ "$INPUT_REPOS" = "all" ]; then
+              echo "repositories=[\"manager\", \"engine\", \"accessor\"]" >> $GITHUB_OUTPUT
+            else
+              # Convert comma-separated string to JSON array
+              REPOS_ARRAY=$(echo "$INPUT_REPOS" | sed 's/,/", "/g' | sed 's/^/["/' | sed 's/$/"]/')
+              echo "repositories=$REPOS_ARRAY" >> $GITHUB_OUTPUT
+            fi
+          else
+            # Scheduled run - process all repositories
+            echo "repositories=[\"manager\", \"engine\", \"accessor\"]" >> $GITHUB_OUTPUT
+          fi
+
   purge:
     name: Purge ${{ matrix.repo }} images
     runs-on: ubuntu-latest
+    needs: setup
     environment: Development
     strategy:
       matrix:
-        repo: [manager, engine, accessor]
+        repo: ${{ fromJson(needs.setup.outputs.repositories) }}
     permissions:
       id-token: write
       contents: read
@@ -35,54 +74,121 @@ jobs:
         run: |
           REPO="${{ matrix.repo }}"
           KEEP_ALWAYS=("latest" "dev" "prod" "stage")
+          
+          # Set keep count based on input or default
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            KEEP_COUNT="${{ inputs.keep_recent_count }}"
+            DRY_RUN="${{ inputs.dry_run }}"
+          else
+            KEEP_COUNT="5"
+            DRY_RUN="false"
+          fi
 
-          echo "Cleaning repo: $REPO"
+          echo "🧹 Cleaning repo: $REPO"
+          echo "📊 Keeping $KEEP_COUNT most recent tags"
+          echo "🏷️  Always keeping: ${KEEP_ALWAYS[*]}"
+          
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "🧪 DRY RUN MODE - No images will be deleted"
+          fi
 
-
+          # Get all tags sorted by time (newest first)
           TAGS=$(az acr repository show-tags \
             --name teachindevacr \
             --repository $REPO \
             --orderby time_desc \
             --output tsv)
 
+          # Keep the N most recent tags
+          KEEP_RECENT=$(echo "$TAGS" | head -n $KEEP_COUNT)
 
-          KEEP_RECENT=$(echo "$TAGS" | head -n 5)
-
-
+          # Find digests for tags we always want to keep
           DIGESTS=()
           for tag in "${KEEP_ALWAYS[@]}"; do
+            echo "🔍 Checking for tag: $tag"
             d=$(az acr repository show-manifests \
                   --name teachindevacr \
                   --repository $REPO \
                   --query "[?tags[?@ == '$tag']].digest" -o tsv)
             if [ -n "$d" ]; then
-              DIGESTS+=($d)
+              echo "✅ Found digest for $tag: $d"
+              DIGESTS+=("$d")
+            else
+              echo "ℹ️  Tag $tag not found in repository"
             fi
           done
 
-
+          # Find all tags that share digests with protected tags
           DIGEST_TAGS=()
           for digest in "${DIGESTS[@]}"; do
+            echo "🔗 Finding all tags for digest: $digest"
             tags=$(az acr repository show-manifests \
                      --name teachindevacr \
                      --repository $REPO \
                      --query "[?digest=='$digest'].tags[]" -o tsv)
             if [ -n "$tags" ]; then
-              DIGEST_TAGS+=($tags)
+              echo "🏷️  Tags sharing this digest: $tags"
+              # Convert space-separated string to array elements
+              for tag in $tags; do
+                DIGEST_TAGS+=("$tag")
+              done
             fi
           done
 
-          WHITELIST=$(printf "%s\n%s\n%s\n" "$KEEP_RECENT" "${KEEP_ALWAYS[@]}" "${DIGEST_TAGS[@]}" | sort -u)
-
-          echo "Keeping in $REPO:"
-          echo "$WHITELIST"
-
+          # Create whitelist by combining all protected tags
+          WHITELIST_ITEMS=()
           
+          # Add recent tags
+          for tag in $KEEP_RECENT; do
+            WHITELIST_ITEMS+=("$tag")
+          done
+          
+          # Add always-keep tags
+          for tag in "${KEEP_ALWAYS[@]}"; do
+            WHITELIST_ITEMS+=("$tag")
+          done
+          
+          # Add digest-related tags
+          for tag in "${DIGEST_TAGS[@]}"; do
+            WHITELIST_ITEMS+=("$tag")
+          done
+
+          # Remove duplicates and create final whitelist
+          WHITELIST=$(printf "%s\n" "${WHITELIST_ITEMS[@]}" | sort -u)
+
+          echo ""
+          echo "=== 🛡️  PROTECTED TAGS (keeping these) ==="
+          echo "$WHITELIST"
+          echo "=== END PROTECTED TAGS ==="
+          echo ""
+
+          # Count tags to be deleted
+          DELETE_COUNT=0
+          KEEP_COUNT_ACTUAL=0
+          
+          # Process each tag
           for tag in $TAGS; do
             if ! echo "$WHITELIST" | grep -qx "$tag"; then
-              echo "Deleting tag $REPO:$tag"
-              az acr repository untag \
-                --name teachindevacr \
-                --image $REPO:$tag
+              DELETE_COUNT=$((DELETE_COUNT + 1))
+              if [ "$DRY_RUN" = "true" ]; then
+                echo "🧪 Would delete tag $REPO:$tag"
+              else
+                echo "🗑️  Deleting tag $REPO:$tag"
+                az acr repository untag \
+                  --name teachindevacr \
+                  --image $REPO:$tag
+              fi
+            else
+              KEEP_COUNT_ACTUAL=$((KEEP_COUNT_ACTUAL + 1))
+              echo "✅ Keeping tag $REPO:$tag"
             fi
           done
+          
+          echo ""
+          echo "📊 Summary for $REPO:"
+          echo "   - Protected: $KEEP_COUNT_ACTUAL tags"
+          echo "   - Deleted: $DELETE_COUNT tags"
+          
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "🧪 DRY RUN COMPLETE - No changes made"
+          fi
