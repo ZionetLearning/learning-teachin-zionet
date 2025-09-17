@@ -185,6 +185,23 @@ namespace Accessor.Migrations
                     b.ToTable("Tasks");
                 });
 
+            modelBuilder.Entity("Accessor.Models.Users.TeacherStudent", b =>
+                {
+                    b.Property<Guid>("TeacherId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("StudentId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("TeacherId", "StudentId");
+
+                    b.HasIndex("StudentId");
+
+                    b.HasIndex("TeacherId");
+
+                    b.ToTable("TeacherStudents", (string)null);
+                });
+
             modelBuilder.Entity("Accessor.Models.Users.UserModel", b =>
                 {
                     b.Property<Guid>("UserId")

@@ -15,7 +15,8 @@
         "teacherDashboard": "מורים",
         "studentDashboard": "תלמידים",
         "adminDashboard": "מנהל מערכת",
-        "genericError": "משהו השתבש. אנא נסה שוב מאוחר יותר."
+        "genericError": "משהו השתבש. אנא נסה שוב מאוחר יותר.",
+        "forbiddenRole": "אין לך הרשאה לגשת לדף זה."
       },
       "home": {
         "title": "ברוכים הבאים למגרש המשחקים הפנימי שלנו",
@@ -76,6 +77,39 @@
         "avatar": "אווטאר",
         "lips": "שפתיים"
       },
+      "chatHistory": {
+        "title": "היסטוריית צ'אט",
+        "toggleButton": {
+          "title": "פתח/סגר היסטוריית צ'אט",
+          "ariaLabel": "פתח או סגר את סרגל היסטוריית הצ'אט"
+        },
+        "closeButton": {
+          "title": "סגור היסטוריית צ'אט",
+          "ariaLabel": "סגור את סרגל היסטוריית הצ'אט"
+        },
+        "newChatButton": {
+          "title": "התחל שיחה חדשה",
+          "text": "צ'אט חדש"
+        },
+        "untitledChat": "צ'אט ללא שם",
+        "dateFormat": {
+          "today": "היום",
+          "yesterday": "אתמול",
+          "daysAgo": "לפני {{count}} ימים",
+          "unknown": "תאריך לא ידוע"
+        },
+        "loading": {
+          "chats": "טוען צ'אטים...",
+          "history": "טוען היסטוריית צ'אט..."
+        },
+        "emptyState": {
+          "title": "אין שיחות עדיין",
+          "description": "התחל צ'אט חדש כדי לראות את היסטוריית השיחות שלך כאן."
+        },
+        "overlay": {
+          "ariaLabel": "לחץ לסגירת היסטוריית הצ'אט"
+        }
+      },
       "avatarOu": {
         "avatarOuPage": "אווטאר - אוריאל",
         "ouAvatar": "Ou Avatar",
@@ -133,14 +167,58 @@
         "replay": "🔄 נגן שוב"
       },
       "wordOrderGame": {
+        "config": {
+          "title": "העדפות משחק",
+          "subtitle": "בחר את העדפותייך למשחק סידור המילים",
+          "difficulty": "רמת קושי",
+          "difficultyDesc": {
+            "easy": "משפטים פשוטים עם אוצר מילים בסיסי",
+            "medium": "משפטים ברמה בינונית עם אוצר מילים יומיומי",
+            "hard": "משפטים ברמה מורכבת עם אוצר מילים מתקדם"
+          },
+          "options": "אפשרויות משחק",
+          "nikud": "כלול ניקוד",
+          "nikudDesc": "הצג סימנים דיאקריטיים כדי לסייע בהגייה",
+          "sentenceCount": "מספר המשפטים",
+          "sentenceCountDesc": "כמות המשפטים ליצירה (1-10)",
+          "startGame": "התחל משחק"
+        },
+        "difficulty": {
+          "easy": "קל",
+          "medium": "בינוני",
+          "hard": "קשה"
+        },
+        "welcome": {
+          "description": "בחר רמת קושי והעדפות נוספות כדי להתחיל לשחק",
+          "configure": "קבע העדפות משחק"
+        },
+        "current": {
+          "difficulty": "רמת קושי",
+          "nikud": "ניקוד",
+          "sentences": "משפטים",
+          "sentence": "משפט"
+        },
+        "gameOver": {
+          "title": "המשחק הסתיים!",
+          "congratulations": "כל הכבוד!",
+          "completed": "השלמת את כל {{count}} המשפטים.",
+          "whatNext": "מה תרצה לעשות כעת?",
+          "playAgain": "משחק חדש",
+          "changeSettings": "שינוי הגדרות משחק"
+        },
         "title": "משחק סידור מילים",
         "subTitle": "סדר את המילים בסדר הנכון",
+        "settings": "הגדרות",
         "loading": "טוען…",
         "reset": "איפוס",
         "check": "בדיקה",
         "next": "הבא",
         "playAudio": "הפעל קטע אודיו",
-        "playAudioSlowly": "הפעל קטע אודיו במהירות איטית (0.6x)"
+        "playAudioSlowly": "הפעל קטע אודיו במהירות איטית (0.6x)",
+        "cancel": "בטל",
+        "close": "סגור",
+        "yes": "כן",
+        "no": "לא"
       },
       "earthquakeMap": {
         "title": "מפת רעידות אדמה",
@@ -261,7 +339,14 @@
         "firstName": "שם פרטי",
         "lastName": "שם משפחה",
         "noChanges": "אין שינויים",
-        "role": "תפקיד"
+        "role": "תפקיד",
+        "actions": "פעולות",
+        "searchPlaceholder": "חפש לפי אימייל, שם פרטי, שם משפחה...",
+        "clear": "נקה",
+        "rowsPerPage": "שורות בעמוד:",
+        "page": "עמוד:",
+        "of": "של",
+        "all": "הכל"
       },
       "profile": {
         "title": "הפרופיל שלי",
@@ -270,6 +355,7 @@
         "firstName": "שם פרטי",
         "lastName": "שם משפחה",
         "email": "דואר אלקטרוני",
+        "preferredLanguage": "שפה מועדפת",
         "emailCannotBeChanged": "דואר אלקטרוני לא ניתן לשינוי",
         "edit": "עריכה",
         "saveChanges": "שמור שינויים",
@@ -312,6 +398,17 @@
       "admin": "מנהל מערכת",
       "teacher": "מורה",
       "student": "תלמיד"
+    },
+    "hebrewLevels": {
+      "title": "רמת עברית",
+      "beginner": "מתחיל",
+      "intermediate": "בינוני",
+      "advanced": "מתקדם",
+      "fluent": "שוטף"
+    },
+    "languages": {
+      "hebrew": "עברית",
+      "english": "אנגלית"
     }
   }
 }

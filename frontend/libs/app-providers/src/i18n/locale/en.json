@@ -15,7 +15,8 @@
         "teacherDashboard": "Teacher Dashboard",
         "studentDashboard": "Student Dashboard",
         "adminDashboard": "Admin Dashboard",
-        "genericError": "Something went wrong. Please try again later."
+        "genericError": "Something went wrong. Please try again later.",
+        "forbiddenRole": "You do not have permission to access this page."
       },
       "home": {
         "title": "Welcome to our internal playground project",
@@ -71,10 +72,43 @@
         "score": "Score:"
       },
       "chatAvatar": {
-        "chatAvatarPage": "Chat with Avatar - Connected to backend",
+        "chatAvatarPage": "Chat with Avatar",
         "typeMessage": "Type a message...",
         "avatar": "Avatar",
         "lips": "Lips"
+      },
+      "chatHistory": {
+        "title": "Chat History",
+        "toggleButton": {
+          "title": "Toggle Chat History",
+          "ariaLabel": "Open or close chat history sidebar"
+        },
+        "closeButton": {
+          "title": "Close Chat History",
+          "ariaLabel": "Close chat history sidebar"
+        },
+        "newChatButton": {
+          "title": "Start a new conversation",
+          "text": "New Chat"
+        },
+        "untitledChat": "Untitled Chat",
+        "dateFormat": {
+          "today": "Today",
+          "yesterday": "Yesterday",
+          "daysAgo": "{{count}} days ago",
+          "unknown": "Unknown date"
+        },
+        "loading": {
+          "chats": "Loading chats...",
+          "history": "Loading chat history..."
+        },
+        "emptyState": {
+          "title": "No conversations yet",
+          "description": "Start a new chat to see your conversation history here."
+        },
+        "overlay": {
+          "ariaLabel": "Click to close chat history"
+        }
       },
       "avatarOu": {
         "avatarOuPage": "Avatar Ou Page",
@@ -133,14 +167,58 @@
         "replay": "🔄 Replay"
       },
       "wordOrderGame": {
+        "config": {
+          "title": "Game Configuration",
+          "subtitle": "Choose your preferences for the word order game",
+          "difficulty": "Difficulty Level",
+          "difficultyDesc": {
+            "easy": "Simple sentences with basic vocabulary",
+            "medium": "Moderate sentences with everyday language",
+            "hard": "Complex sentences with advanced vocabulary"
+          },
+          "options": "Game Options",
+          "nikud": "Include Nikud (Hebrew vowel marks)",
+          "nikudDesc": "Show diacritical marks to help with pronunciation",
+          "sentenceCount": "Number of Sentences",
+          "sentenceCountDesc": "How many sentences to generate (1-10)",
+          "startGame": "Start Game"
+        },
+        "difficulty": {
+          "easy": "Easy",
+          "medium": "Medium",
+          "hard": "Hard"
+        },
+        "welcome": {
+          "description": "Choose your difficulty level and preferences to get started.",
+          "configure": "Configure Game"
+        },
+        "current": {
+          "difficulty": "Difficulty",
+          "nikud": "Nikud",
+          "sentences": "Sentences",
+          "sentence": "Sentence"
+        },
+        "gameOver": {
+          "title": "Game Complete!",
+          "congratulations": "Congratulations!",
+          "completed": "You have completed all {{count}} sentences.",
+          "whatNext": "What would you like to do next?",
+          "playAgain": "Play Again",
+          "changeSettings": "Change Settings"
+        },
         "title": "Word Order Game",
         "subTitle": "Arrange the words in the correct order",
+        "settings": "Settings",
         "loading": "Loading...",
         "reset": "Reset",
         "check": "Check",
         "next": "Next",
         "playAudio": "Play audio",
-        "playAudioSlowly": "Play audio slowly (0.6x)"
+        "playAudioSlowly": "Play audio slowly (0.6x)",
+        "cancel": "Cancel",
+        "close": "Close",
+        "yes": "Yes",
+        "no": "No"
       },
       "earthquakeMap": {
         "title": "Earthquake Map",
@@ -261,7 +339,14 @@
         "firstName": "First Name",
         "lastName": "Last Name",
         "noChanges": "No changes",
-        "role": "Role"
+        "role": "Role",
+        "actions": "Actions",
+        "searchPlaceholder": "Search by email, first name, last name...",
+        "clear": "Clear",
+        "rowsPerPage": "Rows per page:",
+        "page": "Page:",
+        "of": "of",
+        "all": "All"
       },
       "profile": {
         "title": "My profile",
@@ -270,6 +355,7 @@
         "firstName": "First Name",
         "lastName": "Last Name",
         "email": "Email",
+        "preferredLanguage": "Preferred Language",
         "emailCannotBeChanged": "Email cannot be changed",
         "edit": "Edit",
         "saveChanges": "Save changes",
@@ -312,6 +398,17 @@
       "admin": "Admin",
       "teacher": "Teacher",
       "student": "Student"
+    },
+    "hebrewLevels": {
+      "title": "Hebrew Level",
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced",
+      "fluent": "Fluent"
+    },
+    "languages": {
+      "hebrew": "Hebrew",
+      "english": "English"
     }
   }
 }

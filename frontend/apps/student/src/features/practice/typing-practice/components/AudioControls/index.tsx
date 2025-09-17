@@ -62,7 +62,7 @@ export const AudioControls = ({
                 {t("pages.typingPractice.playing")}
               </>
             ) : (
-              <>{t("pages.typingPractice.playingAudio")}</>
+              <>{t("pages.typingPractice.playAudio")}</>
             )}
           </button>
         )}

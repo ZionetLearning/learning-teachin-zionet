@@ -2,6 +2,7 @@ using System.Net;
 using FluentAssertions;
 using Manager.Endpoints;
 using Manager.Services.Clients.Accessor;
+using Manager.Services.Clients.Accessor.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -35,9 +36,11 @@ public class MediaEndpointsTests
     [Fact]
     public async Task GetSpeechToken_ReturnsOk_WithWrappedToken()
     {
+        var speechTokenResponse = new SpeechTokenResponse { Token = "abc123", Region = "eastus" };
+        
         _accessorClient.Reset();
         _accessorClient.Setup(a => a.GetSpeechTokenAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync("tok123");
+            .ReturnsAsync(speechTokenResponse);
 
         var result = await PrivateInvoker.InvokePrivateEndpointAsync(
             typeof(MediaEndpoints),
@@ -47,8 +50,10 @@ public class MediaEndpointsTests
 
         var (status, body) = await ExecuteAsync(result);
         status.Should().Be((int)HttpStatusCode.OK);
-        body.Should().Contain("tok123");
+        body.Should().Contain("abc123");
         body.Should().Contain("token");
+        body.Should().Contain("region");
+        body.Should().Contain("eastus");
     }
 
     [Fact]
@@ -56,7 +61,7 @@ public class MediaEndpointsTests
     {
         _accessorClient.Reset();
         _accessorClient.Setup(a => a.GetSpeechTokenAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync("");
+            .ThrowsAsync(new Exception("failure"));
 
         var result = await PrivateInvoker.InvokePrivateEndpointAsync(
             typeof(MediaEndpoints),

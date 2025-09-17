@@ -15,16 +15,23 @@ using Microsoft.SemanticKernel.ChatCompletion;
 
 namespace Engine.Endpoints;
 
-public class EngineQueueHandler : IQueueHandler<Message>
+public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
 {
     private readonly DaprClient _daprClient;
     private readonly ILogger<EngineQueueHandler> _logger;
-    private readonly Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>> _handlers;
     private readonly IChatAiService _aiService;
     private readonly ISentencesService _sentencesService;
     private readonly IAiReplyPublisher _publisher;
     private readonly IAccessorClient _accessorClient;
     private readonly IChatTitleService _chatTitleService;
+    protected override MessageAction GetAction(Message message) => message.ActionName;
+
+    protected override void Configure(RouteBuilder routes) => routes
+        .On(MessageAction.CreateTask, HandleCreateTaskAsync)
+        .On(MessageAction.TestLongTask, HandleTestLongTaskAsync)
+        .On(MessageAction.ProcessingChatMessage, HandleProcessingChatMessageAsync)
+        .On(MessageAction.GenerateSentences, HandleSentenceGenerationAsync)
+        .On(MessageAction.GenerateSplitSentences, HandleSentenceGenerationAsync);
 
     public EngineQueueHandler(
         DaprClient daprClient,
@@ -33,7 +40,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
         IAccessorClient accessorClient,
         ISentencesService sentencesService,
         IChatTitleService chatTitleService,
-        ILogger<EngineQueueHandler> logger)
+        ILogger<EngineQueueHandler> logger) : base(logger)
     {
         _daprClient = daprClient;
         _aiService = aiService;
@@ -42,31 +49,9 @@ public class EngineQueueHandler : IQueueHandler<Message>
         _chatTitleService = chatTitleService;
         _logger = logger;
         _sentencesService = sentencesService;
-        _handlers = new Dictionary<MessageAction, Func<Message, Func<Task>, CancellationToken, Task>>
-        {
-            [MessageAction.CreateTask] = HandleCreateTaskAsync,
-            [MessageAction.TestLongTask] = HandleTestLongTaskAsync,
-            [MessageAction.ProcessingChatMessage] = HandleProcessingChatMessageAsync,
-            [MessageAction.GenerateSentences] = HandleSentenceGenerationAsync,
-            [MessageAction.GenerateSplitSentences] = HandleSentenceGenerationAsync
-
-        };
     }
 
-    public async Task HandleAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
-    {
-        if (_handlers.TryGetValue(message.ActionName, out var handler))
-        {
-            await handler(message, renewLock, cancellationToken);
-        }
-        else
-        {
-            _logger.LogWarning("No handler for action {Action}", message.ActionName);
-            throw new NonRetryableException($"No handler for action {message.ActionName}");
-        }
-    }
-
-    private async Task HandleCreateTaskAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
+    private async Task HandleCreateTaskAsync(Message message, IReadOnlyDictionary<string, string>? metadata, Func<Task> renewLock, CancellationToken cancellationToken)
     {
         try
         {
@@ -108,7 +93,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
         }
     }
 
-    private async Task HandleTestLongTaskAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
+    private async Task HandleTestLongTaskAsync(Message message, IReadOnlyDictionary<string, string>? metadata, Func<Task> renewLock, CancellationToken cancellationToken)
     {
         using var renewalCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         var renewalTask = Task.Run(async () =>
@@ -175,11 +160,13 @@ public class EngineQueueHandler : IQueueHandler<Message>
         }
     }
 
-    private async Task HandleProcessingChatMessageAsync(
-           Message message,
-           Func<Task> renewLock,
-           CancellationToken ct)
+    private async Task HandleProcessingChatMessageAsync(Message message, IReadOnlyDictionary<string, string>? metadata, Func<Task> renewLock, CancellationToken ct)
     {
+        long getHistoryTime = 0;
+        long addOrCheckSystemPromptTime = 0;
+        long addOrCheckChatNameTime = 0;
+        long afterChatServiseTime = 0;
+
         var sw = Stopwatch.StartNew();
         EngineChatRequest? request = null;
         try
@@ -211,6 +198,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
 
             var snapshot = await _accessorClient.GetHistorySnapshotAsync(request.ThreadId, request.UserId, ct);
 
+            getHistoryTime = sw.ElapsedMilliseconds;
             var skHistory = HistoryMapper.ToChatHistoryFromElement(snapshot.History);
             var storyForKernel = HistoryMapper.CloneToChatHistory(skHistory);
 
@@ -219,6 +207,8 @@ public class EngineQueueHandler : IQueueHandler<Message>
                 var systemPrompt = await GetOrLoadSystemPromptAsync(ct);
                 storyForKernel.Insert(0, new ChatMessageContent(AuthorRole.System, systemPrompt));
             }
+
+            addOrCheckSystemPromptTime = sw.ElapsedMilliseconds;
 
             storyForKernel.AddUserMessage(request.UserMessage.Trim(), DateTimeOffset.UtcNow);
 
@@ -235,6 +225,8 @@ public class EngineQueueHandler : IQueueHandler<Message>
                     chatName = DateTime.UtcNow.ToString("HHmm_dd_MM");
                 }
             }
+
+            addOrCheckChatNameTime = sw.ElapsedMilliseconds;
 
             var upsertUserMessage = new UpsertHistoryRequest
             {
@@ -259,6 +251,8 @@ public class EngineQueueHandler : IQueueHandler<Message>
             };
 
             var aiResponse = await _aiService.ChatHandlerAsync(serviceRequest, ct);
+
+            afterChatServiseTime = sw.ElapsedMilliseconds;
 
             if (aiResponse.Status != ChatAnswerStatus.Ok || aiResponse.Answer is null)
             {
@@ -322,10 +316,17 @@ public class EngineQueueHandler : IQueueHandler<Message>
             sw.Stop();
             if (request is not null)
             {
-                _logger.LogInformation("Chat request {RequestId} chatId {ThreadId} userId {UserId} finished in {ElapsedMs} ms",
+
+                _logger.LogInformation("Chat request {RequestId} chatId {ThreadId} userId {UserId}, " +
+                    "getHistoryTime {GetHistoryTime} ms, addOrCheckSystemPromptTime {AddOrCheckSystemPromptTime} ms, addOrCheckChatNameTime {AddOrCheckChatNameTime}  ms, " +
+                    "afterChatServiseTime {AfterChatServiseTime} ms, finished in {ElapsedMs} ms",
                     request.RequestId,
                     request.ThreadId,
                     request.UserId,
+                    getHistoryTime,
+                    addOrCheckSystemPromptTime,
+                    addOrCheckChatNameTime,
+                    afterChatServiseTime,
                     sw.ElapsedMilliseconds);
             }
         }
@@ -367,7 +368,7 @@ public class EngineQueueHandler : IQueueHandler<Message>
         }
     }
 
-    private async Task HandleSentenceGenerationAsync(Message message, Func<Task> renewLock, CancellationToken cancellationToken)
+    private async Task HandleSentenceGenerationAsync(Message message, IReadOnlyDictionary<string, string>? metadata, Func<Task> renewLock, CancellationToken cancellationToken)
     {
         try
         {

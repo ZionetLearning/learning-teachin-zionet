@@ -1,3 +1,5 @@
+import { addCreatedEmail } from "../support/commands";
+
 describe("auth", () => {
   const baseUrl = "https://localhost:4000";
 
@@ -27,20 +29,16 @@ describe("auth", () => {
     });
   });
 
-  it("signup creates session (mocked by same login logic) and persists after reload", () => {
-    const email = `testuser_${Date.now()}@example.com`;
-    cy.visit(baseUrl + "/");
-    cy.get('[data-testid="auth-tab-signup"]').click();
-    cy.get('[data-testid="auth-email"]').should("be.enabled").type(email);
-    cy.get('[data-testid="auth-password"]')
-      .should("be.enabled")
-      .type("Passw0rd!");
-    cy.get('[data-testid="auth-confirm-password"]')
-      .should("be.enabled")
-      .type("Passw0rd!");
-    cy.get('input[placeholder*="First" i]').type("Test");
-    cy.get('input[placeholder*="Last" i]').type("User");
-    cy.get('[data-testid="auth-submit"]').click();
+  it("signup creates session using same deterministic credentials as Users and registers for centralized cleanup", () => {
+    const EMAIL = "e2e_users_fixed_user@example.com";
+    const PASSWORD = "Passw0rd!";
+    Cypress.env("E2E_TEST_EMAIL", EMAIL);
+    Cypress.env("E2E_TEST_PASSWORD", PASSWORD);
+
+    addCreatedEmail(EMAIL);
+
+    cy.login();
+
     cy.get('[data-testid="app-sidebar"]').should("exist");
     cy.reload();
     cy.get('[data-testid="app-sidebar"]').should("exist");

@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.IO.Compression;
 using System.Net;
 using System.Text;
@@ -6,17 +7,18 @@ using Azure.Messaging.ServiceBus;
 using DotQueue;
 using Manager.Constants;
 using Manager.Endpoints;
-using Microsoft.AspNetCore.ResponseCompression;
 using Manager.Hubs;
 using Manager.Models;
 using Manager.Models.Auth;
 using Manager.Models.QueueMessages;
+using Manager.Models.Users;
 using Manager.Services;
 using Manager.Services.Clients.Accessor;
 using Manager.Services.Clients.Engine;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Logging;
@@ -55,9 +57,13 @@ builder.Services.AddResponseCompression(options =>
 builder.Services.Configure<BrotliCompressionProviderOptions>(o => o.Level = CompressionLevel.Fastest);
 builder.Services.Configure<GzipCompressionProviderOptions>(o => o.Level = CompressionLevel.Fastest);
 
+JwtSecurityTokenHandler.DefaultMapInboundClaims = false;
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        options.MapInboundClaims = false;
+
         IdentityModelEventSource.ShowPII = true;
 
         options.TokenValidationParameters = new TokenValidationParameters
@@ -78,6 +84,24 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             RoleClaimType = AuthSettings.RoleClaimType
         };
     });
+builder.Services.AddAuthorization(options =>
+{
+    // Admin can do anything
+    options.AddPolicy(PolicyNames.AdminOnly, p =>
+        p.RequireRole(Role.Admin.ToString()));
+
+    // Admin or Teacher (student list/create/update/delete)
+    options.AddPolicy(PolicyNames.AdminOrTeacher, p =>
+        p.RequireRole(Role.Admin.ToString(), Role.Teacher.ToString()));
+
+    // Exactly Teacher
+    options.AddPolicy(PolicyNames.TeacherOnly, p =>
+        p.RequireRole(Role.Teacher.ToString()));
+
+    // Any authenticated role (handy for groups)
+    options.AddPolicy(PolicyNames.AdminOrTeacherOrStudent, p =>
+        p.RequireRole(Role.Admin.ToString(), Role.Teacher.ToString(), Role.Student.ToString()));
+});
 
 // ---- Services ----
 builder.Services.AddControllers();

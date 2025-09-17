@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using Engine.Helpers;
+﻿using Engine.Helpers;
 using Engine.Models.Chat;
 using Engine.Services.Clients.AccessorClient.Models;
 using Microsoft.SemanticKernel;
@@ -60,14 +59,11 @@ public sealed class ChatAiService : IChatAiService
                 FunctionChoiceBehavior = FunctionChoiceBehavior.Auto()
             };
 
-            var sw = Stopwatch.StartNew();
             var result = await _kernelPolicy.ExecuteAsync(
                 async ct2 => await _chat.GetChatMessageContentAsync(request.History, settings, _kernel, ct2),
                 ct);
 
-            sw.Stop();
-
-            _log.LogInformation("LLM request {RequestId} finished in {ElapsedMs} ms model {Model}", request.RequestId, sw.ElapsedMilliseconds, settings.ModelId);
+            _log.LogInformation("LLM request {RequestId} finished model {Model}", request.RequestId, settings.ModelId);
 
             if (string.IsNullOrWhiteSpace(result?.Content))
             {
