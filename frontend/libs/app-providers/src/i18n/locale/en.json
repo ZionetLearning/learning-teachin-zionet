@@ -200,7 +200,7 @@
         "gameOver": {
           "title": "Game Complete!",
           "congratulations": "Congratulations!",
-          "completed": "You have completed all {{count}} sentences.",
+          "completed": "You have completed {{correct}} correct sentences out of {{total}}.",
           "whatNext": "What would you like to do next?",
           "playAgain": "Play Again",
           "changeSettings": "Change Settings"
