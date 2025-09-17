@@ -9,28 +9,28 @@ on:
         type: choice
         options: [lock, unlock]
 
+  workflow_call:
+    inputs:
+      action:
+        required: true
+        type: string
+
 permissions:
   issues: write
 
 jobs:
-  manage-lock:
+  # -------------------------------
+  # שלב 1: ודא שיש issue קיים לנעילה
+  # -------------------------------
+  ensure-issue:
     runs-on: ubuntu-latest
+    outputs:
+      issue_number: ${{ steps.find-issue.outputs.issue_number }}
     steps:
-      - name: Ensure "locked" label exists
-        run: |
-          gh label create locked \
-            --repo "${{ github.repository }}" \
-            --description "Marks environment as locked" \
-            --color FF0000 || true
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-
       - name: Ensure lock issue exists
         id: find-issue
         run: |
           REPO=${{ github.repository }}
-
-          # "LOCK: featest"
           ISSUE=$(gh issue list \
             --repo "$REPO" \
             --search "LOCK: featest" \
@@ -50,37 +50,72 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
+  # -------------------------------
+  # שלב 2: בדיקת מצב נעילה
+  # -------------------------------
+  check-lock:
+    runs-on: ubuntu-latest
+    needs: ensure-issue
+    steps:
+      - name: Check if environment is locked
+        id: check
+        run: |
+          REPO=${{ github.repository }}
+          ISSUE=${{ needs.ensure-issue.outputs.issue_number }}
+          USER=${GITHUB_ACTOR}
+
+          # משוך את גוף ה־issue (body)
+          BODY=$(gh issue view "$ISSUE" --repo "$REPO" --json body -q .body)
+
+          LOCKED_BY=$(echo "$BODY" | grep '^locked_by=' | cut -d'=' -f2 || echo "")
+          LOCKED_AT=$(echo "$BODY" | grep '^locked_at=' | cut -d'=' -f2 || echo "")
+
+          echo "locked_by=$LOCKED_BY" >> $GITHUB_OUTPUT
+          echo "locked_at=$LOCKED_AT" >> $GITHUB_OUTPUT
+
+          if gh issue view "$ISSUE" --repo "$REPO" --json labels -q '.labels[].name' | grep -q "^locked$"; then
+            if [ "$LOCKED_BY" != "$USER" ]; then
+              echo "❌ Environment is locked by $LOCKED_BY since $LOCKED_AT. $USER cannot run until it's unlocked."
+              exit 1
+            else
+              echo "✅ Environment is locked, but by the same user ($USER) – allowed."
+            fi
+          else
+            echo "✅ Environment is not locked – allowed."
+          fi
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+  # -------------------------------
+  # שלב 3: ניהול מצב (נעילה / פתיחה)
+  # -------------------------------
+  manage-lock:
+    runs-on: ubuntu-latest
+    needs: [ensure-issue, check-lock]
+    steps:
       - name: Manage lock state
         run: |
           set -x
           ACTION=${{ github.event.inputs.action }}
           USER=${GITHUB_ACTOR}
           REPO=${{ github.repository }}
-          ISSUE=${{ steps.find-issue.outputs.issue_number }}
+          ISSUE=${{ needs.ensure-issue.outputs.issue_number }}
 
           if [ "$ACTION" = "lock" ]; then
             echo "🔒 Locking featest by $USER"
-
             BODY=$(echo -e "locked_by=$USER\nlocked_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)")
-
             gh issue edit "$ISSUE" \
               --repo "$REPO" \
               --add-label "locked" \
               --body "$BODY"
 
-            echo "✅ featest is now locked by $USER"
-
           elif [ "$ACTION" = "unlock" ]; then
             echo "🔓 Unlocking featest by $USER"
-
             BODY=$(echo -e "Unlocked by $USER\nunlocked_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)")
-
             gh issue edit "$ISSUE" \
               --repo "$REPO" \
               --remove-label "locked" \
               --body "$BODY"
-
-            echo "✅ featest is now unlocked by $USER"
           fi
         env:
           GITHUB_TOKEN: ${{ github.token }}
