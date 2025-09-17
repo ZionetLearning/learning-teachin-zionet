@@ -7,8 +7,8 @@ metadata:
 spec:
   scaleTargetRef:
     name: {{ .Values.manager.name }}
-  minReplicaCount: 0
-  maxReplicaCount: 3
+  minReplicaCount: 1
+  maxReplicaCount: 1
   triggers:
   - type: prometheus
     metadata:
