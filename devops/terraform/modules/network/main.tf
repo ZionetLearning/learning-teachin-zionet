@@ -113,26 +113,3 @@ resource "azurerm_virtual_network_peering" "database_to_main" {
 
 
 
-# #--------------------- Integration Subnet ---------------------
-# # Subnet for integration services and private endpoints
-# # This subnet will host private endpoints for various Azure services
-# resource "azurerm_subnet" "integration" {
-#   name                 = var.integration_subnet_name
-#   resource_group_name  = var.resource_group_name
-#   virtual_network_name = azurerm_virtual_network.main.name
-#   address_prefixes     = [var.integration_subnet_prefix]
-
-#   # Disable private endpoint network policies to allow private endpoints
-#   # Note: This is the correct attribute name for azurerm provider 4.x
-#   private_endpoint_network_policies = "Disabled"
-# }
-
-# #--------------------- Management Subnet ---------------------
-# # Subnet for management and monitoring services
-# # This subnet can host jump boxes, monitoring tools, etc.
-# resource "azurerm_subnet" "management" {
-#   name                 = var.management_subnet_name
-#   resource_group_name  = var.resource_group_name
-#   virtual_network_name = azurerm_virtual_network.main.name
-#   address_prefixes     = [var.management_subnet_prefix]
-# }
