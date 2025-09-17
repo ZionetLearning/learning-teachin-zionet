@@ -15,7 +15,7 @@ resource "azurerm_resource_group" "main" {
 
 # only build/resolve network for dev/prod
 locals {
-  enable_network = contains(["dev", "prod"], var.environment_name)
+  enable_network = contains(["dev", "prod", "network"], var.environment_name)
 }
 
 # CREATE new network (dev/prod) when not reusing

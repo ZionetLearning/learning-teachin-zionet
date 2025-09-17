@@ -9,8 +9,8 @@ MC_RG="MC_${ENVIRONMENT}-zionet-learning-2025_aks-cluster-${ENVIRONMENT}_westeur
 LOCATION="westeurope"
 DNS_LABEL="teachin"
 
-if [ "$ENVIRONMENT" = "prod" ]; then
-  DNS_LABEL="teachinprod"
+if [ "$ENVIRONMENT" = "network" ]; then
+  DNS_LABEL="teachinnetwork"
 fi
 
 

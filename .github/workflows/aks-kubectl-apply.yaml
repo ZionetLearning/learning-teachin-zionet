@@ -76,8 +76,8 @@ jobs:
           echo "K8S_DIR=devops/kubernetes/" >> $GITHUB_ENV
           echo "CHART_DIR=devops/kubernetes/charts" >> $GITHUB_ENV
           
-          if [ "$TARGET_NAMESPACE" = "prod" ]; then
-              main_val=prod
+          if [ "$TARGET_NAMESPACE" = "network" ]; then
+              main_val=network
           else
               main_val=dev
           fi

@@ -192,6 +192,7 @@ jobs:
             "${ENVIRONMENT_NAME}-postgres-connection"
 
       - name: Get Terraform Outputs
+        if: false  
         id: terraform_output
         run: |
           echo "Getting terraform outputs..."
