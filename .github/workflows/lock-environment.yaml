@@ -84,15 +84,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
-  manage-lock:
-    runs-on: ubuntu-latest
-    needs: [ensure-issue, check-lock]
-    steps:
       - name: Manage lock state
         run: |
           set -x
-          ACTION=${{ github.event.inputs.action }}
-          INPUT_LOCKED_BY=${{ github.event.inputs.locked_by }}
+          ACTION="${{ inputs.action || github.event.inputs.action }}"
+          INPUT_LOCKED_BY="${{ inputs.locked_by || github.event.inputs.locked_by }}"
           CURRENT_LOCKED_BY=${{ needs.check-lock.outputs.locked_by }}
           USER=${GITHUB_ACTOR}
           REPO=${{ github.repository }}
