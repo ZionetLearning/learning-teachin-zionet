@@ -1,0 +1,23 @@
+
+#------------- Resource Configuration -------------
+location               = "westeurope"
+environment_name       = "network"
+subscription_id        = "90ea4c2f-1eee-4ec9-927d-ed24c563003e"
+tenant_id              = "a814ee32-f813-4a36-9686-1b9268183e27"
+identity_id            = "d1ec4dfd-cefc-4eb9-a7a3-71eeddbaa744"  
+#------------- AKS Configuration -------------
+use_shared_aks         = false   # If false, create aks ; if true, use shared aks 
+aks_cluster_name        = "aks-cluster-network"
+kubernetes_namespace   = "network"
+#------------- Shared Posgtres  Configuration -------------
+use_shared_postgres        = false  # If false, create server ; if true, use shared server 
+#---- docker hub ----------------------------
+docker_registry        = "snir1551"
+#------------- Frontend Configuration -------------
+frontend_sku_tier      = "Free"    
+frontend_sku_size      = "Free"    
+frontend_apps          = ["student", "teacher", "admin"]
+#------------- Redis Shared Instance -------------
+use_shared_redis = false  # If false, create server ; if true, use shared server 
+redis_name = "redis-teachin-network"
+

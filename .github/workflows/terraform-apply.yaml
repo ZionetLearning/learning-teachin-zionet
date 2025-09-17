@@ -101,6 +101,8 @@ jobs:
             TFVARS_FILE="terraform.tfvars.dev"
           elif [ "$ENVIRONMENT_NAME" = "prod" ]; then
             TFVARS_FILE="terraform.tfvars.prod"
+          elif [ "$ENVIRONMENT_NAME" = "network" ]; then
+            TFVARS_FILE="terraform.tfvars.network"
           else
             # Custom environments use template
             TFVARS_FILE="terraform.tfvars.template"
@@ -173,6 +175,7 @@ jobs:
         working-directory: ${{ env.TF_DIR }}
 
       - name: Get Terraform Outputs
+        if: false
         id: terraform_output
         run: |
           echo "Getting terraform outputs..."
