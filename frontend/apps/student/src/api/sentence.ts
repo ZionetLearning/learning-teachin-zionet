@@ -52,10 +52,7 @@ export const useGenerateSplitSentences = () => {
       );
 
       // Make the API call
-      const response = await axios.post(
-        `${AI_BASE_URL}/sentence/split`,
-        requestBody,
-      );
+      await axios.post(`${AI_BASE_URL}/sentence/split`, requestBody);
 
       const splitSentenceResponse = await responsePromise;
       return splitSentenceResponse;
