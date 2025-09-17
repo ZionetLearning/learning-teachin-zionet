@@ -57,6 +57,9 @@ helm upgrade --install "$RELEASE_NAME" ingress-nginx/ingress-nginx \
   --set controller.metrics.service.port=10254 \
   --set controller.metrics.service.annotations."prometheus\.io/scrape"=true \
   --set controller.metrics.service.annotations."prometheus\.io/port"=10254 \
+  --set controller.podAnnotations."prometheus\.io/scrape"=true \
+  --set controller.podAnnotations."prometheus\.io/port"=10254 \
+  --set controller.metrics.service.annotations."prometheus\.io/path"="/metrics" \
   --wait
 
 echo "✅ Ingress Controller installed."
