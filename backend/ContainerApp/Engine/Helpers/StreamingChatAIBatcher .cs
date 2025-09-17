@@ -19,14 +19,11 @@ public sealed class StreamingChatAIBatcher : IAsyncDisposable
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly PeriodicTimer _timer;
     private readonly Stopwatch _sinceLastSend = Stopwatch.StartNew();
-
-    private int _seqBase;
     private bool _disposed;
 
     public StreamingChatAIBatcher(
         int minChars,
         TimeSpan maxLatency,
-        int sequenceStart,
         Func<string, EngineChatStreamResponse> makeChunk,
         Func<EngineChatStreamResponse, Task> sendAsync,
         Func<ChatAiStreamDelta, EngineChatStreamResponse> makeToolChunk,
@@ -35,7 +32,6 @@ public sealed class StreamingChatAIBatcher : IAsyncDisposable
     {
         _minChars = Math.Max(1, minChars);
         _maxLatency = maxLatency <= TimeSpan.Zero ? TimeSpan.FromMilliseconds(250) : maxLatency;
-        _seqBase = sequenceStart;
         _makeChunk = makeChunk ?? throw new ArgumentNullException(nameof(makeChunk));
         _sendAsync = sendAsync ?? throw new ArgumentNullException(nameof(sendAsync));
         _makeToolChunk = makeToolChunk ?? throw new ArgumentNullException(nameof(makeToolChunk));
@@ -48,17 +44,17 @@ public sealed class StreamingChatAIBatcher : IAsyncDisposable
 
     public async Task HandleUpdateAsync(ChatAiStreamDelta upd)
     {
-        if (!string.IsNullOrEmpty(upd.Delta) && upd.Stage == "model")
+        if (!string.IsNullOrEmpty(upd.Delta) && upd.Stage == ChatStreamStage.Model)
         {
             await AddAsync(upd.Delta);
         }
-        else if (upd.Stage == "tool" && !string.IsNullOrEmpty(upd.ToolCall))
+        else if (upd.Stage == ChatStreamStage.Tool && !string.IsNullOrEmpty(upd.ToolCall))
         {
             await FlushAsync();
             var toolChunk = _makeToolChunk(upd);
             await _sendAsync(toolChunk);
         }
-        else if (upd.Stage == "toolResult" && !string.IsNullOrEmpty(upd.ToolResult))
+        else if (upd.Stage == ChatStreamStage.ToolResult && !string.IsNullOrEmpty(upd.ToolResult))
         {
             await FlushAsync();
             var toolResChunk = _makeToolResultChunk(upd);
@@ -149,11 +145,9 @@ public sealed class StreamingChatAIBatcher : IAsyncDisposable
 
         var text = _buffer.ToString();
         _buffer.Clear();
-        var seq = _seqBase++;
         _sinceLastSend.Restart();
 
         var chunk = _makeChunk(text);
-        chunk.Sequence = seq;
         await _sendAsync(chunk).ConfigureAwait(false);
     }
 

@@ -13,7 +13,7 @@ public sealed class ChatAiStreamDelta
     public string? ToolCall { get; set; }
     public string? ToolResult { get; set; }
     public bool IsFinal { get; set; }
-    public string? Stage { get; set; }
+    public ChatStreamStage Stage { get; set; }
     public ChatHistory UpdatedHistory { get; set; } = new ChatHistory();
 
 }

@@ -142,9 +142,14 @@ public sealed class AiReplyPublisher : IAiReplyPublisher
             _log.LogInformation("Publishing stream message to binding {Binding}", CallbackBindingSessionName);
             await _dapr.InvokeBindingAsync(CallbackBindingSessionName, BindingOperation, sessionMsg, queueMetadata, cancellationToken: ct);
         }
+        catch (OperationCanceledException ocex) when (ct.IsCancellationRequested)
+        {
+            _log.LogWarning(ocex, "Publishing stream was cancelled for RequestId {RequestId}", chunk.RequestId);
+            throw;
+        }
         catch (Exception ex)
         {
-            _log.LogError(ex, "Failed to publish stream delta");
+            _log.LogError(ex, "Failed to publish stream delta for RequestId {RequestId}", chunk.RequestId);
             throw;
         }
     }

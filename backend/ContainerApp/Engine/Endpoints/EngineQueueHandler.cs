@@ -176,8 +176,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         Task? renewTask = null;
         Stopwatch? elapsed = null;
         var seq = 0;
-        Func<int> nextSeq = () => Interlocked.Increment(ref seq) - 1;
-
+        Func<int> NextSeq = () => Interlocked.Increment(ref seq) - 1;
         try
         {
             request = PayloadValidation.DeserializeOrThrow<EngineChatRequest>(message, _logger);
@@ -277,11 +276,10 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
                 }
             }, renewalCts.Token);
 
-            var total = new StringBuilder();
             elapsed = Stopwatch.StartNew();
 
             EngineChatStreamResponse BuildResponse(
-                string stage,
+                ChatStreamStage stage,
                 string? delta = null,
                 string? toolCall = null,
                 string? toolResult = null)
@@ -292,7 +290,6 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
                     ThreadId = serviceRequest.ThreadId,
                     UserId = serviceRequest.UserId,
                     ChatName = chatName,
-                    Sequence = nextSeq(),
                     Stage = stage,
                     Delta = delta,
                     ToolCall = toolCall,
@@ -302,17 +299,26 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
                 };
             }
 
+            var total = new StringBuilder();
+
             await using var batcher = new StreamingChatAIBatcher(
                 minChars: 80,
                 maxLatency: TimeSpan.FromMilliseconds(250),
-                sequenceStart: 0,
-                makeChunk: (batchedText) => BuildResponse("model", delta: batchedText),
+                makeChunk: (batchedText) => BuildResponse(ChatStreamStage.Model, delta: batchedText),
                 sendAsync: async (chunk) =>
                 {
+                    chunk.Sequence = NextSeq();
+
+                    if (chunk.Stage == ChatStreamStage.Model && !string.IsNullOrEmpty(chunk.Delta))
+                    {
+                        total.Append(chunk.Delta);
+
+                    }
+
                     await _publisher.SendStreamAsync(userContext, chunk, ct);
                 },
-                makeToolChunk: (upd) => BuildResponse("tool", toolCall: upd.ToolCall),
-                makeToolResultChunk: (upd) => BuildResponse("toolResult", toolResult: upd.ToolResult),
+                makeToolChunk: (upd) => BuildResponse(ChatStreamStage.Tool, toolCall: upd.ToolCall),
+                makeToolResultChunk: (upd) => BuildResponse(ChatStreamStage.ToolResult, toolResult: upd.ToolResult),
                 ct: ct);
 
             await foreach (var upd in _aiService.ChatStreamAsync(serviceRequest, ct))
@@ -345,9 +351,9 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
                 ThreadId = serviceRequest.ThreadId,
                 UserId = serviceRequest.UserId,
                 ChatName = chatName,
-                Sequence = nextSeq(),
+                Sequence = NextSeq(),
                 Delta = finalAnswer,
-                Stage = "final",
+                Stage = ChatStreamStage.Final,
                 IsFinal = true,
                 ElapsedMs = elapsed.ElapsedMilliseconds
             };
@@ -367,8 +373,8 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
                 ThreadId = serviceRequest?.ThreadId ?? request?.ThreadId ?? Guid.Empty,
                 UserId = serviceRequest?.UserId ?? request?.UserId ?? Guid.Empty,
                 ChatName = string.IsNullOrWhiteSpace(chatName) ? "Chat" : chatName,
-                Sequence = nextSeq(),
-                Stage = "canceled",
+                Sequence = NextSeq(),
+                Stage = ChatStreamStage.Canceled,
                 IsFinal = true,
                 ElapsedMs = ms
             };
@@ -421,7 +427,10 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
                 {
                     await renewalCts.CancelAsync();
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Error while cancelling renewal");
+                }
 
                 try
                 {
@@ -430,7 +439,10 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
                         await renewTask;
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Error while awaiting renew lock task");
+                }
 
                 renewalCts.Dispose();
             }

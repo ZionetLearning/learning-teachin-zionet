@@ -103,7 +103,7 @@ public sealed class ChatAiService : IChatAiService
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         if (now > request.SentAt + request.TtlSeconds)
         {
-            yield return new ChatAiStreamDelta { RequestId = request.RequestId, ThreadId = request.ThreadId, UserId = request.UserId, Sequence = 0, IsFinal = true, Stage = "expired" };
+            yield return new ChatAiStreamDelta { RequestId = request.RequestId, ThreadId = request.ThreadId, UserId = request.UserId, IsFinal = true, Stage = ChatStreamStage.Expired };
             yield break;
         }
 
@@ -112,9 +112,10 @@ public sealed class ChatAiService : IChatAiService
             FunctionChoiceBehavior = FunctionChoiceBehavior.Auto()
         };
 
-        var seq = 0;
         var sb = new StringBuilder();
         StreamingChatMessageContent? lastPart = null;
+
+        _log.LogInformation("Starting streaming for {RequestId}", request.RequestId);
 
         await foreach (var part in
             _chat.GetStreamingChatMessageContentsAsync(request.History, settings, _kernel, ct))
@@ -136,9 +137,8 @@ public sealed class ChatAiService : IChatAiService
                         RequestId = request.RequestId,
                         ThreadId = request.ThreadId,
                         UserId = request.UserId,
-                        Sequence = seq++,
                         Delta = t.Text,
-                        Stage = "model",
+                        Stage = ChatStreamStage.Model,
                         IsFinal = false
                     };
                 }
@@ -151,9 +151,8 @@ public sealed class ChatAiService : IChatAiService
                     RequestId = request.RequestId,
                     ThreadId = request.ThreadId,
                     UserId = request.UserId,
-                    Sequence = seq++,
                     ToolCall = call.Name,
-                    Stage = "tool",
+                    Stage = ChatStreamStage.Tool,
                     IsFinal = false
                 };
             }
@@ -181,12 +180,10 @@ public sealed class ChatAiService : IChatAiService
             RequestId = request.RequestId,
             ThreadId = request.ThreadId,
             UserId = request.UserId,
-            Sequence = seq++,
-            Delta = accumulated,
+            Delta = null,
             IsFinal = true,
-            Stage = "final",
+            Stage = ChatStreamStage.Final,
             UpdatedHistory = updatedHistory
         };
-
     }
 }

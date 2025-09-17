@@ -8,7 +8,7 @@ public class AIChatStreamResponse
     public string ChatName { get; set; } = string.Empty;
     public string? Delta { get; set; }
     public int Sequence { get; set; }
-    public string Stage { get; set; } = string.Empty;
+    public ChatStreamStage Stage { get; set; }
     public bool IsFinal { get; set; }
     public long ElapsedMs { get; set; }
     public string? ToolCall { get; set; }

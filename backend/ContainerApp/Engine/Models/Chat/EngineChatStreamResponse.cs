@@ -19,7 +19,7 @@ public sealed class EngineChatStreamResponse
 
     public bool IsFinal { get; set; }
 
-    public string? Stage { get; set; }
+    public ChatStreamStage Stage { get; set; }
 
     public long ElapsedMs { get; set; }
 }
