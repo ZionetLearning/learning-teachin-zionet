@@ -72,12 +72,18 @@ helm $ACTION langfuse langfuse/langfuse \
   --set langfuse.additionalEnv[0].name="LANGFUSE_LOG_LEVEL" \
   --set-string langfuse.additionalEnv[0].value="debug" \
   --set langfuse.additionalEnv[1].name="LANGFUSE_AUTO_POSTGRES_MIGRATION_DISABLED" \
-  --set-string langfuse.additionalEnv[1].value="true" \
+  --set-string langfuse.additionalEnv[1].value="false" \
+  --set langfuse.additionalEnv[2].name="DISABLE_LIVENESS_PROBE" \
+  --set-string langfuse.additionalEnv[2].value="true" \
+  --set langfuse.additionalEnv[3].name="DISABLE_READINESS_PROBE" \
+  --set-string langfuse.additionalEnv[3].value="true" \
   --timeout=5m
 
 echo "✅ Chart applied with web=0. Running Prisma migrations as a Job..."
 
 # --- Phase 1.5: run Prisma migrations once, with the same secrets env as the app ---
+kubectl delete job langfuse-migrate -n "$NAMESPACE" --ignore-not-found
+
 cat <<EOF | kubectl apply -f -
 apiVersion: batch/v1
 kind: Job
@@ -93,7 +99,10 @@ spec:
       - name: migrate
         image: langfuse/langfuse:3.108.0
         command: ["sh", "-c"]
-        args: ["npx prisma migrate deploy --schema=packages/shared/prisma/schema.prisma"]
+        args:
+          - |
+            npx prisma migrate resolve --applied 20240104210052_add_model_indices_pricing --schema=packages/shared/prisma/schema.prisma || true
+            npx prisma migrate deploy --schema=packages/shared/prisma/schema.prisma
         envFrom:
         - secretRef:
             name: langfuse-secrets

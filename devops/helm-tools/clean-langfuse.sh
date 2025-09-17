@@ -13,6 +13,7 @@ helm uninstall langfuse -n "$NAMESPACE" --keep-history=false || true
 echo "🚮 Deleting migration job..."
 kubectl delete job langfuse-migrate -n "$NAMESPACE" --ignore-not-found
 
+# #### if this is deleted a full cicd (terraform apply) is needed, so uncomment only if you want to 'full cicd destroy'
 # # 3. Delete ExternalSecret + synced Secret
 # echo "🚮 Deleting secrets..."
 # kubectl delete externalsecret langfuse-secrets -n "$NAMESPACE" --ignore-not-found

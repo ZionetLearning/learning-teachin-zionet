@@ -1,12 +1,11 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: langfuse-ingress
+  name: apps-ingress
   namespace: devops-tools
   annotations:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
   ingressClassName: nginx
@@ -18,10 +17,11 @@ spec:
   - host: teachin.westeurope.cloudapp.azure.com
     http:
       paths:
-      - path: /langfuse(/|$)(.*)
-        pathType: ImplementationSpecific
+      # Langfuse at root "/"
+      - path: /
+        pathType: Prefix
         backend:
           service:
-            name: langfuse
+            name: langfuse-web
             port:
               number: 3000
