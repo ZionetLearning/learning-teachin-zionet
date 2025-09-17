@@ -54,6 +54,10 @@ jobs:
 
 
   deploy:
+    needs: [lock-featest]
+    if: |
+      needs.lock-featest.result == 'success' ||
+      needs.lock-featest.result == 'skipped'
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || github.event.inputs.environment }}
     permissions:
