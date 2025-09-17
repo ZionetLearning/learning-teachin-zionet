@@ -60,23 +60,26 @@ jobs:
     outputs:
       locked_by: ${{ steps.check.outputs.locked_by }}
       locked_at: ${{ steps.check.outputs.locked_at }}
+      is_locked: ${{ steps.check.outputs.is_locked }}
     steps:
       - name: Check if environment is locked
         id: check
         run: |
           REPO=${{ github.repository }}
           ISSUE=${{ needs.ensure-issue.outputs.issue_number }}
-          USER=${GITHUB_ACTOR}
 
           BODY=$(gh issue view "$ISSUE" --repo "$REPO" --json body -q .body)
 
           LOCKED_BY=$(echo "$BODY" | grep '^locked_by=' | cut -d'=' -f2 || echo "")
           LOCKED_AT=$(echo "$BODY" | grep '^locked_at=' | cut -d'=' -f2 || echo "")
 
+          IS_LOCKED=$(gh issue view "$ISSUE" --repo "$REPO" --json labels -q '.labels[].name' | grep -q "^locked$" && echo "true" || echo "false")
+
           echo "locked_by=$LOCKED_BY" >> $GITHUB_OUTPUT
           echo "locked_at=$LOCKED_AT" >> $GITHUB_OUTPUT
+          echo "is_locked=$IS_LOCKED" >> $GITHUB_OUTPUT
 
-          if gh issue view "$ISSUE" --repo "$REPO" --json labels -q '.labels[].name' | grep -q "^locked$"; then
+          if [ "$IS_LOCKED" = "true" ]; then
             echo "🔒 Currently locked by $LOCKED_BY since $LOCKED_AT"
           else
             echo "✅ Environment is not locked – allowed."
@@ -84,17 +87,20 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
+  manage-lock:
+    runs-on: ubuntu-latest
+    needs: [ensure-issue, check-lock]
+    steps:
       - name: Manage lock state
         run: |
           set -x
           ACTION="${{ inputs.action || github.event.inputs.action }}"
           INPUT_LOCKED_BY="${{ inputs.locked_by || github.event.inputs.locked_by }}"
-          CURRENT_LOCKED_BY=${{ needs.check-lock.outputs.locked_by }}
+          CURRENT_LOCKED_BY="${{ needs.check-lock.outputs.locked_by }}"
+          IS_LOCKED="${{ needs.check-lock.outputs.is_locked }}"
           USER=${GITHUB_ACTOR}
           REPO=${{ github.repository }}
           ISSUE=${{ needs.ensure-issue.outputs.issue_number }}
-
-          IS_LOCKED=$(gh issue view "$ISSUE" --repo "$REPO" --json labels -q '.labels[].name' | grep -q "^locked$" && echo "true" || echo "false")
 
           if [ "$ACTION" = "lock" ]; then
             if [ "$IS_LOCKED" = "true" ]; then
