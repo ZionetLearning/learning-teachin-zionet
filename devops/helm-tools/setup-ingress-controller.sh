@@ -1,14 +1,20 @@
 #!/bin/bash
 set -e
+ENVIRONMENT="${1:-dev}"  # Default to 'dev' if not provided
 
 NAMESPACE="devops-ingress-nginx"
 RELEASE_NAME="ingress-nginx"
 STATIC_IP_NAME="ingress-controller-static-ip"
-MC_RG="MC_prod-zionet-learning-2025_aks-cluster-prod_westeurope"
+MC_RG="MC_${ENVIRONMENT}-zionet-learning-2025_aks-cluster-${ENVIRONMENT}_westeurope"
 LOCATION="westeurope"
-DNS_LABEL="teachinprod"
+DNS_LABEL="teachin"
+
+if [ "$ENVIRONMENT" = "prod" ]; then
+  DNS_LABEL="teachinprod"
+fi
 
 
+ 
 echo "0. Uninstalling existing ingress-nginx Helm release (if present)..."
 helm uninstall "$RELEASE_NAME" -n "$NAMESPACE" || true
 

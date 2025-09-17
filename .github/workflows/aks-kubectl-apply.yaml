@@ -110,7 +110,7 @@ jobs:
         run: |
           cd devops/helm-tools
           chmod +x setup-ingress-controller.sh
-          ./setup-ingress-controller.sh
+          ./setup-ingress-controller.sh "$MAIN_VAL"
 
       - name: Add Grafana
         run: |
