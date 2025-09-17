@@ -246,7 +246,6 @@ jobs:
             --set namespace.name="$TARGET_NAMESPACE" \
             --set namespace.create=false \
             --set global.namePrefix="$TARGET_NAMESPACE" \
-            #--set global.dockerRegistry="$ACR_LOGIN_SERVER" \
             --set global.dockerRegistry="$DOCKER_REGISTRY" \
             --set global.environment="$IMAGE_TAG" \
             --set global.keyvault.clientId="$KEYVAULT_CLIENT_ID" \
@@ -268,7 +267,6 @@ jobs:
             --set namespace.name="$TARGET_NAMESPACE" \
             --set namespace.create=false \
             --set global.namePrefix="$TARGET_NAMESPACE" \
-            #--set global.dockerRegistry="$ACR_LOGIN_SERVER" \
             --set global.dockerRegistry="$DOCKER_REGISTRY" \
             --set global.environment="$IMAGE_TAG" \
             --set global.keyvault.clientId="$KEYVAULT_CLIENT_ID" \
