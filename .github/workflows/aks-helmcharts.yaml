@@ -149,28 +149,6 @@ jobs:
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
 
-      # - name: Get PostgreSQL FQDN from Key Vault
-      #   run: |
-      #     echo "🔍 Getting PostgreSQL FQDN from Key Vault..."
-          
-      #     # Get the connection string from Key Vault (already updated by terraform-apply)
-      #     CONNECTION_STRING=$(az keyvault secret show \
-      #       --vault-name teachin-seo-kv \
-      #       --name "${TARGET_NAMESPACE}-postgres-connection" \
-      #       --query 'value' \
-      #       --output tsv)
-          
-      #     # Extract host from connection string
-      #     POSTGRES_PRIVATE_FQDN=$(echo "$CONNECTION_STRING" | grep -o 'Host=[^;]*' | cut -d'=' -f2)
-          
-      #     if [ -z "$POSTGRES_PRIVATE_FQDN" ]; then
-      #       echo "❌ Error: Could not extract PostgreSQL FQDN from Key Vault secret"
-      #       exit 1
-      #     fi
-          
-      #     echo "✅ Found PostgreSQL FQDN from Key Vault: $POSTGRES_PRIVATE_FQDN"
-      #     echo "POSTGRES_PRIVATE_FQDN=$POSTGRES_PRIVATE_FQDN" >> $GITHUB_ENV
-
       - name: Create namespace
         if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
         run: |

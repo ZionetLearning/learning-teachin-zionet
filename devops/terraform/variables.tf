@@ -92,6 +92,12 @@ variable "tenant_id" {
   description = "Azure tenant ID"
   type        = string
 }
+
+variable "identity_id" {
+  description = "AKS cluster {environment} agent pool managed identity clientId"
+  type        = string
+  default     = "0997f44d-fadf-4be8-8dc6-202f7302f680" # default to dev
+}
 variable "shared_resource_group" {
   description = "Resource group containing the shared AKS cluster, PostgreSQL server, and Redis cache"
   type        = string
