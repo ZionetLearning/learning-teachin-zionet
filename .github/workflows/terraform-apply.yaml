@@ -106,6 +106,8 @@ jobs:
             TFVARS_FILE="terraform.tfvars.dev"
           elif [ "$ENVIRONMENT_NAME" = "prod" ]; then
             TFVARS_FILE="terraform.tfvars.prod"
+          elif [ "$ENVIRONMENT_NAME" = "network" ]; then
+            TFVARS_FILE="terraform.tfvars.network"  
           else
             # Custom environments use template
             TFVARS_FILE="terraform.tfvars.template"
