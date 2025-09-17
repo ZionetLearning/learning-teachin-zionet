@@ -119,14 +119,18 @@ jobs:
               exit 1
             fi
 
-            # validate locked_by input
-            if [ -z "$INPUT_LOCKED_BY" ]; then
-              echo "::error::You must provide locked_by input when unlocking."
-              exit 1
-            fi
-            if [ "$INPUT_LOCKED_BY" != "$CURRENT_LOCKED_BY" ]; then
-              echo "::error::Unlock denied. Environment is locked by $CURRENT_LOCKED_BY, but you entered $INPUT_LOCKED_BY."
-              exit 1
+            if [ "$USER" = "$CURRENT_LOCKED_BY" ]; then
+              echo "✅ $USER is the locker, unlocking directly."
+            else
+              if [ -z "$INPUT_LOCKED_BY" ]; then
+                echo "::error::You must provide locked_by input when unlocking as a different user."
+                exit 1
+              fi
+              if [ "$INPUT_LOCKED_BY" != "$CURRENT_LOCKED_BY" ]; then
+                echo "::error::Unlock denied. Environment is locked by $CURRENT_LOCKED_BY, but you entered $INPUT_LOCKED_BY."
+                exit 1
+              fi
+              echo "✅ Unlock approved: $USER provided correct locker name ($INPUT_LOCKED_BY)."
             fi
 
             echo "🔓 Unlocking featest by $USER"
