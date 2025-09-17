@@ -1,4 +1,4 @@
-import { Tasks } from "../features/tasks";
+import { Tasks } from "../features";
 
 export const TasksPage = () => {
     return <Tasks />;

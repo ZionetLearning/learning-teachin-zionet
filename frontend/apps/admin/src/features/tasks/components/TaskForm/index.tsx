@@ -8,16 +8,15 @@ import {
   useUpdateTaskName,
   useGetTaskById,
   taskKeys
-} from "../../../../api";
-import { useSignalR } from "../../../../hooks";
-import { TaskActionMode, TaskModel } from "../../../../types";
+} from "@admin/api";
+import { useSignalR } from"@admin/hooks";
+import { TaskActionMode, TaskModel } from "@admin/types";
 import { CreateTaskFormValues, validationSchema } from "../../validation";
 import { useStyles } from "./style";
 import { UserNotification } from "@app-providers/types";
 
-function generateRandomId() {
-  return Math.floor(Math.random() * 2147483647) + 1;
-}
+const generateRandomId = (): number =>
+  Math.floor(Math.random() * 2147483647) + 1;
 
 interface TaskFormProps {
   isRtl: boolean;

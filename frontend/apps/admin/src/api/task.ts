@@ -32,7 +32,7 @@ const getAllTasks = async (): Promise<TaskSummaryDto[]> => {
   return response.data as TaskSummaryDto[];
 };
 
-const getTaskById = async (id: number): Promise<TaskWithETag> => {
+export const getTaskById = async (id: number): Promise<TaskWithETag> => {
   const response = await axios.get(`${TASKS_BASE_URL}/${id}`);
   if (response.status !== 200) {
     throw new Error(response.data?.message || "Failed to fetch task");

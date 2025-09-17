@@ -20,9 +20,8 @@ import {
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { useQueryClient } from "@tanstack/react-query";
-import { apiClient as axios } from "@app-providers";
-import { useGetAllTasks, useDeleteTask, taskKeys } from "../../../../api";
-import { TaskActionMode, TaskModel, TaskSummaryDto } from "../../../../types";
+import { useGetAllTasks, useDeleteTask, taskKeys, getTaskById } from "@admin/api";
+import { TaskActionMode, TaskModel, TaskSummaryDto } from "@admin/types";
 import { useStyles } from "./style";
 
 interface TasksListProps {
@@ -98,32 +97,22 @@ export const TasksList = ({ dir, onTaskSelect, refreshTrigger }: TasksListProps)
     }
   };
 
-  // Convert TaskSummaryDto to TaskModel for actions that need full task data
   const handleTaskAction = async (task: TaskSummaryDto, mode: TaskActionMode) => {
     setLoadingTaskId(task.id);
     
     try {
-      // Use axios to get full task details with ETag
-      const response = await axios.get(`${import.meta.env.VITE_TASKS_URL}/task/${task.id}`);
+      const taskWithETag = await getTaskById(task.id);
       
-      if (response.status !== 200) {
-        throw new Error(response.data?.message || "Failed to fetch task");
-      }
-      
-      const fullTaskData = response.data as TaskModel;
-      // ETag is available in response.headers.etag if needed by parent component
-      
-      onTaskSelect(fullTaskData, mode);
+      onTaskSelect(taskWithETag.task, mode);
       
     } catch (error) {
       console.error('Error fetching full task details:', error);
       toast.error(t("pages.tasks.loadTasksFailed"));
       
-      // Fallback: create a minimal TaskModel for the action
       const fallbackTask: TaskModel = {
         id: task.id,
         name: task.name,
-        payload: "" // Empty payload as fallback
+        payload: ""
       };
       onTaskSelect(fallbackTask, mode);
     } finally {
@@ -234,7 +223,7 @@ export const TasksList = ({ dir, onTaskSelect, refreshTrigger }: TasksListProps)
                           <IconButton
                             size="small"
                             onClick={(e) => {
-                              e.stopPropagation(); // Prevent row click
+                              e.stopPropagation();
                               handleTaskAction(task, 'edit');
                             }}
                             disabled={loadingTaskId === task.id}
@@ -246,7 +235,7 @@ export const TasksList = ({ dir, onTaskSelect, refreshTrigger }: TasksListProps)
                           <IconButton
                             size="small"
                             onClick={(e) => {
-                              e.stopPropagation(); // Prevent row click
+                              e.stopPropagation();
                               handleDeleteTask(task);
                             }}
                             disabled={isDeletingTask && deletingTaskId === task.id}
