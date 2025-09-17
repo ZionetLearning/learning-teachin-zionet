@@ -155,7 +155,7 @@ module "database" {
   count  = var.use_shared_postgres ? 0 : 1
   source = "./modules/postgresql"
 
-  server_name         = "prod-pg-zionet-learning"
+  server_name         = var.database_server_name
   location            = var.db_location
   resource_group_name = var.use_shared_postgres ? var.shared_resource_group : azurerm_resource_group.main.name
 

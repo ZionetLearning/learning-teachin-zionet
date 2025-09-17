@@ -11,6 +11,7 @@ aks_cluster_name        = "aks-cluster-prod"
 kubernetes_namespace   = "prod"
 #------------- Shared Posgtres  Configuration -------------
 use_shared_postgres        = false  # If false, create server ; if true, use shared server 
+database_server_name       = "prod-pg-zionet-learning"
 #---- docker hub ----------------------------
 docker_registry        = "snir1551"
 #------------- Frontend Configuration -------------
