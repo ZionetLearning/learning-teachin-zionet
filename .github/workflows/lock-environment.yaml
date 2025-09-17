@@ -8,20 +8,24 @@ on:
         required: true
         type: choice
         options: [lock, unlock]
+      locked_by:
+        description: "Username who locked the environment (required only for unlock)"
+        required: false
+        type: string
 
   workflow_call:
     inputs:
       action:
         required: true
         type: string
+      locked_by:
+        required: false
+        type: string
 
 permissions:
   issues: write
 
 jobs:
-  # -------------------------------
-  # שלב 1: ודא שיש issue קיים לנעילה
-  # -------------------------------
   ensure-issue:
     runs-on: ubuntu-latest
     outputs:
@@ -50,12 +54,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
-  # -------------------------------
-  # שלב 2: בדיקת מצב נעילה
-  # -------------------------------
   check-lock:
     runs-on: ubuntu-latest
     needs: ensure-issue
+    outputs:
+      locked_by: ${{ steps.check.outputs.locked_by }}
+      locked_at: ${{ steps.check.outputs.locked_at }}
     steps:
       - name: Check if environment is locked
         id: check
@@ -64,7 +68,6 @@ jobs:
           ISSUE=${{ needs.ensure-issue.outputs.issue_number }}
           USER=${GITHUB_ACTOR}
 
-          # משוך את גוף ה־issue (body)
           BODY=$(gh issue view "$ISSUE" --repo "$REPO" --json body -q .body)
 
           LOCKED_BY=$(echo "$BODY" | grep '^locked_by=' | cut -d'=' -f2 || echo "")
@@ -74,21 +77,13 @@ jobs:
           echo "locked_at=$LOCKED_AT" >> $GITHUB_OUTPUT
 
           if gh issue view "$ISSUE" --repo "$REPO" --json labels -q '.labels[].name' | grep -q "^locked$"; then
-            if [ "$LOCKED_BY" != "$USER" ]; then
-              echo "::error::Environment is locked by $LOCKED_BY since $LOCKED_AT. $USER cannot run until it's unlocked."
-              exit 1
-            else
-              echo "✅ Environment is locked, but by the same user ($USER) – allowed."
-            fi
+            echo "🔒 Currently locked by $LOCKED_BY since $LOCKED_AT"
           else
             echo "✅ Environment is not locked – allowed."
           fi
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
-  # -------------------------------
-  # שלב 3: ניהול מצב (נעילה / פתיחה)
-  # -------------------------------
   manage-lock:
     runs-on: ubuntu-latest
     needs: [ensure-issue, check-lock]
@@ -97,6 +92,8 @@ jobs:
         run: |
           set -x
           ACTION=${{ github.event.inputs.action }}
+          INPUT_LOCKED_BY=${{ github.event.inputs.locked_by }}
+          CURRENT_LOCKED_BY=${{ needs.check-lock.outputs.locked_by }}
           USER=${GITHUB_ACTOR}
           REPO=${{ github.repository }}
           ISSUE=${{ needs.ensure-issue.outputs.issue_number }}
@@ -110,6 +107,16 @@ jobs:
               --body "$BODY"
 
           elif [ "$ACTION" = "unlock" ]; then
+            # validate locked_by input
+            if [ -z "$INPUT_LOCKED_BY" ]; then
+              echo "::error::You must provide locked_by input when unlocking."
+              exit 1
+            fi
+            if [ "$INPUT_LOCKED_BY" != "$CURRENT_LOCKED_BY" ]; then
+              echo "::error::Unlock denied. Environment is locked by $CURRENT_LOCKED_BY, but you entered $INPUT_LOCKED_BY."
+              exit 1
+            fi
+
             echo "🔓 Unlocking featest by $USER"
             BODY=$(echo -e "Unlocked by $USER\nunlocked_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)")
             gh issue edit "$ISSUE" \
