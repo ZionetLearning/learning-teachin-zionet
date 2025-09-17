@@ -75,23 +75,25 @@ jobs:
             echo "TARGET_NAMESPACE=$ENVIRONMENT_NAME" >> $GITHUB_ENV
             echo "RESOLVED_TARGET=custom($ENVIRONMENT_NAME)" >> $GITHUB_ENV
           else
-            echo "TARGET_NAMESPACE=dev" >> $GITHUB_ENV
-            echo "RESOLVED_TARGET=dev" >> $GITHUB_ENV
+            echo "TARGET_NAMESPACE=network" >> $GITHUB_ENV
+            echo "RESOLVED_TARGET=network" >> $GITHUB_ENV
           fi
 
           echo "K8S_DIR=devops/kubernetes/" >> $GITHUB_ENV
           echo "CHART_DIR=devops/kubernetes/charts" >> $GITHUB_ENV
-          echo "VALUES_FILE=devops/kubernetes/charts/values.dev.yaml" >> $GITHUB_ENV
-          echo "ACR_NAME=teachindevacr" >> $GITHUB_ENV
-          echo "ACR_LOGIN_SERVER=teachindevacr.azurecr.io" >> $GITHUB_ENV
+          echo "VALUES_FILE=devops/kubernetes/charts/values.network.yaml" >> $GITHUB_ENV
+          # echo "ACR_NAME=teachindevacr" >> $GITHUB_ENV
+          # echo "ACR_LOGIN_SERVER=teachindevacr.azurecr.io" >> $GITHUB_ENV
+          echo "DOCKER_REGISTRY=${{ secrets.DOCKERHUB_USERNAME }}" >> $GITHUB_ENV
+
 
           # Shared AKS
-          echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
-          echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
+          echo "AKS_RG=network-zionet-learning-2025" >> $GITHUB_ENV
+          echo "AKS_NAME=aks-cluster-network" >> $GITHUB_ENV
 
           # PG (shared)
-          echo "PG_DB=dev-pg-zionet-learning" >> $GITHUB_ENV
-          echo "PG_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
+          echo "PG_DB=network-pg-zionet-learning" >> $GITHUB_ENV
+          echo "PG_RG=network-zionet-learning-2025" >> $GITHUB_ENV
 
 
           # Determine if infrastructure steps should be skipped
@@ -257,7 +259,7 @@ jobs:
             --set namespace.name="$TARGET_NAMESPACE" \
             --set namespace.create=false \
             --set global.namePrefix="$TARGET_NAMESPACE" \
-            --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
+            --set global.dockerRegistry="$DOCKER_REGISTRY" \
             --set global.environment="$IMAGE_TAG" \
             --set global.keyvault.clientId="$KEYVAULT_CLIENT_ID" \
             --set global.keyvault.tenantId="$KEYVAULT_TENANT_ID" \
@@ -278,7 +280,7 @@ jobs:
             --set namespace.name="$TARGET_NAMESPACE" \
             --set namespace.create=false \
             --set global.namePrefix="$TARGET_NAMESPACE" \
-            --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
+            --set global.dockerRegistry="$DOCKER_REGISTRY" \
             --set global.environment="$IMAGE_TAG" \
             --set global.keyvault.clientId="$KEYVAULT_CLIENT_ID" \
             --set global.keyvault.tenantId="$KEYVAULT_TENANT_ID" \

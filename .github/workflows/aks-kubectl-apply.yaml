@@ -59,17 +59,17 @@ jobs:
             echo "TARGET_NAMESPACE=$ENVIRONMENT_NAME" >> $GITHUB_ENV
             echo "RESOLVED_TARGET=custom($ENVIRONMENT_NAME)" >> $GITHUB_ENV
           else
-            echo "TARGET_NAMESPACE=dev" >> $GITHUB_ENV
-            echo "RESOLVED_TARGET=dev" >> $GITHUB_ENV
+            echo "TARGET_NAMESPACE=network" >> $GITHUB_ENV
+            echo "RESOLVED_TARGET=network" >> $GITHUB_ENV
           fi
 
           echo "K8S_DIR=devops/kubernetes/" >> $GITHUB_ENV
           echo "CHART_DIR=devops/kubernetes/charts" >> $GITHUB_ENV
 
           # Shared AKS
-          echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
-          echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
-          echo "MC_AKS_RG=MC_dev-zionet-learning-2025_aks-cluster-dev_westeurope" >> $GITHUB_ENV
+          echo "AKS_RG=network-zionet-learning-2025" >> $GITHUB_ENV
+          echo "AKS_NAME=aks-cluster-network" >> $GITHUB_ENV
+          echo "MC_AKS_RG=MC_network-zionet-learning-2025_aks-cluster-network_westeurope" >> $GITHUB_ENV
 
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
@@ -87,6 +87,7 @@ jobs:
           ./setup-ingress-controller.sh
 
       - name: Add Grafana
+        if: false
         run: |
           cd devops/helm-tools
           chmod +x grafana.sh
@@ -100,21 +101,25 @@ jobs:
       #     ./setup-https.sh
 
       - name: Apply Grafana ingress (only)
+        if: false
         run: kubectl apply -f "$K8S_DIR/ingress/grafana-ingress.yaml"
 
       - name: Add Prometheus
+        if: false
         run: |
           cd devops/helm-tools/prometheus
           chmod +x prometheus.sh
           ./prometheus.sh
 
       - name: Add Loki (logs stack)
+        if: false
         run: |
           cd devops/helm-tools/loki
           chmod +x loki.sh
           ./loki.sh
     
       - name: Configure Azure Monitor datasource in Grafana
+        if: false
         run: |
           cd devops/helm-tools/azure-monitor
           chmod +x azure-monitor.sh
@@ -126,6 +131,7 @@ jobs:
           AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
 
       - name: Restart logging stack pods (optional)
+        if: false
         run: |
           set -e
           kubectl rollout restart deployment grafana -n devops-logs || true
