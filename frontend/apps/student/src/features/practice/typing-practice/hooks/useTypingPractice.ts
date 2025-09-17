@@ -107,6 +107,8 @@ export const useTypingPractice = () => {
 
       const exercise = toExercise(first);
       setCurrentExercise(exercise);
+      //log to console for debugging
+      console.log("Received exercise:", exercise);
 
       setExerciseState((prev) => ({
         ...prev,
