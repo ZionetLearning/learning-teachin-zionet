@@ -227,6 +227,7 @@ jobs:
           VITE_APPINSIGHTS_CONNECTION_STRING_TEACHER: ${{ secrets.VITE_APPINSIGHTS_CONNECTION_STRING_TEACHER }}
           VITE_APPINSIGHTS_CONNECTION_STRING_ADMIN: ${{ secrets.VITE_APPINSIGHTS_CONNECTION_STRING_ADMIN }}
         run: |
+          set -e  # Exit on any error
           echo "Building ${{ matrix.app }} with AI connection string..."
           
           # Set the appropriate AI connection string based on the app
@@ -250,7 +251,22 @@ jobs:
             echo "WARNING: VITE_APPINSIGHTS_CONNECTION_STRING is empty for ${{ matrix.app }}"
           fi
           
-          npm run build:${{ matrix.app }}
+          echo "=== Running build command ==="
+          if ! npm run build:${{ matrix.app }}; then
+            echo "ERROR: npm run build:${{ matrix.app }} failed"
+            exit 1
+          fi
+          
+          echo "=== Checking build output ==="
+          if [ ! -d "apps/${{ matrix.app }}/dist" ]; then
+            echo "ERROR: Build completed but apps/${{ matrix.app }}/dist directory not created"
+            echo "=== Available directories in apps/${{ matrix.app }}/ ==="
+            ls -la apps/${{ matrix.app }}/
+            exit 1
+          fi
+          
+          echo "BUILD SUCCESS: apps/${{ matrix.app }}/dist directory created"
+          ls -la apps/${{ matrix.app }}/dist/
 
       - name: Verify AI is in ${{ matrix.app }} bundle
         working-directory: ${{ env.FE_DIR }}
