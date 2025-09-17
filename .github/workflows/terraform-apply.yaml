@@ -74,12 +74,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install External Secrets CRDs
+      - name: Install External Secrets Operator
         run: |
-          kubectl apply -f https://github.com/external-secrets/external-secrets/releases/latest/download/crds.yaml
+          # Add the External Secrets Helm repository
+          helm repo add external-secrets https://charts.external-secrets.io
+          helm repo update
+          
+          # Install External Secrets Operator with CRDs
+          helm install external-secrets external-secrets/external-secrets \
+            --namespace external-secrets-system \
+            --create-namespace \
+            --set installCRDs=true \
+            --wait
         env:
           KUBECONFIG: ${{ env.KUBECONFIG }}
-        shell: bash
+        shell: bash   
 
       - name: Install Terraform
         uses: hashicorp/setup-terraform@v3
