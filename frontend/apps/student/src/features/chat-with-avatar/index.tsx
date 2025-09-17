@@ -9,7 +9,7 @@ import { useStyles } from "./style";
 
 export const ChatWithAvatar = () => {
   const classes = useStyles();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { 
     sendMessage, 
     loading, 
@@ -28,6 +28,7 @@ export const ChatWithAvatar = () => {
   const [lastHistoryLoadTime, setLastHistoryLoadTime] = useState<number>(0);
   const { currentVisemeSrc, speak } = useAvatarSpeech({ lipsArray });
   const lastSpokenTextRef = useRef<string | null>(null);
+  const isRTL = i18n.language === 'he';
 
   useEffect(() => {
     const now = Date.now();
@@ -82,7 +83,7 @@ export const ChatWithAvatar = () => {
   };
 
   return (
-    <div className={classes.chatWrapper}>
+    <div className={classes.chatWrapper} dir={isRTL ? 'rtl' : 'ltr'}>
       <ChatHistory
         allChats={allChats}
         isLoadingChats={isLoadingChats}

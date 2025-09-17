@@ -166,6 +166,33 @@ public class TaskIntegrationTests(
         await TaskUpdateHelper.WaitForTaskDeletionAsync(Client, t2.Id);
     }
 
+    [Fact]
+    public async Task Get_Task_Should_Include_Etag_Header()
+    {
+        var task = await CreateTaskAsync();
+
+        var resp = await Client.GetAsync(ApiRoutes.TaskById(task.Id));
+        resp.EnsureSuccessStatusCode();
+
+        resp.Headers.TryGetValues("ETag", out var values).Should().BeTrue();
+        values!.First().Should().StartWith("\"").And.EndWith("\"");
+    }
+
+    [Fact(DisplayName = "GET /tasks-manager/task/{id} - Should include ETag header")]
+    public async Task Get_Task_By_Id_Should_Include_Etag_Header()
+    {
+        var task = await CreateTaskAsync();
+        var resp = await Client.GetAsync(ApiRoutes.TaskById(task.Id));
+        resp.EnsureSuccessStatusCode();
+        resp.Headers.TryGetValues("ETag", out var values).Should().BeTrue();
+
+        var etag = values!.FirstOrDefault();
+        etag.Should().NotBeNullOrWhiteSpace();
+        etag.Should().StartWith("\"").And.EndWith("\"");
+
+        OutputHelper.WriteLine($"Received ETag for task {task.Id}: {etag}");
+    }
+
     [Fact(DisplayName = "GET /tasks-manager/task/{id} - With valid ID should return task")]
     public async Task Get_Task_By_Valid_Id_Should_Return_Task()
     {

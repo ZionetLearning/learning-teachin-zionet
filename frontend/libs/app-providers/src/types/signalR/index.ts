@@ -17,8 +17,15 @@ export type SignalRContextType = {
   connection: HubConnection | null;
   status: Status;
   userId: string;
-  subscribe: <T = unknown>(eventName: string, handler: (data: T) => void) => () => void;
-  waitForResponse: <T = unknown>(eventType: EventType, requestId: string, timeoutMs?: number) => Promise<T>;
+  subscribe: <T = unknown>(
+    eventName: string,
+    handler: (data: T) => void,
+  ) => () => void;
+  waitForResponse: <T = unknown>(
+    eventType: EventType,
+    requestId: string,
+    timeoutMs?: number,
+  ) => Promise<T>;
 };
 
 export type SignalRNotificationType = "Success" | "Info" | "Warning" | "Error";
@@ -31,12 +38,14 @@ export interface UserNotification {
 
 export const EventType = {
   ChatResponse: "ChatResponse",
-  ChatAiAnswer: "ChatAiAnswer", 
+  ChatAiAnswer: "ChatAiAnswer",
   Notification: "Notification",
   SystemMessage: "SystemMessage",
+  SentenceGeneration: "SentenceGeneration", // Must match backend exactly
+  SplitSentenceGeneration: "SplitSentenceGeneration", // Must match backend exactly
 } as const;
 
-export type EventType = typeof EventType[keyof typeof EventType];
+export type EventType = (typeof EventType)[keyof typeof EventType];
 
 export interface ChatAiAnswerPayload {
   requestId: string;
@@ -44,7 +53,7 @@ export interface ChatAiAnswerPayload {
   chatName: string;
   status: string;
   threadId: string;
-};
+}
 
 export interface NotificationPayload {
   message: string;
@@ -56,10 +65,33 @@ export interface SystemMessagePayload {
   description: string;
 }
 
-// Union Type for all possible events, here we add new models we want to get by signalR
+// Regular sentence types
+export interface SentenceItem {
+  text: string;
+  difficulty: string;
+  nikud: boolean;
+}
+
+// Split sentence types
+export interface SplitSentenceItem {
+  words: string[];
+  original: string;
+  difficulty: string;
+  nikud: boolean;
+}
+
+export interface SplitSentenceGeneratedPayload {
+  sentences: SplitSentenceItem[];
+}
+
+// Union Type for all possible events
 export type UserEventUnion =
   | { eventType: typeof EventType.ChatAiAnswer; payload: ChatAiAnswerPayload }
-  | { eventType: typeof EventType.SystemMessage; payload: SystemMessagePayload };
+  | { eventType: typeof EventType.SystemMessage; payload: SystemMessagePayload }
+  | {
+      eventType: typeof EventType.SplitSentenceGeneration;
+      payload: SplitSentenceGeneratedPayload;
+    };
 
 // Event Handler Type
 export type EventHandler<T = unknown> = (event: T) => void;

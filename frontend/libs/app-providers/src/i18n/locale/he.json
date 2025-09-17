@@ -72,7 +72,7 @@
         "score": "תוצאה:"
       },
       "chatAvatar": {
-        "chatAvatarPage": "צ'אט עם אווטאר - מחובר לבקאנד",
+        "chatAvatarPage": "צ'אט עם אווטאר",
         "typeMessage": "הקלד הודעה…",
         "avatar": "אווטאר",
         "lips": "שפתיים"
@@ -167,14 +167,58 @@
         "replay": "🔄 נגן שוב"
       },
       "wordOrderGame": {
+        "config": {
+          "title": "העדפות משחק",
+          "subtitle": "בחר את העדפותייך למשחק סידור המילים",
+          "difficulty": "רמת קושי",
+          "difficultyDesc": {
+            "easy": "משפטים פשוטים עם אוצר מילים בסיסי",
+            "medium": "משפטים ברמה בינונית עם אוצר מילים יומיומי",
+            "hard": "משפטים ברמה מורכבת עם אוצר מילים מתקדם"
+          },
+          "options": "אפשרויות משחק",
+          "nikud": "כלול ניקוד",
+          "nikudDesc": "הצג סימנים דיאקריטיים כדי לסייע בהגייה",
+          "sentenceCount": "מספר המשפטים",
+          "sentenceCountDesc": "כמות המשפטים ליצירה (1-10)",
+          "startGame": "התחל משחק"
+        },
+        "difficulty": {
+          "easy": "קל",
+          "medium": "בינוני",
+          "hard": "קשה"
+        },
+        "welcome": {
+          "description": "בחר רמת קושי והעדפות נוספות כדי להתחיל לשחק",
+          "configure": "קבע העדפות משחק"
+        },
+        "current": {
+          "difficulty": "רמת קושי",
+          "nikud": "ניקוד",
+          "sentences": "משפטים",
+          "sentence": "משפט"
+        },
+        "gameOver": {
+          "title": "המשחק הסתיים!",
+          "congratulations": "כל הכבוד!",
+          "completed": "השלמת {{correct}} משפטים נכונים מתוך {{total}}.",
+          "whatNext": "מה תרצה לעשות כעת?",
+          "playAgain": "משחק חדש",
+          "changeSettings": "שינוי הגדרות משחק"
+        },
         "title": "משחק סידור מילים",
         "subTitle": "סדר את המילים בסדר הנכון",
+        "settings": "הגדרות",
         "loading": "טוען…",
         "reset": "איפוס",
         "check": "בדיקה",
         "next": "הבא",
         "playAudio": "הפעל קטע אודיו",
-        "playAudioSlowly": "הפעל קטע אודיו במהירות איטית (0.6x)"
+        "playAudioSlowly": "הפעל קטע אודיו במהירות איטית (0.6x)",
+        "cancel": "בטל",
+        "close": "סגור",
+        "yes": "כן",
+        "no": "לא"
       },
       "earthquakeMap": {
         "title": "מפת רעידות אדמה",
