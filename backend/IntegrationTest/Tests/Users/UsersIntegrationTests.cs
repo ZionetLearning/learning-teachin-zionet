@@ -328,5 +328,49 @@ public class UsersIntegrationTests(
         updatedStudent!.Role.Should().Be(Role.Teacher);
     }
 
+    [Fact(DisplayName = "PUT /users-manager/user/{id} - Student can update interests")]
+    public async Task Student_Can_Update_Interests()
+    {
+        var user = await CreateUserAsync(role: "student");
+
+        var update = new UpdateUserModel
+        {
+            Interests = ["music", "chess", "travel"]
+        };
+
+        var response = await Client.PutAsJsonAsync(ApiRoutes.UserById(user.UserId), update);
+        response.ShouldBeOk();
+
+        var updatedUser = await Client.GetAsync(ApiRoutes.UserById(user.UserId));
+        updatedUser.ShouldBeOk();
+
+        var userData = await updatedUser.Content.ReadFromJsonAsync<UserData>();
+        userData.Should().NotBeNull();
+        userData.Interests.Should().NotBeNullOrEmpty();
+        userData.Interests.Should().BeEquivalentTo(["music", "chess", "travel"]);
+    }
+
+    [Theory(DisplayName = "PUT /users-manager/user/{id} - Non-students cannot update interests")]
+    [InlineData("teacher")]
+    [InlineData("admin")]
+    public async Task NonStudent_Cannot_Set_Interests(string role)
+    {
+        var user = await CreateUserAsync(role: role);
+
+        var update = new UpdateUserModel
+        {
+            Interests = ["soccer", "cooking"]
+        };
+
+        var response = await Client.PutAsJsonAsync(ApiRoutes.UserById(user.UserId), update);
+        response.ShouldBeBadRequest();
+
+        var updatedUser = await Client.GetAsync(ApiRoutes.UserById(user.UserId));
+
+        var userData = await updatedUser.Content.ReadFromJsonAsync<UserData>();
+        userData.Should().NotBeNull();
+        userData.Interests.Should().BeNullOrEmpty("Non-students should not have interests");
+    }
+
 
 }

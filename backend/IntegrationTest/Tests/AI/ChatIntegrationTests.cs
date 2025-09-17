@@ -1,4 +1,5 @@
 ﻿using FluentAssertions;
+using IntegrationTests.Constants;
 using IntegrationTests.Fixtures;
 using Manager.Models.Chat;
 using Manager.Models.Users;
@@ -104,7 +105,6 @@ public class ChatIntegrationTests(
     }
 
 
-
     [Fact(DisplayName = "System prompt includes user interests when available")]
     public async Task SystemPromptIncludesUserInterests_WhenInjected()
     {
@@ -113,15 +113,26 @@ public class ChatIntegrationTests(
         await _shared.GetAuthenticatedTokenAsync();
         await _shared.EnsureSignalRStartedAsync(SignalRFixture, OutputHelper);
 
-        // Only students can have interests, so we update the user to be a student with interests
+        // Only students can have interests, so we update the admin user to be a student
         var payload = new UpdateUserModel
         {
             Role = Role.Student,
+        };
+
+        var response = await Client.PutAsJsonAsync(ApiRoutes.UserById(user.UserId), payload);
+        response.Should().NotBeNull();
+        response.EnsureSuccessStatusCode();
+
+        // Now set some interests
+        payload = new UpdateUserModel
+        {
             Interests = ["soccer", "food"]
         };
 
-        var response = await Client.PutAsJsonAsync($"users-manager/user/{user.UserId}", payload);
+        response = await Client.PutAsJsonAsync(ApiRoutes.UserById(user.UserId), payload);
+        response.Should().NotBeNull();
         response.EnsureSuccessStatusCode();
+
 
         var chatId = Guid.NewGuid();
 
@@ -159,6 +170,5 @@ public class ChatIntegrationTests(
         }
 
     }
-
 
 }

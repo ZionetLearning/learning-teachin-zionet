@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Endpoints;
 
-// To do check inside the update user when update user interests its only student!
 public static class UsersEndpoints
 {
     private sealed class UserEndpoint { }
@@ -199,6 +198,13 @@ public static class UsersEndpoints
                 return Results.BadRequest("Hebrew level can only be set for students.");
             }
 
+            // only students can have interests
+            if (user.Interests is not null && existingUser.Role != Role.Student)
+            {
+                logger.LogWarning("Non-student tried to set interests. Role: {Role}", existingUser.Role);
+                return Results.BadRequest("Only students can set interests.");
+            }
+
             // Only Admins can change role of another user
             if (user.Role.HasValue && parsedCallerRole != Role.Admin)
             {
@@ -280,6 +286,7 @@ public static class UsersEndpoints
             return Results.Problem("Failed to retrieve users.");
         }
     }
+
     private static async Task<IResult> ListStudentsForTeacherAsync(
         [FromRoute] Guid teacherId,
         [FromServices] IAccessorClient accessorClient,
