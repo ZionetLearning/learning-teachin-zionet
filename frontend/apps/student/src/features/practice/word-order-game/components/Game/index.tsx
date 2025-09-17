@@ -5,14 +5,13 @@ import { Speaker } from "../Speaker";
 import { useHebrewSentence } from "../../hooks";
 import { useAvatarSpeech } from "@student/hooks";
 import { DifficultyLevel } from "@student/types";
+import { WelcomeScreen, ChosenWordsArea, WordsBank, SideButtons } from "../";
 import {
-  WelcomeScreen,
-  GameHeaderSettings,
-  ChosenWordsArea,
-  WordsBank,
-  SideButtons,
-} from "../";
-import { GameConfig, GameConfigModal, GameOverModal } from "@ui-components";
+  GameConfig,
+  GameConfigModal,
+  GameOverModal,
+  GameSettings,
+} from "@ui-components";
 
 export const Game = () => {
   const { t, i18n } = useTranslation();
@@ -199,7 +198,7 @@ export const Game = () => {
     <>
       <div className={classes.gameContainer}>
         {/* Game Header with Settings */}
-        <GameHeaderSettings
+        <GameSettings
           gameConfig={gameConfig}
           currentSentenceIndex={currentSentenceIndex}
           sentenceCount={sentenceCount}

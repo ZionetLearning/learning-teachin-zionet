@@ -5,7 +5,7 @@ import { DifficultyLevel } from "@student/types";
 import { useStyles } from "./style";
 import { GameConfig } from "@ui-components";
 
-interface GameHeaderSettingsProps {
+interface GameSettingsProps {
   gameConfig: GameConfig;
   currentSentenceIndex: number;
   sentenceCount: number;
@@ -13,14 +13,14 @@ interface GameHeaderSettingsProps {
   handleConfigChange: () => void;
   getDifficultyLabel: (level: DifficultyLevel) => string;
 }
-export const GameHeaderSettings = ({
+export const GameSettings = ({
   gameConfig,
   currentSentenceIndex,
   sentenceCount,
   isHebrew,
   handleConfigChange,
   getDifficultyLabel,
-}: GameHeaderSettingsProps) => {
+}: GameSettingsProps) => {
   const { t } = useTranslation();
   const classes = useStyles();
 
@@ -30,14 +30,12 @@ export const GameHeaderSettings = ({
         <Typography variant="body2" color="text.secondary">
           {t("pages.wordOrderGame.current.difficulty")}:{" "}
           {getDifficultyLabel(gameConfig.difficulty)}
-          {" | "}
         </Typography>
         <Typography variant="body2" color="text.secondary">
           {t("pages.wordOrderGame.current.nikud")}:{" "}
           {gameConfig.nikud
             ? t("pages.wordOrderGame.yes")
             : t("pages.wordOrderGame.no")}
-          {" | "}
         </Typography>
         <Typography variant="body2" color="text.secondary">
           {t("pages.wordOrderGame.current.sentence")}:{" "}
