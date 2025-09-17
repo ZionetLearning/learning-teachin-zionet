@@ -258,32 +258,35 @@ jobs:
           fi
           
           echo "=== Checking build output ==="
-          if [ ! -d "apps/${{ matrix.app }}/dist" ]; then
-            echo "ERROR: Build completed but apps/${{ matrix.app }}/dist directory not created"
-            echo "=== Available directories in apps/${{ matrix.app }}/ ==="
-            ls -la apps/${{ matrix.app }}/
+          # Vite outputs to dist/apps/{app}/ not apps/{app}/dist/
+          if [ ! -d "dist/apps/${{ matrix.app }}" ]; then
+            echo "ERROR: Build completed but dist/apps/${{ matrix.app }} directory not created"
+            echo "=== Available directories in dist/ ==="
+            ls -la dist/ || echo "dist/ directory doesn't exist"
+            echo "=== Available directories in dist/apps/ ==="
+            ls -la dist/apps/ || echo "dist/apps/ directory doesn't exist"
             exit 1
           fi
           
-          echo "BUILD SUCCESS: apps/${{ matrix.app }}/dist directory created"
-          ls -la apps/${{ matrix.app }}/dist/
+          echo "BUILD SUCCESS: dist/apps/${{ matrix.app }} directory created"
+          ls -la dist/apps/${{ matrix.app }}/
 
       - name: Verify AI is in ${{ matrix.app }} bundle
         working-directory: ${{ env.FE_DIR }}
         run: |
           echo "=== Debugging ${{ matrix.app }} build output ==="
-          echo "Contents of apps/${{ matrix.app }}/dist/:"
-          find apps/${{ matrix.app }}/dist/ -type f -name "*.js" | head -10
+          echo "Contents of dist/apps/${{ matrix.app }}/:"
+          find dist/apps/${{ matrix.app }}/ -type f -name "*.js" | head -10
           
           echo "=== Checking for ApplicationInsights ==="
-          if ! grep -R "applicationinsights" -n apps/${{ matrix.app }}/dist/ >/dev/null 2>&1; then
+          if ! grep -R "applicationinsights" -n dist/apps/${{ matrix.app }}/ >/dev/null 2>&1; then
             echo "AI SDK not found in ${{ matrix.app }} built files."
             echo "=== Looking for any AI-related content ==="
-            grep -R -i "appinsights\|application.*insights\|ai.*connection" apps/${{ matrix.app }}/dist/ || echo "No AI content found"
+            grep -R -i "appinsights\|application.*insights\|ai.*connection" dist/apps/${{ matrix.app }}/ || echo "No AI content found"
             exit 1
           fi
           
-          if ! grep -R "applicationinsights.azure.com" -n apps/${{ matrix.app }}/dist/ >/dev/null 2>&1; then
+          if ! grep -R "applicationinsights.azure.com" -n dist/apps/${{ matrix.app }}/ >/dev/null 2>&1; then
             echo "Ingestion endpoint not found in ${{ matrix.app }} (env missing?)."
             echo "=== Environment variables during build ==="
             echo "VITE_APPINSIGHTS_CONNECTION_STRING was: ${VITE_APPINSIGHTS_CONNECTION_STRING:-'NOT SET'}"
@@ -300,7 +303,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build-${{ matrix.app }}
-          path: ${{ env.FE_DIR }}/apps/${{ matrix.app }}/dist/
+          path: ${{ env.FE_DIR }}/dist/apps/${{ matrix.app }}/
           retention-days: 1
 
   deploy:
