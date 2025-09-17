@@ -91,8 +91,11 @@ jobs:
           echo "CHART_DIR=devops/kubernetes/charts" >> $GITHUB_ENV
           
           #--------------- docker registry ---------------
-          echo "ACR_NAME=teachindevacr" >> $GITHUB_ENV
-          echo "ACR_LOGIN_SERVER=teachindevacr.azurecr.io" >> $GITHUB_ENV
+          # echo "ACR_NAME=teachindevacr" >> $GITHUB_ENV
+          # echo "ACR_LOGIN_SERVER=teachindevacr.azurecr.io" >> $GITHUB_ENV
+          echo "DOCKER_REGISTRY=${{ secrets.DOCKERHUB_USERNAME }}" >> $GITHUB_ENV
+
+
           
    
           if [ "$TARGET_NAMESPACE" = "prod" ]; then
@@ -225,7 +228,7 @@ jobs:
             --set namespace.name="$TARGET_NAMESPACE" \
             --set namespace.create=false \
             --set global.namePrefix="$TARGET_NAMESPACE" \
-            --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
+            --set global.dockerRegistry="$DOCKER_REGISTRY" \
             --set global.environment="$IMAGE_TAG" \
             --set global.keyvault.clientId="$KEYVAULT_CLIENT_ID" \
             --set global.keyvault.tenantId="$KEYVAULT_TENANT_ID" \
@@ -246,7 +249,7 @@ jobs:
             --set namespace.name="$TARGET_NAMESPACE" \
             --set namespace.create=false \
             --set global.namePrefix="$TARGET_NAMESPACE" \
-            --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
+            --set global.dockerRegistry="$DOCKER_REGISTRY" \
             --set global.environment="$IMAGE_TAG" \
             --set global.keyvault.clientId="$KEYVAULT_CLIENT_ID" \
             --set global.keyvault.tenantId="$KEYVAULT_TENANT_ID" \
