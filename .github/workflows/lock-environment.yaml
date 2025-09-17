@@ -75,7 +75,7 @@ jobs:
 
           if gh issue view "$ISSUE" --repo "$REPO" --json labels -q '.labels[].name' | grep -q "^locked$"; then
             if [ "$LOCKED_BY" != "$USER" ]; then
-              echo "❌ Environment is locked by $LOCKED_BY since $LOCKED_AT. $USER cannot run until it's unlocked."
+              echo "::error::Environment is locked by $LOCKED_BY since $LOCKED_AT. $USER cannot run until it's unlocked."
               exit 1
             else
               echo "✅ Environment is locked, but by the same user ($USER) – allowed."
