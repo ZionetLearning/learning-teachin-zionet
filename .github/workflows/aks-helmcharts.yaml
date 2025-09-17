@@ -48,6 +48,9 @@ jobs:
 
   lock-featest:
     if: ${{ (inputs.environment_name || github.event.inputs.environment_name) == 'featest' }}
+    permissions:
+      contents: read
+      issues: write
     uses: ./.github/workflows/lock-environment.yaml
     with:
       action: lock
