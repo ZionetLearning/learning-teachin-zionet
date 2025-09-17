@@ -102,8 +102,13 @@ jobs:
 
           if [ "$ACTION" = "lock" ]; then
             if [ "$IS_LOCKED" = "true" ]; then
-              echo "::error::Environment is already locked by $CURRENT_LOCKED_BY. You must unlock it first."
-              exit 1
+              if [ "$CURRENT_LOCKED_BY" = "$USER" ]; then
+                echo "✅ Environment already locked by $USER. Nothing to do."
+                exit 0
+              else
+                echo "::error::Environment is already locked by $CURRENT_LOCKED_BY. You must unlock it first."
+                exit 1
+              fi
             fi
 
             echo "🔒 Locking featest by $USER"
@@ -112,6 +117,7 @@ jobs:
               --repo "$REPO" \
               --add-label "locked" \
               --body "$BODY"
+          fi
 
           elif [ "$ACTION" = "unlock" ]; then
             if [ "$IS_LOCKED" != "true" ]; then
