@@ -74,6 +74,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install External Secrets CRDs
+        run: |
+          kubectl apply -f https://github.com/external-secrets/external-secrets/releases/latest/download/crds.yaml
+        env:
+          KUBECONFIG: ${{ env.KUBECONFIG }}
+        shell: bash
+
       - name: Install Terraform
         uses: hashicorp/setup-terraform@v3
         with:
