@@ -6,15 +6,13 @@ import { useHebrewSentence } from "../../hooks";
 import { useAvatarSpeech } from "@student/hooks";
 import { DifficultyLevel } from "@student/types";
 import {
-  GameConfigModal,
-  GameConfig,
-  GameOverModal,
   WelcomeScreen,
   GameHeaderSettings,
   ChosenWordsArea,
   WordsBank,
   SideButtons,
 } from "../";
+import { GameConfig, GameConfigModal, GameOverModal } from "@ui-components";
 
 export const Game = () => {
   const { t, i18n } = useTranslation();

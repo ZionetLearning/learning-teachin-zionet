@@ -1,8 +1,8 @@
 import { useTranslation } from "react-i18next";
 import { Button, Box, Typography } from "@mui/material";
-import { GameConfigModal, GameConfig } from "../modals";
 import { useStyles } from "./style";
 import { DifficultyLevel } from "@student/types";
+import { GameConfig, GameConfigModal } from "@ui-components";
 
 interface WelcomeScreenProps {
   configModalOpen: boolean;

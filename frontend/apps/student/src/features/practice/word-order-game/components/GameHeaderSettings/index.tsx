@@ -1,9 +1,9 @@
 import { useTranslation } from "react-i18next";
 import { Box, Button, Typography } from "@mui/material";
 import { Settings } from "@mui/icons-material";
-import { GameConfig } from "../modals";
 import { DifficultyLevel } from "@student/types";
 import { useStyles } from "./style";
+import { GameConfig } from "@ui-components";
 
 interface GameHeaderSettingsProps {
   gameConfig: GameConfig;
