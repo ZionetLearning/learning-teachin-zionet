@@ -25,10 +25,13 @@ jobs:
     steps:
       - name: Set image tag
         id: set-tag
+        env:
+          ENV_TAG: ${{ inputs.environment_name }}
         run: |
           SHORT_SHA="${{ github.sha }}"
           SHORT_SHA="${SHORT_SHA:0:7}"
-          echo "image_tag=${SHORT_SHA}" >> $GITHUB_OUTPUT
+          FULL_TAG="${ENV_TAG}-${SHORT_SHA}"
+          echo "image_tag=${FULL_TAG}" >> $GITHUB_OUTPUT
 
   build_and_push:
     needs: generate_tag
@@ -53,11 +56,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+      - name: Azure Login via OIDC
+        uses: azure/login@v2
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set ACR environment
+        run: |
+          ACR_NAME=teachindevacr
+          echo "ACR_NAME=$ACR_NAME" >> $GITHUB_ENV
+          echo "ACR_LOGIN_SERVER=$ACR_NAME.azurecr.io" >> $GITHUB_ENV
+
+      - name: Log in to Azure Container Registry
+        run: az acr login --name $ACR_NAME
 
       - name: Set image tags
         id: imgtag
@@ -66,9 +79,9 @@ jobs:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           GITHUB_SHA: ${{ github.sha }}
           ENV_TAG: ${{ inputs.environment_name }}
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
         run: |
-          IMAGE_NAME="${DOCKERHUB_USERNAME}/${{ matrix.service.name }}"
+          ACR_LOGIN_SERVER="teachindevacr.azurecr.io"
+          IMAGE_NAME="${ACR_LOGIN_SERVER}/${{ matrix.service.name }}"
           
           # Extract first 7 characters of commit SHA
           SHORT_SHA="${GITHUB_SHA:0:7}"
@@ -81,7 +94,7 @@ jobs:
               echo "${IMAGE_NAME}:latest"
             fi
             # Always add these two tags
-            echo "${IMAGE_NAME}:${SHORT_SHA}"
+            echo "${IMAGE_NAME}:${ENV_TAG}-${SHORT_SHA}"
             echo "${IMAGE_NAME}:${ENV_TAG}"
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
