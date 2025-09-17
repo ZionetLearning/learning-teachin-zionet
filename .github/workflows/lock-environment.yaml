@@ -98,7 +98,14 @@ jobs:
           REPO=${{ github.repository }}
           ISSUE=${{ needs.ensure-issue.outputs.issue_number }}
 
+          IS_LOCKED=$(gh issue view "$ISSUE" --repo "$REPO" --json labels -q '.labels[].name' | grep -q "^locked$" && echo "true" || echo "false")
+
           if [ "$ACTION" = "lock" ]; then
+            if [ "$IS_LOCKED" = "true" ]; then
+              echo "::error::Environment is already locked by $CURRENT_LOCKED_BY. You must unlock it first."
+              exit 1
+            fi
+
             echo "🔒 Locking featest by $USER"
             BODY=$(echo -e "locked_by=$USER\nlocked_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)")
             gh issue edit "$ISSUE" \
@@ -107,6 +114,11 @@ jobs:
               --body "$BODY"
 
           elif [ "$ACTION" = "unlock" ]; then
+            if [ "$IS_LOCKED" != "true" ]; then
+              echo "::error::Environment is not locked. Nothing to unlock."
+              exit 1
+            fi
+
             # validate locked_by input
             if [ -z "$INPUT_LOCKED_BY" ]; then
               echo "::error::You must provide locked_by input when unlocking."
