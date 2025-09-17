@@ -39,6 +39,9 @@ export const SpeakingPractice = () => {
   const [nikud, setNikud] = useState(true);
   const [count, setCount] = useState(3);
   const [sentences, setSentences] = useState<string[]>([]);
+  const [attempted, setAttempted] = useState<Set<number>>(new Set());
+  const [correctIdxs, setCorrectIdxs] = useState<Set<number>>(new Set());
+  const [skipped, setSkipped] = useState<Set<number>>(new Set());
 
   const recognizerRef = useRef<sdk.SpeechRecognizer | null>(null);
   const audioConfigRef = useRef<sdk.AudioConfig | null>(null);
@@ -106,6 +109,9 @@ export const SpeakingPractice = () => {
         onSuccess: (data) => {
           setSentences(data.map((item) => item.text));
           setCurrentIdx(0);
+          setAttempted(new Set());
+          setCorrectIdxs(new Set());
+          setSkipped(new Set());
           setConfigModalOpen(false);
         },
         onError: (error) => {
@@ -152,6 +158,17 @@ export const SpeakingPractice = () => {
     }
     setFeedback(Feedback.None);
 
+    setAttempted((prev) => {
+      const next = new Set(prev);
+      next.add(currentIdx);
+      return next;
+    });
+    setSkipped((prev) => {
+      const next = new Set(prev);
+      next.delete(currentIdx);
+      return next;
+    });
+
     const audioConfig = sdk.AudioConfig.fromDefaultMicrophoneInput();
     const recognizer = new sdk.SpeechRecognizer(config, audioConfig);
     audioConfigRef.current = audioConfig;
@@ -164,12 +181,23 @@ export const SpeakingPractice = () => {
         const correct = userText
           ? comparePhrases(sentences[currentIdx], userText)
           : false;
+        setCorrectIdxs((prev) => {
+          const next = new Set(prev);
+          if (correct) next.add(currentIdx);
+          else next.delete(currentIdx);
+          return next;
+        });
         setIsCorrect(correct);
         setFeedback(correct ? Feedback.Perfect : Feedback.TryAgain);
         stopRecognition();
       },
       (err) => {
         console.error("Recognition error:", err);
+        setCorrectIdxs((prev) => {
+          const next = new Set(prev);
+          next.delete(currentIdx);
+          return next;
+        });
         setIsCorrect(false);
         setFeedback(Feedback.RecognitionError);
         stopRecognition();
@@ -198,11 +226,32 @@ export const SpeakingPractice = () => {
   const goNext = () => {
     stopSpeech();
     stopRecognition();
+    setSkipped((prev) => {
+      if (!attempted.has(currentIdx)) {
+        const next = new Set(prev);
+        next.add(currentIdx);
+        return next;
+      }
+      return prev;
+    });
     setCurrentIdx((i) => {
       const next = i + 1;
       if (next >= sentences.length) {
-        setGameOverOpen(true);
-        return i;
+        const total = sentences.length;
+        const allCorrect = correctIdxs.size === total;
+        const noSkips = skipped.size === 0 && attempted.size === total;
+
+        if (allCorrect && noSkips) {
+          setGameOverOpen(true);
+          return i;
+        }
+
+        for (let k = 0; k < total; k++) {
+          if (!correctIdxs.has(k)) {
+            return k;
+          }
+        }
+        return 0;
       }
       return next;
     });
@@ -226,6 +275,9 @@ export const SpeakingPractice = () => {
 
   const handlePlayAgain = () => {
     setGameOverOpen(false);
+    setAttempted(new Set());
+    setCorrectIdxs(new Set());
+    setSkipped(new Set());
     requestSentences(difficulty, nikud, count);
   };
 
@@ -243,7 +295,11 @@ export const SpeakingPractice = () => {
   return (
     <div className={classes.container} data-testid="speaking-practice-page">
       <div className={classes.nav} data-testid="speaking-nav">
-        <button onClick={goPrev} data-testid="speaking-prev">
+        <button
+          onClick={goPrev}
+          data-testid="speaking-prev"
+          disabled={sentences.length <= 1 || currentIdx === 0}
+        >
           &laquo; {t("pages.speakingPractice.prev")}
         </button>
         <span data-testid="speaking-index">
@@ -251,7 +307,13 @@ export const SpeakingPractice = () => {
             ? `${Math.min(currentIdx + 1, sentences.length)} / ${sentences.length}`
             : "—"}
         </span>
-        <button onClick={goNext} data-testid="speaking-next">
+        <button
+          onClick={goNext}
+          data-testid="speaking-next"
+          disabled={
+            sentences.length <= 1 || currentIdx === sentences.length - 1
+          }
+        >
           {t("pages.speakingPractice.next")} &raquo;
         </button>
       </div>
