@@ -288,7 +288,10 @@ jobs:
             --set global.keyvault.tenantId="$KEYVAULT_TENANT_ID" \
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false \
-            --set keda.enabled=${{ inputs.use_keda }}
+            --set keda.enabled=${{ inputs.use_keda }} \
+            --set keda.accessor.enabled=true \
+            --set keda.engine.enabled=true \
+            --set keda.manager.enabled=false
 
       - name: Diagnostics (on failure)
         if: failure()

@@ -257,26 +257,26 @@ dapr:
         idleTimeout: "300s"
         maxConnAge: "30m"
   
-  # KEDA scaler (optional)
-  keda:
+# KEDA scaler (optional)
+keda:
+  enabled: true
+  accessor:
     enabled: true
-    accessor:
-      enabled: true
-    engine:
-      enabled: true    # Set to false to disable this file
-    manager:
-      enabled: false
-    httpAddOn:
-      interceptor:
-        proxy:
-          readTimeout: 60s
-          responseHeaderTimeout: 60s
-          idleTimeout: 60s
-          dialTimeout: 10s
-          keepAliveTimeout: 60s
-        scaleToZero:
-          responseTimeout: 60s  # Wait longer for pods to become ready
-        targetPendingRequests: 1
+  engine:
+    enabled: true    # Set to false to disable this file
+  manager:
+    enabled: false
+  httpAddOn:
+    interceptor:
+      proxy:
+        readTimeout: 60s
+        responseHeaderTimeout: 60s
+        idleTimeout: 60s
+        dialTimeout: 10s
+        keepAliveTimeout: 60s
+      scaleToZero:
+        responseTimeout: 60s  # Wait longer for pods to become ready
+      targetPendingRequests: 1
 
   serviceAccount:
   create: false
