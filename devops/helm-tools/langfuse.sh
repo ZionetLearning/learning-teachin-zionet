@@ -108,7 +108,7 @@ spec:
             name: langfuse-secrets
 EOF
 
-kubectl wait --for=condition=complete job/langfuse-migrate -n "$NAMESPACE" --timeout=300s
+kubectl wait --for=condition=complete job/langfuse-migrate -n "$NAMESPACE" --timeout=600s
 kubectl delete job langfuse-migrate -n "$NAMESPACE" --ignore-not-found
 
 echo "✅ Migrations applied."
