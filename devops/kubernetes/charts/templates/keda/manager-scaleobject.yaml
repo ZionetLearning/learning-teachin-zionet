@@ -18,6 +18,7 @@ spec:
       query: |
         sum(rate(nginx_ingress_controller_requests_total{
           host="teachin.westeurope.cloudapp.azure.com",
-          path=~"/api/{{ include "app.namespace" . }}/.*"
+          path=~"/api/{{ include "app.namespace" . }}/.*",
+          status=~".*"
         }[1m]))
 {{- end }}
