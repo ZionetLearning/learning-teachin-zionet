@@ -19,6 +19,10 @@ export const useStyles = createUseStyles({
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    "[dir='rtl'] &": {
+      left: "auto",
+      right: "16px",
+    },
     "&:hover": {
       background: "rgba(249, 250, 251, 0.95)",
       transform: "translateY(-1px)",
@@ -68,7 +72,16 @@ export const useStyles = createUseStyles({
     position: "absolute",
     height: "100%",
     zIndex: 999,
+    left: 0,
+    top: 0,
     boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+    "[dir='rtl'] &": {
+      borderRight: "none",
+      borderLeft: "1px solid #e5e7eb",
+      left: "auto",
+      right: 0,
+      transform: "translateX(100%)",
+    },
     "@media (max-width: 768px)": {
       width: "90%",
       maxWidth: "320px",
@@ -77,6 +90,9 @@ export const useStyles = createUseStyles({
   
   sidebarOpen: {
     transform: "translateX(0)",
+    "[dir='rtl'] &": {
+      transform: "translateX(0)",
+    },
   },
 
   sidebarHeader: {
@@ -188,6 +204,9 @@ export const useStyles = createUseStyles({
       backgroundColor: "#f8fafc",
       borderColor: "#e2e8f0",
       transform: "translateX(4px)",
+      "[dir='rtl'] &": {
+        transform: "translateX(-4px)",
+      },
     },
     "&:focus": {
       outline: "2px solid #3b82f6",
@@ -202,6 +221,9 @@ export const useStyles = createUseStyles({
     "&:hover": {
       backgroundColor: "#dbeafe",
       transform: "translateX(2px)",
+      "[dir='rtl'] &": {
+        transform: "translateX(-2px)",
+      },
     },
   },
 
@@ -230,6 +252,10 @@ export const useStyles = createUseStyles({
     color: "#9ca3af",
     flexShrink: 0,
     transition: "color 0.2s ease",
+    "[dir='rtl'] &": {
+      marginLeft: 0,
+      marginRight: "12px",
+    },
     "$chatItem:hover &": {
       color: "#6b7280",
     },
