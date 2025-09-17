@@ -15,6 +15,12 @@ const VISEME_LATENCY_MS = 40; // tweak 20–70 if needed
 const FALLBACK_VISEMES = [3, 5, 8, 10, 0]; // used only if no visemes arrive
 const FALLBACK_STEP_MS = 60;
 
+const stripHebrewNikud = (input: string): string => {
+  // Normalize, then remove Hebrew diacritics & cantillation marks
+  const noMarks = input.normalize("NFKD").replace(/[\u0591-\u05C7]/g, "");
+  return noMarks.replace(/[\u200e\u200f]/g, "");
+};
+
 export const useAvatarSpeech = ({
   lipsArray = [],
   volume = 1,
@@ -148,6 +154,9 @@ export const useAvatarSpeech = ({
     async (text: string, voiceName?: string) => {
       if (!text.trim()) return;
 
+      // Always strip nikud for TTS reliability; keep original for UI
+      const ttsText = stripHebrewNikud(text);
+
       // Cypress deterministic fake
       if (typeof window !== "undefined" && (window as CypressWindow).Cypress) {
         if (isPlaying) {
@@ -234,11 +243,8 @@ export const useAvatarSpeech = ({
         synthesizerRef.current = synthesizer;
 
         // Buffer or schedule visemes as they arrive
-        synthesizer.visemeReceived = (
-          _s: SpeechSDK.SpeechSynthesizer,
-          e: SpeechSDK.SpeechSynthesisVisemeEventArgs,
-        ) => {
-          const offsetMs = e.audioOffset / 10000; // 100ns -> ms
+        synthesizer.visemeReceived = (_s, e) => {
+          const offsetMs = e.audioOffset / 10000;
           scheduleViseme(e.visemeId, offsetMs);
         };
 
@@ -248,10 +254,7 @@ export const useAvatarSpeech = ({
           // dest.onAudioEnd will fire when speaker drains
         };
 
-        synthesizer.SynthesisCanceled = async (
-          _s: SpeechSDK.SpeechSynthesizer,
-          e: SpeechSDK.SpeechSynthesisEventArgs,
-        ) => {
+        synthesizer.SynthesisCanceled = async (_s, e) => {
           if (e.result?.errorDetails?.toLowerCase().includes("token")) {
             await refetch(); // prep for next call
           }
@@ -270,7 +273,7 @@ export const useAvatarSpeech = ({
         await new Promise<void>((resolve, reject) => {
           try {
             synthesizer.speakTextAsync(
-              text,
+              ttsText,
               () => resolve(),
               (err) => reject(err),
             );
