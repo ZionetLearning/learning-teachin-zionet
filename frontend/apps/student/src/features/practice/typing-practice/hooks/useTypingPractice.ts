@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { ExerciseState, DifficultyLevel, Exercise } from "../types";
 import { compareTexts } from "../utils";
 import { useAvatarSpeech, useSignalR } from "@student/hooks";
-import { usePostSentence } from "@student/api/sentence";
+import { usePostSentence } from "@student/api/regularSentence";
 
 // === server event contracts ===
 type EventType =
