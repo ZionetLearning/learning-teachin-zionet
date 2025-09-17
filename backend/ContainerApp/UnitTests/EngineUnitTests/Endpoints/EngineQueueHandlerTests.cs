@@ -283,7 +283,7 @@ public class EngineQueueHandlerTests
         var history = new ChatHistory();
         history.AddSystemMessage("You are a helpful assistant.");
         history.AddUserMessageNow("boom");
-
+        
         var engineReq = new EngineChatRequest
         {
             RequestId = requestId,
@@ -305,6 +305,11 @@ public class EngineQueueHandlerTests
 
         accessor.Setup(a => a.GetHistorySnapshotAsync(threadId, userId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(snapshotFromAccessor);
+
+        accessor
+            .Setup(a => a.GetUserInterestsAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<string>());
+
 
         accessor
             .Setup(a => a.UpsertHistorySnapshotAsync(
