@@ -12,8 +12,8 @@ spec:
     port: {{ .Values.manager.ports.container }}
     service: manager
   replicas:
-    min: 0               # Scale to zero when no traffic
-    max: 10               # Maximum replicas
+    min: 1               # Scale to zero when no traffic
+    max: 1               # Maximum replicas
   pollingInterval: 5    # Responsive scaling
   scaledownPeriod: 300   # 5 minutes idle before scale down
   targetPendingRequests: 1  # Scale up on any pending request
