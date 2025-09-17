@@ -21,12 +21,12 @@ import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { useQueryClient } from "@tanstack/react-query";
 import { useGetAllTasks, useDeleteTask, taskKeys, getTaskById } from "@admin/api";
-import { TaskActionMode, TaskModel, TaskSummaryDto } from "@admin/types";
+import { TaskActionMode, TaskModel, TaskSummaryDto, TaskWithETag } from "@admin/types";
 import { useStyles } from "./style";
 
 interface TasksListProps {
   dir: "ltr" | "rtl";
-  onTaskSelect: (task: TaskModel, mode: TaskActionMode) => void;
+  onTaskSelect: (taskWithETag: TaskWithETag, mode: TaskActionMode) => void;
   refreshTrigger: number;
 }
 
@@ -103,7 +103,7 @@ export const TasksList = ({ dir, onTaskSelect, refreshTrigger }: TasksListProps)
     try {
       const taskWithETag = await getTaskById(task.id);
       
-      onTaskSelect(taskWithETag.task, mode);
+      onTaskSelect(taskWithETag, mode);
       
     } catch (error) {
       console.error('Error fetching full task details:', error);
@@ -114,7 +114,11 @@ export const TasksList = ({ dir, onTaskSelect, refreshTrigger }: TasksListProps)
         name: task.name,
         payload: ""
       };
-      onTaskSelect(fallbackTask, mode);
+      const fallbackTaskWithETag: TaskWithETag = {
+        task: fallbackTask,
+        etag: undefined
+      };
+      onTaskSelect(fallbackTaskWithETag, mode);
     } finally {
       setLoadingTaskId(null);
     }

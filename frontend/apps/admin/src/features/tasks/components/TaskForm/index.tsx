@@ -6,7 +6,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { 
   useCreateTask,
   useUpdateTaskName,
-  useGetTaskById,
   taskKeys
 } from "@admin/api";
 import { useSignalR } from"@admin/hooks";
@@ -21,6 +20,7 @@ const generateRandomId = (): number =>
 interface TaskFormProps {
   isRtl: boolean;
   selectedTask: TaskModel | null;
+  selectedTaskETag?: string;
   actionMode: TaskActionMode;
   onTaskCreated: () => void;
   onTaskUpdated: () => void;
@@ -32,6 +32,7 @@ interface TaskFormProps {
 export const TaskForm = ({
   isRtl,
   selectedTask,
+  selectedTaskETag,
   actionMode,
   onTaskCreated,
   onTaskUpdated,
@@ -45,7 +46,6 @@ export const TaskForm = ({
 
   const { mutate: createTask, isPending: isCreatingTask } = useCreateTask();
   const { mutate: updateTaskName, isPending: isUpdating } = useUpdateTaskName();
-  const { data: taskWithETag } = useGetTaskById(selectedTask?.id || 0);
   const { status: signalRStatus, subscribe } = useSignalR();
 
   const isEditing = actionMode === 'edit';
@@ -96,7 +96,7 @@ export const TaskForm = ({
         {
           id: selectedTask.id,
           name: values.name.trim(),
-          etag: taskWithETag?.etag,
+          etag: selectedTaskETag,
         },
         {
           onSuccess: () => {
