@@ -242,19 +242,38 @@ jobs:
               ;;
           esac
           
+          echo "=== Build Environment Debug ==="
+          echo "VITE_APPINSIGHTS_CONNECTION_STRING is set: ${VITE_APPINSIGHTS_CONNECTION_STRING:+YES}"
+          echo "VITE_APPINSIGHTS_CONNECTION_STRING length: ${#VITE_APPINSIGHTS_CONNECTION_STRING}"
+          
+          if [ -z "$VITE_APPINSIGHTS_CONNECTION_STRING" ]; then
+            echo "WARNING: VITE_APPINSIGHTS_CONNECTION_STRING is empty for ${{ matrix.app }}"
+          fi
+          
           npm run build:${{ matrix.app }}
 
       - name: Verify AI is in ${{ matrix.app }} bundle
         working-directory: ${{ env.FE_DIR }}
         run: |
+          echo "=== Debugging ${{ matrix.app }} build output ==="
+          echo "Contents of apps/${{ matrix.app }}/dist/:"
+          find apps/${{ matrix.app }}/dist/ -type f -name "*.js" | head -10
+          
+          echo "=== Checking for ApplicationInsights ==="
           if ! grep -R "applicationinsights" -n apps/${{ matrix.app }}/dist/ >/dev/null 2>&1; then
             echo "AI SDK not found in ${{ matrix.app }} built files."
+            echo "=== Looking for any AI-related content ==="
+            grep -R -i "appinsights\|application.*insights\|ai.*connection" apps/${{ matrix.app }}/dist/ || echo "No AI content found"
             exit 1
           fi
+          
           if ! grep -R "applicationinsights.azure.com" -n apps/${{ matrix.app }}/dist/ >/dev/null 2>&1; then
             echo "Ingestion endpoint not found in ${{ matrix.app }} (env missing?)."
+            echo "=== Environment variables during build ==="
+            echo "VITE_APPINSIGHTS_CONNECTION_STRING was: ${VITE_APPINSIGHTS_CONNECTION_STRING:-'NOT SET'}"
             exit 1
           fi
+          
           echo "AI present in ${{ matrix.app }} bundle."
 
       - name: Upload ${{ matrix.app }} build artifacts
