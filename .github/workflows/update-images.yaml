@@ -53,7 +53,21 @@ on:
         default: ''
 
 jobs:
+
+  lock-featest:
+    if: ${{ (inputs.environment_name || github.event.inputs.environment_name) == 'featest' }}
+    permissions:
+      contents: read
+      issues: write
+    uses: ./.github/workflows/lock-environment.yaml
+    with:
+      action: lock
+
   set-defaults:
+    needs: [lock-featest]
+    if: |
+      needs.lock-featest.result == 'success' ||
+      needs.lock-featest.result == 'skipped'
     runs-on: ubuntu-latest
     outputs:
       environment: ${{ steps.defaults.outputs.environment }}

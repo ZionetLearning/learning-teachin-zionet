@@ -36,7 +36,21 @@ on:
             - 'none'
           
 jobs:
+
+  lock-featest:
+    if: ${{ (inputs.environment_name || github.event.inputs.environment_name) == 'featest' }}
+    permissions:
+      contents: read
+      issues: write
+    uses: ./.github/workflows/lock-environment.yaml
+    with:
+      action: lock
+
   build-and-push-images:
+    needs: [lock-featest]
+    if: |
+      needs.lock-featest.result == 'success' ||
+      needs.lock-featest.result == 'skipped'
     uses: ./.github/workflows/build-and-push-images.yaml
     permissions:
       id-token: write
@@ -48,6 +62,10 @@ jobs:
     secrets: inherit
  
   terraform-apply:
+    needs: [lock-featest]
+    if: |
+      needs.lock-featest.result == 'success' ||
+      needs.lock-featest.result == 'skipped'
     uses: ./.github/workflows/terraform-apply.yaml
     permissions:
       id-token: write
