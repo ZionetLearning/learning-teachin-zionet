@@ -11,7 +11,10 @@ interface GameSettingsProps {
   sentenceCount: number;
   isHebrew: boolean;
   handleConfigChange: () => void;
-  getDifficultyLabel: (level: DifficultyLevel) => string;
+  getDifficultyLabel: (
+    level: DifficultyLevel,
+    t: (key: string) => string,
+  ) => string;
 }
 export const GameSettings = ({
   gameConfig,
@@ -29,7 +32,7 @@ export const GameSettings = ({
       <Box className={classes.gameHeaderInfo}>
         <Typography variant="body2" color="text.secondary">
           {t("pages.wordOrderGame.current.difficulty")}:{" "}
-          {getDifficultyLabel(gameConfig.difficulty)}
+          {getDifficultyLabel(gameConfig.difficulty, t)}
         </Typography>
         <Typography variant="body2" color="text.secondary">
           {t("pages.wordOrderGame.current.nikud")}:{" "}

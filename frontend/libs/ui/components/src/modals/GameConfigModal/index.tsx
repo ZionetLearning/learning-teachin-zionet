@@ -30,7 +30,7 @@ interface GameConfigModalProps {
   open: boolean;
   onClose: () => void;
   onConfirm: (config: GameConfig) => void;
-  getDifficultyLevelLabel: (level: DifficultyLevel) => string;
+  getDifficultyLevelLabel: (level: DifficultyLevel, t: (key: string) => string) => string;
   initialConfig?: GameConfig;
 }
 
@@ -117,7 +117,7 @@ export const GameConfigModal = ({
                 label={
                   <Box>
                     <Typography variant="body1">
-                      {getDifficultyLevelLabel(0)}
+                      {getDifficultyLevelLabel(0, t)}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
                       {t("pages.wordOrderGame.config.difficultyDesc.easy")}
@@ -131,7 +131,7 @@ export const GameConfigModal = ({
                 label={
                   <Box>
                     <Typography variant="body1">
-                      {getDifficultyLevelLabel(1)}
+                      {getDifficultyLevelLabel(1, t)}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
                       {t("pages.wordOrderGame.config.difficultyDesc.medium")}
@@ -145,7 +145,7 @@ export const GameConfigModal = ({
                 label={
                   <Box>
                     <Typography variant="body1">
-                      {getDifficultyLevelLabel(2)}
+                      {getDifficultyLevelLabel(2, t)}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
                       {t("pages.wordOrderGame.config.difficultyDesc.hard")}

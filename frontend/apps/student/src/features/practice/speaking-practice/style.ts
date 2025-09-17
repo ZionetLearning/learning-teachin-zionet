@@ -4,7 +4,7 @@ export const useStyles = createUseStyles({
   container: {
     display: "flex",
     flexDirection: "column",
-    height: "100%",
+    height: "100vh",
     width: "100%",
     margin: "auto",
     boxSizing: "border-box",

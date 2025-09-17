@@ -8,7 +8,10 @@ interface WelcomeScreenProps {
   configModalOpen: boolean;
   setConfigModalOpen: (open: boolean) => void;
   handleConfigConfirm: (config: GameConfig) => void;
-  getDifficultyLabel: (level: DifficultyLevel) => string;
+  getDifficultyLabel: (
+    level: DifficultyLevel,
+    t: (key: string) => string,
+  ) => string;
 }
 
 export const WelcomeScreen = ({

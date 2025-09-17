@@ -4,14 +4,15 @@ import { useStyles } from "./style";
 import { Speaker } from "../Speaker";
 import { useHebrewSentence } from "../../hooks";
 import { useAvatarSpeech } from "@student/hooks";
-import { DifficultyLevel } from "@student/types";
-import { WelcomeScreen, ChosenWordsArea, WordsBank, SideButtons } from "../";
+import { ChosenWordsArea, WordsBank, SideButtons } from "../";
 import {
   GameConfig,
   GameConfigModal,
   GameOverModal,
   GameSettings,
+  WelcomeScreen,
 } from "@ui-components";
+import { getDifficultyLabel } from "@student/features";
 
 export const Game = () => {
   const { t, i18n } = useTranslation();
@@ -167,19 +168,6 @@ export const Game = () => {
       if (arr.join(" ") !== original) return arr;
     }
     return [...words].sort(() => Math.random() - 0.5);
-  };
-
-  const getDifficultyLabel = (difficulty: DifficultyLevel) => {
-    switch (difficulty) {
-      case 0:
-        return t("pages.wordOrderGame.difficulty.easy");
-      case 1:
-        return t("pages.wordOrderGame.difficulty.medium");
-      case 2:
-        return t("pages.wordOrderGame.difficulty.hard");
-      default:
-        return t("pages.wordOrderGame.difficulty.medium");
-    }
   };
 
   // Show welcome screen if game hasn't started yet

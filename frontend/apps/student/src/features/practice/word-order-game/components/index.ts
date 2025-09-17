@@ -5,4 +5,3 @@ export * from "./Speaker";
 export * from "./ChosenWordsArea";
 export * from "./WordsBank";
 export * from "./SideButtons";
-export * from "./WelcomeScreen";
