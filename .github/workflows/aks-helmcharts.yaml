@@ -92,7 +92,6 @@ jobs:
           
           # echo "ACR_NAME=teachindevacr" >> $GITHUB_ENV
           # echo "ACR_LOGIN_SERVER=teachindevacr.azurecr.io" >> $GITHUB_ENV
-          echo "VALUES_FILE=devops/kubernetes/charts/values.prod.yaml" >> $GITHUB_ENV
           echo "DOCKER_REGISTRY=${{ secrets.DOCKERHUB_USERNAME }}" >> $GITHUB_ENV
    
           if [ "$TARGET_NAMESPACE" = "prod" ]; then
