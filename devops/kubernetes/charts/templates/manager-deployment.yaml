@@ -119,7 +119,7 @@ spec:
   selector:
     {{ .Values.manager.labels.selectorKey }}: {{ .Values.manager.labels.selectorValue }}
   ports:
-    {{- if .Values.keda.enabled }}
+    {{- if .Values.keda.manager.enabled }}
     - port: {{ .Values.manager.ports.container }}
       targetPort: {{ .Values.manager.ports.container }}
     {{- else }}
