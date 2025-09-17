@@ -12,28 +12,26 @@ import { Celebration, Settings, Replay } from "@mui/icons-material";
 import { useStyles } from "./style";
 interface GameOverModalProps {
   open: boolean;
-  onClose: () => void;
   onPlayAgain: () => void;
   onChangeSettings: () => void;
+  correctSentences: number;
   totalSentences: number;
 }
 
 export const GameOverModal = ({
   open,
-  onClose,
   onPlayAgain,
   onChangeSettings,
+  correctSentences,
   totalSentences,
 }: GameOverModalProps) => {
   const { t, i18n } = useTranslation();
   const classes = useStyles();
-  // Determine if current language is Hebrew (RTL)
   const isHebrew = i18n.language === "he" || i18n.language === "heb";
 
   return (
     <Dialog
       open={open}
-      onClose={onClose}
       maxWidth="sm"
       fullWidth
       className={isHebrew ? classes.gameOverModalRtl : classes.gameOverModalLtr}
@@ -49,21 +47,38 @@ export const GameOverModal = ({
 
       <DialogContent>
         <Box className={classes.gameOverContent}>
-          <Typography variant="h6" gutterBottom>
-            {t("pages.wordOrderGame.gameOver.congratulations")}
-          </Typography>
-          <Typography
-            variant="body1"
-            color="text.secondary"
-            className={classes.gameOverCompletedText}
-          >
-            {t("pages.wordOrderGame.gameOver.completed", {
-              count: totalSentences,
-            })}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {t("pages.wordOrderGame.gameOver.whatNext")}
-          </Typography>
+          {correctSentences === totalSentences ? (
+            <>
+              <Typography variant="h6" gutterBottom>
+                {t("pages.wordOrderGame.gameOver.congratulations")}
+              </Typography>
+              <Typography
+                variant="body1"
+                color="text.secondary"
+                className={classes.gameOverCompletedText}
+              >
+                {t("pages.wordOrderGame.gameOver.completed", {
+                  correct: correctSentences,
+                  total: totalSentences,
+                })}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {t("pages.wordOrderGame.gameOver.whatNext")}
+              </Typography>
+            </>
+          ) : (
+            <>
+              <Typography variant="h6" gutterBottom>
+                {t("pages.wordOrderGame.gameOver.completed", {
+                  correct: correctSentences,
+                  total: totalSentences,
+                })}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {t("pages.wordOrderGame.gameOver.whatNext")}
+              </Typography>
+            </>
+          )}
         </Box>
       </DialogContent>
 
@@ -91,9 +106,6 @@ export const GameOverModal = ({
             >
               {t("pages.wordOrderGame.gameOver.changeSettings")}
             </Button>
-            <Button onClick={onClose} color="inherit">
-              {t("pages.wordOrderGame.close")}
-            </Button>
           </>
         ) : (
           <>
@@ -113,9 +125,6 @@ export const GameOverModal = ({
               className={classes.gameOverButtonEnglish}
             >
               {t("pages.wordOrderGame.gameOver.changeSettings")}
-            </Button>
-            <Button onClick={onClose} color="inherit">
-              {t("pages.wordOrderGame.close")}
             </Button>
           </>
         )}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useStyles } from "./style";
 import { Speaker } from "../Speaker";
@@ -21,10 +21,12 @@ export const Game = () => {
   const classes = useStyles();
   const [chosen, setChosen] = useState<string[]>([]);
   const [shuffledSentence, setShuffledSentence] = useState<string[]>([]);
+  const [isCorrect, setIsCorrect] = useState<boolean>(false);
   const [configModalOpen, setConfigModalOpen] = useState(false);
   const [gameOverModalOpen, setGameOverModalOpen] = useState(false);
   const [gameConfig, setGameConfig] = useState<GameConfig | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
+  const [correctSentencesCount, setCorrectSentencesCount] = useState<number>(0);
   const isHebrew = i18n.language === "he" || i18n.language === "heb";
 
   const {
@@ -68,12 +70,19 @@ export const Game = () => {
     handleNewSentence();
   }, [sentence, words]);
 
+  useEffect(() => {
+    if (words.length > 0) {
+      setIsCorrect(chosen.join(" ") === words.join(" "));
+    }
+  }, [words, chosen]);
+
   const handleConfigConfirm = (config: GameConfig) => {
     setGameConfig(config);
     setConfigModalOpen(false);
     // Reset game state when config changes
     setChosen([]);
     setShuffledSentence([]);
+    setCorrectSentencesCount(0);
     setGameStarted(false);
     // Reset the hook's internal state
     resetGame();
@@ -92,6 +101,9 @@ export const Game = () => {
 
   const handleNextClick = useCallback(async () => {
     stop();
+    if (isCorrect) {
+      setCorrectSentencesCount(correctSentencesCount + 1);
+    }
 
     const result = await fetchSentence();
 
@@ -105,7 +117,7 @@ export const Game = () => {
     if (result.words && result.words.length > 0) {
       setShuffledSentence(shuffleDistinct(result.words));
     }
-  }, [stop, fetchSentence]);
+  }, [stop, fetchSentence, isCorrect]);
 
   const handleGameOverPlayAgain = () => {
     setGameOverModalOpen(false);
@@ -115,6 +127,7 @@ export const Game = () => {
     setChosen([]);
     setShuffledSentence([]);
     setGameStarted(false);
+    setCorrectSentencesCount(0);
     // Restart the game with same config
     setTimeout(() => {
       setGameStarted(true);
@@ -146,14 +159,8 @@ export const Game = () => {
     setShuffledSentence((prev) => [word, ...prev]);
   };
 
-  const isCorrect = useMemo(() => {
-    if (words.length > 0) {
-      return chosen.join(" ") === words.join(" ");
-    }
-  }, [chosen, words]);
-
   const handleCheck = () => {
-    alert(isCorrect ? "Correct!" : "Try again!");
+    alert(isCorrect ? "Correct!" : "Incorrect! Try again");
     return isCorrect;
   };
 
@@ -252,9 +259,9 @@ export const Game = () => {
       {/* Game Over Modal */}
       <GameOverModal
         open={gameOverModalOpen}
-        onClose={() => setGameOverModalOpen(false)}
         onPlayAgain={handleGameOverPlayAgain}
         onChangeSettings={handleGameOverChangeSettings}
+        correctSentences={correctSentencesCount}
         totalSentences={sentenceCount}
       />
     </>
