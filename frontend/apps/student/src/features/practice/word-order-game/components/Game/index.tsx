@@ -150,7 +150,15 @@ export const Game = () => {
   };
 
   const handleChooseWord = (word: string) => {
-    setShuffledSentence((prev) => prev.filter((w) => w !== word));
+    setShuffledSentence((prev) => {
+      const index = prev.indexOf(word);
+      if (index > -1) {
+        const newArray = [...prev];
+        newArray.splice(index, 1); // Remove only the first occurrence
+        return newArray;
+      }
+      return prev;
+    });
     setChosen((prev) => [...prev, word]);
   };
 
@@ -167,16 +175,18 @@ export const Game = () => {
   const shuffleDistinct = (words: string[]) => {
     if (words.length < 2) return [...words];
 
-    const original = words.join(" ");
-    for (let i = 0; i < 5; i++) {
-      const arr = [...words];
-      for (let j = arr.length - 1; j > 0; j--) {
-        const k = Math.floor(Math.random() * (j + 1));
-        [arr[j], arr[k]] = [arr[k], arr[j]];
-      }
-      if (arr.join(" ") !== original) return arr;
+    const shuffled = [...words];
+
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
-    return [...words].sort(() => Math.random() - 0.5);
+
+    if (shuffled.join(" ") === words.join(" ") && words.length > 1) {
+      [shuffled[0], shuffled[1]] = [shuffled[1], shuffled[0]];
+    }
+
+    return shuffled;
   };
 
   const getDifficultyLabel = (difficulty: DifficultyLevel) => {
