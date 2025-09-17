@@ -48,8 +48,8 @@ helm upgrade --install keda kedacore/keda \
     --wait --timeout 300s
 
 # Install KEDA HTTP Add-on  
-echo "Installing KEDA HTTP Add-on..."
-helm upgrade --install keda-http kedacore/keda-add-ons-http \
-    --namespace "$KEDA_NAMESPACE" \
-    --set operator.keda.enabled=false \
-    --wait --timeout 300s
+# echo "Installing KEDA HTTP Add-on..."
+# helm upgrade --install keda-http kedacore/keda-add-ons-http \
+#     --namespace "$KEDA_NAMESPACE" \
+#     --set operator.keda.enabled=false \
+#     --wait --timeout 300s
