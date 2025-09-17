@@ -23,7 +23,12 @@ fi
 # Phase 1: install with web replicas=0 (avoid race with migrations)
 helm $ACTION langfuse langfuse/langfuse \
   --namespace "$NAMESPACE" \
+  --set langfuse.web.image.repository="teachindevacr.azurecr.io/langfuse-web" \
+  --set langfuse.web.image.tag="3.108.0-langfusepath" \
+  --set langfuse.worker.image.repository="langfuse/langfuse" \
+  --set langfuse.worker.image.tag="3.108.0" \
   --set langfuse.replicas=0 \
+  --set langfuse.web.podLabels.app="web" \
   --set langfuse.nextauth.url="https://teachin.westeurope.cloudapp.azure.com/langfuse" \
   --set langfuse.salt.secretKeyRef.name="langfuse-secrets" \
   --set langfuse.salt.secretKeyRef.key="SALT" \
@@ -34,10 +39,10 @@ helm $ACTION langfuse langfuse/langfuse \
   --set langfuse.resources.limits.cpu="1000m" \
   --set langfuse.resources.limits.memory="1Gi" \
   --set langfuse.worker.replicas=1 \
-  --set langfuse.worker.resources.requests.cpu="50m" \
-  --set langfuse.worker.resources.requests.memory="128Mi" \
-  --set langfuse.worker.resources.limits.cpu="200m" \
-  --set langfuse.worker.resources.limits.memory="256Mi" \
+  --set langfuse.worker.resources.requests.cpu="200m" \
+  --set langfuse.worker.resources.requests.memory="256Mi" \
+  --set langfuse.worker.resources.limits.cpu="500m" \
+  --set langfuse.worker.resources.limits.memory="512Mi" \
   --set postgresql.deploy=false \
   --set postgresql.host="dev-pg-zionet-learning.postgres.database.azure.com" \
   --set postgresql.port=5432 \
@@ -53,11 +58,7 @@ helm $ACTION langfuse langfuse/langfuse \
   --set clickhouse.resources.requests.memory="256Mi" \
   --set clickhouse.resources.limits.cpu="200m" \
   --set clickhouse.resources.limits.memory="512Mi" \
-  --set clickhouse.zookeeper.resources.requests.cpu="50m" \
-  --set clickhouse.zookeeper.resources.requests.memory="128Mi" \
-  --set clickhouse.zookeeper.resources.limits.cpu="100m" \
-  --set clickhouse.zookeeper.resources.limits.memory="256Mi" \
-  --set clickhouse.zookeeper.replicaCount=1 \
+  --set clickhouse.zookeeper.enabled=false \
   --set redis.auth.existingSecret="langfuse-secrets" \
   --set redis.auth.existingSecretPasswordKey="REDIS_PASSWORD" \
   --set s3.auth.existingSecret="langfuse-secrets" \
@@ -77,6 +78,12 @@ helm $ACTION langfuse langfuse/langfuse \
   --set-string langfuse.additionalEnv[2].value="true" \
   --set langfuse.additionalEnv[3].name="DISABLE_READINESS_PROBE" \
   --set-string langfuse.additionalEnv[3].value="true" \
+  --set langfuse.additionalEnv[4].name="BASE_PATH" \
+  --set-string langfuse.additionalEnv[4].value="/langfuse" \
+  --set langfuse.additionalEnv[5].name="NEXT_PUBLIC_BASE_PATH" \
+  --set-string langfuse.additionalEnv[5].value="/langfuse" \
+  --set langfuse.additionalEnv[6].name="NEXTAUTH_URL" \
+  --set-string langfuse.additionalEnv[6].value="https://teachin.westeurope.cloudapp.azure.com/langfuse" \
   --timeout=5m
 
 echo "✅ Chart applied with web=0. Running Prisma migrations as a Job..."
