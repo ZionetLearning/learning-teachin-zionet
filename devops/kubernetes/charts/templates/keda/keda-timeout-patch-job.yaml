@@ -12,13 +12,13 @@ metadata:
 spec:
   template:
     spec:
-      serviceAccountName: {{ .Values.serviceAccount.name | default (printf "%s-serviceaccount" .Release.Namespace) }}
+      serviceAccountName: {{ printf "%s-serviceaccount" .Release.Namespace }}
       restartPolicy: Never
       containers:
       - name: keda-patcher
-        image: bitnami/kubectl:latest
+        image: alpine/k8s:1.28.0
         command:
-        - /bin/bash
+        - /bin/sh
         - -c
         - |
           echo "Patching KEDA HTTP interceptor timeouts for scale-to-zero reliability..."
