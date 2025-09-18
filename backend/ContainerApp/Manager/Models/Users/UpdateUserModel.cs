@@ -13,4 +13,5 @@ public class UpdateUserModel
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public Role? Role { get; set; }
+    public List<string>? Interests { get; set; }
 }

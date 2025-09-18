@@ -174,7 +174,8 @@ public class UsersEndpointsTests
         FirstName = "Test",
         LastName = "User",
         Password = "Pass123!",
-        Role = Role.Student
+        Role = Role.Student,
+        Interests = []
     };
 
     private static UserData BuildUserData(string email, Guid? id = null) => new()

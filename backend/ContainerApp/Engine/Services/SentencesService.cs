@@ -31,7 +31,7 @@ public class SentencesService : ISentencesService
         _hardWords = new(() => LoadList(HardPath));
     }
 
-    public async Task<SentenceResponse> GenerateAsync(SentenceRequest req, CancellationToken ct = default)
+    public async Task<SentenceResponse> GenerateAsync(SentenceRequest req, List<string> userInterests, CancellationToken ct = default)
     {
         _log.LogInformation("Inside sentence generator service");
 
@@ -54,6 +54,19 @@ public class SentencesService : ISentencesService
             ["count"] = req.Count.ToString(System.Globalization.CultureInfo.InvariantCulture),
             ["hints"] = hintsStr
         };
+
+        // Add user interest with 50% probability
+        if (userInterests != null && userInterests.Count > 0 && Random.Shared.NextDouble() < 0.5)
+        {
+            var selectedInterest = userInterests[Random.Shared.Next(userInterests.Count)];
+            args["interest"] = selectedInterest;
+            _log.LogInformation("Injecting user interest into sentence generation: {Interest}", selectedInterest);
+        }
+        else
+        {
+            // Ensure no stale variable exists
+            args["interest"] = string.Empty;
+        }
 
         var result = await _genKernel.InvokeAsync(func, args, ct);
         var json = result.GetValue<string>();

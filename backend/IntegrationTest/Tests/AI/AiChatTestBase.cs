@@ -4,6 +4,7 @@ using IntegrationTests.Fixtures;
 using IntegrationTests.Infrastructure;
 using IntegrationTests.Models.Notification;
 using Manager.Models.Chat;
+using Manager.Models.Users;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Xunit.Abstractions;
@@ -50,4 +51,5 @@ await WaitForEventAsync(
          e.Payload.TryGetProperty("requestId", out var rid) &&
          rid.GetString() == requestId,
     timeout);
+
 }

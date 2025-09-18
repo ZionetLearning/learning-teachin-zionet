@@ -140,11 +140,13 @@ public class PromptService : IPromptService
                 .Where(p => keys.Contains(p.PromptKey))
                 .GroupBy(p => p.PromptKey)
                 .Select(g => g.OrderByDescending(p => p.Version).First())
-                .ProjectTo<PromptResponse>(_mapper.ConfigurationProvider)
-                .ToListAsync(cancellationToken: cancellationToken);
+                .ToListAsync(cancellationToken);
+
+            var mapped = _mapper.Map<List<PromptResponse>>(latestPerKey);
 
             _logger.LogInformation("Batch retrieved {Found} / {Requested} prompts", latestPerKey.Count, keys.Count);
-            return latestPerKey;
+            return mapped;
+
         }
         catch (Exception ex)
         {

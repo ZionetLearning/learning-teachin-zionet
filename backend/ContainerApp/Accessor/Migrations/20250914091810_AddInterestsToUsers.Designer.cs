@@ -5,6 +5,7 @@ using System.Net;
 using Accessor.DB;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -13,9 +14,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Accessor.Migrations
 {
     [DbContext(typeof(AccessorDbContext))]
-    partial class AccessorDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250914091810_AddInterestsToUsers")]
+    partial class AddInterestsToUsers
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -184,23 +187,6 @@ namespace Accessor.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Tasks");
-                });
-
-            modelBuilder.Entity("Accessor.Models.Users.TeacherStudent", b =>
-                {
-                    b.Property<Guid>("TeacherId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("StudentId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("TeacherId", "StudentId");
-
-                    b.HasIndex("StudentId");
-
-                    b.HasIndex("TeacherId");
-
-                    b.ToTable("TeacherStudents", (string)null);
                 });
 
             modelBuilder.Entity("Accessor.Models.Users.UserModel", b =>

@@ -15,6 +15,10 @@ public static class UsersEndpoints
 
         usersGroup.MapGet("/{userId:guid}", GetUserAsync).WithName("GetUser");
         usersGroup.MapGet("", GetAllUsersAsync).WithName("GetAllUsers");
+
+        usersGroup.MapGet("/{userId:guid}/interests", GetUserInterestsAsync)
+            .WithName("GetUserInterests");
+
         usersGroup.MapPost("", CreateUserAsync).WithName("CreateUser");
         usersGroup.MapPut("/{userId:guid}", UpdateUserAsync).WithName("UpdateUser");
         usersGroup.MapDelete("/{userId:guid}", DeleteUserAsync).WithName("DeleteUser");
@@ -319,6 +323,35 @@ public static class UsersEndpoints
         {
             logger.LogError(ex, "Failed to list teachers for student.");
             return Results.Problem("An error occurred while retrieving teachers.");
+        }
+    }
+
+    private static async Task<IResult> GetUserInterestsAsync(
+        [FromRoute] Guid userId,
+        [FromServices] IUserService service,
+        [FromServices] ILogger<UsersEndpointsLoggerMarker> logger,
+        CancellationToken ct)
+    {
+        using var _ = logger.BeginScope("Method={Method}, UserId={UserId}", nameof(GetUserInterestsAsync), userId);
+
+        if (userId == Guid.Empty)
+        {
+            logger.LogWarning("Invalid userId.");
+            return Results.BadRequest(new { error = "Invalid userId." });
+        }
+
+        try
+        {
+            var interests = await service.GetUserInterestsAsync(userId);
+
+            return interests == null || interests.Count == 0
+                ? Results.NotFound(new { message = "No interests found for user." })
+                : Results.Ok(interests);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to retrieve interests for user {UserId}", userId);
+            return Results.Problem("An error occurred while retrieving user interests.");
         }
     }
 }
