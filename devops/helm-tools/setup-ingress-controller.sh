@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 ENVIRONMENT="${1:-dev}"  # Default to 'dev' if not provided
-
+echo "Setting up Ingress Controller in '$ENVIRONMENT' environment..."
 NAMESPACE="devops-ingress-nginx"
 RELEASE_NAME="ingress-nginx"
 STATIC_IP_NAME="ingress-controller-static-ip"

@@ -197,28 +197,24 @@ jobs:
           helm repo add external-secrets https://charts.external-secrets.io
           helm repo update
           helm upgrade --install external-secrets external-secrets/external-secrets \
-            --namespace external-secrets \
+            --namespace external-secrets-system \
             --create-namespace \
             --set installCRDs=true \
             --wait --timeout 180s
 
-      - name: Wait for External Secrets CRD
+      - name: Wait for External Secrets API
         if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
         run: |
-          echo "⏳ Waiting for ExternalSecrets CRD..."
-          for i in {1..40}; do
-            if kubectl get crd externalsecrets.external-secrets.io &>/dev/null; then
-              echo "✅ ExternalSecrets CRD is present"
-              # Optionally, check if the API is available
-              if kubectl api-resources | grep -q "^externalsecrets "; then
-                echo "✅ ExternalSecrets API ready"
-                exit 0
-              fi
+          echo "⏳ Waiting for ExternalSecrets API..."
+          for i in {1..30}; do
+            if kubectl api-resources | grep -q "externalsecrets"; then
+              echo "✅ ExternalSecrets API ready"
+              exit 0
             fi
-            echo "Waiting for CRD and API..."
+            echo "Waiting for API..."
             sleep 5
           done
-          echo "❌ Timeout waiting for ExternalSecrets CRD/API"
+          echo "❌ Timeout waiting for ExternalSecrets API"
           exit 1
 
       - name: Helm template sanity (no Namespace objects)
