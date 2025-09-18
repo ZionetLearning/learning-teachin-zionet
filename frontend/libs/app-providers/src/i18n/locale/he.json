@@ -72,7 +72,7 @@
         "score": "תוצאה:"
       },
       "chatAvatar": {
-        "chatAvatarPage": "צ'אט עם אווטאר - מחובר לבקאנד",
+        "chatAvatarPage": "צ'אט עם אווטאר",
         "typeMessage": "הקלד הודעה…",
         "avatar": "אווטאר",
         "lips": "שפתיים"
@@ -201,7 +201,7 @@
         "gameOver": {
           "title": "המשחק הסתיים!",
           "congratulations": "כל הכבוד!",
-          "completed": "השלמת את כל {{count}} המשפטים.",
+          "completed": "השלמת {{correct}} משפטים נכונים מתוך {{total}}.",
           "whatNext": "מה תרצה לעשות כעת?",
           "playAgain": "משחק חדש",
           "changeSettings": "שינוי הגדרות משחק"

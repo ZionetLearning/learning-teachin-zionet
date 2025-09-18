@@ -140,7 +140,7 @@ describe("<Users />", () => {
   it("submits create user form", async () => {
     const mutate = vi.fn(
       (
-        userData: {
+        _userData: {
           userId: string;
           email: string;
           password: string;
