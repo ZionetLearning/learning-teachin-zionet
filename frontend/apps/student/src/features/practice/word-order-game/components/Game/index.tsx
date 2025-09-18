@@ -19,7 +19,6 @@ import {
 export const Game = () => {
   const { t, i18n } = useTranslation();
   const classes = useStyles();
-  const [errorState, setErrorState] = useState<boolean>(false);
   const [chosen, setChosen] = useState<string[]>([]);
   const [shuffledSentence, setShuffledSentence] = useState<string[]>([]);
   const [isCorrect, setIsCorrect] = useState<boolean>(false);
@@ -202,9 +201,6 @@ export const Game = () => {
         return t("pages.wordOrderGame.difficulty.medium");
     }
   };
-const TestErrorComponent = () => {
-  throw new Error("Test error for error boundary");
-};
   // Show welcome screen if game hasn't started yet
   if (!gameStarted || !gameConfig) {
     return (
@@ -219,9 +215,6 @@ const TestErrorComponent = () => {
 
   return (
     <>
-
-      <button onClick={()=> setErrorState(true)}>Click</button>
-      {errorState && <TestErrorComponent />}
       <div className={classes.gameContainer}>
         {/* Game Header with Settings */}
         <GameHeaderSettings
