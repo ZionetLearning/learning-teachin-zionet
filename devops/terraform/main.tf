@@ -373,7 +373,7 @@ data "azurerm_key_vault" "shared" {
 }
 
 module "clustersecretstore" {
-  count       = var.environment_name == "dev" || var.environment_name == "prod" ? 1 : 0
+  count       = var.environment_name == "dev" || var.environment_name == "network" ? 1 : 0
   source      = "./modules/clustersecretstore"
   identity_id = var.identity_id # AKS cluster {environment} agent pool managed identity clientId
   tenant_id   = var.tenant_id
