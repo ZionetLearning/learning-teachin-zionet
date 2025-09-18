@@ -231,6 +231,12 @@ export const SignalRProvider = ({ hubUrl, children }: SignalRProviderProps) => {
     [status, userId, subscribe, waitForResponse],
   );
 
+  // Expose status to window for E2E tests (non-production side effect, harmless in prod)
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).__signalRStatus = status;
+  }, [status]);
+
   return (
     <SignalRContext.Provider value={value}>{children}</SignalRContext.Provider>
   );

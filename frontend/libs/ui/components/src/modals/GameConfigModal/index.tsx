@@ -30,7 +30,10 @@ interface GameConfigModalProps {
   open: boolean;
   onClose: () => void;
   onConfirm: (config: GameConfig) => void;
-  getDifficultyLevelLabel: (level: DifficultyLevel, t: (key: string) => string) => string;
+  getDifficultyLevelLabel: (
+    level: DifficultyLevel,
+    t: (key: string) => string,
+  ) => string;
   initialConfig?: GameConfig;
 }
 
@@ -45,7 +48,6 @@ export const GameConfigModal = ({
     count: 3,
   },
 }: GameConfigModalProps) => {
-  
   const { t } = useTranslation();
   const classes = useStyles();
   const [config, setConfig] = useState<GameConfig>(initialConfig);
@@ -93,7 +95,11 @@ export const GameConfigModal = ({
         <Typography variant="h5" component="div">
           {t("pages.wordOrderGame.config.title")}
         </Typography>
-        <Typography variant="body2" color="text.secondary" className={classes.modalTitle}>
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          className={classes.modalTitle}
+        >
           {t("pages.wordOrderGame.config.subtitle")}
         </Typography>
       </DialogTitle>
@@ -165,6 +171,7 @@ export const GameConfigModal = ({
             </FormLabel>
             <FormGroup>
               <FormControlLabel
+                data-testid="game-config-nikud"
                 control={
                   <Checkbox
                     checked={config.nikud}
@@ -213,6 +220,7 @@ export const GameConfigModal = ({
           variant="contained"
           color="primary"
           className={classes.startGameButton}
+          data-testid="game-config-start"
         >
           {t("pages.wordOrderGame.config.startGame")}
         </Button>
