@@ -10,17 +10,39 @@ spec:
   scaleTargetRef:
     name: {{ .Values.manager.name }}
     port: {{ .Values.manager.ports.container }}
-    service: manager
+    service: {{ .Values.manager.name }}  # Ensure this matches the actual service name
   replicas:
-    min: 0               # Scale to zero when no traffic
+    min: 0               # Scale to zero when no traffic (keep KEDA purpose)
     max: 10               # Maximum replicas
-  pollingInterval: 2     # More responsive scaling (was 5)
+  pollingInterval: 1     # Very responsive scaling (check every 1 second)
   scaledownPeriod: 300   # 5 minutes idle before scale down
   targetPendingRequests: 1  # Scale up on any pending request
-  scaleUpCooldownPeriod: 5   # Faster scale up (was 10)
-  scaleDownCooldownPeriod: 60
-  # Add timeout configurations for slow startup
-  responseTimeout: 120   # Wait up to 2 minutes for response
-  keepAliveTimeout: 60   # Keep connections alive for 1 minute
-  targetPendingRequestsThreshold: 100  # Queue more requests before scaling
+  scaleUpCooldownPeriod: 2   # Very fast scale up (2 seconds)
+  scaleDownCooldownPeriod: 30
+  # Optimize timeout configurations for scale-to-zero
+  responseTimeout: 180   # Wait up to 3 minutes for cold start response
+  keepAliveTimeout: 90   # Keep connections alive longer
+  targetPendingRequestsThreshold: 200  # Queue more requests during startup
+  # Advanced configuration for better scale-to-zero behavior
+  scalingModifiers:
+    target: 1
+    activationThreshold: 1      # Start scaling on first request
+    formula: "ceiling(keda_http_pending_requests / 1)"
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleUp:
+          stabilizationWindowSeconds: 0    # Scale up immediately
+          selectPolicy: Max
+          policies:
+          - type: Percent
+            value: 1000                    # Allow massive scale up
+            periodSeconds: 1
+        scaleDown:
+          stabilizationWindowSeconds: 300  # Wait 5 minutes before scale down
+          selectPolicy: Min
+          policies:
+          - type: Percent
+            value: 100
+            periodSeconds: 60
 {{- end }}
