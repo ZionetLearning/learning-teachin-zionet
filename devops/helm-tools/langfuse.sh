@@ -75,8 +75,8 @@ helm $ACTION langfuse langfuse/langfuse \
   --set-string langfuse.additionalEnv[2].value="true" \
   --set langfuse.additionalEnv[3].name="DISABLE_READINESS_PROBE" \
   --set-string langfuse.additionalEnv[3].value="true" \
-  --set langfuse.additionalEnv[4].name="NEXT_PUBLIC_DISABLE_SIGNUP"
-  --set-string langfuse.additionalEnv[4].value="true"
+  --set langfuse.additionalEnv[4].name="NEXT_PUBLIC_DISABLE_SIGNUP" \
+  --set-string langfuse.additionalEnv[4].value="true" \
   --timeout=5m
 
 echo "✅ Chart applied with web=0. Running Prisma migrations as a Job..."
