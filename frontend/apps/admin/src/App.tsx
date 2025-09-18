@@ -7,12 +7,14 @@ import { SidebarMenu } from "./components";
 import {
   HomePage,
   UsersPage,
-  ProfilePage
+  ProfilePage,
+  TasksPage
 } from "./pages";
 import "./App.css";
+import { AppRole } from "@app-providers";
 
 const ProtectedLayout = () => (
-  <RequireAuth>
+  <RequireAuth allowedRoles={[AppRole.admin]}>
     <div data-testid="protected-layout">
       <SidebarMenuLayout sidebarMenu={<SidebarMenu />} />
     </div>
@@ -29,10 +31,14 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/signin" element={<AuthorizationPage />} />
+        <Route
+          path="/signin"
+          element={<AuthorizationPage allowedRoles={[AppRole.admin]} />}
+        />
         <Route element={<ProtectedLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/users" element={<UsersPage />} />
+          <Route path="/tasks" element={<TasksPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
       </Routes>
@@ -41,5 +47,3 @@ function App() {
 }
 
 export default App;
-
-

@@ -29,7 +29,6 @@ export const useStyles = createUseStyles({
     lineHeight: 1.2,
   },
   authPageSubtitle: {
-    margin: "0 0 1.5rem 0",
     padding: 0,
     fontSize: "1.1rem",
     fontWeight: 500,
@@ -53,6 +52,9 @@ export const useStyles = createUseStyles({
     padding: "1.5rem 2.5rem 2.5rem 2.5rem",
     borderRadius: 12,
     boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
   },
   authPageTabs: {
     display: "flex",
@@ -60,7 +62,6 @@ export const useStyles = createUseStyles({
     position: "relative",
     background: "white",
     borderRadius: 8,
-    marginBottom: "2rem",
   },
   authPageTab: {
     flex: 1,
@@ -109,7 +110,7 @@ export const useStyles = createUseStyles({
   authPageError: {
     color: "red",
     fontSize: "0.85rem",
-    minHeight: "1.125rem",
+    minHeight: "1.3rem",
   },
   authPageSubmit: {
     padding: "0.75rem",

@@ -1,37 +1,35 @@
-using IntegrationTests.Constants;
 using IntegrationTests.Fixtures;
 using IntegrationTests.Infrastructure;
+using Manager.Constants;
 using Manager.Models.Users;
 using Xunit.Abstractions;
 using System.Net.Http.Json;
 
 namespace IntegrationTests.Tests.Users;
 
+/// <summary>
+/// Base for Users integration tests.
+/// Relies on PerTestUserFixture so each test has isolated users.
+/// </summary>
+[Collection("Per-test user collection")]
 public abstract class UsersTestBase(
-    SharedTestFixture sharedFixture,
+    PerTestUserFixture perUserFixture,
     ITestOutputHelper outputHelper,
     SignalRTestFixture signalRFixture
-) : IntegrationTestBase(sharedFixture.HttpFixture, outputHelper, signalRFixture)
+) : IntegrationTestBase(perUserFixture.HttpFixture, outputHelper, signalRFixture)
 {
-    protected SharedTestFixture Shared { get; } = sharedFixture;
-    public override Task InitializeAsync() => SuiteInit.EnsureAsync(Shared, SignalRFixture, OutputHelper);
+    protected PerTestUserFixture PerUserFixture { get; } = perUserFixture;
 
     /// <summary>
-    /// Creates a user via POST and returns the created user data.
+    /// Creates a user (default role: student) and logs them in.
     /// </summary>
-    protected async Task<UserData> CreateUserAsync(
+    protected Task<UserData> CreateUserAsync(
         string role = "student",
         string? email = null,
         string? acceptLanguage = "en-US")
     {
-        var user = TestDataHelper.CreateUser(role: role, email: email);
-        var request = BuildRequest(ApiRoutes.User, user, acceptLanguage);
-
-        var response = await Client.SendAsync(request);
-        response.EnsureSuccessStatusCode();
-
-        var created = await ReadAsJsonAsync<UserData>(response);
-        return created!;
+        var parsedRole = Enum.TryParse<Role>(role, true, out var r) ? r : Role.Student;
+        return PerUserFixture.CreateAndLoginAsync(parsedRole, email);
     }
 
     /// <summary>
