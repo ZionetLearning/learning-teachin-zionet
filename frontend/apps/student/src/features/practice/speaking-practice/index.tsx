@@ -381,26 +381,14 @@ export const SpeakingPractice = () => {
           sentenceCount={sentences.length}
           isHebrew={isHebrew}
           handleConfigChange={handleConfigChange}
-          getDifficultyLabel={(lvl) =>
-            lvl === 0
-              ? t("pages.wordOrderGame.difficulty.easy")
-              : lvl === 1
-                ? t("pages.wordOrderGame.difficulty.medium")
-                : t("pages.wordOrderGame.difficulty.hard")
-          }
+          getDifficultyLabel={(lvl) => getDifficultyLabel(lvl, t)}
         />
       )}
       <GameConfigModal
         open={configModalOpen}
         onClose={() => setConfigModalOpen(false)}
         onConfirm={handleConfigConfirm}
-        getDifficultyLevelLabel={(lvl) =>
-          lvl === 0
-            ? t("pages.wordOrderGame.difficulty.easy")
-            : lvl === 1
-              ? t("pages.wordOrderGame.difficulty.medium")
-              : t("pages.wordOrderGame.difficulty.hard")
-        }
+        getDifficultyLevelLabel={(lvl) => getDifficultyLabel(lvl, t)}
         initialConfig={{ difficulty, nikud, count }}
       />
       <GameOverModal
