@@ -1,20 +1,22 @@
 /// <reference types="vite/client" />
-import { useRef, useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
+
+import { CircularProgress } from "@mui/material";
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";
 import { useTranslation } from "react-i18next";
 import { comparePhrases } from "./utils";
 
-import { useStyles } from "./style";
-import { useAvatarSpeech } from "@student/hooks";
 import { useAzureSpeechToken, useGenerateSentences } from "@student/api";
+import { useAvatarSpeech } from "@student/hooks";
 import { DifficultyLevel } from "@student/types";
 import {
-  GameSettings,
   GameConfigModal,
   GameOverModal,
+  GameSettings,
   WelcomeScreen,
 } from "@ui-components";
 import { getDifficultyLabel } from "../utils";
+import { useStyles } from "./style";
 
 const Feedback = {
   Perfect: "Perfect!",
@@ -281,7 +283,7 @@ export const SpeakingPractice = () => {
     requestSentences(difficulty, nikud, count);
   };
 
-  if (configModalOpen || sentences.length === 0) {
+  if (configModalOpen) {
     return (
       <WelcomeScreen
         configModalOpen={configModalOpen}
@@ -289,6 +291,14 @@ export const SpeakingPractice = () => {
         handleConfigConfirm={handleConfigConfirm}
         getDifficultyLabel={getDifficultyLabel}
       />
+    );
+  }
+
+  if (!sentences.length && generateMutation.isPending) {
+    return (
+      <div className={classes.loader}>
+        <CircularProgress />
+      </div>
     );
   }
 
@@ -389,9 +399,9 @@ export const SpeakingPractice = () => {
       />
       <GameOverModal
         open={gameOverOpen}
-        onClose={() => setGameOverOpen(false)}
         onPlayAgain={handlePlayAgain}
         onChangeSettings={() => setConfigModalOpen(true)}
+        correctSentences={correctIdxs.size}
         totalSentences={sentences.length}
       />
     </div>

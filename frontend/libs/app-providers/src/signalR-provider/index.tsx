@@ -21,9 +21,9 @@ export const SignalRProvider = ({ hubUrl, children }: SignalRProviderProps) => {
     if (!accessToken) return null;
     const payload = decodeJwtPayload(accessToken);
     if (!payload) return null;
-    
+
     const extractedUserId = payload.userId as string;
-           
+
     return extractedUserId;
   }, [accessToken]);
 
@@ -156,7 +156,7 @@ export const SignalRProvider = ({ hubUrl, children }: SignalRProviderProps) => {
         withCredentials: true,
       })
       .withAutomaticReconnect()
-      .build(); 
+      .build();
 
     connection.onreconnecting(() => isMounted && setStatus("reconnecting"));
     connection.onreconnected(() => isMounted && setStatus("connected"));
