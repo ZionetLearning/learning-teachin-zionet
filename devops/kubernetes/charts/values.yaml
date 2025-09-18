@@ -260,12 +260,6 @@ dapr:
 # KEDA scaler (optional)
 keda:
   enabled: true
-  accessor:
-    enabled: true
-  engine:
-    enabled: true    # Set to false to disable this file
-  manager:
-    enabled: false
   httpAddOn:
     interceptor:
       proxy:

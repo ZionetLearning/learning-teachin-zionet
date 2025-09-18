@@ -1,4 +1,4 @@
-{{- if .Values.keda.manager.enabled }}
+{{- if .Values.keda.enabled }}
 apiVersion: v1
 kind: Service
 metadata:

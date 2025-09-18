@@ -27,7 +27,13 @@ spec:
             pathType: ImplementationSpecific
             backend:
               service:
+                {{- if .Values.keda.enabled }}
+                name: keda-interceptor
+                port:
+                  number: 8080
+                {{- else }}
                 name: {{ .Values.manager.name }}
                 port:
                   number: {{ .Values.manager.ports.service }}
+                {{- end }}
 {{- end }}
