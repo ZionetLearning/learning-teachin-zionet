@@ -13,12 +13,10 @@ import * as Sentry from "@sentry/react";
 import { useStyles } from "./style";
 
 interface ErrorFallbackProps {
-  error?: Error;
   resetErrorBoundary?: () => void;
 }
 
 export const ErrorFallback = ({
-  error,
   resetErrorBoundary,
 }: ErrorFallbackProps) => {
   const { t } = useTranslation();
@@ -123,7 +121,6 @@ export const EnhancedErrorBoundary = ({
     <Sentry.ErrorBoundary
       fallback={({ error, resetError }) => (
         <FallbackComponent
-          error={error instanceof Error ? error : new Error(String(error))}
           resetErrorBoundary={resetError}
         />
       )}
