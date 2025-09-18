@@ -15,7 +15,7 @@ spec:
     min: 0               # Scale to zero when no traffic (keep KEDA purpose)
     max: 10               # Maximum replicas
   pollingInterval: 1     # Very responsive scaling (check every 1 second)
-  scaledownPeriod: 600   # Wait 10 minutes before scaling down (increased)
+  scaledownPeriod: 200   # Wait 10 minutes before scaling down (increased)
   targetPendingRequests: 1  # Scale up on any pending request
   # Advanced configuration for better scale-to-zero behavior
   scalingModifiers:
