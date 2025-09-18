@@ -14,9 +14,13 @@ spec:
   replicas:
     min: 0               # Scale to zero when no traffic
     max: 10               # Maximum replicas
-  pollingInterval: 5    # Responsive scaling
+  pollingInterval: 2     # More responsive scaling (was 5)
   scaledownPeriod: 300   # 5 minutes idle before scale down
   targetPendingRequests: 1  # Scale up on any pending request
-  scaleUpCooldownPeriod: 10  # Fast scale up
+  scaleUpCooldownPeriod: 5   # Faster scale up (was 10)
   scaleDownCooldownPeriod: 60
+  # Add timeout configurations for slow startup
+  responseTimeout: 120   # Wait up to 2 minutes for response
+  keepAliveTimeout: 60   # Keep connections alive for 1 minute
+  targetPendingRequestsThreshold: 100  # Queue more requests before scaling
 {{- end }}
