@@ -44,6 +44,7 @@ export const SpeakingPractice = () => {
   const [attempted, setAttempted] = useState<Set<number>>(new Set());
   const [correctIdxs, setCorrectIdxs] = useState<Set<number>>(new Set());
   const [skipped, setSkipped] = useState<Set<number>>(new Set());
+  const [isConfigured, setIsConfigured] = useState(false);
 
   const recognizerRef = useRef<sdk.SpeechRecognizer | null>(null);
   const audioConfigRef = useRef<sdk.AudioConfig | null>(null);
@@ -192,6 +193,24 @@ export const SpeakingPractice = () => {
         setIsCorrect(correct);
         setFeedback(correct ? Feedback.Perfect : Feedback.TryAgain);
         stopRecognition();
+        const total = sentences.length;
+        const isLast = currentIdx === total - 1;
+
+        const nextCorrect = new Set(correctIdxs);
+        if (correct) nextCorrect.add(currentIdx);
+        else nextCorrect.delete(currentIdx);
+
+        const nextAttempted = new Set(attempted);
+        nextAttempted.add(currentIdx);
+        const nextSkipped = new Set(skipped);
+        nextSkipped.delete(currentIdx);
+
+        const allCorrect = nextCorrect.size === total;
+        const noSkips = nextSkipped.size === 0 && nextAttempted.size === total;
+
+        if (isLast && allCorrect && noSkips) {
+          setGameOverOpen(true);
+        }
       },
       (err) => {
         console.error("Recognition error:", err);
@@ -228,6 +247,7 @@ export const SpeakingPractice = () => {
   const goNext = () => {
     stopSpeech();
     stopRecognition();
+
     setSkipped((prev) => {
       if (!attempted.has(currentIdx)) {
         const next = new Set(prev);
@@ -236,27 +256,9 @@ export const SpeakingPractice = () => {
       }
       return prev;
     });
-    setCurrentIdx((i) => {
-      const next = i + 1;
-      if (next >= sentences.length) {
-        const total = sentences.length;
-        const allCorrect = correctIdxs.size === total;
-        const noSkips = skipped.size === 0 && attempted.size === total;
 
-        if (allCorrect && noSkips) {
-          setGameOverOpen(true);
-          return i;
-        }
+    setCurrentIdx((i) => Math.min(i + 1, Math.max(0, sentences.length - 1)));
 
-        for (let k = 0; k < total; k++) {
-          if (!correctIdxs.has(k)) {
-            return k;
-          }
-        }
-        return 0;
-      }
-      return next;
-    });
     setFeedback(Feedback.None);
     setIsCorrect(null);
   };
@@ -272,6 +274,8 @@ export const SpeakingPractice = () => {
     setNikud(config.nikud);
     setCount(config.count);
     setConfigModalOpen(false);
+    setFeedback(Feedback.None);
+    setIsConfigured(true);
     requestSentences(config.difficulty, config.nikud, config.count);
   };
 
@@ -283,14 +287,16 @@ export const SpeakingPractice = () => {
     requestSentences(difficulty, nikud, count);
   };
 
-  if (configModalOpen) {
+  if (!isConfigured) {
     return (
-      <WelcomeScreen
-        configModalOpen={configModalOpen}
-        setConfigModalOpen={setConfigModalOpen}
-        handleConfigConfirm={handleConfigConfirm}
-        getDifficultyLabel={getDifficultyLabel}
-      />
+      <div className={classes.loader}>
+        <WelcomeScreen
+          configModalOpen={configModalOpen}
+          setConfigModalOpen={setConfigModalOpen}
+          handleConfigConfirm={handleConfigConfirm}
+          getDifficultyLabel={getDifficultyLabel}
+        />
+      </div>
     );
   }
 
