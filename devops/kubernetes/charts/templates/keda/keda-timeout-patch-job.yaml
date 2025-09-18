@@ -16,30 +16,18 @@ spec:
       restartPolicy: Never
       containers:
       - name: keda-patcher
-        image: alpine/k8s:1.28.0
-        command:
-        - /bin/sh
+        image: rancher/kubectl:v1.28.0
+        command: ["/bin/sh"]
+        args:
         - -c
         - |
-          echo "Patching KEDA HTTP interceptor timeouts for scale-to-zero reliability..."
+          echo "Applying KEDA HTTP interceptor timeout patches..."
           
-          # Patch KEDA HTTP interceptor deployment with extended timeouts
-          kubectl patch deployment keda-add-ons-http-interceptor -n keda --type='json' -p='[
-            {"op": "replace", "path": "/spec/template/spec/containers/0/env/3/value", "value": "30s"},
-            {"op": "replace", "path": "/spec/template/spec/containers/0/env/4/value", "value": "30s"},
-            {"op": "replace", "path": "/spec/template/spec/containers/0/env/5/value", "value": "300s"}
-          ]' || echo "Base environment variables not found, adding new ones..."
-          
-          # Add timeout environment variables if they don't exist
-          kubectl patch deployment keda-add-ons-http-interceptor -n keda --type='json' -p='[
-            {"op": "add", "path": "/spec/template/spec/containers/0/env/-", "value": {"name": "KEDA_HTTP_RESPONSE_TIMEOUT", "value": "300s"}},
-            {"op": "add", "path": "/spec/template/spec/containers/0/env/-", "value": {"name": "KEDA_HTTP_REQUEST_TIMEOUT", "value": "300s"}}
-          ]' || echo "Timeout environment variables already exist"
-          
-          echo "KEDA HTTP interceptor timeout configuration completed!"
+          # Apply the exact same patch command that works manually
+          kubectl patch deployment keda-add-ons-http-interceptor -n keda --type='json' --patch='[{"op": "replace", "path": "/spec/template/spec/containers/0/env/3/value", "value": "30s"},{"op": "replace", "path": "/spec/template/spec/containers/0/env/5/value", "value": "30s"}]'
           
           # Wait for rollout to complete
           kubectl rollout status deployment/keda-add-ons-http-interceptor -n keda --timeout=60s
           
-          echo "KEDA HTTP interceptor successfully updated with scale-to-zero optimized timeouts"
+          echo "KEDA timeout patches applied successfully!"
 {{- end }}
