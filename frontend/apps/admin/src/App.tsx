@@ -4,7 +4,12 @@ import { useTranslation } from "react-i18next";
 import { AuthorizationPage, RequireAuth } from "@authorization";
 import { SidebarMenuLayout } from "@ui-components";
 import { SidebarMenu } from "./components";
-import { HomePage, UsersPage, ProfilePage } from "./pages";
+import {
+  HomePage,
+  UsersPage,
+  ProfilePage,
+  TasksPage
+} from "./pages";
 import "./App.css";
 import { AppRole } from "@app-providers";
 
@@ -33,6 +38,7 @@ function App() {
         <Route element={<ProtectedLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/users" element={<UsersPage />} />
+          <Route path="/tasks" element={<TasksPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
       </Routes>

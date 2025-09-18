@@ -16,7 +16,6 @@ import {
   CountryExplorerPage,
   EarthquakeMapPage,
   HomePage,
-  SignalRPage,
   SpeakingPracticePage,
   TypingPracticePage,
   WeatherWidgetPage,
@@ -67,7 +66,6 @@ function App() {
           <Route path="/weather" element={<WeatherWidgetPage />} />
           <Route path="/anime-explorer" element={<AnimeExplorerPage />} />
           <Route path="/country-explorer" element={<CountryExplorerPage />} />
-          <Route path="/signalr" element={<SignalRPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
       </Routes>
