@@ -114,6 +114,15 @@ jobs:
           chmod +x loki.sh
           ./loki.sh
     
+      - name: Add Langfuse
+        run: |
+          kubectl create namespace devops-tools --dry-run=client -o yaml | kubectl apply -f -
+          cd devops/helm-tools
+          chmod +x langfuse.sh
+          ./langfuse.sh $TARGET_NAMESPACE
+          # Apply Langfuse ingress
+          kubectl apply -f "../kubernetes/ingress/langfuse-ingress.yaml"
+
       - name: Configure Azure Monitor datasource in Grafana
         run: |
           cd devops/helm-tools/azure-monitor
