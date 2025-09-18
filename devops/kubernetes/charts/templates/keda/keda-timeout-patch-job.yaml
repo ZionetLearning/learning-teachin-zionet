@@ -16,9 +16,9 @@ spec:
       restartPolicy: Never
       containers:
       - name: keda-patcher
-        image: rancher/kubectl:v1.28.0
+        image: bitnami/kubectl:1.28
         command:
-        - /bin/sh
+        - sh
         - -c
         - |
           echo "Patching KEDA HTTP interceptor timeouts for scale-to-zero reliability..."
@@ -32,7 +32,7 @@ spec:
           echo "KEDA HTTP interceptor timeout configuration completed!"
           
           # Wait for rollout to complete
-          kubectl rollout status deployment/keda-add-ons-http-interceptor -n keda --timeout=300s
+          kubectl rollout status deployment/keda-add-ons-http-interceptor -n keda --timeout=60s
           
           echo "KEDA HTTP interceptor successfully updated with scale-to-zero optimized timeouts"
 {{- end }}
