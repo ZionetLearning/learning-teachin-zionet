@@ -2,6 +2,7 @@
 set -euo pipefail
 
 NAMESPACE="devops-tools"
+PG_HOST="dev-pg-zionet-learning.postgres.database.azure.com"
 ENVIRONMENT_NAME="${1:-dev}"
 ADMIN_EMAIL="${2:-admin@teachin.local}"
 ADMIN_PASSWORD="${3:-ChangeMe123!}"
@@ -41,7 +42,7 @@ helm $ACTION langfuse langfuse/langfuse \
   --set langfuse.worker.resources.limits.cpu="500m" \
   --set langfuse.worker.resources.limits.memory="512Mi" \
   --set postgresql.deploy=false \
-  --set postgresql.host="dev-pg-zionet-learning.postgres.database.azure.com" \
+  --set postgresql.host="${PG_HOST}" \
   --set postgresql.port=5432 \
   --set postgresql.auth.database="langfuse-${ENVIRONMENT_NAME}" \
   --set postgresql.auth.existingSecret="langfuse-secrets" \
@@ -77,6 +78,10 @@ helm $ACTION langfuse langfuse/langfuse \
   --set-string langfuse.additionalEnv[3].value="true" \
   --set langfuse.additionalEnv[4].name="NEXT_PUBLIC_DISABLE_SIGNUP" \
   --set-string langfuse.additionalEnv[4].value="true" \
+  --set langfuse.additionalEnv[5].name="DISABLE_SIGNUP" \
+  --set-string langfuse.additionalEnv[5].value="true" \
+  --set langfuse.additionalEnv[6].name="AUTH_DISABLE_SIGNUP" \
+  --set-string langfuse.additionalEnv[6].value="true" \
   --timeout=5m
 
 echo "✅ Chart applied with web=0. Running Prisma migrations as a Job..."
@@ -116,6 +121,10 @@ echo "✅ Migrations applied."
 # --- Phase 1.6: seed admin user ---
 kubectl delete job langfuse-seed-admin -n "$NAMESPACE" --ignore-not-found
 
+# Precompute bcrypt hash outside Postgres (using a Node container)
+ADMIN_PASSWORD_HASH=$(docker run --rm node:22-alpine \
+  sh -c "npm install -g bcrypt-cli >/dev/null 2>&1 && echo '$ADMIN_PASSWORD' | npx bcrypt-cli -s 12")
+
 cat <<EOF | kubectl apply -f -
 apiVersion: batch/v1
 kind: Job
@@ -129,33 +138,62 @@ spec:
       restartPolicy: Never
       containers:
       - name: seed-admin
-        image: postgres:15
+        image: postgres:16
         envFrom:
         - secretRef:
             name: langfuse-secrets
-        command: ["sh", "-c"]
-        args:
-          - |
-            psql "host=\$POSTGRESQL_HOST port=5432 dbname=langfuse-${ENVIRONMENT_NAME} user=\$DATABASE_USERNAME password=\$DATABASE_PASSWORD sslmode=require" <<SQL
-            DO \$\$
-            BEGIN
-              IF NOT EXISTS (SELECT 1 FROM "User" WHERE email = '${ADMIN_EMAIL}') THEN
-                INSERT INTO "User" (id, email, "hashedPassword", role, "createdAt", "updatedAt")
-                VALUES (
-                  gen_random_uuid(),
-                  '${ADMIN_EMAIL}',
-                  crypt('${ADMIN_PASSWORD}', gen_salt('bf')),
-                  'ADMIN',
-                  NOW(),
-                  NOW()
-                );
-              END IF;
-            END
-            \$\$;
-            SQL
+        env:
+        - name: PGHOST
+          value: "$PG_HOST"
+        - name: PGDB
+          value: "langfuse-${ENVIRONMENT_NAME}"
+        - name: ADMIN_EMAIL
+          value: "$ADMIN_EMAIL"
+        - name: ADMIN_PASSWORD_HASH
+          value: "$ADMIN_PASSWORD_HASH"
+        command:
+        - bash
+        - -c
+        - |
+          psql -v ON_ERROR_STOP=1 \
+               -v admin_email="$ADMIN_EMAIL" \
+               -v ADMIN_PASSWORD_HASH="$ADMIN_PASSWORD_HASH" \
+               "host=\$PGHOST port=5432 dbname=\$PGDB user=\$DATABASE_USERNAME password=\$DATABASE_PASSWORD sslmode=require" -c "
+          DO \$\$
+          DECLARE
+            v_user_id text;
+            v_org_id  text;
+          BEGIN
+            SELECT id INTO v_user_id FROM users WHERE email = :'admin_email' LIMIT 1;
+            IF v_user_id IS NULL THEN
+              v_user_id := gen_random_uuid()::text;
+              INSERT INTO users (id, name, email, password, admin, created_at, updated_at)
+              VALUES (v_user_id, 'Admin', :'admin_email', :'ADMIN_PASSWORD_HASH', true, NOW(), NOW());
+            END IF;
+
+            SELECT id INTO v_org_id FROM organizations LIMIT 1;
+            IF v_org_id IS NULL THEN
+              v_org_id := gen_random_uuid()::text;
+              INSERT INTO organizations (id, name, created_at, updated_at)
+              VALUES (v_org_id, 'Default Org', NOW(), NOW());
+            END IF;
+
+            IF NOT EXISTS (
+              SELECT 1 FROM organization_memberships
+              WHERE user_id = v_user_id AND organization_id = v_org_id
+            ) THEN
+              INSERT INTO organization_memberships (id, user_id, organization_id, role, created_at, updated_at)
+              VALUES (gen_random_uuid()::text, v_user_id, v_org_id, 'OWNER', NOW(), NOW());
+            END IF;
+          END
+          \$\$;
+
+          TABLE (SELECT id, email, admin FROM users WHERE email = :'admin_email');
+          "
 EOF
 
-kubectl wait --for=condition=complete job/langfuse-seed-admin -n "$NAMESPACE" --timeout=120s
+kubectl -n $NAMESPACE wait --for=condition=complete job/langfuse-seed-admin --timeout=30s
+kubectl -n $NAMESPACE logs job/langfuse-seed-admin
 kubectl delete job langfuse-seed-admin -n "$NAMESPACE" --ignore-not-found
 
 # --- Phase 2: scale web back up to actually serve traffic ---

@@ -286,8 +286,9 @@ jobs:
             --set dapr.installComponents=false
 
       - name: Add Langfuse
+        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
         run: |
-          kubectl create namespace devops-tools --dry-run=client -o yaml | kubectl apply -f -
+          #kubectl create namespace devops-tools --dry-run=client -o yaml | kubectl apply -f -
           cd devops/helm-tools
           chmod +x langfuse.sh
           ./langfuse.sh $TARGET_NAMESPACE "${{ secrets.LANGFUSE_ADMIN_EMAIL }}" "${{ secrets.LANGFUSE_ADMIN_PASSWORD }}"
