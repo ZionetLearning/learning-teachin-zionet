@@ -3,6 +3,8 @@ set -euo pipefail
 
 NAMESPACE="devops-tools"
 ENVIRONMENT_NAME="${1:-dev}"
+ADMIN_EMAIL="${2:-admin@teachin.local}"
+ADMIN_PASSWORD="${3:-ChangeMe123!}"
 
 echo "🎯 Deploying Langfuse into $NAMESPACE (DB suffix: $ENVIRONMENT_NAME)"
 
@@ -73,6 +75,8 @@ helm $ACTION langfuse langfuse/langfuse \
   --set-string langfuse.additionalEnv[2].value="true" \
   --set langfuse.additionalEnv[3].name="DISABLE_READINESS_PROBE" \
   --set-string langfuse.additionalEnv[3].value="true" \
+  --set langfuse.additionalEnv[4].name="NEXT_PUBLIC_DISABLE_SIGNUP"
+  --set-string langfuse.additionalEnv[4].value="true"
   --timeout=5m
 
 echo "✅ Chart applied with web=0. Running Prisma migrations as a Job..."
@@ -108,6 +112,51 @@ kubectl wait --for=condition=complete job/langfuse-migrate -n "$NAMESPACE" --tim
 kubectl delete job langfuse-migrate -n "$NAMESPACE" --ignore-not-found
 
 echo "✅ Migrations applied."
+
+# --- Phase 1.6: seed admin user ---
+kubectl delete job langfuse-seed-admin -n "$NAMESPACE" --ignore-not-found
+
+cat <<EOF | kubectl apply -f -
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: langfuse-seed-admin
+  namespace: $NAMESPACE
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: seed-admin
+        image: postgres:15
+        envFrom:
+        - secretRef:
+            name: langfuse-secrets
+        command: ["sh", "-c"]
+        args:
+          - |
+            psql "host=\$POSTGRESQL_HOST port=5432 dbname=langfuse-${ENVIRONMENT_NAME} user=\$DATABASE_USERNAME password=\$DATABASE_PASSWORD sslmode=require" <<SQL
+            DO \$\$
+            BEGIN
+              IF NOT EXISTS (SELECT 1 FROM "User" WHERE email = '${ADMIN_EMAIL}') THEN
+                INSERT INTO "User" (id, email, "hashedPassword", role, "createdAt", "updatedAt")
+                VALUES (
+                  gen_random_uuid(),
+                  '${ADMIN_EMAIL}',
+                  crypt('${ADMIN_PASSWORD}', gen_salt('bf')),
+                  'ADMIN',
+                  NOW(),
+                  NOW()
+                );
+              END IF;
+            END
+            \$\$;
+            SQL
+EOF
+
+kubectl wait --for=condition=complete job/langfuse-seed-admin -n "$NAMESPACE" --timeout=120s
+kubectl delete job langfuse-seed-admin -n "$NAMESPACE" --ignore-not-found
 
 # --- Phase 2: scale web back up to actually serve traffic ---
 helm upgrade langfuse langfuse/langfuse \

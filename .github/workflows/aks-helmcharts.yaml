@@ -285,6 +285,14 @@ jobs:
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false
 
+      - name: Add Langfuse
+        run: |
+          kubectl create namespace devops-tools --dry-run=client -o yaml | kubectl apply -f -
+          cd devops/helm-tools
+          chmod +x langfuse.sh
+          ./langfuse.sh $TARGET_NAMESPACE "${{ secrets.LANGFUSE_ADMIN_EMAIL }}" "${{ secrets.LANGFUSE_ADMIN_PASSWORD }}"
+          kubectl apply -f "../kubernetes/ingress/langfuse-ingress.yaml"
+
       - name: Diagnostics (on failure)
         if: failure()
         run: |
