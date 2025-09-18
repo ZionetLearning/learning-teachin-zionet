@@ -83,11 +83,12 @@ jobs:
           fi
 
           
-          echo "MAIN_VAL=$main_val" >> $GITHUB_ENV          
+          echo "MAIN_VAL=$main_val" >> $GITHUB_ENV 
+
           #---------------- AKS ------------------------
-          echo "AKS_RG=${{ env.MAIN_VAL }}-zionet-learning-2025" >> $GITHUB_ENV
-          echo "AKS_NAME=aks-cluster-${{ env.MAIN_VAL }}" >> $GITHUB_ENV
-          echo "MC_AKS_RG=MC_${{ env.MAIN_VAL }}-zionet-learning-2025_aks-cluster-${{ env.MAIN_VAL }}_westeurope" >> $GITHUB_ENV
+          echo "AKS_RG=${main_val}-zionet-learning-2025" >> $GITHUB_ENV
+          echo "AKS_NAME=aks-cluster-${main_val}" >> $GITHUB_ENV
+          echo "MC_AKS_RG=MC_${main_val}-zionet-learning-2025_aks-cluster-${main_val}_westeurope" >> $GITHUB_ENV
 
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
