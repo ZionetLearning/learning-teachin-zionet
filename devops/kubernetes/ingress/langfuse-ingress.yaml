@@ -17,7 +17,8 @@ spec:
   - host: teachin.westeurope.cloudapp.azure.com
     http:
       paths:
-      - path: /langfuse
+      # Langfuse at root "/"
+      - path: /
         pathType: Prefix
         backend:
           service:

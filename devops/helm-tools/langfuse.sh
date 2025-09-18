@@ -23,12 +23,7 @@ fi
 # Phase 1: install with web replicas=0 (avoid race with migrations)
 helm $ACTION langfuse langfuse/langfuse \
   --namespace "$NAMESPACE" \
-  --set langfuse.web.image.repository="teachindevacr.azurecr.io/langfuse-web" \
-  --set langfuse.web.image.tag="3.108.0-langfusepath" \
-  --set langfuse.worker.image.repository="langfuse/langfuse" \
-  --set langfuse.worker.image.tag="3.108.0" \
   --set langfuse.replicas=0 \
-  --set langfuse.web.podLabels.app="web" \
   --set langfuse.nextauth.url="https://teachin.westeurope.cloudapp.azure.com/langfuse" \
   --set langfuse.salt.secretKeyRef.name="langfuse-secrets" \
   --set langfuse.salt.secretKeyRef.key="SALT" \
@@ -78,12 +73,6 @@ helm $ACTION langfuse langfuse/langfuse \
   --set-string langfuse.additionalEnv[2].value="true" \
   --set langfuse.additionalEnv[3].name="DISABLE_READINESS_PROBE" \
   --set-string langfuse.additionalEnv[3].value="true" \
-  --set langfuse.additionalEnv[4].name="BASE_PATH" \
-  --set-string langfuse.additionalEnv[4].value="/langfuse" \
-  --set langfuse.additionalEnv[5].name="NEXT_PUBLIC_BASE_PATH" \
-  --set-string langfuse.additionalEnv[5].value="/langfuse" \
-  --set langfuse.additionalEnv[6].name="NEXTAUTH_URL" \
-  --set-string langfuse.additionalEnv[6].value="https://teachin.westeurope.cloudapp.azure.com/langfuse" \
   --timeout=5m
 
 echo "✅ Chart applied with web=0. Running Prisma migrations as a Job..."
