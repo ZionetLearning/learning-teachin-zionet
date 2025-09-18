@@ -440,6 +440,13 @@
       "tasks": "משימות",
       "profile": "פרופיל"
     },
+    "errorBoundary": {
+      "title": "אופס! משהו השתבש",
+      "message": "קרתה תקלה בלתי צפויה. אל דאגה, הצוות שלנו עובד כדי לתקן אותה.",
+      "tryAgain": "נסה שוב",
+      "goBack": " חזור לתפריט",
+      "reportError": "דווח על התקלה"
+    },
     "goBackToMenu": "חזור לתפריט",
     "logout": "התנתק",
     "somethingWentWrong": "משהו השתבש...",
