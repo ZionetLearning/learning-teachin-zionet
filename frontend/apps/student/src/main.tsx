@@ -7,7 +7,7 @@ import {
   SignalRProvider,
   initAppInsights,
   initializeSentry,
-  EnhancedErrorBoundary
+  SentryErrorBoundary
 } from "@app-providers";
 import { AppRole } from "@app-providers/types";
 import "./index.css";
@@ -25,10 +25,10 @@ createRoot(document.getElementById("root")!).render(
     <ReactQueryProvider>
       <AuthProvider appRole={AppRole.student}>
         <SignalRProvider hubUrl={HUB_URL}>
-          <EnhancedErrorBoundary>
+          <SentryErrorBoundary>
             <App />
             <ToastContainer />
-          </EnhancedErrorBoundary>
+          </SentryErrorBoundary>
         </SignalRProvider>
       </AuthProvider>
     </ReactQueryProvider>

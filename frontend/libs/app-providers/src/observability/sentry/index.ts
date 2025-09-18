@@ -29,4 +29,4 @@ export const initializeSentry = ({ appName }: SentryProps) => {
   });
   Sentry.setTag("app", appName);
 };
-export { ErrorFallback, EnhancedErrorBoundary } from "./ErrorBoundary";
+export { SentryErrorBoundary } from "./ErrorBoundary";

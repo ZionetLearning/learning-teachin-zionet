@@ -8,7 +8,7 @@ import {
   I18nTranslateProvider,
   initializeSentry,
   ReactQueryProvider,
-  EnhancedErrorBoundary
+  SentryErrorBoundary
 } from "@app-providers";
 import App from "./App.tsx";
 
@@ -20,9 +20,9 @@ createRoot(document.getElementById("root")!).render(
     <ReactQueryProvider>
       <AuthProvider appRole={AppRole.teacher}>
         <StrictMode>
-          <EnhancedErrorBoundary>
+          <SentryErrorBoundary>
             <App />
-          </EnhancedErrorBoundary>
+          </SentryErrorBoundary>
         </StrictMode>
       </AuthProvider>
     </ReactQueryProvider>
