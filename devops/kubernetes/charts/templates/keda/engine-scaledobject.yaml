@@ -9,7 +9,7 @@ spec:
     name: {{ .Values.engine.name }}
   minReplicaCount: 0
   maxReplicaCount: 10
-  pollingInterval: 5
+  pollingInterval: 2
   cooldownPeriod: 300  # 5 minutes before scaling down
   triggers:
     - type: kubernetes-workload
