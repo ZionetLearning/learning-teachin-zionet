@@ -119,7 +119,7 @@ export const EnhancedErrorBoundary = ({
 }: EnhancedErrorBoundaryProps) => {
   return (
     <Sentry.ErrorBoundary
-      fallback={({ error, resetError }) => (
+      fallback={({ resetError }) => (
         <FallbackComponent
           resetErrorBoundary={resetError}
         />
