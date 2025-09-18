@@ -1,3 +1,79 @@
+#--------------- VNet Variables ---------------
+variable "vnet_name" {
+  description = "Name for the VNet."
+  type        = string
+  default     = "vnet"
+}
+variable "vnet_address_space" {
+  description = "The address space for the VNet."
+  type        = list(string)
+  default     = ["10.10.0.0/16"]
+}
+variable "aks_subnet_prefix" {
+  description = "Address prefix for AKS subnet."
+  type        = string
+  default     = "10.10.1.0/24"
+}
+variable "aks_subnet_name" {
+  description = "Name for AKS subnet."
+  type        = string
+  default     = "aks-subnet"
+}
+
+variable "use_existing_network" {
+  description = "Whether to use an existing network instead of creating a new one."
+  type        = bool
+  default     = false
+}
+
+# Reuse path identifiers
+variable "existing_network_rg" {
+  description = "RG of existing networks"
+  type        = string
+  default     = null
+}
+variable "existing_vnet_name" {
+  description = "Existing main VNet name"
+  type        = string
+  default     = null
+}
+variable "existing_aks_subnet_name" {
+  description = "Existing AKS subnet name"
+  type        = string
+  default     = null
+}
+variable "existing_db_vnet_name" {
+  description = "Existing DB VNet name"
+  type        = string
+  default     = null
+}
+variable "existing_db_subnet_name" {
+  description = "Existing DB subnet name"
+  type        = string
+  default     = null
+}
+
+#------------- Database VNet Variables -------------
+variable "db_vnet_name" {
+  description = "Name of the database Virtual Network"
+  type        = string
+  default     = "db-vnet"
+}
+variable "db_vnet_address_space" {
+  description = "Address space for the database Virtual Network"
+  type        = list(string)
+  default     = ["10.20.0.0/16"]
+}
+variable "db_subnet_name" {
+  description = "Name of the database subnet"
+  type        = string
+  default     = "db-subnet"
+}
+variable "db_subnet_prefix" {
+  description = "Address prefix for the database subnet"
+  type        = string
+  default     = "10.20.1.0/24"
+}
 #------------- General Variables -------------
 variable "resource_group_name" {
   description = "Name of the resource group"
@@ -15,6 +91,12 @@ variable "subscription_id" {
 variable "tenant_id" {
   description = "Azure tenant ID"
   type        = string
+}
+
+variable "identity_id" {
+  description = "AKS cluster {environment} agent pool managed identity clientId"
+  type        = string
+  default     = "0997f44d-fadf-4be8-8dc6-202f7302f680" # default to dev
 }
 variable "shared_resource_group" {
   description = "Resource group containing the shared AKS cluster, PostgreSQL server, and Redis cache"
@@ -161,12 +243,7 @@ variable "geo_redundant_backup_enabled" {
   description = "Enable geo-redundant backups for PostgreSQL"
   default     = false
 }
-# delegated_subnet_id
-variable "delegated_subnet_id" {
-  type        = string
-  description = "ID of the delegated subnet for PostgreSQL"
-  default     = null
-}
+
 # database_name
 variable "database_name" {
   type        = string
@@ -254,3 +331,4 @@ variable "frontend_apps" {
   type        = list(string)
   default     = ["student", "teacher", "admin"]
 }
+

@@ -66,9 +66,28 @@ variable "active_directory_auth_enabled" {
 #   default     = ""
 # }
 
-variable "delegated_subnet_id" {
+variable "db_subnet_id" {
   type        = string
-  description = "Delegated subnet ID if using VNet integration"
+  description = "ID of the dedicated database subnet for PostgreSQL VNet integration"
+  default     = null
+}
+
+variable "private_dns_zone_id" {
+  type        = string
+  description = "ID of the private DNS zone for PostgreSQL"
+  default     = null
+}
+
+variable "virtual_network_id" {
+  type        = string
+  description = "ID of the database virtual network for Private DNS Zone linking"
+  default     = null
+}
+
+variable "aks_virtual_network_id" {
+  type        = string
+  description = "ID of the AKS virtual network for Private DNS Zone linking"
+  default     = null
 }
 
 variable "database_name" {
@@ -88,10 +107,7 @@ variable "use_shared_postgres" {
   default     = true
 }
 # Environment name to control dynamic server/database creation
-variable "environment_name" {
-  type        = string
-  description = "Name of the environment (e.g., dev, test, prod, feature-123)"
-}
+
 
 # Existing server ID for non-dev environments
 variable "existing_server_id" {
@@ -99,3 +115,4 @@ variable "existing_server_id" {
   description = "ID of the existing PostgreSQL flexible server to use for non-dev environments"
   default     = ""
 }
+

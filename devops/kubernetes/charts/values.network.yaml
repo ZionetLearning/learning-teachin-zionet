@@ -10,7 +10,7 @@ global:
 
 namespace:
   create: true
-  name: dev
+  name: network
 
 
 cronjobs:
@@ -40,7 +40,7 @@ manager:
   # secrets inherit from base values.yaml
   ingress:
     enabled: true
-    host: teachin.westeurope.cloudapp.azure.com
+    host: teachinnetwork.westeurope.cloudapp.azure.com
     basePath: /api
     tls:
       enabled: true
