@@ -4,17 +4,15 @@ import { useStyles } from "./style";
 import { Speaker } from "../Speaker";
 import { useHebrewSentence } from "../../hooks";
 import { useAvatarSpeech } from "@student/hooks";
-import { DifficultyLevel } from "@student/types";
+import { ChosenWordsArea, WordsBank, SideButtons } from "../";
 import {
-  GameConfigModal,
   GameConfig,
+  GameConfigModal,
   GameOverModal,
+  GameSettings,
   WelcomeScreen,
-  GameHeaderSettings,
-  ChosenWordsArea,
-  WordsBank,
-  SideButtons,
-} from "../";
+} from "@ui-components";
+import { getDifficultyLabel } from "@student/features";
 
 export const Game = () => {
   const { t, i18n } = useTranslation();
@@ -189,18 +187,6 @@ export const Game = () => {
     return shuffled;
   };
 
-  const getDifficultyLabel = (difficulty: DifficultyLevel) => {
-    switch (difficulty) {
-      case 0:
-        return t("pages.wordOrderGame.difficulty.easy");
-      case 1:
-        return t("pages.wordOrderGame.difficulty.medium");
-      case 2:
-        return t("pages.wordOrderGame.difficulty.hard");
-      default:
-        return t("pages.wordOrderGame.difficulty.medium");
-    }
-  };
   // Show welcome screen if game hasn't started yet
   if (!gameStarted || !gameConfig) {
     return (
@@ -217,7 +203,7 @@ export const Game = () => {
     <>
       <div className={classes.gameContainer}>
         {/* Game Header with Settings */}
-        <GameHeaderSettings
+        <GameSettings
           gameConfig={gameConfig}
           currentSentenceIndex={currentSentenceIndex}
           sentenceCount={sentenceCount}

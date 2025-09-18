@@ -140,8 +140,7 @@
         "stop": "⏹ Stop",
         "play": "▶ Play",
         "record": "🎤 Record",
-        "hideNikud": "Hide Nikud",
-        "showNikud": "Show Nikud"
+        "noData": "No data"
       },
       "typingPractice": {
         "hebrewTypingPractice": "Hebrew Typing Practice",
