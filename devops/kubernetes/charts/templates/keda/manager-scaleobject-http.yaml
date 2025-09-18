@@ -20,9 +20,12 @@ spec:
   scaleUpCooldownPeriod: 2   # Very fast scale up (2 seconds)
   scaleDownCooldownPeriod: 30
   # Optimize timeout configurations for scale-to-zero
-  responseTimeout: 180   # Wait up to 3 minutes for cold start response
+  responseTimeout: 300   # Wait up to 5 minutes for cold start response (increased)
   keepAliveTimeout: 90   # Keep connections alive longer
-  targetPendingRequestsThreshold: 200  # Queue more requests during startup
+  targetPendingRequestsThreshold: 300  # Queue even more requests during startup
+  # Add connection pooling for better performance
+  connectionTimeout: 30  # Faster connection establishment
+  gracefulShutdownTimeout: 60  # Graceful shutdown for better reliability
   # Advanced configuration for better scale-to-zero behavior
   scalingModifiers:
     target: 1
