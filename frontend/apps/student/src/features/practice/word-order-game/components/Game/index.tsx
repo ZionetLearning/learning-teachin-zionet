@@ -201,7 +201,6 @@ export const Game = () => {
         return t("pages.wordOrderGame.difficulty.medium");
     }
   };
-
   // Show welcome screen if game hasn't started yet
   if (!gameStarted || !gameConfig) {
     return (

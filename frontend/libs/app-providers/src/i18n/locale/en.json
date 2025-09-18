@@ -441,6 +441,13 @@
       "tasks": "Tasks",
       "profile": "Profile"
     },
+    "errorBoundary": {
+      "title": "Oops! Something went wrong",
+      "message": "Something unexpected happened. Don't worry, our team has been notified and we are working to fix it.",
+      "tryAgain": "Try Again",
+      "goBack": "Back to Menu",
+      "reportError": "Report this error"
+    },
     "goBackToMenu": "Go back to Menu",
     "logout": "Logout",
     "somethingWentWrong": "Something went wrong...",
