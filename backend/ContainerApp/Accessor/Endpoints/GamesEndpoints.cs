@@ -14,6 +14,7 @@ public static class GamesEndpoints
         gamesGroup.MapGet("/history/{studentId:guid}", GetHistoryAsync);
         gamesGroup.MapGet("/mistakes/{studentId:guid}", GetMistakesAsync);
         gamesGroup.MapGet("/all-history", GetAllHistoriesAsync);
+        gamesGroup.MapPost("/generated-sentence", SaveGeneratedSentenceAsync);
 
         return app;
     }
@@ -26,22 +27,22 @@ public static class GamesEndpoints
     {
         try
         {
-            logger.LogInformation("SubmitAttemptAsync called. StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}, GivenAnswer={GivenAnswer}", request.StudentId, request.GameType, request.Difficulty, string.Join(" ", request.GivenAnswer));
+            logger.LogInformation("SubmitAttemptAsync called. StudentId={StudentId}, GivenAnswer={GivenAnswer}", request.StudentId, string.Join(" ", request.GivenAnswer));
 
             var result = await service.SubmitAttemptAsync(request, ct);
 
-            logger.LogInformation("SubmitAttemptAsync succeeded. StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}, Success={IsSuccess}, AttemptNumber={AttemptNumber}", result.StudentId, result.GameType, result.Difficulty, result.IsSuccess, result.AttemptNumber);
+            logger.LogInformation("SubmitAttemptAsync succeeded. StudentId={StudentId}, Status={Status}, AttemptNumber={AttemptNumber}", result.StudentId, result.Status, result.AttemptNumber);
 
             return Results.Ok(result);
         }
         catch (InvalidOperationException ex)
         {
-            logger.LogWarning(ex, "SubmitAttemptAsync failed. StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty} - Game not found", request.StudentId, request.GameType, request.Difficulty);
+            logger.LogWarning(ex, "SubmitAttemptAsync failed. StudentId={StudentId} - Game not found", request.StudentId);
             return Results.NotFound(new { message = ex.Message });
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unexpected error in SubmitAttemptAsync. StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}", request.StudentId, request.GameType, request.Difficulty);
+            logger.LogError(ex, "Unexpected error in SubmitAttemptAsync. StudentId={StudentId}", request.StudentId);
             return Results.Problem("Unexpected error occurred while submitting attempt.");
         }
     }
@@ -49,17 +50,20 @@ public static class GamesEndpoints
     private static async Task<IResult> GetHistoryAsync(
         [FromRoute] Guid studentId,
         [FromQuery] bool summary,
+        [FromQuery] int page,
+        [FromQuery] int pageSize,
         [FromServices] IGameService service,
         ILogger<IGameService> logger,
         CancellationToken ct)
     {
         try
         {
-            logger.LogInformation("GetHistoryAsync called. StudentId={StudentId}, Summary={Summary}", studentId, summary);
+            logger.LogInformation("GetHistoryAsync called. StudentId={StudentId}, Summary={Summary}, Page={Page}, PageSize={PageSize}", studentId, summary, page, pageSize
+            );
 
-            var result = await service.GetHistoryAsync(studentId, summary, ct);
+            var result = await service.GetHistoryAsync(studentId, summary, page, pageSize, ct);
 
-            logger.LogInformation("GetHistoryAsync returned {Count} records. StudentId={StudentId}, Summary={Summary}", result.Count(), studentId, summary);
+            logger.LogInformation("GetHistoryAsync returned {Records} records (page). TotalCount={TotalCount}", result.Items.Count(), result.TotalCount);
 
             return Results.Ok(result);
         }
@@ -72,39 +76,47 @@ public static class GamesEndpoints
 
     private static async Task<IResult> GetMistakesAsync(
         [FromRoute] Guid studentId,
+        [FromQuery] int page,
+        [FromQuery] int pageSize,
         [FromServices] IGameService service,
         ILogger<IGameService> logger,
         CancellationToken ct)
     {
         try
         {
-            logger.LogInformation("GetMistakesAsync called. StudentId={StudentId}", studentId);
+            logger.LogInformation("GetMistakesAsync called. StudentId={StudentId}, Page={Page}, PageSize={PageSize}", studentId, page, pageSize);
 
-            var result = await service.GetMistakesAsync(studentId, ct);
+            var result = await service.GetMistakesAsync(studentId, page, pageSize, ct);
 
-            logger.LogInformation("GetMistakesAsync returned {Count} mistakes. StudentId={StudentId}", result.Count(), studentId);
+            logger.LogInformation("GetMistakesAsync returned {Records} mistakes (page). TotalCount={TotalCount}", result.Items.Count(), result.TotalCount);
 
             return Results.Ok(result);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error in GetMistakesAsync. StudentId={StudentId}", studentId);
+            logger.LogError(
+                ex,
+                "Error in GetMistakesAsync. StudentId={StudentId}",
+                studentId
+            );
             return Results.Problem("Unexpected error occurred while fetching mistakes.");
         }
     }
 
     private static async Task<IResult> GetAllHistoriesAsync(
+        [FromQuery] int page,
+        [FromQuery] int pageSize,
         [FromServices] IGameService service,
         ILogger<IGameService> logger,
         CancellationToken ct)
     {
         try
         {
-            logger.LogInformation("GetAllHistoriesAsync called");
+            logger.LogInformation("GetAllHistoriesAsync called. Page={Page}, PageSize={PageSize}", page, pageSize);
 
-            var result = await service.GetAllHistoriesAsync(ct);
+            var result = await service.GetAllHistoriesAsync(page, pageSize, ct);
 
-            logger.LogInformation("GetAllHistoriesAsync returned {Count} records", result.Count());
+            logger.LogInformation("GetAllHistoriesAsync returned {Records} records (page). TotalCount={TotalCount}", result.Items.Count(), result.TotalCount);
 
             return Results.Ok(result);
         }
@@ -112,6 +124,24 @@ public static class GamesEndpoints
         {
             logger.LogError(ex, "Error in GetAllHistoriesAsync");
             return Results.Problem("Unexpected error occurred while fetching all histories.");
+        }
+    }
+
+    private static async Task<IResult> SaveGeneratedSentenceAsync(
+        [FromBody] GeneratedSentenceDto dto,
+        [FromServices] IGameService gameService,
+        ILogger<IGameService> logger,
+        CancellationToken ct)
+    {
+        try
+        {
+            await gameService.SaveGeneratedSentenceAsync(dto, ct);
+            return Results.Ok();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error saving generated sentence for StudentId={StudentId}", dto.StudentId);
+            return Results.Problem("Failed to save generated sentence.");
         }
     }
 }

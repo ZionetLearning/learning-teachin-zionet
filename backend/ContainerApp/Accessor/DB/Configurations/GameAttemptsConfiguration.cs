@@ -29,7 +29,9 @@ public class GameAttemptsConfiguration : IEntityTypeConfiguration<GameAttempt>
             .HasMaxLength(20)
             .IsRequired();
 
-        builder.Property(a => a.IsSuccess)
+        builder.Property(a => a.Status)
+            .HasConversion<string>()
+            .HasMaxLength(20)
             .IsRequired();
 
         builder.Property(a => a.AttemptNumber)
@@ -40,7 +42,7 @@ public class GameAttemptsConfiguration : IEntityTypeConfiguration<GameAttempt>
 
         // Indexes for efficient querying
         builder.HasIndex(a => a.StudentId);
-        builder.HasIndex(a => new { a.StudentId, a.IsSuccess });
+        builder.HasIndex(a => new { a.StudentId, a.Status });
         builder.HasIndex(a => new { a.StudentId, a.GameType, a.Difficulty });
     }
 }

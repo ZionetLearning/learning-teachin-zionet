@@ -42,7 +42,7 @@ public static class GamesEndpoints
             var callerRole = http.User.FindFirstValue(AuthSettings.RoleClaimType);
             var callerIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
 
-            logger.LogInformation("SubmitAttempt called by role={Role}, callerId={CallerId}, studentId={StudentId}, gameType={GameType}, difficulty={Difficulty}", callerRole, callerIdRaw, request.StudentId, request.GameType, request.Difficulty);
+            logger.LogInformation("SubmitAttempt called by role={Role}, callerId={CallerId}, studentId={StudentId}", callerRole, callerIdRaw, request.StudentId);
 
             if (callerRole?.Equals(Role.Student.ToString(), StringComparison.OrdinalIgnoreCase) == true &&
                 Guid.TryParse(callerIdRaw, out var callerId) && callerId != request.StudentId)
@@ -53,16 +53,13 @@ public static class GamesEndpoints
 
             var result = await accessorClient.SubmitAttemptAsync(request, ct);
 
-            logger.LogInformation("Attempt submitted successfully for StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}, Success={IsSuccess}, AttemptNumber={AttemptNumber}", result.StudentId, result.GameType, result.Difficulty, result.IsSuccess, result.AttemptNumber);
+            logger.LogInformation("Attempt submitted successfully for StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}, Status={Status}, AttemptNumber={AttemptNumber}", result.StudentId, result.GameType, result.Difficulty, result.Status, result.AttemptNumber);
 
             return Results.Ok(result);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex,
-                "Error while submitting attempt for StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}",
-                request.StudentId, request.GameType, request.Difficulty
-            );
+            logger.LogError(ex, "Error while submitting attempt for StudentId={StudentId}", request.StudentId);
             return Results.Problem("Failed to submit attempt. Please try again later.");
         }
     }
@@ -70,6 +67,8 @@ public static class GamesEndpoints
     private static async Task<IResult> GetHistoryAsync(
         [FromRoute] Guid studentId,
         [FromQuery] bool summary,
+        [FromQuery] int page,
+        [FromQuery] int pageSize,
         [FromServices] IAccessorClient accessorClient,
         HttpContext http,
         ILogger<GameEndpoint> logger,
@@ -87,11 +86,9 @@ public static class GamesEndpoints
                 return Results.Forbid();
             }
 
-            logger.LogInformation("Fetching history for StudentId={StudentId}, Summary={Summary}", studentId, summary);
+            logger.LogInformation("Fetching history for StudentId={StudentId}, Summary={Summary}, Page={Page}, PageSize={PageSize}", studentId, summary, page, pageSize);
 
-            var result = await accessorClient.GetHistoryAsync(studentId, summary, ct);
-
-            logger.LogInformation("History fetched successfully for StudentId={StudentId}, Count={Count}", studentId, result.Count());
+            var result = await accessorClient.GetHistoryAsync(studentId, summary, page, pageSize, ct);
 
             return Results.Ok(result);
         }
@@ -104,6 +101,8 @@ public static class GamesEndpoints
 
     private static async Task<IResult> GetMistakesAsync(
         [FromRoute] Guid studentId,
+        [FromQuery] int page,
+        [FromQuery] int pageSize,
         [FromServices] IAccessorClient accessorClient,
         HttpContext http,
         ILogger<GameEndpoint> logger,
@@ -121,11 +120,9 @@ public static class GamesEndpoints
                 return Results.Forbid();
             }
 
-            logger.LogInformation("Fetching mistakes for StudentId={StudentId}", studentId);
+            logger.LogInformation("Fetching mistakes for StudentId={StudentId}, Page={Page}, PageSize={PageSize}", studentId, page, pageSize);
 
-            var result = await accessorClient.GetMistakesAsync(studentId, ct);
-
-            logger.LogInformation("Mistakes fetched successfully for StudentId={StudentId}, Count={Count}", studentId, result.Count());
+            var result = await accessorClient.GetMistakesAsync(studentId, page, pageSize, ct);
 
             return Results.Ok(result);
         }
@@ -137,17 +134,17 @@ public static class GamesEndpoints
     }
 
     private static async Task<IResult> GetAllHistoriesAsync(
+        [FromQuery] int page,
+        [FromQuery] int pageSize,
         [FromServices] IAccessorClient accessorClient,
         ILogger<GameEndpoint> logger,
         CancellationToken ct)
     {
         try
         {
-            logger.LogInformation("Fetching all histories...");
+            logger.LogInformation("Fetching all histories Page={Page}, PageSize={PageSize}", page, pageSize);
 
-            var result = await accessorClient.GetAllHistoriesAsync(ct);
-
-            logger.LogInformation("Fetched all histories successfully. Count={Count}", result.Count());
+            var result = await accessorClient.GetAllHistoriesAsync(page, pageSize, ct);
 
             return Results.Ok(result);
         }

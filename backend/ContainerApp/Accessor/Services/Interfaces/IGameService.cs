@@ -5,7 +5,8 @@ namespace Accessor.Services.Interfaces;
 public interface IGameService
 {
     Task<SubmitAttemptResult> SubmitAttemptAsync(SubmitAttemptRequest request, CancellationToken ct);
-    Task<IEnumerable<object>> GetHistoryAsync(Guid studentId, bool summary, CancellationToken ct);
-    Task<IEnumerable<MistakeDto>> GetMistakesAsync(Guid studentId, CancellationToken ct);
-    Task<IEnumerable<SummaryHistoryWithStudentDto>> GetAllHistoriesAsync(CancellationToken ct);
+    Task<PagedResult<object>> GetHistoryAsync(Guid studentId, bool summary, int page, int pageSize, CancellationToken ct);
+    Task<PagedResult<MistakeDto>> GetMistakesAsync(Guid studentId, int page, int pageSize, CancellationToken ct);
+    Task<PagedResult<SummaryHistoryWithStudentDto>> GetAllHistoriesAsync(int page, int pageSize, CancellationToken ct);
+    Task SaveGeneratedSentenceAsync(GeneratedSentenceDto dto, CancellationToken ct);
 }

@@ -624,6 +624,7 @@ public class AccessorClient(
             throw;
         }
     }
+
     public async Task<UpdateTaskNameResult> UpdateTaskNameAsync(int id, string newTaskName, string ifMatch, CancellationToken ct = default)
     {
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(UpdateTaskNameAsync), nameof(AccessorClient));
@@ -672,83 +673,133 @@ public class AccessorClient(
     {
         try
         {
-            _logger.LogInformation("Forwarding SubmitAttempt to Accessor. StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}", request.StudentId, request.GameType, request.Difficulty);
+            _logger.LogInformation("Forwarding SubmitAttempt to Accessor. StudentId={StudentId}", request.StudentId);
 
             var result = await _daprClient.InvokeMethodAsync<SubmitAttemptRequest, SubmitAttemptResult>(
                 HttpMethod.Post, AppIds.Accessor, "games-accessor/attempt", request, ct
             );
 
-            _logger.LogInformation("Received SubmitAttemptResult from Accessor. StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}, Success={IsSuccess}, AttemptNumber={AttemptNumber}", result.StudentId, result.GameType, result.Difficulty, result.IsSuccess, result.AttemptNumber);
+            _logger.LogInformation("Received SubmitAttemptResult from Accessor. StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}, Status={Status}, AttemptNumber={AttemptNumber}", result.StudentId, result.GameType, result.Difficulty, result.Status, result.AttemptNumber);
 
             return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to forward SubmitAttempt to Accessor. StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}", request.StudentId, request.GameType, request.Difficulty);
+            _logger.LogError(ex, "Failed to forward SubmitAttempt to Accessor. StudentId={StudentId}", request.StudentId);
             throw; // rethrow so Manager endpoint can handle with Results.Problem()
         }
     }
 
-    public async Task<IEnumerable<object>> GetHistoryAsync(Guid studentId, bool summary, CancellationToken ct = default)
+    public async Task<PagedResult<object>> GetHistoryAsync(Guid studentId, bool summary, int page, int pageSize, CancellationToken ct = default)
     {
         try
         {
-            _logger.LogInformation("Requesting history from Accessor. StudentId={StudentId}, Summary={Summary}", studentId, summary);
+            _logger.LogInformation("Requesting history from Accessor. StudentId={StudentId}, Summary={Summary}, Page={Page}, PageSize={PageSize}", studentId, summary, page, pageSize);
 
-            var result = await _daprClient.InvokeMethodAsync<IEnumerable<object>>(
-                HttpMethod.Get, AppIds.Accessor, $"games-accessor/history/{studentId}?summary={summary}", cancellationToken: ct
-            ) ?? Enumerable.Empty<object>();
+            var result = await _daprClient.InvokeMethodAsync<PagedResult<object>>(
+                HttpMethod.Get,
+                AppIds.Accessor,
+                $"games-accessor/history/{studentId}?summary={summary}&page={page}&pageSize={pageSize}",
+                cancellationToken: ct
+            );
 
-            _logger.LogInformation("Received history from Accessor. StudentId={StudentId}, Summary={Summary}, Count={Count}", studentId, summary, result.Count());
+            if (result == null)
+            {
+                _logger.LogWarning("Accessor returned null history. StudentId={StudentId}, Summary={Summary}", studentId, summary);
+                return new PagedResult<object> { Page = page, PageSize = pageSize, TotalCount = 0 };
+            }
+
+            _logger.LogInformation("Received history from Accessor. StudentId={StudentId}, Summary={Summary}, Items={Count}, TotalCount={TotalCount}", studentId, summary, result.Items.Count(), result.TotalCount);
 
             return result;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get history from Accessor. StudentId={StudentId}, Summary={Summary}", studentId, summary);
-            return Enumerable.Empty<object>();
+            return new PagedResult<object> { Page = page, PageSize = pageSize, TotalCount = 0 };
         }
     }
 
-    public async Task<IEnumerable<MistakeDto>> GetMistakesAsync(Guid studentId, CancellationToken ct = default)
+    public async Task<PagedResult<MistakeDto>> GetMistakesAsync(Guid studentId, int page, int pageSize, CancellationToken ct = default)
     {
         try
         {
-            _logger.LogInformation("Requesting mistakes from Accessor. StudentId={StudentId}", studentId);
+            _logger.LogInformation("Requesting mistakes from Accessor. StudentId={StudentId}, Page={Page}, PageSize={PageSize}", studentId, page, pageSize);
 
-            var result = await _daprClient.InvokeMethodAsync<IEnumerable<MistakeDto>>(
-                HttpMethod.Get, AppIds.Accessor, $"games-accessor/mistakes/{studentId}", cancellationToken: ct
-            ) ?? Enumerable.Empty<MistakeDto>();
+            var result = await _daprClient.InvokeMethodAsync<PagedResult<MistakeDto>>(
+                HttpMethod.Get,
+                AppIds.Accessor,
+                $"games-accessor/mistakes/{studentId}?page={page}&pageSize={pageSize}",
+                cancellationToken: ct
+            );
 
-            _logger.LogInformation("Received mistakes from Accessor. StudentId={StudentId}, Count={Count}", studentId, result.Count());
+            if (result == null)
+            {
+                _logger.LogWarning("Accessor returned null mistakes. StudentId={StudentId}", studentId);
+                return new PagedResult<MistakeDto> { Page = page, PageSize = pageSize, TotalCount = 0 };
+            }
+
+            _logger.LogInformation("Received mistakes from Accessor. StudentId={StudentId}, Items={Count}, TotalCount={TotalCount}", studentId, result.Items.Count(), result.TotalCount);
 
             return result;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get mistakes from Accessor. StudentId={StudentId}", studentId);
-            return Enumerable.Empty<MistakeDto>();
+            return new PagedResult<MistakeDto> { Page = page, PageSize = pageSize, TotalCount = 0 };
         }
     }
 
-    public async Task<IEnumerable<SummaryHistoryWithStudentDto>> GetAllHistoriesAsync(CancellationToken ct = default)
+    public async Task<PagedResult<SummaryHistoryWithStudentDto>> GetAllHistoriesAsync(int page, int pageSize, CancellationToken ct = default)
     {
         try
         {
-            _logger.LogInformation("Requesting all histories from Accessor");
+            _logger.LogInformation("Requesting all histories from Accessor. Page={Page}, PageSize={PageSize}", page, pageSize);
 
-            var result = await _daprClient.InvokeMethodAsync<IEnumerable<SummaryHistoryWithStudentDto>>(
-                HttpMethod.Get, AppIds.Accessor, "games-accessor/all-history", cancellationToken: ct
-            ) ?? Enumerable.Empty<SummaryHistoryWithStudentDto>();
+            var result = await _daprClient.InvokeMethodAsync<PagedResult<SummaryHistoryWithStudentDto>>(
+                HttpMethod.Get,
+                AppIds.Accessor,
+                $"games-accessor/all-history?page={page}&pageSize={pageSize}",
+                cancellationToken: ct
+            );
 
-            _logger.LogInformation("Received all histories from Accessor. Count={Count}", result.Count());
+            if (result == null)
+            {
+                _logger.LogWarning("Accessor returned null for all histories.");
+                return new PagedResult<SummaryHistoryWithStudentDto> { Page = page, PageSize = pageSize, TotalCount = 0 };
+            }
+
+            _logger.LogInformation("Received all histories from Accessor. Items={Count}, TotalCount={TotalCount}", result.Items.Count(), result.TotalCount);
 
             return result;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get all histories from Accessor");
-            return Enumerable.Empty<SummaryHistoryWithStudentDto>();
+            return new PagedResult<SummaryHistoryWithStudentDto> { Page = page, PageSize = pageSize, TotalCount = 0 };
+        }
+    }
+
+    public async Task SaveGeneratedSentenceAsync(GeneratedSentenceDto dto, CancellationToken ct)
+    {
+        try
+        {
+            _logger.LogInformation("Saving generated sentence for StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}", dto.StudentId, dto.GameType, dto.Difficulty);
+
+            await _daprClient.InvokeMethodAsync(
+                HttpMethod.Post,
+                AppIds.Accessor,
+                "games-accessor/generated-sentence",
+                dto,
+                cancellationToken: ct
+            );
+
+            _logger.LogInformation("Generated sentence saved for StudentId={StudentId}", dto.StudentId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save generated sentence for StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}", dto.StudentId, dto.GameType, dto.Difficulty);
+            throw;
         }
     }
 }

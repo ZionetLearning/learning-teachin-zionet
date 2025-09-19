@@ -26,7 +26,7 @@ public class GameAttempt
     public List<string> GivenAnswer { get; set; } = new();
 
     [Required]
-    public bool IsSuccess { get; set; }
+    public AttemptStatus Status { get; set; }
 
     [Required]
     public int AttemptNumber { get; set; }
