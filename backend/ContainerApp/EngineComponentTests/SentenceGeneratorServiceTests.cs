@@ -45,7 +45,7 @@ public class SentenceGeneratorServiceTests
         {
             UserId = userId,
             Count = 1,
-            Difficulty = Difficulty.medium,
+            Difficulty = Difficulty.Medium,
             Nikud = false,
         };
 
@@ -63,7 +63,7 @@ public class SentenceGeneratorServiceTests
         {
             UserId = Guid.NewGuid(),
             Count = count,
-            Difficulty = Difficulty.medium,
+            Difficulty = Difficulty.Medium,
             Nikud = false
         };
 

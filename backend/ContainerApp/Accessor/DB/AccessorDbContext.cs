@@ -2,6 +2,7 @@ using Accessor.DB.Configurations;
 using Accessor.Models;
 using Microsoft.EntityFrameworkCore;
 using Accessor.Models.Users;
+using Accessor.Models.Games;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Accessor.Models.Prompts;
 
@@ -19,6 +20,7 @@ public class AccessorDbContext : DbContext
     public DbSet<UserModel> Users { get; set; } = default!;
     public DbSet<PromptModel> Prompts { get; set; } = default!;
     public DbSet<TeacherStudent> TeacherStudents { get; set; } = default!;
+    public DbSet<GameAttempt> GameAttempts { get; set; } = default!;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -28,6 +30,8 @@ public class AccessorDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.ApplyConfiguration(new GameAttemptsConfiguration());
+
         // Users table
         modelBuilder.ApplyConfiguration(new UsersConfiguration());
 

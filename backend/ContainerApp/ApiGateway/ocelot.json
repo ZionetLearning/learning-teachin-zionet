@@ -43,6 +43,20 @@
     },
 
     {
+      "UpstreamPathTemplate": "/games-manager/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS" ],
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "manager",
+          "Port": 5001
+        }
+      ],
+      "DownstreamPathTemplate": "/games-manager/{everything}",
+      "RouteIsCaseSensitive": false
+    },
+
+    {
       "UpstreamPathTemplate": "/notificationHub/negotiate",
       "UpstreamHttpMethod": [ "POST", "OPTIONS" ],
       "DownstreamScheme": "http",
