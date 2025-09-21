@@ -1,14 +1,6 @@
 import { createUseStyles } from "react-jss";
 
 export const useStyles = createUseStyles({
-  root: {
-    display: "flex",
-    gap: "2rem",
-    alignItems: "stretch",
-    padding: "1.5rem",
-    background: "linear-gradient(135deg,#f7f9fc 0%, #eef2f7 100%)",
-    height: "calc(100vh - 3rem)",
-  },
   creationContainer: {
     display: "flex",
     flexDirection: "column",
@@ -18,9 +10,11 @@ export const useStyles = createUseStyles({
     boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
     border: "1px solid #e0e0e0",
     padding: "1.5rem 2rem",
-    minWidth: "350px",
-    maxWidth: "400px",
     height: "fit-content",
+    "@media (min-width: 700px)": {
+      minWidth: "350px",
+      maxWidth: "400px",
+    },
   },
   sectionTitle: {
     fontSize: "1.5rem",
