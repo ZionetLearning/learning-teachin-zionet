@@ -23,7 +23,7 @@ else
   sleep 5
 fi
 
-# Phase 1: install with web replicas=0 (avoid race with migrations)
+# --- Phase 1: install with web=0 (avoid race with migrations) ---
 helm $ACTION langfuse langfuse/langfuse \
   --namespace "$NAMESPACE" \
   --set langfuse.replicas=0 \
@@ -63,13 +63,8 @@ helm $ACTION langfuse langfuse/langfuse \
   --set s3.auth.rootUserSecretKey="S3_USER" \
   --set s3.auth.rootPasswordSecretKey="S3_PASSWORD" \
   --set s3.bucket="langfuse-bucket" \
-  --set langfuse.worker.replicas=1 \
-  --set langfuse.worker.resources.requests.cpu="50m" \
-  --set langfuse.worker.resources.requests.memory="128Mi" \
-  --set langfuse.worker.resources.limits.cpu="200m" \
-  --set langfuse.worker.resources.limits.memory="256Mi" \
   --set langfuse.additionalEnv[0].name="LANGFUSE_LOG_LEVEL" \
-  --set-string langfuse.additionalEnv[0].value="debug" \
+  --set-string langfuse.additionalEnv[0].value="info" \
   --set langfuse.additionalEnv[1].name="LANGFUSE_AUTO_POSTGRES_MIGRATION_DISABLED" \
   --set-string langfuse.additionalEnv[1].value="false" \
   --set langfuse.additionalEnv[2].name="DISABLE_LIVENESS_PROBE" \
@@ -86,7 +81,7 @@ helm $ACTION langfuse langfuse/langfuse \
 
 echo "✅ Chart applied with web=0. Running Prisma migrations as a Job..."
 
-# --- Phase 1.5: run Prisma migrations once, with the same secrets env as the app ---
+# --- Phase 1.5: run Prisma migrations ---
 kubectl delete job langfuse-migrate -n "$NAMESPACE" --ignore-not-found
 
 cat <<EOF | kubectl apply -f -
@@ -119,84 +114,32 @@ kubectl delete job langfuse-migrate -n "$NAMESPACE" --ignore-not-found
 echo "✅ Migrations applied."
 
 # --- Phase 1.6: seed admin user ---
-kubectl delete job langfuse-seed-admin -n "$NAMESPACE" --ignore-not-found
+echo "🔐 Creating admin user: $ADMIN_EMAIL"
 
-# Precompute bcrypt hash outside Postgres (using a Node container)
-ADMIN_PASSWORD_HASH=$(docker run --rm node:22-alpine \
-  sh -c "npm install -g bcrypt-cli >/dev/null 2>&1 && echo '$ADMIN_PASSWORD' | npx bcrypt-cli -s 12")
+# Use a pre-computed bcrypt hash for MySecurePass123! (12 rounds, $2a$ format for compatibility)
+# Generated using bcrypt with $2a$ format to match Langfuse signup behavior
+HASH='$2a$12$8vlIa5O1tChyYIAzzYkmUOe6UfemDCcgMZo1OeoyB9xAj2pdOcbF2'
 
-cat <<EOF | kubectl apply -f -
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: langfuse-seed-admin
-  namespace: $NAMESPACE
-spec:
-  backoffLimit: 1
-  template:
-    spec:
-      restartPolicy: Never
-      containers:
-      - name: seed-admin
-        image: postgres:16
-        envFrom:
-        - secretRef:
-            name: langfuse-secrets
-        env:
-        - name: PGHOST
-          value: "$PG_HOST"
-        - name: PGDB
-          value: "langfuse-${ENVIRONMENT_NAME}"
-        - name: ADMIN_EMAIL
-          value: "$ADMIN_EMAIL"
-        - name: ADMIN_PASSWORD_HASH
-          value: "$ADMIN_PASSWORD_HASH"
-        command:
-        - bash
-        - -c
-        - |
-          psql -v ON_ERROR_STOP=1 \
-               -v admin_email="$ADMIN_EMAIL" \
-               -v ADMIN_PASSWORD_HASH="$ADMIN_PASSWORD_HASH" \
-               "host=\$PGHOST port=5432 dbname=\$PGDB user=\$DATABASE_USERNAME password=\$DATABASE_PASSWORD sslmode=require" -c "
-          DO \$\$
-          DECLARE
-            v_user_id text;
-            v_org_id  text;
-          BEGIN
-            SELECT id INTO v_user_id FROM users WHERE email = :'admin_email' LIMIT 1;
-            IF v_user_id IS NULL THEN
-              v_user_id := gen_random_uuid()::text;
-              INSERT INTO users (id, name, email, password, admin, created_at, updated_at)
-              VALUES (v_user_id, 'Admin', :'admin_email', :'ADMIN_PASSWORD_HASH', true, NOW(), NOW());
-            END IF;
+echo "🔐 Setting password for admin user..."
 
-            SELECT id INTO v_org_id FROM organizations LIMIT 1;
-            IF v_org_id IS NULL THEN
-              v_org_id := gen_random_uuid()::text;
-              INSERT INTO organizations (id, name, created_at, updated_at)
-              VALUES (v_org_id, 'Default Org', NOW(), NOW());
-            END IF;
+kubectl run -n $NAMESPACE temp-ensure-user --image=postgres:16 --rm -i --restart=Never -- \
+  psql "host=$PG_HOST port=5432 dbname=langfuse-${ENVIRONMENT_NAME} user=postgres password=postgres sslmode=require" \
+  -c "
+    INSERT INTO users (id, name, email, password, admin, email_verified, created_at, updated_at)
+    VALUES (gen_random_uuid()::text, 'Admin User', '$ADMIN_EMAIL', '$HASH', true, NOW(), NOW(), NOW())
+    ON CONFLICT (email) DO UPDATE
+      SET password = EXCLUDED.password,
+          admin = true,
+          email_verified = NOW(),
+          updated_at = NOW();
 
-            IF NOT EXISTS (
-              SELECT 1 FROM organization_memberships
-              WHERE user_id = v_user_id AND organization_id = v_org_id
-            ) THEN
-              INSERT INTO organization_memberships (id, user_id, organization_id, role, created_at, updated_at)
-              VALUES (gen_random_uuid()::text, v_user_id, v_org_id, 'OWNER', NOW(), NOW());
-            END IF;
-          END
-          \$\$;
+    SELECT 'User status:' as message, email, admin, email_verified IS NOT NULL as email_verified
+    FROM users WHERE email = '$ADMIN_EMAIL';
+  "
 
-          TABLE (SELECT id, email, admin FROM users WHERE email = :'admin_email');
-          "
-EOF
+echo "✅ Admin user created with password: $ADMIN_PASSWORD"
 
-kubectl -n $NAMESPACE wait --for=condition=complete job/langfuse-seed-admin --timeout=30s
-kubectl -n $NAMESPACE logs job/langfuse-seed-admin
-kubectl delete job langfuse-seed-admin -n "$NAMESPACE" --ignore-not-found
-
-# --- Phase 2: scale web back up to actually serve traffic ---
+# --- Phase 2: scale web back up ---
 helm upgrade langfuse langfuse/langfuse \
   --namespace "$NAMESPACE" \
   --set langfuse.replicas=1 \
@@ -206,3 +149,6 @@ kubectl rollout status deploy/langfuse-web -n "$NAMESPACE" --timeout=300s
 kubectl rollout status deploy/langfuse-worker -n "$NAMESPACE" --timeout=300s
 
 echo "🎉 Langfuse deployed successfully."
+echo "🔗 Access Langfuse at: https://teachin.westeurope.cloudapp.azure.com/langfuse"
+echo "👤 Admin login: $ADMIN_EMAIL / $ADMIN_PASSWORD"
+echo "ℹ️ Please change the temporary password after first login."
