@@ -6,7 +6,7 @@ metadata:
   namespace: {{ include "app.namespace" . }}
 spec:
   hosts:
-  - teachin.westeurope.cloudapp.azure.com/api/{{ include "app.namespace" . }}
+  - {{ .Values.manager.ingress.host }}/api/{{ include "app.namespace" . }}
   scaleTargetRef:
     name: {{ .Values.manager.name }}
     port: {{ .Values.manager.ports.container }}
