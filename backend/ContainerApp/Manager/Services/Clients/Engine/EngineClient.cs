@@ -166,7 +166,7 @@ public class EngineClient : IEngineClient
             };
             await _daprClient.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message);
 
-            _logger.LogDebug(
+            _logger.LogInformation(
                 "Generate request sent to Engine via binding '{Binding}'",
                 QueueNames.EngineQueue
             );

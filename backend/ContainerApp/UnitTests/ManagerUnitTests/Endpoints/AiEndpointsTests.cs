@@ -121,7 +121,7 @@ public class AiEndpointsTests
         var request = new SentenceRequest
         {
             UserId = Guid.NewGuid(),
-            Difficulty = Difficulty.medium,
+            Difficulty = Difficulty.Medium,
             Nikud = true,
             Count = 1
         };
