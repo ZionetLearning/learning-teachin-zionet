@@ -1,5 +1,5 @@
 import * as Sentry from "@sentry/react";
-
+export { SentryErrorBoundary } from "./SentryErrorBoundary";
 export interface SentryProps {
   appName: "student" | "teacher" | "admin";
 }
