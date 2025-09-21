@@ -9,21 +9,25 @@ import "react-chat-elements/dist/main.css";
 interface ReactChatElementsProps {
   messages: ChatMessage[] | undefined;
   loading: boolean;
+  isPlaying: boolean;
   avatarMode?: boolean;
   value: string;
   onChange: (value: string) => void;
   handleSendMessage: () => void;
   handlePlay?: () => void;
+  handleStop?: () => void;
 }
 
 export const ReactChatElements = ({
   messages,
   loading,
+  isPlaying,
   avatarMode = false,
   value,
   onChange,
   handleSendMessage,
   handlePlay,
+  handleStop,
 }: ReactChatElementsProps) => {
   const { t } = useTranslation();
   const classes = useStyles();
@@ -33,23 +37,23 @@ export const ReactChatElements = ({
   useEffect(() => {
     const el = listRef.current;
     if (!el) return;
-    
+
     const scrollToBottom = () => {
       el.scrollTo({
         top: el.scrollHeight,
-        behavior: 'smooth'
+        behavior: "smooth",
       });
     };
-    
+
     scrollToBottom();
-    
+
     const timeoutId = setTimeout(() => {
       el.scrollTo({
         top: el.scrollHeight,
-        behavior: 'auto'
+        behavior: "auto",
       });
     }, 100);
-    
+
     return () => clearTimeout(timeoutId);
   }, [messages]);
 
@@ -137,10 +141,16 @@ export const ReactChatElements = ({
                 <button
                   className={classes.sendButton}
                   title={t("pages.chatYo.replayAvatar")}
-                  onClick={handlePlay}
+                  onClick={() => {
+                    if (isPlaying) {
+                      handleStop?.();
+                    } else {
+                      handlePlay?.();
+                    }
+                  }}
                   data-testid="chat-yo-replay"
                 >
-                  🗣
+                  {isPlaying ? <span style={{ fontSize: "15px" }}>■</span> : "🗣"}
                 </button>
                 <button
                   className={classes.sendButton}

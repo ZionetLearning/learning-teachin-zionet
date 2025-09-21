@@ -100,6 +100,24 @@ export const useAvatarSpeech = ({
   }, [hardReset]);
 
   const stop = useCallback(async () => {
+    // Cancel ongoing synthesis first
+    if (synthesizerRef.current) {
+      try {
+        synthesizerRef.current.close(); // This should stop synthesis
+      } catch (error) {
+        console.warn("Error closing synthesizer:", error);
+      }
+    }
+
+    // Stop audio playback
+    if (speakerDestRef.current) {
+      try {
+        speakerDestRef.current.pause(); // If available
+      } catch (error) {
+        console.warn("Error pausing speaker:", error);
+      }
+    }
+
     hardReset();
     onAudioEnd?.();
   }, [hardReset, onAudioEnd]);
@@ -195,6 +213,7 @@ export const useAvatarSpeech = ({
       if (isPlaying) {
         await stop();
         // continue into a fresh speak immediately after stop
+        await new Promise((resolve) => setTimeout(resolve, 100));
       }
 
       try {
@@ -281,6 +300,20 @@ export const useAvatarSpeech = ({
             reject(err as unknown);
           }
         });
+
+        synthesizer.SynthesisCanceled = async (_s, e) => {
+          if (e.result?.errorDetails?.toLowerCase().includes("token")) {
+            await refetch(); // prep for next call
+          }
+          closeSynth();
+          // Ensure we clean up properly on cancellation
+          if (playbackStartMsRef.current) {
+            setIsPlaying(false);
+            setCurrentViseme(0);
+            onAudioEnd?.();
+            closeDest();
+          }
+        };
       } catch (err) {
         console.error("Speech synthesis error:", err);
         // Full cleanup so the *next* call works
