@@ -10,7 +10,7 @@ import {
   GameConfigModal,
   GameOverModal,
   GameSettings,
-  WelcomeScreen,
+  GameSetupPanel,
 } from "@ui-components";
 import { getDifficultyLabel } from "@student/features";
 
@@ -190,7 +190,7 @@ export const Game = () => {
   // Show welcome screen if game hasn't started yet
   if (!gameStarted || !gameConfig) {
     return (
-      <WelcomeScreen
+      <GameSetupPanel
         configModalOpen={configModalOpen}
         setConfigModalOpen={setConfigModalOpen}
         handleConfigConfirm={handleConfigConfirm}

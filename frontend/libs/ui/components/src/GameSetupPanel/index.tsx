@@ -4,7 +4,7 @@ import { useStyles } from "./style";
 import { DifficultyLevel } from "@student/types";
 import { GameConfig, GameConfigModal } from "@ui-components";
 
-interface WelcomeScreenProps {
+interface GameSetupPanelProps {
   configModalOpen: boolean;
   setConfigModalOpen: (open: boolean) => void;
   handleConfigConfirm: (config: GameConfig) => void;
@@ -14,12 +14,12 @@ interface WelcomeScreenProps {
   ) => string;
 }
 
-export const WelcomeScreen = ({
+export const GameSetupPanel = ({
   configModalOpen,
   setConfigModalOpen,
   handleConfigConfirm,
   getDifficultyLabel,
-}: WelcomeScreenProps) => {
+}: GameSetupPanelProps) => {
   const { t } = useTranslation();
   const classes = useStyles();
   return (

@@ -1,11 +1,12 @@
 import { useMutation } from "@tanstack/react-query";
-import { apiClient as axios, SentenceItem } from "@app-providers";
+import { apiClient as axios } from "@app-providers";
 import { toast } from "react-toastify";
 import {
   EventType,
   SplitSentenceGeneratedPayload,
   UserEventUnion,
-} from "@app-providers";
+  SentenceItem,
+} from "@app-providers/types";
 
 import { useSignalR } from "@student/hooks";
 

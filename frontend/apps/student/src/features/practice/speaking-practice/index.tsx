@@ -13,7 +13,7 @@ import {
   GameConfigModal,
   GameOverModal,
   GameSettings,
-  WelcomeScreen,
+  GameSetupPanel,
 } from "@ui-components";
 import { getDifficultyLabel } from "../utils";
 import { useStyles } from "./style";
@@ -257,8 +257,16 @@ export const SpeakingPractice = () => {
       return prev;
     });
 
-    setCurrentIdx((i) => Math.min(i + 1, Math.max(0, sentences.length - 1)));
+    const isLast = currentIdx === Math.max(0, sentences.length - 1);
 
+    if (isLast) {
+      setGameOverOpen(true);
+      setFeedback(Feedback.None);
+      setIsCorrect(null);
+      return;
+    }
+
+    setCurrentIdx((i) => i + 1);
     setFeedback(Feedback.None);
     setIsCorrect(null);
   };
@@ -280,6 +288,8 @@ export const SpeakingPractice = () => {
   };
 
   const handlePlayAgain = () => {
+    setFeedback(Feedback.None);
+    setIsCorrect(null);
     setGameOverOpen(false);
     setAttempted(new Set());
     setCorrectIdxs(new Set());
@@ -290,7 +300,7 @@ export const SpeakingPractice = () => {
   if (!isConfigured) {
     return (
       <div className={classes.loader}>
-        <WelcomeScreen
+        <GameSetupPanel
           configModalOpen={configModalOpen}
           setConfigModalOpen={setConfigModalOpen}
           handleConfigConfirm={handleConfigConfirm}
@@ -326,9 +336,7 @@ export const SpeakingPractice = () => {
         <button
           onClick={goNext}
           data-testid="speaking-next"
-          disabled={
-            sentences.length <= 1 || currentIdx === sentences.length - 1
-          }
+          disabled={sentences.length === 0}
         >
           {t("pages.speakingPractice.next")} &raquo;
         </button>

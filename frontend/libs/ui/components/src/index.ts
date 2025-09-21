@@ -6,4 +6,4 @@ export * from "./Dropdown";
 export * from "./ErrorFallback";
 export * from "./modals";
 export * from "./GameSettings";
-export * from "./WelcomeScreen";
+export * from "./GameSetupPanel";
