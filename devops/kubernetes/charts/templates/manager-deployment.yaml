@@ -82,30 +82,6 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.manager.secrets.signalr.name }}
                   key: {{ .Values.manager.secrets.signalr.key }}
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: {{ .Values.manager.ports.container }}
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 3
-          readinessProbe:
-            httpGet:
-              path: /health
-              port: {{ .Values.manager.ports.container }}
-            initialDelaySeconds: 5
-            periodSeconds: 5
-            timeoutSeconds: 3
-            failureThreshold: 3
-          startupProbe:
-            httpGet:
-              path: /health
-              port: {{ .Values.manager.ports.container }}
-            initialDelaySeconds: 5   # Start checking sooner
-            periodSeconds: 2         # Check more frequently
-            timeoutSeconds: 3
-            failureThreshold: 30     # Allow up to 1 minute for startup (30 * 2s)
           resources:
             {{- toYaml .Values.manager.resources | nindent 12 }}
 ---
