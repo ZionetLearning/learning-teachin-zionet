@@ -3,7 +3,13 @@ import {
   QueryClientProvider,
   type UseQueryResult,
 } from "@tanstack/react-query";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Users } from "../index";
 import { User } from "@app-providers";
@@ -133,19 +139,32 @@ describe("<Users />", () => {
   });
 
   it("renders users table with required columns and rows", () => {
-    const { container } = renderUsers();
+    // table shell 
+    const shell = screen.getByTestId("users-table-shell");
+    expect(shell).toBeInTheDocument();
 
-    // table shell exists
+    // target the header table only
+    const headerTable = within(shell).getByRole("table", {
+      name: "users header",
+    });
+    const header = within(headerTable);
+
+    // headers (role = columnheader)
     expect(
-      container.querySelector('[data-testid="users-table-shell"]'),
-    ).toBeTruthy();
-
-    // headers
-    expect(screen.getByText("pages.users.email")).toBeInTheDocument();
-    expect(screen.getByText("pages.users.firstName")).toBeInTheDocument();
-    expect(screen.getByText("pages.users.lastName")).toBeInTheDocument();
-    expect(screen.getByText("pages.users.role")).toBeInTheDocument();
-    expect(screen.getByText("pages.users.actions")).toBeInTheDocument();
+      header.getByRole("columnheader", { name: "pages.users.email" }),
+    ).toBeInTheDocument();
+    expect(
+      header.getByRole("columnheader", { name: "pages.users.firstName" }),
+    ).toBeInTheDocument();
+    expect(
+      header.getByRole("columnheader", { name: "pages.users.lastName" }),
+    ).toBeInTheDocument();
+    expect(
+      header.getByRole("columnheader", { name: "pages.users.role" }),
+    ).toBeInTheDocument();
+    expect(
+      header.getByRole("columnheader", { name: "pages.users.actions" }),
+    ).toBeInTheDocument();
   });
 
   it("submits create user form", async () => {
