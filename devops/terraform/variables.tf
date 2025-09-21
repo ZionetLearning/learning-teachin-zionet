@@ -81,7 +81,7 @@ variable "signalr_name" {
 
 variable "signalr_sku_name" {
   type    = string
-  default = "Free_F1"
+  default = "Standard_S1"
 }
 
 variable "signalr_sku_capacity" {
