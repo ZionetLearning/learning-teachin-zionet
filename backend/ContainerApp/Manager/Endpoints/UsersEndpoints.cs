@@ -74,6 +74,13 @@ public static class UsersEndpoints
                 return Results.BadRequest("Invalid role provided.");
             }
 
+            // Interests only apply to students
+            if (parsedRole != Role.Student && newUser.Interests.Count > 0)
+            {
+                logger.LogWarning("Non-student tried to set interests. Role: {Role}", parsedRole);
+                return Results.BadRequest("Only students can have interests.");
+            }
+
             // Detect UI language from Accept-Language header
             var acceptLanguage = httpContext.Request.Headers["Accept-Language"].FirstOrDefault();
             var sanitizedAcceptLanguage = acceptLanguage?.Replace("\r", string.Empty).Replace("\n", string.Empty);
@@ -95,7 +102,8 @@ public static class UsersEndpoints
                 Password = BCrypt.Net.BCrypt.HashPassword(newUser.Password),
                 Role = parsedRole,
                 PreferredLanguageCode = preferredLanguage,
-                HebrewLevelValue = hebrewLevel
+                HebrewLevelValue = hebrewLevel,
+                Interests = newUser.Interests
             };
 
             // Send to accessor
@@ -106,7 +114,7 @@ public static class UsersEndpoints
                 return Results.Conflict("User could not be created (may already exist or invalid data).");
             }
 
-            // DTO for response (never return raw password)
+            // DTO for response 
             var result = new UserData
             {
                 UserId = user.UserId,
@@ -115,7 +123,8 @@ public static class UsersEndpoints
                 LastName = user.LastName,
                 Role = parsedRole,
                 PreferredLanguageCode = preferredLanguage,
-                HebrewLevelValue = hebrewLevel
+                HebrewLevelValue = hebrewLevel,
+                Interests = user.Interests
             };
 
             logger.LogInformation("User {Email} created successfully", user.Email);
@@ -187,6 +196,13 @@ public static class UsersEndpoints
             {
                 logger.LogWarning("Non-student tried to set HebrewLevel. Role: {Role}", existingUser.Role);
                 return Results.BadRequest("Hebrew level can only be set for students.");
+            }
+
+            // only students can have interests
+            if (user.Interests is not null && existingUser.Role != Role.Student)
+            {
+                logger.LogWarning("Non-student tried to set interests. Role: {Role}", existingUser.Role);
+                return Results.BadRequest("Only students can set interests.");
             }
 
             // Only Admins can change role of another user
@@ -270,6 +286,7 @@ public static class UsersEndpoints
             return Results.Problem("Failed to retrieve users.");
         }
     }
+
     private static async Task<IResult> ListStudentsForTeacherAsync(
         [FromRoute] Guid teacherId,
         [FromServices] IAccessorClient accessorClient,

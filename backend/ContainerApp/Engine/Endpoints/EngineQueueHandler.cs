@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics;
 using Dapr.Client;
 using DotQueue;
-using Engine.Constants;
 using Engine.Helpers;
 using Engine.Models;
 using Engine.Models.Chat;
@@ -12,6 +11,7 @@ using Engine.Services.Clients.AccessorClient;
 using Engine.Services.Clients.AccessorClient.Models;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
+using Engine.Constants.Chat;
 
 namespace Engine.Endpoints;
 
@@ -202,9 +202,12 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
             var skHistory = HistoryMapper.ToChatHistoryFromElement(snapshot.History);
             var storyForKernel = HistoryMapper.CloneToChatHistory(skHistory);
 
+            // Inject user interests
+            var userInterests = await _accessorClient.GetUserInterestsAsync(request.UserId, ct);
+
             if (!storyForKernel.Any(m => m.Role == AuthorRole.System))
             {
-                var systemPrompt = await GetOrLoadSystemPromptAsync(ct);
+                var systemPrompt = await GetOrLoadSystemPromptAsync(userInterests, ct);
                 storyForKernel.Insert(0, new ChatMessageContent(AuthorRole.System, systemPrompt));
             }
 
@@ -213,7 +216,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
             storyForKernel.AddUserMessage(request.UserMessage.Trim(), DateTimeOffset.UtcNow);
 
             var chatName = snapshot.Name;
-            if (chatName == "New chat")
+            if (chatName == ChatConstants.NewChatName)
             {
                 try
                 {
@@ -332,14 +335,23 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         }
     }
 
-    private async Task<string> GetOrLoadSystemPromptAsync(CancellationToken ct)
+    private async Task<string> GetOrLoadSystemPromptAsync(List<string>? userInterests, CancellationToken ct)
     {
 
         var keys = new[] { PromptsKeys.SystemDefault, PromptsKeys.DetailedExplanation };
         var fallback = "You are a helpful assistant. Keep answers concise.";
+        var hasInterests = userInterests is not null && userInterests.Count > 0;
+        var includeInterestPrompt = false;
 
         try
         {
+            // Add interest-based prompt 50% of the time if user has interests
+            if (hasInterests && Random.Shared.NextDouble() < 0.5)
+            {
+                keys = [.. keys, PromptsKeys.Interests];
+                includeInterestPrompt = true;
+            }
+
             var batch = await _accessorClient.GetPromptsBatchAsync(keys, ct);
             var map = batch.Prompts.ToDictionary(p => p.PromptKey, p => p.Content, StringComparer.Ordinal);
 
@@ -348,10 +360,16 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
                 keys.Select(k => map.TryGetValue(k, out var v) ? v : null)
                     .Where(v => !string.IsNullOrWhiteSpace(v)));
 
+            if (includeInterestPrompt && hasInterests && !string.IsNullOrWhiteSpace(combined))
+            {
+                var joined = string.Join(", ", userInterests!);
+                combined = combined.Replace("{{interests}}", joined);
+            }
+
             if (string.IsNullOrWhiteSpace(combined))
             {
                 _logger.LogWarning("System prompt batch returned empty; using fallback.");
-                combined = fallback;
+                return fallback;
             }
 
             if (batch.NotFound?.Count > 0)
@@ -376,8 +394,11 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
             PayloadValidation.ValidateSentenceGenerationRequest(payload, _logger);
 
+            // inject user interests
+            var userInterests = await _accessorClient.GetUserInterestsAsync(payload.UserId, cancellationToken);
+
             _logger.LogDebug("Processing sentence generation");
-            var response = await _sentencesService.GenerateAsync(payload, cancellationToken);
+            var response = await _sentencesService.GenerateAsync(payload, userInterests, cancellationToken);
             var userId = payload.UserId;
             await _publisher.SendGeneratedMessagesAsync(userId.ToString(), response, message.ActionName, cancellationToken);
         }

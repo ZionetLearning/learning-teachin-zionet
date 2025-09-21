@@ -10,6 +10,7 @@ using Accessor.Services.Interfaces;
 using Azure.Messaging.ServiceBus;
 using DotQueue;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -83,8 +84,15 @@ builder.Services.AddDaprClient(client =>
 });
 
 // Configure PostgreSQL
+
+// Build data source with dynamic JSON enabled
+var dataSourceBuilder = new NpgsqlDataSourceBuilder(builder.Configuration.GetConnectionString("Postgres"));
+dataSourceBuilder.EnableDynamicJson(); // important
+var dataSource = dataSourceBuilder.Build();
+
+// Register DbContext using the data source
 builder.Services.AddDbContext<AccessorDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres"), npgsqlOptions =>
+    options.UseNpgsql(dataSource, npgsqlOptions =>
     {
         npgsqlOptions.EnableRetryOnFailure(
             maxRetryCount: 5,
