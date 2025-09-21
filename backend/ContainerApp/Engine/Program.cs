@@ -152,10 +152,4 @@ app.MapControllers();
 app.MapSubscribeHandler();
 app.MapAiEndpoints();
 
-// Simple health check endpoint for Kubernetes probes
-app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTimeOffset.UtcNow }))
-    .WithName("HealthCheck")
-    .WithTags("Health")
-    .Produces(StatusCodes.Status200OK);
-
 app.Run();

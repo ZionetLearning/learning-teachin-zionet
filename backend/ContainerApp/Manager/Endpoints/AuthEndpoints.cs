@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+﻿﻿using System.Security.Claims;
 using Manager.Constants;
 using Manager.Helpers;
 using Manager.Models.Auth;
@@ -43,14 +43,15 @@ public static class AuthEndpoints
        [FromServices] IAuthService authService,
        [FromServices] ILogger<AuthEndpoint> logger,
        HttpRequest httpRequest,
-       HttpResponse response)
+       HttpResponse response,
+       CancellationToken cancellationToken)
     {
         using var scope = logger.BeginScope("Method: {Method}", nameof(LoginAsync));
         try
         {
             logger.LogInformation("Attempting login for {Email}", loginRequest.Email);
 
-            var (accessToken, refreshToken) = await authService.LoginAsync(loginRequest, httpRequest);
+            var (accessToken, refreshToken) = await authService.LoginAsync(loginRequest, httpRequest, cancellationToken);
 
             // Set the cookies in the response
             var csrfToken = CookieHelper.SetCookies(response, refreshToken);

@@ -26,6 +26,5 @@ public static class StatsEndpoints
             .WithName("GetStatsSnapshot")
             .WithTags("Internal")
             .Produces<StatsSnapshot>(StatusCodes.Status200OK);
-
     }
 }

@@ -26,12 +26,12 @@ public class AuthService : IAuthService
         _accessorClient = accessorClient;
     }
 
-    public async Task<(string, string)> LoginAsync(LoginRequest loginRequest, HttpRequest httpRequest)
+    public async Task<(string, string)> LoginAsync(LoginRequest loginRequest, HttpRequest httpRequest, CancellationToken cancellationToken)
     {
         _log.LogInformation("Login attempt for user {Email}", loginRequest.Email);
         try
         {
-            var response = await _accessorClient.LoginUserAsync(loginRequest);
+            var response = await _accessorClient.LoginUserAsync(loginRequest, cancellationToken);
 
             if (response is null || response.UserId == Guid.Empty)
             {
@@ -67,7 +67,7 @@ public class AuthService : IAuthService
                 UserAgent = ua,
             };
 
-            await _accessorClient.SaveSessionDBAsync(session);
+            await _accessorClient.SaveSessionDBAsync(session, cancellationToken);
             return (accessToken, refreshToken);
         }
 

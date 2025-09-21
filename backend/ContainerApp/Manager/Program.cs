@@ -25,7 +25,6 @@ using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using Manager;
-using Microsoft.AspNetCore.Http.Timeouts;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -134,22 +133,6 @@ builder.Services.AddCors(options =>
     });
 });
 
-var timeouts = new
-{
-    RequestSeconds = builder.Configuration.GetValue<int?>("Timeouts:RequestSeconds") ?? 30,
-    DaprClientSeconds = builder.Configuration.GetValue<int?>("Timeouts:DaprClientSeconds") ?? 30,
-};
-
-builder.Services.AddRequestTimeouts(options =>
-{
-    options.DefaultPolicy = new RequestTimeoutPolicy
-    {
-        Timeout = TimeSpan.FromSeconds(timeouts.RequestSeconds),
-        TimeoutStatusCode = StatusCodes.Status408RequestTimeout
-        // (optional) WriteTimeoutResponse = ctx => ...
-    };
-});
-
 builder.Services.AddScoped<IAccessorClient, AccessorClient>();
 builder.Services.AddScoped<IEngineClient, EngineClient>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
@@ -252,12 +235,6 @@ app.MapHub<NotificationHub>("/NotificationHub");
 app.MapMediaEndpoints();
 
 app.MapStatsPing();
-
-// Simple health check endpoint for Kubernetes probes
-app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTimeOffset.UtcNow }))
-    .WithName("HealthCheck")
-    .WithTags("Health")
-    .Produces(StatusCodes.Status200OK);
 if (env.IsDevelopment())
 {
     app.MapOpenApi();
