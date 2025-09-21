@@ -139,7 +139,9 @@ describe("<Users />", () => {
   });
 
   it("renders users table with required columns and rows", () => {
-    // table shell 
+    renderUsers();
+    
+    // table shell
     const shell = screen.getByTestId("users-table-shell");
     expect(shell).toBeInTheDocument();
 
