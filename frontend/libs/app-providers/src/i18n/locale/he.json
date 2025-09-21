@@ -75,7 +75,9 @@
         "chatAvatarPage": "צ'אט עם אווטאר",
         "typeMessage": "הקלד הודעה…",
         "avatar": "אווטאר",
-        "lips": "שפתיים"
+        "lips": "שפתיים",
+        "mute": "השתק",
+        "unmute": "הפעל קול"
       },
       "chatHistory": {
         "title": "היסטוריית צ'אט",

@@ -50,7 +50,7 @@ export const ChatWithAvatar = () => {
 
     if (isRecentHistoryLoad) return;
     if (messages.length === 0) return; // Don't speak if no messages
-
+    if (isMuted) return;
     const last = messages[messages.length - 1];
 
     if (
@@ -70,7 +70,7 @@ export const ChatWithAvatar = () => {
         lastSpokenTextRef.current = last.text;
       }
     }
-  }, [messages, speak, stop, lastHistoryLoadTime, isPlaying, threadId]);
+  }, [messages, speak, stop, lastHistoryLoadTime, isPlaying, threadId, isMuted]);
 
   useEffect(() => {
     if (chatHistory && chatHistory.messages.length > 0) {
@@ -92,6 +92,7 @@ export const ChatWithAvatar = () => {
   };
 
   const handlePlay = async () => {
+    if (isMuted) return;
     const lastMessage = messages[messages.length - 1];
     if (lastMessage?.position === "left" && lastMessage.text) {
       if (isPlaying) {
@@ -107,7 +108,11 @@ export const ChatWithAvatar = () => {
     await stop();
   };
 
-  const handleMuteToggle = () => {
+  const handleMuteToggle = async () => {
+    // If currently playing and about to mute, stop the speech
+    if (!isMuted && isPlaying) {
+      await stop();
+    }
     toggleMute();
   };
 

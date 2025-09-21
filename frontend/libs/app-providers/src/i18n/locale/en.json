@@ -75,7 +75,9 @@
         "chatAvatarPage": "Chat with Avatar",
         "typeMessage": "Type a message...",
         "avatar": "Avatar",
-        "lips": "Lips"
+        "lips": "Lips",
+        "mute": "Mute audio",
+        "unmute": "Unmute audio"
       },
       "chatHistory": {
         "title": "Chat History",
