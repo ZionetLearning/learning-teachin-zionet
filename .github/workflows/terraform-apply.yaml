@@ -69,6 +69,7 @@ jobs:
     permissions:
       id-token: write      # Required for OIDC login
       contents: read       # For actions/checkout
+
     
     outputs:
       static_web_app_api_keys: ${{ steps.terraform_output.outputs.static_web_app_api_keys }}

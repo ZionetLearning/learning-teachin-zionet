@@ -55,6 +55,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
+      issues: write
     with:
       environment: ${{ github.event.inputs.environment }}
       environment_name: ${{ github.event.inputs.environment_name }}
@@ -70,6 +71,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
+      issues: write
     with:
       environment_name: ${{ github.event.inputs.environment_name }}
       environment: ${{ github.event.inputs.environment }}
@@ -95,6 +97,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
+      issues: write
     with:
       environment_name: ${{ github.event.inputs.environment_name }}
       environment: ${{ github.event.inputs.environment }}
