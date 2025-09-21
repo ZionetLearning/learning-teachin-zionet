@@ -15,7 +15,7 @@ variable "signalr_name" {
 
 variable "sku_name" {
   type        = string
-  default     = "Free_F1"
+  default     = "Standard_S1"
   description = "SignalR SKU (e.g. Free_F1, Standard_S1)"
 }
 
