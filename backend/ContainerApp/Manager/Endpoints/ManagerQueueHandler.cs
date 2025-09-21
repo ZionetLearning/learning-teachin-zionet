@@ -7,11 +7,14 @@ using Manager.Models.Notifications;
 using Manager.Models.QueueMessages;
 using Manager.Models.Sentences;
 using Manager.Services;
+using Manager.Services.Clients.Accessor.Models;
+using Manager.Services.Clients.Accessor;
 
 namespace Manager.Endpoints;
 public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
 {
     private readonly INotificationService _notificationService;
+    private readonly IAccessorClient _accessorClient;
     private readonly ILogger<ManagerQueueHandler> _logger;
     protected override MessageAction GetAction(Message message) => message.ActionName;
 
@@ -23,10 +26,12 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
     public ManagerQueueHandler(
         ILogger<ManagerQueueHandler> logger,
-        INotificationService notificationService) : base(logger)
+        INotificationService notificationService,
+        IAccessorClient accessorClient) : base(logger)
     {
         _notificationService = notificationService;
         _logger = logger;
+        _accessorClient = accessorClient;
     }
 
     public async Task HandleNotifyUserAsync(Message message, IReadOnlyDictionary<string, string>? metadata, Func<Task> renewLock, CancellationToken cancellationToken)
@@ -239,8 +244,17 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
             var split = Splitter.Split(generatedResponse);
 
-            await _notificationService.SendEventAsync(EventType.SplitSentenceGeneration, userId, split);
+            var dto = new GeneratedSentenceDto
+            {
+                StudentId = Guid.Parse(userId),
+                GameType = "wordOrderGame",
+                Difficulty = Enum.TryParse<Manager.Models.Games.Difficulty>(generatedResponse.Sentences.FirstOrDefault()?.Difficulty, ignoreCase: true, out var difficulty) ? difficulty : Manager.Models.Games.Difficulty.Easy,
+                CorrectAnswer = split.Sentences.FirstOrDefault()?.Words ?? new List<string>() // <--- FIX
+            };
 
+            await _accessorClient.SaveGeneratedSentenceAsync(dto, cancellationToken);
+
+            await _notificationService.SendEventAsync(EventType.SplitSentenceGeneration, userId, split);
         }
         catch (NonRetryableException ex)
         {
