@@ -259,18 +259,18 @@ dapr:
   
 # KEDA scaler (optional)
 keda:
-  enabled: true
-  httpAddOn:
-    interceptor:
-      proxy:
-        readTimeout: 60s
-        responseHeaderTimeout: 60s
-        idleTimeout: 60s
-        dialTimeout: 10s
-        keepAliveTimeout: 60s
-      scaleToZero:
-        responseTimeout: 60s  # Wait longer for pods to become ready
-      targetPendingRequests: 1
+  enabled: false
+  # httpAddOn:
+  #   interceptor:
+  #     proxy:
+  #       readTimeout: 60s
+  #       responseHeaderTimeout: 60s
+  #       idleTimeout: 60s
+  #       dialTimeout: 10s
+  #       keepAliveTimeout: 60s
+  #     scaleToZero:
+  #       responseTimeout: 60s  # Wait longer for pods to become ready
+  #     targetPendingRequests: 1
 
   # serviceAccount:
   # create: false

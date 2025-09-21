@@ -18,19 +18,19 @@ check_keda_pods_ready() {
 }
 
 # Check if KEDA is already installed and running
-# if helm list -n "$KEDA_NAMESPACE" | grep -q "keda"; then
-#     echo "KEDA Helm releases found, checking pod status..."
+if helm list -n "$KEDA_NAMESPACE" | grep -q "keda"; then
+    echo "KEDA Helm releases found, checking pod status..."
     
-#     if check_keda_pods_ready; then
-#         echo "KEDA is already installed and running, skipping installation..."
-#         echo "KEDA verification complete!"
-#         exit 0
-#     else
-#         echo "KEDA is installed but pods are not ready, proceeding with reinstallation..."
-#     fi
-# else
-#     echo "KEDA not found, proceeding with fresh installation..."
-# fi
+    if check_keda_pods_ready; then
+        echo "KEDA is already installed and running, skipping installation..."
+        echo "KEDA verification complete!"
+        exit 0
+    else
+        echo "KEDA is installed but pods are not ready, proceeding with reinstallation..."
+    fi
+else
+    echo "KEDA not found, proceeding with fresh installation..."
+fi
 
 echo "Installing KEDA Core and HTTP Add-on..."
 

@@ -17,9 +17,4 @@ spec:
   pollingInterval: 1     # Very responsive scaling (check every 1 second)
   scaledownPeriod: 200   # Wait 10 minutes before scaling down (increased)
   targetPendingRequests: 1  # Scale up on any pending request
-  # Advanced configuration for better scale-to-zero behavior
-  scalingModifiers:
-    target: 1
-    activationThreshold: 1      # Start scaling on first request
-    formula: "ceiling(keda_http_pending_requests / 1)"
 {{- end }}
