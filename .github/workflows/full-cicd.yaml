@@ -91,7 +91,8 @@ jobs:
     secrets: inherit
 
   keda-setup:
-    if: inputs.use_keda == true
+    needs: [aks-kubectl-apply, helmcharts-setup]
+    if: ${{ always() && contains(fromJson('["success","skipped"]'), needs.aks-kubectl-apply.result) && inputs.use_keda == true }}
     uses: ./.github/workflows/aks-keda.yaml
     permissions:
       id-token: write
