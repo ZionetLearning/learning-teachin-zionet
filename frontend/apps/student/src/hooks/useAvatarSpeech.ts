@@ -14,6 +14,7 @@ interface useAvatarSpeechOptions {
 const VISEME_LATENCY_MS = 40; // tweak 20–70 if needed
 const FALLBACK_VISEMES = [3, 5, 8, 10, 0]; // used only if no visemes arrive
 const FALLBACK_STEP_MS = 60;
+const DEFAULT_HE_VOICE = "he-IL-HilaNeural";
 
 const stripHebrewNikud = (input: string): string => {
   // Normalize, then remove Hebrew diacritics & cantillation marks
@@ -227,7 +228,7 @@ export const useAvatarSpeech = ({
           tokenData?.token as string,
           tokenData?.region as string,
         );
-        if (voiceName) speechConfig.speechSynthesisVoiceName = voiceName;
+        speechConfig.speechSynthesisVoiceName = voiceName ?? DEFAULT_HE_VOICE;
 
         // Ensure viseme events are emitted
         speechConfig.setProperty(

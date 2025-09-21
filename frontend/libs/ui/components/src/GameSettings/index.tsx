@@ -1,26 +1,29 @@
 import { useTranslation } from "react-i18next";
 import { Box, Button, Typography } from "@mui/material";
 import { Settings } from "@mui/icons-material";
-import { GameConfig } from "../modals";
 import { DifficultyLevel } from "@student/types";
 import { useStyles } from "./style";
+import { GameConfig } from "@ui-components";
 
-interface GameHeaderSettingsProps {
+interface GameSettingsProps {
   gameConfig: GameConfig;
   currentSentenceIndex: number;
   sentenceCount: number;
   isHebrew: boolean;
   handleConfigChange: () => void;
-  getDifficultyLabel: (level: DifficultyLevel) => string;
+  getDifficultyLabel: (
+    level: DifficultyLevel,
+    t: (key: string) => string,
+  ) => string;
 }
-export const GameHeaderSettings = ({
+export const GameSettings = ({
   gameConfig,
   currentSentenceIndex,
   sentenceCount,
   isHebrew,
   handleConfigChange,
   getDifficultyLabel,
-}: GameHeaderSettingsProps) => {
+}: GameSettingsProps) => {
   const { t } = useTranslation();
   const classes = useStyles();
 
@@ -29,15 +32,13 @@ export const GameHeaderSettings = ({
       <Box className={classes.gameHeaderInfo}>
         <Typography variant="body2" color="text.secondary">
           {t("pages.wordOrderGame.current.difficulty")}:{" "}
-          {getDifficultyLabel(gameConfig.difficulty)}
-          {" | "}
+          {getDifficultyLabel(gameConfig.difficulty, t)}
         </Typography>
         <Typography variant="body2" color="text.secondary">
           {t("pages.wordOrderGame.current.nikud")}:{" "}
           {gameConfig.nikud
             ? t("pages.wordOrderGame.yes")
             : t("pages.wordOrderGame.no")}
-          {" | "}
         </Typography>
         <Typography variant="body2" color="text.secondary">
           {t("pages.wordOrderGame.current.sentence")}:{" "}

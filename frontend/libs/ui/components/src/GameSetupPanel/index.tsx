@@ -1,22 +1,25 @@
 import { useTranslation } from "react-i18next";
 import { Button, Box, Typography } from "@mui/material";
-import { GameConfigModal, GameConfig } from "../modals";
 import { useStyles } from "./style";
 import { DifficultyLevel } from "@student/types";
+import { GameConfig, GameConfigModal } from "@ui-components";
 
-interface WelcomeScreenProps {
+interface GameSetupPanelProps {
   configModalOpen: boolean;
   setConfigModalOpen: (open: boolean) => void;
   handleConfigConfirm: (config: GameConfig) => void;
-  getDifficultyLabel: (level: DifficultyLevel) => string;
+  getDifficultyLabel: (
+    level: DifficultyLevel,
+    t: (key: string) => string,
+  ) => string;
 }
 
-export const WelcomeScreen = ({
+export const GameSetupPanel = ({
   configModalOpen,
   setConfigModalOpen,
   handleConfigConfirm,
   getDifficultyLabel,
-}: WelcomeScreenProps) => {
+}: GameSetupPanelProps) => {
   const { t } = useTranslation();
   const classes = useStyles();
   return (

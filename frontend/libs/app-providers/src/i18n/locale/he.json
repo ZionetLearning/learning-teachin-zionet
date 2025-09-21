@@ -140,8 +140,7 @@
         "stop": "⏹ עצור",
         "play": "▶ הפעל",
         "record": "🎤 הקלט",
-        "hideNikud": "הסתר ניקוד",
-        "showNikud": "הצג ניקוד"
+        "noData": "אין נתונים"
       },
       "typingPractice": {
         "hebrewTypingPractice": "תרגול הקלדה בעברית",
