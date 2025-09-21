@@ -6,7 +6,7 @@ metadata:
   namespace: {{ include "app.namespace" . }}
 spec:
   hosts:
-  - http://{{ .Values.manager.name }}.{{ include "app.namespace" . }}.svc.cluster.local:{{ .Values.manager.ports.container }}/
+  - teachin.westeurope.cloudapp.azure.com/api/{{ include "app.namespace" . }}
   scaleTargetRef:
     name: {{ .Values.manager.name }}
     port: {{ .Values.manager.ports.container }}
