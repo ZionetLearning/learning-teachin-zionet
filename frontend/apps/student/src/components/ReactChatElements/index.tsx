@@ -9,7 +9,7 @@ import "react-chat-elements/dist/main.css";
 interface ReactChatElementsProps {
   messages: ChatMessage[] | undefined;
   loading: boolean;
-  isPlaying: boolean;
+  isPlaying?: boolean;
   avatarMode?: boolean;
   value: string;
   onChange: (value: string) => void;
@@ -21,7 +21,7 @@ interface ReactChatElementsProps {
 export const ReactChatElements = ({
   messages,
   loading,
-  isPlaying,
+  isPlaying = false,
   avatarMode = false,
   value,
   onChange,
