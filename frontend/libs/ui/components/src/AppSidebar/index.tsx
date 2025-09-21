@@ -1,5 +1,11 @@
-import { useState } from 'react';
-import { Sidebar, Menu, MenuItem, SubMenu, sidebarClasses } from 'react-pro-sidebar';
+import { useEffect, useState } from "react";
+import {
+  Sidebar,
+  Menu,
+  MenuItem,
+  SubMenu,
+  sidebarClasses,
+} from "react-pro-sidebar";
 
 export interface SidebarLink {
   label: React.ReactNode;
@@ -11,11 +17,11 @@ export interface SidebarLink {
 }
 
 export interface LanguageItem {
-  code: string;           // 'en' | 'he'
+  code: string; // 'en' | 'he'
   label: React.ReactNode; // visible label
   icon?: React.ReactNode; // optional flag/icon
   active?: boolean;
-  onClick: () => void;    // switch language
+  onClick: () => void; // switch language
   testId?: string;
 }
 
@@ -27,11 +33,9 @@ export interface AppSidebarProps {
     items: LanguageItem[];
   };
   toggle?: SidebarLink;
-  /* initial state only (the component manages the rest) */
-  defaultCollapsed?: boolean;
   /* notify parent when user toggles */
   onCollapsedChange?: (collapsed: boolean) => void;
-  dir?: 'ltr' | 'rtl';
+  dir?: "ltr" | "rtl";
   activePath?: string;
   onNavigate?: (path: string) => void;
   logoutItem?: {
@@ -46,17 +50,27 @@ export const AppSidebar = ({
   items,
   languages,
   toggle,
-  defaultCollapsed = false,
   onCollapsedChange,
-  dir = 'ltr',
+  dir = "ltr",
   activePath,
   onNavigate,
   logoutItem,
 }: AppSidebarProps) => {
-  const [collapsed, setCollapsed] = useState<boolean>(defaultCollapsed);
+  const [collapsed, setCollapsed] = useState<boolean>(
+    typeof window !== "undefined" ? window.innerWidth < 768 : false,
+  );
+
+  useEffect(() => {
+    const handleResize = () => {
+      setCollapsed(window.innerWidth < 768);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const handleToggle = () => {
-    setCollapsed(prev => {
+    setCollapsed((prev) => {
       const next = !prev;
       onCollapsedChange?.(next);
       return next;
@@ -103,12 +117,12 @@ export const AppSidebar = ({
       dir={dir}
       rootStyles={{
         [`.${sidebarClasses.container}`]: {
-          backgroundColor: '#f4f4f4',
-          borderRight: '1px solid #ddd',
-          height: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
+          backgroundColor: "#f4f4f4",
+          borderRight: "1px solid #ddd",
+          height: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
           direction: dir,
         },
       }}
@@ -116,16 +130,19 @@ export const AppSidebar = ({
       <Menu
         menuItemStyles={{
           button: ({ active }) => ({
-            color: active ? 'white' : '#333',
-            backgroundColor: active ? '#7c4dff' : 'transparent',
-            borderRadius: '8px',
-            margin: '4px 8px',
-            padding: '10px',
-            '& .ps-menu-icon': { color: active ? '#fff' : '#7c4dff' },
-            '&:hover': { backgroundColor: active ? '#6a40e6' : '#f0f0f0', color: active ? '#fff' : '#000' },
-            textTransform: 'capitalize',
+            color: active ? "white" : "#333",
+            backgroundColor: active ? "#7c4dff" : "transparent",
+            borderRadius: "8px",
+            margin: "4px 8px",
+            padding: "10px",
+            "& .ps-menu-icon": { color: active ? "#fff" : "#7c4dff" },
+            "&:hover": {
+              backgroundColor: active ? "#6a40e6" : "#f0f0f0",
+              color: active ? "#fff" : "#000",
+            },
+            textTransform: "capitalize",
           }),
-          label: { textAlign: dir === 'rtl' ? 'right' : 'left' },
+          label: { textAlign: dir === "rtl" ? "right" : "left" },
         }}
       >
         {toggle && (
@@ -139,7 +156,11 @@ export const AppSidebar = ({
         )}
 
         {languages?.items?.length ? (
-          <SubMenu label={languages.label} icon={languages.icon} data-testid="sidebar-languages">
+          <SubMenu
+            label={languages.label}
+            icon={languages.icon}
+            data-testid="sidebar-languages"
+          >
             {languages.items.map((lng) => (
               <MenuItem
                 key={lng.code}
@@ -161,17 +182,21 @@ export const AppSidebar = ({
         <Menu
           menuItemStyles={{
             button: {
-              color: '#333',
-              backgroundColor: 'transparent',
-              borderRadius: '8px',
-              margin: '4px 8px',
-              padding: '10px',
-              '&:hover': { backgroundColor: '#f0f0f0' },
-              textTransform: 'capitalize',
+              color: "#333",
+              backgroundColor: "transparent",
+              borderRadius: "8px",
+              margin: "4px 8px",
+              padding: "10px",
+              "&:hover": { backgroundColor: "#f0f0f0" },
+              textTransform: "capitalize",
             },
           }}
         >
-          <MenuItem icon={logoutItem.icon} onClick={logoutItem.onLogout} data-testid={logoutItem.testId}>
+          <MenuItem
+            icon={logoutItem.icon}
+            onClick={logoutItem.onLogout}
+            data-testid={logoutItem.testId}
+          >
             {logoutItem.label}
           </MenuItem>
         </Menu>
