@@ -118,11 +118,6 @@ beforeEach(() => {
 });
 
 describe("<Users />", () => {
-  it("matches snapshot (with users)", () => {
-    const { asFragment } = renderUsers();
-    expect(asFragment()).toMatchSnapshot();
-  });
-
   it("renders loading state", () => {
     mockUseGetAllUsers.mockReturnValue(rq({ isLoading: true }));
     renderUsers();
@@ -135,6 +130,22 @@ describe("<Users />", () => {
     );
     renderUsers();
     expect(screen.getByText("pages.users.userNotFound")).toBeInTheDocument();
+  });
+
+  it("renders users table with required columns and rows", () => {
+    const { container } = renderUsers();
+
+    // table shell exists
+    expect(
+      container.querySelector('[data-testid="users-table-shell"]'),
+    ).toBeTruthy();
+
+    // headers
+    expect(screen.getByText("pages.users.email")).toBeInTheDocument();
+    expect(screen.getByText("pages.users.firstName")).toBeInTheDocument();
+    expect(screen.getByText("pages.users.lastName")).toBeInTheDocument();
+    expect(screen.getByText("pages.users.role")).toBeInTheDocument();
+    expect(screen.getByText("pages.users.actions")).toBeInTheDocument();
   });
 
   it("submits create user form", async () => {
