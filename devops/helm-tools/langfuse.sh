@@ -116,9 +116,53 @@ echo "✅ Migrations applied."
 # --- Phase 1.6: seed admin user ---
 echo "🔐 Creating admin user: $ADMIN_EMAIL"
 
-# Use a pre-computed bcrypt hash for MySecurePass123! (12 rounds, $2a$ format for compatibility)
-# Generated using bcrypt with $2a$ format to match Langfuse signup behavior
-HASH='$2a$12$8vlIa5O1tChyYIAzzYkmUOe6UfemDCcgMZo1OeoyB9xAj2pdOcbF2'
+# Check if user already exists and get existing hash
+echo "� Checking if user exists: $ADMIN_EMAIL"
+
+EXISTING_HASH=$(kubectl run -n $NAMESPACE temp-check-user --image=postgres:16 --rm -i --restart=Never -- \
+  psql "host=$PG_HOST port=5432 dbname=langfuse-${ENVIRONMENT_NAME} user=postgres password=postgres sslmode=require" \
+  -t -c "SELECT password FROM users WHERE email = '$ADMIN_EMAIL';" 2>/dev/null | tr -d ' ' || echo "")
+
+# Always generate fresh hash for the provided password - ignore existing hash
+echo "🔐 Generating bcrypt hash for password: $ADMIN_PASSWORD"
+
+# Create a job to generate the hash to avoid kubectl output issues
+cat <<EOF | kubectl apply -f -
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: hash-generator
+  namespace: $NAMESPACE
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: hash-gen
+        image: python:3.11-alpine
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          pip install bcrypt >/dev/null 2>&1
+          python3 -c "
+          import bcrypt
+          password = '$ADMIN_PASSWORD'
+          salt = bcrypt.gensalt(rounds=12, prefix=b'2a')
+          hash_value = bcrypt.hashpw(password.encode('utf-8'), salt)
+          print('HASH:' + hash_value.decode('utf-8'))
+          "
+EOF
+
+kubectl wait --for=condition=complete job/hash-generator -n "$NAMESPACE" --timeout=60s
+HASH=$(kubectl logs job/hash-generator -n "$NAMESPACE" | grep "HASH:" | cut -d: -f2)
+kubectl delete job hash-generator -n "$NAMESPACE"
+
+if [ -z "$HASH" ] || [ ${#HASH} -lt 20 ]; then
+  echo "❌ Failed to generate password hash. Cannot proceed."
+  exit 1
+fi
+
+echo "✅ Generated bcrypt hash for password: $ADMIN_PASSWORD"
 
 echo "🔐 Setting password for admin user..."
 
@@ -135,6 +179,40 @@ kubectl run -n $NAMESPACE temp-ensure-user --image=postgres:16 --rm -i --restart
 
     SELECT 'User status:' as message, email, admin, email_verified IS NOT NULL as email_verified
     FROM users WHERE email = '$ADMIN_EMAIL';
+  "
+
+echo "🏢 Adding admin user to Default Organization..."
+
+kubectl run -n $NAMESPACE temp-add-org-membership --image=postgres:16 --rm -i --restart=Never -- \
+  psql "host=$PG_HOST port=5432 dbname=langfuse-${ENVIRONMENT_NAME} user=postgres password=postgres sslmode=require" \
+  -c "
+    -- Ensure Default Organization exists
+    INSERT INTO organizations (id, name, created_at, updated_at)
+    SELECT gen_random_uuid()::text, 'Default Organization', NOW(), NOW()
+    WHERE NOT EXISTS (SELECT 1 FROM organizations WHERE name = 'Default Organization');
+
+    -- Add admin user to Default Organization with ADMIN role
+    INSERT INTO organization_memberships (id, org_id, user_id, role, created_at, updated_at)
+    SELECT 
+        gen_random_uuid()::text as id,
+        o.id as org_id,
+        u.id as user_id,
+        'ADMIN' as role,
+        NOW() as created_at,
+        NOW() as updated_at
+    FROM users u, organizations o
+    WHERE u.email = '$ADMIN_EMAIL' 
+      AND o.name = 'Default Organization'
+      AND NOT EXISTS (
+          SELECT 1 FROM organization_memberships om 
+          WHERE om.user_id = u.id AND om.org_id = o.id
+      );
+
+    SELECT 'Membership created:' as message, u.email, om.role, o.name as organization
+    FROM organization_memberships om
+    JOIN users u ON om.user_id = u.id  
+    JOIN organizations o ON om.org_id = o.id
+    WHERE u.email = '$ADMIN_EMAIL';
   "
 
 echo "✅ Admin user created with password: $ADMIN_PASSWORD"
