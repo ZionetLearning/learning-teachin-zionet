@@ -27,7 +27,7 @@ spec:
         dapr.io/sidecar-memory-limit: "{{ .Values.global.dapr.sidecar.limits.memory }}"
     spec:
       {{- if .Values.global.imagePullSecret.enabled }}
-      serviceAccountName: {{ .Values.serviceAccount.name | default (printf "%s-serviceaccount" .Release.Namespace) }}
+      #serviceAccountName: {{ .Values.serviceAccount.name | default (printf "%s-serviceaccount" .Release.Namespace) }}
       imagePullSecrets:
         - name: {{ .Values.global.imagePullSecret.name }}
       {{- end }}

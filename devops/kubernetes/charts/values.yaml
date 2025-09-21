@@ -272,7 +272,7 @@ keda:
         responseTimeout: 60s  # Wait longer for pods to become ready
       targetPendingRequests: 1
 
-  serviceAccount:
-  create: false
-  name: ""
-  annotations: {}
+  # serviceAccount:
+  # create: false
+  # name: ""
+  # annotations: {}
