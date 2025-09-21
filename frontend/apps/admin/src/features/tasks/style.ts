@@ -8,5 +8,9 @@ export const useStyles = createUseStyles({
     padding: "1.5rem",
     background: "linear-gradient(135deg,#f7f9fc 0%, #eef2f7 100%)",
     height: "calc(100vh - 3rem)",
+    "@media (max-width: 700px)": {
+      flexDirection: "column",
+      overflowX: "auto",
+    },
   },
 });
