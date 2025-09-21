@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using AutoMapper;
 using DotQueue;
 using Manager.Models.Chat;
 using Manager.Models.ModelValidation;
@@ -12,15 +13,19 @@ public class ManagerSessionQueueHandler : IQueueHandler<SessionQueueMessage>
 {
     private readonly INotificationService _notificationService;
     private readonly ILogger<ManagerSessionQueueHandler> _logger;
+    private readonly IMapper _mapper;
     private readonly Dictionary<MessageSessionAction, Func<SessionQueueMessage, Func<Task>, IReadOnlyDictionary<string, string>?, CancellationToken, Task>> _handlers;
 
-    public ManagerSessionQueueHandler(INotificationService notificationService, ILogger<ManagerSessionQueueHandler> logger)
+    public ManagerSessionQueueHandler(
+        INotificationService notificationService,
+        ILogger<ManagerSessionQueueHandler> logger,
+        IMapper mapper)
     {
         _notificationService = notificationService;
         _logger = logger;
+        _mapper = mapper;
         _handlers = new Dictionary<MessageSessionAction, Func<SessionQueueMessage, Func<Task>, IReadOnlyDictionary<string, string>?, CancellationToken, Task>>
         {
-            // Dummy handlers for future actions
             [MessageSessionAction.ChatStream] = HandleStreamAIChatAnswerAsync,
         };
     }
@@ -69,14 +74,23 @@ public class ManagerSessionQueueHandler : IQueueHandler<SessionQueueMessage>
                     $"Validation failed for {nameof(AIChatResponse)}: {string.Join("; ", validationErrors)}");
             }
 
-            var userEvent = new UserEvent<AIChatStreamResponse>
+            _logger.LogInformation("Chat frame kind: {FrameKind}", message.Frame);
+
+            if (message.Frame == FrameKind.Last)
             {
-                EventType = EventType.ChatAiAnswer,
+                _logger.LogInformation("Final chat response received for request {RequestId}", chatResponse.RequestId);
+            }
+
+            var streamEvent = new StreamEvent<AIChatStreamResponse>
+            {
+                EventType = StreamEventType.ChatAiAnswer,
+                Stage = _mapper.Map<StreamEventStage>(message.Frame),
                 Payload = chatResponse,
+                SequenceNumber = message.Sequence,
+                RequestId = message.CorrelationId
             };
 
-            await _notificationService.SendEventAsync(userEvent.EventType, metadata.UserId, userEvent.Payload);
-
+            await _notificationService.SendStreamEventAsync(streamEvent, userId: metadata.UserId);
         }
         catch (NonRetryableException ex)
         {
