@@ -27,7 +27,7 @@ fi
 helm $ACTION langfuse langfuse/langfuse \
   --namespace "$NAMESPACE" \
   --set langfuse.replicas=0 \
-  --set langfuse.nextauth.url="https://teachin.westeurope.cloudapp.azure.com/langfuse" \
+  --set langfuse.nextauth.url="https://teachin.westeurope.cloudapp.azure.com" \
   --set langfuse.salt.secretKeyRef.name="langfuse-secrets" \
   --set langfuse.salt.secretKeyRef.key="SALT" \
   --set langfuse.nextauth.secret.secretKeyRef.name="langfuse-secrets" \
@@ -77,6 +77,8 @@ helm $ACTION langfuse langfuse/langfuse \
   --set-string langfuse.additionalEnv[5].value="true" \
   --set langfuse.additionalEnv[6].name="AUTH_DISABLE_SIGNUP" \
   --set-string langfuse.additionalEnv[6].value="true" \
+  --set langfuse.additionalEnv[7].name="NEXT_PUBLIC_BASE_PATH" \
+  --set-string langfuse.additionalEnv[7].value="/langfuse" \
   --timeout=5m
 
 echo "✅ Chart applied with web=0. Running Prisma migrations as a Job..."
@@ -227,6 +229,6 @@ kubectl rollout status deploy/langfuse-web -n "$NAMESPACE" --timeout=300s
 kubectl rollout status deploy/langfuse-worker -n "$NAMESPACE" --timeout=300s
 
 echo "🎉 Langfuse deployed successfully."
-echo "🔗 Access Langfuse at: https://teachin.westeurope.cloudapp.azure.com/langfuse"
+echo "🔗 Access Langfuse at: https://teachin.westeurope.cloudapp.azure.com"
 echo "👤 Admin login: $ADMIN_EMAIL / $ADMIN_PASSWORD"
 echo "ℹ️ Please change the temporary password after first login."
