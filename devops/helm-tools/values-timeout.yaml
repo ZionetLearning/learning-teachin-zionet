@@ -1,0 +1,3 @@
+interceptor:
+  tcpConnectTimeout: "30s"
+  responseHeaderTimeout: "30s"
