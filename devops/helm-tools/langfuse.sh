@@ -6,8 +6,12 @@ PG_HOST="dev-pg-zionet-learning.postgres.database.azure.com"
 ENVIRONMENT_NAME="${1:-dev}"
 ADMIN_EMAIL="${2:-admin@teachin.local}"
 ADMIN_PASSWORD="${3:-ChangeMe123!}"
+PG_USERNAME="${4:-postgres}"
+PG_PASSWORD="${5:-postgres}"
 
 echo "🎯 Deploying Langfuse into $NAMESPACE (DB suffix: $ENVIRONMENT_NAME)"
+echo "📊 PostgreSQL Host: $PG_HOST"
+echo "👤 Using PostgreSQL User: $PG_USERNAME"
 
 helm repo add langfuse https://langfuse.github.io/langfuse-k8s || true
 helm repo update
@@ -122,7 +126,7 @@ echo "🔐 Creating admin user: $ADMIN_EMAIL"
 echo "� Checking if user exists: $ADMIN_EMAIL"
 
 EXISTING_HASH=$(kubectl run -n $NAMESPACE temp-check-user --image=postgres:16 --rm -i --restart=Never -- \
-  psql "host=$PG_HOST port=5432 dbname=langfuse-${ENVIRONMENT_NAME} user=postgres password=postgres sslmode=require" \
+  psql "host=$PG_HOST port=5432 dbname=langfuse-${ENVIRONMENT_NAME} user=$PG_USERNAME password=$PG_PASSWORD sslmode=require" \
   -t -c "SELECT password FROM users WHERE email = '$ADMIN_EMAIL';" 2>/dev/null | tr -d ' ' || echo "")
 
 # Always generate fresh hash for the provided password - ignore existing hash
@@ -169,7 +173,7 @@ echo "✅ Generated bcrypt hash for password: $ADMIN_PASSWORD"
 echo "🔐 Setting password for admin user..."
 
 kubectl run -n $NAMESPACE temp-ensure-user --image=postgres:16 --rm -i --restart=Never -- \
-  psql "host=$PG_HOST port=5432 dbname=langfuse-${ENVIRONMENT_NAME} user=postgres password=postgres sslmode=require" \
+  psql "host=$PG_HOST port=5432 dbname=langfuse-${ENVIRONMENT_NAME} user=$PG_USERNAME password=$PG_PASSWORD sslmode=require" \
   -c "
     INSERT INTO users (id, name, email, password, admin, email_verified, created_at, updated_at)
     VALUES (gen_random_uuid()::text, 'Admin User', '$ADMIN_EMAIL', '$HASH', true, NOW(), NOW(), NOW())
@@ -186,7 +190,7 @@ kubectl run -n $NAMESPACE temp-ensure-user --image=postgres:16 --rm -i --restart
 echo "🏢 Adding admin user to Default Organization..."
 
 kubectl run -n $NAMESPACE temp-add-org-membership --image=postgres:16 --rm -i --restart=Never -- \
-  psql "host=$PG_HOST port=5432 dbname=langfuse-${ENVIRONMENT_NAME} user=postgres password=postgres sslmode=require" \
+  psql "host=$PG_HOST port=5432 dbname=langfuse-${ENVIRONMENT_NAME} user=$PG_USERNAME password=$PG_PASSWORD sslmode=require" \
   -c "
     -- Ensure Default Organization exists
     INSERT INTO organizations (id, name, created_at, updated_at)
