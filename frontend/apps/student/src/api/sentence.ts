@@ -5,7 +5,8 @@ import {
   EventType,
   SplitSentenceGeneratedPayload,
   UserEventUnion,
-} from "@app-providers";
+  SentenceItem,
+} from "@app-providers/types";
 
 import { useSignalR } from "@student/hooks";
 
@@ -13,6 +14,47 @@ export type SentenceRequest = {
   difficulty: 0 | 1 | 2;
   nikud: boolean;
   count: number;
+};
+
+export const useGenerateSentences = () => {
+  const { subscribe, status } = useSignalR();
+
+  return useMutation<SentenceItem[], Error, SentenceRequest>({
+    mutationKey: ["generateSentences", status],
+    mutationFn: async (requestBody) => {
+      if (status !== "connected") {
+        throw new Error("SignalR is not connected");
+      }
+      const sentencesPromise = new Promise<SentenceItem[]>(
+        (resolve, reject) => {
+          const timeout = setTimeout(() => {
+            off();
+            reject(new Error("Timeout waiting for SentenceGeneration event"));
+          }, 120_000);
+
+          const off = subscribe<{ sentences?: SentenceItem[] }>(
+            EventType.SentenceGeneration,
+            (payload) => {
+              const list = payload?.sentences ?? [];
+              if (list.length > 0) {
+                clearTimeout(timeout);
+                off();
+                resolve(list);
+              }
+            },
+          );
+        },
+      );
+
+      await axios.post(`${import.meta.env.VITE_AI_URL!}/sentence`, requestBody);
+
+      return sentencesPromise;
+    },
+    onError: (error) => {
+      console.error("Failed to fetch sentences:", error);
+      toast.error("Failed to fetch sentences. Please try again.");
+    },
+  });
 };
 
 // Hook for fetching split sentences

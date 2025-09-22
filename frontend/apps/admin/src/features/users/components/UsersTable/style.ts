@@ -34,7 +34,6 @@ export const useStyles = createUseStyles({
     display: "flex",
     flexDirection: "column",
     minHeight: 0,
-    overflow: "hidden",
   },
   tableShell: {
     flex: 1,
@@ -44,7 +43,6 @@ export const useStyles = createUseStyles({
     border: "1px solid #e5e7eb",
     borderRadius: 8,
     background: "#fff",
-    overflow: "hidden",
   },
   headerTable: {
     tableLayout: "fixed",
@@ -102,5 +100,16 @@ export const useStyles = createUseStyles({
     padding: "4px 12px",
     borderTop: "1px solid #e5e7eb",
     background: "#fff",
+  },
+  tableScrollX: {
+    overflowX: "auto",
+    WebkitOverflowScrolling: "touch",
+    "&::-webkit-scrollbar:horizontal": { height: 8 },
+    "&::-webkit-scrollbar-thumb": { borderRadius: 8 },
+    "& table": {
+      minWidth: 720, // desktop/tablet baseline
+      "@media (max-width: 900px)": { minWidth: 640 },
+      "@media (max-width: 600px)": { minWidth: 560 },
+    },
   },
 });

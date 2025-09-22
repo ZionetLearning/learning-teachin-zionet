@@ -2,22 +2,13 @@ import { createUseStyles } from "react-jss";
 
 export const useStyles = createUseStyles({
   container: {
-    minHeight: "100dvh",
+    height: "100vh",
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
-    padding: 16,
-    "@media (min-width: 600px)": {
-      paddingLeft: 32,
-      paddingRight: 32,
-    },
-    "@media (min-width: 900px)": {
-      paddingLeft: 64,
-      paddingRight: 64,
-    },
-    "@media (min-width: 1200px)": {
-      paddingLeft: 320,
-      paddingRight: 320,
+    padding: 24,
+    "@media (max-width: 700px)": {
+      padding: 12,
     },
   },
 
@@ -32,12 +23,18 @@ export const useStyles = createUseStyles({
   formCard: {
     border: "1px solid #e0e0e0",
     borderRadius: 24,
-    padding: 24,
+    padding: 16,
     backgroundColor: "#ffffff",
     maxWidth: 600,
     marginLeft: "auto",
     marginRight: "auto",
     width: "100%",
+    "@media (min-width: 600px)": {
+      padding: 24,
+    },
+    "@media (max-width: 700px)": {
+      width: "80%",
+    },
   },
 
   formHeader: {
@@ -45,7 +42,10 @@ export const useStyles = createUseStyles({
   },
 
   fieldContainer: {
-    marginBottom: 24,
+    marginBottom: 16,
+    "@media (min-width: 600px)": {
+      marginBottom: 24,
+    },
   },
 
   fieldLabel: {
@@ -154,5 +154,10 @@ export const useStyles = createUseStyles({
     marginTop: 24,
     display: "flex",
     gap: 8,
+    flexWrap: "wrap",
+    "@media (max-width: 600px)": {
+      flexDirection: "column",
+      gap: 12,
+    },
   },
 });

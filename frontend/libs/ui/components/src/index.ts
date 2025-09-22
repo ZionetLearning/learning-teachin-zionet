@@ -3,3 +3,7 @@ export * from "./AppSidebar";
 export * from "./Profile";
 export * from "./layout";
 export * from "./Dropdown";
+export * from "./ErrorFallback";
+export * from "./modals";
+export * from "./GameSettings";
+export * from "./GameSetupPanel";

@@ -4,17 +4,15 @@ import { useStyles } from "./style";
 import { Speaker } from "../Speaker";
 import { useHebrewSentence } from "../../hooks";
 import { useAvatarSpeech } from "@student/hooks";
-import { DifficultyLevel } from "@student/types";
+import { ChosenWordsArea, WordsBank, SideButtons } from "../";
 import {
-  GameConfigModal,
   GameConfig,
+  GameConfigModal,
   GameOverModal,
-  WelcomeScreen,
-  GameHeaderSettings,
-  ChosenWordsArea,
-  WordsBank,
-  SideButtons,
-} from "../";
+  GameSettings,
+  GameSetupPanel,
+} from "@ui-components";
+import { getDifficultyLabel } from "@student/features";
 
 export const Game = () => {
   const { t, i18n } = useTranslation();
@@ -150,7 +148,15 @@ export const Game = () => {
   };
 
   const handleChooseWord = (word: string) => {
-    setShuffledSentence((prev) => prev.filter((w) => w !== word));
+    setShuffledSentence((prev) => {
+      const index = prev.indexOf(word);
+      if (index > -1) {
+        const newArray = [...prev];
+        newArray.splice(index, 1); // Remove only the first occurrence
+        return newArray;
+      }
+      return prev;
+    });
     setChosen((prev) => [...prev, word]);
   };
 
@@ -167,35 +173,24 @@ export const Game = () => {
   const shuffleDistinct = (words: string[]) => {
     if (words.length < 2) return [...words];
 
-    const original = words.join(" ");
-    for (let i = 0; i < 5; i++) {
-      const arr = [...words];
-      for (let j = arr.length - 1; j > 0; j--) {
-        const k = Math.floor(Math.random() * (j + 1));
-        [arr[j], arr[k]] = [arr[k], arr[j]];
-      }
-      if (arr.join(" ") !== original) return arr;
-    }
-    return [...words].sort(() => Math.random() - 0.5);
-  };
+    const shuffled = [...words];
 
-  const getDifficultyLabel = (difficulty: DifficultyLevel) => {
-    switch (difficulty) {
-      case 0:
-        return t("pages.wordOrderGame.difficulty.easy");
-      case 1:
-        return t("pages.wordOrderGame.difficulty.medium");
-      case 2:
-        return t("pages.wordOrderGame.difficulty.hard");
-      default:
-        return t("pages.wordOrderGame.difficulty.medium");
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
+
+    if (shuffled.join(" ") === words.join(" ") && words.length > 1) {
+      [shuffled[0], shuffled[1]] = [shuffled[1], shuffled[0]];
+    }
+
+    return shuffled;
   };
 
   // Show welcome screen if game hasn't started yet
   if (!gameStarted || !gameConfig) {
     return (
-      <WelcomeScreen
+      <GameSetupPanel
         configModalOpen={configModalOpen}
         setConfigModalOpen={setConfigModalOpen}
         handleConfigConfirm={handleConfigConfirm}
@@ -208,7 +203,7 @@ export const Game = () => {
     <>
       <div className={classes.gameContainer}>
         {/* Game Header with Settings */}
-        <GameHeaderSettings
+        <GameSettings
           gameConfig={gameConfig}
           currentSentenceIndex={currentSentenceIndex}
           sentenceCount={sentenceCount}

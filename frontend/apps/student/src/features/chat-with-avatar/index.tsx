@@ -1,5 +1,8 @@
 import { useEffect, useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { IconButton } from "@mui/material";
+import VolumeUpIcon from "@mui/icons-material/VolumeUp";
+import VolumeOffIcon from "@mui/icons-material/VolumeOff";
 import { useAvatarSpeech, useChat } from "@student/hooks";
 import { ReactChatElements } from "@student/components";
 import { ChatHistory } from "./components";
@@ -10,9 +13,9 @@ import { useStyles } from "./style";
 export const ChatWithAvatar = () => {
   const classes = useStyles();
   const { t, i18n } = useTranslation();
-  const { 
-    sendMessage, 
-    loading, 
+  const {
+    sendMessage,
+    loading,
     messages,
     allChats,
     isLoadingChats,
@@ -21,33 +24,54 @@ export const ChatWithAvatar = () => {
     loadChatHistory,
     loadHistoryIntoMessages,
     startNewChat,
-    threadId
+    threadId,
   } = useChat();
   const [text, setText] = useState("");
   const [showSidebar, setShowSidebar] = useState(false);
   const [lastHistoryLoadTime, setLastHistoryLoadTime] = useState<number>(0);
-  const { currentVisemeSrc, speak } = useAvatarSpeech({ lipsArray });
+  const { currentVisemeSrc, speak, stop, isPlaying, toggleMute, isMuted } =
+    useAvatarSpeech({ lipsArray });
   const lastSpokenTextRef = useRef<string | null>(null);
-  const isRTL = i18n.language === 'he';
+  const currentThreadIdRef = useRef<string | undefined>(null); // Track current thread
+  const isRTL = i18n.language === "he";
 
+  // Track thread changes to prevent speaking old messages
+  useEffect(() => {
+    if (threadId !== currentThreadIdRef.current) {
+      currentThreadIdRef.current = threadId;
+      lastSpokenTextRef.current = null; // Reset when thread changes
+    }
+  }, [threadId]);
+
+  // Fixed speech effect with better conditions
   useEffect(() => {
     const now = Date.now();
     const isRecentHistoryLoad = now - lastHistoryLoadTime < 1000;
 
     if (isRecentHistoryLoad) return;
-    
+    if (messages.length === 0) return; // Don't speak if no messages
+    if (isMuted) return;
     const last = messages[messages.length - 1];
+
     if (
       last?.position === "left" &&
       last.text &&
       last.text !== lastSpokenTextRef.current &&
-      messages.length > 0
+      threadId === currentThreadIdRef.current
     ) {
-      speak(last.text);
-      lastSpokenTextRef.current = last.text;
+      // Always stop current speech before speaking new message
+      if (isPlaying) {
+        stop().then(() => {
+          speak(last.text);
+          lastSpokenTextRef.current = last.text;
+        });
+      } else {
+        speak(last.text);
+        lastSpokenTextRef.current = last.text;
+      }
     }
-  }, [messages, speak, lastHistoryLoadTime]);
-  
+  }, [messages, speak, stop, lastHistoryLoadTime, isPlaying, threadId, isMuted]);
+
   useEffect(() => {
     if (chatHistory && chatHistory.messages.length > 0) {
       setLastHistoryLoadTime(Date.now());
@@ -55,21 +79,69 @@ export const ChatWithAvatar = () => {
     }
   }, [chatHistory, loadHistoryIntoMessages]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!text.trim()) return;
+
+    // Stop current speech when user sends a new message
+    if (isPlaying) {
+      await stop();
+    }
+
     sendMessage(text);
     setText("");
   };
 
-  const handleChatSelect = (chatId: string) => {
+  const handlePlay = async () => {
+    if (isMuted) return;
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage?.position === "left" && lastMessage.text) {
+      if (isPlaying) {
+        await stop();
+      } else {
+        await speak(lastMessage.text);
+        lastSpokenTextRef.current = lastMessage.text;
+      }
+    }
+  };
+
+  const handleStop = async () => {
+    await stop();
+  };
+
+  const handleMuteToggle = async () => {
+    // If currently playing and about to mute, stop the speech
+    if (!isMuted && isPlaying) {
+      await stop();
+    }
+    toggleMute();
+  };
+
+  const handleChatSelect = async (chatId: string) => {
     setLastHistoryLoadTime(Date.now());
+
+    // Stop current speech when switching chats
+    if (isPlaying) {
+      await stop();
+    }
+
+    // Clear spoken text reference for new chat
     lastSpokenTextRef.current = null;
+    currentThreadIdRef.current = null; // Will be updated by useEffect
+
     loadChatHistory(chatId);
     setShowSidebar(false);
   };
 
-  const handleNewChat = () => {
+  const handleNewChat = async () => {
+    // Stop current speech when starting new chat
+    if (isPlaying) {
+      await stop();
+    }
+
+    // Clear references for new chat
     lastSpokenTextRef.current = null;
+    currentThreadIdRef.current = null; // Will be updated by useEffect
+
     startNewChat();
     setShowSidebar(false);
   };
@@ -83,7 +155,7 @@ export const ChatWithAvatar = () => {
   };
 
   return (
-    <div className={classes.chatWrapper} dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className={classes.chatWrapper} dir={isRTL ? "rtl" : "ltr"}>
       <ChatHistory
         allChats={allChats}
         isLoadingChats={isLoadingChats}
@@ -96,9 +168,21 @@ export const ChatWithAvatar = () => {
         onCloseSidebar={handleCloseSidebar}
       />
 
-      {/* Main Chat Area */}
-      <div className={`${classes.mainContent} ${showSidebar ? classes.mainContentShifted : ''}`}>
-        {/* Avatar Section */}
+      <div
+        className={`${classes.mainContent} ${showSidebar ? classes.mainContentShifted : ""}`}
+      >
+        <IconButton
+          onClick={handleMuteToggle}
+          className={`${classes.muteButton} ${isMuted ? classes.muteButtonMuted : classes.muteButtonUnmuted}`}
+          aria-label={
+            isMuted ? t("pages.chatAvatar.unmute") : t("pages.chatAvatar.mute")
+          }
+          title={
+            isMuted ? t("pages.chatAvatar.unmute") : t("pages.chatAvatar.mute")
+          }
+        >
+          {isMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}
+        </IconButton>
         <div className={classes.wrapper}>
           <img
             src={avatar}
@@ -111,17 +195,18 @@ export const ChatWithAvatar = () => {
             className={classes.lipsImage}
           />
         </div>
-        
-        {/* Chat Messages and Input */}
+
         <div className={classes.chatElementsWrapper}>
           <ReactChatElements
             loading={loading}
+            isPlaying={isPlaying}
             messages={messages}
             avatarMode
             value={text}
             onChange={setText}
             handleSendMessage={handleSend}
-            handlePlay={() => speak(lastSpokenTextRef.current ?? "")}
+            handlePlay={handlePlay}
+            handleStop={handleStop}
           />
         </div>
       </div>
