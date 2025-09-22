@@ -52,5 +52,5 @@ echo "Installing KEDA HTTP Add-on..."
 helm upgrade --install keda-http kedacore/keda-add-ons-http \
     --namespace "$KEDA_NAMESPACE" \
     --set operator.keda.enabled=false \
-    -f values-timeouts.yaml \
+    -f values-timeout.yaml \
     --wait --timeout 300s
