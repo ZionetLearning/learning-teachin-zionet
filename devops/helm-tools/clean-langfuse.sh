@@ -31,6 +31,9 @@ kubectl delete deploy,sts,po -l app.kubernetes.io/instance=langfuse -n "$NAMESPA
 echo "🚮 Deleting ingress..."
 kubectl delete ingress langfuse-ingress -n "$NAMESPACE" --ignore-not-found
 
+
+#kubectl run -n devops-tools temp-delete-all-users --image=postgres:16 --rm -i --restart=Never -- psql "host=dev-pg-zionet-learning.postgres.database.azure.com port=5432 dbname=langfuse-lang user=postgres password=postgres sslmode=require" -c "DELETE FROM users;"
+
 echo "✅ Cleanup complete."
 
 # 7. Show what's left
