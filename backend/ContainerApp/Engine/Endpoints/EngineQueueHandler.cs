@@ -24,6 +24,8 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
     private readonly IAiReplyPublisher _publisher;
     private readonly IAccessorClient _accessorClient;
     private readonly IChatTitleService _chatTitleService;
+    private readonly ISentencesService _claudeService;
+
     protected override MessageAction GetAction(Message message) => message.ActionName;
 
     protected override void Configure(RouteBuilder routes) => routes
@@ -40,6 +42,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         IAccessorClient accessorClient,
         ISentencesService sentencesService,
         IChatTitleService chatTitleService,
+        [FromKeyedServices("claude")] ISentencesService claudeService,
         ILogger<EngineQueueHandler> logger) : base(logger)
     {
         _daprClient = daprClient;
@@ -49,6 +52,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         _chatTitleService = chatTitleService;
         _logger = logger;
         _sentencesService = sentencesService;
+        _claudeService = claudeService;
     }
 
     private async Task HandleCreateTaskAsync(Message message, IReadOnlyDictionary<string, string>? metadata, Func<Task> renewLock, CancellationToken cancellationToken)
@@ -377,9 +381,10 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
             PayloadValidation.ValidateSentenceGenerationRequest(payload, _logger);
 
             _logger.LogDebug("Processing sentence generation");
-            var response = await _sentencesService.GenerateAsync(payload, cancellationToken);
+            //var response = await _sentencesService.GenerateAsync(payload, userInterests, cancellationToken);
+            var response1 = await _claudeService.GenerateAsync(payload, userInterests, cancellationToken);
             var userId = payload.UserId;
-            await _publisher.SendGeneratedMessagesAsync(userId.ToString(), response, message.ActionName, cancellationToken);
+            await _publisher.SendGeneratedMessagesAsync(userId.ToString(), response1, message.ActionName, cancellationToken);
         }
         catch (NonRetryableException ex)
         {

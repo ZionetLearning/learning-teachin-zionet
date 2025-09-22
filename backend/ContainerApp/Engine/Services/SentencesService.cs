@@ -7,6 +7,12 @@ using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
 
 namespace Engine.Services;
 
+// hebrew prompt [v] => most of llm working better with english prompts and hebrew output
+// Different AI models [v] 
+// retries []
+// try - catch []
+// max time to wait for response for the frontend []
+
 public class SentencesService : ISentencesService
 {
     private readonly Kernel _genKernel;
@@ -30,8 +36,7 @@ public class SentencesService : ISentencesService
         _mediumWords = new(() => LoadList(MediumPath));
         _hardWords = new(() => LoadList(HardPath));
     }
-
-    public async Task<SentenceResponse> GenerateAsync(SentenceRequest req, CancellationToken ct = default)
+    public async Task<SentenceResponse> GenerateAsync(SentenceRequest req, List<string> userInterests, CancellationToken ct = default)
     {
         _log.LogInformation("Inside sentence generator service");
 
@@ -54,6 +59,19 @@ public class SentencesService : ISentencesService
             ["count"] = req.Count.ToString(System.Globalization.CultureInfo.InvariantCulture),
             ["hints"] = hintsStr
         };
+
+        // Add user interest with 50% probability
+        if (userInterests != null && userInterests.Count > 0)
+        //if (userInterests != null && userInterests.Count > 0 && Random.Shared.NextDouble() < 0.5)
+        {
+            var selectedInterest = userInterests[Random.Shared.Next(userInterests.Count)];
+            args["interest"] = selectedInterest;
+            _log.LogInformation("Injecting user interest into sentence generation: {Interest}", selectedInterest);
+        }
+        else
+        {
+            args["interest"] = string.Empty;
+        }
 
         var result = await _genKernel.InvokeAsync(func, args, ct);
         var json = result.GetValue<string>();

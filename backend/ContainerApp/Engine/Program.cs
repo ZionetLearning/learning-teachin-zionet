@@ -35,6 +35,8 @@ builder.Services.AddScoped<IChatAiService, ChatAiService>();
 builder.Services.AddScoped<IAiReplyPublisher, AiReplyPublisher>();
 builder.Services.AddScoped<IAccessorClient, AccessorClient>();
 builder.Services.AddScoped<ISentencesService, SentencesService>();
+// Register Claude-backed service with key "claude"
+builder.Services.AddKeyedScoped<ISentencesService, ClaudeSentenceGeneratorService>("claude");
 builder.Services.AddSingleton<IRetryPolicyProvider, RetryPolicyProvider>();
 builder.Services.AddSingleton<IRetryPolicy, RetryPolicy>();
 builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
