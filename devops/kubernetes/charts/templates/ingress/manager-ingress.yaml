@@ -23,8 +23,8 @@ spec:
     - host: "{{ .Values.manager.ingress.host }}"
       http:
         paths:
-          - path: /api/{{ .Release.Namespace }}
-            pathType: Prefix
+          - path: "{{ printf "%s/%s(/|$)(.*)" .Values.manager.ingress.basePath .Release.Namespace }}"
+            pathType: ImplementationSpecific
             backend:
               service:
                 {{- if .Values.keda.enabled }}

@@ -6,7 +6,7 @@ metadata:
   namespace: {{ include "app.namespace" . }}
 spec:
   type: ExternalName
-  externalName: keda-add-ons-http-interceptor-proxy.keda.svc.cluster.local
+  externalName: keda-add-ons-http-interceptor-proxy.{{ .Release.Namespace }}.svc.cluster.local
   ports:
     - port: 8080
       targetPort: 8080
