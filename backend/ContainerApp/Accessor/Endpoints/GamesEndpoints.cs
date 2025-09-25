@@ -135,8 +135,8 @@ public static class GamesEndpoints
     {
         try
         {
-            await gameService.SaveGeneratedSentenceAsync(dto, ct);
-            return Results.Ok();
+            var attemptId = await gameService.SaveGeneratedSentenceAsync(dto, ct);
+            return Results.Ok(attemptId);
         }
         catch (Exception ex)
         {

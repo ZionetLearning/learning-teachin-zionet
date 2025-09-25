@@ -286,7 +286,7 @@ public class GameService : IGameService
         }
     }
 
-    public async Task SaveGeneratedSentenceAsync(GeneratedSentenceDto dto, CancellationToken ct)
+    public async Task<Guid> SaveGeneratedSentenceAsync(GeneratedSentenceDto dto, CancellationToken ct)
     {
         try
         {
@@ -307,6 +307,8 @@ public class GameService : IGameService
             await _db.SaveChangesAsync(ct);
 
             _logger.LogInformation("Generated sentence saved successfully. AttemptId={AttemptId}, StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}", attempt.AttemptId, dto.StudentId, dto.GameType, dto.Difficulty);
+
+            return attempt.AttemptId;
         }
         catch (OperationCanceledException)
         {

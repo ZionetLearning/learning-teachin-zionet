@@ -780,13 +780,13 @@ public class AccessorClient(
         }
     }
 
-    public async Task SaveGeneratedSentenceAsync(GeneratedSentenceDto dto, CancellationToken ct)
+    public async Task<Guid> SaveGeneratedSentenceAsync(GeneratedSentenceDto dto, CancellationToken ct)
     {
         try
         {
             _logger.LogInformation("Saving generated sentence for StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}", dto.StudentId, dto.GameType, dto.Difficulty);
 
-            await _daprClient.InvokeMethodAsync(
+            var attemptId = await _daprClient.InvokeMethodAsync<GeneratedSentenceDto, Guid>(
                 HttpMethod.Post,
                 AppIds.Accessor,
                 "games-accessor/generated-sentence",
@@ -794,7 +794,8 @@ public class AccessorClient(
                 cancellationToken: ct
             );
 
-            _logger.LogInformation("Generated sentence saved for StudentId={StudentId}", dto.StudentId);
+            _logger.LogInformation("Generated sentence saved for StudentId={StudentId} with AttemptId={AttemptId}", dto.StudentId, attemptId);
+            return attemptId;
         }
         catch (Exception ex)
         {

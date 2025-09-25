@@ -252,9 +252,18 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
                 CorrectAnswer = split.Sentences.FirstOrDefault()?.Words ?? new List<string>() // <--- FIX
             };
 
-            await _accessorClient.SaveGeneratedSentenceAsync(dto, cancellationToken);
+            var attemptId = await _accessorClient.SaveGeneratedSentenceAsync(dto, cancellationToken);
 
-            await _notificationService.SendEventAsync(EventType.SplitSentenceGeneration, userId, split);
+            _logger.LogInformation("Generated AttemptId={AttemptId}", attemptId);
+
+            await _notificationService.SendEventAsync(
+                EventType.SplitSentenceGeneration,
+                userId,
+                new
+                {
+                    SentenceId = attemptId,
+                    Split = split
+                });
         }
         catch (NonRetryableException ex)
         {
