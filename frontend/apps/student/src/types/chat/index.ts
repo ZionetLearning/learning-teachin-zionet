@@ -33,3 +33,18 @@ export type ChatHistory = {
   chatType: string;
   messages: ChatMessage[];
 };
+
+export type AIChatStreamResponse = {
+  requestId: string;
+  threadId: string;
+  userId: string;
+  chatName: string;
+  delta?: string;         // incremental chunk of assistant reply
+  sequence: number;       // ordering
+  stage: "First" | "Next" | "Last";
+  isFinal: boolean;
+  elapsedMs: number;
+  toolCall?: string;
+  toolResult?: string;
+};
+  
