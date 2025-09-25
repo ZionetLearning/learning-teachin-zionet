@@ -1,3 +1,4 @@
+using Accessor.Constants;
 using Accessor.DB;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,6 +22,7 @@ public class DatabaseInitializer
         var conn = _dbContext.Database.GetDbConnection();
         await conn.OpenAsync();
 
+        // Lock to avoid concurrent migration attempts
         await using (var cmd = conn.CreateCommand())
         {
             cmd.CommandText = "SELECT pg_advisory_lock(727274);";
@@ -29,8 +31,49 @@ public class DatabaseInitializer
 
         try
         {
+            // Check if EF thinks migrations are already applied
+            var appliedMigrations = await _dbContext.Database.GetAppliedMigrationsAsync();
+
+            if (!appliedMigrations.Any())
+            {
+                _logger.LogWarning("No EF migrations found in __EFMigrationsHistory. Checking for existing tables...");
+
+                // Check if key table already exists (e.g., Users)
+                await using var checkTableCommand = conn.CreateCommand();
+                checkTableCommand.CommandText = EfMigrationConstants.CheckIfAnchorTableExistsSql;
+
+                var tableExists = (bool)(await checkTableCommand.ExecuteScalarAsync() ?? false);
+
+                if (tableExists)
+                {
+                    _logger.LogWarning("Tables exist but no migrations recorded. Seeding fake initial migration...");
+
+                    await using var insertCommand = conn.CreateCommand();
+                    insertCommand.CommandText = EfMigrationConstants.InsertInitialMigrationSql;
+
+                    var migrationIdParam = insertCommand.CreateParameter();
+                    migrationIdParam.ParameterName = "@migrationId";
+                    migrationIdParam.Value = EfMigrationConstants.InitialMigrationId;
+                    insertCommand.Parameters.Add(migrationIdParam);
+
+                    var versionParam = insertCommand.CreateParameter();
+                    versionParam.ParameterName = "@version";
+                    versionParam.Value = EfMigrationConstants.EfCoreVersion;
+                    insertCommand.Parameters.Add(versionParam);
+
+                    await insertCommand.ExecuteNonQueryAsync();
+
+                    _logger.LogInformation("Fake migration inserted: {MigrationId}", EfMigrationConstants.InitialMigrationId);
+                }
+            }
+            // Apply real pending migrations
             await _dbContext.Database.MigrateAsync();
             _logger.LogInformation("Database migration completed.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Database migration failed.");
+            throw;
         }
         finally
         {
