@@ -49,7 +49,7 @@ install_keda_http() {
         --set interceptor.kubernetes.watchNamespace="$target_namespace" \
         --set interceptor.kubernetes.interceptorService.namespaceOverride="$target_namespace" \
         --set scaler.kubernetes.kedaNamespace="$KEDA_CORE_NAMESPACE" \
-        --skip-crds=true
+        --skip-crds=true \
         -f values-timeout.yaml \
         --wait --timeout 300s
     
