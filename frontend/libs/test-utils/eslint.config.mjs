@@ -39,6 +39,9 @@ export default tseslint.config([
     rules: {
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",
+      "@typescript-eslint/triple-slash-reference": "off",
+      "no-useless-escape": "off",
+      "no-empty": "off",
     },
   },
 
