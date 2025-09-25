@@ -1,6 +1,7 @@
 using Accessor.Constants;
 using Accessor.DB;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace Accessor.Services;
 
@@ -19,54 +20,54 @@ public class DatabaseInitializer
     {
         _logger.LogInformation("Applying EF Core migrations...");
 
-        var conn = _dbContext.Database.GetDbConnection();
+        await using var conn = (NpgsqlConnection)_dbContext.Database.GetDbConnection();
         await conn.OpenAsync();
 
         // Lock to avoid concurrent migration attempts
-        await using (var cmd = conn.CreateCommand())
+        await using (var lockCmd = conn.CreateCommand())
         {
-            cmd.CommandText = "SELECT pg_advisory_lock(727274);";
-            await cmd.ExecuteNonQueryAsync();
+            lockCmd.CommandText = "SELECT pg_advisory_lock(727274);";
+            await lockCmd.ExecuteNonQueryAsync();
         }
 
         try
         {
-            // Check if EF thinks migrations are already applied
             var appliedMigrations = await _dbContext.Database.GetAppliedMigrationsAsync();
 
             if (!appliedMigrations.Any())
             {
                 _logger.LogWarning("No EF migrations found in __EFMigrationsHistory. Checking for existing tables...");
 
-                // Check if key table already exists (e.g., Users)
-                await using var checkTableCommand = conn.CreateCommand();
-                checkTableCommand.CommandText = EfMigrationConstants.CheckIfAnchorTableExistsSql;
+                // Check if anchor table exists
+                await using var checkCmd = conn.CreateCommand();
+                checkCmd.CommandText = EfMigrationConstants.CheckIfAnchorTableExistsSql;
 
-                var tableExists = (bool)(await checkTableCommand.ExecuteScalarAsync() ?? false);
+                var tableExists = (bool)(await checkCmd.ExecuteScalarAsync() ?? false);
 
                 if (tableExists)
                 {
                     _logger.LogWarning("Tables exist but no migrations recorded. Seeding fake initial migration...");
 
-                    await using var insertCommand = conn.CreateCommand();
-                    insertCommand.CommandText = EfMigrationConstants.InsertInitialMigrationSql;
+                    await using var insertCmd = conn.CreateCommand();
+                    insertCmd.CommandText = EfMigrationConstants.InsertInitialMigrationSql;
 
-                    var migrationIdParam = insertCommand.CreateParameter();
+                    var migrationIdParam = insertCmd.CreateParameter();
                     migrationIdParam.ParameterName = "@migrationId";
                     migrationIdParam.Value = EfMigrationConstants.InitialMigrationId;
-                    insertCommand.Parameters.Add(migrationIdParam);
+                    insertCmd.Parameters.Add(migrationIdParam);
 
-                    var versionParam = insertCommand.CreateParameter();
+                    var versionParam = insertCmd.CreateParameter();
                     versionParam.ParameterName = "@version";
                     versionParam.Value = EfMigrationConstants.EfCoreVersion;
-                    insertCommand.Parameters.Add(versionParam);
+                    insertCmd.Parameters.Add(versionParam);
 
-                    await insertCommand.ExecuteNonQueryAsync();
+                    await insertCmd.ExecuteNonQueryAsync();
 
                     _logger.LogInformation("Fake migration inserted: {MigrationId}", EfMigrationConstants.InitialMigrationId);
                 }
             }
-            // Apply real pending migrations
+
+            // Let EF manage the rest of the connection work
             await _dbContext.Database.MigrateAsync();
             _logger.LogInformation("Database migration completed.");
         }
@@ -77,11 +78,11 @@ public class DatabaseInitializer
         }
         finally
         {
-            await using (var unlock = conn.CreateCommand())
-            {
-                unlock.CommandText = "SELECT pg_advisory_unlock(727274);";
-                await unlock.ExecuteNonQueryAsync();
-            }
+            await using var unlockCmd = conn.CreateCommand();
+            unlockCmd.CommandText = "SELECT pg_advisory_unlock(727274);";
+            await unlockCmd.ExecuteNonQueryAsync();
+
+            await conn.CloseAsync();
         }
     }
 }
