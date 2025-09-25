@@ -54,3 +54,7 @@ accessor:
     tag: "1.0.0"
   env:
     ASPNETCORE_URLS: "http://+:5003"
+
+# Langfuse Configuration (disabled in prod)
+langfuse:
+  enabled: false
