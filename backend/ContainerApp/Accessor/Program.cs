@@ -122,10 +122,16 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 
 var app = builder.Build();
 
+// 1. Run DB initializer (new scope)
 using (var scope = app.Services.CreateScope())
 {
     var initializer = scope.ServiceProvider.GetRequiredService<DatabaseInitializer>();
     await initializer.InitializeAsync();
+}
+
+// 2. Run prompt initializer (separate scope to get fresh DbContext)
+using (var scope = app.Services.CreateScope())
+{
     var promptStartup = scope.ServiceProvider.GetRequiredService<IPromptService>();
     await promptStartup.InitializeDefaultPromptsAsync();
 }
