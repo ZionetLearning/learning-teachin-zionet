@@ -68,8 +68,21 @@ public class DatabaseInitializer
             }
 
             // Let EF manage the rest of the connection work
-            await _dbContext.Database.MigrateAsync();
-            _logger.LogInformation("Database migration completed.");
+            //await _dbContext.Database.MigrateAsync();
+            //_logger.LogInformation("Database migration completed.");
+
+            // FIX: only run MigrateAsync if there are real pending migrations
+            var pendingMigrations = await _dbContext.Database.GetPendingMigrationsAsync();
+            if (pendingMigrations.Any())
+            {
+                _logger.LogInformation("Applying {Count} pending migrations...", pendingMigrations.Count());
+                await _dbContext.Database.MigrateAsync();
+                _logger.LogInformation("Database migration completed.");
+            }
+            else
+            {
+                _logger.LogInformation("No pending migrations to apply.");
+            }
         }
         catch (Exception ex)
         {
