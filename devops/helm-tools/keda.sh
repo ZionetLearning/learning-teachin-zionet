@@ -37,7 +37,7 @@ helm upgrade --install "$KEDA_HTTP_RELEASE" kedacore/keda-add-ons-http \
   --namespace "$KEDA_HTTP_NAMESPACE" \
   --set operator.keda.enabled=false \
   --set scaler.kubernetes.kedaNamespace="$KEDA_CORE_NAMESPACE" \
-  --set interceptor.kubernetes.watchNamespace="$WATCH_NAMESPACES" \
+  --set interceptor.kubernetes.watchNamespace="*" \
   --wait --timeout 300s
 
 echo "=== Verification ==="
