@@ -42,6 +42,14 @@ install_keda_http() {
     # Create target namespace if it doesn't exist
     kubectl create namespace "$target_namespace" --dry-run=client -o yaml | kubectl apply -f -
     
+    # Update ownership annotations/labels on existing CRD if it exists
+    if kubectl get crd httpscaledobjects.http.keda.sh &>/dev/null; then
+        echo "Updating ownership metadata for httpscaledobjects.http.keda.sh"
+        kubectl annotate crd httpscaledobjects.http.keda.sh meta.helm.sh/release-name=keda-http --overwrite
+        kubectl annotate crd httpscaledobjects.http.keda.sh meta.helm.sh/release-namespace="$target_namespace" --overwrite
+        kubectl label crd httpscaledobjects.http.keda.sh app.kubernetes.io/managed-by=Helm --overwrite
+    fi
+    
     # Install KEDA HTTP Add-on
     helm upgrade --install keda-http kedacore/keda-add-ons-http \
         --namespace "$target_namespace" \
