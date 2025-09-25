@@ -1,4 +1,4 @@
-import { locateUserRowByEmail, addCreatedEmail } from "../support/commands";
+import { locateUserRowByEmail, addCreatedEmail } from "@test-utils/cypress";
 
 describe("Users Page Flow (admin app @4002)", () => {
   const TEST_EMAIL = "e2e_users_fixed_user@example.com";
@@ -158,14 +158,16 @@ describe("Users Page Flow (admin app @4002)", () => {
     createDeterministicUser(TEST_EMAIL);
     const updatedEmail = UPDATED_EMAIL;
     addCreatedEmail(updatedEmail);
-    locateUserRowByEmail(TEST_EMAIL).then((rowOrNull) => {
-      expect(rowOrNull, "should locate created row").to.exist;
-      cy.wrap(rowOrNull!).within(() => {
-        cy.get('[data-testid="users-update-btn"]').click();
-        cy.get('[data-testid="users-edit-email"]').clear().type(updatedEmail);
-        cy.get('[data-testid="users-edit-save"]').click();
-      });
-    });
+    locateUserRowByEmail(TEST_EMAIL).then(
+      (rowOrNull: JQuery<HTMLElement> | null) => {
+        expect(rowOrNull, "should locate created row").to.exist;
+        cy.wrap(rowOrNull!).within(() => {
+          cy.get('[data-testid="users-update-btn"]').click();
+          cy.get('[data-testid="users-edit-email"]').clear().type(updatedEmail);
+          cy.get('[data-testid="users-edit-save"]').click();
+        });
+      },
+    );
     cy.wait("@updateUser");
     cy.wait("@getUsers");
     searchFor(updatedEmail);
@@ -176,13 +178,15 @@ describe("Users Page Flow (admin app @4002)", () => {
   it("can delete a newly created user (deterministic)", () => {
     deleteUserIfExistsByEmail(TEST_EMAIL);
     createDeterministicUser(TEST_EMAIL);
-    locateUserRowByEmail(TEST_EMAIL).then((rowOrNull) => {
-      expect(rowOrNull, "row to delete should be found").to.exist;
-      cy.on("window:confirm", () => true);
-      cy.wrap(rowOrNull!)
-        .find('[data-testid="users-delete-btn"]')
-        .click({ force: true });
-    });
+    locateUserRowByEmail(TEST_EMAIL).then(
+      (rowOrNull: JQuery<HTMLElement> | null) => {
+        expect(rowOrNull, "row to delete should be found").to.exist;
+        cy.on("window:confirm", () => true);
+        cy.wrap(rowOrNull!)
+          .find('[data-testid="users-delete-btn"]')
+          .click({ force: true });
+      },
+    );
     cy.wait("@deleteUser");
     searchFor(TEST_EMAIL);
     cy.contains('[data-testid="users-email"]', TEST_EMAIL).should("not.exist");

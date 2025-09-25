@@ -1,3 +1,3 @@
 import "./commands";
-export { deleteAllCreatedUsers } from "./commands";
+export { deleteAllCreatedUsers, locateUserRowByEmail } from "./commands";
 export * from "./helpers";

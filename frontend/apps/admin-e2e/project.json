@@ -1,0 +1,47 @@
+{
+  "name": "admin-e2e",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/admin-e2e/cypress",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": [
+          "libs/admin-e2e/**/*.{ts,tsx,js,jsx}"
+        ]
+      }
+    },
+    "build": {
+      "executor": "@nx/rollup:rollup",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/admin-e2e",
+        "tsConfig": "libs/admin-e2e/tsconfig.json",
+        "entryFile": "libs/admin-e2e/index.ts",
+        "external": ["react", "react-dom", "react/jsx-runtime"],
+        "rollupConfig": "@nx/react/plugins/bundle-rollup",
+        "compiler": "babel"
+      }
+    },
+    "cypress-open": {
+      "executor": "@nx/cypress:cypress",
+      "defaultConfiguration": "local",
+      "options": {
+        "cypressConfig": "apps/admin-e2e/cypress.config.ts",
+        "testingType": "e2e"
+      },
+      "configurations": {
+        "ci": {
+          "devServerTarget": "admin:serve:development",
+          "watch": false
+        },
+        "local": {
+          "watch": true
+        }
+      }
+    }
+  }
+}
