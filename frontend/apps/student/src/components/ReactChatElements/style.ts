@@ -131,4 +131,34 @@ export const useStyles = createUseStyles({
     padding: 0,
     lineHeight: 1,
   },
+  typingIndicator: {
+    display: "flex",
+    alignItems: "center",
+    gap: "2px",
+    paddingLeft: "12px",
+    paddingTop: "4px",
+    "[dir='rtl'] &": {
+      paddingLeft: 0,
+      paddingRight: "12px",
+    },
+  },
+  typingDot: {
+    fontSize: "8px",
+    color: "#999",
+    animation: "$typingPulse 1.5s infinite ease-in-out",
+    "&:nth-child(2)": {
+      animationDelay: "0.3s",
+    },
+    "&:nth-child(3)": {
+      animationDelay: "0.6s",
+    },
+  },
+  "@keyframes typingPulse": {
+    "0%, 60%, 100%": {
+      opacity: 0.3,
+    },
+    "30%": {
+      opacity: 1,
+    },
+  },
 });

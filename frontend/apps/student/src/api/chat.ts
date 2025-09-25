@@ -1,58 +1,68 @@
 /// <reference types="vite/client" />
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { apiClient as axios } from "@app-providers";
 import { isAxiosError } from "axios";
 import { toast } from "react-toastify";
 import { EventType } from "@app-providers/types";
 import { useSignalR } from "@student/hooks";
 import { 
-  SendMessageRequest, 
-  SendMessageResponse, 
+  SendMessageRequest,
+  AIChatStreamResponse,
   Chat, 
   ChatHistory 
 } from "@student/types";
 
-export const useSendChatMessage = () => {
+export const useSendChatMessageStream = () => {
   const AI_BASE_URL = import.meta.env.VITE_AI_URL!;
-  const queryClient = useQueryClient();
-  const { waitForResponse } = useSignalR();
+  const { waitForStream, status } = useSignalR();
 
-  return useMutation<SendMessageResponse, Error, SendMessageRequest>({
-    mutationFn: async ({
-      userMessage,
-      threadId = crypto.randomUUID(),
-      chatType = "default",
-      userId,
-    }) => {
+  const startStream = async (
+    { userMessage, threadId = crypto.randomUUID(), chatType = "default", userId }: SendMessageRequest,
+    onDelta: (delta: string) => void,
+    onCompleted: (final: AIChatStreamResponse) => void
+  ) => {
+    // Check SignalR connection
+    if (status !== 'connected') {
+      throw new Error(`SignalR not connected. Status: ${status}`);
+    }
+
+    try {
+      // Start the request
       const { data } = await axios.post<{ requestId: string }>(
         `${AI_BASE_URL}/chat`,
-        {
-          userMessage,
-          threadId,
-          chatType,
-          userId,
-        },
+        { userMessage, threadId, chatType, userId }
       );
 
       const requestId = data.requestId;
 
-      const aiResponse = await waitForResponse<SendMessageResponse>(
+      // Use waitForStream which creates and manages the stream
+      const streamMessages = waitForStream<AIChatStreamResponse>(
         EventType.ChatAiAnswer,
         requestId,
+        (msg) => {
+          if (msg.payload.delta) {
+            onDelta(msg.payload.delta);
+          }
+          if (msg.payload.isFinal) {
+            onCompleted(msg.payload);
+          }
+        }
       );
-      return aiResponse;
-    },
 
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["chat", data.threadId] });
-    },
+      // Wait for the stream to complete (optional - you can just let it run)
+      streamMessages.catch((error) => {
+        console.error('Stream error:', error);
+      });
 
-    onError: (error) => {
-      console.error("Failed to send chat message:", error);
-      toast.error("Failed to send message. Please try again.");
-    },
-  });
+    } catch (error) {
+      console.error('Error starting stream:', error);
+      throw error;
+    }
+  };
+
+  return { startStream };
 };
+
 
 export const useGetAllChats = (userId: string) => {
   const AI_BASE_URL = import.meta.env.VITE_AI_URL!;

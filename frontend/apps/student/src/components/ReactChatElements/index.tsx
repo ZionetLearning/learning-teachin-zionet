@@ -84,41 +84,29 @@ export const ReactChatElements = ({
               id={String(i)}
               position={msg.position}
               type="text"
-              text={msg.text}
+              text={msg.isTyping && !msg.text ? t("pages.chatYo.thinking") : msg.text}
               title={msg.position === "right" ? "Me" : "Assistant"}
               titleColor={msg.position === "right" ? "black" : "gray"}
               date={msg.date}
               forwarded={false}
               replyButton={false}
               removeButton={false}
-              status="received"
+              status={msg.isTyping ? "waiting" : "received"}
               retracted={false}
               focus={false}
               avatar={msg.position === "left" ? avatarUrl : undefined}
               notch
             />
+            {/* Show typing indicator for streaming messages with content */}
+            {msg.isTyping && msg.text && (
+              <div className={classes.typingIndicator}>
+                <span className={classes.typingDot}>●</span>
+                <span className={classes.typingDot}>●</span>
+                <span className={classes.typingDot}>●</span>
+              </div>
+            )}
           </div>
         ))}
-        {loading && (
-          <div data-testid="chat-yo-msg-loading">
-            <MessageBox
-              id="assistant"
-              position="left"
-              type="text"
-              text={t("pages.chatYo.thinking")}
-              title="Assistant"
-              titleColor="none"
-              date={new Date()}
-              forwarded={false}
-              replyButton={false}
-              removeButton={false}
-              status="waiting"
-              retracted={false}
-              focus={false}
-              notch
-            />
-          </div>
-        )}
       </div>
 
       <div

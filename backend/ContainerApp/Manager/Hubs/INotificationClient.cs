@@ -9,4 +9,6 @@ public interface INotificationClient
     Task NotificationMessage(UserNotification notification);
     // frontend listen to "ReceiveEvent" method in signal r to receive Event 
     Task ReceiveEvent(UserEvent<JsonElement> evt);
+
+    Task StreamEvent(StreamEvent<JsonElement> evt);
 }
