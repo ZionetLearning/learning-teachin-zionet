@@ -20,6 +20,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
 {
     private readonly DaprClient _daprClient;
     private readonly ILogger<EngineQueueHandler> _logger;
+    private readonly ILogger<StreamingChatAIBatcher> _batcherLogger;
     private readonly IChatAiService _aiService;
     private readonly ISentencesService _sentencesService;
     private readonly IAiReplyPublisher _publisher;
@@ -36,19 +37,21 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
     public EngineQueueHandler(
         DaprClient daprClient,
+        ILogger<EngineQueueHandler> logger,
+        ILogger<StreamingChatAIBatcher> batcherLogger,
         IChatAiService aiService,
         IAiReplyPublisher publisher,
         IAccessorClient accessorClient,
         ISentencesService sentencesService,
-        IChatTitleService chatTitleService,
-        ILogger<EngineQueueHandler> logger) : base(logger)
+        IChatTitleService chatTitleService) : base(logger)
     {
         _daprClient = daprClient;
+        _logger = logger;
+        _batcherLogger = batcherLogger;
         _aiService = aiService;
         _publisher = publisher;
         _accessorClient = accessorClient;
         _chatTitleService = chatTitleService;
-        _logger = logger;
         _sentencesService = sentencesService;
     }
 
@@ -319,7 +322,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
                 },
                 makeToolChunk: (upd) => BuildResponse(ChatStreamStage.Tool, toolCall: upd.ToolCall),
                 makeToolResultChunk: (upd) => BuildResponse(ChatStreamStage.ToolResult, toolResult: upd.ToolResult),
-                logger: _logger as ILogger<StreamingChatAIBatcher> ?? throw new InvalidOperationException("Logger for StreamingChatAIBatcher is required."),
+                logger: _batcherLogger,
                 ct: ct);
 
             await foreach (var upd in _aiService.ChatStreamAsync(serviceRequest, ct))
