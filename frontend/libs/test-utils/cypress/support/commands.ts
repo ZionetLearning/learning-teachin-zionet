@@ -1,4 +1,7 @@
 /// <reference types="cypress" />
+/// <reference path="./cypress-commands.d.ts" />
+
+import { addCreatedEmail, createdEmails } from "./helpers";
 
 const APP_URL = "https://localhost:4000";
 const ADMIN_URL = "https://localhost:4002";
@@ -10,11 +13,6 @@ interface TestUser {
 }
 
 let testUser: TestUser | null = null;
-const createdEmails = new Set<string>();
-
-export const addCreatedEmail = (email: string) => {
-  if (email) createdEmails.add(email);
-};
 
 const waitForUsersList = () => {
   cy.get('[data-testid="users-table"]', { timeout: 20000 }).should("exist");
