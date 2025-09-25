@@ -53,4 +53,6 @@ helm upgrade --install keda-http kedacore/keda-add-ons-http \
     --namespace "$KEDA_NAMESPACE" \
     --set operator.keda.enabled=false \
     -f values-timeout.yaml \
+    --set http.watcher.pod.logLevel=info \
+    --set http.watcher.watcherNamespace="" \
     --wait --timeout 300s

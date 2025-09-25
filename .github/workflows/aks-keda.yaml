@@ -80,7 +80,7 @@ jobs:
         run: |
           cd devops/helm-tools
           chmod +x keda.sh
-          ./keda.sh ${{ inputs.environment_name || github.event.inputs.environment_name }}
+          ./keda.sh
 
   keda-deploy:
     needs: keda
