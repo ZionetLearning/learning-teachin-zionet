@@ -22,6 +22,11 @@ on:
         description: 'Optional image tag (e.g., commit hash). Empty -> uses environment_name'
         required: false
         default: ''
+      unlock_featest:
+        description: 'Set to true to only unlock featest environment (skips deployment)'
+        required: false
+        default: false
+        type: boolean
 
   workflow_call:
     inputs:
@@ -39,6 +44,11 @@ on:
         required: false
         type: boolean
         default: false
+      unlock_featest:
+        required: false
+        type: boolean
+        default: false
+        description: 'Set to true to only unlock featest environment (skips deployment)'
     outputs:
       app_url:
         description: "Ingress URL (if already created by platform setup)"
@@ -53,14 +63,14 @@ jobs:
       issues: write
     uses: ./.github/workflows/lock-environment.yaml
     with:
-      action: lock
+      action: ${{ (inputs.unlock_featest || github.event.inputs.unlock_featest) && 'unlock' || 'lock' }}
 
 
   deploy:
     needs: [lock-featest]
     if: |
-      needs.lock-featest.result == 'success' ||
-      needs.lock-featest.result == 'skipped'
+      (needs.lock-featest.result == 'success' || needs.lock-featest.result == 'skipped') &&
+      (inputs.unlock_featest != true && github.event.inputs.unlock_featest != 'true')
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || github.event.inputs.environment }}
     permissions:
