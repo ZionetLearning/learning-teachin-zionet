@@ -63,7 +63,7 @@ jobs:
       issues: write
     uses: ./.github/workflows/lock-environment.yaml
     with:
-      action: ${{ (inputs.unlock_featest || github.event.inputs.unlock_featest) && 'unlock' || 'lock' }}
+      action: ${{ (inputs.unlock_featest == true || github.event.inputs.unlock_featest == 'true') && 'unlock' || 'lock' }}
 
 
   deploy:
