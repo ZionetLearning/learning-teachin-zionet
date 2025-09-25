@@ -10,6 +10,9 @@ if [ -z "$KEDA_HTTP_NAMESPACE_TO_INSTALL" ]; then
     exit 1
 fi
 
+# Suffix used to make global resources unique per namespace
+RESOURCE_SUFFIX="$KEDA_HTTP_NAMESPACE_TO_INSTALL"
+
 # Function to check if all KEDA Core pods are running and ready
 check_keda_core_ready() {
     echo "Checking KEDA Core deployments in namespace: $KEDA_CORE_NAMESPACE"
@@ -34,26 +37,49 @@ check_keda_http_installed() {
     fi
 }
 
+# Function to update ownership metadata for existing global resources
+update_global_resource_ownership() {
+    local kind=$1
+    local name=$2
+    local namespace=$3
+
+    if kubectl get "$kind" "$name" &>/dev/null; then
+        echo "Updating ownership metadata for $kind $name"
+        kubectl annotate "$kind" "$name" meta.helm.sh/release-name=keda-http --overwrite
+        kubectl annotate "$kind" "$name" meta.helm.sh/release-namespace="$namespace" --overwrite
+        kubectl label "$kind" "$name" app.kubernetes.io/managed-by=Helm --overwrite || true
+    fi
+}
+
 # Function to install KEDA HTTP Add-on
 install_keda_http() {
     local target_namespace=$1
     echo "Installing KEDA HTTP Add-on in namespace: $target_namespace..."
-    
+
     # Create target namespace if it doesn't exist
     kubectl create namespace "$target_namespace" --dry-run=client -o yaml | kubectl apply -f -
-    
-    # Install KEDA HTTP Add-on
+
+    # Update ownership metadata for known global resources
+    for res in \
+        httpscaledobjects.http.keda.sh \
+        keda-add-ons-http-interceptor \
+        keda-add-ons-http-role \
+        keda-add-ons-http-rolebinding; do
+        update_global_resource_ownership "$res" "$res" "$target_namespace"
+    done
+
+    # Install KEDA HTTP Add-on with unique suffix for ClusterRole names
     helm upgrade --install keda-http kedacore/keda-add-ons-http \
         --namespace "$target_namespace" \
         --set operator.keda.enabled=false \
         --set interceptor.kubernetes.watchNamespace="$target_namespace" \
         --set interceptor.kubernetes.interceptorService.namespaceOverride="$target_namespace" \
         --set scaler.kubernetes.kedaNamespace="$KEDA_CORE_NAMESPACE" \
-        --set installClusterResources=true \
+        --set global.resourceSuffix="$RESOURCE_SUFFIX" \
         --skip-crds=true \
         -f values-timeout.yaml \
         --wait --timeout 300s
-    
+
     echo "KEDA HTTP Add-on installed successfully in namespace: $target_namespace"
 }
 
@@ -64,41 +90,22 @@ echo "================================="
 
 # Add Helm repo (always do this to ensure latest charts)
 echo "Adding/updating KEDA Helm repository..."
-helm repo add kedacore https://kedacore.github.io/charts
+helm repo add kedacore https://kedacore.github.io/charts || true
 helm repo update
 
 # Check if KEDA Core is already installed and running
 if helm list -n "$KEDA_CORE_NAMESPACE" | grep -q "^keda\s"; then
     echo "KEDA Core Helm release found, checking pod status..."
-    
-    if check_keda_core_ready; then
-        echo "KEDA Core is already installed and running!"
-    else
+    check_keda_core_ready || {
         echo "KEDA Core is installed but pods are not ready, reinstalling..."
-        
-        # Create namespace for KEDA Core
         kubectl create namespace "$KEDA_CORE_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
-        
-        # Reinstall KEDA Core
-        echo "Reinstalling KEDA Core..."
-        helm upgrade --install keda kedacore/keda \
-            --namespace "$KEDA_CORE_NAMESPACE" \
-            --wait --timeout 300s
-        
+        helm upgrade --install keda kedacore/keda --namespace "$KEDA_CORE_NAMESPACE" --wait --timeout 300s
         echo "KEDA Core reinstallation completed!"
-    fi
+    }
 else
     echo "KEDA Core not found, installing fresh..."
-    
-    # Create namespace for KEDA Core
     kubectl create namespace "$KEDA_CORE_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
-    
-    # Install KEDA Core
-    echo "Installing KEDA Core..."
-    helm upgrade --install keda kedacore/keda \
-        --namespace "$KEDA_CORE_NAMESPACE" \
-        --wait --timeout 300s
-    
+    helm upgrade --install keda kedacore/keda --namespace "$KEDA_CORE_NAMESPACE" --wait --timeout 300s
     echo "KEDA Core installation completed!"
 fi
 
