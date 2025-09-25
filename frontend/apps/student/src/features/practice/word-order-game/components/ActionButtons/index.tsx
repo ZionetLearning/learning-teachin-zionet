@@ -1,36 +1,37 @@
 import { useTranslation } from "react-i18next";
+import { Button } from "@ui-components";
 import { useStyles } from "./style";
-interface SideButtonsProps {
+interface ActionButtonsProps {
   loading: boolean;
   handleNextClick: () => void;
   handleCheck: () => void;
   handleReset: () => void;
 }
 
-export const SideButtons = ({
+export const ActionButtons = ({
   loading,
   handleNextClick,
   handleCheck,
   handleReset,
-}: SideButtonsProps) => {
+}: ActionButtonsProps) => {
   const { t } = useTranslation();
   const classes = useStyles();
 
   return (
-    <div className={classes.sideButtons}>
-      <button data-testid="wog-reset" onClick={handleReset}>
-        {t("pages.wordOrderGame.reset")}
-      </button>
-      <button data-testid="wog-check" onClick={handleCheck}>
+    <div className={classes.actionButtons}>
+      <Button data-testid="wog-check" onClick={handleCheck}>
         {t("pages.wordOrderGame.check")}
-      </button>
-      <button
+      </Button>
+      <Button data-testid="wog-reset" onClick={handleReset}>
+        {t("pages.wordOrderGame.reset")}
+      </Button>
+      <Button
         data-testid="wog-next"
         disabled={loading}
         onClick={handleNextClick}
       >
         {t("pages.wordOrderGame.next")}
-      </button>
+      </Button>
     </div>
   );
 };

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useHebrewSentence } from "../../hooks";
 import { useAvatarSpeech } from "@student/hooks";
-import { ChosenWordsArea, WordsBank, SideButtons, Speaker } from "../";
+import { ChosenWordsArea, WordsBank, ActionButtons, Speaker } from "../";
 import {
   GameConfig,
   GameConfigModal,
@@ -217,7 +217,6 @@ export const Game = () => {
   return (
     <>
       <div className={classes.gameContainer}>
-        {/* Game Header with Settings */}
         <GameSettings
           gameConfig={gameConfig}
           currentSentenceIndex={currentSentenceIndex}
@@ -229,20 +228,23 @@ export const Game = () => {
 
         <div className={classes.gameLogic}>
           <div className={classes.speakersContainer}>
-            {speechLoading ? (
-              <div>{t("pages.wordOrderGame.loading")}</div>
-            ) : (
-              <Speaker
-                onClick={() => handlePlay()}
-                disabled={!sentence || sentence.trim() === "" || speechLoading}
-              />
-            )}
+            <Speaker
+              onClick={() => handlePlay()}
+              disabled={!sentence || sentence.trim() === "" || speechLoading}
+            />
+            <ActionButtons
+              loading={loading}
+              handleNextClick={handleNextClick}
+              handleCheck={handleCheck}
+              handleReset={handleReset}
+            />
           </div>
 
           <ChosenWordsArea
             chosenWords={chosen}
             handleUnchooseWord={handleUnchooseWord}
           />
+
           <WordsBank
             loading={loading}
             error={error}
@@ -250,12 +252,6 @@ export const Game = () => {
             handleChooseWord={handleChooseWord}
           />
         </div>
-        <SideButtons
-          loading={loading}
-          handleNextClick={handleNextClick}
-          handleCheck={handleCheck}
-          handleReset={handleReset}
-        />
       </div>
       {/* Configuration Modal */}
       <GameConfigModal

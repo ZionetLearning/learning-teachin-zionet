@@ -1,12 +1,12 @@
 import { createUseStyles } from "react-jss";
 
 export const useStyles = createUseStyles({
-  sideButtons: {
+  actionButtons: {
     display: "flex",
-    flexDirection: "column",
+    flexDirection: "row",
     gap: "20px",
-    paddingLeft: "100px",
-    paddingRight: "95px",
+    width: "max-content",
+    alignSelf: "center",
     "& > button": {
       background: "#eef6fb",
       border: "1px solid #cfe3ef",
