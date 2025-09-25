@@ -1,0 +1,15 @@
+// create tsconfig.json file inside cypress folder
+// to makes sure TypeScript loads the Cypress type definitions for any test file in that folder
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["es2020", "dom"],
+    "types": ["cypress", "node"],
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "baseUrl": "../../../"
+  },
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": []
+}

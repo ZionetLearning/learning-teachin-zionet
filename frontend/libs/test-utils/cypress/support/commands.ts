@@ -1,4 +1,7 @@
 /// <reference types="cypress" />
+/// <reference path="./cypress-commands.d.ts" />
+
+import { addCreatedEmail, createdEmails } from "./helpers";
 
 const APP_URL = "https://localhost:4000";
 const ADMIN_URL = "https://localhost:4002";
@@ -10,11 +13,6 @@ interface TestUser {
 }
 
 let testUser: TestUser | null = null;
-const createdEmails = new Set<string>();
-
-export const addCreatedEmail = (email: string) => {
-  if (email) createdEmails.add(email);
-};
 
 const waitForUsersList = () => {
   cy.get('[data-testid="users-table"]', { timeout: 20000 }).should("exist");
@@ -37,28 +35,30 @@ const clearSearch = () => {
   });
 };
 
-export const locateUserRowByEmail = (email: string) => {
+const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+export const locateUserRowByEmail = (
+  email: string,
+): Cypress.Chainable<JQuery<HTMLElement>> => {
   waitForUsersList();
   searchFor(email);
+  const exact = new RegExp(`^${escapeRegExp(email)}$`);
   return cy.get("body").then(($b) => {
     const $match = $b
       .find('[data-testid="users-email"]')
       .filter((_, el) => el.textContent?.trim() === email);
     if ($match.length) {
-      const $row = $match.first().closest('tr[data-testid^="users-row-"]');
-      return cy.wrap($row as JQuery<HTMLElement>);
+      const $row = $match
+        .first()
+        .closest('tr[data-testid^="users-row-"]') as JQuery<HTMLElement>;
+      return cy.wrap($row);
     }
-
     clearSearch();
     waitForUsersList();
-    return cy.get("body").then(($b2) => {
-      const $match2 = $b2
-        .find('[data-testid="users-email"]')
-        .filter((_, el) => el.textContent?.trim() === email);
-      if (!$match2.length) return cy.wrap(null);
-      const $row2 = $match2.first().closest('tr[data-testid^="users-row-"]');
-      return cy.wrap($row2 as JQuery<HTMLElement>);
-    });
+    return cy
+      .contains('[data-testid="users-email"]', exact, { timeout: 20000 })
+      .closest('tr[data-testid^="users-row-"]')
+      .should("exist");
   });
 };
 

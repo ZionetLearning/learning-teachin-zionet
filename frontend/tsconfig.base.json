@@ -16,6 +16,9 @@
       "@app-providers/*": ["libs/app-providers/src/*"],
       "@authorization": ["libs/authorization/src/index.ts"],
       "@authorization/*": ["libs/authorization/src/*"],
+      "@test-utils": ["libs/test-utils/index.ts"],
+      "@test-utils/*": ["libs/test-utils/*"],
+      "@test-utils/cypress": ["libs/test-utils/cypress/support/index.ts"]
     }
   }
 }

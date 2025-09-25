@@ -7,10 +7,11 @@ describe("speaking practice", () => {
       .click({ timeout: 10000 });
     // Wait until SignalR reports connected (set on window by provider)
     cy.window({ timeout: 15000 }).should((w) => {
-      expect(
-        (w as any).__signalRStatus,
-        "SignalR status should become connected",
-      ).to.equal("connected");
+      const status = (w as unknown as { __signalRStatus?: string })
+        .__signalRStatus;
+      expect(status, "SignalR status should become connected").to.equal(
+        "connected",
+      );
     });
 
     // Then start the game (button should now be safe to click)
