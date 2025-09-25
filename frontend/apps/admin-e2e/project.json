@@ -1,7 +1,7 @@
 {
   "name": "admin-e2e",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/admin-e2e/cypress",
+  "sourceRoot": "apps/admin-e2e/cypress",
   "projectType": "library",
   "tags": [],
   "targets": {
@@ -10,7 +10,7 @@
       "outputs": ["{options.outputFile}"],
       "options": {
         "lintFilePatterns": [
-          "libs/admin-e2e/**/*.{ts,tsx,js,jsx}"
+          "apps/admin-e2e/**/*.{ts,tsx,js,jsx}"
         ]
       }
     },
@@ -18,9 +18,9 @@
       "executor": "@nx/rollup:rollup",
       "outputs": ["{options.outputPath}"],
       "options": {
-        "outputPath": "dist/libs/admin-e2e",
-        "tsConfig": "libs/admin-e2e/tsconfig.json",
-        "entryFile": "libs/admin-e2e/index.ts",
+        "outputPath": "dist/apps/admin-e2e",
+        "tsConfig": "apps/admin-e2e/tsconfig.json",
+        "entryFile": "apps/admin-e2e/index.ts",
         "external": ["react", "react-dom", "react/jsx-runtime"],
         "rollupConfig": "@nx/react/plugins/bundle-rollup",
         "compiler": "babel"

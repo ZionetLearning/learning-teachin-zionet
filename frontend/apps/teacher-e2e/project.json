@@ -1,7 +1,7 @@
 {
   "name": "teacher-e2e",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/teacher-e2e/cypress",
+  "sourceRoot": "apps/teacher-e2e/cypress",
   "projectType": "library",
   "tags": [],
   "targets": {
@@ -10,7 +10,7 @@
       "outputs": ["{options.outputFile}"],
       "options": {
         "lintFilePatterns": [
-          "libs/teacher-e2e/**/*.{ts,tsx,js,jsx}"
+          "apps/teacher-e2e/**/*.{ts,tsx,js,jsx}"
         ]
       }
     },
@@ -18,9 +18,9 @@
       "executor": "@nx/rollup:rollup",
       "outputs": ["{options.outputPath}"],
       "options": {
-        "outputPath": "dist/libs/teacher-e2e",
-        "tsConfig": "libs/teacher-e2e/tsconfig.json",
-        "entryFile": "libs/teacher-e2e/index.ts",
+        "outputPath": "dist/apps/teacher-e2e",
+        "tsConfig": "apps/teacher-e2e/tsconfig.json",
+        "entryFile": "apps/teacher-e2e/index.ts",
         "external": ["react", "react-dom", "react/jsx-runtime"],
         "rollupConfig": "@nx/react/plugins/bundle-rollup",
         "compiler": "babel"
