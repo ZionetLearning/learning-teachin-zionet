@@ -34,6 +34,11 @@ on:
         required: false
         type: string
         default: ''
+      unlock_featest:
+        description: 'Set to true to only unlock featest environment (skips deployment)'
+        required: false
+        default: false
+        type: boolean
   workflow_call:
     inputs:
       environment:
@@ -51,6 +56,11 @@ on:
         required: false
         type: string
         default: ''
+      unlock_featest:
+        required: false
+        type: boolean
+        default: false
+        description: 'Set to true to only unlock featest environment (skips deployment)'
 
 jobs:
 

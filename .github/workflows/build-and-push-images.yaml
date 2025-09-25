@@ -12,6 +12,11 @@ on:
       list_services_names:
         required: true
         type: string
+      unlock_featest:
+        required: false
+        type: boolean
+        default: false
+        description: 'Set to true to only unlock featest environment (skips deployment)'
     outputs:
       image_tag:
         description: "The generated image tag (commit hash)"
@@ -26,13 +31,13 @@ jobs:
       issues: write
     uses: ./.github/workflows/lock-environment.yaml
     with:
-      action: lock
+      action: ${{ (inputs.unlock_featest == true || github.event.inputs.unlock_featest == 'true') && 'unlock' || 'lock' }}
 
   generate_tag:
     needs: [lock-featest]
     if: |
-      needs.lock-featest.result == 'success' ||
-      needs.lock-featest.result == 'skipped'
+      (needs.lock-featest.result == 'success' || needs.lock-featest.result == 'skipped') &&
+      (inputs.unlock_featest != true && github.event.inputs.unlock_featest != 'true')
     runs-on: ubuntu-latest
     outputs:
       image_tag: ${{ steps.set-tag.outputs.image_tag }}
