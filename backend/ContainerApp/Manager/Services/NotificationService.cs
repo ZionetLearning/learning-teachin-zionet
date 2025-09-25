@@ -64,4 +64,34 @@ public class NotificationService : INotificationService
             throw;
         }
     }
+
+    public async Task SendStreamEventAsync<T>(StreamEvent<T> streamEvent, string userId)
+    {
+        if (string.IsNullOrEmpty(userId))
+        {
+            throw new ArgumentException("User ID cannot be null or empty.", nameof(userId));
+        }
+
+        try
+        {
+            var jsonPayload = JsonSerializer.SerializeToElement(streamEvent.Payload, s_payloadJsonOptions);
+
+            var jsonStreamEvent = new StreamEvent<JsonElement>
+            {
+                EventType = streamEvent.EventType,
+                Payload = jsonPayload,
+                SequenceNumber = streamEvent.SequenceNumber,
+                Stage = streamEvent.Stage,
+                RequestId = streamEvent.RequestId
+            };
+
+            await _hubContext.Clients.User(userId).StreamEvent(jsonStreamEvent);
+            _logger.LogInformation("Stream event '{EventType}' sent successfully", streamEvent.EventType);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error sending stream event '{EventType}'", streamEvent.EventType);
+            throw;
+        }
+    }
 }
