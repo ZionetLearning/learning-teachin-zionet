@@ -23,7 +23,7 @@ public class DatabaseInitializer
         await using var conn = (NpgsqlConnection)_dbContext.Database.GetDbConnection();
         await conn.OpenAsync();
 
-        // Lock to avoid concurrent migration attempts
+        // Lock to avoid concurrent migration runs
         await using (var lockCmd = conn.CreateCommand())
         {
             lockCmd.CommandText = "SELECT pg_advisory_lock(727274);";
@@ -32,22 +32,24 @@ public class DatabaseInitializer
 
         try
         {
+            // 1. Check which migrations EF thinks have been applied
             var appliedMigrations = await _dbContext.Database.GetAppliedMigrationsAsync();
 
+            // 2. If none applied, possibly this DB was created outside EF
             if (!appliedMigrations.Any())
             {
-                _logger.LogWarning("No EF migrations found in __EFMigrationsHistory. Checking for existing tables...");
+                _logger.LogWarning("No EF migrations recorded. Checking for existing schema...");
 
-                // Check if anchor table exists
+                // 3. Use an anchor table check (one table you expect to exist) to detect pre-existing DB
                 await using var checkCmd = conn.CreateCommand();
                 checkCmd.CommandText = EfMigrationConstants.CheckIfAnchorTableExistsSql;
-
                 var tableExists = (bool)(await checkCmd.ExecuteScalarAsync() ?? false);
 
                 if (tableExists)
                 {
-                    _logger.LogWarning("Tables exist but no migrations recorded. Seeding fake initial migration...");
+                    _logger.LogWarning("Schema appears to exist without migrations. Inserting initial migration marker.");
 
+                    // 4. Insert the initial migration record into __EFMigrationsHistory
                     await using var insertCmd = conn.CreateCommand();
                     insertCmd.CommandText = EfMigrationConstants.InsertInitialMigrationSql;
 
@@ -63,25 +65,21 @@ public class DatabaseInitializer
 
                     await insertCmd.ExecuteNonQueryAsync();
 
-                    _logger.LogInformation("Fake migration inserted: {MigrationId}", EfMigrationConstants.InitialMigrationId);
+                    _logger.LogInformation("Inserted fake initial migration: {MigrationId}", EfMigrationConstants.InitialMigrationId);
                 }
             }
 
-            // Let EF manage the rest of the connection work
-            //await _dbContext.Database.MigrateAsync();
-            //_logger.LogInformation("Database migration completed.");
-
-            // FIX: only run MigrateAsync if there are real pending migrations
-            var pendingMigrations = await _dbContext.Database.GetPendingMigrationsAsync();
-            if (pendingMigrations.Any())
+            // 5. Now check if there are *any migrations left* to run
+            var pending = await _dbContext.Database.GetPendingMigrationsAsync();
+            if (pending.Any())
             {
-                _logger.LogInformation("Applying {Count} pending migrations...", pendingMigrations.Count());
+                _logger.LogInformation("Running {Count} pending migrations...", pending.Count());
                 await _dbContext.Database.MigrateAsync();
-                _logger.LogInformation("Database migration completed.");
+                _logger.LogInformation("Migrations applied.");
             }
             else
             {
-                _logger.LogInformation("No pending migrations to apply.");
+                _logger.LogInformation("No pending migrations. Skipping migration step.");
             }
         }
         catch (Exception ex)
