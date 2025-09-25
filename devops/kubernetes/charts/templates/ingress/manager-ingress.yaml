@@ -28,7 +28,8 @@ spec:
             backend:
               service:
                 {{- if .Values.keda.enabled }}
-                name: keda-interceptor-{{ include "app.namespace" . }}
+                name: keda-interceptor
+                namespace: keda-http
                 port:
                   number: 8080
                 {{- else }}

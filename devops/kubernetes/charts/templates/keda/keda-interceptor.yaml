@@ -2,8 +2,8 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: keda-interceptor-{{ include "app.namespace" . }}
-  namespace: {{ include "app.namespace" . }}
+  name: keda-interceptor
+  namespace: keda-http
 spec:
   type: ExternalName
   externalName: keda-add-ons-http-interceptor-proxy.keda-http.svc.cluster.local
