@@ -29,7 +29,6 @@ spec:
               service:
                 {{- if .Values.keda.enabled }}
                 name: keda-interceptor
-                namespace: keda-http
                 port:
                   number: 8080
                 {{- else }}

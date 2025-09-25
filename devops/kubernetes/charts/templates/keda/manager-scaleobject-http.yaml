@@ -2,8 +2,8 @@
 apiVersion: http.keda.sh/v1alpha1
 kind: HTTPScaledObject
 metadata:
-  name: manager-http-scaledobject-{{ .Release.Namespace }}
-  namespace: {{ .Release.Namespace }}
+  name: manager-http-scaledobject
+  namespace: {{ include "app.namespace" . }}
 spec:
   hosts:
   - teachin.westeurope.cloudapp.azure.com
