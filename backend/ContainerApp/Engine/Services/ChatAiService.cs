@@ -97,19 +97,34 @@ public sealed class ChatAiService : IChatAiService
     }
 
     public async IAsyncEnumerable<ChatAiStreamDelta> ChatStreamAsync(
-    ChatAiServiseRequest request,
-    [EnumeratorCancellation] CancellationToken ct = default)
+        ChatAiServiseRequest request,
+        [EnumeratorCancellation] CancellationToken ct = default
+    )
     {
+        _log.LogInformation(
+            "ChatAI stream request started {RequestId} for User {UserId}, Thread {ThreadId}",
+            request.RequestId,
+            request.UserId,
+            request.ThreadId
+        );
+
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         if (now > request.SentAt + request.TtlSeconds)
         {
-            yield return new ChatAiStreamDelta { RequestId = request.RequestId, ThreadId = request.ThreadId, UserId = request.UserId, IsFinal = true, Stage = ChatStreamStage.Expired };
+            yield return new ChatAiStreamDelta
+            {
+                RequestId = request.RequestId,
+                ThreadId = request.ThreadId,
+                UserId = request.UserId,
+                IsFinal = true,
+                Stage = ChatStreamStage.Expired,
+            };
             yield break;
         }
 
         var settings = new AzureOpenAIPromptExecutionSettings
         {
-            FunctionChoiceBehavior = FunctionChoiceBehavior.Auto()
+            FunctionChoiceBehavior = FunctionChoiceBehavior.Auto(),
         };
 
         var sb = new StringBuilder();
@@ -139,7 +154,7 @@ public sealed class ChatAiService : IChatAiService
                         UserId = request.UserId,
                         Delta = t.Text,
                         Stage = ChatStreamStage.Model,
-                        IsFinal = false
+                        IsFinal = false,
                     };
                 }
             }
@@ -153,7 +168,7 @@ public sealed class ChatAiService : IChatAiService
                     UserId = request.UserId,
                     ToolCall = call.Name,
                     Stage = ChatStreamStage.Tool,
-                    IsFinal = false
+                    IsFinal = false,
                 };
             }
         }
@@ -183,7 +198,7 @@ public sealed class ChatAiService : IChatAiService
             Delta = null,
             IsFinal = true,
             Stage = ChatStreamStage.Final,
-            UpdatedHistory = updatedHistory
+            UpdatedHistory = updatedHistory,
         };
     }
 }

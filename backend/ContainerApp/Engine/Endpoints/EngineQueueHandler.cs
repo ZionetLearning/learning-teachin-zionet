@@ -319,6 +319,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
                 },
                 makeToolChunk: (upd) => BuildResponse(ChatStreamStage.Tool, toolCall: upd.ToolCall),
                 makeToolResultChunk: (upd) => BuildResponse(ChatStreamStage.ToolResult, toolResult: upd.ToolResult),
+                logger: _logger as ILogger<StreamingChatAIBatcher> ?? throw new InvalidOperationException("Logger for StreamingChatAIBatcher is required."),
                 ct: ct);
 
             await foreach (var upd in _aiService.ChatStreamAsync(serviceRequest, ct))

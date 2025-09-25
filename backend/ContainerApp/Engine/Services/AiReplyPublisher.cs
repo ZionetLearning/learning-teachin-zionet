@@ -128,8 +128,8 @@ public sealed class AiReplyPublisher : IAiReplyPublisher
                 UserId = chunk.UserId,
                 Sequence = chunk.Sequence,
                 CorrelationId = chunk.RequestId,
-                Payload = JsonSerializer.SerializeToElement(chunk),
-                Metadata = JsonSerializer.SerializeToElement(chatMetadata),
+                Payload = payload,
+                Metadata = messageMetadata,
                 CreatedAt = DateTimeOffset.UtcNow,
                 TtlSeconds = 60
             };
