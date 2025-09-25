@@ -34,23 +34,28 @@ on:
           options: 
             - 'all'
             - 'none'
+        unlock_featest:
+          description: 'Set to true to only unlock featest environment (skips deployment)'
+          required: false
+          default: false
+          type: boolean
           
 jobs:
 
   lock-featest:
-    if: ${{ (inputs.environment_name || github.event.inputs.environment_name) == 'featest' }}
+    if: ${{ (github.event.inputs.environment_name) == 'featest' }}
     permissions:
       contents: read
       issues: write
     uses: ./.github/workflows/lock-environment.yaml
     with:
-      action: lock
+      action: ${{ (github.event.inputs.unlock_featest == 'true') && 'unlock' || 'lock' }}
 
   build-and-push-images:
     needs: [lock-featest]
     if: |
-      needs.lock-featest.result == 'success' ||
-      needs.lock-featest.result == 'skipped'
+      (needs.lock-featest.result == 'success' || needs.lock-featest.result == 'skipped') &&
+      (github.event.inputs.unlock_featest != 'true')
     uses: ./.github/workflows/build-and-push-images.yaml
     permissions:
       id-token: write
@@ -65,8 +70,8 @@ jobs:
   terraform-apply:
     needs: [lock-featest]
     if: |
-      needs.lock-featest.result == 'success' ||
-      needs.lock-featest.result == 'skipped'
+      (needs.lock-featest.result == 'success' || needs.lock-featest.result == 'skipped') &&
+      (github.event.inputs.unlock_featest != 'true')
     uses: ./.github/workflows/terraform-apply.yaml
     permissions:
       id-token: write

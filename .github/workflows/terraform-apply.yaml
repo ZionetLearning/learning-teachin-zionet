@@ -20,6 +20,11 @@ on:
         required: false
         type: string
         default: 'all'
+      unlock_featest:
+        required: false
+        type: boolean
+        default: false
+        description: 'Set to true to only unlock featest environment (skips deployment)'
     outputs:
       static_web_app_api_keys:
         description: "API keys for the Azure Static Web Apps"
@@ -47,6 +52,11 @@ on:
         options:
           - 'all'
           - 'none'
+      unlock_featest:
+        description: 'Set to true to only unlock featest environment (skips deployment)'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
 
@@ -57,13 +67,13 @@ jobs:
       issues: write
     uses: ./.github/workflows/lock-environment.yaml
     with:
-      action: lock
+      action: ${{ (inputs.unlock_featest == true || github.event.inputs.unlock_featest == 'true') && 'unlock' || 'lock' }}
 
   terraform:
     needs: [lock-featest]
     if: |
-      needs.lock-featest.result == 'success' ||
-      needs.lock-featest.result == 'skipped'
+      (needs.lock-featest.result == 'success' || needs.lock-featest.result == 'skipped') &&
+      (inputs.unlock_featest != true && github.event.inputs.unlock_featest != 'true')
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || github.event.inputs.environment }}
     permissions:

@@ -61,13 +61,13 @@ jobs:
       issues: write
     uses: ./.github/workflows/lock-environment.yaml
     with:
-      action: lock
+      action: ${{ (inputs.unlock_featest == true || github.event.inputs.unlock_featest == 'true') && 'unlock' || 'lock' }}
 
   set-defaults:
     needs: [lock-featest]
     if: |
-      needs.lock-featest.result == 'success' ||
-      needs.lock-featest.result == 'skipped'
+      (needs.lock-featest.result == 'success' || needs.lock-featest.result == 'skipped') &&
+      (inputs.unlock_featest != true && github.event.inputs.unlock_featest != 'true')
     runs-on: ubuntu-latest
     outputs:
       environment: ${{ steps.defaults.outputs.environment }}
