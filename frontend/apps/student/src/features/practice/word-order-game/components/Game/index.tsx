@@ -179,7 +179,7 @@ export const Game = () => {
     if (isServerCorrect) {
       toast.success(t("pages.wordOrderGame.correct"));
     } else {
-      toast.error(t("pages.wordOrderGame.correct"));
+      toast.error(t("pages.wordOrderGame.incorrect"));
     }
 
     return isServerCorrect;
