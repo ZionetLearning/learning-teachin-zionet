@@ -34,6 +34,35 @@ check_keda_http_installed() {
     fi
 }
 
+# Function to update ownership metadata for cluster-wide resources if they exist
+update_cluster_resources() {
+    local target_namespace=$1
+
+    # CRD
+    if kubectl get crd httpscaledobjects.http.keda.sh &>/dev/null; then
+        echo "Updating ownership metadata for httpscaledobjects.http.keda.sh"
+        kubectl annotate crd httpscaledobjects.http.keda.sh meta.helm.sh/release-name=keda-http --overwrite
+        kubectl annotate crd httpscaledobjects.http.keda.sh meta.helm.sh/release-namespace="$target_namespace" --overwrite
+        kubectl label crd httpscaledobjects.http.keda.sh app.kubernetes.io/managed-by=Helm --overwrite
+    fi
+
+    # ClusterRole
+    if kubectl get clusterrole keda-add-ons-http-interceptor &>/dev/null; then
+        echo "Updating ownership metadata for ClusterRole keda-add-ons-http-interceptor"
+        kubectl annotate clusterrole keda-add-ons-http-interceptor meta.helm.sh/release-name=keda-http --overwrite
+        kubectl annotate clusterrole keda-add-ons-http-interceptor meta.helm.sh/release-namespace="$target_namespace" --overwrite
+        kubectl label clusterrole keda-add-ons-http-interceptor app.kubernetes.io/managed-by=Helm --overwrite
+    fi
+
+    # ClusterRoleBinding
+    if kubectl get clusterrolebinding keda-add-ons-http-interceptor &>/dev/null; then
+        echo "Updating ownership metadata for ClusterRoleBinding keda-add-ons-http-interceptor"
+        kubectl annotate clusterrolebinding keda-add-ons-http-interceptor meta.helm.sh/release-name=keda-http --overwrite
+        kubectl annotate clusterrolebinding keda-add-ons-http-interceptor meta.helm.sh/release-namespace="$target_namespace" --overwrite
+        kubectl label clusterrolebinding keda-add-ons-http-interceptor app.kubernetes.io/managed-by=Helm --overwrite
+    fi
+}
+
 # Function to install KEDA HTTP Add-on
 install_keda_http() {
     local target_namespace=$1
@@ -42,13 +71,8 @@ install_keda_http() {
     # Create target namespace if it doesn't exist
     kubectl create namespace "$target_namespace" --dry-run=client -o yaml | kubectl apply -f -
     
-    # Update ownership annotations/labels on existing CRD if it exists
-    if kubectl get crd httpscaledobjects.http.keda.sh &>/dev/null; then
-        echo "Updating ownership metadata for httpscaledobjects.http.keda.sh"
-        kubectl annotate crd httpscaledobjects.http.keda.sh meta.helm.sh/release-name=keda-http --overwrite
-        kubectl annotate crd httpscaledobjects.http.keda.sh meta.helm.sh/release-namespace="$target_namespace" --overwrite
-        kubectl label crd httpscaledobjects.http.keda.sh app.kubernetes.io/managed-by=Helm --overwrite
-    fi
+    # Update ownership metadata for existing cluster-wide resources
+    update_cluster_resources "$target_namespace"
     
     # Install KEDA HTTP Add-on
     helm upgrade --install keda-http kedacore/keda-add-ons-http \
