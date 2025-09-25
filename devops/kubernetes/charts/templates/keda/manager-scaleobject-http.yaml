@@ -2,7 +2,7 @@
 apiVersion: http.keda.sh/v1alpha1
 kind: HTTPScaledObject
 metadata:
-  name: manager-http-scaledobject
+  name: manager-http-scaledobject-{{ include "app.namespace" . }}
   namespace: {{ include "app.namespace" . }}
 spec:
   hosts:
