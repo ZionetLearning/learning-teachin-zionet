@@ -34,6 +34,47 @@ check_keda_http_installed() {
     fi
 }
 
+# Function to ensure KEDA HTTP CRDs are installed globally
+ensure_keda_http_crds() {
+    echo "Checking KEDA HTTP CRDs..."
+    
+    if kubectl get crd httpscaledobjects.http.keda.sh >/dev/null 2>&1; then
+        echo "HTTPScaledObject CRD already exists"
+        
+        # Check if CRD has Helm ownership annotations
+        CRD_HELM_MANAGED=$(kubectl get crd httpscaledobjects.http.keda.sh -o jsonpath='{.metadata.annotations.meta\.helm\.sh/release-name}' 2>/dev/null || echo "")
+        
+        if [ -n "$CRD_HELM_MANAGED" ]; then
+            echo "CRD is owned by Helm release. Removing ownership to allow multi-namespace installation..."
+            
+            # Remove Helm ownership annotations from HTTPScaledObject CRD
+            kubectl annotate crd httpscaledobjects.http.keda.sh \
+                meta.helm.sh/release-name- \
+                meta.helm.sh/release-namespace- \
+                --overwrite || true
+            
+            # Remove Helm ownership annotations from HTTPReplicas CRD if it exists
+            kubectl annotate crd httpreplicas.http.keda.sh \
+                meta.helm.sh/release-name- \
+                meta.helm.sh/release-namespace- \
+                --overwrite 2>/dev/null || true
+            
+            echo "Helm ownership removed from CRDs"
+        fi
+    else
+        echo "Installing KEDA HTTP CRDs globally..."
+        
+        # Install CRDs directly without Helm ownership
+        kubectl apply -f https://github.com/kedacore/http-add-on/releases/download/v0.8.0/keda-http-add-on-0.8.0-crds.yaml
+        
+        # Wait for CRDs to be established
+        kubectl wait --for condition=established --timeout=60s crd/httpscaledobjects.http.keda.sh
+        kubectl wait --for condition=established --timeout=60s crd/httpreplicas.http.keda.sh
+        
+        echo "KEDA HTTP CRDs installed successfully"
+    fi
+}
+
 # Function to install KEDA HTTP Add-on
 install_keda_http() {
     local target_namespace=$1
@@ -42,7 +83,20 @@ install_keda_http() {
     # Create target namespace if it doesn't exist
     kubectl create namespace "$target_namespace" --dry-run=client -o yaml | kubectl apply -f -
     
-    # Install KEDA HTTP Add-on
+    # Ensure CRDs are available globally
+    ensure_keda_http_crds
+    
+    # Check if values-timeout.yaml exists
+    VALUES_FILE_PARAM=""
+    if [ -f "values-timeout.yaml" ]; then
+        echo "Found values-timeout.yaml file"
+        VALUES_FILE_PARAM="-f values-timeout.yaml"
+    else
+        echo "values-timeout.yaml not found, proceeding without custom values"
+    fi
+    
+    # Install KEDA HTTP Add-on without CRDs (skip them since they're already installed globally)
+    echo "Running helm install command..."
     helm upgrade --install keda-http kedacore/keda-add-ons-http \
         --namespace "$target_namespace" \
         --set operator.keda.enabled=false \
@@ -50,7 +104,7 @@ install_keda_http() {
         --set interceptor.kubernetes.interceptorService.namespaceOverride="$target_namespace" \
         --set scaler.kubernetes.kedaNamespace="$KEDA_CORE_NAMESPACE" \
         --skip-crds=true \
-        -f values-timeout.yaml \
+        $VALUES_FILE_PARAM \
         --wait --timeout 300s
     
     echo "KEDA HTTP Add-on installed successfully in namespace: $target_namespace"
@@ -119,9 +173,16 @@ kubectl get pods -n "$KEDA_CORE_NAMESPACE" -l app.kubernetes.io/name=keda-operat
 
 echo ""
 echo "KEDA HTTP Add-on status in $KEDA_HTTP_NAMESPACE_TO_INSTALL:"
-kubectl get pods -n "$KEDA_HTTP_NAMESPACE_TO_INSTALL" -l app.kubernetes.io/name=keda-add-ons-http
+kubectl get pods -n "$KEDA_HTTP_NAMESPACE_TO_INSTALL" -l app.kubernetes.io/name=keda-add-ons-http || echo "No KEDA HTTP pods found"
+
+echo ""
+echo "KEDA HTTP CRDs status:"
+kubectl get crd | grep http.keda.sh || echo "No KEDA HTTP CRDs found"
 
 echo ""
 echo "KEDA installation/verification completed successfully!"
 echo "KEDA Core: $KEDA_CORE_NAMESPACE namespace"
 echo "KEDA HTTP: $KEDA_HTTP_NAMESPACE_TO_INSTALL namespace"
+echo ""
+echo "You can now create HTTPScaledObjects in namespace: $KEDA_HTTP_NAMESPACE_TO_INSTALL"
+echo "Each namespace will have its own KEDA HTTP interceptor for proper isolation"
