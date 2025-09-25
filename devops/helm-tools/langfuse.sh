@@ -31,7 +31,7 @@ fi
 helm $ACTION langfuse langfuse/langfuse \
   --namespace "$NAMESPACE" \
   --set langfuse.replicas=0 \
-  --set langfuse.nextauth.url="https://teachin.westeurope.cloudapp.azure.com" \
+  --set langfuse.nextauth.url="https://teachin.westeurope.cloudapp.azure.com/langfuse" \
   --set langfuse.salt.secretKeyRef.name="langfuse-secrets" \
   --set langfuse.salt.secretKeyRef.key="SALT" \
   --set langfuse.nextauth.secret.secretKeyRef.name="langfuse-secrets" \
