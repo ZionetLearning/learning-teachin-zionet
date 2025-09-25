@@ -34,6 +34,30 @@ check_keda_http_installed() {
     fi
 }
 
+# Function to clean up existing CRDs if needed
+cleanup_conflicting_crds() {
+    echo "Checking for conflicting CRDs..."
+    
+    # Check if HTTPScaledObject CRD exists and has conflicting ownership
+    if kubectl get crd httpscaledobjects.http.keda.sh >/dev/null 2>&1; then
+        CRD_NAMESPACE=$(kubectl get crd httpscaledobjects.http.keda.sh -o jsonpath='{.metadata.annotations.meta\.helm\.sh/release-namespace}' 2>/dev/null || echo "")
+        CRD_RELEASE=$(kubectl get crd httpscaledobjects.http.keda.sh -o jsonpath='{.metadata.annotations.meta\.helm\.sh/release-name}' 2>/dev/null || echo "")
+        
+        if [ "$CRD_NAMESPACE" != "$KEDA_HTTP_NAMESPACE_TO_INSTALL" ] && [ -n "$CRD_NAMESPACE" ]; then
+            echo "Found conflicting CRD ownership. CRD is owned by release '$CRD_RELEASE' in namespace '$CRD_NAMESPACE'"
+            echo "Removing Helm ownership annotations to allow installation in new namespace..."
+            
+            # Remove Helm ownership annotations from CRDs
+            kubectl annotate crd httpscaledobjects.http.keda.sh meta.helm.sh/release-name- meta.helm.sh/release-namespace- --overwrite || true
+            
+            # Also handle other KEDA HTTP CRDs if they exist
+            kubectl annotate crd httpreplicas.http.keda.sh meta.helm.sh/release-name- meta.helm.sh/release-namespace- --overwrite 2>/dev/null || true
+            
+            echo "CRD ownership annotations removed"
+        fi
+    fi
+}
+
 # Function to install KEDA HTTP Add-on
 install_keda_http() {
     local target_namespace=$1
@@ -42,13 +66,18 @@ install_keda_http() {
     # Create target namespace if it doesn't exist
     kubectl create namespace "$target_namespace" --dry-run=client -o yaml | kubectl apply -f -
     
-    # Install KEDA HTTP Add-on
+    # Clean up any conflicting CRDs
+    cleanup_conflicting_crds
+    
+    # Install KEDA HTTP Add-on with additional flags to handle CRD conflicts
     helm upgrade --install keda-http kedacore/keda-add-ons-http \
         --namespace "$target_namespace" \
         --set operator.keda.enabled=false \
         --set interceptor.kubernetes.watchNamespace="$target_namespace" \
         --set interceptor.kubernetes.interceptorService.namespaceOverride="$target_namespace" \
         --set scaler.kubernetes.kedaNamespace="$KEDA_CORE_NAMESPACE" \
+        --skip-crds=false \
+        --force \
         -f values-timeout.yaml \
         --wait --timeout 300s
     
@@ -118,7 +147,11 @@ kubectl get pods -n "$KEDA_CORE_NAMESPACE" -l app.kubernetes.io/name=keda-operat
 
 echo ""
 echo "KEDA HTTP Add-on status in $KEDA_HTTP_NAMESPACE_TO_INSTALL:"
-kubectl get pods -n "$KEDA_HTTP_NAMESPACE_TO_INSTALL" -l app.kubernetes.io/name=keda-add-ons-http
+kubectl get pods -n "$KEDA_HTTP_NAMESPACE_TO_INSTALL" -l app.kubernetes.io/name=keda-add-ons-http 2>/dev/null || echo "No KEDA HTTP pods found"
+
+echo ""
+echo "HTTPScaledObject CRD status:"
+kubectl get crd httpscaledobjects.http.keda.sh -o jsonpath='{.metadata.name}: {.metadata.annotations.meta\.helm\.sh/release-name}@{.metadata.annotations.meta\.helm\.sh/release-namespace}' 2>/dev/null || echo "CRD not found"
 
 echo ""
 echo "KEDA installation/verification completed successfully!"
