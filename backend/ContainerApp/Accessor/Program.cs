@@ -87,7 +87,7 @@ builder.Services.AddDaprClient(client =>
 
 // Build data source with dynamic JSON enabled
 var dataSourceBuilder = new NpgsqlDataSourceBuilder(builder.Configuration.GetConnectionString("Postgres"));
-dataSourceBuilder.EnableDynamicJson(); // important
+dataSourceBuilder.EnableDynamicJson();
 var dataSource = dataSourceBuilder.Build();
 
 // Register DbContext using the data source

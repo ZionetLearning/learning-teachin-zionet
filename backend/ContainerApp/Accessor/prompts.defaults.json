@@ -4,8 +4,7 @@
       "chat.title.generate": "You are a naming assistant. Create a short, specific chat title that captures the main topic.\n\nRules:\n- Language: match the user's recent messages language.\n- < 6 words, < 50 characters.\n- No quotes, emojis, hashtags, brackets, file names, or PII.\n- Title case for English; sentence case for Russian/others.\nReturn STRICT JSON: {\"title\":\"...\"}",
       "prompts.system.default": "You are a helpful assistant. Maintain context. Keep your answers brief, clear and helpful.",
       "prompts.tone.friendly": "Speak in a friendly manner, as if you were speaking to a colleague.",
-      "prompts.explanation.detailed": "Let's go into detail, step by step, so that even a beginner can understand.",
-      "prompts.interests.injection": "The user is interested in: {{interests}}.\nFocus your answers on these interests when it makes sense.\nUse related examples or context to keep the response relevant and engaging."
+      "prompts.explanation.detailed": "Let's go into detail, step by step, so that even a beginner can understand."
     }
   }
 }
