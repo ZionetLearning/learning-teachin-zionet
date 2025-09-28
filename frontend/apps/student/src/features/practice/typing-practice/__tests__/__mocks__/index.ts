@@ -6,21 +6,6 @@ export const mockExercise = {
   difficulty: "easy" as const,
 };
 
-vi.mock("react-i18next", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("react-i18next")>();
-  return {
-    ...actual,
-    useTranslation: () => ({
-      t: (key: string) => key,
-      i18n: { language: "en", changeLanguage: vi.fn() },
-    }),
-    initReactI18next: {
-      type: "3rdParty",
-      init: () => {},
-    },
-  };
-});
-
 // Mock lottie-web to prevent canvas errors
 vi.mock("lottie-web", () => {
   return {
@@ -33,6 +18,21 @@ vi.mock("lottie-web", () => {
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
     })),
+  };
+});
+
+vi.mock("react-i18next", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("react-i18next")>();
+  return {
+    ...actual,
+    useTranslation: () => ({
+      t: (key: string) => key,
+      i18n: { language: "en", changeLanguage: vi.fn() },
+    }),
+    initReactI18next: {
+      type: "3rdParty",
+      init: () => {},
+    },
   };
 });
 
