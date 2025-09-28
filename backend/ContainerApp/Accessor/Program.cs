@@ -84,17 +84,17 @@ builder.Services.AddDaprClient(client =>
 });
 
 // Configure PostgreSQL
-builder.Services.AddDbContext<AccessorDbContext>((sp, options) =>
+builder.Services.AddSingleton(sp =>
 {
     var connString = builder.Configuration.GetConnectionString("Postgres");
-
-    // Build NpgsqlDataSource with dynamic JSON enabled
     var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(connString);
     dataSourceBuilder.EnableDynamicJson();
+    return dataSourceBuilder.Build();
+});
 
-    var dataSource = dataSourceBuilder.Build();
-
-    // Pass dataSource into EF and keep retry policy
+builder.Services.AddDbContext<AccessorDbContext>((sp, options) =>
+{
+    var dataSource = sp.GetRequiredService<Npgsql.NpgsqlDataSource>();
     options.UseNpgsql(dataSource, npgsqlOptions =>
     {
         npgsqlOptions.EnableRetryOnFailure(
