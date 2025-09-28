@@ -11,14 +11,28 @@ vi.mock("react-i18next", async (importOriginal) => {
   return {
     ...actual,
     useTranslation: () => ({
-      t: (key: string) => key, // תמיד מחזיר את המפתח כטקסט
+      t: (key: string) => key,
       i18n: { language: "en", changeLanguage: vi.fn() },
     }),
-    // זה החלק שהיה חסר – plugin שה-i18n שלך מחפש
     initReactI18next: {
       type: "3rdParty",
       init: () => {},
     },
+  };
+});
+
+// Mock lottie-web to prevent canvas errors
+vi.mock("lottie-web", () => {
+  return {
+    loadAnimation: vi.fn(() => ({
+      play: vi.fn(),
+      stop: vi.fn(),
+      destroy: vi.fn(),
+      setSpeed: vi.fn(),
+      goToAndStop: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    })),
   };
 });
 
