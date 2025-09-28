@@ -6,20 +6,19 @@ export const mockExercise = {
   difficulty: "easy" as const,
 };
 
-// Mock lottie-web to prevent canvas errors
-vi.mock("lottie-web", () => {
-  return {
-    loadAnimation: vi.fn(() => ({
-      play: vi.fn(),
-      stop: vi.fn(),
-      destroy: vi.fn(),
-      setSpeed: vi.fn(),
-      goToAndStop: vi.fn(),
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-    })),
-  };
-});
+// Mock lottie-web at the lowest level to prevent canvas access
+vi.mock("lottie-web", () => ({
+  __esModule: true,
+  default: {
+    loadAnimation: vi.fn(),
+    destroy: vi.fn(),
+    setSpeed: vi.fn(),
+    setDirection: vi.fn(),
+    play: vi.fn(),
+    pause: vi.fn(),
+    stop: vi.fn(),
+  },
+}));
 
 vi.mock("react-i18next", async (importOriginal) => {
   const actual = await importOriginal<typeof import("react-i18next")>();
