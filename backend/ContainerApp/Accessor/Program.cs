@@ -94,13 +94,13 @@ builder.Services.AddSingleton(sp =>
     connectionStringBuilder.Timeout = 30;
     connectionStringBuilder.CommandTimeout = 30;
     connectionStringBuilder.MaxPoolSize = 50;
-    connectionStringBuilder.MinPoolSize = 10;
+    connectionStringBuilder.MinPoolSize = 5;
     connectionStringBuilder.ConnectionIdleLifetime = 30;
 
     return dataSourceBuilder.Build();
 });
 
-builder.Services.AddDbContext<AccessorDbContext>((sp, options) =>
+builder.Services.AddDbContextPool<AccessorDbContext>((sp, options) =>
 {
     var dataSource = sp.GetRequiredService<Npgsql.NpgsqlDataSource>();
     options.UseNpgsql(dataSource, npgsqlOptions =>
