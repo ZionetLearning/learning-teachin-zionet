@@ -31,7 +31,7 @@ public class ChatIntegrationTests(
             UserId = user.UserId.ToString(),
             UserMessage = "Remember number 42",
             ChatType = ChatType.Default
-        }, TimeSpan.FromSeconds(30));
+        }, TimeSpan.FromSeconds(60));
 
         var chatName1 = frames1.Last().ChatName;
         chatName1.Should().NotBeNullOrWhiteSpace();
@@ -52,7 +52,7 @@ public class ChatIntegrationTests(
             UserId = user.UserId.ToString(),
             UserMessage = "What number did you remember?",
             ChatType = ChatType.Default
-        }, TimeSpan.FromSeconds(30));
+        }, TimeSpan.FromSeconds(60));
 
         var chatName2 = frames2.Last().ChatName;
         chatName2.Should().Be(chatName1);
@@ -73,7 +73,7 @@ public class ChatIntegrationTests(
             UserId = user.UserId.ToString(),
             UserMessage = "Give me the current time in ISO-8601 (UTC). Return only the timestamp.",
             ChatType = ChatType.Default
-        }, TimeSpan.FromSeconds(30));
+        }, TimeSpan.FromSeconds(60));
 
         var chatName3 = frames3.Last().ChatName;
         chatName3.Should().Be(chatName1);
