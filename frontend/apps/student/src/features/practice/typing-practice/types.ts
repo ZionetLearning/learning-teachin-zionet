@@ -1,15 +1,3 @@
-export interface Exercise {
-  id: string;
-  hebrewText: string;
-  difficulty: "easy" | "medium" | "hard";
-}
-
-export interface ExerciseBank {
-  easy: Exercise[];
-  medium: Exercise[];
-  hard: Exercise[];
-}
-
 export interface ExerciseState {
   phase: "level-selection" | "ready" | "playing" | "typing" | "feedback";
   selectedLevel: "easy" | "medium" | "hard" | null;

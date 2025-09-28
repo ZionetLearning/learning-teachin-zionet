@@ -1,24 +1,6 @@
-import type { Exercise, DifficultyLevel, FeedbackResult } from "./types";
-import { exerciseBank } from "./data";
+import type { FeedbackResult } from "./types";
 import { stripHebrewNikud, splitGraphemes } from "../utils";
-export function getRandomExercise(level: DifficultyLevel): Exercise {
-  const exercises = exerciseBank[level];
 
-  if (!exercises || exercises.length === 0) {
-    throw new Error(`No exercises found for difficulty level: ${level}`);
-  }
-
-  const randomIndex = Math.floor(Math.random() * exercises.length);
-  return exercises[randomIndex];
-}
-
-export function getExercisesByLevel(level: DifficultyLevel): Exercise[] {
-  return exerciseBank[level] || [];
-}
-
-export function getExerciseCount(level: DifficultyLevel): number {
-  return exerciseBank[level]?.length || 0;
-}
 
 export function compareTexts(
   userInput: string,

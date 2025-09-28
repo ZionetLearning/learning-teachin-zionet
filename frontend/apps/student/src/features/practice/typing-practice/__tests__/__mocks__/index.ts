@@ -6,14 +6,20 @@ export const mockExercise = {
   difficulty: "easy" as const,
 };
 
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (k: string) => k }),
-}));
-
-vi.mock("../../utils", async () => {
-  const actual =
-    await vi.importActual<typeof import("../../utils")>("../../utils");
-  return { ...actual, getRandomExercise: vi.fn(() => mockExercise) };
+vi.mock("react-i18next", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("react-i18next")>();
+  return {
+    ...actual,
+    useTranslation: () => ({
+      t: (key: string) => key, // תמיד מחזיר את המפתח כטקסט
+      i18n: { language: "en", changeLanguage: vi.fn() },
+    }),
+    // זה החלק שהיה חסר – plugin שה-i18n שלך מחפש
+    initReactI18next: {
+      type: "3rdParty",
+      init: () => {},
+    },
+  };
 });
 
 export const speakSpy = vi.fn();
