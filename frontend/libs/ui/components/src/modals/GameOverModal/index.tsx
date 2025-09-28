@@ -90,6 +90,7 @@ export const GameOverModal = ({
         {isHebrew ? (
           <>
             <Button
+              data-testid="typing-play-again"
               onClick={onPlayAgain}
               variant="contained"
               color="primary"
@@ -99,6 +100,7 @@ export const GameOverModal = ({
               {t("pages.wordOrderGame.gameOver.playAgain")}
             </Button>
             <Button
+              data-testid="typing-change-settings"
               onClick={onChangeSettings}
               variant="outlined"
               startIcon={<Settings />}
@@ -110,6 +112,7 @@ export const GameOverModal = ({
         ) : (
           <>
             <Button
+              data-testid="typing-play-again"
               onClick={onPlayAgain}
               variant="contained"
               color="primary"
@@ -119,6 +122,7 @@ export const GameOverModal = ({
               {t("pages.wordOrderGame.gameOver.playAgain")}
             </Button>
             <Button
+              data-testid="typing-change-settings"
               onClick={onChangeSettings}
               variant="outlined"
               startIcon={<Settings />}

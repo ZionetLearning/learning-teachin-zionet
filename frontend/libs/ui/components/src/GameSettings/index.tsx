@@ -46,6 +46,7 @@ export const GameSettings = ({
         </Typography>
       </Box>
       <Button
+        data-testid="typing-change-level"
         variant="outlined"
         size="small"
         startIcon={<Settings />}

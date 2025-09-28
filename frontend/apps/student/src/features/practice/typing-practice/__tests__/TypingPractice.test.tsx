@@ -50,7 +50,8 @@ describe("<TypingPractice />", () => {
 
   it("selects a level and shows ready phase with play button", () => {
     renderWithProviders();
-    fireEvent.click(screen.getByText("Easy"));
+    fireEvent.click(screen.getByTestId("typing-level-easy"));
+    fireEvent.click(screen.getByTestId("game-config-start"));
     expect(screen.getByTestId("typing-exercise-area")).toBeInTheDocument();
     expect(screen.getByTestId("typing-selected-level")).toHaveTextContent(
       "easy",
@@ -61,7 +62,8 @@ describe("<TypingPractice />", () => {
 
   it("plays audio then advances to typing phase and enables replay", async () => {
     renderWithProviders();
-    fireEvent.click(screen.getByText("Easy"));
+    fireEvent.click(screen.getByTestId("typing-level-easy"));
+    fireEvent.click(screen.getByTestId("game-config-start"));
     fireEvent.click(screen.getByTestId("typing-play"));
     await screen.findByTestId("typing-phase-typing");
     expect(screen.getByTestId("typing-replay")).toBeInTheDocument();
@@ -70,7 +72,8 @@ describe("<TypingPractice />", () => {
 
   it("submits a correct answer and shows 100% accuracy feedback", async () => {
     renderWithProviders();
-    fireEvent.click(screen.getByText("Easy"));
+    fireEvent.click(screen.getByTestId("typing-level-easy"));
+    fireEvent.click(screen.getByTestId("game-config-start"));
     fireEvent.click(screen.getByTestId("typing-play"));
     await screen.findByTestId("typing-phase-typing");
     fireEvent.change(screen.getByTestId("typing-input"), {
@@ -87,7 +90,8 @@ describe("<TypingPractice />", () => {
 
   it("handles incorrect answer then try again resets to typing phase with cleared input", async () => {
     renderWithProviders();
-    fireEvent.click(screen.getByText("Easy"));
+    fireEvent.click(screen.getByTestId("typing-level-easy"));
+    fireEvent.click(screen.getByTestId("game-config-start"));
     fireEvent.click(screen.getByTestId("typing-play"));
     await screen.findByTestId("typing-phase-typing");
     fireEvent.change(screen.getByTestId("typing-input"), {
@@ -110,7 +114,8 @@ describe("<TypingPractice />", () => {
 
   it("goes to next exercise after feedback and returns to ready phase", async () => {
     renderWithProviders();
-    fireEvent.click(screen.getByText("Easy"));
+    fireEvent.click(screen.getByTestId("typing-level-easy"));
+    fireEvent.click(screen.getByTestId("game-config-start"));
     fireEvent.click(screen.getByTestId("typing-play"));
     await screen.findByTestId("typing-phase-typing");
     fireEvent.change(screen.getByTestId("typing-input"), {
@@ -125,7 +130,8 @@ describe("<TypingPractice />", () => {
 
   it("change level button returns to level selection", () => {
     renderWithProviders();
-    fireEvent.click(screen.getByText("Easy"));
+    fireEvent.click(screen.getByTestId("typing-level-easy"));
+    fireEvent.click(screen.getByTestId("game-config-start"));
     fireEvent.click(screen.getByTestId("typing-change-level"));
     expect(screen.getByTestId("typing-level-selection")).toBeInTheDocument();
   });

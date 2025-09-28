@@ -119,7 +119,7 @@ export const GameConfigModal = ({
             >
               <FormControlLabel
                 value="0"
-                control={<Radio />}
+                control={<Radio data-testid="typing-level-easy" />}
                 label={
                   <Box>
                     <Typography variant="body1">
@@ -133,7 +133,7 @@ export const GameConfigModal = ({
               />
               <FormControlLabel
                 value="1"
-                control={<Radio />}
+                control={<Radio data-testid="typing-level-medium" />}
                 label={
                   <Box>
                     <Typography variant="body1">
@@ -147,7 +147,7 @@ export const GameConfigModal = ({
               />
               <FormControlLabel
                 value="2"
-                control={<Radio />}
+                control={<Radio data-testid="typing-level-hard" />}
                 label={
                   <Box>
                     <Typography variant="body1">
