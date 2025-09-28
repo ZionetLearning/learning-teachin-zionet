@@ -100,13 +100,14 @@ namespace IntegrationTests.Tests.AI
             SplitSentenceResponse res = JsonSerializer.Deserialize<SplitSentenceResponse>(
                 evtRaw.Payload.GetRawText(), options)!;
 
-            res.Sentences.Count.Should().Be(count);
+            res.Split.Sentences.Count.Should().Be(count);
 
-            Assert.All(res.Sentences, s =>
+            Assert.All(res.Split.Sentences, s =>
             {
                 Assert.Equal(request.Difficulty.ToString(), s.Difficulty);
                 Assert.Equal(request.Nikud, s.Nikud);
             });
+
         }
     }
 }
