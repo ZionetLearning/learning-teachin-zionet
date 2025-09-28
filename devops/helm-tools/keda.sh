@@ -46,14 +46,14 @@ kubectl create namespace "$KEDA_NAMESPACE" --dry-run=client -o yaml | kubectl ap
 echo "Installing KEDA Core..."
 helm upgrade --install keda kedacore/keda \
     --namespace "$KEDA_NAMESPACE" \
-    --set operator.watchNamespace="$CURRENT_NAMESPACE" \
+    --set operator.watchNamespace="*" \
     --wait --timeout 300s
 
 # Install KEDA HTTP Add-on  
 echo "Installing KEDA HTTP Add-on..."
-helm upgrade --install keda-http kedacore/keda-add-ons-http \
+helm upgrade --install http-add-on kedacore/keda-add-ons-http \
     --namespace "$KEDA_NAMESPACE" \
     --set operator.keda.enabled=false \
     -f values-timeout.yaml \
-    --set operator.watchNamespace="$CURRENT_NAMESPACE" \
+    --set operator.watchNamespace="*" \
     --wait --timeout 300s
