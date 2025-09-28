@@ -35,31 +35,35 @@ const clearSearch = () => {
   });
 };
 
-const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
 export const locateUserRowByEmail = (
   email: string,
-): Cypress.Chainable<JQuery<HTMLElement>> => {
+): Cypress.Chainable<JQuery<HTMLElement> | null> => {
   waitForUsersList();
   searchFor(email);
-  const exact = new RegExp(`^${escapeRegExp(email)}$`);
-  return cy.get("body").then(($b) => {
-    const $match = $b
-      .find('[data-testid="users-email"]')
-      .filter((_, el) => el.textContent?.trim() === email);
-    if ($match.length) {
-      const $row = $match
+  return cy
+    .wrap(null as JQuery<HTMLElement> | null, { log: false })
+    .then<JQuery<HTMLElement> | null>(() => {
+      const $matches = Cypress.$('[data-testid="users-email"]').filter(
+        (_, el) => el.textContent?.trim() === email,
+      );
+      if ($matches.length) {
+        const $row = $matches
+          .first()
+          .closest('tr[data-testid^="users-row-"]') as JQuery<HTMLElement>;
+        return $row;
+      }
+
+      clearSearch();
+      waitForUsersList();
+      const $matches2 = Cypress.$('[data-testid="users-email"]').filter(
+        (_, el) => el.textContent?.trim() === email,
+      );
+      if (!$matches2.length) return null;
+      const $row2 = $matches2
         .first()
         .closest('tr[data-testid^="users-row-"]') as JQuery<HTMLElement>;
-      return cy.wrap($row);
-    }
-    clearSearch();
-    waitForUsersList();
-    return cy
-      .contains('[data-testid="users-email"]', exact, { timeout: 20000 })
-      .closest('tr[data-testid^="users-row-"]')
-      .should("exist");
-  });
+      return $row2;
+    });
 };
 
 type AdminCreds = { email: string; password: string };
