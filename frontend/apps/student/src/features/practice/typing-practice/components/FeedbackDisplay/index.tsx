@@ -76,11 +76,6 @@ export const FeedbackDisplay = ({
         >
           {t("pages.typingPractice.nextExercise")}
         </button>
-        {/*
-        <button className={classes.controlButton} onClick={onChangeLevel}>
-          {t("pages.typingPractice.changeLevel")}
-        </button>
-        */}
       </div>
     </div>
   );

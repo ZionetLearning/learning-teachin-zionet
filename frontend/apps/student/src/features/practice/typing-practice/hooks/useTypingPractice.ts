@@ -37,7 +37,6 @@ export const useTypingPractice = (gameConfig?: GameConfig) => {
 
   const [correctSentencesCount, setCorrectSentencesCount] = useState<number>(0);
 
-  // Use the existing useHebrewSentence hook from word order game
   const {
     sentence,
     loading,
@@ -151,7 +150,6 @@ export const useTypingPractice = (gameConfig?: GameConfig) => {
     }
   }, [gameConfig]);
 
-  // Update loading state from API
   useEffect(() => {
     setExerciseState((prev) => ({
       ...prev,
@@ -255,8 +253,6 @@ export const useTypingPractice = (gameConfig?: GameConfig) => {
 
     try {
       if (isPlaying) stop();
-
-      // Fetch next sentence from API
       const result = await fetchSentence();
 
       // Check if game is completed (no more sentences)

@@ -22,8 +22,8 @@ export function compareTexts(
   let correctCharacters = 0;
 
   for (let i = 0; i < maxLength; i++) {
-    const expectedCleanChar = cleanUser[i] || "";
-    const userCleanChar = cleanExpected[i] || "";
+    const expectedCleanChar = cleanExpected[i] || "";
+    const userCleanChar = cleanUser[i] || "";
 
     const expectedChar = expectedChars[i] || "";
     const userChar = userChars[i] || "";

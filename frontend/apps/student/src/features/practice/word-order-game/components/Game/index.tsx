@@ -81,7 +81,6 @@ export const Game = () => {
     setShuffledSentence([]);
     setCorrectSentencesCount(0);
     setGameStarted(false);
-    // Reset the hook's internal state
     resetGame();
   };
 
@@ -115,7 +114,6 @@ export const Game = () => {
 
   const handleGameOverPlayAgain = () => {
     setGameOverModalOpen(false);
-    // Reset the hook's internal state
     resetGame();
     // Reset component state
     setChosen([]);

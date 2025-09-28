@@ -27,5 +27,5 @@ export const splitGraphemes = (text: string): string[] => {
     const segmenter = new Intl.Segmenter("he", { granularity: "grapheme" });
     return Array.from(segmenter.segment(text), (s) => s.segment);
   }
-  return Array.from(text); // fallback
+  return Array.from(text); 
 };

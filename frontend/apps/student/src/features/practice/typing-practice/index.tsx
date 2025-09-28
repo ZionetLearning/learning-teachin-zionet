@@ -55,7 +55,6 @@ export const TypingPractice = () => {
       setGameConfig(config);
       setConfigModalOpen(false);
       setGameStarted(false);
-      // Reset game state when config changes
       resetGame();
     },
     [resetGame],
@@ -151,8 +150,6 @@ export const TypingPractice = () => {
   return (
     <div className={classes.pageWrapper}>
       <div className={classes.container}>
-        {/* Game Header with Settings - Similar to word order game */}
-
         <div className={classes.content}>
           {exerciseState.error && (
             <div className={classes.errorContainer}>{exerciseState.error}</div>
