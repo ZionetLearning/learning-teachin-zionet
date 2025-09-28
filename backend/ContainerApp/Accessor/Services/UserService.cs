@@ -96,11 +96,6 @@ public class UserService : IUserService
             user.LastName = updateUser.LastName;
         }
 
-        if (updateUser.Email is not null)
-        {
-            user.Email = updateUser.Email;
-        }
-
         if (updateUser.PreferredLanguageCode is not null)
         {
             user.PreferredLanguageCode = updateUser.PreferredLanguageCode.Value;
