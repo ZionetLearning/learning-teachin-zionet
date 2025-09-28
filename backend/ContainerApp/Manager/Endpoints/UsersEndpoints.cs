@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+//using System.Text.Json.Serialization;
 using Manager.Constants;
 using Manager.Helpers;
 using Manager.Models.Users;
@@ -500,7 +501,12 @@ public static class UsersEndpoints
             // Update interests and save
             targetUser.Interests = request.Interests;
 
-            var updated = await accessorClient.UpdateUserAsync(targetUser, userId);
+            var updateUser = new UpdateUserModel
+            {
+                Interests = targetUser.Interests
+            };
+
+            var updated = await accessorClient.UpdateUserAsync(updateUser, userId);
             return updated ? Results.Ok("Interests updated.") : Results.Problem("Failed to update interests.");
         }
         catch (Exception ex)
@@ -509,5 +515,4 @@ public static class UsersEndpoints
             return Results.Problem("Unexpected error.");
         }
     }
-
 }
