@@ -25,7 +25,7 @@ export const GameSetupPanel = ({
   return (
     <>
       <Box
-        data-testid="typing-level-selection"
+        data-testid="typing-welcome-screen"
         className={classes.welcomeContainer}
       >
         <Typography
