@@ -2,7 +2,6 @@
 set -e
 
 KEDA_NAMESPACE="keda"
-CURRENT_NAMESPACE=$1
 
 # Function to check if all KEDA pods are running and ready
 check_keda_pods_ready() {
