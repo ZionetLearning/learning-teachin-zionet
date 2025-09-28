@@ -58,8 +58,8 @@ vi.mock("@student/hooks", () => {
     }),
 
     useHebrewSentence: vi.fn(() => ({
-      sentence: "Hello world",
-      words: ["Hello", "world"],
+      sentence: "שלום",
+      words: ["שלום"],
       sentenceCount: 1,
       currentSentenceIndex: 0,
       isLoading: false,
