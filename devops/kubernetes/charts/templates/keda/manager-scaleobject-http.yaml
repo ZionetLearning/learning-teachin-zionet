@@ -8,10 +8,10 @@ spec:
   hosts:
   - teachin.westeurope.cloudapp.azure.com
   pathPrefixes:
-  - "/api/testkeda2"
+  - "/api/{{ include "app.namespace" . }}"
   scaleTargetRef:
     name: {{ .Values.manager.name }}
-    port: {{ .Values.manager.ports.container }}
+    port: {{ .Values.manager.ports.service }}
     service: {{ .Values.manager.name }}  # Ensure this matches the actual service name
   replicas:
     min: 0               # Scale to zero when no traffic (keep KEDA purpose)
