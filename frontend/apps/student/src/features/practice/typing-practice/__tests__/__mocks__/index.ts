@@ -64,5 +64,7 @@ vi.mock("@student/hooks", () => {
       isLoading: false,
       error: null,
     })),
+    resetSentenceGameHook: vi.fn(),
+    initOnce: vi.fn(),
   };
 });
