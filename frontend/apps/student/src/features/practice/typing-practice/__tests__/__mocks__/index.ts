@@ -59,10 +59,16 @@ vi.mock("@student/hooks", () => {
 
     useHebrewSentence: vi.fn(() => ({
       sentence: "Hello world",
+      words: ["Hello", "world"],
       sentenceCount: 1,
       currentSentenceIndex: 0,
       isLoading: false,
       error: null,
+      initOnce: vi.fn(),
+      resetGame: vi.fn(),
+      fetchSentence: vi.fn(),
+      currentDifficulty: 1,
+      hasNikud: true,
     })),
     resetSentenceGameHook: vi.fn(),
     initOnce: vi.fn(),
