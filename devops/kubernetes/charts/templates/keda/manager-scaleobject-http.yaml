@@ -2,13 +2,13 @@
 apiVersion: http.keda.sh/v1alpha1
 kind: HTTPScaledObject
 metadata:
-  name: manager-http-scaledobject
+  name: manager-http-scaledobject-{{ include "app.namespace" . }}
   namespace: {{ include "app.namespace" . }}
 spec:
   hosts:
   - teachin.westeurope.cloudapp.azure.com
   pathPrefixes:
-    - /api/testkeda
+    - /api/{{ include "app.namespace" . }}
   scaleTargetRef:
     name: {{ .Values.manager.name }}
     port: {{ .Values.manager.ports.container }}
