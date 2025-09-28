@@ -36,23 +36,33 @@ vi.mock("react-i18next", async (importOriginal) => {
 });
 
 export const speakSpy = vi.fn();
-vi.mock("@student/hooks", () => ({
-  useAvatarSpeech: (opts: {
-    onAudioStart?: () => void;
-    onAudioEnd?: () => void;
-  }) => ({
-    speak: (text: string) => {
-      speakSpy(text);
-      opts.onAudioStart?.();
-      opts.onAudioEnd?.();
-    },
-    stop: vi.fn(),
-    toggleMute: vi.fn(),
-    isPlaying: false,
-    isMuted: false,
-    isLoading: false,
-    error: null,
-    currentViseme: 0,
-    currentVisemeSrc: undefined,
-  }),
-}));
+vi.mock("@student/hooks", () => {
+  return {
+    useAvatarSpeech: (opts: {
+      onAudioStart?: () => void;
+      onAudioEnd?: () => void;
+    }) => ({
+      speak: (text: string) => {
+        speakSpy(text);
+        opts.onAudioStart?.();
+        opts.onAudioEnd?.();
+      },
+      stop: vi.fn(),
+      toggleMute: vi.fn(),
+      isPlaying: false,
+      isMuted: false,
+      isLoading: false,
+      error: null,
+      currentViseme: 0,
+      currentVisemeSrc: undefined,
+    }),
+
+    useHebrewSentence: vi.fn(() => ({
+      sentence: "Hello world",
+      sentenceCount: 1,
+      currentSentenceIndex: 0,
+      isLoading: false,
+      error: null,
+    })),
+  };
+});
