@@ -89,6 +89,14 @@ builder.Services.AddSingleton(sp =>
     var connString = builder.Configuration.GetConnectionString("Postgres");
     var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(connString);
     dataSourceBuilder.EnableDynamicJson();
+    var connectionStringBuilder = dataSourceBuilder.ConnectionStringBuilder;
+    connectionStringBuilder.ConnectionPruningInterval = 10;
+    connectionStringBuilder.Timeout = 30;
+    connectionStringBuilder.CommandTimeout = 30;
+    connectionStringBuilder.MaxPoolSize = 50;
+    connectionStringBuilder.MinPoolSize = 10;
+    connectionStringBuilder.ConnectionIdleLifetime = 30;
+
     return dataSourceBuilder.Build();
 });
 
