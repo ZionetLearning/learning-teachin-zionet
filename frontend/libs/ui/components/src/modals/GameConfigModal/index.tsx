@@ -104,7 +104,7 @@ export const GameConfigModal = ({
         </Typography>
       </DialogTitle>
 
-      <DialogContent>
+      <DialogContent data-testid="typing-level-selection">
         <Box className={classes.modalContent}>
           {/* Difficulty Selection */}
           <FormControl component="fieldset">
