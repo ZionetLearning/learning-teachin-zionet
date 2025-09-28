@@ -8,7 +8,7 @@ spec:
   hosts:
   - teachin.westeurope.cloudapp.azure.com
   pathPrefixes:
-    - /api/testkeda2
+    - /api/testkeda
   scaleTargetRef:
     name: {{ .Values.manager.name }}
     port: {{ .Values.manager.ports.container }}
