@@ -92,7 +92,7 @@ builder.Services.AddSingleton(sp =>
     return dataSourceBuilder.Build();
 });
 
-builder.Services.AddDbContext<AccessorDbContext>((sp, options) =>
+builder.Services.AddDbContextPool<AccessorDbContext>((sp, options) =>
 {
     var dataSource = sp.GetRequiredService<Npgsql.NpgsqlDataSource>();
     options.UseNpgsql(dataSource, npgsqlOptions =>
