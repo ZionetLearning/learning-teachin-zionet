@@ -32,7 +32,7 @@ spec:
                 port:
                   number: 8080
                 {{- else }}
-                name: {{ .Values.manager.name }}
+                name: {{ .Values.manager.name }}-{{ .Release.Namespace }}
                 port:
                   number: {{ .Values.manager.ports.service }}
                 {{- end }}
