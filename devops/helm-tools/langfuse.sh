@@ -18,9 +18,25 @@ helm repo update
 
 kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 
+# Check if database name has changed - if so, force reinstall to avoid conflicts
+CURRENT_DB_NAME=""
+if helm status langfuse -n "$NAMESPACE" >/dev/null 2>&1; then
+  CURRENT_DB_NAME=$(helm get values langfuse -n "$NAMESPACE" -o json 2>/dev/null | grep -o '"database":"langfuse-[^"]*"' | cut -d'"' -f4 || echo "")
+fi
+
+TARGET_DB_NAME="langfuse-${ENVIRONMENT_NAME}"
+
 ACTION="install"
 if helm status langfuse -n "$NAMESPACE" >/dev/null 2>&1; then
-  ACTION="upgrade"
+  if [[ "$CURRENT_DB_NAME" != "$TARGET_DB_NAME" ]]; then
+    echo "🔄 Database name changed from '$CURRENT_DB_NAME' to '$TARGET_DB_NAME'. Forcing clean reinstall..."
+    helm uninstall langfuse -n "$NAMESPACE" --keep-history=false || true
+    kubectl delete pvc --all -n "$NAMESPACE" --ignore-not-found=true
+    sleep 10
+    ACTION="install"
+  else
+    ACTION="upgrade"
+  fi
 else
   helm uninstall langfuse -n "$NAMESPACE" --keep-history=false || true
   kubectl delete pvc --all -n "$NAMESPACE" --ignore-not-found=true
