@@ -113,7 +113,7 @@ export const useChat = () => {
       position: "left",
       type: "text",
       sender: "system",
-      text: "", // Start with empty text
+      text: "",
       date: new Date(),
       isTyping: true,
     };
@@ -171,90 +171,9 @@ export const useChat = () => {
     );
   };
 
-  const sendMessageAsync = async (userText: string): Promise<string> => {
-    if (!userText.trim() || !userId || isStreaming) return "";
-
-    const payload: SendMessageRequest = {
-      userMessage: userText,
-      threadId: threadId || crypto.randomUUID(),
-      chatType: "default",
-      userId: userId
-    };
-
-    pushUser(userText);
-    setIsStreaming(true);
-
-    // Add initial typing indicator message
-    const typingMessage: ChatMessage = {
-      position: "left",
-      type: "text",
-      sender: "system",
-      text: "",
-      date: new Date(),
-      isTyping: true,
-    };
-    
-    setMessages((prev) => [...prev, typingMessage]);
-
-    return new Promise((resolve) => {
-      let assistantBuffer = "";
-
-      startStream(
-        payload,
-        (delta: string) => {
-          // add partial text
-          assistantBuffer += delta;
-          // Update the typing message with streamed content
-          setMessages((prev) => {
-            const updated = [...prev];
-            const lastIndex = updated.length - 1;
-            const lastMessage = updated[lastIndex];
-            
-            if (lastMessage?.sender === "system" && lastMessage.isTyping) {
-              updated[lastIndex] = { 
-                ...lastMessage, 
-                text: assistantBuffer,
-                isTyping: true
-              };
-            }
-            
-            return updated;
-          });
-        },
-        (final: AIChatStreamResponse) => {
-          setThreadId(final.threadId);
-          setIsStreaming(false);
-          
-          // Mark the message as complete
-          setMessages((prev) => {
-            const updated = [...prev];
-            const lastIndex = updated.length - 1;
-            const lastMessage = updated[lastIndex];
-            
-            if (lastMessage?.sender === "system" && lastMessage.isTyping) {
-              updated[lastIndex] = { 
-                ...lastMessage, 
-                text: assistantBuffer,
-                isTyping: false
-              };
-            }
-            
-            return updated;
-          });
-          
-          if (!threadId) {
-            refetchChats();
-          }
-          resolve(assistantBuffer);
-        }
-      );
-    });
-  };
-
   return {
     messages,
     sendMessage,
-    sendMessageAsync,
     loading: isStreaming,
     threadId,
     setMessages,

@@ -13,10 +13,12 @@ export type Status =
   | "reconnecting"
   | "disconnected";
 
+export type StreamStage = "First" | "Chunk" | "Last" | "Heartbeat" | "Error";
+
 export type StreamMessage<T = unknown> = {
   payload: T;
   sequenceNumber: number;
-  stage: string;
+  stage: StreamStage;
 };
 
 export type SignalRContextType = {
