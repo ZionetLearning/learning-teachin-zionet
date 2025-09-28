@@ -35,15 +35,17 @@ export const useHebrewSentence = (config: UseHebrewSentenceConfig = {}) => {
   } = useGenerateSplitSentences();
 
   // Default configuration
-  const defaultConfig = {
-    difficulty: 1 as DifficultyLevel, // medium
-    nikud: true,
-    count: 3, // Fetch multiple sentences to reduce API calls
-  };
+  const defaultConfig = useMemo(() => {
+    return {
+      difficulty: 1 as DifficultyLevel, // medium
+      nikud: true,
+      count: 3, // Fetch multiple sentences to reduce API calls
+    };
+  }, []);
 
   const finalConfig = useMemo(() => {
     return { ...defaultConfig, ...config };
-  }, [config]);
+  }, [defaultConfig, config]);
 
   const loading = splitLoading;
   const mutationError = splitError;
@@ -97,7 +99,7 @@ export const useHebrewSentence = (config: UseHebrewSentenceConfig = {}) => {
     if (sentencePool.length === 0) return { sentence: "", words: [] };
 
     const nextIndex = currentIndex + 1;
-    
+
     // Check if we've reached the end of all sentences
     if (nextIndex >= sentencePool.length) {
       return { sentence: "", words: [] }; // Game over - no more sentences

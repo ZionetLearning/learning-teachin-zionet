@@ -2,8 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useStyles } from "./style";
 import { Speaker } from "../Speaker";
-import { useHebrewSentence } from "../../hooks";
-import { useAvatarSpeech } from "@student/hooks";
+import { useAvatarSpeech, useHebrewSentence } from "@student/hooks";
 import { ChosenWordsArea, WordsBank, SideButtons } from "../";
 import {
   GameConfig,
@@ -102,20 +101,17 @@ export const Game = () => {
     if (isCorrect) {
       setCorrectSentencesCount(correctSentencesCount + 1);
     }
-
     const result = await fetchSentence();
-
     // Check if we've completed all sentences
     if (!result || !result.sentence) {
       setGameOverModalOpen(true);
       return;
     }
-
     setChosen([]);
     if (result.words && result.words.length > 0) {
       setShuffledSentence(shuffleDistinct(result.words));
     }
-  }, [stop, fetchSentence, isCorrect]);
+  }, [stop, fetchSentence, isCorrect, correctSentencesCount]);
 
   const handleGameOverPlayAgain = () => {
     setGameOverModalOpen(false);

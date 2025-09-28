@@ -33,6 +33,7 @@ export interface FeedbackResult {
     isCorrect: boolean;
     position: number;
   }>;
+  isCorrect: boolean;
 }
 
 export type DifficultyLevel = "easy" | "medium" | "hard";
