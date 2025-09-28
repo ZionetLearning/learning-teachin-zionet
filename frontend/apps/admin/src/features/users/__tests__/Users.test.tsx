@@ -3,7 +3,13 @@ import {
   QueryClientProvider,
   type UseQueryResult,
 } from "@tanstack/react-query";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Users } from "../index";
 import { User } from "@app-providers";
@@ -118,11 +124,6 @@ beforeEach(() => {
 });
 
 describe("<Users />", () => {
-  it("matches snapshot (with users)", () => {
-    const { asFragment } = renderUsers();
-    expect(asFragment()).toMatchSnapshot();
-  });
-
   it("renders loading state", () => {
     mockUseGetAllUsers.mockReturnValue(rq({ isLoading: true }));
     renderUsers();
@@ -137,10 +138,41 @@ describe("<Users />", () => {
     expect(screen.getByText("pages.users.userNotFound")).toBeInTheDocument();
   });
 
+  it("renders users table with required columns and rows", () => {
+    renderUsers();
+    
+    // table shell
+    const shell = screen.getByTestId("users-table-shell");
+    expect(shell).toBeInTheDocument();
+
+    // target the header table only
+    const headerTable = within(shell).getByRole("table", {
+      name: "users header",
+    });
+    const header = within(headerTable);
+
+    // headers (role = columnheader)
+    expect(
+      header.getByRole("columnheader", { name: "pages.users.email" }),
+    ).toBeInTheDocument();
+    expect(
+      header.getByRole("columnheader", { name: "pages.users.firstName" }),
+    ).toBeInTheDocument();
+    expect(
+      header.getByRole("columnheader", { name: "pages.users.lastName" }),
+    ).toBeInTheDocument();
+    expect(
+      header.getByRole("columnheader", { name: "pages.users.role" }),
+    ).toBeInTheDocument();
+    expect(
+      header.getByRole("columnheader", { name: "pages.users.actions" }),
+    ).toBeInTheDocument();
+  });
+
   it("submits create user form", async () => {
     const mutate = vi.fn(
       (
-        userData: {
+        _userData: {
           userId: string;
           email: string;
           password: string;

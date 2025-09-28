@@ -12,7 +12,6 @@ import PublicIcon from '@mui/icons-material/Public';
 import WeatherWidgetIcon from '@mui/icons-material/Cloud';
 import ThreePIcon from '@mui/icons-material/ThreeP';
 import LiveTvIcon from '@mui/icons-material/LiveTv';
-import ConnectWithoutContactIcon from '@mui/icons-material/ConnectWithoutContact';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import FlagIcon from '@mui/icons-material/Flag';
 import GBFlag from 'country-flag-icons/react/3x2/GB';
@@ -38,7 +37,6 @@ export const SidebarMenu = () => {
   const items: SidebarLink[] = [
     { label: t('sidebar.profile'), icon: <AccountCircleIcon />, path: '/profile', testId: 'sidebar-profile' },
     { label: t('sidebar.home'), icon: <HomeIcon />, path: '/', testId: 'sidebar-home' },
-    { label: t('sidebar.signalR'), icon: <ConnectWithoutContactIcon />, path: '/signalr', testId: 'signalR' },
     { label: t('sidebar.chatAvatar'), icon: <ThreePIcon />, path: '/chat-with-avatar', testId: 'sidebar-chat-avatar' },
     {
       label: t('sidebar.chatTools'),

@@ -35,6 +35,7 @@ builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IStatsService, StatsService>();
+builder.Services.AddScoped<IGameService, GameService>();
 builder.Services.AddScoped<DatabaseInitializer>();
 builder.Services.AddScoped<IManagerCallbackQueueService, ManagerCallbackQueueService>();
 builder.Services.AddScoped<IRefreshSessionService, RefreshSessionService>();
@@ -83,14 +84,25 @@ builder.Services.AddDaprClient(client =>
 });
 
 // Configure PostgreSQL
-builder.Services.AddDbContext<AccessorDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres"), npgsqlOptions =>
+builder.Services.AddSingleton(sp =>
+{
+    var connString = builder.Configuration.GetConnectionString("Postgres");
+    var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(connString);
+    dataSourceBuilder.EnableDynamicJson();
+    return dataSourceBuilder.Build();
+});
+
+builder.Services.AddDbContext<AccessorDbContext>((sp, options) =>
+{
+    var dataSource = sp.GetRequiredService<Npgsql.NpgsqlDataSource>();
+    options.UseNpgsql(dataSource, npgsqlOptions =>
     {
         npgsqlOptions.EnableRetryOnFailure(
             maxRetryCount: 5,
             maxRetryDelay: TimeSpan.FromSeconds(5),
             errorCodesToAdd: null);
-    }));
+    });
+});
 
 // This is required for the Scalar UI to have an option to setup an authentication token
 builder.Services.AddOpenApi(
@@ -149,4 +161,5 @@ app.MapAuthEndpoints();
 app.MapRefreshSessionEndpoints();
 app.MapStatsEndpoints();
 app.MapMediaEndpoints();
+app.MapGamesEndpoints();
 await app.RunAsync();

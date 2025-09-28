@@ -1,7 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
-import * as Sentry from "@sentry/react";
 import {
   AppRole,
   AuthProvider,
@@ -9,6 +8,7 @@ import {
   I18nTranslateProvider,
   initializeSentry,
   ReactQueryProvider,
+  SentryErrorBoundary
 } from "@app-providers";
 import App from "./App.tsx";
 
@@ -20,9 +20,9 @@ createRoot(document.getElementById("root")!).render(
     <ReactQueryProvider>
       <AuthProvider appRole={AppRole.teacher}>
         <StrictMode>
-          <Sentry.ErrorBoundary fallback={<div>Something went wrong</div>}>
+          <SentryErrorBoundary>
             <App />
-          </Sentry.ErrorBoundary>
+          </SentryErrorBoundary>
         </StrictMode>
       </AuthProvider>
     </ReactQueryProvider>

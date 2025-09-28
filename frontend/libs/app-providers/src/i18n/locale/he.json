@@ -72,10 +72,12 @@
         "score": "תוצאה:"
       },
       "chatAvatar": {
-        "chatAvatarPage": "צ'אט עם אווטאר - מחובר לבקאנד",
+        "chatAvatarPage": "צ'אט עם אווטאר",
         "typeMessage": "הקלד הודעה…",
         "avatar": "אווטאר",
-        "lips": "שפתיים"
+        "lips": "שפתיים",
+        "mute": "השתק",
+        "unmute": "הפעל קול"
       },
       "chatHistory": {
         "title": "היסטוריית צ'אט",
@@ -140,8 +142,7 @@
         "stop": "⏹ עצור",
         "play": "▶ הפעל",
         "record": "🎤 הקלט",
-        "hideNikud": "הסתר ניקוד",
-        "showNikud": "הצג ניקוד"
+        "noData": "אין נתונים"
       },
       "typingPractice": {
         "hebrewTypingPractice": "תרגול הקלדה בעברית",
@@ -167,14 +168,58 @@
         "replay": "🔄 נגן שוב"
       },
       "wordOrderGame": {
+        "config": {
+          "title": "העדפות משחק",
+          "subtitle": "בחר את העדפותייך למשחק סידור המילים",
+          "difficulty": "רמת קושי",
+          "difficultyDesc": {
+            "easy": "משפטים פשוטים עם אוצר מילים בסיסי",
+            "medium": "משפטים ברמה בינונית עם אוצר מילים יומיומי",
+            "hard": "משפטים ברמה מורכבת עם אוצר מילים מתקדם"
+          },
+          "options": "אפשרויות משחק",
+          "nikud": "כלול ניקוד",
+          "nikudDesc": "הצג סימנים דיאקריטיים כדי לסייע בהגייה",
+          "sentenceCount": "מספר המשפטים",
+          "sentenceCountDesc": "כמות המשפטים ליצירה (1-10)",
+          "startGame": "התחל משחק"
+        },
+        "difficulty": {
+          "easy": "קל",
+          "medium": "בינוני",
+          "hard": "קשה"
+        },
+        "welcome": {
+          "description": "בחר רמת קושי והעדפות נוספות כדי להתחיל לשחק",
+          "configure": "קבע העדפות משחק"
+        },
+        "current": {
+          "difficulty": "רמת קושי",
+          "nikud": "ניקוד",
+          "sentences": "משפטים",
+          "sentence": "משפט"
+        },
+        "gameOver": {
+          "title": "המשחק הסתיים!",
+          "congratulations": "כל הכבוד!",
+          "completed": "השלמת {{correct}} משפטים נכונים מתוך {{total}}.",
+          "whatNext": "מה תרצה לעשות כעת?",
+          "playAgain": "משחק חדש",
+          "changeSettings": "שינוי הגדרות משחק"
+        },
         "title": "משחק סידור מילים",
         "subTitle": "סדר את המילים בסדר הנכון",
+        "settings": "הגדרות",
         "loading": "טוען…",
         "reset": "איפוס",
         "check": "בדיקה",
         "next": "הבא",
         "playAudio": "הפעל קטע אודיו",
-        "playAudioSlowly": "הפעל קטע אודיו במהירות איטית (0.6x)"
+        "playAudioSlowly": "הפעל קטע אודיו במהירות איטית (0.6x)",
+        "cancel": "בטל",
+        "close": "סגור",
+        "yes": "כן",
+        "no": "לא"
       },
       "earthquakeMap": {
         "title": "מפת רעידות אדמה",
@@ -316,6 +361,56 @@
         "edit": "עריכה",
         "saveChanges": "שמור שינויים",
         "cancel": "ביטול"
+      },
+      "tasks": {
+        "title": "ניהול משימות",
+        "tasks": "משימות",
+        "taskId": "מזהה משימה",
+        "taskName": "שם המשימה",
+        "taskPayload": "תוכן המשימה",
+        "actions": "פעולות",
+        "search": "חיפוש משימות...",
+        "searchPlaceholder": "חיפוש משימות...",
+        "addNewTask": "הוסף משימה חדשה",
+        "createTask": "צור משימה",
+        "editTask": "ערוך משימה",
+        "viewTask": "הצג משימה",
+        "updateTask": "עדכן משימה",
+        "deleteTask": "מחק משימה",
+        "delete": "מחק",
+        "edit": "ערוך",
+        "view": "הצג",
+        "save": "שמור",
+        "cancel": "ביטול",
+        "close": "סגור",
+        "clear": "נקה",
+        "confirmDelete": "האם אתה בטוח שברצונך למחוק את המשימה \"{{name}}\"?",
+        "taskCreated": "המשימה נוצרה בהצלחה",
+        "taskUpdated": "המשימה עודכנה בהצלחה",
+        "taskDeleted": "המשימה נמחקה בהצלחה",
+        "taskCreationFailed": "יצירת המשימה נכשלה",
+        "taskUpdateFailed": "עדכון המשימה נכשל",
+        "taskDeleteFailed": "מחיקת המשימה נכשלה",
+        "loading": "טוען...",
+        "loadingTasks": "טוען משימות...",
+        "loadTasksFailed": "טעינת המשימות נכשלה",
+        "creating": "יוצר...",
+        "updating": "מעדכן...",
+        "noTasks": "לא נמצאו משימות",
+        "noTasksFound": "לא נמצאו משימות לחיפוש שלך",
+        "taskNamePlaceholder": "הכנס שם משימה",
+        "taskPayloadPlaceholder": "הכנס תוכן משימה",
+        "signalRConnected": "עדכונים בזמן אמת מחוברים",
+        "signalRDisconnected": "עדכונים בזמן אמת מנותקים",
+        "signalRReconnecting": "מתחבר מחדש...",
+        "rowsPerPage": "שורות בעמוד:",
+        "of": "מתוך",
+        "all": "הכל",
+        "validation": {
+          "taskNameRequired": "שם המשימה הוא שדה חובה",
+          "taskNameMinLength": "שם המשימה חייב להכיל לפחות 2 תווים",
+          "taskNameMaxLength": "שם המשימה לא יכול להכיל יותר מ-100 תווים"
+        }
       }
     },
     "sidebar": {
@@ -343,9 +438,16 @@
       "weather": "מזג האוויר",
       "anime": "ספריית אנימה",
       "countryExplorer": "ספריית מדינות",
-      "signalR": "בדיקת SignalR",
       "users": "משתמשים",
+      "tasks": "משימות",
       "profile": "פרופיל"
+    },
+    "errorBoundary": {
+      "title": "אופס! משהו השתבש",
+      "message": "קרתה תקלה בלתי צפויה. אל דאגה, הצוות שלנו עובד כדי לתקן אותה.",
+      "tryAgain": "נסה שוב",
+      "goBack": " חזור לתפריט",
+      "reportError": "דווח על התקלה"
     },
     "goBackToMenu": "חזור לתפריט",
     "logout": "התנתק",

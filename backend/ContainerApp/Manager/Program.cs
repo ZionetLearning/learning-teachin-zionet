@@ -128,7 +128,8 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(corsSettings.AllowedOrigins)
             .AllowAnyMethod()
             .AllowAnyHeader()
-            .AllowCredentials(); // Required for sending/receiving cookies
+            .AllowCredentials() // Required for sending/receiving cookies
+            .WithExposedHeaders("ETag");
     });
 });
 
@@ -230,6 +231,7 @@ app.MapAiEndpoints();
 app.MapAuthEndpoints();
 app.MapTasksEndpoints();
 app.MapUsersEndpoints();
+app.MapGamesEndpoints();
 app.MapHub<NotificationHub>("/NotificationHub");
 app.MapMediaEndpoints();
 
