@@ -15,9 +15,9 @@ kubectl delete job langfuse-migrate -n "$NAMESPACE" --ignore-not-found
 
 # #### if this is deleted a full cicd (terraform apply) is needed, so uncomment only if you want to 'full cicd destroy'
 # # 3. Delete ExternalSecret + synced Secret
-# echo "🚮 Deleting secrets..."
-# kubectl delete externalsecret langfuse-secrets -n "$NAMESPACE" --ignore-not-found
-# kubectl delete secret langfuse-secrets -n "$NAMESPACE" --ignore-not-found
+echo "🚮 Deleting secrets..."
+kubectl delete externalsecret langfuse-secrets -n "$NAMESPACE" --ignore-not-found
+kubectl delete secret langfuse-secrets -n "$NAMESPACE" --ignore-not-found
 
 # 4. Delete PVCs (ClickHouse, Redis, S3, Zookeeper)
 echo "🚮 Deleting PVCs..."
