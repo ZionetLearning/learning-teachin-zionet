@@ -1,4 +1,4 @@
-import { addCreatedEmail } from "../support/commands";
+import { addCreatedEmail } from "@test-utils/cypress";
 
 describe("auth", () => {
   const baseUrl = "https://localhost:4000";
