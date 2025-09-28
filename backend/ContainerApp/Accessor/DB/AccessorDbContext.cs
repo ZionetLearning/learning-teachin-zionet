@@ -3,7 +3,6 @@ using Accessor.Models;
 using Microsoft.EntityFrameworkCore;
 using Accessor.Models.Users;
 using Accessor.Models.Games;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Accessor.Models.Prompts;
 
 namespace Accessor.DB;
@@ -21,12 +20,6 @@ public class AccessorDbContext : DbContext
     public DbSet<PromptModel> Prompts { get; set; } = default!;
     public DbSet<TeacherStudent> TeacherStudents { get; set; } = default!;
     public DbSet<GameAttempt> GameAttempts { get; set; } = default!;
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        optionsBuilder.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
-        base.OnConfiguring(optionsBuilder);
-    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
