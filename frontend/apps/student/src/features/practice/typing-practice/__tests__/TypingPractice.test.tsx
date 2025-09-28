@@ -224,7 +224,7 @@ describe("<TypingPractice />", () => {
     fireEvent.click(screen.getByTestId("typing-play"));
     await screen.findByTestId("typing-phase-typing");
     fireEvent.change(screen.getByTestId("typing-input"), {
-      target: { value: "שלום" },
+      target: { value: "שולם" },
     });
     fireEvent.click(screen.getByTestId("typing-submit"));
     await waitFor(() => {
