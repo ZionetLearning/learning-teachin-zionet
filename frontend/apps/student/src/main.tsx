@@ -1,6 +1,5 @@
 import { createRoot } from "react-dom/client";
 import { ToastContainer } from "react-toastify";
-import * as Sentry from "@sentry/react";
 import {
   ReactQueryProvider,
   I18nTranslateProvider,
@@ -8,6 +7,7 @@ import {
   SignalRProvider,
   initAppInsights,
   initializeSentry,
+  SentryErrorBoundary
 } from "@app-providers";
 import { AppRole } from "@app-providers/types";
 import "./index.css";
@@ -25,10 +25,10 @@ createRoot(document.getElementById("root")!).render(
     <ReactQueryProvider>
       <AuthProvider appRole={AppRole.student}>
         <SignalRProvider hubUrl={HUB_URL}>
-          <Sentry.ErrorBoundary fallback={<div>Something went wrong</div>}>
+          <SentryErrorBoundary>
             <App />
             <ToastContainer />
-          </Sentry.ErrorBoundary>
+          </SentryErrorBoundary>
         </SignalRProvider>
       </AuthProvider>
     </ReactQueryProvider>

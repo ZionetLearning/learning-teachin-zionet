@@ -75,7 +75,9 @@
         "chatAvatarPage": "Chat with Avatar",
         "typeMessage": "Type a message...",
         "avatar": "Avatar",
-        "lips": "Lips"
+        "lips": "Lips",
+        "mute": "Mute audio",
+        "unmute": "Unmute audio"
       },
       "chatHistory": {
         "title": "Chat History",
@@ -140,8 +142,7 @@
         "stop": "⏹ Stop",
         "play": "▶ Play",
         "record": "🎤 Record",
-        "hideNikud": "Hide Nikud",
-        "showNikud": "Show Nikud"
+        "noData": "No data"
       },
       "typingPractice": {
         "hebrewTypingPractice": "Hebrew Typing Practice",
@@ -440,6 +441,13 @@
       "users": "Users",
       "tasks": "Tasks",
       "profile": "Profile"
+    },
+    "errorBoundary": {
+      "title": "Oops! Something went wrong",
+      "message": "Something unexpected happened. Don't worry, our team has been notified and we are working to fix it.",
+      "tryAgain": "Try Again",
+      "goBack": "Back to Menu",
+      "reportError": "Report this error"
     },
     "goBackToMenu": "Go back to Menu",
     "logout": "Logout",

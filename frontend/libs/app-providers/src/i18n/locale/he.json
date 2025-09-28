@@ -75,7 +75,9 @@
         "chatAvatarPage": "צ'אט עם אווטאר",
         "typeMessage": "הקלד הודעה…",
         "avatar": "אווטאר",
-        "lips": "שפתיים"
+        "lips": "שפתיים",
+        "mute": "השתק",
+        "unmute": "הפעל קול"
       },
       "chatHistory": {
         "title": "היסטוריית צ'אט",
@@ -140,8 +142,7 @@
         "stop": "⏹ עצור",
         "play": "▶ הפעל",
         "record": "🎤 הקלט",
-        "hideNikud": "הסתר ניקוד",
-        "showNikud": "הצג ניקוד"
+        "noData": "אין נתונים"
       },
       "typingPractice": {
         "hebrewTypingPractice": "תרגול הקלדה בעברית",
@@ -440,6 +441,13 @@
       "users": "משתמשים",
       "tasks": "משימות",
       "profile": "פרופיל"
+    },
+    "errorBoundary": {
+      "title": "אופס! משהו השתבש",
+      "message": "קרתה תקלה בלתי צפויה. אל דאגה, הצוות שלנו עובד כדי לתקן אותה.",
+      "tryAgain": "נסה שוב",
+      "goBack": " חזור לתפריט",
+      "reportError": "דווח על התקלה"
     },
     "goBackToMenu": "חזור לתפריט",
     "logout": "התנתק",
