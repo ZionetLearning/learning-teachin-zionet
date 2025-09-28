@@ -2,6 +2,7 @@
 set -e
 
 KEDA_NAMESPACE="keda"
+CURRENT_NAMESPACE=$1
 
 # Function to check if all KEDA pods are running and ready
 check_keda_pods_ready() {
@@ -45,14 +46,14 @@ kubectl create namespace "$KEDA_NAMESPACE" --dry-run=client -o yaml | kubectl ap
 echo "Installing KEDA Core..."
 helm upgrade --install keda kedacore/keda \
     --namespace "$KEDA_NAMESPACE" \
+    --set operator.watchNamespace="$CURRENT_NAMESPACE" \
     --wait --timeout 300s
 
 # Install KEDA HTTP Add-on  
 echo "Installing KEDA HTTP Add-on..."
-helm upgrade --install keda-http kedacore/keda-add-ons-http \
+helm upgrade --install http-add-on kedacore/keda-add-ons-http \
     --namespace "$KEDA_NAMESPACE" \
     --set operator.keda.enabled=false \
     -f values-timeout.yaml \
-    --set http.watcher.pod.logLevel=info \
-    --set http.watcher.watcherNamespace="" \
+    --set operator.watchNamespace="$CURRENT_NAMESPACE" \
     --wait --timeout 300s
