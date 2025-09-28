@@ -59,7 +59,7 @@ jobs:
     secrets: inherit
  
   aks-kubectl-apply:
-    if: ${{ github.event.inputs.environment_name == 'dev' || github.event.inputs.environment_name == 'prod' || github.event.inputs.environment_name == 'newlang' }}
+    if: ${{ github.event.inputs.environment_name == 'dev' || github.event.inputs.environment_name == 'prod' }}
     needs: [build-and-push-images, terraform-apply]
     uses: ./.github/workflows/aks-kubectl-apply.yaml
     permissions:
