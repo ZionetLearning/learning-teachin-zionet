@@ -7,7 +7,8 @@ metadata:
 spec:
   hosts:
   - teachin.westeurope.cloudapp.azure.com
-  pathPrefixes: /api/{{ include "app.namespace" . }}
+  pathPrefixes:
+  - "/api/testkeda"
   scaleTargetRef:
     name: {{ .Values.manager.name }}
     port: {{ .Values.manager.ports.container }}
