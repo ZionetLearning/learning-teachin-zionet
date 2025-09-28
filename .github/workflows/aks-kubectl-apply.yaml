@@ -125,6 +125,14 @@ jobs:
           AZURE_CLIENT_ID: ${{ secrets.AZURE_APPLICATION_ID }}
           AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
 
+      - name: Add Langfuse
+        run: |
+          #kubectl create namespace devops-tools --dry-run=client -o yaml | kubectl apply -f -
+          cd devops/helm-tools
+          chmod +x langfuse.sh
+          ./langfuse.sh $TARGET_NAMESPACE "${{ secrets.LANGFUSE_ADMIN_EMAIL }}" "${{ secrets.LANGFUSE_ADMIN_PASSWORD }}" "${{ secrets.POSTGRES_USER }}" "${{ secrets.POSTGRES_PASSWORD }}"
+          kubectl apply -f "../kubernetes/ingress/langfuse-ingress.yaml"
+
       - name: Restart logging stack pods (optional)
         run: |
           set -e
