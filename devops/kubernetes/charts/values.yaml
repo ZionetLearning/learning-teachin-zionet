@@ -79,7 +79,7 @@ cronjobs:
       port: 80
 
 manager:
-  name: manager-{{ .Values.global.environment | default .Release.Namespace }}
+  name: manager-{{ .Release.Namespace }}
   labels:
     selectorKey: io.kompose.service
     selectorValue: manager
@@ -132,7 +132,7 @@ manager:
       memory: "512Mi"
 
 engine:
-  name: engine-{{ .Values.global.environment | default .Release.Namespace }}
+  name: engine-{{ .Release.Namespace }}
   labels:
     selectorKey: io.kompose.service
     selectorValue: engine
@@ -180,7 +180,7 @@ engine:
       memory: "512Mi"
 
 accessor:
-  name: accessor-{{ .Values.global.environment | default .Release.Namespace }}
+  name: accessor-{{ .Release.Namespace }}
   labels:
     selectorKey: app
     selectorValue: accessor
