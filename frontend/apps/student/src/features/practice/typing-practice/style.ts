@@ -1,11 +1,21 @@
 import { createUseStyles } from "react-jss";
 
 export const useStyles = createUseStyles({
+  pageWrapper: {
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
+    minHeight: "100vh",
+    backgroundColor: "#f5f5f5",
+    padding: "20px",
+    boxSizing: "border-box",
+  },
   container: {
     display: "flex",
     flexDirection: "column",
-    maxHeight: "90%",
-    minHeight: "200px",
+    maxHeight: "calc(100vh - 40px)",
+    minHeight: "400px",
     width: "100%",
     maxWidth: "800px",
     border: "1px solid #e1e5e9",
@@ -13,6 +23,7 @@ export const useStyles = createUseStyles({
     backgroundColor: "#ffffff",
     overflow: "hidden",
     position: "relative",
+    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
   },
   header: {
     flexShrink: 0,
@@ -21,15 +32,25 @@ export const useStyles = createUseStyles({
     backgroundColor: "#f8f9fa",
     textAlign: "center",
   },
-  title: { margin: 0, fontSize: "19px", fontWeight: "600", color: "#333333" },
-  subtitle: { margin: 0, fontSize: "11px", color: "#6c757d" },
+  title: {
+    margin: 0,
+    fontSize: "19px",
+    fontWeight: "600",
+    color: "#333333",
+  },
+  subtitle: {
+    margin: 0,
+    fontSize: "11px",
+    color: "#6c757d",
+  },
   content: {
     flex: 1,
     display: "flex",
     flexDirection: "column",
     padding: "12px",
     minHeight: 0,
-    overflow: "hidden",
+    overflow: "auto",
+    paddingBottom: "40px",
   },
 
   exerciseArea: {
@@ -113,6 +134,9 @@ export const useStyles = createUseStyles({
     boxSizing: "border-box",
     "&:focus": { outline: "none", borderColor: "#007bff" },
     "&::placeholder": { color: "#6c757d" },
+    fontFamily: "'Times New Roman', 'David Libre', 'Frank Ruehl CLM', serif",
+    fontFeatureSettings: "'kern' 1, 'liga' 1, 'clig' 1",
+    textRendering: "optimizeLegibility",
   },
   typingSubmitButton: {
     alignSelf: "flex-end",
@@ -140,6 +164,19 @@ export const useStyles = createUseStyles({
     justifyContent: "center",
     zIndex: 10,
   },
+  gameSettingsWrapper: {
+    display: "flex",
+    padding: "12px",
+  },
+  gameSettings: {
+    flexShrink: 0,
+    backgroundColor: "#ffffff",
+    padding: "12px 16px",
+    zIndex: 5,
+  },
+  feedbackMode: {
+    marginTop: "20px",
+  },
   loadingSpinner: {
     width: "24px",
     height: "24px",
@@ -155,6 +192,10 @@ export const useStyles = createUseStyles({
 
   // Mobile responsive
   "@media (max-width: 768px)": {
+    pageWrapper: {
+      padding: "10px",
+      minHeight: "100vh",
+    },
     container: {
       height: "calc(100vh - 40px)",
       maxWidth: "100%",
