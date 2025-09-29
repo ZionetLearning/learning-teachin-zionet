@@ -40,11 +40,12 @@ export const useSendChatMessageStream = () => {
         EventType.ChatAiAnswer,
         requestId,
         (msg) => {
-          if (msg.payload.delta) {
+          if (msg.stage === "Last") {
+            if (msg.payload.isFinal) {
+              onCompleted(msg.payload);
+            }
+          } else if (msg.payload.delta) {
             onDelta(msg.payload.delta);
-          }
-          if (msg.payload.isFinal) {
-            onCompleted(msg.payload);
           }
         }
       );
