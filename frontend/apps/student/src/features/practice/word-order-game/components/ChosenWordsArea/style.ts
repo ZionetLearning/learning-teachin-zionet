@@ -5,7 +5,6 @@ export const useStyles = createUseStyles({
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    gap: 24,
     marginTop: 8,
   },
   dashLine: {
@@ -21,7 +20,7 @@ export const useStyles = createUseStyles({
     flexWrap: "wrap",
     gap: 8,
     justifyContent: "center",
-    alignItems: "flex-end",
+    alignItems: "center",
     "&::after": {
       content: '""',
       position: "absolute",

@@ -219,7 +219,9 @@
         "cancel": "Cancel",
         "close": "Close",
         "yes": "Yes",
-        "no": "No"
+        "no": "No",
+        "correct": "Correct!",
+        "incorrect": "Incorrect. Try again."
       },
       "earthquakeMap": {
         "title": "Earthquake Map",
