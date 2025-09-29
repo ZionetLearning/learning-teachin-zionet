@@ -86,6 +86,14 @@ manager:
   image:
     name: manager
     # tag: defaults to global.environment, set by CI/CD
+  ingress:
+    enabled: true
+    host: teachin.westeurope.cloudapp.azure.com
+    basePath: /api
+    tls:
+      enabled: true
+      clusterIssuer: letsencrypt-prod
+      secretName: teachin-tls
   ports:
     container: 5001
     service: 80
