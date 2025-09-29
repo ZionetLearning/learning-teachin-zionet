@@ -80,7 +80,7 @@ export interface NotificationPayload {
 }
 
 export interface StreamEvent<TPayload = unknown> {
-  eventType: string;       // StreamEventType from backend (e.g., "ChatAiAnswer")
+  eventType: string; // StreamEventType from backend (e.g., "ChatAiAnswer")
   payload: TPayload;
   sequenceNumber: number;
   stage: "First" | "Chunk" | "Last" | "Heartbeat" | "Error";
@@ -101,15 +101,11 @@ export interface SentenceItem {
 
 // Split sentence types
 export interface SplitSentenceItem {
+  attemptId: string;
   words: string[];
   original: string;
   difficulty: string;
   nikud: boolean;
-}
-
-export interface SplitSentenceGeneratedPayload {
-  sentenceId: string;
-  split: { sentences: SplitSentenceItem[] };
 }
 
 // Union Type for all possible events
@@ -118,7 +114,7 @@ export type UserEventUnion =
   | { eventType: typeof EventType.SystemMessage; payload: SystemMessagePayload }
   | {
       eventType: typeof EventType.SplitSentenceGeneration;
-      payload: SplitSentenceGeneratedPayload;
+      payload: SplitSentenceItem[];
     };
 
 // Event Handler Type
