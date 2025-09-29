@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Text;
 using Dapr.Client;
 using DotQueue;
 using Engine.Constants;
@@ -19,6 +20,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
 {
     private readonly DaprClient _daprClient;
     private readonly ILogger<EngineQueueHandler> _logger;
+    private readonly ILogger<StreamingChatAIBatcher> _batcherLogger;
     private readonly IChatAiService _aiService;
     private readonly ISentencesService _sentencesService;
     private readonly IAiReplyPublisher _publisher;
@@ -35,19 +37,21 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
     public EngineQueueHandler(
         DaprClient daprClient,
+        ILogger<EngineQueueHandler> logger,
+        ILogger<StreamingChatAIBatcher> batcherLogger,
         IChatAiService aiService,
         IAiReplyPublisher publisher,
         IAccessorClient accessorClient,
         ISentencesService sentencesService,
-        IChatTitleService chatTitleService,
-        ILogger<EngineQueueHandler> logger) : base(logger)
+        IChatTitleService chatTitleService) : base(logger)
     {
         _daprClient = daprClient;
+        _logger = logger;
+        _batcherLogger = batcherLogger;
         _aiService = aiService;
         _publisher = publisher;
         _accessorClient = accessorClient;
         _chatTitleService = chatTitleService;
-        _logger = logger;
         _sentencesService = sentencesService;
     }
 
@@ -169,6 +173,13 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
         var sw = Stopwatch.StartNew();
         EngineChatRequest? request = null;
+        var chatName = string.Empty;
+        ChatAiServiseRequest? serviceRequest = null;
+        CancellationTokenSource? renewalCts = null;
+        Task? renewTask = null;
+        Stopwatch? elapsed = null;
+        var seq = 0;
+        Func<int> NextSeq = () => Interlocked.Increment(ref seq) - 1;
         try
         {
             request = PayloadValidation.DeserializeOrThrow<EngineChatRequest>(message, _logger);
@@ -212,7 +223,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
             storyForKernel.AddUserMessage(request.UserMessage.Trim(), DateTimeOffset.UtcNow);
 
-            var chatName = snapshot.Name;
+            chatName = snapshot.Name;
             if (chatName == "New chat")
             {
                 try
@@ -239,7 +250,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
             await _accessorClient.UpsertHistorySnapshotAsync(upsertUserMessage, ct);
 
-            var serviceRequest = new ChatAiServiseRequest
+            serviceRequest = new ChatAiServiseRequest
             {
                 History = storyForKernel,
                 ChatType = request.ChatType,
@@ -250,50 +261,136 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
                 TtlSeconds = request.TtlSeconds,
             };
 
-            var aiResponse = await _aiService.ChatHandlerAsync(serviceRequest, ct);
-
-            afterChatServiseTime = sw.ElapsedMilliseconds;
-
-            if (aiResponse.Status != ChatAnswerStatus.Ok || aiResponse.Answer is null)
+            renewalCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            renewTask = Task.Run(async () =>
             {
-                var errorResponse = new EngineChatResponse
+                try
+                {
+                    while (!renewalCts.IsCancellationRequested)
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(20), renewalCts.Token);
+                        await renewLock();
+                    }
+                }
+                catch (OperationCanceledException) { }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Renew lock loop failed during chat streaming");
+                }
+            }, renewalCts.Token);
+
+            elapsed = Stopwatch.StartNew();
+
+            EngineChatStreamResponse BuildResponse(
+                ChatStreamStage stage,
+                string? delta = null,
+                string? toolCall = null,
+                string? toolResult = null)
+            {
+                return new EngineChatStreamResponse
                 {
                     RequestId = serviceRequest.RequestId,
-                    Status = ChatAnswerStatus.Fail,
-                    ChatName = chatName,
                     ThreadId = serviceRequest.ThreadId,
-                    AssistantMessage = aiResponse.Error
+                    UserId = serviceRequest.UserId,
+                    ChatName = chatName,
+                    Stage = stage,
+                    Delta = delta,
+                    ToolCall = toolCall,
+                    ToolResult = toolResult,
+                    IsFinal = false,
+                    ElapsedMs = elapsed.ElapsedMilliseconds
                 };
-
-                await _publisher.SendReplyAsync(userContext, errorResponse, ct);
-                _logger.LogError("Chat request {RequestId} failed: {Error}", aiResponse.RequestId, aiResponse.Error);
-                return;
             }
 
-            HistoryMapper.AppendDelta(storyForKernel, aiResponse.UpdatedHistory);
+            var total = new StringBuilder();
 
-            var upsertFinal = new UpsertHistoryRequest
+            await using var batcher = new StreamingChatAIBatcher(
+                minChars: 80,
+                maxLatency: TimeSpan.FromMilliseconds(250),
+                makeChunk: (batchedText) => BuildResponse(ChatStreamStage.Model, delta: batchedText),
+                sendAsync: async (chunk) =>
+                {
+                    chunk.Sequence = NextSeq();
+
+                    if (chunk.Stage == ChatStreamStage.Model && !string.IsNullOrEmpty(chunk.Delta))
+                    {
+                        total.Append(chunk.Delta);
+
+                    }
+
+                    await _publisher.SendStreamAsync(userContext, chunk, ct);
+                },
+                makeToolChunk: (upd) => BuildResponse(ChatStreamStage.Tool, toolCall: upd.ToolCall),
+                makeToolResultChunk: (upd) => BuildResponse(ChatStreamStage.ToolResult, toolResult: upd.ToolResult),
+                logger: _batcherLogger,
+                ct: ct);
+
+            await foreach (var upd in _aiService.ChatStreamAsync(serviceRequest, ct))
+            {
+                await batcher.HandleUpdateAsync(upd);
+
+                if (upd.IsFinal)
+                {
+                    HistoryMapper.AppendDelta(storyForKernel, upd.UpdatedHistory);
+                    break;
+                }
+            }
+
+            await batcher.FlushAsync();
+
+            var finalAnswer = total.ToString();
+
+            await _accessorClient.UpsertHistorySnapshotAsync(new UpsertHistoryRequest
             {
                 ThreadId = request.ThreadId,
                 UserId = request.UserId,
                 Name = chatName,
                 ChatType = request.ChatType.ToString().ToLowerInvariant(),
                 History = HistoryMapper.SerializeHistory(storyForKernel)
-            };
+            }, ct);
 
-            await _accessorClient.UpsertHistorySnapshotAsync(upsertFinal, ct);
-
-            var responseToManager = new EngineChatResponse
+            var finalChunk = new EngineChatStreamResponse
             {
-                AssistantMessage = aiResponse.Answer.Content,
-                RequestId = aiResponse.RequestId,
+                RequestId = serviceRequest.RequestId,
+                ThreadId = serviceRequest.ThreadId,
+                UserId = serviceRequest.UserId,
                 ChatName = chatName,
-                Status = aiResponse.Status,
-                ThreadId = aiResponse.ThreadId
+                Sequence = NextSeq(),
+                Delta = finalAnswer,
+                Stage = ChatStreamStage.Final,
+                IsFinal = true,
+                ElapsedMs = elapsed.ElapsedMilliseconds
             };
 
-            await _publisher.SendReplyAsync(userContext, responseToManager, ct);
-            _logger.LogInformation("Chat request {RequestId} processed successfully", aiResponse.RequestId);
+            await _publisher.SendStreamAsync(userContext, finalChunk, ct);
+
+            afterChatServiseTime = sw.ElapsedMilliseconds;
+
+            _logger.LogInformation("Chat request {RequestId} processed successfully", request.RequestId);
+        }
+        catch (OperationCanceledException ex) when (ct.IsCancellationRequested)
+        {
+            var ms = elapsed?.ElapsedMilliseconds ?? 0;
+            var canceled = new EngineChatStreamResponse
+            {
+                RequestId = serviceRequest?.RequestId ?? request?.RequestId ?? string.Empty,
+                ThreadId = serviceRequest?.ThreadId ?? request?.ThreadId ?? Guid.Empty,
+                UserId = serviceRequest?.UserId ?? request?.UserId ?? Guid.Empty,
+                ChatName = string.IsNullOrWhiteSpace(chatName) ? "Chat" : chatName,
+                Sequence = NextSeq(),
+                Stage = ChatStreamStage.Canceled,
+                IsFinal = true,
+                ElapsedMs = ms
+            };
+
+            _logger.LogWarning(ex, "Operation cancelled while processing {Action}", message.ActionName);
+
+            await _publisher.SendStreamAsync(
+                MetadataValidation.DeserializeOrThrow<UserContextMetadata>(message, _logger),
+                canceled,
+                CancellationToken.None);
+
+            throw;
         }
         catch (NonRetryableException ex)
         {
@@ -314,20 +411,44 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         finally
         {
             sw.Stop();
-            if (request is not null)
-            {
 
-                _logger.LogInformation("Chat request {RequestId} chatId {ThreadId} userId {UserId}, " +
-                    "getHistoryTime {GetHistoryTime} ms, addOrCheckSystemPromptTime {AddOrCheckSystemPromptTime} ms, addOrCheckChatNameTime {AddOrCheckChatNameTime}  ms, " +
-                    "afterChatServiseTime {AfterChatServiseTime} ms, finished in {ElapsedMs} ms",
-                    request.RequestId,
-                    request.ThreadId,
-                    request.UserId,
-                    getHistoryTime,
-                    addOrCheckSystemPromptTime,
-                    addOrCheckChatNameTime,
-                    afterChatServiseTime,
-                    sw.ElapsedMilliseconds);
+            _logger.LogInformation(
+                "Chat request {RequestId} chatId {ThreadId} userId {UserId}, getHistoryTime {GetHistoryTime} ms, " +
+                "addOrCheckSystemPromptTime {AddOrCheckSystemPromptTime} ms, addOrCheckChatNameTime {AddOrCheckChatNameTime} ms, " +
+                "afterChatServiseTime {AfterChatServiseTime} ms, finished in {ElapsedMs} ms",
+                request?.RequestId,
+                request?.ThreadId,
+                request?.UserId,
+                getHistoryTime,
+                addOrCheckSystemPromptTime,
+                addOrCheckChatNameTime,
+                afterChatServiseTime,
+                sw.ElapsedMilliseconds);
+
+            if (renewalCts is not null)
+            {
+                try
+                {
+                    await renewalCts.CancelAsync();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Error while cancelling renewal");
+                }
+
+                try
+                {
+                    if (renewTask is not null)
+                    {
+                        await renewTask;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Error while awaiting renew lock task");
+                }
+
+                renewalCts.Dispose();
             }
         }
     }

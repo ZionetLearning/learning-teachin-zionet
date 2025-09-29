@@ -13,6 +13,14 @@ export type Status =
   | "reconnecting"
   | "disconnected";
 
+export type StreamStage = "First" | "Chunk" | "Last" | "Heartbeat" | "Error";
+
+export type StreamMessage<T = unknown> = {
+  payload: T;
+  sequenceNumber: number;
+  stage: StreamStage;
+};
+
 export type SignalRContextType = {
   connection: HubConnection | null;
   status: Status;
@@ -26,6 +34,17 @@ export type SignalRContextType = {
     requestId: string,
     timeoutMs?: number,
   ) => Promise<T>;
+  waitForStream: <T = unknown>(
+    eventType: string,
+    requestId: string,
+    onMessage?: (msg: StreamMessage<T>) => void,
+    timeoutMs?: number,
+  ) => Promise<T[]>;
+  subscribeToStream: <T = unknown>(
+    eventType: string,
+    requestId: string,
+    handler: (msg: StreamMessage<T>) => void,
+  ) => () => void;
 };
 
 export type SignalRNotificationType = "Success" | "Info" | "Warning" | "Error";
@@ -58,6 +77,14 @@ export interface ChatAiAnswerPayload {
 export interface NotificationPayload {
   message: string;
   severity: "info" | "warning" | "error";
+}
+
+export interface StreamEvent<TPayload = unknown> {
+  eventType: string;       // StreamEventType from backend (e.g., "ChatAiAnswer")
+  payload: TPayload;
+  sequenceNumber: number;
+  stage: "First" | "Chunk" | "Last" | "Heartbeat" | "Error";
+  requestId: string;
 }
 
 export interface SystemMessagePayload {
