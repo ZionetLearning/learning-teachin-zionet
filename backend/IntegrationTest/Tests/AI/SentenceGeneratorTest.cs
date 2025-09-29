@@ -4,9 +4,6 @@ using IntegrationTests.Fixtures;
 using IntegrationTests.Infrastructure;
 using IntegrationTests.Models.Ai.Sentences;
 using IntegrationTests.Models.Notification;
-//using Manager.Models.Games;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.Extensions.Options;
 using Models.Ai.Sentences;
 using System.Text.Json;
 using Xunit.Abstractions;
@@ -27,7 +24,7 @@ namespace IntegrationTests.Tests.AI
         [Theory]
         [InlineData(1, Difficulty.hard, false)]
         [InlineData(5, Difficulty.medium, false)]
-        //[InlineData(10, Difficulty.easy, true)]
+        [InlineData(10, Difficulty.easy, true)]
         public async Task GenerateAsync_Returns_Requested_Count(int count, Difficulty difficulty, bool nikud)
         {
             var request = new SentenceRequest
