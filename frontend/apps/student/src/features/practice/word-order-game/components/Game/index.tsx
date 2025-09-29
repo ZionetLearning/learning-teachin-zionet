@@ -34,7 +34,7 @@ export const Game = () => {
   const isHebrew = i18n.language === "he";
 
   const {
-    sentenceId,
+    attemptId,
     sentence,
     words,
     loading,
@@ -163,7 +163,7 @@ export const Game = () => {
 
   const handleCheck = useCallback(async () => {
     const res = await submitAttempt({
-      attemptId: sentenceId || "",
+      attemptId,
       studentId,
       givenAnswer: chosen,
     });
