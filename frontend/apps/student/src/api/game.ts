@@ -7,6 +7,7 @@ export type GameDifficulty = "easy" | "medium" | "hard";
 
 // Game Attempt
 export type GameAttemptRequest = {
+  attemptId: string;
   studentId: string;
   givenAnswer: string[];
 };
