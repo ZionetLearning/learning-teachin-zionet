@@ -5,9 +5,9 @@ metadata:
   namespace: keda
 spec:
   type: ClusterIP
+  selector:
+    app.kubernetes.io/name: keda-add-ons-http-interceptor
   ports:
     - port: 8080
       targetPort: 8080
       protocol: TCP
-  selector:
-    app.kubernetes.io/name: keda-add-ons-http-interceptor
