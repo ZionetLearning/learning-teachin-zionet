@@ -245,14 +245,6 @@ jobs:
           echo "❌ Timeout waiting for ExternalSecrets API"
           exit 1
 
-      - name: Add Langfuse
-        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
-        run: |
-          kubectl create namespace devops-tools --dry-run=client -o yaml | kubectl apply -f -
-          cd devops/helm-tools
-          chmod +x langfuse.sh
-          ./langfuse.sh $TARGET_NAMESPACE "${{ secrets.LANGFUSE_ADMIN_EMAIL }}" "${{ secrets.LANGFUSE_ADMIN_PASSWORD }}" "${{ secrets.POSTGRES_USER }}" "${{ secrets.POSTGRES_PASSWORD }}"
-          kubectl apply -f "../kubernetes/ingress/langfuse-ingress.yaml"
 
       - name: Helm template sanity (no Namespace objects)
         run: |
@@ -293,6 +285,16 @@ jobs:
             --set global.keyvault.tenantId="$KEYVAULT_TENANT_ID" \
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false
+
+
+      - name: Add Langfuse
+        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
+        run: |
+          kubectl create namespace devops-tools --dry-run=client -o yaml | kubectl apply -f -
+          cd devops/helm-tools
+          chmod +x langfuse.sh
+          ./langfuse.sh $TARGET_NAMESPACE "${{ secrets.LANGFUSE_ADMIN_EMAIL }}" "${{ secrets.LANGFUSE_ADMIN_PASSWORD }}" "${{ secrets.POSTGRES_USER }}" "${{ secrets.POSTGRES_PASSWORD }}"
+          kubectl apply -f "../kubernetes/ingress/langfuse-ingress.yaml"
 
 
       - name: Diagnostics (on failure)
