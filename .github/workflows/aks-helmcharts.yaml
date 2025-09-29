@@ -293,16 +293,21 @@ jobs:
           echo "Creating and verifying devops-tools namespace..."
           kubectl create namespace devops-tools --dry-run=client -o yaml | kubectl apply -f -
           
-          # Wait for namespace to be ready
+          # Wait for namespace to be fully ready
           echo "Waiting for namespace to be active..."
-          for i in {1..30}; do
-            if kubectl get namespace devops-tools -o jsonpath='{.status.phase}' | grep -q "Active"; then
-              echo "✅ Namespace devops-tools is ready"
-              break
-            fi
-            echo "⏳ Waiting for namespace... (attempt $i/30)"
-            sleep 2
-          done
+          kubectl wait --for=condition=ready namespace/devops-tools --timeout=60s || true
+          
+          # Double-check namespace exists and is active
+          NAMESPACE_STATUS=$(kubectl get namespace devops-tools -o jsonpath='{.status.phase}' 2>/dev/null || echo "NotFound")
+          echo "Namespace status: $NAMESPACE_STATUS"
+          
+          if [ "$NAMESPACE_STATUS" != "Active" ]; then
+            echo "❌ Namespace is not ready. Current status: $NAMESPACE_STATUS"
+            kubectl get namespaces
+            exit 1
+          fi
+          
+          echo "✅ Namespace devops-tools is ready and active"
           
           echo "Deploying Langfuse..."
           cd devops/helm-tools
