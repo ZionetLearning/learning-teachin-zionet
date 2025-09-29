@@ -14,7 +14,7 @@ public static class GamesEndpoints
         gamesGroup.MapGet("/history/{studentId:guid}", GetHistoryAsync);
         gamesGroup.MapGet("/mistakes/{studentId:guid}", GetMistakesAsync);
         gamesGroup.MapGet("/all-history", GetAllHistoriesAsync);
-        gamesGroup.MapPost("/generated-sentence", SaveGeneratedSentenceAsync);
+        gamesGroup.MapPost("/generated-sentences", SaveGeneratedSentencesAsync);
 
         return app;
     }
@@ -127,7 +127,7 @@ public static class GamesEndpoints
         }
     }
 
-    private static async Task<IResult> SaveGeneratedSentenceAsync(
+    private static async Task<IResult> SaveGeneratedSentencesAsync(
         [FromBody] GeneratedSentenceDto dto,
         [FromServices] IGameService gameService,
         ILogger<IGameService> logger,
@@ -135,8 +135,8 @@ public static class GamesEndpoints
     {
         try
         {
-            var attemptId = await gameService.SaveGeneratedSentenceAsync(dto, ct);
-            return Results.Ok(attemptId);
+            var result = await gameService.SaveGeneratedSentencesAsync(dto, ct);
+            return Results.Ok(result);
         }
         catch (Exception ex)
         {

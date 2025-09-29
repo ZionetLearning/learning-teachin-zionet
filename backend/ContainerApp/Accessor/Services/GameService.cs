@@ -286,38 +286,51 @@ public class GameService : IGameService
         }
     }
 
-    public async Task<Guid> SaveGeneratedSentenceAsync(GeneratedSentenceDto dto, CancellationToken ct)
+    public async Task<List<AttemptedSentenceResult>> SaveGeneratedSentencesAsync(GeneratedSentenceDto dto, CancellationToken ct)
     {
         try
         {
-            var attempt = new GameAttempt
-            {
-                AttemptId = Guid.NewGuid(),
-                StudentId = dto.StudentId,
-                GameType = dto.GameType,
-                Difficulty = dto.Difficulty,
-                CorrectAnswer = dto.CorrectAnswer,
-                GivenAnswer = new(),   // student hasn’t answered yet
-                Status = AttemptStatus.Pending,
-                AttemptNumber = 0,
-                CreatedAt = DateTimeOffset.UtcNow
-            };
+            var resultList = new List<AttemptedSentenceResult>();
 
-            _db.GameAttempts.Add(attempt);
+            foreach (var sentence in dto.Sentences)
+            {
+                var attempt = new GameAttempt
+                {
+                    AttemptId = Guid.NewGuid(),
+                    StudentId = dto.StudentId,
+                    GameType = dto.GameType,
+                    Difficulty = dto.Difficulty,
+                    CorrectAnswer = sentence.CorrectAnswer,
+                    GivenAnswer = new(),
+                    Status = AttemptStatus.Pending,
+                    AttemptNumber = 0,
+                    CreatedAt = DateTimeOffset.UtcNow
+                };
+
+                _db.GameAttempts.Add(attempt);
+
+                resultList.Add(new AttemptedSentenceResult
+                {
+                    AttemptId = attempt.AttemptId,
+                    Original = sentence.Original,
+                    Words = sentence.CorrectAnswer,
+                    Difficulty = dto.Difficulty.ToString().ToLowerInvariant(),
+                    Nikud = sentence.Nikud
+                });
+            }
+
             await _db.SaveChangesAsync(ct);
 
-            _logger.LogInformation("Generated sentence saved successfully. AttemptId={AttemptId}, StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}", attempt.AttemptId, dto.StudentId, dto.GameType, dto.Difficulty);
-
-            return attempt.AttemptId;
+            return resultList;
         }
         catch (OperationCanceledException)
         {
-            _logger.LogWarning("SaveGeneratedSentenceAsync was canceled. StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}", dto.StudentId, dto.GameType, dto.Difficulty);
+            _logger.LogWarning("SaveGeneratedSentencesAsync was canceled. StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}", dto.StudentId, dto.GameType, dto.Difficulty);
             throw;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error while saving generated sentence. StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}", dto.StudentId, dto.GameType, dto.Difficulty);
+            _logger.LogError(ex, "Error while saving generated sentences. StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}", dto.StudentId, dto.GameType, dto.Difficulty);
             throw;
         }
     }

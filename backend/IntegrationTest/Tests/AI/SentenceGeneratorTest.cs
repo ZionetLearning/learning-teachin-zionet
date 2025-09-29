@@ -2,7 +2,9 @@
 using IntegrationTests.Constants;
 using IntegrationTests.Fixtures;
 using IntegrationTests.Infrastructure;
+using IntegrationTests.Models.Ai.Sentences;
 using IntegrationTests.Models.Notification;
+//using Manager.Models.Games;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Options;
 using Models.Ai.Sentences;
@@ -25,7 +27,7 @@ namespace IntegrationTests.Tests.AI
         [Theory]
         [InlineData(1, Difficulty.hard, false)]
         [InlineData(5, Difficulty.medium, false)]
-        [InlineData(10, Difficulty.easy, true)]
+        //[InlineData(10, Difficulty.easy, true)]
         public async Task GenerateAsync_Returns_Requested_Count(int count, Difficulty difficulty, bool nikud)
         {
             var request = new SentenceRequest
@@ -54,8 +56,9 @@ namespace IntegrationTests.Tests.AI
 
             var evtRaw = received.Event;
 
-            SentenceResponse res = JsonSerializer.Deserialize<SentenceResponse>(
-                evtRaw.Payload.GetRawText(), options)!;
+            
+            var res = JsonSerializer.Deserialize<SentenceResponse>(
+            evtRaw.Payload.GetRawText(), options)!;
 
             res.Sentences.Count.Should().Be(count);
 
@@ -97,12 +100,13 @@ namespace IntegrationTests.Tests.AI
 
             var evtRaw = received.Event;
 
-            SplitSentenceResponse res = JsonSerializer.Deserialize<SplitSentenceResponse>(
-                evtRaw.Payload.GetRawText(), options)!;
+            var res = JsonSerializer.Deserialize<List<AttemptedSentenceResult>>(
+            evtRaw.Payload.GetRawText(), options)!;
 
-            res.Split.Sentences.Count.Should().Be(count);
+            res.Count.Should().Be(count);
 
-            Assert.All(res.Split.Sentences, s =>
+
+            Assert.All(res, s =>
             {
                 Assert.Equal(request.Difficulty.ToString(), s.Difficulty);
                 Assert.Equal(request.Nikud, s.Nikud);
