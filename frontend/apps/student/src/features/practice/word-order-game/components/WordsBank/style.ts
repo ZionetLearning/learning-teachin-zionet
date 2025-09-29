@@ -5,6 +5,7 @@ export const useStyles = createUseStyles({
     display: "flex",
     flexDirection: "row",
     gap: "5px",
+    alignSelf: "center",
   },
   bankWord: {
     padding: "8px 14px",

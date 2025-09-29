@@ -44,7 +44,7 @@ export const GameConfigModal = ({
   getDifficultyLevelLabel,
   initialConfig = {
     difficulty: 1,
-    nikud: true,
+    nikud: false,
     count: 3,
   },
 }: GameConfigModalProps) => {
