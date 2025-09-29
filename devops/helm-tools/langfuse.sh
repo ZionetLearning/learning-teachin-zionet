@@ -20,8 +20,7 @@ kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -
 
 ACTION="install"
 if helm status langfuse -n "$NAMESPACE" >/dev/null 2>&1; then
-  ACTION="upgrade"
-else
+  echo "🔄 Existing deployment found. Uninstalling for clean reinstall..."
   helm uninstall langfuse -n "$NAMESPACE" --keep-history=false || true
   kubectl delete pvc --all -n "$NAMESPACE" --ignore-not-found=true
   sleep 5
@@ -57,9 +56,9 @@ helm $ACTION langfuse langfuse/langfuse \
   --set clickhouse.resourcesPreset="nano" \
   --set clickhouse.replicaCount=1 \
   --set clickhouse.resources.requests.cpu="100m" \
-  --set clickhouse.resources.requests.memory="256Mi" \
+  --set clickhouse.resources.requests.memory="512Mi" \
   --set clickhouse.resources.limits.cpu="200m" \
-  --set clickhouse.resources.limits.memory="512Mi" \
+  --set clickhouse.resources.limits.memory="1Gi" \
   --set clickhouse.zookeeper.enabled=false \
   --set redis.auth.existingSecret="langfuse-secrets" \
   --set redis.auth.existingSecretPasswordKey="REDIS_PASSWORD" \
@@ -88,7 +87,8 @@ helm $ACTION langfuse langfuse/langfuse \
 echo "✅ Chart applied with web=0. Running Prisma migrations as a Job..."
 
 # --- Phase 1.5: run Prisma migrations ---
-kubectl delete job langfuse-migrate -n "$NAMESPACE" --ignore-not-found
+kubectl delete job langfuse-migrate -n "$NAMESPACE" --ignore-not-found=true
+sleep 2
 
 cat <<EOF | kubectl apply -f -
 apiVersion: batch/v1
@@ -133,6 +133,9 @@ EXISTING_HASH=$(kubectl run -n $NAMESPACE temp-check-user --image=postgres:16 --
 echo "🔐 Generating bcrypt hash for password: $ADMIN_PASSWORD"
 
 # Create a job to generate the hash to avoid kubectl output issues
+kubectl delete job hash-generator -n "$NAMESPACE" --ignore-not-found=true
+sleep 1
+
 cat <<EOF | kubectl apply -f -
 apiVersion: batch/v1
 kind: Job
