@@ -21,6 +21,7 @@ export const useHebrewSentence = (config: UseHebrewSentenceConfig = {}) => {
     words: [],
   });
 
+  const [sentenceId, setSentenceId] = useState<string | null>(null);
   const [sentencePool, setSentencePool] = useState<SplitSentenceItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -71,12 +72,14 @@ export const useHebrewSentence = (config: UseHebrewSentenceConfig = {}) => {
       nikud: finalConfig.nikud,
       count: finalConfig.count,
     });
+    
+    setSentenceId(response.sentenceId);
 
-    setSentencePool(response.sentences);
+    setSentencePool(response.split.sentences);
     setCurrentIndex(0);
 
-    if (response.sentences.length > 0) {
-      const firstSentence = response.sentences[0] as SplitSentenceItem;
+    if (response.split.sentences.length > 0) {
+      const firstSentence = response.split.sentences[0] as SplitSentenceItem;
 
       updateSentenceState(firstSentence.original, firstSentence.words);
 
@@ -97,7 +100,7 @@ export const useHebrewSentence = (config: UseHebrewSentenceConfig = {}) => {
     if (sentencePool.length === 0) return { sentence: "", words: [] };
 
     const nextIndex = currentIndex + 1;
-    
+
     // Check if we've reached the end of all sentences
     if (nextIndex >= sentencePool.length) {
       return { sentence: "", words: [] }; // Game over - no more sentences
@@ -146,6 +149,7 @@ export const useHebrewSentence = (config: UseHebrewSentenceConfig = {}) => {
   const combinedError = error || (mutationError?.message ?? null);
 
   return {
+    sentenceId: sentenceId,
     sentence: sentenceState.sentence,
     words: sentenceState.words,
     loading,

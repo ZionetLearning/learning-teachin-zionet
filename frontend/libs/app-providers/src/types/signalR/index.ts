@@ -108,7 +108,8 @@ export interface SplitSentenceItem {
 }
 
 export interface SplitSentenceGeneratedPayload {
-  sentences: SplitSentenceItem[];
+  sentenceId: string;
+  split: { sentences: SplitSentenceItem[] };
 }
 
 // Union Type for all possible events

@@ -1,10 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { useStyles } from "./style";
-import { Speaker } from "../Speaker";
 import { useHebrewSentence } from "../../hooks";
 import { useAvatarSpeech } from "@student/hooks";
-import { ChosenWordsArea, WordsBank, SideButtons } from "../";
+import { ChosenWordsArea, WordsBank, ActionButtons, Speaker } from "../";
 import {
   GameConfig,
   GameConfigModal,
@@ -13,10 +11,19 @@ import {
   GameSetupPanel,
 } from "@ui-components";
 import { getDifficultyLabel } from "@student/features";
+import { useAuth } from "@app-providers";
+import { useSubmitGameAttempt } from "@student/api";
+import { useStyles } from "./style";
+import { toast } from "react-toastify";
 
 export const Game = () => {
+  const { user } = useAuth();
   const { t, i18n } = useTranslation();
   const classes = useStyles();
+
+  const studentId = user?.userId ?? "";
+  const { mutateAsync: submitAttempt } = useSubmitGameAttempt();
+
   const [chosen, setChosen] = useState<string[]>([]);
   const [shuffledSentence, setShuffledSentence] = useState<string[]>([]);
   const [isCorrect, setIsCorrect] = useState<boolean>(false);
@@ -25,9 +32,10 @@ export const Game = () => {
   const [gameConfig, setGameConfig] = useState<GameConfig | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
   const [correctSentencesCount, setCorrectSentencesCount] = useState<number>(0);
-  const isHebrew = i18n.language === "he" || i18n.language === "heb";
+  const isHebrew = i18n.language === "he";
 
   const {
+    sentenceId,
     sentence,
     words,
     loading,
@@ -67,12 +75,6 @@ export const Game = () => {
     };
     handleNewSentence();
   }, [sentence, words]);
-
-  useEffect(() => {
-    if (words.length > 0) {
-      setIsCorrect(chosen.join(" ") === words.join(" "));
-    }
-  }, [words, chosen]);
 
   const handleConfigConfirm = (config: GameConfig) => {
     setGameConfig(config);
@@ -165,10 +167,25 @@ export const Game = () => {
     setShuffledSentence((prev) => [word, ...prev]);
   };
 
-  const handleCheck = () => {
-    alert(isCorrect ? "Correct!" : "Incorrect! Try again");
-    return isCorrect;
-  };
+  const handleCheck = useCallback(async () => {
+    const res = await submitAttempt({
+      attemptId: sentenceId || "",
+      studentId,
+      givenAnswer: chosen,
+    });
+
+    const isServerCorrect = res.status === "Success";
+
+    setIsCorrect(isServerCorrect);
+
+    if (isServerCorrect) {
+      toast.success(t("pages.wordOrderGame.correct"));
+    } else {
+      toast.error(t("pages.wordOrderGame.incorrect"));
+    }
+
+    return isServerCorrect;
+  }, [studentId, chosen, submitAttempt]);
 
   const shuffleDistinct = (words: string[]) => {
     if (words.length < 2) return [...words];
@@ -202,7 +219,6 @@ export const Game = () => {
   return (
     <>
       <div className={classes.gameContainer}>
-        {/* Game Header with Settings */}
         <GameSettings
           gameConfig={gameConfig}
           currentSentenceIndex={currentSentenceIndex}
@@ -214,20 +230,23 @@ export const Game = () => {
 
         <div className={classes.gameLogic}>
           <div className={classes.speakersContainer}>
-            {speechLoading ? (
-              <div>{t("pages.wordOrderGame.loading")}</div>
-            ) : (
-              <Speaker
-                onClick={() => handlePlay()}
-                disabled={!sentence || sentence.trim() === "" || speechLoading}
-              />
-            )}
+            <Speaker
+              onClick={() => handlePlay()}
+              disabled={!sentence || sentence.trim() === "" || speechLoading}
+            />
+            <ActionButtons
+              loading={loading}
+              handleNextClick={handleNextClick}
+              handleCheck={handleCheck}
+              handleReset={handleReset}
+            />
           </div>
 
           <ChosenWordsArea
             chosenWords={chosen}
             handleUnchooseWord={handleUnchooseWord}
           />
+
           <WordsBank
             loading={loading}
             error={error}
@@ -235,12 +254,6 @@ export const Game = () => {
             handleChooseWord={handleChooseWord}
           />
         </div>
-        <SideButtons
-          loading={loading}
-          handleNextClick={handleNextClick}
-          handleCheck={handleCheck}
-          handleReset={handleReset}
-        />
       </div>
       {/* Configuration Modal */}
       <GameConfigModal
