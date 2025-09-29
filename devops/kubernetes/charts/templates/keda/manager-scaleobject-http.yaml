@@ -9,6 +9,7 @@ spec:
     - teachin.westeurope.cloudapp.azure.com
   pathPrefixes:
     - /api/{{ include "app.namespace" . }}
+    - /auth/login
   scaleTargetRef:
     name: {{ .Values.manager.name }}-{{ .Release.Namespace }}
     port: {{ .Values.manager.ports.service }}
