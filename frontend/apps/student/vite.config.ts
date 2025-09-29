@@ -41,9 +41,6 @@ export default defineConfig({
       "@teacher": r("apps/teacher/src"),
       "@admin": r("apps/admin/src"),
       "@ui-components": r("libs/ui/components/src"),
-      "@ui-components/*": r("libs/ui/components/src/*"),
-      "@app-providers": r("libs/app-providers/src"),
-      "@app-providers/*": r("libs/app-providers/src/*"),
     },
   },
   define: {
@@ -54,14 +51,5 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: "./src/test/setup.ts",
     exclude: ["node_modules", "dist", "**/*.jest.{test,spec}.{ts,tsx,js,jsx}"],
-    pool: "forks",
-    poolOptions: {
-      forks: {
-        singleFork: true,
-      },
-    },
-    fileParallelism: false,
-    maxConcurrency: 1,
-    isolate: false,
   },
 });

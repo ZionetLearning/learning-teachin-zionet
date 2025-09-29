@@ -8,8 +8,11 @@ import {
   Box,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { Celebration, Settings, Replay } from "@mui/icons-material";
+import Celebration from "@mui/icons-material/Celebration";
+import Replay from "@mui/icons-material/Replay";
+import Settings from "@mui/icons-material/Settings";
 import { useStyles } from "./style";
+
 interface GameOverModalProps {
   open: boolean;
   onPlayAgain: () => void;

@@ -23,18 +23,6 @@ export default defineConfig({
   resolve: {
     alias: {
       "@admin": path.resolve(__dirname, "src"),
-      "@ui-components": path.resolve(__dirname, "../../libs/ui/components/src"),
-      "@ui-components/*": path.resolve(
-        __dirname,
-        "../../libs/ui/components/src/*",
-      ),
-      "@app-providers": path.resolve(__dirname, "../../libs/app-providers/src"),
-      "@app-providers/*": path.resolve(
-        __dirname,
-        "../../libs/app-providers/src/*",
-      ),
-      "@student": path.resolve(__dirname, "../student/src"),
-      "@teacher": path.resolve(__dirname, "../teacher/src"),
     },
   },
   test: {

@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Box, Button, Typography } from "@mui/material";
-import { Settings } from "@mui/icons-material";
+import Settings from "@mui/icons-material/Settings";
 import { DifficultyLevel } from "@student/types";
 import { useStyles } from "./style";
 import { GameConfig } from "@ui-components";
@@ -30,7 +30,11 @@ export const GameSettings = ({
   return (
     <Box className={classes.gameHeader}>
       <Box className={classes.gameHeaderInfo}>
-        <Typography data-testid="typing-selected-level" variant="body2" color="text.secondary">
+        <Typography
+          data-testid="typing-selected-level"
+          variant="body2"
+          color="text.secondary"
+        >
           {t("pages.wordOrderGame.current.difficulty")}:{" "}
           {getDifficultyLabel(gameConfig.difficulty, t)}
         </Typography>
