@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { useHebrewSentence } from "../../hooks";
-import { useAvatarSpeech } from "@student/hooks";
+import { useAvatarSpeech, useHebrewSentence } from "@student/hooks";
 import { ChosenWordsArea, WordsBank, ActionButtons, Speaker } from "../";
 import {
   GameConfig,
@@ -84,7 +83,6 @@ export const Game = () => {
     setShuffledSentence([]);
     setCorrectSentencesCount(0);
     setGameStarted(false);
-    // Reset the hook's internal state
     resetGame();
   };
 
@@ -104,24 +102,20 @@ export const Game = () => {
     if (isCorrect) {
       setCorrectSentencesCount(correctSentencesCount + 1);
     }
-
     const result = await fetchSentence();
-
     // Check if we've completed all sentences
     if (!result || !result.sentence) {
       setGameOverModalOpen(true);
       return;
     }
-
     setChosen([]);
     if (result.words && result.words.length > 0) {
       setShuffledSentence(shuffleDistinct(result.words));
     }
-  }, [stop, fetchSentence, isCorrect]);
+  }, [stop, fetchSentence, isCorrect, correctSentencesCount]);
 
   const handleGameOverPlayAgain = () => {
     setGameOverModalOpen(false);
-    // Reset the hook's internal state
     resetGame();
     // Reset component state
     setChosen([]);

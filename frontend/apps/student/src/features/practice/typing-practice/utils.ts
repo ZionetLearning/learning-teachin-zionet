@@ -1,31 +1,16 @@
-import type { Exercise, DifficultyLevel, FeedbackResult } from "./types";
-import { exerciseBank } from "./data";
+import type { FeedbackResult } from "./types";
+import { stripHebrewNikud, splitGraphemes } from "../utils";
 
-export function getRandomExercise(level: DifficultyLevel): Exercise {
-  const exercises = exerciseBank[level];
-
-  if (!exercises || exercises.length === 0) {
-    throw new Error(`No exercises found for difficulty level: ${level}`);
-  }
-
-  const randomIndex = Math.floor(Math.random() * exercises.length);
-  return exercises[randomIndex];
-}
-
-export function getExercisesByLevel(level: DifficultyLevel): Exercise[] {
-  return exerciseBank[level] || [];
-}
-
-export function getExerciseCount(level: DifficultyLevel): number {
-  return exerciseBank[level]?.length || 0;
-}
 
 export function compareTexts(
   userInput: string,
   expectedText: string,
 ): FeedbackResult {
-  const normalizedUserInput = userInput.trim();
-  const normalizedExpectedText = expectedText.trim();
+  const cleanUser = stripHebrewNikud(userInput.trim());
+  const cleanExpected = stripHebrewNikud(expectedText).trim();
+
+  const userChars = splitGraphemes(userInput);
+  const expectedChars = splitGraphemes(expectedText);
 
   const characterComparison: Array<{
     char: string;
@@ -33,16 +18,17 @@ export function compareTexts(
     position: number;
   }> = [];
 
-  const maxLength = Math.max(
-    normalizedUserInput.length,
-    normalizedExpectedText.length,
-  );
+  const maxLength = Math.max(userChars.length, expectedChars.length);
   let correctCharacters = 0;
 
   for (let i = 0; i < maxLength; i++) {
-    const userChar = normalizedUserInput[i] || "";
-    const expectedChar = normalizedExpectedText[i] || "";
-    const isCorrect = userChar === expectedChar;
+    const expectedCleanChar = cleanExpected[i] || "";
+    const userCleanChar = cleanUser[i] || "";
+
+    const expectedChar = expectedChars[i] || "";
+    const userChar = userChars[i] || "";
+
+    const isCorrect = userCleanChar === expectedCleanChar;
 
     if (isCorrect && userChar !== "") {
       correctCharacters++;
@@ -51,21 +37,23 @@ export function compareTexts(
     if (expectedChar !== "") {
       characterComparison.push({
         char: expectedChar,
-        isCorrect: isCorrect,
+        isCorrect,
         position: i,
       });
     }
   }
 
   const accuracy =
-    normalizedExpectedText.length > 0
-      ? Math.round((correctCharacters / normalizedExpectedText.length) * 100)
+    expectedChars.length > 0
+      ? Math.round((correctCharacters / expectedChars.length) * 100)
       : 0;
+  const isCorrect = accuracy === 100;
 
   return {
-    userInput: normalizedUserInput,
-    expectedText: normalizedExpectedText,
+    userInput: cleanUser,
+    expectedText,
     accuracy,
     characterComparison,
+    isCorrect,
   };
 }

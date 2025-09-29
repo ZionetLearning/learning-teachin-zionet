@@ -36,15 +36,17 @@ export const useHebrewSentence = (config: UseHebrewSentenceConfig = {}) => {
   } = useGenerateSplitSentences();
 
   // Default configuration
-  const defaultConfig = {
-    difficulty: 1 as DifficultyLevel, // medium
-    nikud: true,
-    count: 3, // Fetch multiple sentences to reduce API calls
-  };
+  const defaultConfig = useMemo(() => {
+    return {
+      difficulty: 1 as DifficultyLevel, // medium
+      nikud: true,
+      count: 3, // Fetch multiple sentences to reduce API calls
+    };
+  }, []);
 
   const finalConfig = useMemo(() => {
     return { ...defaultConfig, ...config };
-  }, [config]);
+  }, [defaultConfig, config]);
 
   const loading = splitLoading;
   const mutationError = splitError;
