@@ -97,7 +97,10 @@ jobs:
    
   helmcharts-setup:
     needs: [build-and-push-images, terraform-apply, aks-kubectl-apply]
-    if: ${{ always() && contains(fromJson('["success","skipped"]'), needs.aks-kubectl-apply.result) }}
+    if: |
+      always() && 
+      contains(fromJson('["success","skipped"]'), needs.aks-kubectl-apply.result) &&
+      (needs.terraform-apply.result == 'success')
     uses: ./.github/workflows/aks-helmcharts.yaml
     permissions:
       id-token: write
