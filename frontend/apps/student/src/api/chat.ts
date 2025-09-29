@@ -49,8 +49,6 @@ export const useSendChatMessageStream = () => {
           }
         }
       );
-
-      // Wait for the stream to complete (optional - you can just let it run)
       streamMessages.catch((error) => {
         console.error('Stream error:', error);
       });
