@@ -219,7 +219,9 @@
         "cancel": "בטל",
         "close": "סגור",
         "yes": "כן",
-        "no": "לא"
+        "no": "לא",
+        "correct": "נכון!",
+        "incorrect": "לא נכון. נסה שוב."
       },
       "earthquakeMap": {
         "title": "מפת רעידות אדמה",

@@ -1,8 +1,8 @@
 import { useState, useMemo, useCallback } from "react";
-import { useSendChatMessage, useGetAllChats, useGetChatHistory } from "@student/api";
+import { useSendChatMessageStream, useGetAllChats, useGetChatHistory } from "@student/api";
 import { useAuth } from "@app-providers/auth";
 import { decodeJwtPayload } from "@app-providers/auth/utils";
-import type { SendMessageRequest, SendMessageResponse } from "@student/types";
+import type { SendMessageRequest, AIChatStreamResponse } from "@student/types";
 
 export type ChatPosition = "left" | "right";
 export type ChatSender = "user" | "system";
@@ -13,6 +13,7 @@ export interface ChatMessage {
   sender: ChatSender;
   text: string;
   date: Date;
+  isTyping?: boolean; // Add typing indicator
 }
 
 interface ChatHistoryMessage {
@@ -25,13 +26,10 @@ export const useChat = () => {
   const [threadId, setThreadId] = useState<string | undefined>(undefined);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [shouldLoadHistory, setShouldLoadHistory] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
   const { accessToken } = useAuth();
 
-  const {
-    mutate: sendChatMessage,
-    mutateAsync: sendChatMessageAsync,
-    isPending,
-  } = useSendChatMessage();
+  const { startStream } = useSendChatMessageStream();
 
   const userId = useMemo(() => {
     if (!accessToken) return null;
@@ -67,17 +65,6 @@ export const useChat = () => {
     setMessages((prev) => [...prev, userMsg]);
   };
 
-  const pushAssistant = (text: string) => {
-    const aiMsg: ChatMessage = {
-      position: "left",
-      type: "text",
-      sender: "system",
-      text,
-      date: new Date(),
-    };
-    setMessages((prev) => [...prev, aiMsg]);
-  };
-
   const loadChatHistory = (chatId: string) => {
     if (!userId) return;
     setMessages([]);
@@ -109,7 +96,7 @@ export const useChat = () => {
   };
 
   const sendMessage = (userText: string) => {
-    if (!userText.trim() || !userId) return;
+    if (!userText.trim() || !userId || isStreaming) return;
 
     const payload: SendMessageRequest = {
       userMessage: userText,
@@ -119,48 +106,75 @@ export const useChat = () => {
     };
 
     pushUser(userText);
+    setIsStreaming(true);
 
-    sendChatMessage(payload, {
-      onSuccess: (data: SendMessageResponse) => {
-        setThreadId(data.threadId);
-        const aiText = data.assistantMessage ?? "";
-        pushAssistant(aiText);
-        
-        if (!threadId) {
-          refetchChats();
-        }
+    // Add initial typing indicator message
+    const typingMessage: ChatMessage = {
+      position: "left",
+      type: "text",
+      sender: "system",
+      text: "",
+      date: new Date(),
+      isTyping: true,
+    };
+    
+    setMessages((prev) => [...prev, typingMessage]);
+
+    let assistantBuffer = "";
+
+    startStream(
+      payload,
+      (delta: string) => {
+        // add partial text
+        assistantBuffer += delta;
+        // Update the typing message with streamed content
+        setMessages((prev) => {
+          const updated = [...prev];
+          const lastIndex = updated.length - 1;
+          const lastMessage = updated[lastIndex];
+          
+          // Update the last message if it's our typing message
+          if (lastMessage?.sender === "system" && lastMessage.isTyping) {
+            updated[lastIndex] = { 
+              ...lastMessage, 
+              text: assistantBuffer,
+              isTyping: true // Keep typing indicator while streaming
+            };
+          }
+          
+          return updated;
+        });
       },
-    });
-  };
-
-  const sendMessageAsync = async (userText: string): Promise<string> => {
-    if (!userText.trim() || !userId) return "";
-
-    const payload: SendMessageRequest = {
-      userMessage: userText,
-      threadId: threadId || crypto.randomUUID(),
-      chatType: "default",
-      userId: userId
-    };
-
-    pushUser(userText);
-
-    const data = await sendChatMessageAsync(payload);
-    setThreadId(data.threadId);
-    pushAssistant(data.assistantMessage ?? "");
-    
-    if (!threadId) {
-      refetchChats();
-    }
-    
-    return data.assistantMessage ?? "";
+      (final: AIChatStreamResponse) => {
+        setThreadId(final.threadId);
+        setIsStreaming(false);
+        
+        // Mark the message as complete (not typing anymore)
+        setMessages((prev) => {
+          const updated = [...prev];
+          const lastIndex = updated.length - 1;
+          const lastMessage = updated[lastIndex];
+          
+          if (lastMessage?.sender === "system" && lastMessage.isTyping) {
+            updated[lastIndex] = { 
+              ...lastMessage, 
+              text: assistantBuffer,
+              isTyping: false // Remove typing indicator
+            };
+          }
+          
+          return updated;
+        });
+        
+        refetchChats();
+      }
+    );
   };
 
   return {
     messages,
     sendMessage,
-    sendMessageAsync,
-    loading: isPending,
+    loading: isStreaming,
     threadId,
     setMessages,
     
