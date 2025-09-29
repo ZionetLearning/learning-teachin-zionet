@@ -6,12 +6,12 @@ metadata:
   namespace: {{ include "app.namespace" . }}
 spec:
   hosts:
-  - teachin.westeurope.cloudapp.azure.com
-  basePath:
+    - teachin.westeurope.cloudapp.azure.com
+  pathPrefixes:
     - /api/{{ include "app.namespace" . }}
   scaleTargetRef:
     name: {{ .Values.manager.name }}-{{ .Release.Namespace }}
-    port: {{ .Values.manager.ports.container }}
+    port: {{ .Values.manager.ports.service }}
     service: {{ .Values.manager.name }}-{{ .Release.Namespace }} # Ensure this matches the actual service name
   replicas:
     min: 0               # Scale to zero when no traffic (keep KEDA purpose)
