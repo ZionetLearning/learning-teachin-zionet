@@ -25,7 +25,6 @@ export const Game = () => {
 
   const [chosen, setChosen] = useState<string[]>([]);
   const [shuffledSentence, setShuffledSentence] = useState<string[]>([]);
-  const [isCorrect, setIsCorrect] = useState<boolean>(false);
   const [configModalOpen, setConfigModalOpen] = useState(false);
   const [gameOverModalOpen, setGameOverModalOpen] = useState(false);
   const [gameConfig, setGameConfig] = useState<GameConfig | null>(null);
@@ -99,7 +98,14 @@ export const Game = () => {
 
   const handleNextClick = useCallback(async () => {
     stop();
-    if (isCorrect) {
+    const res = await submitAttempt({
+      attemptId,
+      studentId,
+      givenAnswer: chosen,
+    });
+
+    const isServerCorrect = res.status === "Success";
+    if (isServerCorrect) {
       setCorrectSentencesCount(correctSentencesCount + 1);
     }
     const result = await fetchSentence();
@@ -112,7 +118,7 @@ export const Game = () => {
     if (result.words && result.words.length > 0) {
       setShuffledSentence(shuffleDistinct(result.words));
     }
-  }, [stop, fetchSentence, isCorrect, correctSentencesCount]);
+  }, [stop, submitAttempt, attemptId, studentId, chosen, fetchSentence, correctSentencesCount]);
 
   const handleGameOverPlayAgain = () => {
     setGameOverModalOpen(false);
@@ -170,8 +176,6 @@ export const Game = () => {
 
     const isServerCorrect = res.status === "Success";
 
-    setIsCorrect(isServerCorrect);
-
     if (isServerCorrect) {
       toast.success(t("pages.wordOrderGame.correct"));
     } else {
@@ -179,7 +183,7 @@ export const Game = () => {
     }
 
     return isServerCorrect;
-  }, [studentId, chosen, submitAttempt]);
+  }, [submitAttempt, attemptId, studentId, chosen, t]);
 
   const shuffleDistinct = (words: string[]) => {
     if (words.length < 2) return [...words];
