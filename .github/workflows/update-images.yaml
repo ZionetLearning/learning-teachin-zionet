@@ -56,12 +56,7 @@ on:
         required: false
         type: string
         default: ''
-      unlock_featest:
-        required: false
-        type: boolean
-        default: false
-        description: 'Set to true to only unlock featest environment (skips deployment)'
-
+        
 jobs:
 
   lock-featest:
