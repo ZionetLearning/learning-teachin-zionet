@@ -160,18 +160,24 @@ export const useTypingPractice = (gameConfig?: GameConfig) => {
   const resetGame = () => {
     setCorrectSentencesCount(0);
     resetSentenceGameHook();
-    setExerciseState({
-      phase: "level-selection",
-      selectedLevel: null,
-      isLoading: false,
-      error: null,
-      audioState: {
-        isPlaying: false,
-        hasPlayed: false,
+    setExerciseState((prev) => {
+      const hasConfig = !!gameConfig && gameConfig.difficulty !== undefined;
+      return {
+        ...prev,
+        phase: hasConfig ? "ready" : "level-selection",
+        selectedLevel: hasConfig
+          ? mapDifficultyToDifficultyLevel(gameConfig!.difficulty)
+          : null,
+        isLoading: false,
         error: null,
-      },
-      userInput: "",
-      feedbackResult: null,
+        audioState: {
+          isPlaying: false,
+          hasPlayed: false,
+          error: null,
+        },
+        userInput: "",
+        feedbackResult: null,
+      };
     });
   };
 
