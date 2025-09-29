@@ -142,6 +142,13 @@ jobs:
         if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
         run: |
           kubectl create namespace "$TARGET_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
+          
+          # Also create devops-tools namespace early since the main app might need it
+          kubectl create namespace devops-tools --dry-run=client -o yaml | kubectl apply -f -
+          
+          # Wait for both namespaces to be ready
+          kubectl wait --for=condition=ready namespace/$TARGET_NAMESPACE --timeout=60s || true
+          kubectl wait --for=condition=ready namespace/devops-tools --timeout=60s || true
 
       - name: Check and fix Helm release status
         run: |
@@ -290,26 +297,7 @@ jobs:
       - name: Add Langfuse
         if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
         run: |
-          echo "Creating and verifying devops-tools namespace..."
-          kubectl create namespace devops-tools --dry-run=client -o yaml | kubectl apply -f -
-          
-          # Wait for namespace to be fully ready
-          echo "Waiting for namespace to be active..."
-          kubectl wait --for=condition=ready namespace/devops-tools --timeout=60s || true
-          
-          # Double-check namespace exists and is active
-          NAMESPACE_STATUS=$(kubectl get namespace devops-tools -o jsonpath='{.status.phase}' 2>/dev/null || echo "NotFound")
-          echo "Namespace status: $NAMESPACE_STATUS"
-          
-          if [ "$NAMESPACE_STATUS" != "Active" ]; then
-            echo "❌ Namespace is not ready. Current status: $NAMESPACE_STATUS"
-            kubectl get namespaces
-            exit 1
-          fi
-          
-          echo "✅ Namespace devops-tools is ready and active"
-          
-          echo "Deploying Langfuse..."
+          echo "Deploying Langfuse (devops-tools namespace already created)..."
           cd devops/helm-tools
           chmod +x langfuse.sh
           ./langfuse.sh $TARGET_NAMESPACE "${{ secrets.LANGFUSE_ADMIN_EMAIL }}" "${{ secrets.LANGFUSE_ADMIN_PASSWORD }}" "${{ secrets.POSTGRES_USER }}" "${{ secrets.POSTGRES_PASSWORD }}"
