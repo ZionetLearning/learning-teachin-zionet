@@ -107,7 +107,7 @@ spec:
         command: ["sh", "-c"]
         args:
           - |
-            npx prisma migrate resolve --applied 20240104210052_add_model_indices_pricing --schema=packages/shared/prisma/schema.prisma || true
+            echo "Running Prisma migrations..."
             npx prisma migrate deploy --schema=packages/shared/prisma/schema.prisma
         envFrom:
         - secretRef:
