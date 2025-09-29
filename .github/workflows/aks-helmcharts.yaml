@@ -52,7 +52,7 @@ on:
 jobs:
 
   lock-featest:
-    if: ${{ (inputs.environment_name) == 'featest' }}
+    if: ${{ (github.event.inputs.environment_name == 'featest') }}
     permissions:
       contents: read
       issues: write

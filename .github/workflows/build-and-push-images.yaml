@@ -12,11 +12,6 @@ on:
       list_services_names:
         required: true
         type: string
-      unlock_featest:
-        required: false
-        type: boolean
-        default: false
-        description: 'Set to true to only unlock featest environment (skips deployment)'
     outputs:
       image_tag:
         description: "The generated image tag (commit hash)"
@@ -25,7 +20,7 @@ on:
 jobs:
 
   lock-featest:
-    if: ${{ (inputs.environment_name) == 'featest' }}
+    if: ${{ (github.event.inputs.environment_name == 'featest') }}
     permissions:
       contents: read
       issues: write
