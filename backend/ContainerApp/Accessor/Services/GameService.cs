@@ -286,6 +286,44 @@ public class GameService : IGameService
         }
     }
 
+    public async Task<AttemptHistoryDto> GetAttemptDetailsAsync(Guid studentId, Guid attemptId, CancellationToken ct)
+    {
+        try
+        {
+            _logger.LogInformation("Fetching attempt details. UserId={UserId}, AttemptId={AttemptId}", studentId, attemptId);
+
+            var attempt = await _db.GameAttempts
+                .Where(a => a.StudentId == studentId && a.AttemptId == attemptId)
+                .FirstOrDefaultAsync(ct);
+
+            if (attempt == null)
+            {
+                _logger.LogWarning("Attempt not found. UserId={UserId}, AttemptId={AttemptId}", studentId, attemptId);
+                throw new InvalidOperationException($"Attempt {attemptId} not found for user {studentId}");
+            }
+
+            var result = new AttemptHistoryDto
+            {
+                AttemptId = attempt.AttemptId,
+                GameType = attempt.GameType,
+                Difficulty = attempt.Difficulty,
+                GivenAnswer = attempt.GivenAnswer,
+                CorrectAnswer = attempt.CorrectAnswer,
+                Status = attempt.Status,
+                CreatedAt = attempt.CreatedAt
+            };
+
+            _logger.LogInformation("Attempt details retrieved. UserId={UserId}, AttemptId={AttemptId}, GameType={GameType}, Status={Status}", studentId, attemptId, result.GameType, result.Status);
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error while fetching attempt details. UserId={UserId}, AttemptId={AttemptId}", studentId, attemptId);
+            throw;
+        }
+    }
+
     public async Task<List<AttemptedSentenceResult>> SaveGeneratedSentencesAsync(GeneratedSentenceDto dto, CancellationToken ct)
     {
         try

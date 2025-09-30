@@ -731,7 +731,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
     private async Task<string> BuildMistakeExplanationPromptAsync(AttemptDetailsResponse attemptDetails, string gameType, CancellationToken ct)
     {
-        var userAnswerText = string.Join(" ", attemptDetails.UserAnswer);
+        var userAnswerText = string.Join(" ", attemptDetails.GivenAnswer);
         var correctAnswerText = string.Join(" ", attemptDetails.CorrectAnswer);
 
         var mistakeTemplatePrompt = await _accessorClient.GetPromptAsync("prompts.mistake.template", ct);
@@ -740,8 +740,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         {
             return mistakeTemplatePrompt.Content
                 .Replace("{gameType}", gameType)
-                .Replace("{attemptId}", attemptDetails.AttemptId.ToString())
-                .Replace("{errorType}", attemptDetails.ErrorType)
+                .Replace("{difficulty}", attemptDetails.Difficulty)
                 .Replace("{userAnswer}", userAnswerText)
                 .Replace("{correctAnswer}", correctAnswerText);
         }
@@ -753,8 +752,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
                 **Exercise Details:**
                 - Game Type: {gameType}
-                - Attempt ID: {attemptDetails.AttemptId}
-                - Error Type: {attemptDetails.ErrorType}
+                - Difficulty: {attemptDetails.Difficulty}
 
                 **Student's Answer:** {userAnswerText}
                 **Correct Answer:** {correctAnswerText}
