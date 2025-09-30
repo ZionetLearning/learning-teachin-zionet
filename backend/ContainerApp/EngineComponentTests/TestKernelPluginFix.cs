@@ -10,6 +10,7 @@ public sealed class TestKernelPluginFix : IAsyncLifetime
     {
         var cfg = new ConfigurationBuilder()
             .AddJsonFile("appsettings.json", optional: true)
+            .AddJsonFile("appsettings.Local.json", optional: true)
             .AddEnvironmentVariables()
             .Build();
 

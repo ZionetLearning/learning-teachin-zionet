@@ -11,17 +11,18 @@ export interface UseHebrewSentenceConfig {
 
 // Create a single state object to prevent sync issues
 interface SentenceState {
+  attemptId: string;
   sentence: string;
   words: string[];
 }
 
 export const useHebrewSentence = (config: UseHebrewSentenceConfig = {}) => {
   const [sentenceState, setSentenceState] = useState<SentenceState>({
+    attemptId: "",
     sentence: "",
     words: [],
   });
 
-  const [sentenceId, setSentenceId] = useState<string | null>(null);
   const [sentencePool, setSentencePool] = useState<SplitSentenceItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -36,23 +37,26 @@ export const useHebrewSentence = (config: UseHebrewSentenceConfig = {}) => {
   } = useGenerateSplitSentences();
 
   // Default configuration
-  const defaultConfig = {
-    difficulty: 1 as DifficultyLevel, // medium
-    nikud: true,
-    count: 3, // Fetch multiple sentences to reduce API calls
-  };
+  const defaultConfig = useMemo(() => {
+    return {
+      difficulty: 1 as DifficultyLevel, // medium
+      nikud: true,
+      count: 3, // Fetch multiple sentences to reduce API calls
+    };
+  }, []);
 
   const finalConfig = useMemo(() => {
     return { ...defaultConfig, ...config };
-  }, [config]);
+  }, [defaultConfig, config]);
 
   const loading = splitLoading;
   const mutationError = splitError;
 
   // Helper to update state atomically
   const updateSentenceState = useCallback(
-    (newSentence: string, newWords: string[]) => {
+    (newAttemptId: string, newSentence: string, newWords: string[]) => {
       setSentenceState({
+        attemptId: newAttemptId,
         sentence: newSentence,
         words: newWords,
       });
@@ -72,16 +76,20 @@ export const useHebrewSentence = (config: UseHebrewSentenceConfig = {}) => {
       nikud: finalConfig.nikud,
       count: finalConfig.count,
     });
-    
-    setSentenceId(response.sentenceId);
 
-    setSentencePool(response.split.sentences);
+    console.log({ response });
+
+    setSentencePool(response);
     setCurrentIndex(0);
 
-    if (response.split.sentences.length > 0) {
-      const firstSentence = response.split.sentences[0] as SplitSentenceItem;
+    if (response.length > 0) {
+      const firstSentence = response[0] as SplitSentenceItem;
 
-      updateSentenceState(firstSentence.original, firstSentence.words);
+      updateSentenceState(
+        firstSentence.attemptId,
+        firstSentence.original,
+        firstSentence.words,
+      );
 
       pendingRef.current = false;
       return {
@@ -91,7 +99,7 @@ export const useHebrewSentence = (config: UseHebrewSentenceConfig = {}) => {
     }
 
     // Clear state if no sentences
-    updateSentenceState("", []);
+    updateSentenceState("", "", []);
     pendingRef.current = false;
     return { sentence: "", words: [] };
   }, [finalConfig, fetchSplitSentences, updateSentenceState, sentenceState]);
@@ -108,7 +116,7 @@ export const useHebrewSentence = (config: UseHebrewSentenceConfig = {}) => {
 
     setCurrentIndex(nextIndex);
     const nextItem = sentencePool[nextIndex];
-    updateSentenceState(nextItem.original, nextItem.words);
+    updateSentenceState(nextItem.attemptId, nextItem.original, nextItem.words);
     return { sentence: nextItem.original, words: nextItem.words };
   }, [sentencePool, currentIndex, updateSentenceState]);
 
@@ -139,7 +147,7 @@ export const useHebrewSentence = (config: UseHebrewSentenceConfig = {}) => {
   const resetGame = useCallback(() => {
     setCurrentIndex(0);
     setSentencePool([]);
-    updateSentenceState("", []);
+    updateSentenceState(" ", "", []);
     didInitRef.current = false;
     pendingRef.current = false;
     setError(null);
@@ -149,7 +157,7 @@ export const useHebrewSentence = (config: UseHebrewSentenceConfig = {}) => {
   const combinedError = error || (mutationError?.message ?? null);
 
   return {
-    sentenceId: sentenceId,
+    attemptId: sentenceState.attemptId,
     sentence: sentenceState.sentence,
     words: sentenceState.words,
     loading,

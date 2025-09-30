@@ -8,9 +8,9 @@ using Manager.Models;
 using Manager.Models.Auth;
 using Manager.Models.Auth.RefreshSessions;
 using Manager.Models.Chat;
+using Manager.Models.Games;
 using Manager.Models.QueueMessages;
 using Manager.Models.Users;
-using Manager.Models.Games;
 using Manager.Services.Clients.Accessor.Models;
 
 namespace Manager.Services.Clients.Accessor;
@@ -780,22 +780,22 @@ public class AccessorClient(
         }
     }
 
-    public async Task<Guid> SaveGeneratedSentenceAsync(GeneratedSentenceDto dto, CancellationToken ct)
+    public async Task<List<AttemptedSentenceResult>> SaveGeneratedSentencesAsync(GeneratedSentenceDto dto, CancellationToken ct)
     {
         try
         {
             _logger.LogInformation("Saving generated sentence for StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}", dto.StudentId, dto.GameType, dto.Difficulty);
 
-            var attemptId = await _daprClient.InvokeMethodAsync<GeneratedSentenceDto, Guid>(
+            var result = await _daprClient.InvokeMethodAsync<GeneratedSentenceDto, List<AttemptedSentenceResult>>(
                 HttpMethod.Post,
                 AppIds.Accessor,
-                "games-accessor/generated-sentence",
+                "games-accessor/generated-sentences",
                 dto,
                 cancellationToken: ct
             );
 
-            _logger.LogInformation("Generated sentence saved for StudentId={StudentId} with AttemptId={AttemptId}", dto.StudentId, attemptId);
-            return attemptId;
+            _logger.LogInformation("Generated sentence saved for StudentId={StudentId}", dto.StudentId);
+            return result;
         }
         catch (Exception ex)
         {

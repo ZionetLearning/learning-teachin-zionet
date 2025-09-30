@@ -6,16 +6,17 @@ import {
   Paper,
   Stack,
 } from "@mui/material";
-import { ErrorOutline, Refresh, ArrowBack } from "@mui/icons-material";
+import ErrorOutline from "@mui/icons-material/ErrorOutline";
+import Refresh from "@mui/icons-material/Refresh";
+import ArrowBack from "@mui/icons-material/ArrowBack";
 import { useTranslation } from "react-i18next";
 import { useStyles } from "./style";
 
 export interface ErrorFallbackProps {
   resetErrorBoundary?: () => void;
 }
-export const ErrorFallback = ({
-  resetErrorBoundary,
-}: ErrorFallbackProps) => {
+
+export const ErrorFallback = ({ resetErrorBoundary }: ErrorFallbackProps) => {
   const { t } = useTranslation();
   const classes = useStyles();
 

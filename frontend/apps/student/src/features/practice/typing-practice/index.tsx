@@ -1,63 +1,94 @@
 import { useTranslation } from "react-i18next";
+import { useState, useEffect, useCallback } from "react";
 import { useStyles } from "./style";
-import type { DifficultyLevel } from "./types";
-import { LevelSelection, FeedbackDisplay, AudioControls } from "./components";
+import { FeedbackDisplay, AudioControls } from "./components";
 import { useTypingPractice } from "./hooks";
+import {
+  GameConfig,
+  GameSetupPanel,
+  GameConfigModal,
+  GameOverModal,
+  GameSettings,
+} from "@ui-components";
+import { getDifficultyLabel } from "@student/features";
 
 export const TypingPractice = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const classes = useStyles();
+  const [gameOverModalOpen, setGameOverModalOpen] = useState(false);
+  const [gameConfig, setGameConfig] = useState<GameConfig | null>(null);
+  const [gameStarted, setGameStarted] = useState(false);
+  const [configModalOpen, setConfigModalOpen] = useState(false);
+
+  const isHebrew = i18n.language === "he" || i18n.language === "heb";
 
   const {
     exerciseState,
-    handleLevelSelect,
-    handleBackToLevelSelection,
+    currentSentenceIndex,
+    correctSentencesCount,
+    sentenceCount,
+    resetGame,
+    initOnce,
     handlePlayAudio,
     handleReplayAudio,
     handleInputChange,
     handleSubmitAnswer,
     handleTryAgain,
     handleNextExercise,
-  } = useTypingPractice();
+  } = useTypingPractice(gameConfig || undefined);
 
-  const getLevelBadgeClass = (level: DifficultyLevel) => {
-    switch (level) {
-      case "easy":
-        return classes.levelBadgeEasy;
-      case "medium":
-        return classes.levelBadgeMedium;
-      case "hard":
-        return classes.levelBadgeHard;
-      default:
-        return classes.levelBadgeEasy;
+  useEffect(() => {
+    if (!gameStarted && !gameConfig) {
+      setConfigModalOpen(true);
     }
-  };
+  }, [gameStarted, gameConfig]);
+
+  useEffect(() => {
+    if (gameConfig && !gameStarted) {
+      initOnce();
+      setGameStarted(true);
+    }
+  }, [gameConfig, gameStarted, initOnce]);
+
+  const handleConfigConfirm = useCallback(
+    (config: GameConfig) => {
+      setGameConfig(config);
+      setConfigModalOpen(false);
+      setGameStarted(false);
+      resetGame();
+    },
+    [resetGame],
+  );
+
+  const handleConfigChange = useCallback(() => {
+    setConfigModalOpen(true);
+  }, []);
+
+  const handleGameOverPlayAgain = useCallback(() => {
+    setGameOverModalOpen(false);
+    resetGame();
+    setGameStarted(false);
+
+    setTimeout(() => {
+      setGameStarted(true);
+      initOnce();
+    }, 100);
+  }, [resetGame, initOnce]);
+
+  const handleGameOverChangeSettings = useCallback(() => {
+    setGameOverModalOpen(false);
+    setConfigModalOpen(true);
+  }, []);
+
+  const handleNextExerciseClick = useCallback(async () => {
+    const result = await handleNextExercise();
+    if (result.gameCompleted) {
+      setGameOverModalOpen(true);
+    }
+  }, [handleNextExercise]);
 
   const renderExerciseArea = () => (
     <div className={classes.exerciseArea} data-testid="typing-exercise-area">
-      <div className={classes.exerciseHeader}>
-        <h3 className={classes.exerciseTitle}>
-          {t("pages.typingPractice.hebrewTypingPractice")}
-        </h3>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          {exerciseState.selectedLevel && (
-            <span
-              className={`${classes.levelBadge} ${getLevelBadgeClass(exerciseState.selectedLevel)}`}
-              data-testid="typing-selected-level"
-            >
-              {exerciseState.selectedLevel}
-            </span>
-          )}
-          <button
-            className={classes.backButton}
-            onClick={handleBackToLevelSelection}
-            data-testid="typing-change-level"
-          >
-            {t("pages.typingPractice.changeLevel")}
-          </button>
-        </div>
-      </div>
-
       <div className={classes.audioSection}>
         <AudioControls
           phase={
@@ -78,6 +109,7 @@ export const TypingPractice = () => {
               className={classes.typingInputField}
               value={exerciseState.userInput}
               onChange={handleInputChange}
+              onKeyDown={(e) => e.key === "Enter" && handleSubmitAnswer()}
               placeholder={t("pages.typingPractice.typeHereWhatYouHeard")}
               autoFocus
               data-testid="typing-input"
@@ -97,45 +129,72 @@ export const TypingPractice = () => {
           <FeedbackDisplay
             feedbackResult={exerciseState.feedbackResult}
             onTryAgain={handleTryAgain}
-            onNextExercise={handleNextExercise}
-            onChangeLevel={handleBackToLevelSelection}
+            onNextExercise={handleNextExerciseClick}
           />
         )}
       </div>
     </div>
   );
 
+  if (!gameStarted || !gameConfig) {
+    return (
+      <GameSetupPanel
+        configModalOpen={configModalOpen}
+        setConfigModalOpen={setConfigModalOpen}
+        handleConfigConfirm={handleConfigConfirm}
+        getDifficultyLabel={getDifficultyLabel}
+      />
+    );
+  }
+
   return (
-    <div className={classes.container}>
-      <div className={classes.header}>
-        <h1 className={classes.title}>
-          {t("pages.typingPractice.hebrewTypingPractice")}
-        </h1>
-        <p className={classes.subtitle}>
-          {t("pages.typingPractice.listenToHebrewAudio")}
-        </p>
-      </div>
-
-      <div className={classes.content}>
-        {exerciseState.error && (
-          <div className={classes.errorContainer}>{exerciseState.error}</div>
-        )}
-
-        {exerciseState.phase === "level-selection" ? (
-          <LevelSelection
-            onLevelSelect={handleLevelSelect}
-            isLoading={exerciseState.isLoading}
-          />
-        ) : (
-          renderExerciseArea()
-        )}
-      </div>
-
-      {exerciseState.isLoading && (
-        <div className={classes.loadingOverlay}>
-          <div className={classes.loadingSpinner} />
+    <div className={classes.pageWrapper}>
+      <div className={classes.container}>
+        <div className={classes.content}>
+          {exerciseState.error && (
+            <div className={classes.errorContainer}>{exerciseState.error}</div>
+          )}
+          {renderExerciseArea()}
         </div>
-      )}
+        <div className={classes.gameSettingsWrapper}>
+          <div
+            className={`${classes.gameSettings} ${exerciseState.phase === "feedback" && classes.feedbackMode}`}
+          >
+            <GameSettings
+              gameConfig={gameConfig}
+              currentSentenceIndex={currentSentenceIndex}
+              sentenceCount={sentenceCount}
+              isHebrew={isHebrew}
+              handleConfigChange={handleConfigChange}
+              getDifficultyLabel={getDifficultyLabel}
+            />
+          </div>
+        </div>
+
+        {exerciseState.isLoading && (
+          <div className={classes.loadingOverlay}>
+            <div className={classes.loadingSpinner} />
+          </div>
+        )}
+
+        {/* Configuration Modal */}
+        <GameConfigModal
+          open={configModalOpen}
+          onClose={() => setConfigModalOpen(false)}
+          onConfirm={handleConfigConfirm}
+          getDifficultyLevelLabel={getDifficultyLabel}
+          initialConfig={gameConfig || undefined}
+        />
+
+        {/* Game Over Modal */}
+        <GameOverModal
+          open={gameOverModalOpen}
+          onPlayAgain={handleGameOverPlayAgain}
+          onChangeSettings={handleGameOverChangeSettings}
+          correctSentences={correctSentencesCount}
+          totalSentences={sentenceCount}
+        />
+      </div>
     </div>
   );
 };

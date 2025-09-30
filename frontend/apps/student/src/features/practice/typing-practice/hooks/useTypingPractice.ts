@@ -1,10 +1,26 @@
 import { useEffect, useState } from "react";
-import type { ExerciseState, DifficultyLevel, Exercise } from "../types";
-import { getRandomExercise, compareTexts } from "../utils";
-import { useAvatarSpeech } from "@student/hooks";
+import type { ExerciseState, DifficultyLevel } from "../types";
+import { compareTexts } from "../utils";
+import { useAvatarSpeech, useHebrewSentence } from "@student/hooks";
 import { CypressWindow } from "@student/types";
+import { GameConfig } from "@ui-components";
 
-export const useTypingPractice = () => {
+const mapDifficultyToDifficultyLevel = (
+  difficulty: 0 | 1 | 2,
+): DifficultyLevel => {
+  switch (difficulty) {
+    case 0:
+      return "easy";
+    case 1:
+      return "medium";
+    case 2:
+      return "hard";
+    default:
+      return "easy";
+  }
+};
+
+export const useTypingPractice = (gameConfig?: GameConfig) => {
   const [exerciseState, setExerciseState] = useState<ExerciseState>({
     phase: "level-selection",
     selectedLevel: null,
@@ -19,7 +35,18 @@ export const useTypingPractice = () => {
     feedbackResult: null,
   });
 
-  const [currentExercise, setCurrentExercise] = useState<Exercise | null>(null);
+  const [correctSentencesCount, setCorrectSentencesCount] = useState<number>(0);
+
+  const {
+    sentence,
+    loading,
+    error: sentenceError,
+    fetchSentence,
+    initOnce,
+    resetGame: resetSentenceGameHook,
+    sentenceCount,
+    currentSentenceIndex,
+  } = useHebrewSentence(gameConfig);
 
   const { speak, stop, isPlaying, error } = useAvatarSpeech({
     volume: 1,
@@ -34,7 +61,6 @@ export const useTypingPractice = () => {
         },
       }));
       // In Cypress (or non-audio) environments the onAudioEnd callback might never fire.
-      // Auto-advance to typing phase quickly so E2E tests don't time out.
       try {
         if (
           typeof window !== "undefined" &&
@@ -91,16 +117,26 @@ export const useTypingPractice = () => {
     [error],
   );
 
-  const handleLevelSelect = (level: DifficultyLevel) => {
-    try {
-      setExerciseState((prev) => ({ ...prev, isLoading: true, error: null }));
+  // Handle sentence error
+  useEffect(() => {
+    if (sentenceError) {
+      setExerciseState((prev) => ({
+        ...prev,
+        error: sentenceError,
+      }));
+    }
+  }, [sentenceError]);
 
-      const exercise = getRandomExercise(level);
-      setCurrentExercise(exercise);
-
-      setExerciseState({
+  // Initialize game when config is provided
+  useEffect(() => {
+    if (gameConfig && gameConfig.difficulty !== undefined) {
+      const difficultyLevel = mapDifficultyToDifficultyLevel(
+        gameConfig.difficulty,
+      );
+      setExerciseState((prev) => ({
+        ...prev,
+        selectedLevel: difficultyLevel,
         phase: "ready",
-        selectedLevel: level,
         isLoading: false,
         error: null,
         audioState: {
@@ -110,37 +146,45 @@ export const useTypingPractice = () => {
         },
         userInput: "",
         feedbackResult: null,
-      });
-    } catch (error) {
-      setExerciseState((prev) => ({
-        ...prev,
-        isLoading: false,
-        error:
-          error instanceof Error ? error.message : "Failed to load exercise",
       }));
     }
-  };
+  }, [gameConfig]);
 
-  const handleBackToLevelSelection = () => {
-    if (isPlaying) stop();
-    setExerciseState({
-      phase: "level-selection",
-      selectedLevel: null,
-      isLoading: false,
-      error: null,
-      audioState: {
-        isPlaying: false,
-        hasPlayed: false,
+  useEffect(() => {
+    setExerciseState((prev) => ({
+      ...prev,
+      isLoading: loading,
+    }));
+  }, [loading]);
+
+  const resetGame = () => {
+    setCorrectSentencesCount(0);
+    resetSentenceGameHook();
+    setExerciseState((prev) => {
+      const hasConfig = !!gameConfig && gameConfig.difficulty !== undefined;
+      return {
+        ...prev,
+        phase: hasConfig ? "ready" : "level-selection",
+        selectedLevel: hasConfig
+          ? mapDifficultyToDifficultyLevel(gameConfig!.difficulty)
+          : null,
+        isLoading: false,
         error: null,
-      },
-      userInput: "",
-      feedbackResult: null,
+        audioState: {
+          isPlaying: false,
+          hasPlayed: false,
+          error: null,
+        },
+        userInput: "",
+        feedbackResult: null,
+      };
     });
-    setCurrentExercise(null);
   };
 
   const handlePlayAudio = async (): Promise<void> => {
-    if (!currentExercise) return;
+    if (!sentence) {
+      return;
+    }
 
     if (isPlaying) {
       stop();
@@ -155,11 +199,11 @@ export const useTypingPractice = () => {
         error: null,
       },
     }));
-    speak(currentExercise.hebrewText);
+    speak(sentence);
   };
 
   const handleReplayAudio = async () => {
-    if (!currentExercise) return;
+    if (!sentence) return;
 
     if (isPlaying) {
       stop();
@@ -174,7 +218,7 @@ export const useTypingPractice = () => {
         error: null,
       },
     }));
-    speak(currentExercise.hebrewText);
+    speak(sentence);
   };
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -185,18 +229,20 @@ export const useTypingPractice = () => {
   };
 
   const handleSubmitAnswer = () => {
-    if (!currentExercise || !exerciseState.userInput.trim()) return;
+    if (!sentence || !exerciseState.userInput.trim()) return;
 
-    const feedbackResult = compareTexts(
-      exerciseState.userInput,
-      currentExercise.hebrewText,
-    );
+    const feedbackResult = compareTexts(exerciseState.userInput, sentence);
 
     setExerciseState((prev) => ({
       ...prev,
       phase: "feedback",
       feedbackResult,
     }));
+
+    // Track correct answers using the isCorrect from compareTexts
+    if (feedbackResult.isCorrect) {
+      setCorrectSentencesCount((prev) => prev + 1);
+    }
   };
 
   const handleTryAgain = () => {
@@ -208,13 +254,17 @@ export const useTypingPractice = () => {
     }));
   };
 
-  const handleNextExercise = () => {
-    if (!exerciseState.selectedLevel) return;
+  const handleNextExercise = async (): Promise<{ gameCompleted: boolean }> => {
+    if (!exerciseState.selectedLevel) return { gameCompleted: false };
 
     try {
       if (isPlaying) stop();
-      const exercise = getRandomExercise(exerciseState.selectedLevel);
-      setCurrentExercise(exercise);
+      const result = await fetchSentence();
+
+      // Check if game is completed (no more sentences)
+      if (!result || !result.sentence) {
+        return { gameCompleted: true };
+      }
 
       setExerciseState((prev) => ({
         ...prev,
@@ -227,6 +277,8 @@ export const useTypingPractice = () => {
           error: null,
         },
       }));
+
+      return { gameCompleted: false };
     } catch (error) {
       setExerciseState((prev) => ({
         ...prev,
@@ -235,14 +287,18 @@ export const useTypingPractice = () => {
             ? error.message
             : "Failed to load next exercise",
       }));
+      return { gameCompleted: false };
     }
   };
 
   return {
     exerciseState,
-    currentExercise,
-    handleLevelSelect,
-    handleBackToLevelSelection,
+    currentExercise: sentence ? { hebrewText: sentence } : null,
+    currentSentenceIndex,
+    correctSentencesCount,
+    sentenceCount,
+    resetGame,
+    initOnce,
     handlePlayAudio,
     handleReplayAudio,
     handleInputChange,
