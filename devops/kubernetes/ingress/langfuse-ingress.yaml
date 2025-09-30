@@ -18,7 +18,55 @@ spec:
   - host: teachin.westeurope.cloudapp.azure.com
     http:
       paths:
-      # Langfuse application served at /langfuse path
+      # Direct auth routes - pass through as-is
+      - path: /auth
+        pathType: Prefix
+        backend:
+          service:
+            name: langfuse-web
+            port:
+              number: 3000
+      # Direct API auth routes - pass through as-is
+      - path: /api/auth
+        pathType: Prefix
+        backend:
+          service:
+            name: langfuse-web
+            port:
+              number: 3000
+      # Direct API TRPC routes - pass through as-is
+      - path: /api/trpc
+        pathType: Prefix
+        backend:
+          service:
+            name: langfuse-web
+            port:
+              number: 3000
+      # Direct API routes - pass through as-is
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: langfuse-web
+            port:
+              number: 3000
+      # Static assets that might be requested directly
+      - path: /icon.svg
+        pathType: Exact
+        backend:
+          service:
+            name: langfuse-web
+            port:
+              number: 3000
+      # Next.js static assets
+      - path: /_next
+        pathType: Prefix
+        backend:
+          service:
+            name: langfuse-web
+            port:
+              number: 3000
+      # Langfuse application main path
       - path: /langfuse
         pathType: Prefix
         backend:

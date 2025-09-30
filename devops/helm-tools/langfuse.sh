@@ -82,12 +82,6 @@ helm $ACTION langfuse langfuse/langfuse \
   --set-string langfuse.additionalEnv[6].value="true" \
   --set langfuse.additionalEnv[7].name="NEXTAUTH_URL" \
   --set-string langfuse.additionalEnv[7].value="https://teachin.westeurope.cloudapp.azure.com/langfuse" \
-  --set langfuse.additionalEnv[8].name="NEXT_PUBLIC_BASE_PATH" \
-  --set-string langfuse.additionalEnv[8].value="/langfuse" \
-  --set langfuse.additionalEnv[9].name="NEXTAUTH_BASEPATH" \
-  --set-string langfuse.additionalEnv[9].value="/langfuse" \
-  --set langfuse.additionalEnv[10].name="__NEXT_ROUTER_BASEPATH" \
-  --set-string langfuse.additionalEnv[10].value="/langfuse" \
   --timeout=5m
 
 echo "✅ Chart applied with web=0. Running Prisma migrations as a Job..."
