@@ -5,21 +5,17 @@ export const useStyles = createUseStyles({
     background: "#fff",
     border: "1px solid #e2e8f0",
     boxShadow: "0 2px 4px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03)",
+    borderTopLeftRadius: 0,
+    borderBottomLeftRadius: 0,
     borderRadius: 12,
     padding: "1.25rem 1.15rem 1.5rem",
     position: "relative",
     transition: "box-shadow .25s ease, transform .25s ease",
-    "&:hover": {
-      boxShadow: "0 4px 10px rgba(0,0,0,0.06), 0 6px 18px rgba(0,0,0,0.05)",
-      transform: "translateY(-2px)",
-    },
     display: "flex",
     flexDirection: "column",
     minHeight: 0,
-    flex: "1 1 60%",
-    height: "calc(100vh - 3rem)",
     "@supports (height: 100dvh)": {
-      height: "calc(100dvh - 3rem)",
+      height: "calc(100dvh - 46px)",
     },
   },
   sectionTitle: {
@@ -116,8 +112,6 @@ export const useStyles = createUseStyles({
   colGameType: { minWidth: 120 },
   colDifficulty: { minWidth: 120 },
   colAttempts: { minWidth: 110, textAlign: "center" },
-  colSuccesses: { minWidth: 110, textAlign: "center" },
-  colFailures: { minWidth: 110, textAlign: "center" },
   colRate: { minWidth: 160 },
   rateWrapper: {
     display: "flex",
@@ -140,7 +134,6 @@ export const useStyles = createUseStyles({
   },
   paginationBar: {
     padding: "4px 12px",
-    borderTop: "1px solid #e5e7eb",
     background: "#fff",
   },
 });

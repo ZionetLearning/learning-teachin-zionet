@@ -50,6 +50,12 @@ export const StudentPracticeHistory = () => {
     pageSize: rowsPerPage,
   });
 
+  const handlePageChange = (_: unknown, newPage: number) => setPage(newPage);
+  const handleRowsPerPageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(e.target.value, 10));
+    setPage(0);
+  };
+
   const allItems = useMemo(() => data?.items ?? [], [data]);
 
   const gameTypes = useMemo(
@@ -75,17 +81,12 @@ export const StudentPracticeHistory = () => {
     [allItems, gameType, difficulty],
   );
 
-  const total = filtered.length;
   const pagedItems = useMemo(
     () => filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
     [filtered, page, rowsPerPage],
   );
 
-  const handlePageChange = (_: unknown, newPage: number) => setPage(newPage);
-  const handleRowsPerPageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(e.target.value, 10));
-    setPage(0);
-  };
+  const total = filtered.length;
 
   return (
     <div className={classes.listContainer} data-testid="history-list">
@@ -172,10 +173,10 @@ export const StudentPracticeHistory = () => {
                   <TableCell align="center" className={classes.colAttempts}>
                     {t("pages.studentPracticeHistory.columns.attempts")}
                   </TableCell>
-                  <TableCell align="center" className={classes.colSuccesses}>
+                  <TableCell align="center" className={classes.colAttempts}>
                     {t("pages.studentPracticeHistory.columns.successes")}
                   </TableCell>
-                  <TableCell align="center" className={classes.colFailures}>
+                  <TableCell align="center" className={classes.colAttempts}>
                     {t("pages.studentPracticeHistory.columns.failures")}
                   </TableCell>
                   <TableCell align="center" className={classes.colRate}>
@@ -262,13 +263,13 @@ export const StudentPracticeHistory = () => {
                         </TableCell>
                         <TableCell
                           align="center"
-                          className={classes.colSuccesses}
+                          className={classes.colAttempts}
                         >
                           {it.totalSuccesses}
                         </TableCell>
                         <TableCell
                           align="center"
-                          className={classes.colFailures}
+                          className={classes.colAttempts}
                         >
                           {it.totalFailures}
                         </TableCell>
@@ -295,7 +296,6 @@ export const StudentPracticeHistory = () => {
             </Table>
           </TableContainer>
         </div>
-
         <TablePagination
           component="div"
           className={classes.paginationBar}
