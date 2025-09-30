@@ -1,7 +1,12 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Box,
+  FormControl,
+  InputLabel,
   LinearProgress,
+  MenuItem,
+  Select,
+  Stack,
   Table,
   TableBody,
   TableCell,
@@ -10,48 +15,70 @@ import {
   TablePagination,
   TableRow,
 } from "@mui/material";
-import {
-  Paged,
-  SummaryHistoryWithStudentDto,
-  useGetStudentPracticeHistory,
-} from "./api";
-import { useStyles } from "./style";
-import { DifficultyLevel } from "@student/types";
+import { useTranslation } from "react-i18next";
 
-//mock data for 20 users
-const mockData: Paged<SummaryHistoryWithStudentDto> = {
-  items: Array.from({ length: 20 }).map((_, i) => ({
-    studentId: `student-${i + 1}`,
-    gameType: i % 2 === 0 ? "math" : "spelling",
-    difficulty: (i % 3 === 0
-      ? "easy"
-      : i % 3 === 1
-        ? "medium"
-        : "hard") as unknown as DifficultyLevel,
-    attemptsCount: Math.floor(Math.random() * 100),
-    totalSuccesses: Math.floor(Math.random() * 80),
-    totalFailures: Math.floor(Math.random() * 20),
-  })),
-  totalCount: 20,
-  page: 1,
-  pageSize: 20,
-  hasNextPage: false,
+import { DifficultyLevel } from "@student/types";
+import { useGetStudentPracticeHistory } from "./api";
+import { useStyles } from "./style";
+
+const levelToLabel = (
+  level: DifficultyLevel | string,
+): "Easy" | "Medium" | "Hard" => {
+  if (typeof level === "number") {
+    return level === 0 ? "Easy" : level === 1 ? "Medium" : "Hard";
+  }
+  const s = String(level).toLowerCase();
+  if (s === "0" || s === "easy") return "Easy";
+  if (s === "1" || s === "medium") return "Medium";
+  return "Hard";
 };
 
 export const StudentPracticeHistory = () => {
   const classes = useStyles();
+  const { t } = useTranslation();
 
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(20);
+  const [gameType, setGameType] = useState("all");
+  const [difficulty, setDifficulty] = useState<
+    "all" | "Easy" | "Medium" | "Hard"
+  >("all");
 
-  const { isLoading, isError, error } = useGetStudentPracticeHistory({
+  const { data, isLoading, isError } = useGetStudentPracticeHistory({
     page: page + 1,
     pageSize: rowsPerPage,
   });
 
-  const data = mockData; // Replace with actual data from the hook when backend is ready
-  const items = data?.items ?? [];
-  const total = data?.totalCount ?? 0;
+  const allItems = useMemo(() => data?.items ?? [], [data]);
+
+  const gameTypes = useMemo(
+    () => Array.from(new Set(allItems.map((i) => i.gameType))).sort(),
+    [allItems],
+  );
+
+  const difficulties = useMemo(
+    () =>
+      Array.from(
+        new Set(allItems.map((i) => levelToLabel(i.difficulty))),
+      ).sort() as Array<"Easy" | "Medium" | "Hard">,
+    [allItems],
+  );
+
+  const filtered = useMemo(
+    () =>
+      allItems.filter(
+        (it) =>
+          (gameType === "all" || it.gameType === gameType) &&
+          (difficulty === "all" || levelToLabel(it.difficulty) === difficulty),
+      ),
+    [allItems, gameType, difficulty],
+  );
+
+  const total = filtered.length;
+  const pagedItems = useMemo(
+    () => filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
+    [filtered, page, rowsPerPage],
+  );
 
   const handlePageChange = (_: unknown, newPage: number) => setPage(newPage);
   const handleRowsPerPageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,8 +88,66 @@ export const StudentPracticeHistory = () => {
 
   return (
     <div className={classes.listContainer} data-testid="history-list">
-      <h2 className={classes.sectionTitle}>Student Practice History</h2>
+      <h2 className={classes.sectionTitle}>
+        {t("pages.studentPracticeHistory.title")}
+      </h2>
+      <Stack direction="row" spacing={12} className={classes.filtersRow}>
+        <FormControl
+          size="small"
+          className={classes.filterControl}
+          disabled={isLoading || isError}
+        >
+          <InputLabel id="filter-game-type-label">
+            {t("pages.studentPracticeHistory.filters.gameType")}
+          </InputLabel>
+          <Select
+            labelId="filter-game-type-label"
+            label={t("pages.studentPracticeHistory.filters.gameType")}
+            value={gameType}
+            onChange={(e) => {
+              setGameType(e.target.value);
+              setPage(0);
+            }}
+          >
+            <MenuItem value="all">
+              {t("pages.studentPracticeHistory.filters.all")}
+            </MenuItem>
+            {gameTypes.map((gt) => (
+              <MenuItem key={gt} value={gt}>
+                {gt}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
+        <FormControl
+          size="small"
+          className={classes.filterControl}
+          disabled={isLoading || isError}
+        >
+          <InputLabel id="filter-difficulty-label">
+            {t("pages.studentPracticeHistory.filters.difficulty")}
+          </InputLabel>
+          <Select
+            labelId="filter-difficulty-label"
+            label={t("pages.studentPracticeHistory.filters.difficulty")}
+            value={difficulty}
+            onChange={(e) => {
+              setDifficulty(e.target.value);
+              setPage(0);
+            }}
+          >
+            <MenuItem value="all">
+              {t("pages.studentPracticeHistory.filters.all")}
+            </MenuItem>
+            {difficulties.map((d) => (
+              <MenuItem key={d} value={d}>
+                {d}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Stack>
       <div className={classes.tableArea} data-testid="history-table">
         <div className={classes.tableShell} data-testid="history-table-shell">
           <TableContainer className={classes.rowsScroll}>
@@ -78,13 +163,13 @@ export const StudentPracticeHistory = () => {
                     align="center"
                     sx={{ width: { xs: "44%", sm: "26%" } }}
                   >
-                    Student ID
+                    {t("pages.studentPracticeHistory.columns.studentName")}
                   </TableCell>
                   <TableCell
                     align="center"
                     sx={{ width: { xs: "28%", sm: "18%" } }}
                   >
-                    Game Type
+                    {t("pages.studentPracticeHistory.columns.gameType")}
                   </TableCell>
                   <TableCell
                     align="center"
@@ -93,7 +178,7 @@ export const StudentPracticeHistory = () => {
                       display: { xs: "none", sm: "table-cell" },
                     }}
                   >
-                    Difficulty
+                    {t("pages.studentPracticeHistory.columns.difficulty")}
                   </TableCell>
                   <TableCell
                     align="center"
@@ -102,7 +187,7 @@ export const StudentPracticeHistory = () => {
                       display: { xs: "none", sm: "table-cell" },
                     }}
                   >
-                    Attempts
+                    {t("pages.studentPracticeHistory.columns.attempts")}
                   </TableCell>
                   <TableCell
                     align="center"
@@ -111,7 +196,7 @@ export const StudentPracticeHistory = () => {
                       display: { xs: "none", sm: "table-cell" },
                     }}
                   >
-                    Successes
+                    {t("pages.studentPracticeHistory.columns.successes")}
                   </TableCell>
                   <TableCell
                     align="center"
@@ -120,13 +205,13 @@ export const StudentPracticeHistory = () => {
                       display: { xs: "none", sm: "table-cell" },
                     }}
                   >
-                    Failures
+                    {t("pages.studentPracticeHistory.columns.failures")}
                   </TableCell>
                   <TableCell
                     align="center"
                     sx={{ width: { xs: "28%", sm: "18%" } }}
                   >
-                    Success Rate
+                    {t("pages.studentPracticeHistory.columns.successRate")}
                   </TableCell>
                 </TableRow>
               </TableHead>
@@ -139,7 +224,7 @@ export const StudentPracticeHistory = () => {
                         <LinearProgress
                           sx={{ flex: 1, height: 6, borderRadius: 1 }}
                         />
-                        <span>Loading…</span>
+                        <span>{t("pages.studentPracticeHistory.loading")}</span>
                       </Box>
                     </TableCell>
                   </TableRow>
@@ -148,20 +233,22 @@ export const StudentPracticeHistory = () => {
                 {isError && !isLoading && (
                   <TableRow>
                     <TableCell colSpan={7} style={{ color: "#c00" }}>
-                      {(error as Error)?.message ?? "Failed to load"}
+                      {t("pages.studentPracticeHistory.failedToLoad")}
                     </TableCell>
                   </TableRow>
                 )}
 
-                {!isLoading && !isError && items.length === 0 && (
+                {!isLoading && !isError && pagedItems.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7}>No data found.</TableCell>
+                    <TableCell colSpan={7}>
+                      {t("pages.studentPracticeHistory.noDataFound")}
+                    </TableCell>
                   </TableRow>
                 )}
 
                 {!isLoading &&
                   !isError &&
-                  items.map((it) => {
+                  pagedItems.map((it) => {
                     const rate =
                       it.attemptsCount > 0
                         ? Math.round(
@@ -174,7 +261,7 @@ export const StudentPracticeHistory = () => {
                         key={`${it.studentId}-${it.gameType}-${it.difficulty}`}
                       >
                         <TableCell align="center" title={it.studentId}>
-                          <code>{it.studentId.slice(0, 8)}…</code>
+                          <code>{it.studentId}</code>
                         </TableCell>
 
                         <TableCell
@@ -262,9 +349,9 @@ export const StudentPracticeHistory = () => {
           rowsPerPage={rowsPerPage}
           onRowsPerPageChange={handleRowsPerPageChange}
           rowsPerPageOptions={[10, 20, 50, 100]}
-          labelRowsPerPage="Rows per page"
+          labelRowsPerPage={t("pages.studentPracticeHistory.rowsPerPage")}
           labelDisplayedRows={({ from, to, count }) =>
-            `${from}-${to} of ${count !== -1 ? count : to}`
+            `${from}-${to} ${t("pages.studentPracticeHistory.of")} ${count !== -1 ? count : to}`
           }
         />
       </div>

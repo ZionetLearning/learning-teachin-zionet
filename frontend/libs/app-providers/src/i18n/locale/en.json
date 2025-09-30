@@ -413,6 +413,28 @@
           "taskNameMinLength": "Task name must be at least 2 characters",
           "taskNameMaxLength": "Task name must not exceed 100 characters"
         }
+      },
+      "studentPracticeHistory": {
+        "title": "Student Practice History",
+        "columns": {
+          "studentName": "Student Name",
+          "gameType": "Game Type",
+          "difficulty": "Difficulty",
+          "attempts": "Attempts",
+          "successes": "Successes",
+          "failures": "Failures",
+          "successRate": "Success Rate"
+        },
+        "loading": "Loading…",
+        "failedToLoad": "Failed to load",
+        "noDataFound": "No data found.",
+        "rowsPerPage": "Rows per page:",
+        "of": "of",
+        "filters": {
+          "gameType": "Game",
+          "difficulty": "Difficulty",
+          "all": "All"
+        }
       }
     },
     "sidebar": {

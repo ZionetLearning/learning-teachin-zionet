@@ -413,6 +413,28 @@
           "taskNameMinLength": "שם המשימה חייב להכיל לפחות 2 תווים",
           "taskNameMaxLength": "שם המשימה לא יכול להכיל יותר מ-100 תווים"
         }
+      },
+      "studentPracticeHistory": {
+        "title": "היסטוריית תרגול תלמידים",
+        "columns": {
+          "studentName": "שם תלמיד",
+          "gameType": "סוג משחק",
+          "difficulty": "רמת קושי",
+          "attempts": "ניסיונות",
+          "successes": "הצלחות",
+          "failures": "כישלונות",
+          "successRate": "שיעור הצלחה"
+        },
+        "loading": "טוען...",
+        "failedToLoad": "הטעינה נכשלה:",
+        "noDataFound": "לא נמצאו נתונים.",
+        "rowsPerPage": "שורות בעמוד:",
+        "of": "מתוך",
+        "filters": {
+          "gameType": "סוג משחק",
+          "difficulty": "רמת קושי",
+          "all": "הכל"
+        }
       }
     },
     "sidebar": {

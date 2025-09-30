@@ -79,4 +79,15 @@ export const useStyles = createUseStyles({
     borderTop: "1px solid #e5e7eb",
     background: "#fff",
   },
+  filtersRow: {
+    margin: "0 0 12px",
+    "@media (max-width: 600px)": {
+      flexDirection: "column !important",
+      gap: 8,
+    },
+  },
+  filterControl: {
+    minWidth: 180,
+    "@media (max-width: 600px)": { minWidth: "100%" },
+  },
 });
