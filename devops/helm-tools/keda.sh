@@ -130,6 +130,7 @@ helm upgrade --install "${REL_HTTP}" kedacore/keda-add-ons-http \
   --set fullnameOverride="${REL_HTTP}" \
   ${HTTP_CRDS_FLAG} \
   ${HTTP_SKIP_FLAG} \
+  -f values-timeout.yaml \
   --wait --timeout 300s
 
 # ------------------------------------------------------------------------------
