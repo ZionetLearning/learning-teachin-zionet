@@ -18,6 +18,9 @@ export const useStyles = createUseStyles({
     minHeight: 0,
     flex: "1 1 60%",
     height: "calc(100vh - 3rem)",
+    "@supports (height: 100dvh)": {
+      height: "calc(100dvh - 3rem)",
+    },
   },
   sectionTitle: {
     margin: "0 0 0.85rem",
@@ -26,6 +29,22 @@ export const useStyles = createUseStyles({
     letterSpacing: 0.3,
     color: "#1a202c",
     textAlign: "center",
+  },
+  filtersRow: {
+    margin: "0 0 12px",
+    display: "flex",
+    gap: 12,
+    "@media (max-width: 600px)": {
+      flexDirection: "column !important",
+      gap: 8,
+    },
+  },
+  filterControl: {
+    minWidth: 180,
+    "@media (max-width: 600px)": {
+      minWidth: "100%",
+      width: "100%",
+    },
   },
   tableArea: {
     flex: 1,
@@ -46,7 +65,8 @@ export const useStyles = createUseStyles({
     flex: 1,
     minHeight: 0,
     overflowY: "auto",
-    overflowX: "hidden",
+    overflowX: "auto",
+    WebkitOverflowScrolling: "touch",
     scrollbarGutter: "stable",
   },
   table: {
@@ -61,12 +81,15 @@ export const useStyles = createUseStyles({
       color: "#1f2937",
       borderBottom: "1px solid #e5e7eb",
       whiteSpace: "nowrap",
+      position: "sticky",
+      top: 0,
+      zIndex: 1,
     },
     "& .MuiTableBody-root .MuiTableCell-root": {
       textAlign: "center",
       borderBottom: "1px solid #f1f5f9",
+      whiteSpace: "nowrap",
     },
-
     "@media (max-width: 600px)": {
       "& .MuiTableCell-root": {
         padding: "6px 8px",
@@ -74,20 +97,50 @@ export const useStyles = createUseStyles({
       },
     },
   },
+  tableWide: {
+    "@media (max-width: 600px)": {
+      minWidth: 980,
+    },
+  },
+  cap: { textTransform: "capitalize" },
+  colStudent: {
+    minWidth: 180,
+  },
+  ellipsis: {
+    display: "block",
+    maxWidth: "100%",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  colGameType: { minWidth: 120 },
+  colDifficulty: { minWidth: 120 },
+  colAttempts: { minWidth: 110, textAlign: "center" },
+  colSuccesses: { minWidth: 110, textAlign: "center" },
+  colFailures: { minWidth: 110, textAlign: "center" },
+  colRate: { minWidth: 160 },
+  rateWrapper: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    justifyContent: "center",
+  },
+  rateBarWrap: {
+    width: 140,
+    "@media (max-width: 600px)": { width: 90 },
+  },
+  rateBar: {
+    height: 8,
+    borderRadius: 6,
+    "& .MuiLinearProgress-bar": { borderRadius: 6 },
+  },
+  rateText: {
+    fontSize: 12,
+    color: "#475569",
+  },
   paginationBar: {
     padding: "4px 12px",
     borderTop: "1px solid #e5e7eb",
     background: "#fff",
-  },
-  filtersRow: {
-    margin: "0 0 12px",
-    "@media (max-width: 600px)": {
-      flexDirection: "column !important",
-      gap: 8,
-    },
-  },
-  filterControl: {
-    minWidth: 180,
-    "@media (max-width: 600px)": { minWidth: "100%" },
   },
 });

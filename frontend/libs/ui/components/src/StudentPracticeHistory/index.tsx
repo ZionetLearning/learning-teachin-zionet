@@ -14,6 +14,7 @@ import {
   TableHead,
   TablePagination,
   TableRow,
+  Tooltip,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 
@@ -91,7 +92,7 @@ export const StudentPracticeHistory = () => {
       <h2 className={classes.sectionTitle}>
         {t("pages.studentPracticeHistory.title")}
       </h2>
-      <Stack direction="row" spacing={12} className={classes.filtersRow}>
+      <Stack direction="row" className={classes.filtersRow}>
         <FormControl
           size="small"
           className={classes.filterControl}
@@ -154,63 +155,30 @@ export const StudentPracticeHistory = () => {
             <Table
               stickyHeader
               size="small"
-              className={classes.table}
+              className={`${classes.table} ${classes.tableWide}`}
               aria-label="history"
             >
               <TableHead>
                 <TableRow>
-                  <TableCell
-                    align="center"
-                    sx={{ width: { xs: "44%", sm: "26%" } }}
-                  >
+                  <TableCell align="center" className={classes.colStudent}>
                     {t("pages.studentPracticeHistory.columns.studentName")}
                   </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{ width: { xs: "28%", sm: "18%" } }}
-                  >
+                  <TableCell align="center" className={classes.colGameType}>
                     {t("pages.studentPracticeHistory.columns.gameType")}
                   </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{
-                      width: "12%",
-                      display: { xs: "none", sm: "table-cell" },
-                    }}
-                  >
+                  <TableCell align="center" className={classes.colDifficulty}>
                     {t("pages.studentPracticeHistory.columns.difficulty")}
                   </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{
-                      width: "12%",
-                      display: { xs: "none", sm: "table-cell" },
-                    }}
-                  >
+                  <TableCell align="center" className={classes.colAttempts}>
                     {t("pages.studentPracticeHistory.columns.attempts")}
                   </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{
-                      width: "12%",
-                      display: { xs: "none", sm: "table-cell" },
-                    }}
-                  >
+                  <TableCell align="center" className={classes.colSuccesses}>
                     {t("pages.studentPracticeHistory.columns.successes")}
                   </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{
-                      width: "12%",
-                      display: { xs: "none", sm: "table-cell" },
-                    }}
-                  >
+                  <TableCell align="center" className={classes.colFailures}>
                     {t("pages.studentPracticeHistory.columns.failures")}
                   </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{ width: { xs: "28%", sm: "18%" } }}
-                  >
+                  <TableCell align="center" className={classes.colRate}>
                     {t("pages.studentPracticeHistory.columns.successRate")}
                   </TableCell>
                 </TableRow>
@@ -260,73 +228,62 @@ export const StudentPracticeHistory = () => {
                       <TableRow
                         key={`${it.studentId}-${it.gameType}-${it.difficulty}`}
                       >
-                        <TableCell align="center" title={it.studentId}>
-                          <code>{it.studentId}</code>
+                        <TableCell
+                          align="center"
+                          title={it.studentId}
+                          className={classes.colStudent}
+                        >
+                          <Tooltip title={it.studentId} arrow>
+                            <span className={classes.ellipsis}>
+                              {it.studentId}
+                            </span>
+                          </Tooltip>
                         </TableCell>
 
                         <TableCell
                           align="center"
-                          sx={{ textTransform: "capitalize" }}
+                          className={`${classes.colGameType} ${classes.cap}`}
                         >
                           {it.gameType}
                         </TableCell>
 
                         <TableCell
                           align="center"
-                          sx={{
-                            textTransform: "capitalize",
-                            display: { xs: "none", sm: "table-cell" },
-                          }}
+                          className={`${classes.colDifficulty} ${classes.cap}`}
                         >
                           {it.difficulty}
                         </TableCell>
 
                         <TableCell
                           align="center"
-                          sx={{ display: { xs: "none", sm: "table-cell" } }}
+                          className={classes.colAttempts}
                         >
                           {it.attemptsCount}
                         </TableCell>
                         <TableCell
                           align="center"
-                          sx={{ display: { xs: "none", sm: "table-cell" } }}
+                          className={classes.colSuccesses}
                         >
                           {it.totalSuccesses}
                         </TableCell>
                         <TableCell
                           align="center"
-                          sx={{ display: { xs: "none", sm: "table-cell" } }}
+                          className={classes.colFailures}
                         >
                           {it.totalFailures}
                         </TableCell>
 
-                        <TableCell align="center">
-                          <Box
-                            display="flex"
-                            alignItems="center"
-                            gap={1}
-                            justifyContent="center"
-                          >
-                            <Box
-                              sx={{ flex: { xs: "0 0 90px", sm: "0 0 140px" } }}
-                            >
+                        <TableCell align="center" className={classes.colRate}>
+                          <Box className={classes.rateWrapper}>
+                            <Box className={classes.rateBarWrap}>
                               <LinearProgress
                                 variant="determinate"
                                 value={Math.min(100, Math.max(0, rate))}
-                                sx={{
-                                  height: 8,
-                                  borderRadius: 6,
-                                  "& .MuiLinearProgress-bar": {
-                                    borderRadius: 6,
-                                  },
-                                }}
+                                className={classes.rateBar}
                                 aria-label="success rate"
                               />
                             </Box>
-                            <Box
-                              component="span"
-                              sx={{ fontSize: 12, color: "#475569" }}
-                            >
+                            <Box component="span" className={classes.rateText}>
                               {rate}%
                             </Box>
                           </Box>
