@@ -20,11 +20,6 @@ on:
         required: false
         type: string
         default: 'all'
-      unlock_featest:
-        required: false
-        type: boolean
-        default: false
-        description: 'Set to true to only unlock featest environment (skips deployment)'
     outputs:
       static_web_app_api_keys:
         description: "API keys for the Azure Static Web Apps"
@@ -54,14 +49,12 @@ on:
           - 'none'
 
 jobs:
-
   terraform:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || github.event.inputs.environment }}
     permissions:
       id-token: write      # Required for OIDC login
       contents: read       # For actions/checkout
-
     
     outputs:
       static_web_app_api_keys: ${{ steps.terraform_output.outputs.static_web_app_api_keys }}
