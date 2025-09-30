@@ -21,6 +21,7 @@ import {
   WeatherWidgetPage,
   WordOrderGamePage,
   ProfilePage,
+  PracticeMistakesPage,
 } from "./pages";
 import "./App.css";
 import { AppRole } from "@app-providers";
@@ -67,6 +68,7 @@ function App() {
           <Route path="/anime-explorer" element={<AnimeExplorerPage />} />
           <Route path="/country-explorer" element={<CountryExplorerPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/practice-mistakes" element={<PracticeMistakesPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

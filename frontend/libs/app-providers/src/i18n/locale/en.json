@@ -442,7 +442,8 @@
       "countryExplorer": "Country Explorer",
       "users": "Users",
       "tasks": "Tasks",
-      "profile": "Profile"
+      "profile": "Profile",
+      "myPracticeMistakes": "Practice Mistakes"
     },
     "errorBoundary": {
       "title": "Oops! Something went wrong",

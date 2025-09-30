@@ -442,7 +442,8 @@
       "countryExplorer": "ספריית מדינות",
       "users": "משתמשים",
       "tasks": "משימות",
-      "profile": "פרופיל"
+      "profile": "פרופיל",
+      "myPracticeMistakes": "טעויות התרגול שלי"
     },
     "errorBoundary": {
       "title": "אופס! משהו השתבש",
