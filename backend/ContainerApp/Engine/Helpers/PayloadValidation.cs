@@ -120,6 +120,78 @@ public static class PayloadValidation
 
         logger.LogDebug("ChatAiServiseRequest validation passed.");
     }
+    public static void ValidateEngineExplainMistakeRequest(EngineExplainMistakeRequest req, ILogger logger)
+    {
+        if (req is null)
+        {
+            logger.LogWarning("EngineExplainMistakeRequest cannot be null.");
+            throw new NonRetryableException("EngineExplainMistakeRequest cannot be null.");
+        }
+
+        using var _ = logger.BeginScope(new
+        {
+            req.RequestId,
+            req.AttemptId
+        });
+
+        static void Fail(ILogger log, string message, string param = "")
+        {
+            if (!string.IsNullOrEmpty(param))
+            {
+                log.LogWarning("Validation failed for {Param}: {Message}", param, message);
+            }
+            else
+            {
+                log.LogWarning("{Message}", message);
+            }
+
+            throw new NonRetryableException(message);
+        }
+
+        if (string.IsNullOrWhiteSpace(req.RequestId))
+        {
+            Fail(logger, "RequestId is required.", nameof(req.RequestId));
+        }
+
+        if (req.UserId == Guid.Empty)
+        {
+            Fail(logger, "UserId is required.", nameof(req.UserId));
+        }
+
+        if (req.ThreadId == Guid.Empty)
+        {
+            Fail(logger, "ThreadId is required.", nameof(req.ThreadId));
+        }
+
+        if (req.AttemptId == Guid.Empty)
+        {
+            Fail(logger, "AttemptId is required.", nameof(req.AttemptId));
+        }
+
+        if (string.IsNullOrWhiteSpace(req.GameType))
+        {
+            Fail(logger, "GameType is required.", nameof(req.GameType));
+        }
+
+        if (req.TtlSeconds <= 0)
+        {
+            Fail(logger, "TtlSeconds must be greater than 0.", nameof(req.TtlSeconds));
+        }
+
+        if (req.SentAt <= 0)
+        {
+            Fail(logger, "SentAt must be a valid Unix timestamp.", nameof(req.SentAt));
+        }
+
+        var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        if (now > req.SentAt + req.TtlSeconds)
+        {
+            Fail(logger, "Request TTL expired.", "TTL");
+        }
+
+        logger.LogDebug("EngineExplainMistakeRequest validation passed.");
+    }
+
     public static void ValidateSentenceGenerationRequest(SentenceRequest req, ILogger logger)
     {
         if (req is null)

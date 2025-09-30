@@ -87,6 +87,32 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
         }
     }
 
+    public async Task<AttemptDetailsResponse> GetAttemptDetailsAsync(Guid userId, Guid attemptId, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Getting attempt details for UserId {UserId}, AttemptId {AttemptId}", userId, attemptId);
+
+        try
+        {
+            var response = await _daprClient.InvokeMethodAsync<AttemptDetailsResponse>(
+                HttpMethod.Get,
+                "accessor",
+                $"games-accessor/attempt/{userId:D}/{attemptId:D}",
+                cancellationToken: ct);
+
+            return response;
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("Attempt not found for UserId {UserId}, AttemptId {AttemptId}", userId, attemptId);
+            throw new InvalidOperationException($"Attempt {attemptId} not found for user {userId}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get attempt details for UserId {UserId}, AttemptId {AttemptId}", userId, attemptId);
+            throw;
+        }
+    }
+
     // ========== PROMPTS ==========
 
     public async Task<PromptResponse> CreatePromptAsync(CreatePromptRequest request, CancellationToken ct = default)
