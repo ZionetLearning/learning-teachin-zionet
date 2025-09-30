@@ -18,6 +18,6 @@ spec:
     max: 1
 
   pollingInterval: 1
-  cooldownPeriod: 200             
+  scaledownPeriod: 100             
   targetPendingRequests: 1
 {{- end }}
