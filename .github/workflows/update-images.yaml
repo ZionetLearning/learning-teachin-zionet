@@ -109,7 +109,6 @@ jobs:
     permissions:
       id-token: write
       contents: read
-      issues: write
     with:
       environment: ${{ needs.set-defaults.outputs.environment }}
       environment_name: ${{ needs.set-defaults.outputs.environment_name }}
@@ -122,7 +121,6 @@ jobs:
     permissions:
       id-token: write
       contents: read
-      issues: write
     with:
       environment: ${{ needs.set-defaults.outputs.environment }}
       environment_name: ${{ needs.set-defaults.outputs.environment_name }}

@@ -18,7 +18,6 @@ on:
         value: ${{ jobs.generate_tag.outputs.image_tag }}
 
 jobs:
-
   generate_tag:
     runs-on: ubuntu-latest
     outputs:

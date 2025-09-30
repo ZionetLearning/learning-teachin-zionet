@@ -45,7 +45,6 @@ on:
         value: ${{ jobs.deploy.outputs.app_url }}
 
 jobs:
-
   deploy:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || github.event.inputs.environment }}
