@@ -58,6 +58,7 @@ else
     --set operator.keda.enabled=false \
     --set operator.watchNamespace="${NS}" \
     --set fullnameOverride="${REL_HTTP}" \
+    -f values-timeout.yaml \
     --wait --timeout 300s \
     #--skip-crds
 fi
