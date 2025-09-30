@@ -26,10 +26,8 @@ permissions:
   issues: write
 
 jobs:
-  ensure-issue:
+  manage-lock:
     runs-on: ubuntu-latest
-    outputs:
-      issue_number: ${{ steps.find-issue.outputs.issue_number }}
     steps:
       - name: Ensure lock issue exists
         id: find-issue
@@ -54,19 +52,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
-  check-lock:
-    runs-on: ubuntu-latest
-    needs: ensure-issue
-    outputs:
-      locked_by: ${{ steps.check.outputs.locked_by }}
-      locked_at: ${{ steps.check.outputs.locked_at }}
-      is_locked: ${{ steps.check.outputs.is_locked }}
-    steps:
       - name: Check if environment is locked
         id: check
         run: |
           REPO=${{ github.repository }}
-          ISSUE=${{ needs.ensure-issue.outputs.issue_number }}
+          ISSUE=${{ steps.find-issue.outputs.issue_number }}
 
           BODY=$(gh issue view "$ISSUE" --repo "$REPO" --json body -q .body)
 
@@ -87,20 +77,16 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
-  manage-lock:
-    runs-on: ubuntu-latest
-    needs: [ensure-issue, check-lock]
-    steps:
       - name: Manage lock state
         run: |
           set -x
-          ACTION="$ACTION"
-          INPUT_LOCKED_BY="$INPUT_LOCKED_BY"
-          CURRENT_LOCKED_BY="$CURRENT_LOCKED_BY"
-          IS_LOCKED="$IS_LOCKED"
+          ACTION="${{ inputs.action || github.event.inputs.action }}"
+          INPUT_LOCKED_BY="${{ inputs.locked_by || github.event.inputs.locked_by }}"
+          CURRENT_LOCKED_BY="${{ steps.check.outputs.locked_by }}"
+          IS_LOCKED="${{ steps.check.outputs.is_locked }}"
           USER="$GITHUB_ACTOR"
           REPO="$GITHUB_REPOSITORY"
-          ISSUE="$ISSUE"
+          ISSUE="${{ steps.find-issue.outputs.issue_number }}"
 
           if [ "$ACTION" = "lock" ]; then
             if [ "$IS_LOCKED" = "true" ]; then
@@ -152,8 +138,3 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          ACTION: ${{ inputs.action || github.event.inputs.action }}
-          INPUT_LOCKED_BY: ${{ inputs.locked_by || github.event.inputs.locked_by }}
-          CURRENT_LOCKED_BY: ${{ needs.check-lock.outputs.locked_by }}
-          IS_LOCKED: ${{ needs.check-lock.outputs.is_locked }}
-          ISSUE: ${{ needs.ensure-issue.outputs.issue_number }}
