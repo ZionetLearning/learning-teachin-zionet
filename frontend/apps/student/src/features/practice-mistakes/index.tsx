@@ -32,8 +32,6 @@ export const PracticeMistakes = () => {
     pageSize: rowsPerPage,
   });
 
-  console.log({data})
-
   // const navigate = useNavigate();
   const handleRetry = (item: GameMistakeItem) => {
     //future idea:
@@ -66,13 +64,10 @@ export const PracticeMistakes = () => {
 
   return (
     <Paper>
-      <Box
-        display="flex"
-        alignItems="center"
-        justifyContent="space-between"
-        p={2}
-      >
-        <Typography variant="h6">Practice Mistakes</Typography>
+      <Box display="flex" alignItems="center" justifyContent="center" p={2}>
+        <Typography variant="h5" color="#7c4dff">
+          Practice Mistakes
+        </Typography>
         {isFetching && <CircularProgress size={20} />}
       </Box>
 
@@ -85,9 +80,24 @@ export const PracticeMistakes = () => {
           <Typography>No mistakes to practice 🎉</Typography>
         </Box>
       ) : (
-        <>
+        <Box
+          sx={{
+            width: "50%",
+            display: "flex",
+            alignItems: "center",
+            flexDirection: "column",
+            justifyContent: "center",
+            margin: "auto",
+          }}
+        >
           <TableContainer>
-            <Table>
+            <Table
+              sx={{
+                "& th, & td": {
+                  textAlign: "center",
+                },
+              }}
+            >
               <TableHead>
                 <TableRow>
                   <TableCell>Practice Name</TableCell>
@@ -102,17 +112,25 @@ export const PracticeMistakes = () => {
                   <TableRow key={`${apiPage}-${idx}`} hover>
                     <TableCell>{item.gameType}</TableCell>
                     <TableCell>{item.difficulty}</TableCell>
-                    <TableCell>{item.wrongAnswers.flat().join(" ")}</TableCell>
+                    <TableCell align="center">
+                      {item.wrongAnswers.length > 0 &&
+                      item.wrongAnswers[item.wrongAnswers.length - 1].length > 0
+                        ? item.wrongAnswers[item.wrongAnswers.length - 1].join(
+                            " ",
+                          )
+                        : "-"}
+                    </TableCell>
                     <TableCell>
                       <Typography color="warning.main">Try again!</Typography>
                     </TableCell>
                     <TableCell align="right">
                       <IconButton
-                        color="primary"
+                        sx={{ color: "#7c4dff" }}
                         aria-label="retry"
                         onClick={() => handleRetry(item)}
                       >
                         <PlayArrowIcon />
+                        <Typography sx={{ fontSize: "16px" }}>Retry</Typography>
                       </IconButton>
                     </TableCell>
                   </TableRow>
@@ -130,7 +148,7 @@ export const PracticeMistakes = () => {
             onRowsPerPageChange={handleChangeRowsPerPage}
             rowsPerPageOptions={[5, 10, 25, 50]}
           />
-        </>
+        </Box>
       )}
     </Paper>
   );
