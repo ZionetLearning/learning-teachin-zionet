@@ -2,6 +2,7 @@
 using Manager.Constants;
 using Manager.Helpers;
 using Manager.Models.Users;
+using Manager.Services;
 using Manager.Services.Clients.Accessor;
 using Microsoft.AspNetCore.Mvc;
 
@@ -25,6 +26,8 @@ public static class UsersEndpoints
         usersGroup.MapPost("/teacher/{teacherId:guid}/students/{studentId:guid}", AssignStudentAsync).WithName("AssignStudentToTeacher").RequireAuthorization(PolicyNames.AdminOrTeacher);
         usersGroup.MapDelete("/teacher/{teacherId:guid}/students/{studentId:guid}", UnassignStudentAsync).WithName("UnassignStudentFromTeacher").RequireAuthorization(PolicyNames.AdminOrTeacher);
         usersGroup.MapGet("/student/{studentId:guid}/teachers", ListTeachersForStudentAsync).WithName("ListTeachersForStudent").RequireAuthorization(PolicyNames.AdminOnly);
+
+        usersGroup.MapGet("/online", GetOnlineUsers).WithName("GetOnlineUsers").RequireAuthorization(PolicyNames.AdminOnly);
 
         return app;
     }
@@ -444,5 +447,19 @@ public static class UsersEndpoints
             logger.LogError(ex, "Failed to list teachers for student.");
             return Results.Problem("Failed to retrieve teachers.");
         }
+    }
+
+    private static async Task<IResult> GetOnlineUsers(
+        [FromServices] IOnlinePresenceService onlinePresenceService,
+        CancellationToken ct = default)
+    {
+        var all = await onlinePresenceService.GetOnlineAsync(ct);
+
+        var nonAdmins = all
+        .Where(u => !string.Equals(u.Role, "Admin", StringComparison.OrdinalIgnoreCase) &&
+                    !string.Equals(u.Role, "Administrator", StringComparison.OrdinalIgnoreCase))
+        .ToList();
+
+        return Results.Ok(nonAdmins);
     }
 }
