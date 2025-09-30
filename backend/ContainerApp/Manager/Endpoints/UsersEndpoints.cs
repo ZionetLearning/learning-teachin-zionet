@@ -456,8 +456,7 @@ public static class UsersEndpoints
         var all = await onlinePresenceService.GetOnlineAsync(ct);
 
         var nonAdmins = all
-        .Where(u => !string.Equals(u.Role, "Admin", StringComparison.OrdinalIgnoreCase) &&
-                    !string.Equals(u.Role, "Administrator", StringComparison.OrdinalIgnoreCase))
+        .Where(u => !string.Equals(u.Role, "Admin", StringComparison.OrdinalIgnoreCase))
         .ToList();
 
         return Results.Ok(nonAdmins);
