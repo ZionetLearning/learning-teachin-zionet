@@ -48,6 +48,7 @@ if ! kubectl get crd httpscaledobjects.http.keda.sh >/dev/null 2>&1; then
     -n "${NS}" \
     --set operator.keda.enabled=false \
     --set operator.watchNamespace="${NS}" \
+    --set fullnameOverride="${REL_HTTP}" \
     --wait --timeout 300s
 else
   echo "    CRD httpscaledobjects exists; installing/upgrading add-on without CRDs"
@@ -56,8 +57,9 @@ else
     -n "${NS}" \
     --set operator.keda.enabled=false \
     --set operator.watchNamespace="${NS}" \
+    --set fullnameOverride="${REL_HTTP}" \
     --wait --timeout 300s \
-    --skip-crds
+    #--skip-crds
 fi
 
 echo "[*] waiting for deployments in ${NS}"
