@@ -5,7 +5,7 @@ set -euo pipefail
 # KEDA Core (once-per-cluster) + KEDA HTTP add-on (per-namespace) installer
 #
 # What this script does:
-#   - Ensures the target namespace exists
+#   - Ensures target namespace exists
 #   - Ensures Helm repos exist
 #   - Detects whether KEDA Core CRDs already exist (cluster-scoped)
 #       * If missing: installs KEDA Core ONCE and creates CRDs (cluster owner)
@@ -95,11 +95,14 @@ adopt_crd_to_release() {
 # uninstall a previous release, Helm will not try to remove these globals.
 adopt_http_cluster_scoped() {
   local rel="$1" ns="$2"
-  # ClusterRoles
+
+  # ClusterRoles (full set including proxy-role & metrics-reader)
   for obj in \
     "clusterrole/keda-add-ons-http-interceptor" \
     "clusterrole/keda-add-ons-http-external-scaler" \
-    "clusterrole/keda-add-ons-http-role"
+    "clusterrole/keda-add-ons-http-role" \
+    "clusterrole/keda-add-ons-http-proxy-role" \
+    "clusterrole/keda-add-ons-http-metrics-reader"
   do
     if kubectl get "${obj}" >/dev/null 2>&1; then
       echo "[*] Adopting ${obj} -> ${rel}/${ns}"
@@ -111,12 +114,12 @@ adopt_http_cluster_scoped() {
     fi
   done
 
-  # ClusterRoleBindings created by the HTTP chart can also collide across releases.
-  # Adopt them too so the new install won't fail on ownership checks.
+  # ClusterRoleBindings (full set including proxy-rolebinding)
   for obj in \
     "clusterrolebinding/keda-add-ons-http-interceptor" \
     "clusterrolebinding/keda-add-ons-http-external-scaler" \
-    "clusterrolebinding/keda-add-ons-http-role"
+    "clusterrolebinding/keda-add-ons-http-rolebinding" \
+    "clusterrolebinding/keda-add-ons-http-proxy-rolebinding"
   do
     if kubectl get "${obj}" >/dev/null 2>&1; then
       echo "[*] Adopting ${obj} -> ${rel}/${ns}"
@@ -134,7 +137,6 @@ adopt_http_cluster_scoped() {
 ensure_http_namespace_crbs() {
   local ns="$1"
 
-  # Names are made unique per-namespace to avoid collisions.
   cat <<EOF | kubectl apply -f -
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
