@@ -8,6 +8,7 @@ metadata:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   ingressClassName: nginx
   tls:
@@ -18,33 +19,9 @@ spec:
   - host: teachin.westeurope.cloudapp.azure.com
     http:
       paths:
-      # Direct auth routes - pass through as-is
-      - path: /auth
-        pathType: Prefix
-        backend:
-          service:
-            name: langfuse-web
-            port:
-              number: 3000
-      # Direct API auth routes - pass through as-is
-      - path: /api/auth
-        pathType: Prefix
-        backend:
-          service:
-            name: langfuse-web
-            port:
-              number: 3000
-      # Static assets that might be requested directly
-      - path: /icon.svg
-        pathType: Exact
-        backend:
-          service:
-            name: langfuse-web
-            port:
-              number: 3000
-      # Langfuse application main path
-      - path: /langfuse
-        pathType: Prefix
+      # Langfuse application with subpath rewriting
+      - path: /langfuse(/|$)(.*)
+        pathType: ImplementationSpecific
         backend:
           service:
             name: langfuse-web
