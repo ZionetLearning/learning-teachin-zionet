@@ -9,9 +9,9 @@ spec:
     - "{{ .Values.manager.ingress.host }}"
 
   scaleTargetRef:
-    deployment: {{ .Values.manager.name }}-{{ .Release.Namespace }}
+    name: {{ .Values.manager.name }}-{{ .Release.Namespace }}
     service: {{ .Values.manager.name }}-{{ .Release.Namespace }}
-    port: {{ .Values.manager.ports.service }}   
+    port: {{ .Values.manager.ports.container }}   
 
   replicas:
     min: 0
