@@ -113,6 +113,9 @@ helm upgrade --install "${REL_CORE}" kedacore/keda \
   --set fullnameOverride="${REL_CORE}" \
   ${CORE_CRDS_FLAG} \
   ${CORE_SKIP_FLAG} \
+  --set cloudEvents.enabled=false \
+  --set cloudevents.enabled=false \
+  --set eventing.enabled=false \
   --wait --timeout 300s
 
 # ------------------------------------------------------------------------------
