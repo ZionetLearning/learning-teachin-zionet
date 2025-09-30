@@ -2,15 +2,17 @@
 set -euo pipefail
 
 # ------------------------------------------------------------------------------
-# KEDA + KEDA HTTP add-on per-environment installer (namespaced)
+# KEDA Core (once-per-cluster) + KEDA HTTP add-on (per-namespace) installer
 #
 # What this script does:
-#  - Ensures namespace exists
+#  - Ensures a target namespace exists
 #  - Ensures Helm repos exist
-#  - Detects whether KEDA/Core and HTTP add-on CRDs already exist cluster-wide
-#  - Installs/Upgrades KEDA Core and HTTP add-on in THE GIVEN NAMESPACE ONLY
+#  - Detects whether KEDA Core CRDs already exist (cluster-scoped)
+#  - If CRDs are missing: installs KEDA Core ONCE and creates CRDs (cluster owner)
+#    * The first Core install is set to watchNamespace="" so it serves all namespaces
+#    * CloudEvents is disabled to avoid extra CRDs/ownership complexity
+#  - If CRDs exist: SKIPS Core install and only installs the HTTP add-on in the given namespace
 #  - Uses fullnameOverride so resource names are unique per environment
-#  - Skips CRD creation when CRDs are already present to avoid Helm ownership clashes
 #
 # Usage:
 #   ./keda.sh <namespace> [keda_chart_version] [http_addon_chart_version]
@@ -20,10 +22,9 @@ set -euo pipefail
 #   ./keda.sh testkeda 2.17.2 0.10.0
 #
 # Notes:
-#  - CRDs are cluster-scoped and must exist only once in the cluster.
-#  - The first environment that runs this script will CREATE the CRDs.
-#  - Subsequent environments will SKIP CRD creation (avoids Helm annotation conflicts).
-#  - Pass explicit chart versions if you want to pin them.
+#  - CRDs are cluster-scoped and must be created ONCE per cluster.
+#  - First environment that runs this script becomes the CRD owner.
+#  - Subsequent environments will skip Core and only install the HTTP add-on.
 # ------------------------------------------------------------------------------
 
 if [[ $# -lt 1 ]]; then
@@ -32,14 +33,12 @@ if [[ $# -lt 1 ]]; then
 fi
 
 NS="$1"
-KEDA_VER="${2:-}"      # optional Helm chart version for kedacore/keda
-HTTP_VER="${3:-}"      # optional Helm chart version for kedacore/keda-add-ons-http
+KEDA_VER="${2:-}"   # optional: pin kedacore/keda chart version (e.g., 2.17.2)
+HTTP_VER="${3:-}"   # optional: pin kedacore/keda-add-ons-http chart version (e.g., 0.10.0)
 
-# Release names are unique per namespace to avoid RBAC/name collisions
-REL_CORE="keda-${NS}"
-REL_HTTP="keda-http-${NS}"
+REL_CORE="keda-${NS}"        # release name if this is the FIRST (core) install
+REL_HTTP="keda-http-${NS}"   # per-namespace HTTP add-on release
 
-# Ensure tools exist
 command -v kubectl >/dev/null 2>&1 || { echo "kubectl not found"; exit 1; }
 command -v helm    >/dev/null 2>&1 || { echo "helm not found"; exit 1; }
 
@@ -51,8 +50,7 @@ helm repo add kedacore https://kedacore.github.io/charts >/dev/null 2>&1 || true
 helm repo update >/dev/null 2>&1 || true
 
 # ------------------------------------------------------------------------------
-# Helper: detect whether a list of CRDs exists (all of them)
-# Returns 0 if ALL are present, 1 otherwise.
+# Helper: return 0 if ALL given CRDs exist, 1 otherwise
 # ------------------------------------------------------------------------------
 all_crds_exist() {
   local missing=0
@@ -65,13 +63,7 @@ all_crds_exist() {
   return $missing
 }
 
-# ------------------------------------------------------------------------------
-# Detect CRDs presence and decide flags:
-#  - If CRDs are missing: install WITH CRDs (no --skip-crds, set crds.create=true)
-#  - If CRDs exist     : install WITHOUT CRDs (--skip-crds, set crds.create=false)
-# ------------------------------------------------------------------------------
-
-# KEDA Core CRDs
+# KEDA Core CRDs that indicate Core was initialized cluster-wide
 CORE_CRDS=( \
   scaledobjects.keda.sh \
   scaledjobs.keda.sh \
@@ -79,52 +71,60 @@ CORE_CRDS=( \
   clustertriggerauthentications.keda.sh \
 )
 
+HTTP_CRD=httpscaledobjects.http.keda.sh
+
+# ------------------------------------------------------------------------------
+# Decide: first install (create CRDs + Core) OR subsequent env (skip Core)
+# ------------------------------------------------------------------------------
+FIRST_CORE_INSTALL=0
 if all_crds_exist "${CORE_CRDS[@]}"; then
-  CORE_CRDS_FLAG="--set crds.create=false"
-  CORE_SKIP_FLAG="--skip-crds"
-  echo "[*] KEDA Core CRDs exist (cluster-scoped) -> will skip creating CRDs"
+  echo "[*] KEDA Core CRDs already exist -> Core is already installed in this cluster"
 else
-  CORE_CRDS_FLAG="--set crds.create=true"
-  CORE_SKIP_FLAG=""
-  echo "[*] KEDA Core CRDs missing -> will create CRDs in this run"
-fi
-
-# HTTP add-on CRD
-if kubectl get crd httpscaledobjects.http.keda.sh >/dev/null 2>&1; then
-  HTTP_CRDS_FLAG="--set crds.create=false"
-  HTTP_SKIP_FLAG="--skip-crds"
-  echo "[*] KEDA HTTP CRD exists -> will skip creating CRDs"
-else
-  HTTP_CRDS_FLAG="--set crds.create=true"
-  HTTP_SKIP_FLAG=""
-  echo "[*] KEDA HTTP CRD missing -> will create CRD in this run"
+  echo "[*] KEDA Core CRDs are missing -> this will be the FIRST Core install (cluster owner)"
+  FIRST_CORE_INSTALL=1
 fi
 
 # ------------------------------------------------------------------------------
-# Install/Upgrade KEDA Core (namespaced scope)
-# - watchNamespace limits operator scope to this namespace
-# - fullnameOverride ensures all resource names are unique per env
+# FIRST Core install (once per cluster): create CRDs and install Core (cluster-wide)
 # ------------------------------------------------------------------------------
-echo "[*] Installing/Upgrading KEDA Core in namespace '${NS}'"
-helm upgrade --install "${REL_CORE}" kedacore/keda \
-  ${KEDA_VER:+--version "$KEDA_VER"} \
-  -n "${NS}" \
-  --set watchNamespace="${NS}" \
-  --set fullnameOverride="${REL_CORE}" \
-  ${CORE_CRDS_FLAG} \
-  ${CORE_SKIP_FLAG} \
-  --set cloudEvents.enabled=false \
-  --set cloudevents.enabled=false \
-  --set eventing.enabled=false \
-  --wait --timeout 300s
+if [[ "${FIRST_CORE_INSTALL}" -eq 1 ]]; then
+  echo "[*] Installing KEDA Core (first install, cluster-wide owner of CRDs)"
+
+  # We set watchNamespace="" so the operator watches all namespaces.
+  # We disable CloudEvents to avoid extra CRDs (and ownership issues).
+  helm upgrade --install "${REL_CORE}" kedacore/keda \
+    ${KEDA_VER:+--version "$KEDA_VER"} \
+    -n "${NS}" \
+    --set watchNamespace="" \
+    --set fullnameOverride="${REL_CORE}" \
+    --set crds.create=true \
+    --wait --timeout 300s \
+    --set cloudEvents.enabled=false \
+    --set cloudevents.enabled=false \
+    --set eventing.enabled=false
+
+  # Ensure the HTTP CRD exists as well (it may be created by the add-on, but we check now)
+  if ! kubectl get crd "${HTTP_CRD}" >/dev/null 2>&1; then
+    echo "[*] HTTP CRD (${HTTP_CRD}) not present yet -> will be created by HTTP add-on install"
+  fi
+
+else
+  echo "[*] Skipping KEDA Core install in '${NS}' (CRDs already exist; Core managed by the first install)"
+fi
 
 # ------------------------------------------------------------------------------
-# Install/Upgrade KEDA HTTP Add-on (namespaced scope)
-# - operator.keda.enabled=false as Core is installed separately
-# - operator.watchNamespace limits add-on operator to this namespace
-# - fullnameOverride ensures all resource names are unique per env
+# Always install/upgrade KEDA HTTP add-on per namespace (namespaced operator)
 # ------------------------------------------------------------------------------
 echo "[*] Installing/Upgrading KEDA HTTP add-on in namespace '${NS}'"
+
+# If the HTTP CRD exists, avoid creating/owning it again (skip CRDs).
+HTTP_CRDS_FLAG="--set crds.create=false"
+HTTP_SKIP_FLAG="--skip-crds"
+if ! kubectl get crd "${HTTP_CRD}" >/dev/null 2>&1; then
+  HTTP_CRDS_FLAG="--set crds.create=true"
+  HTTP_SKIP_FLAG=""
+fi
+
 helm upgrade --install "${REL_HTTP}" kedacore/keda-add-ons-http \
   ${HTTP_VER:+--version "$HTTP_VER"} \
   -n "${NS}" \
@@ -133,22 +133,21 @@ helm upgrade --install "${REL_HTTP}" kedacore/keda-add-ons-http \
   --set fullnameOverride="${REL_HTTP}" \
   ${HTTP_CRDS_FLAG} \
   ${HTTP_SKIP_FLAG} \
-  -f values-timeout.yaml \
   --wait --timeout 300s
 
 # ------------------------------------------------------------------------------
-# Wait until everything in the namespace is ready (best-effort)
+# Wait for readiness (best-effort) and show status
 # ------------------------------------------------------------------------------
 echo "[*] Waiting for deployments in ${NS} to become Available"
 kubectl wait --for=condition=Available deploy -n "${NS}" --all --timeout=300s || true
 
 echo "[*] Pods in ${NS}:"
-kubectl get pods -n "${NS}"
+kubectl get pods -n "${NS}" || true
 
-echo "[✓] KEDA Core + HTTP add-on are ready in namespace '${NS}'"
 echo
+echo "[✓] Done. KEDA Core (once) + HTTP add-on (per-namespace) are configured."
 echo "Tips:"
-echo "  - If you ever see 'CRD is terminating' errors, remove finalizers from the CRD:"
+echo "  - First run creates CRDs and installs Core (cluster-wide)."
+echo "  - Subsequent runs SKIP Core and only install HTTP add-on in the target namespace."
+echo "  - If you ever see a CRD 'Terminating' error, remove finalizers:"
 echo "      kubectl patch crd <name> -p '{\"metadata\":{\"finalizers\":[]}}' --type=merge"
-echo "  - If you ever see Helm ownership errors for CRDs, DO NOT try to recreate CRDs;"
-echo "    install with '--skip-crds' and 'crds.create=false' (this script already does that automatically)."
