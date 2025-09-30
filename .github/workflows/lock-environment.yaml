@@ -80,13 +80,8 @@ jobs:
       - name: Manage lock state
         run: |
           set -x
-          ACTION="${{ inputs.action || github.event.inputs.action }}"
-          INPUT_LOCKED_BY="${{ inputs.locked_by || github.event.inputs.locked_by }}"
-          CURRENT_LOCKED_BY="${{ steps.check.outputs.locked_by }}"
-          IS_LOCKED="${{ steps.check.outputs.is_locked }}"
           USER="$GITHUB_ACTOR"
           REPO="$GITHUB_REPOSITORY"
-          ISSUE="${{ steps.find-issue.outputs.issue_number }}"
 
           if [ "$ACTION" = "lock" ]; then
             if [ "$IS_LOCKED" = "true" ]; then
@@ -138,3 +133,8 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          ACTION: ${{ inputs.action || github.event.inputs.action }}
+          INPUT_LOCKED_BY: ${{ inputs.locked_by || github.event.inputs.locked_by }}
+          CURRENT_LOCKED_BY: ${{ steps.check.outputs.locked_by }}
+          IS_LOCKED: ${{ steps.check.outputs.is_locked }}
+          ISSUE: ${{ steps.find-issue.outputs.issue_number }}
