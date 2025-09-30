@@ -60,13 +60,13 @@ on:
 jobs:
 
   lock-featest:
-    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.environment_name) == 'featest' }}
+    if: inputs.environment_name == 'featest'
     permissions:
       contents: read
       issues: write
     uses: ./.github/workflows/lock-environment.yaml
     with:
-      action: ${{ (inputs.unlock_featest == true || github.event.inputs.unlock_featest == 'true') && 'unlock' || 'lock' }}
+      action: ${{ (inputs.unlock_featest == true) && 'unlock' || 'lock' }}
 
   set-defaults:
     needs: [lock-featest]

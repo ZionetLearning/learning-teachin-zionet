@@ -22,11 +22,6 @@ on:
         description: 'Optional image tag (e.g., commit hash). Empty -> uses environment_name'
         required: false
         default: ''
-      unlock_featest:
-        description: 'Set to true to only unlock featest environment (skips deployment)'
-        required: false
-        default: false
-        type: boolean
 
   workflow_call:
     inputs:
@@ -51,21 +46,7 @@ on:
 
 jobs:
 
-  lock-featest:
-    if: ${{ (github.event.inputs.environment_name == 'featest') }}
-    permissions:
-      contents: read
-      issues: write
-    uses: ./.github/workflows/lock-environment.yaml
-    with:
-      action: ${{ (inputs.unlock_featest == true || github.event.inputs.unlock_featest == 'true') && 'unlock' || 'lock' }}
-
-
   deploy:
-    needs: [lock-featest]
-    if: |
-      (needs.lock-featest.result == 'success' || needs.lock-featest.result == 'skipped') &&
-      (inputs.unlock_featest != true && github.event.inputs.unlock_featest != 'true')
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || github.event.inputs.environment }}
     permissions:

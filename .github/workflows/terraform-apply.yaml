@@ -52,28 +52,10 @@ on:
         options:
           - 'all'
           - 'none'
-      unlock_featest:
-        description: 'Set to true to only unlock featest environment (skips deployment)'
-        required: false
-        default: false
-        type: boolean
 
 jobs:
 
-  lock-featest:
-    if: ${{ (inputs.environment_name) == 'featest' }}
-    permissions:
-      contents: read
-      issues: write
-    uses: ./.github/workflows/lock-environment.yaml
-    with:
-      action: ${{ (inputs.unlock_featest == true || github.event.inputs.unlock_featest == 'true') && 'unlock' || 'lock' }}
-
   terraform:
-    needs: [lock-featest]
-    if: |
-      (needs.lock-featest.result == 'success' || needs.lock-featest.result == 'skipped') &&
-      (inputs.unlock_featest != true && github.event.inputs.unlock_featest != 'true')
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || github.event.inputs.environment }}
     permissions:
