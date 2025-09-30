@@ -227,49 +227,65 @@ public class UsersIntegrationTests(
         updatedStudent!.Role.Should().Be(Role.Teacher);
     }
 
-    [Fact(DisplayName = "PUT /users-manager/user/{id} - Student can update interests")]
-    public async Task Student_Can_Update_Interests()
+    [Fact(DisplayName = "PUT /users-manager/user/interests/{id} - Student can set their own interests")]
+    public async Task Student_Can_Set_Their_Own_Interests()
     {
-        var user = await CreateUserAsync(role: "student");
+        var student = await CreateUserAsync();
 
-        var update = new UpdateUserModel
+        var update = new UpdateInterestsRequest
         {
-            Interests = ["music", "chess", "travel"]
+            Interests = ["math", "science", "history"]
         };
 
-        var response = await Client.PutAsJsonAsync(ApiRoutes.UserById(user.UserId), update);
+        var response = await Client.PutAsJsonAsync(ApiRoutes.UserSetInterests(student.UserId), update);
         response.ShouldBeOk();
 
-        var updatedUser = await Client.GetAsync(ApiRoutes.UserById(user.UserId));
-        updatedUser.ShouldBeOk();
+        var fetched = await Client.GetAsync(ApiRoutes.UserById(student.UserId));
+        fetched.ShouldBeOk();
 
-        var userData = await updatedUser.Content.ReadFromJsonAsync<UserData>();
-        userData.Should().NotBeNull();
-        userData.Interests.Should().NotBeNullOrEmpty();
-        userData.Interests.Should().BeEquivalentTo(["music", "chess", "travel"]);
+        var data = await ReadAsJsonAsync<UserData>(fetched);
+        data!.Interests.Should().BeEquivalentTo(update.Interests);
     }
 
-    [Theory(DisplayName = "PUT /users-manager/user/{id} - Non-students cannot update interests")]
-    [InlineData("teacher")]
-    [InlineData("admin")]
-    public async Task NonStudent_Cannot_Set_Interests(string role)
+    [Fact(DisplayName = "PUT /users-manager/user/interests/{id} - Admin can update student interests")]
+    public async Task Admin_Can_Set_Interests_For_Any_Student()
     {
-        var user = await CreateUserAsync(role: role);
+        var admin = await CreateUserAsync(role: "admin");
+        var student = TestDataHelper.CreateUser(role: "student");
 
-        var update = new UpdateUserModel
+        var registerStudent = await Client.PostAsJsonAsync(ApiRoutes.User, student);
+        registerStudent.ShouldBeCreated();
+
+        // Still authenticated as admin here
+        var update = new UpdateInterestsRequest
         {
-            Interests = ["soccer", "cooking"]
+            Interests = ["biology", "coding"]
         };
 
-        var response = await Client.PutAsJsonAsync(ApiRoutes.UserById(user.UserId), update);
-        response.ShouldBeBadRequest();
+        var response = await Client.PutAsJsonAsync(ApiRoutes.UserSetInterests(student.UserId), update);
+        response.ShouldBeOk();
 
-        var updatedUser = await Client.GetAsync(ApiRoutes.UserById(user.UserId));
-
-        var userData = await updatedUser.Content.ReadFromJsonAsync<UserData>();
-        userData.Should().NotBeNull();
-        userData.Interests.Should().BeNullOrEmpty("Non-students should not have interests");
+        var fetched = await Client.GetAsync(ApiRoutes.UserById(student.UserId));
+        fetched.ShouldBeOk();
+        var data = await ReadAsJsonAsync<UserData>(fetched);
+        data!.Interests.Should().BeEquivalentTo(update.Interests);
     }
 
+    [Fact(DisplayName = "PUT /users-manager/user/interests/{id} - Student cannot set another student’s interests")]
+    public async Task Student_Cannot_Update_Other_Student_Interests()
+    {
+        var _ = await CreateUserAsync();
+        var student2 = TestDataHelper.CreateUser(role: "student");
 
+        var registerOther = await Client.PostAsJsonAsync(ApiRoutes.User, student2);
+        registerOther.ShouldBeCreated();
+
+        var update = new UpdateInterestsRequest
+        {
+            Interests = ["football", "gaming"]
+        };
+
+        var response = await Client.PutAsJsonAsync(ApiRoutes.UserSetInterests(student2.UserId), update);
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
 }
