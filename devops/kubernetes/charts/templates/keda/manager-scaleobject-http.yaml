@@ -5,8 +5,8 @@ metadata:
   name: manager-http-scaledobject-{{ include "app.namespace" . }}
   namespace: {{ include "app.namespace" . }}
 spec:
-  hosts:
-    - "{{ .Values.manager.ingress.host }}"
+  hosts: ["teachin.westeurope.cloudapp.azure.com"]
+  pathPrefixes: ["/api/{{ include "app.namespace" . }}"]
 
   scaleTargetRef:
     name: {{ .Values.manager.name }}-{{ .Release.Namespace }}
