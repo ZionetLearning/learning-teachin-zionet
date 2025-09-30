@@ -142,13 +142,6 @@ jobs:
         if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
         run: |
           kubectl create namespace "$TARGET_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
-          
-          # Also create devops-tools namespace early since the main app might need it
-          kubectl create namespace devops-tools --dry-run=client -o yaml | kubectl apply -f -
-          
-          # Wait for both namespaces to be ready
-          kubectl wait --for=condition=ready namespace/$TARGET_NAMESPACE --timeout=60s || true
-          kubectl wait --for=condition=ready namespace/devops-tools --timeout=60s || true
 
       - name: Check and fix Helm release status
         run: |
@@ -294,18 +287,7 @@ jobs:
             --set dapr.installComponents=false
 
 
-      - name: Add Langfuse
-        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
-        run: |
-          echo "Deploying Langfuse (devops-tools namespace already created)..."
-          cd devops/helm-tools
-          chmod +x langfuse.sh
-          ./langfuse.sh $TARGET_NAMESPACE "${{ secrets.LANGFUSE_ADMIN_EMAIL }}" "${{ secrets.LANGFUSE_ADMIN_PASSWORD }}" "${{ secrets.POSTGRES_USER }}" "${{ secrets.POSTGRES_PASSWORD }}"
-          
-          echo "Applying Langfuse ingress..."
-          kubectl apply -f "../kubernetes/ingress/langfuse-ingress.yaml"
-          
-          echo "Langfuse deployment completed"
+
 
 
       - name: Diagnostics (on failure)
