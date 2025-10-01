@@ -5,29 +5,30 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
   IconButton,
   Typography,
   CircularProgress,
   TablePagination,
   Box,
 } from "@mui/material";
-import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import { useState, useMemo } from "react";
 import { useAuth } from "@app-providers";
 import { useGetGameMistakes, GameMistakeItem } from "@student/api";
 import { useTranslation } from "react-i18next";
+import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+import { useStyles } from "./style";
 
 export const PracticeMistakes = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const classes = useStyles();
 
   const studentId = user?.userId ?? "";
 
-  const [pageZero, setPageZero] = useState(0);
+  const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  const apiPage = useMemo(() => pageZero + 1, [pageZero]);
+  const apiPage = useMemo(() => page + 1, [page]);
 
   const { data, isLoading, isFetching, error } = useGetGameMistakes({
     studentId,
@@ -35,19 +36,22 @@ export const PracticeMistakes = () => {
     pageSize: rowsPerPage,
   });
 
+  const items = data?.items ?? [];
+  const total = data?.totalCount ?? 0;
+
   const handleRetry = (item: GameMistakeItem) => {
     console.log("Retry:", item);
   };
 
-  const handleChangePage = (_: unknown, newPageZero: number) => {
-    setPageZero(newPageZero);
+  const handleChangePage = (_: unknown, newPage: number) => {
+    setPage(newPage);
   };
 
   const handleChangeRowsPerPage = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     setRowsPerPage(parseInt(e.target.value, 10));
-    setPageZero(0);
+    setPage(0);
   };
 
   if (error) {
@@ -58,16 +62,13 @@ export const PracticeMistakes = () => {
     );
   }
 
-  const items = data?.items ?? [];
-  const total = data?.totalCount ?? 0;
-
   return (
-    <Paper>
-      <Box display="flex" alignItems="center" justifyContent="center" p={2}>
-        <Typography variant="h5" color="#7c4dff">
+    <Box>
+      <Box className={classes.headerWrapper}>
+        <Typography className={classes.title}>
           {t("pages.practiceMistakes.title")}
         </Typography>
-        <Typography variant="h6" color="#7c4dff">
+        <Typography className={classes.description}>
           {t("pages.practiceMistakes.description")}
         </Typography>
         {isFetching && <CircularProgress size={20} />}
@@ -82,17 +83,12 @@ export const PracticeMistakes = () => {
           <Typography>{t("pages.practiceMistakes.noMistakes")}</Typography>
         </Box>
       ) : (
-        <Box
-          sx={{
-            width: "50%",
-            display: "flex",
-            alignItems: "center",
-            flexDirection: "column",
-            justifyContent: "center",
-            margin: "auto",
-          }}
-        >
-          <TableContainer>
+        <Box className={classes.tableWrapper} sx={{ flex: 1 }}>
+          <TableContainer
+            sx={{
+              maxHeight: 800,
+            }}
+          >
             <Table
               sx={{
                 "& th, & td": {
@@ -154,16 +150,17 @@ export const PracticeMistakes = () => {
           </TableContainer>
 
           <TablePagination
+            className={classes.tablePaginationWrapper}
             component="div"
             count={total}
-            page={pageZero} // 0-based
+            page={page}
             onPageChange={handleChangePage}
             rowsPerPage={rowsPerPage}
             onRowsPerPageChange={handleChangeRowsPerPage}
-            rowsPerPageOptions={[5, 10, 15]}
+            rowsPerPageOptions={[5, 10]}
           />
         </Box>
       )}
-    </Paper>
+    </Box>
   );
 };
