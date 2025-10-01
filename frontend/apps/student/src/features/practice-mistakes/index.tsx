@@ -148,7 +148,7 @@ export const PracticeMistakes = () => {
                             />
                           </TableCell>
 
-                          <TableCell className={classes.td} align="right">
+                          <TableCell className={classes.td}>
                             <Button
                               size="small"
                               variant="contained"

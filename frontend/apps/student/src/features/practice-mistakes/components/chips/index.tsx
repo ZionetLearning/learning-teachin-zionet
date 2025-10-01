@@ -1,4 +1,5 @@
 import { Chip } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { GameMistakeItem } from "@student/api";
 
 export const DifficultyChip = ({
@@ -6,6 +7,9 @@ export const DifficultyChip = ({
 }: {
   level: GameMistakeItem["difficulty"];
 }) => {
+  const { t } = useTranslation();
+  const levelLowerCase = level.toLowerCase();
+
   const map: Record<string, "success" | "warning" | "error" | "default"> = {
     easy: "success",
     medium: "warning",
@@ -14,8 +18,8 @@ export const DifficultyChip = ({
   return (
     <Chip
       size="small"
-      label={level}
-      color={map[level.toLowerCase()] ?? "default"}
+      label={t(`pages.wordOrderGame.difficulty.${levelLowerCase}`)}
+      color={map[levelLowerCase] ?? "default"}
     />
   );
 };
