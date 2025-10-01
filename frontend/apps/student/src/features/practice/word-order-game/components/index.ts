@@ -2,9 +2,6 @@ export * from "./Header";
 export * from "./Description";
 export * from "./Game";
 export * from "./Speaker";
-export * from "./modals"
 export * from "./ChosenWordsArea";
 export * from "./WordsBank";
-export * from "./SideButtons";
-export * from "./GameHeaderSettings";
-export * from "./WelcomeScreen";
+export * from "./ActionButtons";

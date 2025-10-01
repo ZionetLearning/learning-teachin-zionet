@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Typography, TextField, Stack } from "@mui/material";
+import { Typography, TextField, Stack, Box, Grid } from "@mui/material";
 import { useUpdateUserByUserId, toAppRole } from "@app-providers";
 import {
   User,
@@ -11,9 +11,10 @@ import { useStyles } from "./style";
 import { Dropdown, Button } from "@ui-components";
 
 export const Profile = ({ user }: { user: User }) => {
+  const classes = useStyles();
+
   const { t, i18n } = useTranslation();
   const isRTL = i18n.dir() === "rtl";
-  const classes = useStyles();
 
   const { mutateAsync: updateUserMutation } = useUpdateUserByUserId(
     user?.userId ?? "",
@@ -102,55 +103,72 @@ export const Profile = ({ user }: { user: User }) => {
   ];
 
   return (
-    <div className={classes.container}>
-      <div className={classes.titleContainer}>
+    <Box className={classes.container}>
+      <Box className={classes.titleContainer}>
         <Typography variant="h4" className={classes.title}>
           {t("pages.profile.title")}
         </Typography>
-      </div>
+      </Box>
 
-      <div className={classes.formCard}>
-        <div className={classes.formHeader}>
+      <Box className={classes.formCard}>
+        <Box className={classes.formHeader}>
           <Typography variant="h6">{t("pages.profile.subTitle")}</Typography>
           <Typography variant="body2" color="text.secondary">
             {t("pages.profile.secondSubTitle")}
           </Typography>
-        </div>
+        </Box>
 
         <Stack spacing={3}>
-          <div className={classes.fieldContainer}>
-            <Typography
-              variant="body2"
-              color="text.primary"
-              className={isRTL ? classes.fieldLabelRTL : classes.fieldLabelLTR}
-            >
-              {t("pages.profile.firstName")}
-            </Typography>
-            <TextField
-              value={userDetails.firstName}
-              onChange={handleTextChange("firstName")}
-              fullWidth
-              className={isRTL ? classes.textFieldRTL : classes.textFieldLTR}
-            />
-          </div>
+          {/* First/Last name: responsive Grid */}
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Box className={classes.fieldContainer}>
+                <Typography
+                  variant="body2"
+                  color="text.primary"
+                  className={
+                    isRTL ? classes.fieldLabelRTL : classes.fieldLabelLTR
+                  }
+                >
+                  {t("pages.profile.firstName")}
+                </Typography>
+                <TextField
+                  value={userDetails.firstName}
+                  onChange={handleTextChange("firstName")}
+                  fullWidth
+                  className={
+                    isRTL ? classes.textFieldRTL : classes.textFieldLTR
+                  }
+                  size={"small"}
+                />
+              </Box>
+            </Grid>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Box className={classes.fieldContainer}>
+                <Typography
+                  variant="body2"
+                  color="text.primary"
+                  className={
+                    isRTL ? classes.fieldLabelRTL : classes.fieldLabelLTR
+                  }
+                >
+                  {t("pages.profile.lastName")}
+                </Typography>
+                <TextField
+                  value={userDetails.lastName}
+                  onChange={handleTextChange("lastName")}
+                  fullWidth
+                  className={
+                    isRTL ? classes.textFieldRTL : classes.textFieldLTR
+                  }
+                  size={"small"}
+                />
+              </Box>
+            </Grid>
+          </Grid>
 
-          <div className={classes.fieldContainer}>
-            <Typography
-              variant="body2"
-              color="text.primary"
-              className={isRTL ? classes.fieldLabelRTL : classes.fieldLabelLTR}
-            >
-              {t("pages.profile.lastName")}
-            </Typography>
-            <TextField
-              value={userDetails.lastName}
-              onChange={handleTextChange("lastName")}
-              fullWidth
-              className={isRTL ? classes.textFieldRTL : classes.textFieldLTR}
-            />
-          </div>
-
-          <div className={classes.fieldContainer}>
+          {/* Hebrew level (if student) */}
+          <Box className={classes.fieldContainer}>
             <Typography
               variant="body2"
               color="text.primary"
@@ -158,9 +176,8 @@ export const Profile = ({ user }: { user: User }) => {
                 isRTL ? classes.emailFieldLabelRTL : classes.emailFieldLabelLTR
               }
             >
-              {/* Conditionally render Hebrew Level for student role */}
               {toAppRole(user?.role) === "student" && (
-                <div className={classes.fieldContainer}>
+                <Box className={classes.fieldContainer}>
                   <Typography
                     variant="body2"
                     color="text.primary"
@@ -178,10 +195,10 @@ export const Profile = ({ user }: { user: User }) => {
                       handleDropdownChange("hebrewLevelValue")(val)
                     }
                   />
-                </div>
+                </Box>
               )}
 
-              <div className={classes.fieldContainer}>
+              <Box className={classes.fieldContainer}>
                 <Typography
                   variant="body2"
                   color="text.primary"
@@ -197,7 +214,7 @@ export const Profile = ({ user }: { user: User }) => {
                   value={userDetails.preferredLanguageCode}
                   onChange={handleLanguageChange}
                 />
-              </div>
+              </Box>
 
               {t("pages.profile.email")}
             </Typography>
@@ -206,6 +223,7 @@ export const Profile = ({ user }: { user: User }) => {
               disabled
               fullWidth
               className={isRTL ? classes.textFieldRTL : classes.textFieldLTR}
+              size={"small"}
             />
             <Typography
               variant="body2"
@@ -218,18 +236,18 @@ export const Profile = ({ user }: { user: User }) => {
             >
               {t("pages.profile.emailCannotBeChanged")}
             </Typography>
-          </div>
+          </Box>
         </Stack>
 
-        <div className={classes.buttonContainer}>
+        <Box className={classes.buttonContainer}>
           <Button onClick={handleSave} disabled={!dirty}>
             {t("pages.profile.saveChanges")}
           </Button>
           <Button variant="outlined" disabled={!dirty} onClick={handleCancel}>
             {t("pages.profile.cancel")}
           </Button>
-        </div>
-      </div>
-    </div>
+        </Box>
+      </Box>
+    </Box>
   );
 };

@@ -235,6 +235,7 @@ app.MapAiEndpoints();
 app.MapAuthEndpoints();
 app.MapTasksEndpoints();
 app.MapUsersEndpoints();
+app.MapGamesEndpoints();
 app.MapHub<NotificationHub>("/NotificationHub");
 app.MapMediaEndpoints();
 

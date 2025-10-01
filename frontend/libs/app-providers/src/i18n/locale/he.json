@@ -75,7 +75,9 @@
         "chatAvatarPage": "צ'אט עם אווטאר",
         "typeMessage": "הקלד הודעה…",
         "avatar": "אווטאר",
-        "lips": "שפתיים"
+        "lips": "שפתיים",
+        "mute": "השתק",
+        "unmute": "הפעל קול"
       },
       "chatHistory": {
         "title": "היסטוריית צ'אט",
@@ -140,8 +142,7 @@
         "stop": "⏹ עצור",
         "play": "▶ הפעל",
         "record": "🎤 הקלט",
-        "hideNikud": "הסתר ניקוד",
-        "showNikud": "הצג ניקוד"
+        "noData": "אין נתונים"
       },
       "typingPractice": {
         "hebrewTypingPractice": "תרגול הקלדה בעברית",
@@ -218,7 +219,9 @@
         "cancel": "בטל",
         "close": "סגור",
         "yes": "כן",
-        "no": "לא"
+        "no": "לא",
+        "correct": "נכון!",
+        "incorrect": "לא נכון. נסה שוב."
       },
       "earthquakeMap": {
         "title": "מפת רעידות אדמה",
@@ -410,6 +413,22 @@
           "taskNameMinLength": "שם המשימה חייב להכיל לפחות 2 תווים",
           "taskNameMaxLength": "שם המשימה לא יכול להכיל יותר מ-100 תווים"
         }
+      },
+      "practiceMistakes": {
+        "title": "טעויות התרגול שלי",
+        "description": "סקור ונסה שוב תרגילים שענית עליהם בעבר בצורה שגויה.",
+        "noMistakes": "אין טעויות כלל! עבודה טובה!",
+        "practiceName": "שם התרגול",
+        "difficulty": "רמת קושי",
+        "yourLastAnswer": "התשובה האחרונה שלך",
+        "status": "סטטוס",
+        "action": "פעולה",
+        "tryAgain": "נסה שוב!",
+        "retry": "נסה שוב",
+        "failedToLoad": "טעינת טעויות התרגול נכשלה",
+        "gameType": {
+          "wordOrderGame": "משחק סידור מילים"
+        }
       }
     },
     "sidebar": {
@@ -439,7 +458,15 @@
       "countryExplorer": "ספריית מדינות",
       "users": "משתמשים",
       "tasks": "משימות",
-      "profile": "פרופיל"
+      "profile": "פרופיל",
+      "myPracticeMistakes": "טעויות התרגול שלי"
+    },
+    "errorBoundary": {
+      "title": "אופס! משהו השתבש",
+      "message": "קרתה תקלה בלתי צפויה. אל דאגה, הצוות שלנו עובד כדי לתקן אותה.",
+      "tryAgain": "נסה שוב",
+      "goBack": " חזור לתפריט",
+      "reportError": "דווח על התקלה"
     },
     "goBackToMenu": "חזור לתפריט",
     "logout": "התנתק",

@@ -10,7 +10,7 @@ using Accessor.Services.Interfaces;
 using Azure.Messaging.ServiceBus;
 using DotQueue;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
+//using Npgsql;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -36,6 +36,7 @@ builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IStatsService, StatsService>();
+builder.Services.AddScoped<IGameService, GameService>();
 builder.Services.AddScoped<DatabaseInitializer>();
 builder.Services.AddScoped<IManagerCallbackQueueService, ManagerCallbackQueueService>();
 builder.Services.AddScoped<IRefreshSessionService, RefreshSessionService>();
@@ -84,21 +85,25 @@ builder.Services.AddDaprClient(client =>
 });
 
 // Configure PostgreSQL
+builder.Services.AddSingleton(sp =>
+{
+    var connString = builder.Configuration.GetConnectionString("Postgres");
+    var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(connString);
+    dataSourceBuilder.EnableDynamicJson();
+    return dataSourceBuilder.Build();
+});
 
-// Build data source with dynamic JSON enabled
-var dataSourceBuilder = new NpgsqlDataSourceBuilder(builder.Configuration.GetConnectionString("Postgres"));
-dataSourceBuilder.EnableDynamicJson();
-var dataSource = dataSourceBuilder.Build();
-
-// Register DbContext using the data source
-builder.Services.AddDbContext<AccessorDbContext>(options =>
+builder.Services.AddDbContextPool<AccessorDbContext>((sp, options) =>
+{
+    var dataSource = sp.GetRequiredService<Npgsql.NpgsqlDataSource>();
     options.UseNpgsql(dataSource, npgsqlOptions =>
     {
         npgsqlOptions.EnableRetryOnFailure(
             maxRetryCount: 5,
             maxRetryDelay: TimeSpan.FromSeconds(5),
             errorCodesToAdd: null);
-    }));
+    });
+});
 
 // This is required for the Scalar UI to have an option to setup an authentication token
 builder.Services.AddOpenApi(
@@ -157,4 +162,5 @@ app.MapAuthEndpoints();
 app.MapRefreshSessionEndpoints();
 app.MapStatsEndpoints();
 app.MapMediaEndpoints();
+app.MapGamesEndpoints();
 await app.RunAsync();

@@ -6,6 +6,7 @@ using Manager.Models.Notifications;
 using Manager.Models.QueueMessages;
 using Manager.Models.Sentences;
 using Manager.Services;
+using Manager.Services.Clients.Accessor;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -13,11 +14,15 @@ namespace ManagerUnitTests.Endpoints;
 
 public class ManagerQueueHandlerTests
 {
-    private static ManagerQueueHandler CreateSut(Mock<INotificationService>? notificationMock = null)
+    private static ManagerQueueHandler CreateSut(
+        Mock<INotificationService>? notificationMock = null,
+        Mock<IAccessorClient>? accessorClientMock = null)
     {
         var logger = Mock.Of<ILogger<ManagerQueueHandler>>();
         var notificationService = notificationMock?.Object ?? Mock.Of<INotificationService>();
-        return new ManagerQueueHandler(logger, notificationService);
+        var accessorClient = accessorClientMock?.Object ?? Mock.Of<IAccessorClient>();
+
+        return new ManagerQueueHandler(logger, notificationService, accessorClient);
     }
 
     private static JsonElement ToJsonElement<T>(T value) =>
@@ -30,7 +35,7 @@ public class ManagerQueueHandlerTests
         var handler = CreateSut(mockNotif);
 
         var notification = new UserNotification { Message = "hello" };
-        var userId = Guid.NewGuid().ToString(); // string
+        var userId = Guid.NewGuid().ToString();
         var metadata = new UserContextMetadata { MessageId = "m1", UserId = userId };
 
         var message = new Message
@@ -41,8 +46,10 @@ public class ManagerQueueHandlerTests
         };
 
         await handler.HandleAsync(message, null, () => Task.CompletedTask, CancellationToken.None);
-        
-        mockNotif.Verify(s => s.SendNotificationAsync(metadata.UserId, It.IsAny<UserNotification>()), Times.Once);
+
+        mockNotif.Verify(
+            s => s.SendNotificationAsync(metadata.UserId, It.IsAny<UserNotification>()),
+            Times.Once);
     }
 
     [Fact(DisplayName = "HandleAIChatAnswerAsync => sends chat event via service")]
@@ -59,7 +66,7 @@ public class ManagerQueueHandlerTests
             ThreadId = Guid.NewGuid()
         };
 
-        var userId = Guid.NewGuid().ToString(); // string
+        var userId = Guid.NewGuid().ToString();
         var metadata = new UserContextMetadata { UserId = userId };
 
         var message = new Message
@@ -71,7 +78,9 @@ public class ManagerQueueHandlerTests
 
         await handler.HandleAsync(message, null, () => Task.CompletedTask, CancellationToken.None);
 
-        mockNotif.Verify(s => s.SendEventAsync(EventType.ChatAiAnswer, userId, chatResponse), Times.Once);
+        mockNotif.Verify(
+            s => s.SendEventAsync(EventType.ChatAiAnswer, userId, chatResponse),
+            Times.Once);
     }
 
     [Fact(DisplayName = "HandleGenerateAnswer => sends sentence event via service")]
@@ -88,7 +97,7 @@ public class ManagerQueueHandlerTests
             }
         };
 
-        var userId = Guid.NewGuid().ToString(); // string
+        var userId = Guid.NewGuid().ToString();
 
         var message = new Message
         {
@@ -99,6 +108,8 @@ public class ManagerQueueHandlerTests
 
         await handler.HandleAsync(message, null, () => Task.CompletedTask, CancellationToken.None);
 
-        mockNotif.Verify(s => s.SendEventAsync(EventType.SentenceGeneration, userId, It.IsAny<SentenceResponse>()), Times.Once);
+        mockNotif.Verify(
+            s => s.SendEventAsync(EventType.SentenceGeneration, userId, It.IsAny<SentenceResponse>()),
+            Times.Once);
     }
 }

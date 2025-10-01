@@ -9,21 +9,25 @@ import "react-chat-elements/dist/main.css";
 interface ReactChatElementsProps {
   messages: ChatMessage[] | undefined;
   loading: boolean;
+  isPlaying?: boolean;
   avatarMode?: boolean;
   value: string;
   onChange: (value: string) => void;
   handleSendMessage: () => void;
   handlePlay?: () => void;
+  handleStop?: () => void;
 }
 
 export const ReactChatElements = ({
   messages,
   loading,
+  isPlaying = false,
   avatarMode = false,
   value,
   onChange,
   handleSendMessage,
   handlePlay,
+  handleStop,
 }: ReactChatElementsProps) => {
   const { t } = useTranslation();
   const classes = useStyles();
@@ -33,23 +37,23 @@ export const ReactChatElements = ({
   useEffect(() => {
     const el = listRef.current;
     if (!el) return;
-    
+
     const scrollToBottom = () => {
       el.scrollTo({
         top: el.scrollHeight,
-        behavior: 'smooth'
+        behavior: "smooth",
       });
     };
-    
+
     scrollToBottom();
-    
+
     const timeoutId = setTimeout(() => {
       el.scrollTo({
         top: el.scrollHeight,
-        behavior: 'auto'
+        behavior: "auto",
       });
     }, 100);
-    
+
     return () => clearTimeout(timeoutId);
   }, [messages]);
 
@@ -80,41 +84,29 @@ export const ReactChatElements = ({
               id={String(i)}
               position={msg.position}
               type="text"
-              text={msg.text}
+              text={msg.isTyping && !msg.text ? t("pages.chatYo.thinking") : msg.text}
               title={msg.position === "right" ? "Me" : "Assistant"}
               titleColor={msg.position === "right" ? "black" : "gray"}
               date={msg.date}
               forwarded={false}
               replyButton={false}
               removeButton={false}
-              status="received"
+              status={msg.isTyping ? "waiting" : "received"}
               retracted={false}
               focus={false}
               avatar={msg.position === "left" ? avatarUrl : undefined}
               notch
             />
+            {/* Show typing indicator for streaming messages with content */}
+            {msg.isTyping && msg.text && (
+              <div className={classes.typingIndicator}>
+                <span className={classes.typingDot}>●</span>
+                <span className={classes.typingDot}>●</span>
+                <span className={classes.typingDot}>●</span>
+              </div>
+            )}
           </div>
         ))}
-        {loading && (
-          <div data-testid="chat-yo-msg-loading">
-            <MessageBox
-              id="assistant"
-              position="left"
-              type="text"
-              text={t("pages.chatYo.thinking")}
-              title="Assistant"
-              titleColor="none"
-              date={new Date()}
-              forwarded={false}
-              replyButton={false}
-              removeButton={false}
-              status="waiting"
-              retracted={false}
-              focus={false}
-              notch
-            />
-          </div>
-        )}
       </div>
 
       <div
@@ -137,10 +129,16 @@ export const ReactChatElements = ({
                 <button
                   className={classes.sendButton}
                   title={t("pages.chatYo.replayAvatar")}
-                  onClick={handlePlay}
+                  onClick={() => {
+                    if (isPlaying) {
+                      handleStop?.();
+                    } else {
+                      handlePlay?.();
+                    }
+                  }}
                   data-testid="chat-yo-replay"
                 >
-                  🗣
+                  {isPlaying ? <span style={{ fontSize: "15px" }}>■</span> : "🗣"}
                 </button>
                 <button
                   className={classes.sendButton}

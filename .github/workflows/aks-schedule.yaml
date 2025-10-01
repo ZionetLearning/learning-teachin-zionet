@@ -1,11 +1,11 @@
 name: AKS - Scheduled Start/Stop
 
 on:
-  schedule:
-    # 7:00 Israel time = 4:00 UTC (START: Sunday-Thursday)
-    - cron: '0 4 * * 0-4'
-    # 19:30 Israel time = 16:30 UTC (STOP: Sunday-Saturday)
-    - cron: '30 16 * * 0-6'
+  # schedule:
+  #   # 7:00 Israel time = 4:00 UTC (START: Sunday-Thursday)
+  #   - cron: '0 4 * * 0-4'
+  #   # 19:30 Israel time = 16:30 UTC (STOP: Sunday-Saturday)
+  #   - cron: '30 16 * * 0-6'
   workflow_dispatch:
     inputs:
       action:

@@ -6,14 +6,12 @@ interface FeedbackDisplayProps {
   feedbackResult: FeedbackResult;
   onTryAgain: () => void;
   onNextExercise: () => void;
-  onChangeLevel: () => void;
 }
 
 export const FeedbackDisplay = ({
   feedbackResult,
   onTryAgain,
   onNextExercise,
-  onChangeLevel,
 }: FeedbackDisplayProps) => {
   const { t } = useTranslation();
   const classes = useStyles();
@@ -77,9 +75,6 @@ export const FeedbackDisplay = ({
           onClick={onNextExercise}
         >
           {t("pages.typingPractice.nextExercise")}
-        </button>
-        <button className={classes.controlButton} onClick={onChangeLevel}>
-          {t("pages.typingPractice.changeLevel")}
         </button>
       </div>
     </div>
