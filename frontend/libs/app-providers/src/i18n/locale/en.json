@@ -434,7 +434,9 @@
           "gameType": "Game",
           "difficulty": "Difficulty",
           "all": "All"
-        }
+        },
+        "exportPage": "Export (page)",
+        "exportCurrentPage": "Export only current page"
       }
     },
     "sidebar": {

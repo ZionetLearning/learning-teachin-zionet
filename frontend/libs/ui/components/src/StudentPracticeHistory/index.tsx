@@ -1,6 +1,9 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+
+import DownloadIcon from "@mui/icons-material/Download";
 import {
   Box,
+  Button,
   FormControl,
   InputLabel,
   LinearProgress,
@@ -16,6 +19,7 @@ import {
   TableRow,
   Tooltip,
 } from "@mui/material";
+import { CSVLink } from "react-csv";
 import { useTranslation } from "react-i18next";
 
 import { DifficultyLevel } from "@student/types";
@@ -86,6 +90,69 @@ export const StudentPracticeHistory = () => {
     [filtered, page, rowsPerPage],
   );
 
+  const csvHeaders = useMemo(
+    () => [
+      {
+        label: t("pages.studentPracticeHistory.columns.studentName"),
+        key: "studentName",
+      },
+      {
+        label: t("pages.studentPracticeHistory.columns.gameType"),
+        key: "gameType",
+      },
+      {
+        label: t("pages.studentPracticeHistory.columns.difficulty"),
+        key: "difficulty",
+      },
+      {
+        label: t("pages.studentPracticeHistory.columns.attempts"),
+        key: "attempts",
+      },
+      {
+        label: t("pages.studentPracticeHistory.columns.successes"),
+        key: "successes",
+      },
+      {
+        label: t("pages.studentPracticeHistory.columns.failures"),
+        key: "failures",
+      },
+      {
+        label: t("pages.studentPracticeHistory.columns.successRate"),
+        key: "successRate",
+      },
+    ],
+    [t],
+  );
+
+  const toCsvRow = useCallback((it: (typeof allItems)[number]) => {
+    const rate =
+      it.attemptsCount > 0
+        ? Math.round((it.totalSuccesses / it.attemptsCount) * 100)
+        : 0;
+    return {
+      studentName: it.studentId,
+      gameType: it.gameType,
+      difficulty: levelToLabel(it.difficulty),
+      attempts: it.attemptsCount,
+      successes: it.totalSuccesses,
+      failures: it.totalFailures,
+      successRate: `${rate}%`,
+    };
+  }, []);
+
+  const csvPage = useMemo(
+    () => pagedItems.map(toCsvRow),
+    [pagedItems, toCsvRow],
+  );
+
+  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+
+  const filenamePrefix = useMemo(() => {
+    const gt = gameType === "all" ? "all-games" : gameType;
+    const dl = difficulty === "all" ? "all-difficulties" : difficulty;
+    return `practice-history_${gt}_${dl}_${today}`;
+  }, [gameType, difficulty, today]);
+
   const total = filtered.length;
 
   return (
@@ -149,6 +216,31 @@ export const StudentPracticeHistory = () => {
             ))}
           </Select>
         </FormControl>
+        <Box flexGrow={1} />
+
+        <Tooltip
+          title={
+            t("pages.studentPracticeHistory.exportCurrentPage") ||
+            "Export current page"
+          }
+        >
+          <span>
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<DownloadIcon />}
+              disabled={isLoading || isError || pagedItems.length === 0}
+              component={CSVLink as unknown as React.ElementType}
+              headers={csvHeaders}
+              data={csvPage}
+              filename={`${filenamePrefix}_page-${page + 1}_rpp-${rowsPerPage}.csv`}
+              uFEFF
+              target="_blank"
+            >
+              {t("pages.studentPracticeHistory.exportPage")}
+            </Button>
+          </span>
+        </Tooltip>
       </Stack>
       <div className={classes.tableArea} data-testid="history-table">
         <div className={classes.tableShell} data-testid="history-table-shell">

@@ -434,7 +434,9 @@
           "gameType": "סוג משחק",
           "difficulty": "רמת קושי",
           "all": "הכל"
-        }
+        },
+        "exportPage": "ייצוא (עמוד)",
+        "exportCurrentPage": "ייצוא רק את העמוד הנוכחי"
       }
     },
     "sidebar": {
