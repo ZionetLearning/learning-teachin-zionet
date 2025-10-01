@@ -3,6 +3,7 @@ using System.Text.Json;
 using Dapr.Client;
 using Engine.Models.Prompts;
 using Engine.Services.Clients.AccessorClient.Models;
+using Engine.Constants;
 
 namespace Engine.Services.Clients.AccessorClient;
 
@@ -249,6 +250,31 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
         {
             _logger.LogError(ex, "Failed to get prompt versions {PromptKey}", promptKey);
             throw;
+        }
+    }
+
+    public async Task<List<string>> GetUserInterestsAsync(Guid userId, CancellationToken ct)
+    {
+        try
+        {
+            var userInterests = await _daprClient.InvokeMethodAsync<List<string>>(
+                HttpMethod.Get,
+                AppIds.Accessor,
+                $"users-accessor/{userId}/interests",
+                ct);
+
+            if (userInterests == null)
+            {
+                _logger.LogWarning("User {UserId} not found when fetching interests.", userId);
+                return [];
+            }
+
+            return userInterests;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching interests for user {UserId}", userId);
+            return [];
         }
     }
 }

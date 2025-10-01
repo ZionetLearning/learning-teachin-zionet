@@ -49,7 +49,7 @@ public class SentenceGeneratorServiceTests
             Nikud = false,
         };
 
-        var response = await _sentenceService.GenerateAsync(request, CancellationToken.None);
+        var response = await _sentenceService.GenerateAsync(request, [], CancellationToken.None);
         Assert.Equal(request.Count, response.Sentences.Count);
     }
 
@@ -67,7 +67,7 @@ public class SentenceGeneratorServiceTests
             Nikud = false
         };
 
-        var res = await _sentenceService.GenerateAsync(req, CancellationToken.None);
+        var res = await _sentenceService.GenerateAsync(req, [], CancellationToken.None);
 
         Assert.Equal(count, res.Sentences.Count);
     }

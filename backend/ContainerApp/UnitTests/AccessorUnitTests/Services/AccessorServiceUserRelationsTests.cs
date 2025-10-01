@@ -29,7 +29,8 @@ namespace AccessorUnitTests.Users
             FirstName = "F",
             LastName = "L",
             Password = "hashed",
-            Role = role
+            Role = role,
+            Interests = []
         };
 
         [Fact]

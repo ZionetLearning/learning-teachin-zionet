@@ -10,6 +10,7 @@ using Accessor.Services.Interfaces;
 using Azure.Messaging.ServiceBus;
 using DotQueue;
 using Microsoft.EntityFrameworkCore;
+//using Npgsql;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);

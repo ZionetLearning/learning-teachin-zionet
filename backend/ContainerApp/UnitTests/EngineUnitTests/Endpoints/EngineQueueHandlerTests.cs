@@ -6,6 +6,7 @@ using Engine.Helpers;
 using Engine.Models;
 using Engine.Models.Chat;
 using Engine.Models.QueueMessages;
+using Engine.Models.Sentences;
 using Engine.Services;
 using Engine.Services.Clients.AccessorClient;
 using Engine.Services.Clients.AccessorClient.Models;
@@ -291,7 +292,7 @@ public class EngineQueueHandlerTests
         var history = new ChatHistory();
         history.AddSystemMessage("You are a helpful assistant.");
         history.AddUserMessageNow("boom");
-
+        
         var engineReq = new EngineChatRequest
         {
             RequestId = requestId,
@@ -313,6 +314,11 @@ public class EngineQueueHandlerTests
 
         accessorClient.Setup(a => a.GetHistorySnapshotAsync(threadId, userId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(snapshotFromAccessor);
+
+        accessorClient
+            .Setup(a => a.GetUserInterestsAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<string>());
+
 
         accessorClient
             .Setup(a => a.UpsertHistorySnapshotAsync(

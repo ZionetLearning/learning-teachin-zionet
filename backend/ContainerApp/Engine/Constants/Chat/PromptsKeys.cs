@@ -1,6 +1,6 @@
 ﻿using Engine.Options;
 
-namespace Engine.Constants;
+namespace Engine.Constants.Chat;
 
 public static class PromptsKeys
 {

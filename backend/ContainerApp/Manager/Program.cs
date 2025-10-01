@@ -97,6 +97,10 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy(PolicyNames.TeacherOnly, p =>
         p.RequireRole(Role.Teacher.ToString()));
 
+    // Admin or Student, for set interests
+    options.AddPolicy(PolicyNames.AdminOrStudent, p =>
+        p.RequireRole(Role.Admin.ToString(), Role.Student.ToString()));
+
     // Any authenticated role (handy for groups)
     options.AddPolicy(PolicyNames.AdminOrTeacherOrStudent, p =>
         p.RequireRole(Role.Admin.ToString(), Role.Teacher.ToString(), Role.Student.ToString()));

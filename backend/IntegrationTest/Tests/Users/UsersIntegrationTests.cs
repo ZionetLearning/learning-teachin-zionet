@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
 using IntegrationTests.Constants;
@@ -198,5 +199,93 @@ public class UsersIntegrationTests(
         var users = await ReadAsJsonAsync<List<UserData>>(response);
         users!.Should().Contain(u => u.Email == u1.Email);
         users.Should().Contain(u => u.Email == u2.Email);
+    }
+
+    [Fact(DisplayName = "PUT /users-manager/user/{id} - admin user updates student role")]
+    public async Task UpdateUser_RoleChange_ByLoggedInAdmin_ShouldSucceed()
+    {
+        // Log in as Admin 
+        var admin = await CreateUserAsync(role: "admin");
+
+        // Create student
+        var student = TestDataHelper.CreateUser(email: $"list1_{Guid.NewGuid():N}@test.com");
+        var registerStudent = await Client.PostAsJsonAsync(ApiRoutes.User, student);
+        registerStudent.ShouldBeCreated();
+
+        // Update student role to teacher
+        var update = new UpdateUserModel
+        {
+            Role = Role.Teacher
+        };
+
+        var updateResponse = await Client.PutAsJsonAsync(ApiRoutes.UserById(student.UserId), update);
+        updateResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        // Confirm the role change
+        var getResponse = await Client.GetAsync(ApiRoutes.UserById(student.UserId));
+        var updatedStudent = await ReadAsJsonAsync<UserData>(getResponse);
+        updatedStudent!.Role.Should().Be(Role.Teacher);
+    }
+
+    [Fact(DisplayName = "PUT /users-manager/user/interests/{id} - Student can set their own interests")]
+    public async Task Student_Can_Set_Their_Own_Interests()
+    {
+        var student = await CreateUserAsync();
+
+        var update = new UpdateInterestsRequest
+        {
+            Interests = ["math", "science", "history"]
+        };
+
+        var response = await Client.PutAsJsonAsync(ApiRoutes.UserSetInterests(student.UserId), update);
+        response.ShouldBeOk();
+
+        var fetched = await Client.GetAsync(ApiRoutes.UserById(student.UserId));
+        fetched.ShouldBeOk();
+
+        var data = await ReadAsJsonAsync<UserData>(fetched);
+        data!.Interests.Should().BeEquivalentTo(update.Interests);
+    }
+
+    [Fact(DisplayName = "PUT /users-manager/user/interests/{id} - Admin can update student interests")]
+    public async Task Admin_Can_Set_Interests_For_Any_Student()
+    {
+        var admin = await CreateUserAsync(role: "admin");
+        var student = TestDataHelper.CreateUser(role: "student");
+
+        var registerStudent = await Client.PostAsJsonAsync(ApiRoutes.User, student);
+        registerStudent.ShouldBeCreated();
+
+        // Still authenticated as admin here
+        var update = new UpdateInterestsRequest
+        {
+            Interests = ["biology", "coding"]
+        };
+
+        var response = await Client.PutAsJsonAsync(ApiRoutes.UserSetInterests(student.UserId), update);
+        response.ShouldBeOk();
+
+        var fetched = await Client.GetAsync(ApiRoutes.UserById(student.UserId));
+        fetched.ShouldBeOk();
+        var data = await ReadAsJsonAsync<UserData>(fetched);
+        data!.Interests.Should().BeEquivalentTo(update.Interests);
+    }
+
+    [Fact(DisplayName = "PUT /users-manager/user/interests/{id} - Student cannot set another student’s interests")]
+    public async Task Student_Cannot_Update_Other_Student_Interests()
+    {
+        var _ = await CreateUserAsync();
+        var student2 = TestDataHelper.CreateUser(role: "student");
+
+        var registerOther = await Client.PostAsJsonAsync(ApiRoutes.User, student2);
+        registerOther.ShouldBeCreated();
+
+        var update = new UpdateInterestsRequest
+        {
+            Interests = ["football", "gaming"]
+        };
+
+        var response = await Client.PutAsJsonAsync(ApiRoutes.UserSetInterests(student2.UserId), update);
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 }
