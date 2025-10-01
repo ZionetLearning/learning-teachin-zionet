@@ -20,7 +20,53 @@ kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -
 
 # --- Deploy External Secret for Langfuse ---
 echo "🔐 Deploying External Secret for Langfuse..."
-kubectl apply -f "../kubernetes/charts/templates/kv/externalsecret-langfuse.yaml"
+
+# Create External Secret with proper key names (replace template variables)
+cat <<EOF | kubectl apply -f -
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: langfuse-secrets
+  namespace: $NAMESPACE
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: azure-keyvault-backend
+    kind: ClusterSecretStore
+  target:
+    name: langfuse-secrets
+  data:
+    - secretKey: DATABASE_USERNAME
+      remoteRef:
+        key: "${ENVIRONMENT_NAME}-langfuse-db-username"
+    - secretKey: DATABASE_PASSWORD
+      remoteRef:
+        key: "${ENVIRONMENT_NAME}-langfuse-db-password"
+    - secretKey: NEXTAUTH_SECRET
+      remoteRef:
+        key: "${ENVIRONMENT_NAME}-langfuse-nextauth-secret"
+    - secretKey: SALT
+      remoteRef:
+        key: "${ENVIRONMENT_NAME}-langfuse-salt"
+    - secretKey: REDIS_PASSWORD
+      remoteRef:
+        key: "${ENVIRONMENT_NAME}-langfuse-redis-password"
+    - secretKey: CLICKHOUSE_PASSWORD
+      remoteRef:
+        key: "${ENVIRONMENT_NAME}-langfuse-clickhouse-password"
+    - secretKey: S3_USER
+      remoteRef:
+        key: "${ENVIRONMENT_NAME}-langfuse-s3-user"
+    - secretKey: S3_PASSWORD
+      remoteRef:
+        key: "${ENVIRONMENT_NAME}-langfuse-s3-password"
+    - secretKey: DATABASE_URL
+      remoteRef:
+        key: "${ENVIRONMENT_NAME}-langfuse-db-url"
+    - secretKey: DIRECT_URL
+      remoteRef:
+        key: "${ENVIRONMENT_NAME}-langfuse-direct-url"
+EOF
 
 # Wait for the secret to be created by External Secrets
 echo "⏳ Waiting for langfuse-secrets to be created by External Secrets..."
