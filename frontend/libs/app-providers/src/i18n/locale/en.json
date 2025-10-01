@@ -219,7 +219,9 @@
         "cancel": "Cancel",
         "close": "Close",
         "yes": "Yes",
-        "no": "No"
+        "no": "No",
+        "correct": "Correct!",
+        "incorrect": "Incorrect. Try again."
       },
       "earthquakeMap": {
         "title": "Earthquake Map",
@@ -411,6 +413,22 @@
           "taskNameMinLength": "Task name must be at least 2 characters",
           "taskNameMaxLength": "Task name must not exceed 100 characters"
         }
+      },
+      "practiceMistakes": {
+        "title": "My Practice Mistakes",
+        "description": "Review and retry exercises you previously answered incorrectly.",
+        "noMistakes": "No mistakes found. Great job!",
+        "practiceName": "Practice Name",
+        "difficulty": "Difficulty",
+        "yourLastAnswer": "Your Last Answer",
+        "status": "Status",
+        "action": "Action",
+        "tryAgain": "Try Again!",
+        "retry": "Retry",
+        "failedToLoad": "Failed to load mistakes",
+        "gameType": {
+          "wordOrderGame": "Word Order Game"
+        }
       }
     },
     "sidebar": {
@@ -440,7 +458,8 @@
       "countryExplorer": "Country Explorer",
       "users": "Users",
       "tasks": "Tasks",
-      "profile": "Profile"
+      "profile": "Profile",
+      "myPracticeMistakes": "Practice Mistakes"
     },
     "errorBoundary": {
       "title": "Oops! Something went wrong",

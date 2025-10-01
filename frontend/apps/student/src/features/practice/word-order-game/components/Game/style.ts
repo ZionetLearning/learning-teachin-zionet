@@ -4,14 +4,12 @@ export const useStyles = createUseStyles({
     display: "flex",
     flexDirection: "row",
     justifyContent: "center",
-    gap: "100px",
   },
   speakersContainer: {
-    display: "flex",
-    flexDirection: "row",
+     display: "flex",
+    flexDirection: "column",
+    gap: "20px",
     alignItems: "center",
-    justifyContent: "center",
-    gap: "10px",
   },
   gameLogic: {
     display: "flex",
@@ -19,5 +17,11 @@ export const useStyles = createUseStyles({
     gap: "40px",
     paddingLeft: "0px",
     alignSelf: "center",
+  },
+  speakerAndButtonsWrapper: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "20px",
+    alignItems: "center",
   },
 });

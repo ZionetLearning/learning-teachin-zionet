@@ -24,7 +24,10 @@ export const GameSetupPanel = ({
   const classes = useStyles();
   return (
     <>
-      <Box className={classes.welcomeContainer}>
+      <Box
+        data-testid="typing-welcome-screen"
+        className={classes.welcomeContainer}
+      >
         <Typography
           className={classes.welcomeText}
           variant="body1"
@@ -33,6 +36,7 @@ export const GameSetupPanel = ({
           {t("pages.wordOrderGame.welcome.description")}
         </Typography>
         <Button
+          data-testid="typing-configure-button"
           className={classes.welcomeButton}
           variant="contained"
           size="large"

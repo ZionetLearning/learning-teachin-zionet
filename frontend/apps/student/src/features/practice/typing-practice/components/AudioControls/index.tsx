@@ -95,7 +95,7 @@ export const AudioControls = ({
             onClick={onPlayAudio}
             disabled={audioState.isPlaying}
           >
-            {t("pages.typingPractice.tryAgain")}n
+            {t("pages.typingPractice.tryAgain")}
           </button>
         </div>
       )}
