@@ -69,9 +69,8 @@ export const useStyles = createUseStyles({
   retryButton: {
     textTransform: "none",
     borderRadius: 999,
-    px: 1.8,
-    py: 0.6,
-    bgcolor: "#7c4dff",
+    
+    backgroundColor: "#7c4dff",
     "&:hover": { bgcolor: "#6f3cff" },
   },
 });
