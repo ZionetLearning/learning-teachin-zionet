@@ -126,7 +126,9 @@ export const PracticeMistakes = () => {
                         <TableRow key={`${apiPage}-${idx}`} hover>
                           <TableCell className={classes.td}>
                             <Typography fontWeight={600}>
-                              {item.gameType}
+                              {t(
+                                `pages.practiceMistakes.gameType.${item.gameType}`,
+                              )}
                             </Typography>
                           </TableCell>
 

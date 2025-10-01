@@ -425,7 +425,10 @@
         "action": "Action",
         "tryAgain": "Try Again!",
         "retry": "Retry",
-        "failedToLoad": "Failed to load mistakes"
+        "failedToLoad": "Failed to load mistakes",
+        "gameType": {
+          "wordOrderGame": "Word Order Game"
+        }
       }
     },
     "sidebar": {

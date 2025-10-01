@@ -425,7 +425,10 @@
         "action": "פעולה",
         "tryAgain": "נסה שוב!",
         "retry": "נסה שוב",
-        "failedToLoad": "טעינת טעויות התרגול נכשלה"
+        "failedToLoad": "טעינת טעויות התרגול נכשלה",
+        "gameType": {
+          "wordOrderGame": "משחק סידור מילים"
+        }
       }
     },
     "sidebar": {
