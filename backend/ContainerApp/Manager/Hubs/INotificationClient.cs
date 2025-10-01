@@ -11,4 +11,7 @@ public interface INotificationClient
     Task ReceiveEvent(UserEvent<JsonElement> evt);
 
     Task StreamEvent(StreamEvent<JsonElement> evt);
+
+    Task UserOnline(string userId, string role, string name);
+    Task UserOffline(string userId);
 }
