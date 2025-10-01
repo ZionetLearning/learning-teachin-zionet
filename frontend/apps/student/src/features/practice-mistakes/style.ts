@@ -48,7 +48,6 @@ export const useStyles = createUseStyles({
     background: "rgba(255,255,255,0.98)",
     borderTop: "1px solid #eaeaea",
     backdropFilter: "blur(6px)",
-    zIndex: 10,
   },
   paperWrapper: {
     width: "100%",
@@ -69,7 +68,7 @@ export const useStyles = createUseStyles({
   retryButton: {
     textTransform: "none",
     borderRadius: 999,
-    
+
     backgroundColor: "#7c4dff",
     "&:hover": { bgcolor: "#6f3cff" },
   },
