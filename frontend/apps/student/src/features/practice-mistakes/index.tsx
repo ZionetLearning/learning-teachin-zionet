@@ -15,7 +15,8 @@ import {
   Tooltip,
   Button,
 } from "@mui/material";
-import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+import SkipNextIcon from "@mui/icons-material/SkipNext";
+import SkipPreviousIcon from "@mui/icons-material/SkipPrevious";
 import { useAuth } from "@app-providers";
 import { useGetGameMistakes, GameMistakeItem } from "@student/api";
 import { DifficultyChip, StatusChip } from "./components";
@@ -23,10 +24,11 @@ import { useStyles } from "./style";
 
 export const PracticeMistakes = () => {
   const { user } = useAuth();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const classes = useStyles();
 
   const studentId = user?.userId ?? "";
+  const isHebrew = i18n.language === "he";
 
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -154,9 +156,21 @@ export const PracticeMistakes = () => {
                             <Button
                               size="small"
                               variant="contained"
-                              startIcon={<PlayArrowIcon />}
+                              endIcon={
+                                isHebrew ? (
+                                  <SkipPreviousIcon />
+                                ) : (
+                                  <SkipNextIcon />
+                                )
+                              }
                               onClick={() => handleRetry(item)}
                               className={classes.retryButton}
+                              sx={{
+                                "& .MuiButton-endIcon": {
+                                  ml: 1,
+                                  mr: isHebrew ? 1 : 0,
+                                },
+                              }}
                             >
                               {t("pages.practiceMistakes.retry")}
                             </Button>
