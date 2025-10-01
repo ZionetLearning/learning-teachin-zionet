@@ -97,17 +97,22 @@ metadata:
   name: langfuse-migrate
   namespace: $NAMESPACE
 spec:
-  backoffLimit: 1
+  backoffLimit: 3
+  activeDeadlineSeconds: 600
   template:
     spec:
       restartPolicy: Never
       containers:
       - name: migrate
-        image: langfuse/langfuse:3.108.0
+        image: langfuse/langfuse:3.112.0
         command: ["sh", "-c"]
         args:
           - |
             echo "Running Prisma migrations..."
+            echo "Checking database connection..."
+            npx prisma db pull --schema=packages/shared/prisma/schema.prisma --print || echo "DB connection check completed"
+            
+            echo "Starting migration deployment..."
             npx prisma migrate deploy --schema=packages/shared/prisma/schema.prisma
         envFrom:
         - secretRef:
