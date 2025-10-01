@@ -16,9 +16,12 @@ import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import { useState, useMemo } from "react";
 import { useAuth } from "@app-providers";
 import { useGetGameMistakes, GameMistakeItem } from "@student/api";
-// import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+
 export const PracticeMistakes = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
+
   const studentId = user?.userId ?? "";
 
   const [pageZero, setPageZero] = useState(0);
@@ -32,11 +35,7 @@ export const PracticeMistakes = () => {
     pageSize: rowsPerPage,
   });
 
-  // const navigate = useNavigate();
   const handleRetry = (item: GameMistakeItem) => {
-    //future idea:
-
-    // navigate(`/word-order-game/${item.gameType}`, { state: { mode: "retry", item } });
     console.log("Retry:", item);
   };
 
@@ -48,15 +47,15 @@ export const PracticeMistakes = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     setRowsPerPage(parseInt(e.target.value, 10));
-    setPageZero(0); // חזרה לעמוד הראשון כשמשנים גודל עמוד
+    setPageZero(0);
   };
 
-  if (!studentId) {
-    return <Typography color="error">Missing student ID.</Typography>;
-  }
-
   if (error) {
-    return <Typography color="error">Failed to load mistakes.</Typography>;
+    return (
+      <Typography color="error">
+        {t("pages.practiceMistakes.failedToLoad")}
+      </Typography>
+    );
   }
 
   const items = data?.items ?? [];
@@ -66,7 +65,10 @@ export const PracticeMistakes = () => {
     <Paper>
       <Box display="flex" alignItems="center" justifyContent="center" p={2}>
         <Typography variant="h5" color="#7c4dff">
-          Practice Mistakes
+          {t("pages.practiceMistakes.title")}
+        </Typography>
+        <Typography variant="h6" color="#7c4dff">
+          {t("pages.practiceMistakes.description")}
         </Typography>
         {isFetching && <CircularProgress size={20} />}
       </Box>
@@ -77,7 +79,7 @@ export const PracticeMistakes = () => {
         </Box>
       ) : items.length === 0 ? (
         <Box p={3}>
-          <Typography>No mistakes to practice 🎉</Typography>
+          <Typography>{t("pages.practiceMistakes.noMistakes")}</Typography>
         </Box>
       ) : (
         <Box
@@ -100,11 +102,19 @@ export const PracticeMistakes = () => {
             >
               <TableHead>
                 <TableRow>
-                  <TableCell>Practice Name</TableCell>
-                  <TableCell>Difficulty</TableCell>
-                  <TableCell>Your Last Answer</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell align="right">Action</TableCell>
+                  <TableCell>
+                    {t("pages.practiceMistakes.practiceName")}
+                  </TableCell>
+                  <TableCell>
+                    {t("pages.practiceMistakes.difficulty")}
+                  </TableCell>
+                  <TableCell>
+                    {t("pages.practiceMistakes.yourLastAnswer")}
+                  </TableCell>
+                  <TableCell>{t("pages.practiceMistakes.status")}</TableCell>
+                  <TableCell align="right">
+                    {t("pages.practiceMistakes.action")}
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -121,7 +131,9 @@ export const PracticeMistakes = () => {
                         : "-"}
                     </TableCell>
                     <TableCell>
-                      <Typography color="warning.main">Try again!</Typography>
+                      <Typography color="warning.main">
+                        {t("pages.practiceMistakes.tryAgain")}
+                      </Typography>
                     </TableCell>
                     <TableCell align="right">
                       <IconButton
@@ -130,7 +142,9 @@ export const PracticeMistakes = () => {
                         onClick={() => handleRetry(item)}
                       >
                         <PlayArrowIcon />
-                        <Typography sx={{ fontSize: "16px" }}>Retry</Typography>
+                        <Typography sx={{ fontSize: "16px" }}>
+                          {t("pages.practiceMistakes.retry")}
+                        </Typography>
                       </IconButton>
                     </TableCell>
                   </TableRow>
@@ -146,7 +160,7 @@ export const PracticeMistakes = () => {
             onPageChange={handleChangePage}
             rowsPerPage={rowsPerPage}
             onRowsPerPageChange={handleChangeRowsPerPage}
-            rowsPerPageOptions={[5, 10, 25, 50]}
+            rowsPerPageOptions={[5, 10, 15]}
           />
         </Box>
       )}
