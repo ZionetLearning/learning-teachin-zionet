@@ -313,7 +313,7 @@ kubectl rollout status deploy/langfuse-worker -n "$NAMESPACE" --timeout=300s
 
 # --- Phase 3: Deploy ingress ---
 echo "🌐 Deploying Langfuse ingress..."
-INGRESS_FILE="$SCRIPT_DIR/../kubernetes/ingress/langfuse-ingress.yaml"
+INGRESS_FILE="../kubernetes/ingress/langfuse-ingress.yaml"
 
 if [ -f "$INGRESS_FILE" ]; then
   echo "📁 Applying ingress from: $INGRESS_FILE"
