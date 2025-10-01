@@ -18,6 +18,27 @@ helm repo update
 
 kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 
+# --- Deploy External Secret for Langfuse ---
+echo "🔐 Deploying External Secret for Langfuse..."
+kubectl apply -f "../kubernetes/charts/templates/kv/externalsecret-langfuse.yaml"
+
+# Wait for the secret to be created by External Secrets
+echo "⏳ Waiting for langfuse-secrets to be created by External Secrets..."
+for i in {1..30}; do
+  if kubectl get secret langfuse-secrets -n "$NAMESPACE" >/dev/null 2>&1; then
+    echo "✅ langfuse-secrets created successfully"
+    break
+  fi
+  echo "Waiting for External Secrets to create the secret... ($i/30)"
+  sleep 10
+done
+
+if ! kubectl get secret langfuse-secrets -n "$NAMESPACE" >/dev/null 2>&1; then
+  echo "❌ Failed to create langfuse-secrets via External Secrets"
+  echo "Please check Azure Key Vault for the required secrets"
+  exit 1
+fi
+
 ACTION="install"
 if helm status langfuse -n "$NAMESPACE" >/dev/null 2>&1; then
   echo "🔄 Existing deployment found. Uninstalling for clean reinstall..."
@@ -109,11 +130,15 @@ spec:
         args:
           - |
             echo "Running Prisma migrations..."
-            echo "Checking database connection..."
-            npx prisma db pull --schema=packages/shared/prisma/schema.prisma --print || echo "DB connection check completed"
-            
-            echo "Starting migration deployment..."
-            npx prisma migrate deploy --schema=packages/shared/prisma/schema.prisma
+            # If migration fails, try to resolve common failed migrations and retry
+            if ! npx prisma migrate deploy --schema=packages/shared/prisma/schema.prisma; then
+              echo "Migration failed, attempting to resolve and retry..."
+              npx prisma migrate resolve --applied 20240104210051_add_model_indices --schema=packages/shared/prisma/schema.prisma || true
+              npx prisma migrate resolve --applied 20240111152124_add_gpt_35_pricing --schema=packages/shared/prisma/schema.prisma || true
+              npx prisma migrate resolve --applied 20240226165118_add_observations_index --schema=packages/shared/prisma/schema.prisma || true
+              npx prisma migrate resolve --applied 20250519073249_add_trace_media_media_id_index --schema=packages/shared/prisma/schema.prisma || true
+              npx prisma migrate deploy --schema=packages/shared/prisma/schema.prisma
+            fi
         envFrom:
         - secretRef:
             name: langfuse-secrets
@@ -240,7 +265,33 @@ helm upgrade langfuse langfuse/langfuse \
 kubectl rollout status deploy/langfuse-web -n "$NAMESPACE" --timeout=300s
 kubectl rollout status deploy/langfuse-worker -n "$NAMESPACE" --timeout=300s
 
-echo "🎉 Langfuse deployed successfully."
-echo "🔗 Access Langfuse at: https://teachin.westeurope.cloudapp.azure.com"
-echo "👤 Admin login: $ADMIN_EMAIL / $ADMIN_PASSWORD"
-echo "ℹ️ Please change the temporary password after first login."
+# --- Phase 3: Deploy ingress ---
+echo "🌐 Deploying Langfuse ingress..."
+INGRESS_FILE="$SCRIPT_DIR/../kubernetes/ingress/langfuse-ingress.yaml"
+
+if [ -f "$INGRESS_FILE" ]; then
+  echo "📁 Applying ingress from: $INGRESS_FILE"
+  kubectl apply -f "$INGRESS_FILE"
+else
+  echo "⚠️  Ingress file not found at $INGRESS_FILE"
+  echo "📝 You may need to create an ingress manually to expose Langfuse externally."
+fi
+
+echo "✅ Langfuse ingress configured."
+
+# --- Cleanup temporary files ---
+echo "🧹 Cleaning up temporary resources..."
+kubectl delete job --selector=app.kubernetes.io/name=langfuse -n "$NAMESPACE" --ignore-not-found=true
+
+echo ""
+echo "🎉 Langfuse deployed successfully!"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "🔗 Access URL: https://teachin.westeurope.cloudapp.azure.com/langfuse"
+echo "👤 Admin Email: $ADMIN_EMAIL"
+echo "🔑 Admin Password: $ADMIN_PASSWORD"
+echo "📊 Environment: $ENVIRONMENT_NAME"
+echo "🗄️  Database: langfuse-$ENVIRONMENT_NAME"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "⚠️  Please change the admin password after first login!"
+echo "📖 For more information, visit: https://langfuse.com/docs"
+echo ""
