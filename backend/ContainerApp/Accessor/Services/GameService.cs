@@ -20,7 +20,7 @@ public class GameService : IGameService
     {
         try
         {
-            _logger.LogInformation("Submitting attempt. StudentId={StudentId}, AttemptId={AttemptId}, GivenAnswer={GivenAnswer}", request.StudentId, request.AttemptId, string.Join(" ", request.GivenAnswer ?? new()));
+            _logger.LogInformation("Submitting attempt. StudentId={StudentId}, ExerciseId={ExerciseId}, GivenAnswer={GivenAnswer}", request.StudentId, request.ExerciseId, string.Join(" ", request.GivenAnswer ?? new()));
 
             if (request.GivenAnswer is null)
             {
@@ -29,14 +29,14 @@ public class GameService : IGameService
 
             // Step 1: Load the pending attempt (the "generated sentence")
             var pendingAttempt = await _db.GameAttempts
-                .Where(a => a.StudentId == request.StudentId && a.AttemptId == request.AttemptId)
+                .Where(a => a.StudentId == request.StudentId && a.ExerciseId == request.ExerciseId && a.Status == AttemptStatus.Pending)
                 .FirstOrDefaultAsync(ct);
 
             if (pendingAttempt == null)
             {
                 _logger.LogWarning(
-                    "No pending attempt found for StudentId={StudentId}, AttemptId={AttemptId}",
-                    request.StudentId, request.AttemptId
+                    "No pending attempt found for StudentId={StudentId}, ExerciseId={ExerciseId}",
+                    request.StudentId, request.ExerciseId
                 );
                 throw new InvalidOperationException("No pending attempt found. Generate a sentence first.");
             }
@@ -49,47 +49,48 @@ public class GameService : IGameService
             var lastAttempt = await _db.GameAttempts
                 .Where(a =>
                     a.StudentId == request.StudentId &&
-                    a.GameType == pendingAttempt.GameType &&
-                    a.Difficulty == pendingAttempt.Difficulty &&
-                    a.CorrectAnswer.SequenceEqual(pendingAttempt.CorrectAnswer) &&
+                    a.ExerciseId == request.ExerciseId &&
                     a.Status != AttemptStatus.Pending)
-                .OrderByDescending(a => a.CreatedAt)
+                .OrderByDescending(a => a.AttemptNumber)
                 .FirstOrDefaultAsync(ct);
 
-            var nextAttemptNumber = (lastAttempt == null || lastAttempt.Status == AttemptStatus.Success)
+            var nextAttemptNumber = (lastAttempt == null)
                 ? 1
                 : lastAttempt.AttemptNumber + 1;
 
-            // Step 4: Save new attempt row
-            var attempt = new GameAttempt
+            // Step 4: Create new attempt record (not update the pending one)
+            var newAttempt = new GameAttempt
             {
                 AttemptId = Guid.NewGuid(),
+                ExerciseId = request.ExerciseId,
                 StudentId = request.StudentId,
                 GameType = pendingAttempt.GameType,
                 Difficulty = pendingAttempt.Difficulty,
                 CorrectAnswer = pendingAttempt.CorrectAnswer,
-                GivenAnswer = request.GivenAnswer ?? new(),
+                GivenAnswer = request.GivenAnswer,
                 Status = status,
                 AttemptNumber = nextAttemptNumber,
                 CreatedAt = DateTimeOffset.UtcNow
             };
 
-            _db.GameAttempts.Add(attempt);
+            _db.GameAttempts.Add(newAttempt);
             await _db.SaveChangesAsync(ct);
 
             _logger.LogInformation(
-                "Attempt saved. StudentId={StudentId}, AttemptId={AttemptId}, GameType={GameType}, Difficulty={Difficulty}, Status={Status}, AttemptNumber={AttemptNumber}",
-                request.StudentId, attempt.AttemptId, attempt.GameType, attempt.Difficulty, status, nextAttemptNumber
+                "Attempt saved. StudentId={StudentId}, AttemptId={AttemptId}, ExerciseId={ExerciseId}, GameType={GameType}, Difficulty={Difficulty}, Status={Status}, AttemptNumber={AttemptNumber}",
+                request.StudentId, newAttempt.AttemptId, request.ExerciseId, newAttempt.GameType, newAttempt.Difficulty, status, nextAttemptNumber
             );
 
             // Step 5: Return result to FE
             return new SubmitAttemptResult
             {
                 StudentId = request.StudentId,
-                GameType = attempt.GameType,
-                Difficulty = attempt.Difficulty,
+                ExerciseId = request.ExerciseId,
+                AttemptId = newAttempt.AttemptId,
+                GameType = newAttempt.GameType,
+                Difficulty = newAttempt.Difficulty,
                 Status = status,
-                CorrectAnswer = attempt.CorrectAnswer,
+                CorrectAnswer = newAttempt.CorrectAnswer,
                 AttemptNumber = nextAttemptNumber
             };
         }
@@ -97,8 +98,8 @@ public class GameService : IGameService
         {
             _logger.LogError(
                 ex,
-                "Unexpected error while submitting attempt. StudentId={StudentId}, AttemptId={AttemptId}",
-                request.StudentId, request.AttemptId
+                "Unexpected error while submitting attempt. StudentId={StudentId}, ExerciseId={ExerciseId}",
+                request.StudentId, request.ExerciseId
             );
             throw;
         }
@@ -210,12 +211,12 @@ public class GameService : IGameService
                 .ToListAsync(ct);
 
             var mistakes = attempts
-                .GroupBy(a => new { a.GameType, a.Difficulty, CorrectKey = string.Join(" ", a.CorrectAnswer) })
+                .GroupBy(a => a.ExerciseId)
                 .Where(g => !g.Any(x => x.Status == AttemptStatus.Success))
                 .Select(g => new MistakeDto
                 {
-                    GameType = g.Key.GameType,
-                    Difficulty = g.Key.Difficulty,
+                    GameType = g.First().GameType,
+                    Difficulty = g.First().Difficulty,
                     CorrectAnswer = g.First().CorrectAnswer,
                     WrongAnswers = g.Where(x => x.Status == AttemptStatus.Failure).Select(x => x.GivenAnswer).ToList()
                 })
@@ -332,9 +333,12 @@ public class GameService : IGameService
 
             foreach (var sentence in dto.Sentences)
             {
+                var exerciseId = Guid.NewGuid();
+
                 var attempt = new GameAttempt
                 {
-                    AttemptId = Guid.NewGuid(),
+                    AttemptId = exerciseId, // AttemptId = ExerciseId for the initial save only to keep frontend compatibility, needs refactor later
+                    ExerciseId = exerciseId,
                     StudentId = dto.StudentId,
                     GameType = dto.GameType,
                     Difficulty = dto.Difficulty,
@@ -349,7 +353,7 @@ public class GameService : IGameService
 
                 resultList.Add(new AttemptedSentenceResult
                 {
-                    AttemptId = attempt.AttemptId,
+                    AttemptId = exerciseId, // Return the exerciseId as AttemptId for frontend compatibility, needs refactor later
                     Original = sentence.Original,
                     Words = sentence.CorrectAnswer,
                     Difficulty = dto.Difficulty.ToString().ToLowerInvariant(),

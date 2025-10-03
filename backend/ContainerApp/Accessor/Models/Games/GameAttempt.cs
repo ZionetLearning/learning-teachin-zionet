@@ -5,8 +5,13 @@ namespace Accessor.Models.Games;
 
 public class GameAttempt
 {
+    // for each attempt to answer
     [Key]
     public Guid AttemptId { get; set; }
+
+    // for each generated exercise/sentence 
+    [Required]
+    public Guid ExerciseId { get; set; }
 
     [Required]
     public Guid StudentId { get; set; }
