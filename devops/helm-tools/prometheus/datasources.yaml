@@ -4,4 +4,5 @@ datasources:
     type: prometheus
     access: proxy
     url: http://prom-stack-kube-prometheus-prometheus.monitoring.svc:9090
-    isDefault: true
+    uid: prometheus
+    isDefault: false
