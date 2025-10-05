@@ -734,7 +734,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         var userAnswerText = string.Join(" ", attemptDetails.GivenAnswer);
         var correctAnswerText = string.Join(" ", attemptDetails.CorrectAnswer);
 
-        var mistakeTemplatePrompt = await _accessorClient.GetPromptAsync("prompts.mistake.template", ct);
+        var mistakeTemplatePrompt = await _accessorClient.GetPromptAsync(PromptsKeys.MistakeTemplate, ct);
 
         if (mistakeTemplatePrompt?.Content is not null)
         {
