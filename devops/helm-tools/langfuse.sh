@@ -18,72 +18,7 @@ helm repo update
 
 kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 
-# --- Deploy External Secret for Langfuse ---
-echo "🔐 Deploying External Secret for Langfuse..."
-
-# Create External Secret with proper key names (replace template variables)
-cat <<EOF | kubectl apply -f -
-apiVersion: external-secrets.io/v1
-kind: ExternalSecret
-metadata:
-  name: langfuse-secrets
-  namespace: $NAMESPACE
-spec:
-  refreshInterval: 1h
-  secretStoreRef:
-    name: azure-keyvault-backend
-    kind: ClusterSecretStore
-  target:
-    name: langfuse-secrets
-  data:
-    - secretKey: DATABASE_USERNAME
-      remoteRef:
-        key: "${ENVIRONMENT_NAME}-langfuse-db-username"
-    - secretKey: DATABASE_PASSWORD
-      remoteRef:
-        key: "${ENVIRONMENT_NAME}-langfuse-db-password"
-    - secretKey: NEXTAUTH_SECRET
-      remoteRef:
-        key: "${ENVIRONMENT_NAME}-langfuse-nextauth-secret"
-    - secretKey: SALT
-      remoteRef:
-        key: "${ENVIRONMENT_NAME}-langfuse-salt"
-    - secretKey: REDIS_PASSWORD
-      remoteRef:
-        key: "${ENVIRONMENT_NAME}-langfuse-redis-password"
-    - secretKey: CLICKHOUSE_PASSWORD
-      remoteRef:
-        key: "${ENVIRONMENT_NAME}-langfuse-clickhouse-password"
-    - secretKey: S3_USER
-      remoteRef:
-        key: "${ENVIRONMENT_NAME}-langfuse-s3-user"
-    - secretKey: S3_PASSWORD
-      remoteRef:
-        key: "${ENVIRONMENT_NAME}-langfuse-s3-password"
-    - secretKey: DATABASE_URL
-      remoteRef:
-        key: "${ENVIRONMENT_NAME}-langfuse-db-url"
-    - secretKey: DIRECT_URL
-      remoteRef:
-        key: "${ENVIRONMENT_NAME}-langfuse-direct-url"
-EOF
-
-# Wait for the secret to be created by External Secrets
-echo "⏳ Waiting for langfuse-secrets to be created by External Secrets..."
-for i in {1..30}; do
-  if kubectl get secret langfuse-secrets -n "$NAMESPACE" >/dev/null 2>&1; then
-    echo "✅ langfuse-secrets created successfully"
-    break
-  fi
-  echo "Waiting for External Secrets to create the secret... ($i/30)"
-  sleep 10
-done
-
-if ! kubectl get secret langfuse-secrets -n "$NAMESPACE" >/dev/null 2>&1; then
-  echo "❌ Failed to create langfuse-secrets via External Secrets"
-  echo "Please check Azure Key Vault for the required secrets"
-  exit 1
-fi
+# Note: External Secret will be created by Helm chart, not manually here
 
 ACTION="install"
 if helm status langfuse -n "$NAMESPACE" >/dev/null 2>&1; then
@@ -151,7 +86,26 @@ helm $ACTION langfuse langfuse/langfuse \
   --set-string langfuse.additionalEnv[7].value="https://teachin.westeurope.cloudapp.azure.com/langfuse" \
   --timeout=5m
 
-echo "✅ Chart applied with web=0. Running Prisma migrations as a Job..."
+echo "✅ Chart applied with web=0."
+
+# Wait for the External Secret to be created by Helm and then create the Kubernetes secret
+echo "⏳ Waiting for langfuse-secrets to be created by External Secrets..."
+for i in {1..30}; do
+  if kubectl get secret langfuse-secrets -n "$NAMESPACE" >/dev/null 2>&1; then
+    echo "✅ langfuse-secrets created successfully"
+    break
+  fi
+  echo "Waiting for External Secrets to create the secret... ($i/30)"
+  sleep 10
+done
+
+if ! kubectl get secret langfuse-secrets -n "$NAMESPACE" >/dev/null 2>&1; then
+  echo "❌ Failed to create langfuse-secrets via External Secrets"
+  echo "Please check Azure Key Vault for the required secrets"
+  exit 1
+fi
+
+echo "✅ Secrets ready. Running Prisma migrations as a Job..."
 
 # --- Phase 1.5: run Prisma migrations ---
 kubectl delete job langfuse-migrate -n "$NAMESPACE" --ignore-not-found=true
