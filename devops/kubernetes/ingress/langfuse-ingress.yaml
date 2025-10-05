@@ -19,31 +19,15 @@ spec:
     http:
       paths:
       # Direct auth routes - pass through as-is
-      - path: /auth
+      - path: /auth/
         pathType: Prefix
         backend:
           service:
             name: langfuse-web
             port:
               number: 3000
-      # Direct API auth routes - pass through as-is
-      - path: /api/auth
-        pathType: Prefix
-        backend:
-          service:
-            name: langfuse-web
-            port:
-              number: 3000
-      # Direct API TRPC routes - pass through as-is
-      - path: /api/trpc
-        pathType: Prefix
-        backend:
-          service:
-            name: langfuse-web
-            port:
-              number: 3000
-      # Direct API routes - pass through as-is
-      - path: /api
+      # All API routes (including /api/auth, /api/trpc, etc.)
+      - path: /api/
         pathType: Prefix
         backend:
           service:
