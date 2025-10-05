@@ -29,6 +29,4 @@ public abstract class GamesTestBase(
         var parsedRole = Enum.TryParse<Role>(role, true, out var r) ? r : Role.Student;
         return PerUserFixture.CreateAndLoginAsync(parsedRole, email);
     }
-
-
 }
