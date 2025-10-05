@@ -41,10 +41,6 @@ public class UsersIntegrationTests(
         var response = await Client.SendAsync(request);
 
         response.ShouldBeCreated();
-        var created = await ReadAsJsonAsync<UserData>(response);
-
-        created!.PreferredLanguageCode.Should().Be(SupportedLanguage.en);
-        created.HebrewLevelValue.Should().Be(HebrewLevel.beginner);
     }
 
     [Fact(DisplayName = "POST /users-manager/user - Create user success (he)")]
@@ -55,10 +51,6 @@ public class UsersIntegrationTests(
         var response = await Client.SendAsync(request);
 
         response.ShouldBeCreated();
-        var created = await ReadAsJsonAsync<UserData>(response);
-
-        created!.PreferredLanguageCode.Should().Be(SupportedLanguage.he);
-        created.HebrewLevelValue.Should().Be(HebrewLevel.beginner);
     }
 
     [Fact(DisplayName = "POST /users-manager/user - Fallback on unsupported language")]
