@@ -1,5 +1,4 @@
 ﻿using System.Security.Claims;
-//using System.Text.Json.Serialization;
 using Manager.Constants;
 using Manager.Helpers;
 using Manager.Models.Users;
@@ -109,15 +108,13 @@ public static class UsersEndpoints
             }
 
             // DTO for response 
-            var result = new UserData
+            var result = new UserCreationResultDto
             {
                 UserId = user.UserId,
                 Email = user.Email,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 Role = parsedRole,
-                PreferredLanguageCode = preferredLanguage,
-                HebrewLevelValue = hebrewLevel,
             };
 
             logger.LogInformation("User {Email} created successfully", user.Email);

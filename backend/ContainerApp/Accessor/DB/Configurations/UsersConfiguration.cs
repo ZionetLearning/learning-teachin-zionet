@@ -46,7 +46,7 @@ public class UsersConfiguration : IEntityTypeConfiguration<UserModel>
 
         builder.Property(u => u.Interests)
             .HasColumnType("jsonb")
-            .HasDefaultValueSql("'[]'::jsonb")   // default empty JSON array
+            .HasDefaultValueSql("'[]'::jsonb")
             .IsRequired();
 
     }

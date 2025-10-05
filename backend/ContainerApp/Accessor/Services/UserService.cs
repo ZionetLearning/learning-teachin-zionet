@@ -69,14 +69,23 @@ public class UserService : IUserService
 
     public async Task<bool> CreateUserAsync(UserModel newUser)
     {
-        if (await _db.Users.AnyAsync(u => u.Email == newUser.Email))
+        try
+        {
+            if (await _db.Users.AnyAsync(u => u.Email == newUser.Email))
+            {
+                _logger.LogWarning("CreateUserAsync failed: Email already exists {Email}", newUser.Email);
+                return false;
+            }
+
+            await _db.Users.AddAsync(newUser);
+            await _db.SaveChangesAsync();
+            return true;
+        }
+
+        catch (DbUpdateException ex) when (IsUniqueViolation(ex))
         {
             return false;
         }
-
-        await _db.Users.AddAsync(newUser);
-        await _db.SaveChangesAsync();
-        return true;
     }
 
     public async Task<bool> UpdateUserAsync(UpdateUserModel updateUser, Guid userId)
