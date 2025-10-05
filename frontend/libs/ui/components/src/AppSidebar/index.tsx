@@ -118,7 +118,6 @@ export const AppSidebar = ({
       rootStyles={{
         [`.${sidebarClasses.container}`]: {
           backgroundColor: "#f4f4f4",
-          borderRight: "1px solid #ddd",
           height: "100vh",
           display: "flex",
           flexDirection: "column",
