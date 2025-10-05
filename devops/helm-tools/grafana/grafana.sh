@@ -23,8 +23,8 @@ echo "3. Create namespace if not exists..."
 kubectl get ns "$NAMESPACE" >/dev/null 2>&1 || kubectl create ns "$NAMESPACE"
 
 echo "4. Creating ConfigMaps for Grafana provisioning..."
-kubectl -n "$NAMESPACE" create configmap grafana-alerting --from-file=alerts-rules.yaml=./alerts-rules.yaml --dry-run=client -o yaml | kubectl apply -f -
-kubectl -n "$NAMESPACE" create configmap grafana-notifiers --from-file=notifier-teams.yaml=./notifier-teams.yaml --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n "$NAMESPACE" create configmap grafana-alerting --from-file=alerts-rules.yaml=./provisioning/alerting/alerts-rules.yaml --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n "$NAMESPACE" create configmap grafana-notifiers --from-file=notifier-teams.yaml=./provisioning/notifiers/notifier-teams.yaml --dry-run=client -o yaml | kubectl apply -f -
 
 echo "5. Install/upgrade Grafana with subpath configuration..."
 helm upgrade --install grafana grafana/grafana \
@@ -37,23 +37,22 @@ helm upgrade --install grafana grafana/grafana \
   --set service.type=ClusterIP \
   --set sidecar.dashboards.enabled=true \
   --set sidecar.dashboards.searchNamespace="$NAMESPACE" \
-  --set sidecar.datasources.enabled=true \
+  --set sidecar.datasources.enabled=false \
+  --set sidecar.datasources.defaultDatasourceEnabled=false \
   --set env.GF_SERVER_ROOT_URL="https://$CONTROLLER_IP/grafana/" \
   --set env.GF_SERVER_SERVE_FROM_SUB_PATH="true" \
   --set env.GF_SERVER_DOMAIN="$CONTROLLER_IP" \
   --set env.GF_INSTALL_PLUGINS="grafana-azure-monitor-datasource" \
+  --set env.GF_ALERTING_ENABLED="true" \
+  --set env.GF_UNIFIED_ALERTING_ENABLED="false" \
   --set resources.requests.memory="128Mi" \
   --set resources.limits.memory="256Mi" \
-  --set "extraConfigmapMounts[0].name=grafana-alerting" \
-  --set "extraConfigmapMounts[0].configMap=grafana-alerting" \
-  --set "extraConfigmapMounts[0].mountPath=/provisioning/alerting" \
-  --set "extraConfigmapMounts[0].readOnly=true" \
-  --set "extraConfigmapMounts[1].name=grafana-notifiers" \
-  --set "extraConfigmapMounts[1].configMap=grafana-notifiers" \
-  --set "extraConfigmapMounts[1].mountPath=/provisioning/notifiers" \
-  --set "extraConfigmapMounts[1].readOnly=true" \
   --set env.TEAMS_WEBHOOK_URL="$TEAMS_WEBHOOK_URL" \
   --wait
+
+echo "6. Checking Grafana pod status..."
+kubectl get pods -n "$NAMESPACE" -l app.kubernetes.io/name=grafana
+kubectl describe pod -n "$NAMESPACE" -l app.kubernetes.io/name=grafana | grep -A 10 "Events:"
 
 echo
 echo "✅ Grafana should be available at:"
