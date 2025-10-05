@@ -26,6 +26,8 @@ import { useGetStudentPracticeHistory } from "./api";
 import { useStyles } from "./style";
 import { buildCsvHeaders, levelToLabel, toCsvRow } from "./utils";
 
+const DIFFICULTY_ORDER = ["Easy", "Medium", "Hard"] as const;
+
 export const StudentPracticeHistory = () => {
   const classes = useStyles();
   const { t } = useTranslation();
@@ -55,13 +57,10 @@ export const StudentPracticeHistory = () => {
     [allItems],
   );
 
-  const difficulties = useMemo(
-    () =>
-      Array.from(
-        new Set(allItems.map((i) => levelToLabel(i.difficulty))),
-      ).sort() as Array<"Easy" | "Medium" | "Hard">,
-    [allItems],
-  );
+  const difficulties = useMemo(() => {
+    const present = new Set(allItems.map((i) => levelToLabel(i.difficulty)));
+    return DIFFICULTY_ORDER.filter((d) => present.has(d));
+  }, [allItems]);
 
   const filtered = useMemo(
     () =>
@@ -148,7 +147,7 @@ export const StudentPracticeHistory = () => {
             label={t("pages.studentPracticeHistory.filters.difficulty")}
             value={difficulty}
             onChange={(e) => {
-              setDifficulty(e.target.value);
+              setDifficulty(e.target.value as typeof difficulty);
               setPage(0);
             }}
           >
@@ -290,7 +289,7 @@ export const StudentPracticeHistory = () => {
                           align="center"
                           className={`${classes.colDifficulty} ${classes.cap}`}
                         >
-                          {it.difficulty}
+                          {levelToLabel(it.difficulty)}
                         </TableCell>
 
                         <TableCell

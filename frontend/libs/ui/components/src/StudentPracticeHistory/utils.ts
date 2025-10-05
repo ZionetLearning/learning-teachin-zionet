@@ -3,7 +3,7 @@ export type DifficultyLabel = "Easy" | "Medium" | "Hard";
 
 export const levelToLabel = (level: string | number): DifficultyLabel => {
   if (typeof level === "number") {
-    const n = Number(level);
+    const n = level;
     return n === 0 ? "Easy" : n === 1 ? "Medium" : "Hard";
   }
   const s = String(level).toLowerCase();
