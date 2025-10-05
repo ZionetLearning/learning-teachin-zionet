@@ -436,7 +436,7 @@
           "all": "All"
         },
         "exportPage": "Export (page)",
-        "exportCurrentPage": "Export only current page"
+        "exportCurrentPage": "Export current page"
       }
     },
     "sidebar": {

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import DownloadIcon from "@mui/icons-material/Download";
 import {
@@ -22,21 +22,9 @@ import {
 import { CSVLink } from "react-csv";
 import { useTranslation } from "react-i18next";
 
-import { DifficultyLevel } from "@student/types";
 import { useGetStudentPracticeHistory } from "./api";
 import { useStyles } from "./style";
-
-const levelToLabel = (
-  level: DifficultyLevel | string,
-): "Easy" | "Medium" | "Hard" => {
-  if (typeof level === "number") {
-    return level === 0 ? "Easy" : level === 1 ? "Medium" : "Hard";
-  }
-  const s = String(level).toLowerCase();
-  if (s === "0" || s === "easy") return "Easy";
-  if (s === "1" || s === "medium") return "Medium";
-  return "Hard";
-};
+import { buildCsvHeaders, levelToLabel, toCsvRow } from "./utils";
 
 export const StudentPracticeHistory = () => {
   const classes = useStyles();
@@ -90,59 +78,17 @@ export const StudentPracticeHistory = () => {
     [filtered, page, rowsPerPage],
   );
 
-  const csvHeaders = useMemo(
-    () => [
-      {
-        label: t("pages.studentPracticeHistory.columns.studentName"),
-        key: "studentName",
-      },
-      {
-        label: t("pages.studentPracticeHistory.columns.gameType"),
-        key: "gameType",
-      },
-      {
-        label: t("pages.studentPracticeHistory.columns.difficulty"),
-        key: "difficulty",
-      },
-      {
-        label: t("pages.studentPracticeHistory.columns.attempts"),
-        key: "attempts",
-      },
-      {
-        label: t("pages.studentPracticeHistory.columns.successes"),
-        key: "successes",
-      },
-      {
-        label: t("pages.studentPracticeHistory.columns.failures"),
-        key: "failures",
-      },
-      {
-        label: t("pages.studentPracticeHistory.columns.successRate"),
-        key: "successRate",
-      },
-    ],
-    [t],
-  );
-
-  const toCsvRow = useCallback((it: (typeof allItems)[number]) => {
-    const rate =
-      it.attemptsCount > 0
-        ? Math.round((it.totalSuccesses / it.attemptsCount) * 100)
-        : 0;
-    return {
-      studentName: it.studentId,
-      gameType: it.gameType,
-      difficulty: levelToLabel(it.difficulty),
-      attempts: it.attemptsCount,
-      successes: it.totalSuccesses,
-      failures: it.totalFailures,
-      successRate: `${rate}%`,
-    };
-  }, []);
+  const csvHeaders = useMemo(() => buildCsvHeaders(t), [t]);
 
   const csvPage = useMemo(
-    () => pagedItems.map(toCsvRow),
-    [pagedItems, toCsvRow],
+    () =>
+      pagedItems.map((it) =>
+        toCsvRow(it, {
+          levelToLabel,
+          rate: (s, a) => (a > 0 ? Math.round((s / a) * 100) : 0),
+        }),
+      ),
+    [pagedItems],
   );
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
