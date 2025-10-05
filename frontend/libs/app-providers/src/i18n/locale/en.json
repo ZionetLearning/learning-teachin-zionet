@@ -414,6 +414,22 @@
           "taskNameMaxLength": "Task name must not exceed 100 characters"
         }
       },
+      "practiceMistakes": {
+        "title": "My Practice Mistakes",
+        "description": "Review and retry exercises you previously answered incorrectly.",
+        "noMistakes": "No mistakes found. Great job!",
+        "practiceName": "Practice Name",
+        "difficulty": "Difficulty",
+        "yourLastAnswer": "Your Last Answer",
+        "status": "Status",
+        "action": "Action",
+        "tryAgain": "Try Again!",
+        "retry": "Retry",
+        "failedToLoad": "Failed to load mistakes",
+        "gameType": {
+          "wordOrderGame": "Word Order Game"
+        }
+      },
       "studentPracticeHistory": {
         "title": "Student Practice History",
         "columns": {
@@ -467,6 +483,7 @@
       "users": "Users",
       "tasks": "Tasks",
       "profile": "Profile",
+      "myPracticeMistakes": "Practice Mistakes",
       "studentPracticeHistory": "Practice History"
     },
     "errorBoundary": {

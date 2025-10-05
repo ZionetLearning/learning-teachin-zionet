@@ -414,6 +414,22 @@
           "taskNameMaxLength": "שם המשימה לא יכול להכיל יותר מ-100 תווים"
         }
       },
+      "practiceMistakes": {
+        "title": "טעויות התרגול שלי",
+        "description": "סקור ונסה שוב תרגילים שענית עליהם בעבר בצורה שגויה.",
+        "noMistakes": "אין טעויות כלל! עבודה טובה!",
+        "practiceName": "שם התרגול",
+        "difficulty": "רמת קושי",
+        "yourLastAnswer": "התשובה האחרונה שלך",
+        "status": "סטטוס",
+        "action": "פעולה",
+        "tryAgain": "נסה שוב!",
+        "retry": "נסה שוב",
+        "failedToLoad": "טעינת טעויות התרגול נכשלה",
+        "gameType": {
+          "wordOrderGame": "משחק סידור מילים"
+        }
+      },
       "studentPracticeHistory": {
         "title": "היסטוריית תרגול תלמידים",
         "columns": {
@@ -467,6 +483,7 @@
       "users": "משתמשים",
       "tasks": "משימות",
       "profile": "פרופיל",
+      "myPracticeMistakes": "טעויות התרגול שלי",
       "studentPracticeHistory": "היסטוריית תרגול"
     },
     "errorBoundary": {
