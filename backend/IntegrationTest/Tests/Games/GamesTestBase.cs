@@ -30,15 +30,5 @@ public abstract class GamesTestBase(
         return PerUserFixture.CreateAndLoginAsync(parsedRole, email);
     }
 
-    /// <summary>
-    /// Creates a "pending" game attempt by directly inserting it into the database via a game generation endpoint.
-    /// Since we don't have direct DB access in integration tests, we'll simulate this by calling the sentence generation endpoint.
-    /// </summary>
-    protected async Task<Guid> CreatePendingAttemptAsync(Guid studentId, List<string> correctAnswer, string gameType = "SplitSentence", string difficulty = "Easy")
-    {
-        // Note: In a real scenario, we would call the sentence generation endpoint
-        // For now, we'll just return a new GUID as a placeholder
-        // The actual implementation should use the sentence generation endpoint
-        return Guid.NewGuid();
-    }
+
 }
