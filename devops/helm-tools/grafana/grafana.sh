@@ -40,7 +40,20 @@ helm upgrade --install grafana grafana/grafana \
   --set env.GF_INSTALL_PLUGINS="grafana-azure-monitor-datasource" \
   --set resources.requests.memory="128Mi" \
   --set resources.limits.memory="256Mi" \
+  --set "extraConfigmapMounts[0].name=grafana-alerting" \
+  --set "extraConfigmapMounts[0].configMap=grafana-alerting" \
+  --set "extraConfigmapMounts[0].mountPath=/etc/grafana/provisioning/alerting" \
+  --set "extraConfigmapMounts[0].readOnly=true" \
+  --set "extraConfigmapMounts[1].name=grafana-notifiers" \
+  --set "extraConfigmapMounts[1].configMap=grafana-notifiers" \
+  --set "extraConfigmapMounts[1].mountPath=/etc/grafana/provisioning/notifiers" \
+  --set "extraConfigmapMounts[1].readOnly=true" \
+  --set env.TEAMS_WEBHOOK_URL="$TEAMS_WEBHOOK_URL" \
   --wait
+
+echo "5. Creating ConfigMaps for Grafana provisioning..."
+kubectl -n "$NAMESPACE" create configmap grafana-alerting --from-file=alert-rules.yaml=./alert-rules.yaml --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n "$NAMESPACE" create configmap grafana-notifiers --from-file=notifier-teams.yaml=./notifier-teams.yaml --dry-run=client -o yaml | kubectl apply -f -
 
 echo
 echo "✅ Grafana should be available at:"

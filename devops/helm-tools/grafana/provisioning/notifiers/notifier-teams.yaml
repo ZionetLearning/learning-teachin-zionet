@@ -1,0 +1,10 @@
+apiVersion: 1
+notifiers:
+  - name: "teams-webhook"
+    type: "teams"
+    uid: "teams-webhook"
+    org_id: 1
+    is_default: false
+    settings:
+      url: "$TEAMS_WEBHOOK_URL"
+    secure_settings: {}
