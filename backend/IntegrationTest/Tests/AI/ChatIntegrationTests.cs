@@ -1,6 +1,10 @@
 ﻿using FluentAssertions;
+using IntegrationTests.Constants;
 using IntegrationTests.Fixtures;
 using Manager.Models.Chat;
+using Manager.Models.Users;
+using Microsoft.CognitiveServices.Speech.Transcription;
+using System.Net.Http.Json;
 using System.Text.RegularExpressions;
 using Xunit.Abstractions;
 

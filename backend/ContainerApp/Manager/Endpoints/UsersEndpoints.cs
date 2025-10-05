@@ -20,6 +20,7 @@ public static class UsersEndpoints
         usersGroup.MapPost("/user", CreateUserAsync).WithName("CreateUser");
         usersGroup.MapPut("/user/{userId:guid}", UpdateUserAsync).WithName("UpdateUser").RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
         usersGroup.MapDelete("/user/{userId:guid}", DeleteUserAsync).WithName("DeleteUser").RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
+        usersGroup.MapPut("user/interests/{userId:guid}", SetUserInterestsAsync).WithName("SetUserInterests").RequireAuthorization(PolicyNames.AdminOrStudent);
 
         usersGroup.MapGet("/teacher/{teacherId:guid}/students", ListStudentsForTeacherAsync).WithName("ListStudentsForTeacher").RequireAuthorization(PolicyNames.AdminOrTeacher);
         usersGroup.MapPost("/teacher/{teacherId:guid}/students/{studentId:guid}", AssignStudentAsync).WithName("AssignStudentToTeacher").RequireAuthorization(PolicyNames.AdminOrTeacher);
@@ -95,7 +96,7 @@ public static class UsersEndpoints
                 Password = BCrypt.Net.BCrypt.HashPassword(newUser.Password),
                 Role = parsedRole,
                 PreferredLanguageCode = preferredLanguage,
-                HebrewLevelValue = hebrewLevel
+                HebrewLevelValue = hebrewLevel,
             };
 
             // Send to accessor
@@ -106,16 +107,14 @@ public static class UsersEndpoints
                 return Results.Conflict("User could not be created (may already exist or invalid data).");
             }
 
-            // DTO for response (never return raw password)
-            var result = new UserData
+            // DTO for response 
+            var result = new UserCreationResultDto
             {
                 UserId = user.UserId,
                 Email = user.Email,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 Role = parsedRole,
-                PreferredLanguageCode = preferredLanguage,
-                HebrewLevelValue = hebrewLevel
             };
 
             logger.LogInformation("User {Email} created successfully", user.Email);
@@ -187,6 +186,13 @@ public static class UsersEndpoints
             {
                 logger.LogWarning("Non-student tried to set HebrewLevel. Role: {Role}", existingUser.Role);
                 return Results.BadRequest("Hebrew level can only be set for students.");
+            }
+
+            // only students can have interests
+            if (user.Interests is not null && existingUser.Role != Role.Student)
+            {
+                logger.LogWarning("Non-student tried to set interests. Role: {Role}", existingUser.Role);
+                return Results.BadRequest("Only students can set interests.");
             }
 
             // Only Admins can change role of another user
@@ -270,6 +276,7 @@ public static class UsersEndpoints
             return Results.Problem("Failed to retrieve users.");
         }
     }
+
     private static async Task<IResult> ListStudentsForTeacherAsync(
         [FromRoute] Guid teacherId,
         [FromServices] IAccessorClient accessorClient,
@@ -443,6 +450,66 @@ public static class UsersEndpoints
         {
             logger.LogError(ex, "Failed to list teachers for student.");
             return Results.Problem("Failed to retrieve teachers.");
+        }
+    }
+
+    private static async Task<IResult> SetUserInterestsAsync(
+        [FromRoute] Guid userId,
+        [FromBody] UpdateInterestsRequest request,
+        [FromServices] IAccessorClient accessorClient,
+        [FromServices] ILogger<UserEndpoint> logger,
+        HttpContext httpContext)
+    {
+        using var scope = logger.BeginScope("SetUserInterests {UserId}:", userId);
+
+        try
+        {
+            var callerIdRaw = httpContext.User.FindFirstValue(AuthSettings.UserIdClaimType);
+            var callerRole = httpContext.User.FindFirstValue(AuthSettings.RoleClaimType);
+
+            if (string.IsNullOrWhiteSpace(callerRole) || !Guid.TryParse(callerIdRaw, out var callerId))
+            {
+                logger.LogWarning("Unauthorized: missing role or caller ID.");
+                return Results.Unauthorized();
+            }
+
+            // Fetch target user
+            var targetUser = await accessorClient.GetUserAsync(userId);
+            if (targetUser is null)
+            {
+                logger.LogWarning("User {UserId} not found", userId);
+                return Results.NotFound("User not found.");
+            }
+
+            // Only students can have interests
+            if (targetUser.Role != Role.Student)
+            {
+                logger.LogWarning("Interests can only be set for students. Role: {Role}", targetUser.Role);
+                return Results.BadRequest("Only students can have interests.");
+            }
+
+            // Authorization: Admins or the student themself
+            if (callerRole != Role.Admin.ToString() && callerId != userId)
+            {
+                logger.LogWarning("Forbidden: caller {CallerId} with role {Role} tried to update interests for {TargetUserId}.", callerId, callerRole, userId);
+                return Results.Forbid();
+            }
+
+            // Update interests and save
+            targetUser.Interests = request.Interests;
+
+            var updateUser = new UpdateUserModel
+            {
+                Interests = targetUser.Interests
+            };
+
+            var updated = await accessorClient.UpdateUserAsync(updateUser, userId);
+            return updated ? Results.Ok("Interests updated.") : Results.Problem("Failed to update interests.");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to set user interests.");
+            return Results.Problem("Unexpected error.");
         }
     }
 }
