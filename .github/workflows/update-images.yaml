@@ -34,6 +34,11 @@ on:
         required: false
         type: string
         default: ''
+      unlock_featest:
+        description: 'Set to true to only unlock featest environment (skips deployment)'
+        required: false
+        default: false
+        type: boolean
   workflow_call:
     inputs:
       environment:
@@ -51,9 +56,23 @@ on:
         required: false
         type: string
         default: ''
-
+        
 jobs:
+
+  lock-featest:
+    if: inputs.environment_name == 'featest'
+    permissions:
+      contents: read
+      issues: write
+    uses: ./.github/workflows/lock-environment.yaml
+    with:
+      action: ${{ (inputs.unlock_featest == true) && 'unlock' || 'lock' }}
+
   set-defaults:
+    needs: [lock-featest]
+    if: |
+      (needs.lock-featest.result == 'success' || needs.lock-featest.result == 'skipped') &&
+      (inputs.unlock_featest != true && github.event.inputs.unlock_featest != 'true')
     runs-on: ubuntu-latest
     outputs:
       environment: ${{ steps.defaults.outputs.environment }}
