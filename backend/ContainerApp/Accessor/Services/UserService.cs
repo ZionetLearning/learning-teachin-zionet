@@ -47,7 +47,8 @@ public class UserService : IUserService
             LastName = user.LastName,
             Role = user.Role,
             PreferredLanguageCode = user.PreferredLanguageCode,
-            HebrewLevelValue = user.HebrewLevelValue
+            HebrewLevelValue = user.HebrewLevelValue,
+            Interests = user.Interests
         };
     }
 
@@ -61,20 +62,30 @@ public class UserService : IUserService
                 LastName = u.LastName,
                 Role = u.Role,
                 PreferredLanguageCode = u.PreferredLanguageCode,
-                HebrewLevelValue = u.HebrewLevelValue
+                HebrewLevelValue = u.HebrewLevelValue,
+                Interests = u.Interests
             })
             .ToListAsync();
 
     public async Task<bool> CreateUserAsync(UserModel newUser)
     {
-        if (await _db.Users.AnyAsync(u => u.Email == newUser.Email))
+        try
+        {
+            if (await _db.Users.AnyAsync(u => u.Email == newUser.Email))
+            {
+                _logger.LogWarning("CreateUserAsync failed: Email already exists.");
+                return false;
+            }
+
+            await _db.Users.AddAsync(newUser);
+            await _db.SaveChangesAsync();
+            return true;
+        }
+
+        catch (DbUpdateException ex) when (IsUniqueViolation(ex))
         {
             return false;
         }
-
-        await _db.Users.AddAsync(newUser);
-        await _db.SaveChangesAsync();
-        return true;
     }
 
     public async Task<bool> UpdateUserAsync(UpdateUserModel updateUser, Guid userId)
@@ -111,6 +122,11 @@ public class UserService : IUserService
             user.Role = updateUser.Role.Value;
         }
 
+        if (updateUser.Interests is not null)
+        {
+            user.Interests = updateUser.Interests;
+        }
+
         await _db.SaveChangesAsync();
         return true;
     }
@@ -128,6 +144,7 @@ public class UserService : IUserService
         await _db.SaveChangesAsync();
         return true;
     }
+
     public async Task<IEnumerable<UserData>> GetAllUsersAsync(Role? roleFilter = null, Guid? teacherId = null, CancellationToken ct = default)
     {
         _logger.LogInformation("GetAllUsers START (roleFilter={Role}, teacherId={Teacher})",
@@ -150,7 +167,8 @@ public class UserService : IUserService
                     Email = u.Email,
                     FirstName = u.FirstName,
                     LastName = u.LastName,
-                    Role = u.Role
+                    Role = u.Role,
+                    Interests = u.Interests
                 })
                 .ToListAsync(ct);
 
@@ -324,6 +342,39 @@ public class UserService : IUserService
         catch (Exception ex)
         {
             _logger.LogError(ex, "GetTeachersForStudent FAILED (studentId={StudentId})", studentId);
+            throw;
+        }
+    }
+
+    public async Task<List<string>> GetUserInterestsAsync(Guid userId)
+    {
+        _logger.LogInformation("GetUserInterests START (userId={UserId})", userId);
+        try
+        {
+            if (userId == Guid.Empty)
+            {
+                _logger.LogWarning("Invalid userId provided.");
+                return [];
+            }
+
+            var interests = await _db.Users
+                .AsNoTracking()
+                .Where(u => u.UserId == userId)
+                .Select(u => u.Interests)
+                .FirstOrDefaultAsync();
+
+            if (interests == null)
+            {
+                _logger.LogWarning("User not found or has no interests (userId={UserId})", userId);
+                return [];
+            }
+
+            _logger.LogInformation("GetUserInterests END (userId={UserId}), {Count} interests", userId, interests.Count);
+            return interests;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetUserInterests FAILED (userId={UserId})", userId);
             throw;
         }
     }

@@ -5,6 +5,7 @@ using IntegrationTests.Infrastructure;
 using IntegrationTests.Models.Ai.Sentences;
 using IntegrationTests.Models.Notification;
 using Models.Ai.Sentences;
+using System.Net.Http.Json;
 using System.Text.Json;
 using Xunit.Abstractions;
 
@@ -65,6 +66,7 @@ namespace IntegrationTests.Tests.AI
                 Assert.Equal(request.Nikud, s.Nikud);
             });
         }
+
         [Theory]
         [InlineData(1, Difficulty.hard, false)]
         [InlineData(5, Difficulty.medium, false)]

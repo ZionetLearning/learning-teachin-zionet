@@ -22,6 +22,7 @@ import {
   WordOrderGamePage,
   PracticeHistoryPage,
   ProfilePage,
+  PracticeMistakesPage,
 } from "./pages";
 import "./App.css";
 import { AppRole } from "@app-providers";
@@ -69,6 +70,7 @@ function App() {
           <Route path="/country-explorer" element={<CountryExplorerPage />} />
           <Route path="/practice-history" element={<PracticeHistoryPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/practice-mistakes" element={<PracticeMistakesPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

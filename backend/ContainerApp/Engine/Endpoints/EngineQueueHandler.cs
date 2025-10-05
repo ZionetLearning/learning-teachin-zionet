@@ -2,7 +2,7 @@
 using System.Text;
 using Dapr.Client;
 using DotQueue;
-using Engine.Constants;
+using Engine.Constants.Chat;
 using Engine.Helpers;
 using Engine.Models;
 using Engine.Models.Chat;
@@ -27,14 +27,12 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
     private readonly IAccessorClient _accessorClient;
     private readonly IChatTitleService _chatTitleService;
     protected override MessageAction GetAction(Message message) => message.ActionName;
-
     protected override void Configure(RouteBuilder routes) => routes
         .On(MessageAction.CreateTask, HandleCreateTaskAsync)
         .On(MessageAction.TestLongTask, HandleTestLongTaskAsync)
         .On(MessageAction.ProcessingChatMessage, HandleProcessingChatMessageAsync)
         .On(MessageAction.GenerateSentences, HandleSentenceGenerationAsync)
         .On(MessageAction.GenerateSplitSentences, HandleSentenceGenerationAsync);
-
     public EngineQueueHandler(
         DaprClient daprClient,
         ILogger<EngineQueueHandler> logger,
@@ -54,19 +52,15 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         _chatTitleService = chatTitleService;
         _sentencesService = sentencesService;
     }
-
     private async Task HandleCreateTaskAsync(Message message, IReadOnlyDictionary<string, string>? metadata, Func<Task> renewLock, CancellationToken cancellationToken)
     {
         try
         {
             var payload = PayloadValidation.DeserializeOrThrow<TaskModel>(message, _logger);
             PayloadValidation.ValidateTask(payload, _logger);
-
             using var _ = _logger.BeginScope("Processing TaskId: {TaskId}", payload.Id);
             _logger.LogInformation("Inside {Method}", nameof(HandleCreateTaskAsync));
-
             cancellationToken.ThrowIfCancellationRequested();
-
             if (payload is null)
             {
                 _logger.LogWarning("Attempted to process a null task");
@@ -74,9 +68,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
             }
 
             _logger.LogInformation("Logged task: {Name}", payload.Name);
-
             await _daprClient.InvokeMethodAsync(HttpMethod.Post, "accessor", "tasks-accessor/task", payload, cancellationToken);
-
             _logger.LogInformation("Task {Id} forwarded to the Accessor service", payload.Id);
         }
         catch (NonRetryableException ex)
@@ -120,14 +112,10 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         {
             var payload = PayloadValidation.DeserializeOrThrow<TaskModel>(message, _logger);
             PayloadValidation.ValidateTask(payload, _logger);
-
             await Task.Delay(TimeSpan.FromSeconds(80), cancellationToken);
-
             using var _ = _logger.BeginScope("Starting long task handler for Task {Id}", payload.Id);
             _logger.LogInformation("Inside {Method}", nameof(HandleTestLongTaskAsync));
-
             cancellationToken.ThrowIfCancellationRequested();
-
             if (payload is null)
             {
                 _logger.LogWarning("Attempted to process a null task");
@@ -135,10 +123,8 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
             }
 
             _logger.LogInformation("Logged task: {Name}", payload.Name);
-
             await _daprClient.InvokeMethodAsync(
                 HttpMethod.Post, "accessor", "tasks-accessor/task", payload, cancellationToken);
-
             _logger.LogInformation("Task {Id} forwarded to the Accessor service", payload.Id);
         }
         catch (NonRetryableException ex)
@@ -170,7 +156,6 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         long addOrCheckSystemPromptTime = 0;
         long addOrCheckChatNameTime = 0;
         long afterChatServiseTime = 0;
-
         var sw = Stopwatch.StartNew();
         EngineChatRequest? request = null;
         var chatName = string.Empty;
@@ -184,12 +169,9 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         {
             request = PayloadValidation.DeserializeOrThrow<EngineChatRequest>(message, _logger);
             PayloadValidation.ValidateEngineChatRequest(request, _logger);
-
             var userContext = MetadataValidation.DeserializeOrThrow<UserContextMetadata>(message, _logger);
             MetadataValidation.ValidateUserContext(userContext, _logger);
-
             using var _ = _logger.BeginScope(new { request.RequestId, request.ThreadId, request.UserId });
-
             if (request.UserId == Guid.Empty)
             {
                 throw new NonRetryableException("UserId is required.");
@@ -208,7 +190,6 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
             }
 
             var snapshot = await _accessorClient.GetHistorySnapshotAsync(request.ThreadId, request.UserId, ct);
-
             getHistoryTime = sw.ElapsedMilliseconds;
             var skHistory = HistoryMapper.ToChatHistoryFromElement(snapshot.History);
             var storyForKernel = HistoryMapper.CloneToChatHistory(skHistory);
@@ -220,7 +201,6 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
             }
 
             addOrCheckSystemPromptTime = sw.ElapsedMilliseconds;
-
             storyForKernel.AddUserMessage(request.UserMessage.Trim(), DateTimeOffset.UtcNow);
 
             chatName = snapshot.Name;
@@ -238,7 +218,6 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
             }
 
             addOrCheckChatNameTime = sw.ElapsedMilliseconds;
-
             var upsertUserMessage = new UpsertHistoryRequest
             {
                 ThreadId = request.ThreadId,
@@ -247,7 +226,6 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
                 ChatType = request.ChatType.ToString().ToLowerInvariant(),
                 History = HistoryMapper.SerializeHistory(storyForKernel)
             };
-
             await _accessorClient.UpsertHistorySnapshotAsync(upsertUserMessage, ct);
 
             serviceRequest = new ChatAiServiseRequest
@@ -392,6 +370,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
             throw;
         }
+
         catch (NonRetryableException ex)
         {
             _logger.LogError(ex, "Non-retryable error processing message {Action}", message.ActionName);
@@ -463,11 +442,10 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         {
             var batch = await _accessorClient.GetPromptsBatchAsync(keys, ct);
             var map = batch.Prompts.ToDictionary(p => p.PromptKey, p => p.Content, StringComparer.Ordinal);
-
             var combined = string.Join(
-                "\n\n",
-                keys.Select(k => map.TryGetValue(k, out var v) ? v : null)
-                    .Where(v => !string.IsNullOrWhiteSpace(v)));
+            "\n\n",
+            keys.Select(k => map.TryGetValue(k, out var v) ? v : null)
+                .Where(v => !string.IsNullOrWhiteSpace(v)));
 
             if (string.IsNullOrWhiteSpace(combined))
             {
@@ -498,7 +476,15 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
             PayloadValidation.ValidateSentenceGenerationRequest(payload, _logger);
 
             _logger.LogDebug("Processing sentence generation");
-            var response = await _sentencesService.GenerateAsync(payload, cancellationToken);
+            // inject user interests
+            var userInterests = await _accessorClient.GetUserInterestsAsync(payload.UserId, cancellationToken);
+            if (userInterests == null)
+            {
+                _logger.LogWarning("No interests found for user {UserId}", payload.UserId);
+                throw new NonRetryableException("User interests is null.");
+            }
+
+            var response = await _sentencesService.GenerateAsync(payload, userInterests, cancellationToken);
             var userId = payload.UserId;
             await _publisher.SendGeneratedMessagesAsync(userId.ToString(), response, message.ActionName, cancellationToken);
         }
