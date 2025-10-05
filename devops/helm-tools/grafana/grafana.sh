@@ -23,7 +23,7 @@ echo "3. Create namespace if not exists..."
 kubectl get ns "$NAMESPACE" >/dev/null 2>&1 || kubectl create ns "$NAMESPACE"
 
 echo "4. Creating ConfigMaps for Grafana provisioning..."
-kubectl -n "$NAMESPACE" create configmap grafana-alerting --from-file=alert-rules.yaml=./alert-rules.yaml --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n "$NAMESPACE" create configmap grafana-alerting --from-file=alerts-rules.yaml=./alerts-rules.yaml --dry-run=client -o yaml | kubectl apply -f -
 kubectl -n "$NAMESPACE" create configmap grafana-notifiers --from-file=notifier-teams.yaml=./notifier-teams.yaml --dry-run=client -o yaml | kubectl apply -f -
 
 echo "5. Install/upgrade Grafana with subpath configuration..."
