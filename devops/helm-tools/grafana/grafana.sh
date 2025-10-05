@@ -22,7 +22,11 @@ helm repo update
 echo "3. Create namespace if not exists..."
 kubectl get ns "$NAMESPACE" >/dev/null 2>&1 || kubectl create ns "$NAMESPACE"
 
-echo "4. Install/upgrade Grafana with subpath configuration..."
+echo "4. Creating ConfigMaps for Grafana provisioning..."
+kubectl -n "$NAMESPACE" create configmap grafana-alerting --from-file=alert-rules.yaml=./alert-rules.yaml --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n "$NAMESPACE" create configmap grafana-notifiers --from-file=notifier-teams.yaml=./notifier-teams.yaml --dry-run=client -o yaml | kubectl apply -f -
+
+echo "5. Install/upgrade Grafana with subpath configuration..."
 helm upgrade --install grafana grafana/grafana \
   --version "$GRAFANA_CHART_VERSION" \
   --namespace "$NAMESPACE" \
@@ -50,10 +54,6 @@ helm upgrade --install grafana grafana/grafana \
   --set "extraConfigmapMounts[1].readOnly=true" \
   --set env.TEAMS_WEBHOOK_URL="$TEAMS_WEBHOOK_URL" \
   --wait
-
-echo "5. Creating ConfigMaps for Grafana provisioning..."
-kubectl -n "$NAMESPACE" create configmap grafana-alerting --from-file=alert-rules.yaml=./alert-rules.yaml --dry-run=client -o yaml | kubectl apply -f -
-kubectl -n "$NAMESPACE" create configmap grafana-notifiers --from-file=notifier-teams.yaml=./notifier-teams.yaml --dry-run=client -o yaml | kubectl apply -f -
 
 echo
 echo "✅ Grafana should be available at:"
