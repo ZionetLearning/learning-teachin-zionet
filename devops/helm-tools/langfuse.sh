@@ -31,9 +31,6 @@ fi
 # --- Phase 1: install with web=0 (avoid race with migrations) ---
 helm $ACTION langfuse langfuse/langfuse \
   --namespace "$NAMESPACE" \
-  --set web.image.repository="zionetlearning.azurecr.io/langfuse-web" \
-  --set web.image.tag="3.108.0-langfusepath" \
-  --set web.image.pullPolicy="Always" \
   --set langfuse.replicas=0 \
   --set langfuse.nextauth.url="https://teachin.westeurope.cloudapp.azure.com/langfuse" \
   --set langfuse.salt.secretKeyRef.name="langfuse-secrets" \
