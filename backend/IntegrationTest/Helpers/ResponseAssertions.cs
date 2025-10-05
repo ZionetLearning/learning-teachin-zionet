@@ -26,4 +26,7 @@ public static class ResponseAssertions
     public static void ShouldBeUnprocessableEntity(this HttpResponseMessage response) =>
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
 
+    public static void ShouldBeForbidden(this HttpResponseMessage response) =>
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
 }

@@ -20,4 +20,10 @@ public static class ApiRoutes
     //---------Sentences--------
     public const string Sentences = "ai-manager/sentence";
     public const string SplitSentences = "ai-manager/sentence/split";
+
+    // -------- Games --------
+    public const string GameAttempt = "games-manager/attempt";
+    public static string GameHistory(Guid studentId) => $"games-manager/history/{studentId}";
+    public static string GameMistakes(Guid studentId) => $"games-manager/mistakes/{studentId}";
+    public const string GameAllHistory = "games-manager/all-history";
 }
