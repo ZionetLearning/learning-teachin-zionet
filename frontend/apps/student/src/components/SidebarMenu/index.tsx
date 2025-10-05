@@ -14,6 +14,7 @@ import ThreePIcon from "@mui/icons-material/ThreeP";
 import LiveTvIcon from "@mui/icons-material/LiveTv";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import FlagIcon from "@mui/icons-material/Flag";
+import NoteAltIcon from '@mui/icons-material/NoteAlt';
 import GBFlag from "country-flag-icons/react/3x2/GB";
 import ILFlag from "country-flag-icons/react/3x2/IL";
 import { useAuth } from "@app-providers/auth";
@@ -41,6 +42,12 @@ export const SidebarMenu = () => {
       icon: <AccountCircleIcon />,
       path: "/profile",
       testId: "sidebar-profile",
+    },
+    {
+      label: t("sidebar.myPracticeMistakes"),
+      icon: <NoteAltIcon />,
+      path: "/practice-mistakes",
+      testId: "practice-mistakes",
     },
     {
       label: t("sidebar.home"),
