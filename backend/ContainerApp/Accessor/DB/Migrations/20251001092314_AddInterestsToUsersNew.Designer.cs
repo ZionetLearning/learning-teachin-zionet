@@ -5,6 +5,7 @@ using System.Net;
 using Accessor.DB;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -13,9 +14,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Accessor.DB.Migrations
 {
     [DbContext(typeof(AccessorDbContext))]
-    partial class AccessorDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251001092314_AddInterestsToUsersNew")]
+    partial class AddInterestsToUsersNew
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -85,9 +88,6 @@ namespace Accessor.DB.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
-                    b.Property<Guid>("ExerciseId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("GameType")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -107,11 +107,7 @@ namespace Accessor.DB.Migrations
 
                     b.HasKey("AttemptId");
 
-                    b.HasIndex("ExerciseId");
-
                     b.HasIndex("StudentId");
-
-                    b.HasIndex("ExerciseId", "AttemptNumber");
 
                     b.HasIndex("StudentId", "Status");
 

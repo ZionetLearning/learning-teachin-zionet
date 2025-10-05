@@ -2,6 +2,7 @@
 using IntegrationTests.Infrastructure;
 using Manager.Constants;
 using Manager.Models.Auth; // for LoginRequest / AuthRoutes if defined there
+using Manager.Models.Users;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -116,4 +117,5 @@ public class SharedTestFixture : IAsyncLifetime
             throw; // bubble up
         }
     }
+
 }
