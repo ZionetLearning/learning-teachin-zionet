@@ -14,3 +14,4 @@ export * from "./WeatherWidgetPage";
 export * from "./AnimeExplorerPage";
 export * from "./CountryExplorerPage";
 export * from "./ProfilePage";
+export * from "./PracticeHistoryPage";

@@ -13,6 +13,7 @@ import WeatherWidgetIcon from "@mui/icons-material/Cloud";
 import ThreePIcon from "@mui/icons-material/ThreeP";
 import LiveTvIcon from "@mui/icons-material/LiveTv";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import HistoryIcon from '@mui/icons-material/History';
 import FlagIcon from "@mui/icons-material/Flag";
 import GBFlag from "country-flag-icons/react/3x2/GB";
 import ILFlag from "country-flag-icons/react/3x2/IL";
@@ -74,6 +75,12 @@ export const SidebarMenu = () => {
           testId: "sidebar-speaking",
         },
       ],
+    },
+    {
+      label: t("sidebar.practiceHistory"),
+      icon: <HistoryIcon />,
+      path: "/practice-history",
+      testId: "sidebar-practice-history",
     },
     {
       label: t("sidebar.chatTools"),
