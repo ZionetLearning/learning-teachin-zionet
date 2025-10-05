@@ -73,7 +73,7 @@ public class UserService : IUserService
         {
             if (await _db.Users.AnyAsync(u => u.Email == newUser.Email))
             {
-                _logger.LogWarning("CreateUserAsync failed: Email already exists {Email}", newUser.Email);
+                _logger.LogWarning("CreateUserAsync failed: Email already exists.");
                 return false;
             }
 
