@@ -19,4 +19,12 @@ public static class ApiRoutes
 
     public const string Sentences = "ai-manager/sentence";
     public const string SplitSentences = "ai-manager/sentence/split";
+
+    //---------Games--------
+
+    public const string GamesAttempt = "games-manager/attempt";
+
+    //---------Chat--------
+
+    public const string ChatMistakeExplanation = "ai-manager/chat/mistake-explanation";
 }
