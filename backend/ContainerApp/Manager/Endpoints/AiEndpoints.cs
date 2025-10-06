@@ -1,5 +1,6 @@
 ﻿using Manager.Constants;
 using Manager.Models.Chat;
+using Manager.Models.ModelValidation;
 using Manager.Models.Sentences;
 using Manager.Services.Clients.Accessor;
 using Manager.Services.Clients.Engine;
@@ -15,6 +16,7 @@ public static class AiEndpoints
     private sealed class PubSubEndpoint { }
     private sealed class ChatPostEndpoint { }
     private sealed class SpeechEndpoints { }
+    private sealed class ExplainMistakeEndpoint { }
 
     public static WebApplication MapAiEndpoints(this WebApplication app)
     {
@@ -30,6 +32,7 @@ public static class AiEndpoints
         #region HTTP POST
 
         aiGroup.MapPost("/chat", ChatAsync).WithName("Chat");
+        aiGroup.MapPost("/chat/mistake-explanation", ExplainMistakeAsync).WithName("ExplainMistake");
         aiGroup.MapPost("/sentence", SentenceGenerateAsync).WithName("GenerateSentence");
         aiGroup.MapPost("/sentence/split", SplitSentenceGenerateAsync).WithName("GenerateSplitSentence");
 
@@ -331,6 +334,121 @@ public static class AiEndpoints
             return Results.Problem("An error occurred during split sentence generation.");
         }
     }
+    private static async Task<IResult> ExplainMistakeAsync(
+        [FromBody] ExplainMistakeRequest request,
+        [FromServices] IEngineClient engine,
+        [FromServices] ILogger<ExplainMistakeEndpoint> log,
+        HttpContext httpContext,
+        CancellationToken ct)
+    {
+        using var scope = log.BeginScope("AttemptId: {AttemptId}, ThreadId: {ThreadId}", request.AttemptId, request.ThreadId);
+
+        if (!ValidationExtensions.TryValidate(request, out var validationErrors))
+        {
+            log.LogWarning("Validation failed for {Model}: {Errors}", nameof(ExplainMistakeRequest), validationErrors);
+            return Results.BadRequest(new { errors = validationErrors });
+        }
+
+        if (request.AttemptId == Guid.Empty)
+        {
+            return Results.BadRequest(new { error = "attemptId cannot be empty" });
+        }
+
+        var requestId = Guid.NewGuid().ToString("N");
+
+        try
+        {
+            var userId = GetUserId(httpContext, log);
+
+            if (!TryResolveThreadId(request.ThreadId, out var threadId, out var errorThread))
+            {
+                return Results.BadRequest(new { error = "ThreadId must be a valid GUID" });
+            }
+
+            var engineRequest = new EngineExplainMistakeRequest
+            {
+                RequestId = requestId,
+                ThreadId = threadId,
+                UserId = userId,
+                AttemptId = request.AttemptId,
+                GameType = request.GameType,
+                ChatType = request.ChatType
+            };
+
+            var engineResponse = await engine.ExplainMistakeAsync(engineRequest);
+
+            if (engineResponse.success)
+            {
+                log.LogInformation("Explain mistake request {RequestId} (thread {Thread}) accepted", requestId, threadId);
+                return Results.Ok(new
+                {
+                    requestId
+                });
+            }
+            else
+            {
+                log.LogError("Engine explain mistake failed - service returned failure for request {RequestId}", requestId);
+                return Results.Problem(
+                    title: "Engine explain mistake failed",
+                    detail: "Upstream service returned an error.",
+                    statusCode: StatusCodes.Status502BadGateway,
+                    extensions: new Dictionary<string, object?>
+                    {
+                        ["upstreamStatus"] = 500,
+                        ["requestId"] = requestId
+                    });
+            }
+        }
+        catch (InvalidOperationException ex) when (ex.Data.Contains("Tag") &&
+                                          Equals(ex.Data["Tag"], "MissingOrInvalidUserId"))
+        {
+            log.LogWarning(ex, "Invalid or missing UserId");
+            return Results.Problem("Invalid or missing UserId", statusCode: StatusCodes.Status403Forbidden);
+        }
+        catch (Dapr.Client.InvocationException ex) when (ex.Response?.StatusCode is not null)
+        {
+            var upstream = (int)ex.Response!.StatusCode!;
+            log.LogError(ex, "Engine call failed with upstream status {Status}", upstream);
+
+            return Results.Problem(
+                title: "Engine call failed",
+                detail: "Upstream service returned an error.",
+                statusCode: StatusCodes.Status502BadGateway,
+                extensions: new Dictionary<string, object?>
+                {
+                    ["upstreamStatus"] = upstream,
+                    ["requestId"] = requestId
+                });
+        }
+        catch (HttpRequestException ex)
+        {
+            log.LogError(ex, "Engine is unreachable");
+            return Results.Problem(
+                title: "Engine unavailable",
+                detail: "Unable to connect to the upstream service.",
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+        catch (TaskCanceledException ex) when (!ct.IsCancellationRequested)
+        {
+            log.LogWarning(ex, "Engine call timed out");
+            return Results.Problem(
+                title: "Engine timeout",
+                detail: "Upstream service did not respond in time.",
+                statusCode: StatusCodes.Status504GatewayTimeout);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return Results.StatusCode(499);
+        }
+        catch (Exception ex)
+        {
+            log.LogError(ex, "Unhandled error in Manager");
+            return Results.Problem(
+                title: "Unexpected server error",
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
+    }
+
     private static Guid GetUserId(HttpContext httpContext, ILogger logger)
     {
         var raw = httpContext?.User?.Identity?.Name;

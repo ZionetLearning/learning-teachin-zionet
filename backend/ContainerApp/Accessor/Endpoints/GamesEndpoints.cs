@@ -14,6 +14,7 @@ public static class GamesEndpoints
         gamesGroup.MapGet("/history/{studentId:guid}", GetHistoryAsync);
         gamesGroup.MapGet("/mistakes/{studentId:guid}", GetMistakesAsync);
         gamesGroup.MapGet("/all-history", GetAllHistoriesAsync);
+        gamesGroup.MapGet("/attempt/{userId:guid}/{attemptId:guid}", GetAttemptDetailsAsync);
         gamesGroup.MapPost("/generated-sentences", SaveGeneratedSentencesAsync);
 
         return app;
@@ -124,6 +125,35 @@ public static class GamesEndpoints
         {
             logger.LogError(ex, "Error in GetAllHistoriesAsync");
             return Results.Problem("Unexpected error occurred while fetching all histories.");
+        }
+    }
+
+    private static async Task<IResult> GetAttemptDetailsAsync(
+        [FromRoute] Guid userId,
+        [FromRoute] Guid attemptId,
+        [FromServices] IGameService service,
+        ILogger<IGameService> logger,
+        CancellationToken ct)
+    {
+        try
+        {
+            logger.LogInformation("GetAttemptDetailsAsync called. UserId={UserId}, AttemptId={AttemptId}", userId, attemptId);
+
+            var result = await service.GetAttemptDetailsAsync(userId, attemptId, ct);
+
+            logger.LogInformation("GetAttemptDetailsAsync succeeded. UserId={UserId}, AttemptId={AttemptId}, GameType={GameType}", userId, attemptId, result.GameType);
+
+            return Results.Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            logger.LogWarning(ex, "GetAttemptDetailsAsync failed. UserId={UserId}, AttemptId={AttemptId} - Attempt not found", userId, attemptId);
+            return Results.NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Unexpected error in GetAttemptDetailsAsync. UserId={UserId}, AttemptId={AttemptId}", userId, attemptId);
+            return Results.Problem("Unexpected error occurred while fetching attempt details.");
         }
     }
 
