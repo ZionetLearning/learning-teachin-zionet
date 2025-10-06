@@ -2,10 +2,10 @@
 using IntegrationTests.Constants;
 using IntegrationTests.Fixtures;
 using IntegrationTests.Infrastructure;
+using IntegrationTests.Models.Ai.Sentences;
 using IntegrationTests.Models.Notification;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.Extensions.Options;
 using Models.Ai.Sentences;
+using System.Net.Http.Json;
 using System.Text.Json;
 using Xunit.Abstractions;
 
@@ -54,8 +54,9 @@ namespace IntegrationTests.Tests.AI
 
             var evtRaw = received.Event;
 
-            SentenceResponse res = JsonSerializer.Deserialize<SentenceResponse>(
-                evtRaw.Payload.GetRawText(), options)!;
+            
+            var res = JsonSerializer.Deserialize<SentenceResponse>(
+            evtRaw.Payload.GetRawText(), options)!;
 
             res.Sentences.Count.Should().Be(count);
 
@@ -65,6 +66,7 @@ namespace IntegrationTests.Tests.AI
                 Assert.Equal(request.Nikud, s.Nikud);
             });
         }
+
         [Theory]
         [InlineData(1, Difficulty.hard, false)]
         [InlineData(5, Difficulty.medium, false)]
@@ -97,12 +99,13 @@ namespace IntegrationTests.Tests.AI
 
             var evtRaw = received.Event;
 
-            SplitSentenceResponse res = JsonSerializer.Deserialize<SplitSentenceResponse>(
-                evtRaw.Payload.GetRawText(), options)!;
+            var res = JsonSerializer.Deserialize<List<AttemptedSentenceResult>>(
+            evtRaw.Payload.GetRawText(), options)!;
 
-            res.Split.Sentences.Count.Should().Be(count);
+            res.Count.Should().Be(count);
 
-            Assert.All(res.Split.Sentences, s =>
+
+            Assert.All(res, s =>
             {
                 Assert.Equal(request.Difficulty.ToString(), s.Difficulty);
                 Assert.Equal(request.Nikud, s.Nikud);

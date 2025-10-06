@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { useHebrewSentence } from "../../hooks";
-import { useAvatarSpeech } from "@student/hooks";
+import { useAvatarSpeech, useHebrewSentence } from "@student/hooks";
 import { ChosenWordsArea, WordsBank, ActionButtons, Speaker } from "../";
 import {
   GameConfig,
@@ -26,7 +25,6 @@ export const Game = () => {
 
   const [chosen, setChosen] = useState<string[]>([]);
   const [shuffledSentence, setShuffledSentence] = useState<string[]>([]);
-  const [isCorrect, setIsCorrect] = useState<boolean>(false);
   const [configModalOpen, setConfigModalOpen] = useState(false);
   const [gameOverModalOpen, setGameOverModalOpen] = useState(false);
   const [gameConfig, setGameConfig] = useState<GameConfig | null>(null);
@@ -35,7 +33,7 @@ export const Game = () => {
   const isHebrew = i18n.language === "he";
 
   const {
-    sentenceId,
+    attemptId,
     sentence,
     words,
     loading,
@@ -84,7 +82,6 @@ export const Game = () => {
     setShuffledSentence([]);
     setCorrectSentencesCount(0);
     setGameStarted(false);
-    // Reset the hook's internal state
     resetGame();
   };
 
@@ -101,27 +98,30 @@ export const Game = () => {
 
   const handleNextClick = useCallback(async () => {
     stop();
-    if (isCorrect) {
+    const res = await submitAttempt({
+      attemptId,
+      studentId,
+      givenAnswer: chosen,
+    });
+
+    const isServerCorrect = res.status === "Success";
+    if (isServerCorrect) {
       setCorrectSentencesCount(correctSentencesCount + 1);
     }
-
     const result = await fetchSentence();
-
     // Check if we've completed all sentences
     if (!result || !result.sentence) {
       setGameOverModalOpen(true);
       return;
     }
-
     setChosen([]);
     if (result.words && result.words.length > 0) {
       setShuffledSentence(shuffleDistinct(result.words));
     }
-  }, [stop, fetchSentence, isCorrect]);
+  }, [stop, submitAttempt, attemptId, studentId, chosen, fetchSentence, correctSentencesCount]);
 
   const handleGameOverPlayAgain = () => {
     setGameOverModalOpen(false);
-    // Reset the hook's internal state
     resetGame();
     // Reset component state
     setChosen([]);
@@ -169,14 +169,12 @@ export const Game = () => {
 
   const handleCheck = useCallback(async () => {
     const res = await submitAttempt({
-      attemptId: sentenceId || "",
+      attemptId,
       studentId,
       givenAnswer: chosen,
     });
 
     const isServerCorrect = res.status === "Success";
-
-    setIsCorrect(isServerCorrect);
 
     if (isServerCorrect) {
       toast.success(t("pages.wordOrderGame.correct"));
@@ -185,7 +183,7 @@ export const Game = () => {
     }
 
     return isServerCorrect;
-  }, [studentId, chosen, submitAttempt]);
+  }, [submitAttempt, attemptId, studentId, chosen, t]);
 
   const shuffleDistinct = (words: string[]) => {
     if (words.length < 2) return [...words];

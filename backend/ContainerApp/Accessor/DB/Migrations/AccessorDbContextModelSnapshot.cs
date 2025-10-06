@@ -278,6 +278,12 @@ namespace Accessor.DB.Migrations
                     b.Property<string>("HebrewLevelValue")
                         .HasColumnType("text");
 
+                    b.PrimitiveCollection<List<string>>("Interests")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasDefaultValueSql("'[]'::jsonb");
+
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasColumnType("text");

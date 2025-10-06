@@ -17,6 +17,16 @@
       "name": "count",
       "description": "number > 0",
       "is_required": true
+    },
+    {
+      "name": "hints",
+      "description": "Comma-separated Hebrew words without niqqud",
+      "is_required": true
+    },
+    {
+      "name": "interest",
+      "description": "User's topic of interest (optional)",
+      "is_required": false
     }
   ]
 }

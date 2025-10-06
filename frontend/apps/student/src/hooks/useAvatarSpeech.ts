@@ -3,6 +3,7 @@ import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import * as SpeechSDK from "microsoft-cognitiveservices-speech-sdk";
 import { useAzureSpeechToken } from "@student/api";
 import { CypressWindow } from "@student/types";
+import { stripHebrewNikud } from "@student/features";
 
 interface useAvatarSpeechOptions {
   lipsArray?: string[];
@@ -15,12 +16,6 @@ const VISEME_LATENCY_MS = 40; // tweak 20–70 if needed
 const FALLBACK_VISEMES = [3, 5, 8, 10, 0]; // used only if no visemes arrive
 const FALLBACK_STEP_MS = 60;
 const DEFAULT_HE_VOICE = "he-IL-HilaNeural";
-
-const stripHebrewNikud = (input: string): string => {
-  // Normalize, then remove Hebrew diacritics & cantillation marks
-  const noMarks = input.normalize("NFKD").replace(/[\u0591-\u05C7]/g, "");
-  return noMarks.replace(/[\u200e\u200f]/g, "");
-};
 
 export const useAvatarSpeech = ({
   lipsArray = [],

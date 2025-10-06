@@ -1,5 +1,5 @@
 ﻿using System.Text.Json;
-using Engine.Constants;
+using Engine.Constants.Chat;
 using Engine.Services.Clients.AccessorClient;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;

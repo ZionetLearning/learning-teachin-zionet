@@ -3,9 +3,9 @@ import { apiClient as axios } from "@app-providers";
 import { toast } from "react-toastify";
 import {
   EventType,
-  SplitSentenceGeneratedPayload,
   UserEventUnion,
   SentenceItem,
+  SplitSentenceItem,
 } from "@app-providers/types";
 
 import { useSignalR } from "@student/hooks";
@@ -62,7 +62,7 @@ export const useGenerateSplitSentences = () => {
   const AI_BASE_URL = import.meta.env.VITE_AI_URL!;
   const { subscribe } = useSignalR();
 
-  return useMutation<SplitSentenceGeneratedPayload, Error, SentenceRequest>({
+  return useMutation<SplitSentenceItem[], Error, SentenceRequest>({
     mutationFn: async ({ difficulty, nikud, count }) => {
       const requestBody = {
         difficulty,
@@ -74,7 +74,7 @@ export const useGenerateSplitSentences = () => {
       let unsubscribe: (() => void) | undefined;
 
       // Set up a promise to wait for the SignalR response
-      const responsePromise = new Promise<SplitSentenceGeneratedPayload>(
+      const responsePromise = new Promise<SplitSentenceItem[]>(
         (resolve, reject) => {
           timeout = setTimeout(() => {
             reject(new Error("Timeout waiting for split sentence response"));

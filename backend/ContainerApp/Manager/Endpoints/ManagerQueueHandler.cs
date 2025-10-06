@@ -244,26 +244,35 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
             var split = Splitter.Split(generatedResponse);
 
+            if (split.Sentences.Count == 0)
+            {
+                _logger.LogWarning("No sentences found after splitting for user {UserId}", userId);
+                throw new NonRetryableException("No sentences found after splitting.");
+            }
+
             var dto = new GeneratedSentenceDto
             {
                 StudentId = Guid.Parse(userId),
                 GameType = "wordOrderGame",
-                Difficulty = Enum.TryParse<Manager.Models.Games.Difficulty>(generatedResponse.Sentences.FirstOrDefault()?.Difficulty, ignoreCase: true, out var difficulty) ? difficulty : Manager.Models.Games.Difficulty.Easy,
-                CorrectAnswer = split.Sentences.FirstOrDefault()?.Words ?? new List<string>() // <--- FIX
+                Difficulty = Enum.TryParse<Models.Games.Difficulty>(generatedResponse.Sentences.FirstOrDefault()?.Difficulty, ignoreCase: true, out var difficulty)
+                ? difficulty
+                : Manager.Models.Games.Difficulty.Easy,
+                Sentences = [.. split.Sentences
+                .Select(s => new GeneratedSentenceItem
+                {
+                    Original = s.Original,
+                    CorrectAnswer = s.Words,
+                    Nikud = s.Nikud
+                })]
             };
 
-            var attemptId = await _accessorClient.SaveGeneratedSentenceAsync(dto, cancellationToken);
-
-            _logger.LogInformation("Generated AttemptId={AttemptId}", attemptId);
+            var result = await _accessorClient.SaveGeneratedSentencesAsync(dto, cancellationToken);
 
             await _notificationService.SendEventAsync(
                 EventType.SplitSentenceGeneration,
                 userId,
-                new
-                {
-                    SentenceId = attemptId,
-                    Split = split
-                });
+                result
+                );
         }
         catch (NonRetryableException ex)
         {
