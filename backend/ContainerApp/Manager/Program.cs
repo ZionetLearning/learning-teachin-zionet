@@ -141,6 +141,7 @@ builder.Services.AddScoped<IAccessorClient, AccessorClient>();
 builder.Services.AddScoped<IEngineClient, EngineClient>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IOnlinePresenceService, OnlinePresenceService>();
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
