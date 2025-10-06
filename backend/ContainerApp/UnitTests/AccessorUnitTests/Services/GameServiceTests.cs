@@ -38,11 +38,13 @@ public class GameServiceTests
         var service = NewGameService(db);
         var studentId = Guid.NewGuid();
         var attemptId = Guid.NewGuid();
+        var exerciseId = Guid.NewGuid();
         var correctAnswer = new List<string> { "שלום", "עולם" };
 
         db.GameAttempts.Add(new GameAttempt
         {
             AttemptId = attemptId,
+            ExerciseId = exerciseId,
             StudentId = studentId,
             GameType = "wordOrderGame",
             Difficulty = Difficulty.Easy,
@@ -58,7 +60,7 @@ public class GameServiceTests
         var result = await service.SubmitAttemptAsync(new SubmitAttemptRequest
         {
             StudentId = studentId,
-            ExerciseId = attemptId,
+            ExerciseId = exerciseId,
             GivenAnswer = correctAnswer
         }, CancellationToken.None);
 
@@ -75,11 +77,13 @@ public class GameServiceTests
         var service = NewGameService(db);
         var studentId = Guid.NewGuid();
         var attemptId = Guid.NewGuid();
+        var exerciseId = Guid.NewGuid();
         var correctAnswer = new List<string> { "שלום", "עולם" };
 
         db.GameAttempts.Add(new GameAttempt
         {
             AttemptId = attemptId,
+            ExerciseId = exerciseId,
             StudentId = studentId,
             GameType = "wordOrderGame",
             Difficulty = Difficulty.Medium,
@@ -95,7 +99,7 @@ public class GameServiceTests
         var result = await service.SubmitAttemptAsync(new SubmitAttemptRequest
         {
             StudentId = studentId,
-            ExerciseId = attemptId,
+            ExerciseId = exerciseId,
             GivenAnswer = new List<string> { "wrong", "answer" }
         }, CancellationToken.None);
 
@@ -157,6 +161,7 @@ public class GameServiceTests
             new GameAttempt
             {
                 AttemptId = Guid.NewGuid(),
+                ExerciseId = Guid.NewGuid(),
                 StudentId = studentId,
                 GameType = "wordOrderGame",
                 Difficulty = Difficulty.Easy,
@@ -169,6 +174,7 @@ public class GameServiceTests
             new GameAttempt
             {
                 AttemptId = Guid.NewGuid(),
+                ExerciseId = Guid.NewGuid(),
                 StudentId = otherStudentId,
                 GameType = "wordOrderGame",
                 Difficulty = Difficulty.Easy,
@@ -214,6 +220,8 @@ public class GameServiceTests
         var db = NewDb(Guid.NewGuid().ToString());
         var service = NewGameService(db);
         var studentId = Guid.NewGuid();
+        var exerciseId1 = Guid.NewGuid();
+        var exerciseId2 = Guid.NewGuid();
         var correctAnswer1 = new List<string> { "שלום", "עולם" };
         var correctAnswer2 = new List<string> { "אני", "לומד" };
 
@@ -221,6 +229,7 @@ public class GameServiceTests
             new GameAttempt
             {
                 AttemptId = Guid.NewGuid(),
+                ExerciseId = exerciseId1,
                 StudentId = studentId,
                 GameType = "wordOrderGame",
                 Difficulty = Difficulty.Easy,
@@ -233,6 +242,7 @@ public class GameServiceTests
             new GameAttempt
             {
                 AttemptId = Guid.NewGuid(),
+                ExerciseId = exerciseId2,
                 StudentId = studentId,
                 GameType = "wordOrderGame",
                 Difficulty = Difficulty.Medium,
@@ -245,6 +255,7 @@ public class GameServiceTests
             new GameAttempt
             {
                 AttemptId = Guid.NewGuid(),
+                ExerciseId = exerciseId2,
                 StudentId = studentId,
                 GameType = "wordOrderGame",
                 Difficulty = Difficulty.Medium,
@@ -279,6 +290,7 @@ public class GameServiceTests
             new GameAttempt
             {
                 AttemptId = Guid.NewGuid(),
+                ExerciseId = Guid.NewGuid(),
                 StudentId = studentId,
                 GameType = "wordOrderGame",
                 Difficulty = Difficulty.Easy,
@@ -291,6 +303,7 @@ public class GameServiceTests
             new GameAttempt
             {
                 AttemptId = Guid.NewGuid(),
+                ExerciseId = Guid.NewGuid(),
                 StudentId = otherStudentId,
                 GameType = "wordOrderGame",
                 Difficulty = Difficulty.Easy,
