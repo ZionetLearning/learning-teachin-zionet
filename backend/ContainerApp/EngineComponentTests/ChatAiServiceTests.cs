@@ -100,7 +100,7 @@ public class ChatAiServiceTests
         history.AddSystemMessage("You are a helpful assistant.");
         history.AddUserMessageNow("How much is 2 + 2?");
         var userId = Guid.NewGuid();
-        var request = new ChatAiServiseRequest
+        var request = new ChatAiServiceRequest
         {
             History = history,
             ChatType = ChatType.Default,
@@ -130,7 +130,7 @@ public class ChatAiServiceTests
         var threadId = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var userId = Guid.NewGuid();
-        var request1 = new ChatAiServiseRequest
+        var request1 = new ChatAiServiceRequest
         {
             History = history,
             ChatType = ChatType.Default,
@@ -148,7 +148,7 @@ public class ChatAiServiceTests
         history.AddAssistantMessage(response1.Answer.Content);
         history.AddUserMessage("What number did you remember?", DateTimeOffset.UtcNow);
 
-        var request2 = new ChatAiServiseRequest
+        var request2 = new ChatAiServiceRequest
         {
             History = history,
             ChatType = ChatType.Default,
@@ -198,7 +198,7 @@ public class ChatAiServiceTests
         history.AddSystemMessage("You are a helpful assistant.");
         history.AddUserMessageNow("What time is it now?");
 
-        var request = new ChatAiServiseRequest
+        var request = new ChatAiServiceRequest
         {
             History = history,
             ChatType = ChatType.Default,

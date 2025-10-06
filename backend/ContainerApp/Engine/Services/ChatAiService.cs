@@ -30,7 +30,7 @@ public sealed class ChatAiService : IChatAiService
         _kernelPolicy = _retryPolicy.CreateKernelPolicy(_log);
     }
 
-    public async Task<ChatAiServiceResponse> ChatHandlerAsync(ChatAiServiseRequest request, CancellationToken ct = default)
+    public async Task<ChatAiServiceResponse> ChatHandlerAsync(ChatAiServiceRequest request, CancellationToken ct = default)
     {
         _log.LogInformation("ChatAI request started {RequestId} for User {UserId}, Thread {ThreadId}, Type {ChatType}, TTL {TtlSeconds}",
     request.RequestId, request.UserId, request.ThreadId, request.ChatType, request.TtlSeconds);
@@ -97,7 +97,7 @@ public sealed class ChatAiService : IChatAiService
     }
 
     public async IAsyncEnumerable<ChatAiStreamDelta> ChatStreamAsync(
-        ChatAiServiseRequest request,
+        ChatAiServiceRequest request,
         [EnumeratorCancellation] CancellationToken ct = default
     )
     {

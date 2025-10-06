@@ -160,7 +160,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         var sw = Stopwatch.StartNew();
         EngineChatRequest? request = null;
         var chatName = string.Empty;
-        ChatAiServiseRequest? serviceRequest = null;
+        ChatAiServiceRequest? serviceRequest = null;
         CancellationTokenSource? renewalCts = null;
         Task? renewTask = null;
         Stopwatch? elapsed = null;
@@ -229,7 +229,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
             };
             await _accessorClient.UpsertHistorySnapshotAsync(upsertUserMessage, ct);
 
-            serviceRequest = new ChatAiServiseRequest
+            serviceRequest = new ChatAiServiceRequest
             {
                 History = storyForKernel,
                 ChatType = request.ChatType,
@@ -443,7 +443,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         var sw = Stopwatch.StartNew();
         EngineExplainMistakeRequest? request = null;
         var chatName = string.Empty;
-        ChatAiServiseRequest? serviceRequest = null;
+        ChatAiServiceRequest? serviceRequest = null;
         CancellationTokenSource? renewalCts = null;
         Task? renewTask = null;
         Stopwatch? elapsed = null;
@@ -504,7 +504,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
             chatName = $"Mistake Explanation - {request.GameType}";
 
-            serviceRequest = new ChatAiServiseRequest
+            serviceRequest = new ChatAiServiceRequest
             {
                 History = storyForKernel,
                 ChatType = request.ChatType,
