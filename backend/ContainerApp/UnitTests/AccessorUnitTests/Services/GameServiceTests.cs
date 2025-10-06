@@ -96,7 +96,7 @@ public class GameServiceTests
         {
             StudentId = studentId,
             AttemptId = attemptId,
-            GivenAnswer = new List<string> { "עולם", "שלום" }
+            GivenAnswer = new List<string> { "wrong", "answer" }
         }, CancellationToken.None);
 
         // Assert
