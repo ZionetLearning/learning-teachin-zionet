@@ -451,14 +451,23 @@ public static class UsersEndpoints
 
     private static async Task<IResult> GetOnlineUsers(
         [FromServices] IOnlinePresenceService onlinePresenceService,
+        [FromServices] ILogger<UserEndpoint> logger,
         CancellationToken ct = default)
     {
-        var all = await onlinePresenceService.GetOnlineAsync(ct);
+        try
+        {
+            var all = await onlinePresenceService.GetOnlineAsync(ct);
+            var nonAdmins = all
+            .Where(u => !string.Equals(u.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+            .ToList();
 
-        var nonAdmins = all
-        .Where(u => !string.Equals(u.Role, "Admin", StringComparison.OrdinalIgnoreCase))
-        .ToList();
+            return Results.Ok(nonAdmins);
 
-        return Results.Ok(nonAdmins);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to list online users");
+            return Results.Problem("Failed to retrieve omline users.");
+        }
     }
 }

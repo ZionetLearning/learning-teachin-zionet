@@ -28,8 +28,7 @@ public class NotificationHub : Hub<INotificationClient>
             Context.ConnectionId, Context.UserIdentifier, Context.User?.Identity?.Name);
         if (Context.UserIdentifier != null)
         {
-            var userResult = _accessorClient.GetUserAsync(Guid.Parse(Context.UserIdentifier));
-            var user = await userResult.ConfigureAwait(false);
+            var user = await _accessorClient.GetUserAsync(Guid.Parse(Context.UserIdentifier)).ConfigureAwait(false);
             if (user != null)
             {
                 var userId = user.UserId.ToString();
@@ -53,8 +52,7 @@ public class NotificationHub : Hub<INotificationClient>
 
         if (Context.UserIdentifier != null)
         {
-            var userResult = _accessorClient.GetUserAsync(Guid.Parse(Context.UserIdentifier));
-            var user = await userResult.ConfigureAwait(false);
+            var user = await _accessorClient.GetUserAsync(Guid.Parse(Context.UserIdentifier)).ConfigureAwait(false);
             if (user != null)
             {
                 var userId = user.UserId.ToString();
