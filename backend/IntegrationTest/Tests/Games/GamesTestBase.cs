@@ -245,7 +245,7 @@ public abstract class GamesTestBase(
             GivenAnswer = givenAnswer
         };
 
-        var response = await Client.PostAsJsonAsync(ApiRoutes.GameAttempt, request);
+        var response = await Client.PostAsJsonAsync(ApiRoutes.GamesAttempt, request);
         response.EnsureSuccessStatusCode();
 
         return await ReadAsJsonAsync<SubmitAttemptResult>(response)

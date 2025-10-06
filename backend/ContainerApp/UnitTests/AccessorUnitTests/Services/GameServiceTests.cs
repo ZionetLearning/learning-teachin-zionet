@@ -58,7 +58,7 @@ public class GameServiceTests
         var result = await service.SubmitAttemptAsync(new SubmitAttemptRequest
         {
             StudentId = studentId,
-            AttemptId = attemptId,
+            ExerciseId = attemptId,
             GivenAnswer = correctAnswer
         }, CancellationToken.None);
 
@@ -95,7 +95,7 @@ public class GameServiceTests
         var result = await service.SubmitAttemptAsync(new SubmitAttemptRequest
         {
             StudentId = studentId,
-            AttemptId = attemptId,
+            ExerciseId = attemptId,
             GivenAnswer = new List<string> { "wrong", "answer" }
         }, CancellationToken.None);
 
@@ -116,7 +116,7 @@ public class GameServiceTests
             service.SubmitAttemptAsync(new SubmitAttemptRequest
             {
                 StudentId = Guid.NewGuid(),
-                AttemptId = Guid.NewGuid(),
+                ExerciseId = Guid.NewGuid(),
                 GivenAnswer = null!
             }, CancellationToken.None));
     }
@@ -133,7 +133,7 @@ public class GameServiceTests
             service.SubmitAttemptAsync(new SubmitAttemptRequest
             {
                 StudentId = Guid.NewGuid(),
-                AttemptId = Guid.NewGuid(),
+                ExerciseId = Guid.NewGuid(),
                 GivenAnswer = new List<string> { "test" }
             }, CancellationToken.None));
         

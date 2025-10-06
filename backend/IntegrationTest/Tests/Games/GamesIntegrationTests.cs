@@ -30,7 +30,7 @@ public class GamesIntegrationTests(
             GivenAnswer = new List<string> { "test" }
         };
 
-        var response = await Client.PostAsJsonAsync(ApiRoutes.GameAttempt, request);
+        var response = await Client.PostAsJsonAsync(ApiRoutes.GamesAttempt, request);
         
         response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
     }
@@ -47,7 +47,7 @@ public class GamesIntegrationTests(
             GivenAnswer = new List<string> { "test" }
         };
 
-        var response = await Client.PostAsJsonAsync(ApiRoutes.GameAttempt, request);
+        var response = await Client.PostAsJsonAsync(ApiRoutes.GamesAttempt, request);
         
         response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
     }
@@ -65,7 +65,7 @@ public class GamesIntegrationTests(
             GivenAnswer = new List<string> { "test" }
         };
 
-        var response = await Client.PostAsJsonAsync(ApiRoutes.GameAttempt, request);
+        var response = await Client.PostAsJsonAsync(ApiRoutes.GamesAttempt, request);
         response.ShouldBeForbidden();
     }
 
