@@ -45,6 +45,7 @@ groups:
               refId: A
               intervalMs: 1000
               maxDataPoints: 43200
+            reducer: "max"
         for: 5m
         annotations:
           summary: "Pod in CrashLoopBackOff: {{ $labels.pod }}"
