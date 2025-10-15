@@ -32,9 +32,9 @@ groups:
     rules:
       - uid: pod-crashloop
         title: "Pod CrashLoopBackOff (stage/dev only)"
-        condition: A
+        condition: B # <--- CONDITION IS NOW 'B'
         data:
-          - refId: A
+          - refId: A # Step A: Fetch the time series data and reduce it.
             queryType: timeSeriesQuery
             relativeTimeRange:
               from: 300
@@ -45,7 +45,22 @@ groups:
               refId: A
               intervalMs: 1000
               maxDataPoints: 43200
-            reducer: "max"
+            reducer: "max" # This step generates reduced data points for each pod.
+          
+          - refId: B # <--- NEW Step B: Evaluate the reduced data (A) to get a single number.
+            queryType: expression
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__ # Special UID for math expressions
+            model:
+              # Simple math expression: is the result from A > 0?
+              # This forces a single number for the final evaluation.
+              expr: 'A > 0' 
+              refId: B
+              intervalMs: 1000
+              maxDataPoints: 43200
+            
         for: 5m
         annotations:
           summary: "Pod in CrashLoopBackOff: {{ $labels.pod }}"
