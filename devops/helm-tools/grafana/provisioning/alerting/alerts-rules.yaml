@@ -40,7 +40,7 @@ groups:
               to: 0
             datasourceUid: prometheus
             model:
-              expr: 'kube_pod_container_status_restarts_total{namespace=~"stage|dev"} > 0'
+              expr: 'count(kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff", namespace=~"stage|dev"}) > 0'
               refId: A
               intervalMs: 1000
               maxDataPoints: 43200
