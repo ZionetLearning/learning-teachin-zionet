@@ -41,7 +41,7 @@ groups:
               to: 0
             datasourceUid: prometheus
             model:
-              expr: 'kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff", namespace=~"stage|dev"}'
+              expr: 'sum by (namespace, pod, container) (kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff", namespace=~"stage|dev"})'
               refId: A
               intervalMs: 1000
               maxDataPoints: 43200
