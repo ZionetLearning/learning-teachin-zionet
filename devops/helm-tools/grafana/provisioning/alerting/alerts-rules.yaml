@@ -13,7 +13,10 @@ groups:
             relativeTimeRange:
               from: 300
               to: 0
-            datasourceUid: prometheus
+            datasource:
+              type: prometheus
+              uid: ""
+
             model:
               expr: 'kube_node_status_condition{condition="Ready",status="false"} > 0'
               refId: A
