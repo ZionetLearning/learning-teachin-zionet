@@ -25,6 +25,7 @@ kubectl get ns "$NAMESPACE" >/dev/null 2>&1 || kubectl create ns "$NAMESPACE"
 echo "4. Creating ConfigMaps for Grafana provisioning..."
 kubectl -n "$NAMESPACE" create configmap grafana-alerting --from-file=alerts-rules.yaml=./provisioning/alerting/alerts-rules.yaml --dry-run=client -o yaml | kubectl apply -f -
 kubectl -n "$NAMESPACE" create configmap grafana-notifiers --from-file=notifier-teams.yaml=./provisioning/notifiers/notifier-teams.yaml --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n "$NAMESPACE" create configmap grafana-alerting-policy --from-file=notification-policy.yaml=./provisioning/alerting/notification-policy.yaml --dry-run=client -o yaml | kubectl apply -f -
 
 echo "5. Install/upgrade Grafana with subpath configuration..."
 helm upgrade --install grafana grafana/grafana \

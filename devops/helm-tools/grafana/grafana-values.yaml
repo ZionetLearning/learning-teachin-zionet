@@ -5,7 +5,7 @@ extraConfigmapMounts:
     subPath: alerts-rules.yaml
     readOnly: true
   - name: grafana-alerting-policy
-    configMap: grafana-alerting
+    configMap: grafana-alerting-policy
     mountPath: /etc/grafana/provisioning/alerting/notification-policy.yaml
     subPath: notification-policy.yaml
     readOnly: true
