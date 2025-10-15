@@ -9,17 +9,16 @@ groups:
         condition: A
         data:
           - refId: A
-            queryType: timeSeriesQuery
+            queryType: ''
             relativeTimeRange:
               from: 300
               to: 0
             datasourceUid: prometheus
             model:
-              expr: 'kube_node_status_condition{condition="Ready",status="false"}'
+              expr: 'kube_node_status_condition{condition="Ready",status="false"} > 0'
               refId: A
               intervalMs: 1000
               maxDataPoints: 43200
-            reducer: "max"
         for: 5m
         annotations:
           summary: "One or more nodes are NotReady"
@@ -32,37 +31,21 @@ groups:
     rules:
       - uid: pod-crashloop
         title: "Pod CrashLoopBackOff (stage/dev only)"
-        condition: B # <--- CONDITION IS NOW 'B'
+        condition: A
         data:
-          - refId: A # Step A: Fetch the time series data and reduce it.
-            queryType: timeSeriesQuery
+          - refId: A
+            queryType: ''
             relativeTimeRange:
               from: 300
               to: 0
             datasourceUid: prometheus
             model:
-              expr: 'sum by (namespace, pod, container) (kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff", namespace=~"stage|dev"})'
+              expr: 'kube_pod_container_status_restarts_total{namespace=~"stage|dev"} > 0'
               refId: A
               intervalMs: 1000
               maxDataPoints: 43200
-            reducer: "max" # This step generates reduced data points for each pod.
-          
-          - refId: B # <--- NEW Step B: Evaluate the reduced data (A) to get a single number.
-            queryType: expression
-            relativeTimeRange:
-              from: 0
-              to: 0
-            datasourceUid: __expr__ # Special UID for math expressions
-            model:
-              # Simple math expression: is the result from A > 0?
-              # This forces a single number for the final evaluation.
-              expr: 'A > 0' 
-              refId: B
-              intervalMs: 1000
-              maxDataPoints: 43200
-            
         for: 5m
         annotations:
-          summary: "Pod in CrashLoopBackOff: {{ $labels.pod }}"
+          summary: "Pod in CrashLoopBackOff"
         labels:
           severity: warning
