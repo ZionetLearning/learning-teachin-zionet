@@ -1,32 +1,23 @@
 // import { useState } from "react";
 // import { useAuth } from "@app-providers";
-// import {
-//   useGetGameHistorySummary,
-//   useGetGameHistoryDetailed,
-// } from "@student/api";
 // import { useTranslation } from "react-i18next";
-// import { getDifficultyLabel } from "../practice/utils";
-// import { ChevronDown, ChevronUp, Play } from "lucide-react";
 // import {
 //   Box,
 //   Button,
-//   Table,
-//   TableBody,
-//   TableCell,
-//   TableContainer,
-//   TableHead,
-//   TableRow,
-//   Paper,
 //   Typography,
 //   Select,
 //   MenuItem,
 //   FormControl,
 //   InputLabel,
-//   Chip,
-//   IconButton,
-//   Collapse,
 //   CircularProgress,
 // } from "@mui/material";
+// import {
+//   useGetGameHistorySummary,
+//   useGetGameHistoryDetailed,
+// } from "@student/api";
+// import { SummaryView } from "./components/summary-view";
+// import { DetailedView } from "./components/detailed-view";
+// import { useStyles } from "./style";
 
 // export const PracticeHistory = () => {
 //   const { user } = useAuth();
@@ -34,12 +25,11 @@
 //   const studentId = user?.userId ?? "";
 
 //   const [viewMode, setViewMode] = useState<"summary" | "detailed">("summary");
-//   const [expandedGames, setExpandedGames] = useState<Set<string>>(new Set());
 //   const [page, setPage] = useState(1);
 //   const [pageSize, setPageSize] = useState(10);
+//   const classes = useStyles();
 //   const isHebrew = i18n.language === "he";
 
-//   // Fetch summary + detailed always (to have latest attempt info for summary)
 //   const { data: summaryData, isLoading: summaryLoading } =
 //     useGetGameHistorySummary({
 //       studentId,
@@ -50,338 +40,21 @@
 //   const { data: detailedData, isLoading: detailedLoading } =
 //     useGetGameHistoryDetailed({
 //       studentId,
-//       page,
-//       pageSize,
+//       page: viewMode === "detailed" ? page : 1, // Conditional page
+//       pageSize: viewMode === "detailed" ? pageSize : 9999, // Conditional pageSize
 //     });
 
 //   const isLoading =
-//     (viewMode === "summary" && summaryLoading) ||
+//     (viewMode === "summary" && (summaryLoading || detailedLoading)) ||
 //     (viewMode === "detailed" && detailedLoading);
+
 //   const currentData = viewMode === "summary" ? summaryData : detailedData;
 
-//   // should be changed
 //   if (viewMode === "summary" && !summaryData && !summaryLoading) return null;
 //   if (viewMode === "detailed" && !detailedData && !detailedLoading) return null;
 
-//   const toggleExpanded = (gameKey: string) => {
-//     setExpandedGames((prev) => {
-//       const newSet = new Set(prev);
-//       if (newSet.has(gameKey)) {
-//         newSet.delete(gameKey);
-//       } else {
-//         newSet.add(gameKey);
-//       }
-//       return newSet;
-//     });
-//   };
-
-//   const getStatusColor = (status: string) => {
-//     switch (status) {
-//       case "Success":
-//         return "success";
-//       case "Failure":
-//         return "error";
-//       case "Pending":
-//         return "warning";
-//       default:
-//         return "default";
-//     }
-//   };
-
-//   const formatDate = (dateString: string) => {
-//     return new Date(dateString).toLocaleString("he-IL", {
-//       day: "2-digit",
-//       month: "2-digit",
-//       hour: "2-digit",
-//       minute: "2-digit",
-//     });
-//   };
-
-//   const renderSummaryView = () => {
-//     if (!summaryData) return null;
-
-//     return (
-//       <TableContainer component={Paper}>
-//         <Table>
-//           <TableHead>
-//             <TableRow>
-//               <TableCell align="right">
-//                 {t("pages.practiceHistory.game")}
-//               </TableCell>
-//               <TableCell align="right">
-//                 {t("pages.practiceHistory.yourLastAnswer")}
-//               </TableCell>
-//               <TableCell align="right">
-//                 {t("pages.practiceHistory.status")}
-//               </TableCell>
-//               <TableCell align="right">
-//                 {t("pages.practiceHistory.action")}
-//               </TableCell>
-//             </TableRow>
-//           </TableHead>
-//           <TableBody>
-//             {summaryData.items.map((item, index) => {
-//               console.log("Looking for:", item.gameType, item.difficulty);
-//               console.log(
-//                 "Available in detailedData:",
-//                 detailedData?.items.map((d) => `${d.gameType}|${d.difficulty}`),
-//               );
-//               const lastAttempt = detailedData?.items
-//                 .filter((detail) => {
-//                   const match =
-//                     detail.gameType === item.gameType &&
-//                     detail.difficulty === item.difficulty;
-//                   console.log(
-//                     `Comparing ${detail.gameType}|${detail.difficulty} with ${item.gameType}|${item.difficulty}: ${match}`,
-//                   );
-//                   return match;
-//                 })
-//                 .sort((a, b) => b.attemptNumber - a.attemptNumber)[0];
-
-//               console.log("Item:", item.gameType, item.difficulty);
-//               console.log("Last attempt:", lastAttempt);
-//               console.log("Given answer:", lastAttempt?.givenAnswer);
-
-//               return (
-//                 <TableRow key={index} hover>
-//                   {/* Game name + correct answer */}
-//                   <TableCell align="right">
-//                     <Box>
-//                       <Typography variant="body2" fontWeight="medium">
-//                         {t(
-//                           `pages.practiceHistory.practiceTools.${item.gameType}`,
-//                         )}
-//                         {lastAttempt?.correctAnswer?.length ? (
-//                           <>: "{lastAttempt.correctAnswer.join(" ")}"</>
-//                         ) : null}
-//                       </Typography>
-//                       <Typography variant="caption" color="text.secondary">
-//                         {getDifficultyLabel(
-//                           Number(item.difficulty) as 0 | 1 | 2,
-//                           t,
-//                         )}
-//                       </Typography>
-//                     </Box>
-//                   </TableCell>
-
-//                   {/* User's last answer */}
-//                   <TableCell align="right">
-//                     <Typography variant="body2">
-//                       {lastAttempt?.givenAnswer?.length
-//                         ? lastAttempt.givenAnswer.join(", ")
-//                         : t("pages.practiceHistory.noAttemptYet")}
-//                     </Typography>
-//                   </TableCell>
-
-//                   {/* Status */}
-//                   <TableCell align="right">
-//                     <Typography
-//                       variant="body2"
-//                       color={
-//                         item.totalSuccesses > 0
-//                           ? "success.main"
-//                           : "text.primary"
-//                       }
-//                     >
-//                       {item.totalSuccesses > 0
-//                         ? t("pages.practiceHistory.correct")
-//                         : t("pages.practiceHistory.tryAgain")}
-//                     </Typography>
-//                   </TableCell>
-
-//                   {/* Retry button */}
-//                   <TableCell align="right">
-//                     <Button
-//                       sx={{
-//                         gap: 1.5,
-//                         display: "flex",
-//                         justifyContent: "center",
-//                         px: 1,
-//                         minWidth: "unset",
-//                       }}
-//                       variant="contained"
-//                       size="small"
-//                       startIcon={!isHebrew && <Play size={16} />}
-//                       endIcon={isHebrew && <Play size={16} />}
-//                       onClick={() =>
-//                         console.log(
-//                           "Retry game:",
-//                           item.gameType,
-//                           item.difficulty,
-//                         )
-//                       }
-//                     >
-//                       <Typography
-//                         variant="button"
-//                         sx={{
-//                           paddingRight: isHebrew ? "5px" : 0,
-//                           paddingLeft: !isHebrew ? "10px" : 0,
-//                         }}
-//                       >
-//                         {t("pages.practiceHistory.retry")}
-//                       </Typography>
-//                     </Button>
-//                   </TableCell>
-//                 </TableRow>
-//               );
-//             })}
-//           </TableBody>
-//         </Table>
-//       </TableContainer>
-//     );
-//   };
-
-//   const renderDetailedView = () => {
-//     if (!detailedData) {
-//       return (
-//         <Paper sx={{ p: 4, textAlign: "center" }}>
-//           <Typography variant="body1" color="text.secondary">
-//             {t("pages.practiceHistory.noDetailedData")}
-//           </Typography>
-//         </Paper>
-//       );
-//     }
-
-//     if (detailedData.items.length === 0) {
-//       return (
-//         <Paper sx={{ p: 4, textAlign: "center" }}>
-//           <Typography variant="body1" color="text.secondary">
-//             {t("pages.practiceHistory.noAttemptsYet")}
-//           </Typography>
-//         </Paper>
-//       );
-//     }
-
-//     // Group attempts by game + difficulty
-//     const groupedAttempts = detailedData.items.reduce(
-//       (acc, item) => {
-//         const key = `${item.gameType}-${item.difficulty}`;
-//         if (!acc[key]) {
-//           acc[key] = {
-//             gameType: item.gameType,
-//             difficulty: item.difficulty,
-//             attempts: [],
-//           };
-//         }
-//         acc[key].attempts.push(item);
-//         return acc;
-//       },
-//       {} as Record<
-//         string,
-//         {
-//           gameType: string;
-//           difficulty: string;
-//           attempts: typeof detailedData.items;
-//         }
-//       >,
-//     );
-
-//     return (
-//       <Box>
-//         {Object.entries(groupedAttempts).map(([key, group]) => {
-//           const isExpanded = expandedGames.has(key);
-
-//           return (
-//             <Paper key={key} sx={{ mb: 2 }}>
-//               <Box
-//                 onClick={() => toggleExpanded(key)}
-//                 sx={{
-//                   p: 2,
-//                   display: "flex",
-//                   alignItems: "center",
-//                   justifyContent: "space-between",
-//                   cursor: "pointer",
-//                   "&:hover": { bgcolor: "action.hover" },
-//                 }}
-//               >
-//                 <Box display="flex" alignItems="center" gap={2}>
-//                   <Box>
-//                     <Typography variant="h6">
-//                       {t(
-//                         `pages.practiceHistory.practiceTools.${group.gameType}`,
-//                       )}
-//                     </Typography>
-//                     <Typography variant="caption" color="text.secondary">
-//                       {getDifficultyLabel(
-//                         Number(group.difficulty) as 0 | 1 | 2,
-//                         t,
-//                       )}
-//                     </Typography>
-//                   </Box>
-//                   <Typography variant="body2" color="text.secondary">
-//                     {t("pages.practiceHistory.attemptsCount", {
-//                       count: group.attempts.length,
-//                     })}
-//                   </Typography>
-//                 </Box>
-//                 <IconButton size="small">
-//                   {isExpanded ? <ChevronUp /> : <ChevronDown />}
-//                 </IconButton>
-//               </Box>
-
-//               <Collapse in={isExpanded}>
-//                 <Box sx={{ borderTop: 1, borderColor: "divider" }}>
-//                   <Table size="small">
-//                     <TableHead>
-//                       <TableRow>
-//                         <TableCell align="right">
-//                           {t("pages.practiceHistory.attemptNumber")}
-//                         </TableCell>
-//                         <TableCell align="right">
-//                           {t("pages.practiceHistory.answer")}
-//                         </TableCell>
-//                         <TableCell align="right">
-//                           {t("pages.practiceHistory.result")}
-//                         </TableCell>
-//                         <TableCell align="right">
-//                           {t("pages.practiceHistory.timestamp")}
-//                         </TableCell>
-//                       </TableRow>
-//                     </TableHead>
-//                     <TableBody>
-//                       {group.attempts.map((attempt) => (
-//                         <TableRow key={attempt.attemptId}>
-//                           <TableCell align="right">
-//                             {attempt.attemptNumber}
-//                           </TableCell>
-//                           <TableCell align="right" dir="rtl">
-//                             {attempt.givenAnswer.join(", ")}
-//                           </TableCell>
-//                           <TableCell align="right">
-//                             <Chip
-//                               label={
-//                                 attempt.status === "Success"
-//                                   ? t("pages.practiceHistory.correct")
-//                                   : t("pages.practiceHistory.tryAgain")
-//                               }
-//                               color={
-//                                 getStatusColor(attempt.status) as
-//                                   | "success"
-//                                   | "error"
-//                                   | "warning"
-//                                   | "default"
-//                               }
-//                               size="small"
-//                             />
-//                           </TableCell>
-//                           <TableCell align="right">
-//                             {formatDate(attempt.createdAt)}
-//                           </TableCell>
-//                         </TableRow>
-//                       ))}
-//                     </TableBody>
-//                   </Table>
-//                 </Box>
-//               </Collapse>
-//             </Paper>
-//           );
-//         })}
-//       </Box>
-//     );
-//   };
-
 //   return (
-//     <Box sx={{ maxWidth: "1200px", mx: "auto", p: 3 }} dir="rtl">
+//     <Box className={classes.container} dir="rtl">
 //       <Box mb={3}>
 //         <Typography variant="h4" component="h1" gutterBottom>
 //           {t("pages.practiceHistory.title")}
@@ -391,33 +64,37 @@
 //         </Typography>
 //       </Box>
 
-//       <Box
-//         display="flex"
-//         justifyContent="space-between"
-//         alignItems="center"
-//         mb={3}
-//       >
-//         <Box display="flex" gap={1}>
+//       <Box className={classes.buttonsContainer}>
+//         <Box className={classes.innerButtonsContainer}>
 //           <Button
 //             variant={viewMode === "summary" ? "contained" : "outlined"}
-//             onClick={() => setViewMode("summary")}
+//             onClick={() => {
+//               setViewMode("summary");
+//               setPage(1); // Reset to page 1 when switching modes
+//             }}
 //           >
 //             {t("pages.practiceHistory.summaryMode")}
 //           </Button>
 //           <Button
 //             variant={viewMode === "detailed" ? "contained" : "outlined"}
-//             onClick={() => setViewMode("detailed")}
+//             onClick={() => {
+//               setViewMode("detailed");
+//               setPage(1); // Reset to page 1 when switching modes
+//             }}
 //           >
 //             {t("pages.practiceHistory.detailedMode")}
 //           </Button>
 //         </Box>
 
-//         <FormControl size="small" sx={{ minWidth: 120 }}>
+//         <FormControl size="small" className={classes.formControl}>
 //           <InputLabel>{t("pages.practiceHistory.perPage")}</InputLabel>
 //           <Select
 //             value={pageSize}
 //             label={t("pages.practiceHistory.perPage")}
-//             onChange={(e) => setPageSize(Number(e.target.value))}
+//             onChange={(e) => {
+//               setPageSize(Number(e.target.value));
+//               setPage(1); // Reset to page 1 when changing page size
+//             }}
 //           >
 //             <MenuItem value={5}>5</MenuItem>
 //             <MenuItem value={10}>10</MenuItem>
@@ -427,20 +104,23 @@
 //       </Box>
 
 //       {isLoading ? (
-//         <Box display="flex" justifyContent="center" py={6}>
+//         <Box className={classes.loadingContainer}>
 //           <CircularProgress />
 //         </Box>
 //       ) : (
 //         <>
-//           {viewMode === "summary" ? renderSummaryView() : renderDetailedView()}
+//           {viewMode === "summary" ? (
+//             <SummaryView
+//               summaryData={summaryData}
+//               detailedData={detailedData}
+//               isHebrew={isHebrew}
+//             />
+//           ) : (
+//             <DetailedView detailedData={detailedData} />
+//           )}
 
 //           {currentData && currentData.totalCount > pageSize && (
-//             <Box
-//               display="flex"
-//               justifyContent="space-between"
-//               alignItems="center"
-//               mt={3}
-//             >
+//             <Box className={classes.navigationButtons}>
 //               <Button
 //                 onClick={() => setPage((p) => Math.max(1, p - 1))}
 //                 disabled={page === 1}
@@ -469,12 +149,8 @@
 //   );
 // };
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAuth } from "@app-providers";
-import {
-  useGetGameHistorySummary,
-  useGetGameHistoryDetailed,
-} from "@student/api";
 import { useTranslation } from "react-i18next";
 import {
   Box,
@@ -486,8 +162,13 @@ import {
   InputLabel,
   CircularProgress,
 } from "@mui/material";
+import {
+  useGetGameHistorySummary,
+  useGetAllGameHistoryDetailed,
+} from "@student/api";
 import { SummaryView } from "./components/summary-view";
 import { DetailedView } from "./components/detailed-view";
+import { useStyles } from "./style";
 
 export const PracticeHistory = () => {
   const { user } = useAuth();
@@ -497,6 +178,7 @@ export const PracticeHistory = () => {
   const [viewMode, setViewMode] = useState<"summary" | "detailed">("summary");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const classes = useStyles();
   const isHebrew = i18n.language === "he";
 
   const { data: summaryData, isLoading: summaryLoading } =
@@ -506,25 +188,62 @@ export const PracticeHistory = () => {
       pageSize,
     });
 
-  const { data: detailedData, isLoading: detailedLoading } =
-    useGetGameHistoryDetailed({
-      studentId,
-      page,
-      pageSize: 9999,
-    });
+  console.log("Summary Data:", summaryData); 
+  console.log("Summary items count:", summaryData?.items.length);
+  console.log("Summary total count:", summaryData?.totalCount);
 
-  const isLoading =
-    (viewMode === "summary" && (summaryLoading || detailedLoading)) ||
-    (viewMode === "detailed" && detailedLoading);
+  // Fetch ALL detailed items at once
+  const { data: allDetailedItems, isLoading: allDetailedLoading } =
+    useGetAllGameHistoryDetailed(studentId);
 
-  const currentData = viewMode === "summary" ? summaryData : detailedData;
+  console.log("All detailed items:", allDetailedItems);
+
+  // Manually paginate the detailed items for detailed view
+  const paginatedDetailedData = useMemo(() => {
+    if (!allDetailedItems) return undefined;
+
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const paginatedItems = allDetailedItems.slice(startIndex, endIndex);
+
+    return {
+      items: paginatedItems,
+      page: page,
+      pageSize: pageSize,
+      totalCount: allDetailedItems.length,
+      hasNextPage: endIndex < allDetailedItems.length,
+    };
+  }, [allDetailedItems, page, pageSize]);
+
+  // Create full detailed data structure for summary view
+  const allDetailedData = useMemo(() => {
+    if (!allDetailedItems) return undefined;
+
+    return {
+      items: allDetailedItems,
+      page: 1,
+      pageSize: allDetailedItems.length,
+      totalCount: allDetailedItems.length,
+      hasNextPage: false,
+    };
+  }, [allDetailedItems]);
+
+  const isLoading = summaryLoading || allDetailedLoading;
+
+  // Determine which data to use for pagination controls
+  const currentData =
+    viewMode === "summary" ? summaryData : paginatedDetailedData;
+
+  // Determine which detailed data to pass to views
+  const detailedDataForView =
+    viewMode === "summary" ? allDetailedData : paginatedDetailedData;
 
   if (viewMode === "summary" && !summaryData && !summaryLoading) return null;
-  if (viewMode === "detailed" && !detailedData && !detailedLoading)
+  if (viewMode === "detailed" && !allDetailedItems && !allDetailedLoading)
     return null;
 
   return (
-    <Box sx={{ maxWidth: "1200px", mx: "auto", p: 3 }} dir="rtl">
+    <Box className={classes.container} dir="rtl">
       <Box mb={3}>
         <Typography variant="h4" component="h1" gutterBottom>
           {t("pages.practiceHistory.title")}
@@ -534,33 +253,37 @@ export const PracticeHistory = () => {
         </Typography>
       </Box>
 
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={3}
-      >
-        <Box display="flex" gap={1}>
+      <Box className={classes.buttonsContainer}>
+        <Box className={classes.innerButtonsContainer}>
           <Button
             variant={viewMode === "summary" ? "contained" : "outlined"}
-            onClick={() => setViewMode("summary")}
+            onClick={() => {
+              setViewMode("summary");
+              setPage(1);
+            }}
           >
             {t("pages.practiceHistory.summaryMode")}
           </Button>
           <Button
             variant={viewMode === "detailed" ? "contained" : "outlined"}
-            onClick={() => setViewMode("detailed")}
+            onClick={() => {
+              setViewMode("detailed");
+              setPage(1);
+            }}
           >
             {t("pages.practiceHistory.detailedMode")}
           </Button>
         </Box>
 
-        <FormControl size="small" sx={{ minWidth: 120 }}>
+        <FormControl size="small" className={classes.formControl}>
           <InputLabel>{t("pages.practiceHistory.perPage")}</InputLabel>
           <Select
             value={pageSize}
             label={t("pages.practiceHistory.perPage")}
-            onChange={(e) => setPageSize(Number(e.target.value))}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
+              setPage(1);
+            }}
           >
             <MenuItem value={5}>5</MenuItem>
             <MenuItem value={10}>10</MenuItem>
@@ -570,7 +293,7 @@ export const PracticeHistory = () => {
       </Box>
 
       {isLoading ? (
-        <Box display="flex" justifyContent="center" py={6}>
+        <Box className={classes.loadingContainer}>
           <CircularProgress />
         </Box>
       ) : (
@@ -578,20 +301,15 @@ export const PracticeHistory = () => {
           {viewMode === "summary" ? (
             <SummaryView
               summaryData={summaryData}
-              detailedData={detailedData}
+              detailedData={detailedDataForView} // All detailed items
               isHebrew={isHebrew}
             />
           ) : (
-            <DetailedView detailedData={detailedData} />
+            <DetailedView detailedData={detailedDataForView} /> // Paginated detailed items
           )}
 
           {currentData && currentData.totalCount > pageSize && (
-            <Box
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
-              mt={3}
-            >
+            <Box className={classes.navigationButtons}>
               <Button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}

@@ -12,8 +12,10 @@ import {
 } from "@mui/material";
 import { Play } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { getDifficultyLabel } from "@student/features/practice/utils";
 import { SummaryData, DetailedData } from "../../types";
+import { useStyles } from "./style";
 
 interface SummaryViewProps {
   summaryData: SummaryData | undefined;
@@ -27,9 +29,28 @@ export const SummaryView = ({
   isHebrew,
 }: SummaryViewProps) => {
   const { t } = useTranslation();
-
+  const navigate = useNavigate();
+  const classes = useStyles();
   if (!summaryData) return null;
 
+  const handleRetry = (
+    gameType: string,
+    difficulty: string,
+    correctAnswer: string[] | undefined,
+    attemptId: string | undefined,
+    nikud: boolean = true,
+  ) => {
+    navigate("/word-order-game", {
+      state: {
+        retryMode: true,
+        nikud: nikud,
+        difficulty: Number(difficulty) as 0 | 1 | 2,
+        gameType: gameType,
+        sentence: correctAnswer?.join(" "),
+        attemptId: attemptId
+      },
+    });
+  };
   return (
     <TableContainer component={Paper}>
       <Table>
@@ -55,7 +76,7 @@ export const SummaryView = ({
               .filter(
                 (detail) =>
                   detail.gameType === item.gameType &&
-                  detail.difficulty === item.difficulty
+                  detail.difficulty === item.difficulty,
               )
               .sort((a, b) => b.attemptNumber - a.attemptNumber)[0];
 
@@ -65,7 +86,7 @@ export const SummaryView = ({
                   <Box>
                     <Typography variant="body2" fontWeight="medium">
                       {t(
-                        `pages.practiceHistory.practiceTools.${item.gameType}`
+                        `pages.practiceHistory.practiceTools.${item.gameType}`,
                       )}
                       {lastAttempt?.correctAnswer?.length ? (
                         <>: "{lastAttempt.correctAnswer.join(" ")}"</>
@@ -74,7 +95,7 @@ export const SummaryView = ({
                     <Typography variant="caption" color="text.secondary">
                       {getDifficultyLabel(
                         Number(item.difficulty) as 0 | 1 | 2,
-                        t
+                        t,
                       )}
                     </Typography>
                   </Box>
@@ -103,19 +124,18 @@ export const SummaryView = ({
 
                 <TableCell align="right">
                   <Button
-                    sx={{
-                      gap: 1.5,
-                      display: "flex",
-                      justifyContent: "center",
-                      px: 1,
-                      minWidth: "unset",
-                    }}
+                    className={classes.retryButton}
                     variant="contained"
                     size="small"
                     startIcon={!isHebrew && <Play size={16} />}
                     endIcon={isHebrew && <Play size={16} />}
                     onClick={() =>
-                      console.log("Retry game:", item.gameType, item.difficulty)
+                      handleRetry(
+                        item.gameType,
+                        item.difficulty,
+                        lastAttempt?.correctAnswer,
+                        lastAttempt?.attemptId
+                      )
                     }
                   >
                     <Typography

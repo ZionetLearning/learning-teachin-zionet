@@ -4,6 +4,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
   Paper,
@@ -16,6 +17,8 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getDifficultyLabel } from "@student/features/practice/utils";
 import { DetailedData, GameAttempt } from "../../types";
+import { useStyles } from "./style";
+import { getStatusColor, formatDate } from "../../utils";
 
 interface DetailedViewProps {
   detailedData: DetailedData | undefined;
@@ -27,32 +30,9 @@ interface GroupedAttempts {
   attempts: GameAttempt[];
 }
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "Success":
-      return "success";
-    case "Failure":
-      return "error";
-    case "Pending":
-      return "warning";
-    default:
-      return "default";
-  }
-};
-
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleString("he-IL", {
-    day: "2-digit",
-    month: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-
-export const DetailedView = ({
-  detailedData,
-}: DetailedViewProps) => {
+export const DetailedView = ({ detailedData }: DetailedViewProps) => {
   const { t } = useTranslation();
+  const classes = useStyles();
   const [expandedGames, setExpandedGames] = useState<Set<string>>(new Set());
 
   const toggleExpanded = (gameKey: string) => {
@@ -69,7 +49,7 @@ export const DetailedView = ({
 
   if (!detailedData) {
     return (
-      <Paper sx={{ p: 4, textAlign: "center" }}>
+      <Paper className={classes.paper}>
         <Typography variant="body1" color="text.secondary">
           {t("pages.practiceHistory.noDetailedData")}
         </Typography>
@@ -79,7 +59,7 @@ export const DetailedView = ({
 
   if (detailedData.items.length === 0) {
     return (
-      <Paper sx={{ p: 4, textAlign: "center" }}>
+      <Paper className={classes.paper}>
         <Typography variant="body1" color="text.secondary">
           {t("pages.practiceHistory.noAttemptsYet")}
         </Typography>
@@ -106,21 +86,21 @@ export const DetailedView = ({
     <Box>
       {Object.entries(groupedAttempts).map(([key, group]) => {
         const isExpanded = expandedGames.has(key);
+        // Filter out attempts with no answer
+        const validAttempts = group.attempts.filter(
+          (attempt) => attempt.givenAnswer.length > 0,
+        );
+
+        // Don't show groups with no valid attempts
+        if (validAttempts.length === 0) return null;
 
         return (
           <Paper key={key} sx={{ mb: 2 }}>
             <Box
+              className={classes.container}
               onClick={() => toggleExpanded(key)}
-              sx={{
-                p: 2,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                cursor: "pointer",
-                "&:hover": { bgcolor: "action.hover" },
-              }}
             >
-              <Box display="flex" alignItems="center" gap={2}>
+              <Box className={classes.innerContainer}>
                 <Box>
                   <Typography variant="h6">
                     {t(`pages.practiceHistory.practiceTools.${group.gameType}`)}
@@ -134,7 +114,7 @@ export const DetailedView = ({
                 </Box>
                 <Typography variant="body2" color="text.secondary">
                   {t("pages.practiceHistory.attemptsCount", {
-                    count: group.attempts.length,
+                    count: validAttempts.length,
                   })}
                 </Typography>
               </Box>
@@ -144,8 +124,10 @@ export const DetailedView = ({
             </Box>
 
             <Collapse in={isExpanded}>
-              <Box sx={{ borderTop: 1, borderColor: "divider" }}>
-                <Table size="small">
+              <TableContainer
+                className={classes.tableContainer}
+              >
+                <Table size="small" stickyHeader>
                   <TableHead>
                     <TableRow>
                       <TableCell align="right">
@@ -163,39 +145,42 @@ export const DetailedView = ({
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {group.attempts.map((attempt) => (
-                      <TableRow key={attempt.attemptId}>
-                        <TableCell align="right">
-                          {attempt.attemptNumber}
-                        </TableCell>
-                        <TableCell align="right" dir="rtl">
-                          {attempt.givenAnswer.join(", ")}
-                        </TableCell>
-                        <TableCell align="right">
-                          <Chip
-                            label={
-                              attempt.status === "Success"
-                                ? t("pages.practiceHistory.correct")
-                                : t("pages.practiceHistory.tryAgain")
-                            }
-                            color={
-                              getStatusColor(attempt.status) as
-                                | "success"
-                                | "error"
-                                | "warning"
-                                | "default"
-                            }
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell align="right">
-                          {formatDate(attempt.createdAt)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {validAttempts.map((attempt) => {
+                      console.log("Attempt data:", attempt);
+                      return (
+                        <TableRow key={attempt.attemptId}>
+                          <TableCell align="right">
+                            {attempt.attemptNumber}
+                          </TableCell>
+                          <TableCell align="right" dir="rtl">
+                            {attempt.givenAnswer.join(", ")}
+                          </TableCell>
+                          <TableCell align="right">
+                            <Chip
+                              label={
+                                attempt.status === "Success"
+                                  ? t("pages.practiceHistory.correct")
+                                  : t("pages.practiceHistory.tryAgain")
+                              }
+                              color={
+                                getStatusColor(attempt.status) as
+                                  | "success"
+                                  | "error"
+                                  | "warning"
+                                  | "default"
+                              }
+                              size="small"
+                            />
+                          </TableCell>
+                          <TableCell align="right">
+                            {formatDate(attempt.createdAt)}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
-              </Box>
+              </TableContainer>
             </Collapse>
           </Paper>
         );

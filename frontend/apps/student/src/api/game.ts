@@ -40,8 +40,6 @@ export type GameHistorySummaryResponse = {
   hasNextPage: boolean;
 };
 
-// --------------
-
 // Game History Detailed
 export type GameHistoryDetailedItem = {
   attemptId: string;
@@ -67,8 +65,6 @@ type GetGameArgs = {
   page?: number;
   pageSize?: number;
 };
-
-// ------------
 
 // Game Mistakes
 
@@ -147,6 +143,40 @@ export const useGetGameHistoryDetailed = ({
       return res.data;
     },
     enabled: Boolean(studentId),
+  });
+};
+
+export const useGetAllGameHistoryDetailed = (studentId: string) => {
+  const GAMES_MANAGER_URL = import.meta.env.VITE_GAMES_MANAGER_URL!;
+
+  return useQuery({
+    queryKey: ["allGamesHistoryDetailed", studentId] as const,
+    queryFn: async () => {
+      if (!studentId) throw new Error("Missing studentId");
+
+      const allItems: GameHistoryDetailedItem[] = [];
+      let currentPage = 1;
+      let hasMore = true;
+
+      // Fetch all pages
+      while (hasMore) {
+        const res = await axios.get<GameHistoryDetailedResponse>(
+          `${GAMES_MANAGER_URL}/history/${encodeURIComponent(studentId)}`,
+          { params: { summary: false, page: currentPage, pageSize: 20 } }
+        );
+
+        allItems.push(...res.data.items);
+        hasMore = res.data.hasNextPage;
+        currentPage++;
+
+        // Safety limit to prevent infinite loops
+        if (currentPage > 100) break;
+      }
+
+      return allItems;
+    },
+    enabled: Boolean(studentId),
+    staleTime: 60_000,
   });
 };
 
