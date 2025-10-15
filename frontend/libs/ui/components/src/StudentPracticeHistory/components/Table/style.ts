@@ -133,6 +133,12 @@ export const useStyles = createUseStyles({
     "@media (max-width: 600px)": {
       gridTemplateColumns: "58% 42%",
     },
+    "@media (max-width: 480px)": {
+      gridTemplateColumns: "1fr",
+      gridAutoRows: "auto",
+      alignItems: "start",
+      rowGap: 8,
+    },
   },
   summaryLeft: {
     minWidth: 0,
@@ -161,6 +167,10 @@ export const useStyles = createUseStyles({
     scrollbarGutter: "stable",
     "-webkit-overflow-scrolling": "touch",
     paddingRight: 10,
+    "@media (max-width: 480px)": {
+      justifySelf: "start",
+      paddingRight: 0,
+    },
   },
   metric: {
     padding: "4px 8px",

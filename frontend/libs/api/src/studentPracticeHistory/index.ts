@@ -9,6 +9,9 @@ export interface SummaryHistoryWithStudentDto {
   attemptsCount: number;
   totalSuccesses: number;
   totalFailures: number;
+  studentFirstName: string;
+  studentLastName: string;
+  timestamp: string;
 }
 
 export interface Paged<T> {

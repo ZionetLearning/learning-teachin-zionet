@@ -37,6 +37,9 @@ type StudentGroup = {
     gameTypes: string[];
     difficulties: DifficultyFilter[];
   };
+  studentFirstName: string;
+  studentLastName: string;
+  timestamp: string;
 };
 
 export const StudentPracticeHistory = () => {
@@ -46,8 +49,10 @@ export const StudentPracticeHistory = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(20);
   const [gameType, setGameType] = useState("all");
-  const [studentId, setStudentId] = useState("all");
+  const [studentName, setStudentName] = useState("all");
   const [difficulty, setDifficulty] = useState<"all" | DifficultyLabel>("all");
+  const [dateFrom, setDateFrom] = useState<string | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<string | undefined>(undefined);
 
   const { data, isLoading, isError } = useGetStudentPracticeHistory({
     page: page + 1,
@@ -74,8 +79,17 @@ export const StudentPracticeHistory = () => {
     );
   }, [allItems]);
 
-  const studentIds = useMemo(
-    () => Array.from(new Set(allItems.map((i) => i.studentId))).sort(),
+  const studentNames = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          allItems.map((i) =>
+            `${i.studentFirstName ?? ""} ${i.studentLastName ?? ""}`.trim(),
+          ),
+        ),
+      )
+        .filter((n) => n.length > 0)
+        .sort(),
     [allItems],
   );
 
@@ -83,11 +97,22 @@ export const StudentPracticeHistory = () => {
     () =>
       allItems.filter(
         (it) =>
-          (studentId === "all" || it.studentId === studentId) &&
+          (studentName === "all" ||
+            `${it.studentFirstName ?? ""} ${it.studentLastName ?? ""}`.trim() ===
+              studentName) &&
           (gameType === "all" || it.gameType === gameType) &&
-          (difficulty === "all" || levelToLabel(it.difficulty) === difficulty),
+          (difficulty === "all" ||
+            levelToLabel(it.difficulty) === difficulty) &&
+          (() => {
+            if (!dateFrom && !dateTo) return true;
+            const dateOnly = (ts: string) => (ts ? ts.slice(0, 10) : "");
+            const d = dateOnly(it.timestamp);
+            if (dateFrom && d < dateFrom) return false;
+            if (dateTo && d > dateTo) return false;
+            return true;
+          })(),
       ),
-    [allItems, studentId, gameType, difficulty],
+    [allItems, studentName, gameType, difficulty, dateFrom, dateTo],
   );
 
   const grouped: StudentGroup[] = useMemo(() => {
@@ -106,6 +131,9 @@ export const StudentPracticeHistory = () => {
             gameTypes: [],
             difficulties: [],
           },
+          studentFirstName: it.studentFirstName,
+          studentLastName: it.studentLastName,
+          timestamp: it.timestamp,
         });
       }
       const g = map.get(key)!;
@@ -134,6 +162,15 @@ export const StudentPracticeHistory = () => {
         gameTypes,
         difficulties: diffs,
       };
+      if (g.items.length > 0) {
+        const first = g.items[0];
+        g.studentFirstName = first.studentFirstName;
+        g.studentLastName = first.studentLastName;
+        g.timestamp = g.items.reduce(
+          (max, i) => (i.timestamp > max ? i.timestamp : max),
+          first.timestamp,
+        );
+      }
     }
     return Array.from(map.values()).sort((a, b) =>
       a.studentId.localeCompare(b.studentId),
@@ -177,9 +214,9 @@ export const StudentPracticeHistory = () => {
       </h2>
       <StudentPracticeFilters
         isDisabled={isLoading || isError}
-        studentId={studentId}
-        setStudentId={setStudentId}
-        studentIds={studentIds}
+        studentName={studentName}
+        setStudentName={setStudentName}
+        studentNames={studentNames}
         gameType={gameType}
         setGameType={setGameType}
         gameTypes={gameTypes}
@@ -189,6 +226,10 @@ export const StudentPracticeHistory = () => {
         csvHeaders={csvHeaders}
         csvPage={csvPage}
         filename={`${filenamePrefix}_page-${page + 1}_rpp-${rowsPerPage}.csv`}
+        dateFrom={dateFrom}
+        setDateFrom={setDateFrom}
+        dateTo={dateTo}
+        setDateTo={setDateTo}
         onAnyChange={() => setPage(0)}
       />
       <StudentPracticeTable

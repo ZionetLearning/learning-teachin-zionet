@@ -31,6 +31,9 @@ export type StudentGroup = {
     gameTypes: string[];
     difficulties: DifficultyFilter[];
   };
+  studentFirstName: string;
+  studentLastName: string;
+  timestamp: string;
 };
 
 interface StudentPracticeTableProps {
@@ -118,13 +121,33 @@ export const StudentPracticeTable = ({
                         >
                           <div className={classes.summaryBar}>
                             <div className={classes.summaryLeft}>
-                              <Tooltip title={g.studentId} arrow>
+                              <Tooltip
+                                title={
+                                  `${g.studentFirstName} ${g.studentLastName}`.trim() ||
+                                  g.studentId
+                                }
+                                arrow
+                              >
                                 <span
                                   className={`${classes.ellipsis} ${classes.studentId}`}
                                 >
-                                  {g.studentId}
+                                  {`${g.studentFirstName} ${g.studentLastName}`.trim() ||
+                                    g.studentId}
                                 </span>
                               </Tooltip>
+                              <Box
+                                component="span"
+                                sx={{
+                                  ml: 2,
+                                  color: "text.secondary",
+                                  fontSize: 12,
+                                }}
+                              >
+                                {t(
+                                  "pages.studentPracticeHistory.columns.lastAttemptTime",
+                                )}
+                                : {g.timestamp?.slice(0, 19).replace("T", " ")}
+                              </Box>
                             </div>
 
                             <div className={classes.summaryRight}>

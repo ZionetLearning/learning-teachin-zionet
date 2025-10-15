@@ -55,6 +55,8 @@ export const buildCsvHeaders = (t: (k: string) => string) => [
 export const toCsvRow = (
   row: {
     studentId: string;
+    studentFirstName?: string;
+    studentLastName?: string;
     gameType: string;
     difficulty: string | number;
     attemptsCount: number;
@@ -67,8 +69,10 @@ export const toCsvRow = (
   },
 ): CsvRow => {
   const rateNum = opts.rate(row.totalSuccesses, row.attemptsCount);
+  const fullName =
+    `${row.studentFirstName ?? ""} ${row.studentLastName ?? ""}`.trim();
   return {
-    studentName: row.studentId,
+    studentName: fullName || row.studentId,
     gameType: row.gameType,
     difficulty: opts.levelToLabel(row.difficulty),
     attempts: row.attemptsCount,

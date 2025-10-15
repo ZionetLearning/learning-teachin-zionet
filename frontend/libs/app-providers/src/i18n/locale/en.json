@@ -440,6 +440,7 @@
           "successes": "Successes",
           "failures": "Failures",
           "successRate": "Success Rate",
+          "lastAttemptTime": "Last attempt time",
           "metrics": "Metrics"
         },
         "loading": "Loading…",
@@ -451,7 +452,11 @@
           "gameType": "Game",
           "difficulty": "Difficulty",
           "all": "All",
-          "student": "Student"
+          "student": "Student",
+          "from": "From date",
+          "to": "To date",
+          "clear": "Clear",
+          "resetAll": "Reset filters"
         },
         "exportPage": "Export (page)",
         "exportCurrentPage": "Export current page"

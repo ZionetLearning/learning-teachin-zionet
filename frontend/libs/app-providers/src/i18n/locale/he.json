@@ -440,6 +440,7 @@
           "successes": "הצלחות",
           "failures": "כישלונות",
           "successRate": "שיעור הצלחה",
+          "lastAttemptTime": "זמן ניסיון אחרון",
           "metrics": "מדדים"
         },
         "loading": "טוען...",
@@ -451,7 +452,11 @@
           "gameType": "סוג משחק",
           "difficulty": "רמת קושי",
           "all": "הכל",
-          "student": "תלמיד"
+          "student": "תלמיד",
+          "from": "מתאריך",
+          "to": "עד תאריך",
+          "clear": "נקה",
+          "resetAll": "איפוס מסננים"
         },
         "exportPage": "ייצוא (עמוד)",
         "exportCurrentPage": "ייצוא את העמוד הנוכחי"
