@@ -1,7 +1,6 @@
 import { apiClient as axios } from "@app-providers";
 import { DifficultyLevel } from "@student/types";
 import { useQuery } from "@tanstack/react-query";
-import { STALE_TIME } from "../utils";
 
 export interface SummaryHistoryWithStudentDto {
   studentId: string;
@@ -25,6 +24,8 @@ export interface Params {
   pageSize: number;
 }
 
+const DEFAULT_STALE_TIME = 5 * 60 * 1000; // 5 minutes
+
 export const useGetStudentPracticeHistory = (params: Params) => {
   return useQuery({
     queryKey: ["student-practice-history", params],
@@ -35,6 +36,6 @@ export const useGetStudentPracticeHistory = (params: Params) => {
       );
       return data;
     },
-    staleTime: STALE_TIME,
+    staleTime: DEFAULT_STALE_TIME,
   });
 };

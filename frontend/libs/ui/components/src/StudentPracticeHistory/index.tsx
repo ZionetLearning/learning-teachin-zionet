@@ -21,7 +21,7 @@ import { useTranslation } from "react-i18next";
 import {
   SummaryHistoryWithStudentDto,
   useGetStudentPracticeHistory,
-} from "./api";
+} from "@api";
 import { DifficultyFilter, StudentPracticeFilters } from "./components";
 import { useStyles } from "./style";
 import {

@@ -1,4 +1,3 @@
-export const STALE_TIME = 5 * 60 * 1000; // 5 minutes
 export type DifficultyLabel = "Easy" | "Medium" | "Hard";
 
 export const levelToLabel = (level: string | number): DifficultyLabel => {
