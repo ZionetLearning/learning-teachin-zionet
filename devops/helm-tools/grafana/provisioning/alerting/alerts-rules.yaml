@@ -9,16 +9,17 @@ groups:
         condition: A
         data:
           - refId: A
-            queryType: ''
+            queryType: timeSeriesQuery
             relativeTimeRange:
               from: 300
               to: 0
             datasourceUid: prometheus
             model:
-              expr: 'kube_node_status_condition{condition="Ready",status="false"} > 0'
+              expr: 'kube_node_status_condition{condition="Ready",status="false"}'
               refId: A
               intervalMs: 1000
               maxDataPoints: 43200
+            reducer: "max"
         for: 5m
         annotations:
           summary: "One or more nodes are NotReady"
@@ -34,18 +35,18 @@ groups:
         condition: A
         data:
           - refId: A
-            queryType: ''
+            queryType: timeSeriesQuery
             relativeTimeRange:
               from: 300
               to: 0
             datasourceUid: prometheus
             model:
-              expr: 'count(kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff", namespace=~"stage|dev"}) > 0'
+              expr: 'kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff", namespace=~"stage|dev"}'
               refId: A
               intervalMs: 1000
               maxDataPoints: 43200
         for: 5m
         annotations:
-          summary: "Pod in CrashLoopBackOff"
+          summary: "Pod in CrashLoopBackOff: {{ $labels.pod }}"
         labels:
           severity: warning
