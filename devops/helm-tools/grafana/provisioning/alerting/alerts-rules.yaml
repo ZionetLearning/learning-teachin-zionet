@@ -17,13 +17,13 @@ groups:
             model:
               expr: 'kube_node_status_condition{condition="Ready",status="false"} > 0'
               refId: A
+              intervalMs: 1000
+              maxDataPoints: 43200
         for: 5m
         annotations:
           summary: "One or more nodes are NotReady"
         labels:
           severity: critical
-        notifications:
-          - uid: teams-webhook
 
   - name: AKS Pods
     folder: Infrastructure
@@ -42,85 +42,10 @@ groups:
             model:
               expr: 'kube_pod_container_status_restarts_total{namespace=~"stage|dev"} > 0'
               refId: A
+              intervalMs: 1000
+              maxDataPoints: 43200
         for: 5m
         annotations:
           summary: "Pod in CrashLoopBackOff"
         labels:
           severity: warning
-        notifications:
-          - uid: teams-webhook
-
-  - name: Frontend Availability
-    folder: Applications
-    interval: 1m
-    rules:
-      - uid: frontend-errors
-        title: "Frontend High 5xx Errors"
-        condition: A
-        data:
-          - refId: A
-            queryType: ''
-            relativeTimeRange:
-              from: 300
-              to: 0
-            datasourceUid: azure-monitor
-            model:
-              expr: 'requests_failed_total > 10'
-              refId: A
-        for: 5m
-        annotations:
-          summary: "High rate of 5xx errors on frontend"
-        labels:
-          severity: critical
-        notifications:
-          - uid: teams-webhook
-
-  - name: Static Web App
-    folder: Applications
-    interval: 5m
-    rules:
-      - uid: staticwebapp-errors
-        title: "Static Web App Errors"
-        condition: A
-        data:
-          - refId: A
-            queryType: ''
-            relativeTimeRange:
-              from: 300
-              to: 0
-            datasourceUid: azure-monitor
-            model:
-              expr: 'requests_failed_total{app="static-webapp"} > 5'
-              refId: A
-        for: 5m
-        annotations:
-          summary: "Static Web App error spike"
-        labels:
-          severity: critical
-        notifications:
-          - uid: teams-webhook
-
-  - name: Cost Management
-    folder: Operations
-    interval: 1h
-    rules:
-      - uid: budget-over
-        title: "Azure Budget Threshold Reached"
-        condition: A
-        data:
-          - refId: A
-            queryType: ''
-            relativeTimeRange:
-              from: 3600
-              to: 0
-            datasourceUid: azure-monitor
-            model:
-              expr: 'budget_actual > 0.9 * budget_limit'
-              refId: A
-        for: 0m
-        annotations:
-          summary: "Budget threshold exceeded"
-        labels:
-          severity: warning
-        notifications:
-          - uid: teams-webhook
