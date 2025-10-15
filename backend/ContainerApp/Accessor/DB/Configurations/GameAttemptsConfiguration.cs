@@ -12,6 +12,9 @@ public class GameAttemptsConfiguration : IEntityTypeConfiguration<GameAttempt>
 
         builder.HasKey(a => a.AttemptId);
 
+        builder.Property(a => a.ExerciseId)
+            .IsRequired();
+
         builder.Property(a => a.GivenAnswer)
             .HasColumnType("jsonb")
             .IsRequired();
@@ -42,7 +45,9 @@ public class GameAttemptsConfiguration : IEntityTypeConfiguration<GameAttempt>
 
         // Indexes for efficient querying
         builder.HasIndex(a => a.StudentId);
+        builder.HasIndex(a => a.ExerciseId);
         builder.HasIndex(a => new { a.StudentId, a.Status });
         builder.HasIndex(a => new { a.StudentId, a.GameType, a.Difficulty });
+        builder.HasIndex(a => new { a.ExerciseId, a.AttemptNumber });
     }
 }

@@ -9,6 +9,8 @@ public interface IAccessorClient
     Task<HistorySnapshotDto> GetHistorySnapshotAsync(Guid threadId, Guid userId, CancellationToken ct = default);
     Task<HistorySnapshotDto> UpsertHistorySnapshotAsync(UpsertHistoryRequest request, CancellationToken ct = default);
 
+    Task<AttemptDetailsResponse> GetAttemptDetailsAsync(Guid userId, Guid attemptId, CancellationToken ct = default);
+
     // Prompts
     Task<PromptResponse> CreatePromptAsync(CreatePromptRequest request, CancellationToken ct = default);
     Task<PromptResponse?> GetPromptAsync(string promptKey, CancellationToken ct = default);

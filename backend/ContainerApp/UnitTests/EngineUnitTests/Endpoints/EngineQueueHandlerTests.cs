@@ -158,7 +158,7 @@ public class EngineQueueHandlerTests
         var history = new ChatHistory();
         history.AddSystemMessage("You are a helpful assistant.");
         history.AddUserMessageNow(userMsg);
-        var expectedAiReq = new ChatAiServiseRequest
+        var expectedAiReq = new ChatAiServiceRequest
         {
             RequestId = requestId,
             ThreadId = threadId,
@@ -194,7 +194,7 @@ public class EngineQueueHandlerTests
             UpdatedHistory = updatedHistory
         };
 
-        ai.Setup(a => a.ChatHandlerAsync(It.Is<ChatAiServiseRequest>(r =>
+        ai.Setup(a => a.ChatHandlerAsync(It.Is<ChatAiServiceRequest>(r =>
                         r.RequestId == expectedAiReq.RequestId &&
                         r.ThreadId == expectedAiReq.ThreadId &&
                         r.UserId == expectedAiReq.UserId &&
@@ -332,7 +332,7 @@ public class EngineQueueHandlerTests
                 History = EmptyHistory()
             });
 
-        var expectedAiReq = new ChatAiServiseRequest
+        var expectedAiReq = new ChatAiServiceRequest
         {
             RequestId = requestId,
             ThreadId = threadId,
@@ -343,7 +343,7 @@ public class EngineQueueHandlerTests
             History = history
         };
 
-        ai.Setup(a => a.ChatHandlerAsync(It.Is<ChatAiServiseRequest>(r =>
+        ai.Setup(a => a.ChatHandlerAsync(It.Is<ChatAiServiceRequest>(r =>
                         r.ThreadId == threadId &&
                         r.History[1].Content == "boom"
                     ), It.IsAny<CancellationToken>()))

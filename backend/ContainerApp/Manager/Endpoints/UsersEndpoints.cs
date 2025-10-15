@@ -2,6 +2,7 @@
 using Manager.Constants;
 using Manager.Helpers;
 using Manager.Models.Users;
+using Manager.Services;
 using Manager.Services.Clients.Accessor;
 using Microsoft.AspNetCore.Mvc;
 
@@ -26,6 +27,8 @@ public static class UsersEndpoints
         usersGroup.MapPost("/teacher/{teacherId:guid}/students/{studentId:guid}", AssignStudentAsync).WithName("AssignStudentToTeacher").RequireAuthorization(PolicyNames.AdminOrTeacher);
         usersGroup.MapDelete("/teacher/{teacherId:guid}/students/{studentId:guid}", UnassignStudentAsync).WithName("UnassignStudentFromTeacher").RequireAuthorization(PolicyNames.AdminOrTeacher);
         usersGroup.MapGet("/student/{studentId:guid}/teachers", ListTeachersForStudentAsync).WithName("ListTeachersForStudent").RequireAuthorization(PolicyNames.AdminOnly);
+
+        usersGroup.MapGet("/online", GetOnlineUsers).WithName("GetOnlineUsers").RequireAuthorization(PolicyNames.AdminOnly);
 
         return app;
     }
@@ -453,6 +456,27 @@ public static class UsersEndpoints
         }
     }
 
+    private static async Task<IResult> GetOnlineUsers(
+        [FromServices] IOnlinePresenceService onlinePresenceService,
+        [FromServices] ILogger<UserEndpoint> logger,
+        CancellationToken ct = default)
+    {
+        try
+        {
+            var all = await onlinePresenceService.GetOnlineAsync(ct);
+            var nonAdmins = all
+            .Where(u => !string.Equals(u.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+            return Results.Ok(nonAdmins);
+
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to list online users");
+            return Results.Problem("Failed to retrieve omline users.");
+        }
+    }
     private static async Task<IResult> SetUserInterestsAsync(
         [FromRoute] Guid userId,
         [FromBody] UpdateInterestsRequest request,

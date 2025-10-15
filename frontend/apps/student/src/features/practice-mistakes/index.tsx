@@ -87,9 +87,6 @@ export const PracticeMistakes = () => {
               <Typography variant="h6" sx={{ mb: 1 }}>
                 {t("pages.practiceMistakes.noMistakes")}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {t("pages.practiceMistakes.keepPracticingHint")}
-              </Typography>
             </Box>
           ) : (
             <>
