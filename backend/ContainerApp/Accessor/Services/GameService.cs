@@ -270,7 +270,10 @@ public class GameService : IGameService
                     Difficulty = g.Key.Difficulty,
                     AttemptsCount = g.Count(),
                     TotalSuccesses = g.Count(x => x.Status == AttemptStatus.Success),
-                    TotalFailures = g.Count(x => x.Status == AttemptStatus.Failure)
+                    TotalFailures = g.Count(x => x.Status == AttemptStatus.Failure),
+                    StudentFirstName = "",
+                    StudentLastName = "",
+                    Timestamp = g.Max(x => x.CreatedAt)
                 });
 
             var total = await query.CountAsync(ct);
@@ -282,8 +285,8 @@ public class GameService : IGameService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unexpected error while fetching all histories.");
-            return new PagedResult<SummaryHistoryWithStudentDto> { Items = Array.Empty<SummaryHistoryWithStudentDto>(), Page = page, PageSize = pageSize, TotalCount = 0 };
+            _logger.LogError(ex, "Unexpected error while fetching all histories from GameService.");
+            throw;
         }
     }
 

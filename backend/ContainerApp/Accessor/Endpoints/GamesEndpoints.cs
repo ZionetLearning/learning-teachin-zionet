@@ -1,5 +1,5 @@
-using Accessor.Services.Interfaces;
 using Accessor.Models.Games;
+using Accessor.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Accessor.Endpoints;
@@ -107,7 +107,7 @@ public static class GamesEndpoints
     private static async Task<IResult> GetAllHistoriesAsync(
         [FromQuery] int page,
         [FromQuery] int pageSize,
-        [FromServices] IGameService service,
+        [FromServices] IStudentPracticeHistoryService service,
         ILogger<IGameService> logger,
         CancellationToken ct)
     {
@@ -115,7 +115,7 @@ public static class GamesEndpoints
         {
             logger.LogInformation("GetAllHistoriesAsync called. Page={Page}, PageSize={PageSize}", page, pageSize);
 
-            var result = await service.GetAllHistoriesAsync(page, pageSize, ct);
+            var result = await service.GetHistoryAsync(page, pageSize, ct);
 
             logger.LogInformation("GetAllHistoriesAsync returned {Records} records (page). TotalCount={TotalCount}", result.Items.Count(), result.TotalCount);
 

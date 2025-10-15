@@ -378,4 +378,34 @@ public class UserService : IUserService
             throw;
         }
     }
+
+    public async Task<Dictionary<Guid, UserNameDto>> GetUserFullNamesAsync(IEnumerable<Guid> userIds, CancellationToken ct)
+    {
+        if (userIds == null || !userIds.Any())
+        {
+            _logger.LogWarning("GetUserFullNamesAsync called with empty userIds.");
+            return [];
+        }
+
+        _logger.LogInformation("GetUserFullNamesAsync START for userIds: {UserIds}", string.Join(", ", userIds));
+        try
+        {
+            return await _db.Users
+                .AsNoTracking()
+                .Where(u => userIds.Contains(u.UserId))
+                .ToDictionaryAsync(
+                    u => u.UserId,
+                    u => new UserNameDto
+                    {
+                        FirstName = u.FirstName,
+                        LastName = u.LastName
+                    },
+                    cancellationToken: ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetUserFullNamesAsync FAILED for userIds: {UserIds}", string.Join(", ", userIds));
+            throw;
+        }
+    }
 }
