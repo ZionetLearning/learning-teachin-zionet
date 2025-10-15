@@ -439,7 +439,8 @@
           "attempts": "ניסיונות",
           "successes": "הצלחות",
           "failures": "כישלונות",
-          "successRate": "שיעור הצלחה"
+          "successRate": "שיעור הצלחה",
+          "metrics": "מדדים"
         },
         "loading": "טוען...",
         "failedToLoad": "הטעינה נכשלה:",
@@ -449,7 +450,8 @@
         "filters": {
           "gameType": "סוג משחק",
           "difficulty": "רמת קושי",
-          "all": "הכל"
+          "all": "הכל",
+          "student": "תלמיד"
         },
         "exportPage": "ייצוא (עמוד)",
         "exportCurrentPage": "ייצוא את העמוד הנוכחי"

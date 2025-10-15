@@ -439,7 +439,8 @@
           "attempts": "Attempts",
           "successes": "Successes",
           "failures": "Failures",
-          "successRate": "Success Rate"
+          "successRate": "Success Rate",
+          "metrics": "Metrics"
         },
         "loading": "Loading…",
         "failedToLoad": "Failed to load",
@@ -449,7 +450,8 @@
         "filters": {
           "gameType": "Game",
           "difficulty": "Difficulty",
-          "all": "All"
+          "all": "All",
+          "student": "Student"
         },
         "exportPage": "Export (page)",
         "exportCurrentPage": "Export current page"
