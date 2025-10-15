@@ -12,6 +12,7 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using System.IdentityModel.Tokens.Jwt;
 using Xunit.Abstractions;
+using IntegrationTests.Models.Ai.Sentences;
 
 namespace IntegrationTests.Tests.Games;
 
