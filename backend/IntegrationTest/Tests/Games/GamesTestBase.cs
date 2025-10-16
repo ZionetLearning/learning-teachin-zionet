@@ -16,24 +16,66 @@ using IntegrationTests.Models.Ai.Sentences;
 
 namespace IntegrationTests.Tests.Games;
 
-[Collection("Per-test user collection")]
+[Collection("IntegrationTests")]
 public abstract class GamesTestBase(
-    PerTestUserFixture perUserFixture,
+    HttpClientFixture httpClientFixture,
     ITestOutputHelper outputHelper,
     SignalRTestFixture signalRFixture
-) : IntegrationTestBase(perUserFixture.HttpFixture, outputHelper, signalRFixture)
+) : IntegrationTestBaseClientFixture(httpClientFixture, outputHelper, signalRFixture)
 {
-    protected PerTestUserFixture PerUserFixture { get; } = perUserFixture;
+    public override async Task InitializeAsync()
+    {
+        // Don't login by default - let tests choose which role to use
+        // Just clear SignalR messages
+        SignalRFixture.ClearReceivedMessages();
+    }
 
     /// <summary>
     /// Creates a user (default role: student) and logs them in.
+    /// Returns UserData for the created user.
     /// </summary>
-    protected Task<UserData> CreateUserAsync(
+    protected async Task<UserData> CreateUserAsync(
         string role = "student",
         string? email = null)
     {
         var parsedRole = Enum.TryParse<Role>(role, true, out var r) ? r : Role.Student;
-        return PerUserFixture.CreateAndLoginAsync(parsedRole, email);
+        email ??= $"{role}-{Guid.NewGuid():N}@example.com";
+
+        var user = new UserModel
+        {
+            UserId = Guid.NewGuid(),
+            Email = email,
+            Password = TestDataHelper.DefaultTestPassword,
+            FirstName = "Test",
+            LastName = "User",
+            Role = parsedRole
+        };
+
+        var createRes = await Client.PostAsJsonAsync(UserRoutes.UserBase, user);
+        createRes.EnsureSuccessStatusCode();
+
+        // Login
+        var loginReq = new LoginRequest { Email = user.Email, Password = TestDataHelper.DefaultTestPassword };
+        var loginRes = await Client.PostAsJsonAsync(AuthRoutes.Login, loginReq);
+        loginRes.EnsureSuccessStatusCode();
+
+        var body = await loginRes.Content.ReadAsStringAsync();
+        var tokenRes = JsonSerializer.Deserialize<AccessTokenResponse>(body)
+                       ?? throw new InvalidOperationException("Invalid login response");
+
+        Client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", tokenRes.AccessToken);
+
+        return new UserData
+        {
+            UserId = user.UserId,
+            Email = user.Email,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            Role = parsedRole,
+            PreferredLanguageCode = SupportedLanguage.en,
+            HebrewLevelValue = HebrewLevel.beginner
+        };
     }
 
     /// <summary>
@@ -54,6 +96,9 @@ public abstract class GamesTestBase(
     /// </summary>
     protected async Task<UserData> LoginAsync(string email, string password, Role role)
     {
+        // Clear previous authorization header before logging in with new credentials
+        Client.DefaultRequestHeaders.Authorization = null;
+
         var loginReq = new LoginRequest { Email = email, Password = password };
         var loginRes = await Client.PostAsJsonAsync(AuthRoutes.Login, loginReq);
         loginRes.EnsureSuccessStatusCode();
@@ -90,6 +135,9 @@ public abstract class GamesTestBase(
     /// </summary>
     protected async Task<UserData> LoginAsync(CreateUser user)
     {
+        // Clear previous authorization header before logging in with new credentials
+        Client.DefaultRequestHeaders.Authorization = null;
+
         var role = Enum.TryParse<Role>(user.Role, true, out var r) ? r : Role.Student;
         
         var loginReq = new LoginRequest { Email = user.Email, Password = user.Password };
