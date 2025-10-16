@@ -13,7 +13,7 @@ using Xunit.Abstractions;
 namespace IntegrationTests.Tests.AI
 {
 
-    [Collection("Shared test collection")]
+    [Collection("IntegrationTests")]
     public class SentenceGeneratorTests(
         HttpClientFixture clientFixture,
         ITestOutputHelper outputHelper,
