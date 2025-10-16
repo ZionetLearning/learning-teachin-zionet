@@ -19,11 +19,15 @@ groups:
               refId: A
               intervalMs: 1000
               maxDataPoints: 43200
+        noDataState: OK
+        execErrState: Alerting
         for: 5m
         annotations:
-          summary: "One or more nodes are NotReady"
+          summary: "Node {{ $labels.node }} is NotReady"
+          description: "Node {{ $labels.node }} has been in NotReady state for more than 5 minutes"
         labels:
           severity: critical
+          node: "{{ $labels.node }}"
 
   - name: AKS Pods
     folder: Infrastructure
@@ -36,16 +40,54 @@ groups:
           - refId: A
             queryType: ''
             relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: 'rate(kube_pod_container_status_restarts_total{namespace=~"stage|dev"}[5m]) > 0'
+              refId: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+        noDataState: OK
+        execErrState: Alerting
+        for: 5m
+        annotations:
+          summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is crash looping"
+          description: "Container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }} has restarted {{ $value }} times in the last 5 minutes"
+        labels:
+          severity: warning
+          namespace: "{{ $labels.namespace }}"
+          pod: "{{ $labels.pod }}"
+          container: "{{ $labels.container }}"
+
+  # Alternative: Detect pods actually in CrashLoopBackOff state
+  - name: AKS Pod States
+    folder: Infrastructure
+    interval: 1m
+    rules:
+      - uid: pod-crashloop-state
+        title: "Pod in CrashLoopBackOff State (stage/dev only)"
+        condition: A
+        data:
+          - refId: A
+            queryType: ''
+            relativeTimeRange:
               from: 300
               to: 0
             datasourceUid: prometheus
             model:
-              expr: 'kube_pod_container_status_restarts_total{namespace=~"stage|dev"} > 0'
+              expr: 'kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff",namespace=~"stage|dev"} > 0'
               refId: A
               intervalMs: 1000
               maxDataPoints: 43200
-        for: 5m
+        noDataState: OK
+        execErrState: Alerting
+        for: 2m
         annotations:
-          summary: "Pod in CrashLoopBackOff"
+          summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is in CrashLoopBackOff"
+          description: "Container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }} is in CrashLoopBackOff state"
         labels:
           severity: warning
+          namespace: "{{ $labels.namespace }}"
+          pod: "{{ $labels.pod }}"
+          container: "{{ $labels.container }}"
