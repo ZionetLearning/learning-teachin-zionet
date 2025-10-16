@@ -10,13 +10,12 @@ using Xunit.Abstractions;
 
 namespace IntegrationTests.Tests.Auth;
 
-public abstract class AuthTestBase : IntegrationTestBase
+public abstract class AuthTestBase(
+      HttpClientFixture httpClientFixture,
+    ITestOutputHelper outputHelper,
+    SignalRTestFixture signalRFixture
+) : IntegrationTestBaseClientFixture(httpClientFixture, outputHelper, signalRFixture)
 {
-    protected AuthTestBase(HttpTestFixture fixture, ITestOutputHelper outputHelper, SignalRTestFixture signalRFixture)
-        : base(fixture, outputHelper, signalRFixture)
-    {
-    }
-
     // Override the base Initialize so we DO NOT start SignalR before login (Auth tests validate login/refresh/logout flows)
     public override Task InitializeAsync()
     {

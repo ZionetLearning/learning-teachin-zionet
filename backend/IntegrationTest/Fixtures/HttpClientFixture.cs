@@ -19,6 +19,8 @@ public class HttpClientFixture : IAsyncLifetime
     private readonly Dictionary<Role, string> _tokenCache = new();
 
     public HttpClient Client { get; }
+    
+    public const string GlobalTestUserPassword = "StrongPass!1";
 
     public HttpClientFixture()
     {
@@ -38,9 +40,9 @@ public class HttpClientFixture : IAsyncLifetime
 
         _globalUsers = new()
         {
-            { Role.Admin,   ("admin-test-user@sdkcrlscd",   "StrongPass!1", Guid.NewGuid()) },
-            { Role.Teacher, ("teacher-test-user@sdkcrlscd", "StrongPass!1", Guid.NewGuid()) },
-            { Role.Student, ("student-test-user@sdkcrlscd", "StrongPass!1", Guid.NewGuid()) },
+            { Role.Admin,   ("admin-test-user@sdkcrlscd",   GlobalTestUserPassword, CreateDeterministicGuid("admin-test-user@sdkcrlscd")) },
+            { Role.Teacher, ("teacher-test-user@sdkcrlscd", GlobalTestUserPassword, CreateDeterministicGuid("teacher-test-user@sdkcrlscd")) },
+            { Role.Student, ("student-test-user@sdkcrlscd", GlobalTestUserPassword, CreateDeterministicGuid("student-test-user@sdkcrlscd")) },
         };
     }
 
@@ -49,8 +51,15 @@ public class HttpClientFixture : IAsyncLifetime
             .SetBasePath(AppContext.BaseDirectory)
             .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
             .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false)
-            .AddEnvironmentVariables() // optional: lets CI override
+            .AddEnvironmentVariables()
             .Build();
+
+    private static Guid CreateDeterministicGuid(string input)
+    {
+        using var md5 = System.Security.Cryptography.MD5.Create();
+        var hash = md5.ComputeHash(System.Text.Encoding.UTF8.GetBytes(input));
+        return new Guid(hash);
+    }
 
     public async Task InitializeAsync()
     {
