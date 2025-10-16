@@ -379,4 +379,19 @@ public class GameService : IGameService
             throw;
         }
     }
+
+    public async Task DeleteAllGamesHistoryAsync(CancellationToken ct)
+    {
+        try
+        {
+            _logger.LogInformation("Deleting all game history...");
+            var deletedAttempts = await _db.GameAttempts.ExecuteDeleteAsync(ct);
+            _logger.LogInformation("Deleted {Count} game attempts", deletedAttempts);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while deleting all game history.");
+            throw;
+        }
+    }
 }

@@ -27,6 +27,9 @@ public static class GamesEndpoints
         gamesGroup.MapGet("/all-history", GetAllHistoriesAsync)
             .RequireAuthorization(PolicyNames.AdminOrTeacher);
 
+        gamesGroup.MapDelete("/all-history", DeleteAllGamesHistoryAsync)
+            .RequireAuthorization(PolicyNames.AdminOrTeacher);
+
         return app;
     }
 
@@ -152,6 +155,31 @@ public static class GamesEndpoints
         {
             logger.LogError(ex, "Error fetching all histories");
             return Results.Problem("Failed to fetch all histories. Please try again later.");
+        }
+    }
+
+    private static async Task<IResult> DeleteAllGamesHistoryAsync(
+        [FromServices] IAccessorClient accessorClient,
+        ILogger<GameEndpoint> logger,
+        CancellationToken ct)
+    {
+        try
+        {
+            logger.LogInformation("Request received to delete all games history.");
+            var success = await accessorClient.DeleteAllGamesHistoryAsync(ct);
+
+            if (success)
+            {
+                logger.LogInformation("All games history deleted successfully.");
+                return Results.Ok(new { message = "All games history deleted." });
+            }
+
+            return Results.Problem("Failed to delete games history.");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error deleting all games history");
+            return Results.Problem("Failed to delete games history.");
         }
     }
 }

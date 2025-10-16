@@ -393,22 +393,18 @@ public class GamesIntegrationTests(
 
     // need to add deleteion of the DB before the assert
     [Fact(DisplayName = "GET /games-manager/all-history - Should return correct names and timestamp")]
-    public async Task GetAllHistory_Should_Include_StudentNames_And_Timestamp()
+    public async Task GetAllHistory_Should_Include_AdminNames_And_Timestamp()
     {
-        var student = await CreateUserViaApiAsync(role: "student");
-
-        var firstName = student.FirstName;
-        var lastName = student.LastName;
-
-        await LoginAsync(student.Email, student.Password, Role.Student);
-        await CreateSuccessfulAttemptAsync(student.UserId, Difficulty.easy);
-        //await CreateMistakeAsync(student.UserId, Difficulty.easy);
-
-        await Task.Delay(500);
-
         var admin = await CreateUserViaApiAsync(role: "admin");
-
         await LoginAsync(admin.Email, admin.Password, Role.Admin);
+
+        // first, delete all games history
+        var deleteResponse = await Client.DeleteAsync($"{ApiRoutes.GameAllHistory}");
+        deleteResponse.ShouldBeOk();
+
+        // Create some game history for the admin user
+        await CreateSuccessfulAttemptAsync(admin.UserId, Difficulty.easy);
+        await CreateMistakeAsync(admin.UserId, Difficulty.easy);
 
         var response = await Client.GetAsync($"{ApiRoutes.GameAllHistory}?page=1&pageSize=10");
         response.ShouldBeOk();
@@ -418,12 +414,12 @@ public class GamesIntegrationTests(
         result!.Items.Should().HaveCount(1);
 
         var item = result.Items.First();
-        item.StudentFirstName.Should().Be(firstName);
-        item.StudentLastName.Should().Be(lastName);
+        item.StudentFirstName.Should().Be(admin.FirstName);
+        item.StudentLastName.Should().Be(admin.LastName);
         item.AttemptsCount.Should().Be(2);
         item.TotalSuccesses.Should().Be(1);
         item.TotalFailures.Should().Be(1);
-        item.Timestamp.Should().BeAfter(DateTime.UtcNow.AddMinutes(-5)); // recent attempt
+        item.Timestamp.Should().BeAfter(DateTime.UtcNow.AddMinutes(-5));
     }
 
 

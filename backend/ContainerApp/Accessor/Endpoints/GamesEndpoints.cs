@@ -16,6 +16,7 @@ public static class GamesEndpoints
         gamesGroup.MapGet("/all-history", GetAllHistoriesAsync);
         gamesGroup.MapGet("/attempt/{userId:guid}/{attemptId:guid}", GetAttemptDetailsAsync);
         gamesGroup.MapPost("/generated-sentences", SaveGeneratedSentencesAsync);
+        gamesGroup.MapDelete("/all-history", DeleteAllGamesHistoryAsync);
 
         return app;
     }
@@ -172,6 +173,24 @@ public static class GamesEndpoints
         {
             logger.LogError(ex, "Error saving generated sentence for StudentId={StudentId}", dto.StudentId);
             return Results.Problem("Failed to save generated sentence.");
+        }
+    }
+
+    private static async Task<IResult> DeleteAllGamesHistoryAsync(
+       [FromServices] IGameService gameService,
+       ILogger<IGameService> logger,
+       CancellationToken ct)
+    {
+        try
+        {
+            await gameService.DeleteAllGamesHistoryAsync(ct);
+            logger.LogInformation("All games history deleted successfully.");
+            return Results.Ok(new { message = "All games history deleted." });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error occurred while deleting games history.");
+            return Results.Problem("Failed to delete all games history.");
         }
     }
 }
