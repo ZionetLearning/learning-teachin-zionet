@@ -319,7 +319,7 @@ groups:
               to: 0
             datasourceUid: prometheus
             model:
-              expr: 'kube_pod_container_status_terminated_reason{reason=~"Error|OOMKilled|ContainerCannotRun",namespace=~"stage|dev",pod!~"app-stats-ping.*"}'
+              expr: 'kube_pod_container_status_terminated_reason{reason=~"Error|StartError|OOMKilled|ContainerCannotRun",namespace=~"stage|dev",pod!~"app-stats-ping.*"}'
               refId: A
               intervalMs: 1000
               maxDataPoints: 43200
