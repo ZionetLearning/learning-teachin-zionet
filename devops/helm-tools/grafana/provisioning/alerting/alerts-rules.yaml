@@ -30,7 +30,8 @@ groups:
               expression: A
               reducer: last
               settings:
-                mode: strict
+                mode: replaceNN
+                replaceWithValue: 0
               refId: B
           - refId: C
             queryType: ''
@@ -92,7 +93,8 @@ groups:
               expression: A
               reducer: last
               settings:
-                mode: strict
+                mode: replaceNN
+                replaceWithValue: 0
               refId: B
           - refId: C
             queryType: ''
@@ -155,7 +157,8 @@ groups:
               expression: A
               reducer: last
               settings:
-                mode: strict
+                mode: replaceNN
+                replaceWithValue: 0
               refId: B
           - refId: C
             queryType: ''
