@@ -6,7 +6,7 @@ groups:
     rules:
       - uid: node-notready
         title: "AKS Node NotReady"
-        condition: A
+        condition: B
         data:
           - refId: A
             queryType: ''
@@ -15,10 +15,44 @@ groups:
               to: 0
             datasourceUid: prometheus
             model:
-              expr: 'kube_node_status_condition{condition="Ready",status="false"} > 0'
+              expr: 'kube_node_status_condition{condition="Ready",status="false"}'
               refId: A
               intervalMs: 1000
               maxDataPoints: 43200
+          - refId: B
+            queryType: ''
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              settings:
+                mode: strict
+              refId: B
+          - refId: C
+            queryType: ''
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  type: query
+              refId: C
         noDataState: OK
         execErrState: Alerting
         for: 5m
@@ -35,7 +69,7 @@ groups:
     rules:
       - uid: pod-crashloop
         title: "Pod CrashLoopBackOff (stage/dev only)"
-        condition: A
+        condition: B
         data:
           - refId: A
             queryType: ''
@@ -44,10 +78,44 @@ groups:
               to: 0
             datasourceUid: prometheus
             model:
-              expr: 'rate(kube_pod_container_status_restarts_total{namespace=~"stage|dev"}[5m]) > 0'
+              expr: 'rate(kube_pod_container_status_restarts_total{namespace=~"stage|dev"}[5m])'
               refId: A
               intervalMs: 1000
               maxDataPoints: 43200
+          - refId: B
+            queryType: ''
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              settings:
+                mode: strict
+              refId: B
+          - refId: C
+            queryType: ''
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  type: query
+              refId: C
         noDataState: OK
         execErrState: Alerting
         for: 5m
@@ -67,7 +135,7 @@ groups:
     rules:
       - uid: pod-crashloop-state
         title: "Pod in CrashLoopBackOff State (stage/dev only)"
-        condition: A
+        condition: B
         data:
           - refId: A
             queryType: ''
@@ -76,10 +144,44 @@ groups:
               to: 0
             datasourceUid: prometheus
             model:
-              expr: 'kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff",namespace=~"stage|dev"} > 0'
+              expr: 'kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff",namespace=~"stage|dev"}'
               refId: A
               intervalMs: 1000
               maxDataPoints: 43200
+          - refId: B
+            queryType: ''
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              settings:
+                mode: strict
+              refId: B
+          - refId: C
+            queryType: ''
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  type: query
+              refId: C
         noDataState: OK
         execErrState: Alerting
         for: 2m
