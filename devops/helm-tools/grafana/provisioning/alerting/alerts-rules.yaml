@@ -142,7 +142,7 @@ groups:
               to: 0
             datasourceUid: prometheus
             model:
-              expr: 'kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff",namespace=~"stage|dev"}'
+              expr: 'kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff",namespace=~"stage|dev",pod!~"app-stats-ping.*"}'
               refId: A
               intervalMs: 1000
               maxDataPoints: 43200
@@ -187,5 +187,182 @@ groups:
         annotations:
           summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is in CrashLoopBackOff"
           description: "Container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }} is in CrashLoopBackOff state"
+        labels:
+          severity: warning
+
+      - uid: pod-image-pull-error
+        title: "Pod ImagePullBackOff/ErrImagePull (stage/dev only)"
+        condition: B
+        data:
+          - refId: A
+            queryType: ''
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: 'kube_pod_container_status_waiting_reason{reason=~"ImagePullBackOff|ErrImagePull",namespace=~"stage|dev",pod!~"app-stats-ping.*"}'
+              refId: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+          - refId: B
+            queryType: ''
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              settings:
+                mode: replaceNN
+                replaceWithValue: 0
+              refId: B
+          - refId: C
+            queryType: ''
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  type: query
+              refId: C
+        noDataState: OK
+        execErrState: Alerting
+        for: 2m
+        annotations:
+          summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} cannot pull image"
+          description: "Container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }} has image pull error: {{ $labels.reason }}"
+        labels:
+          severity: warning
+
+      - uid: pod-start-error
+        title: "Pod CreateContainerError/StartError (stage/dev only)"
+        condition: B
+        data:
+          - refId: A
+            queryType: ''
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: 'kube_pod_container_status_waiting_reason{reason=~"CreateContainerError|StartError|CreateContainerConfigError|InvalidImageName",namespace=~"stage|dev",pod!~"app-stats-ping.*"}'
+              refId: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+          - refId: B
+            queryType: ''
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              settings:
+                mode: replaceNN
+                replaceWithValue: 0
+              refId: B
+          - refId: C
+            queryType: ''
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  type: query
+              refId: C
+        noDataState: OK
+        execErrState: Alerting
+        for: 2m
+        annotations:
+          summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} has container start error"
+          description: "Container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }} failed to start: {{ $labels.reason }}"
+        labels:
+          severity: critical
+
+      - uid: pod-terminated-error
+        title: "Pod in Error/Failed State (stage/dev only)"
+        condition: B
+        data:
+          - refId: A
+            queryType: ''
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: 'kube_pod_container_status_terminated_reason{reason=~"Error|OOMKilled|ContainerCannotRun",namespace=~"stage|dev",pod!~"app-stats-ping.*"}'
+              refId: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+          - refId: B
+            queryType: ''
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              settings:
+                mode: replaceNN
+                replaceWithValue: 0
+              refId: B
+          - refId: C
+            queryType: ''
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  type: query
+              refId: C
+        noDataState: OK
+        execErrState: Alerting
+        for: 2m
+        annotations:
+          summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} terminated with error"
+          description: "Container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }} terminated: {{ $labels.reason }}"
         labels:
           severity: warning
