@@ -20,6 +20,7 @@ import {
   TypingPracticePage,
   WeatherWidgetPage,
   WordOrderGamePage,
+  PracticeHistoryPage,
   ProfilePage,
   PracticeMistakesPage,
 } from "./pages";
@@ -67,6 +68,7 @@ function App() {
           <Route path="/weather" element={<WeatherWidgetPage />} />
           <Route path="/anime-explorer" element={<AnimeExplorerPage />} />
           <Route path="/country-explorer" element={<CountryExplorerPage />} />
+          <Route path="/practice-history" element={<PracticeHistoryPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/practice-mistakes" element={<PracticeMistakesPage />} />
         </Route>
