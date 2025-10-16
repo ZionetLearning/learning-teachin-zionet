@@ -4,23 +4,29 @@ using IntegrationTests.Fixtures;
 using IntegrationTests.Infrastructure;
 using IntegrationTests.Models.Ai.Sentences;
 using IntegrationTests.Models.Notification;
+using Manager.Models.Users;
 using Models.Ai.Sentences;
-using System.Net.Http.Json;
+
 using System.Text.Json;
 using Xunit.Abstractions;
 
 namespace IntegrationTests.Tests.AI
 {
 
-    [Collection("Shared test collection")]
+    [Collection("IntegrationTests")]
     public class SentenceGeneratorTests(
-        SharedTestFixture sharedFixture,
+        HttpClientFixture clientFixture,
         ITestOutputHelper outputHelper,
         SignalRTestFixture signalRFixture
-    ) : IntegrationTestBase(sharedFixture.HttpFixture, outputHelper, signalRFixture), IAsyncLifetime
+    ) : IntegrationTestBase(clientFixture, outputHelper, signalRFixture), IAsyncLifetime
 
     {
-        private readonly SharedTestFixture _shared = sharedFixture;
+        public override async Task InitializeAsync()
+        {
+            await ClientFixture.LoginAsync(Role.Admin);
+            await EnsureSignalRStartedAsync();
+            SignalRFixture.ClearReceivedMessages();
+        }
 
         [Theory]
         [InlineData(1, Difficulty.hard, false)]
@@ -36,7 +42,7 @@ namespace IntegrationTests.Tests.AI
                 Count = count
             };
 
-            await _shared.EnsureSignalRStartedAsync(SignalRFixture, OutputHelper);
+            await EnsureSignalRStartedAsync();
             SignalRFixture.ClearReceivedMessages();
 
             OutputHelper.WriteLine($"Generating sentences");
@@ -81,7 +87,7 @@ namespace IntegrationTests.Tests.AI
                 Count = count
             };
 
-            await _shared.EnsureSignalRStartedAsync(SignalRFixture, OutputHelper);
+            await EnsureSignalRStartedAsync();
             SignalRFixture.ClearReceivedMessages();
 
             OutputHelper.WriteLine($"Generating sentences");

@@ -4,7 +4,6 @@ using IntegrationTests.Fixtures;
 using IntegrationTests.Infrastructure;
 using IntegrationTests.Models.Notification;
 using Manager.Models.Chat;
-using Manager.Models.Users;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Xunit.Abstractions;
@@ -12,7 +11,7 @@ using Xunit.Abstractions;
 namespace IntegrationTests.Tests.AI;
 
 public abstract class AiChatTestBase(
-    HttpTestFixture fixture,
+    HttpClientFixture fixture,
     ITestOutputHelper outputHelper,
     SignalRTestFixture signalRFixture
 ) : IntegrationTestBase(fixture, outputHelper, signalRFixture)
