@@ -429,6 +429,37 @@
         "gameType": {
           "wordOrderGame": "Word Order Game"
         }
+      },
+      "studentPracticeHistory": {
+        "title": "Student Practice History",
+        "columns": {
+          "studentName": "Student Name",
+          "gameType": "Game Type",
+          "difficulty": "Difficulty",
+          "attempts": "Attempts",
+          "successes": "Successes",
+          "failures": "Failures",
+          "successRate": "Success Rate",
+          "lastAttemptTime": "Last attempt time",
+          "metrics": "Metrics"
+        },
+        "loading": "Loading…",
+        "failedToLoad": "Failed to load",
+        "noDataFound": "No data found.",
+        "rowsPerPage": "Rows per page:",
+        "of": "of",
+        "filters": {
+          "gameType": "Game",
+          "difficulty": "Difficulty",
+          "all": "All",
+          "student": "Student",
+          "from": "From date",
+          "to": "To date",
+          "clear": "Clear",
+          "resetAll": "Reset filters"
+        },
+        "exportPage": "Export (page)",
+        "exportCurrentPage": "Export current page"
       }
     },
     "sidebar": {
@@ -459,7 +490,8 @@
       "users": "Users",
       "tasks": "Tasks",
       "profile": "Profile",
-      "myPracticeMistakes": "Practice Mistakes"
+      "myPracticeMistakes": "Practice Mistakes",
+      "studentPracticeHistory": "Practice History"
     },
     "errorBoundary": {
       "title": "Oops! Something went wrong",
