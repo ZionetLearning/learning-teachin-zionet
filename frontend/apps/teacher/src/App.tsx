@@ -5,7 +5,7 @@ import { SidebarMenuLayout } from "@ui-components";
 import { SidebarMenu } from "./components";
 import { AuthorizationPage, RequireAuth } from "@authorization";
 import "./App.css";
-import { HomePage, ProfilePage } from "./pages";
+import { HomePage, ProfilePage, StudentPracticeHistoryPage } from "./pages";
 import { AppRole } from "@app-providers";
 
 const ProtectedLayout = () => {
@@ -39,6 +39,10 @@ function App() {
         <Route element={<ProtectedLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route
+            path="/student-practice-history"
+            element={<StudentPracticeHistoryPage />}
+          />
         </Route>
       </Routes>
     </BrowserRouter>

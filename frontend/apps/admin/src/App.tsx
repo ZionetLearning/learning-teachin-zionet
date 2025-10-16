@@ -8,7 +8,8 @@ import {
   HomePage,
   UsersPage,
   ProfilePage,
-  TasksPage
+  TasksPage,
+  StudentPracticeHistoryPage,
 } from "./pages";
 import "./App.css";
 import { AppRole } from "@app-providers";
@@ -40,6 +41,10 @@ function App() {
           <Route path="/users" element={<UsersPage />} />
           <Route path="/tasks" element={<TasksPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route
+            path="/student-practice-history"
+            element={<StudentPracticeHistoryPage />}
+          />
         </Route>
       </Routes>
     </BrowserRouter>
