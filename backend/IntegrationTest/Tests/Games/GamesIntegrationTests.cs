@@ -146,7 +146,7 @@ public class GamesIntegrationTests(
         await LoginAsync(teacher.Email, "Passw0rd!", Role.Teacher);
         
         // Act
-        var response = await Client.GetAsync($"{ApiRoutes.GameHistory(student.UserId)}?summary=false&page=1&pageSize=10");
+        var response = await Client.GetAsync($"{ApiRoutes.GameHistory(student.UserId)}?summary=false&page=1&pageSize=10&getPending=false");
         response.ShouldBeOk();
         
         // Assert
@@ -172,7 +172,7 @@ public class GamesIntegrationTests(
         var studentModel = await CreateUserViaApiAsync(role: "student");
         
         // Admin should be able to access any student's history
-        var response = await Client.GetAsync($"{ApiRoutes.GameHistory(studentModel.UserId)}?summary=false&page=1&pageSize=10");
+        var response = await Client.GetAsync($"{ApiRoutes.GameHistory(studentModel.UserId)}?summary=false&page=1&pageSize=10&getPending=false");
         response.ShouldBeOk();
         
         var result = await ReadAsJsonAsync<PagedResult<AttemptHistoryDto>>(response);
@@ -185,7 +185,7 @@ public class GamesIntegrationTests(
         var student1 = await CreateUserAsync();
         var student2Model = await CreateUserViaApiAsync(role: "student");
         
-        var response = await Client.GetAsync($"{ApiRoutes.GameHistory(student2Model.UserId)}?summary=false&page=1&pageSize=10");
+        var response = await Client.GetAsync($"{ApiRoutes.GameHistory(student2Model.UserId)}?summary=false&page=1&pageSize=10&getPending=false");
         response.ShouldBeForbidden();
     }
 
@@ -228,7 +228,7 @@ public class GamesIntegrationTests(
         var student = await CreateUserAsync();
         
         // Request with invalid page (0 or negative)
-        var response = await Client.GetAsync($"{ApiRoutes.GameHistory(student.UserId)}?summary=false&page=0&pageSize=10");
+        var response = await Client.GetAsync($"{ApiRoutes.GameHistory(student.UserId)}?summary=false&page=0&pageSize=10&getPending=false");
         response.ShouldBeOk();
 
         var result = await ReadAsJsonAsync<PagedResult<AttemptHistoryDto>>(response);
@@ -242,7 +242,7 @@ public class GamesIntegrationTests(
         var student = await CreateUserAsync();
         
         // Request with very large pageSize
-        var response = await Client.GetAsync($"{ApiRoutes.GameHistory(student.UserId)}?summary=false&page=1&pageSize=500");
+        var response = await Client.GetAsync($"{ApiRoutes.GameHistory(student.UserId)}?summary=false&page=1&pageSize=500&getPending=false");
         response.ShouldBeOk();
 
         var result = await ReadAsJsonAsync<PagedResult<AttemptHistoryDto>>(response);

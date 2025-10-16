@@ -190,7 +190,7 @@ public class GameServiceTests
         await db.SaveChangesAsync();
 
         // Act
-        var result = await service.GetHistoryAsync(studentId, summary: false, page: 1, pageSize: 10, CancellationToken.None);
+        var result = await service.GetHistoryAsync(studentId, summary: false, page: 1, pageSize: 10, getPending: false, CancellationToken.None);
 
         // Assert
         result.Items.Should().HaveCount(1);
@@ -204,7 +204,7 @@ public class GameServiceTests
         var service = NewGameService(db);
 
         // Act
-        var result = await service.GetHistoryAsync(Guid.NewGuid(), summary: false, page: -1, pageSize: 200, CancellationToken.None);
+        var result = await service.GetHistoryAsync(Guid.NewGuid(), summary: false, page: -1, pageSize: 200, getPending: false, CancellationToken.None);
 
         // Assert
         result.Page.Should().Be(1);
