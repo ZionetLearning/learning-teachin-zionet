@@ -16,13 +16,8 @@ public abstract class MediaTestBase(
 {
     public override async Task InitializeAsync()
     {
-        // Login as Admin to get access token
         await ClientFixture.LoginAsync(Role.Admin);
-        
-        // Start SignalR with the authenticated token
         await EnsureSignalRStartedAsync();
-        
-        // Clear any previous messages
         SignalRFixture.ClearReceivedMessages();
     }
     

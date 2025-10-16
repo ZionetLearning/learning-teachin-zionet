@@ -9,10 +9,6 @@ using Xunit;
 
 namespace IntegrationTests.Fixtures;
 
-[CollectionDefinition("IntegrationTests")]
-public class IntegrationTestsCollection : ICollectionFixture<HttpClientFixture>,
-      ICollectionFixture<SignalRTestFixture> { }
-
 public class HttpClientFixture : IAsyncLifetime
 {
     private readonly Dictionary<Role, (string Email, string Password, Guid UserId)> _globalUsers;

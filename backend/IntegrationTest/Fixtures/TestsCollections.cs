@@ -1,8 +1,7 @@
 ﻿namespace IntegrationTests.Fixtures;
 
-[CollectionDefinition("Shared test collection")]
-public class SharedTestCollection
-    : ICollectionFixture<SharedTestFixture>,
+[CollectionDefinition("IntegrationTests")]
+public class IntegrationTestsCollection : ICollectionFixture<HttpClientFixture>,
       ICollectionFixture<SignalRTestFixture>
 { }
 
