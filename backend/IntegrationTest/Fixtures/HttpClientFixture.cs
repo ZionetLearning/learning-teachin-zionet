@@ -171,4 +171,4 @@ public class HttpClientFixture : IAsyncLifetime
     }
 }
 
-
+public record LoginResponse(string AccessToken, string RefreshToken);
