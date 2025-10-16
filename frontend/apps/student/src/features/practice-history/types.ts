@@ -12,6 +12,7 @@ export interface GameAttempt {
 export interface SummaryItem {
   gameType: string;
   difficulty: string;
+  attemptsCount: number;
   totalSuccesses: number;
   totalFailures: number;
 }

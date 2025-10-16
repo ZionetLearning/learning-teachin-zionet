@@ -162,7 +162,7 @@ export const useGetAllGameHistoryDetailed = (studentId: string) => {
       while (hasMore) {
         const res = await axios.get<GameHistoryDetailedResponse>(
           `${GAMES_MANAGER_URL}/history/${encodeURIComponent(studentId)}`,
-          { params: { summary: false, page: currentPage, pageSize: 20 } }
+          { params: { summary: false, page: currentPage, pageSize: 10 } }
         );
 
         allItems.push(...res.data.items);
