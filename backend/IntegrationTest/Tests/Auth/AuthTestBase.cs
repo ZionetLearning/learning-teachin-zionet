@@ -14,7 +14,7 @@ public abstract class AuthTestBase(
       HttpClientFixture httpClientFixture,
     ITestOutputHelper outputHelper,
     SignalRTestFixture signalRFixture
-) : IntegrationTestBaseClientFixture(httpClientFixture, outputHelper, signalRFixture)
+) : IntegrationTestBase(httpClientFixture, outputHelper, signalRFixture)
 {
     // Override the base Initialize so we DO NOT start SignalR before login (Auth tests validate login/refresh/logout flows)
     public override Task InitializeAsync()

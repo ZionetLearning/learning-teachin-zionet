@@ -14,7 +14,7 @@ public abstract class AiChatTestBase(
     HttpClientFixture fixture,
     ITestOutputHelper outputHelper,
     SignalRTestFixture signalRFixture
-) : IntegrationTestBaseClientFixture(fixture, outputHelper, signalRFixture)
+) : IntegrationTestBase(fixture, outputHelper, signalRFixture)
 {
     protected async Task<(string RequestId, ReceivedEvent Event, AIChatStreamResponse[] Frames)>
         PostChatAndWaitAsync(ChatRequest request, TimeSpan? timeout = null)

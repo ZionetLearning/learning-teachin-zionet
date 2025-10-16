@@ -18,7 +18,7 @@ namespace IntegrationTests.Tests.AI
         HttpClientFixture clientFixture,
         ITestOutputHelper outputHelper,
         SignalRTestFixture signalRFixture
-    ) : IntegrationTestBaseClientFixture(clientFixture, outputHelper, signalRFixture), IAsyncLifetime
+    ) : IntegrationTestBase(clientFixture, outputHelper, signalRFixture), IAsyncLifetime
 
     {
         public override async Task InitializeAsync()

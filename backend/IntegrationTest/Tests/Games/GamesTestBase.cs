@@ -21,7 +21,7 @@ public abstract class GamesTestBase(
     HttpClientFixture httpClientFixture,
     ITestOutputHelper outputHelper,
     SignalRTestFixture signalRFixture
-) : IntegrationTestBaseClientFixture(httpClientFixture, outputHelper, signalRFixture)
+) : IntegrationTestBase(httpClientFixture, outputHelper, signalRFixture)
 {
     public override async Task InitializeAsync()
     {

@@ -12,7 +12,7 @@ public abstract class MediaTestBase(
     HttpClientFixture httpClientFixture,
     ITestOutputHelper outputHelper,
     SignalRTestFixture signalRFixture
-) : IntegrationTestBaseClientFixture(httpClientFixture, outputHelper, signalRFixture)
+) : IntegrationTestBase(httpClientFixture, outputHelper, signalRFixture)
 {
     public override async Task InitializeAsync()
     {
