@@ -429,6 +429,37 @@
         "gameType": {
           "wordOrderGame": "משחק סידור מילים"
         }
+      },
+      "studentPracticeHistory": {
+        "title": "היסטוריית תרגול תלמידים",
+        "columns": {
+          "studentName": "שם תלמיד",
+          "gameType": "סוג משחק",
+          "difficulty": "רמת קושי",
+          "attempts": "ניסיונות",
+          "successes": "הצלחות",
+          "failures": "כישלונות",
+          "successRate": "שיעור הצלחה",
+          "lastAttemptTime": "זמן ניסיון אחרון",
+          "metrics": "מדדים"
+        },
+        "loading": "טוען...",
+        "failedToLoad": "הטעינה נכשלה:",
+        "noDataFound": "לא נמצאו נתונים.",
+        "rowsPerPage": "שורות בעמוד:",
+        "of": "מתוך",
+        "filters": {
+          "gameType": "סוג משחק",
+          "difficulty": "רמת קושי",
+          "all": "הכל",
+          "student": "תלמיד",
+          "from": "מתאריך",
+          "to": "עד תאריך",
+          "clear": "נקה",
+          "resetAll": "איפוס מסננים"
+        },
+        "exportPage": "ייצוא (עמוד)",
+        "exportCurrentPage": "ייצוא את העמוד הנוכחי"
       }
     },
     "sidebar": {
@@ -459,7 +490,8 @@
       "users": "משתמשים",
       "tasks": "משימות",
       "profile": "פרופיל",
-      "myPracticeMistakes": "טעויות התרגול שלי"
+      "myPracticeMistakes": "טעויות התרגול שלי",
+      "studentPracticeHistory": "היסטוריית תרגול"
     },
     "errorBoundary": {
       "title": "אופס! משהו השתבש",

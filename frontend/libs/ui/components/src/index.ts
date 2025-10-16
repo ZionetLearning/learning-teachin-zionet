@@ -7,3 +7,4 @@ export * from "./ErrorFallback";
 export * from "./modals";
 export * from "./GameSettings";
 export * from "./GameSetupPanel";
+export * from "./StudentPracticeHistory";

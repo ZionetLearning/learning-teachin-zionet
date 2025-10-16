@@ -2,29 +2,28 @@
 
 #nullable disable
 
-namespace Accessor.DB.Migrations
+namespace Accessor.DB.Migrations;
+
+/// <inheritdoc />
+public partial class RemoveDescriptionFromGameAttempt : Migration
 {
     /// <inheritdoc />
-    public partial class RemoveDescriptionFromGameAttempt : Migration
+    protected override void Up(MigrationBuilder migrationBuilder)
     {
-        /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.DropColumn(
-                name: "Description",
-                table: "GameAttempts");
-        }
+        migrationBuilder.DropColumn(
+            name: "Description",
+            table: "GameAttempts");
+    }
 
-        /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.AddColumn<string>(
-                name: "Description",
-                table: "GameAttempts",
-                type: "character varying(500)",
-                maxLength: 500,
-                nullable: false,
-                defaultValue: "");
-        }
+    /// <inheritdoc />
+    protected override void Down(MigrationBuilder migrationBuilder)
+    {
+        migrationBuilder.AddColumn<string>(
+            name: "Description",
+            table: "GameAttempts",
+            type: "character varying(500)",
+            maxLength: 500,
+            nullable: false,
+            defaultValue: "");
     }
 }

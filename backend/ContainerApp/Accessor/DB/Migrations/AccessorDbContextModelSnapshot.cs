@@ -85,6 +85,9 @@ namespace Accessor.DB.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<Guid>("ExerciseId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("GameType")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -104,7 +107,11 @@ namespace Accessor.DB.Migrations
 
                     b.HasKey("AttemptId");
 
+                    b.HasIndex("ExerciseId");
+
                     b.HasIndex("StudentId");
+
+                    b.HasIndex("ExerciseId", "AttemptNumber");
 
                     b.HasIndex("StudentId", "Status");
 
@@ -277,6 +284,12 @@ namespace Accessor.DB.Migrations
 
                     b.Property<string>("HebrewLevelValue")
                         .HasColumnType("text");
+
+                    b.PrimitiveCollection<List<string>>("Interests")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasDefaultValueSql("'[]'::jsonb");
 
                     b.Property<string>("LastName")
                         .IsRequired()
