@@ -5,24 +5,28 @@ using IntegrationTests.Helpers;
 using IntegrationTests.Infrastructure;
 using IntegrationTests.Models;
 using IntegrationTests.Models.Notification;
+using Manager.Models.Users;
 using Xunit.Abstractions;
 
 namespace IntegrationTests.Tests.Tasks;
 
 public abstract class TaskTestBase(
-    SharedTestFixture sharedFixture,
+    HttpClientFixture httpClientFixture,
     ITestOutputHelper outputHelper,
     SignalRTestFixture signalRFixture
-) : IntegrationTestBase(sharedFixture.HttpFixture, outputHelper, signalRFixture)
+) : IntegrationTestBaseClientFixture(httpClientFixture, outputHelper, signalRFixture)
 {
-    protected SharedTestFixture Shared { get; } = sharedFixture;
-    public override Task InitializeAsync() => SuiteInit.EnsureAsync(Shared, SignalRFixture, OutputHelper);
-
+  
+    public override async Task InitializeAsync()
+    {
+        await ClientFixture.LoginAsync(Role.Admin);
+        await EnsureSignalRStartedAsync();
+    }
     protected async Task<TaskModel> CreateTaskAsync(TaskModel? task = null)
     {
         task ??= TestDataHelper.CreateRandomTask();
 
-        await Shared.EnsureSignalRStartedAsync(SignalRFixture, OutputHelper);
+        await EnsureSignalRStartedAsync();
         SignalRFixture.ClearReceivedMessages();
 
         OutputHelper.WriteLine($"Creating task with ID: {task.Id}, Name: {task.Name}");
