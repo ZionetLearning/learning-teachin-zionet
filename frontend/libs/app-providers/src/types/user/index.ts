@@ -38,3 +38,10 @@ export interface User {
   preferredLanguageCode?: PreferredLanguageCode;
   hebrewLevelValue?: HebrewLevelValue;
 }
+
+export interface OnlineUserDto {
+  userId: string;
+  name: string;
+  role: string;
+  connectionsCount: number;
+}

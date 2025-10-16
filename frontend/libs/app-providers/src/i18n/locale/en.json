@@ -491,7 +491,8 @@
       "tasks": "Tasks",
       "profile": "Profile",
       "myPracticeMistakes": "Practice Mistakes",
-      "studentPracticeHistory": "Practice History"
+      "studentPracticeHistory": "Practice History",
+      "onlineUsers": "Online Users"
     },
     "errorBoundary": {
       "title": "Oops! Something went wrong",

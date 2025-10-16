@@ -9,6 +9,7 @@ import PeopleIcon from "@mui/icons-material/People";
 import HistoryIcon from "@mui/icons-material/History";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import AssignmentIcon from "@mui/icons-material/Assignment";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import GBFlag from "country-flag-icons/react/3x2/GB";
 import ILFlag from "country-flag-icons/react/3x2/IL";
 import { useAuth } from "@app-providers/auth";
@@ -58,6 +59,12 @@ export const SidebarMenu = () => {
       icon: <HistoryIcon />,
       path: "/student-practice-history",
       testId: "sidebar-student-practice-history",
+    },
+    {
+      label: t("sidebar.onlineUsers"),
+      icon: <CheckCircleIcon />,
+      path: "/online-users",
+      testId: "sidebar-online-users",
     },
   ];
 

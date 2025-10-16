@@ -491,7 +491,8 @@
       "tasks": "משימות",
       "profile": "פרופיל",
       "myPracticeMistakes": "טעויות התרגול שלי",
-      "studentPracticeHistory": "היסטוריית תרגול"
+      "studentPracticeHistory": "היסטוריית תרגול",
+      "onlineUsers": "משתמשים מקוונים"
     },
     "errorBoundary": {
       "title": "אופס! משהו השתבש",
