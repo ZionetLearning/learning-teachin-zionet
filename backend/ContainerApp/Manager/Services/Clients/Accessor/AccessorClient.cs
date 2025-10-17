@@ -11,6 +11,7 @@ using Manager.Models.Chat;
 using Manager.Models.Games;
 using Manager.Models.QueueMessages;
 using Manager.Models.Users;
+using Manager.Models.WordCards;
 using Manager.Services.Clients.Accessor.Models;
 
 namespace Manager.Services.Clients.Accessor;
@@ -800,6 +801,83 @@ public class AccessorClient(
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to save generated sentence for StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}", dto.StudentId, dto.GameType, dto.Difficulty);
+            throw;
+        }
+    }
+
+    public async Task<IReadOnlyList<WordCard>> GetWordCardsAsync(Guid userId, CancellationToken ct)
+    {
+        _logger.LogInformation("Fetching word cards for user {UserId}", userId);
+
+        try
+        {
+            var wordCards = await _daprClient.InvokeMethodAsync<List<WordCard>>(
+                HttpMethod.Get,
+                AppIds.Accessor,
+                $"wordcards-accessor/{userId}",
+                cancellationToken: ct
+            );
+
+            return wordCards ?? new List<WordCard>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to fetch word cards for user {UserId}", userId);
+            throw;
+        }
+    }
+
+    public async Task<WordCard> CreateWordCardAsync(Guid userId, CreateWordCard request, CancellationToken ct)
+    {
+        _logger.LogInformation("Creating word card for user {UserId}", userId);
+
+        try
+        {
+            var payload = new
+            {
+                userId,
+                hebrew = request.Hebrew,
+                english = request.English
+            };
+
+            var response = await _daprClient.InvokeMethodAsync<object, WordCard>(
+                HttpMethod.Post,
+                AppIds.Accessor,
+                $"wordcards-accessor",
+                payload,
+                cancellationToken: ct
+            );
+
+            return response;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create word card for user {UserId}", userId);
+            throw;
+        }
+    }
+
+    public async Task<WordCardLearnedStatus> UpdateLearnedStatusAsync(Guid userId, Guid cardId, bool isLearned, CancellationToken ct)
+    {
+        _logger.LogInformation("Updating learned status. UserId={UserId}, CardId={CardId}, IsLearned={IsLearned}", userId, cardId, isLearned);
+
+        try
+        {
+            var payload = new { isLearned };
+
+            var response = await _daprClient.InvokeMethodAsync<object, WordCardLearnedStatus>(
+                HttpMethod.Patch,
+                AppIds.Accessor,
+                $"wordcards-accessor/{cardId}/learned?userId={userId}",
+                payload,
+                cancellationToken: ct
+            );
+
+            return response;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update learned status for CardId={CardId}", cardId);
             throw;
         }
     }
