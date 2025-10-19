@@ -14,7 +14,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
-
+import { SuccessRateChip } from "@ui-components";
 import type { SummaryHistoryWithStudentDto } from "@api";
 import { levelToLabel } from "../../utils";
 import { DifficultyFilter } from "../Filters";
@@ -169,12 +169,7 @@ export const StudentPracticeTable = ({
                                 )}
                                 : <strong>{g.totals.failures}</strong>
                               </span>
-                              <span
-                                className={classes.ratePill}
-                                aria-label="success rate"
-                              >
-                                {g.totals.ratePct}%
-                              </span>
+                              <SuccessRateChip value={g.totals.ratePct} />
                             </div>
                           </div>
                         </AccordionSummary>

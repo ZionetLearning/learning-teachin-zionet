@@ -18,7 +18,7 @@ import {
 } from "@mui/material";
 
 import { useAuth } from "@app-providers";
-import { DifficultyChip, StatusChip } from "@ui-components";
+import { DifficultyChip, StatusChip, SuccessRateChip } from "@ui-components";
 
 import {
   useGetGameHistorySummary,
@@ -262,7 +262,7 @@ export const PracticeHistory = () => {
                                   className={classes.td}
                                   align="center"
                                 >
-                                  {successRate}%
+                                  <SuccessRateChip value={successRate} />
                                 </TableCell>
                               </TableRow>
                             );
