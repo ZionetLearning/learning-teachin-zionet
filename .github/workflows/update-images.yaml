@@ -75,7 +75,10 @@ jobs:
       action: ${{ (inputs.unlock_featest == true || github.event.inputs.unlock_featest == 'true') && 'unlock' || 'lock' }}
 
   set-defaults:
+    needs: [lock-featest]
     if: |
+      always() &&
+      (needs.lock-featest.result == 'success' || needs.lock-featest.result == 'skipped') &&
       (inputs.unlock_featest != true && github.event.inputs.unlock_featest != 'true')
     runs-on: ubuntu-latest
     outputs:
