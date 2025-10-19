@@ -143,7 +143,7 @@ jobs:
         if: success()
         run: |
           # Check if webhook URL is configured
-          if [ -z "${{ secrets.TEAMS_WEBHOOK_URL }}" ]; then
+          if [ -z "$TEAMS_WEBHOOK_URL" ]; then
             echo "⚠️ TEAMS_WEBHOOK_URL secret not configured, skipping notification"
             exit 0
           fi
@@ -209,7 +209,8 @@ jobs:
           echo "$PAYLOAD" | curl -X POST \
                -H "Content-Type: application/json" \
                -d @- \
-               "${{ secrets.TEAMS_WEBHOOK_URL }}" \
+               "$TEAMS_WEBHOOK_URL" \
                || echo "⚠️ Failed to send Teams notification"
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
