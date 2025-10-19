@@ -37,11 +37,10 @@ type ViewMode = "summary" | "detailed";
 
 export const PracticeHistory = () => {
   const { user } = useAuth();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const classes = useStyles();
 
   const studentId = user?.userId ?? "";
-  const isHebrew = i18n.language === "he";
 
   const [view, setView] = useState<ViewMode>("summary");
   const [page, setPage] = useState(0);
@@ -212,9 +211,6 @@ export const PracticeHistory = () => {
                           {t("pages.practiceHistory.status")}
                         </TableCell>
                         <TableCell className={classes.th}>
-                          {t("pages.practiceHistory.attemptNumber")}
-                        </TableCell>
-                        <TableCell className={classes.th}>
                           {t("pages.practiceHistory.date")}
                         </TableCell>
                       </TableRow>
@@ -304,12 +300,6 @@ export const PracticeHistory = () => {
                                         : t("pages.practiceHistory.failed")
                                     }
                                   />
-                                </TableCell>
-                                <TableCell
-                                  className={classes.td}
-                                  align="center"
-                                >
-                                  {item.attemptNumber ?? "-"}
                                 </TableCell>
                                 <TableCell className={classes.td}>
                                   {formatDateTime(item.createdAt)}
