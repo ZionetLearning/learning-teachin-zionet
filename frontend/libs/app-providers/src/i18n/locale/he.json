@@ -430,6 +430,28 @@
           "wordOrderGame": "משחק סידור מילים"
         }
       },
+      "practiceHistory": {
+        "title": "היסטוריית התרגולים שלי",
+        "description": "צפה בהיסטוריית התרגולים שלך כסיכום קצר או גש לפרטים מלאים על כל ניסיון.",
+        "failedToLoad": "טעינת היסטוריית התרגולים נכשלה.",
+        "noMistakes": "לא נמצאה היסטוריית תרגולים.",
+        "summary": "סיכום קצר",
+        "detailed": "פירוט מלא",
+        "practiceName": "שם התרגול",
+        "difficulty": "רמת קושי",
+        "attemptsCount": "מספר ניסיונות",
+        "totalSuccesses": "ניסיונות מוצלחים",
+        "totalFailures": "ניסיונות כושלים",
+        "successRate": "אחוז הצלחה",
+        "yourLastAnswer": "התשובה האחרונה שלך",
+        "status": "סטטוס",
+        "date": "תאריך",
+        "succeeded": "הצלחה",
+        "failed": "כישלון",
+        "gameType": {
+          "wordOrderGame": "משחק סדר מילים"
+        }
+      },
       "studentPracticeHistory": {
         "title": "היסטוריית תרגול תלמידים",
         "columns": {

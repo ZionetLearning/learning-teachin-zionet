@@ -45,7 +45,7 @@ public static class GamesEndpoints
             var callerRole = http.User.FindFirstValue(AuthSettings.RoleClaimType);
             var callerIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
 
-            logger.LogInformation("SubmitAttempt called by role={Role}, callerId={CallerId}, studentId={StudentId}", callerRole, callerIdRaw, request.StudentId);
+            logger.LogInformation("SubmitAttempts called by role={Role}, callerId={CallerId}, studentId={StudentId}", callerRole, callerIdRaw, request.StudentId);
 
             if (callerRole?.Equals(Role.Student.ToString(), StringComparison.OrdinalIgnoreCase) == true &&
                 Guid.TryParse(callerIdRaw, out var callerId) && callerId != request.StudentId)
