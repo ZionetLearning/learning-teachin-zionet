@@ -137,3 +137,108 @@ groups:
 
         labels:
           severity: warning
+
+  - name: AKS Memory Usage
+    folder: Infrastructure
+    interval: 1m
+    rules:
+      - uid: pod-high-memory
+        title: "Pod High Memory Usage"
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            queryType: ''
+            relativeTimeRange:
+              from: 300
+              to: 0
+            model:
+              expr: |
+                (
+                  sum by (namespace, pod) (
+                    container_memory_usage_bytes{container!=""}
+                  )
+                  /
+                  sum by (namespace, pod) (
+                    container_spec_memory_limit_bytes{container!=""}
+                  )
+                ) * 100
+              refId: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    params:
+                      - 90
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - B
+                  type: query
+              refId: B
+
+        noDataState: OK
+        execErrState: Alerting
+        for: 2m
+        annotations:
+          summary: "High Memory Usage in Pod {{ $labels.namespace }}/{{ $labels.pod }}"
+          description: |
+            Pod {{ $labels.namespace }}/{{ $labels.pod }} is using more than 90% of its memory limit.
+        labels:
+          severity: warning
+  
+  - name: Azure Cost
+    folder: Infrastructure
+    interval: 1h
+    rules:
+      - uid: azure-cost-alert
+        title: "Azure Monthly Cost Exceeded"
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: azure-monitor
+            queryType: ''
+            relativeTimeRange:
+              from: 0
+              to: 0
+            model:
+              queryType: AzureMonitorMetrics
+              resourceType: Microsoft.CostManagement/exports
+              metricName: "ActualCost"
+              aggregation: Total
+              refId: A
+
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    params:
+                      - 1000
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - B
+                  type: query
+              refId: B
+
+        noDataState: OK
+        execErrState: Alerting
+        for: 5m
+        annotations:
+          summary: "Monthly Azure Cost Alert"
+          description: "Azure costs exceeded $1000 this month."
+        labels:
+          severity: critical
