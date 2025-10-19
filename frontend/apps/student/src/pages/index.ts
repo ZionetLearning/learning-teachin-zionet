@@ -15,3 +15,4 @@ export * from "./AnimeExplorerPage";
 export * from "./CountryExplorerPage";
 export * from "./ProfilePage";
 export * from "./PracticeMistakesPage";
+export * from "./PracticeHistoryPage";
