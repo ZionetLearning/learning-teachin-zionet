@@ -246,6 +246,7 @@ jobs:
           exit 1
 
       - name: Create devops-tools namespace
+        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' && inputs.environment_name == 'dev' }}
         run: |
           echo "Creating devops-tools namespace..."
           kubectl create namespace devops-tools --dry-run=client -o yaml | kubectl apply -f -
@@ -297,6 +298,7 @@ jobs:
             --set dapr.installComponents=false
 
       - name: Add Langfuse
+        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' && inputs.environment_name == 'dev' }}
         run: |
           echo "Deploying Langfuse..."
           cd devops/helm-tools
