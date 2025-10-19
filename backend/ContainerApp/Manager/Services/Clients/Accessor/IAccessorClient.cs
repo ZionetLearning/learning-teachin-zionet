@@ -44,7 +44,7 @@ public interface IAccessorClient
     Task<List<AttemptedSentenceResult>> SaveGeneratedSentencesAsync(GeneratedSentenceDto dto, CancellationToken ct);
     Task<bool> DeleteAllGamesHistoryAsync(CancellationToken ct);
     Task<IReadOnlyList<WordCard>> GetWordCardsAsync(Guid userId, CancellationToken ct);
-    Task<WordCard> CreateWordCardAsync(Guid userId, CreateWordCard request, CancellationToken ct);
+    Task<WordCard> CreateWordCardAsync(Guid userId, CreateWordCardRequest request, CancellationToken ct);
     Task<WordCardLearnedStatus> UpdateLearnedStatusAsync(Guid userId, Guid cardId, bool isLearned, CancellationToken ct);
 
 }

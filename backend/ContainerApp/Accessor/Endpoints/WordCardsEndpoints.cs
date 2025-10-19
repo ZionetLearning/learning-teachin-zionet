@@ -25,8 +25,7 @@ public static class WordCardsEndpoints
     {
         try
         {
-            logger.LogInformation("GetWordCardsAsync called. UserId={UserId}", userId);
-
+            using var scope = logger.BeginScope("GetWordCardsAsync. UserId={UserId}", userId);
             var result = await service.GetWordCardsAsync(userId, ct);
 
             logger.LogInformation("GetWordCardsAsync returned {Count} cards for UserId={UserId}", result.Count, userId);
@@ -41,11 +40,19 @@ public static class WordCardsEndpoints
     }
 
     private static async Task<IResult> CreateWordCardAsync(
-        [FromBody] CreateWordCardInternalRequest request,
+        [FromBody] CreateWordCard request,
         [FromServices] IWordCardService service,
         ILogger<IWordCardService> logger,
         CancellationToken ct)
     {
+        using var scope = logger.BeginScope("CreateWordCardAsync");
+
+        if (CreateWordCardInternalRequest == null)
+        {
+            logger.LogWarning("CreateWordCardAsync called with null request");
+            return Results.BadRequest("Request body cannot be null.");
+        }
+
         try
         {
             logger.LogInformation("CreateWordCardAsync called. UserId={UserId}, Hebrew={Hebrew}, English={English}", request.UserId, request.Hebrew, request.English);
@@ -66,7 +73,7 @@ public static class WordCardsEndpoints
     private static async Task<IResult> UpdateLearnedStatusAsync(
         [FromRoute] Guid cardId,
         [FromQuery] Guid userId,
-        [FromBody] SetLearnedStatusRequest request,
+        [FromBody] SetLearnedStatus request,
         [FromServices] IWordCardService service,
         ILogger<IWordCardService> logger,
         CancellationToken ct)

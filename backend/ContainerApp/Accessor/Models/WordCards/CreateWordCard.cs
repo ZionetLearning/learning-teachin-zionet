@@ -1,4 +1,4 @@
-﻿namespace Manager.Models.WordCards;
+﻿namespace Accessor.Models.WordCards;
 
 public class CreateWordCard
 {

@@ -41,6 +41,7 @@ builder.Services.AddScoped<IManagerCallbackQueueService, ManagerCallbackQueueSer
 builder.Services.AddScoped<IRefreshSessionService, RefreshSessionService>();
 builder.Services.AddScoped<ISpeechService, SpeechService>();
 builder.Services.AddScoped<IStudentPracticeHistoryService, StudentPracticeHistoryService>();
+builder.Services.AddScoped<IWordCardService, WordCardService>();
 
 builder.Services.AddHttpClient("SpeechClient", client =>
 {
@@ -163,4 +164,5 @@ app.MapRefreshSessionEndpoints();
 app.MapStatsEndpoints();
 app.MapMediaEndpoints();
 app.MapGamesEndpoints();
+app.MapWordCardsEndpoints();
 await app.RunAsync();

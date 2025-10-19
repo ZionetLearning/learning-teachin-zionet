@@ -32,6 +32,7 @@ public static class WordCardsEndpoints
         ILogger<WordCardsEndpoint> logger,
         CancellationToken ct)
     {
+        using var scope = logger.BeginScope("GetWordCardsAsync");
         try
         {
             var userIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
@@ -55,12 +56,13 @@ public static class WordCardsEndpoints
     }
 
     private static async Task<IResult> CreateWordCardAsync(
-        [FromBody] CreateWordCard request,
+        [FromBody] CreateWordCardRequest request,
         [FromServices] IAccessorClient accessorClient,
         HttpContext http,
         ILogger<WordCardsEndpoint> logger,
         CancellationToken ct)
     {
+        using var scope = logger.BeginScope("CreateWordCardAsync");
         try
         {
             var userIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
@@ -91,6 +93,7 @@ public static class WordCardsEndpoints
         ILogger<WordCardsEndpoint> logger,
         CancellationToken ct)
     {
+        using var scope = logger.BeginScope("MarkWordCardAsLearnedAsync");
         try
         {
             var userIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);

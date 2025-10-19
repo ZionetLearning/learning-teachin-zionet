@@ -846,20 +846,20 @@ public class AccessorClient(
         }
     }
 
-    public async Task<WordCard> CreateWordCardAsync(Guid userId, CreateWordCard request, CancellationToken ct)
+    public async Task<WordCard> CreateWordCardAsync(Guid userId, CreateWordCardRequest request, CancellationToken ct)
     {
         _logger.LogInformation("Creating word card for user {UserId}", userId);
 
         try
         {
-            var payload = new
+            var payload = new CreateWordCard
             {
-                userId,
-                hebrew = request.Hebrew,
-                english = request.English
+                UserId = userId,
+                Hebrew = request.Hebrew,
+                English = request.English
             };
 
-            var response = await _daprClient.InvokeMethodAsync<object, WordCard>(
+            var response = await _daprClient.InvokeMethodAsync<CreateWordCard, WordCard>(
                 HttpMethod.Post,
                 AppIds.Accessor,
                 $"wordcards-accessor",
@@ -882,9 +882,12 @@ public class AccessorClient(
 
         try
         {
-            var payload = new { isLearned };
+            var payload = new SetLearnedStatus
+            {
+                IsLearned = isLearned,
+            };
 
-            var response = await _daprClient.InvokeMethodAsync<object, WordCardLearnedStatus>(
+            var response = await _daprClient.InvokeMethodAsync<SetLearnedStatus, WordCardLearnedStatus>(
                 HttpMethod.Patch,
                 AppIds.Accessor,
                 $"wordcards-accessor/{cardId}/learned?userId={userId}",
