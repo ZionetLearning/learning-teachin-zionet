@@ -430,6 +430,28 @@
           "wordOrderGame": "Word Order Game"
         }
       },
+      "practiceHistory": {
+        "title": "My Practice History",
+        "description": "View your practice history as a short summary or explore detailed information for each attempt.",
+        "failedToLoad": "Failed to load practice history.",
+        "noMistakes": "No practice history found.",
+        "summary": "Summary",
+        "detailed": "Detailed",
+        "practiceName": "Practice Name",
+        "difficulty": "Difficulty",
+        "attemptsCount": "Attempts",
+        "totalSuccesses": "Successes",
+        "totalFailures": "Failures",
+        "successRate": "Success Rate",
+        "yourLastAnswer": "Your Last Answer",
+        "status": "Status",
+        "date": "Date",
+        "succeeded": "Succeeded",
+        "failed": "Failed",
+        "gameType": {
+          "wordOrderGame": "Word Order Game"
+        }
+      },
       "studentPracticeHistory": {
         "title": "Student Practice History",
         "columns": {

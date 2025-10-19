@@ -142,7 +142,7 @@ export const useGetGameHistoryDetailed = ({
       if (!studentId) throw new Error("Missing studentId");
       const res = await axios.get<GameHistoryDetailedResponse>(
         `${GAMES_MANAGER_URL}/history/${encodeURIComponent(studentId)}`,
-        { params: { page, pageSize } },
+        { params: { summary: false, page, pageSize } },
       );
       return res.data;
     },
