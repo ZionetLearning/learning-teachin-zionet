@@ -3,6 +3,7 @@ using System.Text.Json;
 using Dapr.Client;
 using Engine.Models.Prompts;
 using Engine.Services.Clients.AccessorClient.Models;
+using Engine.Constants;
 
 namespace Engine.Services.Clients.AccessorClient;
 
@@ -83,6 +84,32 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to upsert history snapshot for chatId {ChatId}", request.ThreadId);
+            throw;
+        }
+    }
+
+    public async Task<AttemptDetailsResponse> GetAttemptDetailsAsync(Guid userId, Guid attemptId, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Getting attempt details for UserId {UserId}, AttemptId {AttemptId}", userId, attemptId);
+
+        try
+        {
+            var response = await _daprClient.InvokeMethodAsync<AttemptDetailsResponse>(
+                HttpMethod.Get,
+                "accessor",
+                $"games-accessor/attempt/{userId:D}/{attemptId:D}",
+                cancellationToken: ct);
+
+            return response;
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("Attempt not found for UserId {UserId}, AttemptId {AttemptId}", userId, attemptId);
+            throw new InvalidOperationException($"Attempt {attemptId} not found for user {userId}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get attempt details for UserId {UserId}, AttemptId {AttemptId}", userId, attemptId);
             throw;
         }
     }
@@ -249,6 +276,31 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
         {
             _logger.LogError(ex, "Failed to get prompt versions {PromptKey}", promptKey);
             throw;
+        }
+    }
+
+    public async Task<List<string>> GetUserInterestsAsync(Guid userId, CancellationToken ct)
+    {
+        try
+        {
+            var userInterests = await _daprClient.InvokeMethodAsync<List<string>>(
+                HttpMethod.Get,
+                AppIds.Accessor,
+                $"users-accessor/{userId}/interests",
+                ct);
+
+            if (userInterests == null)
+            {
+                _logger.LogWarning("User {UserId} not found when fetching interests.", userId);
+                return [];
+            }
+
+            return userInterests;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching interests for user {UserId}", userId);
+            return [];
         }
     }
 }

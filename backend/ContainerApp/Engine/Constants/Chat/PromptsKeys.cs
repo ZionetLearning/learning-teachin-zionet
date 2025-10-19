@@ -1,6 +1,6 @@
 ﻿using Engine.Options;
 
-namespace Engine.Constants;
+namespace Engine.Constants.Chat;
 
 public static class PromptsKeys
 {
@@ -8,6 +8,8 @@ public static class PromptsKeys
     public static string SystemDefault { get; private set; } = "prompts.system.default";
     public static string FriendlyTone { get; private set; } = "prompts.tone.friendly";
     public static string DetailedExplanation { get; private set; } = "prompts.explanation.detailed";
+    public static string ExplainMistakeSystem { get; private set; } = "chat.system.explain.mistake";
+    public static string MistakeTemplate { get; private set; } = "prompts.mistake.template";
 
     public static void Configure(PromptKeyOptions? options)
     {
@@ -34,6 +36,16 @@ public static class PromptsKeys
         if (!string.IsNullOrWhiteSpace(options.DetailedExplanation))
         {
             DetailedExplanation = options.DetailedExplanation;
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.ExplainMistakeSystem))
+        {
+            ExplainMistakeSystem = options.ExplainMistakeSystem;
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.MistakeTemplate))
+        {
+            MistakeTemplate = options.MistakeTemplate;
         }
     }
 }

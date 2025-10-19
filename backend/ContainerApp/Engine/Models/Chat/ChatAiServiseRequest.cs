@@ -2,7 +2,7 @@
 
 namespace Engine.Models.Chat;
 
-public sealed record ChatAiServiseRequest
+public sealed record ChatAiServiceRequest
 {
     public required string RequestId { get; init; }
     public required ChatHistory History { get; init; }
