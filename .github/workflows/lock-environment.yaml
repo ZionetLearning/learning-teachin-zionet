@@ -79,15 +79,18 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
 
       - name: Manage lock state
+        id: lock-action
         run: |
           set -x
           USER="$GITHUB_ACTOR"
           REPO="$GITHUB_REPOSITORY"
+          NOTIFICATION_NEEDED=false
 
           if [ "$ACTION" = "lock" ]; then
             if [ "$IS_LOCKED" = "true" ]; then
               if [ "$CURRENT_LOCKED_BY" = "$USER" ]; then
                 echo "✅ Environment already locked by $USER. Nothing to do."
+                echo "notification_needed=false" >> $GITHUB_OUTPUT
                 exit 0
               else
                 echo "::error::Environment is already locked by $CURRENT_LOCKED_BY. You must unlock it first."
@@ -101,6 +104,7 @@ jobs:
               --repo "$REPO" \
               --add-label "locked" \
               --body "$BODY"
+            echo "notification_needed=true" >> $GITHUB_OUTPUT
 
           elif [ "$ACTION" = "unlock" ]; then
             if [ "$IS_LOCKED" != "true" ]; then
@@ -128,6 +132,7 @@ jobs:
               --repo "$REPO" \
               --remove-label "locked" \
               --body "$BODY"
+            echo "notification_needed=true" >> $GITHUB_OUTPUT
           else
             echo "::error::Unknown action: $ACTION"
             exit 1
@@ -141,7 +146,7 @@ jobs:
           ISSUE: ${{ steps.find-issue.outputs.issue_number }}
 
       - name: Send Teams notification
-        if: success()
+        if: success() && steps.lock-action.outputs.notification_needed == 'true'
         run: |
           # Debug: Check environment and context
           echo "Debug: Current repository: ${{ github.repository }}"
