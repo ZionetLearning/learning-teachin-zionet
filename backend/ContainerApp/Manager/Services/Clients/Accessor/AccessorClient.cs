@@ -803,4 +803,23 @@ public class AccessorClient(
             throw;
         }
     }
+
+    public async Task<bool> DeleteAllGamesHistoryAsync(CancellationToken ct)
+    {
+        try
+        {
+            await _daprClient.InvokeMethodAsync(
+                HttpMethod.Delete,
+                AppIds.Accessor,
+                $"/games-accessor/all-history",
+                ct);
+            _logger.LogInformation("All games history deleted successfully.");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Exception occurred while deleting all games history.");
+            return false;
+        }
+    }
 }

@@ -389,4 +389,38 @@ public class GamesIntegrationTests(
         mistake.CorrectAnswer.Should().NotBeEmpty();
         mistake.WrongAnswers.Should().HaveCount(1);
     }
+
+
+    // need to add deleteion of the DB before the assert
+    [Fact(DisplayName = "GET /games-manager/all-history - Should return correct names and timestamp")]
+    public async Task GetAllHistory_Should_Include_AdminNames_And_Timestamp()
+    {
+        var admin = await CreateUserViaApiAsync(role: "admin");
+        await LoginAsync(admin.Email, admin.Password, Role.Admin);
+
+        // first, delete all games history
+        var deleteResponse = await Client.DeleteAsync($"{ApiRoutes.GameAllHistory}");
+        deleteResponse.ShouldBeOk();
+
+        // Create some game history for the admin user
+        await CreateSuccessfulAttemptAsync(admin.UserId, Difficulty.easy);
+        await CreateMistakeAsync(admin.UserId, Difficulty.easy);
+
+        var response = await Client.GetAsync($"{ApiRoutes.GameAllHistory}?page=1&pageSize=10");
+        response.ShouldBeOk();
+
+        var result = await ReadAsJsonAsync<PagedResult<SummaryHistoryWithStudentDto>>(response);
+        result.Should().NotBeNull();
+        result!.Items.Should().HaveCount(1);
+
+        var item = result.Items.First();
+        item.StudentFirstName.Should().Be(admin.FirstName);
+        item.StudentLastName.Should().Be(admin.LastName);
+        item.AttemptsCount.Should().Be(2);
+        item.TotalSuccesses.Should().Be(1);
+        item.TotalFailures.Should().Be(1);
+        item.Timestamp.Should().BeAfter(DateTime.UtcNow.AddMinutes(-5));
+    }
+
+
 }
