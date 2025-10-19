@@ -60,7 +60,7 @@ on:
 jobs:
 
   lock-featest:
-    if: inputs.environment_name == 'featest'
+    if: inputs.custom_environment_name == 'featest'
     permissions:
       contents: read
       issues: write
