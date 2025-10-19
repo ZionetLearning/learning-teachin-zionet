@@ -53,7 +53,7 @@ export const GameOverModal = ({
     [navigate],
   );
 
-  const onGoHome = () => navigate("/");
+  const onGoHome = useCallback(() => navigate("/"), [navigate]);
 
   const isPerfect = correctSentences === totalSentences;
 
@@ -143,7 +143,7 @@ export const GameOverModal = ({
             data-testid={b.testId}
             onClick={b.onClick}
             variant={b.variant}
-            color={b.color}
+            {...(b.color ? { color: b.color } : {})}
             startIcon={b.icon}
             className={buttonClass}
           >
