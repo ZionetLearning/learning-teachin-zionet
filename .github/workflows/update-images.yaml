@@ -61,10 +61,12 @@ jobs:
 
   lock-featest:
     if: |
-      inputs.custom_environment_name == 'featest' ||
-      inputs.custom_environment_name == '' ||
-      inputs.unlock_featest == true ||
-      github.event.inputs.unlock_featest == 'true'
+      github.event_name != 'push' && (
+        inputs.custom_environment_name == 'featest' ||
+        inputs.custom_environment_name == '' ||
+        inputs.unlock_featest == true ||
+        github.event.inputs.unlock_featest == 'true'
+      )
     permissions:
       contents: read
       issues: write
