@@ -112,7 +112,9 @@ jobs:
 
   build-and-push-images:
     needs: [set-defaults]
-    if: needs.set-defaults.result == 'success'
+    if: |
+      always() &&
+      needs.set-defaults.result == 'success'
     uses: ./.github/workflows/build-and-push-images.yaml
     permissions:
       id-token: write
@@ -125,6 +127,10 @@ jobs:
 
   helm-deploy:
     needs: [set-defaults, build-and-push-images]
+    if: |
+      always() &&
+      needs.set-defaults.result == 'success' &&
+      needs.build-and-push-images.result == 'success'
     uses: ./.github/workflows/aks-helmcharts.yaml
     permissions:
       id-token: write
