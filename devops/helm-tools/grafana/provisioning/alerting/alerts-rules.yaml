@@ -224,7 +224,7 @@ groups:
               conditions:
                 - evaluator:
                     params:
-                      - 1000
+                      - 10
                     type: gt
                   operator:
                     type: and
@@ -239,6 +239,6 @@ groups:
         for: 5m
         annotations:
           summary: "Monthly Azure Cost Alert"
-          description: "Azure costs exceeded $1000 this month."
+          description: "Azure costs exceeded $10 this month."
         labels:
           severity: critical
