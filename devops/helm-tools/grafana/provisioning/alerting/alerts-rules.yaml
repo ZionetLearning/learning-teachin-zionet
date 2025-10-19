@@ -207,7 +207,7 @@ groups:
             datasourceUid: azure-monitor
             queryType: ''
             relativeTimeRange:
-              from: 0
+              from: 300
               to: 0
             model:
               queryType: AzureMonitorMetrics
