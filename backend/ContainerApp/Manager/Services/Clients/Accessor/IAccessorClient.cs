@@ -42,6 +42,7 @@ public interface IAccessorClient
     Task<PagedResult<MistakeDto>> GetMistakesAsync(Guid studentId, int page, int pageSize, CancellationToken ct = default);
     Task<PagedResult<SummaryHistoryWithStudentDto>> GetAllHistoriesAsync(int page, int pageSize, CancellationToken ct = default);
     Task<List<AttemptedSentenceResult>> SaveGeneratedSentencesAsync(GeneratedSentenceDto dto, CancellationToken ct);
+    Task<bool> DeleteAllGamesHistoryAsync(CancellationToken ct);
     Task<IReadOnlyList<WordCard>> GetWordCardsAsync(Guid userId, CancellationToken ct);
     Task<WordCard> CreateWordCardAsync(Guid userId, CreateWordCard request, CancellationToken ct);
     Task<WordCardLearnedStatus> UpdateLearnedStatusAsync(Guid userId, Guid cardId, bool isLearned, CancellationToken ct);
