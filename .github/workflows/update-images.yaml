@@ -73,6 +73,7 @@ jobs:
     uses: ./.github/workflows/lock-environment.yaml
     with:
       action: ${{ (inputs.unlock_featest == true || github.event.inputs.unlock_featest == 'true') && 'unlock' || 'lock' }}
+    secrets: inherit
 
   set-defaults:
     needs: [lock-featest]
