@@ -28,7 +28,7 @@ public static class GamesEndpoints
             .RequireAuthorization(PolicyNames.AdminOrTeacher);
 
         gamesGroup.MapDelete("/all-history", DeleteAllGamesHistoryAsync)
-            .RequireAuthorization(PolicyNames.AdminOrTeacher);
+            .RequireAuthorization(PolicyNames.AdminOnly);
 
         return app;
     }
