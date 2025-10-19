@@ -818,7 +818,7 @@ public class AccessorClient(
                 cancellationToken: ct
             );
 
-            return wordCards ?? new List<WordCard>();
+            return wordCards ?? [];
         }
         catch (Exception ex)
         {
