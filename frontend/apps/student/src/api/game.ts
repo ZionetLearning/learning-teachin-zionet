@@ -66,7 +66,6 @@ type GetGameArgs = {
   studentId?: string;
   page?: number;
   pageSize?: number;
-  enabled?: boolean;
 };
 
 // ------------
@@ -110,7 +109,6 @@ export const useGetGameHistorySummary = ({
   studentId,
   page = 1,
   pageSize = 10,
-  enabled = true,
 }: GetGameArgs) => {
   const GAMES_MANAGER_URL = import.meta.env.VITE_GAMES_MANAGER_URL;
 
@@ -125,7 +123,7 @@ export const useGetGameHistorySummary = ({
       );
       return res.data;
     },
-    enabled: Boolean(studentId) && enabled,
+    enabled: Boolean(studentId),
     staleTime: 60_000,
   });
 };
@@ -134,7 +132,6 @@ export const useGetGameHistoryDetailed = ({
   studentId,
   page = 1,
   pageSize = 10,
-  enabled = true,
 }: GetGameArgs): UseQueryResult<GameHistoryDetailedResponse, Error> => {
   const GAMES_MANAGER_URL = import.meta.env.VITE_GAMES_MANAGER_URL!;
 
@@ -149,7 +146,7 @@ export const useGetGameHistoryDetailed = ({
       );
       return res.data;
     },
-    enabled: Boolean(studentId) && enabled,
+    enabled: Boolean(studentId),
   });
 };
 
