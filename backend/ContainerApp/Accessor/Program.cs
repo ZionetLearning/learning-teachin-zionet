@@ -40,6 +40,7 @@ builder.Services.AddScoped<DatabaseInitializer>();
 builder.Services.AddScoped<IManagerCallbackQueueService, ManagerCallbackQueueService>();
 builder.Services.AddScoped<IRefreshSessionService, RefreshSessionService>();
 builder.Services.AddScoped<ISpeechService, SpeechService>();
+builder.Services.AddScoped<IStudentPracticeHistoryService, StudentPracticeHistoryService>();
 
 builder.Services.AddHttpClient("SpeechClient", client =>
 {

@@ -346,7 +346,7 @@ public class UserService : IUserService
         }
     }
 
-    public async Task<List<string>> GetUserInterestsAsync(Guid userId)
+    public async Task<IReadOnlyList<string>?> GetUserInterestsAsync(Guid userId, CancellationToken ct = default)
     {
         _logger.LogInformation("GetUserInterests START (userId={UserId})", userId);
         try
@@ -354,19 +354,19 @@ public class UserService : IUserService
             if (userId == Guid.Empty)
             {
                 _logger.LogWarning("Invalid userId provided.");
-                return [];
+                return null;
             }
 
             var interests = await _db.Users
                 .AsNoTracking()
                 .Where(u => u.UserId == userId)
                 .Select(u => u.Interests)
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(ct);
 
             if (interests == null)
             {
-                _logger.LogWarning("User not found or has no interests (userId={UserId})", userId);
-                return [];
+                _logger.LogWarning("No interests found for user (userId={UserId})", userId);
+                return null;
             }
 
             _logger.LogInformation("GetUserInterests END (userId={UserId}), {Count} interests", userId, interests.Count);
@@ -375,6 +375,36 @@ public class UserService : IUserService
         catch (Exception ex)
         {
             _logger.LogError(ex, "GetUserInterests FAILED (userId={UserId})", userId);
+            throw;
+        }
+    }
+
+    public async Task<Dictionary<Guid, UserNameDto>> GetUserFullNamesAsync(IEnumerable<Guid> userIds, CancellationToken ct)
+    {
+        if (userIds == null || !userIds.Any())
+        {
+            _logger.LogWarning("GetUserFullNamesAsync called with empty userIds.");
+            return [];
+        }
+
+        _logger.LogInformation("GetUserFullNamesAsync START for userIds: {UserIds}", string.Join(", ", userIds));
+        try
+        {
+            return await _db.Users
+                .AsNoTracking()
+                .Where(u => userIds.Contains(u.UserId))
+                .ToDictionaryAsync(
+                    u => u.UserId,
+                    u => new UserNameDto
+                    {
+                        FirstName = u.FirstName,
+                        LastName = u.LastName
+                    },
+                    cancellationToken: ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetUserFullNamesAsync FAILED for userIds: {UserIds}", string.Join(", ", userIds));
             throw;
         }
     }
