@@ -19,7 +19,7 @@ import SkipNextIcon from "@mui/icons-material/SkipNext";
 import SkipPreviousIcon from "@mui/icons-material/SkipPrevious";
 import { useAuth } from "@app-providers";
 import { useGetGameMistakes, GameMistakeItem } from "@student/api";
-import { DifficultyChip, StatusChip } from "./components";
+import { DifficultyChip, StatusChip } from "@ui-components";
 import { useStyles } from "./style";
 
 export const PracticeMistakes = () => {
