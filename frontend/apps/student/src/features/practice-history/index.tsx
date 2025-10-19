@@ -37,10 +37,11 @@ type ViewMode = "summary" | "detailed";
 
 export const PracticeHistory = () => {
   const { user } = useAuth();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const classes = useStyles();
 
   const studentId = user?.userId ?? "";
+  const isHebrew = i18n.language === "he";
 
   const [view, setView] = useState<ViewMode>("summary");
   const [page, setPage] = useState(0);
@@ -52,7 +53,6 @@ export const PracticeHistory = () => {
     setPage(0);
   }, [view, rowsPerPage]);
 
-  // Declare both queries; enable only the active one
   const {
     data: summaryData,
     isLoading: summaryLoading,
@@ -62,7 +62,7 @@ export const PracticeHistory = () => {
     studentId,
     page: apiPage,
     pageSize: rowsPerPage,
-    // @NOTE: if your hook doesn’t accept enabled, add it there; in the definitions you provided it already has enabled(Boolean(studentId))
+    enabled: view === "summary",
   });
 
   const {
@@ -74,13 +74,9 @@ export const PracticeHistory = () => {
     studentId,
     page: apiPage,
     pageSize: rowsPerPage,
+    enabled: view === "detailed",
   });
 
-  // Gate queries via enabled flag inside the hooks’ implementation:
-  // enabled: Boolean(studentId) && view === 'summary' / 'detailed'
-  // If you haven't added that yet, do it in the hooks to avoid double-fetching.
-
-  // pick active dataset/status
   const activeData =
     view === "summary"
       ? (summaryData as GameHistorySummaryResponse | undefined)
@@ -108,12 +104,22 @@ export const PracticeHistory = () => {
 
   const formatDateTime = (iso?: string) => {
     if (!iso) return "-";
-    try {
-      // keep it simple; localize as needed
-      return new Date(iso).toLocaleString();
-    } catch {
-      return iso;
-    }
+    const date = new Date(iso);
+
+    const options: Intl.DateTimeFormatOptions = {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: isHebrew ? undefined : "2-digit",
+      hour12: !isHebrew, // AM/PM only in English
+    };
+
+    return new Intl.DateTimeFormat(
+      isHebrew ? "he-IL" : "en-US",
+      options,
+    ).format(date);
   };
 
   if (error) {
