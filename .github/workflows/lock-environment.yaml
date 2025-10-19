@@ -138,3 +138,52 @@ jobs:
           CURRENT_LOCKED_BY: ${{ steps.check.outputs.locked_by }}
           IS_LOCKED: ${{ steps.check.outputs.is_locked }}
           ISSUE: ${{ steps.find-issue.outputs.issue_number }}
+
+      - name: Send Teams notification
+        if: success()
+        run: |
+          USER="$GITHUB_ACTOR"
+          ACTION="${{ inputs.action || github.event.inputs.action }}"
+          REPO_URL="https://github.com/${{ github.repository }}"
+          WORKFLOW_URL="$REPO_URL/actions/runs/${{ github.run_id }}"
+          
+          if [ "$ACTION" = "lock" ]; then
+            TITLE="🔒 Featest Environment Locked"
+            COLOR="attention"
+            MESSAGE="**Featest environment has been locked**"
+            FACTS="[{\"name\": \"Locked by\", \"value\": \"$USER\"}, {\"name\": \"Repository\", \"value\": \"${{ github.repository }}\"}, {\"name\": \"Time\", \"value\": \"$(date -u +%Y-%m-%d\ %H:%M:%S\ UTC)\"}]"
+          else
+            TITLE="🔓 Featest Environment Unlocked" 
+            COLOR="good"
+            MESSAGE="**Featest environment has been unlocked**"
+            FACTS="[{\"name\": \"Unlocked by\", \"value\": \"$USER\"}, {\"name\": \"Repository\", \"value\": \"${{ github.repository }}\"}, {\"name\": \"Time\", \"value\": \"$(date -u +%Y-%m-%d\ %H:%M:%S\ UTC)\"}]"
+          fi
+
+          PAYLOAD=$(cat <<EOF
+          {
+            "@type": "MessageCard",
+            "@context": "https://schema.org/extensions",
+            "summary": "$TITLE",
+            "themeColor": "$COLOR",
+            "sections": [{
+              "activityTitle": "$TITLE",
+              "activitySubtitle": "$MESSAGE",
+              "facts": $FACTS,
+              "potentialAction": [{
+                "@type": "OpenUri",
+                "name": "View Workflow",
+                "targets": [{
+                  "os": "default",
+                  "uri": "$WORKFLOW_URL"
+                }]
+              }]
+            }]
+          }
+          EOF
+          )
+
+          curl -H "Content-Type: application/json" \
+               -d "$PAYLOAD" \
+               "${{ secrets.TEAMS_WEBHOOK_URL }}"
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
