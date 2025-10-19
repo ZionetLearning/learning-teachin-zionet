@@ -137,3 +137,65 @@ groups:
 
         labels:
           severity: warning
+  
+  - name: Azure Costs and Budget
+    folder: Infrastructure
+    interval: 5m
+    rules:
+      - uid: azure-budget-threshold
+        title: "Azure Budget Threshold Exceeded"
+        condition: B
+        data:
+          - refId: A
+            queryType: 'Azure Log Analytics'
+            azureLogAnalytics:
+              query: |
+                // Query current month cost from Azure Cost Management
+                AzureActivity
+                | where TimeGenerated >= startofmonth(now())
+                | summarize TotalCost = sum(todouble(Properties.cost)) by SubscriptionId
+                | extend BudgetLimit = 1000.0  // Set your monthly budget here
+                | extend PercentUsed = (TotalCost / BudgetLimit) * 100
+                | where PercentUsed > 80  // Alert when 80% of budget used
+              resource: '/subscriptions/YOUR_SUBSCRIPTION_ID/resourceGroups/YOUR_RG/providers/Microsoft.OperationalInsights/workspaces/YOUR_WORKSPACE'
+            datasourceUid: azure-monitor
+            relativeTimeRange:
+              from: 3600
+              to: 0
+          - refId: B
+            queryType: ''
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              settings:
+                mode: replaceNN
+                replaceWithValue: 0
+              refId: B
+          - refId: C
+            queryType: ''
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    params:
+                      - 80
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  type: query
+              refId: C
+        noDataState: OK
+        execErrState: Alerting
+        for: 10m
+        annotations:
+          summary: "Azure subscription budget at {{ $value }}%"
+          description: "Subscription has used {{ $value }}% of monthly budget"
+        labels:
+          severity: warning
