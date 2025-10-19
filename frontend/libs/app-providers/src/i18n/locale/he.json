@@ -205,7 +205,8 @@
           "completed": "השלמת {{correct}} משפטים נכונים מתוך {{total}}.",
           "whatNext": "מה תרצה לעשות כעת?",
           "playAgain": "משחק חדש",
-          "changeSettings": "שינוי הגדרות משחק"
+          "changeSettings": "שינוי הגדרות משחק",
+          "viewMyMistakes": "צפה בטעויות שלי"
         },
         "title": "משחק סידור מילים",
         "subTitle": "סדר את המילים בסדר הנכון",
