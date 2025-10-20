@@ -1,5 +1,4 @@
-// WordCaptureProvider.tsx
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Button,
@@ -13,6 +12,7 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { useCreateWordCard, type CreateWordCardRequest } from "../../api";
+import { useStyles } from "./style";
 
 type WordCaptureProviderProps = {
   children: React.ReactNode;
@@ -30,7 +30,7 @@ export const WordCaptureProvider: React.FC<WordCaptureProviderProps> = ({
   minLength = 1,
   maxLength = 20,
 }) => {
-  const rootRef = useRef<HTMLDivElement | null>(null);
+  const classes = useStyles();
 
   const [open, setOpen] = useState(false);
   const [hebrewWord, setHebrewWord] = useState<string>("");
@@ -68,7 +68,7 @@ export const WordCaptureProvider: React.FC<WordCaptureProviderProps> = ({
         setHebrewWord(word);
         setEnglish("");
         setOpen(true);
-        // Clear selection so it doesn't stay highlighted
+        // Clear selection
         selection?.removeAllRanges();
       }
     };
@@ -99,72 +99,71 @@ export const WordCaptureProvider: React.FC<WordCaptureProviderProps> = ({
     hebrewWord.length === 0;
 
   return (
-    <Box ref={rootRef} sx={{ display: "contents" }}>
+    <Box sx={{ display: "contents" }}>
       {children}
 
-      <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ pr: 6 }}>
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        maxWidth="xs"
+        fullWidth
+        slotProps={{ paper: { className: classes.dialogPaper } }}
+      >
+        <DialogTitle className={classes.dialogTitle}>
           Add Translation
           <IconButton
             onClick={handleClose}
             aria-label="close"
-            sx={{ position: "absolute", right: 8, top: 8 }}
+            className={classes.closeButton}
           >
             <CloseIcon />
           </IconButton>
         </DialogTitle>
 
         <DialogContent>
-          <Box
-            sx={{
-              mb: 2,
-              p: 1.5,
-              borderRadius: 2,
-              bgcolor: "background.default",
-              border: (theme) => `1px solid ${theme.palette.divider}`,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: 2,
-            }}
-          >
-            <Box>
-              <Typography variant="caption" color="text.secondary">
-                Hebrew word
-              </Typography>
-              <Typography
-                variant="h6"
-                sx={{ direction: "rtl", fontWeight: 700, lineHeight: 1.3 }}
-              >
-                {hebrewWord}
-              </Typography>
+          <Box className={classes.dialogBodyGradient}>
+            <Box className={classes.wordPanel}>
+              <Box className={classes.wordMeta}>
+                <Typography className={classes.wordLabel}>
+                  Hebrew word
+                </Typography>
+                <Typography className={classes.hebrewWord}>
+                  {hebrewWord}
+                </Typography>
+              </Box>
             </Box>
-          </Box>
 
-          <TextField
-            label="English translation"
-            fullWidth
-            autoFocus
-            value={english}
-            onChange={(e) => setEnglish(e.target.value)}
-            placeholder="Type the English meaning…"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !saveDisabled) {
-                e.preventDefault();
-                handleSave();
-              }
-            }}
-          />
+            <TextField
+              label="English translation"
+              fullWidth
+              autoFocus
+              className={classes.textField}
+              value={english}
+              onChange={(e) => setEnglish(e.target.value)}
+              placeholder="Type the English meaning…"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !saveDisabled) {
+                  e.preventDefault();
+                  handleSave();
+                }
+              }}
+            />
+          </Box>
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={handleClose} variant="text">
+        <DialogActions className={classes.actions}>
+          <Button
+            onClick={handleClose}
+            variant="text"
+            className={classes.cancelButton}
+          >
             Cancel
           </Button>
           <Button
             onClick={handleSave}
             variant="contained"
             disabled={saveDisabled}
+            className={classes.saveButton}
           >
             {createWordCard.isPending ? "Saving…" : "Save"}
           </Button>
