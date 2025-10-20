@@ -13,7 +13,9 @@ import WeatherWidgetIcon from "@mui/icons-material/Cloud";
 import ThreePIcon from "@mui/icons-material/ThreeP";
 import LiveTvIcon from "@mui/icons-material/LiveTv";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import PendingActionsIcon from '@mui/icons-material/PendingActions';
+import PendingActionsIcon from "@mui/icons-material/PendingActions";
+import DashboardCustomizeIcon from "@mui/icons-material/DashboardCustomize";
+import SchoolIcon from "@mui/icons-material/School";
 import FlagIcon from "@mui/icons-material/Flag";
 import NoteAltIcon from "@mui/icons-material/NoteAlt";
 import GBFlag from "country-flag-icons/react/3x2/GB";
@@ -51,16 +53,28 @@ export const SidebarMenu = () => {
       testId: "sidebar-profile",
     },
     {
-      label: t("sidebar.myPracticeMistakes"),
-      icon: <NoteAltIcon />,
-      path: "/practice-mistakes",
-      testId: "practice-mistakes",
-    },
-    {
-      label: t("sidebar.studentPracticeHistory"),
-      icon: <PendingActionsIcon />,
-      path: "/practice-history",
-      testId: "practice-mistakes",
+      label: t("sidebar.myLearning"),
+      icon: <SchoolIcon />,
+      children: [
+        {
+          label: t("sidebar.wordCards"),
+          icon: <DashboardCustomizeIcon />,
+          path: "/word-cards",
+          testId: "word-cards",
+        },
+        {
+          label: t("sidebar.myPracticeMistakes"),
+          icon: <NoteAltIcon />,
+          path: "/practice-mistakes",
+          testId: "practice-mistakes",
+        },
+        {
+          label: t("sidebar.studentPracticeHistory"),
+          icon: <PendingActionsIcon />,
+          path: "/practice-history",
+          testId: "practice-history",
+        },
+      ],
     },
     {
       label: t("sidebar.practiceTools"),

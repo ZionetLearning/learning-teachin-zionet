@@ -514,7 +514,9 @@
       "tasks": "Tasks",
       "profile": "Profile",
       "myPracticeMistakes": "Practice Mistakes",
-      "studentPracticeHistory": "Practice History"
+      "studentPracticeHistory": "Practice History",
+      "wordCards": "Word Cards",
+      "myLearning": "My Learning"
     },
     "errorBoundary": {
       "title": "Oops! Something went wrong",

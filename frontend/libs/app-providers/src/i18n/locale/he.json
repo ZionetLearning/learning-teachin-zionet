@@ -514,7 +514,9 @@
       "tasks": "משימות",
       "profile": "פרופיל",
       "myPracticeMistakes": "טעויות התרגול שלי",
-      "studentPracticeHistory": "היסטוריית תרגול"
+      "studentPracticeHistory": "היסטוריית תרגול",
+      "wordCards": "כרטיסיות מילים",
+      "myLearning": "הלמידה שלי"
     },
     "errorBoundary": {
       "title": "אופס! משהו השתבש",
