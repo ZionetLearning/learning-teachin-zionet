@@ -12,21 +12,33 @@ public static class WordCardsEndpoints
 
         group.MapGet("/{userId:guid}", GetWordCardsAsync);
         group.MapPost("/", CreateWordCardAsync);
-        group.MapPatch("/{cardId:guid}/learned", UpdateLearnedStatusAsync);
+        group.MapPatch("/learned", UpdateLearnedStatusAsync);
 
         return app;
     }
 
     private static async Task<IResult> GetWordCardsAsync(
         [FromRoute] Guid userId,
-        [FromServices] IWordCardService service,
+        [FromServices] IWordCardService wordCardservice,
         ILogger<IWordCardService> logger,
         CancellationToken ct)
     {
+        if (userId == Guid.Empty)
+        {
+            logger.LogWarning("GetWordCardsAsync called with empty UserId");
+            return Results.BadRequest("UserId cannot be empty.");
+        }
+
+        var scope = logger.BeginScope("GetWordCardsAsync. UserId={UserId}", userId);
         try
         {
-            using var scope = logger.BeginScope("GetWordCardsAsync. UserId={UserId}", userId);
-            var result = await service.GetWordCardsAsync(userId, ct);
+            var result = await wordCardservice.GetWordCardsAsync(userId, ct);
+
+            if (result == null || result.Count == 0)
+            {
+                logger.LogInformation("No word cards found for UserId={UserId}", userId);
+                return Results.Ok(Array.Empty<WordCard>());
+            }
 
             logger.LogInformation("GetWordCardsAsync returned {Count} cards for UserId={UserId}", result.Count, userId);
 
@@ -40,14 +52,14 @@ public static class WordCardsEndpoints
     }
 
     private static async Task<IResult> CreateWordCardAsync(
-        [FromBody] CreateWordCard request,
-        [FromServices] IWordCardService service,
+        [FromBody] CreateWordCard createWordCardRequest,
+        [FromServices] IWordCardService wordCardservice,
         ILogger<IWordCardService> logger,
         CancellationToken ct)
     {
         using var scope = logger.BeginScope("CreateWordCardAsync");
 
-        if (CreateWordCardInternalRequest == null)
+        if (createWordCardRequest == null)
         {
             logger.LogWarning("CreateWordCardAsync called with null request");
             return Results.BadRequest("Request body cannot be null.");
@@ -55,9 +67,15 @@ public static class WordCardsEndpoints
 
         try
         {
-            logger.LogInformation("CreateWordCardAsync called. UserId={UserId}, Hebrew={Hebrew}, English={English}", request.UserId, request.Hebrew, request.English);
+            logger.LogInformation("CreateWordCardAsync called. UserId={UserId}, Hebrew={Hebrew}, English={English}", createWordCardRequest.UserId, createWordCardRequest.Hebrew, createWordCardRequest.English);
 
-            var result = await service.CreateWordCardAsync(request, ct);
+            var result = await wordCardservice.CreateWordCardAsync(createWordCardRequest, ct);
+
+            if (result == null)
+            {
+                logger.LogWarning("CreateWordCardAsync failed to create word card for UserId={UserId}", createWordCardRequest.UserId);
+                return Results.Problem("Failed to create word card.");
+            }
 
             logger.LogInformation("CreateWordCardAsync succeeded. CardId={CardId}", result.CardId);
 
@@ -65,32 +83,43 @@ public static class WordCardsEndpoints
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unexpected error in CreateWordCardAsync. UserId={UserId}", request.UserId);
+            logger.LogError(ex, "Unexpected error in CreateWordCardAsync. UserId={UserId}", createWordCardRequest.UserId);
             return Results.Problem("Unexpected error occurred while creating word card.");
         }
     }
 
     private static async Task<IResult> UpdateLearnedStatusAsync(
-        [FromRoute] Guid cardId,
-        [FromQuery] Guid userId,
         [FromBody] SetLearnedStatus request,
-        [FromServices] IWordCardService service,
+        [FromServices] IWordCardService wordCardservice,
         ILogger<IWordCardService> logger,
         CancellationToken ct)
     {
+        using var scope = logger.BeginScope("UpdateLearnedStatusAsync");
+
+        if (request == null)
+        {
+            logger.LogWarning("UpdateLearnedStatusAsync called with null request");
+            return Results.BadRequest("Request body cannot be null.");
+        }
+
         try
         {
-            logger.LogInformation("UpdateLearnedStatusAsync called. UserId={UserId}, CardId={CardId}, IsLearned={IsLearned}", userId, cardId, request.IsLearned);
+            logger.LogInformation("UpdateLearnedStatusAsync called. UserId={UserId}, CardId={CardId}, IsLearned={IsLearned}", request.UserId, request.CardId, request.IsLearned);
 
-            var result = await service.UpdateLearnedStatusAsync(userId, cardId, request.IsLearned, ct);
+            var result = await wordCardservice.UpdateLearnedStatusAsync(request.UserId, request.CardId, request.IsLearned, ct);
 
             logger.LogInformation("UpdateLearnedStatusAsync succeeded. CardId={CardId}, IsLearned={IsLearned}", result.CardId, result.IsLearned);
 
             return Results.Ok(result);
         }
+        catch (KeyNotFoundException)
+        {
+            logger.LogWarning("Card not found. CardId={CardId}", request.CardId);
+            return Results.NotFound("Word card not found.");
+        }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unexpected error in UpdateLearnedStatusAsync. CardId={CardId}", cardId);
+            logger.LogError(ex, "Unexpected error in UpdateLearnedStatusAsync. CardId={CardId}", request.CardId);
             return Results.Problem("Unexpected error occurred while updating learned status.");
         }
     }

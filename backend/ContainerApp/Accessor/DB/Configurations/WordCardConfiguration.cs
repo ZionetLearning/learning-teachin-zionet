@@ -42,7 +42,6 @@ public class WordCardConfiguration : IEntityTypeConfiguration<WordCardModel>
             .HasColumnName("updated_at")
             .IsRequired();
 
-        // Optional: composite index to speed up user lookups
         builder.HasIndex(w => new { w.UserId, w.IsLearned });
     }
 }

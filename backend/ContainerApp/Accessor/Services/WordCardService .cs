@@ -1,12 +1,12 @@
 ﻿using Accessor.DB;
 using Accessor.Models.WordCards;
 using Accessor.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace Accessor.Services;
 
 public class WordCardService : IWordCardService
 {
-
     private readonly ILogger<WordCardService> _logger;
     private readonly AccessorDbContext _db;
 
@@ -18,61 +18,100 @@ public class WordCardService : IWordCardService
 
     public async Task<IReadOnlyList<WordCard>> GetWordCardsAsync(Guid userId, CancellationToken ct)
     {
-        var entities = await _db.GetByUserIdAsync(userId, ct);
-
-        return entities.Select(card => new WordCardResponse
+        try
         {
-            CardId = card.CardId,
-            Hebrew = card.Hebrew,
-            English = card.English,
-            IsLearned = card.IsLearned
-        }).ToList();
+            _logger.LogInformation("Fetching word cards for user {UserId}", userId);
+
+            var entities = await _db.WordCards
+                .Where(card => card.UserId == userId)
+                .OrderByDescending(card => card.CreatedAt)
+                .ToListAsync(ct);
+
+            return entities.Select(card => new WordCard
+            {
+                CardId = card.CardId,
+                Hebrew = card.Hebrew,
+                English = card.English,
+                IsLearned = card.IsLearned
+            }).ToList();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching word cards for user {UserId}", userId);
+            throw;
+        }
     }
 
     public async Task<WordCard> CreateWordCardAsync(CreateWordCard request, CancellationToken ct)
     {
-        var now = DateTime.UtcNow;
-
-        var newCard = new WordCard
+        try
         {
-            CardId = Guid.NewGuid(),
-            UserId = request.UserId,
-            Hebrew = request.Hebrew.Trim(),
-            English = request.English.Trim(),
-            IsLearned = false,
-            CreatedAt = now,
-            UpdatedAt = now
-        };
+            _logger.LogInformation("Creating new word card for user {UserId}", request.UserId);
 
-        await _repository.InsertAsync(newCard, ct);
+            var now = DateTime.UtcNow;
 
-        return new WordCardResponse
+            var newCard = new WordCardModel
+            {
+                CardId = Guid.NewGuid(),
+                UserId = request.UserId,
+                Hebrew = request.Hebrew.Trim(),
+                English = request.English.Trim(),
+                IsLearned = false,
+                CreatedAt = now,
+                UpdatedAt = now
+            };
+
+            _db.WordCards.Add(newCard);
+            await _db.SaveChangesAsync(ct);
+
+            return new WordCard
+            {
+                CardId = newCard.CardId,
+                Hebrew = newCard.Hebrew,
+                English = newCard.English,
+                IsLearned = newCard.IsLearned
+            };
+        }
+        catch (Exception ex)
         {
-            CardId = newCard.CardId,
-            Hebrew = newCard.Hebrew,
-            English = newCard.English,
-            IsLearned = newCard.IsLearned
-        };
+            _logger.LogError(ex, "Error creating word card for user {UserId}", request.UserId);
+            throw;
+        }
     }
 
     public async Task<WordCardLearnedStatus> UpdateLearnedStatusAsync(Guid userId, Guid cardId, bool isLearned, CancellationToken ct)
     {
-        var card = await _repository.GetByIdAsync(cardId, ct);
-
-        if (card == null || card.UserId != userId)
+        try
         {
-            throw new UnauthorizedAccessException("Card not found or user unauthorized.");
+            _logger.LogInformation("Updating learned status for card {CardId} (user {UserId}) to {IsLearned}", cardId, userId, isLearned);
+
+            var card = await _db.WordCards.FirstOrDefaultAsync(
+            x => x.CardId == cardId && x.UserId == userId,
+            ct
+            );
+
+            if (card is null)
+            {
+                _logger.LogWarning("Card {CardId} not found for user {UserId}", cardId, userId);
+                throw new KeyNotFoundException($"Card with ID {cardId} not found for user {userId}.");
+            }
+
+            card.IsLearned = isLearned;
+            card.UpdatedAt = DateTime.UtcNow;
+
+            _db.WordCards.Update(card);
+            await _db.SaveChangesAsync(ct);
+
+            return new WordCardLearnedStatus
+            {
+                CardId = card.CardId,
+                IsLearned = card.IsLearned
+            };
         }
-
-        card.IsLearned = isLearned;
-        card.UpdatedAt = DateTime.UtcNow;
-
-        await _repository.UpdateAsync(card, ct);
-
-        return new WordCardLearnedUpdateResult
+        catch (Exception ex)
         {
-            CardId = card.CardId,
-            IsLearned = card.IsLearned
-        };
+            _logger.LogError(ex, "Error updating learned status for card {CardId} (user {UserId})", cardId, userId);
+            throw;
+        }
     }
 }

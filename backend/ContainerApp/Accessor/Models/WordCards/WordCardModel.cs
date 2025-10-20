@@ -4,8 +4,8 @@ public class WordCardModel
 {
     public Guid CardId { get; set; }
     public Guid UserId { get; set; }
-    public string Hebrew { get; set; } = default!;
-    public string English { get; set; } = default!;
+    public required string Hebrew { get; set; }
+    public required string English { get; set; }
     public bool IsLearned { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

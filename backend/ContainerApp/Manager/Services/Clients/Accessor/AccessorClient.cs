@@ -884,13 +884,15 @@ public class AccessorClient(
         {
             var payload = new SetLearnedStatus
             {
+                UserId = userId,
+                CardId = cardId,
                 IsLearned = isLearned,
             };
 
             var response = await _daprClient.InvokeMethodAsync<SetLearnedStatus, WordCardLearnedStatus>(
                 HttpMethod.Patch,
                 AppIds.Accessor,
-                $"wordcards-accessor/{cardId}/learned?userId={userId}",
+                $"wordcards-accessor/learned",
                 payload,
                 cancellationToken: ct
             );
