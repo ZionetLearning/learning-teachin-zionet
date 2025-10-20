@@ -48,6 +48,7 @@ helm upgrade --install grafana grafana/grafana \
   --set resources.requests.memory="128Mi" \
   --set resources.limits.memory="256Mi" \
   --set env.TEAMS_WEBHOOK_URL="$TEAMS_WEBHOOK_URL" \
+  --set env.SUBSCRIPTION_ID="$SUBSCRIPTION_ID" \
   --timeout=10m \
   --wait
 

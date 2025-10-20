@@ -194,34 +194,338 @@ groups:
             Pod {{ $labels.namespace }}/{{ $labels.pod }} is using more than 90% of its memory limit.
         labels:
           severity: warning
-  
-  - name: Azure Cost
+
+  #######################################################################
+  # Frontend (App Insights via Logs) – student/admin/teacher
+  #######################################################################
+  - name: Frontend (App Insights Logs)
     folder: Infrastructure
-    interval: 1h
+    interval: 1m
     rules:
-      - uid: azure-cost-threshold
-        title: "Azure Monthly Cost Exceeded"
-        condition: B
+      # ---------- student ----------
+      - uid: ai-student-failure
+        title: "Frontend(student): Failure rate > 5%"
+        condition: C
         data:
           - refId: A
-            datasourceUid: prometheus
-            relativeTimeRange: { from: 3600, to: 0 }
+            datasourceUid: azure-monitor
+            relativeTimeRange: { from: 600, to: 0 }   # 10m
             model:
-              expr: 'azure_month_to_date_cost_usd'
+              queryType: AzureMonitorLogs
+              resultFormat: time_series
+              resourceUri: "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/dev-zionet-learning-2025/providers/Microsoft.Insights/components/static-web-app-student-dev-appinsights"
+              query: |
+                requests
+                | where timestamp > ago(5m)
+                | summarize total=count(), failed=countif(success==false)
+                | extend failureRate = 100.0 * todouble(failed) / iif(total==0, 1.0, todouble(total))
+                | extend timestamp = now()
+                | project timestamp, failureRate
               refId: A
           - refId: B
             datasourceUid: __expr__
             model:
-              type: threshold
+              type: reduce
               expression: A
+              reducer: last
+              settings: { mode: replaceNN, replaceWithValue: 0 }
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
               conditions:
-                - evaluator: { type: gt, params: [10] }  
+                - evaluator: { type: gt, params: [5] }   # >5%
                   operator: { type: and }
-                  query: { params: [B] }
+                  query: { params: [C] }
         for: 5m
+        labels: { severity: critical, app: student }
         annotations:
-          summary: "Monthly Azure Cost Alert"
-          description: "Azure costs exceeded threshold this month."
-        labels:
-          severity: critical
+          summary: "High failure rate (student)"
 
+      - uid: ai-student-5xx
+        title: "Frontend(student): 5xx% > 1%"
+        condition: C
+        data:
+          - refId: A
+            datasourceUid: azure-monitor
+            relativeTimeRange: { from: 600, to: 0 }
+            model:
+              queryType: AzureMonitorLogs
+              resultFormat: time_series
+              resourceUri: "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/dev-zionet-learning-2025/providers/Microsoft.Insights/components/static-web-app-student-dev-appinsights"
+              query: |
+                requests
+                | where timestamp > ago(5m)
+                | summarize fivexx=countif(toint(resultCode) between (500..599)), total=count()
+                | extend pct_5xx = 100.0 * todouble(fivexx) / iif(total==0, 1.0, todouble(total))
+                | extend timestamp = now()
+                | project timestamp, pct_5xx
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model: { type: reduce, expression: A, reducer: last, settings: { mode: replaceNN, replaceWithValue: 0 } }
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: { type: gt, params: [1] }   # >1%
+                  operator: { type: and }
+                  query: { params: [C] }
+        for: 5m
+        labels: { severity: critical, app: student }
+        annotations:
+          summary: "5xx rate high (student)"
+
+      - uid: ai-student-p95
+        title: "Frontend(student): p95 > 2000ms"
+        condition: C
+        data:
+          - refId: A
+            datasourceUid: azure-monitor
+            relativeTimeRange: { from: 1200, to: 0 }   # 20m
+            model:
+              queryType: AzureMonitorLogs
+              resultFormat: time_series
+              resourceUri: "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/dev-zionet-learning-2025/providers/Microsoft.Insights/components/static-web-app-student-dev-appinsights"
+              query: |
+                requests
+                | where timestamp > ago(10m)
+                | summarize p95 = percentile(duration, 95)
+                | extend timestamp = now()
+                | project timestamp, p95
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model: { type: reduce, expression: A, reducer: last, settings: { mode: replaceNN, replaceWithValue: 0 } }
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: { type: gt, params: [2000] }
+                  operator: { type: and }
+                  query: { params: [C] }
+        for: 10m
+        labels: { severity: warning, app: student }
+        annotations:
+          summary: "Slow p95 latency (student)"
+
+      # ---------- admin ----------
+      - uid: ai-admin-failure
+        title: "Frontend(admin): Failure rate > 5%"
+        condition: C
+        data:
+          - refId: A
+            datasourceUid: azure-monitor
+            relativeTimeRange: { from: 600, to: 0 }
+            model:
+              queryType: AzureMonitorLogs
+              resultFormat: time_series
+              resourceUri: "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/dev-zionet-learning-2025/providers/Microsoft.Insights/components/static-web-app-admin-dev-appinsights"
+              query: |
+                requests
+                | where timestamp > ago(5m)
+                | summarize total=count(), failed=countif(success==false)
+                | extend failureRate = 100.0 * todouble(failed) / iif(total==0, 1.0, todouble(total))
+                | extend timestamp = now()
+                | project timestamp, failureRate
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model: { type: reduce, expression: A, reducer: last, settings: { mode: replaceNN, replaceWithValue: 0 } }
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: { type: gt, params: [5] }
+                  operator: { type: and }
+                  query: { params: [C] }
+        for: 5m
+        labels: { severity: critical, app: admin }
+        annotations:
+          summary: "High failure rate (admin)"
+
+      - uid: ai-admin-5xx
+        title: "Frontend(admin): 5xx% > 1%"
+        condition: C
+        data:
+          - refId: A
+            datasourceUid: azure-monitor
+            relativeTimeRange: { from: 600, to: 0 }
+            model:
+              queryType: AzureMonitorLogs
+              resultFormat: time_series
+              resourceUri: "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/dev-zionet-learning-2025/providers/Microsoft.Insights/components/static-web-app-admin-dev-appinsights"
+              query: |
+                requests
+                | where timestamp > ago(5m)
+                | summarize fivexx=countif(toint(resultCode) between (500..599)), total=count()
+                | extend pct_5xx = 100.0 * todouble(fivexx) / iif(total==0, 1.0, todouble(total))
+                | extend timestamp = now()
+                | project timestamp, pct_5xx
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model: { type: reduce, expression: A, reducer: last, settings: { mode: replaceNN, replaceWithValue: 0 } }
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: { type: gt, params: [1] }
+                  operator: { type: and }
+                  query: { params: [C] }
+        for: 5m
+        labels: { severity: critical, app: admin }
+        annotations:
+          summary: "5xx rate high (admin)"
+
+      - uid: ai-admin-p95
+        title: "Frontend(admin): p95 > 2000ms"
+        condition: C
+        data:
+          - refId: A
+            datasourceUid: azure-monitor
+            relativeTimeRange: { from: 1200, to: 0 }
+            model:
+              queryType: AzureMonitorLogs
+              resultFormat: time_series
+              resourceUri: "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/dev-zionet-learning-2025/providers/Microsoft.Insights/components/static-web-app-admin-dev-appinsights"
+              query: |
+                requests
+                | where timestamp > ago(10m)
+                | summarize p95 = percentile(duration, 95)
+                | extend timestamp = now()
+                | project timestamp, p95
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model: { type: reduce, expression: A, reducer: last, settings: { mode: replaceNN, replaceWithValue: 0 } }
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: { type: gt, params: [2000] }
+                  operator: { type: and }
+                  query: { params: [C] }
+        for: 10m
+        labels: { severity: warning, app: admin }
+        annotations:
+          summary: "Slow p95 latency (admin)"
+
+      # ---------- teacher ----------
+      - uid: ai-teacher-failure
+        title: "Frontend(teacher): Failure rate > 5%"
+        condition: C
+        data:
+          - refId: A
+            datasourceUid: azure-monitor
+            relativeTimeRange: { from: 600, to: 0 }
+            model:
+              queryType: AzureMonitorLogs
+              resultFormat: time_series
+              resourceUri: "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/dev-zionet-learning-2025/providers/Microsoft.Insights/components/static-web-app-teacher-dev-appinsights"
+              query: |
+                requests
+                | where timestamp > ago(5m)
+                | summarize total=count(), failed=countif(success==false)
+                | extend failureRate = 100.0 * todouble(failed) / iif(total==0, 1.0, todouble(total))
+                | extend timestamp = now()
+                | project timestamp, failureRate
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model: { type: reduce, expression: A, reducer: last, settings: { mode: replaceNN, replaceWithValue: 0 } }
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: { type: gt, params: [5] }
+                  operator: { type: and }
+                  query: { params: [C] }
+        for: 5m
+        labels: { severity: critical, app: teacher }
+        annotations:
+          summary: "High failure rate (teacher)"
+
+      - uid: ai-teacher-5xx
+        title: "Frontend(teacher): 5xx% > 1%"
+        condition: C
+        data:
+          - refId: A
+            datasourceUid: azure-monitor
+            relativeTimeRange: { from: 600, to: 0 }
+            model:
+              queryType: AzureMonitorLogs
+              resultFormat: time_series
+              resourceUri: "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/dev-zionet-learning-2025/providers/Microsoft.Insights/components/static-web-app-teacher-dev-appinsights"
+              query: |
+                requests
+                | where timestamp > ago(5m)
+                | summarize fivexx=countif(toint(resultCode) between (500..599)), total=count()
+                | extend pct_5xx = 100.0 * todouble(fivexx) / iif(total==0, 1.0, todouble(total))
+                | extend timestamp = now()
+                | project timestamp, pct_5xx
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model: { type: reduce, expression: A, reducer: last, settings: { mode: replaceNN, replaceWithValue: 0 } }
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: { type: gt, params: [1] }
+                  operator: { type: and }
+                  query: { params: [C] }
+        for: 5m
+        labels: { severity: critical, app: teacher }
+        annotations:
+          summary: "5xx rate high (teacher)"
+
+      - uid: ai-teacher-p95
+        title: "Frontend(teacher): p95 > 2000ms"
+        condition: C
+        data:
+          - refId: A
+            datasourceUid: azure-monitor
+            relativeTimeRange: { from: 1200, to: 0 }
+            model:
+              queryType: AzureMonitorLogs
+              resultFormat: time_series
+              resourceUri: "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/dev-zionet-learning-2025/providers/Microsoft.Insights/components/static-web-app-teacher-dev-appinsights"
+              query: |
+                requests
+                | where timestamp > ago(10m)
+                | summarize p95 = percentile(duration, 95)
+                | extend timestamp = now()
+                | project timestamp, p95
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model: { type: reduce, expression: A, reducer: last, settings: { mode: replaceNN, replaceWithValue: 0 } }
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: { type: gt, params: [2000] }
+                  operator: { type: and }
+                  query: { params: [C] }
+        for: 10m
+        labels: { severity: warning, app: teacher }
+        annotations:
+          summary: "Slow p95 latency (teacher)"

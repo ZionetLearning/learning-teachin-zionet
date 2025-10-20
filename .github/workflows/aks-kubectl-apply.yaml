@@ -93,6 +93,7 @@ jobs:
           ./grafana.sh
         env:
           TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       
       ###### This is one time only!! Never use unless the whole RG is wiped out
       # - name: Setup HTTPS certificates
