@@ -211,7 +211,7 @@ groups:
             datasourceUid: azure-monitor
             relativeTimeRange: { from: 600, to: 0 }   # 10m
             model:
-              queryType: AzureMonitorLogs
+              queryType: Azure Log Analytics
               resultFormat: time_series
               resourceUri: "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/dev-zionet-learning-2025/providers/Microsoft.Insights/components/static-web-app-student-dev-appinsights"
               query: |
@@ -251,7 +251,7 @@ groups:
             datasourceUid: azure-monitor
             relativeTimeRange: { from: 600, to: 0 }
             model:
-              queryType: AzureMonitorLogs
+              queryType: ''
               resultFormat: time_series
               resourceUri: "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/dev-zionet-learning-2025/providers/Microsoft.Insights/components/static-web-app-student-dev-appinsights"
               query: |
