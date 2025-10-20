@@ -876,17 +876,17 @@ public class AccessorClient(
         }
     }
 
-    public async Task<WordCardLearnedStatus> UpdateLearnedStatusAsync(Guid userId, Guid cardId, bool isLearned, CancellationToken ct)
+    public async Task<WordCardLearnedStatus> UpdateLearnedStatusAsync(Guid userId, LearnedStatus request, CancellationToken ct)
     {
-        _logger.LogInformation("Updating learned status. UserId={UserId}, CardId={CardId}, IsLearned={IsLearned}", userId, cardId, isLearned);
+        _logger.LogInformation("Updating learned status. UserId={UserId}, CardId={CardId}, IsLearned={IsLearned}", userId, request.CardId, request.IsLearned);
 
         try
         {
             var payload = new SetLearnedStatus
             {
                 UserId = userId,
-                CardId = cardId,
-                IsLearned = isLearned,
+                CardId = request.CardId,
+                IsLearned = request.IsLearned,
             };
 
             var response = await _daprClient.InvokeMethodAsync<SetLearnedStatus, WordCardLearnedStatus>(
@@ -901,7 +901,7 @@ public class AccessorClient(
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to update learned status for CardId={CardId}", cardId);
+            _logger.LogError(ex, "Failed to update learned status for CardId={CardId}", request.CardId);
             throw;
         }
     }

@@ -4,11 +4,11 @@ using Accessor.Models.WordCards;
 
 namespace Accessor.DB.Configurations;
 
-public class WordCardConfiguration : IEntityTypeConfiguration<WordCardModel>
+public class WordCardsConfiguration : IEntityTypeConfiguration<WordCardModel>
 {
     public void Configure(EntityTypeBuilder<WordCardModel> builder)
     {
-        builder.ToTable("word_cards");
+        builder.ToTable("WordCards");
 
         builder.HasKey(w => w.CardId);
 

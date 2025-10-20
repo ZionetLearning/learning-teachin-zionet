@@ -86,8 +86,7 @@ public static class WordCardsEndpoints
     }
 
     private static async Task<IResult> MarkWordCardAsLearnedAsync(
-        [FromRoute] Guid cardId,
-        [FromBody] SetLearnedStatus request,
+        [FromBody] LearnedStatus request,
         [FromServices] IAccessorClient accessorClient,
         HttpContext http,
         ILogger<WordCardsEndpoint> logger,
@@ -103,15 +102,15 @@ public static class WordCardsEndpoints
                 return Results.Unauthorized();
             }
 
-            logger.LogInformation("Marking word card as learned. UserId={UserId}, CardId={CardId}, IsLearned={IsLearned}", userId, cardId, request.IsLearned);
+            logger.LogInformation("Marking word card as learned. UserId={UserId}, CardId={CardId}, IsLearned={IsLearned}", userId, request.CardId, request.IsLearned);
 
-            var result = await accessorClient.UpdateLearnedStatusAsync(userId, cardId, request.IsLearned, ct);
+            var result = await accessorClient.UpdateLearnedStatusAsync(userId, request, ct);
 
             return Results.Ok(result);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error updating learned status for CardId={CardId}", cardId);
+            logger.LogError(ex, "Error updating learned status for CardId={CardId}", request.CardId);
             return Results.Problem("Failed to update learned status.");
         }
     }

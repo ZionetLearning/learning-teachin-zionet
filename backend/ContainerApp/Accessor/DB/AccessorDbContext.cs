@@ -93,7 +93,7 @@ public class AccessorDbContext : DbContext
         });
 
         // Word cards table
-        modelBuilder.ApplyConfiguration(new WordCardConfiguration());
+        modelBuilder.ApplyConfiguration(new WordCardsConfiguration());
 
         base.OnModelCreating(modelBuilder);
     }
