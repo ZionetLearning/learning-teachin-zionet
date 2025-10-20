@@ -23,50 +23,68 @@ public class NotificationHub : Hub<INotificationClient>
 
     public override async Task OnConnectedAsync()
     {
-        _logger.LogInformation(
-            "Conn={Conn} UserIdentifier={UserId} Name={Name}",
-            Context.ConnectionId, Context.UserIdentifier, Context.User?.Identity?.Name);
-        if (Context.UserIdentifier != null)
+        try
         {
-            var user = await _accessorClient.GetUserAsync(Guid.Parse(Context.UserIdentifier)).ConfigureAwait(false);
-            if (user != null)
+            _logger.LogInformation(
+                "Conn={Conn} UserIdentifier={UserId} Name={Name}",
+                Context.ConnectionId, Context.UserIdentifier, Context.User?.Identity?.Name);
+            if (Context.UserIdentifier != null)
             {
-                var userId = user.UserId.ToString();
-                var name = user.FirstName + " " + user.LastName;
-                var role = user.Role.ToString();
-
-                var first = await _presence.AddConnectionAsync(userId, name, role, Context.ConnectionId);
-                if (first)
+                var user = await _accessorClient.GetUserAsync(Guid.Parse(Context.UserIdentifier)).ConfigureAwait(false);
+                if (user != null)
                 {
-                    await Clients.Group(AdminGroups.Admins).UserOnline(userId, role, name);
+                    var userId = user.UserId.ToString();
+                    var name = user.FirstName + " " + user.LastName;
+                    var role = user.Role.ToString();
+
+                    var first = await _presence.AddConnectionAsync(userId, name, role, Context.ConnectionId);
+                    if (first)
+                    {
+                        await Clients.Group(AdminGroups.Admins).UserOnline(userId, role, name);
+                    }
                 }
             }
         }
-
-        await base.OnConnectedAsync();
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during OnConnectedAsync for connection {Conn}", Context.ConnectionId);
+        }
+        finally
+        {
+            await base.OnConnectedAsync();
+        }
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        _logger.LogInformation("Client disconnected: {ConnectionId}", Context.ConnectionId);
-
-        if (Context.UserIdentifier != null)
+        try
         {
-            var user = await _accessorClient.GetUserAsync(Guid.Parse(Context.UserIdentifier)).ConfigureAwait(false);
-            if (user != null)
+            _logger.LogInformation("Client disconnected: {ConnectionId}", Context.ConnectionId);
+
+            if (Context.UserIdentifier != null)
             {
-                var userId = user.UserId.ToString();
-
-                var last = await _presence.RemoveConnectionAsync(userId, Context.ConnectionId);
-
-                if (last)
+                var user = await _accessorClient.GetUserAsync(Guid.Parse(Context.UserIdentifier)).ConfigureAwait(false);
+                if (user != null)
                 {
-                    await Clients.Group(AdminGroups.Admins).UserOffline(userId);
+                    var userId = user.UserId.ToString();
+
+                    var last = await _presence.RemoveConnectionAsync(userId, Context.ConnectionId);
+
+                    if (last)
+                    {
+                        await Clients.Group(AdminGroups.Admins).UserOffline(userId);
+                    }
                 }
             }
         }
-
-        await base.OnDisconnectedAsync(exception);
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during OnDisconnectedAsync for connection {Conn}", Context.ConnectionId);
+        }
+        finally
+        {
+            await base.OnDisconnectedAsync(exception);
+        }
     }
     [Authorize(PolicyNames.AdminOnly)]
     public Task SubscribeAdmin() =>

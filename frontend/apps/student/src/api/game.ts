@@ -119,7 +119,7 @@ export const useGetGameHistorySummary = ({
 
       const res = await axios.get<GameHistorySummaryResponse>(
         `${GAMES_MANAGER_URL}/history/${encodeURIComponent(studentId)}`,
-        { params: { summary: true, page, pageSize } },
+        { params: { summary: true, page, pageSize, getPending: false } },
       );
       return res.data;
     },
@@ -142,7 +142,7 @@ export const useGetGameHistoryDetailed = ({
       if (!studentId) throw new Error("Missing studentId");
       const res = await axios.get<GameHistoryDetailedResponse>(
         `${GAMES_MANAGER_URL}/history/${encodeURIComponent(studentId)}`,
-        { params: { summary: false, page, pageSize } },
+        { params: { summary: false, page, pageSize, getPending: false } },
       );
       return res.data;
     },

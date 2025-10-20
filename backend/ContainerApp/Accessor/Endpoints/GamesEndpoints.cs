@@ -54,16 +54,17 @@ public static class GamesEndpoints
         [FromQuery] bool summary,
         [FromQuery] int page,
         [FromQuery] int pageSize,
+        [FromQuery] bool getPending,
         [FromServices] IGameService service,
         ILogger<IGameService> logger,
         CancellationToken ct)
     {
         try
         {
-            logger.LogInformation("GetHistoryAsync called. StudentId={StudentId}, Summary={Summary}, Page={Page}, PageSize={PageSize}", studentId, summary, page, pageSize
+            logger.LogInformation("GetHistoryAsync called. StudentId={StudentId}, Summary={Summary}, GetPending={GetPending}, Page={Page}, PageSize={PageSize}", studentId, summary, getPending, page, pageSize
             );
 
-            var result = await service.GetHistoryAsync(studentId, summary, page, pageSize, ct);
+            var result = await service.GetHistoryAsync(studentId, summary, page, pageSize, getPending, ct);
 
             logger.LogInformation("GetHistoryAsync returned {Records} records (page). TotalCount={TotalCount}", result.Items.Count(), result.TotalCount);
 
@@ -71,7 +72,7 @@ public static class GamesEndpoints
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error in GetHistoryAsync. StudentId={StudentId}, Summary={Summary}", studentId, summary);
+            logger.LogError(ex, "Error in GetHistoryAsync. StudentId={StudentId}, Summary={Summary}, GetPending={GetPending}", studentId, summary, getPending);
             return Results.Problem("Unexpected error occurred while fetching history.");
         }
     }
