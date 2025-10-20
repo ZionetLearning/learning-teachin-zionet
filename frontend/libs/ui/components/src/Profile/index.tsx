@@ -84,8 +84,10 @@ export const Profile = ({ user }: { user: User }) => {
 
   const arraysEqual = (a: string[] = [], b: string[] = []) => {
     if (a.length !== b.length) return false;
-    for (let i = 0; i < a.length; i++) {
-      if (a[i] !== b[i]) return false;
+    const sortedA = a.slice().sort();
+    const sortedB = b.slice().sort();
+    for (let i = 0; i < sortedA.length; i++) {
+      if (sortedA[i] !== sortedB[i]) return false;
     }
     return true;
   };
@@ -214,7 +216,7 @@ export const Profile = ({ user }: { user: User }) => {
             </Grid>
           </Grid>
 
-          <Box className={classes.fieldContainer}>
+          <Box>
             <Box className={classes.fieldContainer}>
               <Typography
                 variant="body2"
