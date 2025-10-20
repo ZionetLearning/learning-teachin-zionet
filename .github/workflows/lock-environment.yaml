@@ -153,24 +153,24 @@ jobs:
           echo "Debug: Current ref: ${{ github.ref }}"
           echo "Debug: Event name: ${{ github.event_name }}"
           echo "Debug: Actor: ${{ github.actor }}"
-          echo "Debug: TEAMS_WEBHOOK_URL length: ${#TEAMS_WEBHOOK_URL}"
-          echo "Debug: Secret value starts with: ${TEAMS_WEBHOOK_URL:0:30}..."
+          echo "Debug: TEAMS_WEBHOOK_URL_FEATEST length: ${#TEAMS_WEBHOOK_URL_FEATEST}"
+          echo "Debug: Secret value starts with: ${TEAMS_WEBHOOK_URL_FEATEST:0:30}..."
           
           # Also check if the secret is completely empty vs just not set
-          if [ -z "${TEAMS_WEBHOOK_URL+set}" ]; then
-            echo "❌ TEAMS_WEBHOOK_URL environment variable is not set at all"
-          elif [ -z "$TEAMS_WEBHOOK_URL" ]; then
-            echo "❌ TEAMS_WEBHOOK_URL environment variable is set but empty"
+          if [ -z "${TEAMS_WEBHOOK_URL_FEATEST+set}" ]; then
+            echo "❌ TEAMS_WEBHOOK_URL_FEATEST environment variable is not set at all"
+          elif [ -z "$TEAMS_WEBHOOK_URL_FEATEST" ]; then
+            echo "❌ TEAMS_WEBHOOK_URL_FEATEST environment variable is set but empty"
           else
-            echo "✅ TEAMS_WEBHOOK_URL environment variable is set and has content"
+            echo "✅ TEAMS_WEBHOOK_URL_FEATEST environment variable is set and has content"
           fi
           
           # Check if webhook URL is configured
-          if [ -z "$TEAMS_WEBHOOK_URL" ]; then
-            echo "⚠️ TEAMS_WEBHOOK_URL secret not configured, skipping notification"
+          if [ -z "$TEAMS_WEBHOOK_URL_FEATEST" ]; then
+            echo "⚠️ TEAMS_WEBHOOK_URL_FEATEST secret not configured, skipping notification"
             echo "Please check:"
             echo "1. Secret exists in repository settings"
-            echo "2. Secret name is exactly 'TEAMS_WEBHOOK_URL'"
+            echo "2. Secret name is exactly 'TEAMS_WEBHOOK_URL_FEATEST'"
             echo "3. Workflow has access to the secret"
             echo "4. If using environments, secret is in the correct environment"
             exit 0
@@ -237,8 +237,8 @@ jobs:
           echo "$PAYLOAD" | curl -X POST \
                -H "Content-Type: application/json" \
                -d @- \
-               "$TEAMS_WEBHOOK_URL" \
+               "$TEAMS_WEBHOOK_URL_FEATEST" \
                || echo "⚠️ Failed to send Teams notification"
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          TEAMS_WEBHOOK_URL_FEATEST: ${{ secrets.TEAMS_WEBHOOK_URL_FEATEST }}
