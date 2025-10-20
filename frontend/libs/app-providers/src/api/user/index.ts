@@ -21,6 +21,7 @@ export interface UpdateUserInput {
   role?: string;
   hebrewLevelValue?: HebrewLevelValue;
   preferredLanguageCode?: PreferredLanguageCode;
+  interests?: string[];
 }
 
 export const mapUser = (dto: UserDto): User => ({
@@ -113,6 +114,7 @@ export const useUpdateUserByUserId = (
         role: existingUser?.role || "student", // Preserve the role or default to student
         hebrewLevelValue: updated.hebrewLevelValue,
         preferredLanguageCode: updated.preferredLanguageCode,
+        interests: updated.interests,
       };
       // Update the cache with the correct structure
       qc.setQueryData(["user", userId], updatedUserDto);

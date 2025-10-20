@@ -169,4 +169,11 @@ export const useStyles = createUseStyles({
       textAlign: "left",
     },
   },
+
+  interestsContainer: {
+    display: "flex",
+    gap: 8,
+    flexWrap: "wrap",
+    marginTop: 8,
+  },
 });

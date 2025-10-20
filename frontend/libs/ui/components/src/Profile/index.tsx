@@ -2,13 +2,9 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Typography, TextField, Stack, Box, Grid } from "@mui/material";
 import { useUpdateUserByUserId, toAppRole } from "@app-providers";
-import {
-  User,
-  HebrewLevelValue,
-  PreferredLanguageCode,
-} from "@app-providers/types";
+import { User, PreferredLanguageCode } from "@app-providers/types";
 import { useStyles } from "./style";
-import { Dropdown, Button } from "@ui-components";
+import { Dropdown, Button, InterestChip } from "@ui-components";
 
 export const Profile = ({ user }: { user: User }) => {
   const classes = useStyles();
@@ -25,7 +21,10 @@ export const Profile = ({ user }: { user: User }) => {
     lastName: user?.lastName ?? "",
     hebrewLevelValue: user?.hebrewLevelValue ?? "beginner",
     preferredLanguageCode: user?.preferredLanguageCode ?? "en",
+    interests: user?.interests ?? [],
   });
+
+  const [interestInput, setInterestInput] = useState("");
 
   useEffect(() => {
     setUserDetails({
@@ -33,12 +32,15 @@ export const Profile = ({ user }: { user: User }) => {
       lastName: user?.lastName ?? "",
       hebrewLevelValue: user?.hebrewLevelValue ?? "beginner",
       preferredLanguageCode: user?.preferredLanguageCode ?? "en",
+      interests: user?.interests ?? [],
     });
+    setInterestInput("");
   }, [
     user?.firstName,
     user?.hebrewLevelValue,
     user?.lastName,
     user?.preferredLanguageCode,
+    user?.interests,
     user.userId,
   ]);
 
@@ -50,13 +52,6 @@ export const Profile = ({ user }: { user: User }) => {
         [field]: e.target.value,
       }));
     };
-
-  const handleDropdownChange = (field: "hebrewLevelValue") => (val: string) => {
-    setUserDetails((prev) => ({
-      ...prev,
-      [field]: val as HebrewLevelValue,
-    }));
-  };
 
   const handleLanguageChange = (val: string) => {
     setUserDetails((prev) => ({
@@ -71,7 +66,9 @@ export const Profile = ({ user }: { user: User }) => {
       lastName: user?.lastName ?? "",
       hebrewLevelValue: user?.hebrewLevelValue ?? "beginner",
       preferredLanguageCode: user?.preferredLanguageCode ?? "en",
+      interests: user?.interests ?? [],
     });
+    setInterestInput("");
   };
 
   const handleSave = async () => {
@@ -81,26 +78,75 @@ export const Profile = ({ user }: { user: User }) => {
       lastName: userDetails.lastName.trim(),
       hebrewLevelValue: userDetails.hebrewLevelValue,
       preferredLanguageCode: userDetails.preferredLanguageCode,
+      interests: userDetails.interests,
     });
+  };
+
+  const arraysEqual = (a: string[] = [], b: string[] = []) => {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] !== b[i]) return false;
+    }
+    return true;
   };
 
   const dirty =
     userDetails.firstName.trim() !== (user?.firstName ?? "").trim() ||
     userDetails.lastName.trim() !== (user?.lastName ?? "").trim() ||
     userDetails.hebrewLevelValue !== (user?.hebrewLevelValue ?? "beginner") ||
-    userDetails.preferredLanguageCode !== (user?.preferredLanguageCode ?? "en");
-
-  const hebrewLevelOptions = [
-    { value: "beginner", label: t("hebrewLevels.beginner") },
-    { value: "intermediate", label: t("hebrewLevels.intermediate") },
-    { value: "advanced", label: t("hebrewLevels.advanced") },
-    { value: "fluent", label: t("hebrewLevels.fluent") },
-  ];
+    userDetails.preferredLanguageCode !==
+      (user?.preferredLanguageCode ?? "en") ||
+    !arraysEqual(userDetails.interests ?? [], user?.interests ?? []);
 
   const languageOptions = [
     { value: "he", label: t("languages.hebrew") },
     { value: "en", label: t("languages.english") },
   ];
+
+  const addInterests = (tokens: string[]) => {
+    const cleaned = tokens.map((s) => s.trim()).filter((s) => s.length > 0);
+    if (cleaned.length === 0) return;
+    setUserDetails((prev) => {
+      const existing = new Set(prev.interests ?? []);
+      const merged = [...(prev.interests ?? [])];
+      cleaned.forEach((c) => {
+        if (!existing.has(c)) {
+          merged.push(c);
+          existing.add(c);
+        }
+      });
+      return { ...prev, interests: merged };
+    });
+  };
+
+  const handleInterestChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (val.includes(",")) {
+      const parts = val.split(",");
+      const complete = parts.slice(0, -1);
+      addInterests(complete);
+      setInterestInput(parts[parts.length - 1]);
+    } else {
+      setInterestInput(val);
+    }
+  };
+
+  const handleInterestKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (interestInput.trim().length > 0) {
+        addInterests([interestInput]);
+        setInterestInput("");
+      }
+    }
+  };
+
+  const removeInterest = (idx: number) => () => {
+    setUserDetails((prev) => ({
+      ...prev,
+      interests: (prev.interests ?? []).filter((_, i) => i !== idx),
+    }));
+  };
 
   return (
     <Box className={classes.container}>
@@ -169,28 +215,6 @@ export const Profile = ({ user }: { user: User }) => {
           </Grid>
 
           <Box className={classes.fieldContainer}>
-            {toAppRole(user?.role) === "student" && (
-              <Box className={classes.fieldContainer}>
-                <Typography
-                  variant="body2"
-                  color="text.primary"
-                  className={
-                    isRTL ? classes.fieldLabelRTL : classes.fieldLabelLTR
-                  }
-                >
-                  {t("hebrewLevels.title")}
-                </Typography>
-                <Dropdown
-                  name="hebrewLevel"
-                  options={hebrewLevelOptions}
-                  value={userDetails.hebrewLevelValue}
-                  onChange={(val) =>
-                    handleDropdownChange("hebrewLevelValue")(val)
-                  }
-                />
-              </Box>
-            )}
-
             <Box className={classes.fieldContainer}>
               <Typography
                 variant="body2"
@@ -210,7 +234,42 @@ export const Profile = ({ user }: { user: User }) => {
                 />
               </Box>
             </Box>
-
+            {toAppRole(user?.role) === "student" && (
+              <Box className={classes.fieldContainer}>
+                <Typography
+                  variant="body2"
+                  color="text.primary"
+                  className={
+                    isRTL ? classes.fieldLabelRTL : classes.fieldLabelLTR
+                  }
+                >
+                  {t("pages.profile.interests")}
+                </Typography>
+                <Box>
+                  <TextField
+                    placeholder={t("pages.auth.interestsPlaceholder")}
+                    value={interestInput}
+                    onChange={handleInterestChange}
+                    onKeyDown={handleInterestKeyDown}
+                    fullWidth
+                    className={
+                      isRTL ? classes.textFieldRTL : classes.textFieldLTR
+                    }
+                    size="small"
+                  />
+                </Box>
+                <Box className={classes.interestsContainer}>
+                  {(userDetails.interests ?? []).map((it, idx) => (
+                    <InterestChip
+                      key={`${it}-${idx}`}
+                      label={it}
+                      onDelete={removeInterest(idx)}
+                      size="small"
+                    />
+                  ))}
+                </Box>
+              </Box>
+            )}
             <Typography
               variant="body2"
               color="text.primary"
