@@ -55,7 +55,7 @@ export const GameOverModal = ({
 
   const onGoHome = useCallback(() => navigate("/"), [navigate]);
 
-  const isPerfect = correctSentences === totalSentences;
+  const isAllCorrect = correctSentences === totalSentences;
 
   const actionButtons = useMemo(
     () => [
@@ -101,7 +101,7 @@ export const GameOverModal = ({
 
       <DialogContent>
         <Box className={classes.gameOverContent}>
-          {isPerfect ? (
+          {isAllCorrect ? (
             <>
               <Typography variant="h6" gutterBottom>
                 {t("pages.wordOrderGame.gameOver.congratulations")}
