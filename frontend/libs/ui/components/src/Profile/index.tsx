@@ -2,7 +2,11 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Typography, TextField, Stack, Box, Grid } from "@mui/material";
 import { useUpdateUserByUserId, toAppRole } from "@app-providers";
-import { User, PreferredLanguageCode } from "@app-providers/types";
+import {
+  User,
+  HebrewLevelValue,
+  PreferredLanguageCode,
+} from "@app-providers/types";
 import { useStyles } from "./style";
 import { Dropdown, Button, InterestChip } from "@ui-components";
 
@@ -53,6 +57,13 @@ export const Profile = ({ user }: { user: User }) => {
       }));
     };
 
+  const handleDropdownChange = (field: "hebrewLevelValue") => (val: string) => {
+    setUserDetails((prev) => ({
+      ...prev,
+      [field]: val as HebrewLevelValue,
+    }));
+  };
+
   const handleLanguageChange = (val: string) => {
     setUserDetails((prev) => ({
       ...prev,
@@ -82,15 +93,8 @@ export const Profile = ({ user }: { user: User }) => {
     });
   };
 
-  const arraysEqual = (a: string[] = [], b: string[] = []) => {
-    if (a.length !== b.length) return false;
-    const sortedA = a.slice().sort();
-    const sortedB = b.slice().sort();
-    for (let i = 0; i < sortedA.length; i++) {
-      if (sortedA[i] !== sortedB[i]) return false;
-    }
-    return true;
-  };
+  const haveSameItems = (a: string[] = [], b: string[] = []) =>
+    a.length === b.length && a.every((x) => b.includes(x));
 
   const dirty =
     userDetails.firstName.trim() !== (user?.firstName ?? "").trim() ||
@@ -98,7 +102,14 @@ export const Profile = ({ user }: { user: User }) => {
     userDetails.hebrewLevelValue !== (user?.hebrewLevelValue ?? "beginner") ||
     userDetails.preferredLanguageCode !==
       (user?.preferredLanguageCode ?? "en") ||
-    !arraysEqual(userDetails.interests ?? [], user?.interests ?? []);
+    !haveSameItems(userDetails.interests ?? [], user?.interests ?? []);
+
+  const hebrewLevelOptions = [
+    { value: "beginner", label: t("hebrewLevels.beginner") },
+    { value: "intermediate", label: t("hebrewLevels.intermediate") },
+    { value: "advanced", label: t("hebrewLevels.advanced") },
+    { value: "fluent", label: t("hebrewLevels.fluent") },
+  ];
 
   const languageOptions = [
     { value: "he", label: t("languages.hebrew") },
@@ -237,17 +248,38 @@ export const Profile = ({ user }: { user: User }) => {
               </Box>
             </Box>
             {toAppRole(user?.role) === "student" && (
-              <Box className={classes.fieldContainer}>
-                <Typography
-                  variant="body2"
-                  color="text.primary"
-                  className={
-                    isRTL ? classes.fieldLabelRTL : classes.fieldLabelLTR
-                  }
-                >
-                  {t("pages.profile.interests")}
-                </Typography>
-                <Box>
+              <Box>
+                <Box className={classes.fieldContainer}>
+                  <Typography
+                    variant="body2"
+                    color="text.primary"
+                    className={
+                      isRTL ? classes.fieldLabelRTL : classes.fieldLabelLTR
+                    }
+                  >
+                    {t("hebrewLevels.title")}
+                  </Typography>
+                  <Box className={classes.dropdown}>
+                    <Dropdown
+                      name="hebrewLevel"
+                      options={hebrewLevelOptions}
+                      value={userDetails.hebrewLevelValue}
+                      onChange={(val) =>
+                        handleDropdownChange("hebrewLevelValue")(val)
+                      }
+                    />
+                  </Box>
+                </Box>
+                <Box className={classes.fieldContainer}>
+                  <Typography
+                    variant="body2"
+                    color="text.primary"
+                    className={
+                      isRTL ? classes.fieldLabelRTL : classes.fieldLabelLTR
+                    }
+                  >
+                    {t("pages.profile.interests")}
+                  </Typography>
                   <TextField
                     placeholder={t("pages.auth.interestsPlaceholder")}
                     value={interestInput}
@@ -259,16 +291,16 @@ export const Profile = ({ user }: { user: User }) => {
                     }
                     size="small"
                   />
-                </Box>
-                <Box className={classes.interestsContainer}>
-                  {(userDetails.interests ?? []).map((it, idx) => (
-                    <InterestChip
-                      key={`${it}-${idx}`}
-                      label={it}
-                      onDelete={removeInterest(idx)}
-                      size="small"
-                    />
-                  ))}
+                  <Box className={classes.interestsContainer}>
+                    {(userDetails.interests ?? []).map((it, idx) => (
+                      <InterestChip
+                        key={`${it}-${idx}`}
+                        label={it}
+                        onDelete={removeInterest(idx)}
+                        size="small"
+                      />
+                    ))}
+                  </Box>
                 </Box>
               </Box>
             )}
