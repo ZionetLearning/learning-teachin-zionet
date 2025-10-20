@@ -205,7 +205,8 @@
           "completed": "You have completed {{correct}} correct sentences out of {{total}}.",
           "whatNext": "What would you like to do next?",
           "playAgain": "Play Again",
-          "changeSettings": "Change Settings"
+          "changeSettings": "Change Settings",
+          "viewMyMistakes": "View My Mistakes"
         },
         "title": "Word Order Game",
         "subTitle": "Arrange the words in the correct order",
