@@ -160,4 +160,13 @@ export const useStyles = createUseStyles({
       gap: 12,
     },
   },
+
+  dropdown: {
+    "& .MuiInputBase-root": {
+      direction: "ltr",
+    },
+    "& .MuiSelect-select, & .MuiInputBase-input": {
+      textAlign: "left",
+    },
+  },
 });

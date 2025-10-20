@@ -119,7 +119,6 @@ export const Profile = ({ user }: { user: User }) => {
         </Box>
 
         <Stack spacing={3}>
-          {/* First/Last name: responsive Grid */}
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, md: 6 }}>
               <Box className={classes.fieldContainer}>
@@ -139,7 +138,7 @@ export const Profile = ({ user }: { user: User }) => {
                   className={
                     isRTL ? classes.textFieldRTL : classes.textFieldLTR
                   }
-                  size={"small"}
+                  size="small"
                 />
               </Box>
             </Grid>
@@ -161,43 +160,14 @@ export const Profile = ({ user }: { user: User }) => {
                   className={
                     isRTL ? classes.textFieldRTL : classes.textFieldLTR
                   }
-                  size={"small"}
+                  size="small"
                 />
               </Box>
             </Grid>
           </Grid>
 
-          {/* Hebrew level (if student) */}
           <Box className={classes.fieldContainer}>
-            <Typography
-              variant="body2"
-              color="text.primary"
-              className={
-                isRTL ? classes.emailFieldLabelRTL : classes.emailFieldLabelLTR
-              }
-            >
-              {toAppRole(user?.role) === "student" && (
-                <Box className={classes.fieldContainer}>
-                  <Typography
-                    variant="body2"
-                    color="text.primary"
-                    className={
-                      isRTL ? classes.fieldLabelRTL : classes.fieldLabelLTR
-                    }
-                  >
-                    {t("hebrewLevels.title")}
-                  </Typography>
-                  <Dropdown
-                    name="hebrewLevel"
-                    options={hebrewLevelOptions}
-                    value={userDetails.hebrewLevelValue}
-                    onChange={(val) =>
-                      handleDropdownChange("hebrewLevelValue")(val)
-                    }
-                  />
-                </Box>
-              )}
-
+            {toAppRole(user?.role) === "student" && (
               <Box className={classes.fieldContainer}>
                 <Typography
                   variant="body2"
@@ -206,8 +176,30 @@ export const Profile = ({ user }: { user: User }) => {
                     isRTL ? classes.fieldLabelRTL : classes.fieldLabelLTR
                   }
                 >
-                  {t("pages.profile.preferredLanguage")}
+                  {t("hebrewLevels.title")}
                 </Typography>
+                <Dropdown
+                  name="hebrewLevel"
+                  options={hebrewLevelOptions}
+                  value={userDetails.hebrewLevelValue}
+                  onChange={(val) =>
+                    handleDropdownChange("hebrewLevelValue")(val)
+                  }
+                />
+              </Box>
+            )}
+
+            <Box className={classes.fieldContainer}>
+              <Typography
+                variant="body2"
+                color="text.primary"
+                className={
+                  isRTL ? classes.fieldLabelRTL : classes.fieldLabelLTR
+                }
+              >
+                {t("pages.profile.preferredLanguage")}
+              </Typography>
+              <Box className={classes.dropdown}>
                 <Dropdown
                   name="preferredLanguage"
                   options={languageOptions}
@@ -215,7 +207,13 @@ export const Profile = ({ user }: { user: User }) => {
                   onChange={handleLanguageChange}
                 />
               </Box>
+            </Box>
 
+            <Typography
+              variant="body2"
+              color="text.primary"
+              className={isRTL ? classes.fieldLabelRTL : classes.fieldLabelLTR}
+            >
               {t("pages.profile.email")}
             </Typography>
             <TextField
@@ -223,7 +221,7 @@ export const Profile = ({ user }: { user: User }) => {
               disabled
               fullWidth
               className={isRTL ? classes.textFieldRTL : classes.textFieldLTR}
-              size={"small"}
+              size="small"
             />
             <Typography
               variant="body2"
