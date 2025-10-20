@@ -112,7 +112,9 @@ export const Profile = ({ user }: { user: User }) => {
 
       <Box className={classes.formCard}>
         <Box className={classes.formHeader}>
-          <Typography variant="h6">{t("pages.profile.subTitle")}</Typography>
+          <Typography variant="h6" color="text.secondary">
+            {t("pages.profile.subTitle")}
+          </Typography>
           <Typography variant="body2" color="text.secondary">
             {t("pages.profile.secondSubTitle")}
           </Typography>
