@@ -88,6 +88,39 @@ module "database" {
   depends_on = [azurerm_resource_group.main]
 }
 
+# Langfuse database on the same PostgreSQL server
+module "langfuse_database" {
+  count  = 1
+  source = "./modules/postgresql"
+
+  server_name         = var.database_server_name
+  location            = var.db_location
+  resource_group_name = var.use_shared_postgres ? var.shared_resource_group : azurerm_resource_group.main.name
+
+  admin_username = var.admin_username
+  admin_password = var.admin_password
+
+  db_version = var.db_version
+  sku_name   = var.sku_name
+  storage_mb = var.storage_mb
+
+  password_auth_enabled         = var.password_auth_enabled
+  active_directory_auth_enabled = var.active_directory_auth_enabled
+
+  backup_retention_days        = var.backup_retention_days
+  geo_redundant_backup_enabled = var.geo_redundant_backup_enabled
+
+  delegated_subnet_id = var.delegated_subnet_id
+
+  environment_name = var.environment_name
+  database_name    = "langfuse-${var.environment_name}"
+
+  use_shared_postgres = var.use_shared_postgres
+  existing_server_id  = var.use_shared_postgres ? data.azurerm_postgresql_flexible_server.shared[0].id : null
+
+  depends_on = [azurerm_resource_group.main]
+}
+
 module "signalr" {
   source              = "./modules/signalr"
   resource_group_name = azurerm_resource_group.main.name
