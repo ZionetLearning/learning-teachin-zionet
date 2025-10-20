@@ -61,7 +61,7 @@ jobs:
 
   lock-featest:
     if: |
-      github.event_name != 'push' && (
+      github.event_name == 'workflow_dispatch' && (
         inputs.custom_environment_name == 'featest' ||
         inputs.custom_environment_name == '' ||
         inputs.unlock_featest == true ||
