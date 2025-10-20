@@ -22,54 +22,75 @@ public class ClassService : IClassService
         return model;
     }
 
-    public async Task AddMembersAsync(Guid classId, IEnumerable<Guid> userIds, Guid addedBy, CancellationToken ct)
+    public async Task<bool> AddMembersAsync(Guid classId, IEnumerable<Guid> userIds, Guid addedBy, CancellationToken ct)
     {
-        var cls = await _db.Class.FindAsync([classId], ct);
-        if (cls == null)
+        var isSuccessful = false;
+        try
         {
-            throw new InvalidOperationException("Class not found.");
-        }
-
-        var users = await _db.Users
-            .Where(u => userIds.Contains(u.UserId))
-            .ToListAsync(ct);
-
-        var existing = await _db.ClassMembership
-            .Where(m => m.ClassId == classId && userIds.Contains(m.UserId))
-            .ToListAsync(ct);
-
-        foreach (var user in users)
-        {
-            if (existing.Any(m => m.UserId == user.UserId && m.Role == user.Role))
+            var cls = await _db.Class.FindAsync([classId], ct);
+            if (cls == null)
             {
-                continue; // idempotent
+                throw new InvalidOperationException("Class not found.");
             }
 
-            _db.ClassMembership.Add(new ClassMembership
+            var users = await _db.Users
+                .Where(u => userIds.Contains(u.UserId))
+                .ToListAsync(ct);
+
+            var existing = await _db.ClassMembership
+                .Where(m => m.ClassId == classId && userIds.Contains(m.UserId))
+                .ToListAsync(ct);
+
+            foreach (var user in users)
             {
-                ClassId = classId,
-                UserId = user.UserId,
-                Role = user.Role,
-                AddedBy = addedBy
-            });
+                if (existing.Any(m => m.UserId == user.UserId && m.Role == user.Role))
+                {
+                    continue; // idempotent
+                }
+
+                _db.ClassMembership.Add(new ClassMembership
+                {
+                    ClassId = classId,
+                    UserId = user.UserId,
+                    Role = user.Role,
+                    AddedBy = addedBy
+                });
+            }
+
+            await _db.SaveChangesAsync(ct);
+            return isSuccessful = true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to add member");
+            return isSuccessful;
         }
 
-        await _db.SaveChangesAsync(ct);
     }
 
-    public async Task RemoveMembersAsync(Guid classId, IEnumerable<Guid> userIds, CancellationToken ct)
+    public async Task<bool> RemoveMembersAsync(Guid classId, IEnumerable<Guid> userIds, CancellationToken ct)
     {
-        var toRemove = await _db.ClassMembership
-            .Where(m => m.ClassId == classId && userIds.Contains(m.UserId))
-            .ToListAsync(ct);
-
-        if (toRemove.Count == 0)
+        var isSuccessful = false;
+        try
         {
-            return;
-        }
+            var toRemove = await _db.ClassMembership
+                        .Where(m => m.ClassId == classId && userIds.Contains(m.UserId))
+                        .ToListAsync(ct);
 
-        _db.ClassMembership.RemoveRange(toRemove);
-        await _db.SaveChangesAsync(ct);
+            if (toRemove.Count == 0)
+            {
+                return isSuccessful = true;
+            }
+
+            _db.ClassMembership.RemoveRange(toRemove);
+            await _db.SaveChangesAsync(ct);
+            return isSuccessful = true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to remove member");
+            return isSuccessful;
+        }
     }
 
     public async Task<Class?> GetClassWithMembersAsync(Guid classId, CancellationToken ct)
