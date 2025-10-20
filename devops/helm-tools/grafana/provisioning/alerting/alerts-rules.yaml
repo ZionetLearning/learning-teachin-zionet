@@ -199,46 +199,29 @@ groups:
     folder: Infrastructure
     interval: 1h
     rules:
-      - uid: azure-cost-alert
+      - uid: azure-cost-threshold
         title: "Azure Monthly Cost Exceeded"
         condition: B
         data:
           - refId: A
-            datasourceUid: azure-monitor
-            queryType: ''
-            relativeTimeRange:
-              from: 300
-              to: 0
+            datasourceUid: prometheus
+            relativeTimeRange: { from: 3600, to: 0 }
             model:
-              queryType: AzureMonitorMetrics
-              resourceType: Microsoft.CostManagement/exports
-              metricName: "ActualCost"
-              aggregation: Total
+              expr: 'azure_month_to_date_cost_usd'
               refId: A
-
           - refId: B
             datasourceUid: __expr__
             model:
               type: threshold
               expression: A
               conditions:
-                - evaluator:
-                    params:
-                      - 10
-                    type: gt
-                  operator:
-                    type: and
-                  query:
-                    params:
-                      - B
-                  type: query
-              refId: B
-
-        noDataState: OK
-        execErrState: Alerting
+                - evaluator: { type: gt, params: [10] }  
+                  operator: { type: and }
+                  query: { params: [B] }
         for: 5m
         annotations:
           summary: "Monthly Azure Cost Alert"
-          description: "Azure costs exceeded $10 this month."
+          description: "Azure costs exceeded threshold this month."
         labels:
           severity: critical
+
