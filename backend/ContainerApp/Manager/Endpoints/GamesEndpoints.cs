@@ -72,6 +72,7 @@ public static class GamesEndpoints
         [FromQuery] bool summary,
         [FromQuery] int page,
         [FromQuery] int pageSize,
+        [FromQuery] bool getPending,
         [FromServices] IAccessorClient accessorClient,
         HttpContext http,
         ILogger<GameEndpoint> logger,
@@ -89,9 +90,9 @@ public static class GamesEndpoints
                 return Results.Forbid();
             }
 
-            logger.LogInformation("Fetching history for StudentId={StudentId}, Summary={Summary}, Page={Page}, PageSize={PageSize}", studentId, summary, page, pageSize);
+            logger.LogInformation("Fetching history for StudentId={StudentId}, Summary={Summary}, GetPending={GetPending}, Page={Page}, PageSize={PageSize}", studentId, summary, getPending, page, pageSize);
 
-            var result = await accessorClient.GetHistoryAsync(studentId, summary, page, pageSize, ct);
+            var result = await accessorClient.GetHistoryAsync(studentId, summary, page, pageSize, getPending, ct);
 
             return Results.Ok(result);
         }
