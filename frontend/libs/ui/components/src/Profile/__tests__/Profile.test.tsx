@@ -171,7 +171,6 @@ describe("<Profile />", () => {
     ).toBeInTheDocument();
 
     const inputs = screen.getAllByRole("textbox") as HTMLInputElement[];
-    // There are 4 textboxes for student: first, last, interests, and email
     expect(inputs.length).toBeGreaterThanOrEqual(3);
 
     const firstNameInput = inputs[0];
