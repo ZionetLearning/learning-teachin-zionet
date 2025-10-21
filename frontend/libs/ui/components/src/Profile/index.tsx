@@ -238,7 +238,9 @@ export const Profile = ({ user }: { user: User }) => {
               >
                 {t("pages.profile.preferredLanguage")}
               </Typography>
-              <Box className={classes.dropdown}>
+              <Box
+                className={isRTL ? classes.dropdownRTL : classes.dropdownLTR}
+              >
                 <Dropdown
                   name="preferredLanguage"
                   options={languageOptions}
@@ -259,7 +261,11 @@ export const Profile = ({ user }: { user: User }) => {
                   >
                     {t("hebrewLevels.title")}
                   </Typography>
-                  <Box className={classes.dropdown}>
+                  <Box
+                    className={
+                      isRTL ? classes.dropdownRTL : classes.dropdownLTR
+                    }
+                  >
                     <Dropdown
                       name="hebrewLevel"
                       options={hebrewLevelOptions}
