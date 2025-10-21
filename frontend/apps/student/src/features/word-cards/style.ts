@@ -80,7 +80,7 @@ export const useStyles = createUseStyles({
   grid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-    gap: "3%",
+    gap: "15px",
     padding: "2%",
   },
 });

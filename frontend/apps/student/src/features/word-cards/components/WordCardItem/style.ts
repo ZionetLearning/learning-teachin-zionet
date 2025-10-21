@@ -24,7 +24,7 @@ export const useStyles = createUseStyles({
   innerCard: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "flex-start",
+    alignItems: "center",
     gap: 14,
   },
   wordGroup: {
@@ -61,5 +61,11 @@ export const useStyles = createUseStyles({
   },
   learnIconIdle: {
     color: "rgba(0,0,0,0.28)",
+  },
+  learnRow: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+    "& .MuiCheckbox-root": { padding: 6 },
   },
 });
