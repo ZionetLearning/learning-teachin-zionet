@@ -16,7 +16,8 @@
         "studentDashboard": "תלמידים",
         "adminDashboard": "מנהל מערכת",
         "genericError": "משהו השתבש. אנא נסה שוב מאוחר יותר.",
-        "forbiddenRole": "אין לך הרשאה לגשת לדף זה."
+        "forbiddenRole": "אין לך הרשאה לגשת לדף זה.",
+        "interestsPlaceholder": "תחומי עניין, לדוגמה מתמטיקה, מדע, אמנות"
       },
       "home": {
         "title": "ברוכים הבאים למגרש המשחקים הפנימי שלנו",
@@ -363,7 +364,8 @@
         "emailCannotBeChanged": "דואר אלקטרוני לא ניתן לשינוי",
         "edit": "עריכה",
         "saveChanges": "שמור שינויים",
-        "cancel": "ביטול"
+        "cancel": "ביטול",
+        "interests": "תחומי עניין"
       },
       "tasks": {
         "title": "ניהול משימות",
