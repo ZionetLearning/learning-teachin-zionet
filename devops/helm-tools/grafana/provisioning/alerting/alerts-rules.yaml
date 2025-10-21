@@ -198,7 +198,7 @@ groups:
                   query: { params: [C] }
         for: 5m
         noDataState: NoData
-        execErrState: Error
+        execErrState: NoData
         labels: { severity: critical, app: student }
         annotations: { summary: "High failure rate (student)" }
 
