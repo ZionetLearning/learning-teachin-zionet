@@ -182,8 +182,6 @@ groups:
                 | extend pv = coalesce(pv, 0), ex = coalesce(ex, 0)
                 | extend failureRate = iff(pv == 0, 0.0, 100.0 * todouble(ex) / todouble(pv))
                 | project TimeGenerated, failureRate
-                | union (datatable(TimeGenerated:datetime, failureRate:real)[now(), 0.0])
-                | summarize failureRate = max(failureRate) by bin(TimeGenerated, timeGrain)
                 | order by TimeGenerated asc
               refId: A
           - refId: B
@@ -229,8 +227,6 @@ groups:
                 | join kind=leftouter (deps) on TimeGenerated
                 | extend pct_5xx = coalesce(pct_5xx, 0.0)
                 | project TimeGenerated, pct_5xx
-                | union (datatable(TimeGenerated:datetime, pct_5xx:real)[now(), 0.0])
-                | summarize pct_5xx = max(pct_5xx) by bin(TimeGenerated, timeGrain)
                 | order by TimeGenerated asc
               refId: A
           - refId: B
@@ -281,8 +277,6 @@ groups:
                 | join kind=leftouter (timings) on TimeGenerated
                 | extend p95_ms = coalesce(p95_ms, 0.0)
                 | project TimeGenerated, p95_ms
-                | union (datatable(TimeGenerated:datetime, p95_ms:real)[now(), 0.0])
-                | summarize p95_ms = max(p95_ms) by bin(TimeGenerated, timeGrain)
                 | order by TimeGenerated asc
               refId: A
           - refId: B
@@ -332,8 +326,6 @@ groups:
                 | extend pv = coalesce(pv, 0), ex = coalesce(ex, 0)
                 | extend failureRate = iff(pv == 0, 0.0, 100.0 * todouble(ex) / todouble(pv))
                 | project TimeGenerated, failureRate
-                | union (datatable(TimeGenerated:datetime, failureRate:real)[now(), 0.0])
-                | summarize failureRate = max(failureRate) by bin(TimeGenerated, timeGrain)
                 | order by TimeGenerated asc
               refId: A
           - refId: B
@@ -379,8 +371,6 @@ groups:
                 | join kind=leftouter (deps) on TimeGenerated
                 | extend pct_5xx = coalesce(pct_5xx, 0.0)
                 | project TimeGenerated, pct_5xx
-                | union (datatable(TimeGenerated:datetime, pct_5xx:real)[now(), 0.0])
-                | summarize pct_5xx = max(pct_5xx) by bin(TimeGenerated, timeGrain)
                 | order by TimeGenerated asc
               refId: A
           - refId: B
@@ -431,8 +421,6 @@ groups:
                 | join kind=leftouter (timings) on TimeGenerated
                 | extend p95_ms = coalesce(p95_ms, 0.0)
                 | project TimeGenerated, p95_ms
-                | union (datatable(TimeGenerated:datetime, p95_ms:real)[now(), 0.0])
-                | summarize p95_ms = max(p95_ms) by bin(TimeGenerated, timeGrain)
                 | order by TimeGenerated asc
               refId: A
           - refId: B
@@ -482,8 +470,6 @@ groups:
                 | extend pv = coalesce(pv, 0), ex = coalesce(ex, 0)
                 | extend failureRate = iff(pv == 0, 0.0, 100.0 * todouble(ex) / todouble(pv))
                 | project TimeGenerated, failureRate
-                | union (datatable(TimeGenerated:datetime, failureRate:real)[now(), 0.0])
-                | summarize failureRate = max(failureRate) by bin(TimeGenerated, timeGrain)
                 | order by TimeGenerated asc
               refId: A
           - refId: B
@@ -529,8 +515,6 @@ groups:
                 | join kind=leftouter (deps) on TimeGenerated
                 | extend pct_5xx = coalesce(pct_5xx, 0.0)
                 | project TimeGenerated, pct_5xx
-                | union (datatable(TimeGenerated:datetime, pct_5xx:real)[now(), 0.0])
-                | summarize pct_5xx = max(pct_5xx) by bin(TimeGenerated, timeGrain)
                 | order by TimeGenerated asc
               refId: A
           - refId: B
@@ -581,8 +565,6 @@ groups:
                 | join kind=leftouter (timings) on TimeGenerated
                 | extend p95_ms = coalesce(p95_ms, 0.0)
                 | project TimeGenerated, p95_ms
-                | union (datatable(TimeGenerated:datetime, p95_ms:real)[now(), 0.0])
-                | summarize p95_ms = max(p95_ms) by bin(TimeGenerated, timeGrain)
                 | order by TimeGenerated asc
               refId: A
           - refId: B
