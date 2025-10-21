@@ -167,10 +167,16 @@ groups:
               azureLogAnalytics:
                 workspace: "${LA_WS_STUDENT}"      # Workspace Resource ID
               query: |
-                requests
+                let pv = AppPageViews
                 | where TimeGenerated > ago(10m)
-                | summarize total=count(), failed=countif(success==false) by bin(TimeGenerated, 1m)
-                | extend failureRate = iff(total < 20, 0.0, 100.0 * todouble(failed) / todouble(total))
+                | summarize pv = count() by bin(TimeGenerated, 1m);
+                let ex = AppExceptions
+                | where TimeGenerated > ago(10m)
+                | summarize ex = count() by bin(TimeGenerated, 1m);
+                pv
+                | join kind=fullouter ex on TimeGenerated
+                | extend pv = coalesce(pv, 0), ex = coalesce(ex, 0)
+                | extend failureRate = iif(pv == 0, 0.0, 100.0 * todouble(ex) / todouble(pv))
                 | project TimeGenerated, failureRate
               refId: A
           - refId: B
@@ -181,7 +187,10 @@ groups:
             model:
               type: threshold
               expression: B
-              conditions: [ { evaluator: { type: gt, params: [5] }, operator: { type: and }, query: { params: [C] } } ]
+              conditions:
+                - evaluator: { type: gt, params: [5] }
+                  operator: { type: and }
+                  query: { params: [C] }
         for: 5m
         noDataState: NoData
         execErrState: Error
@@ -201,10 +210,11 @@ groups:
               azureLogAnalytics:
                 workspace: "${LA_WS_STUDENT}"
               query: |
-                requests
+                AppDependencies
                 | where TimeGenerated > ago(10m)
-                | summarize total=count(), fivexx=countif(toint(resultCode) between (500..599)) by bin(TimeGenerated, 1m)
-                | extend pct_5xx = iff(total == 0, 0.0, 100.0 * todouble(fivexx) / todouble(total))
+                | extend Code = toint(ResultCode)
+                | summarize total = count(), fivexx = countif(Code between (500..599)) by bin(TimeGenerated, 1m)
+                | extend pct_5xx = iif(total == 0, 0.0, 100.0 * todouble(fivexx) / todouble(total))
                 | project TimeGenerated, pct_5xx
               refId: A
           - refId: B
@@ -215,7 +225,10 @@ groups:
             model:
               type: threshold
               expression: B
-              conditions: [ { evaluator: { type: gt, params: [1] }, operator: { type: and }, query: { params: [C] } } ]
+              conditions:
+                - evaluator: { type: gt, params: [1] }
+                  operator: { type: and }
+                  query: { params: [C] }
         for: 5m
         noDataState: NoData
         execErrState: Error
@@ -228,16 +241,16 @@ groups:
         data:
           - refId: A
             datasourceUid: azure-monitor
-            relativeTimeRange: { from: 1200, to: 0 }   # 20m lookback
+            relativeTimeRange: { from: 1200, to: 0 }   # 20m
             model:
               queryType: "Azure Log Analytics"
               resultFormat: time_series
               azureLogAnalytics:
                 workspace: "${LA_WS_STUDENT}"
               query: |
-                requests
+                AppBrowserTimings
                 | where TimeGenerated > ago(10m)
-                | summarize p95_ms = toreal(percentile(duration, 95) / 1ms) by bin(TimeGenerated, 2m)
+                | summarize p95_ms = percentile(TotalDuration, 95) by bin(TimeGenerated, 2m)
                 | project TimeGenerated, p95_ms
               refId: A
           - refId: B
@@ -248,7 +261,10 @@ groups:
             model:
               type: threshold
               expression: B
-              conditions: [ { evaluator: { type: gt, params: [2000] }, operator: { type: and }, query: { params: [C] } } ]
+              conditions:
+                - evaluator: { type: gt, params: [2000] }
+                  operator: { type: and }
+                  query: { params: [C] }
         for: 10m
         noDataState: NoData
         execErrState: Error
@@ -269,10 +285,16 @@ groups:
               azureLogAnalytics:
                 workspace: "${LA_WS_ADMIN}"
               query: |
-                requests
+                let pv = AppPageViews
                 | where TimeGenerated > ago(10m)
-                | summarize total=count(), failed=countif(success==false) by bin(TimeGenerated, 1m)
-                | extend failureRate = iff(total < 20, 0.0, 100.0 * todouble(failed) / todouble(total))
+                | summarize pv = count() by bin(TimeGenerated, 1m);
+                let ex = AppExceptions
+                | where TimeGenerated > ago(10m)
+                | summarize ex = count() by bin(TimeGenerated, 1m);
+                pv
+                | join kind=fullouter ex on TimeGenerated
+                | extend pv = coalesce(pv, 0), ex = coalesce(ex, 0)
+                | extend failureRate = iif(pv == 0, 0.0, 100.0 * todouble(ex) / todouble(pv))
                 | project TimeGenerated, failureRate
               refId: A
           - refId: B
@@ -283,7 +305,10 @@ groups:
             model:
               type: threshold
               expression: B
-              conditions: [ { evaluator: { type: gt, params: [5] }, operator: { type: and }, query: { params: [C] } } ]
+              conditions:
+                - evaluator: { type: gt, params: [5] }
+                  operator: { type: and }
+                  query: { params: [C] }
         for: 5m
         noDataState: NoData
         execErrState: Error
@@ -303,10 +328,11 @@ groups:
               azureLogAnalytics:
                 workspace: "${LA_WS_ADMIN}"
               query: |
-                requests
+                AppDependencies
                 | where TimeGenerated > ago(10m)
-                | summarize total=count(), fivexx=countif(toint(resultCode) between (500..599)) by bin(TimeGenerated, 1m)
-                | extend pct_5xx = iff(total == 0, 0.0, 100.0 * todouble(fivexx) / todouble(total))
+                | extend Code = toint(ResultCode)
+                | summarize total = count(), fivexx = countif(Code between (500..599)) by bin(TimeGenerated, 1m)
+                | extend pct_5xx = iif(total == 0, 0.0, 100.0 * todouble(fivexx) / todouble(total))
                 | project TimeGenerated, pct_5xx
               refId: A
           - refId: B
@@ -317,7 +343,10 @@ groups:
             model:
               type: threshold
               expression: B
-              conditions: [ { evaluator: { type: gt, params: [1] }, operator: { type: and }, query: { params: [C] } } ]
+              conditions:
+                - evaluator: { type: gt, params: [1] }
+                  operator: { type: and }
+                  query: { params: [C] }
         for: 5m
         noDataState: NoData
         execErrState: Error
@@ -337,9 +366,9 @@ groups:
               azureLogAnalytics:
                 workspace: "${LA_WS_ADMIN}"
               query: |
-                requests
+                AppBrowserTimings
                 | where TimeGenerated > ago(10m)
-                | summarize p95_ms = toreal(percentile(duration, 95) / 1ms) by bin(TimeGenerated, 2m)
+                | summarize p95_ms = percentile(TotalDuration, 95) by bin(TimeGenerated, 2m)
                 | project TimeGenerated, p95_ms
               refId: A
           - refId: B
@@ -350,7 +379,10 @@ groups:
             model:
               type: threshold
               expression: B
-              conditions: [ { evaluator: { type: gt, params: [2000] }, operator: { type: and }, query: { params: [C] } } ]
+              conditions:
+                - evaluator: { type: gt, params: [2000] }
+                  operator: { type: and }
+                  query: { params: [C] }
         for: 10m
         noDataState: NoData
         execErrState: Error
@@ -371,10 +403,16 @@ groups:
               azureLogAnalytics:
                 workspace: "${LA_WS_TEACHER}"
               query: |
-                requests
+                let pv = AppPageViews
                 | where TimeGenerated > ago(10m)
-                | summarize total=count(), failed=countif(success==false) by bin(TimeGenerated, 1m)
-                | extend failureRate = iff(total < 20, 0.0, 100.0 * todouble(failed) / todouble(total))
+                | summarize pv = count() by bin(TimeGenerated, 1m);
+                let ex = AppExceptions
+                | where TimeGenerated > ago(10m)
+                | summarize ex = count() by bin(TimeGenerated, 1m);
+                pv
+                | join kind=fullouter ex on TimeGenerated
+                | extend pv = coalesce(pv, 0), ex = coalesce(ex, 0)
+                | extend failureRate = iif(pv == 0, 0.0, 100.0 * todouble(ex) / todouble(pv))
                 | project TimeGenerated, failureRate
               refId: A
           - refId: B
@@ -385,7 +423,10 @@ groups:
             model:
               type: threshold
               expression: B
-              conditions: [ { evaluator: { type: gt, params: [5] }, operator: { type: and }, query: { params: [C] } } ]
+              conditions:
+                - evaluator: { type: gt, params: [5] }
+                  operator: { type: and }
+                  query: { params: [C] }
         for: 5m
         noDataState: NoData
         execErrState: Error
@@ -405,10 +446,11 @@ groups:
               azureLogAnalytics:
                 workspace: "${LA_WS_TEACHER}"
               query: |
-                requests
+                AppDependencies
                 | where TimeGenerated > ago(10m)
-                | summarize total=count(), fivexx=countif(toint(resultCode) between (500..599)) by bin(TimeGenerated, 1m)
-                | extend pct_5xx = iff(total == 0, 0.0, 100.0 * todouble(fivexx) / todouble(total))
+                | extend Code = toint(ResultCode)
+                | summarize total = count(), fivexx = countif(Code between (500..599)) by bin(TimeGenerated, 1m)
+                | extend pct_5xx = iif(total == 0, 0.0, 100.0 * todouble(fivexx) / todouble(total))
                 | project TimeGenerated, pct_5xx
               refId: A
           - refId: B
@@ -419,7 +461,10 @@ groups:
             model:
               type: threshold
               expression: B
-              conditions: [ { evaluator: { type: gt, params: [1] }, operator: { type: and }, query: { params: [C] } } ]
+              conditions:
+                - evaluator: { type: gt, params: [1] }
+                  operator: { type: and }
+                  query: { params: [C] }
         for: 5m
         noDataState: NoData
         execErrState: Error
@@ -439,9 +484,9 @@ groups:
               azureLogAnalytics:
                 workspace: "${LA_WS_TEACHER}"
               query: |
-                requests
+                AppBrowserTimings
                 | where TimeGenerated > ago(10m)
-                | summarize p95_ms = toreal(percentile(duration, 95) / 1ms) by bin(TimeGenerated, 2m)
+                | summarize p95_ms = percentile(TotalDuration, 95) by bin(TimeGenerated, 2m)
                 | project TimeGenerated, p95_ms
               refId: A
           - refId: B
@@ -452,7 +497,10 @@ groups:
             model:
               type: threshold
               expression: B
-              conditions: [ { evaluator: { type: gt, params: [2000] }, operator: { type: and }, query: { params: [C] } } ]
+              conditions:
+                - evaluator: { type: gt, params: [2000] }
+                  operator: { type: and }
+                  query: { params: [C] }
         for: 10m
         noDataState: NoData
         execErrState: Error
