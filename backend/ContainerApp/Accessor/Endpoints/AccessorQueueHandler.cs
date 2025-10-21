@@ -4,7 +4,7 @@ using Accessor.Models;
 using Accessor.Models.QueueMessages;
 using Accessor.Services.Interfaces;
 using Accessor.Exceptions;
-
+ 
 namespace Accessor.Endpoints;
 
 public class AccessorQueueHandler(
