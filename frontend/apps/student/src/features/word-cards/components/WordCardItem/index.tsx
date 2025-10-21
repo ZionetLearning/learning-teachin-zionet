@@ -10,9 +10,12 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import { useSetWordCardLearned, type WordCard } from "@student/api";
 import { useStyles } from "./style";
+import { useTranslation } from "react-i18next";
 
 export const WordCardItem = ({ card }: { card: WordCard }) => {
   const classes = useStyles();
+  const { t } = useTranslation();
+
   const setLearned = useSetWordCardLearned();
 
   const toggle = () => {
@@ -28,7 +31,11 @@ export const WordCardItem = ({ card }: { card: WordCard }) => {
         </Box>
 
         <Tooltip
-          title={card.isLearned ? "Mark as unlearned" : "Mark as learned"}
+          title={
+            card.isLearned
+              ? t("pages.wordCards.markAsUnlearned")
+              : t("pages.wordCards.markAsLearned")
+          }
         >
           <IconButton
             onClick={toggle}
@@ -54,7 +61,7 @@ export const WordCardItem = ({ card }: { card: WordCard }) => {
               disabled={setLearned.isPending}
             />
           }
-          label="Learned"
+          label={t("pages.wordCards.learned")}
         />
       </Box>
     </Box>

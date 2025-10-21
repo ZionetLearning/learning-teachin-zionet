@@ -505,7 +505,10 @@
         "enterTheEnglishTranslation": "הקלד את התרגום לאנגלית...",
         "cancel": "ביטול",
         "save": "שמור",
-        "saving": "שומר..."
+        "saving": "שומר...",
+        "markAsLearned": "סמן כנלמד",
+        "markAsUnlearned": "סמן כלא נלמד",
+        "learned": "נלמד"
       }
     },
     "sidebar": {

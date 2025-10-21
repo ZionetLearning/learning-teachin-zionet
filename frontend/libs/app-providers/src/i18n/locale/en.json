@@ -505,7 +505,10 @@
         "enterTheEnglishTranslation": "Enter the English translation...",
         "cancel": "Cancel",
         "save": "Save",
-        "saving": "Saving..."
+        "saving": "Saving...",
+        "markAsLearned": "Mark as Learned",
+        "markAsUnlearned": "Mark as Unlearned",
+        "learned": "Learned"
       }
     },
     "sidebar": {
