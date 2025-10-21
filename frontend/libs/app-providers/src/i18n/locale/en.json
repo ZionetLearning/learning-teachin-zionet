@@ -544,7 +544,8 @@
       "myPracticeMistakes": "Practice Mistakes",
       "studentPracticeHistory": "Practice History",
       "wordCards": "Word Cards",
-      "myLearning": "My Learning"
+      "myLearning": "My Learning",
+      "sandbox": "Sandbox"
     },
     "errorBoundary": {
       "title": "Oops! Something went wrong",

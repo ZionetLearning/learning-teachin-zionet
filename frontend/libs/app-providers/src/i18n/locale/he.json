@@ -544,7 +544,8 @@
       "myPracticeMistakes": "טעויות התרגול שלי",
       "studentPracticeHistory": "היסטוריית תרגול",
       "wordCards": "כרטיסיות מילים",
-      "myLearning": "הלמידה שלי"
+      "myLearning": "הלמידה שלי",
+      "sandbox": "ארגז חול"
     },
     "errorBoundary": {
       "title": "אופס! משהו השתבש",

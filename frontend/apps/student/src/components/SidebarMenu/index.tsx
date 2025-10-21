@@ -15,6 +15,7 @@ import LiveTvIcon from "@mui/icons-material/LiveTv";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import PendingActionsIcon from "@mui/icons-material/PendingActions";
 import DashboardCustomizeIcon from "@mui/icons-material/DashboardCustomize";
+import EmojiSymbolsIcon from "@mui/icons-material/EmojiSymbols";
 import SchoolIcon from "@mui/icons-material/School";
 import FlagIcon from "@mui/icons-material/Flag";
 import NoteAltIcon from "@mui/icons-material/NoteAlt";
@@ -104,70 +105,75 @@ export const SidebarMenu = () => {
       testId: "sidebar-chat-avatar",
     },
     {
-      label: t("sidebar.chatTools"),
-      icon: <ChatIcon />,
+      label: t("sidebar.sandbox"),
+      icon: <EmojiSymbolsIcon />,
       children: [
         {
-          label: t("sidebar.chatYo"),
-          path: "/chat/yo",
-          testId: "sidebar-chat-yo",
+          label: t("sidebar.chatTools"),
+          icon: <ChatIcon />,
+          children: [
+            {
+              label: t("sidebar.chatYo"),
+              path: "/chat/yo",
+              testId: "sidebar-chat-yo",
+            },
+            {
+              label: t("sidebar.chatDa"),
+              path: "/chat/da",
+              testId: "sidebar-chat-da",
+            },
+            {
+              label: t("sidebar.chatOu"),
+              path: "/chat/ou",
+              testId: "sidebar-chat-ou",
+            },
+          ],
         },
         {
-          label: t("sidebar.chatDa"),
-          path: "/chat/da",
-          testId: "sidebar-chat-da",
+          label: t("sidebar.avatarTools"),
+          icon: <FaceIcon />,
+          children: [
+            {
+              label: t("sidebar.avatarOu"),
+              path: "/avatar/ou",
+              testId: "sidebar-avatar-ou",
+            },
+            {
+              label: t("sidebar.avatarSh"),
+              path: "/avatar/sh",
+              testId: "sidebar-avatar-sh",
+            },
+            {
+              label: t("sidebar.avatarDa"),
+              path: "/avatar/da",
+              testId: "sidebar-avatar-da",
+            },
+          ],
         },
         {
-          label: t("sidebar.chatOu"),
-          path: "/chat/ou",
-          testId: "sidebar-chat-ou",
+          label: t("sidebar.earthquakeMap"),
+          icon: <PublicIcon />,
+          path: "/earthquake-map",
+          testId: "sidebar-earthquake",
+        },
+        {
+          label: t("sidebar.weather"),
+          icon: <WeatherWidgetIcon />,
+          path: "/weather",
+          testId: "sidebar-weather",
+        },
+        {
+          label: t("sidebar.anime"),
+          icon: <LiveTvIcon />,
+          path: "/anime-explorer",
+          testId: "sidebar-anime",
+        },
+        {
+          label: t("sidebar.countryExplorer"),
+          icon: <FlagIcon />,
+          path: "/country-explorer",
         },
       ],
-    },
-    {
-      label: t("sidebar.avatarTools"),
-      icon: <FaceIcon />,
-      children: [
-        {
-          label: t("sidebar.avatarOu"),
-          path: "/avatar/ou",
-          testId: "sidebar-avatar-ou",
-        },
-        {
-          label: t("sidebar.avatarSh"),
-          path: "/avatar/sh",
-          testId: "sidebar-avatar-sh",
-        },
-        {
-          label: t("sidebar.avatarDa"),
-          path: "/avatar/da",
-          testId: "sidebar-avatar-da",
-        },
-      ],
-    },
-
-    {
-      label: t("sidebar.earthquakeMap"),
-      icon: <PublicIcon />,
-      path: "/earthquake-map",
-      testId: "sidebar-earthquake",
-    },
-    {
-      label: t("sidebar.weather"),
-      icon: <WeatherWidgetIcon />,
-      path: "/weather",
-      testId: "sidebar-weather",
-    },
-    {
-      label: t("sidebar.anime"),
-      icon: <LiveTvIcon />,
-      path: "/anime-explorer",
-      testId: "sidebar-anime",
-    },
-    {
-      label: t("sidebar.countryExplorer"),
-      icon: <FlagIcon />,
-      path: "/country-explorer",
     },
   ];
 
