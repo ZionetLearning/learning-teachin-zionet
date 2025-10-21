@@ -9,19 +9,10 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import { Trans, useTranslation } from "react-i18next";
-import { useGetWordCards, type WordCard } from "@student/api";
+import { useGetWordCards } from "@student/api";
 import { AddWordCardDialog } from "@student/components";
 import { WordCardItem } from "./components";
 import { useStyles } from "./style";
-
-const mockData: WordCard[] = [
-  { cardId: "1", hebrew: "שלום", english: "hello", isLearned: false },
-  { cardId: "2", hebrew: "תודה", english: "thank you", isLearned: true },
-  { cardId: "3", hebrew: "אור", english: "light", isLearned: false },
-  { cardId: "4", hebrew: "מים", english: "water", isLearned: false },
-  { cardId: "5", hebrew: "ספר", english: "book", isLearned: true },
-  { cardId: "6", hebrew: "אוכל", english: "food", isLearned: false },
-];
 
 export const WordCards = () => {
   const classes = useStyles();
@@ -33,11 +24,10 @@ export const WordCards = () => {
   const [hideLearned, setHideLearned] = useState<boolean>(false);
   const [addOpen, setAddOpen] = useState<boolean>(false);
 
-  // need to change from "mockData" to "data" when api is ready
   const filtered = useMemo(() => {
-    const list = mockData ?? [];
+    const list = data ?? [];
     return hideLearned ? list.filter((c) => !c.isLearned) : list;
-  }, [hideLearned]);
+  }, [data, hideLearned]);
 
   return (
     <Box>
@@ -83,12 +73,12 @@ export const WordCards = () => {
       </Box>
 
       <Box className={classes.body}>
-        {isLoading && !mockData ? (
+        {isLoading ? (
           <Box className={classes.centerState}>
             <CircularProgress />
             <Typography> {t("pages.wordCards.loadingCards")}</Typography>
           </Box>
-        ) : isError && !mockData ? (
+        ) : isError ? (
           <Box className={classes.centerState}>
             <Typography color="error">
               {t("pages.wordCards.failedToLoad")}

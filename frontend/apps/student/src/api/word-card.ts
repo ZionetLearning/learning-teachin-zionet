@@ -24,16 +24,15 @@ export type SetLearnedRequest = {
   isLearned: boolean;
 };
 
-const BASE_URL = import.meta.env.VITE_BASE_URL!;
+const WORD_CARDS_MANAGER_URL = import.meta.env.VITE_WORD_CARDS_MANAGER_URL!;
 
 export const useGetWordCards = (): UseQueryResult<WordCard[], Error> => {
   return useQuery<WordCard[], Error>({
     queryKey: ["wordcards"],
     queryFn: async () => {
-      const res = await axios.get<WordCard[]>(`${BASE_URL}/wordcards`);
+      const res = await axios.get<WordCard[]>(WORD_CARDS_MANAGER_URL);
       return res.data;
     },
-    staleTime: 60_000,
   });
 };
 
@@ -42,7 +41,7 @@ export const useCreateWordCard = () => {
 
   return useMutation<WordCard, Error, CreateWordCardRequest>({
     mutationFn: async (body) => {
-      const res = await axios.post<WordCard>(`${BASE_URL}/wordcards`, body);
+      const res = await axios.post<WordCard>(WORD_CARDS_MANAGER_URL, body);
       return res.data;
     },
     onSuccess: () => {
@@ -66,8 +65,9 @@ export const useSetWordCardLearned = () => {
   >({
     mutationFn: async ({ cardId, isLearned }) => {
       const res = await axios.patch<{ cardId: string; isLearned: boolean }>(
-        `${BASE_URL}/wordcards/${encodeURIComponent(cardId)}/learned`,
-        { isLearned },
+        //shahar is working on deleted the cardId from the url
+        `${WORD_CARDS_MANAGER_URL}/${encodeURIComponent(cardId)}/learned`,
+        { isLearned, cardId },
       );
       return res.data;
     },
