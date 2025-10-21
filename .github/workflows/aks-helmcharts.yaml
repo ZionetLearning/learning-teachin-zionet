@@ -134,6 +134,13 @@ jobs:
               ;;
           esac
 
+          # Determine if Langfuse should be deployed (only for dev environment)
+          if [ "$TARGET_NAMESPACE" = "dev" ]; then
+            echo "deploy_langfuse=true" >> $GITHUB_OUTPUT
+          else
+            echo "deploy_langfuse=false" >> $GITHUB_OUTPUT
+          fi
+
 
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
@@ -246,7 +253,7 @@ jobs:
           exit 1
 
       - name: Create devops-tools namespace
-        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' && inputs.environment_name == 'dev' }}
+        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' && steps.setup.outputs.deploy_langfuse == 'true' }}
         run: |
           echo "Creating devops-tools namespace..."
           kubectl create namespace devops-tools --dry-run=client -o yaml | kubectl apply -f -
@@ -286,7 +293,7 @@ jobs:
           
           # Prepare Langfuse setting based on environment
           LANGFUSE_ENABLED="true"
-          if [ "$TARGET_NAMESPACE" != "dev" ]; then
+          if [ "${{ steps.setup.outputs.deploy_langfuse }}" = "false" ]; then
             LANGFUSE_ENABLED="false"
           fi
           
@@ -305,7 +312,7 @@ jobs:
             --set dapr.installComponents=false
 
       - name: Add Langfuse
-        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' && inputs.environment_name == 'dev' }}
+        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' && steps.setup.outputs.deploy_langfuse == 'true' }}
         run: |
           echo "Deploying Langfuse..."
           cd devops/helm-tools
