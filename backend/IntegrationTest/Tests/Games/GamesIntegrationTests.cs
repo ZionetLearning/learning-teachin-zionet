@@ -78,7 +78,7 @@ public class GamesIntegrationTests(
         await CreateSuccessfulAttemptAsync(student.UserId, Difficulty.easy);
         await CreateMistakeAsync(student.UserId, Difficulty.medium);
         
-        var response = await Client.GetAsync($"{ApiRoutes.GameHistory(student.UserId)}?summary=false&page=1&pageSize=10");
+        var response = await Client.GetAsync($"{ApiRoutes.GameHistory(student.UserId)}?summary=false&page=1&pageSize=10&getPending=false");
         response.ShouldBeOk();
 
         // Assert
@@ -114,7 +114,7 @@ public class GamesIntegrationTests(
         await CreateSuccessfulAttemptAsync(student.UserId, Difficulty.easy);
         
         // Request summary view
-        var response = await Client.GetAsync($"{ApiRoutes.GameHistory(student.UserId)}?summary=true&page=1&pageSize=10");
+        var response = await Client.GetAsync($"{ApiRoutes.GameHistory(student.UserId)}?summary=true&page=1&pageSize=10&getPending=false");
         response.ShouldBeOk();
 
         // Assert
