@@ -197,8 +197,8 @@ groups:
                   operator: { type: and }
                   query: { params: [C] }
         for: 5m
-        noDataState: NoData
-        execErrState: NoData
+        noDataState: OK
+        execErrState: OK
         labels: { severity: critical, app: student }
         annotations: { summary: "High failure rate (student)" }
 
