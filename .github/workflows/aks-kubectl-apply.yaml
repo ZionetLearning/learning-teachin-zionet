@@ -109,10 +109,6 @@ jobs:
           ./grafana.sh
         env:
           TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
-          SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          LA_WS_STUDENT:     ${{ env.LA_WS_STUDENT }}
-          LA_WS_ADMIN:       ${{ env.LA_WS_ADMIN }}
-          LA_WS_TEACHER:     ${{ env.LA_WS_TEACHER }}
       
       ###### This is one time only!! Never use unless the whole RG is wiped out
       # - name: Setup HTTPS certificates
@@ -146,6 +142,17 @@ jobs:
           AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           AZURE_CLIENT_ID: ${{ secrets.AZURE_APPLICATION_ID }}
           AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+
+      - name: Provision Grafana alerting (AFTER datasources)
+        run: |
+          cd devops/helm-tools/grafana
+          chmod +x provision-alerting.sh
+          ./provision-alerting.sh
+        env:
+          SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          LA_WS_STUDENT:   ${{ env.LA_WS_STUDENT }}
+          LA_WS_ADMIN:     ${{ env.LA_WS_ADMIN }}
+          LA_WS_TEACHER:   ${{ env.LA_WS_TEACHER }}
 
       - name: Restart logging stack pods (optional)
         run: |

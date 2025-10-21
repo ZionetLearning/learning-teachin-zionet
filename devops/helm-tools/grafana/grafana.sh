@@ -22,18 +22,7 @@ helm repo update
 echo "3. Create namespace if not exists..."
 kubectl get ns "$NAMESPACE" >/dev/null 2>&1 || kubectl create ns "$NAMESPACE"
 
-echo "4. Creating ConfigMaps for Grafana provisioning..."
-sudo apt-get update -y && sudo apt-get install -y gettext-base
-
-SRC=./provisioning/alerting/alerts-rules.yaml
-TMP=/tmp/alerts-rules.yaml
-envsubst '${LA_WS_STUDENT} ${LA_WS_ADMIN} ${LA_WS_TEACHER} ${SUBSCRIPTION_ID}' < "$SRC" > "$TMP"
-
-kubectl -n "$NAMESPACE" create configmap grafana-alerting --from-file=alerts-rules.yaml="$TMP" --dry-run=client -o yaml | kubectl apply -f -
-kubectl -n "$NAMESPACE" create configmap grafana-notifiers --from-file=notifier-teams.yaml=./provisioning/notifiers/notifier-teams.yaml --dry-run=client -o yaml | kubectl apply -f -
-kubectl -n "$NAMESPACE" create configmap grafana-alerting-policy --from-file=notification-policy.yaml=./provisioning/alerting/notification-policy.yaml --dry-run=client -o yaml | kubectl apply -f -
-
-echo "5. Install/upgrade Grafana with subpath configuration..."
+echo "4. Install/upgrade Grafana with subpath configuration..."
 helm upgrade --install grafana grafana/grafana \
   --version "$GRAFANA_CHART_VERSION" \
   --namespace "$NAMESPACE" \
@@ -57,7 +46,7 @@ helm upgrade --install grafana grafana/grafana \
   --timeout=10m \
   --wait
 
-echo "6. Checking Grafana pod status..."
+echo "5. Checking Grafana pod status..."
 kubectl get pods -n "$NAMESPACE" -l app.kubernetes.io/name=grafana
 kubectl describe pod -n "$NAMESPACE" -l app.kubernetes.io/name=grafana | grep -A 10 "Events:"
 
