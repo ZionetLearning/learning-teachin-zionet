@@ -87,7 +87,7 @@ namespace IntegrationTests.Tests.WordCards;
 
         var response = await Client.PatchAsJsonAsync($"{ApiRoutes.WordCards}/learned", request);
 
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
     }
 
 

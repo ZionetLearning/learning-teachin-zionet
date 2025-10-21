@@ -20,7 +20,7 @@ public static class WordCardsEndpoints
         wordCardsGroup.MapPost("/", CreateWordCardAsync)
             .RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
 
-        wordCardsGroup.MapPatch("/{cardId:guid}/learned", MarkWordCardAsLearnedAsync)
+        wordCardsGroup.MapPatch("/learned", MarkWordCardAsLearnedAsync)
             .RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
 
         return app;

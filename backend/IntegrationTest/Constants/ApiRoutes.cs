@@ -33,8 +33,8 @@ public static class ApiRoutes
     public const string GameAllHistory = "games-manager/all-history";
 
     // -------- Word Cards --------
-    public static string WordCards = "wordcards-manager";
-    public static string WordCardsUpdateLearnedStatus(Guid cardId) => $"wordcards-manager/{cardId}/learned";
+    public const string WordCards = "wordcards-manager";
+    public const string WordCardsUpdateLearnedStatus = "wordcards-manager/learned";
 
 
 }
