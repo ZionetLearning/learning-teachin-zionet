@@ -21,14 +21,15 @@ const mockData: WordCard[] = [
   { cardId: "4", hebrew: "מים", english: "water", isLearned: false },
   { cardId: "5", hebrew: "ספר", english: "book", isLearned: true },
   { cardId: "6", hebrew: "אוכל", english: "food", isLearned: false },
-
 ];
 
 export const WordCards = () => {
   const classes = useStyles();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const { data, isLoading, isError } = useGetWordCards();
+
+  const isHebrew = i18n.language === "he";
   const [hideLearned, setHideLearned] = useState<boolean>(false);
   const [addOpen, setAddOpen] = useState<boolean>(false);
 
@@ -58,7 +59,7 @@ export const WordCards = () => {
           />
         </Typography>
 
-        <Box className={classes.headerActions}>
+        <Box className={classes.headerActions} dir={isHebrew ? "rtl" : "ltr"}>
           <FormControlLabel
             control={
               <Checkbox
@@ -69,10 +70,12 @@ export const WordCards = () => {
             label={t("pages.wordCards.hideLearnedWords")}
           />
           <Button
-            startIcon={<AddIcon />}
             variant="contained"
-            className={classes.primaryBtn}
+            className={classes.addCardBtn}
             onClick={() => setAddOpen(true)}
+            startIcon={isHebrew ? undefined : <AddIcon />}
+            endIcon={isHebrew ? <AddIcon /> : undefined}
+            dir={isHebrew ? "rtl" : "ltr"}
           >
             {t("pages.wordCards.addCard")}
           </Button>

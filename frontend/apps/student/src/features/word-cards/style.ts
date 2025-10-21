@@ -36,11 +36,13 @@ export const useStyles = createUseStyles({
     display: "flex",
     gap: 12,
     alignItems: "center",
+    "&[dir='rtl']": {
+      flexDirection: "row-reverse",
+    },
   },
-  primaryBtn: {
+  addCardBtn: {
     background: PURPLE,
     color: "#fff",
-    fontWeight: 800,
     borderRadius: 12,
     padding: "8px 16px",
     boxShadow: "0 8px 18px rgba(124,77,255,0.28), 0 3px 8px rgba(0,0,0,0.12)",
@@ -48,6 +50,20 @@ export const useStyles = createUseStyles({
       background: PURPLE_DARK,
       boxShadow:
         "0 10px 22px rgba(124,77,255,0.34), 0 4px 10px rgba(0,0,0,0.14)",
+    },
+    "& .MuiButton-startIcon": {
+      marginInlineEnd: 8,
+    },
+    "& .MuiButton-endIcon": {
+      marginInlineStart: 8,
+    },
+    "&[dir='rtl'] .MuiButton-startIcon": {
+      marginLeft: 8, // startIcon appears on the left in RTL
+      marginRight: 0,
+    },
+    "&[dir='rtl'] .MuiButton-endIcon": {
+      marginRight: 8, // endIcon appears on the right in RTL
+      marginLeft: 0,
     },
   },
   body: {
