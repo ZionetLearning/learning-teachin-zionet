@@ -167,18 +167,20 @@ groups:
               azureLogAnalytics:
                 resource: "${LA_WS_STUDENT}"      # Workspace Resource ID
               query: |
-                let pv = AppPageViews
-                | where TimeGenerated > ago(10m)
-                | summarize pv = count() by bin(TimeGenerated, 1m);
-                let ex = AppExceptions
-                | where TimeGenerated > ago(10m)
-                | summarize ex = count() by bin(TimeGenerated, 1m);
-                pv
-                | join kind=fullouter ex on TimeGenerated
+                range TimeGenerated from ago(10m) to now() step 1m
+                | join kind=leftouter (
+                    AppPageViews
+                    | where TimeGenerated between (ago(10m) .. now())
+                    | summarize pv = count() by bin(TimeGenerated, 1m)
+                  ) on TimeGenerated
+                | join kind=leftouter (
+                    AppExceptions
+                    | where TimeGenerated between (ago(10m) .. now())
+                    | summarize ex = count() by bin(TimeGenerated, 1m)
+                  ) on TimeGenerated
                 | extend pv = coalesce(pv, 0), ex = coalesce(ex, 0)
                 | extend failureRate = iif(pv == 0, 0.0, 100.0 * todouble(ex) / todouble(pv))
                 | project TimeGenerated, failureRate
-                | union (datatable(TimeGenerated: datetime, failureRate: real) [])
                 | order by TimeGenerated asc
               refId: A
           - refId: B
