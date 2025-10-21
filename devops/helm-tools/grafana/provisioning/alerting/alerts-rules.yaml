@@ -1,5 +1,9 @@
 apiVersion: 1
+
 groups:
+  # =========================
+  # AKS (Prometheus)
+  # =========================
   - name: AKS Nodes
     folder: Infrastructure
     interval: 1m
@@ -9,50 +13,35 @@ groups:
         condition: B
         data:
           - refId: A
-            queryType: ''
-            relativeTimeRange:
-              from: 300
-              to: 0
             datasourceUid: prometheus
+            queryType: ''
+            relativeTimeRange: { from: 300, to: 0 }
             model:
               expr: 'kube_node_status_condition{condition="Ready",status="false"}'
               refId: A
               intervalMs: 1000
               maxDataPoints: 43200
           - refId: B
-            queryType: ''
-            relativeTimeRange:
-              from: 300
-              to: 0
             datasourceUid: __expr__
+            queryType: ''
+            relativeTimeRange: { from: 300, to: 0 }
             model:
               type: reduce
               expression: A
               reducer: last
-              settings:
-                mode: replaceNN
-                replaceWithValue: 0
+              settings: { mode: replaceNN, replaceWithValue: 0 }
               refId: B
           - refId: C
-            queryType: ''
-            relativeTimeRange:
-              from: 300
-              to: 0
             datasourceUid: __expr__
+            queryType: ''
+            relativeTimeRange: { from: 300, to: 0 }
             model:
               type: threshold
               expression: B
               conditions:
-                - evaluator:
-                    params:
-                      - 0
-                    type: gt
-                  operator:
-                    type: and
-                  query:
-                    params:
-                      - C
-                  type: query
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
               refId: C
         noDataState: OK
         execErrState: Alerting
@@ -60,8 +49,7 @@ groups:
         annotations:
           summary: "Node {{ $labels.node }} is NotReady"
           description: "Node {{ $labels.node }} has been in NotReady state for more than 1 minute"
-        labels:
-          severity: critical
+        labels: { severity: critical }
 
   - name: AKS Pod States
     folder: Infrastructure
@@ -72,11 +60,9 @@ groups:
         condition: B
         data:
           - refId: A
-            queryType: ''
-            relativeTimeRange:
-              from: 300
-              to: 0
             datasourceUid: prometheus
+            queryType: ''
+            relativeTimeRange: { from: 300, to: 0 }
             model:
               expr: |
                 (
@@ -87,56 +73,37 @@ groups:
               refId: A
               intervalMs: 1000
               maxDataPoints: 43200
-
           - refId: B
-            queryType: ''
-            relativeTimeRange:
-              from: 300
-              to: 0
             datasourceUid: __expr__
+            queryType: ''
+            relativeTimeRange: { from: 300, to: 0 }
             model:
               type: reduce
               expression: A
               reducer: last
-              settings:
-                mode: replaceNN
-                replaceWithValue: 0
+              settings: { mode: replaceNN, replaceWithValue: 0 }
               refId: B
-
           - refId: C
-            queryType: ''
-            relativeTimeRange:
-              from: 300
-              to: 0
             datasourceUid: __expr__
+            queryType: ''
+            relativeTimeRange: { from: 300, to: 0 }
             model:
               type: threshold
               expression: B
               conditions:
-                - evaluator:
-                    params:
-                      - 0
-                    type: gt
-                  operator:
-                    type: and
-                  query:
-                    params:
-                      - C
-                  type: query
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
               refId: C
-
         noDataState: OK
         execErrState: Alerting
         for: 1m
-
         annotations:
           summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} failure detected"
           description: |
             Container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }} is failing.
             Reason: {{ $labels.reason }}
-
-        labels:
-          severity: warning
+        labels: { severity: warning }
 
   - name: AKS Memory Usage
     folder: Infrastructure
@@ -149,59 +116,43 @@ groups:
           - refId: A
             datasourceUid: prometheus
             queryType: ''
-            relativeTimeRange:
-              from: 300
-              to: 0
+            relativeTimeRange: { from: 300, to: 0 }
             model:
               expr: |
                 (
-                  sum by (namespace, pod) (
-                    container_memory_usage_bytes{container!=""}
-                  )
+                  sum by (namespace, pod) (container_memory_usage_bytes{container!=""})
                   /
-                  sum by (namespace, pod) (
-                    container_spec_memory_limit_bytes{container!=""}
-                  )
+                  sum by (namespace, pod) (container_spec_memory_limit_bytes{container!=""})
                 ) * 100
               refId: A
               intervalMs: 1000
               maxDataPoints: 43200
-
           - refId: B
             datasourceUid: __expr__
             model:
               type: threshold
               expression: A
               conditions:
-                - evaluator:
-                    params:
-                      - 90
-                    type: gt
-                  operator:
-                    type: and
-                  query:
-                    params:
-                      - B
-                  type: query
+                - evaluator: { type: gt, params: [90] }
+                  operator: { type: and }
+                  query: { params: [B] }
               refId: B
-
         noDataState: OK
         execErrState: Alerting
         for: 2m
         annotations:
           summary: "High Memory Usage in Pod {{ $labels.namespace }}/{{ $labels.pod }}"
-          description: |
-            Pod {{ $labels.namespace }}/{{ $labels.pod }} is using more than 90% of its memory limit.
-        labels:
-          severity: warning
+          description: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is using more than 90% of its memory limit."
+        labels: { severity: warning }
 
-  #######################################################################
-  # Frontend (App Insights via Logs) – student/admin/teacher
-  #######################################################################
+  # =========================
+  # Frontend (App Insights via Log Analytics)
+  # =========================
   - name: Frontend (App Insights Logs)
     folder: Infrastructure
     interval: 1m
     rules:
+
       # ---------- student ----------
       - uid: ai-student-failure
         title: "Frontend(student): Failure rate > 5%"
@@ -209,39 +160,33 @@ groups:
         data:
           - refId: A
             datasourceUid: azure-monitor
-            relativeTimeRange: { from: 600, to: 0 }   # 10m
+            relativeTimeRange: { from: 600, to: 0 }   # 10m lookback
             model:
-              queryType: "Insights Analytics"
+              queryType: "Azure Log Analytics"
               resultFormat: time_series
-              resourceUri: "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/dev-zionet-learning-2025/providers/Microsoft.Insights/components/static-web-app-student-dev-appinsights"
+              azureLogAnalytics:
+                workspace: "${LA_WS_STUDENT}"      # Workspace Resource ID
               query: |
                 requests
-                | where timestamp > ago(5m)
-                | summarize total=count(), failed=countif(success==false)
-                | extend failureRate = 100.0 * todouble(failed) / iif(total==0, 1.0, todouble(total))
-                | extend timestamp = now()
-                | project timestamp, failureRate
+                | where TimeGenerated > ago(10m)
+                | summarize total=count(), failed=countif(success==false) by bin(TimeGenerated, 1m)
+                | extend failureRate = iff(total < 20, 0.0, 100.0 * todouble(failed) / todouble(total))
+                | project TimeGenerated, failureRate
               refId: A
           - refId: B
             datasourceUid: __expr__
-            model:
-              type: reduce
-              expression: A
-              reducer: last
-              settings: { mode: replaceNN, replaceWithValue: 0 }
+            model: { type: reduce, expression: A, reducer: last, settings: { mode: replaceNN, replaceWithValue: 0 } }
           - refId: C
             datasourceUid: __expr__
             model:
               type: threshold
               expression: B
-              conditions:
-                - evaluator: { type: gt, params: [5] }   # >5%
-                  operator: { type: and }
-                  query: { params: [C] }
+              conditions: [ { evaluator: { type: gt, params: [5] }, operator: { type: and }, query: { params: [C] } } ]
         for: 5m
+        noDataState: NoData
+        execErrState: Error
         labels: { severity: critical, app: student }
-        annotations:
-          summary: "High failure rate (student)"
+        annotations: { summary: "High failure rate (student)" }
 
       - uid: ai-student-5xx
         title: "Frontend(student): 5xx% > 1%"
@@ -251,16 +196,16 @@ groups:
             datasourceUid: azure-monitor
             relativeTimeRange: { from: 600, to: 0 }
             model:
-              queryType: ''
+              queryType: "Azure Log Analytics"
               resultFormat: time_series
-              resourceUri: "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/dev-zionet-learning-2025/providers/Microsoft.Insights/components/static-web-app-student-dev-appinsights"
+              azureLogAnalytics:
+                workspace: "${LA_WS_STUDENT}"
               query: |
                 requests
-                | where timestamp > ago(5m)
-                | summarize fivexx=countif(toint(resultCode) between (500..599)), total=count()
-                | extend pct_5xx = 100.0 * todouble(fivexx) / iif(total==0, 1.0, todouble(total))
-                | extend timestamp = now()
-                | project timestamp, pct_5xx
+                | where TimeGenerated > ago(10m)
+                | summarize total=count(), fivexx=countif(toint(resultCode) between (500..599)) by bin(TimeGenerated, 1m)
+                | extend pct_5xx = iff(total == 0, 0.0, 100.0 * todouble(fivexx) / todouble(total))
+                | project TimeGenerated, pct_5xx
               refId: A
           - refId: B
             datasourceUid: __expr__
@@ -270,14 +215,12 @@ groups:
             model:
               type: threshold
               expression: B
-              conditions:
-                - evaluator: { type: gt, params: [1] }   # >1%
-                  operator: { type: and }
-                  query: { params: [C] }
+              conditions: [ { evaluator: { type: gt, params: [1] }, operator: { type: and }, query: { params: [C] } } ]
         for: 5m
+        noDataState: NoData
+        execErrState: Error
         labels: { severity: critical, app: student }
-        annotations:
-          summary: "5xx rate high (student)"
+        annotations: { summary: "5xx rate high (student)" }
 
       - uid: ai-student-p95
         title: "Frontend(student): p95 > 2000ms"
@@ -285,17 +228,17 @@ groups:
         data:
           - refId: A
             datasourceUid: azure-monitor
-            relativeTimeRange: { from: 1200, to: 0 }   # 20m
+            relativeTimeRange: { from: 1200, to: 0 }   # 20m lookback
             model:
-              queryType: AzureMonitorLogs
+              queryType: "Azure Log Analytics"
               resultFormat: time_series
-              resourceUri: "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/dev-zionet-learning-2025/providers/Microsoft.Insights/components/static-web-app-student-dev-appinsights"
+              azureLogAnalytics:
+                workspace: "${LA_WS_STUDENT}"
               query: |
                 requests
-                | where timestamp > ago(10m)
-                | summarize p95 = percentile(duration, 95)
-                | extend timestamp = now()
-                | project timestamp, p95
+                | where TimeGenerated > ago(10m)
+                | summarize p95_ms = toreal(percentile(duration, 95) / 1ms) by bin(TimeGenerated, 2m)
+                | project TimeGenerated, p95_ms
               refId: A
           - refId: B
             datasourceUid: __expr__
@@ -305,14 +248,12 @@ groups:
             model:
               type: threshold
               expression: B
-              conditions:
-                - evaluator: { type: gt, params: [2000] }
-                  operator: { type: and }
-                  query: { params: [C] }
+              conditions: [ { evaluator: { type: gt, params: [2000] }, operator: { type: and }, query: { params: [C] } } ]
         for: 10m
+        noDataState: NoData
+        execErrState: Error
         labels: { severity: warning, app: student }
-        annotations:
-          summary: "Slow p95 latency (student)"
+        annotations: { summary: "Slow p95 latency (student)" }
 
       # ---------- admin ----------
       - uid: ai-admin-failure
@@ -323,16 +264,16 @@ groups:
             datasourceUid: azure-monitor
             relativeTimeRange: { from: 600, to: 0 }
             model:
-              queryType: AzureMonitorLogs
+              queryType: "Azure Log Analytics"
               resultFormat: time_series
-              resourceUri: "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/dev-zionet-learning-2025/providers/Microsoft.Insights/components/static-web-app-admin-dev-appinsights"
+              azureLogAnalytics:
+                workspace: "${LA_WS_ADMIN}"
               query: |
                 requests
-                | where timestamp > ago(5m)
-                | summarize total=count(), failed=countif(success==false)
-                | extend failureRate = 100.0 * todouble(failed) / iif(total==0, 1.0, todouble(total))
-                | extend timestamp = now()
-                | project timestamp, failureRate
+                | where TimeGenerated > ago(10m)
+                | summarize total=count(), failed=countif(success==false) by bin(TimeGenerated, 1m)
+                | extend failureRate = iff(total < 20, 0.0, 100.0 * todouble(failed) / todouble(total))
+                | project TimeGenerated, failureRate
               refId: A
           - refId: B
             datasourceUid: __expr__
@@ -342,14 +283,12 @@ groups:
             model:
               type: threshold
               expression: B
-              conditions:
-                - evaluator: { type: gt, params: [5] }
-                  operator: { type: and }
-                  query: { params: [C] }
+              conditions: [ { evaluator: { type: gt, params: [5] }, operator: { type: and }, query: { params: [C] } } ]
         for: 5m
+        noDataState: NoData
+        execErrState: Error
         labels: { severity: critical, app: admin }
-        annotations:
-          summary: "High failure rate (admin)"
+        annotations: { summary: "High failure rate (admin)" }
 
       - uid: ai-admin-5xx
         title: "Frontend(admin): 5xx% > 1%"
@@ -359,16 +298,16 @@ groups:
             datasourceUid: azure-monitor
             relativeTimeRange: { from: 600, to: 0 }
             model:
-              queryType: AzureMonitorLogs
+              queryType: "Azure Log Analytics"
               resultFormat: time_series
-              resourceUri: "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/dev-zionet-learning-2025/providers/Microsoft.Insights/components/static-web-app-admin-dev-appinsights"
+              azureLogAnalytics:
+                workspace: "${LA_WS_ADMIN}"
               query: |
                 requests
-                | where timestamp > ago(5m)
-                | summarize fivexx=countif(toint(resultCode) between (500..599)), total=count()
-                | extend pct_5xx = 100.0 * todouble(fivexx) / iif(total==0, 1.0, todouble(total))
-                | extend timestamp = now()
-                | project timestamp, pct_5xx
+                | where TimeGenerated > ago(10m)
+                | summarize total=count(), fivexx=countif(toint(resultCode) between (500..599)) by bin(TimeGenerated, 1m)
+                | extend pct_5xx = iff(total == 0, 0.0, 100.0 * todouble(fivexx) / todouble(total))
+                | project TimeGenerated, pct_5xx
               refId: A
           - refId: B
             datasourceUid: __expr__
@@ -378,14 +317,12 @@ groups:
             model:
               type: threshold
               expression: B
-              conditions:
-                - evaluator: { type: gt, params: [1] }
-                  operator: { type: and }
-                  query: { params: [C] }
+              conditions: [ { evaluator: { type: gt, params: [1] }, operator: { type: and }, query: { params: [C] } } ]
         for: 5m
+        noDataState: NoData
+        execErrState: Error
         labels: { severity: critical, app: admin }
-        annotations:
-          summary: "5xx rate high (admin)"
+        annotations: { summary: "5xx rate high (admin)" }
 
       - uid: ai-admin-p95
         title: "Frontend(admin): p95 > 2000ms"
@@ -395,15 +332,15 @@ groups:
             datasourceUid: azure-monitor
             relativeTimeRange: { from: 1200, to: 0 }
             model:
-              queryType: AzureMonitorLogs
+              queryType: "Azure Log Analytics"
               resultFormat: time_series
-              resourceUri: "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/dev-zionet-learning-2025/providers/Microsoft.Insights/components/static-web-app-admin-dev-appinsights"
+              azureLogAnalytics:
+                workspace: "${LA_WS_ADMIN}"
               query: |
                 requests
-                | where timestamp > ago(10m)
-                | summarize p95 = percentile(duration, 95)
-                | extend timestamp = now()
-                | project timestamp, p95
+                | where TimeGenerated > ago(10m)
+                | summarize p95_ms = toreal(percentile(duration, 95) / 1ms) by bin(TimeGenerated, 2m)
+                | project TimeGenerated, p95_ms
               refId: A
           - refId: B
             datasourceUid: __expr__
@@ -413,14 +350,12 @@ groups:
             model:
               type: threshold
               expression: B
-              conditions:
-                - evaluator: { type: gt, params: [2000] }
-                  operator: { type: and }
-                  query: { params: [C] }
+              conditions: [ { evaluator: { type: gt, params: [2000] }, operator: { type: and }, query: { params: [C] } } ]
         for: 10m
+        noDataState: NoData
+        execErrState: Error
         labels: { severity: warning, app: admin }
-        annotations:
-          summary: "Slow p95 latency (admin)"
+        annotations: { summary: "Slow p95 latency (admin)" }
 
       # ---------- teacher ----------
       - uid: ai-teacher-failure
@@ -431,16 +366,16 @@ groups:
             datasourceUid: azure-monitor
             relativeTimeRange: { from: 600, to: 0 }
             model:
-              queryType: AzureMonitorLogs
+              queryType: "Azure Log Analytics"
               resultFormat: time_series
-              resourceUri: "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/dev-zionet-learning-2025/providers/Microsoft.Insights/components/static-web-app-teacher-dev-appinsights"
+              azureLogAnalytics:
+                workspace: "${LA_WS_TEACHER}"
               query: |
                 requests
-                | where timestamp > ago(5m)
-                | summarize total=count(), failed=countif(success==false)
-                | extend failureRate = 100.0 * todouble(failed) / iif(total==0, 1.0, todouble(total))
-                | extend timestamp = now()
-                | project timestamp, failureRate
+                | where TimeGenerated > ago(10m)
+                | summarize total=count(), failed=countif(success==false) by bin(TimeGenerated, 1m)
+                | extend failureRate = iff(total < 20, 0.0, 100.0 * todouble(failed) / todouble(total))
+                | project TimeGenerated, failureRate
               refId: A
           - refId: B
             datasourceUid: __expr__
@@ -450,14 +385,12 @@ groups:
             model:
               type: threshold
               expression: B
-              conditions:
-                - evaluator: { type: gt, params: [5] }
-                  operator: { type: and }
-                  query: { params: [C] }
+              conditions: [ { evaluator: { type: gt, params: [5] }, operator: { type: and }, query: { params: [C] } } ]
         for: 5m
+        noDataState: NoData
+        execErrState: Error
         labels: { severity: critical, app: teacher }
-        annotations:
-          summary: "High failure rate (teacher)"
+        annotations: { summary: "High failure rate (teacher)" }
 
       - uid: ai-teacher-5xx
         title: "Frontend(teacher): 5xx% > 1%"
@@ -467,16 +400,16 @@ groups:
             datasourceUid: azure-monitor
             relativeTimeRange: { from: 600, to: 0 }
             model:
-              queryType: AzureMonitorLogs
+              queryType: "Azure Log Analytics"
               resultFormat: time_series
-              resourceUri: "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/dev-zionet-learning-2025/providers/Microsoft.Insights/components/static-web-app-teacher-dev-appinsights"
+              azureLogAnalytics:
+                workspace: "${LA_WS_TEACHER}"
               query: |
                 requests
-                | where timestamp > ago(5m)
-                | summarize fivexx=countif(toint(resultCode) between (500..599)), total=count()
-                | extend pct_5xx = 100.0 * todouble(fivexx) / iif(total==0, 1.0, todouble(total))
-                | extend timestamp = now()
-                | project timestamp, pct_5xx
+                | where TimeGenerated > ago(10m)
+                | summarize total=count(), fivexx=countif(toint(resultCode) between (500..599)) by bin(TimeGenerated, 1m)
+                | extend pct_5xx = iff(total == 0, 0.0, 100.0 * todouble(fivexx) / todouble(total))
+                | project TimeGenerated, pct_5xx
               refId: A
           - refId: B
             datasourceUid: __expr__
@@ -486,14 +419,12 @@ groups:
             model:
               type: threshold
               expression: B
-              conditions:
-                - evaluator: { type: gt, params: [1] }
-                  operator: { type: and }
-                  query: { params: [C] }
+              conditions: [ { evaluator: { type: gt, params: [1] }, operator: { type: and }, query: { params: [C] } } ]
         for: 5m
+        noDataState: NoData
+        execErrState: Error
         labels: { severity: critical, app: teacher }
-        annotations:
-          summary: "5xx rate high (teacher)"
+        annotations: { summary: "5xx rate high (teacher)" }
 
       - uid: ai-teacher-p95
         title: "Frontend(teacher): p95 > 2000ms"
@@ -503,15 +434,15 @@ groups:
             datasourceUid: azure-monitor
             relativeTimeRange: { from: 1200, to: 0 }
             model:
-              queryType: AzureMonitorLogs
+              queryType: "Azure Log Analytics"
               resultFormat: time_series
-              resourceUri: "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/dev-zionet-learning-2025/providers/Microsoft.Insights/components/static-web-app-teacher-dev-appinsights"
+              azureLogAnalytics:
+                workspace: "${LA_WS_TEACHER}"
               query: |
                 requests
-                | where timestamp > ago(10m)
-                | summarize p95 = percentile(duration, 95)
-                | extend timestamp = now()
-                | project timestamp, p95
+                | where TimeGenerated > ago(10m)
+                | summarize p95_ms = toreal(percentile(duration, 95) / 1ms) by bin(TimeGenerated, 2m)
+                | project TimeGenerated, p95_ms
               refId: A
           - refId: B
             datasourceUid: __expr__
@@ -521,11 +452,9 @@ groups:
             model:
               type: threshold
               expression: B
-              conditions:
-                - evaluator: { type: gt, params: [2000] }
-                  operator: { type: and }
-                  query: { params: [C] }
+              conditions: [ { evaluator: { type: gt, params: [2000] }, operator: { type: and }, query: { params: [C] } } ]
         for: 10m
+        noDataState: NoData
+        execErrState: Error
         labels: { severity: warning, app: teacher }
-        annotations:
-          summary: "Slow p95 latency (teacher)"
+        annotations: { summary: "Slow p95 latency (teacher)" }

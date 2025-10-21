@@ -23,7 +23,13 @@ echo "3. Create namespace if not exists..."
 kubectl get ns "$NAMESPACE" >/dev/null 2>&1 || kubectl create ns "$NAMESPACE"
 
 echo "4. Creating ConfigMaps for Grafana provisioning..."
-kubectl -n "$NAMESPACE" create configmap grafana-alerting --from-file=alerts-rules.yaml=./provisioning/alerting/alerts-rules.yaml --dry-run=client -o yaml | kubectl apply -f -
+sudo apt-get update -y && sudo apt-get install -y gettext-base
+
+SRC=./provisioning/alerting/alerts-rules.yaml
+TMP=/tmp/alerts-rules.yaml
+envsubst '${LA_WS_STUDENT} ${LA_WS_ADMIN} ${LA_WS_TEACHER} ${SUBSCRIPTION_ID}' < "$SRC" > "$TMP"
+
+kubectl -n "$NAMESPACE" create configmap grafana-alerting --from-file=alerts-rules.yaml="$TMP" --dry-run=client -o yaml | kubectl apply -f -
 kubectl -n "$NAMESPACE" create configmap grafana-notifiers --from-file=notifier-teams.yaml=./provisioning/notifiers/notifier-teams.yaml --dry-run=client -o yaml | kubectl apply -f -
 kubectl -n "$NAMESPACE" create configmap grafana-alerting-policy --from-file=notification-policy.yaml=./provisioning/alerting/notification-policy.yaml --dry-run=client -o yaml | kubectl apply -f -
 
@@ -48,7 +54,6 @@ helm upgrade --install grafana grafana/grafana \
   --set resources.requests.memory="128Mi" \
   --set resources.limits.memory="256Mi" \
   --set env.TEAMS_WEBHOOK_URL="$TEAMS_WEBHOOK_URL" \
-  --set env.SUBSCRIPTION_ID="$SUBSCRIPTION_ID" \
   --timeout=10m \
   --wait
 
