@@ -36,6 +36,10 @@ public class NotificationHub : Hub<INotificationClient>
                     var userId = user.UserId.ToString();
                     var name = user.FirstName + " " + user.LastName;
                     var role = user.Role.ToString();
+                    if (user.Role == Role.Admin)
+                    {
+                        return;
+                    }
 
                     var first = await _presence.AddConnectionAsync(userId, name, role, Context.ConnectionId);
                     if (first)
@@ -67,6 +71,10 @@ public class NotificationHub : Hub<INotificationClient>
                 if (user != null)
                 {
                     var userId = user.UserId.ToString();
+                    if (user.Role == Role.Admin)
+                    {
+                        return;
+                    }
 
                     var last = await _presence.RemoveConnectionAsync(userId, Context.ConnectionId);
 

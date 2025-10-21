@@ -26,6 +26,11 @@ public sealed class OnlinePresenceService : IOnlinePresenceService
 
     private const int MaxAttempts = 8;
 
+    private static readonly JsonSerializerOptions _json = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
     public OnlinePresenceService(DaprClient dapr, ILogger<OnlinePresenceService> logger)
     {
         _dapr = dapr;
@@ -231,8 +236,8 @@ public sealed class OnlinePresenceService : IOnlinePresenceService
                     continue;
                 }
 
-                var metaObj = JsonSerializer.Deserialize<UserMeta>(metaRaw);
-                var connsSet = JsonSerializer.Deserialize<HashSet<string>>(connsRaw) ?? new();
+                var metaObj = JsonSerializer.Deserialize<UserMeta>(metaRaw, _json);
+                var connsSet = JsonSerializer.Deserialize<HashSet<string>>(connsRaw, _json) ?? new();
 
                 if (metaObj is null)
                 {
