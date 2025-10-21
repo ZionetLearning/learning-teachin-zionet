@@ -65,9 +65,8 @@ export const useSetWordCardLearned = () => {
   >({
     mutationFn: async ({ cardId, isLearned }) => {
       const res = await axios.patch<{ cardId: string; isLearned: boolean }>(
-        //shahar is working on deleted the cardId from the url
-        `${WORD_CARDS_MANAGER_URL}/${encodeURIComponent(cardId)}/learned`,
-        { isLearned, cardId },
+        `${WORD_CARDS_MANAGER_URL}/learned`,
+        { cardId, isLearned },
       );
       return res.data;
     },
