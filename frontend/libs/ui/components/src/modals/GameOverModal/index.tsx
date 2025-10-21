@@ -1,3 +1,5 @@
+import { useCallback, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Dialog,
   DialogTitle,
@@ -6,11 +8,14 @@ import {
   Button,
   Typography,
   Box,
+  IconButton,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import Celebration from "@mui/icons-material/Celebration";
 import Replay from "@mui/icons-material/Replay";
 import Settings from "@mui/icons-material/Settings";
+import PendingActionsIcon from "@mui/icons-material/PendingActions";
+import HomeIcon from "@mui/icons-material/Home";
 import { useStyles } from "./style";
 
 interface GameOverModalProps {
@@ -30,15 +35,61 @@ export const GameOverModal = ({
 }: GameOverModalProps) => {
   const { t, i18n } = useTranslation();
   const classes = useStyles();
+  const navigate = useNavigate();
+
   const isHebrew = i18n.language === "he" || i18n.language === "heb";
+  const dirDialogClass = isHebrew
+    ? classes.gameOverModalRtl
+    : classes.gameOverModalLtr;
+  const actionsClass = isHebrew
+    ? classes.gameOverActionsRtl
+    : classes.gameOverActionsLtr;
+  const buttonClass = isHebrew
+    ? classes.gameOverButtonHebrew
+    : classes.gameOverButtonEnglish;
+
+  const onViewMistakes = useCallback(
+    () => navigate("/practice-mistakes"),
+    [navigate],
+  );
+
+  const onGoHome = useCallback(() => navigate("/"), [navigate]);
+
+  const isAllCorrect = correctSentences === totalSentences;
+
+  const actionButtons = useMemo(
+    () => [
+      {
+        key: "play-again",
+        testId: "typing-play-again",
+        onClick: onPlayAgain,
+        variant: "contained" as const,
+        color: "primary" as const,
+        icon: <Replay />,
+        label: t("pages.wordOrderGame.gameOver.playAgain"),
+      },
+      {
+        key: "change-settings",
+        testId: "typing-change-settings",
+        onClick: onChangeSettings,
+        variant: "outlined" as const,
+        icon: <Settings />,
+        label: t("pages.wordOrderGame.gameOver.changeSettings"),
+      },
+      {
+        key: "view-mistakes",
+        testId: "typing-view-mistakes",
+        onClick: onViewMistakes,
+        variant: "outlined" as const,
+        icon: <PendingActionsIcon />,
+        label: t("pages.wordOrderGame.gameOver.viewMyMistakes"),
+      },
+    ],
+    [onPlayAgain, onChangeSettings, onViewMistakes, t],
+  );
 
   return (
-    <Dialog
-      open={open}
-      maxWidth="sm"
-      fullWidth
-      className={isHebrew ? classes.gameOverModalRtl : classes.gameOverModalLtr}
-    >
+    <Dialog open={open} maxWidth="md" className={dirDialogClass}>
       <DialogTitle>
         <Box className={classes.gameOverTitle}>
           <Celebration color="primary" />
@@ -50,7 +101,7 @@ export const GameOverModal = ({
 
       <DialogContent>
         <Box className={classes.gameOverContent}>
-          {correctSentences === totalSentences ? (
+          {isAllCorrect ? (
             <>
               <Typography variant="h6" gutterBottom>
                 {t("pages.wordOrderGame.gameOver.congratulations")}
@@ -85,56 +136,27 @@ export const GameOverModal = ({
         </Box>
       </DialogContent>
 
-      <DialogActions
-        className={
-          isHebrew ? classes.gameOverActionsRtl : classes.gameOverActionsLtr
-        }
-      >
-        {isHebrew ? (
-          <>
-            <Button
-              data-testid="typing-play-again"
-              onClick={onPlayAgain}
-              variant="contained"
-              color="primary"
-              startIcon={<Replay />}
-              className={classes.gameOverButtonHebrew}
-            >
-              {t("pages.wordOrderGame.gameOver.playAgain")}
-            </Button>
-            <Button
-              data-testid="typing-change-settings"
-              onClick={onChangeSettings}
-              variant="outlined"
-              startIcon={<Settings />}
-              className={classes.gameOverButtonHebrew}
-            >
-              {t("pages.wordOrderGame.gameOver.changeSettings")}
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button
-              data-testid="typing-play-again"
-              onClick={onPlayAgain}
-              variant="contained"
-              color="primary"
-              startIcon={<Replay />}
-              className={classes.gameOverButtonEnglish}
-            >
-              {t("pages.wordOrderGame.gameOver.playAgain")}
-            </Button>
-            <Button
-              data-testid="typing-change-settings"
-              onClick={onChangeSettings}
-              variant="outlined"
-              startIcon={<Settings />}
-              className={classes.gameOverButtonEnglish}
-            >
-              {t("pages.wordOrderGame.gameOver.changeSettings")}
-            </Button>
-          </>
-        )}
+      <DialogActions className={actionsClass}>
+        {actionButtons.map((b) => (
+          <Button
+            key={b.key}
+            data-testid={b.testId}
+            onClick={b.onClick}
+            variant={b.variant}
+            {...(b.color ? { color: b.color } : {})}
+            startIcon={b.icon}
+            className={buttonClass}
+          >
+            {b.label}
+          </Button>
+        ))}
+        <IconButton
+          data-testid="typing-go-home"
+          onClick={onGoHome}
+          color="primary"
+        >
+          <HomeIcon />
+        </IconButton>
       </DialogActions>
     </Dialog>
   );

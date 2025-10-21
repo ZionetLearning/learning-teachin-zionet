@@ -1,5 +1,5 @@
-using Accessor.Services.Interfaces;
 using Accessor.Models.Games;
+using Accessor.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Accessor.Endpoints;
@@ -16,6 +16,7 @@ public static class GamesEndpoints
         gamesGroup.MapGet("/all-history", GetAllHistoriesAsync);
         gamesGroup.MapGet("/attempt/{userId:guid}/{attemptId:guid}", GetAttemptDetailsAsync);
         gamesGroup.MapPost("/generated-sentences", SaveGeneratedSentencesAsync);
+        gamesGroup.MapDelete("/all-history", DeleteAllGamesHistoryAsync);
 
         return app;
     }
@@ -53,16 +54,17 @@ public static class GamesEndpoints
         [FromQuery] bool summary,
         [FromQuery] int page,
         [FromQuery] int pageSize,
+        [FromQuery] bool getPending,
         [FromServices] IGameService service,
         ILogger<IGameService> logger,
         CancellationToken ct)
     {
         try
         {
-            logger.LogInformation("GetHistoryAsync called. StudentId={StudentId}, Summary={Summary}, Page={Page}, PageSize={PageSize}", studentId, summary, page, pageSize
+            logger.LogInformation("GetHistoryAsync called. StudentId={StudentId}, Summary={Summary}, GetPending={GetPending}, Page={Page}, PageSize={PageSize}", studentId, summary, getPending, page, pageSize
             );
 
-            var result = await service.GetHistoryAsync(studentId, summary, page, pageSize, ct);
+            var result = await service.GetHistoryAsync(studentId, summary, page, pageSize, getPending, ct);
 
             logger.LogInformation("GetHistoryAsync returned {Records} records (page). TotalCount={TotalCount}", result.Items.Count(), result.TotalCount);
 
@@ -70,7 +72,7 @@ public static class GamesEndpoints
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error in GetHistoryAsync. StudentId={StudentId}, Summary={Summary}", studentId, summary);
+            logger.LogError(ex, "Error in GetHistoryAsync. StudentId={StudentId}, Summary={Summary}, GetPending={GetPending}", studentId, summary, getPending);
             return Results.Problem("Unexpected error occurred while fetching history.");
         }
     }
@@ -107,7 +109,7 @@ public static class GamesEndpoints
     private static async Task<IResult> GetAllHistoriesAsync(
         [FromQuery] int page,
         [FromQuery] int pageSize,
-        [FromServices] IGameService service,
+        [FromServices] IStudentPracticeHistoryService service,
         ILogger<IGameService> logger,
         CancellationToken ct)
     {
@@ -115,7 +117,7 @@ public static class GamesEndpoints
         {
             logger.LogInformation("GetAllHistoriesAsync called. Page={Page}, PageSize={PageSize}", page, pageSize);
 
-            var result = await service.GetAllHistoriesAsync(page, pageSize, ct);
+            var result = await service.GetHistoryAsync(page, pageSize, ct);
 
             logger.LogInformation("GetAllHistoriesAsync returned {Records} records (page). TotalCount={TotalCount}", result.Items.Count(), result.TotalCount);
 
@@ -172,6 +174,24 @@ public static class GamesEndpoints
         {
             logger.LogError(ex, "Error saving generated sentence for StudentId={StudentId}", dto.StudentId);
             return Results.Problem("Failed to save generated sentence.");
+        }
+    }
+
+    private static async Task<IResult> DeleteAllGamesHistoryAsync(
+       [FromServices] IGameService gameService,
+       ILogger<IGameService> logger,
+       CancellationToken ct)
+    {
+        try
+        {
+            await gameService.DeleteAllGamesHistoryAsync(ct);
+            logger.LogInformation("All games history deleted successfully.");
+            return Results.Ok(new { message = "All games history deleted." });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error occurred while deleting games history.");
+            return Results.Problem("Failed to delete all games history.");
         }
     }
 }

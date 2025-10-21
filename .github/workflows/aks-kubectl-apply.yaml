@@ -131,7 +131,7 @@ jobs:
           cd devops/helm-tools/loki
           chmod +x loki.sh
           ./loki.sh
-    
+
       - name: Configure Azure Monitor datasource in Grafana
         run: |
           cd devops/helm-tools/azure-monitor
@@ -142,6 +142,31 @@ jobs:
           AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           AZURE_CLIENT_ID: ${{ secrets.AZURE_APPLICATION_ID }}
           AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+
+
+      # - name: Create devops-tools namespace
+      #   run: |
+      #     echo "Creating devops-tools namespace..."
+      #     kubectl create namespace devops-tools --dry-run=client -o yaml | kubectl apply -f -
+          
+      #     # Wait for namespace to be ready
+      #     kubectl wait --for=condition=ready namespace/devops-tools --timeout=60s || true
+          
+      #     echo "✅ devops-tools namespace is ready"
+
+      # - name: Add Langfuse
+      #   run: |
+      #     echo "Deploying Langfuse..."
+      #     cd devops/helm-tools
+      #     chmod +x langfuse.sh
+      #     ./langfuse.sh $TARGET_NAMESPACE "${{ secrets.LANGFUSE_ADMIN_EMAIL }}" "${{ secrets.LANGFUSE_ADMIN_PASSWORD }}" "${{ secrets.POSTGRES_USER }}" "${{ secrets.POSTGRES_PASSWORD }}"
+          
+      #     echo "Applying Langfuse ingress..."
+      #     kubectl apply -f "../kubernetes/ingress/langfuse-ingress.yaml"
+          
+      #     echo "Langfuse deployment completed"
+
+
 
       - name: Provision Grafana alerting (AFTER datasources)
         run: |

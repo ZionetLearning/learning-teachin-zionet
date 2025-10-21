@@ -95,7 +95,11 @@ public sealed class OnlinePresenceService : IOnlinePresenceService
                     var all = allEntry.Value ?? new HashSet<string>(StringComparer.Ordinal);
                     all.Add(userId);
                     allEntry.Value = all;
-                    await allEntry.SaveAsync(StrongFirstWrite, cancellationToken: ct);
+                    await allEntry.SaveAsync(new StateOptions
+                    {
+                        Consistency = ConsistencyMode.Eventual,
+                        Concurrency = ConcurrencyMode.LastWrite
+                    }, cancellationToken: ct);
                     return 0;
                 }, ct);
             }
@@ -170,7 +174,11 @@ public sealed class OnlinePresenceService : IOnlinePresenceService
                     var all = allEntry.Value ?? new HashSet<string>(StringComparer.Ordinal);
                     all.Remove(userId);
                     allEntry.Value = all;
-                    await allEntry.SaveAsync(StrongFirstWrite, cancellationToken: ct);
+                    await allEntry.SaveAsync(new StateOptions
+                    {
+                        Consistency = ConsistencyMode.Eventual,
+                        Concurrency = ConcurrencyMode.LastWrite
+                    }, cancellationToken: ct);
                     return 0;
                 }, ct);
             }

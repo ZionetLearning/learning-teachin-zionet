@@ -16,7 +16,8 @@
         "studentDashboard": "תלמידים",
         "adminDashboard": "מנהל מערכת",
         "genericError": "משהו השתבש. אנא נסה שוב מאוחר יותר.",
-        "forbiddenRole": "אין לך הרשאה לגשת לדף זה."
+        "forbiddenRole": "אין לך הרשאה לגשת לדף זה.",
+        "interestsPlaceholder": "תחומי עניין, לדוגמה מתמטיקה, מדע, אמנות"
       },
       "home": {
         "title": "ברוכים הבאים למגרש המשחקים הפנימי שלנו",
@@ -205,7 +206,8 @@
           "completed": "השלמת {{correct}} משפטים נכונים מתוך {{total}}.",
           "whatNext": "מה תרצה לעשות כעת?",
           "playAgain": "משחק חדש",
-          "changeSettings": "שינוי הגדרות משחק"
+          "changeSettings": "שינוי הגדרות משחק",
+          "viewMyMistakes": "צפה בטעויות שלי"
         },
         "title": "משחק סידור מילים",
         "subTitle": "סדר את המילים בסדר הנכון",
@@ -362,7 +364,8 @@
         "emailCannotBeChanged": "דואר אלקטרוני לא ניתן לשינוי",
         "edit": "עריכה",
         "saveChanges": "שמור שינויים",
-        "cancel": "ביטול"
+        "cancel": "ביטול",
+        "interests": "תחומי עניין"
       },
       "tasks": {
         "title": "ניהול משימות",
@@ -428,6 +431,28 @@
         "failedToLoad": "טעינת טעויות התרגול נכשלה",
         "gameType": {
           "wordOrderGame": "משחק סידור מילים"
+        }
+      },
+      "practiceHistory": {
+        "title": "היסטוריית התרגולים שלי",
+        "description": "צפה בהיסטוריית התרגולים שלך כסיכום קצר או גש לפרטים מלאים על כל ניסיון.",
+        "failedToLoad": "טעינת היסטוריית התרגולים נכשלה.",
+        "noMistakes": "לא נמצאה היסטוריית תרגולים.",
+        "summary": "סיכום קצר",
+        "detailed": "פירוט מלא",
+        "practiceName": "שם התרגול",
+        "difficulty": "רמת קושי",
+        "attemptsCount": "מספר ניסיונות",
+        "totalSuccesses": "ניסיונות מוצלחים",
+        "totalFailures": "ניסיונות כושלים",
+        "successRate": "אחוז הצלחה",
+        "yourLastAnswer": "התשובה האחרונה שלך",
+        "status": "סטטוס",
+        "date": "תאריך",
+        "succeeded": "הצלחה",
+        "failed": "כישלון",
+        "gameType": {
+          "wordOrderGame": "משחק סדר מילים"
         }
       },
       "studentPracticeHistory": {

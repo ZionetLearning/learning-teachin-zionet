@@ -13,8 +13,9 @@ import WeatherWidgetIcon from "@mui/icons-material/Cloud";
 import ThreePIcon from "@mui/icons-material/ThreeP";
 import LiveTvIcon from "@mui/icons-material/LiveTv";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import FlagIcon from "@mui/icons-material/Flag";
-import NoteAltIcon from '@mui/icons-material/NoteAlt';
+import NoteAltIcon from "@mui/icons-material/NoteAlt";
 import GBFlag from "country-flag-icons/react/3x2/GB";
 import ILFlag from "country-flag-icons/react/3x2/IL";
 import { useAuth } from "@app-providers/auth";
@@ -38,6 +39,12 @@ export const SidebarMenu = () => {
 
   const items: SidebarLink[] = [
     {
+      label: t("sidebar.home"),
+      icon: <HomeIcon />,
+      path: "/",
+      testId: "sidebar-home",
+    },
+    {
       label: t("sidebar.profile"),
       icon: <AccountCircleIcon />,
       path: "/profile",
@@ -50,30 +57,24 @@ export const SidebarMenu = () => {
       testId: "practice-mistakes",
     },
     {
-      label: t("sidebar.home"),
-      icon: <HomeIcon />,
-      path: "/",
-      testId: "sidebar-home",
-    },
-    {
-      label: t("sidebar.chatAvatar"),
-      icon: <ThreePIcon />,
-      path: "/chat-with-avatar",
-      testId: "sidebar-chat-avatar",
+      label: t("sidebar.studentPracticeHistory"),
+      icon: <PendingActionsIcon />,
+      path: "/practice-history",
+      testId: "practice-mistakes",
     },
     {
       label: t("sidebar.practiceTools"),
       icon: <KeyboardIcon />,
       children: [
         {
-          label: t("sidebar.typingPractice"),
-          path: "/typing",
-          testId: "sidebar-typing",
-        },
-        {
           label: t("sidebar.wordOrderGame"),
           path: "/word-order-game",
           testId: "sidebar-word-order",
+        },
+        {
+          label: t("sidebar.typingPractice"),
+          path: "/typing",
+          testId: "sidebar-typing",
         },
         {
           label: t("sidebar.speakingPractice"),
@@ -81,6 +82,12 @@ export const SidebarMenu = () => {
           testId: "sidebar-speaking",
         },
       ],
+    },
+    {
+      label: t("sidebar.chatAvatar"),
+      icon: <ThreePIcon />,
+      path: "/chat-with-avatar",
+      testId: "sidebar-chat-avatar",
     },
     {
       label: t("sidebar.chatTools"),
