@@ -83,7 +83,7 @@ public abstract class WordCardsTestBase(
             IsLearned = isLearned
         };
 
-        var response = await Client.PatchAsJsonAsync($"{ApiRoutes.WordCardsUpdateLearnedStatus(cardId)}", payload);
+        var response = await Client.PatchAsJsonAsync($"{ApiRoutes.WordCardsUpdateLearnedStatus}", payload);
         response.EnsureSuccessStatusCode();
 
         var result = await ReadAsJsonAsync<WordCardLearnedStatus>(response);
