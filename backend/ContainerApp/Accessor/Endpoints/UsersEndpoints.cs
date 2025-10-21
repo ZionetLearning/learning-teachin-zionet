@@ -342,11 +342,9 @@ public static class UsersEndpoints
 
         try
         {
-            var interests = await service.GetUserInterestsAsync(userId);
+            var interests = await service.GetUserInterestsAsync(userId, ct);
 
-            return interests == null || interests.Count == 0
-                ? Results.NotFound(new { message = "No interests found for user." })
-                : Results.Ok(interests);
+            return interests == null ? Results.NotFound(new { message = "No interests found for user." }) : Results.Ok(interests);
         }
         catch (Exception ex)
         {

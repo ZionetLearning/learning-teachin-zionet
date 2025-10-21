@@ -27,6 +27,9 @@ public static class GamesEndpoints
         gamesGroup.MapGet("/all-history", GetAllHistoriesAsync)
             .RequireAuthorization(PolicyNames.AdminOrTeacher);
 
+        gamesGroup.MapDelete("/all-history", DeleteAllGamesHistoryAsync)
+            .RequireAuthorization(PolicyNames.AdminOnly);
+
         return app;
     }
 
@@ -42,7 +45,7 @@ public static class GamesEndpoints
             var callerRole = http.User.FindFirstValue(AuthSettings.RoleClaimType);
             var callerIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
 
-            logger.LogInformation("SubmitAttempt called by role={Role}, callerId={CallerId}, studentId={StudentId}", callerRole, callerIdRaw, request.StudentId);
+            logger.LogInformation("SubmitAttempts called by role={Role}, callerId={CallerId}, studentId={StudentId}", callerRole, callerIdRaw, request.StudentId);
 
             if (callerRole?.Equals(Role.Student.ToString(), StringComparison.OrdinalIgnoreCase) == true &&
                 Guid.TryParse(callerIdRaw, out var callerId) && callerId != request.StudentId)
@@ -69,6 +72,7 @@ public static class GamesEndpoints
         [FromQuery] bool summary,
         [FromQuery] int page,
         [FromQuery] int pageSize,
+        [FromQuery] bool getPending,
         [FromServices] IAccessorClient accessorClient,
         HttpContext http,
         ILogger<GameEndpoint> logger,
@@ -86,9 +90,9 @@ public static class GamesEndpoints
                 return Results.Forbid();
             }
 
-            logger.LogInformation("Fetching history for StudentId={StudentId}, Summary={Summary}, Page={Page}, PageSize={PageSize}", studentId, summary, page, pageSize);
+            logger.LogInformation("Fetching history for StudentId={StudentId}, Summary={Summary}, GetPending={GetPending}, Page={Page}, PageSize={PageSize}", studentId, summary, getPending, page, pageSize);
 
-            var result = await accessorClient.GetHistoryAsync(studentId, summary, page, pageSize, ct);
+            var result = await accessorClient.GetHistoryAsync(studentId, summary, page, pageSize, getPending, ct);
 
             return Results.Ok(result);
         }
@@ -152,6 +156,31 @@ public static class GamesEndpoints
         {
             logger.LogError(ex, "Error fetching all histories");
             return Results.Problem("Failed to fetch all histories. Please try again later.");
+        }
+    }
+
+    private static async Task<IResult> DeleteAllGamesHistoryAsync(
+        [FromServices] IAccessorClient accessorClient,
+        ILogger<GameEndpoint> logger,
+        CancellationToken ct)
+    {
+        try
+        {
+            logger.LogInformation("Request received to delete all games history.");
+            var success = await accessorClient.DeleteAllGamesHistoryAsync(ct);
+
+            if (success)
+            {
+                logger.LogInformation("All games history deleted successfully.");
+                return Results.Ok(new { message = "All games history deleted." });
+            }
+
+            return Results.Problem("Failed to delete games history.");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error deleting all games history");
+            return Results.Problem("Failed to delete games history.");
         }
     }
 }

@@ -690,32 +690,32 @@ public class AccessorClient(
         }
     }
 
-    public async Task<PagedResult<object>> GetHistoryAsync(Guid studentId, bool summary, int page, int pageSize, CancellationToken ct = default)
+    public async Task<PagedResult<object>> GetHistoryAsync(Guid studentId, bool summary, int page, int pageSize, bool getPending, CancellationToken ct = default)
     {
         try
         {
-            _logger.LogInformation("Requesting history from Accessor. StudentId={StudentId}, Summary={Summary}, Page={Page}, PageSize={PageSize}", studentId, summary, page, pageSize);
+            _logger.LogInformation("Requesting history from Accessor. StudentId={StudentId}, Summary={Summary}, Page={Page}, PageSize={PageSize}, GetPending={GetPending}", studentId, summary, page, pageSize, getPending);
 
             var result = await _daprClient.InvokeMethodAsync<PagedResult<object>>(
                 HttpMethod.Get,
                 AppIds.Accessor,
-                $"games-accessor/history/{studentId}?summary={summary}&page={page}&pageSize={pageSize}",
+                $"games-accessor/history/{studentId}?summary={summary}&page={page}&pageSize={pageSize}&getPending={getPending}",
                 cancellationToken: ct
             );
 
             if (result == null)
             {
-                _logger.LogWarning("Accessor returned null history. StudentId={StudentId}, Summary={Summary}", studentId, summary);
+                _logger.LogWarning("Accessor returned null history. StudentId={StudentId}, Summary={Summary}, GetPending={GetPending}", studentId, summary, getPending);
                 return new PagedResult<object> { Page = page, PageSize = pageSize, TotalCount = 0 };
             }
 
-            _logger.LogInformation("Received history from Accessor. StudentId={StudentId}, Summary={Summary}, Items={Count}, TotalCount={TotalCount}", studentId, summary, result.Items.Count(), result.TotalCount);
+            _logger.LogInformation("Received history from Accessor. StudentId={StudentId}, Summary={Summary}, GetPending={GetPending}, Items={Count}, TotalCount={TotalCount}", studentId, summary, getPending, result.Items.Count(), result.TotalCount);
 
             return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to get history from Accessor. StudentId={StudentId}, Summary={Summary}", studentId, summary);
+            _logger.LogError(ex, "Failed to get history from Accessor. StudentId={StudentId}, Summary={Summary}, GetPending={GetPending}", studentId, summary, getPending);
             return new PagedResult<object> { Page = page, PageSize = pageSize, TotalCount = 0 };
         }
     }
@@ -801,6 +801,25 @@ public class AccessorClient(
         {
             _logger.LogError(ex, "Failed to save generated sentence for StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}", dto.StudentId, dto.GameType, dto.Difficulty);
             throw;
+        }
+    }
+
+    public async Task<bool> DeleteAllGamesHistoryAsync(CancellationToken ct)
+    {
+        try
+        {
+            await _daprClient.InvokeMethodAsync(
+                HttpMethod.Delete,
+                AppIds.Accessor,
+                $"/games-accessor/all-history",
+                ct);
+            _logger.LogInformation("All games history deleted successfully.");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Exception occurred while deleting all games history.");
+            return false;
         }
     }
 }

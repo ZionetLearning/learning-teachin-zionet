@@ -105,7 +105,8 @@ public class GameService : IGameService
         }
     }
 
-    public async Task<PagedResult<object>> GetHistoryAsync(Guid studentId, bool summary, int page, int pageSize, CancellationToken ct)
+    public async Task<PagedResult<object>> GetHistoryAsync(
+    Guid studentId, bool summary, int page, int pageSize, bool getPending, CancellationToken ct)
     {
         try
         {
@@ -127,12 +128,22 @@ public class GameService : IGameService
                 pageSize = 100;
             }
 
-            _logger.LogInformation("Fetching history. StudentId={StudentId}, Summary={Summary}, Page={Page}, PageSize={PageSize}", studentId, summary, page, pageSize);
+            _logger.LogInformation(
+                "Fetching history. StudentId={StudentId}, Summary={Summary}, Page={Page}, PageSize={PageSize}, GetPending={GetPending}",
+                studentId, summary, page, pageSize, getPending);
+
+            var attempts = _db.GameAttempts
+                .AsNoTracking()
+                .Where(a => a.StudentId == studentId);
+
+            if (!getPending)
+            {
+                attempts = attempts.Where(a => a.Status != AttemptStatus.Pending);
+            }
 
             if (summary)
             {
-                var query = _db.GameAttempts
-                    .Where(a => a.StudentId == studentId && a.Status != AttemptStatus.Pending)
+                var query = attempts
                     .GroupBy(a => new { a.GameType, a.Difficulty })
                     .Select(g => new SummaryHistoryDto
                     {
@@ -144,16 +155,30 @@ public class GameService : IGameService
                     });
 
                 var total = await query.CountAsync(ct);
-                var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+                var items = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync(ct);
 
-                _logger.LogInformation("Summary history retrieved. StudentId={StudentId}, Records={Count}, TotalCount={Total}", studentId, items.Count, total);
+                _logger.LogInformation(
+                    "Summary history retrieved. StudentId={StudentId}, Records={Count}, TotalCount={Total}, GetPending={GetPending}",
+                    studentId, items.Count, total, getPending);
 
-                return new PagedResult<object> { Items = items, Page = page, PageSize = pageSize, TotalCount = total };
+                return new PagedResult<object>
+                {
+                    Items = items,
+                    Page = page,
+                    PageSize = pageSize,
+                    TotalCount = total
+                };
             }
             else
             {
-                var query = _db.GameAttempts
-                    .Where(a => a.StudentId == studentId)
+                var total = await attempts.CountAsync(ct);
+
+                var items = await attempts
+                    .OrderByDescending(a => a.CreatedAt)
+                    .ThenByDescending(a => a.AttemptId) // тай-брейкер по равным CreatedAt
                     .Select(a => new AttemptHistoryDto
                     {
                         AttemptId = a.AttemptId,
@@ -164,20 +189,36 @@ public class GameService : IGameService
                         Status = a.Status,
                         CreatedAt = a.CreatedAt
                     })
-                    .OrderByDescending(a => a.CreatedAt);
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync(ct);
 
-                var total = await query.CountAsync(ct);
-                var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+                _logger.LogInformation(
+                    "Full history retrieved. StudentId={StudentId}, Records={Count}, TotalCount={Total}, GetPending={GetPending}",
+                    studentId, items.Count, total, getPending);
 
-                _logger.LogInformation("Full history retrieved. StudentId={StudentId}, Records={Count}, TotalCount={Total}", studentId, items.Count, total);
-
-                return new PagedResult<object> { Items = items, Page = page, PageSize = pageSize, TotalCount = total };
+                return new PagedResult<object>
+                {
+                    Items = items,
+                    Page = page,
+                    PageSize = pageSize,
+                    TotalCount = total
+                };
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unexpected error while fetching history. StudentId={StudentId}, Summary={Summary}", studentId, summary);
-            return new PagedResult<object> { Items = Array.Empty<object>(), Page = page, PageSize = pageSize, TotalCount = 0 };
+            _logger.LogError(ex,
+                "Unexpected error while fetching history. StudentId={StudentId}, Summary={Summary}, GetPending={GetPending}",
+                studentId, summary, getPending);
+
+            return new PagedResult<object>
+            {
+                Items = Array.Empty<object>(),
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = 0
+            };
         }
     }
 
@@ -270,7 +311,10 @@ public class GameService : IGameService
                     Difficulty = g.Key.Difficulty,
                     AttemptsCount = g.Count(),
                     TotalSuccesses = g.Count(x => x.Status == AttemptStatus.Success),
-                    TotalFailures = g.Count(x => x.Status == AttemptStatus.Failure)
+                    TotalFailures = g.Count(x => x.Status == AttemptStatus.Failure),
+                    StudentFirstName = "",
+                    StudentLastName = "",
+                    Timestamp = g.Max(x => x.CreatedAt)
                 });
 
             var total = await query.CountAsync(ct);
@@ -282,8 +326,8 @@ public class GameService : IGameService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unexpected error while fetching all histories.");
-            return new PagedResult<SummaryHistoryWithStudentDto> { Items = Array.Empty<SummaryHistoryWithStudentDto>(), Page = page, PageSize = pageSize, TotalCount = 0 };
+            _logger.LogError(ex, "Unexpected error while fetching all histories from GameService.");
+            throw;
         }
     }
 
@@ -373,6 +417,21 @@ public class GameService : IGameService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error while saving generated sentences. StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}", dto.StudentId, dto.GameType, dto.Difficulty);
+            throw;
+        }
+    }
+
+    public async Task DeleteAllGamesHistoryAsync(CancellationToken ct)
+    {
+        try
+        {
+            _logger.LogInformation("Deleting all game history...");
+            var deletedAttempts = await _db.GameAttempts.ExecuteDeleteAsync(ct);
+            _logger.LogInformation("Deleted {Count} game attempts", deletedAttempts);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while deleting all game history.");
             throw;
         }
     }

@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { MemoryRouter } from "react-router-dom";
 import "./__mocks__";
 import { TypingPractice } from "..";
 import { speakSpy } from "./__mocks__";
@@ -19,9 +20,11 @@ describe("<TypingPractice />", () => {
       },
     });
     return render(
-      <QueryClientProvider client={qc}>
-        <TypingPractice />
-      </QueryClientProvider>,
+      <MemoryRouter>
+        <QueryClientProvider client={qc}>
+          <TypingPractice />
+        </QueryClientProvider>
+      </MemoryRouter>,
     );
   };
 
@@ -88,10 +91,12 @@ describe("<TypingPractice />", () => {
       target: { value: "שלום" },
     });
     fireEvent.click(screen.getByTestId("typing-submit"));
-    
+
     // Just wait for any accuracy feedback to appear
     await waitFor(() => {
-      const accuracyElement = screen.getByText(/% pages\.typingPractice\.accuracy/);
+      const accuracyElement = screen.getByText(
+        /% pages\.typingPractice\.accuracy/,
+      );
       expect(accuracyElement).toBeInTheDocument();
     });
   });
@@ -107,16 +112,20 @@ describe("<TypingPractice />", () => {
       target: { value: "test input" },
     });
     fireEvent.click(screen.getByTestId("typing-submit"));
-    
+
     // Wait for feedback to appear
     await waitFor(() => {
-      expect(screen.getByText("pages.typingPractice.tryAgain")).toBeInTheDocument();
+      expect(
+        screen.getByText("pages.typingPractice.tryAgain"),
+      ).toBeInTheDocument();
     });
-    
+
     // Click try again and verify input is cleared
     fireEvent.click(screen.getByText("pages.typingPractice.tryAgain"));
     await screen.findByTestId("typing-phase-typing");
-    expect((screen.getByTestId("typing-input") as HTMLInputElement).value).toBe("");
+    expect((screen.getByTestId("typing-input") as HTMLInputElement).value).toBe(
+      "",
+    );
   });
 
   it("completes exercise flow successfully", async () => {
@@ -130,10 +139,12 @@ describe("<TypingPractice />", () => {
       target: { value: "שלום" },
     });
     fireEvent.click(screen.getByTestId("typing-submit"));
-    
+
     // Wait for feedback and verify next exercise button exists
     await waitFor(() => {
-      expect(screen.getByText("pages.typingPractice.nextExercise")).toBeInTheDocument();
+      expect(
+        screen.getByText("pages.typingPractice.nextExercise"),
+      ).toBeInTheDocument();
     });
   });
 });
