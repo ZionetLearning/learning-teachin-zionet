@@ -4,7 +4,6 @@ export const PURPLE = "#7c4dff";
 const PURPLE_DARK = "#5f35ff";
 
 export const useStyles = createUseStyles({
-  /* Header (you asked to include these) */
   headerWrapper: {
     display: "flex",
     flexDirection: "column",

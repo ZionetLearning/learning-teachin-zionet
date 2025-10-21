@@ -27,12 +27,7 @@ createRoot(document.getElementById("root")!).render(
       <AuthProvider appRole={AppRole.student}>
         <SignalRProvider hubUrl={HUB_URL}>
           <SentryErrorBoundary>
-            <WordCaptureProvider
-              buildRequest={(hebrew, english) => ({
-                hebrew,
-                english,
-              })}
-            >
+            <WordCaptureProvider>
               <App />
             </WordCaptureProvider>
             <ToastContainer />

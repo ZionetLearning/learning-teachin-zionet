@@ -4,17 +4,11 @@ import {
   Button,
   Checkbox,
   CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   FormControlLabel,
   IconButton,
-  TextField,
   Tooltip,
   Typography,
 } from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
 import AddIcon from "@mui/icons-material/Add";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
@@ -22,10 +16,10 @@ import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import {
   useGetWordCards,
   useSetWordCardLearned,
-  useCreateWordCard,
-  type CreateWordCardRequest,
   type WordCard,
 } from "../../api";
+
+import { AddWordCardDialog } from "../../components";
 
 import { useStyles } from "./style";
 
@@ -122,7 +116,7 @@ export const WordCards = () => {
 
       {/* Add Dialog */}
       {addOpen && (
-        <AddCardDialog open={addOpen} onClose={() => setAddOpen(false)} />
+        <AddWordCardDialog open={addOpen} onClose={() => setAddOpen(false)} />
       )}
     </Box>
   );
@@ -175,98 +169,5 @@ const WordCardItem = ({ card }: { card: WordCard }) => {
         />
       </Box>
     </Box>
-  );
-};
-
-type AddCardDialogProps = {
-  open: boolean;
-  onClose: () => void;
-};
-
-const AddCardDialog = ({ open, onClose }: AddCardDialogProps) => {
-  const classes = useStyles();
-  const createCard = useCreateWordCard();
-
-  const [hebrew, setHebrew] = useState<string>("");
-  const [english, setEnglish] = useState<string>("");
-
-  const disabled =
-    hebrew.trim().length === 0 ||
-    english.trim().length === 0 ||
-    createCard.isPending;
-
-  const handleSave = () => {
-    const body: CreateWordCardRequest = {
-      hebrew: hebrew.trim(),
-      english: english.trim(),
-    };
-    createCard.mutate(body, {
-      onSuccess: () => {
-        setHebrew("");
-        setEnglish("");
-        onClose();
-      },
-    });
-  };
-
-  return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="xs"
-      fullWidth
-      slotProps={{ paper: { className: classes.dialogPaper } }}
-    >
-      <DialogTitle className={classes.dialogTitle}>
-        Add Card
-        <IconButton
-          onClick={onClose}
-          aria-label="close"
-          className={classes.closeButton}
-        >
-          <CloseIcon />
-        </IconButton>
-      </DialogTitle>
-      <DialogContent>
-        <Box className={classes.dialogBodyGradient}>
-          <TextField
-            label="Hebrew"
-            fullWidth
-            autoFocus
-            value={hebrew}
-            className={classes.textField}
-            onChange={(e) => setHebrew(e.target.value)}
-            placeholder="הכנס מילה בעברית…"
-            inputProps={{ dir: "rtl" }}
-            sx={{ mb: 1.5 }}
-          />
-          <TextField
-            label="English"
-            fullWidth
-            value={english}
-            className={classes.textField}
-            onChange={(e) => setEnglish(e.target.value)}
-            placeholder="Enter the English meaning…"
-          />
-        </Box>
-      </DialogContent>
-      <DialogActions className={classes.actions}>
-        <Button
-          onClick={onClose}
-          variant="text"
-          className={classes.cancelButton}
-        >
-          Cancel
-        </Button>
-        <Button
-          onClick={handleSave}
-          variant="contained"
-          disabled={disabled}
-          className={classes.saveButton}
-        >
-          {createCard.isPending ? "Saving…" : "Save"}
-        </Button>
-      </DialogActions>
-    </Dialog>
   );
 };
