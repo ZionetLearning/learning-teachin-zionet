@@ -14,33 +14,22 @@ import CloseIcon from "@mui/icons-material/Close";
 
 import { useCreateWordCard, type CreateWordCardRequest } from "../../api";
 import { useStyles } from "./style";
+import { useTranslation } from "react-i18next";
 
 export type AddWordCardDialogProps = {
   open: boolean;
   onClose: () => void;
-
-  /**
-   * If provided, dialog works in "selection mode":
-   * - Title: "Add Translation"
-   * - Shows the Hebrew word panel
-   * - Single input for English translation
-   * If omitted, dialog works in "blank mode":
-   * - Title: "Add Card"
-   * - Shows Hebrew + English inputs
-   */
   initialHebrew?: string;
-
-  /** Optional: called after successful creation */
-  onCreated?: () => void;
 };
 
 export const AddWordCardDialog = ({
   open,
   onClose,
   initialHebrew,
-  onCreated,
 }: AddWordCardDialogProps) => {
   const classes = useStyles();
+  const { t } = useTranslation();
+
   const createCard = useCreateWordCard();
 
   const selectionMode = useMemo(
@@ -68,7 +57,9 @@ export const AddWordCardDialog = ({
     );
   }, [selectionMode, hebrew, english, createCard.isPending]);
 
-  const title = selectionMode ? "Add Translation" : "Add Card";
+  const title = selectionMode
+    ? t("pages.wordCards.addTranslation")
+    : t("pages.wordCards.addCard");
 
   const handleSave = () => {
     const body: CreateWordCardRequest = {
@@ -79,7 +70,6 @@ export const AddWordCardDialog = ({
       onSuccess: () => {
         setEnglish("");
         if (!selectionMode) setHebrew("");
-        onCreated?.();
         onClose();
       },
     });
@@ -110,19 +100,19 @@ export const AddWordCardDialog = ({
             <>
               <Box className={classes.wordPanel}>
                 <Typography className={classes.wordLabel}>
-                  Hebrew word
+                  {t("pages.wordCards.hebrewWord")}
                 </Typography>
                 <Typography className={classes.hebrewWord}>{hebrew}</Typography>
               </Box>
 
               <TextField
-                label="English translation"
+                label={t("pages.wordCards.englishTranslation")}
                 fullWidth
                 autoFocus
                 className={classes.textField}
                 value={english}
                 onChange={(e) => setEnglish(e.target.value)}
-                placeholder="Type the English translation..."
+                placeholder={t("pages.wordCards.typeTheEnglishTranslation")}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !disabled) {
                     e.preventDefault();
@@ -134,23 +124,27 @@ export const AddWordCardDialog = ({
           ) : (
             <>
               <TextField
-                label="Hebrew"
+                label={t("pages.wordCards.hebrew")}
                 fullWidth
                 autoFocus
                 value={hebrew}
                 className={classes.textField}
                 onChange={(e) => setHebrew(e.target.value)}
-                placeholder="הכנס מילה בעברית…"
-                inputProps={{ dir: "rtl" }}
+                placeholder={t("pages.wordCards.enterTheHebrewWord")}
+                slotProps={{
+                  htmlInput: {
+                    dir: "rtl",
+                  },
+                }}
                 sx={{ mb: 1.5 }}
               />
               <TextField
-                label="English"
+                label={t("pages.wordCards.english")}
                 fullWidth
                 value={english}
                 className={classes.textField}
                 onChange={(e) => setEnglish(e.target.value)}
-                placeholder="Enter the English translation..."
+                placeholder={t("pages.wordCards.enterTheEnglishTranslation")}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !disabled) {
                     e.preventDefault();
@@ -169,7 +163,7 @@ export const AddWordCardDialog = ({
           variant="text"
           className={classes.cancelButton}
         >
-          Cancel
+          {t("pages.wordCards.cancel")}
         </Button>
         <Button
           onClick={handleSave}
@@ -177,7 +171,9 @@ export const AddWordCardDialog = ({
           disabled={disabled}
           className={classes.saveButton}
         >
-          {createCard.isPending ? "Saving…" : "Save"}
+          {createCard.isPending
+            ? t("pages.wordCards.saving")
+            : t("pages.wordCards.save")}
         </Button>
       </DialogActions>
     </Dialog>

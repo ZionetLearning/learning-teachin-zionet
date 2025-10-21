@@ -59,7 +59,7 @@ export const WordCaptureProvider: React.FC<WordCaptureProviderProps> = ({
   };
 
   return (
-    <Box sx={{ display: "contents" }}>
+    <Box>
       {children}
       <AddWordCardDialog
         open={open}

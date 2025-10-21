@@ -8,6 +8,7 @@ import {
   Typography,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import { Trans, useTranslation } from "react-i18next";
 import { useGetWordCards, type WordCard } from "@student/api";
 import { AddWordCardDialog } from "@student/components";
 import { WordCardItem } from "./components";
@@ -24,6 +25,8 @@ const mockData: WordCard[] = [
 
 export const WordCards = () => {
   const classes = useStyles();
+  const { t } = useTranslation();
+
   const { data, isLoading, isError } = useGetWordCards();
   const [hideLearned, setHideLearned] = useState<boolean>(false);
   const [addOpen, setAddOpen] = useState<boolean>(false);
@@ -36,23 +39,22 @@ export const WordCards = () => {
 
   return (
     <Box>
-      {/* Header */}
       <Box className={classes.headerWrapper}>
-        <Typography className={classes.title}>Word Cards</Typography>
-        <Typography className={classes.description}>
-          <strong>
-            Build your own word list and practice Hebrew–English vocabulary.
-          </strong>
+        <Typography className={classes.title}>
+          {t("pages.wordCards.title")}
         </Typography>
         <Typography className={classes.description}>
-          Add new words, review your collection, and mark the ones you’ve
-          already learned.
+          <strong>{t("pages.wordCards.buildYourOwnWordDescription")}</strong>
+        </Typography>
+        <Typography className={classes.description}>
+          {t("pages.wordCards.addNewWordsDescription")}
         </Typography>
 
         <Typography className={classes.helperNote}>
-          <strong>Tip:</strong> You can also{" "}
-          <strong>select any Hebrew word on the site</strong>. A small popup
-          will let you add it directly to your cards.
+          <Trans
+            i18nKey="pages.wordCards.tipHelperNote"
+            components={[<strong />, <strong />]}
+          />
         </Typography>
 
         <Box className={classes.headerActions}>
@@ -63,7 +65,7 @@ export const WordCards = () => {
                 onChange={(e) => setHideLearned(e.target.checked)}
               />
             }
-            label="Hide learned"
+            label={t("pages.wordCards.hideLearnedWords")}
           />
           <Button
             startIcon={<AddIcon />}
@@ -71,28 +73,28 @@ export const WordCards = () => {
             className={classes.primaryBtn}
             onClick={() => setAddOpen(true)}
           >
-            Add Card
+            {t("pages.wordCards.addCard")}
           </Button>
         </Box>
       </Box>
 
-      {/* Body */}
       <Box className={classes.body}>
         {isLoading && !mockData ? (
           <Box className={classes.centerState}>
             <CircularProgress />
-            <Typography>Loading cards…</Typography>
+            <Typography> {t("pages.wordCards.loadingCards")}</Typography>
           </Box>
         ) : isError ? (
           <Box className={classes.centerState}>
-            <Typography color="error">Failed to load word cards.</Typography>
+            <Typography color="error">
+              {t("pages.wordCards.failedToLoad")}
+            </Typography>
           </Box>
         ) : filtered.length === 0 ? (
           <Box className={classes.centerState}>
-            <Typography>No word cards yet.</Typography>
+            <Typography> {t("pages.wordCards.noWordCardsYet")}</Typography>
             <Typography variant="body2" color="text.secondary">
-              Click “Add Card” or select a Hebrew word anywhere in the app to
-              create one.
+              {t("pages.wordCards.clickAddCardOrSelect")}
             </Typography>
           </Box>
         ) : (
@@ -104,7 +106,6 @@ export const WordCards = () => {
         )}
       </Box>
 
-      {/* Add Dialog */}
       {addOpen && (
         <AddWordCardDialog open={addOpen} onClose={() => setAddOpen(false)} />
       )}

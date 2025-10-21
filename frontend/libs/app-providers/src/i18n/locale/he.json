@@ -483,6 +483,29 @@
         },
         "exportPage": "ייצוא (עמוד)",
         "exportCurrentPage": "ייצוא את העמוד הנוכחי"
+      },
+      "wordCards": {
+        "title": "כרטיסיות מילים",
+        "buildYourOwnWordDescription": "בנה לעצמך רשימת מילים ותרגל אוצר מילים בעברית–אנגלית.",
+        "addNewWordsDescription": "הוסף מילים חדשות, עיין באוסף שלך, וסמן את המילים שכבר למדת.",
+        "tipHelperNote": "<0>טיפ:</0> אפשר גם <1>לבחור כל מילה בעברית באתר</1>. תופיע חלונית קטנה שתאפשר להוסיף אותה ישירות לכרטיסיות שלך.",
+        "hideLearnedWords": "הסתר מילים שנלמדו",
+        "addCard": "הוסף כרטיסיה",
+        "loadingCards": "טוען כרטיסיות…",
+        "failedToLoad": "נכשל בטעינת כרטיסיות המילים.",
+        "noWordCardsYet": "אין עדיין כרטיסיות מילים.",
+        "clickAddCardOrSelect": "לחץ על ”הוסף כרטיסיה” או בחר מילה בעברית בכל מקום באפליקציה כדי ליצור אחת.",
+        "addTranslation": "הוסף תרגום",
+        "hebrewWord": "מילה בעברית",
+        "englishTranslation": "תרגום לאנגלית",
+        "typeTheEnglishTranslation": "הקלד את התרגום לאנגלית...",
+        "hebrew": "עברית",
+        "english": "אנגלית",
+        "enterTheHebrewWord": "הקלד את המילה בעברית...",
+        "enterTheEnglishTranslation": "הקלד את התרגום לאנגלית...",
+        "cancel": "ביטול",
+        "save": "שמור",
+        "saving": "שומר..."
       }
     },
     "sidebar": {
