@@ -5,22 +5,12 @@ import {
   Checkbox,
   CircularProgress,
   FormControlLabel,
-  IconButton,
-  Tooltip,
   Typography,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
-
-import {
-  useGetWordCards,
-  useSetWordCardLearned,
-  type WordCard,
-} from "../../api";
-
-import { AddWordCardDialog } from "../../components";
-
+import { useGetWordCards, type WordCard } from "@student/api";
+import { AddWordCardDialog } from "@student/components";
+import { WordCardItem } from "./components";
 import { useStyles } from "./style";
 
 const mockData: WordCard[] = [
@@ -118,56 +108,6 @@ export const WordCards = () => {
       {addOpen && (
         <AddWordCardDialog open={addOpen} onClose={() => setAddOpen(false)} />
       )}
-    </Box>
-  );
-};
-
-const WordCardItem = ({ card }: { card: WordCard }) => {
-  const classes = useStyles();
-  const setLearned = useSetWordCardLearned();
-
-  const toggle = () => {
-    setLearned.mutate({ cardId: card.cardId, isLearned: !card.isLearned });
-  };
-
-  return (
-    <Box className={classes.card}>
-      <Box className={classes.cardTop}>
-        <Box className={classes.wordGroup}>
-          <Typography className={classes.hebrew}>{card.hebrew}</Typography>
-          <Typography className={classes.english}>{card.english}</Typography>
-        </Box>
-
-        <Tooltip
-          title={card.isLearned ? "Mark as unlearned" : "Mark as learned"}
-        >
-          <IconButton
-            onClick={toggle}
-            className={classes.learnBtn}
-            disabled={setLearned.isPending}
-            aria-label="toggle learned"
-          >
-            {card.isLearned ? (
-              <CheckCircleIcon className={classes.learnIconActive} />
-            ) : (
-              <RadioButtonUncheckedIcon className={classes.learnIconIdle} />
-            )}
-          </IconButton>
-        </Tooltip>
-      </Box>
-
-      <Box className={classes.cardFoot}>
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={card.isLearned}
-              onChange={toggle}
-              disabled={setLearned.isPending}
-            />
-          }
-          label="Learned"
-        />
-      </Box>
     </Box>
   );
 };
