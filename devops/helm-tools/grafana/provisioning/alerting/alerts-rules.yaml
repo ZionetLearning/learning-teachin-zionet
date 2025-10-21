@@ -160,27 +160,30 @@ groups:
         data:
           - refId: A
             datasourceUid: azure-monitor
-            relativeTimeRange: { from: 600, to: 0 }   # 10m lookback
+            relativeTimeRange: { from: 600, to: 0 }
             model:
               queryType: "Azure Log Analytics"
               resultFormat: time_series
               azureLogAnalytics:
-                workspace: "${LA_WS_STUDENT}"      # Workspace Resource ID
+                resource: "${LA_WS_STUDENT}"
               query: |
-                range TimeGenerated from ago(10m) to now() step 1m
-                | join kind=leftouter (
-                    AppPageViews
-                    | where TimeGenerated between (ago(10m) .. now())
-                    | summarize pv = count() by bin(TimeGenerated, 1m)
-                  ) on TimeGenerated
-                | join kind=leftouter (
-                    AppExceptions
-                    | where TimeGenerated between (ago(10m) .. now())
-                    | summarize ex = count() by bin(TimeGenerated, 1m)
-                  ) on TimeGenerated
+                let startTime = ago(10m);
+                let endTime = now();
+                let timeGrain = 1m;
+                let pageViews = AppPageViews
+                  | where TimeGenerated between (startTime .. endTime)
+                  | summarize pv = count() by bin(TimeGenerated, timeGrain);
+                let exceptions = AppExceptions
+                  | where TimeGenerated between (startTime .. endTime)
+                  | summarize ex = count() by bin(TimeGenerated, timeGrain);
+                range TimeGenerated from startTime to endTime step timeGrain
+                | join kind=leftouter (pageViews) on TimeGenerated
+                | join kind=leftouter (exceptions) on TimeGenerated
                 | extend pv = coalesce(pv, 0), ex = coalesce(ex, 0)
-                | extend failureRate = iif(pv == 0, 0.0, 100.0 * todouble(ex) / todouble(pv))
+                | extend failureRate = iff(pv == 0, 0.0, 100.0 * todouble(ex) / todouble(pv))
                 | project TimeGenerated, failureRate
+                | union (datatable(TimeGenerated:datetime, failureRate:real)[now(), 0.0])
+                | summarize failureRate = max(failureRate) by bin(TimeGenerated, timeGrain)
                 | order by TimeGenerated asc
               refId: A
           - refId: B
@@ -212,15 +215,22 @@ groups:
               queryType: "Azure Log Analytics"
               resultFormat: time_series
               azureLogAnalytics:
-                workspace: "${LA_WS_STUDENT}"
+                resource: "${LA_WS_STUDENT}"
               query: |
-                AppDependencies
-                | where TimeGenerated > ago(10m)
-                | extend code = toint(tolong(resultCode))
-                | summarize total = count(), fivexx = countif(code between (500..599)) by bin(TimeGenerated, 1m)
-                | extend pct_5xx = iif(total == 0, 0.0, 100.0 * todouble(fivexx) / todouble(total))
+                let startTime = ago(10m);
+                let endTime = now();
+                let timeGrain = 1m;
+                let deps = AppDependencies
+                  | where TimeGenerated between (startTime .. endTime)
+                  | extend code = toint(tolong(resultCode))
+                  | summarize total = count(), fivexx = countif(code >= 500 and code < 600) by bin(TimeGenerated, timeGrain)
+                  | extend pct_5xx = iff(total == 0, 0.0, 100.0 * todouble(fivexx) / todouble(total));
+                range TimeGenerated from startTime to endTime step timeGrain
+                | join kind=leftouter (deps) on TimeGenerated
+                | extend pct_5xx = coalesce(pct_5xx, 0.0)
                 | project TimeGenerated, pct_5xx
-                | union (datatable(TimeGenerated: datetime, pct_5xx: real) [])
+                | union (datatable(TimeGenerated:datetime, pct_5xx:real)[now(), 0.0])
+                | summarize pct_5xx = max(pct_5xx) by bin(TimeGenerated, timeGrain)
                 | order by TimeGenerated asc
               refId: A
           - refId: B
@@ -247,28 +257,32 @@ groups:
         data:
           - refId: A
             datasourceUid: azure-monitor
-            relativeTimeRange: { from: 1200, to: 0 }   # 20m
+            relativeTimeRange: { from: 1200, to: 0 }
             model:
               queryType: "Azure Log Analytics"
               resultFormat: time_series
               azureLogAnalytics:
-                workspace: "${LA_WS_STUDENT}"
+                resource: "${LA_WS_STUDENT}"
               query: |
-                range TimeGenerated from ago(10m) to now() step 2m
-                | join kind=leftouter (
-                    AppBrowserTimings
-                    | where TimeGenerated between (ago(10m) .. now())
-                    | extend td = todouble(coalesce(
-                        column_ifexists("TotalDuration", real(null)),
-                        column_ifexists("totalDuration", real(null)),
-                        column_ifexists("Duration",      real(null)),
-                        column_ifexists("duration",      real(null))
-                      ))
-                    | where isnotnull(td)
-                    | summarize p95_ms = percentile(td, 95) by bin(TimeGenerated, 2m)
-                  ) on TimeGenerated
+                let startTime = ago(10m);
+                let endTime = now();
+                let timeGrain = 2m;
+                let timings = AppBrowserTimings
+                  | where TimeGenerated between (startTime .. endTime)
+                  | extend td = todouble(coalesce(
+                      column_ifexists("TotalDuration", real(null)),
+                      column_ifexists("totalDuration", real(null)),
+                      column_ifexists("Duration", real(null)),
+                      column_ifexists("duration", real(null))
+                    ))
+                  | where isnotnull(td) and td > 0
+                  | summarize p95_ms = percentile(td, 95) by bin(TimeGenerated, timeGrain);
+                range TimeGenerated from startTime to endTime step timeGrain
+                | join kind=leftouter (timings) on TimeGenerated
                 | extend p95_ms = coalesce(p95_ms, 0.0)
                 | project TimeGenerated, p95_ms
+                | union (datatable(TimeGenerated:datetime, p95_ms:real)[now(), 0.0])
+                | summarize p95_ms = max(p95_ms) by bin(TimeGenerated, timeGrain)
                 | order by TimeGenerated asc
               refId: A
           - refId: B
@@ -303,20 +317,23 @@ groups:
               azureLogAnalytics:
                 resource: "${LA_WS_ADMIN}"
               query: |
-                range TimeGenerated from ago(10m) to now() step 1m
-                | join kind=leftouter (
-                    AppPageViews
-                    | where TimeGenerated between (ago(10m) .. now())
-                    | summarize pv = count() by bin(TimeGenerated, 1m)
-                  ) on TimeGenerated
-                | join kind=leftouter (
-                    AppExceptions
-                    | where TimeGenerated between (ago(10m) .. now())
-                    | summarize ex = count() by bin(TimeGenerated, 1m)
-                  ) on TimeGenerated
+                let startTime = ago(10m);
+                let endTime = now();
+                let timeGrain = 1m;
+                let pageViews = AppPageViews
+                  | where TimeGenerated between (startTime .. endTime)
+                  | summarize pv = count() by bin(TimeGenerated, timeGrain);
+                let exceptions = AppExceptions
+                  | where TimeGenerated between (startTime .. endTime)
+                  | summarize ex = count() by bin(TimeGenerated, timeGrain);
+                range TimeGenerated from startTime to endTime step timeGrain
+                | join kind=leftouter (pageViews) on TimeGenerated
+                | join kind=leftouter (exceptions) on TimeGenerated
                 | extend pv = coalesce(pv, 0), ex = coalesce(ex, 0)
-                | extend failureRate = iif(pv == 0, 0.0, 100.0 * todouble(ex) / todouble(pv))
+                | extend failureRate = iff(pv == 0, 0.0, 100.0 * todouble(ex) / todouble(pv))
                 | project TimeGenerated, failureRate
+                | union (datatable(TimeGenerated:datetime, failureRate:real)[now(), 0.0])
+                | summarize failureRate = max(failureRate) by bin(TimeGenerated, timeGrain)
                 | order by TimeGenerated asc
               refId: A
           - refId: B
@@ -350,13 +367,20 @@ groups:
               azureLogAnalytics:
                 resource: "${LA_WS_ADMIN}"
               query: |
-                AppDependencies
-                | where TimeGenerated > ago(10m)
-                | extend code = toint(tolong(resultCode))
-                | summarize total = count(), fivexx = countif(code between (500..599)) by bin(TimeGenerated, 1m)
-                | extend pct_5xx = iif(total == 0, 0.0, 100.0 * todouble(fivexx) / todouble(total))
+                let startTime = ago(10m);
+                let endTime = now();
+                let timeGrain = 1m;
+                let deps = AppDependencies
+                  | where TimeGenerated between (startTime .. endTime)
+                  | extend code = toint(tolong(resultCode))
+                  | summarize total = count(), fivexx = countif(code >= 500 and code < 600) by bin(TimeGenerated, timeGrain)
+                  | extend pct_5xx = iff(total == 0, 0.0, 100.0 * todouble(fivexx) / todouble(total));
+                range TimeGenerated from startTime to endTime step timeGrain
+                | join kind=leftouter (deps) on TimeGenerated
+                | extend pct_5xx = coalesce(pct_5xx, 0.0)
                 | project TimeGenerated, pct_5xx
-                | union (datatable(TimeGenerated: datetime, pct_5xx: real) [])
+                | union (datatable(TimeGenerated:datetime, pct_5xx:real)[now(), 0.0])
+                | summarize pct_5xx = max(pct_5xx) by bin(TimeGenerated, timeGrain)
                 | order by TimeGenerated asc
               refId: A
           - refId: B
@@ -390,21 +414,25 @@ groups:
               azureLogAnalytics:
                 resource: "${LA_WS_ADMIN}"
               query: |
-                range TimeGenerated from ago(10m) to now() step 2m
-                | join kind=leftouter (
-                    AppBrowserTimings
-                    | where TimeGenerated between (ago(10m) .. now())
-                    | extend td = todouble(coalesce(
-                        column_ifexists("TotalDuration", real(null)),
-                        column_ifexists("totalDuration", real(null)),
-                        column_ifexists("Duration",      real(null)),
-                        column_ifexists("duration",      real(null))
-                      ))
-                    | where isnotnull(td)
-                    | summarize p95_ms = percentile(td, 95) by bin(TimeGenerated, 2m)
-                  ) on TimeGenerated
+                let startTime = ago(10m);
+                let endTime = now();
+                let timeGrain = 2m;
+                let timings = AppBrowserTimings
+                  | where TimeGenerated between (startTime .. endTime)
+                  | extend td = todouble(coalesce(
+                      column_ifexists("TotalDuration", real(null)),
+                      column_ifexists("totalDuration", real(null)),
+                      column_ifexists("Duration", real(null)),
+                      column_ifexists("duration", real(null))
+                    ))
+                  | where isnotnull(td) and td > 0
+                  | summarize p95_ms = percentile(td, 95) by bin(TimeGenerated, timeGrain);
+                range TimeGenerated from startTime to endTime step timeGrain
+                | join kind=leftouter (timings) on TimeGenerated
                 | extend p95_ms = coalesce(p95_ms, 0.0)
                 | project TimeGenerated, p95_ms
+                | union (datatable(TimeGenerated:datetime, p95_ms:real)[now(), 0.0])
+                | summarize p95_ms = max(p95_ms) by bin(TimeGenerated, timeGrain)
                 | order by TimeGenerated asc
               refId: A
           - refId: B
@@ -439,20 +467,23 @@ groups:
               azureLogAnalytics:
                 resource: "${LA_WS_TEACHER}"
               query: |
-                range TimeGenerated from ago(10m) to now() step 1m
-                | join kind=leftouter (
-                    AppPageViews
-                    | where TimeGenerated between (ago(10m) .. now())
-                    | summarize pv = count() by bin(TimeGenerated, 1m)
-                  ) on TimeGenerated
-                | join kind=leftouter (
-                    AppExceptions
-                    | where TimeGenerated between (ago(10m) .. now())
-                    | summarize ex = count() by bin(TimeGenerated, 1m)
-                  ) on TimeGenerated
+                let startTime = ago(10m);
+                let endTime = now();
+                let timeGrain = 1m;
+                let pageViews = AppPageViews
+                  | where TimeGenerated between (startTime .. endTime)
+                  | summarize pv = count() by bin(TimeGenerated, timeGrain);
+                let exceptions = AppExceptions
+                  | where TimeGenerated between (startTime .. endTime)
+                  | summarize ex = count() by bin(TimeGenerated, timeGrain);
+                range TimeGenerated from startTime to endTime step timeGrain
+                | join kind=leftouter (pageViews) on TimeGenerated
+                | join kind=leftouter (exceptions) on TimeGenerated
                 | extend pv = coalesce(pv, 0), ex = coalesce(ex, 0)
-                | extend failureRate = iif(pv == 0, 0.0, 100.0 * todouble(ex) / todouble(pv))
+                | extend failureRate = iff(pv == 0, 0.0, 100.0 * todouble(ex) / todouble(pv))
                 | project TimeGenerated, failureRate
+                | union (datatable(TimeGenerated:datetime, failureRate:real)[now(), 0.0])
+                | summarize failureRate = max(failureRate) by bin(TimeGenerated, timeGrain)
                 | order by TimeGenerated asc
               refId: A
           - refId: B
@@ -486,13 +517,20 @@ groups:
               azureLogAnalytics:
                 resource: "${LA_WS_TEACHER}"
               query: |
-                AppDependencies
-                | where TimeGenerated > ago(10m)
-                | extend code = toint(tolong(resultCode))
-                | summarize total = count(), fivexx = countif(code between (500..599)) by bin(TimeGenerated, 1m)
-                | extend pct_5xx = iif(total == 0, 0.0, 100.0 * todouble(fivexx) / todouble(total))
+                let startTime = ago(10m);
+                let endTime = now();
+                let timeGrain = 1m;
+                let deps = AppDependencies
+                  | where TimeGenerated between (startTime .. endTime)
+                  | extend code = toint(tolong(resultCode))
+                  | summarize total = count(), fivexx = countif(code >= 500 and code < 600) by bin(TimeGenerated, timeGrain)
+                  | extend pct_5xx = iff(total == 0, 0.0, 100.0 * todouble(fivexx) / todouble(total));
+                range TimeGenerated from startTime to endTime step timeGrain
+                | join kind=leftouter (deps) on TimeGenerated
+                | extend pct_5xx = coalesce(pct_5xx, 0.0)
                 | project TimeGenerated, pct_5xx
-                | union (datatable(TimeGenerated: datetime, pct_5xx: real) [])
+                | union (datatable(TimeGenerated:datetime, pct_5xx:real)[now(), 0.0])
+                | summarize pct_5xx = max(pct_5xx) by bin(TimeGenerated, timeGrain)
                 | order by TimeGenerated asc
               refId: A
           - refId: B
@@ -526,21 +564,25 @@ groups:
               azureLogAnalytics:
                 resource: "${LA_WS_TEACHER}"
               query: |
-                range TimeGenerated from ago(10m) to now() step 2m
-                | join kind=leftouter (
-                    AppBrowserTimings
-                    | where TimeGenerated between (ago(10m) .. now())
-                    | extend td = todouble(coalesce(
-                        column_ifexists("TotalDuration", real(null)),
-                        column_ifexists("totalDuration", real(null)),
-                        column_ifexists("Duration",      real(null)),
-                        column_ifexists("duration",      real(null))
-                      ))
-                    | where isnotnull(td)
-                    | summarize p95_ms = percentile(td, 95) by bin(TimeGenerated, 2m)
-                  ) on TimeGenerated
+                let startTime = ago(10m);
+                let endTime = now();
+                let timeGrain = 2m;
+                let timings = AppBrowserTimings
+                  | where TimeGenerated between (startTime .. endTime)
+                  | extend td = todouble(coalesce(
+                      column_ifexists("TotalDuration", real(null)),
+                      column_ifexists("totalDuration", real(null)),
+                      column_ifexists("Duration", real(null)),
+                      column_ifexists("duration", real(null))
+                    ))
+                  | where isnotnull(td) and td > 0
+                  | summarize p95_ms = percentile(td, 95) by bin(TimeGenerated, timeGrain);
+                range TimeGenerated from startTime to endTime step timeGrain
+                | join kind=leftouter (timings) on TimeGenerated
                 | extend p95_ms = coalesce(p95_ms, 0.0)
                 | project TimeGenerated, p95_ms
+                | union (datatable(TimeGenerated:datetime, p95_ms:real)[now(), 0.0])
+                | summarize p95_ms = max(p95_ms) by bin(TimeGenerated, timeGrain)
                 | order by TimeGenerated asc
               refId: A
           - refId: B
