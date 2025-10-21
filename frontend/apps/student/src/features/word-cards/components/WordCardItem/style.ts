@@ -32,14 +32,12 @@ export const useStyles = createUseStyles({
   },
   hebrew: {
     direction: "rtl",
-    fontWeight: 800,
     fontSize: 20,
     color: "#20123e",
     marginBottom: 2,
   },
   english: {
-    fontWeight: 600,
-    fontSize: 14,
+    fontSize: 16,
     color: "rgba(0,0,0,0.7)",
     marginBottom: 2,
   },
@@ -53,7 +51,7 @@ export const useStyles = createUseStyles({
     },
   },
   learnLabel: {
-    fontWeight: 700,
+    fontWeight: 600,
     fontSize: 13,
     color: "rgba(0,0,0,0.74)",
   },
