@@ -2,7 +2,6 @@ import {
   Box,
   Checkbox,
   FormControlLabel,
-  IconButton,
   Tooltip,
   Typography,
 } from "@mui/material";
@@ -15,54 +14,49 @@ import { useTranslation } from "react-i18next";
 export const WordCardItem = ({ card }: { card: WordCard }) => {
   const classes = useStyles();
   const { t } = useTranslation();
-
   const setLearned = useSetWordCardLearned();
 
   const toggle = () => {
     setLearned.mutate({ cardId: card.cardId, isLearned: !card.isLearned });
   };
 
+  const title = card.isLearned
+    ? t("pages.wordCards.markAsUnlearned")
+    : t("pages.wordCards.markAsLearned");
+
   return (
-    <Box className={classes.card}>
-      <Box className={classes.cardTop}>
+    <Box className={classes.card} role="group" aria-label="word card">
+      <Box className={classes.innerCard}>
         <Box className={classes.wordGroup}>
-          <Typography className={classes.hebrew}>{card.hebrew}</Typography>
+          <Typography className={classes.hebrew} dir="rtl">
+            {card.hebrew}
+          </Typography>
           <Typography className={classes.english}>{card.english}</Typography>
         </Box>
 
-        <Tooltip
-          title={
-            card.isLearned
-              ? t("pages.wordCards.markAsUnlearned")
-              : t("pages.wordCards.markAsLearned")
-          }
-        >
-          <IconButton
-            onClick={toggle}
-            className={classes.learnBtn}
-            disabled={setLearned.isPending}
-            aria-label="toggle learned"
-          >
-            {card.isLearned ? (
-              <CheckCircleIcon className={classes.learnIconActive} />
-            ) : (
-              <RadioButtonUncheckedIcon className={classes.learnIconIdle} />
-            )}
-          </IconButton>
+        <Tooltip title={title}>
+          <FormControlLabel
+            className={classes.learnControl}
+            control={
+              <Checkbox
+                checked={card.isLearned}
+                onChange={toggle}
+                disabled={setLearned.isPending}
+                icon={
+                  <RadioButtonUncheckedIcon className={classes.learnIconIdle} />
+                }
+                checkedIcon={
+                  <CheckCircleIcon className={classes.learnIconActive} />
+                }
+              />
+            }
+            label={
+              <Typography className={classes.learnLabel}>
+                {t("pages.wordCards.learned")}
+              </Typography>
+            }
+          />
         </Tooltip>
-      </Box>
-
-      <Box className={classes.cardFoot}>
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={card.isLearned}
-              onChange={toggle}
-              disabled={setLearned.isPending}
-            />
-          }
-          label={t("pages.wordCards.learned")}
-        />
       </Box>
     </Box>
   );

@@ -21,6 +21,7 @@ const mockData: WordCard[] = [
   { cardId: "4", hebrew: "מים", english: "water", isLearned: false },
   { cardId: "5", hebrew: "ספר", english: "book", isLearned: true },
   { cardId: "6", hebrew: "אוכל", english: "food", isLearned: false },
+
 ];
 
 export const WordCards = () => {
@@ -84,7 +85,7 @@ export const WordCards = () => {
             <CircularProgress />
             <Typography> {t("pages.wordCards.loadingCards")}</Typography>
           </Box>
-        ) : isError ? (
+        ) : isError && !mockData ? (
           <Box className={classes.centerState}>
             <Typography color="error">
               {t("pages.wordCards.failedToLoad")}
