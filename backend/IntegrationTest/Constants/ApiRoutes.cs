@@ -31,4 +31,10 @@ public static class ApiRoutes
     public static string GameHistory(Guid studentId) => $"games-manager/history/{studentId}";
     public static string GameMistakes(Guid studentId) => $"games-manager/mistakes/{studentId}";
     public const string GameAllHistory = "games-manager/all-history";
+
+    // -------- Word Cards --------
+    public static string WordCards = "wordcards-manager";
+    public static string WordCardsUpdateLearnedStatus(Guid cardId) => $"wordcards-manager/{cardId}/learned";
+
+
 }

@@ -37,4 +37,5 @@ export interface User {
   role: AppRoleType;
   preferredLanguageCode?: PreferredLanguageCode;
   hebrewLevelValue?: HebrewLevelValue;
+  interests?: string[];
 }

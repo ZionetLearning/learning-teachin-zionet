@@ -284,6 +284,12 @@ jobs:
             IMAGE_TAG="$TARGET_NAMESPACE"
           fi
           
+          # Prepare Langfuse setting based on environment
+          LANGFUSE_ENABLED="true"
+          if [ "$TARGET_NAMESPACE" != "dev" ]; then
+            LANGFUSE_ENABLED="false"
+          fi
+          
           helm upgrade --install app "$CHART_DIR" \
             --namespace "$TARGET_NAMESPACE" \
             -f "$VALUES_FILE" \
@@ -294,6 +300,7 @@ jobs:
             --set global.environment="$IMAGE_TAG" \
             --set global.keyvault.clientId="$KEYVAULT_CLIENT_ID" \
             --set global.keyvault.tenantId="$KEYVAULT_TENANT_ID" \
+            --set langfuse.enabled="$LANGFUSE_ENABLED" \
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false
 

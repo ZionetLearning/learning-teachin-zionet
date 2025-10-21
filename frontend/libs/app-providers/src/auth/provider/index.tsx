@@ -146,6 +146,7 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
         firstName: data.firstName,
         lastName: data.lastName,
         role: data.role,
+        interests: data.interests,
       });
       await login(data.email, data.password);
     },

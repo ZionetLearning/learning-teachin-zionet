@@ -255,3 +255,10 @@ variable "frontend_apps" {
   type        = list(string)
   default     = ["student", "teacher", "admin"]
 }
+
+#------------- Langfuse Variables -------------
+variable "enable_langfuse" {
+  description = "Enable Langfuse database creation (only applies to dev environment)"
+  type        = bool
+  default     = true
+}
