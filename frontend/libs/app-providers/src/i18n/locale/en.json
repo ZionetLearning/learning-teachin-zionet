@@ -16,7 +16,8 @@
         "studentDashboard": "Student Dashboard",
         "adminDashboard": "Admin Dashboard",
         "genericError": "Something went wrong. Please try again later.",
-        "forbiddenRole": "You do not have permission to access this page."
+        "forbiddenRole": "You do not have permission to access this page.",
+        "interestsPlaceholder": "Interests, e.g. math, science, art"
       },
       "home": {
         "title": "Welcome to our internal playground project",
@@ -363,7 +364,8 @@
         "emailCannotBeChanged": "Email cannot be changed",
         "edit": "Edit",
         "saveChanges": "Save changes",
-        "cancel": "Cancel"
+        "cancel": "Cancel",
+        "interests": "Interests"
       },
       "tasks": {
         "title": "Tasks Management",
