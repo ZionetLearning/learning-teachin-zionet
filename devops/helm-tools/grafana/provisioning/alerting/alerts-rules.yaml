@@ -254,18 +254,21 @@ groups:
               azureLogAnalytics:
                 resource: "${LA_WS_STUDENT}"
               query: |
-                AppBrowserTimings
-                | where TimeGenerated > ago(10m)
-                | extend td = coalesce(
-                    toreal(column_ifexists("TotalDuration", toreal(null))),
-                    toreal(column_ifexists("totalDuration", toreal(null))),  // 
-                    toreal(column_ifexists("Duration",      toreal(null))),  // 
-                    toreal(column_ifexists("duration",      toreal(null)))
-                  )
-                | where isnotnull(td)
-                | summarize p95_ms = percentile(td, 95) by bin(TimeGenerated, 2m)
+                range TimeGenerated from ago(10m) to now() step 2m
+                | join kind=leftouter (
+                    AppBrowserTimings
+                    | where TimeGenerated between (ago(10m) .. now())
+                    | extend td = todouble(coalesce(
+                        column_ifexists("TotalDuration", real(null)),
+                        column_ifexists("totalDuration", real(null)),
+                        column_ifexists("Duration",      real(null)),
+                        column_ifexists("duration",      real(null))
+                      ))
+                    | where isnotnull(td)
+                    | summarize p95_ms = percentile(td, 95) by bin(TimeGenerated, 2m)
+                  ) on TimeGenerated
+                | extend p95_ms = coalesce(p95_ms, 0.0)
                 | project TimeGenerated, p95_ms
-                | union (datatable(TimeGenerated: datetime, p95_ms: real) [])
                 | order by TimeGenerated asc
               refId: A
           - refId: B
@@ -300,18 +303,20 @@ groups:
               azureLogAnalytics:
                 resource: "${LA_WS_ADMIN}"
               query: |
-                let pv = AppPageViews
-                | where TimeGenerated > ago(10m)
-                | summarize pv = count() by bin(TimeGenerated, 1m);
-                let ex = AppExceptions
-                | where TimeGenerated > ago(10m)
-                | summarize ex = count() by bin(TimeGenerated, 1m);
-                pv
-                | join kind=fullouter ex on TimeGenerated
+                range TimeGenerated from ago(10m) to now() step 1m
+                | join kind=leftouter (
+                    AppPageViews
+                    | where TimeGenerated between (ago(10m) .. now())
+                    | summarize pv = count() by bin(TimeGenerated, 1m)
+                  ) on TimeGenerated
+                | join kind=leftouter (
+                    AppExceptions
+                    | where TimeGenerated between (ago(10m) .. now())
+                    | summarize ex = count() by bin(TimeGenerated, 1m)
+                  ) on TimeGenerated
                 | extend pv = coalesce(pv, 0), ex = coalesce(ex, 0)
                 | extend failureRate = iif(pv == 0, 0.0, 100.0 * todouble(ex) / todouble(pv))
                 | project TimeGenerated, failureRate
-                | union (datatable(TimeGenerated: datetime, failureRate: real) [])
                 | order by TimeGenerated asc
               refId: A
           - refId: B
@@ -385,18 +390,21 @@ groups:
               azureLogAnalytics:
                 resource: "${LA_WS_ADMIN}"
               query: |
-                AppBrowserTimings
-                | where TimeGenerated > ago(10m)
-                | extend td = coalesce(
-                    toreal(column_ifexists("TotalDuration", toreal(null))),
-                    toreal(column_ifexists("totalDuration", toreal(null))),  // 
-                    toreal(column_ifexists("Duration",      toreal(null))),  // 
-                    toreal(column_ifexists("duration",      toreal(null)))
-                  )
-                | where isnotnull(td)
-                | summarize p95_ms = percentile(td, 95) by bin(TimeGenerated, 2m)
+                range TimeGenerated from ago(10m) to now() step 2m
+                | join kind=leftouter (
+                    AppBrowserTimings
+                    | where TimeGenerated between (ago(10m) .. now())
+                    | extend td = todouble(coalesce(
+                        column_ifexists("TotalDuration", real(null)),
+                        column_ifexists("totalDuration", real(null)),
+                        column_ifexists("Duration",      real(null)),
+                        column_ifexists("duration",      real(null))
+                      ))
+                    | where isnotnull(td)
+                    | summarize p95_ms = percentile(td, 95) by bin(TimeGenerated, 2m)
+                  ) on TimeGenerated
+                | extend p95_ms = coalesce(p95_ms, 0.0)
                 | project TimeGenerated, p95_ms
-                | union (datatable(TimeGenerated: datetime, p95_ms: real) [])
                 | order by TimeGenerated asc
               refId: A
           - refId: B
@@ -431,18 +439,20 @@ groups:
               azureLogAnalytics:
                 resource: "${LA_WS_TEACHER}"
               query: |
-                let pv = AppPageViews
-                | where TimeGenerated > ago(10m)
-                | summarize pv = count() by bin(TimeGenerated, 1m);
-                let ex = AppExceptions
-                | where TimeGenerated > ago(10m)
-                | summarize ex = count() by bin(TimeGenerated, 1m);
-                pv
-                | join kind=fullouter ex on TimeGenerated
+                range TimeGenerated from ago(10m) to now() step 1m
+                | join kind=leftouter (
+                    AppPageViews
+                    | where TimeGenerated between (ago(10m) .. now())
+                    | summarize pv = count() by bin(TimeGenerated, 1m)
+                  ) on TimeGenerated
+                | join kind=leftouter (
+                    AppExceptions
+                    | where TimeGenerated between (ago(10m) .. now())
+                    | summarize ex = count() by bin(TimeGenerated, 1m)
+                  ) on TimeGenerated
                 | extend pv = coalesce(pv, 0), ex = coalesce(ex, 0)
                 | extend failureRate = iif(pv == 0, 0.0, 100.0 * todouble(ex) / todouble(pv))
                 | project TimeGenerated, failureRate
-                | union (datatable(TimeGenerated: datetime, failureRate: real) [])
                 | order by TimeGenerated asc
               refId: A
           - refId: B
@@ -516,18 +526,21 @@ groups:
               azureLogAnalytics:
                 resource: "${LA_WS_TEACHER}"
               query: |
-                AppBrowserTimings
-                | where TimeGenerated > ago(10m)
-                | extend td = coalesce(
-                    toreal(column_ifexists("TotalDuration", toreal(null))),
-                    toreal(column_ifexists("totalDuration", toreal(null))),  // 
-                    toreal(column_ifexists("Duration",      toreal(null))),  // 
-                    toreal(column_ifexists("duration",      toreal(null)))
-                  )
-                | where isnotnull(td)
-                | summarize p95_ms = percentile(td, 95) by bin(TimeGenerated, 2m)
+                range TimeGenerated from ago(10m) to now() step 2m
+                | join kind=leftouter (
+                    AppBrowserTimings
+                    | where TimeGenerated between (ago(10m) .. now())
+                    | extend td = todouble(coalesce(
+                        column_ifexists("TotalDuration", real(null)),
+                        column_ifexists("totalDuration", real(null)),
+                        column_ifexists("Duration",      real(null)),
+                        column_ifexists("duration",      real(null))
+                      ))
+                    | where isnotnull(td)
+                    | summarize p95_ms = percentile(td, 95) by bin(TimeGenerated, 2m)
+                  ) on TimeGenerated
+                | extend p95_ms = coalesce(p95_ms, 0.0)
                 | project TimeGenerated, p95_ms
-                | union (datatable(TimeGenerated: datetime, p95_ms: real) [])
                 | order by TimeGenerated asc
               refId: A
           - refId: B
