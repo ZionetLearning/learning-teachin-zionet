@@ -168,17 +168,18 @@ groups:
                 resource: "${LA_WS_STUDENT}"
               query: |
                 let startTime = ago(10m);
-                let endTime = now();
+                let endTime   = now();
                 let timeGrain = 1m;
-                let pageViews = AppPageViews
+                let base = range TimeGenerated from startTime to endTime step timeGrain;
+                let PV = AppPageViews
                   | where TimeGenerated between (startTime .. endTime)
                   | summarize pv = count() by bin(TimeGenerated, timeGrain);
-                let exceptions = AppExceptions
+                let EX = AppExceptions
                   | where TimeGenerated between (startTime .. endTime)
                   | summarize ex = count() by bin(TimeGenerated, timeGrain);
-                range TimeGenerated from startTime to endTime step timeGrain
-                | join kind=leftouter (pageViews) on TimeGenerated
-                | join kind=leftouter (exceptions) on TimeGenerated
+                base
+                | join kind=leftouter PV on TimeGenerated
+                | join kind=leftouter EX on TimeGenerated
                 | extend pv = coalesce(pv, 0), ex = coalesce(ex, 0)
                 | extend failureRate = iff(pv == 0, 0.0, 100.0 * todouble(ex) / todouble(pv))
                 | project TimeGenerated, failureRate
@@ -216,15 +217,20 @@ groups:
                 resource: "${LA_WS_STUDENT}"
               query: |
                 let startTime = ago(10m);
-                let endTime = now();
+                let endTime   = now();
                 let timeGrain = 1m;
-                let deps = AppDependencies
-                  | where TimeGenerated between (startTime .. endTime)
-                  | extend code = toint(tolong(resultCode))
-                  | summarize total = count(), fivexx = countif(code >= 500 and code < 600) by bin(TimeGenerated, timeGrain)
-                  | extend pct_5xx = iff(total == 0, 0.0, 100.0 * todouble(fivexx) / todouble(total));
+                let DEPS = union isfuzzy=true
+                  (AppDependencies | extend code = toint(tolong(resultCode)) | project TimeGenerated, code),
+                  (dependencies    | extend code = toint(tolong(resultCode)) | project TimeGenerated, code);
                 range TimeGenerated from startTime to endTime step timeGrain
-                | join kind=leftouter (deps) on TimeGenerated
+                | join kind=leftouter (
+                    DEPS
+                    | where TimeGenerated between (startTime .. endTime)
+                    | summarize total = count(), fivexx = countif(code >= 500 and code < 600)
+                      by bin(TimeGenerated, timeGrain)
+                    | extend pct_5xx = iff(total == 0, 0.0, 100.0 * todouble(fivexx)/todouble(total))
+                    | project TimeGenerated, pct_5xx
+                  ) on TimeGenerated
                 | extend pct_5xx = coalesce(pct_5xx, 0.0)
                 | project TimeGenerated, pct_5xx
                 | order by TimeGenerated asc
@@ -242,8 +248,8 @@ groups:
                   operator: { type: and }
                   query: { params: [C] }
         for: 5m
-        noDataState: NoData
-        execErrState: Error
+        noDataState: OK
+        execErrState: OK
         labels: { severity: critical, app: student }
         annotations: { summary: "5xx rate high (student)" }
 
@@ -261,20 +267,18 @@ groups:
                 resource: "${LA_WS_STUDENT}"
               query: |
                 let startTime = ago(10m);
-                let endTime = now();
+                let endTime   = now();
                 let timeGrain = 2m;
-                let timings = AppBrowserTimings
-                  | where TimeGenerated between (startTime .. endTime)
-                  | extend td = todouble(coalesce(
-                      column_ifexists("TotalDuration", real(null)),
-                      column_ifexists("totalDuration", real(null)),
-                      column_ifexists("Duration", real(null)),
-                      column_ifexists("duration", real(null))
-                    ))
-                  | where isnotnull(td) and td > 0
-                  | summarize p95_ms = percentile(td, 95) by bin(TimeGenerated, timeGrain);
+                let BT = union isfuzzy=true
+                  (AppBrowserTimings | extend td = todouble(column_ifexists("TotalDuration", real(null))) | project TimeGenerated, td),
+                  (browserTimings    | extend td = todouble(column_ifexists("totalDuration", real(null))) | project TimeGenerated, td);
                 range TimeGenerated from startTime to endTime step timeGrain
-                | join kind=leftouter (timings) on TimeGenerated
+                | join kind=leftouter (
+                    BT
+                    | where TimeGenerated between (startTime .. endTime)
+                    | where isnotnull(td) and td > 0
+                    | summarize p95_ms = percentile(td, 95) by bin(TimeGenerated, timeGrain)
+                  ) on TimeGenerated
                 | extend p95_ms = coalesce(p95_ms, 0.0)
                 | project TimeGenerated, p95_ms
                 | order by TimeGenerated asc
@@ -292,8 +296,8 @@ groups:
                   operator: { type: and }
                   query: { params: [C] }
         for: 10m
-        noDataState: NoData
-        execErrState: Error
+        noDataState: OK
+        execErrState: OK
         labels: { severity: warning, app: student }
         annotations: { summary: "Slow p95 latency (student)" }
 
@@ -312,17 +316,18 @@ groups:
                 resource: "${LA_WS_ADMIN}"
               query: |
                 let startTime = ago(10m);
-                let endTime = now();
+                let endTime   = now();
                 let timeGrain = 1m;
-                let pageViews = AppPageViews
+                let base = range TimeGenerated from startTime to endTime step timeGrain;
+                let PV = AppPageViews
                   | where TimeGenerated between (startTime .. endTime)
                   | summarize pv = count() by bin(TimeGenerated, timeGrain);
-                let exceptions = AppExceptions
+                let EX = AppExceptions
                   | where TimeGenerated between (startTime .. endTime)
                   | summarize ex = count() by bin(TimeGenerated, timeGrain);
-                range TimeGenerated from startTime to endTime step timeGrain
-                | join kind=leftouter (pageViews) on TimeGenerated
-                | join kind=leftouter (exceptions) on TimeGenerated
+                base
+                | join kind=leftouter PV on TimeGenerated
+                | join kind=leftouter EX on TimeGenerated
                 | extend pv = coalesce(pv, 0), ex = coalesce(ex, 0)
                 | extend failureRate = iff(pv == 0, 0.0, 100.0 * todouble(ex) / todouble(pv))
                 | project TimeGenerated, failureRate
@@ -341,8 +346,8 @@ groups:
                   operator: { type: and }
                   query: { params: [C] }
         for: 5m
-        noDataState: NoData
-        execErrState: Error
+        noDataState: OK
+        execErrState: OK
         labels: { severity: critical, app: admin }
         annotations: { summary: "High failure rate (admin)" }
 
@@ -360,15 +365,20 @@ groups:
                 resource: "${LA_WS_ADMIN}"
               query: |
                 let startTime = ago(10m);
-                let endTime = now();
+                let endTime   = now();
                 let timeGrain = 1m;
-                let deps = AppDependencies
-                  | where TimeGenerated between (startTime .. endTime)
-                  | extend code = toint(tolong(resultCode))
-                  | summarize total = count(), fivexx = countif(code >= 500 and code < 600) by bin(TimeGenerated, timeGrain)
-                  | extend pct_5xx = iff(total == 0, 0.0, 100.0 * todouble(fivexx) / todouble(total));
+                let DEPS = union isfuzzy=true
+                  (AppDependencies | extend code = toint(tolong(resultCode)) | project TimeGenerated, code),
+                  (dependencies    | extend code = toint(tolong(resultCode)) | project TimeGenerated, code);
                 range TimeGenerated from startTime to endTime step timeGrain
-                | join kind=leftouter (deps) on TimeGenerated
+                | join kind=leftouter (
+                    DEPS
+                    | where TimeGenerated between (startTime .. endTime)
+                    | summarize total = count(), fivexx = countif(code >= 500 and code < 600)
+                      by bin(TimeGenerated, timeGrain)
+                    | extend pct_5xx = iff(total == 0, 0.0, 100.0 * todouble(fivexx)/todouble(total))
+                    | project TimeGenerated, pct_5xx
+                  ) on TimeGenerated
                 | extend pct_5xx = coalesce(pct_5xx, 0.0)
                 | project TimeGenerated, pct_5xx
                 | order by TimeGenerated asc
@@ -386,8 +396,8 @@ groups:
                   operator: { type: and }
                   query: { params: [C] }
         for: 5m
-        noDataState: NoData
-        execErrState: Error
+        noDataState: OK
+        execErrState: OK
         labels: { severity: critical, app: admin }
         annotations: { summary: "5xx rate high (admin)" }
 
@@ -405,20 +415,18 @@ groups:
                 resource: "${LA_WS_ADMIN}"
               query: |
                 let startTime = ago(10m);
-                let endTime = now();
+                let endTime   = now();
                 let timeGrain = 2m;
-                let timings = AppBrowserTimings
-                  | where TimeGenerated between (startTime .. endTime)
-                  | extend td = todouble(coalesce(
-                      column_ifexists("TotalDuration", real(null)),
-                      column_ifexists("totalDuration", real(null)),
-                      column_ifexists("Duration", real(null)),
-                      column_ifexists("duration", real(null))
-                    ))
-                  | where isnotnull(td) and td > 0
-                  | summarize p95_ms = percentile(td, 95) by bin(TimeGenerated, timeGrain);
+                let BT = union isfuzzy=true
+                  (AppBrowserTimings | extend td = todouble(column_ifexists("TotalDuration", real(null))) | project TimeGenerated, td),
+                  (browserTimings    | extend td = todouble(column_ifexists("totalDuration", real(null))) | project TimeGenerated, td);
                 range TimeGenerated from startTime to endTime step timeGrain
-                | join kind=leftouter (timings) on TimeGenerated
+                | join kind=leftouter (
+                    BT
+                    | where TimeGenerated between (startTime .. endTime)
+                    | where isnotnull(td) and td > 0
+                    | summarize p95_ms = percentile(td, 95) by bin(TimeGenerated, timeGrain)
+                  ) on TimeGenerated
                 | extend p95_ms = coalesce(p95_ms, 0.0)
                 | project TimeGenerated, p95_ms
                 | order by TimeGenerated asc
@@ -436,8 +444,8 @@ groups:
                   operator: { type: and }
                   query: { params: [C] }
         for: 10m
-        noDataState: NoData
-        execErrState: Error
+        noDataState: OK
+        execErrState: OK
         labels: { severity: warning, app: admin }
         annotations: { summary: "Slow p95 latency (admin)" }
 
@@ -456,17 +464,18 @@ groups:
                 resource: "${LA_WS_TEACHER}"
               query: |
                 let startTime = ago(10m);
-                let endTime = now();
+                let endTime   = now();
                 let timeGrain = 1m;
-                let pageViews = AppPageViews
+                let base = range TimeGenerated from startTime to endTime step timeGrain;
+                let PV = AppPageViews
                   | where TimeGenerated between (startTime .. endTime)
                   | summarize pv = count() by bin(TimeGenerated, timeGrain);
-                let exceptions = AppExceptions
+                let EX = AppExceptions
                   | where TimeGenerated between (startTime .. endTime)
                   | summarize ex = count() by bin(TimeGenerated, timeGrain);
-                range TimeGenerated from startTime to endTime step timeGrain
-                | join kind=leftouter (pageViews) on TimeGenerated
-                | join kind=leftouter (exceptions) on TimeGenerated
+                base
+                | join kind=leftouter PV on TimeGenerated
+                | join kind=leftouter EX on TimeGenerated
                 | extend pv = coalesce(pv, 0), ex = coalesce(ex, 0)
                 | extend failureRate = iff(pv == 0, 0.0, 100.0 * todouble(ex) / todouble(pv))
                 | project TimeGenerated, failureRate
@@ -485,8 +494,8 @@ groups:
                   operator: { type: and }
                   query: { params: [C] }
         for: 5m
-        noDataState: NoData
-        execErrState: Error
+        noDataState: OK
+        execErrState: OK
         labels: { severity: critical, app: teacher }
         annotations: { summary: "High failure rate (teacher)" }
 
@@ -504,15 +513,20 @@ groups:
                 resource: "${LA_WS_TEACHER}"
               query: |
                 let startTime = ago(10m);
-                let endTime = now();
+                let endTime   = now();
                 let timeGrain = 1m;
-                let deps = AppDependencies
-                  | where TimeGenerated between (startTime .. endTime)
-                  | extend code = toint(tolong(resultCode))
-                  | summarize total = count(), fivexx = countif(code >= 500 and code < 600) by bin(TimeGenerated, timeGrain)
-                  | extend pct_5xx = iff(total == 0, 0.0, 100.0 * todouble(fivexx) / todouble(total));
+                let DEPS = union isfuzzy=true
+                  (AppDependencies | extend code = toint(tolong(resultCode)) | project TimeGenerated, code),
+                  (dependencies    | extend code = toint(tolong(resultCode)) | project TimeGenerated, code);
                 range TimeGenerated from startTime to endTime step timeGrain
-                | join kind=leftouter (deps) on TimeGenerated
+                | join kind=leftouter (
+                    DEPS
+                    | where TimeGenerated between (startTime .. endTime)
+                    | summarize total = count(), fivexx = countif(code >= 500 and code < 600)
+                      by bin(TimeGenerated, timeGrain)
+                    | extend pct_5xx = iff(total == 0, 0.0, 100.0 * todouble(fivexx)/todouble(total))
+                    | project TimeGenerated, pct_5xx
+                  ) on TimeGenerated
                 | extend pct_5xx = coalesce(pct_5xx, 0.0)
                 | project TimeGenerated, pct_5xx
                 | order by TimeGenerated asc
@@ -530,8 +544,8 @@ groups:
                   operator: { type: and }
                   query: { params: [C] }
         for: 5m
-        noDataState: NoData
-        execErrState: Error
+        noDataState: OK
+        execErrState: OK
         labels: { severity: critical, app: teacher }
         annotations: { summary: "5xx rate high (teacher)" }
 
@@ -549,20 +563,18 @@ groups:
                 resource: "${LA_WS_TEACHER}"
               query: |
                 let startTime = ago(10m);
-                let endTime = now();
+                let endTime   = now();
                 let timeGrain = 2m;
-                let timings = AppBrowserTimings
-                  | where TimeGenerated between (startTime .. endTime)
-                  | extend td = todouble(coalesce(
-                      column_ifexists("TotalDuration", real(null)),
-                      column_ifexists("totalDuration", real(null)),
-                      column_ifexists("Duration", real(null)),
-                      column_ifexists("duration", real(null))
-                    ))
-                  | where isnotnull(td) and td > 0
-                  | summarize p95_ms = percentile(td, 95) by bin(TimeGenerated, timeGrain);
+                let BT = union isfuzzy=true
+                  (AppBrowserTimings | extend td = todouble(column_ifexists("TotalDuration", real(null))) | project TimeGenerated, td),
+                  (browserTimings    | extend td = todouble(column_ifexists("totalDuration", real(null))) | project TimeGenerated, td);
                 range TimeGenerated from startTime to endTime step timeGrain
-                | join kind=leftouter (timings) on TimeGenerated
+                | join kind=leftouter (
+                    BT
+                    | where TimeGenerated between (startTime .. endTime)
+                    | where isnotnull(td) and td > 0
+                    | summarize p95_ms = percentile(td, 95) by bin(TimeGenerated, timeGrain)
+                  ) on TimeGenerated
                 | extend p95_ms = coalesce(p95_ms, 0.0)
                 | project TimeGenerated, p95_ms
                 | order by TimeGenerated asc
@@ -580,7 +592,7 @@ groups:
                   operator: { type: and }
                   query: { params: [C] }
         for: 10m
-        noDataState: NoData
-        execErrState: Error
+        noDataState: OK
+        execErrState: OK
         labels: { severity: warning, app: teacher }
         annotations: { summary: "Slow p95 latency (teacher)" }
