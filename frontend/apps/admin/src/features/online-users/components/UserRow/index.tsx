@@ -1,15 +1,16 @@
 import {
-  TableRow,
-  TableCell,
-  Typography,
   Avatar,
-  Chip,
   Box,
   Card,
   CardContent,
+  Chip,
+  TableCell,
+  TableRow,
+  Typography,
   useTheme,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
+
 import type { OnlineUserDto } from "@app-providers";
 import { getRoleColor, getRoleIcon } from "../../utils";
 import { useStyles } from "./style";

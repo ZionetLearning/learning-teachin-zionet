@@ -1,13 +1,13 @@
 import { useEffect } from "react";
-import { useTranslation } from "react-i18next";
 import {
   Box,
+  Chip,
   CircularProgress,
   Typography,
-  Chip,
   useTheme,
 } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 
 import { useGetOnlineUsers } from "@admin/api";
 import { useSignalR } from "@admin/hooks";
@@ -136,26 +136,28 @@ export const OnlineUsers = () => {
         />
       </Box>
 
-      {!data || data.length === 0 ? (
-        <Box className={classes.emptyState}>
-          <Typography className={classes.emptyIcon}>👥</Typography>
-          <Typography variant="h6" gutterBottom>
-            {t("pages.users.noUsersOnline")}
-          </Typography>
-          <Typography variant="body2" color="textSecondary">
-            {t("pages.users.noUsersOnlineSubtext")}
-          </Typography>
-        </Box>
-      ) : (
-        <>
-          <OnlineUsersTable users={data} />
-          <Box className={classes.mobileCardList}>
-            {data.map((user) => (
-              <UserRow key={user.userId} user={user} variant="card" />
-            ))}
+      <Box className={classes.contentArea}>
+        {!data || data.length === 0 ? (
+          <Box className={classes.emptyState}>
+            <Typography className={classes.emptyIcon}>👥</Typography>
+            <Typography variant="h6" gutterBottom>
+              {t("pages.users.noUsersOnline")}
+            </Typography>
+            <Typography variant="body2" color="textSecondary">
+              {t("pages.users.noUsersOnlineSubtext")}
+            </Typography>
           </Box>
-        </>
-      )}
+        ) : (
+          <>
+            <OnlineUsersTable users={data} />
+            <Box className={classes.mobileCardList}>
+              {data.map((user) => (
+                <UserRow key={user.userId} user={user} variant="card" />
+              ))}
+            </Box>
+          </>
+        )}
+      </Box>
     </Box>
   );
 };

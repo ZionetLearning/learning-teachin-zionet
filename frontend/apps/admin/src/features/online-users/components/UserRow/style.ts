@@ -45,12 +45,14 @@ export const useStyles = createUseStyles((theme: Theme) => ({
     fontSize: "14px",
     color: theme.palette.text.secondary,
   },
-  // Mobile card styles
   mobileCard: {
     marginBottom: "12px",
     borderRadius: "8px",
     border: `1px solid ${theme.palette.divider}`,
     backgroundColor: theme.palette.background.paper,
+    "&:last-child": {
+      marginBottom: "16px",
+    },
   },
   mobileCardContent: {
     padding: "16px !important",

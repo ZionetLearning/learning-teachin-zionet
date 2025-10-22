@@ -6,6 +6,14 @@ export const useStyles = createUseStyles((theme: Theme) => ({
     padding: "16px",
     maxWidth: "1200px",
     margin: "0 auto",
+    height: "100vh",
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+    "@media (max-width: 600px)": {
+      height: "calc(100vh - 20px)",
+      padding: "12px",
+    },
   },
   loadingContainer: {
     display: "flex",
@@ -35,8 +43,6 @@ export const useStyles = createUseStyles((theme: Theme) => ({
   },
   subtitle: {
     marginBottom: "16px",
-    color: theme.palette.text.secondary,
-    opacity: theme.palette.mode === "dark" ? 0.9 : 0.8,
   },
   statusChip: {
     marginBottom: "24px",
@@ -52,10 +58,71 @@ export const useStyles = createUseStyles((theme: Theme) => ({
   statusDotDisconnected: {
     backgroundColor: theme.palette.warning.main,
   },
+  contentArea: {
+    flex: 1,
+    overflow: "hidden",
+    display: "flex",
+    flexDirection: "column",
+  },
+  scrollableContainer: {
+    flex: 1,
+    overflow: "auto",
+    paddingRight: "4px",
+    paddingBottom: "16px",
+    "&::-webkit-scrollbar": {
+      width: "8px",
+    },
+    "&::-webkit-scrollbar-track": {
+      backgroundColor:
+        theme.palette.mode === "dark"
+          ? theme.palette.grey[800]
+          : theme.palette.grey[200],
+      borderRadius: "4px",
+    },
+    "&::-webkit-scrollbar-thumb": {
+      backgroundColor:
+        theme.palette.mode === "dark"
+          ? theme.palette.grey[600]
+          : theme.palette.grey[400],
+      borderRadius: "4px",
+      "&:hover": {
+        backgroundColor:
+          theme.palette.mode === "dark"
+            ? theme.palette.grey[500]
+            : theme.palette.grey[500],
+      },
+    },
+  },
   mobileCardList: {
     display: "none",
     "@media (max-width: 600px)": {
       display: "block",
+      flex: 1,
+      overflow: "auto",
+      padding: "0 4px 24px 0", // Right padding for scrollbar, bottom padding for content
+      "&::-webkit-scrollbar": {
+        width: "6px",
+      },
+      "&::-webkit-scrollbar-track": {
+        backgroundColor:
+          theme.palette.mode === "dark"
+            ? theme.palette.grey[800]
+            : theme.palette.grey[200],
+        borderRadius: "3px",
+      },
+      "&::-webkit-scrollbar-thumb": {
+        backgroundColor:
+          theme.palette.mode === "dark"
+            ? theme.palette.grey[600]
+            : theme.palette.grey[400],
+        borderRadius: "3px",
+        "&:hover": {
+          backgroundColor:
+            theme.palette.mode === "dark"
+              ? theme.palette.grey[500]
+              : theme.palette.grey[500],
+        },
+      },
     },
   },
 }));

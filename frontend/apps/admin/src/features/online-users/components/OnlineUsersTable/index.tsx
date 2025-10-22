@@ -1,15 +1,16 @@
 import {
+  Box,
+  Paper,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
-  Box,
   useTheme,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
+
 import type { OnlineUserDto } from "@app-providers";
 import { UserRow } from "../UserRow";
 import { useStyles } from "./style";
