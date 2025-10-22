@@ -22,7 +22,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "components", "components", 
 		dapr\components\engine-queue-out.yaml = dapr\components\engine-queue-out.yaml
 		dapr\components\manager-callback-queue-in.yaml = dapr\components\manager-callback-queue-in.yaml
 		dapr\components\manager-callback-queue-out.yaml = dapr\components\manager-callback-queue-out.yaml
-		dapr\components\manager-callback-session-queue-in.yaml = dapr\components\manager-callback-session-queue-in.yaml
 		dapr\components\manager-callback-session-queue-out.yaml = dapr\components\manager-callback-session-queue-out.yaml
 		dapr\components\statestore.yaml = dapr\components\statestore.yaml
 	EndProjectSection
