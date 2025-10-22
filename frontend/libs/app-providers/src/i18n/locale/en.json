@@ -16,7 +16,8 @@
         "studentDashboard": "Student Dashboard",
         "adminDashboard": "Admin Dashboard",
         "genericError": "Something went wrong. Please try again later.",
-        "forbiddenRole": "You do not have permission to access this page."
+        "forbiddenRole": "You do not have permission to access this page.",
+        "interestsPlaceholder": "Interests, e.g. math, science, art"
       },
       "home": {
         "title": "Welcome to our internal playground project",
@@ -217,12 +218,15 @@
         "next": "Next",
         "playAudio": "Play audio",
         "playAudioSlowly": "Play audio slowly (0.6x)",
+        "playSentence": "Play Sentence",
         "cancel": "Cancel",
         "close": "Close",
         "yes": "Yes",
         "no": "No",
         "correct": "Correct!",
-        "incorrect": "Incorrect. Try again."
+        "incorrect": "Incorrect. Try again.",
+        "wordBankTitle": "Word Bank",
+        "wordBankHint": "Click a word to add it to the sentence"
       },
       "earthquakeMap": {
         "title": "Earthquake Map",
@@ -363,7 +367,8 @@
         "emailCannotBeChanged": "Email cannot be changed",
         "edit": "Edit",
         "saveChanges": "Save changes",
-        "cancel": "Cancel"
+        "cancel": "Cancel",
+        "interests": "Interests"
       },
       "tasks": {
         "title": "Tasks Management",
@@ -483,6 +488,32 @@
         },
         "exportPage": "Export (page)",
         "exportCurrentPage": "Export current page"
+      },
+      "wordCards": {
+        "title": "Word Cards",
+        "buildYourOwnWordDescription": "Build your own word list and practice Hebrew–English vocabulary.",
+        "addNewWordsDescription": "Add new words, review your collection, and mark the ones you’ve already learned.",
+        "tipHelperNote": "<0>Tip:</0> You can also <1>select any Hebrew word on the site</1>. A small popup will let you add it directly to your cards.",
+        "hideLearnedWords": "Hide learned words",
+        "addCard": "Add Card",
+        "loadingCards": "Loading cards…",
+        "failedToLoad": "Failed to load word cards.",
+        "noWordCardsYet": "No word cards yet.",
+        "clickAddCardOrSelect": " Click “Add Card” or select a Hebrew word anywhere in the app to create one.",
+        "addTranslation": "Add Translation",
+        "hebrewWord": "Hebrew Word",
+        "englishTranslation": "English Translation",
+        "typeTheEnglishTranslation": "Type the English translation...",
+        "hebrew": "Hebrew",
+        "english": "English",
+        "enterTheHebrewWord": "Enter the Hebrew word...",
+        "enterTheEnglishTranslation": "Enter the English translation...",
+        "cancel": "Cancel",
+        "save": "Save",
+        "saving": "Saving...",
+        "markAsLearned": "Mark as Learned",
+        "markAsUnlearned": "Mark as Unlearned",
+        "learned": "Learned"
       }
     },
     "sidebar": {
@@ -514,7 +545,10 @@
       "tasks": "Tasks",
       "profile": "Profile",
       "myPracticeMistakes": "Practice Mistakes",
-      "studentPracticeHistory": "Practice History"
+      "studentPracticeHistory": "Practice History",
+      "wordCards": "Word Cards",
+      "myLearning": "My Learning",
+      "sandbox": "Sandbox"
     },
     "errorBoundary": {
       "title": "Oops! Something went wrong",

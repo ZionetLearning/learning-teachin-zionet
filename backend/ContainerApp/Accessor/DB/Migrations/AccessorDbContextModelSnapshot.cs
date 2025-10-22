@@ -319,6 +319,48 @@ namespace Accessor.DB.Migrations
 
                     b.ToTable("Users", (string)null);
                 });
+
+            modelBuilder.Entity("Accessor.Models.WordCards.WordCardModel", b =>
+                {
+                    b.Property<Guid>("CardId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("card_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("English")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("english");
+
+                    b.Property<string>("Hebrew")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("hebrew");
+
+                    b.Property<bool>("IsLearned")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_learned");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("CardId");
+
+                    b.HasIndex("UserId", "IsLearned");
+
+                    b.ToTable("WordCards", (string)null);
+                });
 #pragma warning restore 612, 618
         }
     }
