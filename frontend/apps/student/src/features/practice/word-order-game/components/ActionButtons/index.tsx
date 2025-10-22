@@ -3,6 +3,7 @@ import { Button } from "@ui-components";
 import { useStyles } from "./style";
 interface ActionButtonsProps {
   loading: boolean;
+  showNext: boolean;
   handleNextClick: () => void;
   handleCheck: () => void;
   handleReset: () => void;
@@ -10,6 +11,7 @@ interface ActionButtonsProps {
 
 export const ActionButtons = ({
   loading,
+  showNext,
   handleNextClick,
   handleCheck,
   handleReset,
@@ -25,13 +27,15 @@ export const ActionButtons = ({
       <Button data-testid="wog-reset" onClick={handleReset}>
         {t("pages.wordOrderGame.reset")}
       </Button>
-      <Button
-        data-testid="wog-next"
-        disabled={loading}
-        onClick={handleNextClick}
-      >
-        {t("pages.wordOrderGame.next")}
-      </Button>
+      {showNext && (
+        <Button
+          data-testid="wog-next"
+          disabled={loading}
+          onClick={handleNextClick}
+        >
+          {t("pages.wordOrderGame.next")}
+        </Button>
+      )}
     </div>
   );
 };
