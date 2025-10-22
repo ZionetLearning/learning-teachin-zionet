@@ -7,4 +7,5 @@ export * from "./chat-with-avatar";
 export * from "./anime-explorer";
 export * from "./country-explorer";
 export * from "./practice-mistakes";
-export * from './practice-history'
+export * from "./practice-history";
+export * from "./word-cards";
