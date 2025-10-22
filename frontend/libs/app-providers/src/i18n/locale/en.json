@@ -218,12 +218,15 @@
         "next": "Next",
         "playAudio": "Play audio",
         "playAudioSlowly": "Play audio slowly (0.6x)",
+        "playSentence": "Play Sentence",
         "cancel": "Cancel",
         "close": "Close",
         "yes": "Yes",
         "no": "No",
         "correct": "Correct!",
-        "incorrect": "Incorrect. Try again."
+        "incorrect": "Incorrect. Try again.",
+        "wordBankTitle": "Word Bank",
+        "wordBankHint": "Click a word to add it to the sentence"
       },
       "earthquakeMap": {
         "title": "Earthquake Map",
