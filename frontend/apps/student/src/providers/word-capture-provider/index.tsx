@@ -8,7 +8,11 @@ type WordCaptureProviderProps = {
   maxLength?: number;
 };
 
-export const WordCaptureProvider: React.FC<WordCaptureProviderProps> = ({
+export const WordCaptureProvider = ({
+  children,
+  minLength = 1,
+  maxLength = 20,
+}: WordCaptureProviderProps) => {
   children,
   minLength = 1,
   maxLength = 20,
