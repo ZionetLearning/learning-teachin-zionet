@@ -18,20 +18,30 @@ export const WordsBank = ({
   const classes = useStyles();
 
   return (
-    <div className={classes.wordsBank} dir="rtl" data-testid="wog-bank">
-      {loading && <div>{t("pages.wordOrderGame.loading")}</div>}
-      {error && <div style={{ color: "red" }}>{error}</div>}
-      {!loading &&
-        !error &&
-        shuffledSentence.map((w, i) => (
-          <button
-            key={`b-${w}-${i}`}
-            className={classes.bankWord}
-            onClick={() => handleChooseWord(w)}
-          >
-            {w}
-          </button>
-        ))}
+    <div className={classes.bankWrapper} dir="rtl">
+      <div className={classes.bankHeader}>
+        {t("pages.wordOrderGame.wordBankTitle")}
+      </div>
+
+      <div className={classes.wordsBank} data-testid="wog-bank">
+        {loading && <div>{t("pages.wordOrderGame.loading")}</div>}
+        {error && <div className={classes.errorText}>{error}</div>}
+        {!loading &&
+          !error &&
+          shuffledSentence.map((w, i) => (
+            <button
+              key={`b-${w}-${i}`}
+              className={classes.bankWord}
+              onClick={() => handleChooseWord(w)}
+            >
+              {w}
+            </button>
+          ))}
+      </div>
+
+      <div className={classes.bankHint}>
+        {t("pages.wordOrderGame.wordBankHint")}
+      </div>
     </div>
   );
 };

@@ -1,11 +1,33 @@
 import { createUseStyles } from "react-jss";
 
 export const useStyles = createUseStyles({
+  bankWrapper: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 8,
+    width: "100%",
+  },
+  bankHeader: {
+    fontSize: 20,
+    fontWeight: 600,
+    color: "#6f42c1",
+    marginBottom: 4,
+    textShadow: "0 1px 2px rgba(124,77,255,0.08)",
+  },
   wordsBank: {
     display: "flex",
-    flexDirection: "row",
-    gap: "5px",
-    alignSelf: "center",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 8,
+    background: "linear-gradient(180deg, #fafbfc 0%, #f5f7fa 100%)",
+    border: "1px solid rgba(180, 200, 210, 0.4)",
+    borderRadius: 16,
+    padding: "12px 16px",
+    minHeight: 64,
+    maxWidth: 520,
+    boxShadow: "inset 0 1px 2px rgba(0,0,0,0.04)",
   },
   bankWord: {
     padding: "8px 16px",
@@ -27,5 +49,15 @@ export const useStyles = createUseStyles({
       transform: "scale(0.97)",
       boxShadow: "0 2px 4px rgba(0, 0, 0, 0.15)",
     },
+  },
+  bankHint: {
+    marginTop: 4,
+    fontSize: 14,
+    color: "rgba(60, 60, 80, 0.7)",
+    fontStyle: "italic",
+  },
+  errorText: {
+    color: "red",
+    fontWeight: 500,
   },
 });

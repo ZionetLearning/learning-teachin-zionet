@@ -224,7 +224,9 @@
         "yes": "כן",
         "no": "לא",
         "correct": "נכון!",
-        "incorrect": "לא נכון. נסה שוב."
+        "incorrect": "לא נכון. נסה שוב.",
+        "wordBankTitle": "מאגר מילים",
+        "wordBankHint": "לחץ על מילה כדי להוסיף אותה למשפט"
       },
       "earthquakeMap": {
         "title": "מפת רעידות אדמה",
