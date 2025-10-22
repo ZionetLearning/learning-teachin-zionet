@@ -26,7 +26,6 @@ export const useStyles = createUseStyles({
     borderRadius: 16,
     padding: "12px 16px",
     minHeight: 64,
-    maxWidth: 520,
     boxShadow: "inset 0 1px 2px rgba(0,0,0,0.04)",
   },
   bankWord: {
