@@ -67,8 +67,28 @@ export const OnlineUsers = () => {
         );
       };
 
+      const onUpdateUserConnections = (
+        userId: string,
+        connectionsCount: number,
+      ) => {
+        qc.setQueryData<OnlineUserDto[] | undefined>(
+          ["onlineUsers"],
+          (prev) => {
+            const list = prev ?? [];
+            const idx = list.findIndex((u) => u.userId === userId);
+            if (idx >= 0) {
+              const copy = list.slice();
+              copy[idx] = { ...copy[idx], connectionsCount };
+              return copy;
+            }
+            return list;
+          },
+        );
+      };
+
       connection.on("UserOnline", onUserOnline);
       connection.on("UserOffline", onUserOffline);
+      connection.on("UpdateUserConnections", onUpdateUserConnections);
 
       return function cleanupSignalRSubscriptionAndEventHandlers() {
         if (connection && connection.state === "Connected") {
@@ -79,6 +99,7 @@ export const OnlineUsers = () => {
         }
         connection?.off("UserOnline", onUserOnline);
         connection?.off("UserOffline", onUserOffline);
+        connection?.off("UpdateUserConnections", onUpdateUserConnections);
       };
     },
     [connection, status, qc],
