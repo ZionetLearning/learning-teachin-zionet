@@ -218,6 +218,7 @@
         "next": "Next",
         "playAudio": "Play audio",
         "playAudioSlowly": "Play audio slowly (0.6x)",
+        "playSentence": "Play Sentence",
         "cancel": "Cancel",
         "close": "Close",
         "yes": "Yes",
