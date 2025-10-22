@@ -14,4 +14,5 @@ public interface INotificationClient
 
     Task UserOnline(string userId, string role, string name);
     Task UserOffline(string userId);
+    Task UpdateUserConnections(string userId, int count);
 }

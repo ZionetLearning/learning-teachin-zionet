@@ -54,7 +54,7 @@ public sealed class OnlinePresenceService : IOnlinePresenceService
         }
     }
 
-    public async Task<bool> AddConnectionAsync(string userId, string name, string role, string connectionId, CancellationToken ct = default)
+    public async Task<(bool first, int count)> AddConnectionAsync(string userId, string name, string role, string connectionId, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(userId) ||
             string.IsNullOrEmpty(name) ||
@@ -71,6 +71,7 @@ public sealed class OnlinePresenceService : IOnlinePresenceService
         try
         {
             var firstConnection = false;
+            var currentCount = 0;
 
             await WithRetry(async () =>
             {
@@ -80,12 +81,14 @@ public sealed class OnlinePresenceService : IOnlinePresenceService
                 var added = conns.Add(connectionId);
                 if (!added)
                 {
+                    currentCount = conns.Count;
                     return 0;
                 }
 
                 connsEntry.Value = conns;
                 await connsEntry.SaveAsync(SafeWrite, cancellationToken: ct);
 
+                currentCount = conns.Count;
                 if (wasEmptyBefore)
                 {
                     var fresh = await _dapr.GetStateAsync<HashSet<string>>(Store, connsKey, cancellationToken: ct);
@@ -119,7 +122,7 @@ public sealed class OnlinePresenceService : IOnlinePresenceService
                 }, ct);
             }
 
-            return firstConnection;
+            return (firstConnection, currentCount);
         }
         catch (Exception ex)
         {
@@ -128,7 +131,7 @@ public sealed class OnlinePresenceService : IOnlinePresenceService
         }
     }
 
-    public async Task<bool> RemoveConnectionAsync(string userId, string connectionId, CancellationToken ct = default)
+    public async Task<(bool last, int count)> RemoveConnectionAsync(string userId, string connectionId, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(connectionId))
         {
@@ -142,6 +145,7 @@ public sealed class OnlinePresenceService : IOnlinePresenceService
         try
         {
             var lastConnection = false;
+            var currentCount = 0;
 
             await WithRetry(async () =>
             {
@@ -150,6 +154,7 @@ public sealed class OnlinePresenceService : IOnlinePresenceService
 
                 if (!conns.Remove(connectionId))
                 {
+                    currentCount = conns.Count;
                     return 0;
                 }
 
@@ -160,12 +165,14 @@ public sealed class OnlinePresenceService : IOnlinePresenceService
                     if (fresh is null || fresh.Count == 0)
                     {
                         lastConnection = true;
+                        currentCount = 0;
                     }
                 }
                 else
                 {
                     connsEntry.Value = conns;
                     await connsEntry.SaveAsync(SafeWrite, cancellationToken: ct);
+                    currentCount = conns.Count;
                 }
 
                 return 0;
@@ -195,7 +202,7 @@ public sealed class OnlinePresenceService : IOnlinePresenceService
                 }, ct);
             }
 
-            return lastConnection;
+            return (lastConnection, currentCount);
         }
         catch (Exception ex)
         {
