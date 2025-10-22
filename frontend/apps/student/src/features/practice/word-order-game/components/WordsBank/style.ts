@@ -15,19 +15,21 @@ export const useStyles = createUseStyles({
     marginBottom: 4,
     textShadow: "0 1px 2px rgba(124,77,255,0.08)",
   },
-  wordsBank: {
+  wordsBank: ({ isEmpty }: { isEmpty: boolean }) => ({
     display: "flex",
     flexWrap: "wrap",
     justifyContent: "center",
     alignItems: "center",
     gap: 8,
-    background: "linear-gradient(180deg, #fafbfc 0%, #f5f7fa 100%)",
-    border: "1px solid rgba(180, 200, 210, 0.4)",
+    background: isEmpty
+      ? "transparent"
+      : "linear-gradient(180deg, #fafbfc 0%, #f5f7fa 100%)",
+    border: isEmpty ? "none" : "1px solid rgba(180, 200, 210, 0.4)",
     borderRadius: 16,
     padding: "12px 16px",
     minHeight: 64,
-    boxShadow: "inset 0 1px 2px rgba(0,0,0,0.04)",
-  },
+    boxShadow: isEmpty ? "none" : "inset 0 1px 2px rgba(0,0,0,0.04)",
+  }),
   bankWord: {
     padding: "8px 16px",
     borderRadius: 16,

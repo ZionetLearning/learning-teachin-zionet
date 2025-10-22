@@ -15,7 +15,7 @@ export const WordsBank = ({
   handleChooseWord,
 }: WordsBankProps) => {
   const { t } = useTranslation();
-  const classes = useStyles();
+  const classes = useStyles({ isEmpty: shuffledSentence.length === 0 });
 
   return (
     <div className={classes.bankWrapper} dir="rtl">
