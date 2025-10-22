@@ -13,10 +13,6 @@ export const WordCaptureProvider = ({
   minLength = 1,
   maxLength = 20,
 }: WordCaptureProviderProps) => {
-  children,
-  minLength = 1,
-  maxLength = 20,
-}) => {
   const [open, setOpen] = useState(false);
   const [hebrewWord, setHebrewWord] = useState<string>("");
 
