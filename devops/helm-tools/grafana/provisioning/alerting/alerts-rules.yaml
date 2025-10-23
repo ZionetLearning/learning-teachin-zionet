@@ -165,25 +165,13 @@ groups:
               queryType: "Azure Log Analytics"
               resultFormat: time_series
               azureLogAnalytics:
-                resource: "${LA_WS_STUDENT}"
+                resource: "/subscriptions/90ea4c2f-1eee-4ec9-927d-ed24c563003e/resourceGroups/dev-zionet-learning-2025/providers/Microsoft.Insights/components/static-web-app-student-dev-appinsights"
               query: |
                 let startTime = ago(30d);
                 let endTime   = now();
-                let timeGrain = 1m;
-                let base = range TimeGenerated from startTime to endTime step timeGrain;
-                let PV = AppPageViews
-                  | where TimeGenerated between (startTime .. endTime)
-                  | summarize pv = count() by bin(TimeGenerated, timeGrain);
-                let EX = AppExceptions
-                  | where TimeGenerated between (startTime .. endTime)
-                  | summarize ex = count() by bin(TimeGenerated, timeGrain);
-                base
-                | join kind=leftouter PV on TimeGenerated
-                | join kind=leftouter EX on TimeGenerated
-                | extend pv = coalesce(pv, 0), ex = coalesce(ex, 0)
-                | extend failureRate = iff(pv == 0, 0.0, 100.0 * todouble(ex) / todouble(pv))
-                | project TimeGenerated, failureRate
-                | order by TimeGenerated asc
+                let pv = toscalar(pageViews | where timestamp between (startTime .. endTime) | summarize count());
+                let ex = toscalar(exceptions | where timestamp between (startTime .. endTime) | summarize count());
+                print timestamp = now(), value = iff(pv == 0, 0.0, 100.0 * todouble(ex) / todouble(pv))
               refId: A
           - refId: B
             datasourceUid: __expr__
