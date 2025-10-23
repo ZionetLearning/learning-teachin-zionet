@@ -144,3 +144,99 @@ groups:
           summary: "High Memory Usage in Pod {{ $labels.namespace }}/{{ $labels.pod }}"
           description: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is using more than 90% of its memory limit."
         labels: { severity: warning }
+    
+  - name: System Pods (Prometheus & Dapr)
+    folder: Infrastructure
+    interval: 1m
+    rules:
+      - uid: system-pods-failure
+        title: "System pods failure (prometheus/dapr)"
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            queryType: ""
+            relativeTimeRange: { from: 300, to: 0 }
+            model:
+              expr: |
+                (
+                  kube_pod_container_status_waiting_reason{namespace=~"monitoring|dapr-system",reason=~"CrashLoopBackOff|ImagePullBackOff|ErrImagePull|CreateContainerError|StartError|CreateContainerConfigError|InvalidImageName"}
+                or
+                  kube_pod_container_status_terminated_reason{namespace=~"monitoring|dapr-system",reason=~"Error|StartError|OOMKilled|ContainerCannotRun"}
+                )
+              refId: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+          - refId: B
+            datasourceUid: __expr__
+            queryType: ""
+            relativeTimeRange: { from: 300, to: 0 }
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              settings: { mode: replaceNN, replaceWithValue: 0 }
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            queryType: ""
+            relativeTimeRange: { from: 300, to: 0 }
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+              refId: C
+        noDataState: OK
+        execErrState: Alerting
+        for: 2m
+        annotations:
+          summary: "System pod failure detected"
+          description: "Problematic pod in {{ $labels.namespace }}/{{ $labels.pod }} (container {{ $labels.container }}) reason {{ $labels.reason }}"
+        labels: { severity: critical }
+
+      - uid: prom-dapr-targets-down
+        title: "Scrape targets down (prometheus/dapr)"
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            queryType: ""
+            relativeTimeRange: { from: 300, to: 0 }
+            model:
+              expr: |
+                sum by (job) (up{job=~".*prometheus.*|.*dapr.*"} == 0)
+              refId: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+          - refId: B
+            datasourceUid: __expr__
+            queryType: ""
+            relativeTimeRange: { from: 300, to: 0 }
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              settings: { mode: replaceNN, replaceWithValue: 0 }
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            queryType: ""
+            relativeTimeRange: { from: 300, to: 0 }
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+              refId: C
+        noDataState: OK
+        execErrState: Alerting
+        for: 3m
+        annotations:
+          summary: "Prometheus/Dapr scrape targets are down"
+          description: "One or more scrape targets are down for job {{ $labels.job }}"
+        labels: { severity: critical }
