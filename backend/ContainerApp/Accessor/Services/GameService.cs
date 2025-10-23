@@ -16,144 +16,228 @@ public class GameService : IGameService
         _logger = logger;
     }
 
+    //public async Task<SubmitAttemptResult> SubmitAttemptAsync(SubmitAttemptRequest request, CancellationToken ct)
+    //{
+    //    try
+    //    {
+    //        _logger.LogInformation("Submitting attempt. StudentId={StudentId}, ExerciseId={ExerciseId}, GivenAnswer={GivenAnswer}", request.StudentId, request.ExerciseId, string.Join(" ", request.GivenAnswer ?? []));
+
+    //        if (request.GivenAnswer is null)
+    //        {
+    //            throw new ArgumentException("GivenAnswer must not be null.");
+    //        }
+
+    //        // Check if its retry attempt
+    //        var retryAttempt = await _db.GameAttempts
+    //            .FirstOrDefaultAsync(a => a.AttemptId == request.ExerciseId && a.Status == AttemptStatus.Failure, ct);
+
+    //        if (retryAttempt is not null)
+    //        {
+    //            // Retry: Create a new attempt based on the failed one
+
+    //            var isCorrectAns = request.GivenAnswer.SequenceEqual(retryAttempt.CorrectAnswer);
+
+    //            // Get latest attempt number for this exercise
+    //            var lastAttemptDB = await _db.GameAttempts
+    //                .Where(a => a.StudentId == retryAttempt.StudentId &&
+    //                            a.ExerciseId == retryAttempt.ExerciseId &&
+    //                            a.Status != AttemptStatus.Pending)
+    //                .OrderByDescending(a => a.AttemptNumber)
+    //                .FirstOrDefaultAsync(ct);
+
+    //            var attemptNumber = (lastAttemptDB?.AttemptNumber ?? 0) + 1;
+
+    //            var newRetryAttempt = new GameAttempt
+    //            {
+    //                AttemptId = Guid.NewGuid(),
+    //                ExerciseId = retryAttempt.ExerciseId,
+    //                StudentId = retryAttempt.StudentId,
+    //                GameType = retryAttempt.GameType,
+    //                Difficulty = retryAttempt.Difficulty,
+    //                CorrectAnswer = retryAttempt.CorrectAnswer,
+    //                GivenAnswer = request.GivenAnswer,
+    //                Status = isCorrectAns ? AttemptStatus.Success : AttemptStatus.Failure,
+    //                AttemptNumber = attemptNumber,
+    //                CreatedAt = DateTimeOffset.UtcNow
+    //            };
+
+    //            _db.GameAttempts.Add(newRetryAttempt);
+    //            await _db.SaveChangesAsync(ct);
+
+    //            _logger.LogInformation("Retry created as new attempt. NewAttemptId={AttemptId}, OriginalAttemptId={OriginalId}, AttemptNumber={AttemptNumber}, Status={Status}",
+    //                newRetryAttempt.AttemptId, retryAttempt.AttemptId, newRetryAttempt.AttemptNumber, newRetryAttempt.Status);
+
+    //            return new SubmitAttemptResult
+    //            {
+    //                StudentId = newRetryAttempt.StudentId,
+    //                ExerciseId = newRetryAttempt.ExerciseId,
+    //                AttemptId = newRetryAttempt.AttemptId,
+    //                GameType = newRetryAttempt.GameType,
+    //                Difficulty = newRetryAttempt.Difficulty,
+    //                Status = newRetryAttempt.Status,
+    //                CorrectAnswer = newRetryAttempt.CorrectAnswer,
+    //                AttemptNumber = newRetryAttempt.AttemptNumber
+    //            };
+    //        }
+
+    //        // Step 1: Load the pending attempt (the "generated sentence")
+    //        var pendingAttempt = await _db.GameAttempts
+    //            .Where(a => a.StudentId == request.StudentId && a.ExerciseId == request.ExerciseId && a.Status == AttemptStatus.Pending)
+    //            .FirstOrDefaultAsync(ct);
+
+    //        if (pendingAttempt == null)
+    //        {
+    //            _logger.LogWarning(
+    //                "No pending attempt found for StudentId={StudentId}, ExerciseId={ExerciseId}",
+    //                request.StudentId, request.ExerciseId
+    //            );
+    //            throw new InvalidOperationException("No pending attempt found. Generate a sentence first.");
+    //        }
+
+    //        // Step 2: Compare answers
+    //        var isCorrect = request.GivenAnswer.SequenceEqual(pendingAttempt.CorrectAnswer);
+    //        var status = isCorrect ? AttemptStatus.Success : AttemptStatus.Failure;
+
+    //        // Step 3: Calculate attempt number
+    //        var lastAttempt = await _db.GameAttempts
+    //            .Where(a =>
+    //                a.StudentId == request.StudentId &&
+    //                a.ExerciseId == request.ExerciseId &&
+    //                a.Status != AttemptStatus.Pending)
+    //            .OrderByDescending(a => a.AttemptNumber)
+    //            .FirstOrDefaultAsync(ct);
+
+    //        var nextAttemptNumber = (lastAttempt == null)
+    //            ? 1
+    //            : lastAttempt.AttemptNumber + 1;
+
+    //        // Step 4: Create new attempt record (not update the pending one)
+    //        var newAttempt = new GameAttempt
+    //        {
+    //            AttemptId = Guid.NewGuid(),
+    //            ExerciseId = request.ExerciseId,
+    //            StudentId = request.StudentId,
+    //            GameType = pendingAttempt.GameType,
+    //            Difficulty = pendingAttempt.Difficulty,
+    //            CorrectAnswer = pendingAttempt.CorrectAnswer,
+    //            GivenAnswer = request.GivenAnswer,
+    //            Status = status,
+    //            AttemptNumber = nextAttemptNumber,
+    //            CreatedAt = DateTimeOffset.UtcNow
+    //        };
+
+    //        _db.GameAttempts.Add(newAttempt);
+    //        await _db.SaveChangesAsync(ct);
+
+    //        _logger.LogInformation(
+    //            "Attempt saved. StudentId={StudentId}, AttemptId={AttemptId}, ExerciseId={ExerciseId}, GameType={GameType}, Difficulty={Difficulty}, Status={Status}, AttemptNumber={AttemptNumber}",
+    //            request.StudentId, newAttempt.AttemptId, request.ExerciseId, newAttempt.GameType, newAttempt.Difficulty, status, nextAttemptNumber
+    //        );
+
+    //        // Step 5: Return result to FE
+    //        return new SubmitAttemptResult
+    //        {
+    //            StudentId = request.StudentId,
+    //            ExerciseId = request.ExerciseId,
+    //            AttemptId = newAttempt.AttemptId,
+    //            GameType = newAttempt.GameType,
+    //            Difficulty = newAttempt.Difficulty,
+    //            Status = status,
+    //            CorrectAnswer = newAttempt.CorrectAnswer,
+    //            AttemptNumber = nextAttemptNumber
+    //        };
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        _logger.LogError(
+    //            ex,
+    //            "Unexpected error while submitting attempt. StudentId={StudentId}, ExerciseId={ExerciseId}",
+    //            request.StudentId, request.ExerciseId
+    //        );
+    //        throw;
+    //    }
+    //}
+
     public async Task<SubmitAttemptResult> SubmitAttemptAsync(SubmitAttemptRequest request, CancellationToken ct)
     {
         try
         {
-            _logger.LogInformation("Submitting attempt. StudentId={StudentId}, ExerciseId={ExerciseId}, GivenAnswer={GivenAnswer}", request.StudentId, request.ExerciseId, string.Join(" ", request.GivenAnswer ?? []));
+            _logger.LogInformation("Submit attempt requested. AttemptId={AttemptId}, StudentId={StudentId}", request.AttemptId, request.StudentId);
 
-            if (request.GivenAnswer is null)
+            var original = await _db.GameAttempts
+                .FirstOrDefaultAsync(a => a.StudentId == request.StudentId && a.AttemptId == request.AttemptId, ct);
+
+            if (original is null)
             {
-                throw new ArgumentException("GivenAnswer must not be null.");
+                _logger.LogWarning("Attempt not found. AttemptId={AttemptId}", request.AttemptId);
+                throw new KeyNotFoundException("Original attempt not found.");
             }
 
-            // Check if its retry attempt
-            var retryAttempt = await _db.GameAttempts
-                .FirstOrDefaultAsync(a => a.AttemptId == request.ExerciseId && a.Status == AttemptStatus.Failure, ct);
-
-            if (retryAttempt is not null)
+            // If already successful, return as-is
+            if (original.Status == AttemptStatus.Success)
             {
-                // Retry: Create a new attempt based on the failed one
-
-                var isCorrectAns = request.GivenAnswer.SequenceEqual(retryAttempt.CorrectAnswer);
-
-                // Get latest attempt number for this exercise
-                var lastAttemptDB = await _db.GameAttempts
-                    .Where(a => a.StudentId == retryAttempt.StudentId &&
-                                a.ExerciseId == retryAttempt.ExerciseId &&
-                                a.Status != AttemptStatus.Pending)
-                    .OrderByDescending(a => a.AttemptNumber)
-                    .FirstOrDefaultAsync(ct);
-
-                var attemptNumber = (lastAttemptDB?.AttemptNumber ?? 0) + 1;
-
-                var newRetryAttempt = new GameAttempt
-                {
-                    AttemptId = Guid.NewGuid(),
-                    ExerciseId = retryAttempt.ExerciseId,
-                    StudentId = retryAttempt.StudentId,
-                    GameType = retryAttempt.GameType,
-                    Difficulty = retryAttempt.Difficulty,
-                    CorrectAnswer = retryAttempt.CorrectAnswer,
-                    GivenAnswer = request.GivenAnswer,
-                    Status = isCorrectAns ? AttemptStatus.Success : AttemptStatus.Failure,
-                    AttemptNumber = attemptNumber,
-                    CreatedAt = DateTimeOffset.UtcNow
-                };
-
-                _db.GameAttempts.Add(newRetryAttempt);
-                await _db.SaveChangesAsync(ct);
-
-                _logger.LogInformation("Retry created as new attempt. NewAttemptId={AttemptId}, OriginalAttemptId={OriginalId}, AttemptNumber={AttemptNumber}, Status={Status}",
-                    newRetryAttempt.AttemptId, retryAttempt.AttemptId, newRetryAttempt.AttemptNumber, newRetryAttempt.Status);
+                _logger.LogInformation("Attempt already successful. Returning result. AttemptId={AttemptId}", original.AttemptId);
 
                 return new SubmitAttemptResult
                 {
-                    StudentId = newRetryAttempt.StudentId,
-                    ExerciseId = newRetryAttempt.ExerciseId,
-                    AttemptId = newRetryAttempt.AttemptId,
-                    GameType = newRetryAttempt.GameType,
-                    Difficulty = newRetryAttempt.Difficulty,
-                    Status = newRetryAttempt.Status,
-                    CorrectAnswer = newRetryAttempt.CorrectAnswer,
-                    AttemptNumber = newRetryAttempt.AttemptNumber
+                    StudentId = original.StudentId,
+                    ExerciseId = original.ExerciseId,
+                    AttemptId = original.AttemptId,
+                    GameType = original.GameType,
+                    Difficulty = original.Difficulty,
+                    Status = original.Status,
+                    CorrectAnswer = original.CorrectAnswer,
+                    AttemptNumber = original.AttemptNumber
                 };
             }
 
-            // Step 1: Load the pending attempt (the "generated sentence")
-            var pendingAttempt = await _db.GameAttempts
-                .Where(a => a.StudentId == request.StudentId && a.ExerciseId == request.ExerciseId && a.Status == AttemptStatus.Pending)
-                .FirstOrDefaultAsync(ct);
+            // Check correctness
+            var isCorrect = request.GivenAnswer.SequenceEqual(original.CorrectAnswer);
 
-            if (pendingAttempt == null)
-            {
-                _logger.LogWarning(
-                    "No pending attempt found for StudentId={StudentId}, ExerciseId={ExerciseId}",
-                    request.StudentId, request.ExerciseId
-                );
-                throw new InvalidOperationException("No pending attempt found. Generate a sentence first.");
-            }
-
-            // Step 2: Compare answers
-            var isCorrect = request.GivenAnswer.SequenceEqual(pendingAttempt.CorrectAnswer);
-            var status = isCorrect ? AttemptStatus.Success : AttemptStatus.Failure;
-
-            // Step 3: Calculate attempt number
-            var lastAttempt = await _db.GameAttempts
-                .Where(a =>
-                    a.StudentId == request.StudentId &&
-                    a.ExerciseId == request.ExerciseId &&
-                    a.Status != AttemptStatus.Pending)
+            // Determine next attempt number
+            var last = await _db.GameAttempts
+                .Where(a => a.StudentId == original.StudentId && a.ExerciseId == original.ExerciseId)
                 .OrderByDescending(a => a.AttemptNumber)
                 .FirstOrDefaultAsync(ct);
 
-            var nextAttemptNumber = (lastAttempt == null)
-                ? 1
-                : lastAttempt.AttemptNumber + 1;
+            var nextNumber = (last?.AttemptNumber ?? 0) + 1;
 
-            // Step 4: Create new attempt record (not update the pending one)
+            // Create new attempt
             var newAttempt = new GameAttempt
             {
                 AttemptId = Guid.NewGuid(),
-                ExerciseId = request.ExerciseId,
-                StudentId = request.StudentId,
-                GameType = pendingAttempt.GameType,
-                Difficulty = pendingAttempt.Difficulty,
-                CorrectAnswer = pendingAttempt.CorrectAnswer,
+                ExerciseId = original.ExerciseId,
+                StudentId = original.StudentId,
+                GameType = original.GameType,
+                Difficulty = original.Difficulty,
+                CorrectAnswer = original.CorrectAnswer,
                 GivenAnswer = request.GivenAnswer,
-                Status = status,
-                AttemptNumber = nextAttemptNumber,
+                Status = isCorrect ? AttemptStatus.Success : AttemptStatus.Failure,
+                AttemptNumber = nextNumber,
                 CreatedAt = DateTimeOffset.UtcNow
             };
 
             _db.GameAttempts.Add(newAttempt);
             await _db.SaveChangesAsync(ct);
 
-            _logger.LogInformation(
-                "Attempt saved. StudentId={StudentId}, AttemptId={AttemptId}, ExerciseId={ExerciseId}, GameType={GameType}, Difficulty={Difficulty}, Status={Status}, AttemptNumber={AttemptNumber}",
-                request.StudentId, newAttempt.AttemptId, request.ExerciseId, newAttempt.GameType, newAttempt.Difficulty, status, nextAttemptNumber
-            );
+            _logger.LogInformation("New attempt saved. AttemptId={NewId}, BasedOn={OriginalId}, Number={Number}, Status={Status}",
+                newAttempt.AttemptId, original.AttemptId, nextNumber, newAttempt.Status);
 
-            // Step 5: Return result to FE
             return new SubmitAttemptResult
             {
-                StudentId = request.StudentId,
-                ExerciseId = request.ExerciseId,
+                StudentId = newAttempt.StudentId,
+                ExerciseId = newAttempt.ExerciseId,
                 AttemptId = newAttempt.AttemptId,
                 GameType = newAttempt.GameType,
                 Difficulty = newAttempt.Difficulty,
-                Status = status,
+                Status = newAttempt.Status,
                 CorrectAnswer = newAttempt.CorrectAnswer,
-                AttemptNumber = nextAttemptNumber
+                AttemptNumber = newAttempt.AttemptNumber
             };
         }
         catch (Exception ex)
         {
-            _logger.LogError(
-                ex,
-                "Unexpected error while submitting attempt. StudentId={StudentId}, ExerciseId={ExerciseId}",
-                request.StudentId, request.ExerciseId
-            );
+            _logger.LogError(ex, "Error while submitting attempt. AttemptId={AttemptId}, StudentId={StudentId}", request.AttemptId, request.StudentId);
             throw;
         }
     }
