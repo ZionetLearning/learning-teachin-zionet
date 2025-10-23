@@ -57,14 +57,15 @@ export const useSendChatMessageStream = () => {
           // 1) Emit meta
           onMeta?.({ stage, toolCall, isFinal });
 
-          // 2) Emit tokens (Model chunks)
-          if (typeof delta === "string" && delta.length > 0) {
-            onDelta(delta);
-          }
-
-          // 3) Finalize
+          // 2) if final, complete.
           if (isFinal) {
             onCompleted(payload as AIChatStreamResponse);
+            return; //  prevent duplicate text
+          }
+
+          // 3) model chunks only while not final
+          if (typeof delta === "string" && delta.length > 0) {
+            onDelta(delta);
           }
         },
       );
