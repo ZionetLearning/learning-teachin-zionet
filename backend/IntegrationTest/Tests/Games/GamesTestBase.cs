@@ -53,19 +53,50 @@ public abstract class GamesTestBase(
 
         var createRes = await Client.PostAsJsonAsync(UserRoutes.UserBase, user);
         createRes.EnsureSuccessStatusCode();
+        
+        // The API returns UserCreationResultDto with the actual UserId from the server
+        var createdUser = await ReadAsJsonAsync<UserCreationResultDto>(createRes)
+                          ?? throw new InvalidOperationException("Failed to deserialize UserCreationResultDto");
+        
         return await LoginAsync(user.Email, TestDataHelper.DefaultTestPassword, parsedRole);
     }
 
     /// <summary>
     /// Creates a user via API without logging them in.
-    /// Returns the created user model.
+    /// Returns UserData with the created user's information (including UserId from response).
     /// </summary>
-    protected async Task<CreateUser> CreateUserViaApiAsync(string role = "student", string? email = null)
+    protected async Task<UserData> CreateUserViaApiAsync(string role = "student", string? email = null)
     {
-        var user = TestDataHelper.CreateUser(role: role, email: email);
+        var parsedRole = Enum.TryParse<Role>(role, true, out var r) ? r : Role.Student;
+        email ??= $"{role}-{Guid.NewGuid():N}@example.com";
+        
+        var user = new UserModel
+        {
+            UserId = Guid.NewGuid(),
+            Email = email,
+            Password = TestDataHelper.DefaultTestPassword,
+            FirstName = "Test",
+            LastName = "User",
+            Role = parsedRole
+        };
+        
         var response = await Client.PostAsJsonAsync(UserRoutes.UserBase, user);
         response.EnsureSuccessStatusCode();
-        return user;
+        
+        // The API returns UserCreationResultDto with the actual UserId from the server
+        var createdUser = await ReadAsJsonAsync<UserCreationResultDto>(response)
+                          ?? throw new InvalidOperationException("Failed to deserialize UserCreationResultDto");
+        
+        return new UserData
+        {
+            UserId = createdUser.UserId,
+            Email = createdUser.Email,
+            FirstName = createdUser.FirstName,
+            LastName = createdUser.LastName,
+            Role = createdUser.Role,
+            PreferredLanguageCode = SupportedLanguage.en,
+            HebrewLevelValue = HebrewLevel.beginner
+        };
     }
 
     /// <summary>
@@ -109,16 +140,14 @@ public abstract class GamesTestBase(
     }
 
     /// <summary>
-    /// Logs in with a CreateUser model (uses email, password from the model).
+    /// Logs in with a UserData model (uses email from the model).
     /// </summary>
-    protected async Task<UserData> LoginAsync(CreateUser user)
+    protected async Task<UserData> LoginAsync(UserData user)
     {
         // Clear previous authorization header before logging in with new credentials
         Client.DefaultRequestHeaders.Authorization = null;
-
-        var role = Enum.TryParse<Role>(user.Role, true, out var r) ? r : Role.Student;
         
-        var loginReq = new LoginRequest { Email = user.Email, Password = user.Password };
+        var loginReq = new LoginRequest { Email = user.Email, Password = TestDataHelper.DefaultTestPassword };
         var loginRes = await Client.PostAsJsonAsync(AuthRoutes.Login, loginReq);
         loginRes.EnsureSuccessStatusCode();
 
@@ -143,7 +172,7 @@ public abstract class GamesTestBase(
             Email = user.Email,
             FirstName = user.FirstName,
             LastName = user.LastName,
-            Role = role,
+            Role = user.Role,
             PreferredLanguageCode = SupportedLanguage.en,
             HebrewLevelValue = HebrewLevel.beginner
         };
@@ -168,27 +197,16 @@ public abstract class GamesTestBase(
         var admin = await CreateUserAsync(role: "admin");
         
         // Create teacher and student
-        var teacherModel = await CreateUserViaApiAsync(role: "teacher");
-        var studentModel = await CreateUserViaApiAsync(role: "student");
+        var teacher = await CreateUserViaApiAsync(role: "teacher");
+        var student = await CreateUserViaApiAsync(role: "student");
         
         // Assign student to teacher
-        await AssignStudentToTeacherAsync(teacherModel.UserId, studentModel.UserId);
+        await AssignStudentToTeacherAsync(teacher.UserId, student.UserId);
         
-        // Now login as teacher
-        var teacher = await LoginAsync(teacherModel);
-        
-        var student = new UserData
-        {
-            UserId = studentModel.UserId,
-            Email = studentModel.Email,
-            FirstName = studentModel.FirstName,
-            LastName = studentModel.LastName,
-            Role = Role.Student,
-            PreferredLanguageCode = SupportedLanguage.en,
-            HebrewLevelValue = HebrewLevel.beginner
-        };
+        // Now login as teacher and get the updated UserData with the JWT userId
+        var loggedInTeacher = await LoginAsync(teacher);
 
-        return (teacher, student);
+        return (loggedInTeacher, student);
     }
 
     /// <summary>

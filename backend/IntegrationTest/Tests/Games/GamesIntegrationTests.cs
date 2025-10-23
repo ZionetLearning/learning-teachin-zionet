@@ -339,7 +339,7 @@ public class GamesIntegrationTests(
         var studentModel = await CreateUserViaApiAsync(role: "student");
         
         // Log in as the student to create mistakes
-        await LoginAsync(studentModel.Email, studentModel.Password, Role.Student);
+        await LoginAsync(studentModel.Email, TestDataHelper.DefaultTestPassword, Role.Student);
         
         // Create a mistake
         await CreateMistakeAsync(studentModel.UserId, Difficulty.hard);
@@ -400,7 +400,7 @@ public class GamesIntegrationTests(
     public async Task GetAllHistory_Should_Include_AdminNames_And_Timestamp()
     {
         var admin = await CreateUserViaApiAsync(role: "admin");
-        await LoginAsync(admin.Email, admin.Password, Role.Admin);
+        await LoginAsync(admin.Email, TestDataHelper.DefaultTestPassword, Role.Admin);
 
         // first, delete all games history
         var deleteResponse = await Client.DeleteAsync($"{ApiRoutes.GameAllHistory}");
