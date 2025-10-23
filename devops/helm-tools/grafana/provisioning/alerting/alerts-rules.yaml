@@ -167,7 +167,7 @@ groups:
               azureLogAnalytics:
                 resource: "${LA_WS_STUDENT}"
               query: |
-                let startTime = ago(10m);
+                let startTime = ago(30d);
                 let endTime   = now();
                 let timeGrain = 1m;
                 let base = range TimeGenerated from startTime to endTime step timeGrain;
