@@ -1,0 +1,242 @@
+apiVersion: 1
+
+groups:
+  # =========================
+  # AKS (Prometheus)
+  # =========================
+  - name: AKS Nodes
+    folder: Infrastructure
+    interval: 1m
+    rules:
+      - uid: node-notready
+        title: "AKS Node NotReady"
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            queryType: ''
+            relativeTimeRange: { from: 300, to: 0 }
+            model:
+              expr: 'kube_node_status_condition{condition="Ready",status="false"}'
+              refId: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+          - refId: B
+            datasourceUid: __expr__
+            queryType: ''
+            relativeTimeRange: { from: 300, to: 0 }
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              settings: { mode: replaceNN, replaceWithValue: 0 }
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            queryType: ''
+            relativeTimeRange: { from: 300, to: 0 }
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+              refId: C
+        noDataState: OK
+        execErrState: Alerting
+        for: 1m
+        annotations:
+          summary: "Node {{ $labels.node }} is NotReady"
+          description: "Node {{ $labels.node }} has been in NotReady state for more than 1 minute"
+        labels: { severity: critical }
+
+  - name: AKS Pod States
+    folder: Infrastructure
+    interval: 1m
+    rules:
+      - uid: pod-failure-state
+        title: "Pod Failure State (stage/dev only)"
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            queryType: ''
+            relativeTimeRange: { from: 300, to: 0 }
+            model:
+              expr: |
+                (
+                  kube_pod_container_status_waiting_reason{reason=~"CrashLoopBackOff|ImagePullBackOff|ErrImagePull|CreateContainerError|StartError|CreateContainerConfigError|InvalidImageName", namespace=~"stage|dev", pod!~"app-stats-ping.*"}
+                or
+                  kube_pod_container_status_terminated_reason{reason=~"Error|StartError|OOMKilled|ContainerCannotRun", namespace=~"stage|dev", pod!~"app-stats-ping.*"}
+                )
+              refId: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+          - refId: B
+            datasourceUid: __expr__
+            queryType: ''
+            relativeTimeRange: { from: 300, to: 0 }
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              settings: { mode: replaceNN, replaceWithValue: 0 }
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            queryType: ''
+            relativeTimeRange: { from: 300, to: 0 }
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+              refId: C
+        noDataState: OK
+        execErrState: Alerting
+        for: 1m
+        annotations:
+          summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} failure detected"
+          description: |
+            Container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }} is failing.
+            Reason: {{ $labels.reason }}
+        labels: { severity: warning }
+
+  - name: AKS Memory Usage
+    folder: Infrastructure
+    interval: 1m
+    rules:
+      - uid: pod-high-memory
+        title: "Pod High Memory Usage"
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            queryType: ''
+            relativeTimeRange: { from: 300, to: 0 }
+            model:
+              expr: |
+                (
+                  sum by (namespace, pod) (container_memory_usage_bytes{container!=""})
+                  /
+                  sum by (namespace, pod) (container_spec_memory_limit_bytes{container!=""})
+                ) * 100
+              refId: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [90] }
+                  operator: { type: and }
+                  query: { params: [B] }
+              refId: B
+        noDataState: OK
+        execErrState: Alerting
+        for: 2m
+        annotations:
+          summary: "High Memory Usage in Pod {{ $labels.namespace }}/{{ $labels.pod }}"
+          description: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is using more than 90% of its memory limit."
+        labels: { severity: warning }
+    
+  - name: System Pods (Prometheus & Dapr)
+    folder: Infrastructure
+    interval: 1m
+    rules:
+      - uid: system-pods-failure
+        title: "System pods failure (prometheus/dapr)"
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            queryType: ""
+            relativeTimeRange: { from: 300, to: 0 }
+            model:
+              expr: |
+                (
+                  kube_pod_container_status_waiting_reason{namespace=~"monitoring|dapr-system",reason=~"CrashLoopBackOff|ImagePullBackOff|ErrImagePull|CreateContainerError|StartError|CreateContainerConfigError|InvalidImageName"}
+                or
+                  kube_pod_container_status_terminated_reason{namespace=~"monitoring|dapr-system",reason=~"Error|StartError|OOMKilled|ContainerCannotRun"}
+                )
+              refId: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+          - refId: B
+            datasourceUid: __expr__
+            queryType: ""
+            relativeTimeRange: { from: 300, to: 0 }
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              settings: { mode: replaceNN, replaceWithValue: 0 }
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            queryType: ""
+            relativeTimeRange: { from: 300, to: 0 }
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+              refId: C
+        noDataState: OK
+        execErrState: Alerting
+        for: 2m
+        annotations:
+          summary: "System pod failure detected"
+          description: "Problematic pod in {{ $labels.namespace }}/{{ $labels.pod }} (container {{ $labels.container }}) reason {{ $labels.reason }}"
+        labels: { severity: critical }
+
+      - uid: prom-dapr-targets-down
+        title: "Scrape targets down (prometheus/dapr)"
+        condition: B
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            queryType: ""
+            relativeTimeRange: { from: 300, to: 0 }
+            model:
+              expr: |
+                sum by (job) (up{job=~".*prometheus.*|.*dapr.*"} == 0)
+              refId: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+          - refId: B
+            datasourceUid: __expr__
+            queryType: ""
+            relativeTimeRange: { from: 300, to: 0 }
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              settings: { mode: replaceNN, replaceWithValue: 0 }
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            queryType: ""
+            relativeTimeRange: { from: 300, to: 0 }
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+                  operator: { type: and }
+                  query: { params: [C] }
+              refId: C
+        noDataState: OK
+        execErrState: Alerting
+        for: 3m
+        annotations:
+          summary: "Prometheus/Dapr scrape targets are down"
+          description: "One or more scrape targets are down for job {{ $labels.job }}"
+        labels: { severity: critical }
