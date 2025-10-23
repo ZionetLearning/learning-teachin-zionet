@@ -36,11 +36,19 @@ public class NotificationHub : Hub<INotificationClient>
                     var userId = user.UserId.ToString();
                     var name = user.FirstName + " " + user.LastName;
                     var role = user.Role.ToString();
+                    if (user.Role == Role.Admin)
+                    {
+                        return;
+                    }
 
-                    var first = await _presence.AddConnectionAsync(userId, name, role, Context.ConnectionId);
+                    var (first, count) = await _presence.AddConnectionAsync(userId, name, role, Context.ConnectionId);
                     if (first)
                     {
                         await Clients.Group(AdminGroups.Admins).UserOnline(userId, role, name);
+                    }
+                    else
+                    {
+                        await Clients.Group(AdminGroups.Admins).UpdateUserConnections(userId, count);
                     }
                 }
             }
@@ -67,12 +75,20 @@ public class NotificationHub : Hub<INotificationClient>
                 if (user != null)
                 {
                     var userId = user.UserId.ToString();
+                    if (user.Role == Role.Admin)
+                    {
+                        return;
+                    }
 
-                    var last = await _presence.RemoveConnectionAsync(userId, Context.ConnectionId);
+                    var (last, count) = await _presence.RemoveConnectionAsync(userId, Context.ConnectionId);
 
                     if (last)
                     {
                         await Clients.Group(AdminGroups.Admins).UserOffline(userId);
+                    }
+                    else
+                    {
+                        await Clients.Group(AdminGroups.Admins).UpdateUserConnections(userId, count);
                     }
                 }
             }
