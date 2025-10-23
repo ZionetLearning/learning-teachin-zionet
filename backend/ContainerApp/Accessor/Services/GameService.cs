@@ -27,6 +27,59 @@ public class GameService : IGameService
                 throw new ArgumentException("GivenAnswer must not be null.");
             }
 
+            // Check if its retry attempt
+            var retryAttempt = await _db.GameAttempts
+                .FirstOrDefaultAsync(a => a.AttemptId == request.ExerciseId && a.Status == AttemptStatus.Failure, ct);
+
+            if (retryAttempt is not null)
+            {
+                // Retry: Create a new attempt based on the failed one
+
+                var isCorrectAns = request.GivenAnswer.SequenceEqual(retryAttempt.CorrectAnswer);
+
+                // Get latest attempt number for this exercise
+                var lastAttemptDB = await _db.GameAttempts
+                    .Where(a => a.StudentId == retryAttempt.StudentId &&
+                                a.ExerciseId == retryAttempt.ExerciseId &&
+                                a.Status != AttemptStatus.Pending)
+                    .OrderByDescending(a => a.AttemptNumber)
+                    .FirstOrDefaultAsync(ct);
+
+                var AttemptNumber = (lastAttemptDB?.AttemptNumber ?? 0) + 1;
+
+                var newRetryAttempt = new GameAttempt
+                {
+                    AttemptId = Guid.NewGuid(),
+                    ExerciseId = retryAttempt.ExerciseId,
+                    StudentId = retryAttempt.StudentId,
+                    GameType = retryAttempt.GameType,
+                    Difficulty = retryAttempt.Difficulty,
+                    CorrectAnswer = retryAttempt.CorrectAnswer,
+                    GivenAnswer = request.GivenAnswer,
+                    Status = isCorrectAns ? AttemptStatus.Success : AttemptStatus.Failure,
+                    AttemptNumber = AttemptNumber,
+                    CreatedAt = DateTimeOffset.UtcNow
+                };
+
+                _db.GameAttempts.Add(newRetryAttempt);
+                await _db.SaveChangesAsync(ct);
+
+                _logger.LogInformation("Retry created as new attempt. NewAttemptId={AttemptId}, OriginalAttemptId={OriginalId}, AttemptNumber={AttemptNumber}, Status={Status}",
+                    newRetryAttempt.AttemptId, newRetryAttempt.AttemptId, newRetryAttempt.AttemptNumber, newRetryAttempt.Status);
+
+                return new SubmitAttemptResult
+                {
+                    StudentId = newRetryAttempt.StudentId,
+                    ExerciseId = newRetryAttempt.ExerciseId,
+                    AttemptId = newRetryAttempt.AttemptId,
+                    GameType = newRetryAttempt.GameType,
+                    Difficulty = newRetryAttempt.Difficulty,
+                    Status = newRetryAttempt.Status,
+                    CorrectAnswer = newRetryAttempt.CorrectAnswer,
+                    AttemptNumber = newRetryAttempt.AttemptNumber
+                };
+            }
+
             // Step 1: Load the pending attempt (the "generated sentence")
             var pendingAttempt = await _db.GameAttempts
                 .Where(a => a.StudentId == request.StudentId && a.ExerciseId == request.ExerciseId && a.Status == AttemptStatus.Pending)
