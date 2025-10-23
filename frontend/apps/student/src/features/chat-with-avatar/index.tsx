@@ -38,8 +38,8 @@ export const ChatWithAvatar = () => {
   const lastSpokenTextRef = useRef<string | null>(null);
   const currentThreadIdRef = useRef<string | undefined>(null); // Track current thread
 
-  const [visibleTool, setVisibleTool] = useState<string>(""); // what we actually render
-  const lingerMs = 1200; // tweak (800–1500ms works well)
+  const [visibleTool, setVisibleTool] = useState<string>(""); // state to show current tool call
+  const lingerMs = 1200; // delayed in 1200 ms so we can see the tool call after tool ends
   const hideTimerRef = useRef<number | null>(null);
 
   const isRTL = i18n.language === "he";
