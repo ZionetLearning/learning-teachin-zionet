@@ -9,6 +9,10 @@ public static class TestDataHelper
 
     // Consistent password for all test users
     public const string DefaultTestPassword = "Test123!";
+    
+    // Test user default names
+    public const string TestUserFirstName = "Test";
+    public const string TestUserLastName = "User";
 
     public static TaskModel CreateRandomTask()
     {
@@ -35,8 +39,8 @@ public static class TestDataHelper
         {
             UserId = Guid.NewGuid(),
             Email = email ?? $"user_{Guid.NewGuid():N}@test.com",
-            FirstName = "Test",
-            LastName = "User",
+            FirstName = TestUserFirstName,
+            LastName = TestUserLastName,
             Password = DefaultTestPassword,
             Role = role
         };
@@ -48,8 +52,8 @@ public static class TestDataHelper
         {
             UserId = Guid.NewGuid(),
             Email = email ?? $"dup_{Guid.NewGuid()}@test.com",
-            FirstName = "Test",
-            LastName = "User",
+            FirstName = TestUserFirstName,
+            LastName = TestUserLastName,
             Password = DefaultTestPassword,
             Role = "student"
         };

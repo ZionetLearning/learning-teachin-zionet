@@ -3,10 +3,7 @@ using System.Net.Http.Json;
 using FluentAssertions;
 using IntegrationTests.Constants;
 using IntegrationTests.Fixtures;
-using IntegrationTests.Infrastructure;
-using Manager.Models.Auth;
 using Manager.Models.Users;
-using System.Text.Json;
 using Xunit.Abstractions;
 
 namespace IntegrationTests.Tests.Users;
@@ -16,61 +13,8 @@ public class TeacherStudentIntegrationTests(
     HttpClientFixture httpClientFixture,
     ITestOutputHelper outputHelper,
     SignalRTestFixture signalRFixture
-) : IntegrationTestBase(httpClientFixture, outputHelper, signalRFixture)
+) : UsersTestBase(httpClientFixture, outputHelper, signalRFixture)
 {
-    public override async Task InitializeAsync()
-    {
-        // Don't login by default - let tests choose which role to use
-        SignalRFixture.ClearReceivedMessages();
-    }
-
-    /// <summary>
-    /// Creates a user and logs them in.
-    /// </summary>
-    private async Task<UserData> CreateAndLoginAsync(Role role, string? email = null)
-    {
-        email ??= $"{role.ToString().ToLower()}-{Guid.NewGuid():N}@example.com";
-
-        var user = new UserModel
-        {
-            UserId = Guid.NewGuid(),
-            Email = email,
-            Password = TestDataHelper.DefaultTestPassword,
-            FirstName = "Test",
-            LastName = "User",
-            Role = role
-        };
-
-        var createRes = await Client.PostAsJsonAsync(UserRoutes.UserBase, user);
-        createRes.EnsureSuccessStatusCode();
-
-        // Clear previous auth before logging in
-        Client.DefaultRequestHeaders.Authorization = null;
-
-        // Login
-        var loginReq = new LoginRequest { Email = user.Email, Password = TestDataHelper.DefaultTestPassword };
-        var loginRes = await Client.PostAsJsonAsync(AuthRoutes.Login, loginReq);
-        loginRes.EnsureSuccessStatusCode();
-
-        var body = await loginRes.Content.ReadAsStringAsync();
-        var tokenRes = JsonSerializer.Deserialize<Models.Auth.AccessTokenResponse>(body)
-                       ?? throw new InvalidOperationException("Invalid login response");
-
-        Client.DefaultRequestHeaders.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", tokenRes.AccessToken);
-
-        return new UserData
-        {
-            UserId = user.UserId,
-            Email = user.Email,
-            FirstName = user.FirstName,
-            LastName = user.LastName,
-            Role = role,
-            PreferredLanguageCode = SupportedLanguage.en,
-            HebrewLevelValue = HebrewLevel.beginner
-        };
-    }
-
     [Fact(DisplayName = "Admin can assign & unassign any student to any teacher")]
     public async Task Admin_Assign_Unassign_Flow()
     {

@@ -2,21 +2,23 @@
 using Manager.Models.Auth;
 using Manager.Models.Users;
 using Microsoft.Extensions.Configuration;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using Xunit;
 
 namespace IntegrationTests.Fixtures;
 
 public class HttpClientFixture : IAsyncLifetime
 {
-    private readonly Dictionary<Role, (string Email, string Password, Guid UserId)> _globalUsers;
-    private readonly Dictionary<Role, string> _tokenCache = new();
+    private readonly ConcurrentDictionary<Role, (string Email, string Password, Guid UserId)> _globalUsers;
+    private readonly ConcurrentDictionary<Role, string> _tokenCache = new();
 
     public HttpClient Client { get; }
     
     public const string GlobalTestUserPassword = "StrongPass!1";
+    private const string TestUserFirstName = "Test-User-FirstName";
+    private const string TestUserLastName = "Test-User-LastName";
 
     public HttpClientFixture()
     {
@@ -34,12 +36,12 @@ public class HttpClientFixture : IAsyncLifetime
             Timeout = TimeSpan.FromSeconds(40)
         };
 
-        _globalUsers = new()
+        _globalUsers = new(new Dictionary<Role, (string Email, string Password, Guid UserId)>
         {
             { Role.Admin,   ("admin-test-user@sdkcrlscd",   GlobalTestUserPassword, CreateDeterministicGuid("admin-test-user@sdkcrlscd")) },
             { Role.Teacher, ("teacher-test-user@sdkcrlscd", GlobalTestUserPassword, CreateDeterministicGuid("teacher-test-user@sdkcrlscd")) },
             { Role.Student, ("student-test-user@sdkcrlscd", GlobalTestUserPassword, CreateDeterministicGuid("student-test-user@sdkcrlscd")) },
-        };
+        });
     }
 
     private static IConfigurationRoot BuildConfig() =>
@@ -52,9 +54,14 @@ public class HttpClientFixture : IAsyncLifetime
 
     private static Guid CreateDeterministicGuid(string input)
     {
-        using var md5 = System.Security.Cryptography.MD5.Create();
-        var hash = md5.ComputeHash(System.Text.Encoding.UTF8.GetBytes(input));
-        return new Guid(hash);
+        using var sha256 = System.Security.Cryptography.SHA256.Create();
+        var hash = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(input));
+
+        // Take the first 16 bytes (128 bits) of the 32-byte SHA256 hash
+        var guidBytes = new byte[16];
+        Array.Copy(hash, guidBytes, 16);
+
+        return new Guid(guidBytes);
     }
 
     public async Task InitializeAsync()
@@ -63,27 +70,31 @@ public class HttpClientFixture : IAsyncLifetime
             await EnsureUserExistsAsync(creds.Email, creds.Password, creds.UserId, role);
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public Task DisposeAsync()
+    {
+        Client.Dispose();
+        return Task.CompletedTask;
+    }
 
     /// <summary>
     /// Logs in as a predefined test user of a given role and sets the default Authorization header.
     /// </summary>
     public async Task LoginAsync(Role role)
     {
-        var token = await GetOrLoginAsync(role);
+        var token = await GetOrCreateTokenAsync(role);
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
     }
 
     /// <summary>
     /// Gets the user information for a predefined test user of a given role.
-    /// Returns UserId, Email, and Role.
+    /// Returns UserInfo record containing UserId, Email, and Role.
     /// </summary>
-    public (Guid UserId, string Email, Role Role) GetUserInfo(Role role)
+    public UserInfo GetUserInfo(Role role)
     {
         if (!_globalUsers.TryGetValue(role, out var userInfo))
             throw new InvalidOperationException($"User for role {role} has not been initialized.");
 
-        return (userInfo.UserId, userInfo.Email, role);
+        return new UserInfo(userInfo.UserId, userInfo.Email, role);
     }
 
     /// <summary>
@@ -111,14 +122,16 @@ public class HttpClientFixture : IAsyncLifetime
 
     // Internal helpers
 
-    private async Task<string> GetOrLoginAsync(Role role)
+    private async Task<string> GetOrCreateTokenAsync(Role role)
     {
         if (_tokenCache.TryGetValue(role, out var existing))
             return existing;
 
-        var (email, password, _) = _globalUsers[role];
-        var token = await LoginInternalAsync(email, password);
-        _tokenCache[role] = token;
+        if (!_globalUsers.TryGetValue(role, out var userInfo))
+            throw new InvalidOperationException($"User for role {role} has not been initialized.");
+
+        var token = await LoginInternalAsync(userInfo.Email, userInfo.Password);
+        _tokenCache.TryAdd(role, token);
 
         return token;
     }
@@ -130,8 +143,8 @@ public class HttpClientFixture : IAsyncLifetime
             UserId = userId,
             Email = email,
             Password = password,
-            FirstName = "Test-User-FirstName",
-            LastName = "Test-User-LastName",
+            FirstName = TestUserFirstName,
+            LastName = TestUserLastName,
             Role = role.ToString()
         });
 
@@ -148,13 +161,15 @@ public class HttpClientFixture : IAsyncLifetime
             UserId = Guid.NewGuid(),
             Email = email,
             Password = password,
-            FirstName = "Test-User-FirstName",
-            LastName = "Test-User-LastName",
+            FirstName = TestUserFirstName,
+            LastName = TestUserLastName,
             Role = role.ToString()
         });
 
-        if (res.StatusCode != HttpStatusCode.OK && res.StatusCode != HttpStatusCode.Conflict)
-            throw new Exception($"Failed to register {email}: {res.StatusCode}");
+        if (res.StatusCode == HttpStatusCode.Conflict)
+            return; // already exists — OK
+
+        res.EnsureSuccessStatusCode();
     }
 
     private async Task<string> LoginInternalAsync(string email, string password)
@@ -170,5 +185,7 @@ public class HttpClientFixture : IAsyncLifetime
         return payload?.AccessToken ?? throw new InvalidOperationException("No access token returned from login.");
     }
 }
+
+public record UserInfo(Guid UserId, string Email, Role Role);
 
 public record LoginResponse(string AccessToken, string RefreshToken);

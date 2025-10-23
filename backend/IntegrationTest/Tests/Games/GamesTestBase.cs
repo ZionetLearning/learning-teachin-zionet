@@ -8,13 +8,11 @@ using IntegrationTests.Models.Notification;
 using Manager.Models.Auth;
 using Manager.Models.Users;
 using Models.Ai.Sentences;
-using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Xunit.Abstractions;
-using IntegrationTests.Models.Ai.Sentences;
 
 namespace IntegrationTests.Tests.Games;
 
@@ -55,29 +53,7 @@ public abstract class GamesTestBase(
 
         var createRes = await Client.PostAsJsonAsync(UserRoutes.UserBase, user);
         createRes.EnsureSuccessStatusCode();
-
-        // Login
-        var loginReq = new LoginRequest { Email = user.Email, Password = TestDataHelper.DefaultTestPassword };
-        var loginRes = await Client.PostAsJsonAsync(AuthRoutes.Login, loginReq);
-        loginRes.EnsureSuccessStatusCode();
-
-        var body = await loginRes.Content.ReadAsStringAsync();
-        var tokenRes = JsonSerializer.Deserialize<AccessTokenResponse>(body)
-                       ?? throw new InvalidOperationException("Invalid login response");
-
-        Client.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", tokenRes.AccessToken);
-
-        return new UserData
-        {
-            UserId = user.UserId,
-            Email = user.Email,
-            FirstName = user.FirstName,
-            LastName = user.LastName,
-            Role = parsedRole,
-            PreferredLanguageCode = SupportedLanguage.en,
-            HebrewLevelValue = HebrewLevel.beginner
-        };
+        return await LoginAsync(user.Email, TestDataHelper.DefaultTestPassword, parsedRole);
     }
 
     /// <summary>
