@@ -16,6 +16,6 @@ public interface IUserService
     Task<bool> AssignStudentToTeacherAsync(Guid teacherId, Guid studentId, CancellationToken ct = default);
     Task<bool> UnassignStudentFromTeacherAsync(Guid teacherId, Guid studentId, CancellationToken ct = default);
     Task<IEnumerable<UserData>> GetTeachersForStudentAsync(Guid studentId, CancellationToken ct = default);
-    Task<List<string>> GetUserInterestsAsync(Guid userId);
-
+    Task<IReadOnlyList<string>?> GetUserInterestsAsync(Guid userId, CancellationToken ct = default);
+    Task<Dictionary<Guid, UserNameDto>> GetUserFullNamesAsync(IEnumerable<Guid> userIds, CancellationToken ct);
 }

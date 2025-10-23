@@ -1,16 +1,18 @@
+using IntegrationTests.Constants;
 using IntegrationTests.Fixtures;
 using IntegrationTests.Infrastructure;
-using IntegrationTests.Constants;
+using IntegrationTests.Models.Ai.Sentences;
 using IntegrationTests.Models.Auth;
 using IntegrationTests.Models.Games;
 using IntegrationTests.Models.Notification;
-using Models.Ai.Sentences;
 using Manager.Models.Auth;
 using Manager.Models.Users;
-using System.Net.Http.Json;
-using System.Net.Http.Headers;
-using System.Text.Json;
+using Models.Ai.Sentences;
+using System;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Text.Json;
 using Xunit.Abstractions;
 using IntegrationTests.Models.Ai.Sentences;
 
@@ -389,4 +391,5 @@ public abstract class GamesTestBase(
 
         return (sentence, failureResult, successResult);
     }
+
 }

@@ -78,7 +78,7 @@ public class GamesIntegrationTests(
         await CreateSuccessfulAttemptAsync(student.UserId, Difficulty.easy);
         await CreateMistakeAsync(student.UserId, Difficulty.medium);
         
-        var response = await Client.GetAsync($"{ApiRoutes.GameHistory(student.UserId)}?summary=false&page=1&pageSize=10");
+        var response = await Client.GetAsync($"{ApiRoutes.GameHistory(student.UserId)}?summary=false&page=1&pageSize=10&getPending=false");
         response.ShouldBeOk();
 
         // Assert
@@ -114,7 +114,7 @@ public class GamesIntegrationTests(
         await CreateSuccessfulAttemptAsync(student.UserId, Difficulty.easy);
         
         // Request summary view
-        var response = await Client.GetAsync($"{ApiRoutes.GameHistory(student.UserId)}?summary=true&page=1&pageSize=10");
+        var response = await Client.GetAsync($"{ApiRoutes.GameHistory(student.UserId)}?summary=true&page=1&pageSize=10&getPending=false");
         response.ShouldBeOk();
 
         // Assert
@@ -146,7 +146,7 @@ public class GamesIntegrationTests(
         await LoginAsync(teacher.Email, TestDataHelper.DefaultTestPassword, Role.Teacher);
         
         // Act
-        var response = await Client.GetAsync($"{ApiRoutes.GameHistory(student.UserId)}?summary=false&page=1&pageSize=10");
+        var response = await Client.GetAsync($"{ApiRoutes.GameHistory(student.UserId)}?summary=false&page=1&pageSize=10&getPending=false");
         response.ShouldBeOk();
         
         // Assert
@@ -172,7 +172,7 @@ public class GamesIntegrationTests(
         var studentModel = await CreateUserViaApiAsync(role: "student");
         
         // Admin should be able to access any student's history
-        var response = await Client.GetAsync($"{ApiRoutes.GameHistory(studentModel.UserId)}?summary=false&page=1&pageSize=10");
+        var response = await Client.GetAsync($"{ApiRoutes.GameHistory(studentModel.UserId)}?summary=false&page=1&pageSize=10&getPending=false");
         response.ShouldBeOk();
         
         var result = await ReadAsJsonAsync<PagedResult<AttemptHistoryDto>>(response);
@@ -185,7 +185,7 @@ public class GamesIntegrationTests(
         var student1 = await CreateUserAsync();
         var student2Model = await CreateUserViaApiAsync(role: "student");
         
-        var response = await Client.GetAsync($"{ApiRoutes.GameHistory(student2Model.UserId)}?summary=false&page=1&pageSize=10");
+        var response = await Client.GetAsync($"{ApiRoutes.GameHistory(student2Model.UserId)}?summary=false&page=1&pageSize=10&getPending=false");
         response.ShouldBeForbidden();
     }
 
@@ -228,7 +228,7 @@ public class GamesIntegrationTests(
         var student = await CreateUserAsync();
         
         // Request with invalid page (0 or negative)
-        var response = await Client.GetAsync($"{ApiRoutes.GameHistory(student.UserId)}?summary=false&page=0&pageSize=10");
+        var response = await Client.GetAsync($"{ApiRoutes.GameHistory(student.UserId)}?summary=false&page=0&pageSize=10&getPending=false");
         response.ShouldBeOk();
 
         var result = await ReadAsJsonAsync<PagedResult<AttemptHistoryDto>>(response);
@@ -242,7 +242,7 @@ public class GamesIntegrationTests(
         var student = await CreateUserAsync();
         
         // Request with very large pageSize
-        var response = await Client.GetAsync($"{ApiRoutes.GameHistory(student.UserId)}?summary=false&page=1&pageSize=500");
+        var response = await Client.GetAsync($"{ApiRoutes.GameHistory(student.UserId)}?summary=false&page=1&pageSize=500&getPending=false");
         response.ShouldBeOk();
 
         var result = await ReadAsJsonAsync<PagedResult<AttemptHistoryDto>>(response);
@@ -273,6 +273,7 @@ public class GamesIntegrationTests(
         // Verify each mistake has the expected structure
         foreach (var mistake in result.Items)
         {
+            mistake.AttemptId.Should().NotBeEmpty();
             mistake.GameType.Should().Be("wordOrderGame");
             mistake.Difficulty.ToLower().Should().BeOneOf("easy", "medium", "hard");
             mistake.CorrectAnswer.Should().NotBeEmpty();
@@ -320,6 +321,7 @@ public class GamesIntegrationTests(
         // Verify mistakes structure
         foreach (var mistake in result.Items)
         {
+            mistake.AttemptId.Should().NotBeEmpty();
             mistake.GameType.Should().Be("wordOrderGame");
             mistake.Difficulty.ToLower().Should().BeOneOf("easy", "medium");
             mistake.CorrectAnswer.Should().NotBeEmpty();
@@ -355,6 +357,7 @@ public class GamesIntegrationTests(
         result!.Items.Should().HaveCount(1);
         
         var mistake = result.Items.First();
+        mistake.AttemptId.Should().NotBeEmpty();
         mistake.GameType.Should().Be("wordOrderGame");
         mistake.Difficulty.ToLower().Should().Be("hard");
         mistake.CorrectAnswer.Should().NotBeEmpty();
@@ -385,8 +388,43 @@ public class GamesIntegrationTests(
         result!.Items.Should().HaveCount(1);
         
         var mistake = result.Items.First();
+        mistake.AttemptId.Should().NotBeEmpty();
         mistake.Difficulty.ToLower().Should().Be("medium");
         mistake.CorrectAnswer.Should().NotBeEmpty();
         mistake.WrongAnswers.Should().HaveCount(1);
     }
+
+
+    // need to add deleteion of the DB before the assert
+    [Fact(DisplayName = "GET /games-manager/all-history - Should return correct names and timestamp")]
+    public async Task GetAllHistory_Should_Include_AdminNames_And_Timestamp()
+    {
+        var admin = await CreateUserViaApiAsync(role: "admin");
+        await LoginAsync(admin.Email, admin.Password, Role.Admin);
+
+        // first, delete all games history
+        var deleteResponse = await Client.DeleteAsync($"{ApiRoutes.GameAllHistory}");
+        deleteResponse.ShouldBeOk();
+
+        // Create some game history for the admin user
+        await CreateSuccessfulAttemptAsync(admin.UserId, Difficulty.easy);
+        await CreateMistakeAsync(admin.UserId, Difficulty.easy);
+
+        var response = await Client.GetAsync($"{ApiRoutes.GameAllHistory}?page=1&pageSize=10");
+        response.ShouldBeOk();
+
+        var result = await ReadAsJsonAsync<PagedResult<SummaryHistoryWithStudentDto>>(response);
+        result.Should().NotBeNull();
+        result!.Items.Should().HaveCount(1);
+
+        var item = result.Items.First();
+        item.StudentFirstName.Should().Be(admin.FirstName);
+        item.StudentLastName.Should().Be(admin.LastName);
+        item.AttemptsCount.Should().Be(2);
+        item.TotalSuccesses.Should().Be(1);
+        item.TotalFailures.Should().Be(1);
+        item.Timestamp.Should().BeAfter(DateTime.UtcNow.AddMinutes(-5));
+    }
+
+
 }

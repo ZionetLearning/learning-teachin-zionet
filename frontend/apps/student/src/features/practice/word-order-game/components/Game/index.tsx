@@ -30,6 +30,8 @@ export const Game = () => {
   const [gameConfig, setGameConfig] = useState<GameConfig | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
   const [correctSentencesCount, setCorrectSentencesCount] = useState<number>(0);
+  const [hasCheckedThisSentence, setHasCheckedThisSentence] = useState(false);
+
   const isHebrew = i18n.language === "he";
 
   const {
@@ -70,6 +72,7 @@ export const Game = () => {
       }
       setChosen([]);
       setShuffledSentence(shuffleDistinct(words));
+      setHasCheckedThisSentence(false);
     };
     handleNewSentence();
   }, [sentence, words]);
@@ -82,6 +85,7 @@ export const Game = () => {
     setShuffledSentence([]);
     setCorrectSentencesCount(0);
     setGameStarted(false);
+    setHasCheckedThisSentence(false);
     resetGame();
   };
 
@@ -98,27 +102,22 @@ export const Game = () => {
 
   const handleNextClick = useCallback(async () => {
     stop();
-    const res = await submitAttempt({
-      attemptId,
-      studentId,
-      givenAnswer: chosen,
-    });
 
-    const isServerCorrect = res.status === "Success";
-    if (isServerCorrect) {
-      setCorrectSentencesCount(correctSentencesCount + 1);
-    }
     const result = await fetchSentence();
-    // Check if we've completed all sentences
+
+    // Game over?
     if (!result || !result.sentence) {
       setGameOverModalOpen(true);
       return;
     }
+
+    // Prepare next sentence
     setChosen([]);
-    if (result.words && result.words.length > 0) {
+    if (result?.words?.length > 0) {
       setShuffledSentence(shuffleDistinct(result.words));
     }
-  }, [stop, submitAttempt, attemptId, studentId, chosen, fetchSentence, correctSentencesCount]);
+    setHasCheckedThisSentence(false);
+  }, [stop, fetchSentence]);
 
   const handleGameOverPlayAgain = () => {
     setGameOverModalOpen(false);
@@ -128,6 +127,8 @@ export const Game = () => {
     setShuffledSentence([]);
     setGameStarted(false);
     setCorrectSentencesCount(0);
+    setHasCheckedThisSentence(false);
+
     // Restart the game with same config
     setTimeout(() => {
       setGameStarted(true);
@@ -147,6 +148,8 @@ export const Game = () => {
     if (words.length > 0) {
       setShuffledSentence(shuffleDistinct(words));
     }
+
+    setHasCheckedThisSentence(false);
   };
 
   const handleChooseWord = (word: string) => {
@@ -160,11 +163,13 @@ export const Game = () => {
       return prev;
     });
     setChosen((prev) => [...prev, word]);
+    setHasCheckedThisSentence(false); // changing answer invalidates prior check
   };
 
   const handleUnchooseWord = (index: number, word: string) => {
     setChosen((prev) => prev.filter((_, i) => i !== index));
     setShuffledSentence((prev) => [word, ...prev]);
+    setHasCheckedThisSentence(false); // changing answer invalidates prior check
   };
 
   const handleCheck = useCallback(async () => {
@@ -177,10 +182,13 @@ export const Game = () => {
     const isServerCorrect = res.status === "Success";
 
     if (isServerCorrect) {
+      setCorrectSentencesCount((c) => c + 1);
       toast.success(t("pages.wordOrderGame.correct"));
     } else {
       toast.error(t("pages.wordOrderGame.incorrect"));
     }
+
+    setHasCheckedThisSentence(true);
 
     return isServerCorrect;
   }, [submitAttempt, attemptId, studentId, chosen, t]);
@@ -237,6 +245,7 @@ export const Game = () => {
               handleNextClick={handleNextClick}
               handleCheck={handleCheck}
               handleReset={handleReset}
+              showNext={hasCheckedThisSentence}
             />
           </div>
 

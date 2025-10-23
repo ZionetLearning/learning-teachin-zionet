@@ -8,7 +8,7 @@ export interface ButtonProps {
   sx?: object;
   size?: "small" | "medium" | "large" | undefined;
   onClick?: () => void;
-  
+  className?: string;
 }
 
 export const Button = ({
@@ -18,17 +18,18 @@ export const Button = ({
   onClick,
   variant = "contained",
   sx,
-  size = undefined
+  size = undefined,
+  className,
 }: ButtonProps) => {
-
   return (
     <MuiButton
-      type = {type}
+      type={type}
       variant={variant}
       disabled={disabled}
       sx={sx ?? undefined}
       size={size}
       onClick={onClick}
+      className={className}
     >
       {children}
     </MuiButton>
