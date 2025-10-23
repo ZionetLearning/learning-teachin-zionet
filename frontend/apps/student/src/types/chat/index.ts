@@ -2,7 +2,7 @@ export type SendMessageRequest = {
   userMessage: string;
   threadId?: string;
   chatType?: "default" | string;
-  userId: string; 
+  userId: string;
 };
 
 export type SendMessageResponse = {
@@ -39,12 +39,19 @@ export type AIChatStreamResponse = {
   threadId: string;
   userId: string;
   chatName: string;
-  delta?: string;         // incremental chunk of assistant reply
-  sequence: number;       // ordering
+  delta?: string; // incremental chunk of assistant reply
+  sequence: number; // ordering
   stage: "First" | "Next" | "Last";
   isFinal: boolean;
   elapsedMs: number;
   toolCall?: string;
   toolResult?: string;
 };
-  
+
+export type StreamStage = "Model" | "Tool" | "Final";
+
+export interface StreamMetaEvent {
+  stage?: StreamStage;
+  toolCall?: string | null;
+  isFinal?: boolean;
+}

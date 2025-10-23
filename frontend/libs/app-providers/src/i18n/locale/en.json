@@ -78,7 +78,8 @@
         "avatar": "Avatar",
         "lips": "Lips",
         "mute": "Mute audio",
-        "unmute": "Unmute audio"
+        "unmute": "Unmute audio",
+        "callingTool": "Calling Tool: {{tool}}"
       },
       "chatHistory": {
         "title": "Chat History",

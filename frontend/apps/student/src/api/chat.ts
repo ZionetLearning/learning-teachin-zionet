@@ -5,11 +5,13 @@ import { isAxiosError } from "axios";
 import { toast } from "react-toastify";
 import { EventType } from "@app-providers/types";
 import { useSignalR } from "@student/hooks";
-import { 
+import {
   SendMessageRequest,
   AIChatStreamResponse,
-  Chat, 
-  ChatHistory 
+  Chat,
+  ChatHistory,
+  StreamMetaEvent,
+  StreamStage,
 } from "@student/types";
 
 export const useSendChatMessageStream = () => {
@@ -17,12 +19,18 @@ export const useSendChatMessageStream = () => {
   const { waitForStream, status } = useSignalR();
 
   const startStream = async (
-    { userMessage, threadId = crypto.randomUUID(), chatType = "default", userId }: SendMessageRequest,
+    {
+      userMessage,
+      threadId = crypto.randomUUID(),
+      chatType = "default",
+      userId,
+    }: SendMessageRequest,
     onDelta: (delta: string) => void,
-    onCompleted: (final: AIChatStreamResponse) => void
+    onCompleted: (final: AIChatStreamResponse) => void,
+    onMeta?: (evt?: StreamMetaEvent) => void,
   ) => {
     // Check SignalR connection
-    if (status !== 'connected') {
+    if (status !== "connected") {
       throw new Error(`SignalR not connected. Status: ${status}`);
     }
 
@@ -30,7 +38,7 @@ export const useSendChatMessageStream = () => {
       // Start the request
       const { data } = await axios.post<{ requestId: string }>(
         `${AI_BASE_URL}/chat`,
-        { userMessage, threadId, chatType, userId }
+        { userMessage, threadId, chatType, userId },
       );
 
       const requestId = data.requestId;
@@ -40,28 +48,39 @@ export const useSendChatMessageStream = () => {
         EventType.ChatAiAnswer,
         requestId,
         (msg) => {
-          if (msg.stage === "Last") {
-            if (msg.payload.isFinal) {
-              onCompleted(msg.payload);
-            }
-          } else if (msg.payload.delta) {
-            onDelta(msg.payload.delta);
-          }
-        }
-      );
-      streamMessages.catch((error) => {
-        console.error('Stream error:', error);
-      });
+          const payload = msg?.payload ?? {};
+          const stage = payload?.stage as StreamStage | undefined; // "Tool" | "Model" | "Final"
+          const toolCall = (payload?.toolCall ?? null) as string | null;
+          const isFinal = !!payload?.isFinal;
+          const delta = payload?.delta;
 
+          // 1) Emit meta
+          onMeta?.({ stage, toolCall, isFinal });
+
+          // 2) Emit tokens (Model chunks)
+          if (typeof delta === "string" && delta.length > 0) {
+            onDelta(delta);
+          }
+
+          // 3) Finalize
+          if (isFinal) {
+            onCompleted(payload as AIChatStreamResponse);
+          }
+        },
+      );
+
+      // Surface stream errors
+      streamMessages.catch((error) => {
+        console.error("Stream error:", error);
+      });
     } catch (error) {
-      console.error('Error starting stream:', error);
+      console.error("Error starting stream:", error);
       throw error;
     }
   };
 
   return { startStream };
 };
-
 
 export const useGetAllChats = (userId: string) => {
   const AI_BASE_URL = import.meta.env.VITE_AI_URL!;
@@ -70,8 +89,8 @@ export const useGetAllChats = (userId: string) => {
     queryKey: ["chats", userId],
     queryFn: async () => {
       try {
-        const { data } = await axios.get<{chats: Chat[]}>(
-          `${AI_BASE_URL}/chats/${userId}`
+        const { data } = await axios.get<{ chats: Chat[] }>(
+          `${AI_BASE_URL}/chats/${userId}`,
         );
 
         return data.chats || [];
@@ -96,17 +115,16 @@ export const useGetChatHistory = (chatId: string, userId: string) => {
     queryFn: async () => {
       try {
         const { data } = await axios.get<ChatHistory>(
-          `${AI_BASE_URL}/chat/${chatId}/${userId}`
+          `${AI_BASE_URL}/chat/${chatId}/${userId}`,
         );
         return data;
       } catch (error: unknown) {
-       
         if (isAxiosError(error) && error.response?.status === 404) {
           return {
             chatId: chatId,
             name: "New Chat",
             chatType: "default",
-            messages: []
+            messages: [],
           };
         }
         console.error("Failed to fetch chat history:", error);

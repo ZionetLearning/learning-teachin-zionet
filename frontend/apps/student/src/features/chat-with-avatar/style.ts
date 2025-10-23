@@ -122,4 +122,22 @@ export const useStyles = createUseStyles({
     borderRadius: "50%",
     objectFit: "cover",
   },
+  toolCallBadge: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    padding: "4px 10px",
+    borderRadius: 999,
+    background:
+      "linear-gradient(180deg, rgba(255,255,255,0.72), rgba(255,255,255,0.58))",
+    border: "1px solid rgba(17,187,255,0.35)",
+    backdropFilter: "saturate(1.2) blur(6px)",
+    fontSize: 12,
+    fontWeight: 700,
+    color: "#0c3b5d",
+    boxShadow: "0 2px 8px rgba(16,24,40,.06), 0 1px 2px rgba(16,24,40,.04)",
+    pointerEvents: "none",
+    whiteSpace: "nowrap",
+    transition: "opacity 180ms ease",
+  },
 });

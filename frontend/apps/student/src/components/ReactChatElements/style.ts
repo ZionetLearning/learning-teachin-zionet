@@ -161,4 +161,10 @@ export const useStyles = createUseStyles({
       opacity: 1,
     },
   },
+  toolCallInline: {
+    margin: "4px 12px 8px",
+    fontSize: 12,
+    color: "#0c3b5d",
+    opacity: 0.9,
+  },
 });
