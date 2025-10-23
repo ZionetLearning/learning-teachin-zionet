@@ -20,14 +20,6 @@ public class MistakeExplanationIntegrationTests(
     SignalRTestFixture signalRFixture
 ) : AiChatTestBase(httpClientFixture, outputHelper, signalRFixture)
 {
-    public override async Task InitializeAsync()
-    {
-        await ClientFixture.LoginAsync(Role.Admin);
-        
-        await EnsureSignalRStartedAsync();
-        
-        SignalRFixture.ClearReceivedMessages();
-    }
 
     [Fact(DisplayName = "Complete mistake explanation flow test")]
     public async Task MistakeExplanation_CompleteFlow_ShouldExplainMistake()

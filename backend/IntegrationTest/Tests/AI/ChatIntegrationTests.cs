@@ -16,18 +16,6 @@ public class ChatIntegrationTests(
     SignalRTestFixture signalRFixture
 ) : AiChatTestBase(httpClientFixture, outputHelper, signalRFixture)
 {
-    public override async Task InitializeAsync()
-    {
-        // Login as Admin to get access token
-        await ClientFixture.LoginAsync(Role.Admin);
-
-        // Start SignalR with the authenticated token
-        await EnsureSignalRStartedAsync();
-
-        // Clear any previous messages
-        SignalRFixture.ClearReceivedMessages();
-    }
-
     [Fact(DisplayName = "Chat AI integration test")]
     public async Task Post_new_chat()
     {
