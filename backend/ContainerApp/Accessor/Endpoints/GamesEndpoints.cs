@@ -37,7 +37,7 @@ public static class GamesEndpoints
 
             return Results.Ok(result);
         }
-        catch (InvalidOperationException ex)
+        catch (KeyNotFoundException ex)
         {
             logger.LogWarning(ex, "SubmitAttemptAsync failed. StudentId={StudentId} - Game not found", request.StudentId);
             return Results.NotFound(new { message = ex.Message });
