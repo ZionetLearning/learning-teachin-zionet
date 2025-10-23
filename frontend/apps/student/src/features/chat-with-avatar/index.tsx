@@ -25,15 +25,54 @@ export const ChatWithAvatar = () => {
     loadHistoryIntoMessages,
     startNewChat,
     threadId,
+    currentStage,
+    currentToolCall,
   } = useChat();
+
+  const { currentVisemeSrc, speak, stop, isPlaying, toggleMute, isMuted } =
+    useAvatarSpeech({ lipsArray });
+
   const [text, setText] = useState("");
   const [showSidebar, setShowSidebar] = useState(false);
   const [lastHistoryLoadTime, setLastHistoryLoadTime] = useState<number>(0);
-  const { currentVisemeSrc, speak, stop, isPlaying, toggleMute, isMuted } =
-    useAvatarSpeech({ lipsArray });
   const lastSpokenTextRef = useRef<string | null>(null);
   const currentThreadIdRef = useRef<string | undefined>(null); // Track current thread
+
+  const [visibleTool, setVisibleTool] = useState<string>(""); // state to show current tool call
+  const lingerMs = 1200; // delayed in 1200 ms so we can see the tool call after tool ends
+  const hideTimerRef = useRef<number | null>(null);
+
   const isRTL = i18n.language === "he";
+
+  // When a tool starts, show immediately and cancel any hide timer
+  useEffect(() => {
+    if (currentStage === "Tool" && currentToolCall) {
+      if (hideTimerRef.current) {
+        window.clearTimeout(hideTimerRef.current);
+        hideTimerRef.current = null;
+      }
+      setVisibleTool(currentToolCall);
+    }
+  }, [currentStage, currentToolCall]);
+
+  // When we leave Tool, keep it for a short time then hide
+  useEffect(() => {
+    if (currentStage !== "Tool" && visibleTool) {
+      if (hideTimerRef.current) {
+        window.clearTimeout(hideTimerRef.current);
+      }
+      hideTimerRef.current = window.setTimeout(() => {
+        setVisibleTool("");
+        hideTimerRef.current = null;
+      }, lingerMs);
+    }
+    return () => {
+      if (hideTimerRef.current) {
+        window.clearTimeout(hideTimerRef.current);
+        hideTimerRef.current = null;
+      }
+    };
+  }, [currentStage, visibleTool]);
 
   // Track thread changes to prevent speaking old messages
   useEffect(() => {
@@ -70,7 +109,15 @@ export const ChatWithAvatar = () => {
         lastSpokenTextRef.current = last.text;
       }
     }
-  }, [messages, speak, stop, lastHistoryLoadTime, isPlaying, threadId, isMuted]);
+  }, [
+    messages,
+    speak,
+    stop,
+    lastHistoryLoadTime,
+    isPlaying,
+    threadId,
+    isMuted,
+  ]);
 
   useEffect(() => {
     if (chatHistory && chatHistory.messages.length > 0) {
@@ -194,6 +241,13 @@ export const ChatWithAvatar = () => {
             alt={t("pages.chatAvatar.lips")}
             className={classes.lipsImage}
           />
+
+          {/* Tool badge - Renders even after Tool ends—until linger timeout */}
+          {!!visibleTool && (
+            <div className={classes.toolCallBadge} aria-live="polite">
+              {t("pages.chatAvatar.callingTool", { tool: visibleTool })}
+            </div>
+          )}
         </div>
 
         <div className={classes.chatElementsWrapper}>

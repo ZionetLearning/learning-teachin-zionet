@@ -66,47 +66,54 @@ export const ReactChatElements = ({
         ref={listRef}
         data-testid="chat-yo-messages"
       >
-        {messages?.map((msg, i) => (
-          <div
-            key={i}
-            data-testid={
-              msg.position === "right"
-                ? "chat-yo-msg-user"
-                : "chat-yo-msg-assistant"
-            }
-          >
-            <MessageBox
-              className={classes.messageBox}
-              styles={{
-                backgroundColor: msg.position === "right" ? "#11bbff" : "#fff",
-                color: "#000",
-              }}
-              id={String(i)}
-              position={msg.position}
-              type="text"
-              text={msg.isTyping && !msg.text ? t("pages.chatYo.thinking") : msg.text}
-              title={msg.position === "right" ? "Me" : "Assistant"}
-              titleColor={msg.position === "right" ? "black" : "gray"}
-              date={msg.date}
-              forwarded={false}
-              replyButton={false}
-              removeButton={false}
-              status={msg.isTyping ? "waiting" : "received"}
-              retracted={false}
-              focus={false}
-              avatar={msg.position === "left" ? avatarUrl : undefined}
-              notch
-            />
-            {/* Show typing indicator for streaming messages with content */}
-            {msg.isTyping && msg.text && (
-              <div className={classes.typingIndicator}>
-                <span className={classes.typingDot}>●</span>
-                <span className={classes.typingDot}>●</span>
-                <span className={classes.typingDot}>●</span>
-              </div>
-            )}
-          </div>
-        ))}
+        {messages?.map((msg, i) => {
+          return (
+            <div
+              key={i}
+              data-testid={
+                msg.position === "right"
+                  ? "chat-yo-msg-user"
+                  : "chat-yo-msg-assistant"
+              }
+            >
+              <MessageBox
+                className={classes.messageBox}
+                styles={{
+                  backgroundColor:
+                    msg.position === "right" ? "#11bbff" : "#fff",
+                  color: "#000",
+                }}
+                id={String(i)}
+                position={msg.position}
+                type="text"
+                text={
+                  msg.isTyping && !msg.text
+                    ? t("pages.chatYo.thinking")
+                    : msg.text
+                }
+                title={msg.position === "right" ? "Me" : "Assistant"}
+                titleColor={msg.position === "right" ? "black" : "gray"}
+                date={msg.date}
+                forwarded={false}
+                replyButton={false}
+                removeButton={false}
+                status={msg.isTyping ? "waiting" : "received"}
+                retracted={false}
+                focus={false}
+                avatar={msg.position === "left" ? avatarUrl : undefined}
+                notch
+              />
+              {/* Show typing indicator for streaming messages with content */}
+              {msg.isTyping && msg.text && (
+                <div className={classes.typingIndicator}>
+                  <span className={classes.typingDot}>●</span>
+                  <span className={classes.typingDot}>●</span>
+                  <span className={classes.typingDot}>●</span>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       <div
@@ -138,7 +145,11 @@ export const ReactChatElements = ({
                   }}
                   data-testid="chat-yo-replay"
                 >
-                  {isPlaying ? <span style={{ fontSize: "15px" }}>■</span> : "🗣"}
+                  {isPlaying ? (
+                    <span style={{ fontSize: "15px" }}>■</span>
+                  ) : (
+                    "🗣"
+                  )}
                 </button>
                 <button
                   className={classes.sendButton}
