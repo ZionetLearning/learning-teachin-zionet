@@ -30,7 +30,7 @@ public sealed class OnlinePresenceService : IOnlinePresenceService
     {
         PropertyNameCaseInsensitive = true
     };
-
+    private static readonly IReadOnlyDictionary<string, string> TtlMeta = new Dictionary<string, string> { ["ttlInSeconds"] = "86400" };
     public OnlinePresenceService(DaprClient dapr, ILogger<OnlinePresenceService> logger)
     {
         _dapr = dapr;
@@ -86,7 +86,7 @@ public sealed class OnlinePresenceService : IOnlinePresenceService
                 }
 
                 connsEntry.Value = conns;
-                await connsEntry.SaveAsync(SafeWrite, cancellationToken: ct);
+                await connsEntry.SaveAsync(SafeWrite, metadata: TtlMeta, cancellationToken: ct);
 
                 currentCount = conns.Count;
                 if (wasEmptyBefore)
@@ -107,7 +107,7 @@ public sealed class OnlinePresenceService : IOnlinePresenceService
                 {
                     var metaEntry = await _dapr.GetStateEntryAsync<UserMeta>(Store, metaKey, cancellationToken: ct);
                     metaEntry.Value = new UserMeta(name, role);
-                    await metaEntry.SaveAsync(SafeWrite, cancellationToken: ct);
+                    await metaEntry.SaveAsync(SafeWrite, metadata: TtlMeta, cancellationToken: ct);
                     return 0;
                 }, ct);
 
@@ -117,7 +117,7 @@ public sealed class OnlinePresenceService : IOnlinePresenceService
                     var all = allEntry.Value ?? new HashSet<string>(StringComparer.Ordinal);
                     all.Add(userId);
                     allEntry.Value = all;
-                    await allEntry.SaveAsync(WeakWrite, cancellationToken: ct);
+                    await allEntry.SaveAsync(WeakWrite, metadata: TtlMeta, cancellationToken: ct);
                     return 0;
                 }, ct);
             }
@@ -171,7 +171,7 @@ public sealed class OnlinePresenceService : IOnlinePresenceService
                 else
                 {
                     connsEntry.Value = conns;
-                    await connsEntry.SaveAsync(SafeWrite, cancellationToken: ct);
+                    await connsEntry.SaveAsync(SafeWrite, metadata: TtlMeta, cancellationToken: ct);
                     currentCount = conns.Count;
                 }
 
@@ -197,7 +197,7 @@ public sealed class OnlinePresenceService : IOnlinePresenceService
                     var all = allEntry.Value ?? new HashSet<string>(StringComparer.Ordinal);
                     all.Remove(userId);
                     allEntry.Value = all;
-                    await allEntry.SaveAsync(WeakWrite, cancellationToken: ct);
+                    await allEntry.SaveAsync(WeakWrite, metadata: TtlMeta, cancellationToken: ct);
                     return 0;
                 }, ct);
             }
