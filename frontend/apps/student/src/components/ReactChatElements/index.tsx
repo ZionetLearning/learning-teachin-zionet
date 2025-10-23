@@ -16,7 +16,6 @@ interface ReactChatElementsProps {
   handleSendMessage: () => void;
   handlePlay?: () => void;
   handleStop?: () => void;
-  toolCall?: string;
 }
 
 export const ReactChatElements = ({
@@ -29,7 +28,6 @@ export const ReactChatElements = ({
   handleSendMessage,
   handlePlay,
   handleStop,
-  toolCall = "",
 }: ReactChatElementsProps) => {
   const { t } = useTranslation();
   const classes = useStyles();
@@ -69,7 +67,6 @@ export const ReactChatElements = ({
         data-testid="chat-yo-messages"
       >
         {messages?.map((msg, i) => {
-          const isAssistantTyping = msg.position === "left" && msg.isTyping;
           return (
             <div
               key={i}
@@ -112,13 +109,6 @@ export const ReactChatElements = ({
                   <span className={classes.typingDot}>●</span>
                   <span className={classes.typingDot}>●</span>
                   <span className={classes.typingDot}>●</span>
-                </div>
-              )}
-
-              {/* Inline tool hint (only if typing and we actually have a tool name) */}
-              {isAssistantTyping && !!toolCall && (
-                <div className={classes.toolCallInline} aria-live="polite">
-                  {t("pages.chatAvatar.callingTool", { tool: toolCall })}
                 </div>
               )}
             </div>

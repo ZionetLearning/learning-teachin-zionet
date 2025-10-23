@@ -66,7 +66,6 @@ export const ChatWithAvatar = () => {
         hideTimerRef.current = null;
       }, lingerMs);
     }
-    // cleanup on unmount
     return () => {
       if (hideTimerRef.current) {
         window.clearTimeout(hideTimerRef.current);
@@ -262,7 +261,6 @@ export const ChatWithAvatar = () => {
             handleSendMessage={handleSend}
             handlePlay={handlePlay}
             handleStop={handleStop}
-            toolCall={currentStage === "Tool" ? (currentToolCall ?? "") : ""}
           />
         </div>
       </div>

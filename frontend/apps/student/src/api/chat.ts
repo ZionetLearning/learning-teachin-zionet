@@ -70,7 +70,6 @@ export const useSendChatMessageStream = () => {
         },
       );
 
-      // Surface stream errors
       streamMessages.catch((error) => {
         console.error("Stream error:", error);
       });
