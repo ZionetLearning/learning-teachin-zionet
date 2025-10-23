@@ -20,7 +20,7 @@ public class GameService : IGameService
     {
         try
         {
-            _logger.LogInformation("Submitting attempt. StudentId={StudentId}, ExerciseId={ExerciseId}, GivenAnswer={GivenAnswer}", request.StudentId, request.ExerciseId, string.Join(" ", request.GivenAnswer ?? new()));
+            _logger.LogInformation("Submitting attempt. StudentId={StudentId}, ExerciseId={ExerciseId}, GivenAnswer={GivenAnswer}", request.StudentId, request.ExerciseId, string.Join(" ", request.GivenAnswer ?? []));
 
             if (request.GivenAnswer is null)
             {
@@ -45,7 +45,7 @@ public class GameService : IGameService
                     .OrderByDescending(a => a.AttemptNumber)
                     .FirstOrDefaultAsync(ct);
 
-                var AttemptNumber = (lastAttemptDB?.AttemptNumber ?? 0) + 1;
+                var attemptNumber = (lastAttemptDB?.AttemptNumber ?? 0) + 1;
 
                 var newRetryAttempt = new GameAttempt
                 {
@@ -57,7 +57,7 @@ public class GameService : IGameService
                     CorrectAnswer = retryAttempt.CorrectAnswer,
                     GivenAnswer = request.GivenAnswer,
                     Status = isCorrectAns ? AttemptStatus.Success : AttemptStatus.Failure,
-                    AttemptNumber = AttemptNumber,
+                    AttemptNumber = attemptNumber,
                     CreatedAt = DateTimeOffset.UtcNow
                 };
 
@@ -65,7 +65,7 @@ public class GameService : IGameService
                 await _db.SaveChangesAsync(ct);
 
                 _logger.LogInformation("Retry created as new attempt. NewAttemptId={AttemptId}, OriginalAttemptId={OriginalId}, AttemptNumber={AttemptNumber}, Status={Status}",
-                    newRetryAttempt.AttemptId, newRetryAttempt.AttemptId, newRetryAttempt.AttemptNumber, newRetryAttempt.Status);
+                    newRetryAttempt.AttemptId, retryAttempt.AttemptId, newRetryAttempt.AttemptNumber, newRetryAttempt.Status);
 
                 return new SubmitAttemptResult
                 {
