@@ -38,9 +38,9 @@ public class HttpClientFixture : IAsyncLifetime
 
         _globalUsers = new(new Dictionary<Role, (string Email, string Password, Guid UserId)>
         {
-            { Role.Admin,   ("admin-test-user@sdkcrlscd",   GlobalTestUserPassword, CreateDeterministicGuid("admin-test-user@sdkcrlscd")) },
-            { Role.Teacher, ("teacher-test-user@sdkcrlscd", GlobalTestUserPassword, CreateDeterministicGuid("teacher-test-user@sdkcrlscd")) },
-            { Role.Student, ("student-test-user@sdkcrlscd", GlobalTestUserPassword, CreateDeterministicGuid("student-test-user@sdkcrlscd")) },
+            { Role.Admin,   ("admin-test-user@testmail",   GlobalTestUserPassword, CreateDeterministicGuid("admin-test-user@sdkcrlscd")) },
+            { Role.Teacher, ("teacher-test-user@testmail", GlobalTestUserPassword, CreateDeterministicGuid("teacher-test-user@sdkcrlscd")) },
+            { Role.Student, ("student-test-user@testmail", GlobalTestUserPassword, CreateDeterministicGuid("student-test-user@sdkcrlscd")) },
         });
     }
 
