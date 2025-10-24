@@ -12,11 +12,20 @@ using Xunit.Abstractions;
 namespace IntegrationTests.Tests.AI;
 
 public abstract class AiChatTestBase(
-    HttpTestFixture fixture,
+    HttpClientFixture fixture,
     ITestOutputHelper outputHelper,
     SignalRTestFixture signalRFixture
 ) : IntegrationTestBase(fixture, outputHelper, signalRFixture)
 {
+    public override async Task InitializeAsync()
+    {
+        await ClientFixture.LoginAsync(Role.Admin);
+
+        await EnsureSignalRStartedAsync();
+
+        SignalRFixture.ClearReceivedMessages();
+    }
+
     protected async Task<(string RequestId, ReceivedEvent Event, AIChatStreamResponse[] Frames)>
         PostChatAndWaitAsync(ChatRequest request, TimeSpan? timeout = null)
     {

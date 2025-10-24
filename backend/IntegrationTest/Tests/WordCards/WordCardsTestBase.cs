@@ -1,43 +1,26 @@
-﻿using Azure.Core;
-using FluentAssertions;
+﻿using FluentAssertions;
 using IntegrationTests.Constants;
 using IntegrationTests.Fixtures;
 using IntegrationTests.Infrastructure;
-using Manager.Constants;
-using Manager.Models.Users;
 using Manager.Models.WordCards;
-using Microsoft.AspNetCore.Identity.Data;
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
-using System.Net.Http.Headers;
+using Manager.Models.Users;
 using System.Net.Http.Json;
-using System.Text;
-using System.Threading.Tasks;
 using Xunit.Abstractions;
 
 namespace IntegrationTests.Tests.WordCards;
 
-[Collection("Per-test user collection")]
+[Collection("IntegrationTests")]
 public abstract class WordCardsTestBase(
-    PerTestUserFixture perUserFixture,
+    HttpClientFixture httpClientFixture,
     ITestOutputHelper outputHelper,
     SignalRTestFixture signalRFixture
-) : IntegrationTestBase(perUserFixture.HttpFixture, outputHelper, signalRFixture)
+) : IntegrationTestBase(httpClientFixture, outputHelper, signalRFixture)
 {
-    protected PerTestUserFixture PerUserFixture { get; } = perUserFixture;
-
-    /// <summary>
-    /// Creates a user (default role: student) and logs them in.
-    /// </summary>
-    protected Task<UserData> CreateUserAsync(
-        string role = "student",
-        string? email = null)
+    public override async Task InitializeAsync()
     {
-        var parsedRole = Enum.TryParse<Role>(role, true, out var r) ? r : Role.Student;
-        return PerUserFixture.CreateAndLoginAsync(parsedRole, email);
+        await ClientFixture.LoginAsync(Role.Student);
+        await EnsureSignalRStartedAsync();
+        SignalRFixture.ClearReceivedMessages();
     }
 
     /// <summary>
@@ -90,5 +73,4 @@ public abstract class WordCardsTestBase(
         result.Should().NotBeNull();
         return result!;
     }
-
 }

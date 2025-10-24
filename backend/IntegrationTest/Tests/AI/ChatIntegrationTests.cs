@@ -3,36 +3,31 @@ using IntegrationTests.Constants;
 using IntegrationTests.Fixtures;
 using Manager.Models.Chat;
 using Manager.Models.Users;
-using Microsoft.CognitiveServices.Speech.Transcription;
 using System.Net.Http.Json;
 using System.Text.RegularExpressions;
 using Xunit.Abstractions;
 
 namespace IntegrationTests.Tests.AI;
 
-[Collection("Shared test collection")]
+[Collection("IntegrationTests")]
 public class ChatIntegrationTests(
-    SharedTestFixture sharedFixture,
+    HttpClientFixture httpClientFixture,
     ITestOutputHelper outputHelper,
     SignalRTestFixture signalRFixture
-) : AiChatTestBase(sharedFixture.HttpFixture, outputHelper, signalRFixture), IAsyncLifetime
+) : AiChatTestBase(httpClientFixture, outputHelper, signalRFixture)
 {
-    private readonly SharedTestFixture _shared = sharedFixture;
-
     [Fact(DisplayName = "Chat AI integration test")]
     public async Task Post_new_chat()
     {
-        var user = _shared.UserFixture.TestUser;
-
-        await _shared.GetAuthenticatedTokenAsync();
-        await _shared.EnsureSignalRStartedAsync(SignalRFixture, OutputHelper);
+        // Get the logged-in user's information
+        var userInfo = ClientFixture.GetUserInfo(Role.Admin);
 
         var chatId1 = Guid.NewGuid();
 
         var (req1, ev1, frames1) = await PostChatAndWaitAsync(new ChatRequest
         {
             ThreadId = chatId1.ToString(),
-            UserId = user.UserId.ToString(),
+            UserId = userInfo.UserId.ToString(),
             UserMessage = "Remember number 42",
             ChatType = ChatType.Default
         }, TimeSpan.FromSeconds(60));
@@ -44,16 +39,16 @@ public class ChatIntegrationTests(
         var fallbackTitlePattern = new Regex(@"^\d{4}_\d{2}_\d{2}$");
         fallbackTitlePattern.IsMatch(chatName1).Should().BeFalse($"_chatTitleService.GenerateTitleAsync not work properly. Name was: {chatName1}");
 
-        var history1 = await AIChatHelper.CheckCountMessageInChatHistory(Client, chatId1, user.UserId, 2, 30);
+        var history1 = await AIChatHelper.CheckCountMessageInChatHistory(Client, chatId1, userInfo.UserId, 2, 30);
         history1.Messages.Count.Should().Be(2);
 
-        var chatHistoryAfterRequest1 = await AIChatHelper.CheckCountMessageInChatHistory(Client, chatId1, user.UserId, waitMessages: 2, timeoutSeconds: 30);
+        var chatHistoryAfterRequest1 = await AIChatHelper.CheckCountMessageInChatHistory(Client, chatId1, userInfo.UserId, waitMessages: 2, timeoutSeconds: 30);
         chatHistoryAfterRequest1.Messages.Count.Should().Be(2);
 
         var (req2, ev2, frames2) = await PostChatAndWaitAsync(new ChatRequest
         {
             ThreadId = chatId1.ToString(),
-            UserId = user.UserId.ToString(),
+            UserId = userInfo.UserId.ToString(),
             UserMessage = "What number did you remember?",
             ChatType = ChatType.Default
         }, TimeSpan.FromSeconds(60));
@@ -65,7 +60,7 @@ public class ChatIntegrationTests(
         string combined2 = string.Concat(frames2.Where(f => f.Stage == ChatStreamStage.Model).Select(f => f.Delta)) ?? string.Empty;
         combined2.Should().MatchRegex(regexCheck);
 
-        var chatHistoryAfterRequest2 = await AIChatHelper.CheckCountMessageInChatHistory(Client, chatId1, user.UserId, waitMessages: 4, timeoutSeconds: 30);
+        var chatHistoryAfterRequest2 = await AIChatHelper.CheckCountMessageInChatHistory(Client, chatId1, userInfo.UserId, waitMessages: 4, timeoutSeconds: 30);
         chatHistoryAfterRequest2.Messages.Count.Should().Be(4);
 
         var text = chatHistoryAfterRequest2.Messages[^1].Text ?? string.Empty;
@@ -74,7 +69,7 @@ public class ChatIntegrationTests(
         var (req3, ev3, frames3) = await PostChatAndWaitAsync(new ChatRequest
         {
             ThreadId = chatId1.ToString(),
-            UserId = user.UserId.ToString(),
+            UserId = userInfo.UserId.ToString(),
             UserMessage = "Give me the current time in ISO-8601 (UTC). Return only the timestamp.",
             ChatType = ChatType.Default
         }, TimeSpan.FromSeconds(60));
