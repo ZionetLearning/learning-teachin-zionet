@@ -138,23 +138,6 @@ export const ChatWithAvatar = () => {
     setText("");
   };
 
-  const handlePlay = async () => {
-    if (isMuted) return;
-    const lastMessage = messages[messages.length - 1];
-    if (lastMessage?.position === "left" && lastMessage.text) {
-      if (isPlaying) {
-        await stop();
-      } else {
-        await speak(lastMessage.text);
-        lastSpokenTextRef.current = lastMessage.text;
-      }
-    }
-  };
-
-  const handleStop = async () => {
-    await stop();
-  };
-
   const handleMuteToggle = async () => {
     // If currently playing and about to mute, stop the speech
     if (!isMuted && isPlaying) {
@@ -253,14 +236,10 @@ export const ChatWithAvatar = () => {
         <div className={classes.chatElementsWrapper}>
           <ReactChatElements
             loading={loading}
-            isPlaying={isPlaying}
             messages={messages}
-            avatarMode
             value={text}
             onChange={setText}
             handleSendMessage={handleSend}
-            handlePlay={handlePlay}
-            handleStop={handleStop}
           />
         </div>
       </div>
