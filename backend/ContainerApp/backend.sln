@@ -12,7 +12,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dapr", "dapr", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 	ProjectSection(SolutionItems) = preProject
 		dapr\config.yaml = dapr\config.yaml
-		dapr\components\manager-callback-session-queue-out.yaml = dapr\components\manager-callback-session-queue-out.yaml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "components", "components", "{F0FF105B-41F5-4E9B-B432-5CDE99DEE70E}"

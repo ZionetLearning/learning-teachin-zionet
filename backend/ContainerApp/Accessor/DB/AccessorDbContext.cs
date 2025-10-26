@@ -5,6 +5,7 @@ using Accessor.Models.Users;
 using Accessor.Models.Games;
 using Accessor.Models.Prompts;
 using Accessor.Models.Classes;
+using Accessor.Models.WordCards;
 
 namespace Accessor.DB;
 
@@ -23,6 +24,7 @@ public class AccessorDbContext : DbContext
     public DbSet<GameAttempt> GameAttempts { get; set; } = default!;
     public DbSet<Class> Class { get; set; } = default!;
     public DbSet<ClassMembership> ClassMembership { get; set; } = default!;
+    public DbSet<WordCardModel> WordCards { get; set; } = default!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -94,6 +96,9 @@ public class AccessorDbContext : DbContext
 
             entity.HasIndex(e => e.PromptKey);
         });
+
+        // Word cards table
+        modelBuilder.ApplyConfiguration(new WordCardsConfiguration());
 
         base.OnModelCreating(modelBuilder);
     }

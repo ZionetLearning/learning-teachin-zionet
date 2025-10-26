@@ -10,6 +10,8 @@
       "@student/*": ["apps/student/src/*"],
       "@teacher/*": ["apps/teacher/src/*"],
       "@admin/*": ["apps/admin/src/*"],
+      "@api": ["libs/api/src/index.ts"],
+      "@api/*": ["libs/api/src/*"],
       "@ui-components/*": ["libs/ui/components/src/*"],
       "@ui-components": ["libs/ui/components/src/index.ts"],
       "@app-providers": ["libs/app-providers/src/index.ts"],

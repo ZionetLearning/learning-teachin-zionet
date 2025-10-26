@@ -24,6 +24,7 @@ on:
 
 permissions:
   issues: write
+  contents: read
 
 jobs:
   manage-lock:
@@ -78,15 +79,18 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
 
       - name: Manage lock state
+        id: lock-action
         run: |
           set -x
           USER="$GITHUB_ACTOR"
           REPO="$GITHUB_REPOSITORY"
+          NOTIFICATION_NEEDED=false
 
           if [ "$ACTION" = "lock" ]; then
             if [ "$IS_LOCKED" = "true" ]; then
               if [ "$CURRENT_LOCKED_BY" = "$USER" ]; then
                 echo "✅ Environment already locked by $USER. Nothing to do."
+                echo "notification_needed=false" >> $GITHUB_OUTPUT
                 exit 0
               else
                 echo "::error::Environment is already locked by $CURRENT_LOCKED_BY. You must unlock it first."
@@ -100,6 +104,7 @@ jobs:
               --repo "$REPO" \
               --add-label "locked" \
               --body "$BODY"
+            echo "notification_needed=true" >> $GITHUB_OUTPUT
 
           elif [ "$ACTION" = "unlock" ]; then
             if [ "$IS_LOCKED" != "true" ]; then
@@ -127,6 +132,7 @@ jobs:
               --repo "$REPO" \
               --remove-label "locked" \
               --body "$BODY"
+            echo "notification_needed=true" >> $GITHUB_OUTPUT
           else
             echo "::error::Unknown action: $ACTION"
             exit 1
@@ -138,3 +144,75 @@ jobs:
           CURRENT_LOCKED_BY: ${{ steps.check.outputs.locked_by }}
           IS_LOCKED: ${{ steps.check.outputs.is_locked }}
           ISSUE: ${{ steps.find-issue.outputs.issue_number }}
+
+      - name: Send Teams notification
+        if: success() && steps.lock-action.outputs.notification_needed == 'true'
+        run: |
+          
+          
+          echo "✅ Teams webhook configured, proceeding with notification..."
+          
+          USER="$GITHUB_ACTOR"
+          ACTION="${{ inputs.action || github.event.inputs.action }}"
+          REPO_URL="https://github.com/${{ github.repository }}"
+          WORKFLOW_URL="$REPO_URL/actions/runs/${{ github.run_id }}"
+          TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          
+          if [ "$ACTION" = "lock" ]; then
+            TITLE="🔒 Featest Environment Locked"
+            COLOR="FF6B35"
+            MESSAGE="Featest environment has been locked"
+            ACTION_TEXT="Locked by"
+          else
+            TITLE="🔓 Featest Environment Unlocked" 
+            COLOR="28A745"
+            MESSAGE="Featest environment has been unlocked"
+            ACTION_TEXT="Unlocked by"
+          fi
+
+          # Create JSON payload using jq for proper escaping
+          PAYLOAD=$(jq -n \
+            --arg type "MessageCard" \
+            --arg context "https://schema.org/extensions" \
+            --arg summary "$TITLE" \
+            --arg color "$COLOR" \
+            --arg activityTitle "$TITLE" \
+            --arg activitySubtitle "$MESSAGE" \
+            --arg actionText "$ACTION_TEXT" \
+            --arg user "$USER" \
+            --arg repo "${{ github.repository }}" \
+            --arg timestamp "$TIMESTAMP" \
+            --arg workflowUrl "$WORKFLOW_URL" \
+            '{
+              "@type": $type,
+              "@context": $context,
+              "summary": $summary,
+              "themeColor": $color,
+              "sections": [{
+                "activityTitle": $activityTitle,
+                "activitySubtitle": $activitySubtitle,
+                "facts": [
+                  {"name": $actionText, "value": $user},
+                  {"name": "Repository", "value": $repo},
+                  {"name": "Time", "value": $timestamp}
+                ],
+                "potentialAction": [{
+                  "@type": "OpenUri",
+                  "name": "View Workflow",
+                  "targets": [{
+                    "os": "default",
+                    "uri": $workflowUrl
+                  }]
+                }]
+              }]
+            }')
+
+          echo "Sending Teams notification..."
+          echo "$PAYLOAD" | curl -X POST \
+               -H "Content-Type: application/json" \
+               -d @- \
+               "$TEAMS_WEBHOOK_URL_FEATEST" \
+               || echo "⚠️ Failed to send Teams notification"
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          TEAMS_WEBHOOK_URL_FEATEST: ${{ secrets.TEAMS_WEBHOOK_URL_FEATEST }}

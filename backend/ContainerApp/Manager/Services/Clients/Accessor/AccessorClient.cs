@@ -11,6 +11,7 @@ using Manager.Models.Chat;
 using Manager.Models.Games;
 using Manager.Models.QueueMessages;
 using Manager.Models.Users;
+using Manager.Models.WordCards;
 using Manager.Services.Clients.Accessor.Models;
 
 namespace Manager.Services.Clients.Accessor;
@@ -690,32 +691,32 @@ public class AccessorClient(
         }
     }
 
-    public async Task<PagedResult<object>> GetHistoryAsync(Guid studentId, bool summary, int page, int pageSize, CancellationToken ct = default)
+    public async Task<PagedResult<object>> GetHistoryAsync(Guid studentId, bool summary, int page, int pageSize, bool getPending, CancellationToken ct = default)
     {
         try
         {
-            _logger.LogInformation("Requesting history from Accessor. StudentId={StudentId}, Summary={Summary}, Page={Page}, PageSize={PageSize}", studentId, summary, page, pageSize);
+            _logger.LogInformation("Requesting history from Accessor. StudentId={StudentId}, Summary={Summary}, Page={Page}, PageSize={PageSize}, GetPending={GetPending}", studentId, summary, page, pageSize, getPending);
 
             var result = await _daprClient.InvokeMethodAsync<PagedResult<object>>(
                 HttpMethod.Get,
                 AppIds.Accessor,
-                $"games-accessor/history/{studentId}?summary={summary}&page={page}&pageSize={pageSize}",
+                $"games-accessor/history/{studentId}?summary={summary}&page={page}&pageSize={pageSize}&getPending={getPending}",
                 cancellationToken: ct
             );
 
             if (result == null)
             {
-                _logger.LogWarning("Accessor returned null history. StudentId={StudentId}, Summary={Summary}", studentId, summary);
+                _logger.LogWarning("Accessor returned null history. StudentId={StudentId}, Summary={Summary}, GetPending={GetPending}", studentId, summary, getPending);
                 return new PagedResult<object> { Page = page, PageSize = pageSize, TotalCount = 0 };
             }
 
-            _logger.LogInformation("Received history from Accessor. StudentId={StudentId}, Summary={Summary}, Items={Count}, TotalCount={TotalCount}", studentId, summary, result.Items.Count(), result.TotalCount);
+            _logger.LogInformation("Received history from Accessor. StudentId={StudentId}, Summary={Summary}, GetPending={GetPending}, Items={Count}, TotalCount={TotalCount}", studentId, summary, getPending, result.Items.Count(), result.TotalCount);
 
             return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to get history from Accessor. StudentId={StudentId}, Summary={Summary}", studentId, summary);
+            _logger.LogError(ex, "Failed to get history from Accessor. StudentId={StudentId}, Summary={Summary}, GetPending={GetPending}", studentId, summary, getPending);
             return new PagedResult<object> { Page = page, PageSize = pageSize, TotalCount = 0 };
         }
     }
@@ -800,6 +801,107 @@ public class AccessorClient(
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to save generated sentence for StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}", dto.StudentId, dto.GameType, dto.Difficulty);
+            throw;
+        }
+    }
+
+    public async Task<bool> DeleteAllGamesHistoryAsync(CancellationToken ct)
+    {
+        try
+        {
+            await _daprClient.InvokeMethodAsync(
+                HttpMethod.Delete,
+                AppIds.Accessor,
+                $"/games-accessor/all-history",
+                ct);
+            _logger.LogInformation("All games history deleted successfully.");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Exception occurred while deleting all games history.");
+            return false;
+        }
+    }
+
+    public async Task<IReadOnlyList<WordCard>> GetWordCardsAsync(Guid userId, CancellationToken ct)
+    {
+        _logger.LogInformation("Fetching word cards for user {UserId}", userId);
+
+        try
+        {
+            var wordCards = await _daprClient.InvokeMethodAsync<List<WordCard>>(
+                HttpMethod.Get,
+                AppIds.Accessor,
+                $"wordcards-accessor/{userId}",
+                cancellationToken: ct
+            );
+
+            return wordCards ?? [];
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to fetch word cards for user {UserId}", userId);
+            throw;
+        }
+    }
+
+    public async Task<WordCard> CreateWordCardAsync(Guid userId, CreateWordCardRequest request, CancellationToken ct)
+    {
+        _logger.LogInformation("Creating word card for user {UserId}", userId);
+
+        try
+        {
+            var payload = new CreateWordCard
+            {
+                UserId = userId,
+                Hebrew = request.Hebrew,
+                English = request.English
+            };
+
+            var response = await _daprClient.InvokeMethodAsync<CreateWordCard, WordCard>(
+                HttpMethod.Post,
+                AppIds.Accessor,
+                $"wordcards-accessor",
+                payload,
+                cancellationToken: ct
+            );
+
+            return response;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create word card for user {UserId}", userId);
+            throw;
+        }
+    }
+
+    public async Task<WordCardLearnedStatus> UpdateLearnedStatusAsync(Guid userId, LearnedStatus request, CancellationToken ct)
+    {
+        _logger.LogInformation("Updating learned status. UserId={UserId}, CardId={CardId}, IsLearned={IsLearned}", userId, request.CardId, request.IsLearned);
+
+        try
+        {
+            var payload = new SetLearnedStatus
+            {
+                UserId = userId,
+                CardId = request.CardId,
+                IsLearned = request.IsLearned,
+            };
+
+            var response = await _daprClient.InvokeMethodAsync<SetLearnedStatus, WordCardLearnedStatus>(
+                HttpMethod.Patch,
+                AppIds.Accessor,
+                $"wordcards-accessor/learned",
+                payload,
+                cancellationToken: ct
+            );
+
+            return response;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update learned status for CardId={CardId}", request.CardId);
             throw;
         }
     }

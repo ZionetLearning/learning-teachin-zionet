@@ -60,17 +60,25 @@ on:
 jobs:
 
   lock-featest:
-    if: inputs.environment_name == 'featest'
+    if: |
+      github.event_name == 'workflow_dispatch' && (
+        inputs.custom_environment_name == 'featest' ||
+        inputs.custom_environment_name == '' ||
+        inputs.unlock_featest == true ||
+        github.event.inputs.unlock_featest == 'true'
+      )
     permissions:
       contents: read
       issues: write
     uses: ./.github/workflows/lock-environment.yaml
     with:
-      action: ${{ (inputs.unlock_featest == true) && 'unlock' || 'lock' }}
+      action: ${{ (inputs.unlock_featest == true || github.event.inputs.unlock_featest == 'true') && 'unlock' || 'lock' }}
+    secrets: inherit
 
   set-defaults:
     needs: [lock-featest]
     if: |
+      always() &&
       (needs.lock-featest.result == 'success' || needs.lock-featest.result == 'skipped') &&
       (inputs.unlock_featest != true && github.event.inputs.unlock_featest != 'true')
     runs-on: ubuntu-latest
@@ -105,6 +113,9 @@ jobs:
 
   build-and-push-images:
     needs: [set-defaults]
+    if: |
+      always() &&
+      needs.set-defaults.result == 'success'
     uses: ./.github/workflows/build-and-push-images.yaml
     permissions:
       id-token: write
@@ -117,6 +128,10 @@ jobs:
 
   helm-deploy:
     needs: [set-defaults, build-and-push-images]
+    if: |
+      always() &&
+      needs.set-defaults.result == 'success' &&
+      needs.build-and-push-images.result == 'success'
     uses: ./.github/workflows/aks-helmcharts.yaml
     permissions:
       id-token: write

@@ -26,6 +26,7 @@ echo "4. Install/upgrade Grafana with subpath configuration..."
 helm upgrade --install grafana grafana/grafana \
   --version "$GRAFANA_CHART_VERSION" \
   --namespace "$NAMESPACE" \
+  -f grafana-values.yaml \
   --set adminUser="$ADMIN_USER" \
   --set adminPassword="$ADMIN_PASS" \
   --set persistence.enabled=true \
@@ -38,9 +39,16 @@ helm upgrade --install grafana grafana/grafana \
   --set env.GF_SERVER_SERVE_FROM_SUB_PATH="true" \
   --set env.GF_SERVER_DOMAIN="$CONTROLLER_IP" \
   --set env.GF_INSTALL_PLUGINS="grafana-azure-monitor-datasource" \
+  --set env.GF_ALERTING_ENABLED="true" \
   --set resources.requests.memory="128Mi" \
   --set resources.limits.memory="256Mi" \
+  --set env.TEAMS_WEBHOOK_URL="$TEAMS_WEBHOOK_URL" \
+  --timeout=10m \
   --wait
+
+echo "5. Checking Grafana pod status..."
+kubectl get pods -n "$NAMESPACE" -l app.kubernetes.io/name=grafana
+kubectl describe pod -n "$NAMESPACE" -l app.kubernetes.io/name=grafana | grep -A 10 "Events:"
 
 echo
 echo "✅ Grafana should be available at:"

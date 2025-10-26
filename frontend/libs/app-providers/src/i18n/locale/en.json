@@ -16,7 +16,8 @@
         "studentDashboard": "Student Dashboard",
         "adminDashboard": "Admin Dashboard",
         "genericError": "Something went wrong. Please try again later.",
-        "forbiddenRole": "You do not have permission to access this page."
+        "forbiddenRole": "You do not have permission to access this page.",
+        "interestsPlaceholder": "Interests, e.g. math, science, art"
       },
       "home": {
         "title": "Welcome to our internal playground project",
@@ -77,7 +78,10 @@
         "avatar": "Avatar",
         "lips": "Lips",
         "mute": "Mute audio",
-        "unmute": "Unmute audio"
+        "unmute": "Unmute audio",
+        "callingTool": "Calling Tool: {{tool}}",
+        "send":"Send",
+        "me": "Me"
       },
       "chatHistory": {
         "title": "Chat History",
@@ -205,7 +209,8 @@
           "completed": "You have completed {{correct}} correct sentences out of {{total}}.",
           "whatNext": "What would you like to do next?",
           "playAgain": "Play Again",
-          "changeSettings": "Change Settings"
+          "changeSettings": "Change Settings",
+          "viewMyMistakes": "View My Mistakes"
         },
         "title": "Word Order Game",
         "subTitle": "Arrange the words in the correct order",
@@ -216,12 +221,15 @@
         "next": "Next",
         "playAudio": "Play audio",
         "playAudioSlowly": "Play audio slowly (0.6x)",
+        "playSentence": "Play Sentence",
         "cancel": "Cancel",
         "close": "Close",
         "yes": "Yes",
         "no": "No",
         "correct": "Correct!",
-        "incorrect": "Incorrect. Try again."
+        "incorrect": "Incorrect. Try again.",
+        "wordBankTitle": "Word Bank",
+        "wordBankHint": "Click a word to add it to the sentence"
       },
       "earthquakeMap": {
         "title": "Earthquake Map",
@@ -362,7 +370,8 @@
         "emailCannotBeChanged": "Email cannot be changed",
         "edit": "Edit",
         "saveChanges": "Save changes",
-        "cancel": "Cancel"
+        "cancel": "Cancel",
+        "interests": "Interests"
       },
       "tasks": {
         "title": "Tasks Management",
@@ -429,6 +438,85 @@
         "gameType": {
           "wordOrderGame": "Word Order Game"
         }
+      },
+      "practiceHistory": {
+        "title": "My Practice History",
+        "description": "View your practice history as a short summary or explore detailed information for each attempt.",
+        "failedToLoad": "Failed to load practice history.",
+        "noMistakes": "No practice history found.",
+        "summary": "Summary",
+        "detailed": "Detailed",
+        "practiceName": "Practice Name",
+        "difficulty": "Difficulty",
+        "attemptsCount": "Attempts",
+        "totalSuccesses": "Successes",
+        "totalFailures": "Failures",
+        "successRate": "Success Rate",
+        "yourLastAnswer": "Your Last Answer",
+        "status": "Status",
+        "date": "Date",
+        "succeeded": "Succeeded",
+        "failed": "Failed",
+        "gameType": {
+          "wordOrderGame": "Word Order Game"
+        }
+      },
+      "studentPracticeHistory": {
+        "title": "Student Practice History",
+        "columns": {
+          "studentName": "Student Name",
+          "gameType": "Game Type",
+          "difficulty": "Difficulty",
+          "attempts": "Attempts",
+          "successes": "Successes",
+          "failures": "Failures",
+          "successRate": "Success Rate",
+          "lastAttemptTime": "Last attempt time",
+          "metrics": "Metrics"
+        },
+        "loading": "Loading…",
+        "failedToLoad": "Failed to load",
+        "noDataFound": "No data found.",
+        "rowsPerPage": "Rows per page:",
+        "of": "of",
+        "filters": {
+          "gameType": "Game",
+          "difficulty": "Difficulty",
+          "all": "All",
+          "student": "Student",
+          "from": "From date",
+          "to": "To date",
+          "clear": "Clear",
+          "resetAll": "Reset filters"
+        },
+        "exportPage": "Export (page)",
+        "exportCurrentPage": "Export current page"
+      },
+      "wordCards": {
+        "title": "Word Cards",
+        "buildYourOwnWordDescription": "Build your own word list and practice Hebrew–English vocabulary.",
+        "addNewWordsDescription": "Add new words, review your collection, and mark the ones you’ve already learned.",
+        "tipHelperNote": "<0>Tip:</0> You can also <1>select any Hebrew word on the site</1>. A small popup will let you add it directly to your cards.",
+        "hideLearnedWords": "Hide learned words",
+        "addCard": "Add Card",
+        "loadingCards": "Loading cards…",
+        "failedToLoad": "Failed to load word cards.",
+        "noWordCardsYet": "No word cards yet.",
+        "clickAddCardOrSelect": " Click “Add Card” or select a Hebrew word anywhere in the app to create one.",
+        "addTranslation": "Add Translation",
+        "hebrewWord": "Hebrew Word",
+        "englishTranslation": "English Translation",
+        "typeTheEnglishTranslation": "Type the English translation...",
+        "hebrew": "Hebrew",
+        "english": "English",
+        "enterTheHebrewWord": "Enter the Hebrew word...",
+        "enterTheEnglishTranslation": "Enter the English translation...",
+        "cancel": "Cancel",
+        "save": "Save",
+        "saving": "Saving...",
+        "markAsLearned": "Mark as Learned",
+        "markAsUnlearned": "Mark as Unlearned",
+        "learned": "Learned"
       }
     },
     "sidebar": {
@@ -459,7 +547,11 @@
       "users": "Users",
       "tasks": "Tasks",
       "profile": "Profile",
-      "myPracticeMistakes": "Practice Mistakes"
+      "myPracticeMistakes": "Practice Mistakes",
+      "studentPracticeHistory": "Practice History",
+      "wordCards": "Word Cards",
+      "myLearning": "My Learning",
+      "sandbox": "Sandbox"
     },
     "errorBoundary": {
       "title": "Oops! Something went wrong",

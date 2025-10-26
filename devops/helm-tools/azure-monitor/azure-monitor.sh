@@ -49,6 +49,7 @@ data:
     datasources:
       - name: Azure Monitor
         type: grafana-azure-monitor-datasource
+        uid: azure-monitor
         access: proxy
         editable: true
         isDefault: false
