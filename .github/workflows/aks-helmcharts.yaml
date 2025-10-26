@@ -135,10 +135,13 @@ jobs:
           esac
 
           # Determine if Langfuse should be deployed (only for dev environment)
+          echo "🔍 DEBUG: TARGET_NAMESPACE='$TARGET_NAMESPACE'"
           if [ "$TARGET_NAMESPACE" = "dev" ]; then
             echo "deploy_langfuse=true" >> $GITHUB_OUTPUT
+            echo "✅ deploy_langfuse=true (TARGET_NAMESPACE matches 'dev')"
           else
             echo "deploy_langfuse=false" >> $GITHUB_OUTPUT
+            echo "❌ deploy_langfuse=false (TARGET_NAMESPACE='$TARGET_NAMESPACE' != 'dev')"
           fi
 
 
