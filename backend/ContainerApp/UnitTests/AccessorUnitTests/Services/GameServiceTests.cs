@@ -1,6 +1,7 @@
 using Accessor.DB;
 using Accessor.Models.Games;
 using Accessor.Services;
+using AutoMapper;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -27,7 +28,23 @@ public class GameServiceTests
     private static GameService NewGameService(AccessorDbContext db)
     {
         var logger = Mock.Of<ILogger<GameService>>();
-        return new GameService(db, logger);
+        var mockMapper = new Mock<IMapper>();
+
+        mockMapper
+            .Setup(m => m.Map<SubmitAttemptResult>(It.IsAny<GameAttempt>()))
+            .Returns((GameAttempt src) => new SubmitAttemptResult
+            {
+                StudentId = src.StudentId,
+                ExerciseId = src.ExerciseId,
+                AttemptId = src.AttemptId,
+                GameType = src.GameType,
+                Difficulty = src.Difficulty,
+                Status = src.Status,
+                CorrectAnswer = src.CorrectAnswer,
+                AttemptNumber = src.AttemptNumber
+            });
+
+        return new GameService(db, logger, mockMapper.Object);
     }
 
     #region SubmitAttemptAsync Tests
@@ -118,7 +135,7 @@ public class GameServiceTests
         var service = NewGameService(db);
 
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
             service.SubmitAttemptAsync(new SubmitAttemptRequest
             {
                 StudentId = Guid.NewGuid(),

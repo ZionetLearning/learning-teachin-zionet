@@ -8,6 +8,5 @@ internal sealed class AutoMapperProfile : Profile
     {
         CreateMap<PromptModel, PromptResponse>();
         CreateMap<GameAttempt, SubmitAttemptResult>();
-
     }
 }
