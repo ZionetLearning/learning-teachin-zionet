@@ -71,11 +71,6 @@ export const ReactChatElements = ({
                   ? classes.bubbleRight
                   : classes.bubbleLeft
               }`}
-              styles={{
-                backgroundColor:
-                  msg.position === "right" ? "transparent" : "transparent",
-                color: "inherit",
-              }}
               id={String(i)}
               position={msg.position}
               type="text"
@@ -84,7 +79,11 @@ export const ReactChatElements = ({
                   ? t("pages.chatYo.thinking")
                   : msg.text
               }
-              title={msg.position === "right" ? t("Me") : t("Assistant")}
+              title={
+                msg.position === "right"
+                  ? t("pages.chatAvatar.me")
+                  : t("pages.chatAvatar.avatar")
+              }
               titleColor="inherit"
               date={msg.date}
               forwarded={false}
@@ -122,7 +121,7 @@ export const ReactChatElements = ({
               data-testid="chat-yo-send"
               disabled={loading || !value.trim()}
             >
-              {loading ? "…" : "Send"}
+              {loading ? "…" : t("pages.chatAvatar.send")}
             </button>
           }
         />
