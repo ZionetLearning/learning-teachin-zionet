@@ -48,6 +48,7 @@ export const useStyles = createUseStyles({
     },
   },
   tableShell: {
+    flex: 1,
     display: "flex",
     flexDirection: "column",
     minHeight: 0,
