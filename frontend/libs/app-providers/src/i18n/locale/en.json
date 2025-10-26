@@ -227,7 +227,8 @@
         "correct": "Correct!",
         "incorrect": "Incorrect. Try again.",
         "wordBankTitle": "Word Bank",
-        "wordBankHint": "Click a word to add it to the sentence"
+        "wordBankHint": "Click a word to add it to the sentence",
+        "explainMistake": "Explain Mistake"
       },
       "earthquakeMap": {
         "title": "Earthquake Map",
@@ -516,6 +517,13 @@
         "markAsUnlearned": "Mark as Unlearned",
         "learned": "Learned"
       }
+    },
+    "mistakeChat": {
+      "title": "Explain Mistake",
+      "loadingExplanation": "Loading explanation...",
+      "errorLoadingExplanation": "Sorry, couldn't load explanation.",
+      "askFollowUp": "Ask a follow-up question...",
+      "send": "Send"
     },
     "sidebar": {
       "toggleSidebar": "Toggle Sidebar",

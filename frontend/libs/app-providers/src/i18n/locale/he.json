@@ -227,7 +227,8 @@
         "correct": "נכון!",
         "incorrect": "לא נכון. נסה שוב.",
         "wordBankTitle": "מאגר מילים",
-        "wordBankHint": "לחץ על מילה כדי להוסיף אותה למשפט"
+        "wordBankHint": "לחץ על מילה כדי להוסיף אותה למשפט",
+        "explainMistake": "הסבר טעות"
       },
       "earthquakeMap": {
         "title": "מפת רעידות אדמה",
@@ -516,6 +517,13 @@
         "markAsUnlearned": "סמן כלא נלמד",
         "learned": "נלמד"
       }
+    },
+    "mistakeChat": {
+      "title": "הסבר טעות",
+      "loadingExplanation": "טוען הסבר...",
+      "errorLoadingExplanation": "מצטערים, לא ניתן לטעון את ההסבר.",
+      "askFollowUp": "שאל שאלת המשך...",
+      "send": "שלח"
     },
     "sidebar": {
       "toggleSidebar": "החלף סרגל",
