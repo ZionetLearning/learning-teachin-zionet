@@ -29,12 +29,24 @@ export const ReactChatElements = ({
   useEffect(() => {
     const el = listRef.current;
     if (!el) return;
-    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-    const id = setTimeout(
-      () => el.scrollTo({ top: el.scrollHeight, behavior: "auto" }),
-      140,
-    );
-    return () => clearTimeout(id);
+
+    const scrollToBottom = () => {
+      el.scrollTo({
+        top: el.scrollHeight,
+        behavior: "smooth",
+      });
+    };
+
+    scrollToBottom();
+
+    const timeoutId = setTimeout(() => {
+      el.scrollTo({
+        top: el.scrollHeight,
+        behavior: "auto",
+      });
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
   }, [messages]);
 
   return (
