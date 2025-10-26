@@ -33,13 +33,13 @@ public class NotificationHub : Hub<INotificationClient>
                 var user = await _accessorClient.GetUserAsync(Guid.Parse(Context.UserIdentifier)).ConfigureAwait(false);
                 if (user != null)
                 {
-                    var userId = user.UserId.ToString();
-                    var name = user.FirstName + " " + user.LastName;
-                    var role = user.Role.ToString();
                     if (user.Role == Role.Admin)
                     {
                         return;
                     }
+                    var userId = user.UserId.ToString();
+                    var name = user.FirstName + " " + user.LastName;
+                    var role = user.Role.ToString();
 
                     var (first, count) = await _presence.AddConnectionAsync(userId, name, role, Context.ConnectionId);
                     if (first)
