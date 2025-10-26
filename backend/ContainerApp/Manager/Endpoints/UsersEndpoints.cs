@@ -3,8 +3,11 @@ using Manager.Constants;
 using Manager.Helpers;
 using Manager.Models.Users;
 using Manager.Services;
+using Manager.Services.Avatars;
+using Manager.Services.Avatars.Models;
 using Manager.Services.Clients.Accessor;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace Manager.Endpoints;
 
@@ -30,6 +33,21 @@ public static class UsersEndpoints
 
         usersGroup.MapGet("/online", GetOnlineUsers).WithName("GetOnlineUsers").RequireAuthorization(PolicyNames.AdminOnly);
 
+        usersGroup.MapPost("/user/{userId:guid}/avatar/upload-url", GetUploadAvatarUrlAsync)
+            .WithName("GetUploadAvatarUrl")
+            .RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
+
+        usersGroup.MapPost("/user/{userId:guid}/avatar/confirm", ConfirmAvatarAsync)
+    .WithName("ConfirmAvatar")
+    .RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
+
+        usersGroup.MapDelete("/user/{userId:guid}/avatar", DeleteAvatarAsync)
+            .WithName("DeleteAvatar")
+            .RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
+
+        usersGroup.MapGet("/user/{userId:guid}/avatar/url", GetAvatarReadUrlAsync)
+            .WithName("GetAvatarReadUrl")
+            .RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
         return app;
     }
     private static bool IsTeacher(string? role) =>
@@ -535,5 +553,211 @@ public static class UsersEndpoints
             logger.LogError(ex, "Failed to set user interests.");
             return Results.Problem("Unexpected error.");
         }
+    }
+
+    private static async Task<IResult> GetUploadAvatarUrlAsync(
+     [FromRoute] Guid userId,
+     [FromBody] GetUploadUrlRequest req,
+     [FromServices] IAvatarStorage storage,
+     [FromServices] IOptions<AvatarsOptions> opt,
+     [FromServices] ILogger<UserEndpoint> logger,
+     HttpContext http,
+     CancellationToken ct)
+    {
+        using var _ = logger.BeginScope("UploadUrl: userId={UserId}", userId);
+
+        logger.LogInformation("Request upload-url: ContentType={ContentType}, Size={SizeBytes}", req.ContentType, req.SizeBytes);
+
+        if (!UserDefaultsHelper.IsSelfOrAdmin(http, userId))
+        {
+            logger.LogWarning("Forbidden for confirm");
+            return Results.Forbid();
+        }
+
+        var (url, exp, blobPath) = await storage.GetUploadSasAsync(userId, req.ContentType, req.SizeBytes, ct);
+
+        logger.LogInformation("Generated upload SAS: blobPath={BlobPath}, expiresAt={Expires}", blobPath, exp);
+
+        return Results.Ok(new GetUploadUrlResponse
+        {
+            UploadUrl = url.ToString(),
+            BlobPath = blobPath,
+            ExpiresAtUtc = exp.UtcDateTime,
+            MaxBytes = opt.Value.MaxBytes,
+            AcceptedContentTypes = opt.Value.AllowedContentTypes
+        });
+    }
+
+    private static async Task<IResult> ConfirmAvatarAsync(
+        [FromRoute] Guid userId,
+        [FromBody] ConfirmAvatarRequest req,
+        [FromServices] IAvatarStorage storage,
+        [FromServices] IAccessorClient accessorClient,
+        [FromServices] IOptions<AvatarsOptions> opt,
+        [FromServices] ILogger<UserEndpoint> log,
+        HttpContext http,
+        CancellationToken ct)
+    {
+        using var _ = log.BeginScope("ConfirmAvatar: userId={UserId}", userId);
+
+        if (!UserDefaultsHelper.IsSelfOrAdmin(http, userId))
+        {
+            log.LogWarning("Forbidden for confirm");
+            return Results.Forbid();
+        }
+
+        log.LogInformation("Confirm request: BlobPath={BlobPath}, ContentType={CT}", req.BlobPath, req.ContentType);
+
+        var expectedPrefix = $"{userId}/";
+        if (!req.BlobPath.StartsWith(expectedPrefix, StringComparison.Ordinal))
+        {
+            log.LogWarning("Invalid blobPath prefix: expected prefix={Prefix}", expectedPrefix);
+            return Results.BadRequest("Invalid blobPath prefix");
+        }
+
+        var props = await storage.GetBlobPropsAsync(req.BlobPath, ct);
+        if (props is null)
+        {
+            log.LogWarning("Blob not found: {BlobPath}", req.BlobPath);
+            return Results.BadRequest("Blob not found");
+        }
+
+        log.LogInformation("Blob found: Size={Size}, ContentType={BlobCT}, ETag={ETag}",
+        props.ContentLength, props.ContentType, props.ETag);
+
+        if (!opt.Value.AllowedContentTypes.Contains(req.ContentType, StringComparer.OrdinalIgnoreCase))
+        {
+            return Results.BadRequest("Unsupported content-type");
+        }
+
+        if (req.SizeBytes is > 0 && props.ContentLength != req.SizeBytes)
+        {
+            log.LogWarning("Client sizeBytes {Client} != blob size {Blob}", req.SizeBytes, props.ContentLength);
+        }
+
+        if (props.ContentLength > opt.Value.MaxBytes)
+        {
+            return Results.BadRequest("File too large");
+        }
+
+        if (!string.Equals(props.ContentType, req.ContentType, StringComparison.OrdinalIgnoreCase))
+        {
+            log.LogWarning("Uploaded content-type {BlobCT} differs from requested {ReqCT}", props.ContentType, req.ContentType);
+        }
+
+        if (req.ETag is not null && props.ETag.ToString() != req.ETag)
+        {
+            log.LogWarning("ETag mismatch: {Blob} != {Req}", props.ETag, req.ETag);
+        }
+
+        var user = await accessorClient.GetUserAsync(userId);
+        var old = user?.AvatarPath;
+
+        log.LogInformation("Updating avatar in DB. OldPath={Old}, NewPath={New}", old, req.BlobPath);
+
+        var updated = await accessorClient.UpdateUserAsync(new UpdateUserModel
+        {
+            AvatarPath = req.BlobPath,
+            AvatarContentType = req.ContentType
+        }, userId);
+        if (!updated)
+        {
+            log.LogError("DB update failed while confirming avatar");
+            return Results.NotFound("User not found.");
+        }
+
+        if (!string.IsNullOrEmpty(old) && !string.Equals(old, req.BlobPath, StringComparison.Ordinal))
+        {
+            try
+            {
+                log.LogInformation("Deleting old avatar: {Old}", old);
+                await storage.DeleteAsync(old!, ct);
+            }
+            catch (Exception e)
+            {
+                log.LogWarning(e, "Failed to delete old avatar {Old}", old);
+            }
+        }
+
+        log.LogInformation("Avatar confirmed successfully");
+        return Results.Ok();
+    }
+
+    private static async Task<IResult> DeleteAvatarAsync(
+        [FromRoute] Guid userId,
+        [FromServices] IAccessorClient accessorClient,
+        [FromServices] IAvatarStorage storage,
+        [FromServices] ILogger<UserEndpoint> log,
+        HttpContext http,
+        CancellationToken ct)
+    {
+        using var _ = log.BeginScope("DeleteAvatar: userId={UserId}", userId);
+
+        if (!UserDefaultsHelper.IsSelfOrAdmin(http, userId))
+        {
+            log.LogWarning("Forbidden delete avatar");
+            return Results.Forbid();
+        }
+
+        var user = await accessorClient.GetUserAsync(userId);
+        if (user is null)
+        {
+            log.LogWarning("User not found");
+            return Results.NotFound("User not found.");
+        }
+
+        if (string.IsNullOrEmpty(user.AvatarPath))
+        {
+            log.LogInformation("Avatar already empty");
+            return Results.Ok();
+        }
+
+        try
+        {
+            await storage.DeleteAsync(user.AvatarPath!, ct);
+        }
+        catch (Exception e)
+        {
+            log.LogWarning(e, "Delete blob failed for {Path}", user.AvatarPath);
+        }
+
+        var ok = await accessorClient.UpdateUserAsync(new UpdateUserModel
+        {
+            AvatarPath = null,
+            AvatarContentType = null
+        }, userId);
+
+        log.LogInformation("Avatar removed in DB");
+        return ok ? Results.Ok() : Results.NotFound("User not found.");
+    }
+
+    private static async Task<IResult> GetAvatarReadUrlAsync(
+        [FromRoute] Guid userId,
+        [FromServices] IAccessorClient accessorClient,
+        [FromServices] IAvatarStorage storage,
+        [FromServices] IOptions<AvatarsOptions> opt,
+        [FromServices] ILogger<UserEndpoint> log,
+        HttpContext http,
+        CancellationToken ct)
+    {
+        using var _ = log.BeginScope("ReadUrl: userId={UserId}", userId);
+
+        if (!UserDefaultsHelper.IsSelfOrAdmin(http, userId))
+        {
+            log.LogWarning("Forbidden for read-url");
+            return Results.Forbid();
+        }
+
+        var user = await accessorClient.GetUserAsync(userId);
+        if (user is null || string.IsNullOrEmpty(user.AvatarPath))
+        {
+            log.LogWarning("Avatar not set for {UserId}", userId);
+            return Results.NotFound();
+        }
+
+        var uri = await storage.GetReadSasAsync(user.AvatarPath!, TimeSpan.FromMinutes(opt.Value.ReadUrlTtlMinutes), ct);
+        log.LogInformation("Returning read SAS: {Url}", uri);
+
+        return Results.Ok(uri.ToString());
     }
 }
