@@ -5,7 +5,7 @@ set -e
 NAMESPACE="devops-logs"
 ADMIN_USER="admin"
 ADMIN_PASS="admin123"
-GRAFANA_CHART_VERSION="9.3.0"
+GRAFANA_CHART_VERSION="10.1.2"
 MC_RG="MC_dev-zionet-learning-2025_aks-cluster-dev_westeurope"
 # Public FQDN for ingress controller (must match ingress/grafana-ingress.yaml)
 CONTROLLER_IP="teachin-zionet.westeurope.cloudapp.azure.com"
