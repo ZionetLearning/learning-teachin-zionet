@@ -27,15 +27,32 @@ public static class GamesEndpoints
         ILogger<IGameService> logger,
         CancellationToken ct)
     {
+        if (request is null)
+        {
+            logger.LogWarning("SubmitAttemptAsync rejected. Request body is null.");
+            return Results.BadRequest(new { message = "Request body must not be null." });
+        }
+
+        if (request.AttemptId == Guid.Empty)
+        {
+            logger.LogWarning("SubmitAttemptAsync rejected. Invalid AttemptId provided.");
+            return Results.BadRequest(new { message = "AttemptId must be a non-empty GUID." });
+        }
+
+        using var scope = logger.BeginScope("Method: {Method}, AttemptId: {AttemptId}", nameof(SubmitAttemptAsync), request.AttemptId);
+
         try
         {
-            logger.LogInformation("SubmitAttemptAsync called. StudentId={StudentId}, GivenAnswer={GivenAnswer}", request.StudentId, string.Join(" ", request.GivenAnswer));
-
             var result = await service.SubmitAttemptAsync(request, ct);
 
             logger.LogInformation("SubmitAttemptAsync succeeded. StudentId={StudentId}, Status={Status}, AttemptNumber={AttemptNumber}", result.StudentId, result.Status, result.AttemptNumber);
 
             return Results.Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            logger.LogWarning(ex, "Validation failed. AttemptId={AttemptId}", request.AttemptId);
+            return Results.BadRequest(new { message = ex.Message });
         }
         catch (KeyNotFoundException ex)
         {

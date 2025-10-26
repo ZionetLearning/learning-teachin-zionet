@@ -1,6 +1,7 @@
 using Accessor.DB;
-using Accessor.Services.Interfaces;
 using Accessor.Models.Games;
+using Accessor.Services.Interfaces;
+using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 
 namespace Accessor.Services;
@@ -9,15 +10,27 @@ public class GameService : IGameService
 {
     private readonly AccessorDbContext _db;
     private readonly ILogger<GameService> _logger;
+    private readonly IMapper _mapper;
 
-    public GameService(AccessorDbContext db, ILogger<GameService> logger)
+    public GameService(AccessorDbContext db, ILogger<GameService> logger, IMapper mapper)
     {
         _db = db;
         _logger = logger;
+        _mapper = mapper;
     }
 
     public async Task<SubmitAttemptResult> SubmitAttemptAsync(SubmitAttemptRequest request, CancellationToken ct)
     {
+        if (request.StudentId == Guid.Empty)
+        {
+            throw new InvalidOperationException("StudentId must not be empty.");
+        }
+
+        if (request.GivenAnswer is null)
+        {
+            throw new InvalidOperationException("GivenAnswer must not be null.");
+        }
+
         try
         {
             _logger.LogInformation("Submit attempt requested. AttemptId={AttemptId}, StudentId={StudentId}", request.AttemptId, request.StudentId);
@@ -35,18 +48,7 @@ public class GameService : IGameService
             if (original.Status == AttemptStatus.Success)
             {
                 _logger.LogInformation("Attempt already successful. Returning result. AttemptId={AttemptId}", original.AttemptId);
-
-                return new SubmitAttemptResult
-                {
-                    StudentId = original.StudentId,
-                    ExerciseId = original.ExerciseId,
-                    AttemptId = original.AttemptId,
-                    GameType = original.GameType,
-                    Difficulty = original.Difficulty,
-                    Status = original.Status,
-                    CorrectAnswer = original.CorrectAnswer,
-                    AttemptNumber = original.AttemptNumber
-                };
+                return _mapper.Map<SubmitAttemptResult>(original);
             }
 
             // Check correctness
@@ -81,17 +83,7 @@ public class GameService : IGameService
             _logger.LogInformation("New attempt saved. AttemptId={NewId}, BasedOn={OriginalId}, Number={Number}, Status={Status}",
                 newAttempt.AttemptId, original.AttemptId, nextNumber, newAttempt.Status);
 
-            return new SubmitAttemptResult
-            {
-                StudentId = newAttempt.StudentId,
-                ExerciseId = newAttempt.ExerciseId,
-                AttemptId = newAttempt.AttemptId,
-                GameType = newAttempt.GameType,
-                Difficulty = newAttempt.Difficulty,
-                Status = newAttempt.Status,
-                CorrectAnswer = newAttempt.CorrectAnswer,
-                AttemptNumber = newAttempt.AttemptNumber
-            };
+            return _mapper.Map<SubmitAttemptResult>(newAttempt);
         }
         catch (Exception ex)
         {
