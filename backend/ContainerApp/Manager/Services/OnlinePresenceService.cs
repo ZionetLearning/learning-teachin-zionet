@@ -91,11 +91,7 @@ public sealed class OnlinePresenceService : IOnlinePresenceService
                 currentCount = conns.Count;
                 if (wasEmptyBefore)
                 {
-                    var fresh = await _dapr.GetStateAsync<HashSet<string>>(Store, connsKey, cancellationToken: ct);
-                    if (fresh?.Count == 1)
-                    {
-                        firstConnection = true;
-                    }
+                    firstConnection = true;
                 }
 
                 return 0;
@@ -152,21 +148,20 @@ public sealed class OnlinePresenceService : IOnlinePresenceService
                 var connsEntry = await _dapr.GetStateEntryAsync<HashSet<string>>(Store, connsKey, cancellationToken: ct);
                 var conns = connsEntry.Value ?? new HashSet<string>(StringComparer.Ordinal);
 
-                if (!conns.Remove(connectionId))
+                if (!conns.Contains(connectionId))
                 {
                     currentCount = conns.Count;
                     return 0;
                 }
 
+                var wasLastBefore = conns.Count == 1;
+                conns.Remove(connectionId);
+
                 if (conns.Count == 0)
                 {
                     await connsEntry.DeleteAsync(SafeWrite, cancellationToken: ct);
-                    var fresh = await _dapr.GetStateAsync<HashSet<string>>(Store, connsKey, cancellationToken: ct);
-                    if (fresh is null || fresh.Count == 0)
-                    {
-                        lastConnection = true;
-                        currentCount = 0;
-                    }
+                    lastConnection = wasLastBefore;
+                    currentCount = 0;
                 }
                 else
                 {
