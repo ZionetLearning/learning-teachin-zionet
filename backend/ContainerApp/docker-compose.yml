@@ -204,6 +204,8 @@ services:
   engine:
     build:
       context: ./Engine
+    env_file:
+      - .env
     container_name: engine
     ports:
       - "5002"

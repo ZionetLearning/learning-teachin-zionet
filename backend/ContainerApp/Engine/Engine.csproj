@@ -13,8 +13,10 @@
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="Dapr.AspNetCore" Version="1.15.4" />
+		<PackageReference Include="dotenv.net" Version="4.0.0" />
 		<PackageReference Include="DotQueue" Version="1.0.5" />
 		<PackageReference Include="Microsoft.CognitiveServices.Speech" Version="1.45.0" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Amazon" Version="1.66.0-alpha" />
 		<PackageReference Include="Polly" Version="8.6.3" />
 		<PackageReference Include="Microsoft.SemanticKernel" Version="1.65.0" />
 	</ItemGroup>

@@ -3,7 +3,7 @@ using System.Text.Json;
 using DotQueue;
 using Engine.Models.Sentences;
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
+//using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
 
 namespace Engine.Services;
 
@@ -21,9 +21,11 @@ public class SentencesService : ISentencesService
     private readonly Lazy<string[]> _mediumWords;
     private readonly Lazy<string[]> _hardWords;
 
-    public SentencesService([FromKeyedServices("gen")] Kernel genKernel, ILogger<SentencesService> log)
+    //public SentencesService([FromKeyedServices("gen")] Kernel genKernel, ILogger<SentencesService> log)
+    public SentencesService(Kernel claudeKernel, ILogger<SentencesService> log)
+
     {
-        _genKernel = genKernel;
+        _genKernel = claudeKernel;
         _log = log;
 
         _easyWords = new(() => LoadList(EasyPath));
@@ -37,10 +39,18 @@ public class SentencesService : ISentencesService
 
         var func = _genKernel.Plugins["Sentences"]["Generate"];
 
-        var exec = new AzureOpenAIPromptExecutionSettings
+        //var exec = new AzureOpenAIPromptExecutionSettings
+        //{
+        //    Temperature = 0.3,
+        //    ResponseFormat = typeof(SentenceResponse)
+        //};
+        var exec = new PromptExecutionSettings
         {
-            Temperature = 0.3,
-            ResponseFormat = typeof(SentenceResponse)
+            // provider-agnostic bag; Bedrock/Claude will read these if supported
+            ExtensionData = new Dictionary<string, object>
+            {
+                ["temperature"] = 0.3
+            }
         };
 
         var difficulty = req.Difficulty.ToString().ToLowerInvariant();

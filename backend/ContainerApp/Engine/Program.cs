@@ -1,18 +1,21 @@
+using Amazon.BedrockRuntime;
 using Azure.Messaging.ServiceBus;
+using dotenv.net;
+using DotQueue;
+using Engine;
 using Engine.Constants;
+using Engine.Constants.Chat;
 using Engine.Endpoints;
 using Engine.Models;
+using Engine.Models.QueueMessages;
+using Engine.Options;
 using Engine.Plugins;
 using Engine.Services;
 using Engine.Services.Clients.AccessorClient;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
-using DotQueue;
-using Engine;
-using Engine.Models.QueueMessages;
-using Engine.Options;
-using Engine.Constants.Chat;
+DotEnv.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -61,14 +64,27 @@ builder.Services
 
 builder.Services.AddSingleton(sp =>
 {
-    var cfg = sp.GetRequiredService<IOptions<AzureOpenAiSettings>>().Value;
+    //var cfg = sp.GetRequiredService<IOptions<AzureOpenAiSettings>>().Value;
 
+    //var kernel = Kernel.CreateBuilder()
+    //             .AddAzureOpenAIChatCompletion(
+    //                 deploymentName: cfg.DeploymentName,
+    //                 endpoint: cfg.Endpoint,
+    //                 apiKey: cfg.ApiKey)
+    //             .Build();
+
+    var config = builder.Configuration.GetSection("Claude");
+    //var apiKey = config["ApiKey"];
+    var model = config["ModelId"];
+    var bedrockRuntime = new AmazonBedrockRuntimeClient(); // AWS creds are loaded from .env
+
+#pragma warning disable SKEXP0070
     var kernel = Kernel.CreateBuilder()
-                 .AddAzureOpenAIChatCompletion(
-                     deploymentName: cfg.DeploymentName,
-                     endpoint: cfg.Endpoint,
-                     apiKey: cfg.ApiKey)
-                 .Build();
+        .AddBedrockChatCompletionService(
+            modelId: model!,
+            bedrockRuntime: bedrockRuntime,
+            serviceId: "claude")
+        .Build();
     var logger = sp.GetRequiredService<ILoggerFactory>()
     .CreateLogger("KernelPluginRegistration");
     foreach (var plugin in sp.GetServices<ISemanticKernelPlugin>())
