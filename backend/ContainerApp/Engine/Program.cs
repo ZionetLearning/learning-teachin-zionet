@@ -73,38 +73,72 @@ builder.Services.AddSingleton(sp =>
     //                 apiKey: cfg.ApiKey)
     //             .Build();
 
-    var config = builder.Configuration.GetSection("Claude");
-    //var apiKey = config["ApiKey"];
-    var model = config["ModelId"];
-    var bedrockRuntime = new AmazonBedrockRuntimeClient(); // AWS creds are loaded from .env
+    try
+    {
+        var config = builder.Configuration.GetSection("Claude");
+        //var apiKey = config["ApiKey"];
+        var model = config["ModelId"];
+        var bedrockRuntime = new AmazonBedrockRuntimeClient(); // AWS creds are loaded from .env
 
 #pragma warning disable SKEXP0070
-    var kernel = Kernel.CreateBuilder()
-        .AddBedrockChatCompletionService(
-            modelId: model!,
-            bedrockRuntime: bedrockRuntime,
-            serviceId: "claude")
-        .Build();
-    var logger = sp.GetRequiredService<ILoggerFactory>()
-    .CreateLogger("KernelPluginRegistration");
-    foreach (var plugin in sp.GetServices<ISemanticKernelPlugin>())
-    {
-        try
-        {
-            var pluginName = plugin.GetType().ToPluginName();
-            kernel.Plugins.AddFromObject(plugin, pluginName);
-            logger.LogInformation("Plugin {Name} registered.", pluginName);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex,
-                "Failed to register plugin {PluginType}", plugin.GetType().FullName);
+        var kb = Kernel.CreateBuilder()
+            .AddBedrockChatCompletionService(
+                modelId: "anthropic.claude-3-haiku-20240307-v1:0",
+                bedrockRuntime: bedrockRuntime,
+                serviceId: "claude");
 
+        //var logger = sp.GetRequiredService<ILoggerFactory>()
+        //.CreateLogger("KernelPluginRegistration");
+        //foreach (var plugin in sp.GetServices<ISemanticKernelPlugin>())
+        //{
+        //    try
+        //    {
+        //        var pluginName = plugin.GetType().ToPluginName();
+        //        kernel.Plugins.AddFromObject(plugin, pluginName);
+        //        logger.LogInformation("Plugin {Name} registered.", pluginName);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        logger.LogError(ex,
+        //            "Failed to register plugin {PluginType}", plugin.GetType().FullName);
+
+        //    }
+        //}
+
+        var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("KernelPluginRegistration");
+
+        var baseDir = Path.Combine(AppContext.BaseDirectory, "Plugins", "Sentences");
+
+        if (!Directory.Exists(baseDir))
+        {
+            logger.LogWarning("Plugins directory not found: {Dir}", baseDir);
         }
+        else
+        {
+            foreach (var subdir in Directory.GetDirectories(baseDir))
+            {
+                try
+                {
+                    var pluginName = Path.GetFileName(baseDir); // "Sentences"
+                    kb.Plugins.AddFromPromptDirectory(subdir, pluginName);
+                    logger.LogInformation("Loaded SK prompt plugin '{Plugin}' from {Dir}", pluginName, subdir);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Failed to load plugin from {Dir}", subdir);
+                }
+            }
+        }
+
+        var kernel = kb.Build();
+        return kernel;
     }
-
-    return kernel;
-
+    catch (Exception)
+    {
+        var logger = sp.GetRequiredService<ILoggerFactory>();
+        logger.CreateLogger("KernelPluginRegistration").LogInformation("faill!!!!!!!!!!!!!!!!!!!!!!!!!!.");
+        throw;
+    }
 });
 
 builder.Services.AddKeyedSingleton("gen", (sp, key) =>
