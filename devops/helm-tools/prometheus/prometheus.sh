@@ -4,7 +4,7 @@ set -e
 # Define variables for namespaces, chart versions, and admin credentials
 GRAFANA_NAMESPACE="devops-logs"
 PROM_NAMESPACE="monitoring"
-PROM_CHART_VERSION="57.0.2"
+PROM_CHART_VERSION="78.5.0"
 
 echo "1. Add Helm repos"
 # Add the Prometheus Helm repo (ignore if it already exists), then update
