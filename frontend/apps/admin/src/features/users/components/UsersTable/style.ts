@@ -21,6 +21,14 @@ export const useStyles = createUseStyles({
     flexDirection: "column",
     minHeight: 0,
     alignSelf: "center",
+    "@media (max-width: 768px)": {
+      flex: "0 0 auto",
+      minHeight: "auto",
+      alignSelf: "stretch",
+    },
+    "@media (max-width: 480px)": {
+      padding: "1rem 0.75rem 1.25rem",
+    },
   },
   sectionTitle: {
     margin: "0 0 0.85rem",
@@ -35,6 +43,9 @@ export const useStyles = createUseStyles({
     display: "flex",
     flexDirection: "column",
     minHeight: 0,
+    "@media (max-width: 768px)": {
+      flex: "0 0 auto",
+    },
   },
   tableShell: {
     display: "flex",
@@ -43,6 +54,9 @@ export const useStyles = createUseStyles({
     border: "1px solid #e5e7eb",
     borderRadius: 8,
     background: "#fff",
+    "@media (max-width: 480px)": {
+      borderRadius: 6,
+    },
   },
   headerTable: {
     tableLayout: "fixed",
@@ -56,21 +70,41 @@ export const useStyles = createUseStyles({
       borderBottom: "1px solid #e5e7eb",
     },
   },
+  headerCell: {
+    "@media (max-width: 768px)": {
+      fontSize: 13,
+      padding: "6px 4px",
+    },
+    "@media (max-width: 480px)": {
+      fontSize: 11,
+      padding: "4px 2px",
+    },
+  },
   searchBar: {
     padding: "8px 12px 6px",
     borderBottom: "1px solid #e5e7eb",
     background: "#fff",
+    "@media (max-width: 480px)": {
+      padding: "10px 8px 8px",
+    },
   },
   searchField: {
     "& .MuiOutlinedInput-root": {
       height: 32,
       borderRadius: 8,
       background: "#f8fafc",
+      "@media (max-width: 480px)": {
+        height: 36,
+      },
     },
     "& .MuiOutlinedInput-input": {
       padding: "4px 8px",
       fontSize: 13,
       lineHeight: 1.2,
+      "@media (max-width: 480px)": {
+        fontSize: 14,
+        padding: "6px 10px",
+      },
     },
     "& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus":
       {
@@ -89,6 +123,13 @@ export const useStyles = createUseStyles({
     scrollbarGutter: "stable",
     display: "flex",
     flexDirection: "column",
+    "@media (max-width: 768px)": {
+      maxHeight: "none",
+      flex: "0 0 auto",
+    },
+    "@media (max-width: 480px)": {
+      maxHeight: "none",
+    },
   },
   bodyTable: {
     tableLayout: "fixed",
@@ -111,12 +152,20 @@ export const useStyles = createUseStyles({
 
     "& .MuiTablePagination-toolbar": {
       minHeight: 44,
+      "@media (max-width: 480px)": {
+        minHeight: 36,
+        flexWrap: "wrap",
+        gap: "8px",
+      },
     },
 
     "& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows": {
       fontSize: 14,
       fontWeight: 500,
       color: "#374151",
+      "@media (max-width: 480px)": {
+        fontSize: 12,
+      },
     },
 
     "& .MuiTablePagination-select": {
@@ -129,6 +178,11 @@ export const useStyles = createUseStyles({
       marginLeft: 8,
       "&:hover": {
         borderColor: "#9ca3af",
+      },
+      "@media (max-width: 480px)": {
+        fontSize: 12,
+        padding: "2px 24px 2px 6px",
+        marginLeft: 4,
       },
     },
 
@@ -148,6 +202,14 @@ export const useStyles = createUseStyles({
         borderColor: "#e5e7eb",
         color: "#9ca3af",
       },
+      "@media (max-width: 480px)": {
+        padding: "4px",
+        margin: "0 0.5px",
+      },
+    },
+
+    "@media (max-width: 480px)": {
+      padding: "6px 12px",
     },
   },
   tableContainer: {
@@ -162,7 +224,8 @@ export const useStyles = createUseStyles({
     "& table": {
       minWidth: 720, // desktop/tablet baseline
       "@media (max-width: 900px)": { minWidth: 640 },
-      "@media (max-width: 600px)": { minWidth: 560 },
+      "@media (max-width: 600px)": { minWidth: 480 },
+      "@media (max-width: 480px)": { minWidth: 400 },
     },
   },
 });

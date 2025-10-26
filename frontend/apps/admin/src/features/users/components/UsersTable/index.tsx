@@ -81,19 +81,39 @@ export const UsersTable = ({ dir }: { dir: "ltr" | "rtl" }) => {
               >
                 <TableHead>
                   <TableRow>
-                    <TableCell align="center" width="28%">
+                    <TableCell
+                      align="center"
+                      width="28%"
+                      className={classes.headerCell}
+                    >
                       {t("pages.users.email")}
                     </TableCell>
-                    <TableCell align="center" width="18%">
+                    <TableCell
+                      align="center"
+                      width="18%"
+                      className={classes.headerCell}
+                    >
                       {t("pages.users.firstName")}
                     </TableCell>
-                    <TableCell align="center" width="18%">
+                    <TableCell
+                      align="center"
+                      width="18%"
+                      className={classes.headerCell}
+                    >
                       {t("pages.users.lastName")}
                     </TableCell>
-                    <TableCell align="center" width="16%">
+                    <TableCell
+                      align="center"
+                      width="16%"
+                      className={classes.headerCell}
+                    >
                       {t("pages.users.role")}
                     </TableCell>
-                    <TableCell align="center" width="20%">
+                    <TableCell
+                      align="center"
+                      width="20%"
+                      className={classes.headerCell}
+                    >
                       {t("pages.users.actions")}
                     </TableCell>
                   </TableRow>
