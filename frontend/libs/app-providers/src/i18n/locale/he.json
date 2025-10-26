@@ -226,7 +226,18 @@
         "correct": "נכון!",
         "incorrect": "לא נכון. נסה שוב.",
         "wordBankTitle": "מאגר מילים",
-        "wordBankHint": "לחץ על מילה כדי להוסיף אותה למשפט"
+        "wordBankHint": "לחץ על מילה כדי להוסיף אותה למשפט",
+        "yourLastWrongAnswer": "התשובה השגויה האחרונה שלך:"
+      },
+      "retryResultModal": {
+        "successTitle": "🎉 מעולה!",
+        "failureTitle": "המשך לנסות!",
+        "successMessage": "תיקנת את הטעות!",
+        "failureMessage": "לא בדיוק נכון הפעם.",
+        "successDescription": "כל הכבוד! תיקנת בהצלחה את הטעות הזו. אתה יכול לתרגל עוד טעויות או לנסות שוב את זו.",
+        "failureDescription": "אל תדאג! למידה דורשת תרגול. אתה יכול לנסות שוב או לעבור לטעויות אחרות.",
+        "tryAgain": "נסה שוב",
+        "backToMistakes": "חזור לטעויות"
       },
       "earthquakeMap": {
         "title": "מפת רעידות אדמה",

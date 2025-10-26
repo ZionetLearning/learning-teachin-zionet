@@ -226,7 +226,18 @@
         "correct": "Correct!",
         "incorrect": "Incorrect. Try again.",
         "wordBankTitle": "Word Bank",
-        "wordBankHint": "Click a word to add it to the sentence"
+        "wordBankHint": "Click a word to add it to the sentence",
+        "yourLastWrongAnswer": "Your last wrong answer:"
+      },
+      "retryResultModal": {
+        "successTitle": "🎉 Excellent!",
+        "failureTitle": "Keep Trying!",
+        "successMessage": "You fixed the mistake!",
+        "failureMessage": "Not quite right this time.",
+        "successDescription": "Great job! You've successfully corrected this mistake. You can practice more mistakes or try this one again.",
+        "failureDescription": "Don't worry! Learning takes practice. You can try again or move on to other mistakes.",
+        "tryAgain": "Try Again",
+        "backToMistakes": "Back to Mistakes"
       },
       "earthquakeMap": {
         "title": "Earthquake Map",
