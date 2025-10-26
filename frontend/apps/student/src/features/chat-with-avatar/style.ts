@@ -2,8 +2,9 @@ import { createUseStyles } from "react-jss";
 
 export const useStyles = createUseStyles({
   chatWrapper: {
-    maxWidth: "900px",
-    height: "570px",
+    maxWidth: "80%",
+    height: "90vh",
+    marginTop: "3%",
     margin: "0 auto 30px auto",
     border: "1px solid #ccc",
     borderRadius: "10px",
