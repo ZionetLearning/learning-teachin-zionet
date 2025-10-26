@@ -137,8 +137,10 @@ jobs:
           # Determine if Langfuse should be deployed (only for dev environment)
           if [ "$TARGET_NAMESPACE" = "dev" ]; then
             echo "deploy_langfuse=true" >> $GITHUB_OUTPUT
+            echo "deploy_langfuse=true"
           else
             echo "deploy_langfuse=false" >> $GITHUB_OUTPUT
+            echo "deploy_langfuse=false"
           fi
 
 
@@ -253,7 +255,7 @@ jobs:
           exit 1
 
       - name: Create devops-tools namespace
-        if: ${{ steps.setup.outputs.deploy_langfuse == 'true' }}
+        if: steps.setup.outputs.deploy_langfuse == 'true'
         run: |
           echo "Creating devops-tools namespace..."
           kubectl create namespace devops-tools --dry-run=client -o yaml | kubectl apply -f -
@@ -312,7 +314,7 @@ jobs:
             --set dapr.installComponents=false
 
       - name: Add Langfuse
-        if: ${{ steps.setup.outputs.deploy_langfuse == 'true' }}
+        if: steps.setup.outputs.deploy_langfuse == 'true'
         run: |
           echo "Deploying Langfuse..."
           cd devops/helm-tools
