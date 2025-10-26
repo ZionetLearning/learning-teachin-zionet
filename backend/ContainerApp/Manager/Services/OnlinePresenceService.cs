@@ -25,12 +25,13 @@ public sealed class OnlinePresenceService : IOnlinePresenceService
     };
 
     private const int MaxAttempts = 8;
+    private const int DefaultTtlSeconds = 86400;
 
     private static readonly JsonSerializerOptions _json = new()
     {
         PropertyNameCaseInsensitive = true
     };
-    private static readonly IReadOnlyDictionary<string, string> TtlMeta = new Dictionary<string, string> { ["ttlInSeconds"] = "86400" };
+    private static readonly IReadOnlyDictionary<string, string> TtlMeta = new Dictionary<string, string> { ["ttlInSeconds"] = DefaultTtlSeconds.ToString() };
     public OnlinePresenceService(DaprClient dapr, ILogger<OnlinePresenceService> logger)
     {
         _dapr = dapr;
