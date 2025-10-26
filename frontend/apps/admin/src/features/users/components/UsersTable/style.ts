@@ -20,6 +20,7 @@ export const useStyles = createUseStyles({
     display: "flex",
     flexDirection: "column",
     minHeight: 0,
+    alignSelf: "center",
   },
   sectionTitle: {
     margin: "0 0 0.85rem",
@@ -36,7 +37,6 @@ export const useStyles = createUseStyles({
     minHeight: 0,
   },
   tableShell: {
-    flex: 1,
     display: "flex",
     flexDirection: "column",
     minHeight: 0,
@@ -84,22 +84,75 @@ export const useStyles = createUseStyles({
   rowsScroll: {
     flex: 1,
     minHeight: 0,
+    maxHeight: "calc(100vh - 300px)",
     overflowY: "auto",
     scrollbarGutter: "stable",
+    display: "flex",
+    flexDirection: "column",
   },
   bodyTable: {
     tableLayout: "fixed",
     width: "100%",
     borderCollapse: "separate",
     borderSpacing: 0,
+    flex: "0 0 auto",
     "& td": {
       borderBottom: "1px solid #f1f5f9",
     },
   },
   paginationBar: {
-    padding: "4px 12px",
-    borderTop: "1px solid #e5e7eb",
-    background: "#fff",
+    padding: "8px 16px",
+    borderTop: "1px solid #d1d5db",
+    background: "#f9fafb",
+    flex: "0 0 auto",
+    marginTop: "auto",
+    borderBottomLeftRadius: 8,
+    borderBottomRightRadius: 8,
+
+    "& .MuiTablePagination-toolbar": {
+      minHeight: 44,
+    },
+
+    "& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows": {
+      fontSize: 14,
+      fontWeight: 500,
+      color: "#374151",
+    },
+
+    "& .MuiTablePagination-select": {
+      fontSize: 14,
+      fontWeight: 600,
+      backgroundColor: "#fff",
+      border: "1px solid #d1d5db",
+      borderRadius: 6,
+      padding: "4px 28px 4px 8px",
+      marginLeft: 8,
+      "&:hover": {
+        borderColor: "#9ca3af",
+      },
+    },
+
+    "& .MuiTablePagination-actions .MuiIconButton-root": {
+      backgroundColor: "#fff",
+      border: "1px solid #d1d5db",
+      borderRadius: 6,
+      margin: "0 1px",
+      transition: "all 0.15s ease",
+      "&:hover": {
+        backgroundColor: "#3b82f6",
+        borderColor: "#3b82f6",
+        color: "#fff",
+      },
+      "&.Mui-disabled": {
+        backgroundColor: "#f3f4f6",
+        borderColor: "#e5e7eb",
+        color: "#9ca3af",
+      },
+    },
+  },
+  tableContainer: {
+    flex: "1 1 auto",
+    overflowY: "auto",
   },
   tableScrollX: {
     overflowX: "auto",
