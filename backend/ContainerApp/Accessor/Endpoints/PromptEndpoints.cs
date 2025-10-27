@@ -12,10 +12,10 @@ public static class PromptEndpoints
         var promptGroup = app.MapGroup("/prompts").WithTags("Prompts");
 
         promptGroup.MapPost("/", CreatePromptAsync).WithName("CreatePrompt");
+        promptGroup.MapGet("/", GetAllPromptsAsync).WithName("GetAllPrompts");
         promptGroup.MapGet("/{promptKey}", GetPromptAsync).WithName("GetPrompt");
-        promptGroup.MapGet("/{promptKey}/versions", GetPromptVersionsAsync).WithName("GetPromptVersions");
-        promptGroup.MapGet("/{promptKey}/versions/{version}", GetPromptVersionAsync).WithName("GetPromptVersion");
         promptGroup.MapPost("/batch", GetPromptsBatchAsync).WithName("GetPromptsBatch");
+        promptGroup.MapPatch("/{promptKey}/versions/{version}/labels", UpdatePromptLabelsAsync).WithName("UpdatePromptLabels");
 
         return app;
     }
@@ -55,51 +55,53 @@ public static class PromptEndpoints
         }
     }
 
-    public static async Task<IResult> GetPromptAsync(
-        [FromRoute] string promptKey,
+    public static async Task<IResult> GetAllPromptsAsync(
         [FromServices] IPromptService promptService,
         [FromServices] ILogger<PromptService> logger,
         CancellationToken cancellationToken)
     {
-        using var scope = logger.BeginScope("Method: {Method}, PromptKey: {PromptKey}", nameof(GetPromptAsync), promptKey);
+        using var scope = logger.BeginScope("Method: {Method}", nameof(GetAllPromptsAsync));
 
         try
         {
-            var prompt = await promptService.GetLatestPromptAsync(promptKey, cancellationToken);
+            var prompts = await promptService.GetAllPromptsAsync(cancellationToken);
+            logger.LogInformation("Retrieved {Count} prompts", prompts.Count);
+            return Results.Ok(prompts);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error retrieving all prompts");
+            return Results.Problem("Failed to retrieve prompts.");
+        }
+    }
+
+    public static async Task<IResult> GetPromptAsync(
+        [FromRoute] string promptKey,
+        [FromQuery] int? version,
+        [FromQuery] string? label,
+        [FromServices] IPromptService promptService,
+        [FromServices] ILogger<PromptService> logger,
+        CancellationToken cancellationToken)
+    {
+        using var scope = logger.BeginScope("Method: {Method}, PromptKey: {PromptKey}, Version: {Version}, Label: {Label}",
+            nameof(GetPromptAsync), promptKey, version, label);
+
+        try
+        {
+            var prompt = await promptService.GetPromptAsync(promptKey, version, label, cancellationToken);
             if (prompt is null)
             {
                 logger.LogInformation("Prompt {PromptKey} not found.", promptKey);
                 return Results.NotFound(new { error = $"Prompt with key '{promptKey}' not found." });
             }
 
-            logger.LogInformation("Retrieved latest prompt {PromptKey}", prompt.PromptKey);
+            logger.LogInformation("Retrieved prompt {PromptKey} from {Source}", prompt.PromptKey, prompt.Source);
             return Results.Ok(prompt);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error retrieving prompt {PromptKey}", promptKey);
             return Results.Problem("Failed to retrieve prompt.");
-        }
-    }
-
-    public static async Task<IResult> GetPromptVersionsAsync(
-        [FromRoute] string promptKey,
-        [FromServices] IPromptService promptService,
-        [FromServices] ILogger<PromptService> logger,
-        CancellationToken cancellationToken)
-    {
-        using var scope = logger.BeginScope("Method: {Method}, PromptKey: {PromptKey}", nameof(GetPromptVersionsAsync), promptKey);
-
-        try
-        {
-            var versions = await promptService.GetAllVersionsAsync(promptKey, cancellationToken);
-            logger.LogInformation("Retrieved {Count} versions for prompt {PromptKey}", versions.Count, promptKey);
-            return Results.Ok(versions);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error retrieving versions for prompt {PromptKey}", promptKey);
-            return Results.Problem("Failed to retrieve prompt versions.");
         }
     }
 
@@ -125,7 +127,7 @@ public static class PromptEndpoints
                 return Results.BadRequest(new { error = $"Maximum {maxBatch} prompt keys allowed." });
             }
 
-            var prompts = await promptService.GetLatestPromptsAsync(request.PromptKeys, cancellationToken);
+            var prompts = await promptService.GetPromptsAsync(request.PromptKeys, request.Label, cancellationToken);
             var foundSet = prompts.Select(p => p.PromptKey).ToHashSet(StringComparer.Ordinal);
             var notFound = request.PromptKeys
                 .Where(k => !string.IsNullOrWhiteSpace(k))
@@ -153,37 +155,48 @@ public static class PromptEndpoints
         }
     }
 
-    public static async Task<IResult> GetPromptVersionAsync(
+    public static async Task<IResult> UpdatePromptLabelsAsync(
         [FromRoute] string promptKey,
-        [FromRoute] string version,
+        [FromRoute] int version,
+        [FromBody] UpdatePromptLabelsRequest request,
         [FromServices] IPromptService promptService,
         [FromServices] ILogger<PromptService> logger,
         CancellationToken cancellationToken)
     {
-        using var scope = logger.BeginScope("Method: {Method}, PromptKey: {PromptKey}, Version: {Version}", nameof(GetPromptVersionAsync), promptKey, version);
+        using var scope = logger.BeginScope("Method: {Method}, PromptKey: {PromptKey}, Version: {Version}",
+            nameof(UpdatePromptLabelsAsync), promptKey, version);
 
         try
         {
-            if (string.IsNullOrWhiteSpace(promptKey) || string.IsNullOrWhiteSpace(version))
+            if (string.IsNullOrWhiteSpace(promptKey))
             {
-                logger.LogWarning("Invalid request for specific prompt version.");
-                return Results.BadRequest(new { error = "PromptKey and Version are required." });
+                return Results.BadRequest(new { error = "PromptKey is required." });
             }
 
-            var prompt = await promptService.GetPromptByVersionAsync(promptKey, version, cancellationToken);
-            if (prompt is null)
+            if (request is null || request.NewLabels is null || request.NewLabels.Length == 0)
             {
-                logger.LogInformation("Prompt {PromptKey} version {Version} not found.", promptKey, version);
-                return Results.NotFound(new { error = $"Prompt '{promptKey}' with version '{version}' not found." });
+                return Results.BadRequest(new { error = "NewLabels are required." });
             }
 
-            logger.LogInformation("Retrieved prompt {PromptKey} version {Version}", promptKey, version);
-            return Results.Ok(prompt);
+            var updated = await promptService.UpdatePromptLabelsAsync(promptKey, version, request, cancellationToken);
+            logger.LogInformation("Updated labels for prompt {PromptKey} version {Version}", promptKey, version);
+
+            return Results.Ok(updated);
+        }
+        catch (InvalidOperationException ex)
+        {
+            logger.LogWarning(ex, "Prompt not found");
+            return Results.NotFound(new { error = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            logger.LogWarning(ex, "Validation failure");
+            return Results.BadRequest(new { error = ex.Message });
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error retrieving prompt {PromptKey} version {Version}", promptKey, version);
-            return Results.Problem("Failed to retrieve prompt version.");
+            logger.LogError(ex, "Error updating prompt labels");
+            return Results.Problem("Failed to update prompt labels.");
         }
     }
 }

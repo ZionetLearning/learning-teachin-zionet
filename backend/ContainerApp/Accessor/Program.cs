@@ -52,6 +52,8 @@ builder.Services.AddHttpClient("SpeechClient", client =>
     client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", key);
 });
 
+builder.Services.AddHttpClient<ILangfuseService, LangfuseService>();
+
 builder.Services.AddScoped<IPromptService, PromptService>();
 
 var env = builder.Environment;
@@ -72,6 +74,11 @@ builder.Services.AddOptions<TaskCacheOptions>()
 
 builder.Services.AddOptions<PromptsOptions>()
     .Bind(builder.Configuration.GetSection("Prompts"))
+    .ValidateOnStart();
+
+builder.Services.AddOptions<LangfuseOptions>()
+    .Bind(builder.Configuration.GetSection("Langfuse"))
+    .ValidateDataAnnotations()
     .ValidateOnStart();
 
 // Register Dapr client with custom JSON options

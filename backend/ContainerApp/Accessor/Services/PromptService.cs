@@ -1,9 +1,4 @@
-﻿using System.Globalization;
-using Microsoft.EntityFrameworkCore;
-using AutoMapper;
-using AutoMapper.QueryableExtensions;
-using Accessor.DB;
-using Accessor.Models.Prompts;
+﻿using Accessor.Models.Prompts;
 using Accessor.Options;
 using Accessor.Services.Interfaces;
 using Microsoft.Extensions.Options;
@@ -13,19 +8,16 @@ namespace Accessor.Services;
 public class PromptService : IPromptService
 {
     private readonly ILogger<PromptService> _logger;
-    private readonly AccessorDbContext _dbContext;
-    private readonly IMapper _mapper;
+    private readonly ILangfuseService _langfuseService;
     private readonly IOptions<PromptsOptions> _promptsOptions;
 
     public PromptService(
         ILogger<PromptService> logger,
-        AccessorDbContext dbContext,
-        IMapper mapper,
+        ILangfuseService langfuseService,
         IOptions<PromptsOptions> promptsOptions)
     {
         _logger = logger;
-        _dbContext = dbContext;
-        _mapper = mapper;
+        _langfuseService = langfuseService;
         _promptsOptions = promptsOptions;
     }
 
@@ -36,140 +28,180 @@ public class PromptService : IPromptService
             throw new ArgumentNullException(nameof(request));
         }
 
-        using var scope = _logger.BeginScope("PromptKey: {PromptKey}", request.PromptKey);
-        ValidateRequest(request);
+        if (string.IsNullOrWhiteSpace(request.PromptKey))
+        {
+            throw new ArgumentException("PromptKey is required.", nameof(request));
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Content))
+        {
+            throw new ArgumentException("Content is required.", nameof(request));
+        }
 
         try
         {
-            // Idempotent: if latest has identical content, reuse it
-            var latest = await GetLatestPromptInternalAsync(request.PromptKey, track: false, cancellationToken: cancellationToken);
-            if (latest is not null &&
-                string.Equals(latest.Content, request.Content, StringComparison.Ordinal))
-            {
-                _logger.LogInformation("Content unchanged; returning existing prompt");
-                return latest;
-            }
+            _logger.LogInformation("Creating prompt '{PromptKey}' in Langfuse", request.PromptKey);
 
-            var model = new PromptModel
+            var langfuseRequest = new CreateLangfusePromptRequest
             {
-                Id = Guid.NewGuid(),
-                PromptKey = request.PromptKey,
-                Version = GenerateVersion(),
-                Content = request.Content
+                Name = request.PromptKey,
+                Prompt = request.Content,
+                Type = "text",
+                CommitMessage = request.CommitMessage,
+                Labels = request.Labels ?? Array.Empty<string>(),
+                Tags = request.Tags ?? Array.Empty<string>()
             };
 
-            _dbContext.Prompts.Add(model);
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            var created = await _langfuseService.CreatePromptAsync(langfuseRequest, cancellationToken);
 
-            _logger.LogInformation("Created prompt internal version {Version}", model.Version);
-            return _mapper.Map<PromptResponse>(model);
-        }
-        catch (DbUpdateException ex)
-        {
-            _logger.LogError(ex, "Database failure creating prompt");
-            throw new InvalidOperationException("Failed to persist prompt", ex);
+            return new PromptResponse
+            {
+                PromptKey = created.Name,
+                Content = created.Prompt,
+                Version = created.Version,
+                Labels = created.Labels,
+                Tags = created.Tags,
+                Type = created.Type,
+                Config = created.Config as LangfusePromptConfiguration,
+                Source = "Langfuse"
+            };
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unexpected error creating prompt");
+            _logger.LogError(ex, "Failed to create prompt '{PromptKey}' in Langfuse", request.PromptKey);
             throw;
         }
     }
 
-    public async Task<List<PromptResponse>> GetAllVersionsAsync(string promptKey, CancellationToken cancellationToken = default)
+    public async Task<PromptResponse?> GetPromptAsync(
+        string promptKey,
+        int? version = null,
+        string? label = null,
+        CancellationToken cancellationToken = default)
     {
-        ValidatePromptKey(promptKey);
+        if (string.IsNullOrWhiteSpace(promptKey))
+        {
+            throw new ArgumentException("PromptKey is required.", nameof(promptKey));
+        }
 
         try
         {
-            var list = await _dbContext.Prompts
-                .AsNoTracking()
-                .Where(p => p.PromptKey == promptKey)
-                .OrderByDescending(p => p.Version)
-                .ProjectTo<PromptResponse>(_mapper.ConfigurationProvider)
-                .ToListAsync(cancellationToken: cancellationToken);
+            _logger.LogInformation("Fetching prompt '{PromptKey}' (version: {Version}, label: {Label}) from Langfuse",
+                promptKey, version, label);
 
-            _logger.LogInformation("Retrieved {Count} prompt entries for {PromptKey}", list.Count, promptKey);
-            return list;
+            var langfusePrompt = await _langfuseService.GetPromptAsync(promptKey, version, label, cancellationToken);
+
+            if (langfusePrompt != null)
+            {
+                _logger.LogInformation("Successfully retrieved prompt '{PromptKey}' from Langfuse", promptKey);
+                return new PromptResponse
+                {
+                    PromptKey = langfusePrompt.Name,
+                    Content = langfusePrompt.Prompt,
+                    Version = langfusePrompt.Version,
+                    Labels = langfusePrompt.Labels,
+                    Tags = langfusePrompt.Tags,
+                    Type = langfusePrompt.Type,
+                    Config = langfusePrompt.Config,
+                    Source = "Langfuse"
+                };
+            }
+
+            _logger.LogWarning("Prompt '{PromptKey}' not found in Langfuse, checking local defaults", promptKey);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed retrieving prompts for {PromptKey}", promptKey);
-            throw;
+            _logger.LogWarning(ex, "Error retrieving prompt '{PromptKey}' from Langfuse, falling back to local defaults", promptKey);
         }
+
+        // Fallback to local defaults
+        return GetPromptFromDefaults(promptKey);
     }
 
-    public async Task<PromptResponse?> GetLatestPromptAsync(string promptKey, CancellationToken cancellationToken = default)
+    public async Task<List<LangfusePromptListItem>> GetAllPromptsAsync(CancellationToken cancellationToken = default)
     {
-        ValidatePromptKey(promptKey);
-
         try
         {
-            return await GetLatestPromptInternalAsync(promptKey, track: false, cancellationToken: cancellationToken);
+            _logger.LogInformation("Fetching all prompts from Langfuse");
+            return await _langfuseService.GetAllPromptsAsync(cancellationToken);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed retrieving latest prompt for {PromptKey}", promptKey);
+            _logger.LogError(ex, "Failed to retrieve all prompts from Langfuse");
             throw;
         }
     }
 
-    public async Task<List<PromptResponse>> GetLatestPromptsAsync(IEnumerable<string> promptKeys, CancellationToken cancellationToken = default)
+    public async Task<List<PromptResponse>> GetPromptsAsync(
+        IEnumerable<string> promptKeys,
+        string? label = null,
+        CancellationToken cancellationToken = default)
     {
         if (promptKeys is null)
         {
             throw new ArgumentNullException(nameof(promptKeys));
         }
 
-        var keys = promptKeys
-            .Where(k => !string.IsNullOrWhiteSpace(k))
-            .Distinct(StringComparer.Ordinal)
-            .ToList();
-
+        var keys = promptKeys.Where(k => !string.IsNullOrWhiteSpace(k)).Distinct().ToList();
         if (keys.Count == 0)
         {
             throw new ArgumentException("At least one prompt key is required.", nameof(promptKeys));
         }
 
+        var results = new List<PromptResponse>();
+
+        foreach (var key in keys)
+        {
+            var prompt = await GetPromptAsync(key, label: label, cancellationToken: cancellationToken);
+            if (prompt != null)
+            {
+                results.Add(prompt);
+            }
+        }
+
+        return results;
+    }
+
+    public async Task<PromptResponse> UpdatePromptLabelsAsync(
+        string promptKey,
+        int version,
+        UpdatePromptLabelsRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(promptKey))
+        {
+            throw new ArgumentException("PromptKey is required.", nameof(promptKey));
+        }
+
+        if (request is null)
+        {
+            throw new ArgumentNullException(nameof(request));
+        }
+
         try
         {
-            _logger.LogInformation("Batch retrieving {Count} prompt keys", keys.Count);
+            _logger.LogInformation("Updating labels for prompt '{PromptKey}' version {Version} in Langfuse",
+                promptKey, version);
 
-            var latestPerKey = await _dbContext.Prompts
-                .AsNoTracking()
-                .Where(p => keys.Contains(p.PromptKey))
-                .GroupBy(p => p.PromptKey)
-                .Select(g => g.OrderByDescending(p => p.Version).First())
-                .ToListAsync(cancellationToken);
+            var updated = await _langfuseService.UpdatePromptLabelsAsync(promptKey, version, request, cancellationToken);
 
-            var mapped = _mapper.Map<List<PromptResponse>>(latestPerKey);
-
-            _logger.LogInformation("Batch retrieved {Found} / {Requested} prompts", latestPerKey.Count, keys.Count);
-            return mapped;
-
+            return new PromptResponse
+            {
+                PromptKey = updated.Name,
+                Content = updated.Prompt,
+                Version = updated.Version,
+                Labels = updated.Labels,
+                Tags = updated.Tags,
+                Type = updated.Type,
+                Config = updated.Config,
+                Source = "Langfuse"
+            };
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed batch retrieving prompts");
+            _logger.LogError(ex, "Failed to update labels for prompt '{PromptKey}' version {Version}", promptKey, version);
             throw;
         }
-    }
-
-    public async Task<PromptResponse?> GetPromptByVersionAsync(string promptKey, string version, CancellationToken cancellationToken = default)
-    {
-        ValidatePromptKey(promptKey);
-
-        if (string.IsNullOrWhiteSpace(version))
-        {
-            throw new ArgumentException("Version is required.", nameof(version));
-        }
-
-        var entity = await _dbContext.Prompts
-            .AsNoTracking()
-            .Where(p => p.PromptKey == promptKey && p.Version == version)
-            .SingleOrDefaultAsync(cancellationToken);
-
-        return entity is null ? null : _mapper.Map<PromptResponse>(entity);
     }
 
     public async Task InitializeDefaultPromptsAsync()
@@ -182,82 +214,65 @@ public class PromptService : IPromptService
             return;
         }
 
-        try
+        _logger.LogInformation("Initializing {Count} default prompts to Langfuse", defaults.Count);
+
+        var initialized = 0;
+        var skipped = 0;
+
+        foreach (var (key, content) in defaults)
         {
-            var keys = defaults.Keys.ToList();
-            var existingKeys = await _dbContext.Prompts
-                .AsNoTracking()
-                .Where(p => keys.Contains(p.PromptKey))
-                .Select(p => p.PromptKey)
-                .Distinct()
-                .ToListAsync();
-
-            var missing = defaults.Where(kvp => !existingKeys.Contains(kvp.Key)).ToList();
-            if (missing.Count == 0)
+            try
             {
-                _logger.LogInformation("Default prompts already initialized");
-                return;
-            }
+                // Check if prompt already exists in Langfuse
+                var existing = await _langfuseService.GetPromptAsync(key, version: null, label: "latest", CancellationToken.None);
 
-            foreach (var (key, content) in missing)
-            {
-                _dbContext.Prompts.Add(new PromptModel
+                if (existing != null)
                 {
-                    Id = Guid.NewGuid(),
-                    PromptKey = key,
-                    Version = GenerateVersion(),
-                    Content = content
-                });
+                    _logger.LogDebug("Prompt '{PromptKey}' already exists in Langfuse, skipping", key);
+                    skipped++;
+                    continue;
+                }
+
+                // Create the prompt in Langfuse
+                var request = new CreateLangfusePromptRequest
+                {
+                    Name = key,
+                    Prompt = content,
+                    Type = "text",
+                    CommitMessage = "Initialized from defaults",
+                    Labels = new[] { "production" },
+                    Tags = new[] { "default", "initialized" }
+                };
+
+                await _langfuseService.CreatePromptAsync(request, CancellationToken.None);
+                initialized++;
+                _logger.LogInformation("Initialized default prompt '{PromptKey}' in Langfuse", key);
             }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to initialize default prompt '{PromptKey}' in Langfuse", key);
+            }
+        }
 
-            await _dbContext.SaveChangesAsync();
-            _logger.LogInformation("Initialized {Count} default prompts", missing.Count);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed initializing default prompts");
-            throw;
-        }
+        _logger.LogInformation("Default prompts initialization complete. Initialized: {Initialized}, Skipped: {Skipped}",
+            initialized, skipped);
     }
 
-    private static string GenerateVersion() =>
-        DateTime.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", CultureInfo.InvariantCulture);
-
-    private async Task<PromptResponse?> GetLatestPromptInternalAsync(string promptKey, bool track, CancellationToken cancellationToken = default)
+    private PromptResponse? GetPromptFromDefaults(string promptKey)
     {
-        var query = _dbContext.Prompts
-            .Where(p => p.PromptKey == promptKey)
-            .OrderByDescending(p => p.Version);
-
-        if (!track)
+        var defaults = _promptsOptions.Value.Defaults;
+        if (defaults == null || !defaults.TryGetValue(promptKey, out var content))
         {
-            query = (IOrderedQueryable<PromptModel>)query.AsNoTracking();
+            _logger.LogWarning("Prompt '{PromptKey}' not found in local defaults either", promptKey);
+            return null;
         }
 
-        var entity = await query.FirstOrDefaultAsync(cancellationToken: cancellationToken);
-        return entity is null ? null : _mapper.Map<PromptResponse>(entity);
-    }
-
-    private void ValidateRequest(CreatePromptRequest request)
-    {
-        if (request is null)
+        _logger.LogInformation("Returning prompt '{PromptKey}' from local defaults", promptKey);
+        return new PromptResponse
         {
-            throw new ArgumentNullException(nameof(request));
-        }
-
-        ValidatePromptKey(request.PromptKey);
-
-        if (string.IsNullOrWhiteSpace(request.Content))
-        {
-            throw new ArgumentException("Content is required", nameof(request));
-        }
-    }
-
-    private void ValidatePromptKey(string promptKey)
-    {
-        if (string.IsNullOrWhiteSpace(promptKey))
-        {
-            throw new ArgumentException("PromptKey is required", nameof(promptKey));
-        }
+            PromptKey = promptKey,
+            Content = content,
+            Source = "Local"
+        };
     }
 }
