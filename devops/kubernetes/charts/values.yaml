@@ -108,7 +108,7 @@ manager:
       name: signalr-connection
       key: SignalRConnectionString
     avatars:
-      enabled: false
+      enabled: true
       name: avatars-storage-secret
       key: AvatarsStorageConnectionString
     jwt:
@@ -127,6 +127,8 @@ manager:
           key: Jwt__Audience
         - remote: manager-jwt-refreshtokenhashkey
           key: Jwt__RefreshTokenHashKey
+  ingress:
+    enabled: false
   resources:
     requests:
       cpu: "100m"
