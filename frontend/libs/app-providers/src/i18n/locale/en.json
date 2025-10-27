@@ -323,7 +323,7 @@
         "send": "Send",
         "noNotifications": "No notifications",
         "notifications": "Notifications",
-        "reronnects": "Reconnects",
+        "reconnects": "Reconnects",
         "errors": "Errors",
         "signalRStatus": "SignalR Status",
         "noEventsYet": "No SignalR events yet."
