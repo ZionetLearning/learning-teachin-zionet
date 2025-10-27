@@ -36,7 +36,6 @@ export const ChatWithAvatar = () => {
   const [showSidebar, setShowSidebar] = useState(false);
   const lastSpokenTextRef = useRef<string | null>(null);
   const lastUnmuteTimeRef = useRef<number>(0);
-  const isLoadingHistoryRef = useRef<boolean>(false);
   const suppressSpeechUntilUserMessageRef = useRef<boolean>(false);
 
   const [visibleTool, setVisibleTool] = useState<string>(""); // state to show current tool call
@@ -87,7 +86,6 @@ export const ChatWithAvatar = () => {
       if (suppressSpeechUntilUserMessageRef.current) return;
       if (isRecentUnmute) return;
       if (isLoadingHistory) return;
-      if (isLoadingHistoryRef.current) return;
       if (isMuted) return;
 
       const last = messages[messages.length - 1];
@@ -95,8 +93,7 @@ export const ChatWithAvatar = () => {
       if (
         last?.position === "left" &&
         last.text &&
-        last.text !== lastSpokenTextRef.current &&
-        !isLoadingHistoryRef.current
+        last.text !== lastSpokenTextRef.current
       ) {
         if (isPlaying) {
           stop().then(() => {
@@ -109,7 +106,7 @@ export const ChatWithAvatar = () => {
         }
       }
     },
-    [messages, speak, stop, isPlaying, threadId, isMuted, isLoadingHistory],
+    [messages, speak, stop, isPlaying, isMuted, isLoadingHistory],
   );
 
   useEffect(
@@ -118,12 +115,7 @@ export const ChatWithAvatar = () => {
         lastSpokenTextRef.current = null;
         loadHistoryIntoMessages();
         suppressSpeechUntilUserMessageRef.current = true;
-
-        setTimeout(() => {
-          isLoadingHistoryRef.current = false;
-        }, 500);
       } else if (chatHistory && chatHistory.messages.length === 0) {
-        isLoadingHistoryRef.current = false;
         suppressSpeechUntilUserMessageRef.current = true;
       }
     },
@@ -163,7 +155,6 @@ export const ChatWithAvatar = () => {
       await stop();
     }
 
-    isLoadingHistoryRef.current = true;
     suppressSpeechUntilUserMessageRef.current = true;
 
     // Clear spoken text reference for new chat
@@ -179,7 +170,6 @@ export const ChatWithAvatar = () => {
       await stop();
     }
 
-    isLoadingHistoryRef.current = true;
     suppressSpeechUntilUserMessageRef.current = true;
 
     // Clear references for new chat
@@ -187,10 +177,6 @@ export const ChatWithAvatar = () => {
 
     startNewChat();
     setShowSidebar(false);
-
-    setTimeout(() => {
-      isLoadingHistoryRef.current = false;
-    }, 500);
   };
 
   const handleToggleSidebar = () => {
