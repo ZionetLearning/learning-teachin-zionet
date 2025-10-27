@@ -187,7 +187,7 @@ resource "azurerm_storage_account" "avatars" {
     Purpose     = "avatars-media"
   }
 
-  depends_on = [azurerm_resource_group.storage]
+  depends_on = [data.azurerm_resource_group.storage]
 }
 
 # Private container for avatars
