@@ -34,9 +34,10 @@ export const ChatWithAvatar = () => {
 
   const [text, setText] = useState("");
   const [showSidebar, setShowSidebar] = useState(false);
-  const [lastHistoryLoadTime, setLastHistoryLoadTime] = useState<number>(0);
   const lastSpokenTextRef = useRef<string | null>(null);
-  const currentThreadIdRef = useRef<string | undefined>(null); // Track current thread
+  const lastUnmuteTimeRef = useRef<number>(0);
+  const isLoadingHistoryRef = useRef<boolean>(false);
+  const suppressSpeechUntilUserMessageRef = useRef<boolean>(false);
 
   const [visibleTool, setVisibleTool] = useState<string>(""); // state to show current tool call
   const lingerMs = 1200; // delayed in 1200 ms so we can see the tool call after tool ends
@@ -44,87 +45,90 @@ export const ChatWithAvatar = () => {
 
   const isRTL = i18n.language === "he";
 
-  // When a tool starts, show immediately and cancel any hide timer
-  useEffect(() => {
-    if (currentStage === "Tool" && currentToolCall) {
-      if (hideTimerRef.current) {
-        window.clearTimeout(hideTimerRef.current);
-        hideTimerRef.current = null;
+  useEffect(
+    function handleToolCallStart() {
+      if (currentStage === "Tool" && currentToolCall) {
+        if (hideTimerRef.current) {
+          window.clearTimeout(hideTimerRef.current);
+          hideTimerRef.current = null;
+        }
+        setVisibleTool(currentToolCall);
       }
-      setVisibleTool(currentToolCall);
-    }
-  }, [currentStage, currentToolCall]);
+    },
+    [currentStage, currentToolCall],
+  );
 
-  // When we leave Tool, keep it for a short time then hide
-  useEffect(() => {
-    if (currentStage !== "Tool" && visibleTool) {
-      if (hideTimerRef.current) {
-        window.clearTimeout(hideTimerRef.current);
+  useEffect(
+    function handleToolCallEnd() {
+      if (currentStage !== "Tool" && visibleTool) {
+        if (hideTimerRef.current) {
+          window.clearTimeout(hideTimerRef.current);
+        }
+        hideTimerRef.current = window.setTimeout(() => {
+          setVisibleTool("");
+          hideTimerRef.current = null;
+        }, lingerMs);
       }
-      hideTimerRef.current = window.setTimeout(() => {
-        setVisibleTool("");
-        hideTimerRef.current = null;
-      }, lingerMs);
-    }
-    return () => {
-      if (hideTimerRef.current) {
-        window.clearTimeout(hideTimerRef.current);
-        hideTimerRef.current = null;
-      }
-    };
-  }, [currentStage, visibleTool]);
+      return () => {
+        if (hideTimerRef.current) {
+          window.clearTimeout(hideTimerRef.current);
+          hideTimerRef.current = null;
+        }
+      };
+    },
+    [currentStage, visibleTool],
+  );
 
-  // Track thread changes to prevent speaking old messages
-  useEffect(() => {
-    if (threadId !== currentThreadIdRef.current) {
-      currentThreadIdRef.current = threadId;
-      lastSpokenTextRef.current = null; // Reset when thread changes
-    }
-  }, [threadId]);
+  useEffect(
+    function handleAvatarSpeech() {
+      const now = Date.now();
+      const isRecentUnmute = now - lastUnmuteTimeRef.current < 500;
 
-  // Fixed speech effect with better conditions
-  useEffect(() => {
-    const now = Date.now();
-    const isRecentHistoryLoad = now - lastHistoryLoadTime < 1000;
+      if (suppressSpeechUntilUserMessageRef.current) return;
+      if (isRecentUnmute) return;
+      if (isLoadingHistory) return;
+      if (isLoadingHistoryRef.current) return;
+      if (isMuted) return;
 
-    if (isRecentHistoryLoad) return;
-    if (messages.length === 0) return; // Don't speak if no messages
-    if (isMuted) return;
-    const last = messages[messages.length - 1];
+      const last = messages[messages.length - 1];
 
-    if (
-      last?.position === "left" &&
-      last.text &&
-      last.text !== lastSpokenTextRef.current &&
-      threadId === currentThreadIdRef.current
-    ) {
-      // Always stop current speech before speaking new message
-      if (isPlaying) {
-        stop().then(() => {
+      if (
+        last?.position === "left" &&
+        last.text &&
+        last.text !== lastSpokenTextRef.current &&
+        !isLoadingHistoryRef.current
+      ) {
+        if (isPlaying) {
+          stop().then(() => {
+            speak(last.text);
+            lastSpokenTextRef.current = last.text;
+          });
+        } else {
           speak(last.text);
           lastSpokenTextRef.current = last.text;
-        });
-      } else {
-        speak(last.text);
-        lastSpokenTextRef.current = last.text;
+        }
       }
-    }
-  }, [
-    messages,
-    speak,
-    stop,
-    lastHistoryLoadTime,
-    isPlaying,
-    threadId,
-    isMuted,
-  ]);
+    },
+    [messages, speak, stop, isPlaying, threadId, isMuted, isLoadingHistory],
+  );
 
-  useEffect(() => {
-    if (chatHistory && chatHistory.messages.length > 0) {
-      setLastHistoryLoadTime(Date.now());
-      loadHistoryIntoMessages();
-    }
-  }, [chatHistory, loadHistoryIntoMessages]);
+  useEffect(
+    function handleChatHistoryLoad() {
+      if (chatHistory && chatHistory.messages.length > 0) {
+        lastSpokenTextRef.current = null;
+        loadHistoryIntoMessages();
+        suppressSpeechUntilUserMessageRef.current = true;
+
+        setTimeout(() => {
+          isLoadingHistoryRef.current = false;
+        }, 500);
+      } else if (chatHistory && chatHistory.messages.length === 0) {
+        isLoadingHistoryRef.current = false;
+        suppressSpeechUntilUserMessageRef.current = true;
+      }
+    },
+    [chatHistory, loadHistoryIntoMessages],
+  );
 
   const handleSend = async () => {
     if (!text.trim()) return;
@@ -133,6 +137,8 @@ export const ChatWithAvatar = () => {
     if (isPlaying) {
       await stop();
     }
+
+    suppressSpeechUntilUserMessageRef.current = false;
 
     sendMessage(text);
     setText("");
@@ -143,20 +149,25 @@ export const ChatWithAvatar = () => {
     if (!isMuted && isPlaying) {
       await stop();
     }
+
+    if (isMuted) {
+      lastUnmuteTimeRef.current = Date.now();
+    }
+
     toggleMute();
   };
 
   const handleChatSelect = async (chatId: string) => {
-    setLastHistoryLoadTime(Date.now());
-
     // Stop current speech when switching chats
     if (isPlaying) {
       await stop();
     }
 
+    isLoadingHistoryRef.current = true;
+    suppressSpeechUntilUserMessageRef.current = true;
+
     // Clear spoken text reference for new chat
     lastSpokenTextRef.current = null;
-    currentThreadIdRef.current = null; // Will be updated by useEffect
 
     loadChatHistory(chatId);
     setShowSidebar(false);
@@ -168,12 +179,18 @@ export const ChatWithAvatar = () => {
       await stop();
     }
 
+    isLoadingHistoryRef.current = true;
+    suppressSpeechUntilUserMessageRef.current = true;
+
     // Clear references for new chat
     lastSpokenTextRef.current = null;
-    currentThreadIdRef.current = null; // Will be updated by useEffect
 
     startNewChat();
     setShowSidebar(false);
+
+    setTimeout(() => {
+      isLoadingHistoryRef.current = false;
+    }, 500);
   };
 
   const handleToggleSidebar = () => {
