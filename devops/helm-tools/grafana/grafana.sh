@@ -11,6 +11,13 @@ GRAFANA_CHART_VERSION="10.1.2"
 CONTROLLER_IP="teachin.westeurope.cloudapp.azure.com"
 
 # ==============================
+# Delete existing Grafana release
+# ==============================
+echo "0. Uninstalling existing Grafana Helm release (if present)..."
+helm uninstall grafana -n "$NAMESPACE" || true
+kubectl delete svc grafana -n "$NAMESPACE" || true
+
+# ==============================
 # 1. Helm repo
 # ==============================
 echo "1. Add Grafana Helm repo (if missing) and update..."
