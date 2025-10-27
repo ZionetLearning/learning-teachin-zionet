@@ -14,3 +14,7 @@ extraConfigmapMounts:
     mountPath: /etc/grafana/provisioning/alerting/notifier-teams.yaml
     subPath: notifier-teams.yaml
     readOnly: true
+
+extraEnvFrom:
+  - secretRef:
+      name: azure-monitor-secret
