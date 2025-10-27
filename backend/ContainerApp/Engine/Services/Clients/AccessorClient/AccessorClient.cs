@@ -2,6 +2,7 @@
 using System.Text.Json;
 using Dapr.Client;
 using Engine.Models.Prompts;
+using Engine.Options;
 using Engine.Services.Clients.AccessorClient.Models;
 using Engine.Constants;
 
@@ -160,21 +161,35 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
         }
     }
 
-    public async Task<PromptResponse?> GetPromptAsync(string promptKey, CancellationToken ct = default)
+    public async Task<PromptResponse?> GetPromptAsync(string promptKey, int? version = null, string? label = null, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(promptKey))
         {
             throw new ArgumentException("promptKey cannot be empty", nameof(promptKey));
         }
 
-        _logger.LogInformation("Getting latest prompt {PromptKey}", promptKey);
+        _logger.LogInformation("Getting prompt {PromptKey} (version: {Version}, label: {Label})", promptKey, version, label);
 
         try
         {
+            var queryParams = new List<string>();
+            if (version.HasValue)
+            {
+                queryParams.Add($"version={version.Value}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(label))
+            {
+                queryParams.Add($"label={Uri.EscapeDataString(label)}");
+            }
+
+            var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : string.Empty;
+            var url = $"prompts/{Uri.EscapeDataString(promptKey)}{queryString}";
+
             var prompt = await _daprClient.InvokeMethodAsync<PromptResponse>(
                 HttpMethod.Get,
                 "accessor",
-                $"prompts/{Uri.EscapeDataString(promptKey)}",
+                url,
                 cancellationToken: ct);
 
             return prompt;
@@ -191,7 +206,13 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
         }
     }
 
-    public async Task<GetPromptsBatchResponse> GetPromptsBatchAsync(IEnumerable<string> promptKeys, CancellationToken ct = default)
+    public Task<PromptResponse?> GetPromptAsync(PromptConfiguration config, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(config);
+        return GetPromptAsync(config.Key, config.Version, config.Label, ct);
+    }
+
+    public async Task<GetPromptsBatchResponse> GetPromptsBatchAsync(IEnumerable<string> promptKeys, string? label = null, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(promptKeys);
 
@@ -211,11 +232,12 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
             throw new ArgumentException($"Maximum {maxBatch} prompt keys allowed. Received {keys.Count}.", nameof(promptKeys));
         }
 
-        _logger.LogInformation("Batch requesting {Count} prompts", keys.Count);
+        _logger.LogInformation("Batch requesting {Count} prompts with label: {Label}", keys.Count, label);
 
         var request = new GetPromptsBatchRequest
         {
-            PromptKeys = keys
+            PromptKeys = keys,
+            Label = label
         };
 
         try
@@ -246,6 +268,48 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
             _logger.LogError(ex, "Unexpected error retrieving batch prompts");
             throw;
         }
+    }
+
+    public async Task<GetPromptsBatchResponse> GetPromptsBatchAsync(IEnumerable<PromptConfiguration> configs, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(configs);
+
+        var configList = configs.ToList();
+        if (configList.Count == 0)
+        {
+            throw new ArgumentException("At least one prompt configuration must be provided", nameof(configs));
+        }
+
+        // For batch requests with configs, we need to fetch them individually since they may have different versions/labels
+        var results = new List<PromptResponse>();
+        var notFound = new List<string>();
+
+        foreach (var config in configList)
+        {
+            try
+            {
+                var prompt = await GetPromptAsync(config, ct);
+                if (prompt != null)
+                {
+                    results.Add(prompt);
+                }
+                else
+                {
+                    notFound.Add(config.Key);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to get prompt {PromptKey}", config.Key);
+                notFound.Add(config.Key);
+            }
+        }
+
+        return new GetPromptsBatchResponse
+        {
+            Prompts = results,
+            NotFound = notFound
+        };
     }
 
     public async Task<IReadOnlyList<PromptResponse>> GetPromptVersionsAsync(string promptKey, CancellationToken ct = default)
