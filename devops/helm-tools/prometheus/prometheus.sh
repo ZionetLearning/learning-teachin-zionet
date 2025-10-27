@@ -28,7 +28,7 @@ echo "3. Installing Prometheus stack..."
 helm upgrade --install prom-stack prometheus-community/kube-prometheus-stack \
   --version "$PROM_CHART_VERSION" \
   --namespace "$PROM_NAMESPACE" \
-  --values ./values-prometheus-dapr.yaml \
+  --values ./yaml/values-prometheus-dapr.yaml \
   --wait
 
 # ==============================
@@ -44,7 +44,7 @@ kubectl wait --namespace "$GRAFANA_NAMESPACE" \
 # 5. Apply Grafana datasource
 # ==============================
 echo "5. Applying Grafana datasource..."
-kubectl apply -f ./datasources.yaml -n "$GRAFANA_NAMESPACE"
+kubectl apply -f ./yaml/datasources.yaml -n "$GRAFANA_NAMESPACE"
 
 # ==============================
 # 6. Apply Grafana dashboards
