@@ -143,75 +143,12 @@ export const useStyles = createUseStyles({
     },
   },
   paginationBar: {
-    padding: "8px 16px",
+    background: "rgba(255,255,255,0.98)",
     borderTop: "1px solid #d1d5db",
-    background: "#f9fafb",
-    flex: "0 0 auto",
-    marginTop: "auto",
-    borderBottomLeftRadius: 8,
-    borderBottomRightRadius: 8,
-
-    "& .MuiTablePagination-toolbar": {
-      minHeight: 44,
-      "@media (max-width: 480px)": {
-        minHeight: 36,
-        flexWrap: "wrap",
-        gap: "8px",
-      },
-    },
-
-    "& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows": {
-      fontSize: 14,
-      fontWeight: 500,
-      color: "#374151",
-      "@media (max-width: 480px)": {
-        fontSize: 12,
-      },
-    },
-
-    "& .MuiTablePagination-select": {
-      fontSize: 14,
-      fontWeight: 600,
-      backgroundColor: "#fff",
-      border: "1px solid #d1d5db",
-      borderRadius: 6,
-      padding: "4px 28px 4px 8px",
-      marginLeft: 8,
-      "&:hover": {
-        borderColor: "#9ca3af",
-      },
-      "@media (max-width: 480px)": {
-        fontSize: 12,
-        padding: "2px 24px 2px 6px",
-        marginLeft: 4,
-      },
-    },
-
-    "& .MuiTablePagination-actions .MuiIconButton-root": {
-      backgroundColor: "#fff",
-      border: "1px solid #d1d5db",
-      borderRadius: 6,
-      margin: "0 1px",
-      transition: "all 0.15s ease",
-      "&:hover": {
-        backgroundColor: "#3b82f6",
-        borderColor: "#3b82f6",
-        color: "#fff",
-      },
-      "&.Mui-disabled": {
-        backgroundColor: "#f3f4f6",
-        borderColor: "#e5e7eb",
-        color: "#9ca3af",
-      },
-      "@media (max-width: 480px)": {
-        padding: "4px",
-        margin: "0 0.5px",
-      },
-    },
-
-    "@media (max-width: 480px)": {
-      padding: "6px 12px",
-    },
+    backdropFilter: "blur(6px)",
+    boxShadow: "0 -4px 12px rgba(0,0,0,0.04), 0 -12px 32px rgba(0,0,0,0.03)",
+    position: "relative",
+    zIndex: 2,
   },
   tableContainer: {
     flex: "1 1 auto",
