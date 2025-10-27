@@ -30,7 +30,7 @@ createRoot(document.getElementById("root")!).render(
           <DevToolsProvider>
             <SentryErrorBoundary>
               <App />
-              <DevToolsDock label="DevTools" />
+              <DevToolsDock />
               <ToastContainer />
             </SentryErrorBoundary>
           </DevToolsProvider>
