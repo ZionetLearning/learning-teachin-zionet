@@ -78,7 +78,10 @@
         "avatar": "אווטאר",
         "lips": "שפתיים",
         "mute": "השתק",
-        "unmute": "הפעל קול"
+        "unmute": "הפעל קול",
+        "callingTool": "מפעיל כלי: {{tool}}",
+        "send": "שלח",
+        "me": "אני"
       },
       "chatHistory": {
         "title": "היסטוריית צ'אט",

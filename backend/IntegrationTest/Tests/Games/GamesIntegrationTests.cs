@@ -273,6 +273,7 @@ public class GamesIntegrationTests(
         // Verify each mistake has the expected structure
         foreach (var mistake in result.Items)
         {
+            mistake.AttemptId.Should().NotBeEmpty();
             mistake.GameType.Should().Be("wordOrderGame");
             mistake.Difficulty.ToLower().Should().BeOneOf("easy", "medium", "hard");
             mistake.CorrectAnswer.Should().NotBeEmpty();
@@ -320,6 +321,7 @@ public class GamesIntegrationTests(
         // Verify mistakes structure
         foreach (var mistake in result.Items)
         {
+            mistake.AttemptId.Should().NotBeEmpty();
             mistake.GameType.Should().Be("wordOrderGame");
             mistake.Difficulty.ToLower().Should().BeOneOf("easy", "medium");
             mistake.CorrectAnswer.Should().NotBeEmpty();
@@ -355,6 +357,7 @@ public class GamesIntegrationTests(
         result!.Items.Should().HaveCount(1);
         
         var mistake = result.Items.First();
+        mistake.AttemptId.Should().NotBeEmpty();
         mistake.GameType.Should().Be("wordOrderGame");
         mistake.Difficulty.ToLower().Should().Be("hard");
         mistake.CorrectAnswer.Should().NotBeEmpty();
@@ -385,6 +388,7 @@ public class GamesIntegrationTests(
         result!.Items.Should().HaveCount(1);
         
         var mistake = result.Items.First();
+        mistake.AttemptId.Should().NotBeEmpty();
         mistake.Difficulty.ToLower().Should().Be("medium");
         mistake.CorrectAnswer.Should().NotBeEmpty();
         mistake.WrongAnswers.Should().HaveCount(1);

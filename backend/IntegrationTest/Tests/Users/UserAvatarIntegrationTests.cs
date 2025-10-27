@@ -18,7 +18,7 @@ public class UserAvatarIntegrationTests(
     SignalRTestFixture signalRFixture
 ) : UsersTestBase(perUserFixture, outputHelper, signalRFixture), IAsyncLifetime
 {
-    // минимальная валидная PNG 1x1 (прозрачная)
+    // min png
     private static readonly byte[] Png1x1 = Convert.FromBase64String(
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Yk7G4sAAAAASUVORK5CYII=");
 
@@ -66,7 +66,7 @@ public class UserAvatarIntegrationTests(
         var uploadUrl = uploadDto.GetProperty("uploadUrl").GetString()!;
         var blobPath = uploadDto.GetProperty("blobPath").GetString()!;
 
-        // 2) PUT в Azurite напрямую по SAS
+        // 2) PUT in Azurite
         using (var raw = new HttpClient())
         {
             using var content = new ByteArrayContent(Png1x1);
@@ -88,7 +88,6 @@ public class UserAvatarIntegrationTests(
         userData!.AvatarPath.Should().Be(blobPath);
         userData.AvatarContentType.Should().Be(ContentTypePng);
 
-        // 👇 запоминаем время установки
         var setAt = userData.AvatarUpdatedAtUtc;
         setAt.Should().NotBeNull();
 
@@ -98,12 +97,10 @@ public class UserAvatarIntegrationTests(
         var readUrl = await readUrlResp.Content.ReadAsStringAsync();
         readUrl.Should().NotBeNullOrWhiteSpace();
 
-        // Попробуем GET картинку по read-url (для SAS sp=r или публичной ссылки это 200)
         using (var raw = new HttpClient())
         {
-            var img = await raw.GetAsync(readUrl.Trim('"')); // если пришло как JSON-строка
+            var img = await raw.GetAsync(readUrl.Trim('"'));
             img.StatusCode.Should().Be(HttpStatusCode.OK);
-            // размер не обязателен, но должен быть > 0
             (await img.Content.ReadAsByteArrayAsync()).Length.Should().BeGreaterThan(0);
         }
 
@@ -111,11 +108,9 @@ public class UserAvatarIntegrationTests(
         var del = await Client.DeleteAsync($"/users-manager/user/{user.UserId}/avatar");
         del.ShouldBeOk();
 
-        // повторный delete — идемпотентно
         var del2 = await Client.DeleteAsync($"/users-manager/user/{user.UserId}/avatar");
         del2.ShouldBeOk();
 
-        // и поля в user должны очиститься
         var afterDelResp = await Client.GetAsync(ApiRoutes.UserById(user.UserId));
         afterDelResp.ShouldBeOk();
         var afterDel = await ReadAsJsonAsync<UserData>(afterDelResp);
@@ -145,7 +140,7 @@ public class UserAvatarIntegrationTests(
         var createB = await Client.PostAsJsonAsync(ApiRoutes.User, userB);
         createB.ShouldBeCreated();
 
-        // Пытаемся для B получить upload-url под токеном A → 403
+        // get B  upload-url with token A 
         var url = $"/users-manager/user/{userB.UserId}/avatar/upload-url";
         var body = new { contentType = ContentTypePng, sizeBytes = (long?)Png1x1.Length };
 
@@ -169,7 +164,7 @@ public class UserAvatarIntegrationTests(
     {
         var user = await CreateUserAsync();
 
-        // заведомо больше лимита (2 МБ)
+        // > 10 МБ
         var body = new { contentType = ContentTypePng, sizeBytes = (long?)(30 * 1024 * 1024) };
         var resp = await Client.PostAsJsonAsync($"/users-manager/user/{user.UserId}/avatar/upload-url", body);
 

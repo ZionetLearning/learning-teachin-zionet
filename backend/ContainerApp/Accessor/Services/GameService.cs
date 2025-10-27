@@ -256,6 +256,7 @@ public class GameService : IGameService
                 .Where(g => !g.Any(x => x.Status == AttemptStatus.Success))
                 .Select(g => new MistakeDto
                 {
+                    AttemptId = g.First().AttemptId,
                     GameType = g.First().GameType,
                     Difficulty = g.First().Difficulty,
                     CorrectAnswer = g.First().CorrectAnswer,
