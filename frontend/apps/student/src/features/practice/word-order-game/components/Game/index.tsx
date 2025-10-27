@@ -389,13 +389,6 @@ export const Game = ({ retryData }: GameProps) => {
             handleUnchooseWord={handleUnchooseWord}
           />
 
-          <WordsBank
-            loading={loading}
-            error={error}
-            shuffledSentence={shuffledSentence}
-            handleChooseWord={handleChooseWord}
-          />
-
           <WrongAnswerDisplay
             wrongAnswer={
               isRetryMode && retryData && retryData.wrongAnswers.length > 0
@@ -403,6 +396,13 @@ export const Game = ({ retryData }: GameProps) => {
                 : []
             }
             show={isRetryMode && retryData && retryData.wrongAnswers.length > 0}
+          />
+
+          <WordsBank
+            loading={loading}
+            error={error}
+            shuffledSentence={shuffledSentence}
+            handleChooseWord={handleChooseWord}
           />
         </div>
       </div>
