@@ -141,22 +141,16 @@ locals {
 }
 
 # ------------- Storage Resource Group (Shared across environments) -----------------------
-resource "azurerm_resource_group" "storage" {
-  name     = "storage-rg"
-  location = var.location
-
-  tags = {
-    Environment = "shared"
-    ManagedBy   = "terraform"
-    Purpose     = "storage-accounts"
-  }
+# Use existing storage-rg resource group (created manually or by other environment)
+data "azurerm_resource_group" "storage" {
+  name = "storage-rg"
 }
 
 # ------------- Storage Account for Avatars (Optimized for Cost) -----------------------
 resource "azurerm_storage_account" "avatars" {
   name                     = "${var.environment_name}avatarsstorage"
-  resource_group_name      = azurerm_resource_group.storage.name
-  location                = azurerm_resource_group.storage.location
+  resource_group_name      = data.azurerm_resource_group.storage.name
+  location                = data.azurerm_resource_group.storage.location
   account_tier            = "Standard"          # Cheapest tier
   account_replication_type = "LRS"             # Cheapest replication (Local only)
   access_tier             = "Cool"             # Cool tier for cheaper storage (avatars accessed less frequently)

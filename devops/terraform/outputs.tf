@@ -95,7 +95,7 @@ output "frontend_apps_enabled" {
 # Storage Account Outputs
 output "storage_resource_group_name" {
   description = "Name of the shared storage resource group"
-  value       = azurerm_resource_group.storage.name
+  value       = data.azurerm_resource_group.storage.name
 }
 
 output "avatars_storage_account_name" {
