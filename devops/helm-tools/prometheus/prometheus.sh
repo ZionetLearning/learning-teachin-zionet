@@ -54,8 +54,10 @@ for file in ./dashboards/*.json; do
   DASH_NAME=$(basename "$file" .json)
   kubectl create configmap "dashboard-$DASH_NAME" \
     --namespace "$GRAFANA_NAMESPACE" \
-    --from-file="$file" \
-    --dry-run=client -o yaml | kubectl apply -f -
+    --from-file="$DASH_NAME.json=$file" \
+    --dry-run=client -o yaml | \
+  kubectl label -f - grafana_dashboard="1" --overwrite | \
+  kubectl apply -f -
 done
 
 echo "Prometheus and Grafana successfully deployed and configured."
