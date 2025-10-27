@@ -1,0 +1,218 @@
+name: Lock / Unlock Featest (Single Issue)
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Lock or Unlock the featest environment"
+        required: true
+        type: choice
+        options: [lock, unlock]
+      locked_by:
+        description: "Username who locked the environment (required only for unlock)"
+        required: false
+        type: string
+
+  workflow_call:
+    inputs:
+      action:
+        required: true
+        type: string
+      locked_by:
+        required: false
+        type: string
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  manage-lock:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure lock issue exists
+        id: find-issue
+        run: |
+          REPO=${{ github.repository }}
+          ISSUE=$(gh issue list \
+            --repo "$REPO" \
+            --search "LOCK: featest" \
+            --json number \
+            --jq '.[0].number' 2>/dev/null || echo "")
+
+          if [ -z "$ISSUE" ]; then
+            echo "⚠️ No issue found, creating one..."
+            URL=$(gh issue create \
+              --repo "$REPO" \
+              --title "LOCK: featest" \
+              --body "Initial lock issue placeholder")
+            ISSUE=$(basename "$URL")
+          fi
+
+          echo "issue_number=$ISSUE" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Check if environment is locked
+        id: check
+        run: |
+          REPO=${{ github.repository }}
+          ISSUE=${{ steps.find-issue.outputs.issue_number }}
+
+          BODY=$(gh issue view "$ISSUE" --repo "$REPO" --json body -q .body)
+
+          LOCKED_BY=$(echo "$BODY" | grep '^locked_by=' | cut -d'=' -f2 || echo "")
+          LOCKED_AT=$(echo "$BODY" | grep '^locked_at=' | cut -d'=' -f2 || echo "")
+
+          IS_LOCKED=$(gh issue view "$ISSUE" --repo "$REPO" --json labels -q '.labels[].name' | grep -q "^locked$" && echo "true" || echo "false")
+
+          echo "locked_by=$LOCKED_BY" >> $GITHUB_OUTPUT
+          echo "locked_at=$LOCKED_AT" >> $GITHUB_OUTPUT
+          echo "is_locked=$IS_LOCKED" >> $GITHUB_OUTPUT
+
+          if [ "$IS_LOCKED" = "true" ]; then
+            echo "🔒 Currently locked by $LOCKED_BY since $LOCKED_AT"
+          else
+            echo "✅ Environment is not locked – allowed."
+          fi
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Manage lock state
+        id: lock-action
+        run: |
+          set -x
+          USER="$GITHUB_ACTOR"
+          REPO="$GITHUB_REPOSITORY"
+          NOTIFICATION_NEEDED=false
+
+          if [ "$ACTION" = "lock" ]; then
+            if [ "$IS_LOCKED" = "true" ]; then
+              if [ "$CURRENT_LOCKED_BY" = "$USER" ]; then
+                echo "✅ Environment already locked by $USER. Nothing to do."
+                echo "notification_needed=false" >> $GITHUB_OUTPUT
+                exit 0
+              else
+                echo "::error::Environment is already locked by $CURRENT_LOCKED_BY. You must unlock it first."
+                exit 1
+              fi
+            fi
+
+            echo "🔒 Locking featest by $USER"
+            BODY=$(echo -e "locked_by=$USER\nlocked_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)")
+            gh issue edit "$ISSUE" \
+              --repo "$REPO" \
+              --add-label "locked" \
+              --body "$BODY"
+            echo "notification_needed=true" >> $GITHUB_OUTPUT
+
+          elif [ "$ACTION" = "unlock" ]; then
+            if [ "$IS_LOCKED" != "true" ]; then
+              echo "::error::Environment is not locked. Nothing to unlock."
+              exit 1
+            fi
+
+            if [ "$USER" = "$CURRENT_LOCKED_BY" ]; then
+              echo "✅ $USER is the locker, unlocking directly."
+            else
+              if [ -z "$INPUT_LOCKED_BY" ]; then
+                echo "::error::You must provide locked_by input when unlocking as a different user."
+                exit 1
+              fi
+              if [ "$INPUT_LOCKED_BY" != "$CURRENT_LOCKED_BY" ]; then
+                echo "::error::Unlock denied. Environment is locked by $CURRENT_LOCKED_BY, but you entered $INPUT_LOCKED_BY."
+                exit 1
+              fi
+              echo "✅ Unlock approved: $USER provided correct locker name ($INPUT_LOCKED_BY)."
+            fi
+
+            echo "🔓 Unlocking featest by $USER"
+            BODY=$(echo -e "Unlocked by $USER\nunlocked_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)")
+            gh issue edit "$ISSUE" \
+              --repo "$REPO" \
+              --remove-label "locked" \
+              --body "$BODY"
+            echo "notification_needed=true" >> $GITHUB_OUTPUT
+          else
+            echo "::error::Unknown action: $ACTION"
+            exit 1
+          fi
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          ACTION: ${{ inputs.action || github.event.inputs.action }}
+          INPUT_LOCKED_BY: ${{ inputs.locked_by || github.event.inputs.locked_by }}
+          CURRENT_LOCKED_BY: ${{ steps.check.outputs.locked_by }}
+          IS_LOCKED: ${{ steps.check.outputs.is_locked }}
+          ISSUE: ${{ steps.find-issue.outputs.issue_number }}
+
+      - name: Send Teams notification
+        if: success() && steps.lock-action.outputs.notification_needed == 'true'
+        run: |
+          
+          
+          echo "✅ Teams webhook configured, proceeding with notification..."
+          
+          USER="$GITHUB_ACTOR"
+          ACTION="${{ inputs.action || github.event.inputs.action }}"
+          REPO_URL="https://github.com/${{ github.repository }}"
+          WORKFLOW_URL="$REPO_URL/actions/runs/${{ github.run_id }}"
+          TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          
+          if [ "$ACTION" = "lock" ]; then
+            TITLE="🔒 Featest Environment Locked"
+            COLOR="FF6B35"
+            MESSAGE="Featest environment has been locked"
+            ACTION_TEXT="Locked by"
+          else
+            TITLE="🔓 Featest Environment Unlocked" 
+            COLOR="28A745"
+            MESSAGE="Featest environment has been unlocked"
+            ACTION_TEXT="Unlocked by"
+          fi
+
+          # Create JSON payload using jq for proper escaping
+          PAYLOAD=$(jq -n \
+            --arg type "MessageCard" \
+            --arg context "https://schema.org/extensions" \
+            --arg summary "$TITLE" \
+            --arg color "$COLOR" \
+            --arg activityTitle "$TITLE" \
+            --arg activitySubtitle "$MESSAGE" \
+            --arg actionText "$ACTION_TEXT" \
+            --arg user "$USER" \
+            --arg repo "${{ github.repository }}" \
+            --arg timestamp "$TIMESTAMP" \
+            --arg workflowUrl "$WORKFLOW_URL" \
+            '{
+              "@type": $type,
+              "@context": $context,
+              "summary": $summary,
+              "themeColor": $color,
+              "sections": [{
+                "activityTitle": $activityTitle,
+                "activitySubtitle": $activitySubtitle,
+                "facts": [
+                  {"name": $actionText, "value": $user},
+                  {"name": "Repository", "value": $repo},
+                  {"name": "Time", "value": $timestamp}
+                ],
+                "potentialAction": [{
+                  "@type": "OpenUri",
+                  "name": "View Workflow",
+                  "targets": [{
+                    "os": "default",
+                    "uri": $workflowUrl
+                  }]
+                }]
+              }]
+            }')
+
+          echo "Sending Teams notification..."
+          echo "$PAYLOAD" | curl -X POST \
+               -H "Content-Type: application/json" \
+               -d @- \
+               "$TEAMS_WEBHOOK_URL_FEATEST" \
+               || echo "⚠️ Failed to send Teams notification"
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          TEAMS_WEBHOOK_URL_FEATEST: ${{ secrets.TEAMS_WEBHOOK_URL_FEATEST }}

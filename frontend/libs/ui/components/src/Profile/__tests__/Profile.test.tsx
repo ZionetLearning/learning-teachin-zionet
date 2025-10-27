@@ -1,6 +1,5 @@
-
 import { render, screen, fireEvent } from "@testing-library/react";
-import { vi, beforeEach } from "vitest";
+import { vi, beforeEach, describe, it, expect } from "vitest";
 
 // --- i18n mock ---
 let currentDir: "ltr" | "rtl" = "ltr";
@@ -17,7 +16,7 @@ import type {
   ButtonHTMLAttributes,
 } from "react";
 
-// --- @mui/material mock
+// --- @mui/material mock ---
 vi.mock("@mui/material", () => {
   type InputProps = InputHTMLAttributes<HTMLInputElement>;
   type BtnProps = ButtonHTMLAttributes<HTMLButtonElement>;
@@ -42,10 +41,16 @@ vi.mock("@mui/material", () => {
     value?: InputProps["value"];
     onChange?: InputProps["onChange"];
     disabled?: boolean;
-  }) => <input type="text" value={value} onChange={onChange} disabled={disabled} />;
+  }) => (
+    <input type="text" value={value} onChange={onChange} disabled={disabled} />
+  );
 
   const Stack = ({ children }: WithChildren) => (
     <div data-testid="mui-stack">{children}</div>
+  );
+
+  const Grid = ({ children }: WithChildren & Record<string, unknown>) => (
+    <div data-testid="mui-grid">{children}</div>
   );
 
   const Button = ({
@@ -58,11 +63,10 @@ vi.mock("@mui/material", () => {
     </button>
   );
 
-  return { Box, Typography, TextField, Stack, Button };
+  return { Box, Typography, TextField, Stack, Button, Grid };
 });
 
-// --- Your custom Button mock (typed, no `{}`) ---
-vi.mock("../Button", () => {
+vi.mock("@ui-components", () => {
   type CustomBtnProps = ButtonHTMLAttributes<HTMLButtonElement> & {
     variant?: string;
   };
@@ -78,17 +82,70 @@ vi.mock("../Button", () => {
     </button>
   );
 
-  return { Button };
+  const Dropdown = ({
+    value,
+    onChange,
+    options,
+  }: {
+    value?: string;
+    onChange?: (v: string) => void;
+    options?: { value: string; label: string }[];
+  }) => (
+    <select
+      data-testid="ui-dropdown"
+      value={value}
+      onChange={(e) => onChange?.(e.target.value)}
+    >
+      {(options ?? []).map((o) => (
+        <option key={o.value} value={o.value}>
+          {o.label}
+        </option>
+      ))}
+    </select>
+  );
+
+  const InterestChip = ({
+    label,
+    onDelete,
+  }: {
+    label: string;
+    onDelete?: () => void;
+  }) => (
+    <span data-testid="interest-chip">
+      {label}
+      {onDelete && (
+        <button aria-label={`delete-${label}`} onClick={onDelete}>
+          x
+        </button>
+      )}
+    </span>
+  );
+
+  return { Button, Dropdown, InterestChip };
 });
 
+// --- @app-providers mock: provide the mutation hook + types used in the file ---
+const mutateAsyncMock = vi.fn();
+vi.mock("@app-providers", () => {
+  return {
+    // minimal shape to satisfy the component’s imports
+    useUpdateUserByUserId: vi.fn(() => ({
+      mutateAsync: mutateAsyncMock,
+    })),
+    toAppRole: (role: unknown) => role,
+  };
+});
 
 // ---- Under test (import after mocks) ----
 import { Profile } from "../index";
 
-const baseProps = {
+// Helper user
+const user = {
+  userId: "user-123",
   firstName: "Alice",
   lastName: "Smith",
   email: "alice@example.com",
+  role: "student" as const,
 };
 
 beforeEach(() => {
@@ -97,123 +154,141 @@ beforeEach(() => {
 });
 
 describe("<Profile />", () => {
-  it("renders titles/labels and initial values", () => {
-    render(<Profile {...baseProps} />);
+  it("renders titles/labels and initial values; name inputs enabled, email disabled; save/cancel disabled initially", () => {
+    render(<Profile user={user} />);
 
+    // labels/titles
     expect(screen.getByText("pages.profile.title")).toBeInTheDocument();
     expect(screen.getByText("pages.profile.subTitle")).toBeInTheDocument();
-    expect(screen.getByText("pages.profile.secondSubTitle")).toBeInTheDocument();
+    expect(
+      screen.getByText("pages.profile.secondSubTitle"),
+    ).toBeInTheDocument();
     expect(screen.getByText("pages.profile.firstName")).toBeInTheDocument();
     expect(screen.getByText("pages.profile.lastName")).toBeInTheDocument();
     expect(screen.getByText("pages.profile.email")).toBeInTheDocument();
     expect(
-      screen.getByText("pages.profile.emailCannotBeChanged")
+      screen.getByText("pages.profile.emailCannotBeChanged"),
     ).toBeInTheDocument();
 
-    const textboxes = screen.getAllByRole("textbox") as HTMLInputElement[];
-    expect(textboxes[0]).toHaveValue("Alice");
-    expect(textboxes[1]).toHaveValue("Smith");
-    expect(textboxes[2]).toHaveValue("alice@example.com");
+    const inputs = screen.getAllByRole("textbox") as HTMLInputElement[];
+    expect(inputs.length).toBeGreaterThanOrEqual(3);
 
-    textboxes.forEach((tb) => expect(tb).toBeDisabled());
+    const firstNameInput = inputs[0];
+    const lastNameInput = inputs[1];
+    const emailInput = inputs[inputs.length - 1];
+    expect(firstNameInput).toHaveValue("Alice");
+    expect(lastNameInput).toHaveValue("Smith");
+    expect(emailInput).toHaveValue("alice@example.com");
 
-    expect(screen.getByText("pages.profile.edit")).toBeInTheDocument();
-    expect(screen.queryByText("pages.profile.saveChanges")).not.toBeInTheDocument();
-    expect(screen.queryByText("pages.profile.cancel")).not.toBeInTheDocument();
-  });
-
-  it("enters edit mode and enables name fields; save disabled until dirty", () => {
-    render(<Profile {...baseProps} />);
-    fireEvent.click(screen.getByText("pages.profile.edit"));
-
-    const saveBtn = screen.getByText("pages.profile.saveChanges");
-    const cancelBtn = screen.getByText("pages.profile.cancel");
-    expect(saveBtn).toBeInTheDocument();
-    expect(cancelBtn).toBeInTheDocument();
-
-    const [firstNameInput, lastNameInput, emailInput] =
-      screen.getAllByRole("textbox") as HTMLInputElement[];
     expect(firstNameInput).toBeEnabled();
     expect(lastNameInput).toBeEnabled();
     expect(emailInput).toBeDisabled();
 
+    const saveBtn = screen.getByText("pages.profile.saveChanges");
+    const cancelBtn = screen.getByText("pages.profile.cancel");
     expect(saveBtn).toBeDisabled();
+    expect(cancelBtn).toBeDisabled();
+  });
+
+  it("enables Save/Cancel when dirty; trimming to same value keeps them disabled", () => {
+    render(<Profile user={user} />);
+
+    const saveBtn = screen.getByText(
+      "pages.profile.saveChanges",
+    ) as HTMLButtonElement;
+    const cancelBtn = screen.getByText(
+      "pages.profile.cancel",
+    ) as HTMLButtonElement;
+    const [firstNameInput] = screen.getAllByRole(
+      "textbox",
+    ) as HTMLInputElement[];
+
+    // Not dirty initially
+    expect(saveBtn).toBeDisabled();
+    expect(cancelBtn).toBeDisabled();
+
+    // Change to a different value -> becomes dirty
+    fireEvent.change(firstNameInput, { target: { value: "Alicia" } });
+    expect(saveBtn).toBeEnabled();
+    expect(cancelBtn).toBeEnabled();
+
+    // Change to a trimmed-equal value -> back to original -> not dirty
+    fireEvent.change(firstNameInput, { target: { value: "  Alice  " } });
+    expect(saveBtn).toBeDisabled();
+    expect(cancelBtn).toBeDisabled();
+  });
+
+  it("Cancel reverts edits and disables buttons again", () => {
+    render(<Profile user={user} />);
+
+    const saveBtn = screen.getByText("pages.profile.saveChanges");
+    const cancelBtn = screen.getByText("pages.profile.cancel");
+    const [firstNameInput] = screen.getAllByRole(
+      "textbox",
+    ) as HTMLInputElement[];
 
     fireEvent.change(firstNameInput, { target: { value: "Alicia" } });
     expect(saveBtn).toBeEnabled();
+    expect(cancelBtn).toBeEnabled();
+
+    fireEvent.click(cancelBtn);
+    expect(firstNameInput).toHaveValue("Alice");
+    expect(saveBtn).toBeDisabled();
+    expect(cancelBtn).toBeDisabled();
   });
 
-  it("saves edited names and calls onSave; exits edit mode", () => {
-    const onSave = vi.fn();
-    render(<Profile {...baseProps} onSave={onSave} />);
+  it("calls update mutation with trimmed values on Save", async () => {
+    render(<Profile user={user} />);
 
-    fireEvent.click(screen.getByText("pages.profile.edit"));
+    const saveBtn = screen.getByText("pages.profile.saveChanges");
+    const [firstNameInput, lastNameInput] = screen.getAllByRole(
+      "textbox",
+    ) as HTMLInputElement[];
 
-    const [firstNameInput] = screen.getAllByRole("textbox") as HTMLInputElement[];
-    fireEvent.change(firstNameInput, { target: { value: "Alicia" } });
+    fireEvent.change(firstNameInput, { target: { value: "  Alicia  " } });
+    fireEvent.change(lastNameInput, { target: { value: "  Smyth  " } });
 
-    fireEvent.click(screen.getByText("pages.profile.saveChanges"));
-    expect(onSave).toHaveBeenCalledTimes(1);
-    expect(onSave).toHaveBeenCalledWith({ firstName: "Alicia", lastName: "Smith" });
+    // enable save now
+    expect(saveBtn).toBeEnabled();
 
-    expect(screen.getByText("pages.profile.edit")).toBeInTheDocument();
-    expect(screen.queryByText("pages.profile.saveChanges")).not.toBeInTheDocument();
+    // mock resolves
+    mutateAsyncMock.mockResolvedValueOnce({ ok: true });
+
+    // click save
+    await fireEvent.click(saveBtn);
+
+    expect(mutateAsyncMock).toHaveBeenCalledTimes(1);
+    expect(mutateAsyncMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: "alice@example.com",
+        firstName: "Alicia",
+        lastName: "Smyth",
+      }),
+    );
   });
 
-  it("cancels edits and resets values", () => {
-    const onSave = vi.fn();
-    render(<Profile {...baseProps} onSave={onSave} />);
+  it("updates inputs when parent user prop changes", () => {
+    const { rerender } = render(<Profile user={user} />);
 
-    fireEvent.click(screen.getByText("pages.profile.edit"));
+    rerender(
+      <Profile
+        user={{
+          ...user,
+          firstName: "Alicia",
+          lastName: "Smyth",
+        }}
+      />,
+    );
 
-    const [, lastNameInput] = screen.getAllByRole("textbox") as HTMLInputElement[];
-    fireEvent.change(lastNameInput, { target: { value: "Smyth" } });
-
-    fireEvent.click(screen.getByText("pages.profile.cancel"));
-
-    expect(screen.getByText("pages.profile.edit")).toBeInTheDocument();
-
-    fireEvent.click(screen.getByText("pages.profile.edit"));
-    const [firstNameInput2, lastNameInput2] =
-      screen.getAllByRole("textbox") as HTMLInputElement[];
-    expect(firstNameInput2).toHaveValue("Alice");
-    expect(lastNameInput2).toHaveValue("Smith");
-
-    expect(onSave).not.toHaveBeenCalled();
-  });
-
-  it("updates inputs when parent props change", () => {
-    const { rerender } = render(<Profile {...baseProps} />);
-    rerender(<Profile {...baseProps} firstName="Alicia" lastName="Smyth" />);
-
-    const [firstNameInput, lastNameInput] =
-      screen.getAllByRole("textbox") as HTMLInputElement[];
+    const [firstNameInput, lastNameInput] = screen.getAllByRole(
+      "textbox",
+    ) as HTMLInputElement[];
     expect(firstNameInput).toHaveValue("Alicia");
     expect(lastNameInput).toHaveValue("Smyth");
   });
 
-  it("save button stays disabled if nothing changed", () => {
-    render(<Profile {...baseProps} />);
-
-    fireEvent.click(screen.getByText("pages.profile.edit"));
-    const saveBtn = screen.getByText("pages.profile.saveChanges");
-    expect(saveBtn).toBeDisabled();
-
-    const [firstNameInput] =
-      screen.getAllByRole("textbox") as HTMLInputElement[];
-    fireEvent.change(firstNameInput, { target: { value: "  Alice  " } });
-    expect(saveBtn).toBeDisabled();
-  });
-
-  it("renders correctly and matches snapshot", () => {
-    const { asFragment } = render(
-      <Profile
-        firstName="John"
-        lastName="Doe"
-        email="john.doe@example.com"
-        onSave={vi.fn()}
-      />
-    );
+  it("matches snapshot", () => {
+    const { asFragment } = render(<Profile user={user} />);
     expect(asFragment()).toMatchSnapshot();
   });
 });

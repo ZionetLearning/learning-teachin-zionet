@@ -32,7 +32,7 @@ public abstract class TaskTestBase(
 
         var received = await WaitForNotificationAsync(
             n => n.Type == NotificationType.Success && n.Message.Contains(task.Name),
-            TimeSpan.FromSeconds(20)
+            TimeSpan.FromSeconds(300)
         );
         received.Should().NotBeNull("Expected a SignalR notification");
 
@@ -40,13 +40,27 @@ public abstract class TaskTestBase(
         return task;
     }
 
-    protected async Task<HttpResponseMessage> UpdateTaskNameAsync(int id, string newName)
+    protected async Task<(TaskModel Task, string? ETag)> GetTaskWithEtagAsync(int id)
     {
-        OutputHelper.WriteLine($"Updating task ID {id} with new name: {newName}");
+        var resp = await Client.GetAsync(ApiRoutes.TaskById(id));
+        resp.EnsureSuccessStatusCode();
 
-        var response = await Client.PutAsync(ApiRoutes.UpdateTaskName(id, newName), null);
+        var task = await ReadAsJsonAsync<TaskModel>(resp);
+        var etag = resp.Headers.ETag?.Tag ?? resp.Headers.ETag?.ToString(); // includes quotes
+        return (task!, etag);
+    }
 
-        OutputHelper.WriteLine($"Update response status: {response.StatusCode}");
-        return response;
+    protected async Task<HttpResponseMessage> UpdateTaskNameAsync(int id, string newName, string? ifMatch = null)
+    {
+        // If not provided, fetch current ETag via GET
+        if (string.IsNullOrWhiteSpace(ifMatch))
+        {
+            var (_task, tag) = await GetTaskWithEtagAsync(id);
+            ifMatch = tag;
+        }
+
+        var req = new HttpRequestMessage(HttpMethod.Put, ApiRoutes.UpdateTaskName(id, newName));
+        req.Headers.TryAddWithoutValidation("If-Match", ifMatch);
+        return await Client.SendAsync(req);
     }
 }

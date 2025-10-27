@@ -4,7 +4,7 @@ export const useStyles = createUseStyles({
   container: {
     display: "flex",
     flexDirection: "column",
-    height: "100%",
+    height: "100vh",
     width: "100%",
     margin: "auto",
     boxSizing: "border-box",
@@ -35,6 +35,18 @@ export const useStyles = createUseStyles({
       borderRadius: 4,
       transition: "background-color 0.2s",
       "&:hover": { backgroundColor: "#357ab7" },
+    },
+    "& button:disabled": {
+      backgroundColor: "#bcd7f3",
+      color: "#f2f7fc",
+      cursor: "not-allowed",
+      opacity: 0.7,
+      boxShadow: "none",
+      transform: "none",
+    },
+    "& button:disabled:hover, & button:disabled:active": {
+      backgroundColor: "#bcd7f3",
+      transform: "none",
     },
     "& span": {
       fontWeight: 500,
@@ -88,5 +100,11 @@ export const useStyles = createUseStyles({
     "&.correct": { color: "#4a9e46" },
     "&.incorrect": { color: "#e94b35" },
     marginTop: 8,
+  },
+  loader: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    height: "100vh",
   },
 });

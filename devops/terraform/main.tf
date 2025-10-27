@@ -57,7 +57,7 @@ data "azurerm_postgresql_flexible_server" "shared" {
 
 # Create new PostgreSQL server and database only if not using shared
 module "database" {
-  count  = var.use_shared_postgres ? 1 : 1
+  count  = var.use_shared_postgres ? 0 : 1
   source = "./modules/postgresql"
 
   server_name         = var.database_server_name
@@ -86,6 +86,21 @@ module "database" {
   existing_server_id  = var.use_shared_postgres ? data.azurerm_postgresql_flexible_server.shared[0].id : null
 
   depends_on = [azurerm_resource_group.main]
+}
+
+# Langfuse database on the same PostgreSQL server (dev environment only)
+resource "azurerm_postgresql_flexible_server_database" "langfuse" {
+  count     = (var.enable_langfuse && var.environment_name == "dev") ? 1 : 0
+  name      = "langfuse-${var.environment_name}"
+  server_id = var.use_shared_postgres ? data.azurerm_postgresql_flexible_server.shared[0].id : module.database[0].id
+  charset   = "UTF8"
+  collation = "en_US.utf8"
+
+  
+  depends_on = [
+    module.database,
+    data.azurerm_postgresql_flexible_server.shared
+  ]
 }
 
 module "signalr" {
@@ -152,7 +167,7 @@ module "monitoring" {
 
   log_analytics_workspace_id  = local.log_analytics_workspace_id
   servicebus_namespace_id     = module.servicebus.namespace_id
-  postgres_server_id          = module.database[0].id
+  postgres_server_id          = var.use_shared_postgres ? data.azurerm_postgresql_flexible_server.shared[0].id : module.database[0].id
   signalr_id                  = module.signalr.id
   redis_id                    = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].id : module.redis[0].id
   frontend_static_web_app_id  = length(var.frontend_apps) > 0 ? [for f in module.frontend : f.static_web_app_id] : []

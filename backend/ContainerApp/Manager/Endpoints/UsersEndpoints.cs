@@ -1,6 +1,9 @@
-﻿using Manager.Models.Users;
-using Manager.Services.Clients.Accessor;
+﻿using System.Security.Claims;
+using Manager.Constants;
 using Manager.Helpers;
+using Manager.Models.Users;
+using Manager.Services;
+using Manager.Services.Clients.Accessor;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Endpoints;
@@ -8,18 +11,29 @@ namespace Manager.Endpoints;
 public static class UsersEndpoints
 {
     private sealed class UserEndpoint { }
+
     public static IEndpointRouteBuilder MapUsersEndpoints(this IEndpointRouteBuilder app)
     {
         var usersGroup = app.MapGroup("/users-manager").WithTags("Users");
 
-        usersGroup.MapGet("/user-list", GetAllUsersAsync).WithName("GetAllUsers").RequireAuthorization();
-        usersGroup.MapGet("/user/{userId:guid}", GetUserAsync).WithName("GetUser").RequireAuthorization();
+        usersGroup.MapGet("/user-list", GetAllUsersAsync).WithName("GetAllUsers").RequireAuthorization(PolicyNames.AdminOrTeacher);
+        usersGroup.MapGet("/user/{userId:guid}", GetUserAsync).WithName("GetUser").RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
         usersGroup.MapPost("/user", CreateUserAsync).WithName("CreateUser");
-        usersGroup.MapPut("/user/{userId:guid}", UpdateUserAsync).WithName("UpdateUser").RequireAuthorization();
-        usersGroup.MapDelete("/user/{userId:guid}", DeleteUserAsync).WithName("DeleteUser").RequireAuthorization();
+        usersGroup.MapPut("/user/{userId:guid}", UpdateUserAsync).WithName("UpdateUser").RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
+        usersGroup.MapDelete("/user/{userId:guid}", DeleteUserAsync).WithName("DeleteUser").RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
+        usersGroup.MapPut("user/interests/{userId:guid}", SetUserInterestsAsync).WithName("SetUserInterests").RequireAuthorization(PolicyNames.AdminOrStudent);
+
+        usersGroup.MapGet("/teacher/{teacherId:guid}/students", ListStudentsForTeacherAsync).WithName("ListStudentsForTeacher").RequireAuthorization(PolicyNames.AdminOrTeacher);
+        usersGroup.MapPost("/teacher/{teacherId:guid}/students/{studentId:guid}", AssignStudentAsync).WithName("AssignStudentToTeacher").RequireAuthorization(PolicyNames.AdminOrTeacher);
+        usersGroup.MapDelete("/teacher/{teacherId:guid}/students/{studentId:guid}", UnassignStudentAsync).WithName("UnassignStudentFromTeacher").RequireAuthorization(PolicyNames.AdminOrTeacher);
+        usersGroup.MapGet("/student/{studentId:guid}/teachers", ListTeachersForStudentAsync).WithName("ListTeachersForStudent").RequireAuthorization(PolicyNames.AdminOnly);
+
+        usersGroup.MapGet("/online", GetOnlineUsers).WithName("GetOnlineUsers").RequireAuthorization(PolicyNames.AdminOnly);
 
         return app;
     }
+    private static bool IsTeacher(string? role) =>
+    string.Equals(role, Role.Teacher.ToString(), StringComparison.OrdinalIgnoreCase);
 
     private static async Task<IResult> GetUserAsync(
         [FromRoute] Guid userId,
@@ -85,7 +99,7 @@ public static class UsersEndpoints
                 Password = BCrypt.Net.BCrypt.HashPassword(newUser.Password),
                 Role = parsedRole,
                 PreferredLanguageCode = preferredLanguage,
-                HebrewLevelValue = hebrewLevel
+                HebrewLevelValue = hebrewLevel,
             };
 
             // Send to accessor
@@ -96,16 +110,14 @@ public static class UsersEndpoints
                 return Results.Conflict("User could not be created (may already exist or invalid data).");
             }
 
-            // DTO for response (never return raw password)
-            var result = new UserData
+            // DTO for response 
+            var result = new UserCreationResultDto
             {
                 UserId = user.UserId,
                 Email = user.Email,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 Role = parsedRole,
-                PreferredLanguageCode = preferredLanguage,
-                HebrewLevelValue = hebrewLevel
             };
 
             logger.LogInformation("User {Email} created successfully", user.Email);
@@ -122,12 +134,34 @@ public static class UsersEndpoints
         [FromRoute] Guid userId,
         [FromBody] UpdateUserModel user,
         [FromServices] IAccessorClient accessorClient,
-        [FromServices] ILogger<UserEndpoint> logger)
+        [FromServices] ILogger<UserEndpoint> logger,
+        HttpContext httpContext)
     {
         using var scope = logger.BeginScope("UpdateUser {UserId}:", userId);
 
         try
         {
+            if (httpContext?.User == null)
+            {
+                logger.LogWarning("Access denied: missing or unauthenticated user context.");
+                return Results.Unauthorized();
+            }
+
+            var callerRole = httpContext.User.FindFirst(AuthSettings.RoleClaimType)?.Value;
+            if (string.IsNullOrWhiteSpace(callerRole))
+            {
+                logger.LogWarning("Access denied: no role claim found in user context.");
+                return Results.Forbid();
+            }
+
+            if (!Enum.TryParse<Role>(callerRole, ignoreCase: true, out var parsedCallerRole))
+            {
+                logger.LogWarning("Could not determine caller role.");
+                return Results.Forbid();
+            }
+
+            logger.LogInformation("Caller authenticated with role: {CallerRole}", callerRole);
+
             // Fetch current user to check role
             var existingUser = await accessorClient.GetUserAsync(userId);
             if (existingUser is null)
@@ -155,6 +189,20 @@ public static class UsersEndpoints
             {
                 logger.LogWarning("Non-student tried to set HebrewLevel. Role: {Role}", existingUser.Role);
                 return Results.BadRequest("Hebrew level can only be set for students.");
+            }
+
+            // only students can have interests
+            if (user.Interests is not null && existingUser.Role != Role.Student)
+            {
+                logger.LogWarning("Non-student tried to set interests. Role: {Role}", existingUser.Role);
+                return Results.BadRequest("Only students can set interests.");
+            }
+
+            // Only Admins can change role of another user
+            if (user.Role.HasValue && parsedCallerRole != Role.Admin)
+            {
+                logger.LogWarning("Non-admin attempted to change role. Caller role: {CallerRole}", parsedCallerRole);
+                return Results.Forbid();
             }
 
             var success = await accessorClient.UpdateUserAsync(user, userId);
@@ -188,26 +236,304 @@ public static class UsersEndpoints
 
     private static async Task<IResult> GetAllUsersAsync(
         [FromServices] IAccessorClient accessorClient,
-        [FromServices] ILogger<UserEndpoint> logger)
+        [FromServices] ILogger<UserEndpoint> logger,
+        HttpContext http,
+        CancellationToken ct)
     {
-        using var scope = logger.BeginScope("GetAllUsers:");
+        using var scope = logger.BeginScope("GetAllUsers");
+
+        var callerRole = http.User.FindFirstValue(AuthSettings.RoleClaimType);
+        var callerIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
+
+        if (string.IsNullOrWhiteSpace(callerRole))
+        {
+            logger.LogWarning("Unauthorized: missing role.");
+            return Results.Unauthorized();
+        }
+
+        if (!Guid.TryParse(callerIdRaw, out var callerId))
+        {
+            logger.LogWarning("Unauthorized: missing or invalid callerId.");
+            return Results.Unauthorized();
+        }
 
         try
         {
-            var users = await accessorClient.GetAllUsersAsync();
+            var users = await accessorClient.GetUsersForCallerAsync(
+                new CallerContextDto { CallerRole = callerRole, CallerId = callerId },
+                ct);
+
             if (users is null || !users.Any())
             {
-                logger.LogWarning("No users found");
+                logger.LogInformation("No users visible to {CallerId} ({Role})", callerId, callerRole);
                 return Results.NotFound("No users found.");
             }
 
-            logger.LogInformation("Retrieved {Count} users", users.Count());
+            logger.LogInformation("Returned {Count} users for {CallerId} ({Role})",
+                users.Count(), callerId, callerRole);
             return Results.Ok(users);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error retrieving users");
+            logger.LogError(ex, "Failed to retrieve users");
             return Results.Problem("Failed to retrieve users.");
+        }
+    }
+
+    private static async Task<IResult> ListStudentsForTeacherAsync(
+        [FromRoute] Guid teacherId,
+        [FromServices] IAccessorClient accessorClient,
+        [FromServices] ILogger<UserEndpoint> logger,
+        HttpContext http,
+        CancellationToken ct)
+    {
+        using var _ = logger.BeginScope("Method={Method}, TeacherId={TeacherId}", nameof(ListStudentsForTeacherAsync), teacherId);
+
+        if (teacherId == Guid.Empty)
+        {
+            logger.LogWarning("Invalid teacherId.");
+            return Results.BadRequest("Invalid teacherId.");
+        }
+
+        var callerRole = http.User.FindFirstValue(AuthSettings.RoleClaimType);
+        var callerIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
+
+        if (string.IsNullOrWhiteSpace(callerRole))
+        {
+            logger.LogWarning("Unauthorized: missing role.");
+            return Results.Unauthorized();
+        }
+
+        if (!Guid.TryParse(callerIdRaw, out var callerId))
+        {
+            logger.LogWarning("Unauthorized: missing or invalid callerId.");
+            return Results.Unauthorized();
+        }
+
+        // Teacher can list only their own students; Admin can list any
+        if (IsTeacher(callerRole) && callerId != teacherId)
+        {
+            logger.LogWarning("Forbidden: teacher {CallerId} tried to list students for {TeacherId}.", callerId, teacherId);
+            return Results.Forbid();
+        }
+
+        try
+        {
+            var students = await accessorClient.GetStudentsForTeacherAsync(teacherId, ct);
+            return Results.Ok(students);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to list students for teacher.");
+            return Results.Problem("Failed to retrieve students.");
+        }
+    }
+
+    private static async Task<IResult> AssignStudentAsync(
+        [FromRoute] Guid teacherId,
+        [FromRoute] Guid studentId,
+        [FromServices] IAccessorClient accessorClient,
+        [FromServices] ILogger<UserEndpoint> logger,
+        HttpContext http,
+        CancellationToken ct)
+    {
+        using var _ = logger.BeginScope("Method={Method}, TeacherId={TeacherId}, StudentId={StudentId}",
+            nameof(AssignStudentAsync), teacherId, studentId);
+
+        if (teacherId == Guid.Empty || studentId == Guid.Empty)
+        {
+            logger.LogWarning("Invalid teacherId or studentId.");
+            return Results.BadRequest(new { error = "Invalid teacherId or studentId." });
+        }
+
+        var callerRole = http.User.FindFirstValue(AuthSettings.RoleClaimType);
+        var callerIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
+
+        if (!Guid.TryParse(callerIdRaw, out var callerId))
+        {
+            logger.LogWarning("Unauthorized: missing caller id.");
+            return Results.Unauthorized();
+        }
+
+        // Teacher can assign only to themselves; Admin can assign anywhere
+        if (IsTeacher(callerRole) && callerId != teacherId)
+        {
+            logger.LogWarning("Forbidden: teacher {CallerId} tried to assign for {TeacherId}.", callerId, teacherId);
+            return Results.Forbid();
+        }
+
+        try
+        {
+            var ok = await accessorClient.AssignStudentToTeacherAsync(
+                new TeacherStudentMapDto { TeacherId = teacherId, StudentId = studentId },
+                ct);
+            return ok ? Results.Ok(new { message = "Assigned" })
+                      : Results.BadRequest(new { error = "Assign failed" });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to assign student to teacher.");
+            return Results.Problem("Failed to assign student.");
+        }
+    }
+
+    private static async Task<IResult> UnassignStudentAsync(
+        [FromRoute] Guid teacherId,
+        [FromRoute] Guid studentId,
+        [FromServices] IAccessorClient accessorClient,
+        [FromServices] ILogger<UserEndpoint> logger,
+        HttpContext http,
+        CancellationToken ct)
+    {
+        using var _ = logger.BeginScope("Method={Method}, TeacherId={TeacherId}, StudentId={StudentId}",
+            nameof(UnassignStudentAsync), teacherId, studentId);
+
+        if (teacherId == Guid.Empty || studentId == Guid.Empty)
+        {
+            logger.LogWarning("Invalid teacherId or studentId.");
+            return Results.BadRequest(new { error = "Invalid teacherId or studentId." });
+        }
+
+        var callerRole = http.User.FindFirstValue(AuthSettings.RoleClaimType);
+        var callerIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
+
+        if (string.IsNullOrWhiteSpace(callerRole))
+        {
+            logger.LogWarning("Unauthorized: missing or empty caller role.");
+            return Results.Unauthorized();
+        }
+
+        if (!Guid.TryParse(callerIdRaw, out var callerId) || callerId == Guid.Empty)
+        {
+            logger.LogWarning("Unauthorized: missing or invalid caller id.");
+            return Results.Unauthorized();
+        }
+
+        if (IsTeacher(callerRole) && callerId != teacherId)
+        {
+            logger.LogWarning("Forbidden: teacher {CallerId} tried to unassign for {TeacherId}.", callerId, teacherId);
+            return Results.Forbid();
+        }
+
+        try
+        {
+            var ok = await accessorClient.UnassignStudentFromTeacherAsync(
+                new TeacherStudentMapDto { TeacherId = teacherId, StudentId = studentId },
+                ct);
+            return ok ? Results.Ok(new { message = "Unassigned" })
+                      : Results.BadRequest(new { error = "Unassign failed" });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to unassign student from teacher.");
+            return Results.Problem("Failed to unassign student.");
+        }
+    }
+
+    private static async Task<IResult> ListTeachersForStudentAsync(
+        [FromRoute] Guid studentId,
+        [FromServices] IAccessorClient accessorClient,
+        [FromServices] ILogger<UserEndpoint> logger,
+        CancellationToken ct)
+    {
+        using var _ = logger.BeginScope("Method={Method}, StudentId={StudentId}", nameof(ListTeachersForStudentAsync), studentId);
+
+        if (studentId == Guid.Empty)
+        {
+            logger.LogWarning("Invalid studentId.");
+            return Results.BadRequest("Invalid studentId.");
+        }
+
+        try
+        {
+            var teachers = await accessorClient.GetTeachersForStudentAsync(studentId, ct);
+            return Results.Ok(teachers);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to list teachers for student.");
+            return Results.Problem("Failed to retrieve teachers.");
+        }
+    }
+
+    private static async Task<IResult> GetOnlineUsers(
+        [FromServices] IOnlinePresenceService onlinePresenceService,
+        [FromServices] ILogger<UserEndpoint> logger,
+        CancellationToken ct = default)
+    {
+        try
+        {
+            var all = await onlinePresenceService.GetOnlineAsync(ct);
+            var nonAdmins = all
+            .Where(u => !string.Equals(u.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+            return Results.Ok(nonAdmins);
+
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to list online users");
+            return Results.Problem("Failed to retrieve omline users.");
+        }
+    }
+    private static async Task<IResult> SetUserInterestsAsync(
+        [FromRoute] Guid userId,
+        [FromBody] UpdateInterestsRequest request,
+        [FromServices] IAccessorClient accessorClient,
+        [FromServices] ILogger<UserEndpoint> logger,
+        HttpContext httpContext)
+    {
+        using var scope = logger.BeginScope("SetUserInterests {UserId}:", userId);
+
+        try
+        {
+            var callerIdRaw = httpContext.User.FindFirstValue(AuthSettings.UserIdClaimType);
+            var callerRole = httpContext.User.FindFirstValue(AuthSettings.RoleClaimType);
+
+            if (string.IsNullOrWhiteSpace(callerRole) || !Guid.TryParse(callerIdRaw, out var callerId))
+            {
+                logger.LogWarning("Unauthorized: missing role or caller ID.");
+                return Results.Unauthorized();
+            }
+
+            // Fetch target user
+            var targetUser = await accessorClient.GetUserAsync(userId);
+            if (targetUser is null)
+            {
+                logger.LogWarning("User {UserId} not found", userId);
+                return Results.NotFound("User not found.");
+            }
+
+            // Only students can have interests
+            if (targetUser.Role != Role.Student)
+            {
+                logger.LogWarning("Interests can only be set for students. Role: {Role}", targetUser.Role);
+                return Results.BadRequest("Only students can have interests.");
+            }
+
+            // Authorization: Admins or the student themself
+            if (callerRole != Role.Admin.ToString() && callerId != userId)
+            {
+                logger.LogWarning("Forbidden: caller {CallerId} with role {Role} tried to update interests for {TargetUserId}.", callerId, callerRole, userId);
+                return Results.Forbid();
+            }
+
+            // Update interests and save
+            targetUser.Interests = request.Interests;
+
+            var updateUser = new UpdateUserModel
+            {
+                Interests = targetUser.Interests
+            };
+
+            var updated = await accessorClient.UpdateUserAsync(updateUser, userId);
+            return updated ? Results.Ok("Interests updated.") : Results.Problem("Failed to update interests.");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to set user interests.");
+            return Results.Problem("Unexpected error.");
         }
     }
 }

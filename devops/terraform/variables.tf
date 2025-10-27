@@ -82,6 +82,7 @@ variable "signalr_name" {
 variable "signalr_sku_name" {
   type    = string
   default = "Free_F1"
+  # default = "Standard_S1" ## limited for 5 free so just for testing new RG for 1 hour it will cost ~3-7 cents, return to above after finish task
 }
 
 variable "signalr_sku_capacity" {
@@ -253,4 +254,11 @@ variable "frontend_apps" {
   description = "List of frontend applications to deploy. Set to [] to disable Static Web Apps creation."
   type        = list(string)
   default     = ["student", "teacher", "admin"]
+}
+
+#------------- Langfuse Variables -------------
+variable "enable_langfuse" {
+  description = "Enable Langfuse database creation (only applies to dev environment)"
+  type        = bool
+  default     = true
 }

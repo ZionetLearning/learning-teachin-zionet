@@ -71,3 +71,7 @@ accessor:
     # tag will be set dynamically via global.environment by CI/CD
   env:
     ASPNETCORE_URLS: "http://+:5003"
+
+# Langfuse Configuration (dev only)
+langfuse:
+  enabled: true

@@ -21,9 +21,21 @@ export type UserDto = User & {
   role?: AppRoleType;
 };
 
+export type HebrewLevelValue =
+  | "beginner"
+  | "intermediate"
+  | "advanced"
+  | "fluent";
+
+export type PreferredLanguageCode = "he" | "en";
+
 export interface User {
   userId: string;
   firstName: string;
   lastName: string;
   email: string;
+  role: AppRoleType;
+  preferredLanguageCode?: PreferredLanguageCode;
+  hebrewLevelValue?: HebrewLevelValue;
+  interests?: string[];
 }

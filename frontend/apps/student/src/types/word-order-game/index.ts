@@ -1,0 +1,1 @@
+export type DifficultyLevel = 0 | 1 | 2; // 0=easy, 1=medium, 2=hard

@@ -10,7 +10,20 @@ import type {
   UserEventUnion,
   UserNotification,
   Status,
+  StreamEvent,
+  StreamMessage,
 } from "@app-providers/types";
+
+type ActiveStream<T = unknown> = {
+  eventType: string;
+  requestId: string;
+  messages: StreamMessage<T>[];
+  subscribers: Set<(msg: StreamMessage<T>) => void>;
+  resolve: (msgs: T[]) => void;
+  reject: (reason?: unknown) => void;
+  timeout: NodeJS.Timeout;
+};
+
 
 export const SignalRProvider = ({ hubUrl, children }: SignalRProviderProps) => {
   const [status, setStatus] = useState<Status>("idle");
@@ -21,9 +34,9 @@ export const SignalRProvider = ({ hubUrl, children }: SignalRProviderProps) => {
     if (!accessToken) return null;
     const payload = decodeJwtPayload(accessToken);
     if (!payload) return null;
-    
+
     const extractedUserId = payload.userId as string;
-           
+
     return extractedUserId;
   }, [accessToken]);
 
@@ -31,6 +44,8 @@ export const SignalRProvider = ({ hubUrl, children }: SignalRProviderProps) => {
   const handlersRef = useRef<Map<string, Set<(data: unknown) => void>>>(
     new Map(),
   );
+  // Store active streams
+const activeStreamsRef = useRef<Map<string, ActiveStream>>(new Map());
 
   // Store pending requests for waitForResponse
   const pendingRequestsRef = useRef<
@@ -50,6 +65,39 @@ export const SignalRProvider = ({ hubUrl, children }: SignalRProviderProps) => {
       handlers.forEach((handler) => handler(data));
     }
   }, []);
+
+  const handleStreamEvent = useCallback(
+    (evt: StreamEvent<unknown>) => {
+      const { eventType, requestId, payload, sequenceNumber, stage } = evt;
+      const streamKey = `${eventType}:${requestId}`;
+
+      const activeStream = activeStreamsRef.current.get(streamKey);
+      if (!activeStream) return;
+
+      const msg: StreamMessage = { payload, sequenceNumber, stage };
+      activeStream.messages.push(msg);
+
+      // Notify subscribers immediately
+      activeStream.subscribers.forEach((cb) => cb(msg));
+
+      if (stage === "Last" || stage === "Error") {
+        clearTimeout(activeStream.timeout);
+        activeStreamsRef.current.delete(streamKey);
+
+        if (stage === "Error") {
+          activeStream.reject(new Error(`Stream ${streamKey} ended with error`));
+        } else {
+          const ordered = activeStream.messages.sort(
+            (a, b) => a.sequenceNumber - b.sequenceNumber,
+          );
+          activeStream.resolve(ordered.map((m) => m.payload));
+        }
+      }
+    },
+    [],
+  );
+
+
 
   const checkPendingRequests = useCallback(
     (eventType: string, payload: unknown) => {
@@ -106,6 +154,27 @@ export const SignalRProvider = ({ hubUrl, children }: SignalRProviderProps) => {
     [],
   );
 
+  const subscribeToStream = useCallback(
+    <T = unknown,>(
+      eventType: string,
+      requestId: string,
+      handler: (msg: StreamMessage<T>) => void,
+    ): (() => void) => {
+      const streamKey = `${eventType}:${requestId}`;
+      const activeStream = activeStreamsRef.current.get(streamKey);
+      if (!activeStream) {
+        throw new Error(`No active stream for ${streamKey}`);
+      }
+
+      activeStream.subscribers.add(handler as (msg: StreamMessage) => void);
+      return () => {
+        activeStream.subscribers.delete(handler as (msg: StreamMessage) => void);
+      };
+    },
+    [],
+  );
+
+
   const waitForResponse = useCallback(
     <T = unknown,>(
       eventType: EventType,
@@ -139,6 +208,45 @@ export const SignalRProvider = ({ hubUrl, children }: SignalRProviderProps) => {
     [status],
   );
 
+  const waitForStream = useCallback(
+    <T = unknown,>(
+      eventType: string,
+      requestId: string,
+      onMessage?: (msg: StreamMessage<T>) => void,
+      timeoutMs = 300000,
+    ): Promise<T[]> => {
+      if (status !== "connected") {
+        return Promise.reject(new Error("SignalR is not connected"));
+      }
+
+      const streamKey = `${eventType}:${requestId}`;
+      if (activeStreamsRef.current.has(streamKey)) {
+        return Promise.reject(new Error(`Stream ${streamKey} already in progress`));
+      }
+
+      return new Promise<T[]>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          activeStreamsRef.current.delete(streamKey);
+          reject(new Error(`Timeout waiting for stream ${streamKey}`));
+        }, timeoutMs);
+
+        const newStream: ActiveStream<T> = {
+          eventType,
+          requestId,
+          messages: [],
+          subscribers: new Set(onMessage ? [onMessage] : []),
+          resolve,
+          reject,
+          timeout,
+        };
+
+        activeStreamsRef.current.set(streamKey, newStream as ActiveStream<unknown>);
+      });
+    },
+    [status],
+  );
+
+
   useEffect(() => {
     if (!accessToken || !userId) {
       setStatus("idle");
@@ -156,10 +264,14 @@ export const SignalRProvider = ({ hubUrl, children }: SignalRProviderProps) => {
         withCredentials: true,
       })
       .withAutomaticReconnect()
-      .build(); 
+      .build();
 
-    connection.onreconnecting(() => isMounted && setStatus("reconnecting"));
-    connection.onreconnected(() => isMounted && setStatus("connected"));
+    connection.onreconnecting(() => {
+      if (isMounted) setStatus("reconnecting");
+    });
+    connection.onreconnected(() => {
+      if (isMounted) setStatus("connected");
+    });
     connection.onclose(() => {
       if (isMounted) setStatus("disconnected");
 
@@ -183,6 +295,11 @@ export const SignalRProvider = ({ hubUrl, children }: SignalRProviderProps) => {
 
       // Check for pending requests
       checkPendingRequests(event.eventType, event.payload);
+    });
+
+    // Listen for stream events (from SendStreamEventAsync)
+    connection.on("StreamEvent", (streamEvent: StreamEvent<unknown>) => {
+      handleStreamEvent(streamEvent);
     });
 
     // Listen for direct notifications (from SendNotificationAsync)
@@ -218,7 +335,7 @@ export const SignalRProvider = ({ hubUrl, children }: SignalRProviderProps) => {
       connRef.current = null;
       c?.stop().catch(() => {});
     };
-  }, [hubUrl, accessToken, userId, handleEvent, checkPendingRequests]);
+  }, [hubUrl, accessToken, userId, handleEvent, checkPendingRequests, handleStreamEvent]);
 
   const value = useMemo<SignalRContextType>(
     () => ({
@@ -227,9 +344,17 @@ export const SignalRProvider = ({ hubUrl, children }: SignalRProviderProps) => {
       userId: userId ?? "",
       subscribe,
       waitForResponse,
+      waitForStream,
+      subscribeToStream,
     }),
-    [status, userId, subscribe, waitForResponse],
+    [status, userId, subscribe, waitForResponse, waitForStream, subscribeToStream],
   );
+
+  // Expose status to window for E2E tests (non-production side effect, harmless in prod)
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).__signalRStatus = status;
+  }, [status]);
 
   return (
     <SignalRContext.Provider value={value}>{children}</SignalRContext.Provider>

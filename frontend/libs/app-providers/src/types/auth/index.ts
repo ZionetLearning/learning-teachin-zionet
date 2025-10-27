@@ -1,7 +1,7 @@
 export const AppRole = {
   student: "student",
   teacher: "teacher",
-  admin: "admin"
+  admin: "admin",
 } as const;
 
 export type AppRoleType = (typeof AppRole)[keyof typeof AppRole];
@@ -19,4 +19,7 @@ export interface SignupData {
   firstName: string;
   lastName: string;
   role: AppRoleType;
+  interests?: string[];
 }
+
+export const APP_ROLES: AppRoleType[] = Object.values(AppRole);

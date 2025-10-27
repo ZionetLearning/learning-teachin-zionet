@@ -1,210 +1,352 @@
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Box, Typography, TextField, Stack } from '@mui/material';
-import { Button } from '../Button';
+import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import { Typography, TextField, Stack, Box, Grid } from "@mui/material";
+import { useUpdateUserByUserId, toAppRole } from "@app-providers";
+import {
+  User,
+  HebrewLevelValue,
+  PreferredLanguageCode,
+} from "@app-providers/types";
+import { useStyles } from "./style";
+import { Dropdown, Button, InterestChip } from "@ui-components";
 
-export type ProfileProps = {
-    firstName: string;
-    lastName: string;
-    email: string;
-    onSave?: (data: { firstName: string; lastName: string }) => void;
-};
+export const Profile = ({ user }: { user: User }) => {
+  const classes = useStyles();
 
-export const Profile = ({
-    firstName,
-    lastName,
-    email,
-    onSave,
-}: ProfileProps) => {
-    const { t, i18n } = useTranslation();
-    const [fn, setFn] = useState(firstName);
-    const [ln, setLn] = useState(lastName);
-    const [editing, setEditing] = useState(false);
+  const { t, i18n } = useTranslation();
+  const isRTL = i18n.dir() === "rtl";
 
-    const isRTL = i18n.dir() === 'rtl';
+  const { mutateAsync: updateUserMutation } = useUpdateUserByUserId(
+    user?.userId ?? "",
+  );
 
-    useEffect(() => {
-        setFn(firstName);
-        setLn(lastName);
-    }, [firstName, lastName]);
+  const [userDetails, setUserDetails] = useState({
+    firstName: user?.firstName ?? "",
+    lastName: user?.lastName ?? "",
+    hebrewLevelValue: user?.hebrewLevelValue ?? "beginner",
+    preferredLanguageCode: user?.preferredLanguageCode ?? "en",
+    interests: user?.interests ?? [],
+  });
 
-    const dirty =
-        fn.trim() !== firstName.trim() || ln.trim() !== lastName.trim();
+  const [interestInput, setInterestInput] = useState("");
 
-    const handleCancel = () => {
-        setFn(firstName);
-        setLn(lastName);
-        setEditing(false);
+  useEffect(() => {
+    setUserDetails({
+      firstName: user?.firstName ?? "",
+      lastName: user?.lastName ?? "",
+      hebrewLevelValue: user?.hebrewLevelValue ?? "beginner",
+      preferredLanguageCode: user?.preferredLanguageCode ?? "en",
+      interests: user?.interests ?? [],
+    });
+    setInterestInput("");
+  }, [
+    user?.firstName,
+    user?.hebrewLevelValue,
+    user?.lastName,
+    user?.preferredLanguageCode,
+    user?.interests,
+    user.userId,
+  ]);
+
+  const handleTextChange =
+    (field: "firstName" | "lastName") =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setUserDetails((prev) => ({
+        ...prev,
+        [field]: e.target.value,
+      }));
     };
 
-    const handleSave = () => {
-        onSave?.({ firstName: fn, lastName: ln });
-        setEditing(false);
-    };
+  const handleDropdownChange = (field: "hebrewLevelValue") => (val: string) => {
+    setUserDetails((prev) => ({
+      ...prev,
+      [field]: val as HebrewLevelValue,
+    }));
+  };
 
-    return (
-        <Box 
-            sx={{
-                minHeight: '100dvh',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                p: 2,
-                '@media (min-width: 600px)': {
-                    px: 4,
-                },
-                '@media (min-width: 900px)': {
-                    px: 8,
-                },
-                '@media (min-width: 1200px)': {
-                    px: 40,
-                }
-            }}
-        >
-            <Box sx={{ mb: 2 }}>
-                <Typography variant="h4" fontWeight={700}>
-                    {t('pages.profile.title')}
-                </Typography>
-            </Box>
+  const handleLanguageChange = (val: string) => {
+    setUserDetails((prev) => ({
+      ...prev,
+      preferredLanguageCode: val as PreferredLanguageCode,
+    }));
+  };
 
-            <Box
-                sx={{
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    borderRadius: 3,
-                    p: 3,
-                    bgcolor: 'background.paper',
-                    maxWidth: 600,
-                    mx: 'auto',
-                    width: '100%'
-                }}
-            >
-                <Box sx={{ mb: 3 }}>
-                    <Typography variant="h6">
-                        {t('pages.profile.subTitle')}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        {t('pages.profile.secondSubTitle')}
-                    </Typography>
-                </Box>
+  const handleCancel = () => {
+    setUserDetails({
+      firstName: user?.firstName ?? "",
+      lastName: user?.lastName ?? "",
+      hebrewLevelValue: user?.hebrewLevelValue ?? "beginner",
+      preferredLanguageCode: user?.preferredLanguageCode ?? "en",
+      interests: user?.interests ?? [],
+    });
+    setInterestInput("");
+  };
 
-                <Stack spacing={3}>
-                    <Box>
-                        <Typography
-                            variant="body2"
-                            color="text.primary"
-                            sx={{
-                                mb: 0.3,
-                                textAlign: isRTL ? 'right' : 'left',
-                                fontWeight: 300
-                            }}
-                        >
-                            {t('pages.profile.firstName')}
-                        </Typography>
-                        <TextField
-                            value={fn}
-                            onChange={(e) => setFn(e.target.value)}
-                            disabled={!editing}
-                            fullWidth
-                            sx={{
-                                '& .MuiInputLabel-root': { display: 'none' },
-                                '& .MuiInputBase-root': {
-                                    direction: isRTL ? 'rtl' : 'ltr',
-                                },
-                                '&.Mui-disabled': { color: 'text.disabled' },
-                                '&.Mui-error': { color: 'error.main' },
-                            }}
-                        />
-                    </Box>
+  const handleSave = async () => {
+    await updateUserMutation({
+      email: user.email,
+      firstName: userDetails.firstName.trim(),
+      lastName: userDetails.lastName.trim(),
+      hebrewLevelValue: userDetails.hebrewLevelValue,
+      preferredLanguageCode: userDetails.preferredLanguageCode,
+      interests: userDetails.interests,
+    });
+  };
 
-                    <Box>
-                        <Typography
-                            variant="body2"
-                            color="text.primary"
-                            sx={{
-                                mb: 0.3,
-                                textAlign: isRTL ? 'right' : 'left',
-                                fontWeight: 300
-                            }}
-                        >
-                            {t('pages.profile.lastName')}
-                        </Typography>
-                        <TextField
-                            value={ln}
-                            onChange={(e) => setLn(e.target.value)}
-                            disabled={!editing}
-                            fullWidth
-                            sx={{
-                                '& .MuiInputLabel-root': { display: 'none' },
-                                '& .MuiInputBase-root': {
-                                    direction: isRTL ? 'rtl' : 'ltr',
-                                },
-                                '&.Mui-disabled': { color: 'text.disabled' },
-                                '&.Mui-error': { color: 'error.main' },
-                            }}
-                        />
-                    </Box>
+  const haveSameItems = (a: string[] = [], b: string[] = []) =>
+    a.length === b.length && a.every((x) => b.includes(x));
 
-                    <Box>
-                        <Typography
-                            variant="body2"
-                            color="text.primary"
-                            sx={{
-                                mb: 0.3,
-                                textAlign: isRTL ? 'right' : 'left',
-                                fontWeight: 100
-                            }}
-                        >
-                            {t('pages.profile.email')}
-                        </Typography>
-                        <TextField
-                            value={email}
-                            disabled
-                            fullWidth
-                            sx={{
-                                '& .MuiInputLabel-root': { display: 'none' },
-                                '& .MuiInputBase-root': {
-                                    direction: isRTL ? 'rtl' : 'ltr',
-                                },
-                                '&.Mui-disabled': { color: 'text.disabled' },
-                                '&.Mui-error': { color: 'error.main' },
-                            }}
-                        />
-                        <Typography
-                            variant="body2"
-                            color="text.disabled"
-                            sx={{
-                                mt: 0.5,
-                                textAlign: isRTL ? 'right' : 'left',
-                                fontWeight: 100,
-                                fontSize: '0.75rem'
-                            }}
-                        >
-                            {t('pages.profile.emailCannotBeChanged')}
-                        </Typography>
-                    </Box>
-                </Stack>
+  const dirty =
+    userDetails.firstName.trim() !== (user?.firstName ?? "").trim() ||
+    userDetails.lastName.trim() !== (user?.lastName ?? "").trim() ||
+    userDetails.hebrewLevelValue !== (user?.hebrewLevelValue ?? "beginner") ||
+    userDetails.preferredLanguageCode !==
+      (user?.preferredLanguageCode ?? "en") ||
+    !haveSameItems(userDetails.interests ?? [], user?.interests ?? []);
 
-                <Box sx={{ mt: 3, display: 'flex', gap: 1 }}>
-                    {!editing ? (
-                        <Button onClick={() => setEditing(true)}>
-                            {t('pages.profile.edit')}
-                        </Button>
-                    ) : (
-                        <>
-                            <Button
-                                onClick={handleSave}
-                                disabled={!dirty}
-                            >
-                                {t('pages.profile.saveChanges')}
-                            </Button>
-                            <Button variant="outlined" onClick={handleCancel}>
-                                {t('pages.profile.cancel')}
-                            </Button>
-                        </>
-                    )}
-                </Box>
-            </Box>
+  const hebrewLevelOptions = [
+    { value: "beginner", label: t("hebrewLevels.beginner") },
+    { value: "intermediate", label: t("hebrewLevels.intermediate") },
+    { value: "advanced", label: t("hebrewLevels.advanced") },
+    { value: "fluent", label: t("hebrewLevels.fluent") },
+  ];
+
+  const languageOptions = [
+    { value: "he", label: t("languages.hebrew") },
+    { value: "en", label: t("languages.english") },
+  ];
+
+  const addInterests = (tokens: string[]) => {
+    const cleaned = tokens.map((s) => s.trim()).filter((s) => s.length > 0);
+    if (cleaned.length === 0) return;
+    setUserDetails((prev) => {
+      const existing = new Set(prev.interests ?? []);
+      const merged = [...(prev.interests ?? [])];
+      cleaned.forEach((c) => {
+        if (!existing.has(c)) {
+          merged.push(c);
+          existing.add(c);
+        }
+      });
+      return { ...prev, interests: merged };
+    });
+  };
+
+  const handleInterestChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (val.includes(",")) {
+      const parts = val.split(",");
+      const complete = parts.slice(0, -1);
+      addInterests(complete);
+      setInterestInput(parts[parts.length - 1]);
+    } else {
+      setInterestInput(val);
+    }
+  };
+
+  const handleInterestKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (interestInput.trim().length > 0) {
+        addInterests([interestInput]);
+        setInterestInput("");
+      }
+    }
+  };
+
+  const removeInterest = (idx: number) => () => {
+    setUserDetails((prev) => ({
+      ...prev,
+      interests: (prev.interests ?? []).filter((_, i) => i !== idx),
+    }));
+  };
+
+  return (
+    <Box className={classes.container}>
+      <Box className={classes.titleContainer}>
+        <Typography variant="h4" className={classes.title}>
+          {t("pages.profile.title")}
+        </Typography>
+      </Box>
+
+      <Box className={classes.formCard}>
+        <Box className={classes.formHeader}>
+          <Typography variant="h6" color="text.secondary">
+            {t("pages.profile.subTitle")}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {t("pages.profile.secondSubTitle")}
+          </Typography>
         </Box>
-    );
+
+        <Stack spacing={3}>
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Box className={classes.fieldContainer}>
+                <Typography
+                  variant="body2"
+                  color="text.primary"
+                  className={
+                    isRTL ? classes.fieldLabelRTL : classes.fieldLabelLTR
+                  }
+                >
+                  {t("pages.profile.firstName")}
+                </Typography>
+                <TextField
+                  value={userDetails.firstName}
+                  onChange={handleTextChange("firstName")}
+                  fullWidth
+                  className={
+                    isRTL ? classes.textFieldRTL : classes.textFieldLTR
+                  }
+                  size="small"
+                />
+              </Box>
+            </Grid>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Box className={classes.fieldContainer}>
+                <Typography
+                  variant="body2"
+                  color="text.primary"
+                  className={
+                    isRTL ? classes.fieldLabelRTL : classes.fieldLabelLTR
+                  }
+                >
+                  {t("pages.profile.lastName")}
+                </Typography>
+                <TextField
+                  value={userDetails.lastName}
+                  onChange={handleTextChange("lastName")}
+                  fullWidth
+                  className={
+                    isRTL ? classes.textFieldRTL : classes.textFieldLTR
+                  }
+                  size="small"
+                />
+              </Box>
+            </Grid>
+          </Grid>
+
+          <Box>
+            <Box className={classes.fieldContainer}>
+              <Typography
+                variant="body2"
+                color="text.primary"
+                className={
+                  isRTL ? classes.fieldLabelRTL : classes.fieldLabelLTR
+                }
+              >
+                {t("pages.profile.preferredLanguage")}
+              </Typography>
+              <Box
+                className={isRTL ? classes.dropdownRTL : classes.dropdownLTR}
+              >
+                <Dropdown
+                  name="preferredLanguage"
+                  options={languageOptions}
+                  value={userDetails.preferredLanguageCode}
+                  onChange={handleLanguageChange}
+                />
+              </Box>
+            </Box>
+            {toAppRole(user?.role) === "student" && (
+              <Box>
+                <Box className={classes.fieldContainer}>
+                  <Typography
+                    variant="body2"
+                    color="text.primary"
+                    className={
+                      isRTL ? classes.fieldLabelRTL : classes.fieldLabelLTR
+                    }
+                  >
+                    {t("hebrewLevels.title")}
+                  </Typography>
+                  <Box
+                    className={
+                      isRTL ? classes.dropdownRTL : classes.dropdownLTR
+                    }
+                  >
+                    <Dropdown
+                      name="hebrewLevel"
+                      options={hebrewLevelOptions}
+                      value={userDetails.hebrewLevelValue}
+                      onChange={(val) =>
+                        handleDropdownChange("hebrewLevelValue")(val)
+                      }
+                    />
+                  </Box>
+                </Box>
+                <Box className={classes.fieldContainer}>
+                  <Typography
+                    variant="body2"
+                    color="text.primary"
+                    className={
+                      isRTL ? classes.fieldLabelRTL : classes.fieldLabelLTR
+                    }
+                  >
+                    {t("pages.profile.interests")}
+                  </Typography>
+                  <TextField
+                    placeholder={t("pages.auth.interestsPlaceholder")}
+                    value={interestInput}
+                    onChange={handleInterestChange}
+                    onKeyDown={handleInterestKeyDown}
+                    fullWidth
+                    className={
+                      isRTL ? classes.textFieldRTL : classes.textFieldLTR
+                    }
+                    size="small"
+                  />
+                  <Box className={classes.interestsContainer}>
+                    {(userDetails.interests ?? []).map((it, idx) => (
+                      <InterestChip
+                        key={`${it}-${idx}`}
+                        label={it}
+                        onDelete={removeInterest(idx)}
+                        size="small"
+                      />
+                    ))}
+                  </Box>
+                </Box>
+              </Box>
+            )}
+            <Typography
+              variant="body2"
+              color="text.primary"
+              className={isRTL ? classes.fieldLabelRTL : classes.fieldLabelLTR}
+            >
+              {t("pages.profile.email")}
+            </Typography>
+            <TextField
+              value={user?.email}
+              disabled
+              fullWidth
+              className={isRTL ? classes.textFieldRTL : classes.textFieldLTR}
+              size="small"
+            />
+            <Typography
+              variant="body2"
+              color="text.disabled"
+              className={
+                isRTL
+                  ? classes.emailDisabledNoteRTL
+                  : classes.emailDisabledNoteLTR
+              }
+            >
+              {t("pages.profile.emailCannotBeChanged")}
+            </Typography>
+          </Box>
+        </Stack>
+
+        <Box className={classes.buttonContainer}>
+          <Button onClick={handleSave} disabled={!dirty}>
+            {t("pages.profile.saveChanges")}
+          </Button>
+          <Button variant="outlined" disabled={!dirty} onClick={handleCancel}>
+            {t("pages.profile.cancel")}
+          </Button>
+        </Box>
+      </Box>
+    </Box>
+  );
 };

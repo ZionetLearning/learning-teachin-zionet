@@ -2,7 +2,9 @@ using Accessor.DB.Configurations;
 using Accessor.Models;
 using Microsoft.EntityFrameworkCore;
 using Accessor.Models.Users;
+using Accessor.Models.Games;
 using Accessor.Models.Prompts;
+using Accessor.Models.WordCards;
 
 namespace Accessor.DB;
 
@@ -17,19 +19,28 @@ public class AccessorDbContext : DbContext
     public DbSet<RefreshSessionsRecord> RefreshSessions { get; set; } = default!;
     public DbSet<UserModel> Users { get; set; } = default!;
     public DbSet<PromptModel> Prompts { get; set; } = default!;
+    public DbSet<TeacherStudent> TeacherStudents { get; set; } = default!;
+    public DbSet<GameAttempt> GameAttempts { get; set; } = default!;
+    public DbSet<WordCardModel> WordCards { get; set; } = default!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.ApplyConfiguration(new GameAttemptsConfiguration());
+
         // Users table
         modelBuilder.ApplyConfiguration(new UsersConfiguration());
 
         // Refresh Sessions table
         modelBuilder.ApplyConfiguration(new RefreshSessionConfiguration());
 
-        // TaskModel – ensure Id is unique/PK
+        // TaskModel – primary key + map Postgres system column `xmin` as a shadow concurrency token
         modelBuilder.Entity<TaskModel>(e =>
         {
             e.HasKey(t => t.Id);
+            e.Property<uint>("xmin")
+             .HasColumnName("xmin")
+             .IsConcurrencyToken()
+             .ValueGeneratedOnAddOrUpdate();
         });
 
         // ChatHistorySnapshot table
@@ -50,6 +61,13 @@ public class AccessorDbContext : DbContext
 
             e.Property(x => x.UpdatedAt)
              .HasDefaultValueSql("NOW()");
+        });
+        modelBuilder.Entity<TeacherStudent>(e =>
+        {
+            e.ToTable("TeacherStudents");
+            e.HasKey(x => new { x.TeacherId, x.StudentId });
+            e.HasIndex(x => x.TeacherId);
+            e.HasIndex(x => x.StudentId);
         });
 
         // Prompts table
@@ -73,6 +91,9 @@ public class AccessorDbContext : DbContext
 
             entity.HasIndex(e => e.PromptKey);
         });
+
+        // Word cards table
+        modelBuilder.ApplyConfiguration(new WordCardsConfiguration());
 
         base.OnModelCreating(modelBuilder);
     }

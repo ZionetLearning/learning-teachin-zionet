@@ -16,16 +16,19 @@ import {
   CountryExplorerPage,
   EarthquakeMapPage,
   HomePage,
-  SignalRPage,
   SpeakingPracticePage,
   TypingPracticePage,
   WeatherWidgetPage,
   WordOrderGamePage,
-  ProfilePage
+  ProfilePage,
+  PracticeMistakesPage,
+  PracticeHistoryPage,
+  WordCardsPage,
 } from "./pages";
 import "./App.css";
+import { AppRole } from "@app-providers";
 const ProtectedLayout = () => (
-  <RequireAuth>
+  <RequireAuth allowedRoles={[AppRole.student, AppRole.admin]}>
     <div data-testid="protected-layout">
       <SidebarMenuLayout sidebarMenu={<SidebarMenu />} />
     </div>
@@ -42,7 +45,14 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/signin" element={<AuthorizationPage />} />
+        <Route
+          path="/signin"
+          element={
+            <AuthorizationPage
+              allowedRoles={[AppRole.student, AppRole.admin]}
+            />
+          }
+        />
         <Route element={<ProtectedLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/chat/yo" element={<ChatYoPage />} />
@@ -59,8 +69,10 @@ function App() {
           <Route path="/weather" element={<WeatherWidgetPage />} />
           <Route path="/anime-explorer" element={<AnimeExplorerPage />} />
           <Route path="/country-explorer" element={<CountryExplorerPage />} />
-          <Route path="/signalr" element={<SignalRPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/practice-mistakes" element={<PracticeMistakesPage />} />
+          <Route path="/practice-history" element={<PracticeHistoryPage />} />
+          <Route path="/word-cards" element={<WordCardsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

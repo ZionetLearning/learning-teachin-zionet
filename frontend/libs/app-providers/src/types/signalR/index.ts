@@ -13,12 +13,38 @@ export type Status =
   | "reconnecting"
   | "disconnected";
 
+export type StreamStage = "First" | "Chunk" | "Last" | "Heartbeat" | "Error";
+
+export type StreamMessage<T = unknown> = {
+  payload: T;
+  sequenceNumber: number;
+  stage: StreamStage;
+};
+
 export type SignalRContextType = {
   connection: HubConnection | null;
   status: Status;
   userId: string;
-  subscribe: <T = unknown>(eventName: string, handler: (data: T) => void) => () => void;
-  waitForResponse: <T = unknown>(eventType: EventType, requestId: string, timeoutMs?: number) => Promise<T>;
+  subscribe: <T = unknown>(
+    eventName: string,
+    handler: (data: T) => void,
+  ) => () => void;
+  waitForResponse: <T = unknown>(
+    eventType: EventType,
+    requestId: string,
+    timeoutMs?: number,
+  ) => Promise<T>;
+  waitForStream: <T = unknown>(
+    eventType: string,
+    requestId: string,
+    onMessage?: (msg: StreamMessage<T>) => void,
+    timeoutMs?: number,
+  ) => Promise<T[]>;
+  subscribeToStream: <T = unknown>(
+    eventType: string,
+    requestId: string,
+    handler: (msg: StreamMessage<T>) => void,
+  ) => () => void;
 };
 
 export type SignalRNotificationType = "Success" | "Info" | "Warning" | "Error";
@@ -31,12 +57,14 @@ export interface UserNotification {
 
 export const EventType = {
   ChatResponse: "ChatResponse",
-  ChatAiAnswer: "ChatAiAnswer", 
+  ChatAiAnswer: "ChatAiAnswer",
   Notification: "Notification",
   SystemMessage: "SystemMessage",
+  SentenceGeneration: "SentenceGeneration", // Must match backend exactly
+  SplitSentenceGeneration: "SplitSentenceGeneration", // Must match backend exactly
 } as const;
 
-export type EventType = typeof EventType[keyof typeof EventType];
+export type EventType = (typeof EventType)[keyof typeof EventType];
 
 export interface ChatAiAnswerPayload {
   requestId: string;
@@ -44,11 +72,19 @@ export interface ChatAiAnswerPayload {
   chatName: string;
   status: string;
   threadId: string;
-};
+}
 
 export interface NotificationPayload {
   message: string;
   severity: "info" | "warning" | "error";
+}
+
+export interface StreamEvent<TPayload = unknown> {
+  eventType: string; // StreamEventType from backend (e.g., "ChatAiAnswer")
+  payload: TPayload;
+  sequenceNumber: number;
+  stage: "First" | "Chunk" | "Last" | "Heartbeat" | "Error";
+  requestId: string;
 }
 
 export interface SystemMessagePayload {
@@ -56,10 +92,30 @@ export interface SystemMessagePayload {
   description: string;
 }
 
-// Union Type for all possible events, here we add new models we want to get by signalR
+// Regular sentence types
+export interface SentenceItem {
+  text: string;
+  difficulty: string;
+  nikud: boolean;
+}
+
+// Split sentence types
+export interface SplitSentenceItem {
+  attemptId: string;
+  words: string[];
+  original: string;
+  difficulty: string;
+  nikud: boolean;
+}
+
+// Union Type for all possible events
 export type UserEventUnion =
   | { eventType: typeof EventType.ChatAiAnswer; payload: ChatAiAnswerPayload }
-  | { eventType: typeof EventType.SystemMessage; payload: SystemMessagePayload };
+  | { eventType: typeof EventType.SystemMessage; payload: SystemMessagePayload }
+  | {
+      eventType: typeof EventType.SplitSentenceGeneration;
+      payload: SplitSentenceItem[];
+    };
 
 // Event Handler Type
 export type EventHandler<T = unknown> = (event: T) => void;

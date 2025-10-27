@@ -25,7 +25,7 @@ public class AccessorQueueHandler_Invalid_Approval
         Exception? ex = null;
         try
         {
-            await handler.HandleAsync(msg, () => Task.CompletedTask, CancellationToken.None);
+            await handler.HandleAsync(msg, null, () => Task.CompletedTask, CancellationToken.None);
         }
         catch (Exception e)
         {

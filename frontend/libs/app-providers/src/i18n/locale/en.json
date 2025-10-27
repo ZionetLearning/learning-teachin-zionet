@@ -15,7 +15,9 @@
         "teacherDashboard": "Teacher Dashboard",
         "studentDashboard": "Student Dashboard",
         "adminDashboard": "Admin Dashboard",
-        "genericError": "Something went wrong. Please try again later."
+        "genericError": "Something went wrong. Please try again later.",
+        "forbiddenRole": "You do not have permission to access this page.",
+        "interestsPlaceholder": "Interests, e.g. math, science, art"
       },
       "home": {
         "title": "Welcome to our internal playground project",
@@ -71,10 +73,48 @@
         "score": "Score:"
       },
       "chatAvatar": {
-        "chatAvatarPage": "Chat with Avatar - Connected to backend",
+        "chatAvatarPage": "Chat with Avatar",
         "typeMessage": "Type a message...",
         "avatar": "Avatar",
-        "lips": "Lips"
+        "lips": "Lips",
+        "mute": "Mute audio",
+        "unmute": "Unmute audio",
+        "callingTool": "Calling Tool: {{tool}}",
+        "send":"Send",
+        "me": "Me"
+      },
+      "chatHistory": {
+        "title": "Chat History",
+        "toggleButton": {
+          "title": "Toggle Chat History",
+          "ariaLabel": "Open or close chat history sidebar"
+        },
+        "closeButton": {
+          "title": "Close Chat History",
+          "ariaLabel": "Close chat history sidebar"
+        },
+        "newChatButton": {
+          "title": "Start a new conversation",
+          "text": "New Chat"
+        },
+        "untitledChat": "Untitled Chat",
+        "dateFormat": {
+          "today": "Today",
+          "yesterday": "Yesterday",
+          "daysAgo": "{{count}} days ago",
+          "unknown": "Unknown date"
+        },
+        "loading": {
+          "chats": "Loading chats...",
+          "history": "Loading chat history..."
+        },
+        "emptyState": {
+          "title": "No conversations yet",
+          "description": "Start a new chat to see your conversation history here."
+        },
+        "overlay": {
+          "ariaLabel": "Click to close chat history"
+        }
       },
       "avatarOu": {
         "avatarOuPage": "Avatar Ou Page",
@@ -106,8 +146,7 @@
         "stop": "⏹ Stop",
         "play": "▶ Play",
         "record": "🎤 Record",
-        "hideNikud": "Hide Nikud",
-        "showNikud": "Show Nikud"
+        "noData": "No data"
       },
       "typingPractice": {
         "hebrewTypingPractice": "Hebrew Typing Practice",
@@ -133,14 +172,64 @@
         "replay": "🔄 Replay"
       },
       "wordOrderGame": {
+        "config": {
+          "title": "Game Configuration",
+          "subtitle": "Choose your preferences for the word order game",
+          "difficulty": "Difficulty Level",
+          "difficultyDesc": {
+            "easy": "Simple sentences with basic vocabulary",
+            "medium": "Moderate sentences with everyday language",
+            "hard": "Complex sentences with advanced vocabulary"
+          },
+          "options": "Game Options",
+          "nikud": "Include Nikud (Hebrew vowel marks)",
+          "nikudDesc": "Show diacritical marks to help with pronunciation",
+          "sentenceCount": "Number of Sentences",
+          "sentenceCountDesc": "How many sentences to generate (1-10)",
+          "startGame": "Start Game"
+        },
+        "difficulty": {
+          "easy": "Easy",
+          "medium": "Medium",
+          "hard": "Hard"
+        },
+        "welcome": {
+          "description": "Choose your difficulty level and preferences to get started.",
+          "configure": "Configure Game"
+        },
+        "current": {
+          "difficulty": "Difficulty",
+          "nikud": "Nikud",
+          "sentences": "Sentences",
+          "sentence": "Sentence"
+        },
+        "gameOver": {
+          "title": "Game Complete!",
+          "congratulations": "Congratulations!",
+          "completed": "You have completed {{correct}} correct sentences out of {{total}}.",
+          "whatNext": "What would you like to do next?",
+          "playAgain": "Play Again",
+          "changeSettings": "Change Settings",
+          "viewMyMistakes": "View My Mistakes"
+        },
         "title": "Word Order Game",
         "subTitle": "Arrange the words in the correct order",
+        "settings": "Settings",
         "loading": "Loading...",
         "reset": "Reset",
         "check": "Check",
         "next": "Next",
         "playAudio": "Play audio",
-        "playAudioSlowly": "Play audio slowly (0.6x)"
+        "playAudioSlowly": "Play audio slowly (0.6x)",
+        "playSentence": "Play Sentence",
+        "cancel": "Cancel",
+        "close": "Close",
+        "yes": "Yes",
+        "no": "No",
+        "correct": "Correct!",
+        "incorrect": "Incorrect. Try again.",
+        "wordBankTitle": "Word Bank",
+        "wordBankHint": "Click a word to add it to the sentence"
       },
       "earthquakeMap": {
         "title": "Earthquake Map",
@@ -261,7 +350,14 @@
         "firstName": "First Name",
         "lastName": "Last Name",
         "noChanges": "No changes",
-        "role": "Role"
+        "role": "Role",
+        "actions": "Actions",
+        "searchPlaceholder": "Search by email, first name, last name...",
+        "clear": "Clear",
+        "rowsPerPage": "Rows per page:",
+        "page": "Page:",
+        "of": "of",
+        "all": "All"
       },
       "profile": {
         "title": "My profile",
@@ -270,10 +366,157 @@
         "firstName": "First Name",
         "lastName": "Last Name",
         "email": "Email",
+        "preferredLanguage": "Preferred Language",
         "emailCannotBeChanged": "Email cannot be changed",
         "edit": "Edit",
         "saveChanges": "Save changes",
-        "cancel": "Cancel"
+        "cancel": "Cancel",
+        "interests": "Interests"
+      },
+      "tasks": {
+        "title": "Tasks Management",
+        "tasks": "Tasks",
+        "taskId": "Task ID",
+        "taskName": "Task Name",
+        "taskPayload": "Task Payload",
+        "actions": "Actions",
+        "search": "Search tasks...",
+        "searchPlaceholder": "Search tasks...",
+        "addNewTask": "Add New Task",
+        "createTask": "Create Task",
+        "editTask": "Edit Task",
+        "viewTask": "View Task",
+        "updateTask": "Update Task",
+        "deleteTask": "Delete Task",
+        "delete": "Delete",
+        "edit": "Edit",
+        "view": "View",
+        "save": "Save",
+        "cancel": "Cancel",
+        "close": "Close",
+        "clear": "Clear",
+        "confirmDelete": "Are you sure you want to delete the task \"{{name}}\"?",
+        "taskCreated": "Task created successfully",
+        "taskUpdated": "Task updated successfully",
+        "taskDeleted": "Task deleted successfully",
+        "taskCreationFailed": "Failed to create task",
+        "taskUpdateFailed": "Failed to update task",
+        "taskDeleteFailed": "Failed to delete task",
+        "loading": "Loading...",
+        "loadingTasks": "Loading tasks...",
+        "loadTasksFailed": "Failed to load tasks",
+        "creating": "Creating...",
+        "updating": "Updating...",
+        "noTasks": "No tasks found",
+        "noTasksFound": "No tasks found for your search",
+        "taskNamePlaceholder": "Enter task name",
+        "taskPayloadPlaceholder": "Enter task payload",
+        "signalRConnected": "Real-time updates connected",
+        "signalRDisconnected": "Real-time updates disconnected",
+        "signalRReconnecting": "Reconnecting...",
+        "rowsPerPage": "Rows per page:",
+        "of": "of",
+        "all": "All",
+        "validation": {
+          "taskNameRequired": "Task name is required",
+          "taskNameMinLength": "Task name must be at least 2 characters",
+          "taskNameMaxLength": "Task name must not exceed 100 characters"
+        }
+      },
+      "practiceMistakes": {
+        "title": "My Practice Mistakes",
+        "description": "Review and retry exercises you previously answered incorrectly.",
+        "noMistakes": "No mistakes found. Great job!",
+        "practiceName": "Practice Name",
+        "difficulty": "Difficulty",
+        "yourLastAnswer": "Your Last Answer",
+        "status": "Status",
+        "action": "Action",
+        "tryAgain": "Try Again!",
+        "retry": "Retry",
+        "failedToLoad": "Failed to load mistakes",
+        "gameType": {
+          "wordOrderGame": "Word Order Game"
+        }
+      },
+      "practiceHistory": {
+        "title": "My Practice History",
+        "description": "View your practice history as a short summary or explore detailed information for each attempt.",
+        "failedToLoad": "Failed to load practice history.",
+        "noMistakes": "No practice history found.",
+        "summary": "Summary",
+        "detailed": "Detailed",
+        "practiceName": "Practice Name",
+        "difficulty": "Difficulty",
+        "attemptsCount": "Attempts",
+        "totalSuccesses": "Successes",
+        "totalFailures": "Failures",
+        "successRate": "Success Rate",
+        "yourLastAnswer": "Your Last Answer",
+        "status": "Status",
+        "date": "Date",
+        "succeeded": "Succeeded",
+        "failed": "Failed",
+        "gameType": {
+          "wordOrderGame": "Word Order Game"
+        }
+      },
+      "studentPracticeHistory": {
+        "title": "Student Practice History",
+        "columns": {
+          "studentName": "Student Name",
+          "gameType": "Game Type",
+          "difficulty": "Difficulty",
+          "attempts": "Attempts",
+          "successes": "Successes",
+          "failures": "Failures",
+          "successRate": "Success Rate",
+          "lastAttemptTime": "Last attempt time",
+          "metrics": "Metrics"
+        },
+        "loading": "Loading…",
+        "failedToLoad": "Failed to load",
+        "noDataFound": "No data found.",
+        "rowsPerPage": "Rows per page:",
+        "of": "of",
+        "filters": {
+          "gameType": "Game",
+          "difficulty": "Difficulty",
+          "all": "All",
+          "student": "Student",
+          "from": "From date",
+          "to": "To date",
+          "clear": "Clear",
+          "resetAll": "Reset filters"
+        },
+        "exportPage": "Export (page)",
+        "exportCurrentPage": "Export current page"
+      },
+      "wordCards": {
+        "title": "Word Cards",
+        "buildYourOwnWordDescription": "Build your own word list and practice Hebrew–English vocabulary.",
+        "addNewWordsDescription": "Add new words, review your collection, and mark the ones you’ve already learned.",
+        "tipHelperNote": "<0>Tip:</0> You can also <1>select any Hebrew word on the site</1>. A small popup will let you add it directly to your cards.",
+        "hideLearnedWords": "Hide learned words",
+        "addCard": "Add Card",
+        "loadingCards": "Loading cards…",
+        "failedToLoad": "Failed to load word cards.",
+        "noWordCardsYet": "No word cards yet.",
+        "clickAddCardOrSelect": " Click “Add Card” or select a Hebrew word anywhere in the app to create one.",
+        "addTranslation": "Add Translation",
+        "hebrewWord": "Hebrew Word",
+        "englishTranslation": "English Translation",
+        "typeTheEnglishTranslation": "Type the English translation...",
+        "hebrew": "Hebrew",
+        "english": "English",
+        "enterTheHebrewWord": "Enter the Hebrew word...",
+        "enterTheEnglishTranslation": "Enter the English translation...",
+        "cancel": "Cancel",
+        "save": "Save",
+        "saving": "Saving...",
+        "markAsLearned": "Mark as Learned",
+        "markAsUnlearned": "Mark as Unlearned",
+        "learned": "Learned"
       }
     },
     "sidebar": {
@@ -301,9 +544,21 @@
       "weather": "Weather",
       "anime": "Anime Explorer",
       "countryExplorer": "Country Explorer",
-      "signalR": "SignalR Testing",
       "users": "Users",
-      "profile": "Profile"
+      "tasks": "Tasks",
+      "profile": "Profile",
+      "myPracticeMistakes": "Practice Mistakes",
+      "studentPracticeHistory": "Practice History",
+      "wordCards": "Word Cards",
+      "myLearning": "My Learning",
+      "sandbox": "Sandbox"
+    },
+    "errorBoundary": {
+      "title": "Oops! Something went wrong",
+      "message": "Something unexpected happened. Don't worry, our team has been notified and we are working to fix it.",
+      "tryAgain": "Try Again",
+      "goBack": "Back to Menu",
+      "reportError": "Report this error"
     },
     "goBackToMenu": "Go back to Menu",
     "logout": "Logout",
@@ -312,6 +567,17 @@
       "admin": "Admin",
       "teacher": "Teacher",
       "student": "Student"
+    },
+    "hebrewLevels": {
+      "title": "Hebrew Level",
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced",
+      "fluent": "Fluent"
+    },
+    "languages": {
+      "hebrew": "Hebrew",
+      "english": "English"
     }
   }
 }

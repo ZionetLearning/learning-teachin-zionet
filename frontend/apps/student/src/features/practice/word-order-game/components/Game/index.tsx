@@ -1,147 +1,284 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import { useAvatarSpeech, useHebrewSentence } from "@student/hooks";
+import { ChosenWordsArea, WordsBank, ActionButtons, Speaker } from "../";
+import {
+  GameConfig,
+  GameConfigModal,
+  GameOverModal,
+  GameSettings,
+  GameSetupPanel,
+} from "@ui-components";
+import { getDifficultyLabel } from "@student/features";
+import { useAuth } from "@app-providers";
+import { useSubmitGameAttempt } from "@student/api";
 import { useStyles } from "./style";
-import { Speaker } from "../Speaker";
-import { useHebrewSentence } from "../../hooks";
-import { useAvatarSpeech } from "@student/hooks";
+import { toast } from "react-toastify";
 
 export const Game = () => {
-  const { t } = useTranslation();
+  const { user } = useAuth();
+  const { t, i18n } = useTranslation();
   const classes = useStyles();
+
+  const studentId = user?.userId ?? "";
+  const { mutateAsync: submitAttempt } = useSubmitGameAttempt();
+
   const [chosen, setChosen] = useState<string[]>([]);
   const [shuffledSentence, setShuffledSentence] = useState<string[]>([]);
-  const { sentence, loading, error, fetchSentence, initOnce } =
-    useHebrewSentence();
+  const [configModalOpen, setConfigModalOpen] = useState(false);
+  const [gameOverModalOpen, setGameOverModalOpen] = useState(false);
+  const [gameConfig, setGameConfig] = useState<GameConfig | null>(null);
+  const [gameStarted, setGameStarted] = useState(false);
+  const [correctSentencesCount, setCorrectSentencesCount] = useState<number>(0);
+  const [hasCheckedThisSentence, setHasCheckedThisSentence] = useState(false);
 
-  const { speak, stop } = useAvatarSpeech({});
+  const isHebrew = i18n.language === "he";
 
+  const {
+    attemptId,
+    sentence,
+    words,
+    loading,
+    error,
+    fetchSentence,
+    initOnce,
+    resetGame,
+    sentenceCount,
+    currentSentenceIndex,
+  } = useHebrewSentence(gameConfig || undefined);
+
+  const { speak, stop, isLoading: speechLoading } = useAvatarSpeech({});
+
+  // Show config modal on first load
   useEffect(() => {
-    initOnce();
-  }, [initOnce]);
+    if (!gameStarted && !gameConfig) {
+      setConfigModalOpen(true);
+    }
+  }, [gameStarted, gameConfig]);
 
+  // Initialize game when config is set
+  useEffect(() => {
+    if (gameConfig && !gameStarted) {
+      initOnce();
+      setGameStarted(true);
+    }
+  }, [gameConfig, gameStarted, initOnce]);
+
+  // Handle new sentences
   useEffect(() => {
     const handleNewSentence = () => {
-      if (!sentence) return;
+      if (!sentence || words.length === 0) {
+        return;
+      }
       setChosen([]);
-      setShuffledSentence(
-        shuffleDistinct(sentence.replace(/\./g, "").split(" ")),
-      );
+      setShuffledSentence(shuffleDistinct(words));
+      setHasCheckedThisSentence(false);
     };
     handleNewSentence();
-  }, [sentence]);
+  }, [sentence, words]);
+
+  const handleConfigConfirm = (config: GameConfig) => {
+    setGameConfig(config);
+    setConfigModalOpen(false);
+    // Reset game state when config changes
+    setChosen([]);
+    setShuffledSentence([]);
+    setCorrectSentencesCount(0);
+    setGameStarted(false);
+    setHasCheckedThisSentence(false);
+    resetGame();
+  };
+
+  const handleConfigChange = () => {
+    setConfigModalOpen(true);
+  };
 
   const handlePlay = () => {
-    if (!sentence) return;
-    // play the sentence
+    if (!sentence || sentence.trim() === "" || speechLoading) {
+      return;
+    }
     speak(sentence);
   };
 
-  const handleNextClick = async () => {
+  const handleNextClick = useCallback(async () => {
     stop();
-    const s = await fetchSentence();
-    if (!s) return;
+
+    const result = await fetchSentence();
+
+    // Game over?
+    if (!result || !result.sentence) {
+      setGameOverModalOpen(true);
+      return;
+    }
+
+    // Prepare next sentence
     setChosen([]);
-    setShuffledSentence(shuffleDistinct(s.replace(/\./g, "").split(" ")));
+    if (result?.words?.length > 0) {
+      setShuffledSentence(shuffleDistinct(result.words));
+    }
+    setHasCheckedThisSentence(false);
+  }, [stop, fetchSentence]);
+
+  const handleGameOverPlayAgain = () => {
+    setGameOverModalOpen(false);
+    resetGame();
+    // Reset component state
+    setChosen([]);
+    setShuffledSentence([]);
+    setGameStarted(false);
+    setCorrectSentencesCount(0);
+    setHasCheckedThisSentence(false);
+
+    // Restart the game with same config
+    setTimeout(() => {
+      setGameStarted(true);
+      initOnce();
+    }, 100);
+  };
+
+  const handleGameOverChangeSettings = () => {
+    setGameOverModalOpen(false);
+    setConfigModalOpen(true);
   };
 
   const handleReset = () => {
     if (!sentence) return;
-    const clean = sentence.replace(/\./g, "");
     setChosen([]);
-    setShuffledSentence(shuffleDistinct(clean.split(" ")));
+
+    if (words.length > 0) {
+      setShuffledSentence(shuffleDistinct(words));
+    }
+
+    setHasCheckedThisSentence(false);
   };
 
   const handleChooseWord = (word: string) => {
-    setShuffledSentence((prev) => prev.filter((w) => w !== word));
+    setShuffledSentence((prev) => {
+      const index = prev.indexOf(word);
+      if (index > -1) {
+        const newArray = [...prev];
+        newArray.splice(index, 1); // Remove only the first occurrence
+        return newArray;
+      }
+      return prev;
+    });
     setChosen((prev) => [...prev, word]);
+    setHasCheckedThisSentence(false); // changing answer invalidates prior check
   };
 
   const handleUnchooseWord = (index: number, word: string) => {
     setChosen((prev) => prev.filter((_, i) => i !== index));
     setShuffledSentence((prev) => [word, ...prev]);
+    setHasCheckedThisSentence(false); // changing answer invalidates prior check
   };
 
-  const isCorrect = useMemo(
-    () => chosen.join(" ") === sentence.replace(/\./g, ""),
-    [chosen, sentence],
-  );
+  const handleCheck = useCallback(async () => {
+    const res = await submitAttempt({
+      attemptId,
+      studentId,
+      givenAnswer: chosen,
+    });
 
-  const handleCheck = () => {
-    alert(isCorrect ? "Correct!" : "Try again!");
-    return isCorrect;
-  };
+    const isServerCorrect = res.status === "Success";
+
+    if (isServerCorrect) {
+      setCorrectSentencesCount((c) => c + 1);
+      toast.success(t("pages.wordOrderGame.correct"));
+    } else {
+      toast.error(t("pages.wordOrderGame.incorrect"));
+    }
+
+    setHasCheckedThisSentence(true);
+
+    return isServerCorrect;
+  }, [submitAttempt, attemptId, studentId, chosen, t]);
 
   const shuffleDistinct = (words: string[]) => {
     if (words.length < 2) return [...words];
 
-    // try a few times to get an order different from the original
-    const original = words.join(" ");
-    for (let i = 0; i < 5; i++) {
-      const arr = [...words];
-      for (let j = arr.length - 1; j > 0; j--) {
-        const k = Math.floor(Math.random() * (j + 1));
-        [arr[j], arr[k]] = [arr[k], arr[j]];
-      }
-      if (arr.join(" ") !== original) return arr;
+    const shuffled = [...words];
+
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
-    // if we couldn’t get a different order, just return the shuffled result
-    return [...words].sort(() => Math.random() - 0.5);
+
+    if (shuffled.join(" ") === words.join(" ") && words.length > 1) {
+      [shuffled[0], shuffled[1]] = [shuffled[1], shuffled[0]];
+    }
+
+    return shuffled;
   };
 
+  // Show welcome screen if game hasn't started yet
+  if (!gameStarted || !gameConfig) {
+    return (
+      <GameSetupPanel
+        configModalOpen={configModalOpen}
+        setConfigModalOpen={setConfigModalOpen}
+        handleConfigConfirm={handleConfigConfirm}
+        getDifficultyLabel={getDifficultyLabel}
+      />
+    );
+  }
+
   return (
-    <div className={classes.gameContainer}>
-      <div className={classes.gameLogic}>
-        <div className={classes.speakersContainer}>
-          <Speaker onClick={() => handlePlay()} />
-        </div>
+    <>
+      <div className={classes.gameContainer}>
+        <GameSettings
+          gameConfig={gameConfig}
+          currentSentenceIndex={currentSentenceIndex}
+          sentenceCount={sentenceCount}
+          isHebrew={isHebrew}
+          handleConfigChange={handleConfigChange}
+          getDifficultyLabel={getDifficultyLabel}
+        />
 
-        <div className={classes.answerArea} dir="rtl">
-          <div className={classes.dashLine} />
-          <div className={classes.dashLineWithWords} data-testid="wog-chosen">
-            {chosen.map((w, i) => (
-              <button
-                key={`c-${w}-${i}`}
-                className={classes.chosenWord}
-                onClick={() => handleUnchooseWord(i, w)}
-              >
-                {w}
-              </button>
-            ))}
+        <div className={classes.gameLogic}>
+          <div className={classes.speakersContainer}>
+            <Speaker
+              onClick={() => handlePlay()}
+              disabled={!sentence || sentence.trim() === "" || speechLoading}
+            />
+            <ActionButtons
+              loading={loading}
+              handleNextClick={handleNextClick}
+              handleCheck={handleCheck}
+              handleReset={handleReset}
+              showNext={hasCheckedThisSentence}
+            />
           </div>
-        </div>
 
-        <div className={classes.wordsBank} dir="rtl" data-testid="wog-bank">
-          {loading && <div>{t("pages.wordOrderGame.loading")}</div>}
-          {error && <div style={{ color: "red" }}>{error}</div>}
-          {!loading &&
-            !error &&
-            shuffledSentence.map((w, i) => (
-              <button
-                key={`b-${w}-${i}`}
-                className={classes.bankWord}
-                onClick={() => handleChooseWord(w)}
-              >
-                {w}
-              </button>
-            ))}
+          <ChosenWordsArea
+            chosenWords={chosen}
+            handleUnchooseWord={handleUnchooseWord}
+          />
+
+          <WordsBank
+            loading={loading}
+            error={error}
+            shuffledSentence={shuffledSentence}
+            handleChooseWord={handleChooseWord}
+          />
         </div>
       </div>
+      {/* Configuration Modal */}
+      <GameConfigModal
+        open={configModalOpen}
+        onClose={() => setConfigModalOpen(false)}
+        onConfirm={handleConfigConfirm}
+        getDifficultyLevelLabel={getDifficultyLabel}
+        initialConfig={gameConfig || undefined}
+      />
 
-      <div className={classes.sideButtons}>
-        <button data-testid="wog-reset" onClick={handleReset}>
-          {t("pages.wordOrderGame.reset")}
-        </button>
-        <button data-testid="wog-check" onClick={handleCheck}>
-          {t("pages.wordOrderGame.check")}
-        </button>
-        <button
-          data-testid="wog-next"
-          disabled={loading}
-          onClick={handleNextClick}
-        >
-          {t("pages.wordOrderGame.next")}
-        </button>
-      </div>
-    </div>
+      {/* Game Over Modal */}
+      <GameOverModal
+        open={gameOverModalOpen}
+        onPlayAgain={handleGameOverPlayAgain}
+        onChangeSettings={handleGameOverChangeSettings}
+        correctSentences={correctSentencesCount}
+        totalSentences={sentenceCount}
+      />
+    </>
   );
 };

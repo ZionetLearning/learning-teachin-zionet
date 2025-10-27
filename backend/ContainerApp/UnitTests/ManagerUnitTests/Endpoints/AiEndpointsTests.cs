@@ -1,7 +1,6 @@
 ﻿using Manager.Endpoints;
 using Manager.Models.Chat;
 using Manager.Models.Sentences;
-using Manager.Models.Speech;
 using Manager.Services.Clients.Accessor;
 using Manager.Services.Clients.Engine;
 using Manager.Services.Clients.Engine.Models;
@@ -116,45 +115,13 @@ public class AiEndpointsTests
         Assert.Equal(chatId, root.GetProperty("ChatId").GetGuid());
     }
 
-    [Fact(DisplayName = "POST /ai-manager/speech/synthesize => 200 + body when valid")]
-    public async Task Synthesize_Returns_Ok_When_Valid()
-    {
-        var dto = new SpeechRequest { Text = "hello", VoiceName = "he-IL-HilaNeural" };
-
-        var engineResponse = new SpeechEngineResponse
-        {
-            AudioData = Convert.ToBase64String(Encoding.UTF8.GetBytes("audio")),
-            Metadata = new SpeechMetadata { ContentType = "audio/mpeg" }
-        };
-
-        var engine = new Mock<IEngineClient>();
-        engine.Setup(e => e.SynthesizeAsync(dto, It.IsAny<CancellationToken>()))
-              .ReturnsAsync(engineResponse);
-
-        var logger = Mock.Of<ILogger<object>>();
-        var httpReq = new DefaultHttpContext().Request;
-
-        var result = await PrivateInvoker.InvokePrivateEndpointAsync(
-            typeof(AiEndpoints),
-            "SynthesizeAsync",
-            dto,
-            engine.Object,
-            logger,
-            httpReq,
-            CancellationToken.None
-        );
-
-        var status = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
-        Assert.Equal(StatusCodes.Status200OK, status.StatusCode);
-    }
-
     [Fact(DisplayName = "POST /ai-manager/sentence => 200 when valid")]
     public async Task Sentence_Returns_Ok_When_Valid()
     {
         var request = new SentenceRequest
         {
             UserId = Guid.NewGuid(),
-            Difficulty = Difficulty.medium,
+            Difficulty = Difficulty.Medium,
             Nikud = true,
             Count = 1
         };

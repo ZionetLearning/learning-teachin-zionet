@@ -75,6 +75,8 @@ env:
   VITE_TASKS_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/tasks-manager"
   VITE_USERS_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/users-manager"
   VITE_MEDIA_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/media-manager"
+  VITE_GAMES_MANAGER_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/games-manager"
+  VITE_WORD_CARDS_MANAGER_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/wordcards-manager"
   
   # Azure OpenAI configuration
   VITE_AZURE_OPENAI_KEY: ""
@@ -116,13 +118,69 @@ jobs:
           npx vitest run --reporter=verbose --passWithNoTests --root apps/${{ matrix.app }}
           echo "Tests completed successfully for ${{ matrix.app }}"
       
+      # - name: Start All Applications for E2E Testing
+      #   working-directory: ${{ env.FE_DIR }}
+      #   run: |
+      #     echo "Starting all applications for cross-app E2E testing..."
+          
+      #     # Start student app (port 4000)
+      #     npm run serve:student &
+      #     STUDENT_PID=$!
+      #     echo "Started student app (PID: $STUDENT_PID) on port 4000"
+          
+      #     # Start teacher app (port 4001) 
+      #     npm run serve:teacher &
+      #     TEACHER_PID=$!
+      #     echo "Started teacher app (PID: $TEACHER_PID) on port 4001"
+          
+      #     # Start admin app (port 4002)
+      #     npm run serve:admin &
+      #     ADMIN_PID=$!
+      #     echo "Started admin app (PID: $ADMIN_PID) on port 4002"
+          
+      #     # Wait for all applications to be ready
+      #     echo "Waiting for applications to start..."
+          
+      #     # Function to check if an app is ready
+      #     check_app_ready() {
+      #       local port=$1
+      #       local app_name=$2
+      #       local max_attempts=60  # 5 minutes total (60 * 5s)
+      #       local attempt=0
+            
+      #       while [ $attempt -lt $max_attempts ]; do
+      #         if curl -s --fail --connect-timeout 3 "https://localhost:$port" >/dev/null 2>&1; then
+      #           echo "✅ $app_name (port $port) is ready"
+      #           return 0
+      #         fi
+              
+      #         echo "Waiting for $app_name (port $port)... attempt $((attempt + 1))/$max_attempts"
+      #         sleep 5
+      #         attempt=$((attempt + 1))
+      #       done
+            
+      #       echo "$app_name (port $port) failed to start after $((max_attempts * 5)) seconds"
+      #       return 1
+      #     }
+          
+      #     # Check each application sequentially to avoid wait issues
+      #     echo "Checking student app readiness..."
+      #     check_app_ready 4000 "student"
+          
+      #     echo "Checking teacher app readiness..."
+      #     check_app_ready 4001 "teacher"
+          
+      #     echo "Checking admin app readiness..."
+      #     check_app_ready 4002 "admin"
+          
+      #     echo "All applications are ready for E2E testing"
+
       # - name: Run E2E Tests (Cypress) for ${{ matrix.app }}
-      #   continue-on-error: true
       #   working-directory: ${{ env.FE_DIR }}
       #   run: |
       #     echo "Running Cypress for ${{ matrix.app }}..."
       #     if grep -q "\"cypress:${{ matrix.app }}\":" package.json; then
-      #       # Run Cypress - will show results even with some test failures
+      #       # Run Cypress with all apps running - will show results even with some test failures
       #       npm run cypress:${{ matrix.app }}:ci
       #       echo "Cypress run completed for ${{ matrix.app }}"
       #     else
@@ -135,6 +193,9 @@ jobs:
     needs: [frontend-test]
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || 'Development' }}
+    strategy:
+      matrix:
+        app: [student, teacher, admin]
     env:
       FE_DIR: frontend
     steps:
@@ -160,66 +221,91 @@ jobs:
           ts=$(date -u "+Release-%d-%m-%Y_%H-%M")
           echo "RELEASE_NAME=${ts}-${GITHUB_SHA::7}" >> $GITHUB_ENV
 
-      - name: Build All Applications (Parallel)
+      - name: Build ${{ matrix.app }} Application
         working-directory: ${{ env.FE_DIR }}
         env:
-          # Build-specific environment variables (RELEASE_NAME is created in the previous step)
           RELEASE: ${{ env.RELEASE_NAME }}
           VITE_APPINSIGHTS_CONNECTION_STRING_STUDENT: ${{ secrets.VITE_APPINSIGHTS_CONNECTION_STRING_STUDENT }}
           VITE_APPINSIGHTS_CONNECTION_STRING_TEACHER: ${{ secrets.VITE_APPINSIGHTS_CONNECTION_STRING_TEACHER }}
-          VITE_APPINSIGHTS_CONNECTION_STRING_ADMIN:  ${{ secrets.VITE_APPINSIGHTS_CONNECTION_STRING_ADMIN  }}
+          VITE_APPINSIGHTS_CONNECTION_STRING_ADMIN: ${{ secrets.VITE_APPINSIGHTS_CONNECTION_STRING_ADMIN }}
         run: |
-          echo "Starting parallel builds with per-app AI connection strings..."
-
-          VITE_APPINSIGHTS_CONNECTION_STRING="$VITE_APPINSIGHTS_CONNECTION_STRING_STUDENT" npm run build:student &
-          STUDENT_PID=$! && echo "Started student build (PID: $STUDENT_PID)"
-
-          VITE_APPINSIGHTS_CONNECTION_STRING="$VITE_APPINSIGHTS_CONNECTION_STRING_TEACHER" npm run build:teacher &
-          TEACHER_PID=$! && echo "Started teacher build (PID: $TEACHER_PID)"
-
-          VITE_APPINSIGHTS_CONNECTION_STRING="$VITE_APPINSIGHTS_CONNECTION_STRING_ADMIN"  npm run build:admin   &
-          ADMIN_PID=$!   && echo "Started admin build (PID: $ADMIN_PID)"
-
-          echo "Waiting for all builds to complete..."
-          wait $STUDENT_PID && echo "Student build completed"
-          wait $TEACHER_PID && echo "Teacher build completed"
-          wait $ADMIN_PID   && echo "Admin build completed"
-
-          echo "🚀 All frontend applications built successfully with per-app AI!"
-
-      - name: Normalize build outputs to frontend/dist/apps/*
-        working-directory: ${{ env.FE_DIR }}
-        run: |
-          set -e
-          mkdir -p dist/apps/student dist/apps/teacher dist/apps/admin
-          if [ -d apps/student/dist ]; then rsync -a --delete apps/student/dist/ dist/apps/student/; fi
-          if [ -d apps/teacher/dist ]; then rsync -a --delete apps/teacher/dist/ dist/apps/teacher/; fi
-          if [ -d apps/admin/dist ];  then rsync -a --delete apps/admin/dist/  dist/apps/admin/;  fi
-          echo "== dist tree =="
-          find dist -maxdepth 3 -type d -print
-
-      - name: Verify AI is in bundles
-        working-directory: ${{ env.FE_DIR }}
-        run: |
-          if ! grep -R "applicationinsights" -n dist/ >/dev/null 2>&1; then
-            echo "AI SDK not found in built files."
+          set -e  # Exit on any error
+          echo "Building ${{ matrix.app }} with AI connection string..."
+          
+          # Set the appropriate AI connection string based on the app
+          case "${{ matrix.app }}" in
+            "student")
+              export VITE_APPINSIGHTS_CONNECTION_STRING="$VITE_APPINSIGHTS_CONNECTION_STRING_STUDENT"
+              ;;
+            "teacher")
+              export VITE_APPINSIGHTS_CONNECTION_STRING="$VITE_APPINSIGHTS_CONNECTION_STRING_TEACHER"
+              ;;
+            "admin")
+              export VITE_APPINSIGHTS_CONNECTION_STRING="$VITE_APPINSIGHTS_CONNECTION_STRING_ADMIN"
+              ;;
+          esac
+          
+          echo "=== Build Environment Debug ==="
+          echo "VITE_APPINSIGHTS_CONNECTION_STRING is set: ${VITE_APPINSIGHTS_CONNECTION_STRING:+YES}"
+          echo "VITE_APPINSIGHTS_CONNECTION_STRING length: ${#VITE_APPINSIGHTS_CONNECTION_STRING}"
+          
+          if [ -z "$VITE_APPINSIGHTS_CONNECTION_STRING" ]; then
+            echo "WARNING: VITE_APPINSIGHTS_CONNECTION_STRING is empty for ${{ matrix.app }}"
+          fi
+          
+          echo "=== Running build command ==="
+          if ! npm run build:${{ matrix.app }}; then
+            echo "ERROR: npm run build:${{ matrix.app }} failed"
             exit 1
           fi
-          if ! grep -R "applicationinsights.azure.com" -n dist/ >/dev/null 2>&1; then
-            echo "Ingestion endpoint not found (env missing?)."
+          
+          echo "=== Checking build output ==="
+          # Vite outputs to dist/apps/{app}/ not apps/{app}/dist/
+          if [ ! -d "dist/apps/${{ matrix.app }}" ]; then
+            echo "ERROR: Build completed but dist/apps/${{ matrix.app }} directory not created"
+            echo "=== Available directories in dist/ ==="
+            ls -la dist/ || echo "dist/ directory doesn't exist"
+            echo "=== Available directories in dist/apps/ ==="
+            ls -la dist/apps/ || echo "dist/apps/ directory doesn't exist"
             exit 1
           fi
-          echo "AI present in bundles."
+          
+          echo "BUILD SUCCESS: dist/apps/${{ matrix.app }} directory created"
+          ls -la dist/apps/${{ matrix.app }}/
 
-      - name: Upload build artifacts
+      - name: Verify AI is in ${{ matrix.app }} bundle
+        working-directory: ${{ env.FE_DIR }}
+        run: |
+          echo "=== Debugging ${{ matrix.app }} build output ==="
+          echo "Contents of dist/apps/${{ matrix.app }}/:"
+          find dist/apps/${{ matrix.app }}/ -type f -name "*.js" | head -10
+          
+          echo "=== Checking for ApplicationInsights ==="
+          if ! grep -R "applicationinsights" -n dist/apps/${{ matrix.app }}/ >/dev/null 2>&1; then
+            echo "AI SDK not found in ${{ matrix.app }} built files."
+            echo "=== Looking for any AI-related content ==="
+            grep -R -i "appinsights\|application.*insights\|ai.*connection" dist/apps/${{ matrix.app }}/ || echo "No AI content found"
+            exit 1
+          fi
+          
+          if ! grep -R "applicationinsights.azure.com" -n dist/apps/${{ matrix.app }}/ >/dev/null 2>&1; then
+            echo "Ingestion endpoint not found in ${{ matrix.app }} (env missing?)."
+            echo "=== Environment variables during build ==="
+            echo "VITE_APPINSIGHTS_CONNECTION_STRING was: ${VITE_APPINSIGHTS_CONNECTION_STRING:-'NOT SET'}"
+            exit 1
+          fi
+          
+          echo "AI present in ${{ matrix.app }} bundle."
+
+      - name: Upload ${{ matrix.app }} build artifacts
         if: |
          github.event_name == 'push' ||
          github.event_name == 'workflow_dispatch' ||
          github.event_name == 'workflow_call'
         uses: actions/upload-artifact@v4
         with:
-          name: frontend-build
-          path: ${{ env.FE_DIR }}/dist/
+          name: frontend-build-${{ matrix.app }}
+          path: ${{ env.FE_DIR }}/dist/apps/${{ matrix.app }}/
           retention-days: 1
 
   deploy:
@@ -383,7 +469,7 @@ jobs:
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: frontend-build
+          name: frontend-build-${{ matrix.app }}
           path: ${{ env.FE_DIR }}/dist/
 
       - name: Get SWA deployment token
@@ -418,7 +504,7 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ env.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: "upload"
-          app_location: "${{ env.FE_DIR }}/dist/apps/${{ matrix.app }}"
+          app_location: "${{ env.FE_DIR }}/dist/"
           api_location: "" # No API
           output_location: "" # Files are already built
           skip_app_build: true
