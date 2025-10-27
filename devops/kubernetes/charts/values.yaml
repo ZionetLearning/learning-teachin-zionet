@@ -260,3 +260,7 @@ dapr:
         poolTimeout: "30s"
         idleTimeout: "300s"
         maxConnAge: "30m"
+
+# Langfuse Configuration (optional observability tool)
+langfuse:
+  enabled: false  # Set to true if you want to deploy Langfuse for LLM observability
