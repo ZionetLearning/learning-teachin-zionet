@@ -19,11 +19,7 @@ sidecar:
     enabled: true
 
 plugins:
-  install:
-    - grafana-azure-monitor-datasource
-
-alerting:
-  enabled: true
+  - grafana-azure-monitor-datasource
 
 extraConfigmapMounts:
   - name: grafana-alerting
