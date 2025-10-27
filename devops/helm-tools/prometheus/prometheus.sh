@@ -56,7 +56,7 @@ for file in ./dashboards/*.json; do
     --namespace "$GRAFANA_NAMESPACE" \
     --from-file="$DASH_NAME.json=$file" \
     --dry-run=client -o yaml | \
-  kubectl label -f - grafana_dashboard="1" --overwrite | \
+  kubectl label -f - grafana_dashboard="1" --local --dry-run=client -o yaml | \
   kubectl apply -f -
 done
 
