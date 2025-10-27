@@ -42,7 +42,9 @@ helm upgrade --install grafana grafana/grafana \
   --set adminPassword="$ADMIN_PASS" \
   --set sidecar.dashboards.searchNamespace="$NAMESPACE" \
   --set env.TEAMS_WEBHOOK_URL="$TEAMS_WEBHOOK_URL" \
+  --set env.GF_SERVER_ROOT_URL="https://$CONTROLLER_IP/grafana/" \
   --set env.GF_SERVER_SERVE_FROM_SUB_PATH="true" \
+  --set env.GF_SERVER_DOMAIN="$CONTROLLER_IP" \
   --timeout=10m \
   --wait
 
