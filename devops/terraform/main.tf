@@ -55,12 +55,11 @@ data "azurerm_postgresql_flexible_server" "shared" {
   resource_group_name = var.shared_resource_group
 }
 
-# Create new PostgreSQL server and database only if not using shared
+# Create PostgreSQL database (always needed, regardless of shared server or not)
 module "database" {
-  count  = var.use_shared_postgres ? 0 : 1
   source = "./modules/postgresql"
 
-  server_name         = var.database_server_name
+  server_name         = var.use_shared_postgres ? var.database_server_name : var.database_server_name
   location            = var.db_location
   resource_group_name = var.use_shared_postgres ? var.shared_resource_group : azurerm_resource_group.main.name
 
@@ -92,7 +91,7 @@ module "database" {
 resource "azurerm_postgresql_flexible_server_database" "langfuse" {
   count     = (var.enable_langfuse && var.environment_name == "dev") ? 1 : 0
   name      = "langfuse-${var.environment_name}"
-  server_id = var.use_shared_postgres ? data.azurerm_postgresql_flexible_server.shared[0].id : module.database[0].id
+  server_id = var.use_shared_postgres ? data.azurerm_postgresql_flexible_server.shared[0].id : module.database.id
   charset   = "UTF8"
   collation = "en_US.utf8"
 
@@ -140,6 +139,88 @@ locals {
   redis_key      = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].primary_access_key : module.redis[0].primary_access_key
 }
 
+# ------------- Storage Resource Group (Shared across environments) -----------------------
+# Use existing storage-rg resource group (created manually or by other environment)
+data "azurerm_resource_group" "storage" {
+  name = "storage-rg"
+}
+
+# ------------- Storage Account for Avatars (Optimized for Cost) -----------------------
+resource "azurerm_storage_account" "avatars" {
+  name                     = "${var.environment_name}avatarsstorage"
+  resource_group_name      = data.azurerm_resource_group.storage.name
+  location                = data.azurerm_resource_group.storage.location
+  account_tier            = "Standard"          # Cheapest tier
+  account_replication_type = "LRS"             # Cheapest replication (Local only)
+  access_tier             = "Cool"             # Cool tier for cheaper storage (avatars accessed less frequently)
+  
+  # Enable blob public access for SAS token functionality
+  allow_nested_items_to_be_public = true
+  
+  # Security settings
+  min_tls_version                = "TLS1_2"
+  https_traffic_only_enabled     = true
+  
+  # CORS configuration for web uploads
+  blob_properties {
+    cors_rule {
+      allowed_headers    = ["*"]
+      allowed_methods    = ["GET", "HEAD", "POST", "PUT", "DELETE"]
+      allowed_origins    = ["*"]
+      exposed_headers    = ["*"]
+      max_age_in_seconds = 3600
+    }
+    
+    # Delete old versions automatically to save space/cost
+    delete_retention_policy {
+      days = 7  # Keep deleted blobs for 7 days only (minimum)
+    }
+    
+    # Automatically move to cheaper tiers
+    versioning_enabled = false  # Disable versioning to save cost
+  }
+
+  tags = {
+    Environment = var.environment_name
+    ManagedBy   = "terraform"
+    Purpose     = "avatars-media"
+  }
+
+  depends_on = [data.azurerm_resource_group.storage]
+}
+
+# Private container for avatars
+resource "azurerm_storage_container" "avatars" {
+  name                 = "avatars"
+  storage_account_id   = azurerm_storage_account.avatars.id
+  container_access_type = "private"
+
+  depends_on = [azurerm_storage_account.avatars]
+}
+
+# Lifecycle management to minimize costs
+resource "azurerm_storage_management_policy" "avatars_lifecycle" {
+  storage_account_id = azurerm_storage_account.avatars.id
+
+  rule {
+    name    = "avatars_lifecycle"
+    enabled = true
+    filters {
+      prefix_match = ["avatars/"]
+      blob_types   = ["blockBlob"]
+    }
+    actions {
+      base_blob {
+        # Move to Cool tier after 30 days (even cheaper)
+        tier_to_cool_after_days_since_modification_greater_than = 30
+        # Move to Archive tier after 90 days (cheapest storage for long-term retention)
+        tier_to_archive_after_days_since_modification_greater_than = 90
+        # No deletion - avatars should be kept permanently
+      }
+    }
+  }
+}
+
 # Monitoring - Diagnostic Settings for resources to Log Analytics
 # Log Analytics Workspace - only create in dev environment
 resource "azurerm_log_analytics_workspace" "main" {
@@ -167,7 +248,7 @@ module "monitoring" {
 
   log_analytics_workspace_id  = local.log_analytics_workspace_id
   servicebus_namespace_id     = module.servicebus.namespace_id
-  postgres_server_id          = var.use_shared_postgres ? data.azurerm_postgresql_flexible_server.shared[0].id : module.database[0].id
+  postgres_server_id          = var.use_shared_postgres ? data.azurerm_postgresql_flexible_server.shared[0].id : module.database.id
   signalr_id                  = module.signalr.id
   redis_id                    = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].id : module.redis[0].id
   frontend_static_web_app_id  = length(var.frontend_apps) > 0 ? [for f in module.frontend : f.static_web_app_id] : []

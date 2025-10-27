@@ -70,6 +70,11 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.manager.secrets.signalr.name }}
                   key: {{ .Values.manager.secrets.signalr.key }}
+            - name: Avatars__StorageConnectionString
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.manager.secrets.avatars.name }}
+                  key: {{ .Values.manager.secrets.avatars.key }}
           resources:
             {{- toYaml .Values.manager.resources | nindent 12 }}
 ---

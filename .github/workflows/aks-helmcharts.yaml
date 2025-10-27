@@ -277,7 +277,10 @@ jobs:
             --set namespace.create=false \
             --set global.namePrefix="$TARGET_NAMESPACE" \
             --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
-            --set global.environment="$IMAGE_TAG" \
+            --set global.environment="$TARGET_NAMESPACE" \
+            --set manager.image.tag="$IMAGE_TAG" \
+            --set engine.image.tag="$IMAGE_TAG" \
+            --set accessor.image.tag="$IMAGE_TAG" \
             --set global.keyvault.clientId="$KEYVAULT_CLIENT_ID" \
             --set global.keyvault.tenantId="$KEYVAULT_TENANT_ID" \
             --set dapr.installComponents=false \
@@ -304,7 +307,10 @@ jobs:
             --set namespace.create=false \
             --set global.namePrefix="$TARGET_NAMESPACE" \
             --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
-            --set global.environment="$IMAGE_TAG" \
+            --set global.environment="$TARGET_NAMESPACE" \
+            --set manager.image.tag="$IMAGE_TAG" \
+            --set engine.image.tag="$IMAGE_TAG" \
+            --set accessor.image.tag="$IMAGE_TAG" \
             --set global.keyvault.clientId="$KEYVAULT_CLIENT_ID" \
             --set global.keyvault.tenantId="$KEYVAULT_TENANT_ID" \
             --set langfuse.enabled="$LANGFUSE_ENABLED" \
