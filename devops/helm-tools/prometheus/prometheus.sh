@@ -50,14 +50,6 @@ kubectl apply -f ./datasources.yaml -n "$GRAFANA_NAMESPACE"
 # 6. Apply Grafana dashboards
 # ==============================
 echo "6. Applying Grafana dashboards..."
-for file in ./dashboards/*.json; do
-  DASH_NAME=$(basename "$file" .json)
-  kubectl create configmap "dashboard-$DASH_NAME" \
-    --namespace "$GRAFANA_NAMESPACE" \
-    --from-file="$DASH_NAME.json=$file" \
-    --dry-run=client -o yaml | \
-  kubectl label -f - grafana_dashboard="1" --local --dry-run=client -o yaml | \
-  kubectl apply -f -
-done
+bash ../add-dashboards.sh ./dashboards
 
 echo "Prometheus and Grafana successfully deployed and configured."
