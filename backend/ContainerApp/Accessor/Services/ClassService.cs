@@ -65,9 +65,7 @@ public class ClassService : IClassService
             _logger.LogError(ex, "Failed to add member");
             return isSuccessful;
         }
-
     }
-
     public async Task<bool> RemoveMembersAsync(Guid classId, IEnumerable<Guid> userIds, CancellationToken ct)
     {
         var isSuccessful = false;
