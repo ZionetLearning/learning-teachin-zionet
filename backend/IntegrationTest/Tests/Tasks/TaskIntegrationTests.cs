@@ -9,12 +9,12 @@ using Xunit.Abstractions;
 
 namespace IntegrationTests.Tests.Tasks;
 
-[Collection("Shared test collection")]
+[Collection("IntegrationTests")]
 public class TaskIntegrationTests(
-    SharedTestFixture sharedFixture,
+    HttpClientFixture httpClientFixture,
     ITestOutputHelper outputHelper,
     SignalRTestFixture signalRFixture
-) : TaskTestBase(sharedFixture, outputHelper, signalRFixture), IAsyncLifetime
+) : TaskTestBase(httpClientFixture, outputHelper, signalRFixture), IAsyncLifetime
 {
     [Fact(DisplayName = "POST /tasks-manager/task - Same ID twice still returns 202 Accepted")]
     public async Task Post_Same_Id_Twice_Should_Return_Accepted()
@@ -56,7 +56,7 @@ public class TaskIntegrationTests(
     {
         OutputHelper.WriteLine("Running: Post_Valid_Task_Should_Return_Accepted");
 
-        await Shared.EnsureSignalRStartedAsync(SignalRFixture, OutputHelper);
+        await EnsureSignalRStartedAsync();
         SignalRFixture.ClearReceivedMessages();
 
         var task = TestDataHelper.CreateRandomTask();
@@ -65,7 +65,7 @@ public class TaskIntegrationTests(
         var response = await PostAsJsonAsync(ApiRoutes.Task, task);
         response.ShouldBeAccepted();
 
-        await Shared.EnsureSignalRStartedAsync(SignalRFixture, OutputHelper);
+        await EnsureSignalRStartedAsync();
 
         var receivedNotification = await WaitForNotificationAsync(
             n => n.Type == NotificationType.Success && n.Message.Contains(task.Name),
@@ -75,7 +75,7 @@ public class TaskIntegrationTests(
         if (receivedNotification is null)
         {
             OutputHelper.WriteLine("No SignalR notification yet; ensuring connection & retrying...");
-            await Shared.EnsureSignalRStartedAsync(SignalRFixture, OutputHelper);
+            await EnsureSignalRStartedAsync();
             receivedNotification = await WaitForNotificationAsync(
                 n => n.Type == NotificationType.Success && n.Message.Contains(task.Name),
                 TimeSpan.FromSeconds(10)

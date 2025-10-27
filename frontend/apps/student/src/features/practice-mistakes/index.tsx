@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import {
   Table,
   TableBody,
@@ -25,6 +26,7 @@ import { useStyles } from "./style";
 export const PracticeMistakes = () => {
   const { user } = useAuth();
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const classes = useStyles();
 
   const studentId = user?.userId ?? "";
@@ -44,8 +46,16 @@ export const PracticeMistakes = () => {
   const total = data?.totalCount ?? 0;
 
   const handleRetry = (item: GameMistakeItem) => {
-    // TODO: navigate to practice screen with item context (currently to WordOrderGame)
-    console.log("Retry:", item);
+    const retryData = {
+      correctAnswer: item.correctAnswer,
+      attemptId: item.attemptId,
+      wrongAnswers: item.wrongAnswers,
+      difficulty: item.difficulty,
+    };
+
+    navigate("/word-order-game", {
+      state: { retryData },
+    });
   };
 
   const handleChangePage = (_: unknown, newPage: number) => setPage(newPage);

@@ -1,6 +1,7 @@
 using Accessor.DB;
 using Accessor.Models.Games;
 using Accessor.Services;
+using AutoMapper;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -27,7 +28,23 @@ public class GameServiceTests
     private static GameService NewGameService(AccessorDbContext db)
     {
         var logger = Mock.Of<ILogger<GameService>>();
-        return new GameService(db, logger);
+        var mockMapper = new Mock<IMapper>();
+
+        mockMapper
+            .Setup(m => m.Map<SubmitAttemptResult>(It.IsAny<GameAttempt>()))
+            .Returns((GameAttempt src) => new SubmitAttemptResult
+            {
+                StudentId = src.StudentId,
+                ExerciseId = src.ExerciseId,
+                AttemptId = src.AttemptId,
+                GameType = src.GameType,
+                Difficulty = src.Difficulty,
+                Status = src.Status,
+                CorrectAnswer = src.CorrectAnswer,
+                AttemptNumber = src.AttemptNumber
+            });
+
+        return new GameService(db, logger, mockMapper.Object);
     }
 
     #region SubmitAttemptAsync Tests
@@ -62,7 +79,7 @@ public class GameServiceTests
         var result = await service.SubmitAttemptAsync(new SubmitAttemptRequest
         {
             StudentId = studentId,
-            ExerciseId = exerciseId,
+            AttemptId = attemptId,
             GivenAnswer = correctAnswer
         }, CancellationToken.None);
 
@@ -101,7 +118,7 @@ public class GameServiceTests
         var result = await service.SubmitAttemptAsync(new SubmitAttemptRequest
         {
             StudentId = studentId,
-            ExerciseId = exerciseId,
+            AttemptId = attemptId,
             GivenAnswer = new List<string> { "wrong", "answer" }
         }, CancellationToken.None);
 
@@ -118,33 +135,37 @@ public class GameServiceTests
         var service = NewGameService(db);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() =>
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
             service.SubmitAttemptAsync(new SubmitAttemptRequest
             {
                 StudentId = Guid.NewGuid(),
-                ExerciseId = Guid.NewGuid(),
+                AttemptId = Guid.NewGuid(),
                 GivenAnswer = null!
             }, CancellationToken.None));
     }
 
     [Fact]
-    public async Task SubmitAttemptAsync_NonexistentId_ThrowsInvalidOperationException()
+    public async Task SubmitAttemptAsync_NonexistentAttemptId_ThrowsKeyNotFoundException()
     {
         // Arrange
         var db = NewDb(Guid.NewGuid().ToString());
         var service = NewGameService(db);
 
+        var StudentId = Guid.NewGuid();
+        var AttemptId = Guid.NewGuid();
+
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
             service.SubmitAttemptAsync(new SubmitAttemptRequest
             {
-                StudentId = Guid.NewGuid(),
-                ExerciseId = Guid.NewGuid(),
+                StudentId = StudentId,
+                AttemptId = AttemptId,
                 GivenAnswer = new List<string> { "test" }
             }, CancellationToken.None));
 
-        exception.Message.Should().Contain("No pending attempt found");
+        exception.Message.Should().Contain("Original attempt not found.");
     }
+
 
     #endregion
 
