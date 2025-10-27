@@ -322,7 +322,11 @@
         "posting": "שולח...",
         "send": "שלח",
         "noNotifications": "אין התראות",
-        "notifications": "התראות"
+        "notifications": "התראות",
+        "reconnects": "חיבורים מחדש",
+        "errors": "שגיאות",
+        "signalRStatus": "סטטוס SignalR",
+        "noEventsYet": "עדיין אין אירועי SignalR."
       },
       "users": {
         "createUsers": "צור משתמשים",

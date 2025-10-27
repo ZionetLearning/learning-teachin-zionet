@@ -80,7 +80,7 @@
         "mute": "Mute audio",
         "unmute": "Unmute audio",
         "callingTool": "Calling Tool: {{tool}}",
-        "send":"Send",
+        "send": "Send",
         "me": "Me"
       },
       "chatHistory": {
@@ -322,7 +322,11 @@
         "posting": "Posting...",
         "send": "Send",
         "noNotifications": "No notifications",
-        "notifications": "Notifications"
+        "notifications": "Notifications",
+        "reconnects": "Reconnects",
+        "errors": "Errors",
+        "signalRStatus": "SignalR Status",
+        "noEventsYet": "No SignalR events yet."
       },
       "users": {
         "createUsers": "Create Users",
