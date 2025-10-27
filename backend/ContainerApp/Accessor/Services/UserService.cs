@@ -103,6 +103,22 @@ public class UserService : IUserService
             return false;
         }
 
+        if (updateUser.ClearAvatar == true)
+        {
+            user.AvatarPath = null;
+            user.AvatarContentType = null;
+            user.AvatarUpdatedAtUtc = DateTime.UtcNow;
+        }
+        else
+        {
+            if (updateUser.AvatarPath is not null)
+            {
+                user.AvatarPath = updateUser.AvatarPath;
+                user.AvatarContentType = updateUser.AvatarContentType;
+                user.AvatarUpdatedAtUtc = DateTime.UtcNow;
+            }
+        }
+
         if (updateUser.FirstName is not null)
         {
             user.FirstName = updateUser.FirstName;
@@ -131,13 +147,6 @@ public class UserService : IUserService
         if (updateUser.Interests is not null)
         {
             user.Interests = updateUser.Interests;
-        }
-
-        if (updateUser.AvatarPath is not null)
-        {
-            user.AvatarPath = updateUser.AvatarPath;
-            user.AvatarContentType = updateUser.AvatarContentType;
-            user.AvatarUpdatedAtUtc = DateTime.UtcNow;
         }
 
         await _db.SaveChangesAsync();

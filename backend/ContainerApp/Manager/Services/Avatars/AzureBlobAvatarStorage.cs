@@ -14,7 +14,7 @@ public sealed class AzureBlobAvatarStorage : IAvatarStorage
     private readonly BlobContainerClient _container;
     private readonly ILogger<AzureBlobAvatarStorage> _log;
 
-    public AzureBlobAvatarStorage(IOptions<AvatarsOptions> opt, Logger<AzureBlobAvatarStorage> log)
+    public AzureBlobAvatarStorage(IOptions<AvatarsOptions> opt, ILogger<AzureBlobAvatarStorage> log)
     {
         _options = opt.Value;
         _svc = new BlobServiceClient(_options.StorageConnectionString);

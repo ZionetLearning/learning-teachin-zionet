@@ -1,4 +1,6 @@
 ﻿using System.Security.Claims;
+using Azure;
+using Azure.Storage.Blobs.Models;
 using Manager.Constants;
 using Manager.Helpers;
 using Manager.Models.Users;
@@ -574,18 +576,36 @@ public static class UsersEndpoints
             return Results.Forbid();
         }
 
-        var (url, exp, blobPath) = await storage.GetUploadSasAsync(userId, req.ContentType, req.SizeBytes, ct);
-
-        logger.LogInformation("Generated upload SAS: blobPath={BlobPath}, expiresAt={Expires}", blobPath, exp);
-
-        return Results.Ok(new GetUploadUrlResponse
+        try
         {
-            UploadUrl = url.ToString(),
-            BlobPath = blobPath,
-            ExpiresAtUtc = exp.UtcDateTime,
-            MaxBytes = opt.Value.MaxBytes,
-            AcceptedContentTypes = opt.Value.AllowedContentTypes
-        });
+            var (url, exp, blobPath) = await storage.GetUploadSasAsync(userId, req.ContentType, req.SizeBytes, ct);
+
+            logger.LogInformation("Generated upload SAS: blobPath={BlobPath}, expiresAt={Expires}", blobPath, exp);
+
+            return Results.Ok(new GetUploadUrlResponse
+            {
+                UploadUrl = url.ToString(),
+                BlobPath = blobPath,
+                ExpiresAtUtc = exp.UtcDateTime,
+                MaxBytes = opt.Value.MaxBytes,
+                AcceptedContentTypes = opt.Value.AllowedContentTypes
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            logger.LogWarning(ex, "Validation failed for upload-url");
+            return Results.BadRequest(ex.Message);
+        }
+        catch (RequestFailedException ex)
+        {
+            logger.LogError(ex, "Azure request failed");
+            return Results.Problem("Storage error.", statusCode: 502);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Unexpected error");
+            return Results.Problem("Unexpected error.");
+        }
     }
 
     private static async Task<IResult> ConfirmAvatarAsync(
@@ -615,7 +635,32 @@ public static class UsersEndpoints
             return Results.BadRequest("Invalid blobPath prefix");
         }
 
-        var props = await storage.GetBlobPropsAsync(req.BlobPath, ct);
+        BlobProperties? props;
+        try
+        {
+            props = await storage.GetBlobPropsAsync(req.BlobPath, ct);
+        }
+        catch (InvalidOperationException ex)
+        {
+            log.LogWarning(ex, "Validation failed when reading blob props");
+            return Results.BadRequest(ex.Message);
+        }
+        catch (RequestFailedException ex) when (ex.Status == 404)
+        {
+            log.LogWarning(ex, "Blob not found during confirm");
+            return Results.BadRequest("Blob not found");
+        }
+        catch (RequestFailedException ex)
+        {
+            log.LogError(ex, "Azure request failed when reading blob props");
+            return Results.Problem("Storage error.", statusCode: 502);
+        }
+        catch (Exception ex)
+        {
+            log.LogError(ex, "Unexpected error when reading blob props");
+            return Results.Problem("Unexpected error.");
+        }
+
         if (props is null)
         {
             log.LogWarning("Blob not found: {BlobPath}", req.BlobPath);
@@ -673,9 +718,17 @@ public static class UsersEndpoints
                 log.LogInformation("Deleting old avatar: {Old}", old);
                 await storage.DeleteAsync(old!, ct);
             }
-            catch (Exception e)
+            catch (RequestFailedException ex) when (ex.Status == 404)
             {
-                log.LogWarning(e, "Failed to delete old avatar {Old}", old);
+                log.LogWarning(ex, "Old avatar not found during delete (ignored)");
+            }
+            catch (RequestFailedException ex)
+            {
+                log.LogWarning(ex, "Azure delete failed for old avatar (ignored)");
+            }
+            catch (Exception ex)
+            {
+                log.LogWarning(ex, "Unexpected error deleting old avatar (ignored)");
             }
         }
 
@@ -716,15 +769,24 @@ public static class UsersEndpoints
         {
             await storage.DeleteAsync(user.AvatarPath!, ct);
         }
-        catch (Exception e)
+        catch (RequestFailedException ex) when (ex.Status == 404)
         {
-            log.LogWarning(e, "Delete blob failed for {Path}", user.AvatarPath);
+            log.LogWarning(ex, "Avatar blob not found during delete (ignored)");
+        }
+        catch (RequestFailedException ex)
+        {
+            log.LogWarning(ex, "Azure delete failed (ignored)");
+        }
+        catch (Exception ex)
+        {
+            log.LogWarning(ex, "Delete blob failed for {Path}", user.AvatarPath);
         }
 
         var ok = await accessorClient.UpdateUserAsync(new UpdateUserModel
         {
             AvatarPath = null,
-            AvatarContentType = null
+            AvatarContentType = null,
+            ClearAvatar = true
         }, userId);
 
         log.LogInformation("Avatar removed in DB");
@@ -755,9 +817,27 @@ public static class UsersEndpoints
             return Results.NotFound();
         }
 
-        var uri = await storage.GetReadSasAsync(user.AvatarPath!, TimeSpan.FromMinutes(opt.Value.ReadUrlTtlMinutes), ct);
-        log.LogInformation("Returning read SAS: {Url}", uri);
+        try
+        {
+            var uri = await storage.GetReadSasAsync(user.AvatarPath!, TimeSpan.FromMinutes(opt.Value.ReadUrlTtlMinutes), ct);
+            log.LogInformation("Returning read SAS: {Url}", uri);
 
-        return Results.Ok(uri.ToString());
+            return Results.Ok(uri.ToString());
+        }
+        catch (InvalidOperationException ex)
+        {
+            log.LogWarning(ex, "Validation failed when generating read SAS");
+            return Results.BadRequest(ex.Message);
+        }
+        catch (RequestFailedException ex)
+        {
+            log.LogError(ex, "Azure request failed when generating read SAS");
+            return Results.Problem("Storage error.", statusCode: 502);
+        }
+        catch (Exception ex)
+        {
+            log.LogError(ex, "Unexpected error when generating read SAS");
+            return Results.Problem("Unexpected error.");
+        }
     }
 }

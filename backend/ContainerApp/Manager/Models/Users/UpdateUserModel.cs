@@ -16,4 +16,5 @@ public class UpdateUserModel
     public List<string>? Interests { get; set; }
     public string? AvatarPath { get; set; }
     public string? AvatarContentType { get; set; }
+    public bool? ClearAvatar { get; set; }
 }
