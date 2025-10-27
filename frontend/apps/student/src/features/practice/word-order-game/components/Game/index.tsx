@@ -75,6 +75,15 @@ export const Game = ({ retryData }: GameProps) => {
 
   const { speak, stop, isLoading: speechLoading } = useAvatarSpeech({});
 
+  useEffect(
+    function showConfigModalOnFirstLoad() {
+      if (!gameStarted && !gameConfig && !isRetryMode) {
+        setConfigModalOpen(true);
+      }
+    },
+    [gameStarted, gameConfig, isRetryMode],
+  );
+
   const shuffleDistinct = useCallback((words: string[]) => {
     if (words.length < 2) return [...words];
 
@@ -91,15 +100,6 @@ export const Game = ({ retryData }: GameProps) => {
 
     return shuffled;
   }, []);
-
-  useEffect(
-    function showConfigModalOnFirstLoad() {
-      if (!gameStarted && !gameConfig && !isRetryMode) {
-        setConfigModalOpen(true);
-      }
-    },
-    [gameStarted, gameConfig, isRetryMode],
-  );
 
   useEffect(
     function initializeGameOrRetryMode() {
@@ -308,9 +308,9 @@ export const Game = ({ retryData }: GameProps) => {
         setLastCheckWasIncorrect(false);
       } else {
         toast.error(t("pages.wordOrderGame.incorrect"));
+        setLastCheckWasIncorrect(true);
+        setCurrentAttemptId(attemptId);
       }
-      setLastCheckWasIncorrect(true);
-      setCurrentAttemptId(attemptId);
     }
 
     setHasCheckedThisSentence(true);
