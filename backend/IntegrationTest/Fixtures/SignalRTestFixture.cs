@@ -1,4 +1,3 @@
-using IntegrationTests.Constants;
 using IntegrationTests.Models.Notification;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Configuration;
