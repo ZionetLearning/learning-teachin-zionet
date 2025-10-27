@@ -140,6 +140,94 @@ locals {
   redis_key      = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].primary_access_key : module.redis[0].primary_access_key
 }
 
+# ------------- Storage Resource Group (Shared across environments) -----------------------
+resource "azurerm_resource_group" "storage" {
+  name     = "storage-rg"
+  location = var.location
+
+  tags = {
+    Environment = "shared"
+    ManagedBy   = "terraform"
+    Purpose     = "storage-accounts"
+  }
+}
+
+# ------------- Storage Account for Avatars (Optimized for Cost) -----------------------
+resource "azurerm_storage_account" "avatars" {
+  name                     = "${var.environment_name}avatarsstorage"
+  resource_group_name      = azurerm_resource_group.storage.name
+  location                = azurerm_resource_group.storage.location
+  account_tier            = "Standard"          # Cheapest tier
+  account_replication_type = "LRS"             # Cheapest replication (Local only)
+  access_tier             = "Cool"             # Cool tier for cheaper storage (avatars accessed less frequently)
+  
+  # Enable blob public access for SAS token functionality
+  allow_nested_items_to_be_public = true
+  
+  # Security settings
+  min_tls_version                = "TLS1_2"
+  https_traffic_only_enabled     = true
+  
+  # CORS configuration for web uploads
+  blob_properties {
+    cors_rule {
+      allowed_headers    = ["*"]
+      allowed_methods    = ["GET", "HEAD", "POST", "PUT", "DELETE"]
+      allowed_origins    = ["*"]
+      exposed_headers    = ["*"]
+      max_age_in_seconds = 3600
+    }
+    
+    # Delete old versions automatically to save space/cost
+    delete_retention_policy {
+      days = 7  # Keep deleted blobs for 7 days only (minimum)
+    }
+    
+    # Automatically move to cheaper tiers
+    versioning_enabled = false  # Disable versioning to save cost
+  }
+
+  tags = {
+    Environment = var.environment_name
+    ManagedBy   = "terraform"
+    Purpose     = "avatars-media"
+  }
+
+  depends_on = [azurerm_resource_group.storage]
+}
+
+# Private container for avatars
+resource "azurerm_storage_container" "avatars" {
+  name                 = "avatars"
+  storage_account_id   = azurerm_storage_account.avatars.id
+  container_access_type = "private"
+
+  depends_on = [azurerm_storage_account.avatars]
+}
+
+# Lifecycle management to minimize costs
+resource "azurerm_storage_management_policy" "avatars_lifecycle" {
+  storage_account_id = azurerm_storage_account.avatars.id
+
+  rule {
+    name    = "avatars_lifecycle"
+    enabled = true
+    filters {
+      prefix_match = ["avatars/"]
+      blob_types   = ["blockBlob"]
+    }
+    actions {
+      base_blob {
+        # Move to Cool tier after 30 days (even cheaper)
+        tier_to_cool_after_days_since_modification_greater_than = 30
+        # Move to Archive tier after 90 days (cheapest storage for long-term retention)
+        tier_to_archive_after_days_since_modification_greater_than = 90
+        # No deletion - avatars should be kept permanently
+      }
+    }
+  }
+}
+
 # Monitoring - Diagnostic Settings for resources to Log Analytics
 # Log Analytics Workspace - only create in dev environment
 resource "azurerm_log_analytics_workspace" "main" {

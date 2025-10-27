@@ -50,6 +50,14 @@ resource "azurerm_key_vault_secret" "redis_password" {
   key_vault_id = data.azurerm_key_vault.shared.id
 }
 
+########################
+# Storage Account secret for Avatars
+########################
+resource "azurerm_key_vault_secret" "avatars_storage_connection" {
+  name         = "${var.environment_name}-avatars-storage-connection"
+  value        = azurerm_storage_account.avatars.primary_connection_string
+  key_vault_id = data.azurerm_key_vault.shared.id
+}
 
 ########################
 # Langfuse secrets (always create, controlled by Helm values)

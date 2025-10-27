@@ -107,6 +107,10 @@ manager:
     signalr:
       name: signalr-connection
       key: SignalRConnectionString
+    avatars:
+      enabled: true
+      name: avatars-storage-secret
+      key: AvatarsStorageConnectionString
     jwt:
       name: manager-appsettings
       keys:
