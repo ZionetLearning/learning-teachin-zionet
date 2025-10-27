@@ -14,6 +14,7 @@ import {
   RetryResultModal,
   WrongAnswerDisplay,
 } from "@ui-components";
+import { MistakeChatPopup } from "@student/components";
 import { getDifficultyLabel } from "@student/features";
 import { useAuth } from "@app-providers";
 import { useSubmitGameAttempt } from "@student/api";
@@ -49,6 +50,9 @@ export const Game = ({ retryData }: GameProps) => {
   const [gameStarted, setGameStarted] = useState(false);
   const [correctSentencesCount, setCorrectSentencesCount] = useState<number>(0);
   const [hasCheckedThisSentence, setHasCheckedThisSentence] = useState(false);
+  const [lastCheckWasIncorrect, setLastCheckWasIncorrect] = useState(false);
+  const [mistakeChatOpen, setMistakeChatOpen] = useState(false);
+  const [currentAttemptId, setCurrentAttemptId] = useState<string>("");
   const [isRetryMode] = useState(!!retryData);
   const [retryAttemptId] = useState(retryData?.attemptId || "");
   const [retryResultModalOpen, setRetryResultModalOpen] = useState(false);
@@ -150,6 +154,9 @@ export const Game = ({ retryData }: GameProps) => {
     setCorrectSentencesCount(0);
     setGameStarted(false);
     setHasCheckedThisSentence(false);
+    setLastCheckWasIncorrect(false);
+    setCurrentAttemptId("");
+    setMistakeChatOpen(false);
     resetGame();
   };
 
@@ -187,6 +194,9 @@ export const Game = ({ retryData }: GameProps) => {
       setShuffledSentence(shuffleDistinct(result.words));
     }
     setHasCheckedThisSentence(false);
+    setLastCheckWasIncorrect(false);
+    setCurrentAttemptId("");
+    setMistakeChatOpen(false);
   }, [stop, fetchSentence, shuffleDistinct]);
 
   const handleGameOverPlayAgain = () => {
@@ -198,6 +208,9 @@ export const Game = ({ retryData }: GameProps) => {
     setGameStarted(false);
     setCorrectSentencesCount(0);
     setHasCheckedThisSentence(false);
+    setLastCheckWasIncorrect(false);
+    setCurrentAttemptId("");
+    setMistakeChatOpen(false);
 
     // Restart the game with same config
     setTimeout(() => {
@@ -222,10 +235,8 @@ export const Game = ({ retryData }: GameProps) => {
     }
 
     setHasCheckedThisSentence(false);
-  };
-
-  const handleBackToMistakes = () => {
-    navigate("/practice-mistakes");
+    setLastCheckWasIncorrect(false);
+    setCurrentAttemptId("");
   };
 
   const handleRetryAgain = () => {
@@ -237,6 +248,10 @@ export const Game = ({ retryData }: GameProps) => {
       const shuffledWords = shuffleDistinct(retryData.correctAnswer);
       setShuffledSentence(shuffledWords);
     }
+  };
+
+  const handleBackToMistakes = () => {
+    navigate("/practice-mistakes");
   };
 
   const handleModalBackToMistakes = () => {
@@ -256,12 +271,14 @@ export const Game = ({ retryData }: GameProps) => {
     });
     setChosen((prev) => [...prev, word]);
     setHasCheckedThisSentence(false); // changing answer invalidates prior check
+    setLastCheckWasIncorrect(false);
   };
 
   const handleUnchooseWord = (index: number, word: string) => {
     setChosen((prev) => prev.filter((_, i) => i !== index));
     setShuffledSentence((prev) => [word, ...prev]);
     setHasCheckedThisSentence(false); // changing answer invalidates prior check
+    setLastCheckWasIncorrect(false);
   };
 
   const handleCheck = useCallback(async () => {
@@ -288,9 +305,12 @@ export const Game = ({ retryData }: GameProps) => {
       if (isServerCorrect) {
         setCorrectSentencesCount((c) => c + 1);
         toast.success(t("pages.wordOrderGame.correct"));
+        setLastCheckWasIncorrect(false);
       } else {
         toast.error(t("pages.wordOrderGame.incorrect"));
       }
+      setLastCheckWasIncorrect(true);
+      setCurrentAttemptId(attemptId);
     }
 
     setHasCheckedThisSentence(true);
@@ -306,6 +326,16 @@ export const Game = ({ retryData }: GameProps) => {
     t,
     queryClient,
   ]);
+
+  const handleExplainMistake = useCallback(() => {
+    if (currentAttemptId) {
+      setMistakeChatOpen(true);
+    }
+  }, [currentAttemptId]);
+
+  const handleCloseMistakeChat = useCallback(() => {
+    setMistakeChatOpen(false);
+  }, []);
 
   // Show welcome screen if game hasn't started yet
   if (!gameStarted || !gameConfig) {
@@ -347,6 +377,10 @@ export const Game = ({ retryData }: GameProps) => {
               handleCheck={handleCheck}
               handleReset={handleReset}
               showNext={hasCheckedThisSentence}
+              showExplainMistake={
+                hasCheckedThisSentence && lastCheckWasIncorrect
+              }
+              handleExplainMistake={handleExplainMistake}
             />
           </div>
 
@@ -388,6 +422,15 @@ export const Game = ({ retryData }: GameProps) => {
         onChangeSettings={handleGameOverChangeSettings}
         correctSentences={correctSentencesCount}
         totalSentences={sentenceCount}
+      />
+
+      {/* Mistake Chat Popup */}
+      <MistakeChatPopup
+        open={mistakeChatOpen}
+        onClose={handleCloseMistakeChat}
+        attemptId={currentAttemptId}
+        gameType="word-order"
+        title={t("pages.wordOrderGame.explainMistake")}
       />
 
       {/* Retry Result Modal */}

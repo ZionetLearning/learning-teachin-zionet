@@ -78,7 +78,10 @@
         "avatar": "אווטאר",
         "lips": "שפתיים",
         "mute": "השתק",
-        "unmute": "הפעל קול"
+        "unmute": "הפעל קול",
+        "callingTool": "מפעיל כלי: {{tool}}",
+        "send": "שלח",
+        "me": "אני"
       },
       "chatHistory": {
         "title": "היסטוריית צ'אט",
@@ -227,6 +230,7 @@
         "incorrect": "לא נכון. נסה שוב.",
         "wordBankTitle": "מאגר מילים",
         "wordBankHint": "לחץ על מילה כדי להוסיף אותה למשפט",
+        "explainMistake": "הסבר טעות",
         "yourLastWrongAnswer": "התשובה השגויה האחרונה שלך:"
       },
       "retryResultModal": {
@@ -329,7 +333,11 @@
         "posting": "שולח...",
         "send": "שלח",
         "noNotifications": "אין התראות",
-        "notifications": "התראות"
+        "notifications": "התראות",
+        "reconnects": "חיבורים מחדש",
+        "errors": "שגיאות",
+        "signalRStatus": "סטטוס SignalR",
+        "noEventsYet": "עדיין אין אירועי SignalR."
       },
       "users": {
         "createUsers": "צור משתמשים",
@@ -526,6 +534,13 @@
         "markAsUnlearned": "סמן כלא נלמד",
         "learned": "נלמד"
       }
+    },
+    "mistakeChat": {
+      "title": "הסבר טעות",
+      "loadingExplanation": "טוען הסבר...",
+      "errorLoadingExplanation": "מצטערים, לא ניתן לטעון את ההסבר.",
+      "askFollowUp": "שאל שאלת המשך...",
+      "send": "שלח"
     },
     "sidebar": {
       "toggleSidebar": "החלף סרגל",

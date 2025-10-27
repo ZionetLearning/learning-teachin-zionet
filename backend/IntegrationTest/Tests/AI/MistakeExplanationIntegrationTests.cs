@@ -6,35 +6,32 @@ using IntegrationTests.Models.Games;
 using IntegrationTests.Models.Notification;
 using Models.Ai.Sentences;
 using Manager.Models.Chat;
+using Manager.Models.Users;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Xunit.Abstractions;
 
 namespace IntegrationTests.Tests.AI;
 
-[Collection("Shared test collection")]
+[Collection("IntegrationTests")]
 public class MistakeExplanationIntegrationTests(
-    SharedTestFixture sharedFixture,
+    HttpClientFixture httpClientFixture,
     ITestOutputHelper outputHelper,
     SignalRTestFixture signalRFixture
-) : AiChatTestBase(sharedFixture.HttpFixture, outputHelper, signalRFixture), IAsyncLifetime
+) : AiChatTestBase(httpClientFixture, outputHelper, signalRFixture)
 {
-    private readonly SharedTestFixture _shared = sharedFixture;
 
     [Fact(DisplayName = "Complete mistake explanation flow test")]
     public async Task MistakeExplanation_CompleteFlow_ShouldExplainMistake()
     {
         // Arrange
-        var user = _shared.UserFixture.TestUser;
-        await _shared.GetAuthenticatedTokenAsync();
-        await _shared.EnsureSignalRStartedAsync(SignalRFixture, OutputHelper);
-        SignalRFixture.ClearReceivedMessages();
+        var userInfo = ClientFixture.GetUserInfo(Role.Admin);
 
         // Step 1: Generate split sentences for word order game
         OutputHelper.WriteLine("Step 1: Generating split sentences for word order game");
         var sentenceRequest = new SentenceRequest
         {
-            UserId = user.UserId,
+            UserId = userInfo.UserId,
             Difficulty = Difficulty.easy,
             Nikud = false,
             Count = 1
@@ -77,7 +74,7 @@ public class MistakeExplanationIntegrationTests(
 
         var attemptRequest = new SubmitAttemptRequest
         {
-            StudentId = user.UserId,
+            StudentId = userInfo.UserId,
             AttemptId = sentence.AttemptId,
             GivenAnswer = wrongAnswer
         };

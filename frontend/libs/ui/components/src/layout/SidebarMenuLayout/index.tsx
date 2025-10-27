@@ -10,7 +10,14 @@ export const SidebarMenuLayout = ({ sidebarMenu }: SidebarMenuLayoutProps) => {
   return (
     <Box sx={{ display: "flex", height: "100vh" }}>
       {sidebarMenu}
-      <Box sx={{ flexGrow: 1, position: "relative", overflow: "hidden" }}>
+      <Box
+        sx={{
+          flexGrow: 1,
+          position: "relative",
+          overflowY: "auto",
+          overflowX: "hidden",
+        }}
+      >
         <Outlet />
       </Box>
     </Box>

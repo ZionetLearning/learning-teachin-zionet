@@ -1,6 +1,7 @@
 using Accessor.DB;
-using Accessor.Services.Interfaces;
 using Accessor.Models.Games;
+using Accessor.Services.Interfaces;
+using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 
 namespace Accessor.Services;
@@ -9,98 +10,84 @@ public class GameService : IGameService
 {
     private readonly AccessorDbContext _db;
     private readonly ILogger<GameService> _logger;
+    private readonly IMapper _mapper;
 
-    public GameService(AccessorDbContext db, ILogger<GameService> logger)
+    public GameService(AccessorDbContext db, ILogger<GameService> logger, IMapper mapper)
     {
         _db = db;
         _logger = logger;
+        _mapper = mapper;
     }
 
     public async Task<SubmitAttemptResult> SubmitAttemptAsync(SubmitAttemptRequest request, CancellationToken ct)
     {
+        if (request.StudentId == Guid.Empty)
+        {
+            throw new InvalidOperationException("StudentId must not be empty.");
+        }
+
+        if (request.GivenAnswer is null)
+        {
+            throw new InvalidOperationException("GivenAnswer must not be null.");
+        }
+
         try
         {
-            _logger.LogInformation("Submitting attempt. StudentId={StudentId}, ExerciseId={ExerciseId}, GivenAnswer={GivenAnswer}", request.StudentId, request.ExerciseId, string.Join(" ", request.GivenAnswer ?? new()));
+            _logger.LogInformation("Submit attempt requested. AttemptId={AttemptId}, StudentId={StudentId}", request.AttemptId, request.StudentId);
 
-            if (request.GivenAnswer is null)
+            var original = await _db.GameAttempts
+                .FirstOrDefaultAsync(a => a.StudentId == request.StudentId && a.AttemptId == request.AttemptId, ct);
+
+            if (original is null)
             {
-                throw new ArgumentException("GivenAnswer must not be null.");
+                _logger.LogWarning("Attempt not found. AttemptId={AttemptId}", request.AttemptId);
+                throw new KeyNotFoundException("Original attempt not found.");
             }
 
-            // Step 1: Load the pending attempt (the "generated sentence")
-            var pendingAttempt = await _db.GameAttempts
-                .Where(a => a.StudentId == request.StudentId && a.ExerciseId == request.ExerciseId && a.Status == AttemptStatus.Pending)
-                .FirstOrDefaultAsync(ct);
-
-            if (pendingAttempt == null)
+            // If already successful, return as-is
+            if (original.Status == AttemptStatus.Success)
             {
-                _logger.LogWarning(
-                    "No pending attempt found for StudentId={StudentId}, ExerciseId={ExerciseId}",
-                    request.StudentId, request.ExerciseId
-                );
-                throw new InvalidOperationException("No pending attempt found. Generate a sentence first.");
+                _logger.LogInformation("Attempt already successful. Returning result. AttemptId={AttemptId}", original.AttemptId);
+                return _mapper.Map<SubmitAttemptResult>(original);
             }
 
-            // Step 2: Compare answers
-            var isCorrect = request.GivenAnswer.SequenceEqual(pendingAttempt.CorrectAnswer);
-            var status = isCorrect ? AttemptStatus.Success : AttemptStatus.Failure;
+            // Check correctness
+            var isCorrect = request.GivenAnswer.SequenceEqual(original.CorrectAnswer);
 
-            // Step 3: Calculate attempt number
-            var lastAttempt = await _db.GameAttempts
-                .Where(a =>
-                    a.StudentId == request.StudentId &&
-                    a.ExerciseId == request.ExerciseId &&
-                    a.Status != AttemptStatus.Pending)
+            // Determine next attempt number
+            var last = await _db.GameAttempts
+                .Where(a => a.StudentId == original.StudentId && a.ExerciseId == original.ExerciseId)
                 .OrderByDescending(a => a.AttemptNumber)
                 .FirstOrDefaultAsync(ct);
 
-            var nextAttemptNumber = (lastAttempt == null)
-                ? 1
-                : lastAttempt.AttemptNumber + 1;
+            var nextNumber = (last?.AttemptNumber ?? 0) + 1;
 
-            // Step 4: Create new attempt record (not update the pending one)
+            // Create new attempt
             var newAttempt = new GameAttempt
             {
                 AttemptId = Guid.NewGuid(),
-                ExerciseId = request.ExerciseId,
-                StudentId = request.StudentId,
-                GameType = pendingAttempt.GameType,
-                Difficulty = pendingAttempt.Difficulty,
-                CorrectAnswer = pendingAttempt.CorrectAnswer,
+                ExerciseId = original.ExerciseId,
+                StudentId = original.StudentId,
+                GameType = original.GameType,
+                Difficulty = original.Difficulty,
+                CorrectAnswer = original.CorrectAnswer,
                 GivenAnswer = request.GivenAnswer,
-                Status = status,
-                AttemptNumber = nextAttemptNumber,
+                Status = isCorrect ? AttemptStatus.Success : AttemptStatus.Failure,
+                AttemptNumber = nextNumber,
                 CreatedAt = DateTimeOffset.UtcNow
             };
 
             _db.GameAttempts.Add(newAttempt);
             await _db.SaveChangesAsync(ct);
 
-            _logger.LogInformation(
-                "Attempt saved. StudentId={StudentId}, AttemptId={AttemptId}, ExerciseId={ExerciseId}, GameType={GameType}, Difficulty={Difficulty}, Status={Status}, AttemptNumber={AttemptNumber}",
-                request.StudentId, newAttempt.AttemptId, request.ExerciseId, newAttempt.GameType, newAttempt.Difficulty, status, nextAttemptNumber
-            );
+            _logger.LogInformation("New attempt saved. AttemptId={NewId}, BasedOn={OriginalId}, Number={Number}, Status={Status}",
+                newAttempt.AttemptId, original.AttemptId, nextNumber, newAttempt.Status);
 
-            // Step 5: Return result to FE
-            return new SubmitAttemptResult
-            {
-                StudentId = request.StudentId,
-                ExerciseId = request.ExerciseId,
-                AttemptId = newAttempt.AttemptId,
-                GameType = newAttempt.GameType,
-                Difficulty = newAttempt.Difficulty,
-                Status = status,
-                CorrectAnswer = newAttempt.CorrectAnswer,
-                AttemptNumber = nextAttemptNumber
-            };
+            return _mapper.Map<SubmitAttemptResult>(newAttempt);
         }
         catch (Exception ex)
         {
-            _logger.LogError(
-                ex,
-                "Unexpected error while submitting attempt. StudentId={StudentId}, ExerciseId={ExerciseId}",
-                request.StudentId, request.ExerciseId
-            );
+            _logger.LogError(ex, "Error while submitting attempt. AttemptId={AttemptId}, StudentId={StudentId}", request.AttemptId, request.StudentId);
             throw;
         }
     }
@@ -256,6 +243,7 @@ public class GameService : IGameService
                 .Where(g => !g.Any(x => x.Status == AttemptStatus.Success))
                 .Select(g => new MistakeDto
                 {
+                    AttemptId = g.First().AttemptId,
                     GameType = g.First().GameType,
                     Difficulty = g.First().Difficulty,
                     CorrectAnswer = g.First().CorrectAnswer,

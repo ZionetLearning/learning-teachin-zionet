@@ -78,7 +78,10 @@
         "avatar": "Avatar",
         "lips": "Lips",
         "mute": "Mute audio",
-        "unmute": "Unmute audio"
+        "unmute": "Unmute audio",
+        "callingTool": "Calling Tool: {{tool}}",
+        "send": "Send",
+        "me": "Me"
       },
       "chatHistory": {
         "title": "Chat History",
@@ -227,6 +230,7 @@
         "incorrect": "Incorrect. Try again.",
         "wordBankTitle": "Word Bank",
         "wordBankHint": "Click a word to add it to the sentence",
+        "explainMistake": "Explain Mistake",
         "yourLastWrongAnswer": "Your last wrong answer:"
       },
       "retryResultModal": {
@@ -329,7 +333,11 @@
         "posting": "Posting...",
         "send": "Send",
         "noNotifications": "No notifications",
-        "notifications": "Notifications"
+        "notifications": "Notifications",
+        "reconnects": "Reconnects",
+        "errors": "Errors",
+        "signalRStatus": "SignalR Status",
+        "noEventsYet": "No SignalR events yet."
       },
       "users": {
         "createUsers": "Create Users",
@@ -526,6 +534,13 @@
         "markAsUnlearned": "Mark as Unlearned",
         "learned": "Learned"
       }
+    },
+    "mistakeChat": {
+      "title": "Explain Mistake",
+      "loadingExplanation": "Loading explanation...",
+      "errorLoadingExplanation": "Sorry, couldn't load explanation.",
+      "askFollowUp": "Ask a follow-up question...",
+      "send": "Send"
     },
     "sidebar": {
       "toggleSidebar": "Toggle Sidebar",
