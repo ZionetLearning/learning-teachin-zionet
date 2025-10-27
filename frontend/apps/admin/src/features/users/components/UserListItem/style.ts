@@ -57,6 +57,11 @@ export const useStyles = createUseStyles({
     gap: 4,
     "&:active:not(:disabled)": { transform: "translateY(1px)" },
     "&:disabled": { opacity: 0.55, cursor: "not-allowed" },
+    "@media (max-width: 480px)": {
+      padding: "0.3rem 0.5rem 0.35rem",
+      fontSize: 10,
+      minWidth: "auto",
+    },
   },
   updateButton: {
     composes: "$btnBase",
@@ -109,12 +114,20 @@ export const useStyles = createUseStyles({
     display: "flex",
     gap: 6,
     justifyContent: "center",
+    "@media (max-width: 480px)": {
+      gap: 4,
+      flexDirection: "column",
+    },
   },
   actions: {
     display: "flex",
     alignItems: "center",
     gap: 6,
     justifyContent: "center",
+    "@media (max-width: 480px)": {
+      gap: 4,
+      flexDirection: "column",
+    },
   },
   saveButton: {
     composes: "$btnBase",
@@ -132,6 +145,9 @@ export const useStyles = createUseStyles({
   },
   tableRow: {
     background: "#ffffff",
+    "@media (max-width: 480px)": {
+      minHeight: 48,
+    },
   },
   tableCell: {
     color: "#1f2937",
@@ -139,6 +155,14 @@ export const useStyles = createUseStyles({
     "& span": { color: "#1f2937" },
     textAlign: "center",
     padding: "4px 8px",
+    "@media (max-width: 768px)": {
+      fontSize: 13,
+      padding: "3px 6px",
+    },
+    "@media (max-width: 480px)": {
+      fontSize: 12,
+      padding: "2px 4px",
+    },
   },
   dropdownCell: {
     "& label, & .MuiSelect-select, & .MuiInputBase-input": {
@@ -146,12 +170,21 @@ export const useStyles = createUseStyles({
     },
   },
   textField: {
-    "& .MuiOutlinedInput-root": { height: 32 },
+    "& .MuiOutlinedInput-root": {
+      height: 32,
+      "@media (max-width: 480px)": {
+        height: 28,
+      },
+    },
     "& .MuiOutlinedInput-input": {
       padding: "4px 8px",
       fontSize: 13,
       lineHeight: 1.2,
       backgroundColor: "#f8fafc",
+      "@media (max-width: 480px)": {
+        padding: "2px 6px",
+        fontSize: 11,
+      },
     },
   },
   email: {
@@ -160,5 +193,11 @@ export const useStyles = createUseStyles({
     whiteSpace: "nowrap",
     display: "inline-block",
     maxWidth: 200,
+    "@media (max-width: 768px)": {
+      maxWidth: 150,
+    },
+    "@media (max-width: 480px)": {
+      maxWidth: 100,
+    },
   },
 });
