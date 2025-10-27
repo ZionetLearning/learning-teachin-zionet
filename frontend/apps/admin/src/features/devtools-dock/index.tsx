@@ -30,7 +30,7 @@ export const DevToolsDock = ({
       <button
         type="button"
         className={classes.floater}
-        style={isHebrew ? { right: 16 } : { left: 16 }}
+        style={isHebrew ? { left: 16 } : { right: 16 }}
         onClick={() => setOpen(!isOpen)}
         aria-label="Toggle DevTools"
         title={`${label} (${shortcut})`}
