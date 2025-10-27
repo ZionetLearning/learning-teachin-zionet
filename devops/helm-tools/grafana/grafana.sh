@@ -8,6 +8,7 @@ NAMESPACE="devops-logs"
 ADMIN_USER="admin"
 ADMIN_PASS="admin123"
 GRAFANA_CHART_VERSION="10.1.2"
+CONTROLLER_IP="teachin.westeurope.cloudapp.azure.com"
 
 # ==============================
 # 1. Helm repo
@@ -34,6 +35,7 @@ helm upgrade --install grafana grafana/grafana \
   --set adminPassword="$ADMIN_PASS" \
   --set sidecar.dashboards.searchNamespace="$NAMESPACE" \
   --set env.TEAMS_WEBHOOK_URL="$TEAMS_WEBHOOK_URL" \
+  --set env.GF_SERVER_SERVE_FROM_SUB_PATH="true" \
   --timeout=10m \
   --wait
 
