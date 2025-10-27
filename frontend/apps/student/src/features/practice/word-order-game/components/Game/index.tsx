@@ -9,6 +9,7 @@ import {
   GameSettings,
   GameSetupPanel,
 } from "@ui-components";
+import { MistakeChatPopup } from "@student/components";
 import { getDifficultyLabel } from "@student/features";
 import { useAuth } from "@app-providers";
 import { useSubmitGameAttempt } from "@student/api";
@@ -31,6 +32,9 @@ export const Game = () => {
   const [gameStarted, setGameStarted] = useState(false);
   const [correctSentencesCount, setCorrectSentencesCount] = useState<number>(0);
   const [hasCheckedThisSentence, setHasCheckedThisSentence] = useState(false);
+  const [lastCheckWasIncorrect, setLastCheckWasIncorrect] = useState(false);
+  const [mistakeChatOpen, setMistakeChatOpen] = useState(false);
+  const [currentAttemptId, setCurrentAttemptId] = useState<string>("");
 
   const isHebrew = i18n.language === "he";
 
@@ -86,6 +90,9 @@ export const Game = () => {
     setCorrectSentencesCount(0);
     setGameStarted(false);
     setHasCheckedThisSentence(false);
+    setLastCheckWasIncorrect(false);
+    setCurrentAttemptId("");
+    setMistakeChatOpen(false);
     resetGame();
   };
 
@@ -117,6 +124,9 @@ export const Game = () => {
       setShuffledSentence(shuffleDistinct(result.words));
     }
     setHasCheckedThisSentence(false);
+    setLastCheckWasIncorrect(false);
+    setCurrentAttemptId("");
+    setMistakeChatOpen(false);
   }, [stop, fetchSentence]);
 
   const handleGameOverPlayAgain = () => {
@@ -128,6 +138,9 @@ export const Game = () => {
     setGameStarted(false);
     setCorrectSentencesCount(0);
     setHasCheckedThisSentence(false);
+    setLastCheckWasIncorrect(false);
+    setCurrentAttemptId("");
+    setMistakeChatOpen(false);
 
     // Restart the game with same config
     setTimeout(() => {
@@ -150,6 +163,8 @@ export const Game = () => {
     }
 
     setHasCheckedThisSentence(false);
+    setLastCheckWasIncorrect(false);
+    setCurrentAttemptId("");
   };
 
   const handleChooseWord = (word: string) => {
@@ -164,12 +179,14 @@ export const Game = () => {
     });
     setChosen((prev) => [...prev, word]);
     setHasCheckedThisSentence(false); // changing answer invalidates prior check
+    setLastCheckWasIncorrect(false);
   };
 
   const handleUnchooseWord = (index: number, word: string) => {
     setChosen((prev) => prev.filter((_, i) => i !== index));
     setShuffledSentence((prev) => [word, ...prev]);
     setHasCheckedThisSentence(false); // changing answer invalidates prior check
+    setLastCheckWasIncorrect(false);
   };
 
   const handleCheck = useCallback(async () => {
@@ -184,14 +201,27 @@ export const Game = () => {
     if (isServerCorrect) {
       setCorrectSentencesCount((c) => c + 1);
       toast.success(t("pages.wordOrderGame.correct"));
+      setLastCheckWasIncorrect(false);
     } else {
       toast.error(t("pages.wordOrderGame.incorrect"));
+      setLastCheckWasIncorrect(true);
+      setCurrentAttemptId(attemptId);
     }
 
     setHasCheckedThisSentence(true);
 
     return isServerCorrect;
   }, [submitAttempt, attemptId, studentId, chosen, t]);
+
+  const handleExplainMistake = useCallback(() => {
+    if (currentAttemptId) {
+      setMistakeChatOpen(true);
+    }
+  }, [currentAttemptId]);
+
+  const handleCloseMistakeChat = useCallback(() => {
+    setMistakeChatOpen(false);
+  }, []);
 
   const shuffleDistinct = (words: string[]) => {
     if (words.length < 2) return [...words];
@@ -246,6 +276,8 @@ export const Game = () => {
               handleCheck={handleCheck}
               handleReset={handleReset}
               showNext={hasCheckedThisSentence}
+              showExplainMistake={hasCheckedThisSentence && lastCheckWasIncorrect}
+              handleExplainMistake={handleExplainMistake}
             />
           </div>
 
@@ -278,6 +310,15 @@ export const Game = () => {
         onChangeSettings={handleGameOverChangeSettings}
         correctSentences={correctSentencesCount}
         totalSentences={sentenceCount}
+      />
+
+      {/* Mistake Chat Popup */}
+      <MistakeChatPopup
+        open={mistakeChatOpen}
+        onClose={handleCloseMistakeChat}
+        attemptId={currentAttemptId}
+        gameType="word-order"
+        title={t("pages.wordOrderGame.explainMistake")}
       />
     </>
   );
