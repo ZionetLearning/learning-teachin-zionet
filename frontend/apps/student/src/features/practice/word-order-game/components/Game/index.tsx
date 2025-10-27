@@ -12,9 +12,8 @@ import {
   GameSettings,
   GameSetupPanel,
   RetryResultModal,
-  WrongAnswerDisplay,
 } from "@ui-components";
-import { MistakeChatPopup } from "@student/components";
+import { MistakeChatPopup, WrongAnswerDisplay } from "@student/components";
 import { getDifficultyLabel } from "@student/features";
 import { useAuth } from "@app-providers";
 import { useSubmitGameAttempt } from "@student/api";

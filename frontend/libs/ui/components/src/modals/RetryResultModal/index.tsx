@@ -83,14 +83,16 @@ export const RetryResultModal = ({
       </DialogContent>
 
       <DialogActions className={classes.actions}>
-        <Button
-          onClick={handleRetryAgain}
-          variant="outlined"
-          startIcon={<RefreshIcon />}
-          className={classes.button}
-        >
-          {t("pages.retryResultModal.tryAgain")}
-        </Button>
+        {!isCorrect && (
+          <Button
+            onClick={handleRetryAgain}
+            variant="outlined"
+            startIcon={<RefreshIcon />}
+            className={classes.button}
+          >
+            {t("pages.retryResultModal.tryAgain")}
+          </Button>
+        )}
         <Button
           onClick={handleBackToMistakes}
           variant="contained"
