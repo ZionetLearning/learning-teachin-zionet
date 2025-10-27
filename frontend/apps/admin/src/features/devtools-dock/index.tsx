@@ -1,6 +1,6 @@
 import { createPortal } from "react-dom";
-import { useDevTools } from "@admin/hooks";
-import { useSignalR } from "@admin/hooks";
+import { Box } from "@mui/material";
+import { useSignalR, useDevTools } from "@admin/hooks";
 import { SignalRPanel } from "./components";
 import { useStyles } from "./style";
 
@@ -40,17 +40,15 @@ export const DevToolsDock = ({
       </button>
 
       {isOpen && (
-        <div className={classes.dock}>
-          <div className={classes.header}>
+        <Box className={classes.dock}>
+          <Box className={classes.header}>
             <strong style={{ fontSize: 12 }}>{label}</strong>
-            <div style={{ marginLeft: "auto", fontSize: 11, opacity: 0.7 }}>
-              {shortcut}
-            </div>
-          </div>
-          <div className={classes.body}>
+            <Box className={classes.shortcutWrapper}>{shortcut}</Box>
+          </Box>
+          <Box className={classes.body}>
             <SignalRPanel />
-          </div>
-        </div>
+          </Box>
+        </Box>
       )}
     </>,
     portalRoot,

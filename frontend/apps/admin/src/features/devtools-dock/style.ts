@@ -9,7 +9,7 @@ export const useStyles = createUseStyles({
     alignItems: "center",
     gap: 8,
     background: "white",
-    border: "1px solid rgba(0,0,0,.08)",
+    border: "1px solid black",
     borderRadius: 999,
     padding: "8px 12px",
     boxShadow: "0 6px 20px rgba(0,0,0,.12)",
@@ -25,7 +25,10 @@ export const useStyles = createUseStyles({
     "&.ok": { background: "#10b981" },
     "&.warn": { background: "#f59e0b" },
   },
-  label: { fontSize: 12 },
+  label: {
+    fontSize: 12,
+    color: "black",
+  },
   dock: {
     position: "fixed",
     left: 0,
@@ -49,5 +52,10 @@ export const useStyles = createUseStyles({
     overflow: "auto",
     padding: 12,
     background: "linear-gradient(180deg,#0b1020 0%, #101631 100%)",
+  },
+  shortcutWrapper: {
+    marginLeft: "auto",
+    fontSize: 11,
+    opacity: 0.7,
   },
 });

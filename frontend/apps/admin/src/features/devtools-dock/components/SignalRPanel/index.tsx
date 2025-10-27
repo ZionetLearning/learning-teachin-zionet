@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Box } from "@mui/material";
 import { useSignalR } from "@admin/hooks";
 import { useStyles } from "./style";
 
 export const SignalRPanel = () => {
   const classes = useStyles();
+  const { t } = useTranslation();
   const { status, subscribe } = useSignalR();
 
   const [events, setEvents] = useState<string[]>([]);
@@ -13,7 +16,6 @@ export const SignalRPanel = () => {
   useEffect(() => {
     if (!subscribe) return;
 
-    // list of SignalR events we care about
     const eventsToWatch = [
       "connected",
       "reconnecting",
@@ -53,24 +55,24 @@ export const SignalRPanel = () => {
     status === "connected" ? "ok" : status === "reconnecting" ? "warn" : "";
 
   return (
-    <div>
-      <div className={classes.grid}>
-        <div>Status</div>
-        <div className={classes.pill}>
+    <Box>
+      <Box className={classes.grid}>
+        <Box>{t("pages.signalR.signalRStatus")}</Box>
+        <Box className={classes.pill}>
           <span className={`${classes.dot} ${healthClass}`} />
           <span>{status}</span>
-        </div>
+        </Box>
 
-        <div>Reconnects</div>
-        <div>{reconnects}</div>
+        <Box>{t("pages.signalR.reconnects")}</Box>
+        <Box>{reconnects}</Box>
 
-        <div>Errors</div>
-        <div>{errors}</div>
-      </div>
+        <Box>{t("pages.signalR.errors")}</Box>
+        <Box>{errors}</Box>
+      </Box>
 
-      <div className={classes.log}>
-        {events.length ? events.join("\n") : "No SignalR events yet."}
-      </div>
-    </div>
+      <Box className={classes.log}>
+        {events.length ? events.join("\n") : t("pages.signalR.noEventsYet")}
+      </Box>
+    </Box>
   );
 };
