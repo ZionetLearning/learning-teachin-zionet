@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: grafana-datasources
-  namespace: ${GRAFANA_NAMESPACE}
+  namespace: devops-logs
   labels:
     grafana_datasource: "1"
 data:
