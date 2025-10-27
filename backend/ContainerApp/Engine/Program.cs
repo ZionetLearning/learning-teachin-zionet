@@ -115,18 +115,14 @@ builder.Services.AddSingleton(sp =>
         }
         else
         {
-            foreach (var subdir in Directory.GetDirectories(baseDir))
+            try
             {
-                try
-                {
-                    var pluginName = Path.GetFileName(baseDir); // "Sentences"
-                    kb.Plugins.AddFromPromptDirectory(subdir, pluginName);
-                    logger.LogInformation("Loaded SK prompt plugin '{Plugin}' from {Dir}", pluginName, subdir);
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Failed to load plugin from {Dir}", subdir);
-                }
+                kb.Plugins.AddFromPromptDirectory(baseDir, "Sentences");
+                logger.LogInformation("Loaded SK plugin 'Sentences' from {Dir}", baseDir);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to load SK plugin from {Dir}", baseDir);
             }
         }
 
