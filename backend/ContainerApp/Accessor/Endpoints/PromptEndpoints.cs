@@ -115,31 +115,47 @@ public static class PromptEndpoints
 
         try
         {
-            if (request is null || request.PromptKeys is null || request.PromptKeys.Count == 0)
+            if (request is null || request.Prompts is null || request.Prompts.Count == 0)
             {
-                logger.LogWarning("Batch request missing prompt keys");
-                return Results.BadRequest(new { error = "PromptKeys are required." });
+                logger.LogWarning("Batch request missing prompt configurations");
+                return Results.BadRequest(new { error = "Prompts are required." });
             }
 
             const int maxBatch = 100;
-            if (request.PromptKeys.Count > maxBatch)
+            if (request.Prompts.Count > maxBatch)
             {
-                return Results.BadRequest(new { error = $"Maximum {maxBatch} prompt keys allowed." });
+                return Results.BadRequest(new { error = $"Maximum {maxBatch} prompt configurations allowed." });
             }
 
-            var prompts = await promptService.GetPromptsAsync(request.PromptKeys, request.Label, cancellationToken);
-            var foundSet = prompts.Select(p => p.PromptKey).ToHashSet(StringComparer.Ordinal);
-            var notFound = request.PromptKeys
-                .Where(k => !string.IsNullOrWhiteSpace(k))
-                .Where(k => !foundSet.Contains(k))
-                .Distinct(StringComparer.Ordinal)
-                .ToList();
+            var results = new List<PromptResponse>();
+            var notFound = new List<string>();
 
-            logger.LogInformation("Batch retrieval complete. Found {Found} Missing {Missing}", prompts.Count, notFound.Count);
+            foreach (var config in request.Prompts)
+            {
+                try
+                {
+                    var prompt = await promptService.GetPromptAsync(config.Key, config.Version, config.Label, cancellationToken);
+                    if (prompt != null)
+                    {
+                        results.Add(prompt);
+                    }
+                    else
+                    {
+                        notFound.Add(config.Key);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Failed to get prompt {PromptKey} in batch", config.Key);
+                    notFound.Add(config.Key);
+                }
+            }
+
+            logger.LogInformation("Batch retrieval complete. Found {Found} Missing {Missing}", results.Count, notFound.Count);
 
             return Results.Ok(new GetPromptsBatchResponse
             {
-                Prompts = prompts,
+                Prompts = results,
                 NotFound = notFound
             });
         }

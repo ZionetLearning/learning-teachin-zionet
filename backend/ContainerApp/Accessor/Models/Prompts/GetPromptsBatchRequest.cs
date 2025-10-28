@@ -2,6 +2,5 @@ namespace Accessor.Models.Prompts;
 
 public sealed record GetPromptsBatchRequest
 {
-    public required List<string> PromptKeys { get; init; }
-    public string? Label { get; init; }
+    public required List<PromptConfiguration> Prompts { get; init; }
 }

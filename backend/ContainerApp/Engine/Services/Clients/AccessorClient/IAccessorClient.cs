@@ -14,10 +14,7 @@ public interface IAccessorClient
 
     // Prompts
     Task<PromptResponse> CreatePromptAsync(CreatePromptRequest request, CancellationToken ct = default);
-
-    Task<PromptResponse?> GetPromptAsync(string promptKey, int? version = null, string? label = null, CancellationToken ct = default);
     Task<PromptResponse?> GetPromptAsync(PromptConfiguration config, CancellationToken ct = default);
-    Task<GetPromptsBatchResponse> GetPromptsBatchAsync(IEnumerable<string> promptKeys, string? label = null, CancellationToken ct = default);
     Task<GetPromptsBatchResponse> GetPromptsBatchAsync(IEnumerable<PromptConfiguration> configs, CancellationToken ct = default);
 
     // User Interests

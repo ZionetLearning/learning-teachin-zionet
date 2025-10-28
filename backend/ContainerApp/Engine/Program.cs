@@ -22,6 +22,7 @@ builder.Configuration
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
     .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
     .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
+    .AddJsonFile("prompts.config.json", optional: false, reloadOnChange: true)
     .AddEnvironmentVariables();
 
 builder.Services.Configure<PromptKeyOptions>(builder.Configuration.GetSection("Prompts:Keys"));
