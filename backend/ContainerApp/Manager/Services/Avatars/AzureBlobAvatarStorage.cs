@@ -17,9 +17,19 @@ public sealed class AzureBlobAvatarStorage : IAvatarStorage
     public AzureBlobAvatarStorage(IOptions<AvatarsOptions> opt, ILogger<AzureBlobAvatarStorage> log)
     {
         _options = opt.Value;
-        _svc = new BlobServiceClient(_options.StorageConnectionString);
-        _container = _svc.GetBlobContainerClient(_options.Container);
         _log = log;
+
+        try
+        {
+            _svc = new BlobServiceClient(_options.StorageConnectionString);
+            _container = _svc.GetBlobContainerClient(_options.Container);
+        }
+        catch (Exception ex)
+        {
+            _log.LogError(ex, "Failed to init BlobServiceClient. ConnStr prefix={Prefix}",
+                _options.StorageConnectionString?.Length > 20 ? _options.StorageConnectionString[..20] : _options.StorageConnectionString);
+            throw;
+        }
 
         _log.LogInformation("Avatar storage init. Container={Container}", _options.Container);
     }
