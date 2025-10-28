@@ -5,6 +5,10 @@ run-name: >
     github.event.inputs.environment_name || 'custom' 
   }} | GitHub Env: ${{ github.event.inputs.environment }}
 
+permissions:
+  id-token: write
+  contents: read
+
 on:
   # push:
   #  branches:
@@ -38,9 +42,6 @@ on:
 jobs:
   build-and-push-images:
     uses: ./.github/workflows/build-and-push-images.yaml
-    permissions:
-      id-token: write
-      contents: read
     with:
       environment: ${{ github.event.inputs.environment }}
       environment_name: ${{ github.event.inputs.environment_name }}
@@ -49,9 +50,6 @@ jobs:
  
   terraform-apply:
     uses: ./.github/workflows/terraform-apply.yaml
-    permissions:
-      id-token: write
-      contents: read
     with:
       environment_name: ${{ github.event.inputs.environment_name }}
       environment: ${{ github.event.inputs.environment }}
@@ -62,9 +60,6 @@ jobs:
     if: ${{ github.event.inputs.environment_name == 'dev' || github.event.inputs.environment_name == 'prod' }}
     needs: [build-and-push-images, terraform-apply]
     uses: ./.github/workflows/aks-kubectl-apply.yaml
-    permissions:
-      id-token: write
-      contents: read
     with:
       environment: ${{ github.event.inputs.environment }}
     secrets: inherit
@@ -73,9 +68,6 @@ jobs:
     needs: [build-and-push-images, terraform-apply, aks-kubectl-apply]
     if: ${{ always() && contains(fromJson('["success","skipped"]'), needs.aks-kubectl-apply.result) }}
     uses: ./.github/workflows/aks-helmcharts.yaml
-    permissions:
-      id-token: write
-      contents: read
     with:
       environment_name: ${{ github.event.inputs.environment_name }}
       environment: ${{ github.event.inputs.environment }}
@@ -87,9 +79,6 @@ jobs:
     if: ${{ github.event.inputs.environment_name == 'dev' || github.event.inputs.frontend_apps == 'all' }}
     needs: [terraform-apply]
     uses: ./.github/workflows/deploy-frontend.yaml
-    permissions:
-      id-token: write
-      contents: read
     with:
       environment: ${{ github.event.inputs.environment }}
       environment_name: ${{ github.event.inputs.environment_name }}

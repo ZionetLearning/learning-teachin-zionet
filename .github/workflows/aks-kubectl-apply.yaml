@@ -19,9 +19,6 @@ on:
       environment:
         required: true
         type: string
-      environment_name:
-        required: false
-        type: string
 
 jobs:
   platform:
@@ -96,7 +93,7 @@ jobs:
           chmod +x loki.sh
           ./loki.sh
 
-      - name: Configure Azure Monitor datasource in Grafana
+      - name: Azure Monitor
         run: |
           cd devops/helm-tools/azure-monitor
           chmod +x azure-monitor.sh
