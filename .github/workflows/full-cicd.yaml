@@ -66,7 +66,6 @@ jobs:
       id-token: write
       contents: read
     with:
-      environment_name: ${{ github.event.inputs.environment_name }}
       environment: ${{ github.event.inputs.environment }}
     secrets: inherit
    
