@@ -33,11 +33,6 @@ public class LangfuseService : ILangfuseService
 
     private void ConfigureHttpClient()
     {
-        if (_httpClient.BaseAddress == null)
-        {
-            _httpClient.BaseAddress = new Uri(_options.BaseUrl);
-        }
-
         // Basic authentication with public key as username and secret key as password
         var authValue = Convert.ToBase64String(
             Encoding.UTF8.GetBytes($"{_options.PublicKey}:{_options.SecretKey}"));

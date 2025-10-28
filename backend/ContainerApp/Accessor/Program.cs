@@ -10,6 +10,7 @@ using Accessor.Services.Interfaces;
 using Azure.Messaging.ServiceBus;
 using DotQueue;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -52,7 +53,11 @@ builder.Services.AddHttpClient("SpeechClient", client =>
     client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", key);
 });
 
-builder.Services.AddHttpClient<ILangfuseService, LangfuseService>();
+builder.Services.AddHttpClient<ILangfuseService, LangfuseService>((serviceProvider, client) =>
+{
+    var options = serviceProvider.GetRequiredService<IOptions<LangfuseOptions>>().Value;
+    client.BaseAddress = new Uri(options.BaseUrl);
+});
 
 builder.Services.AddScoped<IPromptService, PromptService>();
 
