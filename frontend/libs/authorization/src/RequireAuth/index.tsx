@@ -65,7 +65,7 @@ export const RequireAuth = ({ children, allowedRoles }: RequireAuthProps) => {
                 isRefreshingRef.current = false;
               }
             } else {
-              // Beyond grace period - immediate logout
+              // beyond grace period - immediate logout
               console.warn(
                 `Token expired ${Math.round(timeSinceExpiry / 1000)}s ago (beyond grace period), logging out`,
               );
