@@ -9,19 +9,19 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Select environment (GitHub Environment)'
+        description: "Select environment (GitHub Environment)"
         required: true
-        default: 'Development'
+        default: "Development"
         type: choice
         options: [Development, Production]
       environment_name:
-        description: 'Optional namespace/prefix (lowercase letters & digits). Empty -> dev'
+        description: "Optional namespace/prefix (lowercase letters & digits). Empty -> dev"
         required: false
-        default: ''
+        default: ""
       image_tag:
-        description: 'Optional image tag (e.g., commit hash). Empty -> uses environment_name'
+        description: "Optional image tag (e.g., commit hash). Empty -> uses environment_name"
         required: false
-        default: ''
+        default: ""
 
   workflow_call:
     inputs:
@@ -34,7 +34,7 @@ on:
       image_tag:
         required: false
         type: string
-        description: 'Docker image tag to deploy (e.g., commit hash)'
+        description: "Docker image tag to deploy (e.g., commit hash)"
       skip_infra_steps:
         required: false
         type: boolean
@@ -72,7 +72,7 @@ jobs:
           ENVIRONMENT_NAME="${{ inputs.environment_name || github.event.inputs.environment_name }}"
           if [ -n "$ENVIRONMENT_NAME" ]; then
             [[ "$ENVIRONMENT_NAME" =~ ^[a-z0-9]+$ ]] || { echo "environment_name must be ^[a-z0-9]+$"; exit 1; }
-            echo "$ENVIRONMENT_NAME" >> $GITHUB_ENV
+            echo "ENVIRONMENT_NAME=$ENVIRONMENT_NAME" >> $GITHUB_ENV
           else
             echo "ENVIRONMENT_NAME=dev" >> $GITHUB_ENV
           fi
@@ -214,7 +214,6 @@ jobs:
             --rule-name allow-aks-egress \
             --start-ip-address $AKS_EGRESS_IP \
             --end-ip-address $AKS_EGRESS_IP
-            
 
       - name: Install External Secrets Operator (with CRDs)
         if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
@@ -247,10 +246,10 @@ jobs:
         run: |
           echo "Creating devops-tools namespace..."
           kubectl create namespace devops-tools --dry-run=client -o yaml | kubectl apply -f -
-          
+
           # Wait for namespace to be ready
           kubectl wait --for=condition=ready namespace/devops-tools --timeout=60s || true
-          
+
           echo "✅ devops-tools namespace is ready"
 
       - name: Helm template sanity (no Namespace objects)
@@ -260,7 +259,7 @@ jobs:
           if [ -z "$IMAGE_TAG" ]; then
             IMAGE_TAG="$ENVIRONMENT_NAME"
           fi
-          
+
           helm template app "$CHART_DIR" -f "$VALUES_FILE" \
             --set namespace.name="$ENVIRONMENT_NAME" \
             --set namespace.create=false \
@@ -279,13 +278,13 @@ jobs:
           if [ -z "$IMAGE_TAG" ]; then
             IMAGE_TAG="$ENVIRONMENT_NAME"
           fi
-          
+
           # Prepare Langfuse setting based on environment
           LANGFUSE_ENABLED="true"
           if [ "${{ steps.setup.outputs.deploy_langfuse }}" = "false" ]; then
             LANGFUSE_ENABLED="false"
           fi
-          
+
           helm upgrade --install app "$CHART_DIR" \
             --namespace "$ENVIRONMENT_NAME" \
             -f "$VALUES_FILE" \
@@ -307,7 +306,7 @@ jobs:
           kubectl apply -f "../kubernetes/ingress/langfuse-ingress.yaml"
           chmod +x langfuse.sh
           ./langfuse.sh $ENVIRONMENT_NAME "${{ secrets.LANGFUSE_ADMIN_EMAIL }}" "${{ secrets.LANGFUSE_ADMIN_PASSWORD }}" "${{ secrets.POSTGRES_USER }}" "${{ secrets.POSTGRES_PASSWORD }}"
-          
+
           echo "Langfuse deployment completed"
 
       - name: Diagnostics (on failure)
