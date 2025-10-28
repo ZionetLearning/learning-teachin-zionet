@@ -12,7 +12,6 @@ on:
     branches: [ main ]
     paths:
       - 'backend/**'  # Only trigger for Azure backend changes
-      # - '.github/workflows/build-and-push-images.yaml'  # Trigger on workflow changes
   workflow_dispatch:
     inputs:
       environment:
@@ -50,10 +49,6 @@ on:
         required: true
         type: string
       environment_name:
-        required: false
-        type: string
-        default: ''
-      custom_environment_name:
         required: false
         type: string
         default: ''
