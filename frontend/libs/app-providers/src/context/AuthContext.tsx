@@ -8,6 +8,7 @@ export interface AuthContextValue {
   login: (email: string, password: string) => Promise<void> | void;
   signup: (data: SignupData) => void;
   logout: () => void;
+  refreshSession: () => Promise<boolean>;
   accessToken?: string | null;
   loginStatus?: { isLoading: boolean; error: unknown };
   user: UserDto | null;
