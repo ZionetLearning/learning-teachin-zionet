@@ -9,6 +9,7 @@ interface RequireAuthProps {
 }
 
 const TOKEN_GRACE_PERIOD_MS = 2 * 60 * 1000; // 2 minutes
+const TOKEN_EXPIRY_THRESHOLD_MS = 3 * 60 * 1000; // 3 minutes
 
 export const RequireAuth = ({ children, allowedRoles }: RequireAuthProps) => {
   const { isAuthorized, logout, refreshSession, role } = useAuth();
@@ -83,7 +84,7 @@ export const RequireAuth = ({ children, allowedRoles }: RequireAuthProps) => {
 
       validateCredentials();
     },
-    [isAuthorized, logout, refreshSession, role],
+    [isAuthorized, logout, refreshSession],
   );
 
   useEffect(
@@ -107,7 +108,7 @@ export const RequireAuth = ({ children, allowedRoles }: RequireAuthProps) => {
           const now = Date.now();
           const timeUntilExpiry = parsed.accessTokenExpiry - now;
 
-          if (timeUntilExpiry <= 3 * 60 * 1000) {
+          if (timeUntilExpiry <= TOKEN_EXPIRY_THRESHOLD_MS) {
             if (isRefreshingRef.current) return;
 
             console.log(
