@@ -1,8 +1,7 @@
 name: AKS - Platform Setup (Ingress/Dapr/Monitoring)
 
 run-name: >
-  ⚙️ AKS Platform Setup | Environment: ${{ 
-    inputs.environment_name || github.event.inputs.environment_name 
+  ⚙️ AKS Platform Setup | Environment: dev
   }} | GitHub Env: ${{ inputs.environment || github.event.inputs.environment }}
 
 on:
