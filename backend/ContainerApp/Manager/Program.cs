@@ -146,7 +146,11 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IOnlinePresenceService, OnlinePresenceService>();
 
 var rawConn = builder.Configuration["Avatars:StorageConnectionString"];
+var rawContainer = builder.Configuration["Avatars:Container"];
+
 Console.Error.WriteLine($"[BOOT] Avatars:StorageConnectionString prefix='{(rawConn is { Length: > 40 } ? rawConn[..40] : rawConn)}', len={rawConn?.Length ?? 0}");
+
+Console.Error.WriteLine($"[BOOT] Avatars:Container ='{rawContainer}");
 
 builder.Services
   .AddOptions<AvatarsOptions>()
@@ -154,7 +158,6 @@ builder.Services
   .Validate(o => !string.IsNullOrWhiteSpace(o.StorageConnectionString), "Avatars:StorageConnectionString is required")
   .Validate(o => !string.IsNullOrWhiteSpace(o.Container), "Avatars:Container is required")
   .Validate(o => TryValidateStorage(o.StorageConnectionString, o.Container), "Avatars:StorageConnectionString is invalid for Azure Blob Storage");
-
 
 builder.Services.AddSingleton<IAvatarStorage, AzureBlobAvatarStorage>();
 
