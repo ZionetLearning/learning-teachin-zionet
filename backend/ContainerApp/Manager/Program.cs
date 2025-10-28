@@ -151,7 +151,6 @@ builder.Services
   .Validate(o => !string.IsNullOrWhiteSpace(o.StorageConnectionString), "Avatars:StorageConnectionString is required")
   .Validate(o => !string.IsNullOrWhiteSpace(o.Container), "Avatars:Container is required")
   .Validate(o => TryValidateStorage(o.StorageConnectionString, o.Container), "Avatars:StorageConnectionString is invalid for Azure Blob Storage");
-  //.ValidateOnStart();
 
 static bool TryValidateStorage(string conn, string container)
 {
