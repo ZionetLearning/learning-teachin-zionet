@@ -19,7 +19,13 @@ public sealed class AzureBlobAvatarStorage : IAvatarStorage
     {
         _options = opt.Value;
         _log = log;
+        var conn = _options.StorageConnectionString;
 
+        _log.LogDebug("AvatarStorage: FULL connection string loaded: {Conn}", conn);
+
+        _log.LogInformation("AvatarStorage init. ConnStr prefix='{Prefix}', length={Length}",
+            conn is { Length: > 20 } ? conn[..20] : conn,
+            conn?.Length ?? 0);
         try
         {
             _svc = new BlobServiceClient(_options.StorageConnectionString);
