@@ -22,10 +22,6 @@ on:
       environment_name:
         required: false
         type: string
-    outputs:
-      ingress_url:
-        description: "http://<ingress external IP>"
-        value: ${{ jobs.platform.outputs.ingress_url }}
 
 jobs:
   platform:
