@@ -37,6 +37,7 @@ public class NotificationHub : Hub<INotificationClient>
                     {
                         return;
                     }
+
                     var userId = user.UserId.ToString();
                     var name = user.FirstName + " " + user.LastName;
                     var role = user.Role.ToString();
