@@ -16,15 +16,11 @@ public class ClassesConfiguration : IEntityTypeConfiguration<Class>
             .HasMaxLength(100);
 
         builder.Property(c => c.Code)
-            .IsRequired()
             .HasMaxLength(50);
 
         builder.HasIndex(c => c.Name)
             .IsUnique()
             .HasDatabaseName("IX_Classes_Name_CI");
-
-        builder.HasIndex(c => c.Code)
-            .IsUnique();
 
         builder.Property(c => c.CreatedAt)
             .HasDefaultValueSql("NOW()");

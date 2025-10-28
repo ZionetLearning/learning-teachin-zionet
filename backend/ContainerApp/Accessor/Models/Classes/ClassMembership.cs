@@ -13,3 +13,9 @@ public class ClassMembership
     public Class Class { get; set; } = null!;
     public UserModel User { get; set; } = null!;
 }
+
+public record MemberDto
+{
+    public Guid MemberId { get; set; }
+    public required string Name { get; set; }
+}

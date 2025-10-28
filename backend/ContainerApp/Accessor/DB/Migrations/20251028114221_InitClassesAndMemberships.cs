@@ -10,19 +10,18 @@ public partial class InitClassesAndMemberships : Migration
     /// <inheritdoc />
     protected override void Up(MigrationBuilder migrationBuilder)
     {
-        migrationBuilder.DropColumn(
-            name: "CreatedBy",
+        migrationBuilder.DropIndex(
+            name: "IX_Classes_Code",
             table: "Classes");
     }
 
     /// <inheritdoc />
     protected override void Down(MigrationBuilder migrationBuilder)
     {
-        migrationBuilder.AddColumn<Guid>(
-            name: "CreatedBy",
+        migrationBuilder.CreateIndex(
+            name: "IX_Classes_Code",
             table: "Classes",
-            type: "uuid",
-            nullable: false,
-            defaultValue: new Guid("00000000-0000-0000-0000-000000000000"));
+            column: "Code",
+            unique: true);
     }
 }

@@ -14,7 +14,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Accessor.DB.Migrations
 {
     [DbContext(typeof(AccessorDbContext))]
-    [Migration("20251027133850_InitClassesAndMemberships")]
+    [Migration("20251028114221_InitClassesAndMemberships")]
     partial class InitClassesAndMemberships
     {
         /// <inheritdoc />
@@ -90,9 +90,6 @@ namespace Accessor.DB.Migrations
                         .HasColumnType("character varying(100)");
 
                     b.HasKey("ClassId");
-
-                    b.HasIndex("Code")
-                        .IsUnique();
 
                     b.HasIndex("Name")
                         .IsUnique()

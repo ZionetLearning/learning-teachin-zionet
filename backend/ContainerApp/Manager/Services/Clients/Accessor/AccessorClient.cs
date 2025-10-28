@@ -907,13 +907,13 @@ public class AccessorClient(
         }
     }
 
-    public async Task<Class?> GetClassAsync(Guid classId, CancellationToken ct = default)
+    public async Task<ClassDto?> GetClassAsync(Guid classId, CancellationToken ct = default)
     {
         _logger.LogInformation("Fetching class {ClassId} from Accessor", classId);
 
         try
         {
-            var cls = await _daprClient.InvokeMethodAsync<Class?>(
+            var cls = await _daprClient.InvokeMethodAsync<ClassDto?>(
                 HttpMethod.Get,
                 AppIds.Accessor,
                 $"classes-accessor/{classId:D}",

@@ -11,3 +11,8 @@ public class ClassMembership
     public Guid AddedBy { get; set; }
     public DateTime AddedAt { get; set; } = DateTime.UtcNow;
 }
+public record MemberDto
+{
+    public Guid MemberId { get; set; }
+    public required string Name { get; set; }
+}

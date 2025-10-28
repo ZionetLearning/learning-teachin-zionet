@@ -91,11 +91,31 @@ public class ClassService : IClassService
         }
     }
 
-    public async Task<Class?> GetClassWithMembersAsync(Guid classId, CancellationToken ct)
-        => await _db.Class
+    public async Task<ClassDto?> GetClassWithMembersAsync(Guid classId, CancellationToken ct)
+    {
+        var cls = await _db.Class
             .Include(c => c.Memberships)
             .ThenInclude(m => m.User)
             .FirstOrDefaultAsync(c => c.ClassId == classId, ct);
+
+        if (cls is null)
+        {
+            return null;
+        }
+
+        return new ClassDto
+        {
+            ClassId = cls.ClassId,
+            Name = cls.Name,
+            Members = cls.Memberships
+                .Select(m => new MemberDto
+                {
+                    MemberId = m.UserId,
+                    Name = $"{m.User.FirstName} {m.User.LastName}"
+                })
+                .ToList()
+        };
+    }
 
     public async Task<List<Class>> GetClassesForUserAsync(Guid userId, Role role, CancellationToken ct)
         => await _db.ClassMembership

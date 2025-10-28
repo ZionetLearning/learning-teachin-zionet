@@ -88,9 +88,6 @@ namespace Accessor.DB.Migrations
 
                     b.HasKey("ClassId");
 
-                    b.HasIndex("Code")
-                        .IsUnique();
-
                     b.HasIndex("Name")
                         .IsUnique()
                         .HasDatabaseName("IX_Classes_Name_CI");

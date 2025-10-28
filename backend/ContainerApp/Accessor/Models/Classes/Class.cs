@@ -10,3 +10,11 @@ public class Class
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public ICollection<ClassMembership> Memberships { get; set; } = new List<ClassMembership>();
 }
+
+public record ClassDto
+{
+    public Guid ClassId { get; set; }
+    public required string Name { get; set; }
+    public required List<MemberDto> Members { get; set; }
+}
+
