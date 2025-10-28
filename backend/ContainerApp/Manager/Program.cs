@@ -145,45 +145,9 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IOnlinePresenceService, OnlinePresenceService>();
 
-var rawConn = builder.Configuration["Avatars:StorageConnectionString"];
-var rawContainer = builder.Configuration["Avatars:Container"];
-
-Console.Error.WriteLine($"[BOOT] Avatars:StorageConnectionString prefix='{(rawConn is { Length: > 40 } ? rawConn[..40] : rawConn)}', len={rawConn?.Length ?? 0}");
-
-Console.Error.WriteLine(
-    $"[BOOT] Avatars:Container len={rawContainer?.Length}, escaped='{rawContainer?.Replace("\r", "\\r").Replace("\n", "\\n")}'");
-Console.Error.WriteLine(
-    $"[BOOT] Avatars:Container bytes={BitConverter.ToString(Encoding.UTF8.GetBytes(rawContainer!))}");
 builder.Services
   .AddOptions<AvatarsOptions>()
-  .Bind(builder.Configuration.GetSection(AvatarsOptions.SectionName))
-  .PostConfigure(o =>
-  {
-      o.Container = (o.Container ?? "").Trim().Trim('"').Replace("\r", "").Replace("\n", "").ToLowerInvariant();
-      o.StorageConnectionString = (o.StorageConnectionString ?? "").Trim().Trim('"').Replace("\r", "").Replace("\n", "");
-  })
-  .Validate(o =>
-  {
-      var ok = LooksLikeStorageConn(o.StorageConnectionString, out var why);
-      if (!ok)
-      {
-          Console.Error.WriteLine($"[BOOT] StorageConn invalid: reason={why}, prefix='{(o.StorageConnectionString.Length > 40 ? o.StorageConnectionString[..40] : o.StorageConnectionString)}'");
-      }
-
-      return ok;
-  }, "Avatars:StorageConnectionString is invalid for Azure Blob Storage")
-  .Validate(o =>
-  {
-      var ok = LooksLikeValidContainer(o.Container, out var why);
-      if (!ok)
-      {
-          Console.Error.WriteLine($"[BOOT] Container invalid: reason={why}, val='{o.Container}'");
-          return ok;
-      }
-
-      return ok;
-
-  }, "Avatars:Container is invalid");
+  .Bind(builder.Configuration.GetSection(AvatarsOptions.SectionName));
 
 builder.Services.AddSingleton<IAvatarStorage, AzureBlobAvatarStorage>();
 
@@ -306,68 +270,3 @@ if (env.IsDevelopment())
 }
 
 app.Run();
-
-static bool LooksLikeStorageConn(string conn, out string reason)
-{
-    reason = "";
-    if (string.IsNullOrWhiteSpace(conn))
-    {
-        reason = "empty";
-        return false;
-    }
-
-    conn = conn.Trim().Trim('"').Replace("\r", "").Replace("\n", "");
-
-    var hasAccountName = conn.Contains("AccountName=", StringComparison.OrdinalIgnoreCase);
-    var hasAccountKey = conn.Contains("AccountKey=", StringComparison.OrdinalIgnoreCase);
-    var hasDefaultProt = conn.Contains("DefaultEndpointsProtocol=", StringComparison.OrdinalIgnoreCase)
-                      || conn.Contains("BlobEndpoint=", StringComparison.OrdinalIgnoreCase);
-    var hasSuffix = conn.Contains("EndpointSuffix=", StringComparison.OrdinalIgnoreCase)
-                      || conn.Contains(".blob.core.", StringComparison.OrdinalIgnoreCase);
-
-    var looksSharedKey = hasAccountName && hasAccountKey && (hasDefaultProt || hasSuffix);
-
-    var looksSas = conn.Contains("SharedAccessSignature=", StringComparison.OrdinalIgnoreCase)
-                && conn.Contains("BlobEndpoint=", StringComparison.OrdinalIgnoreCase);
-
-    if (looksSharedKey || looksSas)
-    {
-        return true;
-
-    }
-
-    reason = "pattern mismatch";
-    return false;
-}
-
-static bool LooksLikeValidContainer(string c, out string reason)
-{
-    reason = "";
-    if (string.IsNullOrWhiteSpace(c))
-    {
-        reason = "empty";
-        return false;
-    }
-
-    c = c.Trim().Trim('"').Replace("\r", "").Replace("\n", "").ToLowerInvariant();
-
-    if (c.Length < 3 || c.Length > 63)
-    {
-        reason = "length";
-        return false;
-    }
-
-    if (!c.All(ch => ch == '-' || char.IsDigit(ch) || (ch >= 'a' && ch <= 'z')))
-    {
-        reason = "charset";
-        return false;
-    }
-
-    if (c[0] == '-' || c[^1] == '-' || c.Contains("--"))
-    {
-        reason = "dashes";
-        return false;
-    }
-
-    return true;
-}

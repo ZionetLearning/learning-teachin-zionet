@@ -15,7 +15,18 @@ public static class ApiRoutes
     public const string UserList = "users-manager/user-list";
     public static string UserSetInterests(Guid userId) => $"users-manager/user/interests/{userId}";
 
+    // -------- Avatar --------
+    public static string AvatarUploadUrl(Guid userId)
+        => $"users-manager/user/{userId}/avatar/upload-url";
 
+    public static string AvatarConfirm(Guid userId)
+        => $"users-manager/user/{userId}/avatar/confirm";
+
+    public static string AvatarReadUrl(Guid userId)
+        => $"users-manager/user/{userId}/avatar/url";
+
+    public static string AvatarDelete(Guid userId)
+        => $"users-manager/user/{userId}/avatar";
 
     //---------Sentences--------
     public const string Sentences = "ai-manager/sentence";

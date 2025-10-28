@@ -1,13 +1,15 @@
-﻿using System.Net;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using System.Text.Json;
-using FluentAssertions;
+﻿using FluentAssertions;
 using IntegrationTests.Constants;
 using IntegrationTests.Fixtures;
 using IntegrationTests.Helpers;
 using Manager.Models.Users;
+using Microsoft.CognitiveServices.Speech.Transcription;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Text.Json;
 using Xunit.Abstractions;
+using static Dapr.Client.Autogen.Grpc.v1.HTTPExtension.Types;
 
 namespace IntegrationTests.Tests.Users;
 
@@ -29,7 +31,7 @@ public class UserAvatarIntegrationTests(
     public async Task UploadUrl_Should_Return_Sas_And_Path()
     {
         var user = await CreateUserAsync();
-        var url = $"/users-manager/user/{user.UserId}/avatar/upload-url";
+        var url = $"{ApiRoutes.AvatarUploadUrl(user.UserId)}";
 
         var req = new
         {
@@ -59,7 +61,7 @@ public class UserAvatarIntegrationTests(
 
         // 1) upload-url
         var uploadReq = new { contentType = ContentTypePng, sizeBytes = (long?)Png1x1.Length };
-        var uploadResp = await Client.PostAsJsonAsync($"/users-manager/user/{user.UserId}/avatar/upload-url", uploadReq);
+        var uploadResp = await Client.PostAsJsonAsync($"{ApiRoutes.AvatarUploadUrl(user.UserId)}", uploadReq);
         uploadResp.ShouldBeOk();
 
         var uploadDto = await ReadAsJsonAsync<JsonElement>(uploadResp);
@@ -79,7 +81,7 @@ public class UserAvatarIntegrationTests(
 
         // 3) confirm
         var confirmReq = new { blobPath = blobPath, contentType = ContentTypePng };
-        var confirmResp = await Client.PostAsJsonAsync($"/users-manager/user/{user.UserId}/avatar/confirm", confirmReq);
+        var confirmResp = await Client.PostAsJsonAsync($"{ApiRoutes.AvatarConfirm(user.UserId)}", confirmReq);
         confirmResp.ShouldBeOk();
 
         var getUserResp = await Client.GetAsync(ApiRoutes.UserById(user.UserId));
@@ -92,7 +94,7 @@ public class UserAvatarIntegrationTests(
         setAt.Should().NotBeNull();
 
         // 4) read-url
-        var readUrlResp = await Client.GetAsync($"/users-manager/user/{user.UserId}/avatar/url");
+        var readUrlResp = await Client.GetAsync($"{ApiRoutes.AvatarReadUrl(user.UserId)}");
         readUrlResp.ShouldBeOk();
         var readUrl = await readUrlResp.Content.ReadAsStringAsync();
         readUrl.Should().NotBeNullOrWhiteSpace();
@@ -105,10 +107,10 @@ public class UserAvatarIntegrationTests(
         }
 
         // 5) delete
-        var del = await Client.DeleteAsync($"/users-manager/user/{user.UserId}/avatar");
+        var del = await Client.DeleteAsync($"{ApiRoutes.AvatarDelete(user.UserId)}");
         del.ShouldBeOk();
 
-        var del2 = await Client.DeleteAsync($"/users-manager/user/{user.UserId}/avatar");
+        var del2 = await Client.DeleteAsync($"{ApiRoutes.AvatarDelete(user.UserId)}");
         del2.ShouldBeOk();
 
         var afterDelResp = await Client.GetAsync(ApiRoutes.UserById(user.UserId));
@@ -126,7 +128,7 @@ public class UserAvatarIntegrationTests(
         var user = await CreateUserAsync();
 
         var confirmReq = new { blobPath = $"some-other-user/avatar_v123.png", contentType = ContentTypePng };
-        var resp = await Client.PostAsJsonAsync($"/users-manager/user/{user.UserId}/avatar/confirm", confirmReq);
+        var resp = await Client.PostAsJsonAsync($"{ApiRoutes.AvatarConfirm(user.UserId)}", confirmReq);
 
         resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -141,7 +143,7 @@ public class UserAvatarIntegrationTests(
         createB.ShouldBeCreated();
 
         // get B  upload-url with token A 
-        var url = $"/users-manager/user/{userB.UserId}/avatar/upload-url";
+        var url = $"{ApiRoutes.AvatarUploadUrl(userB.UserId)}";
         var body = new { contentType = ContentTypePng, sizeBytes = (long?)Png1x1.Length };
 
         var resp = await Client.PostAsJsonAsync(url, body);
@@ -154,7 +156,7 @@ public class UserAvatarIntegrationTests(
         var user = await CreateUserAsync();
 
         var body = new { contentType = "image/gif", sizeBytes = (long?)1234 };
-        var resp = await Client.PostAsJsonAsync($"/users-manager/user/{user.UserId}/avatar/upload-url", body);
+        var resp = await Client.PostAsJsonAsync($"{ApiRoutes.AvatarUploadUrl(user.UserId)}", body);
 
         resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -166,7 +168,7 @@ public class UserAvatarIntegrationTests(
 
         // > 10 МБ
         var body = new { contentType = ContentTypePng, sizeBytes = (long?)(30 * 1024 * 1024) };
-        var resp = await Client.PostAsJsonAsync($"/users-manager/user/{user.UserId}/avatar/upload-url", body);
+        var resp = await Client.PostAsJsonAsync($"{ApiRoutes.AvatarUploadUrl(user.UserId)}", body);
 
         resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
