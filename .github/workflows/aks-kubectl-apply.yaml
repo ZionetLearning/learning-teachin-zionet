@@ -88,9 +88,11 @@ jobs:
 
       - name: Add Grafana
         run: |
-          cd devops/helm-tools
+          cd devops/helm-tools/grafana
           chmod +x grafana.sh
           ./grafana.sh
+        env:
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
       
       ###### This is one time only!! Never use unless the whole RG is wiped out
       # - name: Setup HTTPS certificates
@@ -148,7 +150,11 @@ jobs:
           
       #     echo "Langfuse deployment completed"
 
-
+      - name: Provision Grafana alerting (AFTER datasources)
+        run: |
+          cd devops/helm-tools/grafana
+          chmod +x provision-alerting.sh
+          ./provision-alerting.sh
 
       - name: Restart logging stack pods (optional)
         run: |

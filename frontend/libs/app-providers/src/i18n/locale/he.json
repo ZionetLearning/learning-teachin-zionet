@@ -78,7 +78,10 @@
         "avatar": "אווטאר",
         "lips": "שפתיים",
         "mute": "השתק",
-        "unmute": "הפעל קול"
+        "unmute": "הפעל קול",
+        "callingTool": "מפעיל כלי: {{tool}}",
+        "send": "שלח",
+        "me": "אני"
       },
       "chatHistory": {
         "title": "היסטוריית צ'אט",
@@ -218,12 +221,27 @@
         "next": "הבא",
         "playAudio": "הפעל קטע אודיו",
         "playAudioSlowly": "הפעל קטע אודיו במהירות איטית (0.6x)",
+        "playSentence": "השמע משפט",
         "cancel": "בטל",
         "close": "סגור",
         "yes": "כן",
         "no": "לא",
         "correct": "נכון!",
-        "incorrect": "לא נכון. נסה שוב."
+        "incorrect": "לא נכון. נסה שוב.",
+        "wordBankTitle": "מאגר מילים",
+        "wordBankHint": "לחץ על מילה כדי להוסיף אותה למשפט",
+        "explainMistake": "הסבר טעות",
+        "yourLastWrongAnswer": "התשובה השגויה האחרונה שלך:"
+      },
+      "retryResultModal": {
+        "successTitle": "🎉 מעולה!",
+        "failureTitle": "המשך לנסות!",
+        "successMessage": "תיקנת את הטעות!",
+        "failureMessage": "לא בדיוק נכון הפעם.",
+        "successDescription": "כל הכבוד! תיקנת בהצלחה את הטעות הזו. אתה יכול לתרגל עוד טעויות או לנסות שוב את זו.",
+        "failureDescription": "אל תדאג! למידה דורשת תרגול. אתה יכול לנסות שוב או לעבור לטעויות אחרות.",
+        "tryAgain": "נסה שוב",
+        "backToMistakes": "חזור לטעויות"
       },
       "earthquakeMap": {
         "title": "מפת רעידות אדמה",
@@ -315,7 +333,11 @@
         "posting": "שולח...",
         "send": "שלח",
         "noNotifications": "אין התראות",
-        "notifications": "התראות"
+        "notifications": "התראות",
+        "reconnects": "חיבורים מחדש",
+        "errors": "שגיאות",
+        "signalRStatus": "סטטוס SignalR",
+        "noEventsYet": "עדיין אין אירועי SignalR."
       },
       "users": {
         "createUsers": "צור משתמשים",
@@ -499,7 +521,40 @@
         },
         "exportPage": "ייצוא (עמוד)",
         "exportCurrentPage": "ייצוא את העמוד הנוכחי"
+      },
+      "wordCards": {
+        "title": "כרטיסיות מילים",
+        "buildYourOwnWordDescription": "בנה לעצמך רשימת מילים ותרגל אוצר מילים בעברית–אנגלית.",
+        "addNewWordsDescription": "הוסף מילים חדשות, עיין באוסף שלך, וסמן את המילים שכבר למדת.",
+        "tipHelperNote": "<0>טיפ:</0> אפשר גם <1>לבחור כל מילה בעברית באתר</1>. תופיע חלונית קטנה שתאפשר להוסיף אותה ישירות לכרטיסיות שלך.",
+        "hideLearnedWords": "הסתר מילים שנלמדו",
+        "addCard": "הוסף כרטיסיה",
+        "loadingCards": "טוען כרטיסיות…",
+        "failedToLoad": "נכשל בטעינת כרטיסיות המילים.",
+        "noWordCardsYet": "אין עדיין כרטיסיות מילים.",
+        "clickAddCardOrSelect": "לחץ על ”הוסף כרטיסיה” או בחר מילה בעברית בכל מקום באפליקציה כדי ליצור אחת.",
+        "addTranslation": "הוסף תרגום",
+        "hebrewWord": "מילה בעברית",
+        "englishTranslation": "תרגום לאנגלית",
+        "typeTheEnglishTranslation": "הקלד את התרגום לאנגלית...",
+        "hebrew": "עברית",
+        "english": "אנגלית",
+        "enterTheHebrewWord": "הקלד את המילה בעברית...",
+        "enterTheEnglishTranslation": "הקלד את התרגום לאנגלית...",
+        "cancel": "ביטול",
+        "save": "שמור",
+        "saving": "שומר...",
+        "markAsLearned": "סמן כנלמד",
+        "markAsUnlearned": "סמן כלא נלמד",
+        "learned": "נלמד"
       }
+    },
+    "mistakeChat": {
+      "title": "הסבר טעות",
+      "loadingExplanation": "טוען הסבר...",
+      "errorLoadingExplanation": "מצטערים, לא ניתן לטעון את ההסבר.",
+      "askFollowUp": "שאל שאלת המשך...",
+      "send": "שלח"
     },
     "sidebar": {
       "toggleSidebar": "החלף סרגל",
@@ -531,6 +586,9 @@
       "profile": "פרופיל",
       "myPracticeMistakes": "טעויות התרגול שלי",
       "studentPracticeHistory": "היסטוריית תרגול",
+      "wordCards": "כרטיסיות מילים",
+      "myLearning": "הלמידה שלי",
+      "sandbox": "ארגז חול",
       "onlineUsers": "משתמשים מקוונים"
     },
     "errorBoundary": {

@@ -9,25 +9,17 @@ import "react-chat-elements/dist/main.css";
 interface ReactChatElementsProps {
   messages: ChatMessage[] | undefined;
   loading: boolean;
-  isPlaying?: boolean;
-  avatarMode?: boolean;
   value: string;
   onChange: (value: string) => void;
   handleSendMessage: () => void;
-  handlePlay?: () => void;
-  handleStop?: () => void;
 }
 
 export const ReactChatElements = ({
   messages,
   loading,
-  isPlaying = false,
-  avatarMode = false,
   value,
   onChange,
   handleSendMessage,
-  handlePlay,
-  handleStop,
 }: ReactChatElementsProps) => {
   const { t } = useTranslation();
   const classes = useStyles();
@@ -60,9 +52,7 @@ export const ReactChatElements = ({
   return (
     <div className={classes.chatContainer}>
       <div
-        className={
-          avatarMode ? classes.messagesListAvatar : classes.messagesList
-        }
+        className={classes.messagesList}
         ref={listRef}
         data-testid="chat-yo-messages"
       >
@@ -76,17 +66,25 @@ export const ReactChatElements = ({
             }
           >
             <MessageBox
-              className={classes.messageBox}
-              styles={{
-                backgroundColor: msg.position === "right" ? "#11bbff" : "#fff",
-                color: "#000",
-              }}
+              className={`${classes.messageBox} ${
+                msg.position === "right"
+                  ? classes.bubbleRight
+                  : classes.bubbleLeft
+              }`}
               id={String(i)}
               position={msg.position}
               type="text"
-              text={msg.isTyping && !msg.text ? t("pages.chatYo.thinking") : msg.text}
-              title={msg.position === "right" ? "Me" : "Assistant"}
-              titleColor={msg.position === "right" ? "black" : "gray"}
+              text={
+                msg.isTyping && !msg.text
+                  ? t("pages.chatYo.thinking")
+                  : msg.text
+              }
+              title={
+                msg.position === "right"
+                  ? t("pages.chatAvatar.me")
+                  : t("pages.chatAvatar.avatar")
+              }
+              titleColor="inherit"
               date={msg.date}
               forwarded={false}
               replyButton={false}
@@ -97,67 +95,34 @@ export const ReactChatElements = ({
               avatar={msg.position === "left" ? avatarUrl : undefined}
               notch
             />
-            {/* Show typing indicator for streaming messages with content */}
-            {msg.isTyping && msg.text && (
-              <div className={classes.typingIndicator}>
-                <span className={classes.typingDot}>●</span>
-                <span className={classes.typingDot}>●</span>
-                <span className={classes.typingDot}>●</span>
-              </div>
-            )}
           </div>
         ))}
       </div>
 
       <div
-        className={avatarMode ? classes.inputContainer : undefined}
+        className={classes.inputContainer}
         data-testid="chat-yo-input-wrapper"
       >
         <Input
           data-testid="chat-yo-input"
           placeholder={t("pages.chatYo.typeMessage")}
-          className={avatarMode ? classes.inputAvatar : classes.input}
+          className={classes.input}
           value={value}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
             onChange(e.target.value)
           }
           onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-          maxHeight={100}
+          maxHeight={120}
           rightButtons={
-            avatarMode ? (
-              <div className={classes.rightButtons}>
-                <button
-                  className={classes.sendButton}
-                  title={t("pages.chatYo.replayAvatar")}
-                  onClick={() => {
-                    if (isPlaying) {
-                      handleStop?.();
-                    } else {
-                      handlePlay?.();
-                    }
-                  }}
-                  data-testid="chat-yo-replay"
-                >
-                  {isPlaying ? <span style={{ fontSize: "15px" }}>■</span> : "🗣"}
-                </button>
-                <button
-                  className={classes.sendButton}
-                  title={t("pages.chatYo.send")}
-                  onClick={handleSendMessage}
-                  data-testid="chat-yo-send"
-                >
-                  {loading ? "…" : "↑"}
-                </button>
-              </div>
-            ) : (
-              <button
-                className={classes.sendButton}
-                onClick={handleSendMessage}
-                data-testid="chat-yo-send"
-              >
-                {loading ? "…" : "↑"}
-              </button>
-            )
+            <button
+              className={classes.sendButton}
+              title={t("pages.chatYo.send")}
+              onClick={handleSendMessage}
+              data-testid="chat-yo-send"
+              disabled={loading || !value.trim()}
+            >
+              {loading ? "…" : t("pages.chatAvatar.send")}
+            </button>
           }
         />
       </div>

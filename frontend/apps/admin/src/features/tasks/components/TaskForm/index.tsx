@@ -3,12 +3,8 @@ import { ErrorMessage, Field, Form, Formik } from "formik";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { useQueryClient } from "@tanstack/react-query";
-import { 
-  useCreateTask,
-  useUpdateTaskName,
-  taskKeys
-} from "@admin/api";
-import { useSignalR } from"@admin/hooks";
+import { useCreateTask, useUpdateTaskName, taskKeys } from "@admin/api";
+import { useSignalR } from "@admin/hooks";
 import { TaskActionMode, TaskModel } from "@admin/types";
 import { CreateTaskFormValues, validationSchema } from "../../validation";
 import { useStyles } from "./style";
@@ -48,34 +44,46 @@ export const TaskForm = ({
   const { mutate: updateTaskName, isPending: isUpdating } = useUpdateTaskName();
   const { status: signalRStatus, subscribe } = useSignalR();
 
-  const isEditing = actionMode === 'edit';
-  const isViewing = actionMode === 'view';
+  const isEditing = actionMode === "edit";
+  const isViewing = actionMode === "view";
   const isFormDisabled = isViewing || isCreatingTask || isUpdating;
 
-  const handleTaskNotification = useCallback((notification: UserNotification) => {
-    if (notification.type === 'Success' && notification.message.includes('Task created')) {
-      toast.success(notification.message);
-      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
-      onRefreshTaskList();
-    } else if (notification.type === 'Success' && notification.message.includes('Task updated')) {
-      toast.success(notification.message);
-      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
-    } else if (notification.type === 'Error' && notification.message.includes('Task')) {
-      toast.error(notification.message);
-    }
-  }, [queryClient, onRefreshTaskList]);
+  const handleTaskNotification = useCallback(
+    (notification: UserNotification) => {
+      if (
+        notification.type === "Success" &&
+        notification.message.includes("Task created")
+      ) {
+        toast.success(notification.message);
+        queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+        onRefreshTaskList();
+      } else if (
+        notification.type === "Success" &&
+        notification.message.includes("Task updated")
+      ) {
+        toast.success(notification.message);
+        queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+      } else if (
+        notification.type === "Error" &&
+        notification.message.includes("Task")
+      ) {
+        toast.error(notification.message);
+      }
+    },
+    [queryClient, onRefreshTaskList],
+  );
 
   useEffect(() => {
-    if (signalRStatus === 'connected') {
+    if (signalRStatus === "connected") {
       const unsubscribe = subscribe<UserNotification>(
         "NotificationMessage",
-        handleTaskNotification
+        handleTaskNotification,
       );
       return unsubscribe;
     }
   }, [signalRStatus, subscribe, handleTaskNotification]);
 
-    const initialValues = useMemo((): CreateTaskFormValues => {
+  const initialValues = useMemo((): CreateTaskFormValues => {
     if (selectedTask && (isEditing || isViewing)) {
       return {
         id: selectedTask.id.toString(),
@@ -89,7 +97,13 @@ export const TaskForm = ({
     };
   }, [selectedTask, isEditing, isViewing]);
 
-  const handleSubmit = (values: CreateTaskFormValues, helpers: { resetForm: () => void; setSubmitting: (isSubmitting: boolean) => void }) => {
+  const handleSubmit = (
+    values: CreateTaskFormValues,
+    helpers: {
+      resetForm: () => void;
+      setSubmitting: (isSubmitting: boolean) => void;
+    },
+  ) => {
     const { resetForm, setSubmitting } = helpers;
     if (isEditing && selectedTask) {
       updateTaskName(
@@ -108,29 +122,28 @@ export const TaskForm = ({
             toast.error(error.message || t("pages.tasks.taskUpdateFailed"));
           },
           onSettled: () => setSubmitting(false),
-        }
+        },
       );
     } else {
-          createTask(
-            {
-              id: generateRandomId(),
-              name: values.name.trim(),
-              payload: values.payload.trim(),
-            },
-            {
-              onSuccess: () => {
-                toast.success(t("pages.tasks.taskCreated"));
-                onTaskCreated();
-                resetForm();
-              },
-              onError: (error: Error) => {
-                toast.error(error.message || t("pages.tasks.taskCreationFailed"));
-              },
-              onSettled: () => setSubmitting(false),
-            }
-          );
+      createTask(
+        {
+          id: generateRandomId(),
+          name: values.name.trim(),
+          payload: values.payload.trim(),
+        },
+        {
+          onSuccess: () => {
+            toast.success(t("pages.tasks.taskCreated"));
+            onTaskCreated();
+            resetForm();
+          },
+          onError: (error: Error) => {
+            toast.error(error.message || t("pages.tasks.taskCreationFailed"));
+          },
+          onSettled: () => setSubmitting(false),
+        },
+      );
     }
-
   };
 
   return (
@@ -142,21 +155,12 @@ export const TaskForm = ({
         {isViewing
           ? t("pages.tasks.viewTask")
           : isEditing
-          ? t("pages.tasks.editTask")
-          : t("pages.tasks.createTask")}
+            ? t("pages.tasks.editTask")
+            : t("pages.tasks.createTask")}
       </h2>
-      <div>
-        <span className={classes.statusLabel}>SignalR: </span>
-        <span
-          className={`${classes.statusValue} ${
-            signalRStatus === 'connected' ? classes.statusConnected : classes.statusDisconnected
-          }`}
-        >
-          {signalRStatus}
-        </span>
-      </div>
+
       <Formik
-        key={`${actionMode}-${selectedTask?.id || 'new'}`}
+        key={`${actionMode}-${selectedTask?.id || "new"}`}
         initialValues={initialValues}
         validationSchema={validationSchema}
         onSubmit={handleSubmit}
@@ -202,13 +206,12 @@ export const TaskForm = ({
                   data-testid="task-form-submit"
                 >
                   {isSubmitting
-                    ? isEditing 
+                    ? isEditing
                       ? t("pages.tasks.updating")
                       : t("pages.tasks.creating")
                     : isEditing
-                    ? t("pages.tasks.updateTask")
-                    : t("pages.tasks.createTask")
-                  }
+                      ? t("pages.tasks.updateTask")
+                      : t("pages.tasks.createTask")}
                 </button>
               )}
 
@@ -234,7 +237,9 @@ export const TaskForm = ({
                     }}
                     data-testid="task-form-cancel"
                   >
-                    {isViewing ? t("pages.tasks.close") : t("pages.tasks.cancel")}
+                    {isViewing
+                      ? t("pages.tasks.close")
+                      : t("pages.tasks.cancel")}
                   </button>
                 </>
               )}

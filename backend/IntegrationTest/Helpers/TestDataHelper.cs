@@ -4,8 +4,15 @@ using System.Security.Cryptography;
 
 public static class TestDataHelper
 {
-    // Reserve a high range to avoid collisions with “real” data
+    // Reserve a high range to avoid collisions with "real" data
     private const int MinTestId = 1_000_000;
+
+    // Consistent password for all test users
+    public const string DefaultTestPassword = "Test123!";
+    
+    // Test user default names
+    public const string TestUserFirstName = "Test";
+    public const string TestUserLastName = "User";
 
     public static TaskModel CreateRandomTask()
     {
@@ -32,21 +39,22 @@ public static class TestDataHelper
         {
             UserId = Guid.NewGuid(),
             Email = email ?? $"user_{Guid.NewGuid():N}@test.com",
-            FirstName = "Test",
-            LastName = "User",
-            Password = "Passw0rd!",
+            FirstName = TestUserFirstName,
+            LastName = TestUserLastName,
+            Password = DefaultTestPassword,
             Role = role
         };
     }
+    
     public static CreateUser CreateUserWithFixedEmail(string? email = null)
     {
         return new CreateUser
         {
             UserId = Guid.NewGuid(),
             Email = email ?? $"dup_{Guid.NewGuid()}@test.com",
-            FirstName = "Test",
-            LastName = "User",
-            Password = "123456",
+            FirstName = TestUserFirstName,
+            LastName = TestUserLastName,
+            Password = DefaultTestPassword,
             Role = "student"
         };
     }

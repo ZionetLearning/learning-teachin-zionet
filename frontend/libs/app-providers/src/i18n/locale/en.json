@@ -78,7 +78,10 @@
         "avatar": "Avatar",
         "lips": "Lips",
         "mute": "Mute audio",
-        "unmute": "Unmute audio"
+        "unmute": "Unmute audio",
+        "callingTool": "Calling Tool: {{tool}}",
+        "send": "Send",
+        "me": "Me"
       },
       "chatHistory": {
         "title": "Chat History",
@@ -218,12 +221,27 @@
         "next": "Next",
         "playAudio": "Play audio",
         "playAudioSlowly": "Play audio slowly (0.6x)",
+        "playSentence": "Play Sentence",
         "cancel": "Cancel",
         "close": "Close",
         "yes": "Yes",
         "no": "No",
         "correct": "Correct!",
-        "incorrect": "Incorrect. Try again."
+        "incorrect": "Incorrect. Try again.",
+        "wordBankTitle": "Word Bank",
+        "wordBankHint": "Click a word to add it to the sentence",
+        "explainMistake": "Explain Mistake",
+        "yourLastWrongAnswer": "Your last wrong answer:"
+      },
+      "retryResultModal": {
+        "successTitle": "🎉 Excellent!",
+        "failureTitle": "Keep Trying!",
+        "successMessage": "You fixed the mistake!",
+        "failureMessage": "Not quite right this time.",
+        "successDescription": "Great job! You've successfully corrected this mistake. You can practice more mistakes or try this one again.",
+        "failureDescription": "Don't worry! Learning takes practice. You can try again or move on to other mistakes.",
+        "tryAgain": "Try Again",
+        "backToMistakes": "Back to Mistakes"
       },
       "earthquakeMap": {
         "title": "Earthquake Map",
@@ -315,7 +333,11 @@
         "posting": "Posting...",
         "send": "Send",
         "noNotifications": "No notifications",
-        "notifications": "Notifications"
+        "notifications": "Notifications",
+        "reconnects": "Reconnects",
+        "errors": "Errors",
+        "signalRStatus": "SignalR Status",
+        "noEventsYet": "No SignalR events yet."
       },
       "users": {
         "createUsers": "Create Users",
@@ -499,7 +521,40 @@
         },
         "exportPage": "Export (page)",
         "exportCurrentPage": "Export current page"
+      },
+      "wordCards": {
+        "title": "Word Cards",
+        "buildYourOwnWordDescription": "Build your own word list and practice Hebrew–English vocabulary.",
+        "addNewWordsDescription": "Add new words, review your collection, and mark the ones you’ve already learned.",
+        "tipHelperNote": "<0>Tip:</0> You can also <1>select any Hebrew word on the site</1>. A small popup will let you add it directly to your cards.",
+        "hideLearnedWords": "Hide learned words",
+        "addCard": "Add Card",
+        "loadingCards": "Loading cards…",
+        "failedToLoad": "Failed to load word cards.",
+        "noWordCardsYet": "No word cards yet.",
+        "clickAddCardOrSelect": " Click “Add Card” or select a Hebrew word anywhere in the app to create one.",
+        "addTranslation": "Add Translation",
+        "hebrewWord": "Hebrew Word",
+        "englishTranslation": "English Translation",
+        "typeTheEnglishTranslation": "Type the English translation...",
+        "hebrew": "Hebrew",
+        "english": "English",
+        "enterTheHebrewWord": "Enter the Hebrew word...",
+        "enterTheEnglishTranslation": "Enter the English translation...",
+        "cancel": "Cancel",
+        "save": "Save",
+        "saving": "Saving...",
+        "markAsLearned": "Mark as Learned",
+        "markAsUnlearned": "Mark as Unlearned",
+        "learned": "Learned"
       }
+    },
+    "mistakeChat": {
+      "title": "Explain Mistake",
+      "loadingExplanation": "Loading explanation...",
+      "errorLoadingExplanation": "Sorry, couldn't load explanation.",
+      "askFollowUp": "Ask a follow-up question...",
+      "send": "Send"
     },
     "sidebar": {
       "toggleSidebar": "Toggle Sidebar",
@@ -531,6 +586,9 @@
       "profile": "Profile",
       "myPracticeMistakes": "Practice Mistakes",
       "studentPracticeHistory": "Practice History",
+      "wordCards": "Word Cards",
+      "myLearning": "My Learning",
+      "sandbox": "Sandbox",
       "onlineUsers": "Online Users"
     },
     "errorBoundary": {

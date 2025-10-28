@@ -1,0 +1,16 @@
+extraConfigmapMounts:
+  - name: grafana-alerting
+    configMap: grafana-alerting
+    mountPath: /etc/grafana/provisioning/alerting/alerts-rules.yaml
+    subPath: alerts-rules.yaml
+    readOnly: true
+  - name: grafana-alerting-policy
+    configMap: grafana-alerting-policy
+    mountPath: /etc/grafana/provisioning/alerting/notification-policy.yaml
+    subPath: notification-policy.yaml
+    readOnly: true
+  - name: grafana-notifiers
+    configMap: grafana-notifiers
+    mountPath: /etc/grafana/provisioning/alerting/notifier-teams.yaml
+    subPath: notifier-teams.yaml
+    readOnly: true
