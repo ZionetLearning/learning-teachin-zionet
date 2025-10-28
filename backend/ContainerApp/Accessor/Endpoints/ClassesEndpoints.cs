@@ -47,10 +47,9 @@ public static class ClassesEndpoints
     }
 
     private static async Task<IResult> CreateClassAsync(
-        [FromBody] Class model,
+        [FromBody] CreateClassRequest model,
         [FromServices] IClassService service,
-        [FromServices] ILogger<ClassesEndpointsLoggerMarker> logger,
-        CancellationToken ct)
+        [FromServices] ILogger<ClassesEndpointsLoggerMarker> logger, CancellationToken ct)
     {
         using var _ = logger.BeginScope("Method={Method}, Name={Name}", nameof(CreateClassAsync), model.Name);
 
@@ -61,10 +60,18 @@ public static class ClassesEndpoints
 
         try
         {
-            var ok = await service.CreateClassAsync(model, ct);
+            var newClass = new Class
+            {
+                ClassId = Guid.NewGuid(),
+                Name = model.Name,
+                Code = string.Empty,
+                Description = model.Description,
+                CreatedAt = DateTime.UtcNow,
+            };
+            var ok = await service.CreateClassAsync(newClass, ct);
             if (ok is not null)
             {
-                return Results.Created($"/classes-accessor/{model.ClassId}", model);
+                return Results.Created($"/classes-accessor/{newClass.ClassId}", newClass);
             }
             else
             {

@@ -934,13 +934,13 @@ public class AccessorClient(
         }
     }
 
-    public async Task<Class?> CreateClassAsync(Class request, CancellationToken ct = default)
+    public async Task<Class?> CreateClassAsync(CreateClassRequest request, CancellationToken ct = default)
     {
         _logger.LogInformation("Creating class {Name} via Accessor", request.Name);
 
         try
         {
-            var cls = await _daprClient.InvokeMethodAsync<Class, Class?>(
+            var cls = await _daprClient.InvokeMethodAsync<CreateClassRequest, Class?>(
                 HttpMethod.Post,
                 AppIds.Accessor,
                 "classes-accessor",

@@ -29,6 +29,7 @@ public class AccessorDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new ClassesConfiguration());
+        modelBuilder.ApplyConfiguration(new ClassMembershipConfiguration());
 
         modelBuilder.ApplyConfiguration(new GameAttemptsConfiguration());
 

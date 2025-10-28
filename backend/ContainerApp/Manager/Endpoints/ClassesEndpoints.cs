@@ -50,7 +50,7 @@ public static class ClassesEndpoints
     }
 
     private static async Task<IResult> CreateClassAsync(
-        [FromBody] Class request,
+        [FromBody] CreateClassRequest request,
         [FromServices] IAccessorClient accessorClient,
         HttpContext http,
         ILogger<ClassEndpoint> logger,
@@ -61,7 +61,6 @@ public static class ClassesEndpoints
             var callerRole = http.User.FindFirstValue(AuthSettings.RoleClaimType);
             var callerId = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
             logger.LogInformation("CreateClass called by {Role} ({CallerId}) for {Name}", callerRole, callerId, request.Name);
-
             if (string.IsNullOrWhiteSpace(request.Name))
             {
                 return Results.BadRequest("Class name is required.");
