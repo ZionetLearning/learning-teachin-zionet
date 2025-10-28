@@ -23,7 +23,7 @@ export const useStyles = createUseStyles((theme: Theme) => ({
     width: "32px",
     height: "32px",
     fontSize: "14px",
-    marginRight: "12px",
+    marginInlineEnd: "12px",
   },
   userName: {
     fontWeight: "500",
@@ -36,10 +36,16 @@ export const useStyles = createUseStyles((theme: Theme) => ({
     textTransform: "capitalize",
     color: "white",
     fontWeight: "500",
+    "& .MuiChip-label": {
+      paddingInline: "8px",
+    },
   },
   onlineChip: {
     height: "24px",
     fontSize: "12px",
+    "& .MuiChip-label": {
+      paddingInline: "8px",
+    },
   },
   connectionCount: {
     fontSize: "14px",
@@ -67,7 +73,7 @@ export const useStyles = createUseStyles((theme: Theme) => ({
   },
   mobileUserInfo: {
     flex: 1,
-    marginLeft: "12px",
+    marginInlineStart: "12px",
   },
   mobileUserName: {
     fontWeight: "500",

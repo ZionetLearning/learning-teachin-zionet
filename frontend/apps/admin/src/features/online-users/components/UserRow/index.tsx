@@ -23,7 +23,8 @@ interface UserRowProps {
 export const UserRow = ({ user, variant }: UserRowProps) => {
   const theme = useTheme();
   const classes = useStyles({ theme });
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isRTL = i18n.dir() === "rtl";
 
   if (variant === "table") {
     return (
@@ -56,7 +57,7 @@ export const UserRow = ({ user, variant }: UserRowProps) => {
             className={classes.onlineChip}
           />
         </TableCell>
-        <TableCell align="right">
+        <TableCell align={isRTL ? "left" : "right"}>
           <Typography className={classes.connectionCount}>
             {user.connectionsCount}
           </Typography>

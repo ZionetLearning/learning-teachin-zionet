@@ -22,7 +22,8 @@ interface OnlineUsersTableProps {
 export const OnlineUsersTable = ({ users }: OnlineUsersTableProps) => {
   const theme = useTheme();
   const classes = useStyles({ theme });
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isRTL = i18n.dir() === "rtl";
 
   return (
     <Box className={classes.desktopTable}>
@@ -33,7 +34,7 @@ export const OnlineUsersTable = ({ users }: OnlineUsersTableProps) => {
               <TableCell>{t("pages.users.user")}</TableCell>
               <TableCell>{t("pages.users.role")}</TableCell>
               <TableCell>{t("pages.users.status")}</TableCell>
-              <TableCell align="right">
+              <TableCell align={isRTL ? "left" : "right"}>
                 {t("pages.users.connections")}
               </TableCell>
             </TableRow>

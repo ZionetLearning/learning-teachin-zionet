@@ -6,12 +6,11 @@ export const useStyles = createUseStyles((theme: Theme) => ({
     padding: "16px",
     maxWidth: "1200px",
     margin: "0 auto",
-    height: "100vh",
     display: "flex",
     flexDirection: "column",
     overflow: "hidden",
     "@media (max-width: 600px)": {
-      height: "calc(100vh - 20px)",
+      height: "calc(100vh - 25px)",
       padding: "12px",
     },
   },
@@ -67,7 +66,7 @@ export const useStyles = createUseStyles((theme: Theme) => ({
   scrollableContainer: {
     flex: 1,
     overflow: "auto",
-    paddingRight: "4px",
+    paddingInlineEnd: "4px",
     paddingBottom: "16px",
     "&::-webkit-scrollbar": {
       width: "8px",
@@ -99,7 +98,8 @@ export const useStyles = createUseStyles((theme: Theme) => ({
       display: "block",
       flex: 1,
       overflow: "auto",
-      padding: "0 4px 24px 0", // Right padding for scrollbar, bottom padding for content
+      paddingInlineEnd: "4px",
+      paddingBottom: "24px",
       "&::-webkit-scrollbar": {
         width: "6px",
       },
