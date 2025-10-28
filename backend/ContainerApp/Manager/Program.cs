@@ -145,15 +145,13 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IOnlinePresenceService, OnlinePresenceService>();
 
-builder.Services.Configure<AvatarsOptions>(builder.Configuration.GetSection(AvatarsOptions.SectionName));
-builder.Services.AddSingleton<IAvatarStorage, AzureBlobAvatarStorage>();
-
 builder.Services
   .AddOptions<AvatarsOptions>()
   .Bind(builder.Configuration.GetSection(AvatarsOptions.SectionName))
   .Validate(o => !string.IsNullOrWhiteSpace(o.StorageConnectionString), "Avatars:StorageConnectionString is required")
   .Validate(o => !string.IsNullOrWhiteSpace(o.Container), "Avatars:Container is required")
   .ValidateOnStart();
+builder.Services.AddSingleton<IAvatarStorage, AzureBlobAvatarStorage>();
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
