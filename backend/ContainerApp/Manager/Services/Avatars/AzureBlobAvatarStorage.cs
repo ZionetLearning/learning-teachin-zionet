@@ -10,9 +10,10 @@ namespace Manager.Services.Avatars;
 public sealed class AzureBlobAvatarStorage : IAvatarStorage
 {
     private readonly AvatarsOptions _options;
-    private readonly BlobServiceClient _svc;
-    private readonly BlobContainerClient _container;
+    private readonly BlobServiceClient? _svc;
+    private readonly BlobContainerClient? _container;
     private readonly ILogger<AzureBlobAvatarStorage> _log;
+    private Exception? _initError;
 
     public AzureBlobAvatarStorage(IOptions<AvatarsOptions> opt, ILogger<AzureBlobAvatarStorage> log)
     {
@@ -23,20 +24,38 @@ public sealed class AzureBlobAvatarStorage : IAvatarStorage
         {
             _svc = new BlobServiceClient(_options.StorageConnectionString);
             _container = _svc.GetBlobContainerClient(_options.Container);
+            _log.LogInformation("Avatar storage init. Container={Container}", _options.Container);
         }
         catch (Exception ex)
         {
-            _log.LogError(ex, "Failed to init BlobServiceClient. ConnStr prefix={Prefix}",
-                _options.StorageConnectionString?.Length > 20 ? _options.StorageConnectionString[..20] : _options.StorageConnectionString);
-            throw;
+            _initError = ex;
+            _log.LogError(ex,
+                "Failed to init BlobServiceClient. ConnStr prefix={Prefix}",
+                _options.StorageConnectionString?.Length > 20
+                    ? _options.StorageConnectionString[..20] : _options.StorageConnectionString);
+        }
+    }
+
+    private void EnsureReady()
+    {
+        if (_initError != null)
+        {
+            throw new InvalidOperationException(
+                "Avatar storage is misconfigured: invalid Storage connection string or container.",
+                _initError);
         }
 
-        _log.LogInformation("Avatar storage init. Container={Container}", _options.Container);
+        if (_svc == null || _container == null)
+        {
+            throw new InvalidOperationException("Avatar storage is not initialized.");
+        }
     }
 
     public async Task<(Uri uploadUrl, DateTimeOffset expiresAtUtc, string blobPath)>
         GetUploadSasAsync(Guid userId, string contentType, long? sizeBytes, CancellationToken ct)
     {
+        EnsureReady();
+
         using var _ = _log.BeginScope("GetUploadSas userId={UserId}", userId);
 
         if (!_options.AllowedContentTypes.Contains(contentType, StringComparer.OrdinalIgnoreCase))
@@ -63,7 +82,7 @@ public sealed class AzureBlobAvatarStorage : IAvatarStorage
         };
 
         var blobPath = $"{userId}/avatar_v{DateTime.UtcNow.Ticks}.{ext}";
-        var blob = _container.GetBlobClient(blobPath);
+        var blob = _container!.GetBlobClient(blobPath);
 
         try
         {
@@ -93,12 +112,17 @@ public sealed class AzureBlobAvatarStorage : IAvatarStorage
     }
 
     public async Task<bool> BlobExistsAsync(string blobPath, CancellationToken ct)
-        => await _container.GetBlobClient(Relative(blobPath)).ExistsAsync(ct);
+    {
+        EnsureReady();
+        return await _container!.GetBlobClient(Relative(blobPath)).ExistsAsync(ct);
+    }
 
     public async Task<BlobProperties?> GetBlobPropsAsync(string blobPath, CancellationToken ct)
     {
+        EnsureReady();
+
         using var _ = _log.BeginScope("GetBlobProps path={Path}", blobPath);
-        var blob = _container.GetBlobClient(Relative(blobPath));
+        var blob = _container!.GetBlobClient(Relative(blobPath));
         try
         {
             var response = await blob.GetPropertiesAsync(cancellationToken: ct);
@@ -121,9 +145,11 @@ public sealed class AzureBlobAvatarStorage : IAvatarStorage
 
     public Task<Uri> GetReadSasAsync(string blobPath, TimeSpan ttl, CancellationToken ct)
     {
+        EnsureReady();
+
         using var _ = _log.BeginScope("GetReadSas path={Path}", blobPath);
 
-        var blob = _container.GetBlobClient(Relative(blobPath));
+        var blob = _container!.GetBlobClient(Relative(blobPath));
 
         var now = DateTimeOffset.UtcNow;
         var expires = now.Add(ttl);
@@ -143,7 +169,13 @@ public sealed class AzureBlobAvatarStorage : IAvatarStorage
     }
 
     public Task DeleteAsync(string blobPath, CancellationToken ct)
-        => _container.GetBlobClient(Relative(blobPath)).DeleteIfExistsAsync(DeleteSnapshotsOption.IncludeSnapshots, cancellationToken: ct);
+    {
+        EnsureReady();
+
+        return _container!
+            .GetBlobClient(Relative(blobPath))
+            .DeleteIfExistsAsync(DeleteSnapshotsOption.IncludeSnapshots, cancellationToken: ct);
+    }
 
     private static string Relative(string blobPath)
         => !string.IsNullOrWhiteSpace(blobPath)
