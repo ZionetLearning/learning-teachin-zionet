@@ -5,6 +5,7 @@ using Accessor.Models.Users;
 using Accessor.Models.Games;
 using Accessor.Models.Prompts;
 using Accessor.Models.WordCards;
+using Accessor.Models.Meetings;
 
 namespace Accessor.DB;
 
@@ -22,6 +23,7 @@ public class AccessorDbContext : DbContext
     public DbSet<TeacherStudent> TeacherStudents { get; set; } = default!;
     public DbSet<GameAttempt> GameAttempts { get; set; } = default!;
     public DbSet<WordCardModel> WordCards { get; set; } = default!;
+    public DbSet<MeetingModel> Meetings { get; set; } = default!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -94,6 +96,9 @@ public class AccessorDbContext : DbContext
 
         // Word cards table
         modelBuilder.ApplyConfiguration(new WordCardsConfiguration());
+
+        // Meetings table
+        modelBuilder.ApplyConfiguration(new MeetingsConfiguration());
 
         base.OnModelCreating(modelBuilder);
     }
