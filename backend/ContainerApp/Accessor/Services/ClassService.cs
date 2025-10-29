@@ -24,7 +24,6 @@ public class ClassService : IClassService
 
     public async Task<bool> AddMembersAsync(Guid classId, IEnumerable<Guid> userIds, Guid addedBy, CancellationToken ct)
     {
-        var isSuccessful = false;
         try
         {
             var cls = await _db.Class.FindAsync([classId], ct);
@@ -45,7 +44,7 @@ public class ClassService : IClassService
             {
                 if (existing.Any(m => m.UserId == user.UserId && m.Role == user.Role))
                 {
-                    continue; // idempotent
+                    continue;
                 }
 
                 _db.ClassMembership.Add(new ClassMembership
@@ -58,17 +57,16 @@ public class ClassService : IClassService
             }
 
             await _db.SaveChangesAsync(ct);
-            return isSuccessful = true;
+            return true;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to add member");
-            return isSuccessful;
+            return false;
         }
     }
     public async Task<bool> RemoveMembersAsync(Guid classId, IEnumerable<Guid> userIds, CancellationToken ct)
     {
-        var isSuccessful = false;
         try
         {
             var toRemove = await _db.ClassMembership
@@ -77,17 +75,17 @@ public class ClassService : IClassService
 
             if (toRemove.Count == 0)
             {
-                return isSuccessful = true;
+                return true;
             }
 
             _db.ClassMembership.RemoveRange(toRemove);
             await _db.SaveChangesAsync(ct);
-            return isSuccessful = true;
+            return true;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to remove member");
-            return isSuccessful;
+            return false;
         }
     }
 
