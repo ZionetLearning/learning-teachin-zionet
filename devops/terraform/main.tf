@@ -62,10 +62,9 @@ data "azurerm_postgresql_flexible_server" "shared" {
   resource_group_name = local.postgres_server_rg
 }
 
-# Create PostgreSQL server and database module
-# - Dev: Creates server and database
-# - Non-dev: Creates only database on shared server
+# Create new PostgreSQL server only for dev environment
 module "database" {
+  count  = local.use_shared_postgres ? 0 : 1
   source = "./modules/postgresql"
 
   server_name         = var.database_server_name
@@ -90,18 +89,28 @@ module "database" {
   environment_name = var.environment_name
   database_name    = "${var.database_name}-${var.environment_name}"
 
-  # Use shared server for non-dev environments
-  use_shared_postgres = local.use_shared_postgres
-  existing_server_id  = local.use_shared_postgres ? data.azurerm_postgresql_flexible_server.shared[0].id : null
+  use_shared_postgres = false
+  existing_server_id  = null
 
-  depends_on = [azurerm_resource_group.main, data.azurerm_postgresql_flexible_server.shared]
+  depends_on = [azurerm_resource_group.main]
+}
+
+# Create database on shared server for non-dev environments
+resource "azurerm_postgresql_flexible_server_database" "shared_database" {
+  count     = local.use_shared_postgres ? 1 : 0
+  name      = "${var.database_name}-${var.environment_name}"
+  server_id = data.azurerm_postgresql_flexible_server.shared[0].id
+  charset   = "UTF8"
+  collation = "en_US.utf8"
+
+  depends_on = [data.azurerm_postgresql_flexible_server.shared]
 }
 
 # Langfuse database on the same PostgreSQL server (dev environment only)
 resource "azurerm_postgresql_flexible_server_database" "langfuse" {
   count     = (var.enable_langfuse && var.environment_name == "dev") ? 1 : 0
   name      = "langfuse-${var.environment_name}"
-  server_id = local.use_shared_postgres ? data.azurerm_postgresql_flexible_server.shared[0].id : module.database.id
+  server_id = local.use_shared_postgres ? data.azurerm_postgresql_flexible_server.shared[0].id : module.database[0].id
   charset   = "UTF8"
   collation = "en_US.utf8"
 
@@ -257,7 +266,7 @@ module "monitoring" {
 
   log_analytics_workspace_id  = local.log_analytics_workspace_id
   servicebus_namespace_id     = module.servicebus.namespace_id
-  postgres_server_id          = local.use_shared_postgres ? data.azurerm_postgresql_flexible_server.shared[0].id : module.database.id
+  postgres_server_id          = local.use_shared_postgres ? data.azurerm_postgresql_flexible_server.shared[0].id : module.database[0].id
   signalr_id                  = module.signalr.id
   redis_id                    = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].id : module.redis[0].id
   frontend_static_web_app_id  = length(var.frontend_apps) > 0 ? [for f in module.frontend : f.static_web_app_id] : []
