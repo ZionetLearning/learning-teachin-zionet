@@ -4,7 +4,7 @@ terraform {
     storage_account_name = "teachintfstate"
     container_name       = "tfstate-aks"
     # key will be set dynamically via terraform init -backend-config
-    use_azuread_auth = true
+    # use_azuread_auth = true
   }
 
   required_providers {
@@ -33,8 +33,8 @@ provider "azurerm" {
       prevent_deletion_if_contains_resources = false
     }
   }
-  #subscription_id = var.subscription_id # removed because of githubactions
-  #tenant_id       = var.tenant_id # removed because of githubactions
+  subscription_id = var.subscription_id # removed because of githubactions
+  tenant_id       = var.tenant_id # removed because of githubactions
 }
 
 # Kubernetes provider configuration - moved from main.tf

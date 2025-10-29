@@ -48,20 +48,28 @@ module "servicebus" {
   depends_on          = [azurerm_resource_group.main]
 }
 #--------------------PostgreSQL-----------------------
-## Shared PostgreSQL server (created only once, in main RG)
-data "azurerm_postgresql_flexible_server" "shared" {
-  count               = var.use_shared_postgres ? 1 : 0
-  name                = var.database_server_name
-  resource_group_name = var.shared_resource_group
+# Logic: dev creates PostgreSQL server, other environments use shared server from dev
+locals {
+  # Dev creates server, others use shared from dev environment
+  use_shared_postgres = var.environment_name != "dev"
+  postgres_server_rg  = var.environment_name == "dev" ? azurerm_resource_group.main.name : "dev-zionet-learning-2025"
 }
 
-# Create PostgreSQL database (always needed, regardless of shared server or not)
+# Reference to shared PostgreSQL server (for non-dev environments)
+data "azurerm_postgresql_flexible_server" "shared" {
+  count               = local.use_shared_postgres ? 1 : 0
+  name                = var.database_server_name
+  resource_group_name = local.postgres_server_rg
+}
+
+# Create new PostgreSQL server only for dev environment
 module "database" {
+  count  = local.use_shared_postgres ? 0 : 1
   source = "./modules/postgresql"
 
-  server_name         = var.use_shared_postgres ? var.database_server_name : var.database_server_name
+  server_name         = var.database_server_name
   location            = var.db_location
-  resource_group_name = var.use_shared_postgres ? var.shared_resource_group : azurerm_resource_group.main.name
+  resource_group_name = azurerm_resource_group.main.name
 
   admin_username = var.admin_username
   admin_password = var.admin_password
@@ -81,8 +89,8 @@ module "database" {
   environment_name = var.environment_name
   database_name    = "${var.database_name}-${var.environment_name}"
 
-  use_shared_postgres = var.use_shared_postgres
-  existing_server_id  = var.use_shared_postgres ? data.azurerm_postgresql_flexible_server.shared[0].id : null
+  use_shared_postgres = false
+  existing_server_id  = null
 
   depends_on = [azurerm_resource_group.main]
 }
@@ -91,7 +99,7 @@ module "database" {
 resource "azurerm_postgresql_flexible_server_database" "langfuse" {
   count     = (var.enable_langfuse && var.environment_name == "dev") ? 1 : 0
   name      = "langfuse-${var.environment_name}"
-  server_id = var.use_shared_postgres ? data.azurerm_postgresql_flexible_server.shared[0].id : module.database.id
+  server_id = local.use_shared_postgres ? data.azurerm_postgresql_flexible_server.shared[0].id : module.database[0].id
   charset   = "UTF8"
   collation = "en_US.utf8"
 
@@ -248,7 +256,7 @@ module "monitoring" {
 
   log_analytics_workspace_id  = local.log_analytics_workspace_id
   servicebus_namespace_id     = module.servicebus.namespace_id
-  postgres_server_id          = var.use_shared_postgres ? data.azurerm_postgresql_flexible_server.shared[0].id : module.database.id
+  postgres_server_id          = local.use_shared_postgres ? data.azurerm_postgresql_flexible_server.shared[0].id : module.database[0].id
   signalr_id                  = module.signalr.id
   redis_id                    = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].id : module.redis[0].id
   frontend_static_web_app_id  = length(var.frontend_apps) > 0 ? [for f in module.frontend : f.static_web_app_id] : []

@@ -265,15 +265,10 @@ jobs:
             --set namespace.create=false \
             --set global.namePrefix="$ENVIRONMENT_NAME" \
             --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
-            --set global.environment="$TARGET_NAMESPACE" \
-            --set manager.image.tag="$IMAGE_TAG" \
-            --set engine.image.tag="$IMAGE_TAG" \
-            --set accessor.image.tag="$IMAGE_TAG" \
-            --set global.keyvault.clientId="$KEYVAULT_CLIENT_ID" \
-            --set global.keyvault.tenantId="$KEYVAULT_TENANT_ID" \
-            --set dapr.installComponents=false \
+            --set global.environment="$IMAGE_TAG" \
             --set langfuse.enabled="$LANGFUSE_ENABLED" \
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
+            --set dapr.installComponents=false \
           | grep -n '^kind: Namespace' && { echo "Namespace still rendered"; exit 1; } || echo "OK: no Namespace in chart"
 
       - name: Helm upgrade/install app
@@ -297,12 +292,7 @@ jobs:
             --set namespace.create=false \
             --set global.namePrefix="$ENVIRONMENT_NAME" \
             --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
-            --set global.environment="$TARGET_NAMESPACE" \
-            --set manager.image.tag="$IMAGE_TAG" \
-            --set engine.image.tag="$IMAGE_TAG" \
-            --set accessor.image.tag="$IMAGE_TAG" \
-            --set global.keyvault.clientId="$KEYVAULT_CLIENT_ID" \
-            --set global.keyvault.tenantId="$KEYVAULT_TENANT_ID" \
+            --set global.environment="$IMAGE_TAG" \
             --set langfuse.enabled="$LANGFUSE_ENABLED" \
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false
