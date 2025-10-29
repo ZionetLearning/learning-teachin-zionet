@@ -112,7 +112,15 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddControllers();
 
 builder.Services.AddControllers().AddDapr();
-var signalRBuilder = builder.Services.AddSignalR();
+var signalROptions = builder.Configuration.GetSection("SignalR");
+var keepAlive = signalROptions.GetValue("KeepAliveSeconds", 15);
+var clientTimeout = signalROptions.GetValue("ClientTimeoutSeconds", 30);
+var signalRBuilder = builder.Services.AddSignalR(o =>
+{
+    o.KeepAliveInterval = TimeSpan.FromSeconds(keepAlive);
+    o.ClientTimeoutInterval = TimeSpan.FromSeconds(clientTimeout);
+}
+);
 
 var signalRConnString = builder.Configuration["SignalR:ConnectionString"];
 if (!string.IsNullOrEmpty(signalRConnString))

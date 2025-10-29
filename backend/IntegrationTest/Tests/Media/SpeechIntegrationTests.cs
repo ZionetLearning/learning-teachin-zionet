@@ -6,12 +6,12 @@ using Xunit.Abstractions;
 
 namespace IntegrationTests.Tests.Media;
 
-[Collection("Shared test collection")]
+[Collection("IntegrationTests")]
 public class SpeechIntegrationTests(
-    SharedTestFixture sharedFixture,
+    HttpClientFixture httpClientFixture,
     ITestOutputHelper outputHelper,
     SignalRTestFixture signalRFixture
-) : MediaTestBase(sharedFixture, outputHelper, signalRFixture)
+) : MediaTestBase(httpClientFixture, outputHelper, signalRFixture)
 {
     [Fact(DisplayName = "GET /media-manager/speech/token - Should return a token")]
     public async Task Get_Speech_Token_Should_Return_Token()

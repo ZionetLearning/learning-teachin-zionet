@@ -229,7 +229,19 @@
         "correct": "נכון!",
         "incorrect": "לא נכון. נסה שוב.",
         "wordBankTitle": "מאגר מילים",
-        "wordBankHint": "לחץ על מילה כדי להוסיף אותה למשפט"
+        "wordBankHint": "לחץ על מילה כדי להוסיף אותה למשפט",
+        "explainMistake": "הסבר טעות",
+        "yourLastWrongAnswer": "התשובה השגויה האחרונה שלך:"
+      },
+      "retryResultModal": {
+        "successTitle": "🎉 מעולה!",
+        "failureTitle": "המשך לנסות!",
+        "successMessage": "תיקנת את הטעות!",
+        "failureMessage": "לא בדיוק נכון הפעם.",
+        "successDescription": "כל הכבוד! תיקנת בהצלחה את הטעות הזו. אתה יכול לתרגל עוד טעויות או לנסות שוב את זו.",
+        "failureDescription": "אל תדאג! למידה דורשת תרגול. אתה יכול לנסות שוב או לעבור לטעויות אחרות.",
+        "tryAgain": "נסה שוב",
+        "backToMistakes": "חזור לטעויות"
       },
       "earthquakeMap": {
         "title": "מפת רעידות אדמה",
@@ -321,7 +333,11 @@
         "posting": "שולח...",
         "send": "שלח",
         "noNotifications": "אין התראות",
-        "notifications": "התראות"
+        "notifications": "התראות",
+        "reconnects": "חיבורים מחדש",
+        "errors": "שגיאות",
+        "signalRStatus": "סטטוס SignalR",
+        "noEventsYet": "עדיין אין אירועי SignalR."
       },
       "users": {
         "createUsers": "צור משתמשים",
@@ -518,6 +534,13 @@
         "markAsUnlearned": "סמן כלא נלמד",
         "learned": "נלמד"
       }
+    },
+    "mistakeChat": {
+      "title": "הסבר טעות",
+      "loadingExplanation": "טוען הסבר...",
+      "errorLoadingExplanation": "מצטערים, לא ניתן לטעון את ההסבר.",
+      "askFollowUp": "שאל שאלת המשך...",
+      "send": "שלח"
     },
     "sidebar": {
       "toggleSidebar": "החלף סרגל",

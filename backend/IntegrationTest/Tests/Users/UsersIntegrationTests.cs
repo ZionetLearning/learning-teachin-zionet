@@ -10,14 +10,14 @@ using Xunit.Abstractions;
 namespace IntegrationTests.Tests.Users;
 
 /// <summary>
-/// Users integration tests using per-test user isolation.
+/// Users integration tests using HttpClientFixture.
 /// </summary>
-[Collection("Per-test user collection")]
+[Collection("IntegrationTests")]
 public class UsersIntegrationTests(
-    PerTestUserFixture perUserFixture,
+    HttpClientFixture httpClientFixture,
     ITestOutputHelper outputHelper,
     SignalRTestFixture signalRFixture
-) : UsersTestBase(perUserFixture, outputHelper, signalRFixture), IAsyncLifetime
+) : UsersTestBase(httpClientFixture, outputHelper, signalRFixture)
 {
     [Fact(DisplayName = "POST users-manager/user - Duplicate email should return 409 Conflict")]
     public async Task CreateUser_DuplicateEmail_Should_Return_Conflict()
@@ -174,7 +174,7 @@ public class UsersIntegrationTests(
         // Log in as Admin first
         var admin = await CreateUserAsync(role: "admin");
 
-        // Create two extra users directly via POST (don’t switch auth)
+        // Create two extra users directly via POST (don't switch auth)
         var u1 = TestDataHelper.CreateUser(email: $"list1_{Guid.NewGuid():N}@test.com");
         var u2 = TestDataHelper.CreateUser(email: $"list2_{Guid.NewGuid():N}@test.com");
 
@@ -263,7 +263,7 @@ public class UsersIntegrationTests(
         data!.Interests.Should().BeEquivalentTo(update.Interests);
     }
 
-    [Fact(DisplayName = "PUT users-manager/user/interests/{id} - Student cannot set another student’s interests")]
+    [Fact(DisplayName = "PUT users-manager/user/interests/{id} - Student cannot set another student�s interests")]
     public async Task Student_Cannot_Update_Other_Student_Interests()
     {
         var _ = await CreateUserAsync();

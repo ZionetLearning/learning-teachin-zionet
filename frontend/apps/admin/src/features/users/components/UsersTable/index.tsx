@@ -81,19 +81,39 @@ export const UsersTable = ({ dir }: { dir: "ltr" | "rtl" }) => {
               >
                 <TableHead>
                   <TableRow>
-                    <TableCell align="center" width="28%">
+                    <TableCell
+                      align="center"
+                      width="28%"
+                      className={classes.headerCell}
+                    >
                       {t("pages.users.email")}
                     </TableCell>
-                    <TableCell align="center" width="18%">
+                    <TableCell
+                      align="center"
+                      width="18%"
+                      className={classes.headerCell}
+                    >
                       {t("pages.users.firstName")}
                     </TableCell>
-                    <TableCell align="center" width="18%">
+                    <TableCell
+                      align="center"
+                      width="18%"
+                      className={classes.headerCell}
+                    >
                       {t("pages.users.lastName")}
                     </TableCell>
-                    <TableCell align="center" width="16%">
+                    <TableCell
+                      align="center"
+                      width="16%"
+                      className={classes.headerCell}
+                    >
                       {t("pages.users.role")}
                     </TableCell>
-                    <TableCell align="center" width="20%">
+                    <TableCell
+                      align="center"
+                      width="20%"
+                      className={classes.headerCell}
+                    >
                       {t("pages.users.actions")}
                     </TableCell>
                   </TableRow>
@@ -157,28 +177,28 @@ export const UsersTable = ({ dir }: { dir: "ltr" | "rtl" }) => {
                 </Table>
               </div>
             </div>
-          </div>
 
-          <TablePagination
-            component="div"
-            className={classes.paginationBar}
-            data-testid="users-pagination"
-            count={filteredUsers.length}
-            page={page}
-            onPageChange={handlePageChange}
-            rowsPerPage={rowsPerPage}
-            onRowsPerPageChange={handleRowsPerPageChange}
-            rowsPerPageOptions={[
-              5,
-              10,
-              25,
-              { label: t("pages.users.all"), value: -1 },
-            ]}
-            labelRowsPerPage={t("pages.users.rowsPerPage")}
-            labelDisplayedRows={({ from, to, count }) =>
-              `${from}-${to} ${t("pages.users.of")} ${count !== -1 ? count : to}`
-            }
-          />
+            <TablePagination
+              component="div"
+              className={classes.paginationBar}
+              data-testid="users-pagination"
+              count={filteredUsers.length}
+              page={page}
+              onPageChange={handlePageChange}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={handleRowsPerPageChange}
+              rowsPerPageOptions={[
+                5,
+                10,
+                25,
+                { label: t("pages.users.all"), value: -1 },
+              ]}
+              labelRowsPerPage={t("pages.users.rowsPerPage")}
+              labelDisplayedRows={({ from, to, count }) =>
+                `${from}-${to} ${t("pages.users.of")} ${count !== -1 ? count : to}`
+              }
+            />
+          </div>
         </div>
       )}
     </div>

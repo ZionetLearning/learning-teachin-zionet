@@ -1,0 +1,61 @@
+import { createUseStyles } from "react-jss";
+
+export const useStyles = createUseStyles({
+  floater: {
+    position: "fixed",
+    bottom: 16,
+    zIndex: 9999,
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+    background: "white",
+    border: "1px solid black",
+    borderRadius: 999,
+    padding: "8px 12px",
+    boxShadow: "0 6px 20px rgba(0,0,0,.12)",
+    cursor: "pointer",
+    fontWeight: 600,
+    userSelect: "none",
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: "50%",
+    background: "#ef4444",
+    "&.ok": { background: "#10b981" },
+    "&.warn": { background: "#f59e0b" },
+  },
+  label: {
+    fontSize: 12,
+    color: "black",
+  },
+  dock: {
+    position: "fixed",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 9998,
+    background: "#0b1020",
+    color: "#fff",
+    borderTop: "1px solid rgba(255,255,255,.12)",
+    boxShadow: "0 -10px 30px rgba(0,0,0,.35)",
+  },
+  header: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    padding: "8px 12px",
+    borderBottom: "1px solid rgba(255,255,255,.08)",
+  },
+  body: {
+    maxHeight: "40vh",
+    overflow: "auto",
+    padding: 12,
+    background: "linear-gradient(180deg,#0b1020 0%, #101631 100%)",
+  },
+  shortcutWrapper: {
+    marginLeft: "auto",
+    fontSize: 11,
+    opacity: 0.7,
+  },
+});

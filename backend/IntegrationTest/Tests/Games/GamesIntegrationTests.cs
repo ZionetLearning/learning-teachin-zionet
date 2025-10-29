@@ -11,12 +11,12 @@ using Xunit.Abstractions;
 
 namespace IntegrationTests.Tests.Games;
 
-[Collection("Per-test user collection")]
+[Collection("IntegrationTests")]
 public class GamesIntegrationTests(
-    PerTestUserFixture perUserFixture,
+    HttpClientFixture httpClientFixture,
     ITestOutputHelper outputHelper,
     SignalRTestFixture signalRFixture
-) : GamesTestBase(perUserFixture, outputHelper, signalRFixture), IAsyncLifetime
+) : GamesTestBase(httpClientFixture, outputHelper, signalRFixture)
 {
     [Fact(DisplayName = "POST /games-manager/attempt - Invalid empty GUID should return error")]
     public async Task SubmitAttempt_InvalidInput_Should_Return_Error()
@@ -139,11 +139,11 @@ public class GamesIntegrationTests(
         var (teacher, student) = await SetupTeacherStudentRelationshipAsync();
         
         // Log in as student to create some history
-        await LoginAsync(student.Email, "Passw0rd!", Role.Student);
+        await LoginAsync(student.Email, TestDataHelper.DefaultTestPassword, Role.Student);
         await CreateSuccessfulAttemptAsync(student.UserId, Difficulty.easy);
         
         // Log back in as teacher  
-        await LoginAsync(teacher.Email, "Passw0rd!", Role.Teacher);
+        await LoginAsync(teacher.Email, TestDataHelper.DefaultTestPassword, Role.Teacher);
         
         // Act
         var response = await Client.GetAsync($"{ApiRoutes.GameHistory(student.UserId)}?summary=false&page=1&pageSize=10&getPending=false");
@@ -300,14 +300,14 @@ public class GamesIntegrationTests(
         var (teacher, student) = await SetupTeacherStudentRelationshipAsync();
         
         // Log back in as the student to create mistakes
-        await LoginAsync(student.Email, "Passw0rd!", Role.Student);
+        await LoginAsync(student.Email, TestDataHelper.DefaultTestPassword, Role.Student);
         
         // Create mistakes for the student
         await CreateMistakeAsync(student.UserId, Difficulty.easy);
         await CreateMistakeAsync(student.UserId, Difficulty.medium);
         
         // Log back in as teacher to access student's mistakes
-        await LoginAsync(teacher.Email, "Passw0rd!", Role.Teacher);
+        await LoginAsync(teacher.Email, TestDataHelper.DefaultTestPassword, Role.Teacher);
         
         // Act
         var response = await Client.GetAsync($"{ApiRoutes.GameMistakes(student.UserId)}?page=1&pageSize=10");
@@ -339,13 +339,13 @@ public class GamesIntegrationTests(
         var studentModel = await CreateUserViaApiAsync(role: "student");
         
         // Log in as the student to create mistakes
-        await LoginAsync(studentModel.Email, studentModel.Password, Role.Student);
+        await LoginAsync(studentModel.Email, TestDataHelper.DefaultTestPassword, Role.Student);
         
         // Create a mistake
         await CreateMistakeAsync(studentModel.UserId, Difficulty.hard);
         
         // Log back in as admin
-        await LoginAsync(admin.Email, "Test123!", Role.Admin);
+        await LoginAsync(admin.Email, TestDataHelper.DefaultTestPassword, Role.Admin);
         
         // Act
         var response = await Client.GetAsync($"{ApiRoutes.GameMistakes(studentModel.UserId)}?page=1&pageSize=10");
@@ -400,7 +400,7 @@ public class GamesIntegrationTests(
     public async Task GetAllHistory_Should_Include_AdminNames_And_Timestamp()
     {
         var admin = await CreateUserViaApiAsync(role: "admin");
-        await LoginAsync(admin.Email, admin.Password, Role.Admin);
+        await LoginAsync(admin.Email, TestDataHelper.DefaultTestPassword, Role.Admin);
 
         // first, delete all games history
         var deleteResponse = await Client.DeleteAsync($"{ApiRoutes.GameAllHistory}");

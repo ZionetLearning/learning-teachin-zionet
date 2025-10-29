@@ -19,6 +19,14 @@ export const useStyles = createUseStyles({
     flex: "1 1 40%",
     maxWidth: 430,
     alignSelf: "center",
+    "@media (max-width: 768px)": {
+      flex: "0 0 auto",
+      maxWidth: "100%",
+      alignSelf: "stretch",
+    },
+    "@media (max-width: 480px)": {
+      padding: "1rem 0.75rem 1.25rem",
+    },
   },
   sectionTitle: {
     margin: "0 0 0.85rem",
@@ -32,6 +40,9 @@ export const useStyles = createUseStyles({
     display: "flex",
     flexDirection: "column",
     gap: "0.85rem",
+    "@media (max-width: 480px)": {
+      gap: "0.75rem",
+    },
   },
   label: {
     display: "flex",
@@ -66,6 +77,13 @@ export const useStyles = createUseStyles({
           transition: "background-color 9999s ease-out, color 9999s ease-out",
           caretColor: "#1a202c",
         },
+      "@media (max-width: 480px)": {
+        padding: "0.5rem 0.6rem",
+        fontSize: 13,
+      },
+    },
+    "@media (max-width: 480px)": {
+      fontSize: 13,
     },
   },
   error: {
