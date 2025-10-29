@@ -94,19 +94,19 @@ output "frontend_apps_enabled" {
 
 # Langfuse secrets for Accessor
 output "langfuse_baseurl" {
-  description = "Langfuse Base URL for Accessor service"
+  description = "Langfuse Base URL - Global API endpoint for all environments"
   value       = azurerm_key_vault_secret.langfuse_baseurl.value
-  sensitive   = true
+  sensitive   = false
 }
 
 output "langfuse_public_key" {
-  description = "Langfuse Public Key for Accessor service"
+  description = "Langfuse Public Key - Global API key for all environments"
   value       = azurerm_key_vault_secret.langfuse_public_key.value
   sensitive   = true
 }
 
 output "langfuse_secret_key" {
-  description = "Langfuse Secret Key for Accessor service"
+  description = "Langfuse Secret Key - Global API key for all environments"
   value       = azurerm_key_vault_secret.langfuse_secret_key.value
   sensitive   = true
 }
