@@ -15,10 +15,10 @@ namespace IntegrationTests.Tests.Users;
 
 [Collection("Per-test user collection")]
 public class UserAvatarIntegrationTests(
-    PerTestUserFixture perUserFixture,
+    HttpClientFixture httpClientFixture,
     ITestOutputHelper outputHelper,
     SignalRTestFixture signalRFixture
-) : UsersTestBase(perUserFixture, outputHelper, signalRFixture), IAsyncLifetime
+) : UsersTestBase(httpClientFixture, outputHelper, signalRFixture), IAsyncLifetime
 {
     // min png
     private static readonly byte[] Png1x1 = Convert.FromBase64String(
