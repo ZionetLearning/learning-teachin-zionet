@@ -6,7 +6,7 @@ export const useStyles = createUseStyles({
     justifyContent: "center",
   },
   speakersContainer: {
-     display: "flex",
+    display: "flex",
     flexDirection: "column",
     gap: "20px",
     alignItems: "center",
@@ -14,7 +14,7 @@ export const useStyles = createUseStyles({
   gameLogic: {
     display: "flex",
     flexDirection: "column",
-    gap: "40px",
+    gap: "30px",
     paddingLeft: "0px",
     alignSelf: "center",
   },

@@ -1,3 +1,26 @@
+persistence:
+  enabled: true
+  size: 5Gi
+
+service:
+  type: ClusterIP
+
+resources:
+  requests:
+    memory: 128Mi
+  limits:
+    memory: 256Mi
+
+sidecar:
+  dashboards:
+    enabled: true
+    searchNamespace: devops-logs
+  datasources:
+    enabled: true
+
+plugins:
+  - grafana-azure-monitor-datasource
+
 extraConfigmapMounts:
   - name: grafana-alerting
     configMap: grafana-alerting
@@ -14,3 +37,7 @@ extraConfigmapMounts:
     mountPath: /etc/grafana/provisioning/alerting/notifier-teams.yaml
     subPath: notifier-teams.yaml
     readOnly: true
+
+extraEnvFrom:
+  - secretRef:
+      name: azure-monitor-secret

@@ -10,26 +10,28 @@ using Xunit.Abstractions;
 namespace IntegrationTests.Infrastructure;
 
 public abstract class IntegrationTestBase
-    : IClassFixture<HttpTestFixture>,
+    : IClassFixture<HttpClientFixture>,
         IClassFixture<SignalRTestFixture>,
         IAsyncLifetime
 {
     protected readonly HttpClient Client;
     protected readonly SignalRTestFixture SignalRFixture;
+    protected readonly HttpClientFixture ClientFixture;
     protected readonly ITestOutputHelper OutputHelper;
     private static readonly JsonSerializerOptions CachedJsonOptions = new() { PropertyNameCaseInsensitive = true };
     public IConfiguration Configuration { get; }
 
 
     protected IntegrationTestBase(
-        HttpTestFixture httpFixture,
+        HttpClientFixture httpClientFixture,
         ITestOutputHelper testOutputHelper,
         SignalRTestFixture signalRFixture
     )
     {
-        Client = httpFixture.Client;
+        Client = httpClientFixture.Client;
         OutputHelper = testOutputHelper;
         SignalRFixture = signalRFixture;
+        ClientFixture = httpClientFixture;
         try
         {
             Configuration = new ConfigurationBuilder()
@@ -79,11 +81,11 @@ public abstract class IntegrationTestBase
             {
                 return default;
             }
-            
+
             // For non-nullable value types, empty content is likely an error
             var type = typeof(T);
             var isNullable = !type.IsValueType || Nullable.GetUnderlyingType(type) != null;
-            
+
             if (!isNullable)
             {
                 throw new InvalidOperationException(
@@ -91,10 +93,10 @@ public abstract class IntegrationTestBase
                     $"Expected JSON content but received empty response with status {response.StatusCode}."
                 );
             }
-            
+
             return default;
         }
-        
+
         try
         {
             return JsonSerializer.Deserialize<T>(content, CachedJsonOptions);
@@ -137,5 +139,30 @@ public abstract class IntegrationTestBase
         var evt = await SignalRFixture.WaitForEventAsync(predicate, timeout);
         evt.Should().NotBeNull("Expected a SignalR event");
         return evt!;
+    }
+
+    /// <summary>
+    /// Starts the SignalR connection using the current authentication token from the HttpClient.
+    /// If no token is present, starts without authentication.
+    /// </summary>
+    protected async Task EnsureSignalRStartedAsync()
+    {
+        var token = Client.DefaultRequestHeaders.Authorization?.Parameter;
+        
+        if (!string.IsNullOrEmpty(token))
+        {
+            SignalRFixture.UseAccessToken(token);
+        }
+
+        try
+        {
+            await SignalRFixture.StartAsync();
+            OutputHelper.WriteLine("SignalR connection started successfully.");
+        }
+        catch (Exception ex)
+        {
+            OutputHelper.WriteLine($"Failed to start SignalR connection: {ex.Message}");
+            throw;
+        }
     }
 }

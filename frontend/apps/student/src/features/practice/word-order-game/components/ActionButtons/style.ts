@@ -91,6 +91,19 @@ export const useStyles = createUseStyles({
       boxShadow: "0 1px 4px rgba(124,77,255,0.3)",
     },
   },
+  btnExplain: {
+    composes: "$btnBase",
+    background: "#fff",
+    border: "1px solid #ff6b6b",
+    color: "#ff6b6b",
+    "&:hover": {
+      background: "#fff8f8",
+      boxShadow: "0 2px 6px rgba(255, 107, 107, 0.25)",
+    },
+    "&:active": {
+      background: "#fff0f0",
+    },
+  },
   btnIcon: {
     fontSize: 20,
     flex: "0 0 auto",

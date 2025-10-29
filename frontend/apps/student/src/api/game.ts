@@ -77,6 +77,7 @@ export type GameMistakeItem = {
   difficulty: GameDifficulty;
   correctAnswer: string[];
   wrongAnswers: string[][];
+  attemptId: string;
 };
 
 export type GameMistakesResponse = {

@@ -80,7 +80,7 @@
         "mute": "Mute audio",
         "unmute": "Unmute audio",
         "callingTool": "Calling Tool: {{tool}}",
-        "send":"Send",
+        "send": "Send",
         "me": "Me"
       },
       "chatHistory": {
@@ -229,7 +229,19 @@
         "correct": "Correct!",
         "incorrect": "Incorrect. Try again.",
         "wordBankTitle": "Word Bank",
-        "wordBankHint": "Click a word to add it to the sentence"
+        "wordBankHint": "Click a word to add it to the sentence",
+        "explainMistake": "Explain Mistake",
+        "yourLastWrongAnswer": "Your last wrong answer:"
+      },
+      "retryResultModal": {
+        "successTitle": "🎉 Excellent!",
+        "failureTitle": "Keep Trying!",
+        "successMessage": "You fixed the mistake!",
+        "failureMessage": "Not quite right this time.",
+        "successDescription": "Great job! You've successfully corrected this mistake. You can practice more mistakes or try this one again.",
+        "failureDescription": "Don't worry! Learning takes practice. You can try again or move on to other mistakes.",
+        "tryAgain": "Try Again",
+        "backToMistakes": "Back to Mistakes"
       },
       "earthquakeMap": {
         "title": "Earthquake Map",
@@ -321,7 +333,11 @@
         "posting": "Posting...",
         "send": "Send",
         "noNotifications": "No notifications",
-        "notifications": "Notifications"
+        "notifications": "Notifications",
+        "reconnects": "Reconnects",
+        "errors": "Errors",
+        "signalRStatus": "SignalR Status",
+        "noEventsYet": "No SignalR events yet."
       },
       "users": {
         "createUsers": "Create Users",
@@ -518,6 +534,13 @@
         "markAsUnlearned": "Mark as Unlearned",
         "learned": "Learned"
       }
+    },
+    "mistakeChat": {
+      "title": "Explain Mistake",
+      "loadingExplanation": "Loading explanation...",
+      "errorLoadingExplanation": "Sorry, couldn't load explanation.",
+      "askFollowUp": "Ask a follow-up question...",
+      "send": "Send"
     },
     "sidebar": {
       "toggleSidebar": "Toggle Sidebar",

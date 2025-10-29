@@ -4,36 +4,27 @@ using IntegrationTests.Fixtures;
 using Manager.Constants;
 using Manager.Models.Auth;
 using Manager.Models.Users;
-using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Json;
-using System.Security.Claims;
-using System.Text;
 using Xunit.Abstractions;
 
 namespace IntegrationTests.Tests.Auth;
 
 
-[Collection("Shared test collection")]
-public class AuthIntegrationTests : AuthTestBase
+[Collection("IntegrationTests")]
+public class AuthIntegrationTests(
+        HttpClientFixture clientFixture,
+        ITestOutputHelper outputHelper,
+        SignalRTestFixture signalRTestFixture
+    ) : AuthTestBase(clientFixture, outputHelper, signalRTestFixture)
 {
-    private readonly SharedTestFixture _sharedFixture;
-
-    public AuthIntegrationTests(
-        SharedTestFixture sharedFixture,
-        ITestOutputHelper outputHelper
-    ) : base(sharedFixture.HttpFixture, outputHelper, new SignalRTestFixture())
-    {
-        _sharedFixture = sharedFixture;
-    }
-
     [Fact(DisplayName = "Login returns access token and sets cookies")]
     public async Task Login_ShouldReturnAccessTokenAndSetCookies()
     {
-        var user = _sharedFixture.UserFixture.TestUser;
+        var userInfo = ClientFixture.GetUserInfo(Role.Admin);
 
-        var response = await LoginAsync(user.Email, user.Password);
+        var response = await LoginAsync(userInfo.Email, HttpClientFixture.GlobalTestUserPassword);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -56,10 +47,10 @@ public class AuthIntegrationTests : AuthTestBase
     [InlineData("invalid@example.com", "wrongpass")]   // Both invalid
     public async Task Login_ShouldReturnUnauthorized_WhenCredentialsInvalid(string email, string password)
     {
-        var user = _sharedFixture.UserFixture.TestUser;
+        var userInfo = ClientFixture.GetUserInfo(Role.Admin);
 
-        var actualEmail = email == "VALID" ? user.Email : email;
-        var actualPassword = password == "VALID" ? user.Password : password;
+        var actualEmail = email == "VALID" ? userInfo.Email : email;
+        var actualPassword = password == "VALID" ? HttpClientFixture.GlobalTestUserPassword : password;
 
         var response = await LoginAsync(actualEmail, actualPassword);
 
@@ -70,9 +61,9 @@ public class AuthIntegrationTests : AuthTestBase
     [Fact(DisplayName = "Logout clears refresh and csrf cookies")]
     public async Task Logout_ShouldClearCookies()
     {
-        var user = _sharedFixture.UserFixture.TestUser;
+        var userInfo = ClientFixture.GetUserInfo(Role.Admin);
 
-        var loginResponse = await LoginAsync(user.Email, user.Password);
+        var loginResponse = await LoginAsync(userInfo.Email, HttpClientFixture.GlobalTestUserPassword);
         loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         var (refreshToken, _) = ExtractTokens(loginResponse);
 
@@ -89,9 +80,9 @@ public class AuthIntegrationTests : AuthTestBase
     [Fact(DisplayName = "Refresh with invalid refresh token should return 401 Unauthorized")]
     public async Task Refresh_ShouldReturnUnauthorized()
     {
-        var user = _sharedFixture.UserFixture.TestUser;
+        var userInfo = ClientFixture.GetUserInfo(Role.Admin);
 
-        var loginResponse = await LoginAsync(user.Email, user.Password);
+        var loginResponse = await LoginAsync(userInfo.Email, HttpClientFixture.GlobalTestUserPassword);
         loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var (refreshToken, csrfToken) = ExtractTokens(loginResponse);
@@ -131,9 +122,9 @@ public class AuthIntegrationTests : AuthTestBase
     [Fact(DisplayName = "Access token allows access to protected endpoint")]
     public async Task AccessToken_ShouldAllowAccessToProtectedEndpoint()
     {
-        var user = _sharedFixture.UserFixture.TestUser;
+        var userInfo = ClientFixture.GetUserInfo(Role.Admin);
 
-        var loginResponse = await LoginAsync(user.Email, user.Password);
+        var loginResponse = await LoginAsync(userInfo.Email, HttpClientFixture.GlobalTestUserPassword);
         loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var token = await ExtractAccessToken(loginResponse);
@@ -154,14 +145,14 @@ public class AuthIntegrationTests : AuthTestBase
     [Fact(DisplayName = "Refresh fails with mismatched fingerprint")]
     public async Task Refresh_ShouldFail_WhenFingerprintMismatch()
     {
-        var user = _sharedFixture.UserFixture.TestUser;
+        var userInfo = ClientFixture.GetUserInfo(Role.Admin);
 
         var request = new HttpRequestMessage(HttpMethod.Post, AuthRoutes.Login)
         {
             Content = JsonContent.Create(new LoginRequest
             {
-                Email = user.Email,
-                Password = user.Password
+                Email = userInfo.Email,
+                Password = HttpClientFixture.GlobalTestUserPassword
             })
         };
 
@@ -195,9 +186,9 @@ public class AuthIntegrationTests : AuthTestBase
     [Fact(DisplayName = "Refresh after logout should fail")]
     public async Task Refresh_AfterLogout_ShouldReturnUnauthorized()
     {
-        var user = _sharedFixture.UserFixture.TestUser;
+        var userInfo = ClientFixture.GetUserInfo(Role.Admin);
 
-        var loginResponse = await LoginAsync(user.Email, user.Password);
+        var loginResponse = await LoginAsync(userInfo.Email, HttpClientFixture.GlobalTestUserPassword);
         var (refreshToken, csrfToken) = ExtractTokens(loginResponse);
 
         // Logout
@@ -215,9 +206,9 @@ public class AuthIntegrationTests : AuthTestBase
     [Fact(DisplayName = "Successful full auth flow (register, login, access protected, refresh, logout)")]
     public async Task SuccessfulAuthFlow_ShouldSetCookiesAndAccessProtectedRoute()
     {
-        var user = _sharedFixture.UserFixture.TestUser;
+        var userInfo = ClientFixture.GetUserInfo(Role.Admin);
 
-        var loginResponse = await LoginAsync(user.Email, user.Password);
+        var loginResponse = await LoginAsync(userInfo.Email, HttpClientFixture.GlobalTestUserPassword);
         loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var accessToken = await ExtractAccessToken(loginResponse);
@@ -255,9 +246,9 @@ public class AuthIntegrationTests : AuthTestBase
     [Fact(DisplayName = "Access token should contain correct userid and role claims")]
     public async Task AccessToken_ShouldContainUserIdAndRoleClaims()
     {
-        var user = _sharedFixture.UserFixture.TestUser;
+        var userInfo = ClientFixture.GetUserInfo(Role.Admin);
 
-        var response = await LoginAsync(user.Email, user.Password);
+        var response = await LoginAsync(userInfo.Email, HttpClientFixture.GlobalTestUserPassword);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var (refreshToken, _) = ExtractTokens(response);
 
@@ -273,8 +264,8 @@ public class AuthIntegrationTests : AuthTestBase
         userIdClaim.Should().NotBeNullOrWhiteSpace("userId should be present in the token");
         roleClaim.Should().NotBeNullOrWhiteSpace("Role should be present in the token");
 
-        userIdClaim.Should().Be(user.UserId.ToString());
-        roleClaim.Should().Be(user.Role.ToString());
+        userIdClaim.Should().Be(userInfo.UserId.ToString());
+        roleClaim.Should().Be(userInfo.Role.ToString());
 
         // Clear the refreshSessions
         var logoutResponse = await LogoutAsync(refreshToken!);
