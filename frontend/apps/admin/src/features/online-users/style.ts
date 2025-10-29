@@ -43,20 +43,6 @@ export const useStyles = createUseStyles((theme: Theme) => ({
   subtitle: {
     marginBottom: "16px",
   },
-  statusChip: {
-    marginBottom: "24px",
-  },
-  statusDot: {
-    width: "8px",
-    height: "8px",
-    borderRadius: "50%",
-  },
-  statusDotConnected: {
-    backgroundColor: theme.palette.success.main,
-  },
-  statusDotDisconnected: {
-    backgroundColor: theme.palette.warning.main,
-  },
   contentArea: {
     flex: 1,
     overflow: "hidden",

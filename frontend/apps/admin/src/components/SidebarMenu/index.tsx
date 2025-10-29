@@ -49,6 +49,12 @@ export const SidebarMenu = () => {
       testId: "sidebar-users",
     },
     {
+      label: t("sidebar.onlineUsers"),
+      icon: <CheckCircleIcon />,
+      path: "/online-users",
+      testId: "sidebar-online-users",
+    },
+    {
       label: t("sidebar.tasks"),
       icon: <AssignmentIcon />,
       path: "/tasks",
@@ -59,12 +65,6 @@ export const SidebarMenu = () => {
       icon: <HistoryIcon />,
       path: "/student-practice-history",
       testId: "sidebar-student-practice-history",
-    },
-    {
-      label: t("sidebar.onlineUsers"),
-      icon: <CheckCircleIcon />,
-      path: "/online-users",
-      testId: "sidebar-online-users",
     },
   ];
 
