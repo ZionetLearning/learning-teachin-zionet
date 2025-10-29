@@ -48,7 +48,8 @@ public class UserService : IUserService
             Role = user.Role,
             PreferredLanguageCode = user.PreferredLanguageCode,
             HebrewLevelValue = user.HebrewLevelValue,
-            Interests = user.Interests
+            Interests = user.Interests,
+            AcsUserId = user.AcsUserId
         };
     }
 
@@ -63,7 +64,8 @@ public class UserService : IUserService
                 Role = u.Role,
                 PreferredLanguageCode = u.PreferredLanguageCode,
                 HebrewLevelValue = u.HebrewLevelValue,
-                Interests = u.Interests
+                Interests = u.Interests,
+                AcsUserId = u.AcsUserId
             })
             .ToListAsync();
 
@@ -127,6 +129,11 @@ public class UserService : IUserService
             user.Interests = updateUser.Interests;
         }
 
+        if (updateUser.AcsUserId is not null)
+        {
+            user.AcsUserId = updateUser.AcsUserId;
+        }
+
         await _db.SaveChangesAsync();
         return true;
     }
@@ -168,7 +175,8 @@ public class UserService : IUserService
                     FirstName = u.FirstName,
                     LastName = u.LastName,
                     Role = u.Role,
-                    Interests = u.Interests
+                    Interests = u.Interests,
+                    AcsUserId = u.AcsUserId
                 })
                 .ToListAsync(ct);
 
@@ -212,7 +220,8 @@ public class UserService : IUserService
                     Email = u.Email,
                     FirstName = u.FirstName,
                     LastName = u.LastName,
-                    Role = u.Role
+                    Role = u.Role,
+                    AcsUserId = u.AcsUserId
                 })
                 .ToListAsync(ct);
 
@@ -332,7 +341,8 @@ public class UserService : IUserService
                     Email = u.Email,
                     FirstName = u.FirstName,
                     LastName = u.LastName,
-                    Role = u.Role
+                    Role = u.Role,
+                    AcsUserId = u.AcsUserId
                 })
                 .ToListAsync(ct);
 

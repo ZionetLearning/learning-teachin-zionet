@@ -1,5 +1,4 @@
-﻿
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace Manager.Models.Users;
 
@@ -14,4 +13,5 @@ public class UpdateUserModel
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public Role? Role { get; set; }
     public List<string>? Interests { get; set; }
+    public string? AcsUserId { get; set; }
 }

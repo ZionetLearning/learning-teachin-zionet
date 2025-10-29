@@ -1,5 +1,4 @@
-﻿
-namespace Engine.Models.Users;
+﻿namespace Engine.Models.Users;
 
 public class UserData
 {
@@ -11,4 +10,5 @@ public class UserData
     //public SupportedLanguage PreferredLanguageCode { get; set; } = SupportedLanguage.en;
     //public HebrewLevel? HebrewLevelValue { get; set; } // only for students
     public List<string> Interests { get; set; } = [];
+    public string? AcsUserId { get; set; }
 }
