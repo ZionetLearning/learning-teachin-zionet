@@ -24,7 +24,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "${DS_LOKI}"
+        "uid": "loki"
       },
       "description": "Tracks login attempts per $__interval across environments. Automatically adjusts to the selected time range, helping identify spikes, drops, or anomalies in user authentication behavior.",
       "fieldConfig": {
@@ -168,7 +168,7 @@
         {
           "datasource": {
             "type": "loki",
-            "uid": "${DS_LOKI}"
+            "uid": "loki"
           },
           "direction": "backward",
           "editorMode": "code",
@@ -261,7 +261,7 @@
         {
           "datasource": {
             "type": "loki",
-            "uid": "${DS_LOKI}"
+            "uid": "loki"
           },
           "direction": "backward",
           "editorMode": "code",
@@ -274,7 +274,7 @@
         {
           "datasource": {
             "type": "loki",
-            "uid": "${DS_LOKI}"
+            "uid": "loki"
           },
           "direction": "backward",
           "editorMode": "code",
@@ -286,7 +286,7 @@
         {
           "datasource": {
             "type": "loki",
-            "uid": "${DS_LOKI}"
+            "uid": "loki"
           },
           "direction": "backward",
           "editorMode": "code",
