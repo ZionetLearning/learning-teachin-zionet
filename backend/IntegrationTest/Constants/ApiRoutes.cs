@@ -15,7 +15,7 @@ public static class ApiRoutes
     public const string UserList = "users-manager/user-list";
     public static string UserSetInterests(Guid userId) => $"users-manager/user/interests/{userId}";
 
-    // -------- Avatar -------- 
+    // -------- Avatar --------
     public static string AvatarUploadUrl(Guid userId)
         => $"users-manager/user/{userId}/avatar/upload-url";
 
