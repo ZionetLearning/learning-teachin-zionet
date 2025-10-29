@@ -96,7 +96,7 @@ output "frontend_apps_enabled" {
 output "langfuse_baseurl" {
   description = "Langfuse Base URL - Global API endpoint for all environments"
   value       = azurerm_key_vault_secret.langfuse_baseurl.value
-  sensitive   = false
+  sensitive   = true
 }
 
 output "langfuse_public_key" {
