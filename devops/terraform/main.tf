@@ -48,11 +48,11 @@ module "servicebus" {
   depends_on          = [azurerm_resource_group.main]
 }
 #--------------------PostgreSQL-----------------------
-# Logic: dev creates PostgreSQL server, other environments use shared server from dev
+# Logic: Respect the use_shared_postgres variable from tfvars
 locals {
-  # Dev creates server, others use shared from dev environment
-  use_shared_postgres = var.environment_name != "dev"
-  postgres_server_rg  = var.environment_name == "dev" ? azurerm_resource_group.main.name : "dev-zionet-learning-2025"
+  # Use the variable from tfvars to determine if using shared postgres
+  use_shared_postgres = var.use_shared_postgres
+  postgres_server_rg  = var.use_shared_postgres ? "dev-zionet-learning-2025" : azurerm_resource_group.main.name
 }
 
 # Reference to shared PostgreSQL server (for non-dev environments)
@@ -62,9 +62,10 @@ data "azurerm_postgresql_flexible_server" "shared" {
   resource_group_name = local.postgres_server_rg
 }
 
-# Create new PostgreSQL server only for dev environment
+# Create PostgreSQL server and database module
+# - Dev: Creates server and database
+# - Non-dev: Creates only database on shared server
 module "database" {
-  count  = local.use_shared_postgres ? 0 : 1
   source = "./modules/postgresql"
 
   server_name         = var.database_server_name
@@ -89,21 +90,21 @@ module "database" {
   environment_name = var.environment_name
   database_name    = "${var.database_name}-${var.environment_name}"
 
-  use_shared_postgres = false
-  existing_server_id  = null
+  # Use shared server for non-dev environments
+  use_shared_postgres = local.use_shared_postgres
+  existing_server_id  = local.use_shared_postgres ? data.azurerm_postgresql_flexible_server.shared[0].id : null
 
-  depends_on = [azurerm_resource_group.main]
+  depends_on = [azurerm_resource_group.main, data.azurerm_postgresql_flexible_server.shared]
 }
 
 # Langfuse database on the same PostgreSQL server (dev environment only)
 resource "azurerm_postgresql_flexible_server_database" "langfuse" {
   count     = (var.enable_langfuse && var.environment_name == "dev") ? 1 : 0
   name      = "langfuse-${var.environment_name}"
-  server_id = local.use_shared_postgres ? data.azurerm_postgresql_flexible_server.shared[0].id : module.database[0].id
+  server_id = local.use_shared_postgres ? data.azurerm_postgresql_flexible_server.shared[0].id : module.database.server_id
   charset   = "UTF8"
   collation = "en_US.utf8"
 
-  
   depends_on = [
     module.database,
     data.azurerm_postgresql_flexible_server.shared
