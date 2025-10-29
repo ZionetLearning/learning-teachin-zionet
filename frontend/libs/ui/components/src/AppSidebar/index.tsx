@@ -6,6 +6,12 @@ import {
   SubMenu,
   sidebarClasses,
 } from "react-pro-sidebar";
+import { useThemeColors } from "@app-providers";
+import { useColorScheme } from "@mui/material/styles";
+import BrightnessAutoIcon from "@mui/icons-material/BrightnessAuto";
+import LightModeIcon from "@mui/icons-material/LightMode";
+import DarkModeIcon from "@mui/icons-material/DarkMode";
+import PaletteIcon from "@mui/icons-material/Palette";
 
 export interface SidebarLink {
   label: React.ReactNode;
@@ -59,6 +65,9 @@ export const AppSidebar = ({
   const [collapsed, setCollapsed] = useState<boolean>(
     typeof window !== "undefined" ? window.innerWidth < 768 : false,
   );
+
+  const { mode, setMode } = useColorScheme(); // 'light' | 'dark' | 'system'
+  const color = useThemeColors();
 
   useEffect(() => {
     const handleResize = () => {
@@ -117,31 +126,38 @@ export const AppSidebar = ({
       dir={dir}
       rootStyles={{
         [`.${sidebarClasses.container}`]: {
-          backgroundColor: "#f4f4f4",
+          backgroundColor: color.bg,
+          color: color.text,
           height: "100vh",
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
           direction: dir,
+          borderRight: `1px solid ${color.divider}`,
         },
       }}
     >
       <Menu
         menuItemStyles={{
           button: ({ active }) => ({
-            color: active ? "white" : "#333",
-            backgroundColor: active ? "#7c4dff" : "transparent",
+            color: active ? color.primaryContrast : color.text,
+            backgroundColor: active ? color.primary : "transparent",
             borderRadius: "8px",
             margin: "4px 8px",
             padding: "10px",
-            "& .ps-menu-icon": { color: active ? "#fff" : "#7c4dff" },
+            "& .ps-menu-icon": {
+              color: active ? color.primaryContrast : color.primary,
+            },
             "&:hover": {
-              backgroundColor: active ? "#6a40e6" : "#f0f0f0",
-              color: active ? "#fff" : "#000",
+              backgroundColor: active ? color.primaryDark : color.hover,
+              color: active ? color.primaryContrast : color.text,
             },
             textTransform: "capitalize",
           }),
           label: { textAlign: dir === "rtl" ? "right" : "left" },
+          subMenuContent: {
+            backgroundColor: color.bg,
+          },
         }}
       >
         {toggle && (
@@ -174,6 +190,33 @@ export const AppSidebar = ({
           </SubMenu>
         ) : null}
 
+        <SubMenu label="Appearance" icon={<PaletteIcon />}>
+          <MenuItem
+            icon={<BrightnessAutoIcon />}
+            active={mode === "system"}
+            onClick={() => setMode("system")}
+            data-testid="sidebar-theme-system"
+          >
+            System
+          </MenuItem>
+          <MenuItem
+            icon={<LightModeIcon />}
+            active={mode === "light"}
+            onClick={() => setMode("light")}
+            data-testid="sidebar-theme-light"
+          >
+            Light
+          </MenuItem>
+          <MenuItem
+            icon={<DarkModeIcon />}
+            active={mode === "dark"}
+            onClick={() => setMode("dark")}
+            data-testid="sidebar-theme-dark"
+          >
+            Dark
+          </MenuItem>
+        </SubMenu>
+
         {items.map(renderItem)}
       </Menu>
 
@@ -181,12 +224,12 @@ export const AppSidebar = ({
         <Menu
           menuItemStyles={{
             button: {
-              color: "#333",
+              color: color.text,
               backgroundColor: "transparent",
               borderRadius: "8px",
               margin: "4px 8px",
               padding: "10px",
-              "&:hover": { backgroundColor: "#f0f0f0" },
+              "&:hover": { backgroundColor: color.hover },
               textTransform: "capitalize",
             },
           }}
