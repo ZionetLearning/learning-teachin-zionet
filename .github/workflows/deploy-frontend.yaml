@@ -89,7 +89,6 @@ env:
   SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
 jobs:
-
   frontend-test:
     runs-on: ubuntu-latest
     strategy:
@@ -186,7 +185,6 @@ jobs:
       #     else
       #       echo "No cypress:${{ matrix.app }} script found in package.json - skipping"
       #     fi
-
 
   frontend-build-and-lint:
     if: inputs.run_only_tests == false
@@ -433,8 +431,6 @@ jobs:
               --environment-name "$env" \
               --yes || true
           done
-
-
 
       - name: Get App Insights connection string
         id: ai
