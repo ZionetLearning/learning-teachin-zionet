@@ -12,14 +12,26 @@ public sealed class OnlinePresenceService : IOnlinePresenceService
     private const string Store = AppIds.StateStore;
     private readonly ILogger<OnlinePresenceService> _logger;
 
-    private static readonly StateOptions StrongFirstWrite = new()
+    private static readonly StateOptions SafeWrite = new()
     {
         Consistency = ConsistencyMode.Strong,
-        Concurrency = ConcurrencyMode.FirstWrite
+        Concurrency = ConcurrencyMode.LastWrite
+    };
+
+    private static readonly StateOptions WeakWrite = new()
+    {
+        Consistency = ConsistencyMode.Eventual,
+        Concurrency = ConcurrencyMode.LastWrite
     };
 
     private const int MaxAttempts = 8;
+    private const int DefaultTtlSeconds = 86400;
 
+    private static readonly JsonSerializerOptions _json = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+    private static readonly IReadOnlyDictionary<string, string> TtlMeta = new Dictionary<string, string> { ["ttlInSeconds"] = DefaultTtlSeconds.ToString() };
     public OnlinePresenceService(DaprClient dapr, ILogger<OnlinePresenceService> logger)
     {
         _dapr = dapr;
@@ -43,7 +55,7 @@ public sealed class OnlinePresenceService : IOnlinePresenceService
         }
     }
 
-    public async Task<bool> AddConnectionAsync(string userId, string name, string role, string connectionId, CancellationToken ct = default)
+    public async Task<(bool first, int count)> AddConnectionAsync(string userId, string name, string role, string connectionId, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(userId) ||
             string.IsNullOrEmpty(name) ||
@@ -60,22 +72,29 @@ public sealed class OnlinePresenceService : IOnlinePresenceService
         try
         {
             var firstConnection = false;
+            var currentCount = 0;
 
             await WithRetry(async () =>
             {
                 var connsEntry = await _dapr.GetStateEntryAsync<HashSet<string>>(Store, connsKey, cancellationToken: ct);
                 var conns = connsEntry.Value ?? new HashSet<string>(StringComparer.Ordinal);
-                var wasEmpty = conns.Count == 0;
+                var wasEmptyBefore = conns.Count == 0;
                 var added = conns.Add(connectionId);
                 if (!added)
                 {
-                    firstConnection = false;
+                    currentCount = conns.Count;
                     return 0;
                 }
 
                 connsEntry.Value = conns;
-                await connsEntry.SaveAsync(StrongFirstWrite, cancellationToken: ct);
-                firstConnection = wasEmpty && conns.Count == 1;
+                await connsEntry.SaveAsync(SafeWrite, metadata: TtlMeta, cancellationToken: ct);
+
+                currentCount = conns.Count;
+                if (wasEmptyBefore)
+                {
+                    firstConnection = true;
+                }
+
                 return 0;
             }, ct);
 
@@ -85,7 +104,7 @@ public sealed class OnlinePresenceService : IOnlinePresenceService
                 {
                     var metaEntry = await _dapr.GetStateEntryAsync<UserMeta>(Store, metaKey, cancellationToken: ct);
                     metaEntry.Value = new UserMeta(name, role);
-                    await metaEntry.SaveAsync(StrongFirstWrite, cancellationToken: ct);
+                    await metaEntry.SaveAsync(SafeWrite, metadata: TtlMeta, cancellationToken: ct);
                     return 0;
                 }, ct);
 
@@ -95,16 +114,12 @@ public sealed class OnlinePresenceService : IOnlinePresenceService
                     var all = allEntry.Value ?? new HashSet<string>(StringComparer.Ordinal);
                     all.Add(userId);
                     allEntry.Value = all;
-                    await allEntry.SaveAsync(new StateOptions
-                    {
-                        Consistency = ConsistencyMode.Eventual,
-                        Concurrency = ConcurrencyMode.LastWrite
-                    }, cancellationToken: ct);
+                    await allEntry.SaveAsync(WeakWrite, metadata: TtlMeta, cancellationToken: ct);
                     return 0;
                 }, ct);
             }
 
-            return firstConnection;
+            return (firstConnection, currentCount);
         }
         catch (Exception ex)
         {
@@ -113,10 +128,9 @@ public sealed class OnlinePresenceService : IOnlinePresenceService
         }
     }
 
-    public async Task<bool> RemoveConnectionAsync(string userId, string connectionId, CancellationToken ct = default)
+    public async Task<(bool last, int count)> RemoveConnectionAsync(string userId, string connectionId, CancellationToken ct = default)
     {
-        if (string.IsNullOrEmpty(userId) ||
-            string.IsNullOrEmpty(connectionId))
+        if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(connectionId))
         {
             throw new ArgumentException("One or more arguments are missing");
         }
@@ -128,28 +142,33 @@ public sealed class OnlinePresenceService : IOnlinePresenceService
         try
         {
             var lastConnection = false;
+            var currentCount = 0;
 
             await WithRetry(async () =>
             {
                 var connsEntry = await _dapr.GetStateEntryAsync<HashSet<string>>(Store, connsKey, cancellationToken: ct);
                 var conns = connsEntry.Value ?? new HashSet<string>(StringComparer.Ordinal);
 
-                if (!conns.Remove(connectionId))
+                if (!conns.Contains(connectionId))
                 {
-                    lastConnection = false;
+                    currentCount = conns.Count;
                     return 0;
                 }
 
+                var wasLastBefore = conns.Count == 1;
+                conns.Remove(connectionId);
+
                 if (conns.Count == 0)
                 {
-                    await connsEntry.DeleteAsync(StrongFirstWrite, cancellationToken: ct);
-                    lastConnection = true;
+                    await connsEntry.DeleteAsync(SafeWrite, cancellationToken: ct);
+                    lastConnection = wasLastBefore;
+                    currentCount = 0;
                 }
                 else
                 {
                     connsEntry.Value = conns;
-                    await connsEntry.SaveAsync(StrongFirstWrite, cancellationToken: ct);
-                    lastConnection = false;
+                    await connsEntry.SaveAsync(SafeWrite, metadata: TtlMeta, cancellationToken: ct);
+                    currentCount = conns.Count;
                 }
 
                 return 0;
@@ -162,7 +181,7 @@ public sealed class OnlinePresenceService : IOnlinePresenceService
                     var metaEntry = await _dapr.GetStateEntryAsync<UserMeta>(Store, metaKey, cancellationToken: ct);
                     if (metaEntry.ETag is not null || metaEntry.Value is not null)
                     {
-                        await metaEntry.DeleteAsync(StrongFirstWrite, cancellationToken: ct);
+                        await metaEntry.DeleteAsync(SafeWrite, cancellationToken: ct);
                     }
 
                     return 0;
@@ -174,16 +193,12 @@ public sealed class OnlinePresenceService : IOnlinePresenceService
                     var all = allEntry.Value ?? new HashSet<string>(StringComparer.Ordinal);
                     all.Remove(userId);
                     allEntry.Value = all;
-                    await allEntry.SaveAsync(new StateOptions
-                    {
-                        Consistency = ConsistencyMode.Eventual,
-                        Concurrency = ConcurrencyMode.LastWrite
-                    }, cancellationToken: ct);
+                    await allEntry.SaveAsync(WeakWrite, metadata: TtlMeta, cancellationToken: ct);
                     return 0;
                 }, ct);
             }
 
-            return lastConnection;
+            return (lastConnection, currentCount);
         }
         catch (Exception ex)
         {
@@ -197,7 +212,7 @@ public sealed class OnlinePresenceService : IOnlinePresenceService
         try
         {
             var all = await _dapr.GetStateAsync<HashSet<string>>(Store, PresenceKeys.All, cancellationToken: ct)
-                  ?? new HashSet<string>(StringComparer.Ordinal);
+                      ?? new HashSet<string>(StringComparer.Ordinal);
 
             if (all.Count == 0)
             {
@@ -216,7 +231,6 @@ public sealed class OnlinePresenceService : IOnlinePresenceService
             for (var i = 0; i < ids.Length; i++)
             {
                 var userId = ids[i];
-
                 var metaRaw = metas[i].Value;
                 var connsRaw = conns[i].Value;
 
@@ -225,20 +239,15 @@ public sealed class OnlinePresenceService : IOnlinePresenceService
                     continue;
                 }
 
-                var metaObj = JsonSerializer.Deserialize<UserMeta>(metaRaw);
-                var connsSet = JsonSerializer.Deserialize<HashSet<string>>(connsRaw) ?? new();
+                var metaObj = JsonSerializer.Deserialize<UserMeta>(metaRaw, _json);
+                var connsSet = JsonSerializer.Deserialize<HashSet<string>>(connsRaw, _json) ?? new();
 
                 if (metaObj is null)
                 {
                     continue;
                 }
 
-                list.Add(new OnlineUserDto(
-                    userId,
-                    metaObj.Name,
-                    metaObj.Role,
-                    connsSet.Count
-                ));
+                list.Add(new OnlineUserDto(userId, metaObj.Name, metaObj.Role, connsSet.Count));
             }
 
             return list;
