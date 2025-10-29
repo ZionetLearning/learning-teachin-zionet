@@ -184,7 +184,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid":"${DS_LOKI}"
+        "uid":"loki"
       },
       "description": "Displays the number of active refresh sessions per environment.\nCalculated as: sessions created minus sessions deleted or cleaned.\nThe data reflects the selected time.\nIf no data exists for an environment, it's shown as zero.",
       "fieldConfig": {

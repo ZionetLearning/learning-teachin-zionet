@@ -727,7 +727,7 @@
         {
             "datasource": {
                 "type": "grafana-azure-monitor-datasource",
-                "uid": "loki"
+                "uid": "azure-monitor"
             },
             "fieldConfig": {
                 "defaults": {
@@ -899,7 +899,7 @@
                     },
                     "datasource": {
                         "type": "grafana-azure-monitor-datasource",
-                        "uid": "loki"
+                        "uid": "azure-monitor"
                     },
                     "queryType": "Azure Monitor",
                     "refId": "A",
@@ -936,7 +936,7 @@
                     },
                     "datasource": {
                         "type": "grafana-azure-monitor-datasource",
-                        "uid": "loki"
+                        "uid": "azure-monitor"
                     },
                     "hide": false,
                     "queryType": "Azure Monitor",
@@ -974,7 +974,7 @@
                     },
                     "datasource": {
                         "type": "grafana-azure-monitor-datasource",
-                        "uid": "loki"
+                        "uid": "azure-monitor"
                     },
                     "hide": false,
                     "queryType": "Azure Monitor",
@@ -988,7 +988,7 @@
                     },
                     "datasource": {
                         "type": "grafana-azure-monitor-datasource",
-                        "uid": "loki"
+                        "uid": "azure-monitor"
                     },
                     "hide": false,
                     "queryType": "Azure Monitor",
@@ -1001,7 +1001,7 @@
         {
             "datasource": {
                 "type": "grafana-azure-monitor-datasource",
-                "uid": "loki"
+                "uid": "azure-monitor"
             },
             "fieldConfig": {
                 "defaults": {
@@ -1144,7 +1144,7 @@
                     },
                     "datasource": {
                         "type": "grafana-azure-monitor-datasource",
-                        "uid": "loki"
+                        "uid": "azure-monitor"
                     },
                     "hide": false,
                     "queryType": "Azure Monitor",
@@ -1183,7 +1183,7 @@
                     },
                     "datasource": {
                         "type": "grafana-azure-monitor-datasource",
-                        "uid": "loki"
+                        "uid": "azure-monitor"
                     },
                     "hide": false,
                     "queryType": "Azure Monitor",
