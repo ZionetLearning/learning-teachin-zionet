@@ -121,3 +121,24 @@ resource "azurerm_key_vault_secret" "langfuse_direct_url" {
   value        = "postgresql://${var.admin_username}:${var.admin_password}@${var.database_server_name}.postgres.database.azure.com:5432/langfuse-${var.environment_name}?schema=public&sslmode=require"
   key_vault_id = data.azurerm_key_vault.shared.id
 }
+
+########################
+# Langfuse API Keys for Accessor
+########################
+resource "azurerm_key_vault_secret" "langfuse_baseurl" {
+  name         = "${var.environment_name}-langfuse-baseurl"
+  value        = "https://teachin.westeurope.cloudapp.azure.com/langfuse"
+  key_vault_id = data.azurerm_key_vault.shared.id
+}
+
+resource "azurerm_key_vault_secret" "langfuse_public_key" {
+  name         = "${var.environment_name}-langfuse-public-key"
+  value        = "pk-lf-a61f2d1a-0401-4d37-94b9-a4d5301e8ae4"
+  key_vault_id = data.azurerm_key_vault.shared.id
+}
+
+resource "azurerm_key_vault_secret" "langfuse_secret_key" {
+  name         = "${var.environment_name}-langfuse-secret-key"
+  value        = "sk-lf-ab8732ff-42e8-48aa-bcf5-54c90dc9f648"
+  key_vault_id = data.azurerm_key_vault.shared.id
+}

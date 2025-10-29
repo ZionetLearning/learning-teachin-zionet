@@ -91,3 +91,22 @@ output "frontend_apps_enabled" {
   description = "List of enabled frontend applications"
   value       = var.frontend_apps
 }
+
+# Langfuse secrets for Accessor
+output "langfuse_baseurl" {
+  description = "Langfuse Base URL for Accessor service"
+  value       = azurerm_key_vault_secret.langfuse_baseurl.value
+  sensitive   = true
+}
+
+output "langfuse_public_key" {
+  description = "Langfuse Public Key for Accessor service"
+  value       = azurerm_key_vault_secret.langfuse_public_key.value
+  sensitive   = true
+}
+
+output "langfuse_secret_key" {
+  description = "Langfuse Secret Key for Accessor service"
+  value       = azurerm_key_vault_secret.langfuse_secret_key.value
+  sensitive   = true
+}
