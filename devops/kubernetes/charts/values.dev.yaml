@@ -6,6 +6,9 @@ global:
   dapr:
     enabled: true
     configName: dapr-config
+  servicebus:
+    namespace: ""  # Will be set by CI/CD based on TARGET_NAMESPACE
+    clientId: ""   # Will be set by CI/CD from Terraform output
 
 
 namespace:
