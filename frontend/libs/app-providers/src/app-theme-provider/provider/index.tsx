@@ -43,7 +43,6 @@ const theme = createTheme({
     },
   },
   components: {
-    // optional: ensure buttons and links pick up hover correctly
     MuiButton: {
       styleOverrides: {
         root: {
@@ -65,6 +64,59 @@ const theme = createTheme({
             color: PRIMARY_DARK,
           },
         },
+      },
+    },
+    MuiSelect: {
+      styleOverrides: {
+        // make inner area transparent so the root bg shows uniformly
+        select: {
+          backgroundColor: "transparent",
+        },
+        icon: ({ theme }) => ({
+          color: theme.vars.palette.text.secondary,
+        }),
+      },
+      defaultProps: {
+        MenuProps: {
+          PaperProps: {
+            sx: {
+              bgcolor: "background.paper",
+              color: "text.primary",
+              border: "1px solid",
+              borderColor: "divider",
+            },
+          },
+        },
+      },
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: ({ theme }) => ({
+          backgroundColor: theme.vars.palette.background.paper,
+          borderRadius: 8,
+          // outline colors
+          "& .MuiOutlinedInput-notchedOutline": {
+            borderColor: theme.vars.palette.divider,
+          },
+          "&:hover .MuiOutlinedInput-notchedOutline": {
+            borderColor: theme.vars.palette.divider,
+          },
+          "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+            borderColor: theme.vars.palette.primary.main,
+          },
+        }),
+        input: ({ theme }) => ({
+          color: theme.vars.palette.text.primary,
+        }),
+      },
+    },
+    MuiMenu: {
+      styleOverrides: {
+        paper: ({ theme }) => ({
+          backgroundColor: theme.vars.palette.background.paper,
+          color: theme.vars.palette.text.primary,
+          border: `1px solid ${theme.vars.palette.divider}`,
+        }),
       },
     },
   },
