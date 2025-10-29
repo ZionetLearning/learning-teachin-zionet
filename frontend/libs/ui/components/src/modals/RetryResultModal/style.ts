@@ -23,7 +23,7 @@ export const useStyles = createUseStyles({
   },
   titleIcon: {
     fontSize: 48,
-    marginRight: 8,
+    marginInlineEnd: 8,
   },
   titleText: {
     textAlign: "center",
