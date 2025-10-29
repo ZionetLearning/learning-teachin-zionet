@@ -1,24 +1,25 @@
 import { ReactNode } from "react";
 import { Outlet } from "react-router-dom";
-import { Box } from "@mui/material";
+import { Box, Container } from "@mui/material";
+import { useThemeColors } from "@app-providers";
+import { useStyles } from "./style";
 
 export interface SidebarMenuLayoutProps {
   sidebarMenu: ReactNode;
 }
 
 export const SidebarMenuLayout = ({ sidebarMenu }: SidebarMenuLayoutProps) => {
+  const color = useThemeColors();
+  const classes = useStyles(color);
+
   return (
-    <Box sx={{ display: "flex", height: "100vh" }}>
+    <Box className={classes.layout}>
       {sidebarMenu}
-      <Box
-        sx={{
-          flexGrow: 1,
-          position: "relative",
-          overflowY: "auto",
-          overflowX: "hidden",
-        }}
-      >
-        <Outlet />
+
+      <Box className={classes.content}>
+        <Container>
+          <Outlet />
+        </Container>
       </Box>
     </Box>
   );
