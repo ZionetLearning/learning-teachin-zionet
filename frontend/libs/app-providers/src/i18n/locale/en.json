@@ -532,7 +532,29 @@
         "saving": "Saving...",
         "markAsLearned": "Mark as Learned",
         "markAsUnlearned": "Mark as Unlearned",
-        "learned": "Learned"
+        "learned": "Learned",
+        "practice": "Practice"
+      },
+      "wordCardsChallenge": {
+        "title": "Word Cards Challenge",
+        "selectMode": "Choose your practice mode:",
+        "hebToEng": "Hebrew → English",
+        "engToHeb": "English → Hebrew",
+        "loading": "Loading cards...",
+        "noCardsTitle": "No Word Cards Yet",
+        "noCardsDescription": "Create some word cards first to start practicing!",
+        "cardProgress": "Card {{current}} of {{total}}",
+        "translateToEnglish": "Translate to English:",
+        "translateToHebrew": "Translate to Hebrew:",
+        "typeYourAnswer": "Type your answer...",
+        "submit": "Submit",
+        "correct": "✅ Correct!",
+        "wrong": "❌ Wrong. Correct answer: {{answer}}",
+        "gameComplete": "Game Complete!",
+        "yourScore": "Your Score",
+        "correctAnswers": "{{correct}} out of {{total}} correct",
+        "playAgain": "Play Again",
+        "switchDirection": "Switch Direction"
       }
     },
     "mistakeChat": {
@@ -573,6 +595,7 @@
       "myPracticeMistakes": "Practice Mistakes",
       "studentPracticeHistory": "Practice History",
       "wordCards": "Word Cards",
+      "wordCardsChallenge": "Word Cards Challenge",
       "myLearning": "My Learning",
       "sandbox": "Sandbox"
     },

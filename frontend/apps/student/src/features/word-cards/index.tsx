@@ -8,7 +8,9 @@ import {
   Typography,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import SportsEsportsIcon from "@mui/icons-material/SportsEsports";
 import { Trans, useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { useGetWordCards } from "@student/api";
 import { AddWordCardDialog } from "@student/components";
 import { WordCardItem } from "./components";
@@ -17,6 +19,7 @@ import { useStyles } from "./style";
 export const WordCards = () => {
   const classes = useStyles();
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
 
   const { data, isLoading, isError } = useGetWordCards();
 
@@ -59,16 +62,30 @@ export const WordCards = () => {
             }
             label={t("pages.wordCards.hideLearnedWords")}
           />
-          <Button
-            variant="contained"
-            className={classes.addCardBtn}
-            onClick={() => setAddOpen(true)}
-            startIcon={isHebrew ? undefined : <AddIcon />}
-            endIcon={isHebrew ? <AddIcon /> : undefined}
-            dir={isHebrew ? "rtl" : "ltr"}
-          >
-            {t("pages.wordCards.addCard")}
-          </Button>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            {(data?.length ?? 0) > 0 && (
+              <Button
+                variant="outlined"
+                className={classes.practiceBtn}
+                onClick={() => navigate("/word-cards-challenge")}
+                startIcon={isHebrew ? undefined : <SportsEsportsIcon />}
+                endIcon={isHebrew ? <SportsEsportsIcon /> : undefined}
+                dir={isHebrew ? "rtl" : "ltr"}
+              >
+                {t("pages.wordCards.practice")}
+              </Button>
+            )}
+            <Button
+              variant="contained"
+              className={classes.addCardBtn}
+              onClick={() => setAddOpen(true)}
+              startIcon={isHebrew ? undefined : <AddIcon />}
+              endIcon={isHebrew ? <AddIcon /> : undefined}
+              dir={isHebrew ? "rtl" : "ltr"}
+            >
+              {t("pages.wordCards.addCard")}
+            </Button>
+          </Box>
         </Box>
       </Box>
 

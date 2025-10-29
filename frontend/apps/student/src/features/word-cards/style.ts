@@ -40,6 +40,31 @@ export const useStyles = createUseStyles({
       flexDirection: "row-reverse",
     },
   },
+  practiceBtn: {
+    color: PURPLE,
+    borderColor: PURPLE,
+    borderRadius: 12,
+    padding: "8px 16px",
+    fontWeight: 600,
+    "&:hover": {
+      borderColor: PURPLE_DARK,
+      background: "rgba(124,77,255,0.08)",
+    },
+    "& .MuiButton-startIcon": {
+      marginInlineEnd: 8,
+    },
+    "& .MuiButton-endIcon": {
+      marginInlineStart: 8,
+    },
+    "&[dir='rtl'] .MuiButton-startIcon": {
+      marginLeft: 8,
+      marginRight: 0,
+    },
+    "&[dir='rtl'] .MuiButton-endIcon": {
+      marginRight: 8,
+      marginLeft: 0,
+    },
+  },
   addCardBtn: {
     background: PURPLE,
     color: "#fff",

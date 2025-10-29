@@ -532,7 +532,29 @@
         "saving": "שומר...",
         "markAsLearned": "סמן כנלמד",
         "markAsUnlearned": "סמן כלא נלמד",
-        "learned": "נלמד"
+        "learned": "נלמד",
+        "practice": "תרגול"
+      },
+      "wordCardsChallenge": {
+        "title": "אתגר כרטיסי מילים",
+        "selectMode": "בחר את מצב התרגול שלך:",
+        "hebToEng": "עברית ← אנגלית",
+        "engToHeb": "אנגלית ← עברית",
+        "loading": "טוען כרטיסיות...",
+        "noCardsTitle": "אין עדיין כרטיסיות מילים",
+        "noCardsDescription": "צור כמה כרטיסיות מילים כדי להתחיל לתרגל!",
+        "cardProgress": "כרטיסיה {{current}} מתוך {{total}}",
+        "translateToEnglish": "תרגם לאנגלית:",
+        "translateToHebrew": "תרגם לעברית:",
+        "typeYourAnswer": "הקלד את התשובה שלך...",
+        "submit": "שלח",
+        "correct": "✅ נכון!",
+        "wrong": "❌ לא נכון. התשובה הנכונה: {{answer}}",
+        "gameComplete": "המשחק הסתיים!",
+        "yourScore": "הציון שלך",
+        "correctAnswers": "{{correct}} מתוך {{total}} נכונות",
+        "playAgain": "שחק שוב",
+        "switchDirection": "החלף כיוון"
       }
     },
     "mistakeChat": {
@@ -573,6 +595,7 @@
       "myPracticeMistakes": "טעויות התרגול שלי",
       "studentPracticeHistory": "היסטוריית תרגול",
       "wordCards": "כרטיסיות מילים",
+      "wordCardsChallenge": "אתגר כרטיסי מילים",
       "myLearning": "הלמידה שלי",
       "sandbox": "ארגז חול"
     },
