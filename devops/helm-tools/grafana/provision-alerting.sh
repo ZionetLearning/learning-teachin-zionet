@@ -1,11 +1,16 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/bash
+set -e
 
+# ==============================
+# Configuration
+# ==============================
 NAMESPACE="${NAMESPACE:-devops-logs}"
 SRC="${SRC:-./provisioning/alerting/alerts-rules.yaml}"
 DEPLOYMENT_NAME="${DEPLOYMENT_NAME:-grafana}"
-ROLLOUT_TIMEOUT="${ROLLOUT_TIMEOUT:-180s}"
 
+# ==============================
+# Create alerting ConfigMaps
+# ==============================
 echo "Applying Grafana alerting ConfigMaps..."
 kubectl -n "$NAMESPACE" create configmap grafana-alerting \
   --from-file=alerts-rules.yaml="$SRC" --dry-run=client -o yaml | kubectl apply -f -

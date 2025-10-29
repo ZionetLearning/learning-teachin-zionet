@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasource-azure-monitor
+  namespace: $GRAFANA_NAMESPACE
+  labels:
+    grafana_datasource: "1"
+data:
+  azure-monitor-datasource.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Azure Monitor
+        type: grafana-azure-monitor-datasource
+        uid: azure-monitor
+        access: proxy
+        editable: true
+        isDefault: false
+        jsonData:
+          cloudName: azuremonitor
+          tenantId: $AZURE_TENANT_ID
+          subscriptionId: $AZURE_SUBSCRIPTION_ID
+          clientId: $AZURE_CLIENT_ID
+          defaultSubscription: $AZURE_SUBSCRIPTION_ID
+        secureJsonData:
+          clientSecret: $AZURE_CLIENT_SECRET
+        version: 1
