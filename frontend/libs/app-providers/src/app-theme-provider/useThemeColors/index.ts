@@ -13,6 +13,8 @@ export const useThemeColors = () => {
     },
   };
 
+  const primaryMainChannel = "--mui-palette-primary-mainChannel";
+
   return {
     bg: vars.palette.background.default,
     paper: vars.palette.background.paper,
@@ -24,5 +26,6 @@ export const useThemeColors = () => {
     hover: vars.palette.action.hover,
     selected: vars.palette.action.selected,
     divider: vars.palette.divider,
+    primaryMainChannel,
   };
 };

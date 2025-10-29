@@ -12,10 +12,12 @@ import { Trans, useTranslation } from "react-i18next";
 import { useGetWordCards } from "@student/api";
 import { AddWordCardDialog } from "@student/components";
 import { WordCardItem } from "./components";
+import { useThemeColors } from "@app-providers";
 import { useStyles } from "./style";
 
 export const WordCards = () => {
-  const classes = useStyles();
+  const color = useThemeColors();
+  const classes = useStyles(color);
   const { t, i18n } = useTranslation();
 
   const { data, isLoading, isError } = useGetWordCards();
@@ -61,6 +63,7 @@ export const WordCards = () => {
           />
           <Button
             variant="contained"
+            color="primary"
             className={classes.addCardBtn}
             onClick={() => setAddOpen(true)}
             startIcon={isHebrew ? undefined : <AddIcon />}

@@ -11,10 +11,10 @@ import {
   Typography,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-
+import { useTranslation } from "react-i18next";
+import { useThemeColors } from "@app-providers";
 import { useCreateWordCard, type CreateWordCardRequest } from "../../api";
 import { useStyles } from "./style";
-import { useTranslation } from "react-i18next";
 
 export type AddWordCardDialogProps = {
   open: boolean;
@@ -27,7 +27,8 @@ export const AddWordCardDialog = ({
   onClose,
   initialHebrew,
 }: AddWordCardDialogProps) => {
-  const classes = useStyles();
+  const color = useThemeColors();
+  const classes = useStyles(color);
   const { t } = useTranslation();
 
   const createCard = useCreateWordCard();
