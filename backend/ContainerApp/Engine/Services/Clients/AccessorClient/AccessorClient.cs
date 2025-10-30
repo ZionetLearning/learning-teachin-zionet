@@ -4,6 +4,7 @@ using Dapr.Client;
 using Engine.Models.Prompts;
 using Engine.Services.Clients.AccessorClient.Models;
 using Engine.Constants;
+using Engine.Models.Users;
 
 namespace Engine.Services.Clients.AccessorClient;
 
@@ -301,6 +302,19 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
         {
             _logger.LogError(ex, "Error fetching interests for user {UserId}", userId);
             return [];
+        }
+    }
+    public async Task<UserData?> GetUserAsync(Guid userId)
+    {
+        try
+        {
+            return await _daprClient.InvokeMethodAsync<UserData?>(
+                HttpMethod.Get, AppIds.Accessor, $"users-accessor/{userId}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting user {UserId}", userId);
+            return null;
         }
     }
 }
