@@ -24,7 +24,6 @@ type ActiveStream<T = unknown> = {
   timeout: NodeJS.Timeout;
 };
 
-
 export const SignalRProvider = ({ hubUrl, children }: SignalRProviderProps) => {
   const [status, setStatus] = useState<Status>("idle");
   const { accessToken } = useAuth();
@@ -45,7 +44,7 @@ export const SignalRProvider = ({ hubUrl, children }: SignalRProviderProps) => {
     new Map(),
   );
   // Store active streams
-const activeStreamsRef = useRef<Map<string, ActiveStream>>(new Map());
+  const activeStreamsRef = useRef<Map<string, ActiveStream>>(new Map());
 
   // Store pending requests for waitForResponse
   const pendingRequestsRef = useRef<
@@ -66,38 +65,33 @@ const activeStreamsRef = useRef<Map<string, ActiveStream>>(new Map());
     }
   }, []);
 
-  const handleStreamEvent = useCallback(
-    (evt: StreamEvent<unknown>) => {
-      const { eventType, requestId, payload, sequenceNumber, stage } = evt;
-      const streamKey = `${eventType}:${requestId}`;
+  const handleStreamEvent = useCallback((evt: StreamEvent<unknown>) => {
+    const { eventType, requestId, payload, sequenceNumber, stage } = evt;
+    const streamKey = `${eventType}:${requestId}`;
 
-      const activeStream = activeStreamsRef.current.get(streamKey);
-      if (!activeStream) return;
+    const activeStream = activeStreamsRef.current.get(streamKey);
+    if (!activeStream) return;
 
-      const msg: StreamMessage = { payload, sequenceNumber, stage };
-      activeStream.messages.push(msg);
+    const msg: StreamMessage = { payload, sequenceNumber, stage };
+    activeStream.messages.push(msg);
 
-      // Notify subscribers immediately
-      activeStream.subscribers.forEach((cb) => cb(msg));
+    // Notify subscribers immediately
+    activeStream.subscribers.forEach((cb) => cb(msg));
 
-      if (stage === "Last" || stage === "Error") {
-        clearTimeout(activeStream.timeout);
-        activeStreamsRef.current.delete(streamKey);
+    if (stage === "Last" || stage === "Error") {
+      clearTimeout(activeStream.timeout);
+      activeStreamsRef.current.delete(streamKey);
 
-        if (stage === "Error") {
-          activeStream.reject(new Error(`Stream ${streamKey} ended with error`));
-        } else {
-          const ordered = activeStream.messages.sort(
-            (a, b) => a.sequenceNumber - b.sequenceNumber,
-          );
-          activeStream.resolve(ordered.map((m) => m.payload));
-        }
+      if (stage === "Error") {
+        activeStream.reject(new Error(`Stream ${streamKey} ended with error`));
+      } else {
+        const ordered = activeStream.messages.sort(
+          (a, b) => a.sequenceNumber - b.sequenceNumber,
+        );
+        activeStream.resolve(ordered.map((m) => m.payload));
       }
-    },
-    [],
-  );
-
-
+    }
+  }, []);
 
   const checkPendingRequests = useCallback(
     (eventType: string, payload: unknown) => {
@@ -168,12 +162,13 @@ const activeStreamsRef = useRef<Map<string, ActiveStream>>(new Map());
 
       activeStream.subscribers.add(handler as (msg: StreamMessage) => void);
       return () => {
-        activeStream.subscribers.delete(handler as (msg: StreamMessage) => void);
+        activeStream.subscribers.delete(
+          handler as (msg: StreamMessage) => void,
+        );
       };
     },
     [],
   );
-
 
   const waitForResponse = useCallback(
     <T = unknown,>(
@@ -221,7 +216,9 @@ const activeStreamsRef = useRef<Map<string, ActiveStream>>(new Map());
 
       const streamKey = `${eventType}:${requestId}`;
       if (activeStreamsRef.current.has(streamKey)) {
-        return Promise.reject(new Error(`Stream ${streamKey} already in progress`));
+        return Promise.reject(
+          new Error(`Stream ${streamKey} already in progress`),
+        );
       }
 
       return new Promise<T[]>((resolve, reject) => {
@@ -240,12 +237,14 @@ const activeStreamsRef = useRef<Map<string, ActiveStream>>(new Map());
           timeout,
         };
 
-        activeStreamsRef.current.set(streamKey, newStream as ActiveStream<unknown>);
+        activeStreamsRef.current.set(
+          streamKey,
+          newStream as ActiveStream<unknown>,
+        );
       });
     },
     [status],
   );
-
 
   useEffect(() => {
     if (!accessToken || !userId) {
@@ -335,7 +334,37 @@ const activeStreamsRef = useRef<Map<string, ActiveStream>>(new Map());
       connRef.current = null;
       c?.stop().catch(() => {});
     };
-  }, [hubUrl, accessToken, userId, handleEvent, checkPendingRequests, handleStreamEvent]);
+  }, [
+    hubUrl,
+    accessToken,
+    userId,
+    handleEvent,
+    checkPendingRequests,
+    handleStreamEvent,
+  ]);
+
+  useEffect(function cleanUp() {
+    const handleBeforeUnload = () => {
+      const c = connRef.current;
+      if (c) {
+        c.stop().catch(() => {});
+      }
+    };
+
+    const handlePageHide = () => {
+      const c = connRef.current;
+      if (c) {
+        c.stop().catch(() => {});
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("pagehide", handlePageHide);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("pagehide", handlePageHide);
+    };
+  }, []);
 
   const value = useMemo<SignalRContextType>(
     () => ({
@@ -347,7 +376,14 @@ const activeStreamsRef = useRef<Map<string, ActiveStream>>(new Map());
       waitForStream,
       subscribeToStream,
     }),
-    [status, userId, subscribe, waitForResponse, waitForStream, subscribeToStream],
+    [
+      status,
+      userId,
+      subscribe,
+      waitForResponse,
+      waitForStream,
+      subscribeToStream,
+    ],
   );
 
   // Expose status to window for E2E tests (non-production side effect, harmless in prod)

@@ -2,12 +2,16 @@ name: AKS - Deploy Current Backend Images (and refresh pods)
 # Builds and pushs current backend images (from current main) into acr
 # and refreshes the pods with the new images.
 
+permissions:
+  id-token: write
+  contents: read
+  issues: write
+
 on:
   push:
     branches: [ main ]
     paths:
       - 'backend/**'  # Only trigger for Azure backend changes
-      # - '.github/workflows/build-and-push-images.yaml'  # Trigger on workflow changes
   workflow_dispatch:
     inputs:
       environment:
@@ -48,17 +52,12 @@ on:
         required: false
         type: string
         default: ''
-      custom_environment_name:
-        required: false
-        type: string
-        default: ''
       list_services_names:
         required: false
         type: string
         default: ''
         
 jobs:
-
   lock-featest:
     if: |
       github.event_name == 'workflow_dispatch' && (
@@ -67,9 +66,7 @@ jobs:
         inputs.unlock_featest == true ||
         github.event.inputs.unlock_featest == 'true'
       )
-    permissions:
-      contents: read
-      issues: write
+      
     uses: ./.github/workflows/lock-environment.yaml
     with:
       action: ${{ (inputs.unlock_featest == true || github.event.inputs.unlock_featest == 'true') && 'unlock' || 'lock' }}
@@ -117,9 +114,6 @@ jobs:
       always() &&
       needs.set-defaults.result == 'success'
     uses: ./.github/workflows/build-and-push-images.yaml
-    permissions:
-      id-token: write
-      contents: read
     with:
       environment: ${{ needs.set-defaults.outputs.environment }}
       environment_name: ${{ needs.set-defaults.outputs.environment_name }}
@@ -133,9 +127,6 @@ jobs:
       needs.set-defaults.result == 'success' &&
       needs.build-and-push-images.result == 'success'
     uses: ./.github/workflows/aks-helmcharts.yaml
-    permissions:
-      id-token: write
-      contents: read
     with:
       environment: ${{ needs.set-defaults.outputs.environment }}
       environment_name: ${{ needs.set-defaults.outputs.environment_name }}

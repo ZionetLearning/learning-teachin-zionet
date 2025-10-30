@@ -8,22 +8,28 @@ import {
   I18nTranslateProvider,
   initializeSentry,
   ReactQueryProvider,
-  SentryErrorBoundary
+  SentryErrorBoundary,
+  SignalRProvider,
 } from "@app-providers";
 import App from "./App.tsx";
 
 initAppInsights("teacher");
 initializeSentry({ appName: "teacher" });
 
+const BASE_URL = import.meta.env.VITE_BASE_URL!;
+const HUB_URL = `${BASE_URL}/notificationHub`;
+
 createRoot(document.getElementById("root")!).render(
   <I18nTranslateProvider>
     <ReactQueryProvider>
       <AuthProvider appRole={AppRole.teacher}>
-        <StrictMode>
-          <SentryErrorBoundary>
-            <App />
-          </SentryErrorBoundary>
-        </StrictMode>
+        <SignalRProvider hubUrl={HUB_URL}>
+          <StrictMode>
+            <SentryErrorBoundary>
+              <App />
+            </SentryErrorBoundary>
+          </StrictMode>
+        </SignalRProvider>
       </AuthProvider>
     </ReactQueryProvider>
   </I18nTranslateProvider>,

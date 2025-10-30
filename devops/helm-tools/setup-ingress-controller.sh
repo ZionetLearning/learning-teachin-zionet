@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# ==============================
+# Configuration
+# ==============================
 NAMESPACE="devops-ingress-nginx"
 RELEASE_NAME="ingress-nginx"
 STATIC_IP_NAME="ingress-controller-static-ip"
@@ -8,10 +11,15 @@ MC_RG="MC_dev-zionet-learning-2025_aks-cluster-dev_westeurope"
 LOCATION="westeurope"
 DNS_LABEL="teachin"
 
-
+# ==============================
+# 0. Uninstall existing ingress-nginx Helm release (if any)
+# ==============================
 echo "0. Uninstalling existing ingress-nginx Helm release (if present)..."
 helm uninstall "$RELEASE_NAME" -n "$NAMESPACE" || true
 
+# ==============================
+# 1. Ensure Azure Public IP exists with DNS label
+# ==============================
 echo "1 Ensure Azure public IP exists..."
 if ! az network public-ip show --resource-group "$MC_RG" --name "$STATIC_IP_NAME" &> /dev/null; then
   echo "Azure Public IP '$STATIC_IP_NAME' not found in '$MC_RG'. Creating..."
@@ -25,22 +33,32 @@ else
   echo "Azure Public IP '$STATIC_IP_NAME' already exists."
 fi
 
-echo "1.1 Adding public DNS label to your static IP..."
+# ==============================
+# 2. Add DNS label to the Public IP
+# ==============================
+echo "2. Adding public DNS label to your static IP..."
 az network public-ip update \
   --resource-group "$MC_RG" \
   --name "$STATIC_IP_NAME" \
   --dns-name "$DNS_LABEL"
 
-
-
-echo "2. Adding ingress-nginx Helm repo..."
+# ==============================
+# 3. Add ingress-nginx Helm repo
+# ==============================
+echo "3. Adding ingress-nginx Helm repo..."
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx || true
 helm repo update
 
-echo "3. Creating namespace $NAMESPACE (if not exists)..."
+# ==============================
+# 4. Create namespace
+# ==============================
+echo "4. Creating namespace $NAMESPACE (if not exists)..."
 kubectl get ns "$NAMESPACE" >/dev/null 2>&1 || kubectl create ns "$NAMESPACE"
 
-echo "4. Installing ingress-nginx Helm chart..."
+# ==============================
+# 5. Install ingress-nginx Helm chart
+# ==============================
+echo "5. Installing ingress-nginx Helm chart..."
 helm upgrade --install "$RELEASE_NAME" ingress-nginx/ingress-nginx \
   --namespace "$NAMESPACE" \
   --set controller.replicaCount=1 \

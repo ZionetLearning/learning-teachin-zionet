@@ -13,7 +13,7 @@ resource "azurerm_key_vault_secret" "azure_service_bus" {
 resource "azurerm_key_vault_secret" "postgres_connection" {
   name  = "${var.environment_name}-postgres-connection"
   value = (
-    var.use_shared_postgres
+    local.use_shared_postgres
     ? format(
         "Host=%s;Database=%s;Username=%s;Password=%s;SslMode=Require",
         data.azurerm_postgresql_flexible_server.shared[0].fqdn,
@@ -50,6 +50,14 @@ resource "azurerm_key_vault_secret" "redis_password" {
   key_vault_id = data.azurerm_key_vault.shared.id
 }
 
+########################
+# Storage Account secret for Avatars
+########################
+resource "azurerm_key_vault_secret" "avatars_storage_connection" {
+  name         = "${var.environment_name}-avatars-storage-connection"
+  value        = azurerm_storage_account.avatars.primary_connection_string
+  key_vault_id = data.azurerm_key_vault.shared.id
+}
 
 ########################
 # Langfuse secrets (always create, controlled by Helm values)
