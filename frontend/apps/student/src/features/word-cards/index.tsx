@@ -61,6 +61,7 @@ export const WordCards = () => {
           />
           <Button
             variant="contained"
+            color="primary"
             className={classes.addCardBtn}
             onClick={() => setAddOpen(true)}
             startIcon={isHebrew ? undefined : <AddIcon />}

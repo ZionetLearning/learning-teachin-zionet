@@ -1,92 +1,94 @@
 import { createUseStyles } from "react-jss";
-import { Theme } from "@mui/material/styles";
+import { useThemeColors } from "@app-providers";
 
-export const useStyles = createUseStyles((theme: Theme) => ({
-  tableRow: {
-    "&:hover": {
-      backgroundColor:
-        theme.palette.mode === "dark"
-          ? theme.palette.grey[800]
-          : theme.palette.grey[50],
+export const useStyles = () => {
+  const color = useThemeColors();
+
+  return createUseStyles({
+    tableRow: {
+      "&:hover": {
+        backgroundColor: `rgba(var(${color.primaryMainChannel}) / 0.05)`,
+      },
+      "& .MuiTableCell-root": {
+        padding: "12px 16px",
+        borderBottom: `1px solid ${color.divider}`,
+        color: color.text,
+      },
     },
-    "& .MuiTableCell-root": {
-      padding: "12px 16px",
-      borderBottom: `1px solid ${theme.palette.divider}`,
-      color: theme.palette.text.primary,
+    userInfo: {
+      display: "flex",
+      alignItems: "center",
     },
-  },
-  userInfo: {
-    display: "flex",
-    alignItems: "center",
-  },
-  avatar: {
-    width: "32px",
-    height: "32px",
-    fontSize: "14px",
-    marginInlineEnd: "12px",
-  },
-  userName: {
-    fontWeight: "500",
-    fontSize: "14px",
-    color: theme.palette.text.primary,
-  },
-  roleChip: {
-    height: "24px",
-    fontSize: "12px",
-    textTransform: "capitalize",
-    color: "white",
-    fontWeight: "500",
-    "& .MuiChip-label": {
-      paddingInline: "8px",
+    avatar: {
+      width: "32px",
+      height: "32px",
+      fontSize: "14px",
+      marginInlineEnd: "12px",
     },
-  },
-  onlineChip: {
-    height: "24px",
-    fontSize: "12px",
-    "& .MuiChip-label": {
-      paddingInline: "8px",
+    userName: {
+      fontWeight: "500",
+      fontSize: "14px",
+      color: color.text,
     },
-  },
-  connectionCount: {
-    fontSize: "14px",
-    color: theme.palette.text.secondary,
-  },
-  mobileCard: {
-    marginBottom: "12px",
-    borderRadius: "8px",
-    border: `1px solid ${theme.palette.divider}`,
-    backgroundColor: theme.palette.background.paper,
-    "&:last-child": {
-      marginBottom: "16px",
+    roleChip: {
+      height: "24px",
+      fontSize: "12px",
+      textTransform: "capitalize",
+      color: color.primaryContrast,
+      fontWeight: "500",
+      backgroundColor: color.primary,
+      "& .MuiChip-label": {
+        paddingInline: "8px",
+      },
     },
-  },
-  mobileCardContent: {
-    padding: "16px !important",
-    "&:last-child": {
-      paddingBottom: "16px !important",
+    onlineChip: {
+      height: "24px",
+      fontSize: "12px",
+      "& .MuiChip-label": {
+        paddingInline: "8px",
+      },
     },
-  },
-  mobileUserHeader: {
-    display: "flex",
-    alignItems: "center",
-    marginBottom: "12px",
-  },
-  mobileUserInfo: {
-    flex: 1,
-    marginInlineStart: "12px",
-  },
-  mobileUserName: {
-    fontWeight: "500",
-    fontSize: "16px",
-    marginBottom: "4px",
-    color: theme.palette.text.primary,
-  },
-  mobileConnectionInfo: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: "12px",
-    paddingTop: "12px",
-    borderTop: `1px solid ${theme.palette.divider}`,
-  },
-}));
+    connectionCount: {
+      fontSize: "14px",
+      color: color.textMuted,
+    },
+    mobileCard: {
+      marginBottom: "12px",
+      borderRadius: "8px",
+      border: `1px solid ${color.divider}`,
+      backgroundColor: color.paper,
+      "&:last-child": {
+        marginBottom: "16px",
+      },
+    },
+    mobileCardContent: {
+      padding: "16px !important",
+      "&:last-child": {
+        paddingBottom: "16px !important",
+      },
+    },
+    mobileUserHeader: {
+      display: "flex",
+      alignItems: "center",
+      marginBottom: "12px",
+    },
+    mobileUserInfo: {
+      flex: 1,
+      marginInlineStart: "12px",
+    },
+    mobileUserName: {
+      fontWeight: "500",
+      fontSize: "16px",
+      marginBottom: "4px",
+      color: color.text,
+    },
+    mobileConnectionInfo: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginTop: "12px",
+      paddingTop: "12px",
+      borderTop: `1px solid ${color.divider}`,
+    },
+  })();
+};
