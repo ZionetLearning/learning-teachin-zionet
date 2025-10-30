@@ -1,14 +1,17 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Box,
   Button,
   CircularProgress,
+  Dialog,
   TextField,
   Typography,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useGetWordCards, type WordCard } from "@student/api";
 import { useStyles } from "./style";
+import { ModeSelection, GameSummary } from "./components";
+import { FEEDBACK_DISPLAY_DURATION } from "./constants";
 
 type GameMode = "heb-to-eng" | "eng-to-heb";
 type GameState = "mode-selection" | "playing" | "summary";
@@ -16,16 +19,18 @@ type GameState = "mode-selection" | "playing" | "summary";
 export const WordCardsChallenge = () => {
   const classes = useStyles();
   const { t } = useTranslation();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [gameState, setGameState] = useState<GameState>("mode-selection");
   const [mode, setMode] = useState<GameMode>("heb-to-eng");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [userAnswer, setUserAnswer] = useState("");
   const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
+  const [displayedCorrectAnswer, setDisplayedCorrectAnswer] = useState("");
   const [correctCount, setCorrectCount] = useState(0);
   const [shuffledCards, setShuffledCards] = useState<WordCard[]>([]);
 
-  const { data: cards, isLoading } = useGetWordCards();
+  const { data: cards, isLoading, isError } = useGetWordCards();
 
   useEffect(
     function resetOnCardsChange() {
@@ -36,8 +41,21 @@ export const WordCardsChallenge = () => {
     [cards, gameState, shuffledCards.length],
   );
 
+  useEffect(function cleanupTimeout() {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
   const shuffleCards = useCallback((cardList: WordCard[]) => {
-    return [...cardList].sort(() => Math.random() - 0.5);
+    const shuffled = [...cardList];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
   }, []);
 
   const startGame = useCallback(
@@ -55,52 +73,54 @@ export const WordCardsChallenge = () => {
   );
 
   const hasCards = (cards?.length ?? 0) > 0;
-
   const currentCard = shuffledCards[currentIndex];
 
-  const questionText = currentCard
-    ? mode === "heb-to-eng"
-      ? currentCard.hebrew
-      : currentCard.english
-    : "";
-
-  const correctAnswer = currentCard
-    ? mode === "heb-to-eng"
-      ? currentCard.english
-      : currentCard.hebrew
-    : "";
-
   const checkAnswer = useCallback(() => {
+    const correctAnswer = currentCard
+      ? mode === "heb-to-eng"
+        ? currentCard.english
+        : currentCard.hebrew
+      : "";
     const trimmedAnswer = userAnswer.trim().toLowerCase();
     const trimmedCorrect = correctAnswer.trim().toLowerCase();
     const isCorrect = trimmedAnswer === trimmedCorrect;
 
+    setDisplayedCorrectAnswer(correctAnswer);
     setFeedback(isCorrect ? "correct" : "wrong");
     if (isCorrect) {
       setCorrectCount((prev) => prev + 1);
     }
 
-    setTimeout(() => {
+    timeoutRef.current = setTimeout(() => {
       if (currentIndex + 1 >= shuffledCards.length) {
         setGameState("summary");
+        setFeedback(null);
       } else {
         setCurrentIndex((prev) => prev + 1);
         setUserAnswer("");
         setFeedback(null);
       }
-    }, 1500);
-  }, [userAnswer, correctAnswer, currentIndex, shuffledCards.length]);
-
-  const percentage = useMemo(() => {
-    if (shuffledCards.length === 0) return 0;
-    return Math.round((correctCount / shuffledCards.length) * 100);
-  }, [correctCount, shuffledCards.length]);
+    }, FEEDBACK_DISPLAY_DURATION);
+  }, [userAnswer, currentCard, mode, currentIndex, shuffledCards.length]);
 
   if (isLoading) {
     return (
       <Box className={classes.centerState}>
         <CircularProgress />
         <Typography>{t("pages.wordCardsChallenge.loading")}</Typography>
+      </Box>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Box className={classes.emptyState}>
+        <Typography className={classes.emptyTitle}>
+          {t("pages.wordCardsChallenge.errorTitle")}
+        </Typography>
+        <Typography className={classes.emptyDescription}>
+          {t("pages.wordCardsChallenge.errorDescription")}
+        </Typography>
       </Box>
     );
   }
@@ -119,83 +139,37 @@ export const WordCardsChallenge = () => {
   }
 
   if (gameState === "mode-selection") {
-    return (
-      <Box className={classes.container}>
-        <Box className={classes.modeSelection}>
-          <Typography className={classes.title}>
-            {t("pages.wordCardsChallenge.title")}
-          </Typography>
-          <Typography className={classes.subtitle}>
-            {t("pages.wordCardsChallenge.selectMode")}
-          </Typography>
-          <Box className={classes.modeButtons}>
-            <Button
-              variant="contained"
-              className={classes.modeButton}
-              onClick={() => startGame("heb-to-eng")}
-            >
-              {t("pages.wordCardsChallenge.hebToEng")}
-            </Button>
-            <Button
-              variant="contained"
-              className={classes.modeButton}
-              onClick={() => startGame("eng-to-heb")}
-            >
-              {t("pages.wordCardsChallenge.engToHeb")}
-            </Button>
-          </Box>
-        </Box>
-      </Box>
-    );
+    return <ModeSelection onStartGame={startGame} />;
   }
 
   if (gameState === "summary") {
     return (
-      <Box className={classes.container}>
-        <Box className={classes.summary}>
-          <Typography className={classes.summaryTitle}>
-            {t("pages.wordCardsChallenge.gameComplete")}
-          </Typography>
-          <Box className={classes.scoreBox}>
-            <Typography className={classes.scoreText}>
-              {t("pages.wordCardsChallenge.yourScore")}
-            </Typography>
-            <Typography className={classes.scoreNumber}>
-              {percentage}%
-            </Typography>
-            <Typography className={classes.scoreDetails}>
-              {t("pages.wordCardsChallenge.correctAnswers", {
-                correct: correctCount,
-                total: shuffledCards.length,
-              })}
-            </Typography>
-          </Box>
-          <Box className={classes.summaryButtons}>
-            <Button
-              variant="contained"
-              className={classes.summaryButton}
-              onClick={() => startGame(mode)}
-            >
-              {t("pages.wordCardsChallenge.playAgain")}
-            </Button>
-            <Button
-              variant="outlined"
-              className={classes.summaryButtonOutlined}
-              onClick={() =>
-                startGame(mode === "heb-to-eng" ? "eng-to-heb" : "heb-to-eng")
-              }
-            >
-              {t("pages.wordCardsChallenge.switchDirection")}
-            </Button>
-          </Box>
-        </Box>
-      </Box>
+      <GameSummary
+        correctCount={correctCount}
+        totalCards={shuffledCards.length}
+        currentMode={mode}
+        onPlayAgain={startGame}
+      />
     );
   }
 
+  const questionText = currentCard
+    ? mode === "heb-to-eng"
+      ? currentCard.hebrew
+      : currentCard.english
+    : "";
+
   return (
     <Box className={classes.container}>
-      <Box className={classes.gameCard}>
+      <Box
+        className={`${classes.gameCard} ${
+          feedback === "correct"
+            ? classes.gameCardSlideRight
+            : feedback === "wrong"
+              ? classes.gameCardSlideLeft
+              : ""
+        }`}
+      >
         <Box className={classes.progressBar}>
           <Typography className={classes.progressText}>
             {t("pages.wordCardsChallenge.cardProgress", {
@@ -252,28 +226,37 @@ export const WordCardsChallenge = () => {
             </Button>
           )}
         </Box>
-
-        {feedback && (
-          <Box
-            className={
-              feedback === "correct"
-                ? classes.feedbackCorrect
-                : classes.feedbackWrong
-            }
-          >
-            <Typography
-              className={classes.feedbackText}
-              dir={mode === "heb-to-eng" ? "ltr" : "rtl"}
-            >
-              {feedback === "correct"
-                ? t("pages.wordCardsChallenge.correct")
-                : t("pages.wordCardsChallenge.wrong", {
-                    answer: correctAnswer,
-                  })}
-            </Typography>
-          </Box>
-        )}
       </Box>
+
+      <Dialog
+        open={feedback !== null}
+        className={classes.feedbackModal}
+        slotProps={{
+          paper: {
+            className:
+              feedback === "correct"
+                ? classes.feedbackModalCorrect
+                : feedback === "wrong"
+                  ? classes.feedbackModalWrong
+                  : "",
+          },
+        }}
+      >
+        <Box className={classes.feedbackModalContent}>
+          <Typography
+            className={classes.feedbackModalText}
+            dir={mode === "heb-to-eng" ? "ltr" : "rtl"}
+          >
+            {feedback === "correct"
+              ? t("pages.wordCardsChallenge.correct")
+              : feedback === "wrong"
+                ? t("pages.wordCardsChallenge.wrong", {
+                    answer: displayedCorrectAnswer,
+                  })
+                : ""}
+          </Typography>
+        </Box>
+      </Dialog>
     </Box>
   );
 };

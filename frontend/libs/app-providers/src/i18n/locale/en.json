@@ -541,6 +541,8 @@
         "hebToEng": "Hebrew → English",
         "engToHeb": "English → Hebrew",
         "loading": "Loading cards...",
+        "errorTitle": "Failed to Load Cards",
+        "errorDescription": "Something went wrong while loading your word cards. Please try again later.",
         "noCardsTitle": "No Word Cards Yet",
         "noCardsDescription": "Create some word cards first to start practicing!",
         "cardProgress": "Card {{current}} of {{total}}",

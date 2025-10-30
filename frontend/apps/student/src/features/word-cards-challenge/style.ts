@@ -1,9 +1,7 @@
 import { createUseStyles } from "react-jss";
+import { COLORS } from "./constants";
 
-const PURPLE = "#7c4dff";
-const PURPLE_DARK = "#5f35ff";
-const GREEN = "#4caf50";
-const RED = "#f44336";
+const { PURPLE, PURPLE_DARK, GREEN, RED } = COLORS;
 
 export const useStyles = createUseStyles({
   container: {
@@ -50,53 +48,6 @@ export const useStyles = createUseStyles({
       color: "rgba(255,255,255,0.7)",
     },
   },
-  modeSelection: {
-    background: "white",
-    borderRadius: 24,
-    padding: 48,
-    boxShadow:
-      "0 14px 34px rgba(27, 18, 66, 0.18), 0 3px 10px rgba(0,0,0,0.08)",
-    textAlign: "center",
-    maxWidth: 500,
-    width: "100%",
-    "@media (prefers-color-scheme: dark)": {
-      background: "#1e1e1e",
-      boxShadow: "0 14px 34px rgba(0, 0, 0, 0.4), 0 3px 10px rgba(0,0,0,0.3)",
-    },
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 700,
-    color: PURPLE,
-    marginBottom: 16,
-  },
-  subtitle: {
-    fontSize: 18,
-    color: "rgba(0,0,0,0.72)",
-    marginBottom: 32,
-    "@media (prefers-color-scheme: dark)": {
-      color: "rgba(255,255,255,0.7)",
-    },
-  },
-  modeButtons: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 16,
-  },
-  modeButton: {
-    background: PURPLE,
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: 600,
-    padding: "16px 32px",
-    borderRadius: 16,
-    boxShadow: "0 8px 18px rgba(124,77,255,0.28), 0 3px 8px rgba(0,0,0,0.12)",
-    "&:hover": {
-      background: PURPLE_DARK,
-      boxShadow:
-        "0 10px 22px rgba(124,77,255,0.34), 0 4px 10px rgba(0,0,0,0.14)",
-    },
-  },
   gameCard: {
     background: "white",
     borderRadius: 24,
@@ -120,6 +71,32 @@ export const useStyles = createUseStyles({
       opacity: 1,
       transform: "translateX(0)",
     },
+  },
+  "@keyframes slideOutRight": {
+    "0%": {
+      transform: "translateX(0) rotate(0deg)",
+      opacity: 1,
+    },
+    "100%": {
+      transform: "translateX(100%) rotate(15deg)",
+      opacity: 0,
+    },
+  },
+  "@keyframes slideOutLeft": {
+    "0%": {
+      transform: "translateX(0) rotate(0deg)",
+      opacity: 1,
+    },
+    "100%": {
+      transform: "translateX(-100%) rotate(-15deg)",
+      opacity: 0,
+    },
+  },
+  gameCardSlideRight: {
+    animation: "$slideOutRight 0.5s ease-in forwards",
+  },
+  gameCardSlideLeft: {
+    animation: "$slideOutLeft 0.5s ease-in forwards",
   },
   progressBar: {
     marginBottom: 24,
@@ -224,121 +201,42 @@ export const useStyles = createUseStyles({
       boxShadow: "none",
     },
   },
-  feedbackCorrect: {
-    marginTop: 16,
-    padding: 16,
-    borderRadius: 12,
-    background: `linear-gradient(135deg, ${GREEN}15 0%, ${GREEN}08 100%)`,
-    border: `2px solid ${GREEN}`,
-    animation: "$fadeIn 0.3s ease-out",
+  feedbackModal: {
+    "& .MuiBackdrop-root": {
+      backgroundColor: "rgba(0, 0, 0, 0.7)",
+    },
   },
-  feedbackWrong: {
-    marginTop: 16,
-    padding: 16,
-    borderRadius: 12,
-    background: `linear-gradient(135deg, ${RED}15 0%, ${RED}08 100%)`,
-    border: `2px solid ${RED}`,
-    animation: "$fadeIn 0.3s ease-out",
+  feedbackModalCorrect: {
+    background: `linear-gradient(135deg, ${GREEN} 0%, ${GREEN}dd 100%)`,
+    borderRadius: 24,
+    padding: "48px 64px",
+    boxShadow: `0 20px 60px ${GREEN}80`,
+    animation: "$scaleIn 0.3s ease-out",
   },
-  "@keyframes fadeIn": {
+  feedbackModalWrong: {
+    background: `linear-gradient(135deg, ${RED} 0%, ${RED}dd 100%)`,
+    borderRadius: 24,
+    padding: "48px 64px",
+    boxShadow: `0 20px 60px ${RED}80`,
+    animation: "$scaleIn 0.3s ease-out",
+  },
+  "@keyframes scaleIn": {
     from: {
       opacity: 0,
-      transform: "translateY(-10px)",
+      transform: "scale(0.8)",
     },
     to: {
       opacity: 1,
-      transform: "translateY(0)",
+      transform: "scale(1)",
     },
   },
-  feedbackText: {
-    fontSize: 16,
-    fontWeight: 600,
+  feedbackModalContent: {
     textAlign: "center",
   },
-  summary: {
-    background: "white",
-    borderRadius: 24,
-    padding: 48,
-    boxShadow:
-      "0 14px 34px rgba(27, 18, 66, 0.18), 0 3px 10px rgba(0,0,0,0.08)",
-    textAlign: "center",
-    maxWidth: 500,
-    width: "100%",
-    "@media (prefers-color-scheme: dark)": {
-      background: "#1e1e1e",
-      boxShadow: "0 14px 34px rgba(0, 0, 0, 0.4), 0 3px 10px rgba(0,0,0,0.3)",
-    },
-  },
-  summaryTitle: {
-    fontSize: 28,
+  feedbackModalText: {
+    fontSize: 32,
     fontWeight: 700,
-    color: PURPLE,
-    marginBottom: 32,
-  },
-  scoreBox: {
-    background:
-      "linear-gradient(180deg, rgba(124,77,255,0.10) 0%, rgba(124,77,255,0.03) 100%)",
-    borderRadius: 16,
-    padding: 32,
-    marginBottom: 32,
-    border: "2px solid rgba(124,77,255,0.25)",
-    "@media (prefers-color-scheme: dark)": {
-      background:
-        "linear-gradient(180deg, rgba(124,77,255,0.20) 0%, rgba(124,77,255,0.08) 100%)",
-      border: "2px solid rgba(124,77,255,0.4)",
-    },
-  },
-  scoreText: {
-    fontSize: 16,
-    fontWeight: 600,
-    color: "rgba(0,0,0,0.62)",
-    marginBottom: 8,
-    "@media (prefers-color-scheme: dark)": {
-      color: "rgba(255,255,255,0.7)",
-    },
-  },
-  scoreNumber: {
-    fontSize: 56,
-    fontWeight: 700,
-    color: PURPLE,
-    marginBottom: 8,
-  },
-  scoreDetails: {
-    fontSize: 14,
-    color: "rgba(0,0,0,0.62)",
-    "@media (prefers-color-scheme: dark)": {
-      color: "rgba(255,255,255,0.7)",
-    },
-  },
-  summaryButtons: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 12,
-  },
-  summaryButton: {
-    background: PURPLE,
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: 600,
-    padding: "12px 24px",
-    borderRadius: 12,
-    boxShadow: "0 8px 18px rgba(124,77,255,0.28), 0 3px 8px rgba(0,0,0,0.12)",
-    "&:hover": {
-      background: PURPLE_DARK,
-      boxShadow:
-        "0 10px 22px rgba(124,77,255,0.34), 0 4px 10px rgba(0,0,0,0.14)",
-    },
-  },
-  summaryButtonOutlined: {
-    color: PURPLE,
-    borderColor: PURPLE,
-    fontSize: 16,
-    fontWeight: 600,
-    padding: "12px 24px",
-    borderRadius: 12,
-    "&:hover": {
-      borderColor: PURPLE_DARK,
-      background: "rgba(124,77,255,0.08)",
-    },
+    color: "#ffffff",
+    textShadow: "0 2px 8px rgba(0,0,0,0.2)",
   },
 });
