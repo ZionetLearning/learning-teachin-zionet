@@ -43,6 +43,7 @@ builder.Services.AddScoped<ISpeechService, SpeechService>();
 builder.Services.AddScoped<IStudentPracticeHistoryService, StudentPracticeHistoryService>();
 builder.Services.AddScoped<IWordCardService, WordCardService>();
 builder.Services.AddScoped<IMeetingService, MeetingService>();
+builder.Services.AddScoped<IAzureCommunicationService, AzureCommunicationService>();
 
 builder.Services.AddHttpClient("SpeechClient", client =>
 {

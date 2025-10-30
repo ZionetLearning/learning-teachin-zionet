@@ -19,7 +19,7 @@ public partial class AddMeetings : Migration
                 Attendees = table.Column<List<MeetingAttendee>>(type: "jsonb", nullable: false),
                 StartTimeUtc = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                 Status = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
-                GroupCallId = table.Column<Guid>(type: "uuid", nullable: false),
+                GroupCallId = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                 CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()"),
                 CreatedByUserId = table.Column<Guid>(type: "uuid", nullable: false)
             },

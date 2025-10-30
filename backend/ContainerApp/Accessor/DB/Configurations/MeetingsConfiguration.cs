@@ -25,6 +25,7 @@ public class MeetingsConfiguration : IEntityTypeConfiguration<MeetingModel>
             .IsRequired();
 
         builder.Property(m => m.GroupCallId)
+            .HasMaxLength(255)
             .IsRequired();
 
         builder.Property(m => m.CreatedOn)

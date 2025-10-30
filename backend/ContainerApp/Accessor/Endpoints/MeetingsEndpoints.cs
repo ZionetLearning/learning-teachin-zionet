@@ -22,6 +22,12 @@ public static class MeetingsEndpoints
         meetingsGroup.MapPost("", CreateMeetingAsync)
             .WithName("CreateMeeting");
 
+        meetingsGroup.MapPost("/{meetingId:guid}/token", GenerateTokenForMeetingAsync)
+            .WithName("GenerateTokenForMeeting");
+
+        meetingsGroup.MapPost("/identity/{userId:guid}", CreateOrGetIdentityAsync)
+            .WithName("CreateOrGetIdentity");
+
         meetingsGroup.MapPut("/{meetingId:guid}", UpdateMeetingAsync)
             .WithName("UpdateMeeting");
 
@@ -106,12 +112,6 @@ public static class MeetingsEndpoints
             return Results.BadRequest("Meeting must have at least one attendee.");
         }
 
-        if (request.GroupCallId == Guid.Empty)
-        {
-            logger.LogWarning("Invalid GroupCallId.");
-            return Results.BadRequest("Valid GroupCallId is required.");
-        }
-
         if (request.CreatedByUserId == Guid.Empty)
         {
             logger.LogWarning("Invalid CreatedByUserId.");
@@ -194,6 +194,84 @@ public static class MeetingsEndpoints
         {
             logger.LogError(ex, "Failed to delete meeting.");
             return Results.Problem("An error occurred while deleting the meeting.");
+        }
+    }
+
+    private static async Task<IResult> GenerateTokenForMeetingAsync(
+        [FromRoute] Guid meetingId,
+        [FromQuery] Guid userId,
+        [FromServices] IAzureCommunicationService acsService,
+        [FromServices] ILogger<MeetingsEndpointsLoggerMarker> logger,
+        CancellationToken ct)
+    {
+        using var scope = logger.BeginScope("Method: {Method}, MeetingId: {MeetingId}, UserId: {UserId}",
+            nameof(GenerateTokenForMeetingAsync), meetingId, userId);
+
+        if (meetingId == Guid.Empty)
+        {
+            logger.LogWarning("Invalid meeting ID provided: {MeetingId}", meetingId);
+            return Results.BadRequest("Invalid meeting ID.");
+        }
+
+        if (userId == Guid.Empty)
+        {
+            logger.LogWarning("Invalid user ID provided: {UserId}", userId);
+            return Results.BadRequest("Invalid user ID.");
+        }
+
+        try
+        {
+            var tokenResponse = await acsService.GenerateTokenForMeetingAsync(userId, meetingId, ct);
+            logger.LogInformation("Generated token for user {UserId} to join meeting {MeetingId}", userId, meetingId);
+            return Results.Ok(tokenResponse);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            logger.LogWarning(ex, "User {UserId} is not authorized to join meeting {MeetingId}", userId, meetingId);
+            return Results.Forbid();
+        }
+        catch (InvalidOperationException ex)
+        {
+            logger.LogWarning(ex, "Invalid operation: {Message}", ex.Message);
+            return Results.NotFound(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to generate token for meeting.");
+            return Results.Problem("An error occurred while generating the access token.");
+        }
+    }
+
+    private static async Task<IResult> CreateOrGetIdentityAsync(
+        [FromRoute] Guid userId,
+        [FromServices] IAzureCommunicationService acsService,
+        [FromServices] ILogger<MeetingsEndpointsLoggerMarker> logger,
+        CancellationToken ct)
+    {
+        using var scope = logger.BeginScope("Method: {Method}, UserId: {UserId}",
+            nameof(CreateOrGetIdentityAsync), userId);
+
+        if (userId == Guid.Empty)
+        {
+            logger.LogWarning("Invalid user ID provided: {UserId}", userId);
+            return Results.BadRequest("Invalid user ID.");
+        }
+
+        try
+        {
+            var identity = await acsService.CreateOrGetIdentityAsync(userId, ct);
+            logger.LogInformation("Retrieved ACS identity for user {UserId}: {AcsUserId}", userId, identity.AcsUserId);
+            return Results.Ok(identity);
+        }
+        catch (InvalidOperationException ex)
+        {
+            logger.LogWarning(ex, "Invalid operation: {Message}", ex.Message);
+            return Results.NotFound(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to create or get ACS identity.");
+            return Results.Problem("An error occurred while creating or getting the ACS identity.");
         }
     }
 }

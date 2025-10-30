@@ -9,11 +9,16 @@ public class MeetingService : IMeetingService
 {
     private readonly AccessorDbContext _db;
     private readonly ILogger<MeetingService> _logger;
+    private readonly IAzureCommunicationService _acsService;
 
-    public MeetingService(AccessorDbContext db, ILogger<MeetingService> logger)
+    public MeetingService(
+        AccessorDbContext db,
+        ILogger<MeetingService> logger,
+        IAzureCommunicationService acsService)
     {
         _db = db;
         _logger = logger;
+        _acsService = acsService;
     }
 
     public async Task<MeetingDto?> GetMeetingAsync(Guid meetingId, CancellationToken ct = default)
@@ -78,12 +83,25 @@ public class MeetingService : IMeetingService
 
         try
         {
+            // If GroupCallId is not provided, create a new ACS room
+            var groupCallId = request.GroupCallId;
+            if (string.IsNullOrWhiteSpace(groupCallId))
+            {
+                _logger.LogInformation("GroupCallId not provided, creating new ACS room");
+
+                // Set room validity: from start time to 2 hours after (default meeting duration)
+                var validFrom = request.StartTimeUtc;
+                var validUntil = request.StartTimeUtc.AddHours(2);
+
+                groupCallId = await _acsService.CreateRoomAsync(validFrom, validUntil, ct);
+            }
+
             var meeting = new MeetingModel
             {
                 Id = Guid.NewGuid(),
                 Attendees = request.Attendees,
                 StartTimeUtc = request.StartTimeUtc,
-                GroupCallId = request.GroupCallId,
+                GroupCallId = groupCallId,
                 Status = MeetingStatus.Scheduled,
                 CreatedOn = DateTimeOffset.UtcNow,
                 CreatedByUserId = request.CreatedByUserId
@@ -92,7 +110,8 @@ public class MeetingService : IMeetingService
             _db.Meetings.Add(meeting);
             await _db.SaveChangesAsync(ct);
 
-            _logger.LogInformation("CreateMeeting END: created meeting {MeetingId}", meeting.Id);
+            _logger.LogInformation("CreateMeeting END: created meeting {MeetingId} with ACS Room {GroupCallId}",
+                meeting.Id, groupCallId);
             return MapToDto(meeting);
         }
         catch (Exception ex)
@@ -132,11 +151,6 @@ public class MeetingService : IMeetingService
                 meeting.Status = request.Status.Value;
             }
 
-            if (request.GroupCallId.HasValue)
-            {
-                meeting.GroupCallId = request.GroupCallId.Value;
-            }
-
             await _db.SaveChangesAsync(ct);
 
             _logger.LogInformation("UpdateMeeting END: updated meeting {MeetingId}", meetingId);
@@ -161,6 +175,16 @@ public class MeetingService : IMeetingService
             {
                 _logger.LogWarning("Meeting not found for deletion (meetingId={MeetingId})", meetingId);
                 return false;
+            }
+
+            try
+            {
+                await _acsService.DeleteRoomAsync(meeting.GroupCallId, ct);
+                _logger.LogInformation("Deleted ACS room {GroupCallId} for meeting {MeetingId}", meeting.GroupCallId, meetingId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to delete ACS room {GroupCallId}, continuing with meeting deletion", meeting.GroupCallId);
             }
 
             _db.Meetings.Remove(meeting);

@@ -20,7 +20,8 @@ public class MeetingModel
     public MeetingStatus Status { get; set; } = MeetingStatus.Scheduled;
 
     [Required]
-    public Guid GroupCallId { get; set; }
+    [MaxLength(255)]
+    public required string GroupCallId { get; set; }
 
     [Required]
     public DateTimeOffset CreatedOn { get; set; } = DateTimeOffset.UtcNow;
