@@ -2,6 +2,9 @@
 
 public record CreatePromptRequest
 {
-    public string PromptKey { get; set; } = null!;
-    public string Content { get; set; } = null!;
+    public required string PromptKey { get; set; }
+    public required string Content { get; set; }
+    public string? CommitMessage { get; set; }
+    public string[]? Labels { get; set; }
+    public string[]? Tags { get; set; }
 }

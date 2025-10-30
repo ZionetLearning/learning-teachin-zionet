@@ -1,4 +1,5 @@
 ﻿using Engine.Models.Prompts;
+using Engine.Options;
 using Engine.Services.Clients.AccessorClient.Models;
 
 namespace Engine.Services.Clients.AccessorClient;
@@ -13,12 +14,10 @@ public interface IAccessorClient
 
     // Prompts
     Task<PromptResponse> CreatePromptAsync(CreatePromptRequest request, CancellationToken ct = default);
-    Task<PromptResponse?> GetPromptAsync(string promptKey, CancellationToken ct = default);
-    Task<IReadOnlyList<PromptResponse>> GetPromptVersionsAsync(string promptKey, CancellationToken ct = default);
-    Task<GetPromptsBatchResponse> GetPromptsBatchAsync(IEnumerable<string> promptKeys, CancellationToken ct = default);
+    Task<PromptResponse?> GetPromptAsync(PromptConfiguration config, CancellationToken ct = default);
+    Task<GetPromptsBatchResponse> GetPromptsBatchAsync(IEnumerable<PromptConfiguration> configs, CancellationToken ct = default);
 
     // User Interests
     Task<List<string>> GetUserInterestsAsync(Guid userId, CancellationToken ct);
-
 }
 
