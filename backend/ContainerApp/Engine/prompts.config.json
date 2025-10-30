@@ -6,7 +6,7 @@
         "Label": "production"
       },
       "SystemDefault": {
-        "Key": "prompts.system.default",
+        "Key": "chat.system.default",
         "Label": "production"
       },
       "FriendlyTone": {
