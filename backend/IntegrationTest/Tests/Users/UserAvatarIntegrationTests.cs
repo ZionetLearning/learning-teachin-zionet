@@ -31,6 +31,7 @@ public class UserAvatarIntegrationTests(
     public async Task UploadUrl_Should_Return_Sas_And_Path()
     {
         var user = await CreateUserAsync();
+        await ClientFixture.LoginAsync(Role.Admin); 
         var url = $"{ApiRoutes.AvatarUploadUrl(user.UserId)}";
 
         var req = new

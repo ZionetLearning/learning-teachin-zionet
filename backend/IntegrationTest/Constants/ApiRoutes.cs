@@ -27,7 +27,7 @@ public static class ApiRoutes
 
     public static string AvatarDelete(Guid userId)
         => $"users-manager/user/{userId}/avatar";
-
+    
     //---------Sentences--------
     public const string Sentences = "ai-manager/sentence";
     public const string SplitSentences = "ai-manager/sentence/split";

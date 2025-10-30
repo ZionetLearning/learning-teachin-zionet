@@ -19,7 +19,7 @@ public class UsersIntegrationTests(
     SignalRTestFixture signalRFixture
 ) : UsersTestBase(httpClientFixture, outputHelper, signalRFixture)
 {
-    [Fact(DisplayName = "POST users-manager/user - Duplicate email should return 409 Conflict")]
+    [Fact(DisplayName = "POST /users-manager/user - Duplicate email should return 409 Conflict")]
     public async Task CreateUser_DuplicateEmail_Should_Return_Conflict()
     {
         var email = $"dup_{Guid.NewGuid()}@test.com";
@@ -33,7 +33,7 @@ public class UsersIntegrationTests(
         r2.ShouldBeConflict();
     }
 
-    [Fact(DisplayName = "POST users-manager/user - Create user success (en)")]
+    [Fact(DisplayName = "POST /users-manager/user - Create user success (en)")]
     public async Task CreateUser_Success_En()
     {
         var user = TestDataHelper.CreateUser(role: "student");
@@ -43,7 +43,7 @@ public class UsersIntegrationTests(
         response.ShouldBeCreated();
     }
 
-    [Fact(DisplayName = "POST users-manager/user - Create user success (he)")]
+    [Fact(DisplayName = "POST /users-manager/user - Create user success (he)")]
     public async Task CreateUser_Success_He()
     {
         var user = TestDataHelper.CreateUser(role: "student");
@@ -53,7 +53,7 @@ public class UsersIntegrationTests(
         response.ShouldBeCreated();
     }
 
-    [Fact(DisplayName = "POST users-manager/user - Fallback on unsupported language")]
+    [Fact(DisplayName = "POST /users-manager/user - Fallback on unsupported language")]
     public async Task CreateUser_Fallback_UnsupportedLang()
     {
         var user = TestDataHelper.CreateUser();
@@ -67,7 +67,7 @@ public class UsersIntegrationTests(
         created!.PreferredLanguageCode.Should().Be(SupportedLanguage.en);
     }
 
-    [Fact(DisplayName = "POST users-manager/user - Invalid role should return 400")]
+    [Fact(DisplayName = "POST /users-manager/user - Invalid role should return 400")]
     public async Task CreateUser_InvalidRole()
     {
         var user = TestDataHelper.CreateUser(role: "alien");
@@ -76,7 +76,7 @@ public class UsersIntegrationTests(
         response.ShouldBeBadRequest();
     }
 
-    [Fact(DisplayName = "GET users-manager/user/{id} - With valid ID should return user")]
+    [Fact(DisplayName = "GET /users-manager/user/{id} - With valid ID should return user")]
     public async Task GetUser_By_Valid_Id_Should_Return_User()
     {
         var user = await CreateUserAsync();
@@ -89,7 +89,7 @@ public class UsersIntegrationTests(
         fetched.Email.Should().Be(user.Email);
     }
 
-    [Fact(DisplayName = "GET users-manager/user/{id} - With invalid ID should return 404")]
+    [Fact(DisplayName = "GET /users-manager/user/{id} - With invalid ID should return 404")]
     public async Task GetUser_By_Invalid_Id_Should_Return_NotFound()
     {
         // Create & login a user (to attach token)
@@ -101,7 +101,7 @@ public class UsersIntegrationTests(
         response.ShouldBeNotFound();
     }
 
-    [Fact(DisplayName = "PUT users-manager/user/{id} - Update language valid")]
+    [Fact(DisplayName = "PUT /users-manager/user/{id} - Update language valid")]
     public async Task UpdateUser_Language_Valid()
     {
         var user = await CreateUserAsync();
@@ -112,7 +112,7 @@ public class UsersIntegrationTests(
         response.ShouldBeOk();
     }
 
-    [Fact(DisplayName = "PUT users-manager/user/{id} - Invalid language should return 400")]
+    [Fact(DisplayName = "PUT /users-manager/user/{id} - Invalid language should return 400")]
     public async Task UpdateUser_Language_Invalid()
     {
         var user = await CreateUserAsync();
@@ -123,7 +123,7 @@ public class UsersIntegrationTests(
         response.ShouldBeBadRequest();
     }
 
-    [Fact(DisplayName = "PUT users-manager/user/{id} - Update HebrewLevel (student)")]
+    [Fact(DisplayName = "PUT /users-manager/user/{id} - Update HebrewLevel (student)")]
     public async Task UpdateUser_HebrewLevel_Student()
     {
         var user = await CreateUserAsync(role: "student");
@@ -134,7 +134,7 @@ public class UsersIntegrationTests(
         response.ShouldBeOk();
     }
 
-    [Fact(DisplayName = "PUT users-manager/user/{id} - Invalid HebrewLevel should return 400")]
+    [Fact(DisplayName = "PUT /users-manager/user/{id} - Invalid HebrewLevel should return 400")]
     public async Task UpdateUser_HebrewLevel_Invalid()
     {
         var user = await CreateUserAsync(role: "student");
@@ -145,7 +145,7 @@ public class UsersIntegrationTests(
         response.ShouldBeBadRequest();
     }
 
-    [Fact(DisplayName = "PUT users-manager/user/{id} - Non-student cannot set HebrewLevel")]
+    [Fact(DisplayName = "PUT /users-manager/user/{id} - Non-student cannot set HebrewLevel")]
     public async Task UpdateUser_HebrewLevel_NonStudent()
     {
         var user = await CreateUserAsync(role: "teacher");
@@ -156,7 +156,7 @@ public class UsersIntegrationTests(
         response.ShouldBeBadRequest();
     }
 
-    [Fact(DisplayName = "DELETE users-manager/user/{id} - With valid ID should delete user")]
+    [Fact(DisplayName = "DELETE /users-manager/user/{id} - With valid ID should delete user")]
     public async Task DeleteUser_Valid()
     {
         var user = await CreateUserAsync();
@@ -168,7 +168,7 @@ public class UsersIntegrationTests(
         getResponse.ShouldBeNotFound();
     }
 
-   [Fact(DisplayName = "GET users-manager/user-list - Should return all users")]
+   [Fact(DisplayName = "GET /users-manager/user-list - Should return all users")]
     public async Task GetAllUsers_Should_Return_List()
     {
         // Log in as Admin first
@@ -193,7 +193,7 @@ public class UsersIntegrationTests(
         users.Should().Contain(u => u.Email == u2.Email);
     }
 
-    [Fact(DisplayName = "PUT users-manager/user/{id} - admin user updates student role")]
+    [Fact(DisplayName = "PUT /users-manager/user/{id} - admin user updates student role")]
     public async Task UpdateUser_RoleChange_ByLoggedInAdmin_ShouldSucceed()
     {
         // Log in as Admin 
@@ -219,7 +219,7 @@ public class UsersIntegrationTests(
         updatedStudent!.Role.Should().Be(Role.Teacher);
     }
 
-    [Fact(DisplayName = "PUT users-manager/user/interests/{id} - Student can set their own interests")]
+    [Fact(DisplayName = "PUT /users-manager/user/interests/{id} - Student can set their own interests")]
     public async Task Student_Can_Set_Their_Own_Interests()
     {
         var student = await CreateUserAsync();
@@ -239,7 +239,7 @@ public class UsersIntegrationTests(
         data!.Interests.Should().BeEquivalentTo(update.Interests);
     }
 
-    [Fact(DisplayName = "PUT users-manager/user/interests/{id} - Admin can update student interests")]
+    [Fact(DisplayName = "PUT /users-manager/user/interests/{id} - Admin can update student interests")]
     public async Task Admin_Can_Set_Interests_For_Any_Student()
     {
         var admin = await CreateUserAsync(role: "admin");
@@ -263,7 +263,7 @@ public class UsersIntegrationTests(
         data!.Interests.Should().BeEquivalentTo(update.Interests);
     }
 
-    [Fact(DisplayName = "PUT users-manager/user/interests/{id} - Student cannot set another student’s interests")]
+    [Fact(DisplayName = "PUT /users-manager/user/interests/{id} - Student cannot set another student’s interests")]
     public async Task Student_Cannot_Update_Other_Student_Interests()
     {
         var _ = await CreateUserAsync();
