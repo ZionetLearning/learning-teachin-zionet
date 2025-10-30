@@ -5,7 +5,7 @@ import type { ChatMessage } from "../../hooks";
 import { renderWithBold } from "@student/utils";
 import avatar from "@student/assets/avatar.svg";
 import "react-chat-elements/dist/main.css";
-import { useStyles } from "./style";
+import { useStylesWithMode } from "./style";
 
 interface ReactChatElementsProps {
   messages: ChatMessage[] | undefined;
@@ -23,7 +23,7 @@ export const ReactChatElements = ({
   handleSendMessage,
 }: ReactChatElementsProps) => {
   const { t } = useTranslation();
-  const classes = useStyles();
+  const classes = useStylesWithMode();
   const avatarUrl = avatar;
   const listRef = useRef<HTMLDivElement | null>(null);
 
