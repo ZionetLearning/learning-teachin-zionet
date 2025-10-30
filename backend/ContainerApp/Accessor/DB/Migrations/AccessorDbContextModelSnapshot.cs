@@ -139,8 +139,10 @@ namespace Accessor.DB.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("NOW()");
 
-                    b.Property<Guid>("GroupCallId")
-                        .HasColumnType("uuid");
+                    b.Property<string>("GroupCallId")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<DateTimeOffset>("StartTimeUtc")
                         .HasColumnType("timestamp with time zone");

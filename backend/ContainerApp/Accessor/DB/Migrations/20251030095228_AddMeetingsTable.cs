@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Accessor.DB.Migrations;
 
 /// <inheritdoc />
-public partial class AddMeetings : Migration
+public partial class AddMeetingsTable : Migration
 {
     /// <inheritdoc />
     protected override void Up(MigrationBuilder migrationBuilder)
