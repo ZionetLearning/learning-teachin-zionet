@@ -1,11 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Typography, TextField, Stack, Box, Grid } from "@mui/material";
-import {
-  useUpdateUserByUserId,
-  toAppRole,
-  useThemeColors,
-} from "@app-providers";
+import { useUpdateUserByUserId, toAppRole } from "@app-providers";
 import {
   User,
   HebrewLevelValue,
@@ -15,8 +11,7 @@ import { useStyles } from "./style";
 import { Dropdown, Button, InterestChip } from "@ui-components";
 
 export const Profile = ({ user }: { user: User }) => {
-  const color = useThemeColors();
-  const classes = useStyles(color);
+  const classes = useStyles();
 
   const { t, i18n } = useTranslation();
   const isRTL = i18n.dir() === "rtl";

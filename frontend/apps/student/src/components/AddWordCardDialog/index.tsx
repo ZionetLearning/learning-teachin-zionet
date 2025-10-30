@@ -12,7 +12,6 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { useTranslation } from "react-i18next";
-import { useThemeColors } from "@app-providers";
 import { useCreateWordCard, type CreateWordCardRequest } from "../../api";
 import { useStyles } from "./style";
 
@@ -27,8 +26,7 @@ export const AddWordCardDialog = ({
   onClose,
   initialHebrew,
 }: AddWordCardDialogProps) => {
-  const color = useThemeColors();
-  const classes = useStyles(color);
+  const classes = useStyles();
   const { t } = useTranslation();
 
   const createCard = useCreateWordCard();

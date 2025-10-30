@@ -1,7 +1,6 @@
 import { ReactNode } from "react";
 import { Outlet } from "react-router-dom";
 import { Box, Container } from "@mui/material";
-import { useThemeColors } from "@app-providers";
 import { useStyles } from "./style";
 
 export interface SidebarMenuLayoutProps {
@@ -9,8 +8,7 @@ export interface SidebarMenuLayoutProps {
 }
 
 export const SidebarMenuLayout = ({ sidebarMenu }: SidebarMenuLayoutProps) => {
-  const color = useThemeColors();
-  const classes = useStyles(color);
+  const classes = useStyles();
 
   return (
     <Box className={classes.layout}>
