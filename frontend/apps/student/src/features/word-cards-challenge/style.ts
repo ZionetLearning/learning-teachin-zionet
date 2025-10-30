@@ -5,11 +5,12 @@ const { PURPLE, PURPLE_DARK, GREEN, RED } = COLORS;
 
 export const useStyles = createUseStyles({
   container: {
-    minHeight: "calc(100vh - 64px)",
+    minHeight: "100vh",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     padding: 24,
+    boxSizing: "border-box",
     background:
       "linear-gradient(180deg, rgba(124,77,255,0.08) 0%, rgba(124,77,255,0.02) 100%)",
     "@media (prefers-color-scheme: dark)": {
