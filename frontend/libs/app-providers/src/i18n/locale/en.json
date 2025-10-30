@@ -589,7 +589,11 @@
       "wordCards": "Word Cards",
       "myLearning": "My Learning",
       "sandbox": "Sandbox",
-      "onlineUsers": "Online Users"
+      "onlineUsers": "Online Users",
+      "appearance": "Appearance",
+      "lightMode": "Light Mode",
+      "darkMode": "Dark Mode",
+      "systemDefault": "System Default"
     },
     "errorBoundary": {
       "title": "Oops! Something went wrong",

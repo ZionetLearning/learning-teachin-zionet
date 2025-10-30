@@ -589,7 +589,11 @@
       "wordCards": "כרטיסיות מילים",
       "myLearning": "הלמידה שלי",
       "sandbox": "ארגז חול",
-      "onlineUsers": "משתמשים מקוונים"
+      "onlineUsers": "משתמשים מקוונים",
+      "appearance": "מראה",
+      "lightMode": "מצב בהיר",
+      "darkMode": "מצב כהה",
+      "systemDefault": "מצב מערכת"
     },
     "errorBoundary": {
       "title": "אופס! משהו השתבש",

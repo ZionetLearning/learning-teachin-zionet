@@ -6,6 +6,7 @@ import {
   SubMenu,
   sidebarClasses,
 } from "react-pro-sidebar";
+import { useTranslation } from "react-i18next";
 import { useThemeColors } from "@app-providers";
 import { useColorScheme } from "@mui/material/styles";
 import BrightnessAutoIcon from "@mui/icons-material/BrightnessAuto";
@@ -65,7 +66,7 @@ export const AppSidebar = ({
   const [collapsed, setCollapsed] = useState<boolean>(
     typeof window !== "undefined" ? window.innerWidth < 768 : false,
   );
-
+  const { t } = useTranslation();
   const { mode, setMode } = useColorScheme(); // 'light' | 'dark' | 'system'
   const color = useThemeColors();
 
@@ -238,14 +239,14 @@ export const AppSidebar = ({
           </SubMenu>
         ) : null}
 
-        <SubMenu label="Appearance" icon={<PaletteIcon />}>
+        <SubMenu label={t("sidebar.appearance")} icon={<PaletteIcon />}>
           <MenuItem
             icon={<BrightnessAutoIcon />}
             active={mode === "system"}
             onClick={() => setMode("system")}
             data-testid="sidebar-theme-system"
           >
-            System
+            {t("sidebar.systemDefault")}
           </MenuItem>
           <MenuItem
             icon={<LightModeIcon />}
@@ -253,7 +254,7 @@ export const AppSidebar = ({
             onClick={() => setMode("light")}
             data-testid="sidebar-theme-light"
           >
-            Light
+            {t("sidebar.lightMode")}
           </MenuItem>
           <MenuItem
             icon={<DarkModeIcon />}
@@ -261,7 +262,7 @@ export const AppSidebar = ({
             onClick={() => setMode("dark")}
             data-testid="sidebar-theme-dark"
           >
-            Dark
+            {t("sidebar.darkMode")}
           </MenuItem>
         </SubMenu>
 
