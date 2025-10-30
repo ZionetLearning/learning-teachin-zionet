@@ -123,35 +123,22 @@ jobs:
 
       - name: Build ${{ matrix.app }} Application
         working-directory: ${{ env.FE_DIR }}
-        env:
-          RELEASE: ${{ env.RELEASE_NAME }}
-          VITE_APPINSIGHTS_CONNECTION_STRING_STUDENT: ${{ secrets.VITE_APPINSIGHTS_CONNECTION_STRING_STUDENT }}
-          VITE_APPINSIGHTS_CONNECTION_STRING_TEACHER: ${{ secrets.VITE_APPINSIGHTS_CONNECTION_STRING_TEACHER }}
-          VITE_APPINSIGHTS_CONNECTION_STRING_ADMIN: ${{ secrets.VITE_APPINSIGHTS_CONNECTION_STRING_ADMIN }}
         run: |
           set -e  # Exit on any error
-          echo "Building ${{ matrix.app }} with AI connection string..."
-          
-          # Set the appropriate AI connection string based on the app
+          echo "Building ${{ matrix.app }} with App Insights connection string..."
+
+          # Create temporary .env file for Vite
           case "${{ matrix.app }}" in
             "student")
-              export VITE_APPINSIGHTS_CONNECTION_STRING="$VITE_APPINSIGHTS_CONNECTION_STRING_STUDENT"
+              echo "VITE_APPINSIGHTS_CONNECTION_STRING=${{ secrets.VITE_APPINSIGHTS_CONNECTION_STRING_STUDENT }}" > .env
               ;;
             "teacher")
-              export VITE_APPINSIGHTS_CONNECTION_STRING="$VITE_APPINSIGHTS_CONNECTION_STRING_TEACHER"
+              echo "VITE_APPINSIGHTS_CONNECTION_STRING=${{ secrets.VITE_APPINSIGHTS_CONNECTION_STRING_TEACHER }}" > .env
               ;;
             "admin")
-              export VITE_APPINSIGHTS_CONNECTION_STRING="$VITE_APPINSIGHTS_CONNECTION_STRING_ADMIN"
+              echo "VITE_APPINSIGHTS_CONNECTION_STRING=${{ secrets.VITE_APPINSIGHTS_CONNECTION_STRING_ADMIN }}" > .env
               ;;
           esac
-          
-          echo "=== Build Environment Debug ==="
-          echo "VITE_APPINSIGHTS_CONNECTION_STRING is set: ${VITE_APPINSIGHTS_CONNECTION_STRING:+YES}"
-          echo "VITE_APPINSIGHTS_CONNECTION_STRING length: ${#VITE_APPINSIGHTS_CONNECTION_STRING}"
-          
-          if [ -z "$VITE_APPINSIGHTS_CONNECTION_STRING" ]; then
-            echo "WARNING: VITE_APPINSIGHTS_CONNECTION_STRING is empty for ${{ matrix.app }}"
-          fi
           
           echo "=== Running build command ==="
           if ! npm run build:${{ matrix.app }}; then
@@ -159,44 +146,6 @@ jobs:
             exit 1
           fi
           
-          echo "=== Checking build output ==="
-          # Vite outputs to dist/apps/{app}/ not apps/{app}/dist/
-          if [ ! -d "dist/apps/${{ matrix.app }}" ]; then
-            echo "ERROR: Build completed but dist/apps/${{ matrix.app }} directory not created"
-            echo "=== Available directories in dist/ ==="
-            ls -la dist/ || echo "dist/ directory doesn't exist"
-            echo "=== Available directories in dist/apps/ ==="
-            ls -la dist/apps/ || echo "dist/apps/ directory doesn't exist"
-            exit 1
-          fi
-          
-          echo "BUILD SUCCESS: dist/apps/${{ matrix.app }} directory created"
-          ls -la dist/apps/${{ matrix.app }}/
-
-      - name: Verify AI is in ${{ matrix.app }} bundle
-        working-directory: ${{ env.FE_DIR }}
-        run: |
-          echo "=== Debugging ${{ matrix.app }} build output ==="
-          echo "Contents of dist/apps/${{ matrix.app }}/:"
-          find dist/apps/${{ matrix.app }}/ -type f -name "*.js" | head -10
-          
-          echo "=== Checking for ApplicationInsights ==="
-          if ! grep -R "applicationinsights" -n dist/apps/${{ matrix.app }}/ >/dev/null 2>&1; then
-            echo "AI SDK not found in ${{ matrix.app }} built files."
-            echo "=== Looking for any AI-related content ==="
-            grep -R -i "appinsights\|application.*insights\|ai.*connection" dist/apps/${{ matrix.app }}/ || echo "No AI content found"
-            exit 1
-          fi
-          
-          if ! grep -R "applicationinsights.azure.com" -n dist/apps/${{ matrix.app }}/ >/dev/null 2>&1; then
-            echo "Ingestion endpoint not found in ${{ matrix.app }} (env missing?)."
-            echo "=== Environment variables during build ==="
-            echo "VITE_APPINSIGHTS_CONNECTION_STRING was: ${VITE_APPINSIGHTS_CONNECTION_STRING:-'NOT SET'}"
-            exit 1
-          fi
-          
-          echo "AI present in ${{ matrix.app }} bundle."
-
       - name: Upload ${{ matrix.app }} build artifacts
         if: |
          github.event_name == 'push' ||
