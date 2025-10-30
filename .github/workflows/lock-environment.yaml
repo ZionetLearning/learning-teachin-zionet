@@ -148,8 +148,6 @@ jobs:
       - name: Send Teams notification
         if: success() && steps.lock-action.outputs.notification_needed == 'true'
         run: |
-          
-          
           echo "✅ Teams webhook configured, proceeding with notification..."
           
           USER="$GITHUB_ACTOR"
