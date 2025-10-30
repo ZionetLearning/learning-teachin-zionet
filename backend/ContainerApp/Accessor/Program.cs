@@ -140,8 +140,6 @@ using (var scope = app.Services.CreateScope())
 {
     var initializer = scope.ServiceProvider.GetRequiredService<DatabaseInitializer>();
     await initializer.InitializeAsync();
-    var promptStartup = scope.ServiceProvider.GetRequiredService<IPromptService>();
-    await promptStartup.InitializeDefaultPromptsAsync();
 }
 
 // Configure middleware and Dapr

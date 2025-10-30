@@ -32,9 +32,4 @@ public interface IPromptService
     /// Update labels for a specific prompt version in Langfuse
     /// </summary>
     Task<PromptResponse> UpdatePromptLabelsAsync(string promptKey, int version, UpdatePromptLabelsRequest request, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Initialize default prompts from configuration to Langfuse (if not already present)
-    /// </summary>
-    Task InitializeDefaultPromptsAsync();
 }

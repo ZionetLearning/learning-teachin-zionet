@@ -204,60 +204,6 @@ public class PromptService : IPromptService
         }
     }
 
-    public async Task InitializeDefaultPromptsAsync()
-    {
-        var defaults = _promptsOptions.Value.Defaults ?? new Dictionary<string, string>();
-
-        if (defaults.Count == 0)
-        {
-            _logger.LogInformation("No default prompts configured; skipping initialization");
-            return;
-        }
-
-        _logger.LogInformation("Initializing {Count} default prompts to Langfuse", defaults.Count);
-
-        var initialized = 0;
-        var skipped = 0;
-
-        foreach (var (key, content) in defaults)
-        {
-            try
-            {
-                // Check if prompt already exists in Langfuse
-                var existing = await _langfuseService.GetPromptAsync(key, version: null, label: "latest", CancellationToken.None);
-
-                if (existing != null)
-                {
-                    _logger.LogDebug("Prompt '{PromptKey}' already exists in Langfuse, skipping", key);
-                    skipped++;
-                    continue;
-                }
-
-                // Create the prompt in Langfuse
-                var request = new CreateLangfusePromptRequest
-                {
-                    Name = key,
-                    Prompt = content,
-                    Type = "text",
-                    CommitMessage = "Initialized from defaults",
-                    Labels = new[] { "production" },
-                    Tags = new[] { "default", "initialized" }
-                };
-
-                await _langfuseService.CreatePromptAsync(request, CancellationToken.None);
-                initialized++;
-                _logger.LogInformation("Initialized default prompt '{PromptKey}' in Langfuse", key);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to initialize default prompt '{PromptKey}' in Langfuse", key);
-            }
-        }
-
-        _logger.LogInformation("Default prompts initialization complete. Initialized: {Initialized}, Skipped: {Skipped}",
-            initialized, skipped);
-    }
-
     private PromptResponse? GetPromptFromDefaults(string promptKey)
     {
         var defaults = _promptsOptions.Value.Defaults;
