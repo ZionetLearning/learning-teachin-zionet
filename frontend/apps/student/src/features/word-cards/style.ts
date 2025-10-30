@@ -92,5 +92,34 @@ export const useStyles = () => {
         marginLeft: 0,
       },
     },
+    practiceBtn: {
+      color: color.primary,
+      borderColor: color.primary,
+      borderRadius: 12,
+      padding: "8px 16px",
+      fontWeight: 600,
+      "&:hover": {
+        borderColor: color.primaryDark,
+        background: "rgba(124,77,255,0.08)",
+      },
+      "& .MuiButton-startIcon": {
+        marginInlineEnd: 8,
+      },
+      "& .MuiButton-endIcon": {
+        marginInlineStart: 8,
+      },
+      "&[dir='rtl'] .MuiButton-startIcon": {
+        marginLeft: 8,
+        marginRight: 0,
+      },
+      "&[dir='rtl'] .MuiButton-endIcon": {
+        marginRight: 8,
+        marginLeft: 0,
+      },
+    },
+    actionButtons: {
+      display: "flex",
+      gap: 8,
+    },
   })();
 };

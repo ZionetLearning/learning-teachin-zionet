@@ -17,3 +17,4 @@ export * from "./ProfilePage";
 export * from "./PracticeMistakesPage";
 export * from "./PracticeHistoryPage";
 export * from "./WordCardsPage";
+export * from "./WordCardsChallengePage";
