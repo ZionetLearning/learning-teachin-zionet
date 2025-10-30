@@ -121,7 +121,7 @@ export const AddWordCardDialog = ({
               />
             </>
           ) : (
-            <>
+            <Box className={classes.wordPanel}>
               <TextField
                 label={t("pages.wordCards.hebrew")}
                 fullWidth
@@ -151,7 +151,7 @@ export const AddWordCardDialog = ({
                   }
                 }}
               />
-            </>
+            </Box>
           )}
         </Box>
       </DialogContent>

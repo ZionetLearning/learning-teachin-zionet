@@ -21,6 +21,15 @@ const theme = createTheme({
           default: "#f9f9fb",
           paper: "#ffffff",
         },
+        text: {
+          primary: "#1a1a1f",
+          secondary: "#5c5f6a",
+        },
+        divider: "rgba(0,0,0,0.12)",
+        action: {
+          hover: "rgba(0,0,0,0.04)",
+          selected: "rgba(0,0,0,0.08)",
+        },
       },
     },
     dark: {
@@ -38,6 +47,11 @@ const theme = createTheme({
         text: {
           primary: "#e8eaed",
           secondary: "#a1a6ad",
+        },
+        divider: "rgba(255,255,255,0.12)",
+        action: {
+          hover: "rgba(255,255,255,0.06)",
+          selected: "rgba(255,255,255,0.10)",
         },
       },
     },
