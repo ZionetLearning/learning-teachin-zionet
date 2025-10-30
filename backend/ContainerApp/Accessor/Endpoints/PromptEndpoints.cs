@@ -26,8 +26,6 @@ public static class PromptEndpoints
         [FromServices] ILogger<PromptService> logger,
         CancellationToken cancellationToken)
     {
-        using var scope = logger.BeginScope("Method: {Method}, PromptKey: {PromptKey}", nameof(CreatePromptAsync), request?.PromptKey);
-
         try
         {
             if (request is null ||
@@ -60,8 +58,6 @@ public static class PromptEndpoints
         [FromServices] ILogger<PromptService> logger,
         CancellationToken cancellationToken)
     {
-        using var scope = logger.BeginScope("Method: {Method}", nameof(GetAllPromptsAsync));
-
         try
         {
             var prompts = await promptService.GetAllPromptsAsync(cancellationToken);
@@ -83,9 +79,6 @@ public static class PromptEndpoints
         [FromServices] ILogger<PromptService> logger,
         CancellationToken cancellationToken)
     {
-        using var scope = logger.BeginScope("Method: {Method}, PromptKey: {PromptKey}, Version: {Version}, Label: {Label}",
-            nameof(GetPromptAsync), promptKey, version, label);
-
         try
         {
             var prompt = await promptService.GetPromptAsync(promptKey, version, label, cancellationToken);
@@ -111,8 +104,6 @@ public static class PromptEndpoints
         [FromServices] ILogger<PromptService> logger,
         CancellationToken cancellationToken)
     {
-        using var scope = logger.BeginScope("Method: {Method}", nameof(GetPromptsBatchAsync));
-
         try
         {
             if (request is null || request.Prompts is null || request.Prompts.Count == 0)
@@ -179,9 +170,6 @@ public static class PromptEndpoints
         [FromServices] ILogger<PromptService> logger,
         CancellationToken cancellationToken)
     {
-        using var scope = logger.BeginScope("Method: {Method}, PromptKey: {PromptKey}, Version: {Version}",
-            nameof(UpdatePromptLabelsAsync), promptKey, version);
-
         try
         {
             if (string.IsNullOrWhiteSpace(promptKey))
