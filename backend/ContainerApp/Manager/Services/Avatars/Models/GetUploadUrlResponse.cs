@@ -1,6 +1,6 @@
 ﻿namespace Manager.Services.Avatars.Models;
 
-public sealed class GetUploadUrlResponse
+public sealed class AvatarUploadUrlResponse
 {
     public string UploadUrl { get; set; } = default!;
     public string BlobPath { get; set; } = default!;

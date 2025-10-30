@@ -2,7 +2,7 @@
 
 namespace Manager.Services.Avatars;
 
-public interface IAvatarStorage
+public interface IAvatarStorageService
 {
     Task<(Uri uploadUrl, DateTimeOffset expiresAtUtc, string blobPath)> GetUploadSasAsync(Guid userId, string contentType, long? sizeBytes, CancellationToken ct);
 

@@ -7,15 +7,15 @@ using Microsoft.Extensions.Options;
 
 namespace Manager.Services.Avatars;
 
-public sealed class AzureBlobAvatarStorage : IAvatarStorage
+public sealed class AzureBlobAvatarStorageService : IAvatarStorageService
 {
     private readonly AvatarsOptions _options;
     private readonly BlobServiceClient? _svc;
     private readonly BlobContainerClient? _container;
-    private readonly ILogger<AzureBlobAvatarStorage> _log;
+    private readonly ILogger<AzureBlobAvatarStorageService> _log;
     private Exception? _initError;
 
-    public AzureBlobAvatarStorage(IOptions<AvatarsOptions> opt, ILogger<AzureBlobAvatarStorage> log)
+    public AzureBlobAvatarStorageService(IOptions<AvatarsOptions> opt, ILogger<AzureBlobAvatarStorageService> log)
     {
         _options = opt.Value;
         _log = log;

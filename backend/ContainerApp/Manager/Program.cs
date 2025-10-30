@@ -157,7 +157,7 @@ builder.Services
   .AddOptions<AvatarsOptions>()
   .Bind(builder.Configuration.GetSection(AvatarsOptions.SectionName));
 
-builder.Services.AddSingleton<IAvatarStorage, AzureBlobAvatarStorage>();
+builder.Services.AddSingleton<IAvatarStorageService, AzureBlobAvatarStorageService>();
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 

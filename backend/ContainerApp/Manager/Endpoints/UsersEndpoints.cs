@@ -39,6 +39,10 @@ public static class UsersEndpoints
             .WithName("GetUploadAvatarUrl")
             .RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
 
+        usersGroup.MapPost("/user/{userId:guid}/avatar", GetUploadAvatarUrlAsync)
+    .WithName("Avatar_RequestUploadUrl")
+    .RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
+
         usersGroup.MapPost("/user/{userId:guid}/avatar/confirm", ConfirmAvatarAsync)
     .WithName("ConfirmAvatar")
     .RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
@@ -560,7 +564,7 @@ public static class UsersEndpoints
     private static async Task<IResult> GetUploadAvatarUrlAsync(
      [FromRoute] Guid userId,
      [FromBody] GetUploadUrlRequest req,
-     [FromServices] IAvatarStorage storage,
+     [FromServices] IAvatarStorageService storage,
      [FromServices] IOptions<AvatarsOptions> opt,
      [FromServices] ILogger<UserEndpoint> logger,
      HttpContext http,
@@ -582,7 +586,7 @@ public static class UsersEndpoints
 
             logger.LogInformation("Generated upload SAS: blobPath={BlobPath}, expiresAt={Expires}", blobPath, exp);
 
-            return Results.Ok(new GetUploadUrlResponse
+            return Results.Ok(new AvatarUploadUrlResponse
             {
                 UploadUrl = url.ToString(),
                 BlobPath = blobPath,
@@ -611,7 +615,7 @@ public static class UsersEndpoints
     private static async Task<IResult> ConfirmAvatarAsync(
         [FromRoute] Guid userId,
         [FromBody] ConfirmAvatarRequest req,
-        [FromServices] IAvatarStorage storage,
+        [FromServices] IAvatarStorageService storage,
         [FromServices] IAccessorClient accessorClient,
         [FromServices] IOptions<AvatarsOptions> opt,
         [FromServices] ILogger<UserEndpoint> log,
@@ -739,7 +743,7 @@ public static class UsersEndpoints
     private static async Task<IResult> DeleteAvatarAsync(
         [FromRoute] Guid userId,
         [FromServices] IAccessorClient accessorClient,
-        [FromServices] IAvatarStorage storage,
+        [FromServices] IAvatarStorageService storage,
         [FromServices] ILogger<UserEndpoint> log,
         HttpContext http,
         CancellationToken ct)
@@ -796,7 +800,7 @@ public static class UsersEndpoints
     private static async Task<IResult> GetAvatarReadUrlAsync(
         [FromRoute] Guid userId,
         [FromServices] IAccessorClient accessorClient,
-        [FromServices] IAvatarStorage storage,
+        [FromServices] IAvatarStorageService storage,
         [FromServices] IOptions<AvatarsOptions> opt,
         [FromServices] ILogger<UserEndpoint> log,
         HttpContext http,
