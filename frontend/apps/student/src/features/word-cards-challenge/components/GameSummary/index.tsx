@@ -21,10 +21,10 @@ export const GameSummary = ({
   const classes = useStyles();
   const { t } = useTranslation();
 
-  const percentage = useMemo(() => {
-    if (totalCards === 0) return 0;
-    return Math.round((correctCount / totalCards) * 100);
-  }, [correctCount, totalCards]);
+  const percentage = useMemo(
+    () => Math.round((correctCount / totalCards) * 100),
+    [correctCount, totalCards],
+  );
 
   return (
     <Box className={classes.container}>

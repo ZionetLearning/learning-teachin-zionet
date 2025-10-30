@@ -91,6 +91,10 @@ export const WordCardsChallenge = () => {
       setCorrectCount((prev) => prev + 1);
     }
 
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
     timeoutRef.current = setTimeout(() => {
       if (currentIndex + 1 >= shuffledCards.length) {
         setGameState("summary");
