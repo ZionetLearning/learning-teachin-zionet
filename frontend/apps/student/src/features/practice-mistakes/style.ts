@@ -112,13 +112,10 @@ export const useStyles = () => {
       bottom: 0,
       left: 0,
       right: 0,
-      background: color.paper,
+      backgroundColor: color.paper,
+      color: color.text,
       borderTop: `1px solid ${color.divider}`,
       backdropFilter: "blur(6px)",
-      boxShadow: "0 -6px 18px rgba(0,0,0,0.4)",
-      padding: "8px 16px",
-      display: "flex",
-      justifyContent: "center",
     },
 
     retryButton: {

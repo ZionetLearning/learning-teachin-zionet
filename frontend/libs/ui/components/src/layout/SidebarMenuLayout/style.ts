@@ -14,7 +14,7 @@ export const useStyles = () => {
       position: "relative",
       overflowY: "auto",
       overflowX: "hidden",
-      backgroundColor: color.paper,
+      backgroundColor: color.bg,
       color: color.text,
     },
   })();
