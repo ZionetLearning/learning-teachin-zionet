@@ -82,7 +82,6 @@ const theme = createTheme({
     },
     MuiSelect: {
       styleOverrides: {
-        // make inner area transparent so the root bg shows uniformly
         select: {
           backgroundColor: "transparent",
         },
