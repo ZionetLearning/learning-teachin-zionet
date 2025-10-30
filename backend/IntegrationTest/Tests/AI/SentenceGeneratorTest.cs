@@ -112,5 +112,35 @@ namespace IntegrationTests.Tests.AI
             });
 
         }
+
+
+
+        [Theory]
+        [InlineData(1, Difficulty.easy, false)]
+        [InlineData(2, Difficulty.medium, true)]
+        [InlineData(3, Difficulty.hard, false)] 
+        public async Task LlmModelsTest(int count, Difficulty difficulty, bool nikud)
+        {
+            var request = new SentenceRequest
+            {
+                UserId = Guid.NewGuid(),
+                Difficulty = difficulty,
+                Nikud = nikud,
+                Count = count
+            };
+
+            await _shared.EnsureSignalRStartedAsync(SignalRFixture, OutputHelper);
+            SignalRFixture.ClearReceivedMessages();
+
+            OutputHelper.WriteLine($"Generating sentences");
+
+            var response = await PostAsJsonAsync(ApiRoutes.Sentences, request);
+            response.EnsureSuccessStatusCode();
+        }
+
+
+
+
+
     }
 }

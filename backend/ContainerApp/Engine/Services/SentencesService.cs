@@ -1,8 +1,12 @@
-﻿using System.Security.Cryptography;
+﻿using System.Diagnostics;
+using System.Security.Cryptography;
 using System.Text.Json;
-using DotQueue;
+//using System.Text.Json;
+//using DotQueue;
 using Engine.Models.Sentences;
 using Microsoft.SemanticKernel;
+//using OpenAI.Chat;
+//using Microsoft.SemanticKernel.ChatCompletion;
 //using Microsoft.SemanticKernel.ChatCompletion;
 //using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
 
@@ -21,14 +25,24 @@ public class SentencesService : ISentencesService
     private readonly Lazy<string[]> _easyWords;
     private readonly Lazy<string[]> _mediumWords;
     private readonly Lazy<string[]> _hardWords;
+    private readonly JsonSerializerOptions settings = new JsonSerializerOptions
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
+    private static readonly JsonSerializerOptions _prettyJsonOptions = new()
+    {
+        WriteIndented = true,
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+
+    };
 
     //public SentencesService([FromKeyedServices("gen")] Kernel genKernel, ILogger<SentencesService> log)
-    public SentencesService(Kernel claudeKernel, ILogger<SentencesService> log)
+    public SentencesService(Kernel kernel, ILogger<SentencesService> log)
 
     {
-        _genKernel = claudeKernel;
+        _genKernel = kernel;
         _log = log;
-
         _easyWords = new(() => LoadList(EasyPath));
         _mediumWords = new(() => LoadList(MediumPath));
         _hardWords = new(() => LoadList(HardPath));
@@ -38,69 +52,84 @@ public class SentencesService : ISentencesService
     {
         _log.LogInformation("Inside sentence generator service");
 
-        var func = _genKernel.Plugins["Sentences"]["Generate"];
-
-        //var chat = _genKernel.GetRequiredService<IChatCompletionService>();
-        //var reply = await chat.GetChatMessageContentAsync("Say hi from Claude!", cancellationToken: ct);
-        //_log.LogInformation("Claude test reply: {Reply}", reply.Content);
-
-        //var exec = new AzureOpenAIPromptExecutionSettings
-        //{
-        //    Temperature = 0.3,
-        //    ResponseFormat = typeof(SentenceResponse)
-        //};
-        var exec = new PromptExecutionSettings
-        {
-            // provider-agnostic bag; Bedrock/Claude will read these if supported
-            ExtensionData = new Dictionary<string, object>
-            {
-                ["temperature"] = 0.3,
-                ["max_tokens_to_sample"] = 512
-            }
-        };
-
         var difficulty = req.Difficulty.ToString().ToLowerInvariant();
         var hints = GetRandomHints(difficulty, 3);
         var hintsStr = string.Join(", ", hints);
 
-        var args = new KernelArguments(exec)
+        var args = new KernelArguments
         {
             ["difficulty"] = difficulty,
             ["nikud"] = req.Nikud.ToString().ToLowerInvariant(),
             ["count"] = req.Count.ToString(System.Globalization.CultureInfo.InvariantCulture),
-            ["hints"] = hintsStr
+            ["hints"] = hintsStr,
+            ["interest"] = string.Empty
         };
 
-        // Add user interest with 50% probability
-        if (userInterests != null && userInterests.Count > 0 && Random.Shared.NextDouble() < 0.5)
+        // Add user interest with 50% chance
+        if (userInterests?.Count > 0 && Random.Shared.NextDouble() < 0.5)
         {
-            var selectedInterest = userInterests[Random.Shared.Next(userInterests.Count)];
-            args["interest"] = selectedInterest;
-            _log.LogInformation("Injecting user interest into sentence generation: {Interest}", selectedInterest);
-        }
-        else
-        {
-            // Ensure no stale variable exists
-            args["interest"] = string.Empty;
+            var interest = userInterests[Random.Shared.Next(userInterests.Count)];
+            args["interest"] = interest;
+            _log.LogInformation("Injecting interest: {Interest}", interest);
         }
 
-        var result = await _genKernel.InvokeAsync(func, args, ct);
-        var json = result.GetValue<string>();
+        // Compare across models
+        var services = new[] {
+            "gpt"
+            , "claude"
+            ,
+            "phi"
+        };
+        var comparison = new SentenceComparisonResponse();
 
-        if (json is null)
+        foreach (var serviceId in services)
         {
-            _log.LogError("Error while generating sentences. The response is empty");
-            throw new RetryableException("Error while generating sentences. The response is empty");
+            var sw = Stopwatch.StartNew();
+
+            try
+            {
+                var result = await RunPluginAsync(_genKernel, serviceId, "Sentences", "Generate", args, ct);
+                sw.Stop();
+
+                var res = new ModelResult
+                {
+                    Provider = serviceId,
+                    Latency = sw.Elapsed,
+                    Response = result
+                };
+
+                comparison.Results.Add(res);
+
+                _log.LogInformation("Model: {Provider} | Latency: {Latency}ms | Sentence count: {Count}",
+                    res.Provider,
+                    res.Latency.TotalMilliseconds,
+                    res.Response?.Sentences?.Count ?? 0);
+
+                var index = 1;
+                foreach (var s in res.Response!.Sentences!)
+                {
+                    _log.LogInformation("Sentence {Index}: {Sentence}", index++, s.Text);
+                }
+            }
+            catch (Exception ex)
+            {
+                sw.Stop();
+                _log.LogError(ex, "{Provider} failed during sentence generation", serviceId);
+
+                comparison.Results.Add(new ModelResult
+                {
+                    Provider = serviceId,
+                    Latency = sw.Elapsed,
+                    Response = null
+                });
+            }
         }
 
-        var parsed = JsonSerializer.Deserialize<SentenceResponse>(json);
-        if (parsed is null)
-        {
-            _log.LogError("Error while generating sentences. The response is empty or invalid JSON");
-            throw new RetryableException("Error while generating sentences. The response is empty or invalid JSON");
-        }
+        SaveComparisonToFile(comparison);
 
-        return parsed;
+        _log.LogInformation("Completed sentence generation comparison");
+
+        return new SentenceResponse { Sentences = [] };
     }
 
     private string[] GetRandomHints(string difficulty, int count)
@@ -152,6 +181,95 @@ public class SentencesService : ISentencesService
         {
             _log.LogError(ex, "Exception while reading hints file: {Path}", path);
             return Array.Empty<string>();
+        }
+    }
+
+    private async Task<SentenceResponse?> RunPluginAsync(
+    Kernel kernel,
+    string serviceId,
+    string pluginName,
+    string functionName,
+    KernelArguments args,
+    CancellationToken ct = default)
+    {
+        var execSettings = new PromptExecutionSettings
+        {
+            ServiceId = serviceId,
+            ExtensionData = new Dictionary<string, object>
+            {
+                ["temperature"] = 0.3,
+                ["max_tokens_to_sample"] = 512
+            }
+        };
+
+        var scopedArgs = new KernelArguments(execSettings);
+
+        foreach (var kvp in args)
+        {
+            scopedArgs[kvp.Key] = kvp.Value;
+        }
+
+        var func = kernel.Plugins[pluginName][functionName];
+        var result = await kernel.InvokeAsync(func, scopedArgs, ct);
+        var json = result.GetValue<string>();
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            _log.LogWarning("Received empty response from plugin {Plugin}.{Function}", pluginName, functionName);
+            return null;
+        }
+
+        var sanitizeJson = SanitizeJson(json);
+
+        var parsedResult = JsonSerializer.Deserialize<SentenceResponse>(
+            sanitizeJson, settings
+        );
+        return parsedResult;
+
+    }
+
+    private static string SanitizeJson(string raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return string.Empty;
+        }
+
+        raw = raw.Trim();
+
+        // Remove ```json ... ``` or ``` ... ``` Markdown blocks
+        if (raw.StartsWith("```"))
+        {
+            var start = raw.IndexOf('\n');
+            var end = raw.LastIndexOf("```");
+
+            if (start >= 0 && end > start)
+            {
+                raw = raw.Substring(start + 1, end - start - 1).Trim();
+            }
+        }
+
+        return raw;
+    }
+
+    private void SaveComparisonToFile(SentenceComparisonResponse comparison)
+    {
+        try
+        {
+            var folder = Path.Combine(AppContext.BaseDirectory, "ModelLogs");
+            Directory.CreateDirectory(folder);
+
+            var fileName = $"comparison_{DateTime.UtcNow:yyyyMMdd_HHmmss_fff}.json";
+            var filePath = Path.Combine(folder, fileName);
+
+            var json = JsonSerializer.Serialize(comparison, _prettyJsonOptions);
+
+            File.WriteAllText(filePath, json);
+
+            _log.LogInformation("Saved model comparison to file: {FilePath}", filePath);
+        }
+        catch (Exception ex)
+        {
+            _log.LogError(ex, "Failed to save model comparison to file.");
         }
     }
 }

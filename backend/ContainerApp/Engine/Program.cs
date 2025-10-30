@@ -15,6 +15,7 @@ using Engine.Services.Clients.AccessorClient;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
+
 DotEnv.Load();
 
 var builder = WebApplication.CreateBuilder(args);
@@ -62,80 +63,70 @@ builder.Services
         !string.IsNullOrWhiteSpace(s.DeploymentName),
         "Azure OpenAI settings are incomplete");
 
+// Azure OpenAI Semantic Kernel with Plugins
 builder.Services.AddSingleton(sp =>
 {
-    //var cfg = sp.GetRequiredService<IOptions<AzureOpenAiSettings>>().Value;
-
-    //var kernel = Kernel.CreateBuilder()
-    //             .AddAzureOpenAIChatCompletion(
-    //                 deploymentName: cfg.DeploymentName,
-    //                 endpoint: cfg.Endpoint,
-    //                 apiKey: cfg.ApiKey)
-    //             .Build();
+    var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("KernelPluginRegistration");
 
     try
     {
-        var config = builder.Configuration.GetSection("Claude");
-        //var apiKey = config["ApiKey"];
-        var model = config["ModelId"];
-        var bedrockRuntime = new AmazonBedrockRuntimeClient(); // AWS creds are loaded from .env
+        var azureCfg = sp.GetRequiredService<IOptions<AzureOpenAiSettings>>().Value;
+        var claudeCfg = builder.Configuration.GetSection("Claude");
+        var phiCfg = builder.Configuration.GetSection("Phi-4");
+        if (claudeCfg is null || phiCfg is null)
+        {
+            throw new InvalidOperationException("Claude or Phi-4 configuration section is missing.");
+        }
 
-#pragma warning disable SKEXP0070
         var kb = Kernel.CreateBuilder()
+            // GPT-4.1-mini
+            .AddAzureOpenAIChatCompletion(
+                deploymentName: azureCfg.DeploymentName,
+                endpoint: azureCfg.Endpoint,
+                apiKey: azureCfg.ApiKey,
+                serviceId: "gpt")
+            // Claude-3-haiku
             .AddBedrockChatCompletionService(
-                modelId: "anthropic.claude-3-haiku-20240307-v1:0",
-                bedrockRuntime: bedrockRuntime,
-                serviceId: "claude");
+                modelId: claudeCfg["ModelId"]!,
+                bedrockRuntime: new AmazonBedrockRuntimeClient(),
+                serviceId: "claude")
+            // Phi-4
+            .AddAzureOpenAIChatCompletion(
+            deploymentName: phiCfg["DeploymentName"]!,
+            endpoint: phiCfg["Endpoint"]!,
+            apiKey: phiCfg["ApiKey"]!,
+            serviceId: "phi");
 
-        //var logger = sp.GetRequiredService<ILoggerFactory>()
-        //.CreateLogger("KernelPluginRegistration");
-        //foreach (var plugin in sp.GetServices<ISemanticKernelPlugin>())
-        //{
-        //    try
-        //    {
-        //        var pluginName = plugin.GetType().ToPluginName();
-        //        kernel.Plugins.AddFromObject(plugin, pluginName);
-        //        logger.LogInformation("Plugin {Name} registered.", pluginName);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        logger.LogError(ex,
-        //            "Failed to register plugin {PluginType}", plugin.GetType().FullName);
-
-        //    }
-        //}
-
-        var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("KernelPluginRegistration");
-
-        var baseDir = Path.Combine(AppContext.BaseDirectory, "Plugins", "Sentences");
-
-        if (!Directory.Exists(baseDir))
-        {
-            logger.LogWarning("Plugins directory not found: {Dir}", baseDir);
-        }
-        else
-        {
-            try
-            {
-                kb.Plugins.AddFromPromptDirectory(baseDir, "Sentences");
-                logger.LogInformation("Loaded SK plugin 'Sentences' from {Dir}", baseDir);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Failed to load SK plugin from {Dir}", baseDir);
-            }
-        }
-
-        var kernel = kb.Build();
-        return kernel;
+        LoadPlugins(kb, logger);
+        return kb.Build();
     }
     catch (Exception)
     {
-        var logger = sp.GetRequiredService<ILoggerFactory>();
-        logger.CreateLogger("KernelPluginRegistration").LogInformation("faill!!!!!!!!!!!!!!!!!!!!!!!!!!.");
+        logger.LogWarning("Failed to create Semantic Kernel instance.");
         throw;
     }
 });
+
+static void LoadPlugins(IKernelBuilder kb, ILogger logger)
+{
+    var baseDir = Path.Combine(AppContext.BaseDirectory, "Plugins", "Sentences");
+
+    if (!Directory.Exists(baseDir))
+    {
+        logger.LogWarning("Plugins directory not found: {Dir}", baseDir);
+        return;
+    }
+
+    try
+    {
+        kb.Plugins.AddFromPromptDirectory(baseDir, "Sentences");
+        logger.LogInformation("Loaded plugin 'Sentences' from {Dir}", baseDir);
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Failed to load plugin from {Dir}", baseDir);
+    }
+}
 
 builder.Services.AddKeyedSingleton("gen", (sp, key) =>
 {
