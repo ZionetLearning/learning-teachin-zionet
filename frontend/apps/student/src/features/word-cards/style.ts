@@ -108,4 +108,8 @@ export const useStyles = createUseStyles({
     gap: "15px",
     padding: "2%",
   },
+  actionButtons: {
+    display: "flex",
+    gap: 8,
+  },
 });

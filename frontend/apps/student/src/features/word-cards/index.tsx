@@ -62,7 +62,7 @@ export const WordCards = () => {
             }
             label={t("pages.wordCards.hideLearnedWords")}
           />
-          <Box sx={{ display: "flex", gap: 1 }}>
+          <Box className={classes.actionButtons}>
             {(data?.length ?? 0) > 0 && (
               <Button
                 variant="outlined"
