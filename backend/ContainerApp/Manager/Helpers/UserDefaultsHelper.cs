@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Manager.Constants;
 using Manager.Models.Users;
 
 namespace Manager.Helpers;
@@ -11,11 +13,15 @@ public static class UserDefaultsHelper
     public static SupportedLanguage ParsePreferredLanguage(string? header)
     {
         if (string.IsNullOrWhiteSpace(header))
+        {
             return SupportedLanguage.en;
+        }
 
         var first = header.Split(',').FirstOrDefault();
         if (string.IsNullOrWhiteSpace(first))
+        {
             return SupportedLanguage.en;
+        }
 
         // Handle values like "he-IL;q=0.9"
         var lang = first.Split('-')[0].Split(';')[0].ToLowerInvariant();
@@ -34,5 +40,23 @@ public static class UserDefaultsHelper
         return role == Role.Student
             ? HebrewLevel.beginner
             : null;
+    }
+
+    /// <summary>
+    /// Checks whether the current user is authorized to perform an action on the specified user.
+    /// Returns true if the caller is either an administrator or the same user as the routeUserId.
+    /// </summary>
+    public static bool IsSelfOrAdmin(HttpContext http, Guid routeUserId)
+    {
+        var callerRole = http.User.FindFirstValue(AuthSettings.RoleClaimType);
+        var callerIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
+
+        if (!Guid.TryParse(callerIdRaw, out var callerId))
+        {
+            return false;
+        }
+
+        var isAdmin = string.Equals(callerRole, Role.Admin.ToString(), StringComparison.OrdinalIgnoreCase);
+        return isAdmin || callerId == routeUserId;
     }
 }

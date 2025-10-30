@@ -263,7 +263,7 @@ public class UsersIntegrationTests(
         data!.Interests.Should().BeEquivalentTo(update.Interests);
     }
 
-    [Fact(DisplayName = "PUT /users-manager/user/interests/{id} - Student cannot set another student's interests")]
+    [Fact(DisplayName = "PUT /users-manager/user/interests/{id} - Student cannot set another student’s interests")]
     public async Task Student_Cannot_Update_Other_Student_Interests()
     {
         var _ = await CreateUserAsync();
