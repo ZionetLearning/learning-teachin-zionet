@@ -243,18 +243,23 @@ export const WordCardsChallenge = () => {
         }}
       >
         <Box className={classes.feedbackModalContent}>
-          <Typography
-            className={classes.feedbackModalText}
-            dir={mode === "heb-to-eng" ? "ltr" : "rtl"}
-          >
-            {feedback === "correct"
-              ? t("pages.wordCardsChallenge.correct")
-              : feedback === "wrong"
-                ? t("pages.wordCardsChallenge.wrong", {
-                    answer: displayedCorrectAnswer,
-                  })
-                : ""}
-          </Typography>
+          {feedback === "correct" ? (
+            <Typography className={classes.feedbackModalText}>
+              {t("pages.wordCardsChallenge.correct")}
+            </Typography>
+          ) : feedback === "wrong" ? (
+            <Box>
+              <Typography className={classes.feedbackModalText}>
+                {t("pages.wordCardsChallenge.wrongLabel")}
+              </Typography>
+              <Typography
+                className={classes.feedbackModalText}
+                dir={mode === "eng-to-heb" ? "rtl" : "ltr"}
+              >
+                {displayedCorrectAnswer}
+              </Typography>
+            </Box>
+          ) : null}
         </Box>
       </Dialog>
     </Box>

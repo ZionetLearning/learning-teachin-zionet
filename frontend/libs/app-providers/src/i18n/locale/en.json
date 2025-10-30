@@ -551,7 +551,7 @@
         "typeYourAnswer": "Type your answer...",
         "submit": "Submit",
         "correct": "✅ Correct!",
-        "wrong": "❌ Wrong. Correct answer: {{answer}}",
+        "wrongLabel": "❌ Wrong. Correct answer:",
         "gameComplete": "Game Complete!",
         "yourScore": "Your Score",
         "correctAnswers": "{{correct}} out of {{total}} correct",

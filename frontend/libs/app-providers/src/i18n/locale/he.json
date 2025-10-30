@@ -551,7 +551,7 @@
         "typeYourAnswer": "הקלד את התשובה שלך...",
         "submit": "שלח",
         "correct": "✅ נכון!",
-        "wrong": "❌ לא נכון. התשובה הנכונה: {{answer}}",
+        "wrongLabel": "❌ לא נכון. התשובה הנכונה:",
         "gameComplete": "המשחק הסתיים!",
         "yourScore": "הציון שלך",
         "correctAnswers": "{{correct}} מתוך {{total}} נכונות",
