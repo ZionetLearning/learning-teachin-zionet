@@ -139,25 +139,73 @@ export const AppSidebar = ({
     >
       <Menu
         menuItemStyles={{
-          button: ({ active }) => ({
+          button: ({ active, open, level }) => ({
             color: active ? color.primaryContrast : color.text,
-            backgroundColor: active ? color.primary : "transparent",
+            backgroundColor: active
+              ? color.primary
+              : open && level === 0
+                ? `rgba(var(${color.primaryMainChannel}) / 0.12)`
+                : "transparent",
             borderRadius: "8px",
             margin: "4px 8px",
             padding: "10px",
+            border:
+              open && level === 0
+                ? `1px solid rgba(var(${color.primaryMainChannel}) / 0.35)`
+                : "1px solid transparent",
+
             "& .ps-menu-icon": {
-              color: active ? color.primaryContrast : color.primary,
+              color: active
+                ? color.primaryContrast
+                : open && level === 0
+                  ? color.primary
+                  : color.primary,
             },
+
             "&:hover": {
-              backgroundColor: active ? color.primaryDark : color.hover,
+              backgroundColor: active
+                ? color.primaryDark
+                : open && level === 0
+                  ? `rgba(var(${color.primaryMainChannel}) / 0.18)`
+                  : color.hover,
               color: active ? color.primaryContrast : color.text,
             },
+
             textTransform: "capitalize",
           }),
-          label: { textAlign: dir === "rtl" ? "right" : "left" },
-          subMenuContent: {
-            backgroundColor: color.bg,
+
+          label: {
+            textAlign: dir === "rtl" ? "right" : "left",
           },
+
+          subMenuContent: ({ open }) =>
+            open
+              ? {
+                  backgroundColor:
+                    mode === "dark"
+                      ? "rgba(255,255,255,0.03)"
+                      : "rgba(255,255,255,0.06)",
+                  margin: "0 8px 4px 8px",
+                  borderRadius: 8,
+                  padding: "4px 0",
+                  border: `1px solid ${color.divider}`,
+                  borderLeft:
+                    dir === "ltr"
+                      ? `3px solid rgba(var(${color.primaryMainChannel}) / 0.6)`
+                      : undefined,
+                  borderRight:
+                    dir === "rtl"
+                      ? `3px solid rgba(var(${color.primaryMainChannel}) / 0.6)`
+                      : undefined,
+                }
+              : {
+                  backgroundColor: "transparent",
+                  margin: 0,
+                  padding: 0,
+                  border: "none",
+                  borderLeft: "none",
+                  borderRight: "none",
+                },
         }}
       >
         {toggle && (
