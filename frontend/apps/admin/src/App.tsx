@@ -10,6 +10,7 @@ import {
   ProfilePage,
   TasksPage,
   StudentPracticeHistoryPage,
+  OnlineUsersPage,
 } from "./pages";
 import "./App.css";
 import { AppRole } from "@app-providers";
@@ -39,6 +40,7 @@ function App() {
         <Route element={<ProtectedLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/users" element={<UsersPage />} />
+          <Route path="/online-users" element={<OnlineUsersPage />} />
           <Route path="/tasks" element={<TasksPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route
