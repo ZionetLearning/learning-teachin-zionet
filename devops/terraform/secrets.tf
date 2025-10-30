@@ -141,12 +141,12 @@ resource "azurerm_key_vault_secret" "langfuse_baseurl" {
 
 resource "azurerm_key_vault_secret" "langfuse_public_key" {
   name         = "langfuse-public-key"
-  value        = "pk-lf-a61f2d1a-0401-4d37-94b9-a4d5301e8ae4"
+  value        = "pk-lf-78a4be40-1031-43d6-b2a0-4b1cf15f8ff6"
   key_vault_id = data.azurerm_key_vault.shared.id
 }
 
 resource "azurerm_key_vault_secret" "langfuse_secret_key" {
   name         = "langfuse-secret-key"
-  value        = "sk-lf-ab8732ff-42e8-48aa-bcf5-54c90dc9f648"
+  value        = "sk-lf-7e889621-246f-4bdb-8954-d298ef5d67a1"
   key_vault_id = data.azurerm_key_vault.shared.id
 }
