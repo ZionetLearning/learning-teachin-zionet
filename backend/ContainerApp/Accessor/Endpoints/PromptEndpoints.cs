@@ -28,6 +28,7 @@ public static class PromptEndpoints
     {
         try
         {
+            logger.LogInformation("Creating new prompt with key {PromptKey}", request?.PromptKey);
             if (request is null ||
                 string.IsNullOrWhiteSpace(request.PromptKey) ||
                 string.IsNullOrWhiteSpace(request.Content))
@@ -60,6 +61,7 @@ public static class PromptEndpoints
     {
         try
         {
+            logger.LogInformation("Retrieving all prompts");
             var prompts = await promptService.GetAllPromptsAsync(cancellationToken);
             logger.LogInformation("Retrieved {Count} prompts", prompts.Count);
             return Results.Ok(prompts);
@@ -81,6 +83,7 @@ public static class PromptEndpoints
     {
         try
         {
+            logger.LogInformation("Retrieving prompt {PromptKey} with version {Version} and label {Label}", promptKey, version, label);
             var prompt = await promptService.GetPromptAsync(promptKey, version, label, cancellationToken);
             if (prompt is null)
             {
@@ -90,6 +93,11 @@ public static class PromptEndpoints
 
             logger.LogInformation("Retrieved prompt {PromptKey} from {Source}", prompt.PromptKey, prompt.Source);
             return Results.Ok(prompt);
+        }
+        catch (ArgumentException ex)
+        {
+            logger.LogWarning(ex, "Invalid argument for prompt {PromptKey}", promptKey);
+            return Results.BadRequest(new { error = ex.Message });
         }
         catch (Exception ex)
         {
@@ -106,6 +114,7 @@ public static class PromptEndpoints
     {
         try
         {
+            logger.LogInformation("Starting batch retrieval of prompts. Requested count: {Count}", request?.Prompts?.Count ?? 0);
             if (request is null || request.Prompts is null || request.Prompts.Count == 0)
             {
                 logger.LogWarning("Batch request missing prompt configurations");
@@ -172,6 +181,7 @@ public static class PromptEndpoints
     {
         try
         {
+            logger.LogInformation("Updating labels for prompt {PromptKey} version {Version}", promptKey, version);
             if (string.IsNullOrWhiteSpace(promptKey))
             {
                 return Results.BadRequest(new { error = "PromptKey is required." });

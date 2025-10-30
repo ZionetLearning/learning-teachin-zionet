@@ -10,15 +10,18 @@ public class PromptService : IPromptService
     private readonly ILogger<PromptService> _logger;
     private readonly ILangfuseService _langfuseService;
     private readonly IOptions<PromptsOptions> _promptsOptions;
+    private readonly IOptions<LangfuseOptions> _langfuseOptions;
 
     public PromptService(
         ILogger<PromptService> logger,
         ILangfuseService langfuseService,
-        IOptions<PromptsOptions> promptsOptions)
+        IOptions<PromptsOptions> promptsOptions,
+        IOptions<LangfuseOptions> langfuseOptions)
     {
         _logger = logger;
         _langfuseService = langfuseService;
         _promptsOptions = promptsOptions;
+        _langfuseOptions = langfuseOptions;
     }
 
     public async Task<PromptResponse> CreatePromptAsync(CreatePromptRequest request, CancellationToken cancellationToken = default)
@@ -36,6 +39,12 @@ public class PromptService : IPromptService
         if (string.IsNullOrWhiteSpace(request.Content))
         {
             throw new ArgumentException("Content is required.", nameof(request));
+        }
+
+        if (!_langfuseOptions.Value.IsConfigured())
+        {
+            _logger.LogWarning("Cannot create prompt '{PromptKey}' - Langfuse is not configured", request.PromptKey);
+            throw new InvalidOperationException("Langfuse is not configured. Cannot create prompts.");
         }
 
         try
@@ -84,42 +93,56 @@ public class PromptService : IPromptService
             throw new ArgumentException("PromptKey is required.", nameof(promptKey));
         }
 
-        try
+        // If Langfuse is configured, try to fetch from it first
+        if (_langfuseOptions.Value.IsConfigured())
         {
-            _logger.LogInformation("Fetching prompt '{PromptKey}' (version: {Version}, label: {Label}) from Langfuse",
-                promptKey, version, label);
-
-            var langfusePrompt = await _langfuseService.GetPromptAsync(promptKey, version, label, cancellationToken);
-
-            if (langfusePrompt != null)
+            try
             {
-                _logger.LogInformation("Successfully retrieved prompt '{PromptKey}' from Langfuse", promptKey);
-                return new PromptResponse
+                _logger.LogInformation("Fetching prompt '{PromptKey}' (version: {Version}, label: {Label}) from Langfuse",
+                    promptKey, version, label);
+
+                var langfusePrompt = await _langfuseService.GetPromptAsync(promptKey, version, label, cancellationToken);
+
+                if (langfusePrompt != null)
                 {
-                    PromptKey = langfusePrompt.Name,
-                    Content = langfusePrompt.Prompt,
-                    Version = langfusePrompt.Version,
-                    Labels = langfusePrompt.Labels,
-                    Tags = langfusePrompt.Tags,
-                    Type = langfusePrompt.Type,
-                    Config = langfusePrompt.Config,
-                    Source = "Langfuse"
-                };
+                    _logger.LogInformation("Successfully retrieved prompt '{PromptKey}' from Langfuse", promptKey);
+                    return new PromptResponse
+                    {
+                        PromptKey = langfusePrompt.Name,
+                        Content = langfusePrompt.Prompt,
+                        Version = langfusePrompt.Version,
+                        Labels = langfusePrompt.Labels,
+                        Tags = langfusePrompt.Tags,
+                        Type = langfusePrompt.Type,
+                        Config = langfusePrompt.Config,
+                        Source = "Langfuse"
+                    };
+                }
+
+                _logger.LogWarning("Prompt '{PromptKey}' not found in Langfuse, falling back to local defaults", promptKey);
             }
-
-            _logger.LogWarning("Prompt '{PromptKey}' not found in Langfuse, checking local defaults", promptKey);
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error retrieving prompt '{PromptKey}' from Langfuse, falling back to local defaults", promptKey);
+            }
         }
-        catch (Exception ex)
+        else
         {
-            _logger.LogWarning(ex, "Error retrieving prompt '{PromptKey}' from Langfuse, falling back to local defaults", promptKey);
+            _logger.LogInformation("Langfuse is not configured, using local defaults for prompt '{PromptKey}'", promptKey);
         }
 
-        // Fallback to local defaults
+        // Always fallback to local defaults
         return GetPromptFromDefaults(promptKey);
     }
 
     public async Task<List<LangfusePromptListItem>> GetAllPromptsAsync(CancellationToken cancellationToken = default)
     {
+        if (!_langfuseOptions.Value.IsConfigured())
+        {
+            _logger.LogWarning("Cannot get all prompts - Langfuse is not configured");
+            throw new InvalidOperationException("Langfuse is not configured. Cannot retrieve prompts list.");
+        }
+
         try
         {
             _logger.LogInformation("Fetching all prompts from Langfuse");
@@ -176,6 +199,12 @@ public class PromptService : IPromptService
         if (request is null)
         {
             throw new ArgumentNullException(nameof(request));
+        }
+
+        if (!_langfuseOptions.Value.IsConfigured())
+        {
+            _logger.LogWarning("Cannot update prompt '{PromptKey}' - Langfuse is not configured", promptKey);
+            throw new InvalidOperationException("Langfuse is not configured. Cannot update prompts.");
         }
 
         try

@@ -56,7 +56,15 @@ builder.Services.AddHttpClient("SpeechClient", client =>
 builder.Services.AddHttpClient<ILangfuseService, LangfuseService>((serviceProvider, client) =>
 {
     var options = serviceProvider.GetRequiredService<IOptions<LangfuseOptions>>().Value;
-    client.BaseAddress = new Uri(options.BaseUrl);
+    // Only set BaseAddress if configured, otherwise use a dummy URL to prevent exception
+    if (!string.IsNullOrWhiteSpace(options.BaseUrl))
+    {
+        client.BaseAddress = new Uri(options.BaseUrl);
+    }
+    else
+    {
+        client.BaseAddress = new Uri("http://localhost");
+    }
 });
 
 builder.Services.AddScoped<IPromptService, PromptService>();
@@ -83,7 +91,6 @@ builder.Services.AddOptions<PromptsOptions>()
 
 builder.Services.AddOptions<LangfuseOptions>()
     .Bind(builder.Configuration.GetSection("Langfuse"))
-    .ValidateDataAnnotations()
     .ValidateOnStart();
 
 // Register Dapr client with custom JSON options

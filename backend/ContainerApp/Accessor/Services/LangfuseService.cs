@@ -13,6 +13,7 @@ public class LangfuseService : ILangfuseService
     private readonly ILogger<LangfuseService> _logger;
     private readonly HttpClient _httpClient;
     private readonly LangfuseOptions _options;
+    private readonly bool _isConfigured;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -27,8 +28,16 @@ public class LangfuseService : ILangfuseService
         _logger = logger;
         _httpClient = httpClient;
         _options = options.Value;
+        _isConfigured = _options.IsConfigured();
 
-        ConfigureHttpClient();
+        if (_isConfigured)
+        {
+            ConfigureHttpClient();
+        }
+        else
+        {
+            _logger.LogWarning("Langfuse is not configured. Service will not be available.");
+        }
     }
 
     private void ConfigureHttpClient()
@@ -39,12 +48,22 @@ public class LangfuseService : ILangfuseService
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authValue);
     }
 
+    private void ThrowIfNotConfigured()
+    {
+        if (!_isConfigured)
+        {
+            throw new InvalidOperationException("Langfuse is not configured. Please check your appsettings configuration.");
+        }
+    }
+
     public async Task<LangfusePromptModel?> GetPromptAsync(
         string promptName,
         int? version = null,
         string? label = null,
         CancellationToken cancellationToken = default)
     {
+        ThrowIfNotConfigured();
+
         if (string.IsNullOrWhiteSpace(promptName))
         {
             throw new ArgumentException("Prompt name is required.", nameof(promptName));
@@ -112,6 +131,8 @@ public class LangfuseService : ILangfuseService
 
     public async Task<List<LangfusePromptListItem>> GetAllPromptsAsync(CancellationToken cancellationToken = default)
     {
+        ThrowIfNotConfigured();
+
         try
         {
             _logger.LogInformation("Fetching all prompts from Langfuse");
@@ -154,6 +175,8 @@ public class LangfuseService : ILangfuseService
         CreateLangfusePromptRequest request,
         CancellationToken cancellationToken = default)
     {
+        ThrowIfNotConfigured();
+
         if (request is null)
         {
             throw new ArgumentNullException(nameof(request));
@@ -216,6 +239,8 @@ public class LangfuseService : ILangfuseService
         UpdatePromptLabelsRequest request,
         CancellationToken cancellationToken = default)
     {
+        ThrowIfNotConfigured();
+
         if (string.IsNullOrWhiteSpace(promptName))
         {
             throw new ArgumentException("Prompt name is required.", nameof(promptName));
