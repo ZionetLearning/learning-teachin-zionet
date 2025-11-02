@@ -8,11 +8,13 @@ using Manager.Models;
 using Manager.Models.Auth;
 using Manager.Models.Auth.RefreshSessions;
 using Manager.Models.Chat;
+using Manager.Models.GameConfiguration;
 using Manager.Models.Games;
 using Manager.Models.QueueMessages;
 using Manager.Models.Users;
 using Manager.Models.WordCards;
 using Manager.Services.Clients.Accessor.Models;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Services.Clients.Accessor;
 
@@ -905,4 +907,32 @@ public class AccessorClient(
             throw;
         }
     }
+
+    public async Task<UserGameConfig> GetUserGameConfigAsync(Guid userId, GameName gameName, CancellationToken ct)
+    {
+        _logger.LogInformation("Get User's Game Configuration. UserId={UserId}, Game Name={GameName}", userId, gameName);
+
+        try
+        {
+            var response = await _daprClient.InvokeMethodAsync<UserGameConfig>(
+                HttpMethod.Get,
+                AppIds.Accessor,
+                $"game-config-accessor",
+                cancellationToken: ct
+            );
+            if (response == null)
+            {
+                _logger.LogInformation("Get user config game is null");
+                throw new BadHttpRequestException("User config is null");
+            }
+
+            return response;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get user configuration for UserId={UserId}", userId);
+            throw;
+        }
+    }
+
 }

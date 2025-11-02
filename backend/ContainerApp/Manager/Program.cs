@@ -248,6 +248,7 @@ app.MapGamesEndpoints();
 app.MapHub<NotificationHub>("/NotificationHub");
 app.MapMediaEndpoints();
 app.MapWordCardsEndpoints();
+app.MapGameConfigEndpoints();
 
 app.MapStatsPing();
 if (env.IsDevelopment())

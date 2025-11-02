@@ -2,6 +2,7 @@
 using Manager.Models.Auth;
 using Manager.Models.Auth.RefreshSessions;
 using Manager.Models.Chat;
+using Manager.Models.GameConfiguration;
 using Manager.Models.Games;
 using Manager.Models.Users;
 using Manager.Models.WordCards;
@@ -46,5 +47,6 @@ public interface IAccessorClient
     Task<IReadOnlyList<WordCard>> GetWordCardsAsync(Guid userId, CancellationToken ct);
     Task<WordCard> CreateWordCardAsync(Guid userId, CreateWordCardRequest request, CancellationToken ct);
     Task<WordCardLearnedStatus> UpdateLearnedStatusAsync(Guid userId, LearnedStatus request, CancellationToken ct);
+    Task<UserGameConfig> GetUserGameConfigAsync(Guid userId, GameName gameName, CancellationToken ct);
 
 }
