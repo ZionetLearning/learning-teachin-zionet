@@ -291,7 +291,7 @@ public class MeetingsIntegrationTests(
             ],
             StartTimeUtc = DateTimeOffset.UtcNow.AddHours(1),
             DurationMinutes= 60,
-            Description = "ACS Toke n Generation Meeting",
+            Description = "ACS Token Generation Meeting",
         }, teacher);
 
         // Act - Teacher generates token
