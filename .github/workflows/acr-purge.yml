@@ -1,4 +1,4 @@
-name: Purge Old ACR Images
+name: Scheduled - Purge Old ACR Images
 
 on:
   schedule:

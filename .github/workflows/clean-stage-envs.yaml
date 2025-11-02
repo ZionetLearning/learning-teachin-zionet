@@ -1,4 +1,4 @@
-name: Clean Stage Environments
+name: Scheduled - Clean Stage Environments
 
 on:
   schedule:

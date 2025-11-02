@@ -1,4 +1,4 @@
-name: Clear Postgres Database
+name: Scheduled - Clear Postgres Database
 
 on:
   schedule:
