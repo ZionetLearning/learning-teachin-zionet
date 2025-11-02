@@ -116,41 +116,6 @@ jobs:
           echo "Loading dev environment configuration from .env.cloud..."
           grep -E '^[^#]+=' .env.cloud >> $GITHUB_ENV
         shell: bash
-      
-      - name: Compute resource names
-        id: names
-        shell: bash
-        run: |
-          ENV="${{ inputs.environment_name }}"
-          APP="${{ matrix.app }}"
-          RG="${ENV}-zionet-learning-2025"
-          SWA_NAME="static-web-app-${APP}-${ENV}"
-
-          echo "rg=$RG" >> $GITHUB_OUTPUT
-          echo "swa=$SWA_NAME" >> $GITHUB_OUTPUT
-
-      - name: Clean staging environments (production deployments only)
-        if: github.event_name != 'pull_request'
-        shell: bash
-        run: |
-          set -euo pipefail 
-
-          # Get all staging environments for this Static Web App
-          ENVIRONMENTS=$(az staticwebapp environment list \
-            --name "${{ steps.names.outputs.swa }}" \
-            --resource-group "${{ steps.names.outputs.rg }}" \
-            --query "[?name != 'default'].{name:name, createdOn:createdOn}" \
-            --output json)
-
-          # Delete all staging environments
-          for env in $(echo "$ENVIRONMENTS" | jq -r '.[].name'); do
-            echo "Deleting staging environment: $env"
-            az staticwebapp environment delete \
-              --name "${{ steps.names.outputs.swa }}" \
-              --resource-group "${{ steps.names.outputs.rg }}" \
-              --environment-name "$env" \
-              --yes || true
-          done
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
