@@ -1,6 +1,7 @@
 using Accessor.Models.Meetings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using System.Text.Json;
 
 namespace Accessor.DB.Configurations;
 
@@ -14,6 +15,9 @@ public class MeetingsConfiguration : IEntityTypeConfiguration<MeetingModel>
 
         builder.Property(m => m.Attendees)
             .HasColumnType("jsonb")
+            .HasConversion(
+                v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                v => JsonSerializer.Deserialize<List<MeetingAttendee>>(v, (JsonSerializerOptions?)null) ?? new List<MeetingAttendee>())
             .IsRequired();
 
         builder.Property(m => m.StartTimeUtc)
