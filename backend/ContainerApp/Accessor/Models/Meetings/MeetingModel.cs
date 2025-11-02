@@ -17,6 +17,13 @@ public class MeetingModel
     public DateTimeOffset StartTimeUtc { get; set; }
 
     [Required]
+    [Range(1, 1440)]
+    public int DurationMinutes { get; set; }
+
+    [MaxLength(500)]
+    public string? Description { get; set; }
+
+    [Required]
     public MeetingStatus Status { get; set; } = MeetingStatus.Scheduled;
 
     [Required]

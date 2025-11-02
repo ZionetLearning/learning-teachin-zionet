@@ -1,4 +1,4 @@
-namespace Accessor.Models.Meetings;
+namespace Manager.Models.Meetings;
 
 public sealed record MeetingDto
 {

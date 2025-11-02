@@ -146,6 +146,7 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddScoped<IAccessorClient, AccessorClient>();
+builder.Services.AddScoped<IMeetingAccessorClient, MeetingAccessorClient>();
 builder.Services.AddScoped<IEngineClient, EngineClient>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -248,6 +249,7 @@ app.MapGamesEndpoints();
 app.MapHub<NotificationHub>("/NotificationHub");
 app.MapMediaEndpoints();
 app.MapWordCardsEndpoints();
+app.MapMeetingsEndpoints();
 
 app.MapStatsPing();
 if (env.IsDevelopment())

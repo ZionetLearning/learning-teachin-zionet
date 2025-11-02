@@ -83,24 +83,22 @@ public class MeetingService : IMeetingService
 
         try
         {
-            // If GroupCallId is not provided, create a new ACS room
-            var groupCallId = request.GroupCallId;
-            if (string.IsNullOrWhiteSpace(groupCallId))
-            {
-                _logger.LogInformation("GroupCallId not provided, creating new ACS room");
+            // Always create a new ACS room in the backend
+            _logger.LogInformation("Creating new ACS room for meeting");
 
-                // Set room validity: from start time to 2 hours after (default meeting duration)
-                var validFrom = request.StartTimeUtc;
-                var validUntil = request.StartTimeUtc.AddHours(2);
+            // Set room validity: from start time to start time + duration
+            var validFrom = request.StartTimeUtc;
+            var validUntil = request.StartTimeUtc.AddMinutes(request.DurationMinutes);
 
-                groupCallId = await _acsService.CreateRoomAsync(validFrom, validUntil, ct);
-            }
+            var groupCallId = await _acsService.CreateRoomAsync(validFrom, validUntil, ct);
 
             var meeting = new MeetingModel
             {
                 Id = Guid.NewGuid(),
                 Attendees = request.Attendees,
                 StartTimeUtc = request.StartTimeUtc,
+                DurationMinutes = request.DurationMinutes,
+                Description = request.Description,
                 GroupCallId = groupCallId,
                 Status = MeetingStatus.Scheduled,
                 CreatedOn = DateTimeOffset.UtcNow,
@@ -110,8 +108,8 @@ public class MeetingService : IMeetingService
             _db.Meetings.Add(meeting);
             await _db.SaveChangesAsync(ct);
 
-            _logger.LogInformation("CreateMeeting END: created meeting {MeetingId} with ACS Room {GroupCallId}",
-                meeting.Id, groupCallId);
+            _logger.LogInformation("CreateMeeting END: created meeting {MeetingId} with ACS Room {GroupCallId}, Duration={Duration}min",
+                meeting.Id, groupCallId, request.DurationMinutes);
             return MapToDto(meeting);
         }
         catch (Exception ex)
@@ -144,6 +142,16 @@ public class MeetingService : IMeetingService
             if (request.StartTimeUtc.HasValue)
             {
                 meeting.StartTimeUtc = request.StartTimeUtc.Value;
+            }
+
+            if (request.DurationMinutes.HasValue)
+            {
+                meeting.DurationMinutes = request.DurationMinutes.Value;
+            }
+
+            if (request.Description != null)
+            {
+                meeting.Description = request.Description;
             }
 
             if (request.Status.HasValue)
@@ -207,6 +215,8 @@ public class MeetingService : IMeetingService
             Id = meeting.Id,
             Attendees = meeting.Attendees,
             StartTimeUtc = meeting.StartTimeUtc,
+            DurationMinutes = meeting.DurationMinutes,
+            Description = meeting.Description,
             Status = meeting.Status,
             GroupCallId = meeting.GroupCallId,
             CreatedOn = meeting.CreatedOn,
