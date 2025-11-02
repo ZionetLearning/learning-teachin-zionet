@@ -18,6 +18,7 @@ public static class ClassesEndpoints
 
         classesGroup.MapPost("/{classId:guid}/members", AddMembersAsync).WithName("AddMembersToClass");
         classesGroup.MapDelete("/{classId:guid}/members", RemoveMembersAsync).WithName("RemoveMembersFromClass");
+        classesGroup.MapDelete("/{classId:guid}", DeleteClassAsync).WithName("DeleteClass");
 
         return app;
     }
@@ -136,8 +137,30 @@ public static class ClassesEndpoints
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to remove members from class {ClassId}", classId);
+            logger.LogError(ex, "Failed to remove members from class");
             return Results.Problem("An error occurred while removing members.");
+        }
+    }
+    private static async Task<IResult> DeleteClassAsync(
+    [FromRoute] Guid classId,
+    [FromServices] IClassService service,
+    [FromServices] ILogger<ClassesEndpointsLoggerMarker> logger,
+    CancellationToken ct)
+    {
+        using var _ = logger.BeginScope("Method={Method}, ClassId={ClassId}", nameof(RemoveMembersAsync), classId);
+
+        try
+        {
+            var deleted = await service.DeleteClassAsync(classId, ct);
+
+            return deleted
+                ? Results.NoContent()
+                : Results.NotFound();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to delete class with ID");
+            return Results.Problem("Internal server error while deleting class");
         }
     }
 }

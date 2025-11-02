@@ -51,5 +51,6 @@ public interface IAccessorClient
     Task<Class?> CreateClassAsync(CreateClassRequest request, CancellationToken ct = default);
     Task<bool> AddMembersToClassAsync(Guid classId, AddMembersRequest request, CancellationToken ct = default);
     Task<bool> RemoveMembersFromClassAsync(Guid classId, RemoveMembersRequest request, CancellationToken ct = default);
+    Task<bool> DeleteClassAsync(Guid classId, CancellationToken ct);
 
 }

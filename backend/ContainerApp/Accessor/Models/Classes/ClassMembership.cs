@@ -18,4 +18,5 @@ public record MemberDto
 {
     public Guid MemberId { get; set; }
     public required string Name { get; set; }
+    public Role Role { get; set; }
 }

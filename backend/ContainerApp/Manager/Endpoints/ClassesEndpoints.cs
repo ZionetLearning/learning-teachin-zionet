@@ -26,6 +26,9 @@ public static class ClassesEndpoints
         classesGroup.MapDelete("/{classId:guid}/members", RemoveMembersAsync)
             .RequireAuthorization(PolicyNames.AdminOrTeacher);
 
+        classesGroup.MapDelete("/{classId:guid}", DeleteClassAsync)
+        .RequireAuthorization(PolicyNames.AdminOrTeacher);
+
         return app;
     }
 
@@ -37,14 +40,15 @@ public static class ClassesEndpoints
     {
         try
         {
-            logger.LogInformation("Fetching class info ClassId={ClassId}", classId);
+            using var scope = logger.BeginScope("ClassID: {ClassId}:", classId);
+            logger.LogInformation("Fetching class info");
             var cls = await accessorClient.GetClassAsync(classId, ct);
 
             return cls is not null ? Results.Ok(cls) : Results.NotFound("Class not found.");
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error fetching class {ClassId}", classId);
+            logger.LogError(ex, "Error fetching class");
             return Results.Problem("Failed to retrieve class. Please try again later.");
         }
     }
@@ -86,12 +90,13 @@ public static class ClassesEndpoints
         ILogger<ClassEndpoint> logger,
         CancellationToken ct)
     {
+        using var scope = logger.BeginScope("ClassID: {ClassId}:", classId);
         try
         {
             var callerRole = http.User.FindFirstValue(AuthSettings.RoleClaimType);
             var callerId = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
 
-            logger.LogInformation("AddMembers called by {Role} ({CallerId}) for ClassId={ClassId}", callerRole, callerId, classId);
+            logger.LogInformation("AddMembers called by {Role} ({CallerId}) for", callerRole, callerId);
 
             if (classId == Guid.Empty || request.UserIds is null || !request.UserIds.Any())
             {
@@ -105,7 +110,7 @@ public static class ClassesEndpoints
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error adding members to class {ClassId}", classId);
+            logger.LogError(ex, "Error adding members to class");
             return Results.Problem("Failed to add members. Please try again later.");
         }
     }
@@ -118,12 +123,13 @@ public static class ClassesEndpoints
         ILogger<ClassEndpoint> logger,
         CancellationToken ct)
     {
+        using var scope = logger.BeginScope("ClassID: {ClassId}:", classId);
         try
         {
             var callerRole = http.User.FindFirstValue(AuthSettings.RoleClaimType);
             var callerId = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
 
-            logger.LogInformation("RemoveMembers called by {Role} ({CallerId}) for ClassId={ClassId}", callerRole, callerId, classId);
+            logger.LogInformation("RemoveMembers called by {Role} ({CallerId}) for Class", callerRole, callerId);
 
             if (classId == Guid.Empty || request.UserIds is null || !request.UserIds.Any())
             {
@@ -137,8 +143,30 @@ public static class ClassesEndpoints
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error removing members from class {ClassId}", classId);
+            logger.LogError(ex, "Error removing members from class");
             return Results.Problem("Failed to remove members. Please try again later.");
+        }
+    }
+    private static async Task<IResult> DeleteClassAsync(
+    [FromRoute] Guid classId,
+    [FromServices] IAccessorClient accessorClient,
+    ILogger<ClassEndpoint> logger,
+    CancellationToken ct)
+    {
+        using var scope = logger.BeginScope("ClassID: {ClassId}:", classId);
+
+        try
+        {
+            var deleted = await accessorClient.DeleteClassAsync(classId, ct);
+
+            return deleted
+                ? Results.NoContent()
+                : Results.NotFound();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to delete class ");
+            return Results.Problem("Internal server error while deleting class");
         }
     }
 }

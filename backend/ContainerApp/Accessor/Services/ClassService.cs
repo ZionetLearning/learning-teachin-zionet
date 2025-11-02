@@ -1,8 +1,10 @@
 ﻿using Accessor.DB;
+using Accessor.Exceptions;
 using Accessor.Models.Classes;
 using Accessor.Models.Users;
 using Accessor.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace Accessor.Services;
 public class ClassService : IClassService
@@ -17,9 +19,22 @@ public class ClassService : IClassService
 
     public async Task<Class> CreateClassAsync(Class model, CancellationToken ct)
     {
-        _db.Class.Add(model);
-        await _db.SaveChangesAsync(ct);
-        return model;
+        try
+        {
+            _db.Class.Add(model);
+            await _db.SaveChangesAsync(ct);
+            return model;
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException pg && pg.SqlState == PostgresErrorCodes.UniqueViolation)
+        {
+            _logger.LogWarning(ex, "Failed to add class. Already exists");
+            throw new ConflictException("Class with the same name or code already exists.", ex);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to add class");
+            throw;
+        }
     }
 
     public async Task<bool> AddMembersAsync(Guid classId, IEnumerable<Guid> userIds, Guid addedBy, CancellationToken ct)
@@ -91,33 +106,90 @@ public class ClassService : IClassService
 
     public async Task<ClassDto?> GetClassWithMembersAsync(Guid classId, CancellationToken ct)
     {
-        var cls = await _db.Class
-            .Include(c => c.Memberships)
-            .ThenInclude(m => m.User)
-            .FirstOrDefaultAsync(c => c.ClassId == classId, ct);
-
-        if (cls is null)
+        try
         {
-            return null;
+            var cls = await _db.Class
+                .Include(c => c.Memberships)
+                .ThenInclude(m => m.User)
+                .FirstOrDefaultAsync(c => c.ClassId == classId, ct);
+
+            if (cls is null)
+            {
+                _logger.LogWarning("Class with ID {ClassId} not found", classId);
+                return null;
+            }
+
+            return new ClassDto
+            {
+                ClassId = cls.ClassId,
+                Name = cls.Name,
+                Members = cls.Memberships
+                    .Select(m => new MemberDto
+                    {
+                        MemberId = m.UserId,
+                        Name = $"{m.User.FirstName} {m.User.LastName}",
+                        Role = m.Role,
+                    })
+                    .ToList()
+            };
         }
-
-        return new ClassDto
+        catch (Exception ex)
         {
-            ClassId = cls.ClassId,
-            Name = cls.Name,
-            Members = cls.Memberships
-                .Select(m => new MemberDto
-                {
-                    MemberId = m.UserId,
-                    Name = $"{m.User.FirstName} {m.User.LastName}"
-                })
-                .ToList()
-        };
+            _logger.LogError(ex, "Failed to load class with members for ID {ClassId}", classId);
+            throw;
+        }
     }
 
     public async Task<List<Class>> GetClassesForUserAsync(Guid userId, Role role, CancellationToken ct)
-        => await _db.ClassMembership
-            .Where(m => m.UserId == userId && m.Role == role)
-            .Select(m => m.Class)
-            .ToListAsync(ct);
+    {
+        try
+        {
+            return await _db.ClassMembership
+                .Where(m => m.UserId == userId && m.Role == role)
+                .Select(m => m.Class)
+                .ToListAsync(ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load classes for user {UserId} with role {Role}", userId, role);
+            throw;
+        }
+    }
+    public async Task<bool> DeleteClassAsync(Guid classId, CancellationToken ct)
+    {
+        using var scope = _logger.BeginScope("ClassID: {ClassId}:", classId);
+        try
+        {
+            var cls = await _db.Class
+                .Include(c => c.Memberships)
+                .FirstOrDefaultAsync(c => c.ClassId == classId, ct);
+
+            if (cls is null)
+            {
+                _logger.LogWarning("Attempted to delete non-existent class with ID");
+                return false;
+            }
+
+            if (cls.Memberships.Any())
+            {
+                _db.ClassMembership.RemoveRange(cls.Memberships);
+            }
+
+            _db.Class.Remove(cls);
+            await _db.SaveChangesAsync(ct);
+
+            _logger.LogInformation("Successfully deleted class with ID");
+            return true;
+        }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogError(ex, "Database update error while deleting class with ID");
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error while deleting class with ID");
+            throw;
+        }
+    }
 }

@@ -10,4 +10,5 @@ public interface IClassService
     Task<bool> RemoveMembersAsync(Guid classId, IEnumerable<Guid> userIds, CancellationToken ct);
     Task<ClassDto?> GetClassWithMembersAsync(Guid classId, CancellationToken ct);
     Task<List<Class>> GetClassesForUserAsync(Guid userId, Role role, CancellationToken ct);
+    Task<bool> DeleteClassAsync(Guid classId, CancellationToken ct);
 }

@@ -983,6 +983,11 @@ public class AccessorClient(
             _logger.LogWarning("Bad request while adding members to class {ClassId}", classId);
             return false;
         }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.Conflict)
+        {
+            _logger.LogWarning("Already exists");
+            return false;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to add members to class {ClassId}", classId);
@@ -1014,6 +1019,32 @@ public class AccessorClient(
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to remove members from class {ClassId}", classId);
+            throw;
+        }
+    }
+    public async Task<bool> DeleteClassAsync(Guid classId, CancellationToken ct)
+    {
+        _logger.LogInformation("Deleting class {ClassId}", classId);
+
+        try
+        {
+            await _daprClient.InvokeMethodAsync(
+                HttpMethod.Delete,
+                AppIds.Accessor,
+                $"classes-accessor/{classId:D}",
+                ct
+            );
+
+            return true;
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.BadRequest)
+        {
+            _logger.LogWarning("Bad request while deleting class {ClassId}", classId);
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to deleting class {ClassId}", classId);
             throw;
         }
     }
