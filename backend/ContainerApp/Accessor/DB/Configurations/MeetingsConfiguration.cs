@@ -19,6 +19,13 @@ public class MeetingsConfiguration : IEntityTypeConfiguration<MeetingModel>
         builder.Property(m => m.StartTimeUtc)
             .IsRequired();
 
+        builder.Property(m => m.DurationMinutes)
+            .IsRequired();
+
+        builder.Property(m => m.Description)
+            .HasMaxLength(500)
+            .IsRequired(false);
+
         builder.Property(m => m.Status)
             .HasConversion<string>()
             .HasMaxLength(20)
@@ -34,6 +41,11 @@ public class MeetingsConfiguration : IEntityTypeConfiguration<MeetingModel>
 
         builder.Property(m => m.CreatedByUserId)
             .IsRequired();
+
+        // Check constraint for DurationMinutes (1-1440 minutes = 1 min to 24 hours)
+        builder.ToTable(t => t.HasCheckConstraint(
+            "CK_Meetings_DurationMinutes",
+            "\"DurationMinutes\" >= 1 AND \"DurationMinutes\" <= 1440"));
 
         // Indexes for efficient querying
         builder.HasIndex(m => m.Status);

@@ -139,6 +139,13 @@ namespace Accessor.DB.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("NOW()");
 
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("DurationMinutes")
+                        .HasColumnType("integer");
+
                     b.Property<string>("GroupCallId")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -162,7 +169,10 @@ namespace Accessor.DB.Migrations
 
                     b.HasIndex("Status");
 
-                    b.ToTable("Meetings", (string)null);
+                    b.ToTable("Meetings", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Meetings_DurationMinutes", "\"DurationMinutes\" >= 1 AND \"DurationMinutes\" <= 1440");
+                        });
                 });
 
             modelBuilder.Entity("Accessor.Models.Prompts.PromptModel", b =>
