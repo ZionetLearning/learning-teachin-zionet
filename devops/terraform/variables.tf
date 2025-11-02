@@ -27,11 +27,6 @@ variable "aks_cluster_name" {
   type        = string
   default     = "aks-cluster-dev"
 }
-variable "node_count" {
-  description = "Number of nodes in the AKS cluster"
-  type        = number
-  default     = 2
-}
 variable "vm_size" {
   description = "Size of the VM instances in the AKS cluster"
   type        = string
