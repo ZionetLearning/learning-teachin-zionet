@@ -35,10 +35,13 @@ public sealed class AzureBlobAvatarStorageService : IAvatarStorageService
             _container = _svc.GetBlobContainerClient(_options.Container);
             _log.LogInformation("Avatar storage init. Container={Container}", _options.Container);
         }
-        catch (FormatException fe)
+        catch (Exception ex)
         {
-            throw new InvalidOperationException(
-                "Avatar storage is misconfigured: invalid Storage connection string or container.", fe);
+            _initError = ex;
+            _log.LogError(ex,
+                "Failed to init BlobServiceClient. ConnStr prefix={Prefix}",
+                _options.StorageConnectionString?.Length > 20
+                    ? _options.StorageConnectionString[..20] : _options.StorageConnectionString);
         }
 
         _log.LogInformation("Avatar storage init. Container={Container}, ConnStr={ConnStr}",
