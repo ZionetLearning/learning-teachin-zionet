@@ -229,7 +229,19 @@
         "correct": "נכון!",
         "incorrect": "לא נכון. נסה שוב.",
         "wordBankTitle": "מאגר מילים",
-        "wordBankHint": "לחץ על מילה כדי להוסיף אותה למשפט"
+        "wordBankHint": "לחץ על מילה כדי להוסיף אותה למשפט",
+        "explainMistake": "הסבר טעות",
+        "yourLastWrongAnswer": "התשובה השגויה האחרונה שלך:"
+      },
+      "retryResultModal": {
+        "successTitle": "🎉 מעולה!",
+        "failureTitle": "המשך לנסות!",
+        "successMessage": "תיקנת את הטעות!",
+        "failureMessage": "לא בדיוק נכון הפעם.",
+        "successDescription": "כל הכבוד! תיקנת בהצלחה את הטעות הזו. אתה יכול לתרגל עוד טעויות או לנסות שוב את זו.",
+        "failureDescription": "אל תדאג! למידה דורשת תרגול. אתה יכול לנסות שוב או לעבור לטעויות אחרות.",
+        "tryAgain": "נסה שוב",
+        "backToMistakes": "חזור לטעויות"
       },
       "earthquakeMap": {
         "title": "מפת רעידות אדמה",
@@ -321,7 +333,11 @@
         "posting": "שולח...",
         "send": "שלח",
         "noNotifications": "אין התראות",
-        "notifications": "התראות"
+        "notifications": "התראות",
+        "reconnects": "חיבורים מחדש",
+        "errors": "שגיאות",
+        "signalRStatus": "סטטוס SignalR",
+        "noEventsYet": "עדיין אין אירועי SignalR."
       },
       "users": {
         "createUsers": "צור משתמשים",
@@ -354,6 +370,20 @@
         "actions": "פעולות",
         "searchPlaceholder": "חפש לפי אימייל, שם פרטי, שם משפחה...",
         "clear": "נקה",
+        "onlineUsersTitle": "משתמשים מקוונים",
+        "onlineUsersSubtitle": "תצוגה בזמן אמת של משתמשים פעילים במערכת",
+        "signalRStatus": "SignalR",
+        "loadingOnlineUsers": "טוען משתמשים מקוונים...",
+        "errorLoadingOnlineUsers": "שגיאה בטעינת משתמשים מקוונים",
+        "errorLoadingOnlineUsersSubtext": "אנא נסה לרענן את הדף או בדוק את החיבור שלך.",
+        "noUsersOnline": "אין משתמשים מקוונים",
+        "noUsersOnlineSubtext": "משתמשים יופיעו כאן כשהם יתחברו למערכת",
+        "user": "משתמש",
+        "status": "סטטוס",
+        "connections": "חיבורים",
+        "online": "מקוון",
+        "unknown": "לא ידוע",
+        "connection": "חיבור",
         "rowsPerPage": "שורות בעמוד:",
         "page": "עמוד:",
         "of": "של",
@@ -516,8 +546,39 @@
         "saving": "שומר...",
         "markAsLearned": "סמן כנלמד",
         "markAsUnlearned": "סמן כלא נלמד",
-        "learned": "נלמד"
+        "learned": "נלמד",
+        "practice": "תרגול"
+      },
+      "wordCardsChallenge": {
+        "title": "אתגר כרטיסי מילים",
+        "selectMode": "בחר את מצב התרגול שלך:",
+        "hebToEng": "עברית ← אנגלית",
+        "engToHeb": "אנגלית ← עברית",
+        "loading": "טוען כרטיסיות...",
+        "errorTitle": "נכשל בטעינת הכרטיסיות",
+        "errorDescription": "משהו השתבש בעת טעינת כרטיסיות המילים שלך. אנא נסה שוב מאוחר יותר.",
+        "noCardsTitle": "אין עדיין כרטיסיות מילים",
+        "noCardsDescription": "צור כמה כרטיסיות מילים כדי להתחיל לתרגל!",
+        "cardProgress": "כרטיסיה {{current}} מתוך {{total}}",
+        "translateToEnglish": "תרגם לאנגלית:",
+        "translateToHebrew": "תרגם לעברית:",
+        "typeYourAnswer": "הקלד את התשובה שלך...",
+        "submit": "שלח",
+        "correct": "✅ נכון!",
+        "wrongLabel": "❌ לא נכון. התשובה הנכונה:",
+        "gameComplete": "המשחק הסתיים!",
+        "yourScore": "הציון שלך",
+        "correctAnswers": "{{correct}} מתוך {{total}} נכונות",
+        "playAgain": "שחק שוב",
+        "switchDirection": "החלף כיוון"
       }
+    },
+    "mistakeChat": {
+      "title": "הסבר טעות",
+      "loadingExplanation": "טוען הסבר...",
+      "errorLoadingExplanation": "מצטערים, לא ניתן לטעון את ההסבר.",
+      "askFollowUp": "שאל שאלת המשך...",
+      "send": "שלח"
     },
     "sidebar": {
       "toggleSidebar": "החלף סרגל",
@@ -550,8 +611,14 @@
       "myPracticeMistakes": "טעויות התרגול שלי",
       "studentPracticeHistory": "היסטוריית תרגול",
       "wordCards": "כרטיסיות מילים",
+      "wordCardsChallenge": "אתגר כרטיסי מילים",
       "myLearning": "הלמידה שלי",
-      "sandbox": "ארגז חול"
+      "sandbox": "ארגז חול",
+      "onlineUsers": "משתמשים מקוונים",
+      "appearance": "מראה",
+      "lightMode": "מצב בהיר",
+      "darkMode": "מצב כהה",
+      "systemDefault": "מצב מערכת"
     },
     "errorBoundary": {
       "title": "אופס! משהו השתבש",

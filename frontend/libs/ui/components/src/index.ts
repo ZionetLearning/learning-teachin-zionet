@@ -8,4 +8,4 @@ export * from "./modals";
 export * from "./GameSettings";
 export * from "./GameSetupPanel";
 export * from "./StudentPracticeHistory";
-export * from './Chips';
+export * from "./Chips";

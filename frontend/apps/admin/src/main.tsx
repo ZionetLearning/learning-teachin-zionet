@@ -7,11 +7,14 @@ import {
   SignalRProvider,
   initAppInsights,
   initializeSentry,
-  SentryErrorBoundary
+  SentryErrorBoundary,
+  AppThemeProvider,
 } from "@app-providers";
+import { DevToolsProvider } from "./providers";
 import { AppRole } from "@app-providers/types";
 import "./index.css";
 import App from "./App.tsx";
+import { DevToolsDock } from "./features";
 
 initAppInsights("admin");
 initializeSentry({ appName: "admin" });
@@ -25,10 +28,15 @@ createRoot(document.getElementById("root")!).render(
     <ReactQueryProvider>
       <AuthProvider appRole={AppRole.admin}>
         <SignalRProvider hubUrl={HUB_URL}>
-          <SentryErrorBoundary>
-            <App />
-            <ToastContainer />
-          </SentryErrorBoundary>
+          <DevToolsProvider>
+            <SentryErrorBoundary>
+              <AppThemeProvider>
+                <App />
+              </AppThemeProvider>
+              <DevToolsDock />
+              <ToastContainer />
+            </SentryErrorBoundary>
+          </DevToolsProvider>
         </SignalRProvider>
       </AuthProvider>
     </ReactQueryProvider>

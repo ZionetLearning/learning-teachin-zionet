@@ -80,7 +80,7 @@
         "mute": "Mute audio",
         "unmute": "Unmute audio",
         "callingTool": "Calling Tool: {{tool}}",
-        "send":"Send",
+        "send": "Send",
         "me": "Me"
       },
       "chatHistory": {
@@ -229,7 +229,19 @@
         "correct": "Correct!",
         "incorrect": "Incorrect. Try again.",
         "wordBankTitle": "Word Bank",
-        "wordBankHint": "Click a word to add it to the sentence"
+        "wordBankHint": "Click a word to add it to the sentence",
+        "explainMistake": "Explain Mistake",
+        "yourLastWrongAnswer": "Your last wrong answer:"
+      },
+      "retryResultModal": {
+        "successTitle": "🎉 Excellent!",
+        "failureTitle": "Keep Trying!",
+        "successMessage": "You fixed the mistake!",
+        "failureMessage": "Not quite right this time.",
+        "successDescription": "Great job! You've successfully corrected this mistake. You can practice more mistakes or try this one again.",
+        "failureDescription": "Don't worry! Learning takes practice. You can try again or move on to other mistakes.",
+        "tryAgain": "Try Again",
+        "backToMistakes": "Back to Mistakes"
       },
       "earthquakeMap": {
         "title": "Earthquake Map",
@@ -321,7 +333,11 @@
         "posting": "Posting...",
         "send": "Send",
         "noNotifications": "No notifications",
-        "notifications": "Notifications"
+        "notifications": "Notifications",
+        "reconnects": "Reconnects",
+        "errors": "Errors",
+        "signalRStatus": "SignalR Status",
+        "noEventsYet": "No SignalR events yet."
       },
       "users": {
         "createUsers": "Create Users",
@@ -354,6 +370,20 @@
         "actions": "Actions",
         "searchPlaceholder": "Search by email, first name, last name...",
         "clear": "Clear",
+        "onlineUsersTitle": "Online Users",
+        "onlineUsersSubtitle": "Real-time view of users currently active in the system",
+        "signalRStatus": "SignalR",
+        "loadingOnlineUsers": "Loading online users...",
+        "errorLoadingOnlineUsers": "Error loading online users",
+        "errorLoadingOnlineUsersSubtext": "Please try refreshing the page or check your connection.",
+        "noUsersOnline": "No users online",
+        "noUsersOnlineSubtext": "Users will appear here when they log into the system",
+        "user": "User",
+        "status": "Status",
+        "connections": "Connections",
+        "online": "Online",
+        "unknown": "Unknown",
+        "connection": "connection",
         "rowsPerPage": "Rows per page:",
         "page": "Page:",
         "of": "of",
@@ -516,8 +546,39 @@
         "saving": "Saving...",
         "markAsLearned": "Mark as Learned",
         "markAsUnlearned": "Mark as Unlearned",
-        "learned": "Learned"
+        "learned": "Learned",
+        "practice": "Practice"
+      },
+      "wordCardsChallenge": {
+        "title": "Word Cards Challenge",
+        "selectMode": "Choose your practice mode:",
+        "hebToEng": "Hebrew → English",
+        "engToHeb": "English → Hebrew",
+        "loading": "Loading cards...",
+        "errorTitle": "Failed to Load Cards",
+        "errorDescription": "Something went wrong while loading your word cards. Please try again later.",
+        "noCardsTitle": "No Word Cards Yet",
+        "noCardsDescription": "Create some word cards first to start practicing!",
+        "cardProgress": "Card {{current}} of {{total}}",
+        "translateToEnglish": "Translate to English:",
+        "translateToHebrew": "Translate to Hebrew:",
+        "typeYourAnswer": "Type your answer...",
+        "submit": "Submit",
+        "correct": "✅ Correct!",
+        "wrongLabel": "❌ Wrong. Correct answer:",
+        "gameComplete": "Game Complete!",
+        "yourScore": "Your Score",
+        "correctAnswers": "{{correct}} out of {{total}} correct",
+        "playAgain": "Play Again",
+        "switchDirection": "Switch Direction"
       }
+    },
+    "mistakeChat": {
+      "title": "Explain Mistake",
+      "loadingExplanation": "Loading explanation...",
+      "errorLoadingExplanation": "Sorry, couldn't load explanation.",
+      "askFollowUp": "Ask a follow-up question...",
+      "send": "Send"
     },
     "sidebar": {
       "toggleSidebar": "Toggle Sidebar",
@@ -550,8 +611,14 @@
       "myPracticeMistakes": "Practice Mistakes",
       "studentPracticeHistory": "Practice History",
       "wordCards": "Word Cards",
+      "wordCardsChallenge": "Word Cards Challenge",
       "myLearning": "My Learning",
-      "sandbox": "Sandbox"
+      "sandbox": "Sandbox",
+      "onlineUsers": "Online Users",
+      "appearance": "Appearance",
+      "lightMode": "Light Mode",
+      "darkMode": "Dark Mode",
+      "systemDefault": "System Default"
     },
     "errorBoundary": {
       "title": "Oops! Something went wrong",

@@ -107,6 +107,10 @@ manager:
     signalr:
       name: signalr-connection
       key: SignalRConnectionString
+    avatars:
+      enabled: true
+      name: avatars-storage-secret
+      key: AvatarsStorageConnectionString
     jwt:
       name: manager-appsettings
       keys:
@@ -123,6 +127,8 @@ manager:
           key: Jwt__Audience
         - remote: manager-jwt-refreshtokenhashkey
           key: Jwt__RefreshTokenHashKey
+  ingress:
+    enabled: false
   resources:
     requests:
       cpu: "100m"
@@ -256,3 +262,7 @@ dapr:
         poolTimeout: "30s"
         idleTimeout: "300s"
         maxConnAge: "30m"
+
+# Langfuse Configuration (optional observability tool)
+langfuse:
+  enabled: false  # Set to true if you want to deploy Langfuse for LLM observability
