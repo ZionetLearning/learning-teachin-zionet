@@ -84,6 +84,7 @@ export const ContextAwareChat = ({
         aria-label="chat"
         className={classes.floatingButton}
         onClick={() => setIsOpen(true)}
+        dir={isRTL ? "rtl" : "ltr"}
       >
         <ChatIcon />
       </Fab>
@@ -108,7 +109,9 @@ export const ContextAwareChat = ({
             </IconButton>
           </Box>
 
-          <Box className={classes.contextInfo}>{renderContextInfo()}</Box>
+          <Box className={classes.contextInfo} dir={isRTL ? "rtl" : "ltr"}>
+            {renderContextInfo()}
+          </Box>
 
           <Box className={classes.messagesContainer}>
             {messages.length === 0 ? (
@@ -127,6 +130,7 @@ export const ContextAwareChat = ({
                       ? classes.userMessage
                       : classes.assistantMessage
                   }`}
+                  dir={isRTL ? "rtl" : "ltr"}
                 >
                   {message.text}
                 </Box>
@@ -135,7 +139,7 @@ export const ContextAwareChat = ({
             <div ref={messagesEndRef} />
           </Box>
 
-          <Box className={classes.inputContainer}>
+          <Box className={classes.inputContainer} dir={isRTL ? "rtl" : "ltr"}>
             <TextField
               className={classes.input}
               value={inputValue}

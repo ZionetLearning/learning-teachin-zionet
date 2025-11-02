@@ -75,7 +75,6 @@ export const useStyles = (props: StyleProps) => {
       fontSize: "13px",
       color: color.primary,
       fontWeight: 500,
-      direction: ({ isRTL }: StyleProps) => (isRTL ? "rtl" : "ltr"),
     },
     messagesContainer: {
       flex: 1,
@@ -95,7 +94,6 @@ export const useStyles = (props: StyleProps) => {
       position: "relative",
       wordWrap: "break-word",
       boxShadow: "0 1px 2px rgba(0, 0, 0, 0.08)",
-      direction: ({ isRTL }: StyleProps) => (isRTL ? "rtl" : "ltr"),
       lineHeight: 1.6,
       fontSize: "14px",
     },
@@ -122,7 +120,6 @@ export const useStyles = (props: StyleProps) => {
       display: "flex",
       gap: "8px",
       alignItems: "flex-end",
-      direction: ({ isRTL }: StyleProps) => (isRTL ? "rtl" : "ltr"),
     },
     input: {
       flex: 1,

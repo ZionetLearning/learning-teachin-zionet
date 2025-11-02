@@ -436,7 +436,6 @@ export const Game = ({ retryData }: GameProps) => {
         </div>
       </div>
 
-      {/* Context-Aware Chat */}
       <ContextAwareChat pageContext={pageContext} hasSettings />
 
       {/* Configuration Modal */}
