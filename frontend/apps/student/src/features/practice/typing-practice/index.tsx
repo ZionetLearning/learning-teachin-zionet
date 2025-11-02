@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useStyles } from "./style";
 import { FeedbackDisplay, AudioControls } from "./components";
 import { useTypingPractice } from "./hooks";
@@ -11,6 +11,7 @@ import {
   GameSettings,
 } from "@ui-components";
 import { getDifficultyLabel } from "@student/features";
+import { ContextAwareChat, PageContext } from "@student/components";
 
 export const TypingPractice = () => {
   const { t, i18n } = useTranslation();
@@ -86,6 +87,27 @@ export const TypingPractice = () => {
       setGameOverModalOpen(true);
     }
   }, [handleNextExercise]);
+
+  const pageContext: PageContext = useMemo(
+    () => ({
+      pageName: "Typing Practice",
+      exerciseType: "typing",
+      currentExercise: currentSentenceIndex + 1,
+      totalExercises: sentenceCount,
+      difficulty: gameConfig?.difficulty.toString(),
+      additionalContext: {
+        phase: exerciseState.phase,
+        correctCount: correctSentencesCount,
+      },
+    }),
+    [
+      currentSentenceIndex,
+      sentenceCount,
+      gameConfig?.difficulty,
+      exerciseState.phase,
+      correctSentencesCount,
+    ],
+  );
 
   const renderExerciseArea = () => (
     <div className={classes.exerciseArea} data-testid="typing-exercise-area">
@@ -195,6 +217,9 @@ export const TypingPractice = () => {
           totalSentences={sentenceCount}
         />
       </div>
+
+      {/* Context-Aware Chat */}
+      <ContextAwareChat pageContext={pageContext} />
     </div>
   );
 };

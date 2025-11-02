@@ -556,6 +556,24 @@
       "askFollowUp": "Ask a follow-up question...",
       "send": "Send"
     },
+    "contextChat": {
+      "title": "Practice Assistant",
+      "emptyState": "Ask me anything about this exercise!",
+      "inputPlaceholder": "Ask a question...",
+      "exerciseType": {
+        "typing": "Typing",
+        "word-order": "Word Order",
+        "speaking": "Speaking"
+      },
+      "difficulty": {
+        "0": "Easy",
+        "1": "Medium",
+        "2": "Hard",
+        "easy": "Easy",
+        "medium": "Medium",
+        "hard": "Hard"
+      }
+    },
     "sidebar": {
       "toggleSidebar": "Toggle Sidebar",
       "home": "Home",

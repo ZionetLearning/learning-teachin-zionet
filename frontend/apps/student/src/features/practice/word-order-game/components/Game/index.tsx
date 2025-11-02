@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -13,7 +13,12 @@ import {
   GameSetupPanel,
   RetryResultModal,
 } from "@ui-components";
-import { MistakeChatPopup, WrongAnswerDisplay } from "@student/components";
+import {
+  MistakeChatPopup,
+  WrongAnswerDisplay,
+  ContextAwareChat,
+  PageContext,
+} from "@student/components";
 import { getDifficultyLabel } from "@student/features";
 import { useAuth } from "@app-providers";
 import { useSubmitGameAttempt } from "@student/api";
@@ -336,6 +341,31 @@ export const Game = ({ retryData }: GameProps) => {
     setMistakeChatOpen(false);
   }, []);
 
+  const pageContext: PageContext = useMemo(
+    () => ({
+      pageName: "Word Order Game",
+      exerciseType: "word-order",
+      currentExercise: currentSentenceIndex + 1,
+      totalExercises: sentenceCount,
+      difficulty: gameConfig?.difficulty?.toString(),
+      additionalContext: {
+        isRetryMode,
+        correctCount: correctSentencesCount,
+        hasChecked: hasCheckedThisSentence,
+        chosenWordsCount: chosen.length,
+      },
+    }),
+    [
+      currentSentenceIndex,
+      sentenceCount,
+      gameConfig?.difficulty,
+      isRetryMode,
+      correctSentencesCount,
+      hasCheckedThisSentence,
+      chosen.length,
+    ],
+  );
+
   // Show welcome screen if game hasn't started yet
   if (!gameStarted || !gameConfig) {
     return (
@@ -405,6 +435,10 @@ export const Game = ({ retryData }: GameProps) => {
           />
         </div>
       </div>
+
+      {/* Context-Aware Chat */}
+      <ContextAwareChat pageContext={pageContext} />
+
       {/* Configuration Modal */}
       <GameConfigModal
         open={configModalOpen}
