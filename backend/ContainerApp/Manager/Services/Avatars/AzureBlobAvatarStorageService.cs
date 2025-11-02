@@ -35,6 +35,10 @@ public sealed class AzureBlobAvatarStorageService : IAvatarStorageService
                 _options.StorageConnectionString?.Length > 20
                     ? _options.StorageConnectionString[..20] : _options.StorageConnectionString);
         }
+
+        _log.LogInformation("Avatar storage init. Container={Container}, ConnStr={ConnStr}",
+    _options.Container,
+    _options.StorageConnectionString);
     }
 
     private void EnsureReady()
