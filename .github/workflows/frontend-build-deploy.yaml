@@ -37,8 +37,7 @@ jobs:
     env:
       FE_DIR: frontend
     steps:
-      - name: Checkout Repository
-        uses: ./.github/actions/checkout
+      - uses: actions/checkout@v5
 
       - name: Setup Frontend Environment
         uses: ./.github/actions/setup-frontend
@@ -95,8 +94,7 @@ jobs:
     env:
       FE_DIR: frontend
     steps:
-      - name: Checkout Repository
-        uses: ./.github/actions/checkout
+      - uses: actions/checkout@v5
 
       - name: Azure Login (OIDC)
         uses: azure/login@v2
