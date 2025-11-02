@@ -136,6 +136,9 @@ jobs:
             echo "deploy_langfuse=false"
           fi
 
+          # Langfuse secrets should be available in all environments
+          echo "langfuse_secrets_enabled=true" >> $GITHUB_OUTPUT
+
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
 
@@ -264,6 +267,12 @@ jobs:
             IMAGE_TAG="$ENVIRONMENT_NAME"
           fi
 
+          # Prepare Langfuse setting based on environment
+          LANGFUSE_ENABLED="true"
+          if [ "${{ steps.setup.outputs.deploy_langfuse }}" = "false" ]; then
+            LANGFUSE_ENABLED="false"
+          fi
+
           helm template app "$CHART_DIR" -f "$VALUES_FILE" \
             --set namespace.name="$ENVIRONMENT_NAME" \
             --set namespace.create=false \
@@ -272,6 +281,7 @@ jobs:
             --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
             --set global.environment="$IMAGE_TAG" \
             --set langfuse.enabled="$LANGFUSE_ENABLED" \
+            --set accessor.secrets.langfuse.enabled="${{ steps.setup.outputs.langfuse_secrets_enabled }}" \
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false \
           | grep -n '^kind: Namespace' && { echo "Namespace still rendered"; exit 1; } || echo "OK: no Namespace in chart"
@@ -285,6 +295,8 @@ jobs:
           fi
 
           # Prepare Langfuse setting based on environment
+          # langfuse.enabled controls if Langfuse app is deployed (only dev)
+          # accessor.secrets.langfuse.enabled controls if accessor gets Langfuse secrets (all envs)
           LANGFUSE_ENABLED="true"
           if [ "${{ steps.setup.outputs.deploy_langfuse }}" = "false" ]; then
             LANGFUSE_ENABLED="false"
@@ -300,7 +312,7 @@ jobs:
             --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
             --set global.environment="$IMAGE_TAG" \
             --set langfuse.enabled="$LANGFUSE_ENABLED" \
-            --set accessor.secrets.langfuse.enabled=true \
+            --set accessor.secrets.langfuse.enabled="${{ steps.setup.outputs.langfuse_secrets_enabled }}" \
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false
 
