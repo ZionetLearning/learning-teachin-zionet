@@ -97,17 +97,12 @@ jobs:
         working-directory: ${{ env.FE_DIR }}
         run: npm ci
 
-      - name: Create release name for Sentry (UTC + short SHA)
-        run: |
-          ts=$(date -u "+Release-%d-%m-%Y_%H-%M")
-          echo "RELEASE_NAME=${ts}-${GITHUB_SHA::7}" >> $GITHUB_ENV
-
-      - name: Load environment configuration
+      - name: Load dev environment variables
         working-directory: ${{ env.FE_DIR }}
         run: |
           echo "Loading dev environment configuration from .env.cloud..."
-          # Load environment variables from .env.cloud file
-          cat .env.cloud >> $GITHUB_ENV
+          grep -E '^[^#]+=' .env.cloud >> $GITHUB_ENV
+        shell: /usr/bin/bash
 
       - name: Build ${{ matrix.app }} Application
         working-directory: ${{ env.FE_DIR }}
