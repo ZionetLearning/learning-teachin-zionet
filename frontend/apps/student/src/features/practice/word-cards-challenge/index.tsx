@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Box,
   Button,
@@ -9,6 +9,7 @@ import {
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useGetWordCards, type WordCard } from "@student/api";
+import { ContextAwareChat, PageContext } from "@student/components";
 import { useStyles } from "./style";
 import { ModeSelection, GameSummary } from "./components";
 import { FEEDBACK_DISPLAY_DURATION } from "./constants";
@@ -107,6 +108,33 @@ export const WordCardsChallenge = () => {
     }, FEEDBACK_DISPLAY_DURATION);
   }, [userAnswer, currentCard, mode, currentIndex, shuffledCards.length]);
 
+  const pageContext: PageContext = useMemo(
+    () => ({
+      pageName: "Word Cards Challenge",
+      exerciseType: "word-cards",
+      currentExercise: currentIndex + 1,
+      totalExercises: shuffledCards.length,
+      additionalContext: {
+        mode,
+        gameState,
+        correctCount,
+        currentWord: currentCard
+          ? mode === "heb-to-eng"
+            ? currentCard.hebrew
+            : currentCard.english
+          : "",
+      },
+    }),
+    [
+      currentIndex,
+      shuffledCards.length,
+      mode,
+      gameState,
+      correctCount,
+      currentCard,
+    ],
+  );
+
   if (isLoading) {
     return (
       <Box className={classes.centerState}>
@@ -143,17 +171,25 @@ export const WordCardsChallenge = () => {
   }
 
   if (gameState === "mode-selection") {
-    return <ModeSelection onStartGame={startGame} />;
+    return (
+      <>
+        <ModeSelection onStartGame={startGame} />
+        <ContextAwareChat pageContext={pageContext} />
+      </>
+    );
   }
 
   if (gameState === "summary") {
     return (
-      <GameSummary
-        correctCount={correctCount}
-        totalCards={shuffledCards.length}
-        currentMode={mode}
-        onPlayAgain={startGame}
-      />
+      <>
+        <GameSummary
+          correctCount={correctCount}
+          totalCards={shuffledCards.length}
+          currentMode={mode}
+          onPlayAgain={startGame}
+        />
+        <ContextAwareChat pageContext={pageContext} />
+      </>
     );
   }
 
@@ -266,6 +302,8 @@ export const WordCardsChallenge = () => {
           ) : null}
         </Box>
       </Dialog>
+
+      <ContextAwareChat pageContext={pageContext} />
     </Box>
   );
 };

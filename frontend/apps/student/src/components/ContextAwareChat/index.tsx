@@ -17,12 +17,16 @@ import { useContextAwareChat } from "./useContextAwareChat";
 
 export interface ContextAwareChatProps {
   pageContext: PageContext;
+  hasSettings?: boolean;
 }
 
-export const ContextAwareChat = ({ pageContext }: ContextAwareChatProps) => {
+export const ContextAwareChat = ({
+  pageContext,
+  hasSettings = false,
+}: ContextAwareChatProps) => {
   const { t, i18n } = useTranslation();
   const isRTL = i18n.dir() === "rtl";
-  const classes = useStyles({ isRTL });
+  const classes = useStyles({ isRTL, hasSettings });
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);

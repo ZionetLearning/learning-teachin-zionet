@@ -1,5 +1,5 @@
 /// <reference types="vite/client" />
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { CircularProgress } from "@mui/material";
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";
@@ -15,6 +15,7 @@ import {
   GameSettings,
   GameSetupPanel,
 } from "@ui-components";
+import { ContextAwareChat, PageContext } from "@student/components";
 import { getDifficultyLabel } from "../utils";
 import { useStyles } from "./style";
 
@@ -297,6 +298,31 @@ export const SpeakingPractice = () => {
     requestSentences(difficulty, nikud, count);
   };
 
+  const pageContext: PageContext = useMemo(
+    () => ({
+      pageName: "Speaking Practice",
+      exerciseType: "speaking",
+      currentExercise: currentIdx + 1,
+      totalExercises: sentences.length,
+      difficulty: difficulty.toString(),
+      additionalContext: {
+        isRecording,
+        isPlaying,
+        correctCount: correctIdxs.size,
+        attemptedCount: attempted.size,
+      },
+    }),
+    [
+      currentIdx,
+      sentences.length,
+      difficulty,
+      isRecording,
+      isPlaying,
+      correctIdxs.size,
+      attempted.size,
+    ],
+  );
+
   if (!isConfigured) {
     return (
       <div className={classes.loader}>
@@ -406,6 +432,7 @@ export const SpeakingPractice = () => {
         correctSentences={correctIdxs.size}
         totalSentences={sentences.length}
       />
+      <ContextAwareChat pageContext={pageContext} hasSettings />
     </div>
   );
 };

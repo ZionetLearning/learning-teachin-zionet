@@ -587,7 +587,8 @@
       "exerciseType": {
         "typing": "Typing",
         "word-order": "Word Order",
-        "speaking": "Speaking"
+        "speaking": "Speaking",
+        "word-cards": "Word Cards"
       },
       "difficulty": {
         "0": "Easy",

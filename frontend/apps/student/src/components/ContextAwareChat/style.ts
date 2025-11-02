@@ -3,6 +3,7 @@ import { useThemeColors } from "@app-providers";
 
 interface StyleProps {
   isRTL: boolean;
+  hasSettings: boolean;
 }
 
 export const useStyles = (props: StyleProps) => {
@@ -11,7 +12,8 @@ export const useStyles = (props: StyleProps) => {
   return createUseStyles({
     floatingButton: {
       position: "fixed",
-      bottom: "96px",
+      bottom: ({ hasSettings }: StyleProps) =>
+        hasSettings ? "calc(16px + 60px + 16px)" : "24px",
       right: ({ isRTL }: StyleProps) => (isRTL ? "auto" : "24px"),
       left: ({ isRTL }: StyleProps) => (isRTL ? "24px" : "auto"),
       zIndex: 1000,

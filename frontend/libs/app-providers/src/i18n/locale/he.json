@@ -587,7 +587,8 @@
       "exerciseType": {
         "typing": "הקלדה",
         "word-order": "סידור מילים",
-        "speaking": "דיבור"
+        "speaking": "דיבור",
+        "word-cards": "כרטיסיות מילים"
       },
       "difficulty": {
         "0": "קל",
