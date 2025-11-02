@@ -61,32 +61,13 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # Azure Speech SDK configuration
+  # Secrets and external APIs (environment-agnostic)
   VITE_AZURE_SPEECH_KEY: ${{ secrets.VITE_AZURE_SPEECH_KEY }}
-  VITE_AZURE_REGION: "eastus"
-  
-  # External APIs
   VITE_OPENWEATHERMAP_API_KEY: ${{ secrets.VITE_OPENWEATHERMAP_API_KEY }}
-  
-  # Backend microservices URLs
-  VITE_BASE_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev"
-  VITE_AI_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/ai-manager"
-  VITE_AUTH_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/auth"
-  VITE_TASKS_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/tasks-manager"
-  VITE_USERS_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/users-manager"
-  VITE_MEDIA_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/media-manager"
-  VITE_GAMES_MANAGER_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/games-manager"
-  VITE_WORD_CARDS_MANAGER_URL: "https://teachin.westeurope.cloudapp.azure.com/api/dev/wordcards-manager"
-  
-  # Azure OpenAI configuration
-  VITE_AZURE_OPENAI_KEY: ""
-  VITE_AZURE_OPENAI_DEPLOYMENT_NAME: "gpt-4.1-mini"
-  VITE_AZURE_OPENAI_API_VERSION: "2024-04-01-preview"
-  VITE_AZURE_OPENAI_ENDPOINT: "https://france-teachin-open-ai.openai.azure.com/"
-  
-  # Monitoring and tracking
   VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
   SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+  
+  # Backend URLs and other config will be loaded dynamically from env-cloud.js
 
 jobs:
   frontend-test:
@@ -120,6 +101,13 @@ jobs:
         run: |
           ts=$(date -u "+Release-%d-%m-%Y_%H-%M")
           echo "RELEASE_NAME=${ts}-${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+      - name: Load environment configuration
+        working-directory: ${{ env.FE_DIR }}
+        run: |
+          echo "Loading dev environment configuration from .env.cloud..."
+          # Load environment variables from .env.cloud file
+          cat .env.cloud >> $GITHUB_ENV
 
       - name: Build ${{ matrix.app }} Application
         working-directory: ${{ env.FE_DIR }}
@@ -189,12 +177,23 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Load environment configuration
+        working-directory: ${{ env.FE_DIR }}
+        run: |
+          echo "Loading dev environment configuration from .env.cloud..."
+          # Load environment variables from .env.cloud file
+          cat .env.cloud >> $GITHUB_ENV
+
       - name: Compute resource names
         id: names
         shell: bash
         run: |
           set -euo pipefail
-          ENV="${{ inputs.environment_name || env.environment_name}}"
+          if [ -n "${{ inputs.environment_name || '' }}" ]; then
+            ENV="${{ inputs.environment_name }}"
+          else
+            ENV="dev"
+          fi
           APP="${{ matrix.app }}"
           RG="${ENV}-zionet-learning-2025"
           
