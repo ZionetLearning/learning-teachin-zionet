@@ -17,23 +17,37 @@ public sealed class AzureBlobAvatarStorageService : IAvatarStorageService
 
     public AzureBlobAvatarStorageService(IOptions<AvatarsOptions> opt, ILogger<AzureBlobAvatarStorageService> log)
     {
+
         _options = opt.Value;
         _log = log;
+
+        var raw = _options.StorageConnectionString;
+        var norm = NormalizeConnString(raw);
+
+        _log.LogInformation("Avatar storage init. Container={Container}, ConnStr={ConnStr}",
+    _options.Container,
+    norm);
+
         var conn = _options.StorageConnectionString;
 
         try
         {
-            _svc = new BlobServiceClient(_options.StorageConnectionString);
+            _svc = new BlobServiceClient(norm);
             _container = _svc.GetBlobContainerClient(_options.Container);
             _log.LogInformation("Avatar storage init. Container={Container}", _options.Container);
         }
-        catch (Exception ex)
+        catch (FormatException fe)
         {
-            _initError = ex;
-            _log.LogError(ex,
-                "Failed to init BlobServiceClient. ConnStr prefix={Prefix}",
-                _options.StorageConnectionString?.Length > 20
-                    ? _options.StorageConnectionString[..20] : _options.StorageConnectionString);
+            // Добавь деталь для отладки
+            _log.LogWarning("ConnStr length={Len}, startsQuote={StartQ}, endsQuote={EndQ}",
+                norm.Length, norm.StartsWith('"') || norm.StartsWith('\''), norm.EndsWith('"') || norm.EndsWith('\''));
+
+            // Ещё можно подсветить первые N символов в hex (без ключа!)
+            _log.LogWarning("ConnStr prefix hex: {Hex}",
+                string.Join(" ", norm.Take(48).Select(ch => ((int)ch).ToString("X2"))));
+
+            throw new InvalidOperationException(
+                "Avatar storage is misconfigured: invalid Storage connection string or container.", fe);
         }
 
         _log.LogInformation("Avatar storage init. Container={Container}, ConnStr={ConnStr}",
@@ -186,4 +200,19 @@ public sealed class AzureBlobAvatarStorageService : IAvatarStorageService
         => !string.IsNullOrWhiteSpace(blobPath)
             ? blobPath
             : throw new ArgumentException("Invalid blobPath");
+
+    private static string NormalizeConnString(string? cs)
+    {
+        if (string.IsNullOrWhiteSpace(cs))
+        {
+            return cs ?? "";
+        }
+
+        var charsToDrop = new[] { '\uFEFF', '\u200B', '\u200C', '\u200D', '\u200E', '\u200F', '\u2060', '\u00A0' };
+        var cleaned = new string(cs.Where(c => !charsToDrop.Contains(c)).ToArray());
+
+        cleaned = cleaned.Trim().Trim('\"', '\'');
+
+        return cleaned;
+    }
 }

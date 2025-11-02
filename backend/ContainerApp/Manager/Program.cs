@@ -157,14 +157,6 @@ builder.Services
   .AddOptions<AvatarsOptions>()
   .Bind(builder.Configuration.GetSection(AvatarsOptions.SectionName));
 
-//builder.Services.AddOptions<AvatarsOptions>()
-//  .Bind(builder.Configuration.GetSection(AvatarsOptions.SectionName))
-//  .Validate(o => !string.IsNullOrWhiteSpace(o.StorageConnectionString), "Avatars:StorageConnectionString is required")
-//  .Validate(o => !string.IsNullOrWhiteSpace(o.Container), "Avatars:Container is required")
-//  .Validate(o => o.MaxBytes > 0, "Avatars:MaxBytes must be > 0")
-//  .Validate(o => o.AllowedContentTypes is { Length: > 0 }, "Avatars:AllowedContentTypes must be non-empty")
-//  .ValidateOnStart();
-
 builder.Services.AddSingleton<IAvatarStorageService, AzureBlobAvatarStorageService>();
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
