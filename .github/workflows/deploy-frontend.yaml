@@ -178,6 +178,18 @@ jobs:
           echo "Loading dev environment configuration from .env.cloud..."
           grep -E '^[^#]+=' .env.cloud >> $GITHUB_ENV
         shell: bash
+      
+      - name: Compute resource names
+        id: names
+        shell: bash
+        run: |
+          ENV="${{ inputs.environment_name || 'dev' }}"
+          APP="${{ matrix.app }}"
+          RG="${ENV}-zionet-learning-2025"
+          SWA_NAME="static-web-app-${APP}-${ENV}"
+
+          echo "rg=$RG" >> $GITHUB_OUTPUT
+          echo "swa=$SWA_NAME" >> $GITHUB_OUTPUT
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
