@@ -82,8 +82,6 @@ jobs:
     with:
       environment: ${{ github.event.inputs.environment }}
       environment_name: ${{ github.event.inputs.environment_name }}
-      deployment_token: ${{ needs.terraform-apply.outputs.static_web_app_api_keys }}
-      app_insights_connection_string: ${{ needs.terraform-apply.outputs.application_insights_connection_strings }}
     secrets: inherit
  
  
