@@ -22,30 +22,21 @@ public sealed class AzureBlobAvatarStorageService : IAvatarStorageService
         _log = log;
 
         var raw = _options.StorageConnectionString;
-        var norm = NormalizeConnString(raw);
+        var normConnection = NormalizeConnString(raw);
 
-        _log.LogInformation("Avatar storage init. Container={Container}, ConnStr={ConnStr}",
-    _options.Container,
-    norm);
+        _log.LogInformation("Avatar storage init. Container={Container}",
+    _options.Container);
 
         var conn = _options.StorageConnectionString;
 
         try
         {
-            _svc = new BlobServiceClient(norm);
+            _svc = new BlobServiceClient(normConnection);
             _container = _svc.GetBlobContainerClient(_options.Container);
             _log.LogInformation("Avatar storage init. Container={Container}", _options.Container);
         }
         catch (FormatException fe)
         {
-            // Добавь деталь для отладки
-            _log.LogWarning("ConnStr length={Len}, startsQuote={StartQ}, endsQuote={EndQ}",
-                norm.Length, norm.StartsWith('"') || norm.StartsWith('\''), norm.EndsWith('"') || norm.EndsWith('\''));
-
-            // Ещё можно подсветить первые N символов в hex (без ключа!)
-            _log.LogWarning("ConnStr prefix hex: {Hex}",
-                string.Join(" ", norm.Take(48).Select(ch => ((int)ch).ToString("X2"))));
-
             throw new InvalidOperationException(
                 "Avatar storage is misconfigured: invalid Storage connection string or container.", fe);
         }
