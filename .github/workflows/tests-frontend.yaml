@@ -2,6 +2,9 @@ name: Frontend Tests & Linting
 run-name: Running Frontend Linting & Tests for all apps (student, teacher, admin)
 
 on:
+  push:
+    branches:
+      - devops/improvment-continue
   pull_request:
     branches:
       - main
