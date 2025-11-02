@@ -7,10 +7,6 @@ variable "location" {
 variable "cluster_name" {
   type = string
 }
-variable "node_count" {
-  type    = number
-  default = 2
-}
 variable "max_node_count" {
   type    = number
   default = 3
@@ -23,12 +19,6 @@ variable "vm_size" {
   type    = string
   default = "Standard_B2s"
 }
-
-variable "identity_type" {	
-  description = "The type of identity to assign to the AKS cluster (SystemAssigned or UserAssigned)"	
-  type        = string	
-  default     = "SystemAssigned"	
-}	
 
 variable "identity_ids" {	
   description = "Optional list of UserAssigned Identity IDs to use if type is UserAssigned"	
