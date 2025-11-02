@@ -42,6 +42,7 @@ builder.Services.AddScoped<IRefreshSessionService, RefreshSessionService>();
 builder.Services.AddScoped<ISpeechService, SpeechService>();
 builder.Services.AddScoped<IStudentPracticeHistoryService, StudentPracticeHistoryService>();
 builder.Services.AddScoped<IWordCardService, WordCardService>();
+builder.Services.AddScoped<IClassService, ClassService>();
 builder.Services.AddScoped<IMeetingService, MeetingService>();
 builder.Services.AddScoped<IAzureCommunicationService, AzureCommunicationService>();
 
@@ -167,5 +168,6 @@ app.MapStatsEndpoints();
 app.MapMediaEndpoints();
 app.MapGamesEndpoints();
 app.MapWordCardsEndpoints();
+app.MapClassesEndpoints();
 app.MapMeetingsEndpoints();
 await app.RunAsync();

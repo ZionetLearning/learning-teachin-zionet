@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Accessor.Models.Users;
 using Accessor.Models.Games;
 using Accessor.Models.Prompts;
+using Accessor.Models.Classes;
 using Accessor.Models.WordCards;
 using Accessor.Models.Meetings;
 
@@ -22,11 +23,16 @@ public class AccessorDbContext : DbContext
     public DbSet<PromptModel> Prompts { get; set; } = default!;
     public DbSet<TeacherStudent> TeacherStudents { get; set; } = default!;
     public DbSet<GameAttempt> GameAttempts { get; set; } = default!;
+    public DbSet<Class> Class { get; set; } = default!;
+    public DbSet<ClassMembership> ClassMembership { get; set; } = default!;
     public DbSet<WordCardModel> WordCards { get; set; } = default!;
     public DbSet<MeetingModel> Meetings { get; set; } = default!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.ApplyConfiguration(new ClassesConfiguration());
+        modelBuilder.ApplyConfiguration(new ClassMembershipConfiguration());
+
         modelBuilder.ApplyConfiguration(new GameAttemptsConfiguration());
 
         // Users table

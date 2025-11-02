@@ -6,3 +6,4 @@ export * from "./types";
 export * from "./observability";
 export * from "./api";
 export * from "./context";
+export * from "./app-theme-provider";

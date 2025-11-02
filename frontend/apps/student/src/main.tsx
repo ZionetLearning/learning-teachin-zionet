@@ -8,6 +8,7 @@ import {
   initAppInsights,
   initializeSentry,
   SentryErrorBoundary,
+  AppThemeProvider,
 } from "@app-providers";
 import { WordCaptureProvider } from "./providers";
 import { AppRole } from "@app-providers/types";
@@ -28,7 +29,9 @@ createRoot(document.getElementById("root")!).render(
         <SignalRProvider hubUrl={HUB_URL}>
           <SentryErrorBoundary>
             <WordCaptureProvider>
-              <App />
+              <AppThemeProvider>
+                <App />
+              </AppThemeProvider>
             </WordCaptureProvider>
             <ToastContainer />
           </SentryErrorBoundary>

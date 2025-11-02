@@ -249,6 +249,7 @@ app.MapGamesEndpoints();
 app.MapHub<NotificationHub>("/NotificationHub");
 app.MapMediaEndpoints();
 app.MapWordCardsEndpoints();
+app.MapClassesEndpoints();
 app.MapMeetingsEndpoints();
 
 app.MapStatsPing();

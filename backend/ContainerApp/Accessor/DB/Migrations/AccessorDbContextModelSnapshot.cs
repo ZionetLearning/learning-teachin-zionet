@@ -63,6 +63,65 @@ namespace Accessor.DB.Migrations
                     b.ToTable("ChatHistorySnapshots", (string)null);
                 });
 
+            modelBuilder.Entity("Accessor.Models.Classes.Class", b =>
+                {
+                    b.Property<Guid>("ClassId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("ClassId");
+
+                    b.HasIndex("Name")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Classes_Name_CI");
+
+                    b.ToTable("Classes", (string)null);
+                });
+
+            modelBuilder.Entity("Accessor.Models.Classes.ClassMembership", b =>
+                {
+                    b.Property<Guid>("ClassId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("AddedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("AddedBy")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("ClassId", "UserId", "Role");
+
+                    b.HasIndex("ClassId", "Role", "UserId");
+
+                    b.HasIndex("UserId", "Role", "ClassId");
+
+                    b.ToTable("ClassMemberships", (string)null);
+                });
+
             modelBuilder.Entity("Accessor.Models.Games.GameAttempt", b =>
                 {
                     b.Property<Guid>("AttemptId")
@@ -421,6 +480,30 @@ namespace Accessor.DB.Migrations
                     b.HasIndex("UserId", "IsLearned");
 
                     b.ToTable("WordCards", (string)null);
+                });
+
+            modelBuilder.Entity("Accessor.Models.Classes.ClassMembership", b =>
+                {
+                    b.HasOne("Accessor.Models.Classes.Class", "Class")
+                        .WithMany("Memberships")
+                        .HasForeignKey("ClassId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Accessor.Models.Users.UserModel", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Class");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Accessor.Models.Classes.Class", b =>
+                {
+                    b.Navigation("Memberships");
                 });
 #pragma warning restore 612, 618
         }
