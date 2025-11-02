@@ -229,36 +229,6 @@ jobs:
               --yes || true
           done
 
-      - name: Get App Insights connection string
-        id: ai
-        shell: bash
-        run: |
-          if [ -n "${{ inputs.app_insights_connection_string || '' }}" ]; then
-            echo "Using provided App Insights connection strings from terraform output..."
-            # Extract the connection string for the current app from the JSON object
-            CONN=$(echo '${{ inputs.app_insights_connection_string }}' | jq -r '."${{ matrix.app }}"')
-            if [ "$CONN" = "null" ] || [ -z "$CONN" ]; then
-              echo "No App Insights connection string found for app: ${{ matrix.app }}"
-              exit 1
-            fi
-            echo "::add-mask::$CONN"
-            echo "APPINSIGHTS_CONNECTION_STRING=$CONN" >> "$GITHUB_ENV"
-          else
-            echo "Fetching App Insights connection string from Azure CLI..."
-            set -euo pipefail
-            CONN=$(az resource show \
-              -g "${{ steps.names.outputs.rg }}" \
-              -n "${{ steps.names.outputs.ai }}" \
-              --resource-type "Microsoft.Insights/components" \
-              --query "properties.ConnectionString" -o tsv)
-            if [ -z "$CONN" ]; then
-              echo "Could not resolve Application Insights connection string."
-              exit 1
-            fi
-            echo "::add-mask::$CONN"
-            echo "APPINSIGHTS_CONNECTION_STRING=$CONN" >> "$GITHUB_ENV"
-          fi
-
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
