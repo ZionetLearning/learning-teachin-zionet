@@ -39,16 +39,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Frontend Environment
+        uses: ./.github/actions/setup-frontend
         with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: '${{ env.FE_DIR }}/package-lock.json'
-
-      - name: Install Dependencies
-        working-directory: ${{ env.FE_DIR }}
-        run: npm ci
+          node-version: ${{ inputs.node_version || '20' }}
 
       - name: Load dev environment variables
         working-directory: ${{ env.FE_DIR }}

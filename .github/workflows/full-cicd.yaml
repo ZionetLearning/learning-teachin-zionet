@@ -78,7 +78,7 @@ jobs:
   deploy-frontend:
     if: ${{ github.event.inputs.environment_name == 'dev' || github.event.inputs.frontend_apps == 'all' }}
     needs: [terraform-apply]
-    uses: ./.github/workflows/deploy-frontend.yaml
+    uses: ./.github/workflows/frontend-pipeline.yaml
     with:
       environment: ${{ github.event.inputs.environment }}
       environment_name: ${{ github.event.inputs.environment_name }}

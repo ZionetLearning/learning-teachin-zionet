@@ -47,11 +47,11 @@ env:
   # Backend URLs and other config will be loaded dynamically from .env.cloud
 
 jobs:
-  frontend-test:
-    uses: ./.github/workflows/tests-frontend.yaml
+  frontend-tests:
+    uses: ./.github/workflows/frontend-tests.yaml
 
   frontend-build-deploy:
-    needs: [frontend-test]
+    needs: [frontend-tests]
     uses: ./.github/workflows/frontend-build-deploy.yaml
     with:
       environment: ${{ inputs.environment || 'Development' }}
