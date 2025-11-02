@@ -179,50 +179,6 @@ jobs:
           # Load environment variables from .env.cloud file
           cat .env.cloud >> $GITHUB_ENV
 
-      - name: Compute resource names
-        id: names
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ -n "${{ inputs.environment_name || '' }}" ]; then
-            ENV="${{ inputs.environment_name }}"
-          else
-            ENV="dev"
-          fi
-          APP="${{ matrix.app }}"
-          RG="${ENV}-zionet-learning-2025"
-          
-          # Use predictable naming pattern: static-web-app-{app}-{env}
-          SWA_NAME="static-web-app-${APP}-${ENV}"
-          AI_NAME="${SWA_NAME}-appinsights"
-          
-          echo "Deploying $APP to: $SWA_NAME"
-          echo "rg=$RG" >> $GITHUB_OUTPUT
-          echo "swa=$SWA_NAME" >> $GITHUB_OUTPUT
-          echo "ai=$AI_NAME" >> $GITHUB_OUTPUT
-       
-      - name: Clean stage environment
-        shell: bash
-        run: |
-          set -euo pipefail 
-
-          # Get all staging environments for this Static Web App
-          ENVIRONMENTS=$(az staticwebapp environment list \
-            --name "${{ steps.names.outputs.swa }}" \
-            --resource-group "${{ steps.names.outputs.rg }}" \
-            --query "[?name != 'default'].{name:name, createdOn:createdOn}" \
-            --output json)
-
-          # Delete all staging environments
-          for env in $(echo "$ENVIRONMENTS" | jq -r '.[].name'); do
-            echo "Deleting staging environment: $env"
-            az staticwebapp environment delete \
-              --name "${{ steps.names.outputs.swa }}" \
-              --resource-group "${{ steps.names.outputs.rg }}" \
-              --environment-name "$env" \
-              --yes || true
-          done
-
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
