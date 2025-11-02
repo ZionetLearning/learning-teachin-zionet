@@ -9,4 +9,3 @@ export * from "./country-explorer";
 export * from "./practice-mistakes";
 export * from "./practice-history";
 export * from "./word-cards";
-export * from "./word-cards-challenge";
