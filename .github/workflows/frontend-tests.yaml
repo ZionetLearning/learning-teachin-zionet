@@ -31,7 +31,7 @@ jobs:
         app: [student, teacher, admin]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Frontend Environment
         uses: ./.github/actions/setup-frontend
@@ -49,7 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Frontend Environment
         uses: ./.github/actions/setup-frontend
