@@ -15,8 +15,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Accessor.DB.Migrations;
 
 [DbContext(typeof(AccessorDbContext))]
-[Migration("20251102124734_AddMeetingsTableWithDurationAndDescription")]
-partial class AddMeetingsTableWithDurationAndDescription
+[Migration("20251102143433_AddMeetingsTable")]
+partial class AddMeetingsTable
 {
     /// <inheritdoc />
     protected override void BuildTargetModel(ModelBuilder modelBuilder)
