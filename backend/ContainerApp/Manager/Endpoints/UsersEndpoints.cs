@@ -35,25 +35,10 @@ public static class UsersEndpoints
 
         usersGroup.MapGet("/online", GetOnlineUsers).WithName("GetOnlineUsers").RequireAuthorization(PolicyNames.AdminOnly);
 
-        usersGroup.MapPost("/user/{userId:guid}/avatar/upload-url", GetUploadAvatarUrlAsync)
-            .WithName("GetUploadAvatarUrl")
-            .RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
-
-        usersGroup.MapPost("/user/{userId:guid}/avatar", GetUploadAvatarUrlAsync)
-    .WithName("Avatar_RequestUploadUrl")
-    .RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
-
-        usersGroup.MapPost("/user/{userId:guid}/avatar/confirm", ConfirmAvatarAsync)
-    .WithName("ConfirmAvatar")
-    .RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
-
-        usersGroup.MapDelete("/user/{userId:guid}/avatar", DeleteAvatarAsync)
-            .WithName("DeleteAvatar")
-            .RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
-
-        usersGroup.MapGet("/user/{userId:guid}/avatar/url", GetAvatarReadUrlAsync)
-            .WithName("GetAvatarReadUrl")
-            .RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
+        usersGroup.MapPost("/user/{userId:guid}/avatar/upload-url", GenerateUploadAvatarUrlAsync).WithName("GetUploadAvatarUrl").RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
+        usersGroup.MapPost("/user/{userId:guid}/avatar/confirm", ConfirmAvatarAsync).WithName("ConfirmAvatar").RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
+        usersGroup.MapDelete("/user/{userId:guid}/avatar", DeleteAvatarAsync).WithName("DeleteAvatar").RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
+        usersGroup.MapGet("/user/{userId:guid}/avatar/url", GenerateAvatarReadUrlAsync).WithName("GetAvatarReadUrl").RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
         return app;
     }
     private static bool IsTeacher(string? role) =>
@@ -561,7 +546,7 @@ public static class UsersEndpoints
         }
     }
 
-    private static async Task<IResult> GetUploadAvatarUrlAsync(
+    private static async Task<IResult> GenerateUploadAvatarUrlAsync(
      [FromRoute] Guid userId,
      [FromBody] GetUploadUrlRequest req,
      [FromServices] IAvatarStorageService storage,
@@ -797,7 +782,7 @@ public static class UsersEndpoints
         return ok ? Results.Ok() : Results.NotFound("User not found.");
     }
 
-    private static async Task<IResult> GetAvatarReadUrlAsync(
+    private static async Task<IResult> GenerateAvatarReadUrlAsync(
         [FromRoute] Guid userId,
         [FromServices] IAccessorClient accessorClient,
         [FromServices] IAvatarStorageService storage,
@@ -823,7 +808,7 @@ public static class UsersEndpoints
 
         try
         {
-            var uri = await storage.GetReadSasAsync(user.AvatarPath!, TimeSpan.FromMinutes(opt.Value.ReadUrlTtlMinutes), ct);
+            var uri = await storage.GenerateReadUrlAsync(user.AvatarPath!, TimeSpan.FromMinutes(opt.Value.ReadUrlTtlMinutes), ct);
             log.LogInformation("Returning read SAS: {Url}", uri);
 
             return Results.Ok(uri.ToString());

@@ -144,7 +144,7 @@ public sealed class AzureBlobAvatarStorageService : IAvatarStorageService
         }
     }
 
-    public Task<Uri> GetReadSasAsync(string blobPath, TimeSpan ttl, CancellationToken ct)
+    public Task<Uri> GenerateReadUrlAsync(string blobPath, TimeSpan ttl, CancellationToken ct)
     {
         EnsureReady();
 

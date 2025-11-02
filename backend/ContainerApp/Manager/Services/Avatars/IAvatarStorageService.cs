@@ -10,7 +10,7 @@ public interface IAvatarStorageService
 
     Task<BlobProperties?> GetBlobPropsAsync(string blobPath, CancellationToken ct);
 
-    Task<Uri> GetReadSasAsync(string blobPath, TimeSpan ttl, CancellationToken ct);
+    Task<Uri> GenerateReadUrlAsync(string blobPath, TimeSpan ttl, CancellationToken ct);
 
     Task DeleteAsync(string blobPath, CancellationToken ct);
 }
