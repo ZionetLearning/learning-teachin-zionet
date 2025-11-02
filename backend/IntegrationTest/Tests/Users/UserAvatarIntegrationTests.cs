@@ -3,13 +3,11 @@ using IntegrationTests.Constants;
 using IntegrationTests.Fixtures;
 using IntegrationTests.Helpers;
 using Manager.Models.Users;
-using Microsoft.CognitiveServices.Speech.Transcription;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Xunit.Abstractions;
-using static Dapr.Client.Autogen.Grpc.v1.HTTPExtension.Types;
 
 namespace IntegrationTests.Tests.Users;
 
@@ -167,7 +165,7 @@ public class UserAvatarIntegrationTests(
     {
         var user = await CreateUserAsync();
 
-        // > 10 МБ
+        // > 10 MB
         var body = new { contentType = ContentTypePng, sizeBytes = (long?)(30 * 1024 * 1024) };
         var resp = await Client.PostAsJsonAsync($"{ApiRoutes.AvatarUploadUrl(user.UserId)}", body);
 
