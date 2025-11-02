@@ -44,7 +44,7 @@ env:
   VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
   SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
   
-  # Backend URLs and other config will be loaded dynamically from env-cloud.js
+  # Backend URLs and other config will be loaded dynamically from .env.cloud
 
 jobs:
   frontend-test:
