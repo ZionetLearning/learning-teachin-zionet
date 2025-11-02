@@ -1,6 +1,8 @@
 name: Frontend - Build and Deploy (Reusable)
 
 on:
+  push:
+    branches: [devops/improvment-continue]
   workflow_dispatch:
     inputs:
       environment:
