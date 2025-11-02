@@ -1,0 +1,12 @@
+name: 'Checkout Repository'
+description: 'Centralized repository checkout with configurable version'
+inputs:
+  checkout-version:
+    description: 'Version of actions/checkout to use'
+    required: false
+    default: 'v5'
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@${{ inputs.checkout-version }}

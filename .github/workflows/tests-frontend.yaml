@@ -30,7 +30,8 @@ jobs:
       matrix:
         app: [student, teacher, admin]
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout Repository
+        uses: ./.github/actions/checkout
 
       - name: Setup Frontend Environment
         uses: ./.github/actions/setup-frontend
@@ -47,7 +48,8 @@ jobs:
   frontend-lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout Repository
+        uses: ./.github/actions/checkout
 
       - name: Setup Frontend Environment
         uses: ./.github/actions/setup-frontend
