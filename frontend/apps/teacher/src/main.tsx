@@ -10,6 +10,7 @@ import {
   ReactQueryProvider,
   SentryErrorBoundary,
   SignalRProvider,
+  AppThemeProvider,
 } from "@app-providers";
 import App from "./App.tsx";
 
@@ -26,7 +27,9 @@ createRoot(document.getElementById("root")!).render(
         <SignalRProvider hubUrl={HUB_URL}>
           <StrictMode>
             <SentryErrorBoundary>
-              <App />
+              <AppThemeProvider>
+                <App />
+              </AppThemeProvider>
             </SentryErrorBoundary>
           </StrictMode>
         </SignalRProvider>
