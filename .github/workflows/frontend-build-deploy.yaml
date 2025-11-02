@@ -37,6 +37,8 @@ jobs:
     env:
       FE_DIR: frontend
     steps:
+      - uses: actions/checkout@v4
+
       - name: Setup Frontend Environment
         uses: ./.github/actions/setup-frontend
 
