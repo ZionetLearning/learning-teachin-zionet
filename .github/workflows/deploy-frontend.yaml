@@ -5,7 +5,8 @@ run-name: >
   }} | GitHub Environment: ${{ inputs.environment || github.event.inputs.environment || 'Development'}}
    
 permissions:
-   contents: read
+  contents: read
+  id-token: write
 
 on:
   pull_request:
