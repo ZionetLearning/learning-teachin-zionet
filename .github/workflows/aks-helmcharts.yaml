@@ -300,6 +300,7 @@ jobs:
             --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
             --set global.environment="$IMAGE_TAG" \
             --set langfuse.enabled="$LANGFUSE_ENABLED" \
+            --set accessor.secrets.langfuse.enabled=true \
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false
 
