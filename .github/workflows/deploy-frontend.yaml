@@ -71,6 +71,9 @@ env:
   # Backend URLs and other config will be loaded dynamically from env-cloud.js
 
 jobs:
+  frontend-test:
+    uses: ./.github/workflows/tests-frontend.yaml
+
   frontend-build-deploy:
     uses: ./.github/workflows/frontend-build-deploy.yaml
     with:
