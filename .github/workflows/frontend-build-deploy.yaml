@@ -37,12 +37,8 @@ jobs:
     env:
       FE_DIR: frontend
     steps:
-      - uses: actions/checkout@v4
-
       - name: Setup Frontend Environment
         uses: ./.github/actions/setup-frontend
-        with:
-          node-version: ${{ inputs.node_version || '20' }}
 
       - name: Load dev environment variables
         working-directory: ${{ env.FE_DIR }}
