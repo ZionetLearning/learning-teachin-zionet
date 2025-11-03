@@ -1,4 +1,4 @@
-name: For Full CICD - Build and push images
+name: Backend - Build and push images
 
 on:
   workflow_call:

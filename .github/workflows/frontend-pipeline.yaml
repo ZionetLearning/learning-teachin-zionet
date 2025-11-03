@@ -1,4 +1,4 @@
-name: Frontend- Deploy Apps to Azure Static Web Apps
+name: Frontend - Deploy Apps to Azure Static Web Apps
 run-name: >
   🚀 Deploy Frontend Apps (student, teacher, admin) to environment: ${{
     inputs.environment_name || github.event.inputs.environment_name || 'dev'

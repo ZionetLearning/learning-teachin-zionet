@@ -1,4 +1,4 @@
-name: Component Tests
+name: Backend - Component Tests
 
 on:
   workflow_call:
@@ -116,4 +116,3 @@ jobs:
             name: TestResults-${{ inputs.service }}
             path: backend/ContainerApp/**/${{ inputs.service }}.trx
             if-no-files-found: warn
-

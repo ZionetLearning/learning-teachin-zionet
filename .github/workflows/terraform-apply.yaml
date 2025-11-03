@@ -1,4 +1,4 @@
-name: Terraform Apply (Dynamic Environment)
+name: Terraform - Plan + Apply (Dynamic Environment)
 run-name: >
   🚀 Deploy Infrastructure to environment_name: ${{
     inputs.environment_name || github.event.inputs.environment_name || 

@@ -1,4 +1,4 @@
-name: Terraform Destroy (Dynamic Environment)
+name: Terraform - Destroy (Dynamic Environment)
 run-name: >
   ${{ inputs.dry_run == 'true' && '🔍 DRY RUN' || '🗑️ Destroy Infrastructure' }} in ${{
     inputs.environment_name || github.event.inputs.environment_name || 
@@ -33,7 +33,6 @@ on:
         required: false
         default: false
         type: boolean
-
 
 jobs:
   terraform-destroy:

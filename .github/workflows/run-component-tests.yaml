@@ -1,4 +1,4 @@
-name: Run Component Tests
+name: Backend - Run Component Tests
 
 on:
   pull_request:

@@ -1,4 +1,4 @@
-name: Unit tests (selective)
+name: Backend - Unit tests (selective)
 
 on:
   pull_request:
