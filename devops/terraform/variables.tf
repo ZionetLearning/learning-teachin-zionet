@@ -157,18 +157,6 @@ variable "static_web_app_name" {
   default     = "static-web-app"
 }
 
-variable "frontend_sku_tier" {
-  description = "SKU tier for the Static Web App (Free or Standard)"
-  type        = string
-  default     = "Free"
-}
-
-variable "frontend_sku_size" {
-  description = "SKU size for the Static Web App (Free or Standard)"
-  type        = string
-  default     = "Free"
-}
-
 variable "frontend_appinsights_retention_days" {
   description = "Number of days to retain Application Insights data"
   type        = number
