@@ -17,8 +17,6 @@ tenant_id              = "a814ee32-f813-4a36-9686-1b9268183e27"
 docker_registry        = "snir1551"
 
 #------------- Frontend Configuration -------------
-frontend_sku_tier      = "Free"
-frontend_sku_size      = "Free"
 frontend_apps          = ["student", "teacher", "admin"]    # Dev environment uses Static Web Apps
 
 #------------- Redis Shared Instance -------------

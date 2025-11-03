@@ -140,6 +140,7 @@ module "redis" {
   name                 = var.redis_name
   location             = azurerm_resource_group.main.location
   resource_group_name  = azurerm_resource_group.main.name
+  use_shared_redis     = false
 }
 
 # Use shared Redis outputs if enabled, otherwise use module outputs
