@@ -41,11 +41,11 @@ module "servicebus" {
   resource_group_name = azurerm_resource_group.main.name
   location            = var.location
   namespace_name      = "${var.environment_name}-${var.servicebus_namespace}"
-  sku                 = var.servicebus_sku
   queue_names         = var.queue_names
   session_enabled_queues = var.session_enabled_queues
   depends_on          = [azurerm_resource_group.main]
 }
+
 #--------------------PostgreSQL-----------------------
 ## Shared PostgreSQL server (created only once, in main RG)
 data "azurerm_postgresql_flexible_server" "shared" {
@@ -92,10 +92,7 @@ resource "azurerm_postgresql_flexible_server_database" "langfuse" {
   count     = (var.enable_langfuse && var.environment_name == "dev") ? 1 : 0
   name      = "langfuse-${var.environment_name}"
   server_id = var.use_shared_postgres ? data.azurerm_postgresql_flexible_server.shared[0].id : module.database[0].id
-  charset   = "UTF8"
-  collation = "en_US.utf8"
 
-  
   depends_on = [
     module.database,
     data.azurerm_postgresql_flexible_server.shared
@@ -107,8 +104,6 @@ module "signalr" {
   resource_group_name = azurerm_resource_group.main.name
   location            = var.location
   signalr_name        = "${var.signalr_name}-${var.environment_name}"
-  sku_name            = var.signalr_sku_name
-  sku_capacity        = var.signalr_sku_capacity
 }
 
 # ------------- Shared Redis -----------------------
@@ -125,11 +120,6 @@ module "redis" {
   name                 = var.redis_name
   location             = azurerm_resource_group.main.location
   resource_group_name  = azurerm_resource_group.main.name
-  sku_name             = "Basic"
-  family               = "C"
-  capacity             = 0
-  shard_count          = 0
-  use_shared_redis     = false
 }
 
 # Use shared Redis outputs if enabled, otherwise use module outputs
@@ -141,23 +131,16 @@ locals {
 
 # Monitoring - Diagnostic Settings for resources to Log Analytics
 # Log Analytics Workspace - only create in dev environment
-resource "azurerm_log_analytics_workspace" "main" {
-  count               = var.environment_name == "dev" ? 1 : 0
-  name                = "${var.environment_name}-laworkspace"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-  sku                 = "PerGB2018"
-  retention_in_days   = 30
-  daily_quota_gb = 1
-
-  tags = {
-    Environment = var.environment_name
-  }
+module "log_analytics" {
+  source = "./modules/log_analytics"
+  environment_name   = var.environment_name
+  resource_group_name = var.resource_group_name
+  location           = var.location
 }
 
 # Local value to determine which workspace to use (only available in dev)
 locals {
-  log_analytics_workspace_id = var.environment_name == "dev" ? azurerm_log_analytics_workspace.main[0].id : null
+  log_analytics_workspace_id = module.log_analytics.log_analytics_workspace_id
 }
 
 module "monitoring" {
@@ -174,7 +157,7 @@ module "monitoring" {
   frontend_application_insights_ids = length(var.frontend_apps) > 0 ? [for f in module.frontend : f.application_insights_id] : []
 
     depends_on = [
-    azurerm_log_analytics_workspace.main,
+    module.log_analytics,
     module.servicebus,
     module.database,
     module.signalr,

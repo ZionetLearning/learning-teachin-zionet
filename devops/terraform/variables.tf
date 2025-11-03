@@ -27,11 +27,6 @@ variable "aks_cluster_name" {
   type        = string
   default     = "aks-cluster-dev"
 }
-variable "vm_size" {
-  description = "Size of the VM instances in the AKS cluster"
-  type        = string
-  default     = "Standard_B2s"
-}
 
 #------------- Service Bus Variables -------------
 variable "servicebus_namespace" {
@@ -39,11 +34,7 @@ variable "servicebus_namespace" {
   type        = string
   default     = "servicebus-zionet-learning"
 }
-variable "servicebus_sku" {
-  description = "Service Bus namespace SKU (Basic, Standard, Premium)"
-  type        = string
-  default     = "Standard"
-}
+
 variable "queue_names" {
   description = "List of Service Bus queues to create"
   type        = list(string)
@@ -72,17 +63,6 @@ variable "signalr_name" {
   type        = string
   description = "SignalR service name (must be globally unique)"
   default     = "signalr-teachin"
-}
-
-variable "signalr_sku_name" {
-  type    = string
-  default = "Free_F1"
-  # default = "Standard_S1" ## limited for 5 free so just for testing new RG for 1 hour it will cost ~3-7 cents, return to above after finish task
-}
-
-variable "signalr_sku_capacity" {
-  type    = number
-  default = 1
 }
 
 #------------- Postgres Variables -------------

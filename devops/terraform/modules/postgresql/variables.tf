@@ -60,12 +60,6 @@ variable "active_directory_auth_enabled" {
   description = "Enable Active Directory authentication"
 }
 
-# variable "high_availability_mode" {
-#   type        = string
-#   description = "High availability mode (e.g., 'Disabled', 'ZoneRedundant')"
-#   default     = ""
-# }
-
 variable "delegated_subnet_id" {
   type        = string
   description = "Delegated subnet ID if using VNet integration"
@@ -75,11 +69,6 @@ variable "database_name" {
   type        = string
   description = "Name of the PostgreSQL database"
 }
-
-# variable "aks_public_ip" {
-#   type        = string
-#   description = "Public IP of the AKS cluster"
-# }
 
 # Use shared postgres server logic (like use_shared_aks)
 variable "use_shared_postgres" {
