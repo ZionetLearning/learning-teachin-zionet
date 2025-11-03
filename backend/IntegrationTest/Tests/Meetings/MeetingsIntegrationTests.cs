@@ -32,12 +32,12 @@ public class MeetingsIntegrationTests(
                 new MeetingAttendee { UserId = studentInfo.UserId, Role = AttendeeRole.Student }
             ],
             StartTimeUtc = DateTimeOffset.UtcNow.AddDays(1),
-            DurationMinutes = 60,
+            DurationMinutes = 15,
             Description = "Integration Test Meeting",
         };
 
         // Act & Assert - Create
-        var meeting = await CreateMeetingAsync(createRequest, teacher);
+        var meeting = await CreateMeetingAsync(teacher, createRequest);
         meeting.Should().NotBeNull();
         meeting.Id.Should().NotBeEmpty();
         meeting.CreatedByUserId.Should().Be(teacher.UserId);
@@ -92,10 +92,10 @@ public class MeetingsIntegrationTests(
             ],
             StartTimeUtc = DateTimeOffset.UtcNow.AddDays(1),
             Description = "Meeting with Multiple Participants",
-            DurationMinutes = 45
+            DurationMinutes = 10
         };
 
-        var meeting = await CreateMeetingAsync(createRequest, teacher);
+        var meeting = await CreateMeetingAsync(teacher, createRequest);
         meeting.Attendees.Should().HaveCount(2);
 
         // Act & Assert - Update to add second student
@@ -126,21 +126,22 @@ public class MeetingsIntegrationTests(
     {
         // Arrange - Create meeting as teacher
         var teacher = await LoginAsAsync(Role.Teacher);
-        var meeting = await CreateMeetingAsync(currentUser: teacher);
+        var meeting = await CreateMeetingAsync(teacher);
 
         // Switch to student
         await LoginAsAsync(Role.Student);
         var teacherInfo = ClientFixture.GetUserInfo(Role.Teacher);
         var studentInfo = ClientFixture.GetUserInfo(Role.Student);
+
         // Act & Assert - Student cannot create
         var createRequest = new CreateMeetingRequest
         {
             Attendees = [
-                new MeetingAttendee { UserId = teacher.UserId, Role = AttendeeRole.Teacher },
+                new MeetingAttendee { UserId = teacherInfo.UserId, Role = AttendeeRole.Teacher },
                 new MeetingAttendee { UserId = studentInfo.UserId, Role = AttendeeRole.Student }
             ],
             StartTimeUtc = DateTimeOffset.UtcNow.AddDays(1),
-            DurationMinutes = 60,
+            DurationMinutes = 10,
             Description = "Integration Test Meeting",
         };
         var createResponse = await Client.PostAsJsonAsync(Constants.MeetingRoutes.CreateMeeting, createRequest);
@@ -161,7 +162,7 @@ public class MeetingsIntegrationTests(
     {
         // Arrange - Create meeting as teacher
         var teacher = await LoginAsAsync(Role.Teacher);
-        var teacherMeeting = await CreateMeetingAsync(currentUser: teacher);
+        var teacherMeeting = await CreateMeetingAsync(teacher);
 
         // Act & Assert - Admin can create meetings
         var admin = await LoginAsAsync(Role.Admin);
@@ -171,17 +172,47 @@ public class MeetingsIntegrationTests(
         {
             Attendees = [new MeetingAttendee { UserId = teacherInfo.UserId, Role = AttendeeRole.Teacher }],
             StartTimeUtc = DateTimeOffset.UtcNow.AddHours(2),
-            DurationMinutes = 30,
+            DurationMinutes = 5,
             Description = "Admin Created Meeting",
         };
 
-        var adminMeeting = await CreateMeetingAsync(createRequest, admin);
+        var adminMeeting = await CreateMeetingAsync(admin, createRequest);
         adminMeeting.Should().NotBeNull();
         adminMeeting.CreatedByUserId.Should().Be(admin.UserId);
 
         // Act & Assert - Admin can delete teacher's meeting
         var deleteSuccess = await DeleteMeetingAsync(teacherMeeting.Id);
         deleteSuccess.Should().BeTrue();
+    }
+
+    [Fact(DisplayName = "Authentication required - All endpoints return 401 when unauthenticated")]
+    public async Task AuthenticationRequired_Unauthenticated_ShouldReturn401()
+    {
+        // Arrange
+        ClientFixture.ClearSession();
+        var meetingId = Guid.NewGuid();
+
+        // Act & Assert
+        var getResponse = await Client.GetAsync(Constants.MeetingRoutes.GetMeeting(meetingId));
+        getResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+
+        var createResponse = await Client.PostAsJsonAsync(Constants.MeetingRoutes.CreateMeeting, new CreateMeetingRequest
+        {
+            Attendees = [],
+            StartTimeUtc = DateTimeOffset.UtcNow.AddHours(1),
+            DurationMinutes = 5,
+            Description = "Test Meeting",
+        });
+        createResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+
+        var updateResponse = await Client.PutAsJsonAsync(Constants.MeetingRoutes.UpdateMeeting(meetingId), new UpdateMeetingRequest());
+        updateResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+
+        var deleteResponse = await Client.DeleteAsync(Constants.MeetingRoutes.DeleteMeeting(meetingId));
+        deleteResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+
+        var tokenResponse = await Client.PostAsync(Constants.MeetingRoutes.GenerateToken(meetingId), null);
+        tokenResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
     #endregion
@@ -195,24 +226,24 @@ public class MeetingsIntegrationTests(
         var teacher = await LoginAsAsync(Role.Teacher);
         var studentInfo = ClientFixture.GetUserInfo(Role.Student);
         
-        var meeting1 = await CreateMeetingAsync(new CreateMeetingRequest
+        var meeting1 = await CreateMeetingAsync(teacher, new CreateMeetingRequest
         {
             Attendees = [new MeetingAttendee { UserId = teacher.UserId, Role = AttendeeRole.Teacher }],
             StartTimeUtc = DateTimeOffset.UtcNow.AddHours(1),
-            DurationMinutes = 30,
+            DurationMinutes = 10,
             Description = "Teacher Only Meeting",
-        }, teacher);
+        });
         
-        var meeting2 = await CreateMeetingAsync(new CreateMeetingRequest
+        var meeting2 = await CreateMeetingAsync(teacher, new CreateMeetingRequest
         {
             Attendees = [
                 new MeetingAttendee { UserId = teacher.UserId, Role = AttendeeRole.Teacher },
                 new MeetingAttendee { UserId = studentInfo.UserId, Role = AttendeeRole.Student }
             ],
             StartTimeUtc = DateTimeOffset.UtcNow.AddHours(2),
-            DurationMinutes = 45,
+            DurationMinutes = 15,
             Description = "Teacher and Student Meeting",
-        }, teacher);
+        });
 
         // Act & Assert - Teacher sees both meetings
         var teacherMeetings = await GetMeetingsForUserAsync(teacher.UserId);
@@ -283,16 +314,16 @@ public class MeetingsIntegrationTests(
         var teacher = await LoginAsAsync(Role.Teacher);
         var studentInfo = ClientFixture.GetUserInfo(Role.Student);
 
-        var meeting = await CreateMeetingAsync(new CreateMeetingRequest
+        var meeting = await CreateMeetingAsync(teacher, new CreateMeetingRequest
         {
             Attendees = [
                 new MeetingAttendee { UserId = teacher.UserId, Role = AttendeeRole.Teacher },
                 new MeetingAttendee { UserId = studentInfo.UserId, Role = AttendeeRole.Student }
             ],
             StartTimeUtc = DateTimeOffset.UtcNow.AddHours(1),
-            DurationMinutes= 60,
-            Description = "ACS Toke n Generation Meeting",
-        }, teacher);
+            DurationMinutes = 10,
+            Description = "ACS Token Generation Meeting",
+        });
 
         // Act - Teacher generates token
         var teacherToken = await GenerateTokenForMeetingAsync(meeting.Id);
@@ -322,7 +353,7 @@ public class MeetingsIntegrationTests(
     {
         // Arrange
         var teacher = await LoginAsAsync(Role.Teacher);
-        var meeting = await CreateMeetingAsync(currentUser: teacher);
+        var meeting = await CreateMeetingAsync(teacher);
         
         // Create student who is not a participant
         var (otherStudentEmail, otherStudentToken) = await ClientFixture.CreateEphemeralUserAsync(Role.Student);

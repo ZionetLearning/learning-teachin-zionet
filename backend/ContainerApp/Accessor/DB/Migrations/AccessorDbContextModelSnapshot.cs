@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using Accessor.DB;
-using Accessor.Models.Meetings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
@@ -70,7 +69,6 @@ namespace Accessor.DB.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("Code")
-                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
@@ -186,7 +184,7 @@ namespace Accessor.DB.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<List<MeetingAttendee>>("Attendees")
+                    b.Property<string>("Attendees")
                         .IsRequired()
                         .HasColumnType("jsonb");
 

@@ -34,42 +34,29 @@ public abstract class MeetingsTestBase(
 
     /// <summary>
     /// Creates a meeting with default or specified parameters.
-    /// Automatically includes the currently logged-in user as a teacher attendee if not specified.
+    /// Requires the current user info to ensure proper attendee setup.
+    /// Automatically includes the current user as an attendee if they're a teacher.
     /// </summary>
     protected async Task<MeetingDto> CreateMeetingAsync(
-        CreateMeetingRequest? request = null,
-        UserInfo? currentUser = null)
+        UserInfo currentUser,
+        CreateMeetingRequest? request = null)
     {
-        // Extract current user ID from JWT token if not provided
-        if (currentUser == null && Client.DefaultRequestHeaders.Authorization != null)
-        {
-            var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
-            var token = Client.DefaultRequestHeaders.Authorization.Parameter;
-            if (!string.IsNullOrEmpty(token))
-            {
-                var jwtToken = handler.ReadJwtToken(token);
-                var userIdClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == TestConstants.UserId)?.Value;
-                if (userIdClaim != null && Guid.TryParse(userIdClaim, out var userId))
-                {
-                    var roleClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "role")?.Value;
-                    var role = Enum.TryParse<Role>(roleClaim, true, out var r) ? r : Role.Teacher;
-                    currentUser = new UserInfo(userId, "", role);
-                }
-            }
-        }
-
         request ??= new CreateMeetingRequest
         {
-            Attendees = currentUser != null
-                ? [new MeetingAttendee { UserId = currentUser.UserId, Role = currentUser.Role == Role.Teacher ? AttendeeRole.Teacher : AttendeeRole.Student }]
-                : [],
+            Attendees = [
+                new MeetingAttendee 
+                { 
+                    UserId = currentUser.UserId, 
+                    Role = currentUser.Role == Role.Teacher ? AttendeeRole.Teacher : AttendeeRole.Student 
+                }
+            ],
             StartTimeUtc = DateTimeOffset.UtcNow.AddHours(1),
-            DurationMinutes = 60,
+            DurationMinutes = 10,
             Description = "Test Meeting",
         };
 
         // Ensure the current user is included as an attendee if they're a teacher
-        if (currentUser?.Role == Role.Teacher && !request.Attendees.Any(a => a.UserId == currentUser.UserId))
+        if (currentUser.Role == Role.Teacher && !request.Attendees.Any(a => a.UserId == currentUser.UserId))
         {
             var updatedAttendees = request.Attendees.ToList();
             updatedAttendees.Insert(0, new MeetingAttendee { UserId = currentUser.UserId, Role = AttendeeRole.Teacher });
