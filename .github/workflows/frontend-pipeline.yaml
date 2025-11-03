@@ -1,0 +1,59 @@
+name: Frontend - Deploy Apps to Azure Static Web Apps
+run-name: >
+  🚀 Deploy Frontend Apps (student, teacher, admin) to environment: ${{
+    inputs.environment_name || github.event.inputs.environment_name || 'dev'
+  }} | GitHub Environment: ${{ inputs.environment || github.event.inputs.environment || 'Development'}}
+   
+permissions:
+  contents: read
+  id-token: write
+
+on:
+  push:
+    branches: [main]
+    paths: ['frontend/**']    
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Select environment (GitHub Environment)'
+        required: true
+        default: 'Development'
+        type: choice
+        options: [Development, Production]
+      environment_name:
+        description: 'lowercase letters & digits only (env identifier) where the application is deployed'
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      environment_name:
+        required: true
+        type: string
+
+concurrency:
+  group: deploy-frontend-apps-${{ inputs.environment_name || github.event.inputs.environment_name || 'dev' }}
+  cancel-in-progress: false
+
+env:
+  # Secrets and external APIs (environment-agnostic)
+  VITE_AZURE_SPEECH_KEY: ${{ secrets.VITE_AZURE_SPEECH_KEY }}
+  VITE_OPENWEATHERMAP_API_KEY: ${{ secrets.VITE_OPENWEATHERMAP_API_KEY }}
+  VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+  SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+  
+  # Backend URLs and other config will be loaded dynamically from .env.cloud
+
+jobs:
+  frontend-tests:
+    uses: ./.github/workflows/frontend-tests.yaml
+
+  frontend-build-deploy:
+    needs: [frontend-tests]
+    uses: ./.github/workflows/frontend-build-deploy.yaml
+    with:
+      environment: ${{ inputs.environment || 'Development' }}
+      environment_name: ${{ inputs.environment_name || github.event.inputs.environment_name || 'dev' }}
+    secrets: inherit
