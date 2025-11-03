@@ -1,16 +1,6 @@
 name: Frontend - Build and Deploy (Reusable)
 
 on:
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Select environment (GitHub Environment)'
-        required: true
-        type: string
-      environment_name:
-        description: 'lowercase letters & digits only (env identifier) where the application is deployed'
-        required: true
-        type: string
   workflow_call:
     inputs:
       environment:
