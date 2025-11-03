@@ -15,4 +15,7 @@ public class UserData
     public HebrewLevel? HebrewLevelValue { get; set; } // only for students
     public List<string>? Interests { get; set; } // only for students
     public string? AcsUserId { get; set; }
+    public string? AvatarPath { get; set; }
+    public string? AvatarContentType { get; set; }
+    public DateTime? AvatarUpdatedAtUtc { get; set; }
 }

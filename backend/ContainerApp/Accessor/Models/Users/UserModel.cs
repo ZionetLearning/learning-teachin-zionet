@@ -23,6 +23,9 @@ public class UserModel
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public HebrewLevel? HebrewLevelValue { get; set; }
     public required List<string> Interests { get; set; }
+    public string? AvatarPath { get; set; }
+    public string? AvatarContentType { get; set; }
+    public DateTime? AvatarUpdatedAtUtc { get; set; }
 
     public string? AcsUserId { get; set; }
 }
