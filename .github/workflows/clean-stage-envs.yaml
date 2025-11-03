@@ -1,10 +1,9 @@
 name: Scheduled - Clean Stage Environments
 permissions:
   contents: read
+  id-token: write
 
 on:
-  push:
-    branches: [devops/improvment-continue]
   schedule:
     - cron: '0 0 */2 * *' # Every two days at midnight
   workflow_dispatch:
