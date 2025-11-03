@@ -25,6 +25,8 @@ using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using Manager;
+using Manager.Services.Avatars;
+using Manager.Services.Avatars.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -151,6 +153,12 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IOnlinePresenceService, OnlinePresenceService>();
 
+builder.Services
+  .AddOptions<AvatarsOptions>()
+  .Bind(builder.Configuration.GetSection(AvatarsOptions.SectionName));
+
+builder.Services.AddSingleton<IAvatarStorageService, AzureBlobAvatarStorageService>();
+
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 builder.Services.AddSingleton(_ =>
@@ -248,6 +256,7 @@ app.MapGamesEndpoints();
 app.MapHub<NotificationHub>("/NotificationHub");
 app.MapMediaEndpoints();
 app.MapWordCardsEndpoints();
+app.MapClassesEndpoints();
 app.MapGameConfigEndpoints();
 
 app.MapStatsPing();
