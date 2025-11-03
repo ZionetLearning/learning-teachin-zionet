@@ -9,7 +9,7 @@ variable "cluster_name" {
 }
 variable "max_node_count" {
   type    = number
-  default = 3
+  default = 4
 }
 variable "min_node_count" {
   type    = number
