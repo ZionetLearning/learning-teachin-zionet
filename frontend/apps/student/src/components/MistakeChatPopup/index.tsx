@@ -11,6 +11,7 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import { useTranslation } from "react-i18next";
 import { useMistakeChat } from "@student/hooks";
+import { renderWithBold } from "@student/utils";
 import { useStyles } from "./style";
 import { MessageInput } from "./elements";
 
@@ -42,7 +43,6 @@ export const MistakeChatPopup = ({
       gameType,
     });
 
-
   useEffect(() => {
     if (messages.length > 0) {
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -70,71 +70,71 @@ export const MistakeChatPopup = ({
       maxWidth={false}
       scroll="paper"
       slotProps={{
-      transition: {
-        timeout: 300,
-      },
+        transition: {
+          timeout: 300,
+        },
       }}
     >
       <DialogTitle className={classes.header}>
-      <Typography variant="h6" component="div" className={classes.title}>
-        {t("mistakeChat.title", { defaultValue: title })}
-      </Typography>
-      <IconButton
-        aria-label="close"
-        onClick={handleClose}
-        className={classes.closeButton}
-      >
-        <CloseIcon />
-      </IconButton>
+        <Typography variant="h6" component="div" className={classes.title}>
+          {t("mistakeChat.title", { defaultValue: title })}
+        </Typography>
+        <IconButton
+          aria-label="close"
+          onClick={handleClose}
+          className={classes.closeButton}
+        >
+          <CloseIcon />
+        </IconButton>
       </DialogTitle>
 
       <DialogContent className={classes.content}>
-      <Box className={classes.messagesContainer}>
-        {messages.map((message, index) => (
-        <Box
-          key={index}
-          className={`${classes.message} ${
-          message.sender === "user"
-            ? classes.userMessage
-            : classes.botMessage
-          }`}
-        >
-          <Typography variant="body1" className={classes.messageText}>
-          {message.text}
-          </Typography>
-          {message.sender === "bot" && message.isTyping && (
-          <Box className={classes.typingIndicator}>
-            <CircularProgress size={12} />
-          </Box>
+        <Box className={classes.messagesContainer}>
+          {messages.map((message, index) => (
+            <Box
+              key={index}
+              className={`${classes.message} ${
+                message.sender === "user"
+                  ? classes.userMessage
+                  : classes.botMessage
+              }`}
+            >
+              <Typography variant="body1" className={classes.messageText}>
+                {renderWithBold(message.text)}
+              </Typography>
+              {message.sender === "bot" && message.isTyping && (
+                <Box className={classes.typingIndicator}>
+                  <CircularProgress size={12} />
+                </Box>
+              )}
+            </Box>
+          ))}
+
+          {loading && messages.length === 0 && (
+            <Box className={classes.loadingContainer}>
+              <CircularProgress size={24} />
+              <Typography variant="body2" className={classes.loadingText}>
+                {t("mistakeChat.loadingExplanation", {
+                  defaultValue: "Loading explanation...",
+                })}
+              </Typography>
+            </Box>
           )}
+
+          <div ref={bottomRef} />
         </Box>
-        ))}
 
-        {loading && messages.length === 0 && (
-        <Box className={classes.loadingContainer}>
-          <CircularProgress size={24} />
-          <Typography variant="body2" className={classes.loadingText}>
-          {t("mistakeChat.loadingExplanation", {
-            defaultValue: "Loading explanation...",
-          })}
-          </Typography>
+        {/* Simple message input for follow-up questions */}
+        <Box className={classes.inputContainer}>
+          <MessageInput
+            onSendMessage={sendMessage}
+            disabled={loading || botTyping}
+            placeholder={t("mistakeChat.askFollowUp", {
+              defaultValue: "Ask a follow-up question...",
+            })}
+            isRTL={isRTL}
+          />
         </Box>
-        )}
-
-        <div ref={bottomRef} />
-      </Box>
-
-      {/* Simple message input for follow-up questions */}
-      <Box className={classes.inputContainer}>
-        <MessageInput
-        onSendMessage={sendMessage}
-        disabled={loading || botTyping}
-        placeholder={t("mistakeChat.askFollowUp", {
-          defaultValue: "Ask a follow-up question...",
-        })}
-        isRTL={isRTL}
-        />
-      </Box>
       </DialogContent>
     </Dialog>
   );

@@ -1,59 +1,82 @@
 import { createUseStyles } from "react-jss";
+import { useThemeColors } from "@app-providers";
 
-export const useStyles = createUseStyles({
-  wrapper: {
-    display: "flex",
-    flexDirection: "column",
-    fontSize: 14,
-    color: "#2d3748",
-    fontWeight: 500,
+export const useStyles = () => {
+  const color = useThemeColors();
 
-    // Label
-    "&& .MuiInputLabel-root": {
+  return createUseStyles({
+    wrapper: {
+      display: "flex",
+      flexDirection: "column",
       fontSize: 14,
-      color: "#2d3748",
-    },
+      color: color.text,
+      fontWeight: 500,
 
-    // Root of the input (OutlinedInput under the Select)
-    "&& .MuiOutlinedInput-root": {
-      background: "#f8fafc",
-      borderRadius: 8,
-      transition: "border-color .2s, box-shadow .2s, background .3s",
-
-      "& .MuiOutlinedInput-notchedOutline": {
-        borderColor: "#cbd5e0",
-      },
-
-      "&:hover .MuiOutlinedInput-notchedOutline": {
-        borderColor: "#a0aec0",
-      },
-
-      "&.Mui-focused": {
-        background: "#fff",
-        boxShadow: "0 0 0 3px rgba(99,102,241,0.25)",
-      },
-      "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-        borderColor: "#6366f1",
-      },
-
-      "&.Mui-disabled": {
-        background: "#f1f5f9",
-        color: "#94a3b8",
-      },
-
-      // The clickable "input" area inside select
-      "& .MuiSelect-select": {
-        marginTop: 4,
-        padding: "0.55rem 0.7rem",
-        marginRight: 24,
+      // Label
+      "&& .MuiInputLabel-root": {
         fontSize: 14,
-        color: "#1a202c",
+        color: color.textMuted,
       },
 
-      // Placeholder
-      "& .MuiSelect-select.MuiPlaceholder": {
-        color: "#94a3b8",
+      // Root of the input (OutlinedInput under the Select)
+      "&& .MuiOutlinedInput-root": {
+        background: color.paper,
+        borderRadius: 8,
+        transition: "border-color .2s, box-shadow .2s, background .3s",
+
+        "& .MuiOutlinedInput-notchedOutline": {
+          borderColor: color.divider,
+        },
+
+        "&:hover .MuiOutlinedInput-notchedOutline": {
+          borderColor: color.divider,
+        },
+
+        "&.Mui-focused": {
+          background: color.paper,
+          // purple glow ring, same vibe as your dialog text fields
+          boxShadow: `0 0 0 3px rgba(var(${color.primaryMainChannel}) / 0.25)`,
+        },
+        "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+          borderColor: color.primary,
+        },
+
+        "&.Mui-disabled": {
+          background: color.bg,
+          color: color.textMuted,
+        },
+
+        // The visible "value" area inside the select
+        "& .MuiSelect-select": {
+          marginTop: 4,
+          padding: "0.55rem 0.7rem",
+          marginRight: 24,
+          fontSize: 14,
+          color: color.text,
+          backgroundColor: "transparent",
+        },
+
+        "& .MuiSelect-select.MuiPlaceholder": {
+          color: color.textMuted,
+        },
+      },
+
+      // Helper/error text at the bottom
+      "&& .MuiFormHelperText-root": {
+        fontSize: 12,
+        lineHeight: 1.4,
+        marginLeft: 0,
+        marginRight: 0,
+        color: color.textMuted,
+      },
+
+      // Error state colors
+      "&& .Mui-error .MuiOutlinedInput-notchedOutline": {
+        borderColor: "#f87171",
+      },
+      "&& .Mui-error.MuiFormHelperText-root": {
+        color: "#f87171",
       },
     },
-  },
-});
+  })();
+};

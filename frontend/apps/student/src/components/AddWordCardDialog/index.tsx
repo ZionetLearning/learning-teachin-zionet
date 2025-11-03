@@ -11,10 +11,9 @@ import {
   Typography,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-
+import { useTranslation } from "react-i18next";
 import { useCreateWordCard, type CreateWordCardRequest } from "../../api";
 import { useStyles } from "./style";
-import { useTranslation } from "react-i18next";
 
 export type AddWordCardDialogProps = {
   open: boolean;
@@ -122,7 +121,7 @@ export const AddWordCardDialog = ({
               />
             </>
           ) : (
-            <>
+            <Box className={classes.wordPanel}>
               <TextField
                 label={t("pages.wordCards.hebrew")}
                 fullWidth
@@ -152,7 +151,7 @@ export const AddWordCardDialog = ({
                   }
                 }}
               />
-            </>
+            </Box>
           )}
         </Box>
       </DialogContent>

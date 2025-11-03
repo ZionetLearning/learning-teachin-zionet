@@ -8,6 +8,7 @@ import {
   initAppInsights,
   initializeSentry,
   SentryErrorBoundary,
+  AppThemeProvider,
 } from "@app-providers";
 import { DevToolsProvider } from "./providers";
 import { AppRole } from "@app-providers/types";
@@ -29,7 +30,9 @@ createRoot(document.getElementById("root")!).render(
         <SignalRProvider hubUrl={HUB_URL}>
           <DevToolsProvider>
             <SentryErrorBoundary>
-              <App />
+              <AppThemeProvider>
+                <App />
+              </AppThemeProvider>
               <DevToolsDock />
               <ToastContainer />
             </SentryErrorBoundary>

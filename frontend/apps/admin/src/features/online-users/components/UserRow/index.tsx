@@ -22,7 +22,7 @@ interface UserRowProps {
 
 export const UserRow = ({ user, variant }: UserRowProps) => {
   const theme = useTheme();
-  const classes = useStyles({ theme });
+  const classes = useStyles();
   const { t, i18n } = useTranslation();
   const isRTL = i18n.dir() === "rtl";
 
