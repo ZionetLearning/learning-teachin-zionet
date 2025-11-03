@@ -66,7 +66,7 @@ module "database" {
   count  = local.use_shared_postgres ? 0 : 1
   source = "./modules/postgresql"
 
-  server_name         = var.use_shared_postgres ? var.database_server_name : var.database_server_name
+  server_name         = var.database_server_name
   location            = var.db_location
   resource_group_name = azurerm_resource_group.main.name
 
