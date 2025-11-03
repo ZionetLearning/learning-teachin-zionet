@@ -1,7 +1,5 @@
-﻿using FluentAssertions;
-using IntegrationTests.Constants;
+﻿using IntegrationTests.Constants;
 using IntegrationTests.Fixtures;
-using IntegrationTests.Helpers;
 using Manager.Models.Users;
 using System.Net;
 using System.Net.Http.Headers;
@@ -29,7 +27,7 @@ public class UserAvatarIntegrationTests(
     public async Task UploadUrl_Should_Return_Sas_And_Path()
     {
         var user = await CreateUserAsync();
-        await ClientFixture.LoginAsync(Role.Admin); 
+        await ClientFixture.LoginAsync(Role.Admin);
         var url = $"{ApiRoutes.AvatarUploadUrl(user.UserId)}";
 
         var req = new
@@ -39,18 +37,20 @@ public class UserAvatarIntegrationTests(
         };
 
         var resp = await Client.PostAsJsonAsync(url, req);
-        resp.ShouldBeOk();
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
 
         var dto = await ReadAsJsonAsync<JsonElement>(resp);
 
         var uploadUrl = dto.GetProperty("uploadUrl").GetString();
         var blobPath = dto.GetProperty("blobPath").GetString();
 
-        uploadUrl.Should().NotBeNullOrWhiteSpace();
-        blobPath.Should().NotBeNullOrWhiteSpace();
-        blobPath!.Should().Contain(user.UserId.ToString("D"));
-        blobPath.Should().Contain("avatar_v");
-        uploadUrl!.Should().Contain(blobPath);
+        Assert.False(string.IsNullOrWhiteSpace(uploadUrl));
+        Assert.False(string.IsNullOrWhiteSpace(blobPath));
+        Assert.NotNull(blobPath);
+        Assert.Contains(user.UserId.ToString("D"), blobPath);
+        Assert.Contains("avatar_v", blobPath);
+        Assert.NotNull(uploadUrl);
+        Assert.Contains(blobPath, uploadUrl);
     }
 
     [Fact(DisplayName = "Avatar: Full flow upload → confirm → read-url → delete")]
@@ -61,13 +61,13 @@ public class UserAvatarIntegrationTests(
         // 1) upload-url
         var uploadReq = new { contentType = ContentTypePng, sizeBytes = (long?)Png1x1.Length };
         var uploadResp = await Client.PostAsJsonAsync($"{ApiRoutes.AvatarUploadUrl(user.UserId)}", uploadReq);
-        uploadResp.ShouldBeOk();
+        Assert.Equal(HttpStatusCode.OK, uploadResp.StatusCode);
 
         var uploadDto = await ReadAsJsonAsync<JsonElement>(uploadResp);
         var uploadUrl = uploadDto.GetProperty("uploadUrl").GetString()!;
         var blobPath = uploadDto.GetProperty("blobPath").GetString()!;
 
-        // 2) PUT in Azurite
+        // 2) PUT in Azurite/Azure
         using (var raw = new HttpClient())
         {
             using var content = new ByteArrayContent(Png1x1);
@@ -75,50 +75,115 @@ public class UserAvatarIntegrationTests(
             content.Headers.Add("x-ms-blob-type", "BlockBlob");
 
             var put = await raw.PutAsync(uploadUrl, content);
-            put.StatusCode.Should().Be(HttpStatusCode.Created);
+            Assert.Equal(HttpStatusCode.Created, put.StatusCode);
         }
 
         // 3) confirm
         var confirmReq = new { blobPath = blobPath, contentType = ContentTypePng };
         var confirmResp = await Client.PostAsJsonAsync($"{ApiRoutes.AvatarConfirm(user.UserId)}", confirmReq);
-        confirmResp.ShouldBeOk();
+        Assert.Equal(HttpStatusCode.OK, confirmResp.StatusCode);
 
-        var getUserResp = await Client.GetAsync(ApiRoutes.UserById(user.UserId));
-        getUserResp.ShouldBeOk();
-        var userData = await ReadAsJsonAsync<UserData>(getUserResp);
-        userData!.AvatarPath.Should().Be(blobPath);
-        userData.AvatarContentType.Should().Be(ContentTypePng);
+        // 3.1) Wait until the user reflects the avatar (eventual consistency in cloud)
+        UserData? userData = null;
+        var swSet = System.Diagnostics.Stopwatch.StartNew();
+        var setTimeout = TimeSpan.FromSeconds(10);
+        var pollDelay = TimeSpan.FromMilliseconds(200);
 
-        var setAt = userData.AvatarUpdatedAtUtc;
-        setAt.Should().NotBeNull();
-
-        // 4) read-url
-        var readUrlResp = await Client.GetAsync($"{ApiRoutes.AvatarReadUrl(user.UserId)}");
-        readUrlResp.ShouldBeOk();
-        var readUrl = await readUrlResp.Content.ReadAsStringAsync();
-        readUrl.Should().NotBeNullOrWhiteSpace();
-
-        using (var raw = new HttpClient())
+        while (true)
         {
-            var img = await raw.GetAsync(readUrl.Trim('"'));
-            img.StatusCode.Should().Be(HttpStatusCode.OK);
-            (await img.Content.ReadAsByteArrayAsync()).Length.Should().BeGreaterThan(0);
+            var getUserResp = await Client.GetAsync(ApiRoutes.UserById(user.UserId));
+            Assert.Equal(HttpStatusCode.OK, getUserResp.StatusCode);
+            userData = await ReadAsJsonAsync<UserData>(getUserResp);
+
+            if (userData?.AvatarPath == blobPath &&
+                userData.AvatarContentType == ContentTypePng &&
+                userData.AvatarUpdatedAtUtc != null)
+            {
+                break;
+            }
+
+            if (swSet.Elapsed > setTimeout)
+            {
+                Assert.Equal(blobPath, userData?.AvatarPath);
+            }
+
+            await Task.Delay(pollDelay);
         }
 
-        // 5) delete
+        var setAt = userData!.AvatarUpdatedAtUtc;
+        Assert.NotNull(setAt);
+
+        // 4) read-url (retry until blob is readable)
+        string? readUrl = null;
+        byte[]? imgBytes = null;
+        var swRead = System.Diagnostics.Stopwatch.StartNew();
+        var readTimeout = TimeSpan.FromSeconds(10);
+
+        while (true)
+        {
+            var readUrlResp = await Client.GetAsync($"{ApiRoutes.AvatarReadUrl(user.UserId)}");
+            Assert.Equal(HttpStatusCode.OK, readUrlResp.StatusCode);
+            readUrl = (await readUrlResp.Content.ReadAsStringAsync()).Trim('"');
+            Assert.False(string.IsNullOrWhiteSpace(readUrl));
+
+            using var raw = new HttpClient();
+            var img = await raw.GetAsync(readUrl);
+            if (img.StatusCode == HttpStatusCode.OK)
+            {
+                var bytes = await img.Content.ReadAsByteArrayAsync();
+                if (bytes.Length > 0)
+                {
+                    imgBytes = bytes;
+                    break;
+                }
+            }
+
+            if (swRead.Elapsed > readTimeout)
+            {
+                var final = await new HttpClient().GetAsync(readUrl);
+                Assert.Equal(HttpStatusCode.OK, final.StatusCode);
+                Assert.True((await final.Content.ReadAsByteArrayAsync()).Length > 0);
+            }
+
+            await Task.Delay(pollDelay);
+        }
+
+        Assert.NotNull(imgBytes);
+        Assert.True(imgBytes.Length > 0);
+
+        // 5) delete (idempotent)
         var del = await Client.DeleteAsync($"{ApiRoutes.AvatarDelete(user.UserId)}");
-        del.ShouldBeOk();
+        Assert.Equal(HttpStatusCode.OK, del.StatusCode);
 
         var del2 = await Client.DeleteAsync($"{ApiRoutes.AvatarDelete(user.UserId)}");
-        del2.ShouldBeOk();
+        Assert.Equal(HttpStatusCode.OK, del2.StatusCode);
 
-        var afterDelResp = await Client.GetAsync(ApiRoutes.UserById(user.UserId));
-        afterDelResp.ShouldBeOk();
-        var afterDel = await ReadAsJsonAsync<UserData>(afterDelResp);
-        afterDel!.AvatarPath.Should().BeNull();
-        afterDel.AvatarContentType.Should().BeNull();
-        afterDel.AvatarUpdatedAtUtc!.Value.ToUniversalTime()
-            .Should().BeOnOrAfter(setAt!.Value.ToUniversalTime());
+        // 5.1) Wait until fields are cleared
+        var swDel = System.Diagnostics.Stopwatch.StartNew();
+        var delTimeout = TimeSpan.FromSeconds(10);
+
+        while (true)
+        {
+            var afterDelResp = await Client.GetAsync(ApiRoutes.UserById(user.UserId));
+            Assert.Equal(HttpStatusCode.OK, afterDelResp.StatusCode);
+            var afterDel = await ReadAsJsonAsync<UserData>(afterDelResp);
+
+            if (afterDel!.AvatarPath is null &&
+                afterDel.AvatarContentType is null &&
+                afterDel.AvatarUpdatedAtUtc!.Value.ToUniversalTime() >= setAt!.Value.ToUniversalTime())
+            {
+                break;
+            }
+
+            if (swDel.Elapsed > delTimeout)
+            {
+                Assert.Null(afterDel!.AvatarPath);
+                Assert.Null(afterDel.AvatarContentType);
+                Assert.True(afterDel.AvatarUpdatedAtUtc!.Value.ToUniversalTime() >= setAt!.Value.ToUniversalTime());
+            }
+
+            await Task.Delay(pollDelay);
+        }
     }
 
     [Fact(DisplayName = "Avatar: confirm should reject wrong blobPath prefix")]
@@ -129,7 +194,7 @@ public class UserAvatarIntegrationTests(
         var confirmReq = new { blobPath = $"some-other-user/avatar_v123.png", contentType = ContentTypePng };
         var resp = await Client.PostAsJsonAsync($"{ApiRoutes.AvatarConfirm(user.UserId)}", confirmReq);
 
-        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
     }
 
     [Fact(DisplayName = "Avatar: upload-url forbids for other user (SelfOrAdmin)")]
@@ -139,14 +204,14 @@ public class UserAvatarIntegrationTests(
         var userA = await CreateUserAsync();
         var userB = TestDataHelper.CreateUser(role: "student");
         var createB = await Client.PostAsJsonAsync(ApiRoutes.User, userB);
-        createB.ShouldBeCreated();
+        Assert.Equal(HttpStatusCode.Created, createB.StatusCode);
 
-        // get B  upload-url with token A 
+        // get B  upload-url with token A
         var url = $"{ApiRoutes.AvatarUploadUrl(userB.UserId)}";
         var body = new { contentType = ContentTypePng, sizeBytes = (long?)Png1x1.Length };
 
         var resp = await Client.PostAsJsonAsync(url, body);
-        resp.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
     }
 
     [Fact(DisplayName = "Avatar: upload-url rejects unsupported content-type")]
@@ -157,7 +222,7 @@ public class UserAvatarIntegrationTests(
         var body = new { contentType = "image/gif", sizeBytes = (long?)1234 };
         var resp = await Client.PostAsJsonAsync($"{ApiRoutes.AvatarUploadUrl(user.UserId)}", body);
 
-        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
     }
 
     [Fact(DisplayName = "Avatar: upload-url rejects size > MaxBytes")]
@@ -169,6 +234,6 @@ public class UserAvatarIntegrationTests(
         var body = new { contentType = ContentTypePng, sizeBytes = (long?)(30 * 1024 * 1024) };
         var resp = await Client.PostAsJsonAsync($"{ApiRoutes.AvatarUploadUrl(user.UserId)}", body);
 
-        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
     }
 }
