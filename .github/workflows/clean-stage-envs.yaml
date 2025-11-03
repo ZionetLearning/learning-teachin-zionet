@@ -1,4 +1,6 @@
 name: Scheduled - Clean Stage Environments
+permissions:
+  contents: read
 
 on:
   schedule:
