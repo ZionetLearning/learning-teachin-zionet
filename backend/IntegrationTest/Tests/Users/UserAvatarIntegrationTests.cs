@@ -104,6 +104,11 @@ public class UserAvatarIntegrationTests(
 
             if (swSet.Elapsed > setTimeout)
             {
+                // add log with blobPath and userData.AvatarPath for easier debugging
+                outputHelper.WriteLine($"Timeout waiting for avatar to be set. Expected blobPath: ");
+                outputHelper.WriteLine(blobPath);
+                outputHelper.WriteLine($"Actual AvatarPath: ");
+                outputHelper.WriteLine(userData?.AvatarPath ?? "null");
                 Assert.Equal(blobPath, userData?.AvatarPath);
             }
 
