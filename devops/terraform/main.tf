@@ -233,18 +233,11 @@ resource "azurerm_storage_management_policy" "avatars_lifecycle" {
 
 # Monitoring - Diagnostic Settings for resources to Log Analytics
 # Log Analytics Workspace - only create in dev environment
-resource "azurerm_log_analytics_workspace" "main" {
-  count               = var.environment_name == "dev" ? 1 : 0
-  name                = "${var.environment_name}-laworkspace"
-  location            = azurerm_resource_group.main.location
+module "log_analytics" {
+  source              = "./modules/log_analytics"
+  environment_name    = var.environment_name
   resource_group_name = azurerm_resource_group.main.name
-  sku                 = "PerGB2018"
-  retention_in_days   = 30
-  daily_quota_gb = 1
-
-  tags = {
-    Environment = var.environment_name
-  }
+  location            = azurerm_resource_group.main.location
 }
 
 # Local value to determine which workspace to use (only available in dev)
