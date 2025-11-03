@@ -5,7 +5,7 @@ import {
   useQueryClient,
   UseQueryResult,
 } from "@tanstack/react-query";
-import { apiClient as axios } from "@app-providers";
+import { apiClient as axios, OnlineUserDto } from "@app-providers";
 import { mapUser, User, UserDto } from "@app-providers";
 
 const USERS_URL = `${import.meta.env.VITE_USERS_URL}/user`;
@@ -46,6 +46,23 @@ export const useDeleteUserByUserId = (
     mutationFn: () => deleteUserByUserId(userId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["users"] });
+    },
+  });
+};
+
+export const useGetOnlineUsers = () => {
+  return useQuery<OnlineUserDto[], Error>({
+    queryKey: ["onlineUsers"],
+    queryFn: async () => {
+      const response = await axios.get(
+        `${import.meta.env.VITE_USERS_URL}/online`,
+      );
+      if (response.status !== 200) {
+        throw new Error(
+          response.data?.message || "Failed to fetch online users",
+        );
+      }
+      return response.data as OnlineUserDto[];
     },
   });
 };

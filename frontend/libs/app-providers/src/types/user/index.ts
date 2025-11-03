@@ -39,3 +39,10 @@ export interface User {
   hebrewLevelValue?: HebrewLevelValue;
   interests?: string[];
 }
+
+export interface OnlineUserDto {
+  userId: string;
+  name: string;
+  role: string;
+  connectionsCount: number;
+}
