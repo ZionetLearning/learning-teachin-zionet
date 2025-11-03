@@ -10,8 +10,8 @@ permissions:
 
 on:
   push:
-    branches: [main]
-    paths: ['frontend/**']    
+    branches: [devops/improvment-continue]
+    #paths: ['frontend/**']    
   workflow_dispatch:
     inputs:
       environment:
