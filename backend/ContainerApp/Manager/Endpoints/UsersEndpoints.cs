@@ -561,7 +561,7 @@ public static class UsersEndpoints
 
         if (!UserDefaultsHelper.IsSelfOrAdmin(http, userId))
         {
-            logger.LogWarning("Forbidden for confirm");
+            logger.LogWarning("Forbidden for upload-url");
             return Results.Forbid();
         }
 
