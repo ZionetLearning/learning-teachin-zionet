@@ -14,7 +14,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Accessor.DB.Migrations
 {
     [DbContext(typeof(AccessorDbContext))]
-    [Migration("20251103093012_InitClassesAndMemberships")]
+    [Migration("20251103102056_InitClassesAndMemberships")]
     partial class InitClassesAndMemberships
     {
         /// <inheritdoc />
