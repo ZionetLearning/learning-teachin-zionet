@@ -9,7 +9,7 @@ using Manager.Models;
 using Manager.Models.Auth;
 using Manager.Models.Auth.RefreshSessions;
 using Manager.Models.Chat;
-using Manager.Models.GameConfiguration;
+using Manager.Models.UserGameConfiguration;
 using Manager.Models.Games;
 using Manager.Models.QueueMessages;
 using Manager.Models.Users;
@@ -917,10 +917,11 @@ public class AccessorClient(
 
         try
         {
+
             var response = await _daprClient.InvokeMethodAsync<UserGameConfig>(
                 HttpMethod.Get,
                 AppIds.Accessor,
-                $"game-config-accessor",
+                $"game-config-accessor?userId={userId}&gameName={gameName}",
                 cancellationToken: ct
             );
             return response;
@@ -960,7 +961,7 @@ public class AccessorClient(
         _logger.LogInformation("Delete User's Game Configuration. UserId={UserId}, Game Name={GameName}", userId, gameName);
         try
         {
-            var payload = new DeleteUserGameConfig
+            var payload = new UserGameConfigKey
             {
                 UserId = userId,
                 GameName = gameName

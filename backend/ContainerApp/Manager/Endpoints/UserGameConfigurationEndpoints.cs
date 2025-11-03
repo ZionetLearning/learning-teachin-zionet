@@ -1,12 +1,12 @@
 ﻿using System.Security.Claims;
 using Manager.Constants;
 using Microsoft.AspNetCore.Mvc;
-using Manager.Models.GameConfiguration;
+using Manager.Models.UserGameConfiguration;
 using Manager.Services.Clients.Accessor;
 
 namespace Manager.Endpoints;
 
-public static class GameConfigurationEndpoints
+public static class UserGameConfigurationEndpoints
 {
     private sealed class GameConfigurationEndpoint();
     public static IEndpointRouteBuilder MapGameConfigEndpoints(this IEndpointRouteBuilder app)

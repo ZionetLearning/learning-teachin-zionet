@@ -2,7 +2,7 @@
 using Manager.Models.Auth;
 using Manager.Models.Auth.RefreshSessions;
 using Manager.Models.Chat;
-using Manager.Models.GameConfiguration;
+using Manager.Models.UserGameConfiguration;
 using Manager.Models.Games;
 using Manager.Models.Users;
 using Manager.Models.WordCards;

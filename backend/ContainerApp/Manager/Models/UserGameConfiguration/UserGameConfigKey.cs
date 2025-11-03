@@ -1,6 +1,6 @@
-﻿namespace Accessor.Models.GameConfiguration;
+﻿namespace Manager.Models.UserGameConfiguration;
 
-public class DeleteUserGameConfig
+public class UserGameConfigKey
 {
     public required Guid UserId { get; set; }
     public required GameName GameName { get; set; }

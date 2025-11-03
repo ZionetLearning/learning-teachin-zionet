@@ -1,5 +1,5 @@
 ﻿using System.Runtime.Serialization;
-namespace Manager.Models.GameConfiguration;
+namespace Manager.Models.UserGameConfiguration;
 
 public enum GameName
 {
