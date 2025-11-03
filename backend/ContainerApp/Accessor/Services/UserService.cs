@@ -48,7 +48,10 @@ public class UserService : IUserService
             Role = user.Role,
             PreferredLanguageCode = user.PreferredLanguageCode,
             HebrewLevelValue = user.HebrewLevelValue,
-            Interests = user.Interests
+            Interests = user.Interests,
+            AvatarPath = user.AvatarPath,
+            AvatarContentType = user.AvatarContentType,
+            AvatarUpdatedAtUtc = user.AvatarUpdatedAtUtc
         };
     }
 
@@ -63,7 +66,10 @@ public class UserService : IUserService
                 Role = u.Role,
                 PreferredLanguageCode = u.PreferredLanguageCode,
                 HebrewLevelValue = u.HebrewLevelValue,
-                Interests = u.Interests
+                Interests = u.Interests,
+                AvatarPath = u.AvatarPath,
+                AvatarContentType = u.AvatarContentType,
+                AvatarUpdatedAtUtc = u.AvatarUpdatedAtUtc
             })
             .ToListAsync();
 
@@ -95,6 +101,22 @@ public class UserService : IUserService
         if (user == null)
         {
             return false;
+        }
+
+        if (updateUser.ClearAvatar == true)
+        {
+            user.AvatarPath = null;
+            user.AvatarContentType = null;
+            user.AvatarUpdatedAtUtc = DateTime.UtcNow;
+        }
+        else
+        {
+            if (updateUser.AvatarPath is not null)
+            {
+                user.AvatarPath = updateUser.AvatarPath;
+                user.AvatarContentType = updateUser.AvatarContentType;
+                user.AvatarUpdatedAtUtc = DateTime.UtcNow;
+            }
         }
 
         if (updateUser.FirstName is not null)

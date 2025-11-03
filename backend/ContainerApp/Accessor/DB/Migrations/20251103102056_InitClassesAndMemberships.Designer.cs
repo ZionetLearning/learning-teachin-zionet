@@ -14,7 +14,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Accessor.DB.Migrations
 {
     [DbContext(typeof(AccessorDbContext))]
-    [Migration("20251028114221_InitClassesAndMemberships")]
+    [Migration("20251103102056_InitClassesAndMemberships")]
     partial class InitClassesAndMemberships
     {
         /// <inheritdoc />
@@ -72,7 +72,6 @@ namespace Accessor.DB.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("Code")
-                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
@@ -334,6 +333,15 @@ namespace Accessor.DB.Migrations
                     b.Property<Guid>("UserId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<string>("AvatarContentType")
+                        .HasColumnType("text");
+
+                    b.Property<string>("AvatarPath")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("AvatarUpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Email")
                         .IsRequired()
