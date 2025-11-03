@@ -45,6 +45,12 @@ public static class GameConfigurationEndpoints
             }
 
             var config = await accessorClient.GetUserGameConfigAsync(userId, gameName, ct);
+            if (config == null)
+            {
+                logger.LogInformation("No configuration found for user {UserId} and game {GameName}", userId, gameName);
+                return Results.NotFound(new { error = "Game configuration not found" });
+            }
+
             return Results.Ok(config);
         }
         catch (Exception ex)
@@ -55,7 +61,7 @@ public static class GameConfigurationEndpoints
     }
 
     private static async Task<IResult> SaveConfigAsync(
-        [FromRoute] UserNewGameConfig userNewGameConfig,
+        [FromBody] UserNewGameConfig userNewGameConfig,
         [FromServices] IAccessorClient accessorClient,
         HttpContext http,
         [FromServices] ILogger<GameConfigurationEndpoint> logger,
@@ -83,15 +89,29 @@ public static class GameConfigurationEndpoints
     }
 
     private static async Task<IResult> DeleteConfigAsync(
-        [FromRoute] string gameName,
-        [FromBody] Dictionary<string, object> config,
+        [FromRoute] GameName gameName,
         [FromServices] IAccessorClient accessorClient,
         HttpContext http,
         [FromServices] ILogger<GameConfigurationEndpoint> logger,
         CancellationToken ct)
     {
-        var userId = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
-        await accessorClient.SaveUserGameConfigAsync(Guid.Parse(userId), gameName, config, ct);
-        return Results.Ok(new { message = "Configuration saved." });
+        try
+        {
+            var userIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
+
+            if (!Guid.TryParse(userIdRaw, out var userId))
+            {
+                logger.LogWarning("Invalid or missing User ID in claims: {RawUserId}", userIdRaw);
+                return Results.Unauthorized();
+            }
+
+            await accessorClient.DeleteUserGameConfigAsync(userId, gameName, ct);
+            return Results.Ok(new { message = "Configuration saved." });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error saving game configuration for game {GameName}", gameName);
+            return Results.Problem("Failed to save game configuration. Please try again later.");
+        }
     }
 }

@@ -2,6 +2,7 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using AutoMapper;
 using Dapr.Client;
 using Manager.Constants;
 using Manager.Models;
@@ -14,19 +15,21 @@ using Manager.Models.QueueMessages;
 using Manager.Models.Users;
 using Manager.Models.WordCards;
 using Manager.Services.Clients.Accessor.Models;
-using Microsoft.AspNetCore.Mvc;
+//using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Services.Clients.Accessor;
 
 public class AccessorClient(
     ILogger<AccessorClient> logger,
     DaprClient daprClient,
-    IHttpContextAccessor httpContextAccessor
+    IHttpContextAccessor httpContextAccessor,
+    IMapper mapper
     ) : IAccessorClient
 {
     private readonly ILogger<AccessorClient> _logger = logger;
     private readonly DaprClient _daprClient = daprClient;
     private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
+    private readonly IMapper _mapper = mapper;
 
     public async Task<TaskModel?> GetTaskAsync(int id)
     {
@@ -920,12 +923,6 @@ public class AccessorClient(
                 $"game-config-accessor",
                 cancellationToken: ct
             );
-            if (response == null)
-            {
-                _logger.LogInformation("Get user config game is null");
-                throw new BadHttpRequestException("User config is null");
-            }
-
             return response;
         }
         catch (Exception ex)
@@ -935,4 +932,52 @@ public class AccessorClient(
         }
     }
 
+    public async Task SaveUserGameConfigAsync(Guid userId, UserNewGameConfig gameName, CancellationToken ct)
+    {
+        _logger.LogInformation("Save User's Game Configuration. UserId={UserId}, Game Name={GameName}", userId, gameName);
+        try
+        {
+            var payload = _mapper.Map<UserGameConfig>(gameName);
+            payload.UserId = userId;
+
+            await _daprClient.InvokeMethodAsync(
+                HttpMethod.Put,
+                AppIds.Accessor,
+                $"game-config-accessor",
+                payload,
+                cancellationToken: ct
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save user configuration for UserId={UserId}", userId);
+            throw;
+        }
+    }
+
+    public async Task DeleteUserGameConfigAsync(Guid userId, GameName gameName, CancellationToken ct)
+    {
+        _logger.LogInformation("Delete User's Game Configuration. UserId={UserId}, Game Name={GameName}", userId, gameName);
+        try
+        {
+            var payload = new DeleteUserGameConfig
+            {
+                UserId = userId,
+                GameName = gameName
+            };
+
+            await _daprClient.InvokeMethodAsync(
+                HttpMethod.Delete,
+                AppIds.Accessor,
+                $"game-config-accessor",
+                payload,
+                cancellationToken: ct
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to delete user configuration for UserId={UserId}", userId);
+            throw;
+        }
+    }
 }

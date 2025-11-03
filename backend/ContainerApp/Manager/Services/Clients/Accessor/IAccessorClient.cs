@@ -43,10 +43,11 @@ public interface IAccessorClient
     Task<PagedResult<MistakeDto>> GetMistakesAsync(Guid studentId, int page, int pageSize, CancellationToken ct = default);
     Task<PagedResult<SummaryHistoryWithStudentDto>> GetAllHistoriesAsync(int page, int pageSize, CancellationToken ct = default);
     Task<List<AttemptedSentenceResult>> SaveGeneratedSentencesAsync(GeneratedSentenceDto dto, CancellationToken ct);
-    Task<bool> DeleteAllGamesHistoryAsync(CancellationToken ct);
-    Task<IReadOnlyList<WordCard>> GetWordCardsAsync(Guid userId, CancellationToken ct);
-    Task<WordCard> CreateWordCardAsync(Guid userId, CreateWordCardRequest request, CancellationToken ct);
-    Task<WordCardLearnedStatus> UpdateLearnedStatusAsync(Guid userId, LearnedStatus request, CancellationToken ct);
-    Task<UserGameConfig> GetUserGameConfigAsync(Guid userId, GameName gameName, CancellationToken ct);
-
+    Task<bool> DeleteAllGamesHistoryAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<WordCard>> GetWordCardsAsync(Guid userId, CancellationToken ct = default);
+    Task<WordCard> CreateWordCardAsync(Guid userId, CreateWordCardRequest request, CancellationToken ct = default);
+    Task<WordCardLearnedStatus> UpdateLearnedStatusAsync(Guid userId, LearnedStatus request, CancellationToken ct = default);
+    Task<UserGameConfig> GetUserGameConfigAsync(Guid userId, GameName gameName, CancellationToken ct = default);
+    Task SaveUserGameConfigAsync(Guid userId, UserNewGameConfig gameName, CancellationToken ct = default);
+    Task DeleteUserGameConfigAsync(Guid userId, GameName gameName, CancellationToken ct = default);
 }
