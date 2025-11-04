@@ -10,7 +10,7 @@ using Xunit.Abstractions;
 namespace IntegrationTests.Tests.WordCards;
 
 [Collection("IntegrationTests")]
-public abstract class WordCardsTestBase(
+public abstract class UserGameConfigurationTestBase(
     HttpClientFixture httpClientFixture,
     ITestOutputHelper outputHelper,
     SignalRTestFixture signalRFixture
@@ -73,4 +73,5 @@ public abstract class WordCardsTestBase(
         result.Should().NotBeNull();
         return result!;
     }
+
 }

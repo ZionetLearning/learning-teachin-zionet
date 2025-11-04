@@ -47,5 +47,10 @@ public static class ApiRoutes
     public const string WordCards = "wordcards-manager";
     public const string WordCardsUpdateLearnedStatus = "wordcards-manager/learned";
 
+    // -------- User Game Config --------
+    public const string GameConfig = "game-config-manager";
+    public static string GameConfigByName(string gameName) => $"game-config-manager/{gameName}";
+
+
 
 }
