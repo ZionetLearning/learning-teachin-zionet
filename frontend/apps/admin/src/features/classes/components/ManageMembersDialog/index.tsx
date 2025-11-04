@@ -68,7 +68,7 @@ export const ManageMembersDialog = ({
 
   // Members set
   const memberIds = useMemo(
-    () => new Set(classData?.members ?? []),
+    () => new Set((classData?.members ?? []).map((m) => m.memberId)),
     [classData?.members],
   );
 
@@ -239,39 +239,36 @@ export const ManageMembersDialog = ({
                 overflow: "auto",
               }}
             >
-              {(nonAdminUsers ?? [])
-                .filter((u) => memberIds.has(u.userId))
-                .map((u) => (
-                  <ListItem
-                    key={u.userId}
-                    secondaryAction={
-                      <Tooltip title="Remove from class">
-                        <span>
-                          <IconButton
-                            edge="end"
-                            onClick={() => handleRemove([u.userId])}
-                            disabled={removing}
-                          >
-                            <RemoveIcon />
-                          </IconButton>
-                        </span>
-                      </Tooltip>
+              {classData?.members.map((u) => (
+                <ListItem
+                  key={u.memberId}
+                  secondaryAction={
+                    <Tooltip title="Remove from class">
+                      <span>
+                        <IconButton
+                          edge="end"
+                          onClick={() => handleRemove([u.memberId])}
+                          disabled={removing}
+                        >
+                          <RemoveIcon />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                  }
+                >
+                  <ListItemText
+                    primary={
+                      <Stack direction="row" gap={1} alignItems="center">
+                        <Typography>{u.name}</Typography>
+                        <RoleChip
+                          role={u.role === 1 ? "teacher" : "student"}
+                          data-testid="users-role-badge"
+                        />
+                      </Stack>
                     }
-                  >
-                    <ListItemText
-                      primary={
-                        <Stack direction="row" gap={1} alignItems="center">
-                          <Typography>{getFullName(u)}</Typography>
-                          <RoleChip
-                            role={u.role}
-                            data-testid="users-role-badge"
-                          />
-                        </Stack>
-                      }
-                      secondary={u.email}
-                    />
-                  </ListItem>
-                ))}
+                  />
+                </ListItem>
+              ))}
 
               {memberIds.size === 0 && (
                 <Box p={2}>

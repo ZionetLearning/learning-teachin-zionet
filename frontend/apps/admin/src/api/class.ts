@@ -7,19 +7,23 @@ import {
 import { apiClient as axios } from "@app-providers";
 import { toast } from "react-toastify";
 
-export type ClassMemberId = string;
+export type ClassMember = {
+  memberId: string;
+  name: string;
+  role: number;
+};
 
 export type ClassItem = {
   classId: string;
   name: string;
-  members: ClassMemberId[];
+  members: ClassMember[];
 };
 
 export type ClassSummary = {
   classId: string;
   name: string;
   // optional if your list endpoint doesn't return members
-  members?: ClassMemberId[];
+  members?: ClassMember[];
 };
 
 export type GetClassResponse = ClassItem;
@@ -39,13 +43,13 @@ export type CreateClassResponse = {
 
 export type AddMembersRequest = {
   classId: string;
-  userIds: ClassMemberId[];
+  userIds: string[];
   addedBy: string; // userId
 };
 
 export type RemoveMembersRequest = {
   classId: string;
-  userIds: ClassMemberId[];
+  userIds: string[];
 };
 
 export type BasicMessageResponse = {
@@ -164,18 +168,10 @@ export const useAddClassMembers = () => {
       );
       return res.data;
     },
-    onSuccess: (_msg, { classId, userIds }) => {
+    onSuccess: (_msg, { classId }) => {
       toast.success("Members added successfully.");
-      // Update cached class members if present
-      qc.setQueryData<GetClassResponse | undefined>(
-        ["class", classId],
-        (prev) => {
-          if (!prev) return undefined;
-          const existing = new Set(prev.members);
-          userIds.forEach((id) => existing.add(id));
-          return { ...prev, members: Array.from(existing) };
-        },
-      );
+      // Just refetch the class to get full member objects
+      qc.invalidateQueries({ queryKey: ["class", classId] });
     },
     onError: (error) => {
       console.error("Failed to add members:", error);
@@ -196,21 +192,29 @@ export const useRemoveClassMembers = () => {
       );
       return res.data;
     },
+
     onSuccess: (_msg, { classId, userIds }) => {
       toast.success("Members removed successfully.");
-      // Update cached class members if present
+
+      // Optimistically update cache: remove by memberId
       qc.setQueryData<GetClassResponse | undefined>(
         ["class", classId],
         (prev) => {
-          if (!prev) return undefined;
+          if (!prev) return prev;
           const toRemove = new Set(userIds);
           return {
             ...prev,
-            members: prev.members.filter((id) => !toRemove.has(id)),
+            members: prev.members.filter((m) => !toRemove.has(m.memberId)),
           };
         },
       );
     },
+
+    // Optional: keep cache perfectly in sync with server
+    onSettled: (_res, _err, vars) => {
+      qc.invalidateQueries({ queryKey: ["class", vars.classId] });
+    },
+
     onError: (error) => {
       console.error("Failed to remove members:", error);
       toast.error("Failed to remove members. Please try again.");
