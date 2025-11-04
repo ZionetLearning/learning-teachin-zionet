@@ -73,16 +73,6 @@ module "database" {
   admin_username = var.admin_username
   admin_password = var.admin_password
 
-  db_version = var.db_version
-  sku_name   = var.sku_name
-  storage_mb = var.storage_mb
-
-  password_auth_enabled         = var.password_auth_enabled
-  active_directory_auth_enabled = var.active_directory_auth_enabled
-
-  backup_retention_days        = var.backup_retention_days
-  geo_redundant_backup_enabled = var.geo_redundant_backup_enabled
-
   delegated_subnet_id = var.delegated_subnet_id
 
   environment_name = var.environment_name
