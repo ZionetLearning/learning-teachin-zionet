@@ -70,7 +70,7 @@ const CLASSES_BASE_URL = import.meta.env.VITE_CLASSES_MANAGER_URL;
 //   });
 // };
 
-const TEMP_CLASS_ID = "0176619e-6acc-4b02-85f1-b38bbef8d230";
+const TEMP_CLASS_ID = "3f0d707b-743d-42f0-8de5-19ed0ec3df99";
 
 // FAKE getAllClasses implementation until backend is ready
 export const useGetAllClasses = (): UseQueryResult<ClassSummary[], Error> => {
