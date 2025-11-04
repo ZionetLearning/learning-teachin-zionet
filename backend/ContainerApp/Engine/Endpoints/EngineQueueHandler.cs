@@ -158,7 +158,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         long getHistoryTime = 0;
         long addOrCheckSystemPromptTime = 0;
         long addOrCheckChatNameTime = 0;
-        long afterChatServiseTime = 0;
+        long afterChatServiceTime = 0;
         var sw = Stopwatch.StartNew();
         EngineChatRequest? request = null;
         var chatName = string.Empty;
@@ -345,7 +345,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
             await _publisher.SendStreamAsync(userContext, finalChunk, ct);
 
-            afterChatServiseTime = sw.ElapsedMilliseconds;
+            afterChatServiceTime = sw.ElapsedMilliseconds;
 
             _logger.LogInformation("Chat request {RequestId} processed successfully", request.RequestId);
         }
@@ -397,14 +397,14 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
             _logger.LogInformation(
                 "Chat request {RequestId} chatId {ThreadId} userId {UserId}, getHistoryTime {GetHistoryTime} ms, " +
                 "addOrCheckSystemPromptTime {AddOrCheckSystemPromptTime} ms, addOrCheckChatNameTime {AddOrCheckChatNameTime} ms, " +
-                "afterChatServiseTime {AfterChatServiseTime} ms, finished in {ElapsedMs} ms",
+                "afterChatServiceTime {AfterChatServiceTime} ms, finished in {ElapsedMs} ms",
                 request?.RequestId,
                 request?.ThreadId,
                 request?.UserId,
                 getHistoryTime,
                 addOrCheckSystemPromptTime,
                 addOrCheckChatNameTime,
-                afterChatServiseTime,
+                afterChatServiceTime,
                 sw.ElapsedMilliseconds);
 
             if (renewalCts is not null)
@@ -439,7 +439,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
     {
         long getHistoryTime = 0;
         long addOrCheckSystemPromptTime = 0;
-        long afterChatServiseTime = 0;
+        long afterChatServiceTime = 0;
         var sw = Stopwatch.StartNew();
         var chatName = string.Empty;
         ChatAiServiceRequest? serviceRequest = null;
@@ -462,9 +462,14 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
             var skHistory = HistoryMapper.ToChatHistoryFromElement(snapshot.History);
             var storyForKernel = HistoryMapper.CloneToChatHistory(skHistory);
 
+            if (request.UserDetail == null)
+            {
+                throw new NonRetryableException("UserDetail is required to create the first system prompt for global chat, but it was null.");
+            }
+
             if (!storyForKernel.Any(m => m.Role == AuthorRole.System))
             {
-                var systemPrompt = CreateFirstSystemPromptForGlobalChat(request.UserDetail!, ct);
+                var systemPrompt = CreateFirstSystemPromptForGlobalChat(request.UserDetail, ct);
                 storyForKernel.Insert(0, new ChatMessageContent(AuthorRole.System, systemPrompt));
             }
 
@@ -553,7 +558,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
             await _publisher.SendStreamAsync(userContext, finalChunk, ct);
 
-            afterChatServiseTime = sw.ElapsedMilliseconds;
+            afterChatServiceTime = sw.ElapsedMilliseconds;
 
             _logger.LogInformation("Chat request {RequestId} processed successfully", request.RequestId);
         }
@@ -605,13 +610,13 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
             _logger.LogInformation(
                 "Chat request {RequestId} chatId {ThreadId} userId {UserId}, getHistoryTime {GetHistoryTime} ms, " +
                 "addOrCheckSystemPromptTime {AddOrCheckSystemPromptTime} ms," +
-                "afterChatServiseTime {AfterChatServiseTime} ms, finished in {ElapsedMs} ms",
+                "afterChatServiceTime {AfterChatServiceTime} ms, finished in {ElapsedMs} ms",
                 request?.RequestId,
                 request?.ThreadId,
                 request?.UserId,
                 getHistoryTime,
                 addOrCheckSystemPromptTime,
-                afterChatServiseTime,
+                afterChatServiceTime,
                 sw.ElapsedMilliseconds);
 
             if (renewalCts is not null)
@@ -748,7 +753,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         long getAttemptDetailsTime = 0;
         long getSystemPromptTime = 0;
         long getMistakePromptTime = 0;
-        long afterChatServicesTime = 0;
+        long afterChatServiceTime = 0;
 
         var sw = Stopwatch.StartNew();
         EngineExplainMistakeRequest? request = null;
@@ -927,7 +932,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
             await _publisher.SendStreamAsync(userContext, finalChunk, ct);
 
-            afterChatServicesTime = sw.ElapsedMilliseconds;
+            afterChatServiceTime = sw.ElapsedMilliseconds;
 
             _logger.LogInformation("Explain mistake request {RequestId} processed successfully", request.RequestId);
         }
@@ -978,7 +983,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
             _logger.LogInformation(
                 "Explain mistake request {RequestId} chatId {ThreadId} userId {UserId}, attemptId {AttemptId}, " +
                 "getAttemptDetailsTime {GetAttemptDetailsTime} ms, getSystemPromptTime {GetSystemPromptTime} ms, " +
-                "getMistakePromptTime {GetMistakePromptTime} ms, afterChatServiseTime {AfterChatServiseTime} ms, " +
+                "getMistakePromptTime {GetMistakePromptTime} ms, afterChatServiceTime {AfterChatServiceTime} ms, " +
                 "finished in {ElapsedMs} ms",
                 request?.RequestId,
                 request?.ThreadId,
@@ -987,7 +992,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
                 getAttemptDetailsTime,
                 getSystemPromptTime,
                 getMistakePromptTime,
-                afterChatServicesTime,
+                afterChatServiceTime,
                 sw.ElapsedMilliseconds);
 
             if (renewalCts is not null)

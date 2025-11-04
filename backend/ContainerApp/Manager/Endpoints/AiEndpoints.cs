@@ -256,8 +256,8 @@ public static class AiEndpoints
 
             if (user == null)
             {
-
-                return Results.StatusCode(400);
+                log.LogWarning("User {UserId} not found in accessor", userId);
+                return Results.BadRequest(new { error = "User not found" });
 
             }
 

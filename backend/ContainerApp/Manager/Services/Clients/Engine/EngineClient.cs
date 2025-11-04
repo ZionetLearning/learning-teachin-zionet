@@ -114,7 +114,7 @@ public class EngineClient : IEngineClient
             await _daprClient.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message, queueMetadata);
 
             _logger.LogDebug(
-                "ProcessingChatMessage request for thread {ThreadId} sent to Engine via binding '{Binding}'",
+                "ProcessingGlobalChatMessage request for thread {ThreadId} sent to Engine via binding '{Binding}'",
                 request.ThreadId,
                 QueueNames.EngineQueue
             );
