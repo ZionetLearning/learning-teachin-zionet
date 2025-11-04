@@ -12,7 +12,6 @@ import {
   InputAdornment,
   List,
   ListItem,
-  ListItemSecondaryAction,
   ListItemText,
   MenuItem,
   Select,
@@ -31,14 +30,7 @@ import {
   useRemoveClassMembers,
   useGetAllUsers,
 } from "@admin/api";
-
-// Minimal user shape — align to your real type
-type Role = "Student" | "Teacher" | "Admin";
-type User = {
-  id: string;
-  fullName: string;
-  role: Role;
-};
+import { type User, type AppRoleType } from "@app-providers";
 
 type Props = {
   open: boolean;
@@ -47,6 +39,8 @@ type Props = {
   onClose: () => void;
 };
 
+const getFullName = (u: User) => `${u.firstName} ${u.lastName}`.trim();
+
 export const ManageMembersDialog = ({
   open,
   classId,
@@ -54,43 +48,49 @@ export const ManageMembersDialog = ({
   onClose,
 }: Props) => {
   const theme = useTheme();
-  const { data: classData } = useGetClass(classId, { enabled: open });
+
+  const { data: classData } = useGetClass(classId);
   const { data: allUsers } = useGetAllUsers();
-  const { mutate: addMembers, isLoading: adding } = useAddClassMembers();
-  const { mutate: removeMembers, isLoading: removing } =
+  const { mutate: addMembers, isPending: adding } = useAddClassMembers();
+  const { mutate: removeMembers, isPending: removing } =
     useRemoveClassMembers();
 
-  const [roleFilter, setRoleFilter] = useState<Role | "All">("All");
+  const [roleFilter, setRoleFilter] = useState<AppRoleType | "All">("All");
   const [query, setQuery] = useState("");
 
+  // Members set
   const memberIds = useMemo(
     () => new Set(classData?.members ?? []),
     [classData?.members],
   );
 
+  // Role counts (lowercase roles per AppRoleType)
+  const studentsCount = (allUsers ?? []).filter(
+    (u) => u.role === "student",
+  ).length;
+  const teachersCount = (allUsers ?? []).filter(
+    (u) => u.role === "teacher",
+  ).length;
+
+  // Filter users by role + query
   const filteredUsers = useMemo(() => {
     const list = (allUsers ?? []) as User[];
     return list
       .filter((u) => (roleFilter === "All" ? true : u.role === roleFilter))
-      .filter((u) =>
-        query
-          ? u.fullName.toLowerCase().includes(query.toLowerCase()) ||
-            u.id.toLowerCase().includes(query.toLowerCase())
-          : true,
-      );
+      .filter((u) => {
+        if (!query) return true;
+        const q = query.toLowerCase();
+        return (
+          getFullName(u).toLowerCase().includes(q) ||
+          u.email.toLowerCase().includes(q)
+        );
+      });
   }, [allUsers, roleFilter, query]);
-
-  const studentsCount = (allUsers ?? []).filter(
-    (u: any) => u.role === "Student",
-  ).length;
-  const teachersCount = (allUsers ?? []).filter(
-    (u: any) => u.role === "Teacher",
-  ).length;
 
   const handleAdd = (ids: string[]) => {
     if (!ids.length) return;
     addMembers(
-      { classId, userIds: ids, addedBy: "admin" /* set to real admin id */ },
+      { classId, userIds: ids, addedBy: "admin" /* TODO: real admin id */ },
       { onSuccess: () => {} },
     );
   };
@@ -111,17 +111,20 @@ export const ManageMembersDialog = ({
               <Select
                 size="small"
                 value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value as any)}
-                sx={{ minWidth: 140 }}
+                onChange={(e) =>
+                  setRoleFilter(e.target.value as AppRoleType | "All")
+                }
+                sx={{ minWidth: 160 }}
               >
                 <MenuItem value="All">All roles</MenuItem>
-                <MenuItem value="Student">Students ({studentsCount})</MenuItem>
-                <MenuItem value="Teacher">Teachers ({teachersCount})</MenuItem>
-                <MenuItem value="Admin">Admins</MenuItem>
+                <MenuItem value="student">Students ({studentsCount})</MenuItem>
+                <MenuItem value="teacher">Teachers ({teachersCount})</MenuItem>
+                <MenuItem value="admin">Admins</MenuItem>
               </Select>
+
               <TextField
                 size="small"
-                placeholder="Search by name/id"
+                placeholder="Search by name / email"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 InputProps={{
@@ -139,7 +142,7 @@ export const ManageMembersDialog = ({
               dense
               sx={{
                 borderRadius: 2,
-                border: theme.palette.divider + " 1px solid",
+                border: `${theme.palette.divider} 1px solid`,
                 bgcolor:
                   theme.palette.mode === "dark"
                     ? "rgba(255,255,255,0.03)"
@@ -149,29 +152,17 @@ export const ManageMembersDialog = ({
               }}
             >
               {filteredUsers.map((u) => {
-                const isMember = memberIds.has(u.id);
+                const isMember = memberIds.has(u.userId);
                 return (
-                  <ListItem key={u.id}>
-                    <ListItemText
-                      primary={
-                        <Stack direction="row" gap={1} alignItems="center">
-                          <Typography>{u.fullName}</Typography>
-                          <Chip
-                            size="small"
-                            label={u.role}
-                            variant="outlined"
-                          />
-                        </Stack>
-                      }
-                      secondary={u.id}
-                    />
-                    <ListItemSecondaryAction>
-                      {isMember ? (
+                  <ListItem
+                    key={u.userId}
+                    secondaryAction={
+                      isMember ? (
                         <Tooltip title="Remove from class">
                           <span>
                             <IconButton
                               edge="end"
-                              onClick={() => handleRemove([u.id])}
+                              onClick={() => handleRemove([u.userId])}
                               disabled={removing}
                             >
                               <RemoveIcon />
@@ -183,21 +174,36 @@ export const ManageMembersDialog = ({
                           <span>
                             <IconButton
                               edge="end"
-                              onClick={() => handleAdd([u.id])}
+                              onClick={() => handleAdd([u.userId])}
                               disabled={adding}
                             >
                               <AddIcon />
                             </IconButton>
                           </span>
                         </Tooltip>
-                      )}
-                    </ListItemSecondaryAction>
+                      )
+                    }
+                  >
+                    <ListItemText
+                      primary={
+                        <Stack direction="row" gap={1} alignItems="center">
+                          <Typography>{getFullName(u)}</Typography>
+                          <Chip
+                            size="small"
+                            label={u.role}
+                            variant="outlined"
+                          />
+                        </Stack>
+                      }
+                      secondary={u.email}
+                    />
                   </ListItem>
                 );
               })}
+
               {filteredUsers.length === 0 && (
                 <Box p={2}>
-                  <Typography variant="body2" opacity={0.7}>
+                  <Typography variant="body2">
                     No users match the current filters.
                   </Typography>
                 </Box>
@@ -212,11 +218,12 @@ export const ManageMembersDialog = ({
             <Typography variant="subtitle1" sx={{ mb: 1 }}>
               Current Members ({memberIds.size})
             </Typography>
+
             <List
               dense
               sx={{
                 borderRadius: 2,
-                border: theme.palette.divider + " 1px solid",
+                border: `${theme.palette.divider} 1px solid`,
                 bgcolor:
                   theme.palette.mode === "dark"
                     ? "rgba(255,255,255,0.03)"
@@ -226,13 +233,28 @@ export const ManageMembersDialog = ({
               }}
             >
               {(allUsers ?? [])
-                .filter((u: any) => memberIds.has(u.id))
-                .map((u: User) => (
-                  <ListItem key={u.id}>
+                .filter((u) => memberIds.has(u.userId))
+                .map((u) => (
+                  <ListItem
+                    key={u.userId}
+                    secondaryAction={
+                      <Tooltip title="Remove from class">
+                        <span>
+                          <IconButton
+                            edge="end"
+                            onClick={() => handleRemove([u.userId])}
+                            disabled={removing}
+                          >
+                            <RemoveIcon />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                    }
+                  >
                     <ListItemText
                       primary={
                         <Stack direction="row" gap={1} alignItems="center">
-                          <Typography>{u.fullName}</Typography>
+                          <Typography>{getFullName(u)}</Typography>
                           <Chip
                             size="small"
                             label={u.role}
@@ -240,26 +262,14 @@ export const ManageMembersDialog = ({
                           />
                         </Stack>
                       }
-                      secondary={u.id}
+                      secondary={u.userId}
                     />
-                    <ListItemSecondaryAction>
-                      <Tooltip title="Remove from class">
-                        <span>
-                          <IconButton
-                            edge="end"
-                            onClick={() => handleRemove([u.id])}
-                            disabled={removing}
-                          >
-                            <RemoveIcon />
-                          </IconButton>
-                        </span>
-                      </Tooltip>
-                    </ListItemSecondaryAction>
                   </ListItem>
                 ))}
+
               {memberIds.size === 0 && (
                 <Box p={2}>
-                  <Typography variant="body2" opacity={0.7}>
+                  <Typography variant="body2">
                     This class has no members yet.
                   </Typography>
                 </Box>
@@ -268,6 +278,7 @@ export const ManageMembersDialog = ({
           </Box>
         </Stack>
       </DialogContent>
+
       <DialogActions>
         <Button onClick={onClose} color="inherit">
           Close
