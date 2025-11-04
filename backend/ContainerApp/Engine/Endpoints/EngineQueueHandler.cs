@@ -502,6 +502,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
             getSystemPromptTime = sw.ElapsedMilliseconds;
             var mistakeExplanationPrompt = await BuildMistakeExplanationPromptAsync(attemptDetails, request.GameType, lang, ct);
+            _logger.LogInformation("Prompt: {Prompt}", mistakeExplanationPrompt);
             storyForKernel.AddUserMessage(mistakeExplanationPrompt, DateTimeOffset.UtcNow);
 
             getMistakePromptTime = sw.ElapsedMilliseconds;
