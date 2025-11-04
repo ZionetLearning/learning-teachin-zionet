@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useStyles } from "./style";
 import { FeedbackDisplay, AudioControls } from "./components";
 import { useTypingPractice } from "./hooks";
@@ -11,7 +11,8 @@ import {
   GameSettings,
 } from "@ui-components";
 import { getDifficultyLabel } from "@student/features";
-import { ContextAwareChat, PageContext } from "@student/components";
+import { ContextAwareChat } from "@student/components";
+import { useTypingPracticeContext } from "@student/components/ContextAwareChat/hooks";
 
 export const TypingPractice = () => {
   const { t, i18n } = useTranslation();
@@ -89,35 +90,19 @@ export const TypingPractice = () => {
     }
   }, [handleNextExercise]);
 
-  const pageContext: PageContext = useMemo(
-    () => ({
-      pageName: "Typing Practice",
-      exerciseType: "typing",
-      currentExercise: currentSentenceIndex + 1,
-      totalExercises: sentenceCount,
-      difficulty: gameConfig?.difficulty.toString(),
-      gameContent: {
-        phraseToSpeak: currentExercise?.hebrewText || undefined,
-        userAttempt: exerciseState.userInput || undefined,
-        correctAnswer: exerciseState.feedbackResult?.expectedText || undefined,
-      },
-      additionalContext: {
-        phase: exerciseState.phase,
-        correctCount: correctSentencesCount,
-        isCorrect: exerciseState.feedbackResult?.isCorrect,
-      },
-    }),
-    [
-      currentSentenceIndex,
-      sentenceCount,
-      gameConfig?.difficulty,
-      exerciseState.phase,
-      currentExercise,
-      exerciseState.userInput,
-      exerciseState.feedbackResult,
-      correctSentencesCount,
-    ],
-  );
+  const pageContext = useTypingPracticeContext({
+    currentExercise: currentSentenceIndex + 1,
+    totalExercises: sentenceCount,
+    difficulty: gameConfig?.difficulty.toString(),
+    phraseToSpeak: currentExercise?.hebrewText,
+    userAttempt: exerciseState.userInput,
+    correctAnswer: exerciseState.feedbackResult?.expectedText,
+    additionalContext: {
+      phase: exerciseState.phase,
+      correctCount: correctSentencesCount,
+      isCorrect: exerciseState.feedbackResult?.isCorrect,
+    },
+  });
 
   const renderExerciseArea = () => (
     <div className={classes.exerciseArea} data-testid="typing-exercise-area">

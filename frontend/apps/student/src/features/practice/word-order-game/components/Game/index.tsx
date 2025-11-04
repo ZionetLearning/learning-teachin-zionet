@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -17,8 +17,8 @@ import {
   MistakeChatPopup,
   WrongAnswerDisplay,
   ContextAwareChat,
-  PageContext,
 } from "@student/components";
+import { useWordOrderContext } from "@student/components/ContextAwareChat/hooks";
 import { getDifficultyLabel } from "@student/features";
 import { useAuth } from "@app-providers";
 import { useSubmitGameAttempt } from "@student/api";
@@ -341,40 +341,20 @@ export const Game = ({ retryData }: GameProps) => {
     setMistakeChatOpen(false);
   }, []);
 
-  const pageContext: PageContext = useMemo(
-    () => ({
-      pageName: "Word Order Game",
-      exerciseType: "word-order",
-      currentExercise: currentSentenceIndex + 1,
-      totalExercises: sentenceCount,
-      difficulty: gameConfig?.difficulty?.toString(),
-      gameContent: {
-        targetSentence: isRetryMode
-          ? retryData?.correctAnswer.join(" ")
-          : sentence,
-        availableWords: shuffledSentence,
-        userAnswer: chosen,
-      },
-      additionalContext: {
-        isRetryMode,
-        correctCount: correctSentencesCount,
-        hasChecked: hasCheckedThisSentence,
-        chosenWordsCount: chosen.length,
-      },
-    }),
-    [
-      currentSentenceIndex,
-      sentenceCount,
-      gameConfig?.difficulty,
+  const pageContext = useWordOrderContext({
+    currentExercise: currentSentenceIndex + 1,
+    totalExercises: sentenceCount,
+    difficulty: gameConfig?.difficulty?.toString(),
+    targetSentence: isRetryMode ? retryData?.correctAnswer.join(" ") : sentence,
+    availableWords: shuffledSentence,
+    userAnswer: chosen,
+    additionalContext: {
       isRetryMode,
-      correctSentencesCount,
-      hasCheckedThisSentence,
-      sentence,
-      shuffledSentence,
-      chosen,
-      retryData,
-    ],
-  );
+      correctCount: correctSentencesCount,
+      hasChecked: hasCheckedThisSentence,
+      chosenWordsCount: chosen.length,
+    },
+  });
 
   // Show welcome screen if game hasn't started yet
   if (!gameStarted || !gameConfig) {

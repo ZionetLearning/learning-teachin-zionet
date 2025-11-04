@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Box,
   Button,
@@ -9,7 +9,8 @@ import {
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useGetWordCards, type WordCard } from "@student/api";
-import { ContextAwareChat, PageContext } from "@student/components";
+import { ContextAwareChat } from "@student/components";
+import { useWordCardsContext } from "@student/components/ContextAwareChat/hooks";
 import { useStyles } from "./style";
 import { ModeSelection, GameSummary } from "./components";
 import { FEEDBACK_DISPLAY_DURATION } from "./constants";
@@ -108,47 +109,31 @@ export const WordCardsChallenge = () => {
     }, FEEDBACK_DISPLAY_DURATION);
   }, [userAnswer, currentCard, mode, currentIndex, shuffledCards.length]);
 
-  const pageContext: PageContext = useMemo(
-    () => ({
-      pageName: "Word Cards Challenge",
-      exerciseType: "word-cards",
-      currentExercise: currentIndex + 1,
-      totalExercises: shuffledCards.length,
-      gameContent: {
-        question:
-          currentCard && mode === "heb-to-eng"
-            ? currentCard.hebrew
-            : currentCard?.english,
-        correctAnswer:
-          currentCard && mode === "heb-to-eng"
-            ? currentCard.english
-            : currentCard?.hebrew,
-        userAttempt: userAnswer || undefined,
-        currentWord: currentCard
-          ? {
-              hebrew: currentCard.hebrew,
-              english: currentCard.english,
-            }
-          : undefined,
-      },
-      additionalContext: {
-        mode,
-        gameState,
-        correctCount,
-        feedback,
-      },
-    }),
-    [
-      currentIndex,
-      shuffledCards.length,
+  const pageContext = useWordCardsContext({
+    currentExercise: currentIndex + 1,
+    totalExercises: shuffledCards.length,
+    question:
+      currentCard && mode === "heb-to-eng"
+        ? currentCard.hebrew
+        : currentCard?.english,
+    correctAnswer:
+      currentCard && mode === "heb-to-eng"
+        ? currentCard.english
+        : currentCard?.hebrew,
+    userAttempt: userAnswer,
+    currentWord: currentCard
+      ? {
+          hebrew: currentCard.hebrew,
+          english: currentCard.english,
+        }
+      : undefined,
+    additionalContext: {
       mode,
       gameState,
       correctCount,
-      currentCard,
-      userAnswer,
       feedback,
-    ],
-  );
+    },
+  });
 
   if (isLoading) {
     return (
