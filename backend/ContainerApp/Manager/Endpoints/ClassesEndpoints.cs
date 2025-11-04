@@ -17,6 +17,12 @@ public static class ClassesEndpoints
         classesGroup.MapGet("/{classId:guid}", GetClassAsync)
             .RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
 
+        classesGroup.MapGet("", GetAllClassesAsync)
+            .RequireAuthorization(PolicyNames.AdminOrTeacher);
+
+        classesGroup.MapGet("/my", GetMyClassesAsync)
+            .RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
+
         classesGroup.MapPost("", CreateClassAsync)
             .RequireAuthorization(PolicyNames.AdminOrTeacher);
 
@@ -43,6 +49,51 @@ public static class ClassesEndpoints
             using var scope = logger.BeginScope("ClassID: {ClassId}:", classId);
             logger.LogInformation("Fetching class info");
             var cls = await accessorClient.GetClassAsync(classId, ct);
+
+            return cls is not null ? Results.Ok(cls) : Results.NotFound("Class not found.");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error fetching class");
+            return Results.Problem("Failed to retrieve class. Please try again later.");
+        }
+    }
+    private static async Task<IResult> GetAllClassesAsync(
+    [FromServices] IAccessorClient accessorClient,
+    ILogger<ClassEndpoint> logger,
+    CancellationToken ct)
+    {
+        try
+        {
+            logger.LogInformation("Fetching all classes");
+            var cls = await accessorClient.GetAllClassesAsync(ct);
+
+            return cls is not null ? Results.Ok(cls) : Results.NotFound("Classes not found.");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error fetching classes");
+            return Results.Problem("Failed to retrieve classes. Please try again later.");
+        }
+    }
+
+    private static async Task<IResult> GetMyClassesAsync(
+    [FromServices] IAccessorClient accessorClient,
+    HttpContext http,
+    ILogger<ClassEndpoint> logger,
+    CancellationToken ct)
+    {
+        try
+        {
+            var callerId = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
+            if (callerId == null)
+            {
+                return Results.BadRequest("UserId is required.");
+            }
+
+            using var scope = logger.BeginScope("UserId: {CallerId}:", callerId);
+            logger.LogInformation("Fetching class info");
+            var cls = await accessorClient.GetMyClassesAsync(Guid.Parse(callerId), ct);
 
             return cls is not null ? Results.Ok(cls) : Results.NotFound("Class not found.");
         }
