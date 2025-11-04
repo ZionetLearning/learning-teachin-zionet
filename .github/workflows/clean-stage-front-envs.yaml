@@ -1,0 +1,73 @@
+name: Scheduled - Clean Stage Environments
+permissions:
+  contents: read
+  id-token: write
+
+on:
+  schedule:
+    - cron: '0 0 */2 * *' # Every two days at midnight
+  workflow_dispatch:
+    inputs:
+      environment_name:
+        description: 'Lowercase letters & digits only (env identifier) where the application is deployed'
+        required: false
+        default: 'dev'
+
+jobs:
+  clean-stage-envs:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [student, teacher, admin]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Compute resource names
+        id: names
+        shell: bash
+        run: |
+          set -euo pipefail
+          
+          if [ -n "${{ inputs.environment_name || '' }}" ]; then
+            ENV="${{ inputs.environment_name }}"
+          else
+            ENV="dev"
+          fi
+
+          APP="${{ matrix.app }}"
+          RG="${ENV}-zionet-learning-2025"
+          SWA_NAME="static-web-app-${APP}-${ENV}"
+
+          echo "Deploying $APP to: $SWA_NAME"
+          echo "rg=$RG" >> $GITHUB_OUTPUT
+          echo "swa=$SWA_NAME" >> $GITHUB_OUTPUT
+
+      - name: Clean stage environment
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Get all staging environments for this Static Web App
+          ENVIRONMENTS=$(az staticwebapp environment list \
+            --name "${{ steps.names.outputs.swa }}" \
+            --resource-group "${{ steps.names.outputs.rg }}" \
+            --query "[?name != 'default'].{name:name}" \
+            --output json)
+
+          # Delete all staging environments
+          for env in $(echo "$ENVIRONMENTS" | jq -r '.[].name'); do
+            echo "Deleting staging environment: $env"
+            az staticwebapp environment delete \
+              --name "${{ steps.names.outputs.swa }}" \
+              --resource-group "${{ steps.names.outputs.rg }}" \
+              --environment-name "$env" \
+              --yes || true
+          done

@@ -1,0 +1,121 @@
+name: Frontend - Build and Deploy (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      environment_name:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  # Secrets and external APIs (environment-agnostic)
+  VITE_AZURE_SPEECH_KEY: ${{ secrets.VITE_AZURE_SPEECH_KEY }}
+  VITE_OPENWEATHERMAP_API_KEY: ${{ secrets.VITE_OPENWEATHERMAP_API_KEY }}
+  VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+  SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+
+jobs:
+  frontend-build:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    strategy:
+      matrix:
+        app: [student, teacher, admin]
+    env:
+      FE_DIR: frontend
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Frontend Environment
+        uses: ./.github/actions/setup-frontend
+
+      - name: Load dev environment variables
+        working-directory: ${{ env.FE_DIR }}
+        run: |
+          echo "Loading dev environment configuration from .env.cloud..."
+          grep -E '^[^#]+=' .env.cloud >> $GITHUB_ENV
+        shell: bash
+
+      - name: Build ${{ matrix.app }} Application
+        working-directory: ${{ env.FE_DIR }}
+        run: |
+          set -e  # Exit on any error
+          echo "Building ${{ matrix.app }} with App Insights connection string..."
+
+          # Create temporary .env file for Vite
+          case "${{ matrix.app }}" in
+            "student")
+              echo "VITE_APPINSIGHTS_CONNECTION_STRING=${{ secrets.VITE_APPINSIGHTS_CONNECTION_STRING_STUDENT }}" > .env
+              ;;
+            "teacher")
+              echo "VITE_APPINSIGHTS_CONNECTION_STRING=${{ secrets.VITE_APPINSIGHTS_CONNECTION_STRING_TEACHER }}" > .env
+              ;;
+            "admin")
+              echo "VITE_APPINSIGHTS_CONNECTION_STRING=${{ secrets.VITE_APPINSIGHTS_CONNECTION_STRING_ADMIN }}" > .env
+              ;;
+          esac
+          
+          echo "=== Running build command ==="
+          if ! npm run build:${{ matrix.app }}; then
+            echo "ERROR: npm run build:${{ matrix.app }} failed"
+            exit 1
+          fi
+          
+      - name: Upload ${{ matrix.app }} build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build-${{ matrix.app }}
+          path: ${{ env.FE_DIR }}/dist/apps/${{ matrix.app }}/
+          retention-days: 1
+
+  frontend-deploy:
+    needs: [frontend-build]
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    permissions:
+      id-token: write
+      contents: read
+    strategy:
+      matrix:
+        app: [student, teacher, admin]
+    env:
+      FE_DIR: frontend
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Load dev environment variables
+        working-directory: ${{ env.FE_DIR }}
+        run: |
+          echo "Loading dev environment configuration from .env.cloud..."
+          grep -E '^[^#]+=' .env.cloud >> $GITHUB_ENV
+        shell: bash
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build-${{ matrix.app }}
+          path: ${{ env.FE_DIR }}/dist/
+
+      - name: Deploy to Azure Static Web Apps (Production slot)
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ fromJson(secrets.SWA_TOKENS)[matrix.app] }}
+          action: "upload"
+          app_location: "${{ env.FE_DIR }}/dist/"
+          api_location: "" # No API
+          output_location: "" # Files are already built
+          skip_app_build: true
+          skip_api_build: true

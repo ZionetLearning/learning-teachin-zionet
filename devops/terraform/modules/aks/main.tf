@@ -27,5 +27,3 @@ resource "azurerm_kubernetes_cluster" "main" {
   oidc_issuer_enabled = true # Enable OIDC issuer for the cluster
 
 }
-
-
