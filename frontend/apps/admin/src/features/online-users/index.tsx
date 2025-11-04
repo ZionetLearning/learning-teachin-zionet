@@ -1,4 +1,4 @@
-import { Box, CircularProgress, Typography, useTheme } from "@mui/material";
+import { Box, CircularProgress, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 
 import { useGetOnlineUsers } from "@admin/api";
@@ -8,8 +8,7 @@ import { useStyles } from "./style";
 
 export const OnlineUsers = () => {
   const { data, isLoading, isError } = useGetOnlineUsers();
-  const theme = useTheme();
-  const classes = useStyles({ theme });
+  const classes = useStyles();
   const { t } = useTranslation();
 
   useOnlineUsersSync();

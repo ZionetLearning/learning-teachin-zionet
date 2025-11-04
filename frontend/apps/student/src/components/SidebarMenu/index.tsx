@@ -96,6 +96,11 @@ export const SidebarMenu = () => {
           path: "/speaking",
           testId: "sidebar-speaking",
         },
+        {
+          label: t("sidebar.wordCardsChallenge"),
+          path: "/word-cards-challenge",
+          testId: "word-cards-challenge",
+        },
       ],
     },
     {

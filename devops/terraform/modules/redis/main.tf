@@ -1,4 +1,3 @@
-
 # Data source for shared Redis (used if use_shared_redis is true)
 data "azurerm_redis_cache" "shared" {
   count                = var.use_shared_redis ? 1 : 0

@@ -7,7 +7,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  useTheme,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 
@@ -20,8 +19,7 @@ interface OnlineUsersTableProps {
 }
 
 export const OnlineUsersTable = ({ users }: OnlineUsersTableProps) => {
-  const theme = useTheme();
-  const classes = useStyles({ theme });
+  const classes = useStyles();
   const { t, i18n } = useTranslation();
   const isRTL = i18n.dir() === "rtl";
 
