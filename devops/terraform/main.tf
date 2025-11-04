@@ -83,6 +83,7 @@ module "database" {
   database_name    = "${var.database_name}-${var.environment_name}"
 
   existing_server_id  = null
+  use_shared_postgres = false
 
   depends_on = [azurerm_resource_group.main]
 }
@@ -133,7 +134,7 @@ module "redis" {
   name                 = var.redis_name
   location             = azurerm_resource_group.main.location
   resource_group_name  = azurerm_resource_group.main.name
-  use_shared_redis     = false
+  shared_redis_name    = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].name : null
 }
 
 # Use shared Redis outputs if enabled, otherwise use module outputs

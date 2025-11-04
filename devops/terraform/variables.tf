@@ -136,6 +136,12 @@ variable "use_shared_redis" {
   default     = true
 }
 
+variable "shared_redis_name" {
+  type        = string
+  default     = null
+  description = "Name of shared Redis cache, if using shared"
+}
+
 #------------- Environment Variables -------------
 variable "environment_name" {
   description = "Name of the environment (e.g., dev, staging, prod, feature-123)"
@@ -159,12 +165,6 @@ variable "kubernetes_namespace" {
   description = "Kubernetes namespace for this environment"
   type        = string
   default     = ""
-}
-
-variable "prefix" {
-  type        = string
-  description = "Prefix for naming resources"
-  default     = "dev"
 }
 
 #------------- Frontend Application Variables -------------
