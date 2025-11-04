@@ -50,7 +50,7 @@ output "servicebus_connection_string" {
 }
 
 output "postgres_connection_string" {
-  value     = var.use_shared_postgres ? format("Host=%s;Database=%s;Username=%s;Password=%s;SslMode=Require", data.azurerm_postgresql_flexible_server.shared[0].fqdn, "${var.database_name}-${var.environment_name}", var.admin_username, var.admin_password) : module.database[0].postgres_connection_string
+  value     = local.use_shared_postgres ? format("Host=%s;Database=%s;Username=%s;Password=%s;SslMode=Require", data.azurerm_postgresql_flexible_server.shared[0].fqdn, "${var.database_name}-${var.environment_name}", var.admin_username, var.admin_password) : module.database[0].postgres_connection_string
   sensitive = true
 }
 
@@ -90,4 +90,25 @@ output "application_insights_connection_strings" {
 output "frontend_apps_enabled" {
   description = "List of enabled frontend applications"
   value       = var.frontend_apps
+}
+
+# Storage Account Outputs
+output "storage_resource_group_name" {
+  description = "Name of the shared storage resource group"
+  value       = data.azurerm_resource_group.storage.name
+}
+
+output "avatars_storage_account_name" {
+  description = "Name of the avatars storage account"
+  value       = azurerm_storage_account.avatars.name
+}
+
+output "avatars_storage_account_primary_endpoint" {
+  description = "Primary blob endpoint for the avatars storage account"
+  value       = azurerm_storage_account.avatars.primary_blob_endpoint
+}
+
+output "avatars_container_name" {
+  description = "Name of the avatars container"
+  value       = azurerm_storage_container.avatars.name
 }

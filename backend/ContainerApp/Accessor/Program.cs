@@ -43,6 +43,7 @@ builder.Services.AddScoped<IRefreshSessionService, RefreshSessionService>();
 builder.Services.AddScoped<ISpeechService, SpeechService>();
 builder.Services.AddScoped<IStudentPracticeHistoryService, StudentPracticeHistoryService>();
 builder.Services.AddScoped<IWordCardService, WordCardService>();
+builder.Services.AddScoped<IClassService, ClassService>();
 
 builder.Services.AddHttpClient("SpeechClient", client =>
 {
@@ -182,4 +183,5 @@ app.MapStatsEndpoints();
 app.MapMediaEndpoints();
 app.MapGamesEndpoints();
 app.MapWordCardsEndpoints();
+app.MapClassesEndpoints();
 await app.RunAsync();

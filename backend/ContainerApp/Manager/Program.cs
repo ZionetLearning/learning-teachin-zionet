@@ -25,6 +25,8 @@ using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using Manager;
+using Manager.Services.Avatars;
+using Manager.Services.Avatars.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -110,7 +112,15 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddControllers();
 
 builder.Services.AddControllers().AddDapr();
-var signalRBuilder = builder.Services.AddSignalR();
+var signalROptions = builder.Configuration.GetSection("SignalR");
+var keepAlive = signalROptions.GetValue("KeepAliveSeconds", 15);
+var clientTimeout = signalROptions.GetValue("ClientTimeoutSeconds", 30);
+var signalRBuilder = builder.Services.AddSignalR(o =>
+{
+    o.KeepAliveInterval = TimeSpan.FromSeconds(keepAlive);
+    o.ClientTimeoutInterval = TimeSpan.FromSeconds(clientTimeout);
+}
+);
 
 var signalRConnString = builder.Configuration["SignalR:ConnectionString"];
 if (!string.IsNullOrEmpty(signalRConnString))
@@ -142,6 +152,12 @@ builder.Services.AddScoped<IEngineClient, EngineClient>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IOnlinePresenceService, OnlinePresenceService>();
+
+builder.Services
+  .AddOptions<AvatarsOptions>()
+  .Bind(builder.Configuration.GetSection(AvatarsOptions.SectionName));
+
+builder.Services.AddSingleton<IAvatarStorageService, AzureBlobAvatarStorageService>();
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
@@ -240,6 +256,7 @@ app.MapGamesEndpoints();
 app.MapHub<NotificationHub>("/NotificationHub");
 app.MapMediaEndpoints();
 app.MapWordCardsEndpoints();
+app.MapClassesEndpoints();
 
 app.MapStatsPing();
 if (env.IsDevelopment())

@@ -2,9 +2,10 @@ import React, { useRef, useEffect } from "react";
 import { MessageBox, Input } from "react-chat-elements";
 import { useTranslation } from "react-i18next";
 import type { ChatMessage } from "../../hooks";
-import { useStyles } from "./style";
+import { renderWithBold } from "@student/utils";
 import avatar from "@student/assets/avatar.svg";
 import "react-chat-elements/dist/main.css";
+import { useStylesWithMode } from "./style";
 
 interface ReactChatElementsProps {
   messages: ChatMessage[] | undefined;
@@ -22,7 +23,7 @@ export const ReactChatElements = ({
   handleSendMessage,
 }: ReactChatElementsProps) => {
   const { t } = useTranslation();
-  const classes = useStyles();
+  const classes = useStylesWithMode();
   const avatarUrl = avatar;
   const listRef = useRef<HTMLDivElement | null>(null);
 
@@ -75,9 +76,9 @@ export const ReactChatElements = ({
               position={msg.position}
               type="text"
               text={
-                msg.isTyping && !msg.text
+                (msg.isTyping && !msg.text
                   ? t("pages.chatYo.thinking")
-                  : msg.text
+                  : renderWithBold(msg.text)) as unknown as string
               }
               title={
                 msg.position === "right"
