@@ -170,6 +170,7 @@ export const useAddClassMembers = () => {
       toast.success("Members added successfully.");
       // Just refetch the class to get full member objects
       qc.invalidateQueries({ queryKey: ["class", classId] });
+      qc.invalidateQueries({ queryKey: ["classes"] });
     },
     onError: (error) => {
       console.error("Failed to add members:", error);
@@ -208,9 +209,9 @@ export const useRemoveClassMembers = () => {
       );
     },
 
-    // Optional: keep cache perfectly in sync with server
     onSettled: (_res, _err, vars) => {
       qc.invalidateQueries({ queryKey: ["class", vars.classId] });
+      qc.invalidateQueries({ queryKey: ["classes"] });
     },
 
     onError: (error) => {
