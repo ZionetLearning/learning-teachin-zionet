@@ -82,7 +82,6 @@ module "database" {
   environment_name = var.environment_name
   database_name    = "${var.database_name}-${var.environment_name}"
 
-  use_shared_postgres = false
   existing_server_id  = null
 
   depends_on = [azurerm_resource_group.main]
