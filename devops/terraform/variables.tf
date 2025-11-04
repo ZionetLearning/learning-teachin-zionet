@@ -81,18 +81,16 @@ variable "db_location" {
   type        = string
   default     = "Israel Central"
 }
-# admin_username
+# admin_username - passed from GitHub Actions as TF_VAR_admin_username
 variable "admin_username" {
   type        = string
-  description = "PostgreSQL administrator username"
-  default     = "postgres"
+  description = "PostgreSQL administrator username - provided by GitHub Actions"
 }
-# admin_password
+# admin_password - passed from GitHub Actions as TF_VAR_admin_password  
 variable "admin_password" {
   type        = string
   sensitive   = true
-  description = "PostgreSQL administrator password"
-  default     = "postgres"
+  description = "PostgreSQL administrator password - provided by GitHub Actions"
 }
 # delegated_subnet_id
 variable "delegated_subnet_id" {

@@ -34,6 +34,10 @@ locals {
   aks_resource_group   = var.use_shared_aks ? var.shared_resource_group : azurerm_resource_group.main.name
   kubernetes_namespace = var.kubernetes_namespace != "" ? var.kubernetes_namespace : var.environment_name
   aks_kube_config      = var.use_shared_aks ? data.azurerm_kubernetes_cluster.shared[0].kube_config[0] : module.aks[0].kube_config
+  
+  # Secure credential management - use GitHub Actions environment variables
+  admin_username = var.admin_username
+  admin_password = var.admin_password
 }
 
 module "servicebus" {
@@ -357,6 +361,9 @@ data "azurerm_key_vault" "shared" {
   name                = "teachin-seo-kv"
   resource_group_name = "dev-zionet-learning-2025"
 }
+
+# PostgreSQL admin credentials will come from GitHub Actions environment variables
+# No need for Key Vault data sources - credentials passed as TF_VAR_* environment variables
 
 module "clustersecretstore" {
   count       = var.environment_name == "dev" ? 1 : 0

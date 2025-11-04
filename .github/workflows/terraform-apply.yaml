@@ -66,6 +66,9 @@ jobs:
       TF_DIR: ./devops/terraform
       TF_IN_AUTOMATION: true
       TF_LOG: INFO
+      # PostgreSQL admin credentials - passed securely from GitHub secrets
+      TF_VAR_admin_username: ${{ secrets.POSTGRES_USER }}
+      TF_VAR_admin_password: ${{ secrets.POSTGRES_PASSWORD }}
 
     steps:
       - name: Checkout repository
