@@ -7,7 +7,7 @@ shared_resource_group   = "dev-zionet-learning-2025"
 location               = "westeurope"
 
 #------------- Shared Posgtres  Configuration -------------
-use_shared_postgres        = false  # If false, create server (dev); if true, use shared server (non-dev)
+use_shared_postgres        = true  # If: true it will use shared pg of dev, else: false it will create new pg
 
 #------------- Azure Configuration-------------------
 subscription_id        = "90ea4c2f-1eee-4ec9-927d-ed24c563003e"
