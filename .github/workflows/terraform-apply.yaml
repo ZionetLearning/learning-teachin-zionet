@@ -5,9 +5,6 @@ run-name: >
     'custom'
   }} | GitHub Environment: ${{ inputs.environment || github.event.inputs.environment }}
 on:
-  # push:
-  #  branches:
-  #    - yosef-benny/combine-tasks
   workflow_call:
     inputs:
       environment:
