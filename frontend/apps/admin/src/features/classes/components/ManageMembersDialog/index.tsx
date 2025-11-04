@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import {
   Box,
   Button,
-  Chip,
   Dialog,
   DialogActions,
   DialogContent,
@@ -56,8 +55,15 @@ export const ManageMembersDialog = ({
   const { mutate: removeMembers, isPending: removing } =
     useRemoveClassMembers();
 
-  const [roleFilter, setRoleFilter] = useState<AppRoleType | "All">("All");
+  const [roleFilter, setRoleFilter] = useState<
+    Exclude<AppRoleType, "admin"> | "All"
+  >("All");
   const [query, setQuery] = useState("");
+
+  const nonAdminUsers = useMemo(
+    () => (allUsers ?? []).filter((u) => u.role !== "admin"),
+    [allUsers],
+  );
 
   // Members set
   const memberIds = useMemo(
@@ -66,27 +72,26 @@ export const ManageMembersDialog = ({
   );
 
   // Role counts (lowercase roles per AppRoleType)
-  const studentsCount = (allUsers ?? []).filter(
+  const studentsCount = nonAdminUsers.filter(
     (u) => u.role === "student",
   ).length;
-  const teachersCount = (allUsers ?? []).filter(
+  const teachersCount = nonAdminUsers.filter(
     (u) => u.role === "teacher",
   ).length;
 
   // Filter users by role + query
   const filteredUsers = useMemo(() => {
-    const list = (allUsers ?? []) as User[];
-    return list
+    return nonAdminUsers
       .filter((u) => (roleFilter === "All" ? true : u.role === roleFilter))
       .filter((u) => {
         if (!query) return true;
         const q = query.toLowerCase();
         return (
-          getFullName(u).toLowerCase().includes(q) ||
+          `${u.firstName} ${u.lastName}`.toLowerCase().includes(q) ||
           u.email.toLowerCase().includes(q)
         );
       });
-  }, [allUsers, roleFilter, query]);
+  }, [nonAdminUsers, roleFilter, query]);
 
   const handleAdd = (ids: string[]) => {
     if (!ids.length) return;
@@ -113,14 +118,15 @@ export const ManageMembersDialog = ({
                 size="small"
                 value={roleFilter}
                 onChange={(e) =>
-                  setRoleFilter(e.target.value as AppRoleType | "All")
+                  setRoleFilter(
+                    e.target.value as Exclude<AppRoleType, "admin"> | "All",
+                  )
                 }
                 sx={{ minWidth: 160 }}
               >
                 <MenuItem value="All">All roles</MenuItem>
                 <MenuItem value="student">Students ({studentsCount})</MenuItem>
                 <MenuItem value="teacher">Teachers ({teachersCount})</MenuItem>
-                <MenuItem value="admin">Admins</MenuItem>
               </Select>
 
               <TextField
@@ -232,7 +238,7 @@ export const ManageMembersDialog = ({
                 overflow: "auto",
               }}
             >
-              {(allUsers ?? [])
+              {(nonAdminUsers ?? [])
                 .filter((u) => memberIds.has(u.userId))
                 .map((u) => (
                   <ListItem
