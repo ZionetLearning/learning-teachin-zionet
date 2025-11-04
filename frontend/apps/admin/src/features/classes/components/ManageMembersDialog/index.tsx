@@ -29,7 +29,7 @@ import {
   useRemoveClassMembers,
   useGetAllUsers,
 } from "@admin/api";
-import { type User, type AppRoleType } from "@app-providers";
+import { type User, type AppRoleType, useAuth } from "@app-providers";
 import { RoleChip } from "@ui-components";
 
 type Props = {
@@ -48,6 +48,7 @@ export const ManageMembersDialog = ({
   onClose,
 }: Props) => {
   const theme = useTheme();
+  const { user } = useAuth();
 
   const { data: classData } = useGetClass(classId);
   const { data: allUsers } = useGetAllUsers();
@@ -96,7 +97,7 @@ export const ManageMembersDialog = ({
   const handleAdd = (ids: string[]) => {
     if (!ids.length) return;
     addMembers(
-      { classId, userIds: ids, addedBy: "admin" /* TODO: real admin id */ },
+      { classId, userIds: ids, addedBy: user?.userId || "" },
       { onSuccess: () => {} },
     );
   };
