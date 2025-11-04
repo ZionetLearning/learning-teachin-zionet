@@ -618,7 +618,8 @@
       "appearance": "מראה",
       "lightMode": "מצב בהיר",
       "darkMode": "מצב כהה",
-      "systemDefault": "מצב מערכת"
+      "systemDefault": "מצב מערכת",
+      "classes": "כיתות"
     },
     "errorBoundary": {
       "title": "אופס! משהו השתבש",

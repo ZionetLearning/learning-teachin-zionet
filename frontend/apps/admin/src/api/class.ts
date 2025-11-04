@@ -15,6 +15,13 @@ export type ClassItem = {
   members: ClassMemberId[];
 };
 
+export type ClassSummary = {
+  classId: string;
+  name: string;
+  // optional if your list endpoint doesn't return members
+  members?: ClassMemberId[];
+};
+
 export type GetClassResponse = ClassItem;
 
 export type CreateClassRequest = {
@@ -47,14 +54,47 @@ export type BasicMessageResponse = {
 
 const CLASSES_BASE_URL = import.meta.env.VITE_CLASSES_MANAGER_URL;
 
+// NOT SUPPORTED YET BY THE BACKEND
+// export const useGetAllClasses = (): UseQueryResult<ClassSummary[], Error> => {
+//   return useQuery<ClassSummary[], Error>({
+//     queryKey: ["classes"],
+//     staleTime: 60_000,
+//     queryFn: async () => {
+//       const res = await axios.get<ClassSummary[]>(`${CLASSES_BASE_URL}`);
+//       return res.data;
+//     },
+//   });
+// };
+
+const TEMP_CLASS_ID = "0176619e-6acc-4b02-85f1-b38bbef8d230";
+
+// FAKE getAllClasses implementation until backend is ready
+export const useGetAllClasses = (): UseQueryResult<ClassSummary[], Error> => {
+  return useQuery<ClassSummary[], Error>({
+    queryKey: ["classes"],
+    staleTime: 30_000,
+    queryFn: async () => {
+      const res = await axios.get<GetClassResponse>(
+        `${CLASSES_BASE_URL}/${encodeURIComponent(TEMP_CLASS_ID)}`,
+      );
+      const cls = res.data;
+      // Map to summary shape; members may not be present on some endpoints
+      const summary: ClassSummary = {
+        classId: cls.classId,
+        name: cls.name,
+        members: cls.members, // optional in type, safe to pass if present
+      };
+      return [summary];
+    },
+  });
+};
+
 export const useGetClass = (
-  classId?: string,
-  options?: { enabled?: boolean; staleTime?: number },
+  classId: string,
 ): UseQueryResult<GetClassResponse, Error> => {
   return useQuery<GetClassResponse, Error>({
     queryKey: ["class", classId] as const,
-    enabled: Boolean(classId) && (options?.enabled ?? true),
-    staleTime: options?.staleTime ?? 60_000,
+    staleTime: 60_000,
     queryFn: async () => {
       if (!classId) throw new Error("Missing classId");
       const res = await axios.get<GetClassResponse>(

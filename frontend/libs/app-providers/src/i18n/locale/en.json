@@ -618,7 +618,8 @@
       "appearance": "Appearance",
       "lightMode": "Light Mode",
       "darkMode": "Dark Mode",
-      "systemDefault": "System Default"
+      "systemDefault": "System Default",
+      "classes": "Classes"
     },
     "errorBoundary": {
       "title": "Oops! Something went wrong",
