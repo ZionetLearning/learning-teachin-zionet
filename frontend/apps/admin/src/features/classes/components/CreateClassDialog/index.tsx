@@ -16,7 +16,7 @@ type Props = {
 };
 
 export const CreateClassDialog = ({ open, onClose }: Props) => {
-  const { mutate: createClass, isLoading } = useCreateClass();
+  const { mutate: createClass } = useCreateClass();
   const [name, setName] = useState("");
   const [description, setDescription] = useState<string>("");
 
@@ -32,6 +32,12 @@ export const CreateClassDialog = ({ open, onClose }: Props) => {
         },
       },
     );
+  };
+
+  const handleClose = () => {
+    setName("");
+    setDescription("");
+    onClose();
   };
 
   return (
@@ -55,10 +61,10 @@ export const CreateClassDialog = ({ open, onClose }: Props) => {
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} color="inherit">
+        <Button onClick={handleClose} color="inherit">
           Cancel
         </Button>
-        <Button onClick={handleCreate} disabled={isLoading} variant="contained">
+        <Button onClick={handleCreate} disabled={!name} variant="contained">
           Create
         </Button>
       </DialogActions>
