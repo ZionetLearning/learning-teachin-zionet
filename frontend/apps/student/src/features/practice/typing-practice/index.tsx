@@ -25,6 +25,7 @@ export const TypingPractice = () => {
 
   const {
     exerciseState,
+    currentExercise,
     currentSentenceIndex,
     correctSentencesCount,
     sentenceCount,
@@ -95,9 +96,15 @@ export const TypingPractice = () => {
       currentExercise: currentSentenceIndex + 1,
       totalExercises: sentenceCount,
       difficulty: gameConfig?.difficulty.toString(),
+      gameContent: {
+        phraseToSpeak: currentExercise?.hebrewText || undefined,
+        userAttempt: exerciseState.userInput || undefined,
+        correctAnswer: exerciseState.feedbackResult?.expectedText || undefined,
+      },
       additionalContext: {
         phase: exerciseState.phase,
         correctCount: correctSentencesCount,
+        isCorrect: exerciseState.feedbackResult?.isCorrect,
       },
     }),
     [
@@ -105,6 +112,9 @@ export const TypingPractice = () => {
       sentenceCount,
       gameConfig?.difficulty,
       exerciseState.phase,
+      currentExercise,
+      exerciseState.userInput,
+      exerciseState.feedbackResult,
       correctSentencesCount,
     ],
   );

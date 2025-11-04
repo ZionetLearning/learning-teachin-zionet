@@ -305,21 +305,28 @@ export const SpeakingPractice = () => {
       currentExercise: currentIdx + 1,
       totalExercises: sentences.length,
       difficulty: difficulty.toString(),
+      gameContent: {
+        phraseToSpeak: sentences[currentIdx] || undefined,
+      },
       additionalContext: {
         isRecording,
         isPlaying,
         correctCount: correctIdxs.size,
         attemptedCount: attempted.size,
+        isCorrect,
+        feedback,
       },
     }),
     [
       currentIdx,
-      sentences.length,
+      sentences,
       difficulty,
       isRecording,
       isPlaying,
       correctIdxs.size,
       attempted.size,
+      isCorrect,
+      feedback,
     ],
   );
 

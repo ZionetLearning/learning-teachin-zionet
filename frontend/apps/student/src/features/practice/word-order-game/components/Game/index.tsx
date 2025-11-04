@@ -348,6 +348,13 @@ export const Game = ({ retryData }: GameProps) => {
       currentExercise: currentSentenceIndex + 1,
       totalExercises: sentenceCount,
       difficulty: gameConfig?.difficulty?.toString(),
+      gameContent: {
+        targetSentence: isRetryMode
+          ? retryData?.correctAnswer.join(" ")
+          : sentence,
+        availableWords: shuffledSentence,
+        userAnswer: chosen,
+      },
       additionalContext: {
         isRetryMode,
         correctCount: correctSentencesCount,
@@ -362,7 +369,10 @@ export const Game = ({ retryData }: GameProps) => {
       isRetryMode,
       correctSentencesCount,
       hasCheckedThisSentence,
-      chosen.length,
+      sentence,
+      shuffledSentence,
+      chosen,
+      retryData,
     ],
   );
 

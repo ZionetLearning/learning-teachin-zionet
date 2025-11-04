@@ -114,15 +114,28 @@ export const WordCardsChallenge = () => {
       exerciseType: "word-cards",
       currentExercise: currentIndex + 1,
       totalExercises: shuffledCards.length,
+      gameContent: {
+        question:
+          currentCard && mode === "heb-to-eng"
+            ? currentCard.hebrew
+            : currentCard?.english,
+        correctAnswer:
+          currentCard && mode === "heb-to-eng"
+            ? currentCard.english
+            : currentCard?.hebrew,
+        userAttempt: userAnswer || undefined,
+        currentWord: currentCard
+          ? {
+              hebrew: currentCard.hebrew,
+              english: currentCard.english,
+            }
+          : undefined,
+      },
       additionalContext: {
         mode,
         gameState,
         correctCount,
-        currentWord: currentCard
-          ? mode === "heb-to-eng"
-            ? currentCard.hebrew
-            : currentCard.english
-          : "",
+        feedback,
       },
     }),
     [
@@ -132,6 +145,8 @@ export const WordCardsChallenge = () => {
       gameState,
       correctCount,
       currentCard,
+      userAnswer,
+      feedback,
     ],
   );
 

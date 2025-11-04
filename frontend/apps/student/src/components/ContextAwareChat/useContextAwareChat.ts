@@ -1,21 +1,24 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
+import { useTranslation } from "react-i18next";
+import { useAuth } from "@app-providers";
+import { useSendChatMessageStream } from "../../api/chat";
 import type { ChatMessage, PageContext } from "./types";
 
-const HARDCODED_RESPONSES = [
-  "That's a great question! Based on your current exercise, I can help you understand this better.",
-  "Let me explain this in the context of what you're practicing right now.",
-  "I see you're working on this exercise. Here's what you need to know...",
-  "Good question! This relates directly to the difficulty level you've chosen.",
-  "Based on your progress so far, here's my suggestion...",
-  "That's an interesting point about this exercise type!",
-];
-
 export const useContextAwareChat = (pageContext: PageContext) => {
+  const { user } = useAuth();
+  const { i18n } = useTranslation();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const threadIdRef = useRef<string>(crypto.randomUUID());
+  const { startStream } = useSendChatMessageStream();
 
   const sendMessage = useCallback(
-    (text: string) => {
+    async (text: string) => {
+      if (!user?.userId) {
+        console.error("User not authenticated");
+        return;
+      }
+
       const userMessage: ChatMessage = {
         id: crypto.randomUUID(),
         text,
@@ -26,33 +29,60 @@ export const useContextAwareChat = (pageContext: PageContext) => {
       setMessages((prev) => [...prev, userMessage]);
       setIsLoading(true);
 
-      // Simulate API call with hardcoded response
-      setTimeout(() => {
-        const randomResponse =
-          HARDCODED_RESPONSES[
-            Math.floor(Math.random() * HARDCODED_RESPONSES.length)
-          ];
+      const assistantMessageId = crypto.randomUUID();
+      let accumulatedText = "";
 
-        const contextInfo = `\n\n[Context: ${pageContext.pageName}${
-          pageContext.exerciseType ? ` - ${pageContext.exerciseType}` : ""
-        }${
-          pageContext.currentExercise !== undefined
-            ? ` - Exercise ${pageContext.currentExercise}/${pageContext.totalExercises}`
-            : ""
-        }${pageContext.difficulty ? ` - ${pageContext.difficulty}` : ""}]`;
+      try {
+        await startStream(
+          {
+            userMessage: text,
+            threadId: threadIdRef.current,
+            chatType: "Global",
+            userId: user.userId,
+            pageContext: {
+              jsonContext: JSON.stringify(pageContext),
+            },
+            userLanguage: i18n.language,
+          },
+          (delta: string) => {
+            accumulatedText += delta;
+            setMessages((prev) => {
+              const existingIndex = prev.findIndex(
+                (m) => m.id === assistantMessageId,
+              );
+              const assistantMessage: ChatMessage = {
+                id: assistantMessageId,
+                text: accumulatedText,
+                sender: "assistant",
+                timestamp: new Date(),
+              };
 
-        const assistantMessage: ChatMessage = {
+              if (existingIndex >= 0) {
+                const updated = [...prev];
+                updated[existingIndex] = assistantMessage;
+                return updated;
+              }
+              return [...prev, assistantMessage];
+            });
+          },
+          () => {
+            setIsLoading(false);
+          },
+        );
+      } catch (error) {
+        console.error("Error sending message:", error);
+        setIsLoading(false);
+
+        const errorMessage: ChatMessage = {
           id: crypto.randomUUID(),
-          text: randomResponse + contextInfo,
+          text: "Sorry, I encountered an error. Please try again.",
           sender: "assistant",
           timestamp: new Date(),
         };
-
-        setMessages((prev) => [...prev, assistantMessage]);
-        setIsLoading(false);
-      }, 1000);
+        setMessages((prev) => [...prev, errorMessage]);
+      }
     },
-    [pageContext],
+    [pageContext, user?.userId, i18n.language, startStream],
   );
 
   return {
