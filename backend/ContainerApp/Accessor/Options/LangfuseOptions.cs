@@ -2,9 +2,27 @@ namespace Accessor.Options;
 
 public class LangfuseOptions
 {
-    public string? BaseUrl { get; set; }
-    public string? PublicKey { get; set; }
-    public string? SecretKey { get; set; }
+    private string? _baseUrl;
+    private string? _publicKey;
+    private string? _secretKey;
+
+    public string? BaseUrl
+    {
+        get => _baseUrl;
+        set => _baseUrl = value?.Trim();
+    }
+
+    public string? PublicKey
+    {
+        get => _publicKey;
+        set => _publicKey = value?.Trim();
+    }
+
+    public string? SecretKey
+    {
+        get => _secretKey;
+        set => _secretKey = value?.Trim();
+    }
 
     public bool IsConfigured()
     {
