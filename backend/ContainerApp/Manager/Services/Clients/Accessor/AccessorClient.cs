@@ -1069,9 +1069,9 @@ public class AccessorClient(
             );
             return response;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            _logger.LogError(ex, "Failed to get user configuration for UserId={UserId}", userId);
+            _logger.LogInformation("Failed to get user configuration for UserId={UserId}", userId);
             throw;
         }
     }

@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using DotQueue;
-using Manager.Models.GameConfiguration;
+using Manager.Models.UserGameConfiguration;
 using Manager.Models.Notifications;
 using Manager.Models.QueueMessages;
 

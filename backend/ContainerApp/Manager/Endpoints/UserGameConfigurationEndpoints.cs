@@ -3,6 +3,7 @@ using Manager.Constants;
 using Microsoft.AspNetCore.Mvc;
 using Manager.Models.UserGameConfiguration;
 using Manager.Services.Clients.Accessor;
+using Dapr.Client;
 
 namespace Manager.Endpoints;
 
@@ -16,7 +17,7 @@ public static class UserGameConfigurationEndpoints
         configGroup.MapGet("/{gameName}", GetConfigAsync)
             .RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
 
-        configGroup.MapPut("/{gameName}", SaveConfigAsync)
+        configGroup.MapPut("/", SaveConfigAsync)
             .RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
 
         configGroup.MapDelete("/{gameName}", DeleteConfigAsync)
@@ -45,13 +46,12 @@ public static class UserGameConfigurationEndpoints
             }
 
             var config = await accessorClient.GetUserGameConfigAsync(userId, gameName, ct);
-            if (config == null)
-            {
-                logger.LogInformation("No configuration found for user {UserId} and game {GameName}", userId, gameName);
-                return Results.NotFound(new { error = "Game configuration not found" });
-            }
-
             return Results.Ok(config);
+        }
+        catch (InvocationException)
+        {
+            logger.LogInformation("No configuration found for game {GameName}", gameName);
+            return Results.NotFound(new { Message = "Game configuration not found" });
         }
         catch (Exception ex)
         {
@@ -106,12 +106,12 @@ public static class UserGameConfigurationEndpoints
             }
 
             await accessorClient.DeleteUserGameConfigAsync(userId, gameName, ct);
-            return Results.Ok(new { message = "Configuration saved." });
+            return Results.Ok(new { message = "Configuration deleted." });
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error saving game configuration for game {GameName}", gameName);
-            return Results.Problem("Failed to save game configuration. Please try again later.");
+            logger.LogError(ex, "Error deleting game configuration for game {GameName}", gameName);
+            return Results.Problem("Failed to delete game configuration. Please try again later.");
         }
     }
 }

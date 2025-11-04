@@ -29,7 +29,22 @@ public class UserGameConfigurationService : IUserGameConfigurationService
     {
         _logger.LogInformation("Saving game config for UserId={UserId}, GameName={GameName}", userGameConfig.UserId, userGameConfig.GameName);
 
-        _db.UserGameConfigs.Update(userGameConfig);
+        var existingConfig = await _db.UserGameConfigs
+            .FirstOrDefaultAsync(x => x.UserId == userGameConfig.UserId && x.GameName == userGameConfig.GameName, ct);
+
+        if (existingConfig != null)
+        {
+            existingConfig.Difficulty = userGameConfig.Difficulty;
+            existingConfig.Nikud = userGameConfig.Nikud;
+            existingConfig.NumberOfSentences = userGameConfig.NumberOfSentences;
+
+            _db.UserGameConfigs.Update(existingConfig);
+        }
+        else
+        {
+            await _db.UserGameConfigs.AddAsync(userGameConfig, ct);
+        }
+
         await _db.SaveChangesAsync(ct);
 
         _logger.LogInformation("Game config saved successfully for UserId={UserId}, GameName={GameName}", userGameConfig.UserId, userGameConfig.GameName);

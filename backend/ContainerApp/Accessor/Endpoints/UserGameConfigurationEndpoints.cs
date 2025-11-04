@@ -6,7 +6,7 @@ namespace Accessor.Endpoints;
 
 public static class UserGameConfigurationEndpoints
 {
-    public static IEndpointRouteBuilder MapWordCardsEndpoints(this IEndpointRouteBuilder app)
+    public static IEndpointRouteBuilder MapUserGameConfigurationEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/game-config-accessor").WithTags("Game Config Accessor");
 
@@ -39,7 +39,7 @@ public static class UserGameConfigurationEndpoints
             if (config is null)
             {
                 logger.LogInformation("No config found for UserId={UserId}, GameName={GameName}", userId, gameName);
-                return Results.NotFound(new { error = "Game configuration not found." });
+                return Results.NotFound();
             }
 
             return Results.Ok(config);
