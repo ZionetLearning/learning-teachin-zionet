@@ -57,7 +57,7 @@ locals {
 # Reference to shared PostgreSQL server (for non-dev environments)
 data "azurerm_postgresql_flexible_server" "shared" {
   count               = local.use_shared_postgres ? 1 : 0
-  name                = var.database_server_name
+  name                = "dev-${var.database_server_name}"
   resource_group_name = local.postgres_server_rg
 }
 
@@ -66,7 +66,7 @@ module "database" {
   count  = local.use_shared_postgres ? 0 : 1
   source = "./modules/postgresql"
 
-  server_name         = var.database_server_name
+  server_name         = "${var.environment_name}-${var.database_server_name}"
   location            = var.db_location
   resource_group_name = azurerm_resource_group.main.name
 

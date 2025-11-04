@@ -74,7 +74,7 @@ variable "use_shared_postgres" {
 variable "database_server_name" {
   description = "Name of the PostgreSQL server (must be globally unique)"
   type        = string
-  default     = "dev-pg-zionet-learning"
+  default     = "pg-zionet-learning"
 }
 variable "db_location" {
   description = "Location for the PostgreSQL database"
