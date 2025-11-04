@@ -1,4 +1,6 @@
 ﻿
+using System.Text.Json;
+
 namespace Engine.Models.Chat;
 
 public sealed record EngineChatRequest
@@ -16,4 +18,8 @@ public sealed record EngineChatRequest
     public required long SentAt { get; init; }
 
     public required int TtlSeconds { get; init; }
+
+    public UserDetailForChat? UserDetail { get; init; }
+
+    public JsonElement? PageContext { get; init; }
 }
