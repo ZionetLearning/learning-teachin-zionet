@@ -1,4 +1,4 @@
-name: Terraform Destroy (Dynamic Environment)
+name: Terraform - Destroy (Dynamic Environment)
 run-name: >
   ${{ inputs.dry_run == 'true' && '🔍 DRY RUN' || '🗑️ Destroy Infrastructure' }} in ${{
     inputs.environment_name || github.event.inputs.environment_name || 
@@ -34,7 +34,6 @@ on:
         default: false
         type: boolean
 
-
 jobs:
   terraform-destroy:
     runs-on: ubuntu-latest
@@ -55,7 +54,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install Terraform
         uses: hashicorp/setup-terraform@v3

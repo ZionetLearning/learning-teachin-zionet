@@ -1,4 +1,4 @@
-name: Clear Postgres Database
+name: Scheduled - Clear Postgres Database
 
 on:
   schedule:
@@ -70,7 +70,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Azure Login via OIDC
         uses: azure/login@v2

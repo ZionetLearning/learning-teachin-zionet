@@ -1,4 +1,4 @@
-name: Lock / Unlock Featest (Single Issue)
+name: AKS - Lock / Unlock Featest (Single Issue)
 
 on:
   workflow_dispatch:

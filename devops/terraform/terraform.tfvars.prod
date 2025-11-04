@@ -20,7 +20,5 @@ tenant_id              = "a814ee32-f813-4a36-9686-1b9268183e27"
 docker_registry        = "snir1551"
 
 #------------- Frontend Configuration -------------
-frontend_sku_tier      = "Free"    
-frontend_sku_size      = "Free"
 frontend_apps          = []    # Prod uses AKS instead of Static Web Apps#------------- Redis Shared Instance -------------
 use_shared_redis = true  # prod uses shared Redis instance

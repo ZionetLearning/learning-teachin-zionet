@@ -17,8 +17,6 @@ tenant_id              = "a814ee32-f813-4a36-9686-1b9268183e27"
 docker_registry        = "snir1551"
 
 #------------- Frontend Configuration -------------
-frontend_sku_tier      = "Free"    
-frontend_sku_size      = "Free"
 frontend_apps          = []   # Set to [] to disable, ["student", "teacher", "admin"] to enable   
 
 #------------- Redis Shared Instance -------------
