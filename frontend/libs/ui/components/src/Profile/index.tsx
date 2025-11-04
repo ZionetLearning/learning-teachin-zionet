@@ -8,7 +8,7 @@ import {
   PreferredLanguageCode,
 } from "@app-providers/types";
 import { useStyles } from "./style";
-import { Dropdown, Button, InterestChip } from "@ui-components";
+import { Dropdown, Button, InterestChip, AvatarUpload } from "@ui-components";
 
 export const Profile = ({ user }: { user: User }) => {
   const classes = useStyles();
@@ -170,6 +170,11 @@ export const Profile = ({ user }: { user: User }) => {
       </Box>
 
       <Box className={classes.formCard}>
+        <AvatarUpload
+          userId={user.userId}
+          userName={`${user.firstName} ${user.lastName}`}
+        />
+
         <Box className={classes.formHeader}>
           <Typography variant="h6" color="text.secondary">
             {t("pages.profile.subTitle")}
