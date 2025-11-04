@@ -31,6 +31,7 @@ import {
   useGetAllUsers,
 } from "@admin/api";
 import { type User, type AppRoleType } from "@app-providers";
+import { RoleChip } from "@ui-components";
 
 type Props = {
   open: boolean;
@@ -188,10 +189,9 @@ export const ManageMembersDialog = ({
                       primary={
                         <Stack direction="row" gap={1} alignItems="center">
                           <Typography>{getFullName(u)}</Typography>
-                          <Chip
-                            size="small"
-                            label={u.role}
-                            variant="outlined"
+                          <RoleChip
+                            role={u.role}
+                            data-testid="users-role-badge"
                           />
                         </Stack>
                       }
@@ -255,14 +255,13 @@ export const ManageMembersDialog = ({
                       primary={
                         <Stack direction="row" gap={1} alignItems="center">
                           <Typography>{getFullName(u)}</Typography>
-                          <Chip
-                            size="small"
-                            label={u.role}
-                            variant="outlined"
+                          <RoleChip
+                            role={u.role}
+                            data-testid="users-role-badge"
                           />
                         </Stack>
                       }
-                      secondary={u.userId}
+                      secondary={u.email}
                     />
                   </ListItem>
                 ))}
