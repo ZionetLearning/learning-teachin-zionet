@@ -10,4 +10,5 @@ public class SubmitAttemptResult
     public required AttemptStatus Status { get; set; }
     public required List<string> CorrectAnswer { get; set; } = new();
     public required int AttemptNumber { get; set; }
+    public required decimal Accuracy { get; set; }
 }

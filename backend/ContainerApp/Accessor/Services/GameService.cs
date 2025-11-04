@@ -1,4 +1,5 @@
 using Accessor.DB;
+using Accessor.Helpers;
 using Accessor.Models.Games;
 using Accessor.Services.Interfaces;
 using AutoMapper;
@@ -54,6 +55,13 @@ public class GameService : IGameService
             // Check correctness
             var isCorrect = request.GivenAnswer.SequenceEqual(original.CorrectAnswer);
 
+            // Calculate accuracy based on game type
+            var accuracy = AccuracyCalculator.Calculate(
+                original.GameType,
+                original.CorrectAnswer,
+                request.GivenAnswer
+            );
+
             // Determine next attempt number
             var last = await _db.GameAttempts
                 .Where(a => a.StudentId == original.StudentId && a.ExerciseId == original.ExerciseId)
@@ -62,7 +70,7 @@ public class GameService : IGameService
 
             var nextNumber = (last?.AttemptNumber ?? 0) + 1;
 
-            // Create new attempt
+            // Create new attempt with calculated accuracy
             var newAttempt = new GameAttempt
             {
                 AttemptId = Guid.NewGuid(),
@@ -74,14 +82,15 @@ public class GameService : IGameService
                 GivenAnswer = request.GivenAnswer,
                 Status = isCorrect ? AttemptStatus.Success : AttemptStatus.Failure,
                 AttemptNumber = nextNumber,
+                Accuracy = accuracy,
                 CreatedAt = DateTimeOffset.UtcNow
             };
 
             _db.GameAttempts.Add(newAttempt);
             await _db.SaveChangesAsync(ct);
 
-            _logger.LogInformation("New attempt saved. AttemptId={NewId}, BasedOn={OriginalId}, Number={Number}, Status={Status}",
-                newAttempt.AttemptId, original.AttemptId, nextNumber, newAttempt.Status);
+            _logger.LogInformation("New attempt saved. AttemptId={NewId}, BasedOn={OriginalId}, Number={Number}, Status={Status}, Accuracy={Accuracy}%",
+                newAttempt.AttemptId, original.AttemptId, nextNumber, newAttempt.Status, newAttempt.Accuracy);
 
             return _mapper.Map<SubmitAttemptResult>(newAttempt);
         }
@@ -165,15 +174,17 @@ public class GameService : IGameService
 
                 var items = await attempts
                     .OrderByDescending(a => a.CreatedAt)
-                    .ThenByDescending(a => a.AttemptId) // тай-брейкер по равным CreatedAt
+                    .ThenByDescending(a => a.AttemptId)
                     .Select(a => new AttemptHistoryDto
                     {
+                        ExerciseId = a.ExerciseId,
                         AttemptId = a.AttemptId,
                         GameType = a.GameType,
                         Difficulty = a.Difficulty,
                         GivenAnswer = a.GivenAnswer,
                         CorrectAnswer = a.CorrectAnswer,
                         Status = a.Status,
+                        Accuracy = a.Accuracy,
                         CreatedAt = a.CreatedAt
                     })
                     .Skip((page - 1) * pageSize)
@@ -337,12 +348,14 @@ public class GameService : IGameService
 
             var result = new AttemptHistoryDto
             {
+                ExerciseId = attempt.ExerciseId,
                 AttemptId = attempt.AttemptId,
                 GameType = attempt.GameType,
                 Difficulty = attempt.Difficulty,
                 GivenAnswer = attempt.GivenAnswer,
                 CorrectAnswer = attempt.CorrectAnswer,
                 Status = attempt.Status,
+                Accuracy = attempt.Accuracy,
                 CreatedAt = attempt.CreatedAt
             };
 
@@ -369,7 +382,7 @@ public class GameService : IGameService
 
                 var attempt = new GameAttempt
                 {
-                    AttemptId = exerciseId, // AttemptId = ExerciseId for the initial save only to keep frontend compatibility, needs refactor later
+                    AttemptId = exerciseId,
                     ExerciseId = exerciseId,
                     StudentId = dto.StudentId,
                     GameType = dto.GameType,
@@ -378,6 +391,7 @@ public class GameService : IGameService
                     GivenAnswer = new(),
                     Status = AttemptStatus.Pending,
                     AttemptNumber = 0,
+                    Accuracy = 0m,
                     CreatedAt = DateTimeOffset.UtcNow
                 };
 
@@ -385,7 +399,7 @@ public class GameService : IGameService
 
                 resultList.Add(new AttemptedSentenceResult
                 {
-                    AttemptId = exerciseId, // Return the exerciseId as AttemptId for frontend compatibility, needs refactor later
+                    AttemptId = exerciseId,
                     Original = sentence.Original,
                     Words = sentence.CorrectAnswer,
                     Difficulty = dto.Difficulty.ToString().ToLowerInvariant(),

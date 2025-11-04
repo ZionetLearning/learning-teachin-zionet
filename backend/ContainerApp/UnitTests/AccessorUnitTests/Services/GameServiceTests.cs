@@ -41,7 +41,8 @@ public class GameServiceTests
                 Difficulty = src.Difficulty,
                 Status = src.Status,
                 CorrectAnswer = src.CorrectAnswer,
-                AttemptNumber = src.AttemptNumber
+                AttemptNumber = src.AttemptNumber,
+                Accuracy = src.Accuracy
             });
 
         return new GameService(db, logger, mockMapper.Object);
@@ -71,6 +72,7 @@ public class GameServiceTests
             GivenAnswer = new(),
             Status = AttemptStatus.Pending,
             AttemptNumber = 0,
+            Accuracy = 0m,
             CreatedAt = DateTimeOffset.UtcNow
         });
         await db.SaveChangesAsync();
@@ -86,6 +88,7 @@ public class GameServiceTests
         // Assert
         result.Status.Should().Be(AttemptStatus.Success);
         result.AttemptNumber.Should().Be(1);
+        result.Accuracy.Should().Be(100m);
     }
 
     [Fact]
@@ -110,6 +113,7 @@ public class GameServiceTests
             GivenAnswer = new(),
             Status = AttemptStatus.Pending,
             AttemptNumber = 0,
+            Accuracy = 0m,
             CreatedAt = DateTimeOffset.UtcNow
         });
         await db.SaveChangesAsync();
@@ -125,6 +129,7 @@ public class GameServiceTests
         // Assert
         result.Status.Should().Be(AttemptStatus.Failure);
         result.CorrectAnswer.Should().BeEquivalentTo(correctAnswer);
+        result.Accuracy.Should().BeGreaterThanOrEqualTo(0m);
     }
 
     [Fact]
@@ -166,6 +171,45 @@ public class GameServiceTests
         exception.Message.Should().Contain("Original attempt not found.");
     }
 
+    [Fact]
+    public async Task SubmitAttemptAsync_PartiallyCorrect_CalculatesAccuracy()
+    {
+        // Arrange
+        var db = NewDb(Guid.NewGuid().ToString());
+        var service = NewGameService(db);
+        var studentId = Guid.NewGuid();
+        var attemptId = Guid.NewGuid();
+        var exerciseId = Guid.NewGuid();
+        var correctAnswer = new List<string> { "שלום", "עולם", "יפה", "מאוד" };
+
+        db.GameAttempts.Add(new GameAttempt
+        {
+            AttemptId = attemptId,
+            ExerciseId = exerciseId,
+            StudentId = studentId,
+            GameType = WordOrderGame,
+            Difficulty = Difficulty.Easy,
+            CorrectAnswer = correctAnswer,
+            GivenAnswer = new(),
+            Status = AttemptStatus.Pending,
+            AttemptNumber = 0,
+            Accuracy = 0m,
+            CreatedAt = DateTimeOffset.UtcNow
+        });
+        await db.SaveChangesAsync();
+
+        // Act - 2 out of 4 words correct in position
+        var result = await service.SubmitAttemptAsync(new SubmitAttemptRequest
+        {
+            StudentId = studentId,
+            AttemptId = attemptId,
+            GivenAnswer = new List<string> { "שלום", "עולם", "wrong", "word" }
+        }, CancellationToken.None);
+
+        // Assert
+        result.Status.Should().Be(AttemptStatus.Failure);
+        result.Accuracy.Should().Be(50m); // 2/4 = 50%
+    }
 
     #endregion
 
@@ -192,6 +236,7 @@ public class GameServiceTests
                 GivenAnswer = new List<string> { "a" },
                 Status = AttemptStatus.Success,
                 AttemptNumber = 1,
+                Accuracy = 100m,
                 CreatedAt = DateTimeOffset.UtcNow
             },
             new GameAttempt
@@ -205,6 +250,7 @@ public class GameServiceTests
                 GivenAnswer = new List<string> { "b" },
                 Status = AttemptStatus.Success,
                 AttemptNumber = 1,
+                Accuracy = 100m,
                 CreatedAt = DateTimeOffset.UtcNow
             }
         );
@@ -246,7 +292,7 @@ public class GameServiceTests
         var exerciseId1 = Guid.NewGuid();
         var exerciseId2 = Guid.NewGuid();
         var correctAnswer1 = new List<string> { "שלום", "עולם" };
-        var correctAnswer2 = new List<string> { "אני", "לומד" };
+        var correctAnswer2 = new List<string> { "אני", "אוהב" };
 
         db.GameAttempts.AddRange(
             new GameAttempt
@@ -260,6 +306,7 @@ public class GameServiceTests
                 GivenAnswer = new List<string> { "עולם", "שלום" },
                 Status = AttemptStatus.Failure,
                 AttemptNumber = 1,
+                Accuracy = 0m,
                 CreatedAt = DateTimeOffset.UtcNow.AddMinutes(-10)
             },
             new GameAttempt
@@ -270,9 +317,10 @@ public class GameServiceTests
                 GameType = WordOrderGame,
                 Difficulty = Difficulty.Medium,
                 CorrectAnswer = correctAnswer2,
-                GivenAnswer = new List<string> { "לומד", "אני" },
+                GivenAnswer = new List<string> { "אוהב", "אני" },
                 Status = AttemptStatus.Failure,
                 AttemptNumber = 1,
+                Accuracy = 0m,
                 CreatedAt = DateTimeOffset.UtcNow.AddMinutes(-5)
             },
             new GameAttempt
@@ -286,6 +334,7 @@ public class GameServiceTests
                 GivenAnswer = correctAnswer2,
                 Status = AttemptStatus.Success,
                 AttemptNumber = 2,
+                Accuracy = 100m,
                 CreatedAt = DateTimeOffset.UtcNow.AddMinutes(-2)
             }
         );
@@ -321,6 +370,7 @@ public class GameServiceTests
                 GivenAnswer = new List<string> { "wrong" },
                 Status = AttemptStatus.Failure,
                 AttemptNumber = 1,
+                Accuracy = 0m,
                 CreatedAt = DateTimeOffset.UtcNow
             },
             new GameAttempt
@@ -334,6 +384,7 @@ public class GameServiceTests
                 GivenAnswer = new List<string> { "other" },
                 Status = AttemptStatus.Failure,
                 AttemptNumber = 1,
+                Accuracy = 0m,
                 CreatedAt = DateTimeOffset.UtcNow
             }
         );
