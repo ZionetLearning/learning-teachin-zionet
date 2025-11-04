@@ -76,7 +76,6 @@ const TEMP_CLASS_ID = "0176619e-6acc-4b02-85f1-b38bbef8d230";
 export const useGetAllClasses = (): UseQueryResult<ClassSummary[], Error> => {
   return useQuery<ClassSummary[], Error>({
     queryKey: ["classes"],
-    staleTime: 30_000,
     queryFn: async () => {
       const res = await axios.get<GetClassResponse>(
         `${CLASSES_BASE_URL}/${encodeURIComponent(TEMP_CLASS_ID)}`,
@@ -98,7 +97,6 @@ export const useGetClass = (
 ): UseQueryResult<GetClassResponse, Error> => {
   return useQuery<GetClassResponse, Error>({
     queryKey: ["class", classId] as const,
-    staleTime: 60_000,
     queryFn: async () => {
       if (!classId) throw new Error("Missing classId");
       const res = await axios.get<GetClassResponse>(
