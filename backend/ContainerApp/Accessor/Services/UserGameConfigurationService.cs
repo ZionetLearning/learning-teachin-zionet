@@ -35,19 +35,20 @@ public class UserGameConfigurationService : IUserGameConfigurationService
         _logger.LogInformation("Game config saved successfully for UserId={UserId}, GameName={GameName}", userGameConfig.UserId, userGameConfig.GameName);
     }
 
-    public Task DeleteConfigAsync(Guid userId, GameName gameName, CancellationToken ct)
+    public async Task DeleteConfigAsync(Guid userId, GameName gameName, CancellationToken ct)
     {
         _logger.LogInformation("Deleting game config for UserId={UserId}, GameName={GameName}", userId, gameName);
 
-        var removeConfig = GetGameConfigAsync(userId, gameName, ct);
+        var removeConfig = await GetGameConfigAsync(userId, gameName, ct);
         if (removeConfig is null)
         {
             _logger.LogWarning("Game config not found for deletion: UserId={UserId}, GameName={GameName}", userId, gameName);
+            return;
         }
         else
         {
             _db.UserGameConfigs.Remove(removeConfig);
-            await _db.SaveChangesAsync();
+            await _db.SaveChangesAsync(ct);
             _logger.LogInformation("Game config deleted successfully: UserId={UserId}, GameName={GameName}", userId, gameName);
         }
     }
