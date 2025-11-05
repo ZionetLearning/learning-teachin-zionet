@@ -4,23 +4,35 @@ variable "resource_group_name" {
   type        = string
   default     = "zionet-learning-2025"
 }
+
 variable "location" {
   description = "Azure region"
   type        = string
 }
+
 variable "subscription_id" {
   description = "Azure subscription ID"
   type        = string
 }
+
+variable "identity_id" {
+  description = "Azure AD identity ID"
+  type        = string
+  default     = "0997f44d-fadf-4be8-8dc6-202f7302f680"
+}
+
 variable "tenant_id" {
   description = "Azure tenant ID"
   type        = string
+  default     = "a814ee32-f813-4a36-9686-1b9268183e27"
 }
+
 variable "shared_resource_group" {
   description = "Resource group containing the shared AKS cluster, PostgreSQL server, and Redis cache"
   type        = string
   default     = "dev-zionet-learning-2025"
 }
+
 #------------- AKS Variables -------------
 variable "aks_cluster_name" {
   description = "Name of the AKS cluster"
@@ -76,16 +88,19 @@ variable "database_server_name" {
   type        = string
   default     = "pg-zionet-learning"
 }
+
 variable "db_location" {
   description = "Location for the PostgreSQL database"
   type        = string
   default     = "Israel Central"
 }
+
 # admin_username - passed from GitHub Actions as TF_VAR_admin_username
 variable "admin_username" {
   type        = string
   description = "PostgreSQL administrator username - provided by GitHub Actions"
 }
+
 # admin_password - passed from GitHub Actions as TF_VAR_admin_password  
 variable "admin_password" {
   type        = string
@@ -98,6 +113,7 @@ variable "delegated_subnet_id" {
   description = "ID of the delegated subnet for PostgreSQL"
   default     = null
 }
+
 # database_name
 variable "database_name" {
   type        = string
@@ -112,17 +128,12 @@ variable "static_web_app_name" {
   default     = "static-web-app"
 }
 
-variable "frontend_appinsights_retention_days" {
-  description = "Number of days to retain Application Insights data"
-  type        = number
-  default     = 30
+variable "frontend_apps" {
+  description = "List of frontend applications to deploy. Set to [] to disable Static Web Apps creation."
+  type        = list(string)
+  default     = ["student", "teacher", "admin"]
 }
 
-variable "frontend_appinsights_sampling_percentage" {
-  description = "Sampling percentage for Application Insights"
-  type        = number
-  default     = 100
-}
 #------------- Redis Variables -------------
 variable "redis_name" {
   description = "Name of the Redis cache instance"
@@ -165,13 +176,6 @@ variable "kubernetes_namespace" {
   description = "Kubernetes namespace for this environment"
   type        = string
   default     = ""
-}
-
-#------------- Frontend Application Variables -------------
-variable "frontend_apps" {
-  description = "List of frontend applications to deploy. Set to [] to disable Static Web Apps creation."
-  type        = list(string)
-  default     = ["student", "teacher", "admin"]
 }
 
 #------------- Langfuse Variables -------------

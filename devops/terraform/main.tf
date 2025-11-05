@@ -40,6 +40,78 @@ locals {
   admin_password = var.admin_password
 }
 
+########################################
+# 2. AKS kube-config for providers
+########################################
+
+resource "null_resource" "aks_ready" {
+  # This resource completes when the AKS cluster (shared or new) is ready
+  count = 1
+
+  # Use triggers to ensure this runs after the appropriate AKS resource is ready
+  triggers = {
+    cluster_name = local.aks_cluster_name
+    cluster_rg   = local.aks_resource_group
+  }
+
+  # Implicit dependency on the AKS module when not using shared AKS
+  depends_on = [
+    module.aks,
+    data.azurerm_kubernetes_cluster.shared
+  ]
+}
+
+# Data source for the cluster to be used (either shared or new)
+data "azurerm_kubernetes_cluster" "main" {
+  name                = local.aks_cluster_name
+  resource_group_name = local.aks_resource_group
+
+  depends_on = [null_resource.aks_ready]
+}
+
+########################################
+# 3. Environment-specific namespace and resources for the workloads
+########################################
+
+# Create namespace for the environment
+resource "kubernetes_namespace" "environment" {
+  metadata {
+    name = local.kubernetes_namespace
+    labels = {
+      environment = var.environment_name
+      managed-by  = "terraform"
+      created-by  = "terraform"
+      purpose     = "application-deployment"
+    }
+
+    annotations = {
+      "kubernetes.io/managed-by" = "terraform"
+      "terraform.io/environment" = var.environment_name
+    }
+  }
+
+  depends_on = [data.azurerm_kubernetes_cluster.main]
+}
+
+# Create service account for the environment
+resource "kubernetes_service_account" "environment" {
+  metadata {
+    name      = "${var.environment_name}-serviceaccount"
+    namespace = kubernetes_namespace.environment.metadata[0].name
+
+    labels = {
+      environment = var.environment_name
+      managed-by  = "terraform"
+    }
+
+    annotations = {
+      "kubernetes.io/managed-by" = "terraform"
+    }
+  }
+
+  depends_on = [kubernetes_namespace.environment]
+}
+
 module "servicebus" {
   source              = "./modules/servicebus"
   resource_group_name = azurerm_resource_group.main.name
@@ -144,86 +216,10 @@ locals {
   redis_key      = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].primary_access_key : module.redis[0].primary_access_key
 }
 
-# ------------- Storage Resource Group (Shared across environments) -----------------------
-# Use existing storage-rg resource group (created manually or by other environment)
-data "azurerm_resource_group" "storage" {
-  name = "storage-rg"
-}
-
 # ------------- Storage Account for Avatars (Optimized for Cost) -----------------------
-resource "azurerm_storage_account" "avatars" {
-  name                     = "${var.environment_name}avatarsstorage"
-  resource_group_name      = data.azurerm_resource_group.storage.name
-  location                = data.azurerm_resource_group.storage.location
-  account_tier            = "Standard"          # Cheapest tier
-  account_replication_type = "LRS"             # Cheapest replication (Local only)
-  access_tier             = "Cool"             # Cool tier for cheaper storage (avatars accessed less frequently)
-  
-  # Enable blob public access for SAS token functionality
-  allow_nested_items_to_be_public = true
-  
-  # Security settings
-  min_tls_version                = "TLS1_2"
-  https_traffic_only_enabled     = true
-  
-  # CORS configuration for web uploads
-  blob_properties {
-    cors_rule {
-      allowed_headers    = ["*"]
-      allowed_methods    = ["GET", "HEAD", "POST", "PUT", "DELETE"]
-      allowed_origins    = ["*"]
-      exposed_headers    = ["*"]
-      max_age_in_seconds = 3600
-    }
-    
-    # Delete old versions automatically to save space/cost
-    delete_retention_policy {
-      days = 7  # Keep deleted blobs for 7 days only (minimum)
-    }
-    
-    # Automatically move to cheaper tiers
-    versioning_enabled = false  # Disable versioning to save cost
-  }
-
-  tags = {
-    Environment = var.environment_name
-    ManagedBy   = "terraform"
-    Purpose     = "avatars-media"
-  }
-
-  depends_on = [data.azurerm_resource_group.storage]
-}
-
-# Private container for avatars
-resource "azurerm_storage_container" "avatars" {
-  name                 = "avatars"
-  storage_account_id   = azurerm_storage_account.avatars.id
-  container_access_type = "private"
-
-  depends_on = [azurerm_storage_account.avatars]
-}
-
-# Lifecycle management to minimize costs
-resource "azurerm_storage_management_policy" "avatars_lifecycle" {
-  storage_account_id = azurerm_storage_account.avatars.id
-
-  rule {
-    name    = "avatars_lifecycle"
-    enabled = true
-    filters {
-      prefix_match = ["avatars/"]
-      blob_types   = ["blockBlob"]
-    }
-    actions {
-      base_blob {
-        # Move to Cool tier after 30 days (even cheaper)
-        tier_to_cool_after_days_since_modification_greater_than = 30
-        # Move to Archive tier after 90 days (cheapest storage for long-term retention)
-        tier_to_archive_after_days_since_modification_greater_than = 90
-        # No deletion - avatars should be kept permanently
-      }
-    }
-  }
+module "storage" {
+  source              = "./modules/storage"
+  environment_name    = var.environment_name
 }
 
 # Monitoring - Diagnostic Settings for resources to Log Analytics
@@ -263,78 +259,6 @@ module "monitoring" {
   ]
 }
 
-########################################
-# 2. AKS kube-config for providers
-########################################
-
-resource "null_resource" "aks_ready" {
-  # This resource completes when the AKS cluster (shared or new) is ready
-  count = 1
-
-  # Use triggers to ensure this runs after the appropriate AKS resource is ready
-  triggers = {
-    cluster_name = local.aks_cluster_name
-    cluster_rg   = local.aks_resource_group
-  }
-
-  # Implicit dependency on the AKS module when not using shared AKS
-  depends_on = [
-    module.aks,
-    data.azurerm_kubernetes_cluster.shared
-  ]
-}
-
-# Data source for the cluster to be used (either shared or new)
-data "azurerm_kubernetes_cluster" "main" {
-  name                = local.aks_cluster_name
-  resource_group_name = local.aks_resource_group
-
-  depends_on = [null_resource.aks_ready]
-}
-
-########################################
-# 4. Environment-specific namespace and resources for the workloads
-########################################
-
-# Create namespace for the environment
-resource "kubernetes_namespace" "environment" {
-  metadata {
-    name = local.kubernetes_namespace
-    labels = {
-      environment = var.environment_name
-      managed-by  = "terraform"
-      created-by  = "terraform"
-      purpose     = "application-deployment"
-    }
-
-    annotations = {
-      "kubernetes.io/managed-by" = "terraform"
-      "terraform.io/environment" = var.environment_name
-    }
-  }
-
-  depends_on = [data.azurerm_kubernetes_cluster.main]
-}
-
-# Create service account for the environment
-resource "kubernetes_service_account" "environment" {
-  metadata {
-    name      = "${var.environment_name}-serviceaccount"
-    namespace = kubernetes_namespace.environment.metadata[0].name
-
-    labels = {
-      environment = var.environment_name
-      managed-by  = "terraform"
-    }
-
-    annotations = {
-      "kubernetes.io/managed-by" = "terraform"
-    }
-  }
-
-  depends_on = [kubernetes_namespace.environment]
-}
-
 module "frontend" {
   for_each = toset(var.frontend_apps)
   
@@ -342,9 +266,6 @@ module "frontend" {
   resource_group_name = azurerm_resource_group.main.name
   location            = azurerm_resource_group.main.location
   static_web_app_name = "${var.static_web_app_name}-${each.key}-${var.environment_name}"
-  appinsights_retention_days = var.frontend_appinsights_retention_days
-  appinsights_sampling_percentage = var.frontend_appinsights_sampling_percentage
-  
   log_analytics_workspace_id = local.log_analytics_workspace_id
   
   tags = {
@@ -354,7 +275,6 @@ module "frontend" {
   
   depends_on = [azurerm_resource_group.main]
 }
-
 
 # Reference the shared Key Vault instead of creating new ones
 data "azurerm_key_vault" "shared" {
@@ -368,6 +288,6 @@ data "azurerm_key_vault" "shared" {
 module "clustersecretstore" {
   count       = var.environment_name == "dev" ? 1 : 0
   source     = "./modules/clustersecretstore"
-  identity_id = "0997f44d-fadf-4be8-8dc6-202f7302f680" # your AKS managed identity clientId
-  tenant_id   = "a814ee32-f813-4a36-9686-1b9268183e27"
+  identity_id = var.identity_id
+  tenant_id   = var.tenant_id
 }
