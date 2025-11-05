@@ -950,12 +950,12 @@ public class AccessorClient(
         }
         catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
         {
-            _logger.LogWarning("Class for user {CallerId} not found (404)", callerId);
+            _logger.LogWarning("Classes for user {CallerId} not found (404)", callerId);
             return null;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to fetch class for user {CallerId} from Accessor", callerId);
+            _logger.LogError(ex, "Failed to fetch classes for user {CallerId} from Accessor", callerId);
             throw;
         }
     }

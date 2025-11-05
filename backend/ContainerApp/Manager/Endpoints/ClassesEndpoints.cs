@@ -18,7 +18,7 @@ public static class ClassesEndpoints
             .RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
 
         classesGroup.MapGet("", GetAllClassesAsync)
-            .RequireAuthorization(PolicyNames.AdminOrTeacher);
+            .RequireAuthorization(PolicyNames.AdminOnly);
 
         classesGroup.MapGet("/my", GetMyClassesAsync)
             .RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
@@ -92,15 +92,15 @@ public static class ClassesEndpoints
             }
 
             using var scope = logger.BeginScope("UserId: {CallerId}:", callerId);
-            logger.LogInformation("Fetching class info");
+            logger.LogInformation("Fetching classes info");
             var cls = await accessorClient.GetMyClassesAsync(Guid.Parse(callerId), ct);
 
-            return cls is not null ? Results.Ok(cls) : Results.NotFound("Class not found.");
+            return cls is not null ? Results.Ok(cls) : Results.NotFound("Classes not found.");
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error fetching class");
-            return Results.Problem("Failed to retrieve class. Please try again later.");
+            logger.LogError(ex, "Error fetching classes for user");
+            return Results.Problem("Failed to retrieve classes. Please try again later.");
         }
     }
 
