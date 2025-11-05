@@ -13,6 +13,8 @@ public static class ClassesEndpoints
         var classesGroup = app.MapGroup("/classes-accessor").WithTags("Classes");
 
         classesGroup.MapGet("/{classId:guid}", GetClassAsync).WithName("GetClass");
+        classesGroup.MapGet("/my/{userid:guid}", GetMyClassesAsync).WithName("GetMyClasses");
+        classesGroup.MapGet("", GetAllClassesAsync).WithName("GetAllClasses");
 
         classesGroup.MapPost("", CreateClassAsync).WithName("CreateClass");
 
@@ -44,6 +46,49 @@ public static class ClassesEndpoints
         {
             logger.LogError(ex, "Failed to get class {ClassId}", classId);
             return Results.Problem("An error occurred while retrieving the class.");
+        }
+    }
+
+    private static async Task<IResult> GetMyClassesAsync(
+    [FromRoute] Guid userId,
+    [FromServices] IClassService service,
+    [FromServices] ILogger<ClassesEndpointsLoggerMarker> logger,
+    CancellationToken ct)
+    {
+        using var _ = logger.BeginScope("Method={Method}, UserId={UserId}", nameof(GetMyClassesAsync), userId);
+
+        if (userId == Guid.Empty)
+        {
+            return Results.BadRequest("Invalid user ID.");
+        }
+
+        try
+        {
+            var cls = await service.GetClassesForUserWithMembersAsync(userId, ct);
+            return cls is not null ? Results.Ok(cls) : Results.NotFound("Classes not found.");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to get classes for user {UserId}", userId);
+            return Results.Problem("An error occurred while retrieving the classes.");
+        }
+    }
+    private static async Task<IResult> GetAllClassesAsync(
+    [FromServices] IClassService service,
+    [FromServices] ILogger<ClassesEndpointsLoggerMarker> logger,
+    CancellationToken ct)
+    {
+        using var _ = logger.BeginScope("Method={Method}", nameof(GetClassAsync));
+
+        try
+        {
+            var cls = await service.GetAllClassesAsync(ct);
+            return cls is not null ? Results.Ok(cls) : Results.NotFound("Classes not found.");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to get classes");
+            return Results.Problem("An error occurred while retrieving the classes.");
         }
     }
 

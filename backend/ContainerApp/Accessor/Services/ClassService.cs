@@ -1,7 +1,6 @@
 ﻿using Accessor.DB;
 using Accessor.Exceptions;
 using Accessor.Models.Classes;
-using Accessor.Models.Users;
 using Accessor.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
@@ -139,19 +138,75 @@ public class ClassService : IClassService
             throw;
         }
     }
-
-    public async Task<List<Class>> GetClassesForUserAsync(Guid userId, Role role, CancellationToken ct)
+    public async Task<List<ClassDto>> GetAllClassesAsync(CancellationToken ct)
     {
         try
         {
-            return await _db.ClassMembership
-                .Where(m => m.UserId == userId && m.Role == role)
-                .Select(m => m.Class)
+            var classes = await _db.Class
+                .Include(c => c.Memberships)
+                .ThenInclude(m => m.User)
                 .ToListAsync(ct);
+
+            if (classes.Count == 0)
+            {
+                _logger.LogInformation("No classes found");
+                return new List<ClassDto>();
+            }
+
+            return classes.Select(cls => new ClassDto
+            {
+                ClassId = cls.ClassId,
+                Name = cls.Name,
+                Members = cls.Memberships
+                    .Select(m => new MemberDto
+                    {
+                        MemberId = m.UserId,
+                        Name = $"{m.User.FirstName} {m.User.LastName}",
+                        Role = m.Role,
+                    })
+                    .ToList()
+            }).ToList();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to load classes for user {UserId} with role {Role}", userId, role);
+            _logger.LogError(ex, "Failed to load all classes with members");
+            throw;
+        }
+    }
+
+    public async Task<List<ClassDto>> GetClassesForUserWithMembersAsync(Guid userId, CancellationToken ct)
+    {
+        try
+        {
+            var classes = await _db.Class
+                .Include(c => c.Memberships)
+                    .ThenInclude(m => m.User)
+                .Where(c => c.Memberships.Any(m => m.UserId == userId))
+                .ToListAsync(ct);
+
+            if (classes.Count == 0)
+            {
+                _logger.LogInformation("No classes found for user {UserId}", userId);
+                return new List<ClassDto>();
+            }
+
+            return classes.Select(cls => new ClassDto
+            {
+                ClassId = cls.ClassId,
+                Name = cls.Name,
+                Members = cls.Memberships
+                    .Select(m => new MemberDto
+                    {
+                        MemberId = m.UserId,
+                        Name = $"{m.User.FirstName} {m.User.LastName}",
+                        Role = m.Role,
+                    })
+                    .ToList()
+            }).ToList();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load classes with members for user {UserId}", userId);
             throw;
         }
     }
