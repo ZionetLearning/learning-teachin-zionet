@@ -26,7 +26,7 @@ vi.mock("react-i18next", async (importOriginal) => {
     ...actual,
     useTranslation: () => ({
       t: (key: string) => key,
-      i18n: { language: "en", changeLanguage: vi.fn() },
+      i18n: { language: "en", changeLanguage: vi.fn(), dir: () => "ltr" },
     }),
     initReactI18next: {
       type: "3rdParty",
