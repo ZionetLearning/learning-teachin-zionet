@@ -933,7 +933,58 @@ public class AccessorClient(
             throw;
         }
     }
+    public async Task<List<ClassDto?>?> GetMyClassesAsync(Guid callerId, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Fetching classes for {CallerId} from Accessor", callerId);
 
+        try
+        {
+            var cls = await _daprClient.InvokeMethodAsync<List<ClassDto?>?>(
+                HttpMethod.Get,
+                AppIds.Accessor,
+                $"classes-accessor/my/{callerId:D}",
+                ct
+            );
+
+            return cls;
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("Classes for user {CallerId} not found (404)", callerId);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to fetch classes for user {CallerId} from Accessor", callerId);
+            throw;
+        }
+    }
+    public async Task<List<ClassDto?>?> GetAllClassesAsync(CancellationToken ct = default)
+    {
+        _logger.LogInformation("Fetching class from Accessor");
+
+        try
+        {
+            var cls = await _daprClient.InvokeMethodAsync<List<ClassDto?>?>(
+                HttpMethod.Get,
+                AppIds.Accessor,
+                $"classes-accessor/",
+                ct
+            );
+
+            return cls;
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("Classes not found (404)");
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to fetch classes from Accessor");
+            throw;
+        }
+    }
     public async Task<Class?> CreateClassAsync(CreateClassRequest request, CancellationToken ct = default)
     {
         _logger.LogInformation("Creating class {Name} via Accessor", request.Name);
