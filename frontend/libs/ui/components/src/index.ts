@@ -8,6 +8,4 @@ export * from "./modals";
 export * from "./GameSettings";
 export * from "./GameSetupPanel";
 export * from "./StudentPracticeHistory";
-export * from "./ContextAwareChat";
-export * from "./ContextAwareChat/hooks";
 export * from "./Chips";

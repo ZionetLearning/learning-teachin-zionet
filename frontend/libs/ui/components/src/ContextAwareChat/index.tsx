@@ -167,3 +167,9 @@ export const ContextAwareChat = ({
 };
 
 export type { PageContext, ChatMessage } from "./types";
+export {
+  useWordOrderContext,
+  useTypingPracticeContext,
+  useSpeakingPracticeContext,
+  useWordCardsContext,
+} from "./hooks";

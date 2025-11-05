@@ -9,7 +9,10 @@ import {
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useGetWordCards, type WordCard } from "@student/api";
-import { ContextAwareChat, useWordCardsContext } from "@ui-components";
+import {
+  ContextAwareChat,
+  useWordCardsContext,
+} from "@ui-components/ContextAwareChat";
 import { useStyles } from "./style";
 import { ModeSelection, GameSummary } from "./components";
 import { FEEDBACK_DISPLAY_DURATION } from "./constants";

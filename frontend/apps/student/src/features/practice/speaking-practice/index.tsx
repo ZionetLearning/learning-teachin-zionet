@@ -14,9 +14,11 @@ import {
   GameOverModal,
   GameSettings,
   GameSetupPanel,
+} from "@ui-components";
+import {
   ContextAwareChat,
   useSpeakingPracticeContext,
-} from "@ui-components";
+} from "@ui-components/ContextAwareChat";
 import { getDifficultyLabel } from "../utils";
 import { useStyles } from "./style";
 

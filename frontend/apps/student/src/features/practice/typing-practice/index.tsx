@@ -9,9 +9,11 @@ import {
   GameConfigModal,
   GameOverModal,
   GameSettings,
+} from "@ui-components";
+import {
   ContextAwareChat,
   useTypingPracticeContext,
-} from "@ui-components";
+} from "@ui-components/ContextAwareChat";
 import { getDifficultyLabel } from "@student/features";
 
 export const TypingPractice = () => {
