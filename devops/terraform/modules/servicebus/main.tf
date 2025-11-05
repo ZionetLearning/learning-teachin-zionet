@@ -22,7 +22,7 @@ resource "azurerm_servicebus_namespace_authorization_rule" "app" {
   manage  = true
 }
 
-# Optional – create queues from list
+# Creates queues from list
 resource "azurerm_servicebus_queue" "this" {
   for_each            = toset(var.queue_names)
 
@@ -33,7 +33,7 @@ resource "azurerm_servicebus_queue" "this" {
   requires_session     = contains(var.session_enabled_queues, each.value)
 }
 
-# Optional – create topics from list
+# Creates topics from list
 resource "azurerm_servicebus_topic" "this" {
   for_each            = toset(var.topic_names)
 

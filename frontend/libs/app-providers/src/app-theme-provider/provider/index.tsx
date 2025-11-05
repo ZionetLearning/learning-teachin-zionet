@@ -68,6 +68,21 @@ const theme = createTheme({
             backgroundColor: PRIMARY_DARK,
           },
         },
+        outlinedPrimary: ({ theme }) => ({
+          backgroundColor: "#9a7eed",
+          color: "#ffffff",
+
+          "&.Mui-disabled": {
+            backgroundColor: theme.vars.palette.action.disabledBackground,
+            color: theme.vars.palette.action.disabled,
+            borderColor: "transparent",
+            boxShadow: "none",
+          },
+
+          "&:hover": {
+            backgroundColor: "#8a6cf0",
+          },
+        }),
       },
     },
     MuiLink: {

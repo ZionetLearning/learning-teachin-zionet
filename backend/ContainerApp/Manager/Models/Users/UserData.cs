@@ -15,4 +15,7 @@ public class UserData
     public SupportedLanguage PreferredLanguageCode { get; set; } = SupportedLanguage.en;
     public HebrewLevel? HebrewLevelValue { get; set; } // only for students
     public List<string>? Interests { get; set; } // only for students
+    public string? AvatarPath { get; set; }
+    public string? AvatarContentType { get; set; }
+    public DateTime? AvatarUpdatedAtUtc { get; set; }
 }
