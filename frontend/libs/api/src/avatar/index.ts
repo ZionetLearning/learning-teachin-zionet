@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient as axios } from "@app-providers";
-import { toast } from "react-toastify";
 import axiosBase from "axios";
 
 const USERS_MANAGER_URL = import.meta.env.VITE_USERS_URL!;
@@ -51,7 +50,6 @@ export const useConfirmAvatar = (userId: string) => {
       );
     },
     onSuccess: () => {
-      toast.success("Avatar uploaded successfully!");
       qc.invalidateQueries({ queryKey: ["avatar", userId] });
     },
   });
@@ -83,12 +81,7 @@ export const useDeleteAvatar = (userId: string) => {
       await axios.delete(`${USERS_MANAGER_URL}/user/${userId}/avatar`);
     },
     onSuccess: () => {
-      toast.success("Avatar deleted successfully!");
       qc.invalidateQueries({ queryKey: ["avatar", userId] });
-    },
-    onError: (error) => {
-      console.error("Failed to delete avatar:", error);
-      toast.error("Failed to delete avatar. Please try again.");
     },
   });
 };

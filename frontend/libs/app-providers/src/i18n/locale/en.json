@@ -412,7 +412,10 @@
           "uploadForbidden": "Upload permission denied. Please try again later.",
           "noConnection": "No internet connection. Please check your network.",
           "uploadFailed": "Upload failed: {{error}}",
-          "uploadFailedGeneric": "Failed to upload avatar. Please try again."
+          "uploadFailedGeneric": "Failed to upload avatar. Please try again.",
+          "uploadSuccess": "Avatar uploaded successfully!",
+          "deleteSuccess": "Avatar deleted successfully!",
+          "deleteFailed": "Failed to delete avatar. Please try again."
         }
       },
       "tasks": {

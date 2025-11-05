@@ -36,6 +36,18 @@ export const AvatarUpload = ({ userId, userName }: AvatarUploadProps) => {
   const { mutateAsync: deleteAvatar, isPending: isDeleting } =
     useDeleteAvatar(userId);
 
+  const handleDeleteSuccess = () => {
+    toast.success(t("pages.profile.avatar.deleteSuccess"));
+  };
+
+  const handleDeleteError = () => {
+    toast.error(t("pages.profile.avatar.deleteFailed"));
+  };
+
+  const handleUploadSuccess = () => {
+    toast.success(t("pages.profile.avatar.uploadSuccess"));
+  };
+
   const handleFileSelect = () => {
     fileInputRef.current?.click();
   };
@@ -93,23 +105,45 @@ export const AvatarUpload = ({ userId, userName }: AvatarUploadProps) => {
         blobPath: uploadData.blobPath,
         contentType: file.type,
       });
+
+      handleUploadSuccess();
     } catch (error) {
       console.error("Avatar upload failed:", error);
+      toast.error(t("pages.profile.avatar.uploadFailedGeneric"));
     }
   };
 
   const handleDelete = async () => {
     if (window.confirm(t("pages.profile.avatar.confirmDelete"))) {
-      await deleteAvatar();
+      try {
+        await deleteAvatar();
+        handleDeleteSuccess();
+      } catch (error) {
+        console.error("Failed to delete avatar:", error);
+        handleDeleteError();
+      }
     }
   };
 
   const getInitials = () => {
-    const names = userName.split(" ");
-    if (names.length >= 2) {
+    if (!userName || userName.length === 0) {
+      return "??";
+    }
+
+    const names = userName
+      .trim()
+      .split(" ")
+      .filter((name) => name.length > 0);
+
+    if (names.length >= 2 && names[0].length > 0 && names[1].length > 0) {
       return `${names[0][0]}${names[1][0]}`.toUpperCase();
     }
-    return userName.substring(0, 2).toUpperCase();
+
+    if (userName.length >= 2) {
+      return userName.substring(0, 2).toUpperCase();
+    }
+
+    return userName.length === 1 ? userName.toUpperCase() : "?";
   };
 
   const isLoading =
