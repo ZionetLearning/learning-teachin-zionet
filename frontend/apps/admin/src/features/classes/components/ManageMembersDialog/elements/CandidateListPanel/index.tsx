@@ -15,35 +15,27 @@ import {
   TextField,
   Tooltip,
   Typography,
-  useTheme,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import AddIcon from "@mui/icons-material/PersonAddAlt";
 
 import { type User, type AppRoleType } from "@app-providers";
 import { RoleChip } from "@ui-components";
+import { useStyles } from "./style";
 
 type StudentTeacherRole = Exclude<AppRoleType, "admin">;
 
 type Props = {
-  users: User[]; // only students/teachers (already filtered for "no admin")
+  users: User[];
   memberIdSet: Set<string>;
   selectedIds: Set<string>;
   onToggle: (userId: string) => void;
-
-  // toolbar
   onSelectAll: () => void;
   onClearAll: () => void;
-
-  // actions
   onAddSingle: (userId: string) => void;
   onBatchAdd: () => void;
   pendingAdd: boolean;
-
-  // UX numbers
   addableCount: number;
-
-  // counts for header filters
   roleFilter: StudentTeacherRole | "All";
   setRoleFilter: (r: StudentTeacherRole | "All") => void;
   query: string;
@@ -72,23 +64,24 @@ export const CandidateListPanel = ({
   studentsCount,
   teachersCount,
 }: Props) => {
-  const theme = useTheme();
-
-  const selectedBg = theme.vars?.palette?.primary?.mainChannel
-    ? `rgba(var(--mui-palette-primary-mainChannel)/0.08)`
-    : theme.palette.action.selected;
+  const classes = useStyles();
 
   return (
-    <Box sx={{ flex: 1, minWidth: 320 }}>
+    <Box className={classes.container}>
       {/* Filters */}
-      <Stack direction="row" gap={1} alignItems="center" sx={{ mb: 1 }}>
+      <Stack
+        direction="row"
+        gap={1}
+        alignItems="center"
+        className={classes.filtersRow}
+      >
         <Select
           size="small"
           value={roleFilter}
           onChange={(e) =>
             setRoleFilter(e.target.value as StudentTeacherRole | "All")
           }
-          sx={{ minWidth: 160 }}
+          className={classes.roleSelect}
         >
           <MenuItem value="All">All roles</MenuItem>
           <MenuItem value="student">Students ({studentsCount})</MenuItem>
@@ -100,19 +93,21 @@ export const CandidateListPanel = ({
           placeholder="Search by name / email"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            },
           }}
           fullWidth
         />
       </Stack>
 
       {/* Toolbar */}
-      <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
+      <Box className={classes.toolbarRow}>
         <Button size="small" onClick={onSelectAll}>
           Select all
         </Button>
@@ -127,22 +122,10 @@ export const CandidateListPanel = ({
         >
           Add selected ({addableCount})
         </Button>
-      </Stack>
+      </Box>
 
       {/* List */}
-      <List
-        dense
-        sx={{
-          borderRadius: 2,
-          border: `${theme.palette.divider} 1px solid`,
-          bgcolor:
-            theme.palette.mode === "dark"
-              ? "rgba(255,255,255,0.03)"
-              : "background.paper",
-          maxHeight: 360,
-          overflow: "auto",
-        }}
-      >
+      <List dense className={classes.list}>
         {users.map((u) => {
           const isMember = memberIdSet.has(u.userId);
           const checked = selectedIds.has(u.userId);
@@ -152,6 +135,7 @@ export const CandidateListPanel = ({
             <ListItem
               key={u.userId}
               disablePadding
+              className={`${classes.listItem} ${isMember ? classes.listItemDisabled : ""}`}
               secondaryAction={
                 <Tooltip title={isMember ? "Already in class" : "Add to class"}>
                   <span>
@@ -168,18 +152,13 @@ export const CandidateListPanel = ({
                   </span>
                 </Tooltip>
               }
-              sx={{ opacity: isMember ? 0.55 : 1 }}
             >
               <ListItemButton
                 dense
                 onClick={() => !isMember && onToggle(u.userId)}
-                sx={{
-                  cursor: isMember ? "not-allowed" : "pointer",
-                  bgcolor: checked ? selectedBg : undefined,
-                  pr: 8, // space for secondary action
-                }}
+                className={`${classes.listItemButton} ${checked ? classes.listItemButtonSelected : ""}`}
               >
-                <ListItemIcon sx={{ minWidth: 40 }}>
+                <ListItemIcon className={classes.listItemIcon}>
                   <Checkbox
                     edge="start"
                     checked={checked}
@@ -188,7 +167,6 @@ export const CandidateListPanel = ({
                     disableRipple
                     onClick={(e) => e.stopPropagation()}
                     onChange={() => !isMember && onToggle(u.userId)}
-                    inputProps={{ "aria-labelledby": labelId }}
                   />
                 </ListItemIcon>
 
@@ -208,8 +186,8 @@ export const CandidateListPanel = ({
         })}
 
         {users.length === 0 && (
-          <Box p={2}>
-            <Typography variant="body2" color="text.secondary">
+          <Box className={classes.emptyBox}>
+            <Typography variant="body2" className={classes.emptyText}>
               No users match the current filters.
             </Typography>
           </Box>
