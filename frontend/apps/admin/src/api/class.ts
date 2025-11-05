@@ -94,6 +94,7 @@ export const useGetAllClasses = (): UseQueryResult<ClassSummary[], Error> => {
 
 export const useGetClass = (
   classId: string,
+  { enabled = true }: { enabled?: boolean } = {},
 ): UseQueryResult<GetClassResponse, Error> => {
   return useQuery<GetClassResponse, Error>({
     queryKey: ["class", classId] as const,
@@ -104,6 +105,7 @@ export const useGetClass = (
       );
       return res.data;
     },
+    enabled: enabled && Boolean(classId),
   });
 };
 

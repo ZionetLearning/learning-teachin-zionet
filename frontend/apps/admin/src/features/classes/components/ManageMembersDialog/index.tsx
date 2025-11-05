@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Button,
+  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
@@ -11,6 +12,8 @@ import {
   InputAdornment,
   List,
   ListItem,
+  ListItemButton,
+  ListItemIcon,
   ListItemText,
   MenuItem,
   Select,
@@ -23,6 +26,7 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import AddIcon from "@mui/icons-material/PersonAddAlt";
 import RemoveIcon from "@mui/icons-material/PersonRemove";
+
 import {
   useAddClassMembers,
   useGetClass,
@@ -39,6 +43,8 @@ type Props = {
   onClose: () => void;
 };
 
+type StudentTeacherRole = Exclude<AppRoleType, "admin">;
+
 const getFullName = (u: User) => `${u.firstName} ${u.lastName}`.trim();
 
 export const ManageMembersDialog = ({
@@ -50,78 +56,154 @@ export const ManageMembersDialog = ({
   const theme = useTheme();
   const { user } = useAuth();
 
-  const { data: classData } = useGetClass(classId);
+  // Fetch class ONLY when dialog is open
+  const { data: classData } = useGetClass(classId, { enabled: open });
   const { data: allUsers } = useGetAllUsers();
+
   const { mutate: addMembers, isPending: adding } = useAddClassMembers();
   const { mutate: removeMembers, isPending: removing } =
     useRemoveClassMembers();
 
-  const [roleFilter, setRoleFilter] = useState<
-    Exclude<AppRoleType, "admin"> | "All"
-  >("All");
+  // ---- filters & search ----
+  const [roleFilter, setRoleFilter] = useState<StudentTeacherRole | "All">(
+    "All",
+  );
   const [query, setQuery] = useState("");
 
-  const nonAdminUsers = useMemo(
-    () => (allUsers ?? []).filter((u) => u.role !== "admin"),
+  // ---- multi-selections ----
+  const [selectedCandidateIds, setSelectedCandidateIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [selectedMemberIds, setSelectedMemberIds] = useState<Set<string>>(
+    new Set(),
+  );
+
+  // Clear selections when dialog opens or class changes
+  useEffect(() => {
+    if (!open) return;
+    setSelectedCandidateIds(new Set());
+    setSelectedMemberIds(new Set());
+  }, [open, classId]);
+
+  // Candidates = only students/teachers (no admins)
+  const candidateUsers = useMemo(
+    () =>
+      (allUsers ?? []).filter(
+        (u) => u.role === "student" || u.role === "teacher",
+      ),
     [allUsers],
   );
 
-  // Members set
-  const memberIds = useMemo(
+  // Fast lookup set of current member IDs
+  const memberIdSet = useMemo(
     () => new Set((classData?.members ?? []).map((m) => m.memberId)),
     [classData?.members],
   );
 
-  // Role counts (lowercase roles per AppRoleType)
-  const studentsCount = nonAdminUsers.filter(
+  // Role counts
+  const studentsCount = candidateUsers.filter(
     (u) => u.role === "student",
   ).length;
-  const teachersCount = nonAdminUsers.filter(
+  const teachersCount = candidateUsers.filter(
     (u) => u.role === "teacher",
   ).length;
 
-  // Filter users by role + query
+  // Left list: filtered users
   const filteredUsers = useMemo(() => {
-    return nonAdminUsers
-      .filter((u) => (roleFilter === "All" ? true : u.role === roleFilter))
-      .filter((u) => {
-        if (!query) return true;
-        const q = query.toLowerCase();
-        return (
-          `${u.firstName} ${u.lastName}`.toLowerCase().includes(q) ||
-          u.email.toLowerCase().includes(q)
-        );
-      });
-  }, [nonAdminUsers, roleFilter, query]);
+    const base = candidateUsers.filter((u) =>
+      roleFilter === "All" ? true : u.role === roleFilter,
+    );
+    if (!query) return base;
+    const q = query.toLowerCase();
+    return base.filter(
+      (u) =>
+        getFullName(u).toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q),
+    );
+  }, [candidateUsers, roleFilter, query]);
 
+  // Right list: current members
+  const visibleMembers = useMemo(
+    () => classData?.members ?? [],
+    [classData?.members],
+  );
+
+  // ---- selection helpers ----
+  const toggleCandidate = (userId: string) =>
+    setSelectedCandidateIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(userId)) next.delete(userId);
+      else next.add(userId);
+      return next;
+    });
+
+  const toggleMember = (memberId: string) =>
+    setSelectedMemberIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(memberId)) next.delete(memberId);
+      else next.add(memberId);
+      return next;
+    });
+
+  const selectAllCandidates = () => {
+    const ids = filteredUsers
+      .filter((u) => !memberIdSet.has(u.userId))
+      .map((u) => u.userId);
+    setSelectedCandidateIds(new Set(ids));
+  };
+  const clearAllCandidates = () => setSelectedCandidateIds(new Set());
+
+  const selectAllMembers = () => {
+    const ids = visibleMembers.map((m) => m.memberId);
+    setSelectedMemberIds(new Set(ids));
+  };
+  const clearAllMembers = () => setSelectedMemberIds(new Set());
+
+  // ---- actions ----
   const handleAdd = (ids: string[]) => {
     if (!ids.length) return;
-    addMembers(
-      { classId, userIds: ids, addedBy: user?.userId || "" },
-      { onSuccess: () => {} },
-    );
+    addMembers({ classId, userIds: ids, addedBy: user?.userId || "" });
   };
 
   const handleRemove = (ids: string[]) => {
     if (!ids.length) return;
-    removeMembers({ classId, userIds: ids }, { onSuccess: () => {} });
+    removeMembers({ classId, userIds: ids });
   };
+
+  const handleBatchAdd = () => {
+    const ids = Array.from(selectedCandidateIds).filter(
+      (id) => !memberIdSet.has(id),
+    );
+    if (!ids.length) return;
+    handleAdd(ids);
+    setSelectedCandidateIds(new Set()); // clear selection
+  };
+
+  const handleBatchRemove = () => {
+    const ids = Array.from(selectedMemberIds);
+    if (!ids.length) return;
+    handleRemove(ids);
+    setSelectedMemberIds(new Set()); // clear selection
+  };
+
+  // helper style to highlight selected rows (optional)
+  const selectedBg = theme.vars?.palette?.primary?.mainChannel
+    ? `rgba(var(--mui-palette-primary-mainChannel)/0.08)`
+    : theme.palette.action.selected;
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
       <DialogTitle>Manage Members — {className}</DialogTitle>
       <DialogContent>
         <Stack direction={{ xs: "column", md: "row" }} gap={2} sx={{ mt: 1 }}>
-          {/* Left panel: filters & users */}
+          {/* LEFT: filters & candidates */}
           <Box sx={{ flex: 1, minWidth: 320 }}>
             <Stack direction="row" gap={1} alignItems="center" sx={{ mb: 1 }}>
               <Select
                 size="small"
                 value={roleFilter}
                 onChange={(e) =>
-                  setRoleFilter(
-                    e.target.value as Exclude<AppRoleType, "admin"> | "All",
-                  )
+                  setRoleFilter(e.target.value as StudentTeacherRole | "All")
                 }
                 sx={{ minWidth: 160 }}
               >
@@ -146,6 +228,35 @@ export const ManageMembersDialog = ({
               />
             </Stack>
 
+            {/* Candidate toolbar */}
+            <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
+              <Button size="small" onClick={selectAllCandidates}>
+                Select all
+              </Button>
+              <Button size="small" onClick={clearAllCandidates}>
+                Clear
+              </Button>
+              <Button
+                size="small"
+                variant="contained"
+                onClick={handleBatchAdd}
+                disabled={
+                  adding ||
+                  Array.from(selectedCandidateIds).filter(
+                    (id) => !memberIdSet.has(id),
+                  ).length === 0
+                }
+              >
+                Add selected (
+                {
+                  Array.from(selectedCandidateIds).filter(
+                    (id) => !memberIdSet.has(id),
+                  ).length
+                }
+                )
+              </Button>
+            </Stack>
+
             <List
               dense
               sx={{
@@ -160,57 +271,81 @@ export const ManageMembersDialog = ({
               }}
             >
               {filteredUsers.map((u) => {
-                const isMember = memberIds.has(u.userId);
+                const isMember = memberIdSet.has(u.userId);
+                const checked = selectedCandidateIds.has(u.userId);
+
+                const labelId = `candidate-${u.userId}`;
+
                 return (
                   <ListItem
                     key={u.userId}
+                    disablePadding
                     secondaryAction={
-                      isMember ? (
-                        <Tooltip title="Remove from class">
-                          <span>
-                            <IconButton
-                              edge="end"
-                              onClick={() => handleRemove([u.userId])}
-                              disabled={removing}
-                            >
-                              <RemoveIcon />
-                            </IconButton>
-                          </span>
-                        </Tooltip>
-                      ) : (
-                        <Tooltip title="Add to class">
-                          <span>
-                            <IconButton
-                              edge="end"
-                              onClick={() => handleAdd([u.userId])}
-                              disabled={adding}
-                            >
-                              <AddIcon />
-                            </IconButton>
-                          </span>
-                        </Tooltip>
-                      )
+                      <Tooltip
+                        title={isMember ? "Already in class" : "Add to class"}
+                      >
+                        <span>
+                          <IconButton
+                            edge="end"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!isMember) handleAdd([u.userId]);
+                            }}
+                            disabled={adding || isMember}
+                          >
+                            <AddIcon />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
                     }
+                    sx={{
+                      opacity: isMember ? 0.55 : 1,
+                    }}
                   >
-                    <ListItemText
-                      primary={
-                        <Stack direction="row" gap={1} alignItems="center">
-                          <Typography>{getFullName(u)}</Typography>
-                          <RoleChip
-                            role={u.role}
-                            data-testid="users-role-badge"
-                          />
-                        </Stack>
-                      }
-                      secondary={u.email}
-                    />
+                    <ListItemButton
+                      dense
+                      onClick={() => !isMember && toggleCandidate(u.userId)}
+                      sx={{
+                        cursor: isMember ? "not-allowed" : "pointer",
+                        bgcolor: checked ? selectedBg : undefined,
+                        pr: 8, // space for secondaryAction
+                      }}
+                    >
+                      <ListItemIcon sx={{ minWidth: 40 }}>
+                        <Checkbox
+                          edge="start"
+                          checked={checked}
+                          disabled={isMember}
+                          tabIndex={-1}
+                          disableRipple
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={() =>
+                            !isMember && toggleCandidate(u.userId)
+                          }
+                          inputProps={{ "aria-labelledby": labelId }}
+                        />
+                      </ListItemIcon>
+                      <ListItemText
+                        id={labelId}
+                        primary={
+                          <Stack direction="row" gap={1} alignItems="center">
+                            <Typography>{getFullName(u)}</Typography>
+                            <RoleChip
+                              role={u.role}
+                              data-testid="users-role-badge"
+                            />
+                          </Stack>
+                        }
+                        secondary={u.email}
+                      />
+                    </ListItemButton>
                   </ListItem>
                 );
               })}
 
               {filteredUsers.length === 0 && (
                 <Box p={2}>
-                  <Typography variant="body2">
+                  <Typography variant="body2" color="text.secondary">
                     No users match the current filters.
                   </Typography>
                 </Box>
@@ -220,11 +355,30 @@ export const ManageMembersDialog = ({
 
           <Divider flexItem orientation="vertical" />
 
-          {/* Right panel: current members */}
+          {/* RIGHT: current members */}
           <Box sx={{ flex: 1, minWidth: 320 }}>
             <Typography variant="subtitle1" sx={{ mb: 1 }}>
-              Current Members ({memberIds.size})
+              Current Members ({visibleMembers.length})
             </Typography>
+
+            {/* Members toolbar */}
+            <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
+              <Button size="small" onClick={selectAllMembers}>
+                Select all
+              </Button>
+              <Button size="small" onClick={clearAllMembers}>
+                Clear
+              </Button>
+              <Button
+                size="small"
+                variant="contained"
+                color="error"
+                onClick={handleBatchRemove}
+                disabled={removing || selectedMemberIds.size === 0}
+              >
+                Remove selected ({selectedMemberIds.size})
+              </Button>
+            </Stack>
 
             <List
               dense
@@ -239,40 +393,67 @@ export const ManageMembersDialog = ({
                 overflow: "auto",
               }}
             >
-              {classData?.members.map((u) => (
-                <ListItem
-                  key={u.memberId}
-                  secondaryAction={
-                    <Tooltip title="Remove from class">
-                      <span>
-                        <IconButton
-                          edge="end"
-                          onClick={() => handleRemove([u.memberId])}
-                          disabled={removing}
-                        >
-                          <RemoveIcon />
-                        </IconButton>
-                      </span>
-                    </Tooltip>
-                  }
-                >
-                  <ListItemText
-                    primary={
-                      <Stack direction="row" gap={1} alignItems="center">
-                        <Typography>{u.name}</Typography>
-                        <RoleChip
-                          role={u.role === 1 ? "teacher" : "student"}
-                          data-testid="users-role-badge"
-                        />
-                      </Stack>
-                    }
-                  />
-                </ListItem>
-              ))}
+              {visibleMembers.map((m) => {
+                const checked = selectedMemberIds.has(m.memberId);
+                const labelId = `member-${m.memberId}`;
 
-              {memberIds.size === 0 && (
+                return (
+                  <ListItem
+                    key={m.memberId}
+                    disablePadding
+                    secondaryAction={
+                      <Tooltip title="Remove from class">
+                        <span>
+                          <IconButton
+                            edge="end"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemove([m.memberId]);
+                            }}
+                            disabled={removing}
+                          >
+                            <RemoveIcon />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                    }
+                  >
+                    <ListItemButton
+                      dense
+                      onClick={() => toggleMember(m.memberId)}
+                      sx={{ pr: 8, bgcolor: checked ? selectedBg : undefined }}
+                    >
+                      <ListItemIcon sx={{ minWidth: 40 }}>
+                        <Checkbox
+                          edge="start"
+                          checked={checked}
+                          tabIndex={-1}
+                          disableRipple
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={() => toggleMember(m.memberId)}
+                          inputProps={{ "aria-labelledby": labelId }}
+                        />
+                      </ListItemIcon>
+                      <ListItemText
+                        id={labelId}
+                        primary={
+                          <Stack direction="row" gap={1} alignItems="center">
+                            <Typography>{m.name}</Typography>
+                            <RoleChip
+                              role={m.role === 1 ? "teacher" : "student"}
+                              data-testid="users-role-badge"
+                            />
+                          </Stack>
+                        }
+                      />
+                    </ListItemButton>
+                  </ListItem>
+                );
+              })}
+
+              {visibleMembers.length === 0 && (
                 <Box p={2}>
-                  <Typography variant="body2">
+                  <Typography variant="body2" color="text.secondary">
                     This class has no members yet.
                   </Typography>
                 </Box>
