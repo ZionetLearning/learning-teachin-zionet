@@ -58,36 +58,13 @@ export type BasicMessageResponse = {
 
 const CLASSES_BASE_URL = import.meta.env.VITE_CLASSES_MANAGER_URL;
 
-// NOT SUPPORTED YET BY THE BACKEND
-// export const useGetAllClasses = (): UseQueryResult<ClassSummary[], Error> => {
-//   return useQuery<ClassSummary[], Error>({
-//     queryKey: ["classes"],
-//     staleTime: 60_000,
-//     queryFn: async () => {
-//       const res = await axios.get<ClassSummary[]>(`${CLASSES_BASE_URL}`);
-//       return res.data;
-//     },
-//   });
-// };
-
-const TEMP_CLASS_ID = "3f0d707b-743d-42f0-8de5-19ed0ec3df99";
-
-// FAKE getAllClasses implementation until backend is ready
 export const useGetAllClasses = (): UseQueryResult<ClassSummary[], Error> => {
   return useQuery<ClassSummary[], Error>({
     queryKey: ["classes"],
+    staleTime: 60_000,
     queryFn: async () => {
-      const res = await axios.get<GetClassResponse>(
-        `${CLASSES_BASE_URL}/${encodeURIComponent(TEMP_CLASS_ID)}`,
-      );
-      const cls = res.data;
-      // Map to summary shape; members may not be present on some endpoints
-      const summary: ClassSummary = {
-        classId: cls.classId,
-        name: cls.name,
-        members: cls.members, // optional in type, safe to pass if present
-      };
-      return [summary];
+      const res = await axios.get<ClassSummary[]>(`${CLASSES_BASE_URL}`);
+      return res.data;
     },
   });
 };
@@ -122,12 +99,12 @@ export const useCreateClass = () => {
     },
     onSuccess: (created) => {
       toast.success("Class created successfully.");
-      // refresh cache for this class
       qc.setQueryData<GetClassResponse>(["class", created.classId], {
         classId: created.classId,
         name: created.name,
         members: [],
       });
+      qc.invalidateQueries({ queryKey: ["classes"] });
     },
     onError: (error) => {
       console.error("Failed to create class:", error);
@@ -148,6 +125,7 @@ export const useDeleteClass = () => {
       toast.success("Class deleted.");
       // Invalidate any cached copies of this class
       qc.invalidateQueries({ queryKey: ["class", classId] });
+      qc.invalidateQueries({ queryKey: ["classes"] });
     },
     onError: (error) => {
       console.error("Failed to delete class:", error);
@@ -170,7 +148,6 @@ export const useAddClassMembers = () => {
     },
     onSuccess: (_msg, { classId }) => {
       toast.success("Members added successfully.");
-      // Just refetch the class to get full member objects
       qc.invalidateQueries({ queryKey: ["class", classId] });
       qc.invalidateQueries({ queryKey: ["classes"] });
     },
@@ -197,7 +174,6 @@ export const useRemoveClassMembers = () => {
     onSuccess: (_msg, { classId, userIds }) => {
       toast.success("Members removed successfully.");
 
-      // Optimistically update cache: remove by memberId
       qc.setQueryData<GetClassResponse | undefined>(
         ["class", classId],
         (prev) => {
