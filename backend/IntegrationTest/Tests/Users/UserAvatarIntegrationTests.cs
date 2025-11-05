@@ -26,9 +26,10 @@ public class UserAvatarIntegrationTests(
     [Fact(DisplayName = "Avatar: POST upload-url returns SAS and blobPath")]
     public async Task UploadUrl_Should_Return_Sas_And_Path()
     {
-        var user = await CreateUserAsync();
+        var userInfo = ClientFixture.GetUserInfo(Role.Admin);
+
         await ClientFixture.LoginAsync(Role.Admin);
-        var url = $"{ApiRoutes.AvatarUploadUrl(user.UserId)}";
+        var url = $"{ApiRoutes.AvatarUploadUrl(userInfo.UserId)}";
 
         var req = new
         {
@@ -47,7 +48,7 @@ public class UserAvatarIntegrationTests(
         Assert.False(string.IsNullOrWhiteSpace(uploadUrl));
         Assert.False(string.IsNullOrWhiteSpace(blobPath));
         Assert.NotNull(blobPath);
-        Assert.Contains(user.UserId.ToString("D"), blobPath);
+        Assert.Contains(userInfo.UserId.ToString("D"), blobPath);
         Assert.Contains("avatar_v", blobPath);
         Assert.NotNull(uploadUrl);
         Assert.Contains(blobPath, uploadUrl);
@@ -194,10 +195,12 @@ public class UserAvatarIntegrationTests(
     [Fact(DisplayName = "Avatar: confirm should reject wrong blobPath prefix")]
     public async Task Confirm_Should_Reject_Invalid_BlobPath_Prefix()
     {
-        var user = await CreateUserAsync();
+        var userInfo = ClientFixture.GetUserInfo(Role.Admin);
+
+        await ClientFixture.LoginAsync(Role.Admin);
 
         var confirmReq = new { blobPath = $"some-other-user/avatar_v123.png", contentType = ContentTypePng };
-        var resp = await Client.PostAsJsonAsync($"{ApiRoutes.AvatarConfirm(user.UserId)}", confirmReq);
+        var resp = await Client.PostAsJsonAsync($"{ApiRoutes.AvatarConfirm(userInfo.UserId)}", confirmReq);
 
         Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
     }
@@ -222,10 +225,12 @@ public class UserAvatarIntegrationTests(
     [Fact(DisplayName = "Avatar: upload-url rejects unsupported content-type")]
     public async Task UploadUrl_Should_Reject_Unsupported_ContentType()
     {
-        var user = await CreateUserAsync();
+        var userInfo = ClientFixture.GetUserInfo(Role.Admin);
+
+        await ClientFixture.LoginAsync(Role.Admin);
 
         var body = new { contentType = "image/gif", sizeBytes = (long?)1234 };
-        var resp = await Client.PostAsJsonAsync($"{ApiRoutes.AvatarUploadUrl(user.UserId)}", body);
+        var resp = await Client.PostAsJsonAsync($"{ApiRoutes.AvatarUploadUrl(userInfo.UserId)}", body);
 
         Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
     }
@@ -233,11 +238,13 @@ public class UserAvatarIntegrationTests(
     [Fact(DisplayName = "Avatar: upload-url rejects size > MaxBytes")]
     public async Task UploadUrl_Should_Reject_Too_Large()
     {
-        var user = await CreateUserAsync();
+        var userInfo = ClientFixture.GetUserInfo(Role.Admin);
+
+        await ClientFixture.LoginAsync(Role.Admin);
 
         // > 10 MB
         var body = new { contentType = ContentTypePng, sizeBytes = (long?)(30 * 1024 * 1024) };
-        var resp = await Client.PostAsJsonAsync($"{ApiRoutes.AvatarUploadUrl(user.UserId)}", body);
+        var resp = await Client.PostAsJsonAsync($"{ApiRoutes.AvatarUploadUrl(userInfo.UserId)}", body);
 
         Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
     }
