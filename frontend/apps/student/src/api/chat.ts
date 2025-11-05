@@ -23,7 +23,6 @@ export const useSendChatMessageStream = () => {
       userMessage,
       threadId = crypto.randomUUID(),
       chatType = "default",
-      userId,
     }: SendMessageRequest,
     onDelta: (delta: string) => void,
     onCompleted: (final: AIChatStreamResponse) => void,
@@ -38,7 +37,7 @@ export const useSendChatMessageStream = () => {
       // Start the request
       const { data } = await axios.post<{ requestId: string }>(
         `${AI_BASE_URL}/chat`,
-        { userMessage, threadId, chatType, userId },
+        { userMessage, threadId, chatType },
       );
 
       const requestId = data.requestId;

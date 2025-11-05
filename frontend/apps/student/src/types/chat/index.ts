@@ -2,7 +2,7 @@ export type SendMessageRequest = {
   userMessage: string;
   threadId?: string;
   chatType?: "default" | string;
-  userId: string;
+  userId?: string;
 };
 
 export type SendMessageResponse = {
