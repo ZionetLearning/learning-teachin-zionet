@@ -1,4 +1,4 @@
-name: Unit tests (selective)
+name: Backend - Unit tests (selective)
 
 on:
   pull_request:
@@ -17,7 +17,7 @@ jobs:
       engine:   ${{ steps.filter.outputs.engine }}
       manager:  ${{ steps.filter.outputs.manager }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with: { fetch-depth: 0 }
 
       - name: Detect changed areas
@@ -41,7 +41,7 @@ jobs:
     if: ${{ needs.detect.outputs.accessor == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.x'
@@ -57,7 +57,7 @@ jobs:
     if: ${{ needs.detect.outputs.engine == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.x'
@@ -73,7 +73,7 @@ jobs:
     if: ${{ needs.detect.outputs.manager == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.x'

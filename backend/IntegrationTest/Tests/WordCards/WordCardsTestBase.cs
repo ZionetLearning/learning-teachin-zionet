@@ -73,4 +73,5 @@ public abstract class WordCardsTestBase(
         result.Should().NotBeNull();
         return result!;
     }
+
 }

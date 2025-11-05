@@ -264,6 +264,7 @@ app.MapMediaEndpoints();
 app.MapWordCardsEndpoints();
 app.MapClassesEndpoints();
 app.MapMeetingsEndpoints();
+app.MapGameConfigEndpoints();
 
 app.MapStatsPing();
 if (env.IsDevelopment())
