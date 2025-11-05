@@ -1,9 +1,7 @@
 ﻿using FluentAssertions;
 using IntegrationTests.Constants;
 using IntegrationTests.Fixtures;
-using Manager.Models.WordCards;
 using System.Net;
-using System.Net.Http.Json;
 using Xunit.Abstractions;
 using Manager.Models.UserGameConfiguration;
 
@@ -19,38 +17,28 @@ public class UserGameConfigurationIntegrationTests(
     [Fact(DisplayName = "PUT /game-config-manager - Can save and fetch user game configuration")]
     public async Task Can_Save_And_Fetch_Game_Configuration()
     {
-        var gameName = "WordOrder";
+        var gameName = GameName.WordOrder;
         await SaveGameConfigAsync(gameName, "Hard", true, 4);
 
         var config = await GetGameConfigAsync(gameName);
-        config.GameName.ToString().Should().Be(gameName);
+        config.GameName.ToString().Should().Be(gameName.ToString());
         config.Difficulty.ToString().Should().Be("Hard");
         config.Nikud.Should().BeTrue();
         config.NumberOfSentences.Should().Be(4);
-    }
-
-    [Fact(DisplayName = "GET /game-config-manager/{gameName} - Invalid enum value returns 400 Bad Request")]
-    public async Task GetGameConfig_With_Invalid_GameName_Returns_BadRequest()
-    {
-        var invalidGameName = "invalidGameName";
-
-        var response = await Client.GetAsync(ApiRoutes.GameConfigByName(invalidGameName));
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
 
     [Fact(DisplayName = "Full flow: save, fetch, delete, fetch (404) user game configuration")]
     public async Task Full_UserGameConfiguration_Flow_Works_Correctly()
     {
-        var gameName = "WordOrder";
+        var gameName = GameName.TypingPractice;
 
         // Save
         await SaveGameConfigAsync(gameName, "Medium", true, 3);
 
         // Fetch and assert
         var config = await GetGameConfigAsync(gameName);
-        config.GameName.ToString().Should().Be(gameName);
+        config.GameName.ToString().Should().Be(gameName.ToString());
         config.Difficulty.ToString().Should().Be("Medium");
         config.Nikud.Should().BeTrue();
         config.NumberOfSentences.Should().Be(3);

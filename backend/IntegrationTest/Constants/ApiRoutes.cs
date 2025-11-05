@@ -1,3 +1,5 @@
+using Manager.Models.UserGameConfiguration;
+
 namespace IntegrationTests.Constants;
 
 public static class ApiRoutes
@@ -49,7 +51,7 @@ public static class ApiRoutes
 
     // -------- User Game Config --------
     public const string GameConfig = "game-config-manager";
-    public static string GameConfigByName(string gameName) => $"game-config-manager/{gameName}";
+    public static string GameConfigByName(GameName gameName) => $"game-config-manager/{gameName}";
 
 
 

@@ -27,7 +27,7 @@ public abstract class UserGameConfigurationTestBase(
     /// <summary>
     /// Saves a game configuration for the current user via PUT.
     /// </summary>
-    protected async Task<HttpResponseMessage> SaveGameConfigAsync(string gameName, string difficulty = "Medium", bool nikud = true, int numberOfSentences = 3)
+    protected async Task<HttpResponseMessage> SaveGameConfigAsync(GameName gameName, string difficulty = "Medium", bool nikud = true, int numberOfSentences = 3)
     {
         var payload = new
         {
@@ -43,7 +43,7 @@ public abstract class UserGameConfigurationTestBase(
     /// <summary>
     /// Fetches the game configuration for the current user via GET.
     /// </summary>
-    protected async Task<UserNewGameConfig> GetGameConfigAsync(string gameName)
+    protected async Task<UserNewGameConfig> GetGameConfigAsync(GameName gameName)
     {
         var response = await Client.GetAsync(ApiRoutes.GameConfigByName(gameName));
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -52,15 +52,4 @@ public abstract class UserGameConfigurationTestBase(
         config.Should().NotBeNull();
         return config!;
     }
-
-    //public override async ValueTask DisposeAsync()
-    //{
-    //    await base.DisposeAsync();
-
-    //    using var scope = ClientFixture.Services.CreateScope();
-    //    var db = scope.ServiceProvider.GetRequiredService<AccessorDbContext>();
-
-    //    db.UserGameConfigs.RemoveRange(db.UserGameConfigs);
-    //    await db.SaveChangesAsync();
-    //}
 }
