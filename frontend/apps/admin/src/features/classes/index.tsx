@@ -27,10 +27,12 @@ import { useTranslation } from "react-i18next";
 import { useStyles } from "./style";
 
 export const Classes = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const classes = useStyles();
   const { data, isLoading, isError } = useGetAllClasses();
   const { mutate: deleteClass } = useDeleteClass();
+
+  const isRTL = i18n.dir() === "rtl";
 
   const [createOpen, setCreateOpen] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
@@ -54,12 +56,17 @@ export const Classes = () => {
       </Toolbar>
 
       <TableContainer component={Paper} className={classes.tableContainer}>
-        <Table>
+        <Table sx={{ direction: isRTL ? "rtl" : "ltr" }}>
           <TableHead className={classes.tableHead}>
             <TableRow>
-              <TableCell>{t("pages.classes.name")}</TableCell>
-              <TableCell>{t("pages.classes.members")}</TableCell>
-              <TableCell className={classes.actionsCell}>
+              <TableCell align="left" sx={{ textAlign: "start" }}>
+                {t("pages.classes.name")}
+              </TableCell>
+              <TableCell align="center">{t("pages.classes.members")}</TableCell>
+              <TableCell
+                className={classes.actionsCell}
+                align={isRTL ? "left" : "right"}
+              >
                 {t("pages.classes.actions")}
               </TableCell>
             </TableRow>
@@ -94,7 +101,10 @@ export const Classes = () => {
               <TableRow key={cls.classId} className={classes.row} hover>
                 <TableCell>{cls.name}</TableCell>
                 <TableCell>{cls.members?.length ?? "—"}</TableCell>
-                <TableCell className={classes.actionsCell}>
+                <TableCell
+                  className={classes.actionsCell}
+                  align={isRTL ? "left" : "right"}
+                >
                   <Tooltip title={t("pages.classes.manageMembers")}>
                     <IconButton
                       className={classes.iconButton}
@@ -106,7 +116,6 @@ export const Classes = () => {
                       <GroupIcon />
                     </IconButton>
                   </Tooltip>
-
                   <Tooltip title={t("pages.classes.deleteClass")}>
                     <span>
                       <IconButton

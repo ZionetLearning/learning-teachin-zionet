@@ -69,16 +69,17 @@ export const useStyles = () => {
         backgroundColor: headerHover,
         color: color.text,
         borderBottom: `1px solid ${color.divider}`,
+        textAlign: "start",
         "@media (max-width: 600px)": {
           fontSize: 13,
           paddingBlock: 10,
         },
       },
     },
-
     tableBody: {
       "& td": {
         borderBottom: `1px solid ${color.divider}`,
+        textAlign: "start",
         "@media (max-width: 600px)": {
           fontSize: 13,
           paddingBlock: 10,
