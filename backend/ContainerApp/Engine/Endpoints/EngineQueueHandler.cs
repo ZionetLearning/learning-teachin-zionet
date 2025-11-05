@@ -502,7 +502,6 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
             getSystemPromptTime = sw.ElapsedMilliseconds;
             var mistakeExplanationPrompt = await BuildMistakeExplanationPromptAsync(attemptDetails, request.GameType, lang, ct);
-            _logger.LogInformation("Prompt: {Prompt}", mistakeExplanationPrompt);
             storyForKernel.AddUserMessage(mistakeExplanationPrompt, DateTimeOffset.UtcNow);
 
             getMistakePromptTime = sw.ElapsedMilliseconds;
@@ -748,7 +747,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
                 3. Tips to avoid this mistake in the future
 
                 Be encouraging and focus on learning rather than just pointing out the error.
-                Use language {lang} to answer.
+                Use only language with this code: {lang} for an answer.
                 """;
         }
     }
