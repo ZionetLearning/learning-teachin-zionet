@@ -75,7 +75,7 @@ public class MeetingsIntegrationTests(
         var teacher = await LoginAsAsync(Role.Teacher);
         var student1 = ClientFixture.GetUserInfo(Role.Student);
         
-        var (student2Email, student2Token) = await ClientFixture.CreateEphemeralUserAsync(Role.Student);
+        var (_, student2Token) = await ClientFixture.CreateEphemeralUserAsync(Role.Student);
         var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
         var jwtToken = handler.ReadJwtToken(student2Token);
         var student2Id = Guid.Parse(jwtToken.Claims.First(c => c.Type == TestConstants.UserId).Value);
@@ -355,8 +355,7 @@ public class MeetingsIntegrationTests(
         var teacher = await LoginAsAsync(Role.Teacher);
         var meeting = await CreateMeetingAsync(teacher);
         
-        // Create student who is not a participant
-        var (otherStudentEmail, otherStudentToken) = await ClientFixture.CreateEphemeralUserAsync(Role.Student);
+        var _ = await LoginAsAsync(Role.Student); // Student is not an attendee
 
         // Act
         var acsToken = await GenerateTokenForMeetingAsync(meeting.Id);
