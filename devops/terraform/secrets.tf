@@ -134,19 +134,19 @@ resource "azurerm_key_vault_secret" "langfuse_direct_url" {
 # Langfuse API Keys - Global/Shared for all environments
 ########################
 resource "azurerm_key_vault_secret" "langfuse_baseurl" {
-  name         = "langfuse-baseurl"
+  name         = "${var.environment_name}-langfuse-baseurl"
   value        = "https://teachin.westeurope.cloudapp.azure.com/langfuse"
   key_vault_id = data.azurerm_key_vault.shared.id
 }
 
 resource "azurerm_key_vault_secret" "langfuse_public_key" {
-  name         = "langfuse-public-key"
+  name         = "${var.environment_name}-langfuse-public-key"
   value        = "pk-lf-78a4be40-1031-43d6-b2a0-4b1cf15f8ff6"
   key_vault_id = data.azurerm_key_vault.shared.id
 }
 
 resource "azurerm_key_vault_secret" "langfuse_secret_key" {
-  name         = "langfuse-secret-key"
+  name         = "${var.environment_name}-langfuse-secret-key"
   value        = "sk-lf-7e889621-246f-4bdb-8954-d298ef5d67a1"
   key_vault_id = data.azurerm_key_vault.shared.id
 }
