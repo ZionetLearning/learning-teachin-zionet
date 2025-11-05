@@ -1,31 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  Box,
   Button,
-  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   Divider,
-  IconButton,
-  InputAdornment,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  MenuItem,
-  Select,
   Stack,
-  TextField,
-  Tooltip,
-  Typography,
-  useTheme,
 } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
-import AddIcon from "@mui/icons-material/PersonAddAlt";
-import RemoveIcon from "@mui/icons-material/PersonRemove";
 
 import {
   useAddClassMembers,
@@ -34,7 +16,8 @@ import {
   useGetAllUsers,
 } from "@admin/api";
 import { type User, type AppRoleType, useAuth } from "@app-providers";
-import { RoleChip } from "@ui-components";
+
+import { CandidateListPanel, ClassMembersListPanel } from "./elements";
 
 type Props = {
   open: boolean;
@@ -53,10 +36,9 @@ export const ManageMembersDialog = ({
   className,
   onClose,
 }: Props) => {
-  const theme = useTheme();
   const { user } = useAuth();
 
-  // Fetch class ONLY when dialog is open
+  // fetch only when dialog open
   const { data: classData } = useGetClass(classId, { enabled: open });
   const { data: allUsers } = useGetAllUsers();
 
@@ -64,13 +46,13 @@ export const ManageMembersDialog = ({
   const { mutate: removeMembers, isPending: removing } =
     useRemoveClassMembers();
 
-  // ---- filters & search ----
+  // filters
   const [roleFilter, setRoleFilter] = useState<StudentTeacherRole | "All">(
     "All",
   );
   const [query, setQuery] = useState("");
 
-  // ---- multi-selections ----
+  // selections
   const [selectedCandidateIds, setSelectedCandidateIds] = useState<Set<string>>(
     new Set(),
   );
@@ -78,14 +60,14 @@ export const ManageMembersDialog = ({
     new Set(),
   );
 
-  // Clear selections when dialog opens or class changes
+  // reset selections when open/class changes
   useEffect(() => {
     if (!open) return;
     setSelectedCandidateIds(new Set());
     setSelectedMemberIds(new Set());
   }, [open, classId]);
 
-  // Candidates = only students/teachers (no admins)
+  // data shaping
   const candidateUsers = useMemo(
     () =>
       (allUsers ?? []).filter(
@@ -94,13 +76,11 @@ export const ManageMembersDialog = ({
     [allUsers],
   );
 
-  // Fast lookup set of current member IDs
   const memberIdSet = useMemo(
     () => new Set((classData?.members ?? []).map((m) => m.memberId)),
     [classData?.members],
   );
 
-  // Role counts
   const studentsCount = candidateUsers.filter(
     (u) => u.role === "student",
   ).length;
@@ -108,11 +88,11 @@ export const ManageMembersDialog = ({
     (u) => u.role === "teacher",
   ).length;
 
-  // Left list: filtered users
   const filteredUsers = useMemo(() => {
-    const base = candidateUsers.filter((u) =>
-      roleFilter === "All" ? true : u.role === roleFilter,
-    );
+    const base =
+      roleFilter === "All"
+        ? candidateUsers
+        : candidateUsers.filter((u) => u.role === roleFilter);
     if (!query) return base;
     const q = query.toLowerCase();
     return base.filter(
@@ -122,13 +102,12 @@ export const ManageMembersDialog = ({
     );
   }, [candidateUsers, roleFilter, query]);
 
-  // Right list: current members
   const visibleMembers = useMemo(
     () => classData?.members ?? [],
     [classData?.members],
   );
 
-  // ---- selection helpers ----
+  // toggle handlers
   const toggleCandidate = (userId: string) =>
     setSelectedCandidateIds((prev) => {
       const next = new Set(prev);
@@ -145,6 +124,7 @@ export const ManageMembersDialog = ({
       return next;
     });
 
+  // select/clear all
   const selectAllCandidates = () => {
     const ids = filteredUsers
       .filter((u) => !memberIdSet.has(u.userId))
@@ -159,12 +139,11 @@ export const ManageMembersDialog = ({
   };
   const clearAllMembers = () => setSelectedMemberIds(new Set());
 
-  // ---- actions ----
+  // actions
   const handleAdd = (ids: string[]) => {
     if (!ids.length) return;
     addMembers({ classId, userIds: ids, addedBy: user?.userId || "" });
   };
-
   const handleRemove = (ids: string[]) => {
     if (!ids.length) return;
     removeMembers({ classId, userIds: ids });
@@ -176,290 +155,59 @@ export const ManageMembersDialog = ({
     );
     if (!ids.length) return;
     handleAdd(ids);
-    setSelectedCandidateIds(new Set()); // clear selection
+    setSelectedCandidateIds(new Set());
   };
-
   const handleBatchRemove = () => {
     const ids = Array.from(selectedMemberIds);
     if (!ids.length) return;
     handleRemove(ids);
-    setSelectedMemberIds(new Set()); // clear selection
+    setSelectedMemberIds(new Set());
   };
 
-  // helper style to highlight selected rows (optional)
-  const selectedBg = theme.vars?.palette?.primary?.mainChannel
-    ? `rgba(var(--mui-palette-primary-mainChannel)/0.08)`
-    : theme.palette.action.selected;
+  // count of selected addable candidates (not already in class)
+  const addableCount = useMemo(
+    () =>
+      Array.from(selectedCandidateIds).filter((id) => !memberIdSet.has(id))
+        .length,
+    [selectedCandidateIds, memberIdSet],
+  );
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
       <DialogTitle>Manage Members — {className}</DialogTitle>
       <DialogContent>
         <Stack direction={{ xs: "column", md: "row" }} gap={2} sx={{ mt: 1 }}>
-          {/* LEFT: filters & candidates */}
-          <Box sx={{ flex: 1, minWidth: 320 }}>
-            <Stack direction="row" gap={1} alignItems="center" sx={{ mb: 1 }}>
-              <Select
-                size="small"
-                value={roleFilter}
-                onChange={(e) =>
-                  setRoleFilter(e.target.value as StudentTeacherRole | "All")
-                }
-                sx={{ minWidth: 160 }}
-              >
-                <MenuItem value="All">All roles</MenuItem>
-                <MenuItem value="student">Students ({studentsCount})</MenuItem>
-                <MenuItem value="teacher">Teachers ({teachersCount})</MenuItem>
-              </Select>
-
-              <TextField
-                size="small"
-                placeholder="Search by name / email"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon />
-                    </InputAdornment>
-                  ),
-                }}
-                fullWidth
-              />
-            </Stack>
-
-            {/* Candidate toolbar */}
-            <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
-              <Button size="small" onClick={selectAllCandidates}>
-                Select all
-              </Button>
-              <Button size="small" onClick={clearAllCandidates}>
-                Clear
-              </Button>
-              <Button
-                size="small"
-                variant="contained"
-                onClick={handleBatchAdd}
-                disabled={
-                  adding ||
-                  Array.from(selectedCandidateIds).filter(
-                    (id) => !memberIdSet.has(id),
-                  ).length === 0
-                }
-              >
-                Add selected (
-                {
-                  Array.from(selectedCandidateIds).filter(
-                    (id) => !memberIdSet.has(id),
-                  ).length
-                }
-                )
-              </Button>
-            </Stack>
-
-            <List
-              dense
-              sx={{
-                borderRadius: 2,
-                border: `${theme.palette.divider} 1px solid`,
-                bgcolor:
-                  theme.palette.mode === "dark"
-                    ? "rgba(255,255,255,0.03)"
-                    : "background.paper",
-                maxHeight: 360,
-                overflow: "auto",
-              }}
-            >
-              {filteredUsers.map((u) => {
-                const isMember = memberIdSet.has(u.userId);
-                const checked = selectedCandidateIds.has(u.userId);
-
-                const labelId = `candidate-${u.userId}`;
-
-                return (
-                  <ListItem
-                    key={u.userId}
-                    disablePadding
-                    secondaryAction={
-                      <Tooltip
-                        title={isMember ? "Already in class" : "Add to class"}
-                      >
-                        <span>
-                          <IconButton
-                            edge="end"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (!isMember) handleAdd([u.userId]);
-                            }}
-                            disabled={adding || isMember}
-                          >
-                            <AddIcon />
-                          </IconButton>
-                        </span>
-                      </Tooltip>
-                    }
-                    sx={{
-                      opacity: isMember ? 0.55 : 1,
-                    }}
-                  >
-                    <ListItemButton
-                      dense
-                      onClick={() => !isMember && toggleCandidate(u.userId)}
-                      sx={{
-                        cursor: isMember ? "not-allowed" : "pointer",
-                        bgcolor: checked ? selectedBg : undefined,
-                        pr: 8, // space for secondaryAction
-                      }}
-                    >
-                      <ListItemIcon sx={{ minWidth: 40 }}>
-                        <Checkbox
-                          edge="start"
-                          checked={checked}
-                          disabled={isMember}
-                          tabIndex={-1}
-                          disableRipple
-                          onClick={(e) => e.stopPropagation()}
-                          onChange={() =>
-                            !isMember && toggleCandidate(u.userId)
-                          }
-                          inputProps={{ "aria-labelledby": labelId }}
-                        />
-                      </ListItemIcon>
-                      <ListItemText
-                        id={labelId}
-                        primary={
-                          <Stack direction="row" gap={1} alignItems="center">
-                            <Typography>{getFullName(u)}</Typography>
-                            <RoleChip
-                              role={u.role}
-                              data-testid="users-role-badge"
-                            />
-                          </Stack>
-                        }
-                        secondary={u.email}
-                      />
-                    </ListItemButton>
-                  </ListItem>
-                );
-              })}
-
-              {filteredUsers.length === 0 && (
-                <Box p={2}>
-                  <Typography variant="body2" color="text.secondary">
-                    No users match the current filters.
-                  </Typography>
-                </Box>
-              )}
-            </List>
-          </Box>
+          <CandidateListPanel
+            users={filteredUsers}
+            memberIdSet={memberIdSet}
+            selectedIds={selectedCandidateIds}
+            onToggle={toggleCandidate}
+            onSelectAll={selectAllCandidates}
+            onClearAll={clearAllCandidates}
+            onAddSingle={(id) => handleAdd([id])}
+            onBatchAdd={handleBatchAdd}
+            pendingAdd={adding}
+            addableCount={addableCount}
+            roleFilter={roleFilter}
+            setRoleFilter={setRoleFilter}
+            query={query}
+            setQuery={setQuery}
+            studentsCount={studentsCount}
+            teachersCount={teachersCount}
+          />
 
           <Divider flexItem orientation="vertical" />
 
-          {/* RIGHT: current members */}
-          <Box sx={{ flex: 1, minWidth: 320 }}>
-            <Typography variant="subtitle1" sx={{ mb: 1 }}>
-              Current Members ({visibleMembers.length})
-            </Typography>
-
-            {/* Members toolbar */}
-            <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
-              <Button size="small" onClick={selectAllMembers}>
-                Select all
-              </Button>
-              <Button size="small" onClick={clearAllMembers}>
-                Clear
-              </Button>
-              <Button
-                size="small"
-                variant="contained"
-                color="error"
-                onClick={handleBatchRemove}
-                disabled={removing || selectedMemberIds.size === 0}
-              >
-                Remove selected ({selectedMemberIds.size})
-              </Button>
-            </Stack>
-
-            <List
-              dense
-              sx={{
-                borderRadius: 2,
-                border: `${theme.palette.divider} 1px solid`,
-                bgcolor:
-                  theme.palette.mode === "dark"
-                    ? "rgba(255,255,255,0.03)"
-                    : "background.paper",
-                maxHeight: 360,
-                overflow: "auto",
-              }}
-            >
-              {visibleMembers.map((m) => {
-                const checked = selectedMemberIds.has(m.memberId);
-                const labelId = `member-${m.memberId}`;
-
-                return (
-                  <ListItem
-                    key={m.memberId}
-                    disablePadding
-                    secondaryAction={
-                      <Tooltip title="Remove from class">
-                        <span>
-                          <IconButton
-                            edge="end"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRemove([m.memberId]);
-                            }}
-                            disabled={removing}
-                          >
-                            <RemoveIcon />
-                          </IconButton>
-                        </span>
-                      </Tooltip>
-                    }
-                  >
-                    <ListItemButton
-                      dense
-                      onClick={() => toggleMember(m.memberId)}
-                      sx={{ pr: 8, bgcolor: checked ? selectedBg : undefined }}
-                    >
-                      <ListItemIcon sx={{ minWidth: 40 }}>
-                        <Checkbox
-                          edge="start"
-                          checked={checked}
-                          tabIndex={-1}
-                          disableRipple
-                          onClick={(e) => e.stopPropagation()}
-                          onChange={() => toggleMember(m.memberId)}
-                          inputProps={{ "aria-labelledby": labelId }}
-                        />
-                      </ListItemIcon>
-                      <ListItemText
-                        id={labelId}
-                        primary={
-                          <Stack direction="row" gap={1} alignItems="center">
-                            <Typography>{m.name}</Typography>
-                            <RoleChip
-                              role={m.role === 1 ? "teacher" : "student"}
-                              data-testid="users-role-badge"
-                            />
-                          </Stack>
-                        }
-                      />
-                    </ListItemButton>
-                  </ListItem>
-                );
-              })}
-
-              {visibleMembers.length === 0 && (
-                <Box p={2}>
-                  <Typography variant="body2" color="text.secondary">
-                    This class has no members yet.
-                  </Typography>
-                </Box>
-              )}
-            </List>
-          </Box>
+          <ClassMembersListPanel
+            members={visibleMembers}
+            selectedIds={selectedMemberIds}
+            onToggle={toggleMember}
+            onSelectAll={selectAllMembers}
+            onClearAll={clearAllMembers}
+            onRemoveSingle={(id) => handleRemove([id])}
+            onBatchRemove={handleBatchRemove}
+            pendingRemove={removing}
+          />
         </Stack>
       </DialogContent>
 
