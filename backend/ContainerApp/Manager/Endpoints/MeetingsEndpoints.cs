@@ -1,10 +1,12 @@
 using System.Security.Claims;
 using Manager.Constants;
+using Manager.Helpers;
 using Manager.Models.Meetings;
 using Manager.Models.ModelValidation;
 using Manager.Models.Users;
 using Manager.Services.Clients.Accessor;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace Manager.Endpoints;
 
@@ -137,6 +139,7 @@ public static class MeetingsEndpoints
     private static async Task<IResult> CreateMeetingAsync(
         [FromBody] CreateMeetingRequest request,
         [FromServices] IMeetingAccessorClient meetingAccessorClient,
+        [FromServices] IOptions<MeetingOptions> meetingOptions,
         [FromServices] ILogger<MeetingsEndpoint> logger,
         HttpContext httpContext,
         CancellationToken ct)
@@ -151,6 +154,13 @@ public static class MeetingsEndpoints
         {
             logger.LogWarning("Validation failed for {Model}: {Errors}", nameof(CreateMeetingRequest), validationErrors);
             return Results.BadRequest(new { errors = validationErrors });
+        }
+
+        var configErrors = MeetingValidationHelper.ValidateCreateMeetingRequest(request, meetingOptions.Value);
+        if (configErrors.Any())
+        {
+            logger.LogWarning("Meeting configuration validation failed: {Errors}", string.Join("; ", configErrors));
+            return Results.BadRequest(new { errors = configErrors });
         }
 
         if (request.Attendees == null || !request.Attendees.Any())
@@ -225,6 +235,7 @@ public static class MeetingsEndpoints
         [FromRoute] Guid meetingId,
         [FromBody] UpdateMeetingRequest request,
         [FromServices] IMeetingAccessorClient meetingAccessorClient,
+        [FromServices] IOptions<MeetingOptions> meetingOptions,
         [FromServices] ILogger<MeetingsEndpoint> logger,
         HttpContext httpContext,
         CancellationToken ct)
@@ -245,6 +256,13 @@ public static class MeetingsEndpoints
         {
             logger.LogWarning("Validation failed for {Model}: {Errors}", nameof(UpdateMeetingRequest), validationErrors);
             return Results.BadRequest(new { errors = validationErrors });
+        }
+
+        var configErrors = MeetingValidationHelper.ValidateUpdateMeetingRequest(request, meetingOptions.Value);
+        if (configErrors.Any())
+        {
+            logger.LogWarning("Meeting configuration validation failed: {Errors}", string.Join("; ", configErrors));
+            return Results.BadRequest(new { errors = configErrors });
         }
 
         if (request.Attendees != null)

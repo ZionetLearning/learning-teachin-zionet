@@ -51,7 +51,7 @@ public class UserService : IUserService
             Interests = user.Interests,
             AvatarPath = user.AvatarPath,
             AvatarContentType = user.AvatarContentType,
-            AvatarUpdatedAtUtc = user.AvatarUpdatedAtUtc
+            AvatarUpdatedAtUtc = user.AvatarUpdatedAtUtc,
             AcsUserId = user.AcsUserId
         };
     }
@@ -68,7 +68,7 @@ public class UserService : IUserService
                 PreferredLanguageCode = u.PreferredLanguageCode,
                 HebrewLevelValue = u.HebrewLevelValue,
                 Interests = u.Interests,
-                AcsUserId = u.AcsUserId
+                AcsUserId = u.AcsUserId,
                 AvatarPath = u.AvatarPath,
                 AvatarContentType = u.AvatarContentType,
                 AvatarUpdatedAtUtc = u.AvatarUpdatedAtUtc

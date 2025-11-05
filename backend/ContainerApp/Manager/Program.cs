@@ -12,6 +12,7 @@ using Manager.Models;
 using Manager.Models.Auth;
 using Manager.Models.QueueMessages;
 using Manager.Models.Users;
+using Manager.Models.Meetings;
 using Manager.Services;
 using Manager.Services.Clients.Accessor;
 using Manager.Services.Clients.Engine;
@@ -44,6 +45,10 @@ builder.Services.Configure<JwtSettings>(
 
 builder.Services.Configure<CorsSettings>(
     builder.Configuration.GetSection("Cors"));
+
+builder.Services
+  .AddOptions<MeetingOptions>()
+  .Bind(builder.Configuration.GetSection(MeetingOptions.SectionName));
 
 var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>()!;
 var key = Encoding.UTF8.GetBytes(jwtSettings.Secret);
