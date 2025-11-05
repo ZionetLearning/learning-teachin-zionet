@@ -18,6 +18,7 @@ import {
 import { type User, type AppRoleType, useAuth } from "@app-providers";
 
 import { CandidateListPanel, ClassMembersListPanel } from "./elements";
+import { useStyles } from "./style";
 
 type Props = {
   open: boolean;
@@ -36,9 +37,9 @@ export const ManageMembersDialog = ({
   className,
   onClose,
 }: Props) => {
+  const classes = useStyles();
   const { user } = useAuth();
 
-  // fetch only when dialog open
   const { data: classData } = useGetClass(classId, { enabled: open });
   const { data: allUsers } = useGetAllUsers();
 
@@ -46,13 +47,11 @@ export const ManageMembersDialog = ({
   const { mutate: removeMembers, isPending: removing } =
     useRemoveClassMembers();
 
-  // filters
   const [roleFilter, setRoleFilter] = useState<StudentTeacherRole | "All">(
     "All",
   );
   const [query, setQuery] = useState("");
 
-  // selections
   const [selectedCandidateIds, setSelectedCandidateIds] = useState<Set<string>>(
     new Set(),
   );
@@ -60,14 +59,12 @@ export const ManageMembersDialog = ({
     new Set(),
   );
 
-  // reset selections when open/class changes
   useEffect(() => {
     if (!open) return;
     setSelectedCandidateIds(new Set());
     setSelectedMemberIds(new Set());
   }, [open, classId]);
 
-  // data shaping
   const candidateUsers = useMemo(
     () =>
       (allUsers ?? []).filter(
@@ -107,7 +104,6 @@ export const ManageMembersDialog = ({
     [classData?.members],
   );
 
-  // toggle handlers
   const toggleCandidate = (userId: string) =>
     setSelectedCandidateIds((prev) => {
       const next = new Set(prev);
@@ -124,7 +120,6 @@ export const ManageMembersDialog = ({
       return next;
     });
 
-  // select/clear all
   const selectAllCandidates = () => {
     const ids = filteredUsers
       .filter((u) => !memberIdSet.has(u.userId))
@@ -139,7 +134,6 @@ export const ManageMembersDialog = ({
   };
   const clearAllMembers = () => setSelectedMemberIds(new Set());
 
-  // actions
   const handleAdd = (ids: string[]) => {
     if (!ids.length) return;
     addMembers({ classId, userIds: ids, addedBy: user?.userId || "" });
@@ -157,6 +151,7 @@ export const ManageMembersDialog = ({
     handleAdd(ids);
     setSelectedCandidateIds(new Set());
   };
+
   const handleBatchRemove = () => {
     const ids = Array.from(selectedMemberIds);
     if (!ids.length) return;
@@ -164,7 +159,6 @@ export const ManageMembersDialog = ({
     setSelectedMemberIds(new Set());
   };
 
-  // count of selected addable candidates (not already in class)
   const addableCount = useMemo(
     () =>
       Array.from(selectedCandidateIds).filter((id) => !memberIdSet.has(id))
@@ -174,9 +168,16 @@ export const ManageMembersDialog = ({
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-      <DialogTitle>Manage Members — {className}</DialogTitle>
-      <DialogContent>
-        <Stack direction={{ xs: "column", md: "row" }} gap={2} sx={{ mt: 1 }}>
+      <DialogTitle className={classes.title}>
+        Manage Members — {className}
+      </DialogTitle>
+
+      <DialogContent className={classes.content}>
+        <Stack
+          direction={{ xs: "column", md: "row" }}
+          gap={2}
+          className={classes.panels}
+        >
           <CandidateListPanel
             users={filteredUsers}
             memberIdSet={memberIdSet}
@@ -196,7 +197,11 @@ export const ManageMembersDialog = ({
             teachersCount={teachersCount}
           />
 
-          <Divider flexItem orientation="vertical" />
+          <Divider
+            flexItem
+            orientation="vertical"
+            className={classes.dividerV}
+          />
 
           <ClassMembersListPanel
             members={visibleMembers}
@@ -211,7 +216,7 @@ export const ManageMembersDialog = ({
         </Stack>
       </DialogContent>
 
-      <DialogActions>
+      <DialogActions className={classes.actions}>
         <Button onClick={onClose} color="inherit">
           Close
         </Button>
