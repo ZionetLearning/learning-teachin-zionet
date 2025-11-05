@@ -22,7 +22,6 @@ export type ClassItem = {
 export type ClassSummary = {
   classId: string;
   name: string;
-  // optional if your list endpoint doesn't return members
   members?: ClassMember[];
 };
 
