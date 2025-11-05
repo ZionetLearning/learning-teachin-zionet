@@ -34,33 +34,29 @@ public abstract class MeetingsTestBase(
 
     /// <summary>
     /// Creates a meeting with default or specified parameters.
-    /// Requires the current user info to ensure proper attendee setup.
-    /// Automatically includes the current user as an attendee if they're a teacher.
+    /// If no request is provided, creates a valid meeting with at least 2 attendees (backend requirement).
     /// </summary>
     protected async Task<MeetingDto> CreateMeetingAsync(
         UserInfo currentUser,
         CreateMeetingRequest? request = null)
     {
-        request ??= new CreateMeetingRequest
+        // If no request provided, create a valid meeting with at least 2 attendees
+        if (request == null)
         {
-            Attendees = [
-                new MeetingAttendee 
-                { 
-                    UserId = currentUser.UserId, 
-                    Role = currentUser.Role == Role.Teacher ? AttendeeRole.Teacher : AttendeeRole.Student 
-                }
-            ],
-            StartTimeUtc = DateTimeOffset.UtcNow.AddHours(1),
-            DurationMinutes = 10,
-            Description = "Test Meeting",
-        };
-
-        // Ensure the current user is included as an attendee if they're a teacher
-        if (currentUser.Role == Role.Teacher && !request.Attendees.Any(a => a.UserId == currentUser.UserId))
-        {
-            var updatedAttendees = request.Attendees.ToList();
-            updatedAttendees.Insert(0, new MeetingAttendee { UserId = currentUser.UserId, Role = AttendeeRole.Teacher });
-            request = request with { Attendees = updatedAttendees };
+            // Backend validation requires MinAttendees = 2
+            var teacher = ClientFixture.GetUserInfo(Role.Teacher);
+            var student = ClientFixture.GetUserInfo(Role.Student);
+            
+            request = new CreateMeetingRequest
+            {
+                Attendees = [
+                    new MeetingAttendee { UserId = teacher.UserId, Role = AttendeeRole.Teacher },
+                    new MeetingAttendee { UserId = student.UserId, Role = AttendeeRole.Student }
+                ],
+                StartTimeUtc = DateTimeOffset.UtcNow.AddMinutes(10), // Must be at least MinAdvanceSchedulingMinutes in future
+                DurationMinutes = 15,
+                Description = "Test Meeting"
+            };
         }
 
         var response = await Client.PostAsJsonAsync(MeetingRoutes.CreateMeeting, request);

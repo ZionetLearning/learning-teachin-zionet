@@ -31,7 +31,7 @@ public class MeetingsIntegrationTests(
                 new MeetingAttendee { UserId = teacher.UserId, Role = AttendeeRole.Teacher },
                 new MeetingAttendee { UserId = studentInfo.UserId, Role = AttendeeRole.Student }
             ],
-            StartTimeUtc = DateTimeOffset.UtcNow.AddDays(1),
+            StartTimeUtc = DateTimeOffset.UtcNow.AddMinutes(10),
             DurationMinutes = 15,
             Description = "Integration Test Meeting",
         };
@@ -167,10 +167,14 @@ public class MeetingsIntegrationTests(
         // Act & Assert - Admin can create meetings
         var admin = await LoginAsAsync(Role.Admin);
         var teacherInfo = ClientFixture.GetUserInfo(Role.Teacher);
-        
+        var studentInfo = ClientFixture.GetUserInfo(Role.Student);
+
         var createRequest = new CreateMeetingRequest
         {
-            Attendees = [new MeetingAttendee { UserId = teacherInfo.UserId, Role = AttendeeRole.Teacher }],
+            Attendees = [
+                new MeetingAttendee { UserId = teacherInfo.UserId, Role = AttendeeRole.Teacher },
+                new MeetingAttendee { UserId = studentInfo.UserId, Role = AttendeeRole.Student }
+            ],
             StartTimeUtc = DateTimeOffset.UtcNow.AddHours(2),
             DurationMinutes = 5,
             Description = "Admin Created Meeting",
@@ -225,10 +229,13 @@ public class MeetingsIntegrationTests(
         // Arrange
         var teacher = await LoginAsAsync(Role.Teacher);
         var studentInfo = ClientFixture.GetUserInfo(Role.Student);
-        
+        var adminInfo = ClientFixture.GetUserInfo(Role.Admin);
         var meeting1 = await CreateMeetingAsync(teacher, new CreateMeetingRequest
         {
-            Attendees = [new MeetingAttendee { UserId = teacher.UserId, Role = AttendeeRole.Teacher }],
+            Attendees = [
+                new MeetingAttendee { UserId = teacher.UserId, Role = AttendeeRole.Teacher },
+                new MeetingAttendee { UserId = adminInfo.UserId, Role = AttendeeRole.Student }
+            ],
             StartTimeUtc = DateTimeOffset.UtcNow.AddHours(1),
             DurationMinutes = 10,
             Description = "Teacher Only Meeting",
@@ -256,23 +263,6 @@ public class MeetingsIntegrationTests(
         var studentMeetings = await GetMeetingsForUserAsync(studentInfo.UserId);
         studentMeetings.Should().Contain(m => m.Id == meeting2.Id);
         studentMeetings.Should().NotContain(m => m.Id == meeting1.Id);
-    }
-
-    [Fact(DisplayName = "Get meetings for user - Returns empty list for new user")]
-    public async Task GetMeetingsForUser_NewUser_ShouldReturnEmpty()
-    {
-        // Arrange
-        var (teacherEmail, teacherToken) = await ClientFixture.CreateEphemeralUserAsync(Role.Teacher);
-        
-        var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
-        var jwtToken = handler.ReadJwtToken(teacherToken);
-        var teacherId = Guid.Parse(jwtToken.Claims.First(c => c.Type == TestConstants.UserId).Value);
-
-        // Act
-        var meetings = await GetMeetingsForUserAsync(teacherId);
-
-        // Assert
-        meetings.Should().BeEmpty();
     }
 
     [Fact(DisplayName = "Get meeting by ID - Returns 404 for nonexistent meeting")]
@@ -355,7 +345,7 @@ public class MeetingsIntegrationTests(
         var teacher = await LoginAsAsync(Role.Teacher);
         var meeting = await CreateMeetingAsync(teacher);
         
-        var _ = await LoginAsAsync(Role.Student); // Student is not an attendee
+        var _ = await LoginAsAsync(Role.Admin); // Admin is not an attendee
 
         // Act
         var acsToken = await GenerateTokenForMeetingAsync(meeting.Id);

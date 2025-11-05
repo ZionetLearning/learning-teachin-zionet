@@ -54,29 +54,17 @@ public class MeetingService : IMeetingService
 
         try
         {
-            // Get all meetings where the user is an attendee
-            var meetings = await _db.Meetings
+            // Get all meetings and filter client-side since Attendees is a JSONB column
+            var allMeetings = await _db.Meetings
                 .AsNoTracking()
                 .ToListAsync(ct);
 
-            // Filter meetings where the user is in the Attendees list
-            var userMeetings = await _db.Meetings
-                .AsNoTracking()
+            // Filter meetings where the user is in the Attendees list (client-side evaluation)
+            var userMeetings = allMeetings
                 .Where(m => m.Attendees.Any(a => a.UserId == userId))
                 .OrderByDescending(m => m.StartTimeUtc)
-                .Select(m => new MeetingDto
-                {
-                    Id = m.Id,
-                    Attendees = m.Attendees,
-                    StartTimeUtc = m.StartTimeUtc,
-                    DurationMinutes = m.DurationMinutes,
-                    Description = m.Description,
-                    Status = m.Status,
-                    GroupCallId = m.GroupCallId,
-                    CreatedOn = m.CreatedOn,
-                    CreatedByUserId = m.CreatedByUserId
-                })
-                .ToListAsync(ct);
+                .Select(MapToDto)
+                .ToList();
 
             _logger.LogInformation("GetMeetingsForUser END: returned {Count} meetings for user {UserId}",
                 userMeetings.Count, userId);
