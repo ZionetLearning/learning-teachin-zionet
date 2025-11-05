@@ -4,4 +4,3 @@ export * from "./ReactChatElements";
 export * from "./AddWordCardDialog";
 export * from "./MistakeChatPopup";
 export * from "./WrongAnswerDisplay";
-export * from "./ContextAwareChat";

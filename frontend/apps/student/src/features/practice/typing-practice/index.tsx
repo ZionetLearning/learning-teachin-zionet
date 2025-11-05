@@ -9,10 +9,10 @@ import {
   GameConfigModal,
   GameOverModal,
   GameSettings,
+  ContextAwareChat,
+  useTypingPracticeContext,
 } from "@ui-components";
 import { getDifficultyLabel } from "@student/features";
-import { ContextAwareChat } from "@student/components";
-import { useTypingPracticeContext } from "@student/components/ContextAwareChat/hooks";
 
 export const TypingPractice = () => {
   const { t, i18n } = useTranslation();

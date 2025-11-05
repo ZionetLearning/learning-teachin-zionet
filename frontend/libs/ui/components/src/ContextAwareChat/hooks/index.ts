@@ -1,3 +1,4 @@
+export { useContextAwareChat } from "./useContextAwareChat";
 export {
   useWordOrderContext,
   useTypingPracticeContext,

@@ -2,8 +2,8 @@ import { useMemo } from "react";
 import type { PageContext } from "../types";
 
 /**
- * factory functions for creating common page context patterns
- * each factory handles a specific game/practice type
+ * Factory functions for creating common page context patterns
+ * Each factory handles a specific game/practice type
  */
 
 interface BaseGameContext {
@@ -14,7 +14,7 @@ interface BaseGameContext {
 }
 
 /**
- * factory for word order game contexts
+ * Factory for word order game contexts
  */
 export const useWordOrderContext = ({
   currentExercise,
@@ -56,7 +56,7 @@ export const useWordOrderContext = ({
 };
 
 /**
- * factory for typing practice contexts
+ * Factory for typing practice contexts
  */
 export const useTypingPracticeContext = ({
   currentExercise,
@@ -98,7 +98,7 @@ export const useTypingPracticeContext = ({
 };
 
 /**
- * factory for speaking practice contexts
+ * Factory for speaking practice contexts
  */
 export const useSpeakingPracticeContext = ({
   currentExercise,
@@ -132,7 +132,7 @@ export const useSpeakingPracticeContext = ({
 };
 
 /**
- * factory for word cards challenge contexts
+ * Factory for word cards challenge contexts
  */
 export const useWordCardsContext = ({
   currentExercise,

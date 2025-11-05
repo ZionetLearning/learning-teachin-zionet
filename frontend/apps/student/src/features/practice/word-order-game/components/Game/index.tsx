@@ -12,13 +12,10 @@ import {
   GameSettings,
   GameSetupPanel,
   RetryResultModal,
-} from "@ui-components";
-import {
-  MistakeChatPopup,
-  WrongAnswerDisplay,
   ContextAwareChat,
-} from "@student/components";
-import { useWordOrderContext } from "@student/components/ContextAwareChat/hooks";
+  useWordOrderContext,
+} from "@ui-components";
+import { MistakeChatPopup, WrongAnswerDisplay } from "@student/components";
 import { getDifficultyLabel } from "@student/features";
 import { useAuth } from "@app-providers";
 import { useSubmitGameAttempt } from "@student/api";

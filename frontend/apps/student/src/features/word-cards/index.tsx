@@ -12,13 +12,10 @@ import SportsEsportsIcon from "@mui/icons-material/SportsEsports";
 import { Trans, useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useGetWordCards } from "@student/api";
-import {
-  AddWordCardDialog,
-  ContextAwareChat,
-  PageContext,
-} from "@student/components";
+import { AddWordCardDialog } from "@student/components";
 import { WordCardItem } from "./components";
 import { useStyles } from "./style";
+import { ContextAwareChat, PageContext } from "@ui-components";
 
 export const WordCards = () => {
   const classes = useStyles();

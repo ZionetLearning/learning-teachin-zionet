@@ -13,7 +13,7 @@ import SendIcon from "@mui/icons-material/Send";
 import { useTranslation } from "react-i18next";
 import { useStyles } from "./style";
 import type { ChatMessage, PageContext } from "./types";
-import { useContextAwareChat } from "./useContextAwareChat";
+import { useContextAwareChat } from "./hooks/useContextAwareChat";
 
 export interface ContextAwareChatProps {
   pageContext: PageContext;

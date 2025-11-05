@@ -1,8 +1,8 @@
 import { useState, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@app-providers";
-import { useSendChatMessageStream } from "../../api/chat";
-import type { ChatMessage, PageContext } from "./types";
+import { useSendChatMessageStream } from "@student/api";
+import type { ChatMessage, PageContext } from "../types";
 
 export const useContextAwareChat = (pageContext: PageContext) => {
   const { user } = useAuth();
