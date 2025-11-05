@@ -173,7 +173,6 @@ export const WordCardsChallenge = () => {
     return (
       <>
         <ModeSelection onStartGame={startGame} />
-        <ContextAwareChat pageContext={pageContext} />
       </>
     );
   }
@@ -187,7 +186,6 @@ export const WordCardsChallenge = () => {
           currentMode={mode}
           onPlayAgain={startGame}
         />
-        <ContextAwareChat pageContext={pageContext} />
       </>
     );
   }

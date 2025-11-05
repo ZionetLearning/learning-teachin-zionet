@@ -194,7 +194,6 @@ export const TypingPractice = () => {
           </div>
         )}
 
-        {/* Configuration Modal */}
         <GameConfigModal
           open={configModalOpen}
           onClose={() => setConfigModalOpen(false)}
@@ -203,7 +202,6 @@ export const TypingPractice = () => {
           initialConfig={gameConfig || undefined}
         />
 
-        {/* Game Over Modal */}
         <GameOverModal
           open={gameOverModalOpen}
           onPlayAgain={handleGameOverPlayAgain}
@@ -213,7 +211,6 @@ export const TypingPractice = () => {
         />
       </div>
 
-      {/* Context-Aware Chat */}
       <ContextAwareChat pageContext={pageContext} />
     </div>
   );
