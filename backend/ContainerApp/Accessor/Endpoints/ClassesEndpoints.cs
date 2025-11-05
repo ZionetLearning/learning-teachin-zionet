@@ -65,12 +65,12 @@ public static class ClassesEndpoints
         try
         {
             var cls = await service.GetClassesForUserWithMembersAsync(userId, ct);
-            return cls is not null ? Results.Ok(cls) : Results.NotFound("Class not found.");
+            return cls is not null ? Results.Ok(cls) : Results.NotFound("Classes not found.");
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to get class for user {UserId}", userId);
-            return Results.Problem("An error occurred while retrieving the class.");
+            logger.LogError(ex, "Failed to get classes for user {UserId}", userId);
+            return Results.Problem("An error occurred while retrieving the classes.");
         }
     }
     private static async Task<IResult> GetAllClassesAsync(
@@ -83,12 +83,12 @@ public static class ClassesEndpoints
         try
         {
             var cls = await service.GetAllClassesAsync(ct);
-            return cls is not null ? Results.Ok(cls) : Results.NotFound("Class not found.");
+            return cls is not null ? Results.Ok(cls) : Results.NotFound("Classes not found.");
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to get classes");
-            return Results.Problem("An error occurred while retrieving the class.");
+            return Results.Problem("An error occurred while retrieving the classes.");
         }
     }
 
