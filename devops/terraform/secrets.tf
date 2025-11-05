@@ -21,7 +21,7 @@ resource "azurerm_key_vault_secret" "postgres_connection" {
         var.admin_username,
         var.admin_password
       )
-    : module.database.postgres_connection_string
+    : module.database[0].postgres_connection_string
   )
   key_vault_id = data.azurerm_key_vault.shared.id
 }

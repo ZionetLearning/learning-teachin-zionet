@@ -24,7 +24,7 @@
         {
             "datasource": {
                 "type": "loki",
-                "uid": "${DS_LOKI}"
+                "uid": "loki"
             },
             "fieldConfig": {
                 "defaults": {
@@ -79,7 +79,7 @@
                 {
                     "datasource": {
                         "type": "loki",
-                        "uid": "${DS_LOKI}"
+                        "uid": "loki"
                     },
                     "direction": "backward",
                     "editorMode": "code",
@@ -96,7 +96,7 @@
         {
             "datasource": {
                 "type": "loki",
-                "uid": "${DS_LOKI}"
+                "uid": "loki"
             },
             "fieldConfig": {
                 "defaults": {
@@ -149,7 +149,7 @@
                 {
                     "datasource": {
                         "type": "loki",
-                        "uid": "${DS_LOKI}"
+                        "uid": "loki"
                     },
                     "direction": "backward",
                     "editorMode": "code",
@@ -165,7 +165,7 @@
         {
             "datasource": {
                 "type": "loki",
-                "uid": "${DS_LOKI}"
+                "uid": "loki"
             },
             "fieldConfig": {
                 "defaults": {
@@ -481,7 +481,7 @@
                 {
                     "datasource": {
                         "type": "loki",
-                        "uid": "${DS_LOKI}"
+                        "uid": "loki"
                     },
                     "direction": "backward",
                     "editorMode": "code",
@@ -495,7 +495,7 @@
                 {
                     "datasource": {
                         "type": "loki",
-                        "uid": "${DS_LOKI}"
+                        "uid": "loki"
                     },
                     "direction": "backward",
                     "editorMode": "code",
@@ -509,7 +509,7 @@
                 {
                     "datasource": {
                         "type": "loki",
-                        "uid": "${DS_LOKI}"
+                        "uid": "loki"
                     },
                     "direction": "backward",
                     "editorMode": "code",
@@ -522,7 +522,7 @@
                 {
                     "datasource": {
                         "type": "loki",
-                        "uid": "${DS_LOKI}"
+                        "uid": "loki"
                     },
                     "direction": "backward",
                     "editorMode": "code",
@@ -535,7 +535,7 @@
                 {
                     "datasource": {
                         "type": "loki",
-                        "uid": "${DS_LOKI}"
+                        "uid": "loki"
                     },
                     "direction": "backward",
                     "editorMode": "code",
@@ -551,7 +551,7 @@
         },
         {
             "datasource": {
-                "uid": "${DS_LOKI}"
+                "uid": "loki"
             },
             "fieldConfig": {
                 "defaults": {
@@ -617,7 +617,7 @@
         {
             "datasource": {
                 "type": "loki",
-                "uid": "${DS_LOKI}"
+                "uid": "loki"
             },
             "fieldConfig": {
                 "defaults": {
@@ -698,7 +698,7 @@
                 {
                     "datasource": {
                         "type": "loki",
-                        "uid": "${DS_LOKI}"
+                        "uid": "loki"
                     },
                     "direction": "backward",
                     "editorMode": "code",
@@ -710,7 +710,7 @@
                 {
                     "datasource": {
                         "type": "loki",
-                        "uid": "${DS_LOKI}"
+                        "uid": "loki"
                     },
                     "direction": "backward",
                     "editorMode": "code",
@@ -727,7 +727,7 @@
         {
             "datasource": {
                 "type": "grafana-azure-monitor-datasource",
-                "uid": "${DS_LOKI}"
+                "uid": "azure-monitor"
             },
             "fieldConfig": {
                 "defaults": {
@@ -899,7 +899,7 @@
                     },
                     "datasource": {
                         "type": "grafana-azure-monitor-datasource",
-                        "uid": "${DS_LOKI}"
+                        "uid": "azure-monitor"
                     },
                     "queryType": "Azure Monitor",
                     "refId": "A",
@@ -936,7 +936,7 @@
                     },
                     "datasource": {
                         "type": "grafana-azure-monitor-datasource",
-                        "uid": "${DS_LOKI}"
+                        "uid": "azure-monitor"
                     },
                     "hide": false,
                     "queryType": "Azure Monitor",
@@ -974,7 +974,7 @@
                     },
                     "datasource": {
                         "type": "grafana-azure-monitor-datasource",
-                        "uid": "${DS_LOKI}"
+                        "uid": "azure-monitor"
                     },
                     "hide": false,
                     "queryType": "Azure Monitor",
@@ -988,7 +988,7 @@
                     },
                     "datasource": {
                         "type": "grafana-azure-monitor-datasource",
-                        "uid": "${DS_LOKI}"
+                        "uid": "azure-monitor"
                     },
                     "hide": false,
                     "queryType": "Azure Monitor",
@@ -1001,7 +1001,7 @@
         {
             "datasource": {
                 "type": "grafana-azure-monitor-datasource",
-                "uid": "${DS_LOKI}"
+                "uid": "azure-monitor"
             },
             "fieldConfig": {
                 "defaults": {
@@ -1144,7 +1144,7 @@
                     },
                     "datasource": {
                         "type": "grafana-azure-monitor-datasource",
-                        "uid": "${DS_LOKI}"
+                        "uid": "azure-monitor"
                     },
                     "hide": false,
                     "queryType": "Azure Monitor",
@@ -1183,7 +1183,7 @@
                     },
                     "datasource": {
                         "type": "grafana-azure-monitor-datasource",
-                        "uid": "${DS_LOKI}"
+                        "uid": "azure-monitor"
                     },
                     "hide": false,
                     "queryType": "Azure Monitor",
@@ -1210,7 +1210,7 @@
                 },
                 "datasource": {
                     "type": "loki",
-                    "uid": "${DS_LOKI}"
+                    "uid": "loki"
                 },
                 "definition": "",
                 "includeAll": true,
