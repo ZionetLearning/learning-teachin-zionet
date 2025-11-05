@@ -12,6 +12,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import RemoveIcon from "@mui/icons-material/PersonRemove";
 import { RoleChip } from "@ui-components";
 import { useStyles } from "./style";
@@ -43,20 +44,21 @@ export const ClassMembersListPanel = ({
   onBatchRemove,
   pendingRemove,
 }: Props) => {
+  const { t } = useTranslation();
   const classes = useStyles();
 
   return (
     <Box className={classes.container}>
       <Typography variant="subtitle1" className={classes.title}>
-        Current Members ({members.length})
+        {t("pages.classes.currentMembers")} ({members.length})
       </Typography>
 
       <Stack direction="row" spacing={1} className={classes.toolbar}>
         <Button size="small" onClick={onSelectAll}>
-          Select all
+          {t("pages.classes.selectAll")}
         </Button>
         <Button size="small" onClick={onClearAll}>
-          Clear
+          {t("pages.classes.clear")}
         </Button>
         <Button
           size="small"
@@ -65,7 +67,7 @@ export const ClassMembersListPanel = ({
           onClick={onBatchRemove}
           disabled={pendingRemove || selectedIds.size === 0}
         >
-          Remove selected ({selectedIds.size})
+          {t("pages.classes.removeSelected")} ({selectedIds.size})
         </Button>
       </Stack>
 
@@ -111,7 +113,7 @@ export const ClassMembersListPanel = ({
                 />
               </ListItemButton>
 
-              <Tooltip title="Remove from class">
+              <Tooltip title={t("pages.classes.removeFromClass")}>
                 <span>
                   <IconButton
                     edge="end"
@@ -131,7 +133,7 @@ export const ClassMembersListPanel = ({
 
         {members.length === 0 && (
           <Box className={classes.emptyState}>
-            This class has no members yet.
+            {t("pages.classes.noMembersYet")}
           </Box>
         )}
       </List>

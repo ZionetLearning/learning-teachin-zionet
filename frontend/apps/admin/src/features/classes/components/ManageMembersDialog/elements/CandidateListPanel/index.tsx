@@ -18,7 +18,7 @@ import {
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import AddIcon from "@mui/icons-material/PersonAddAlt";
-
+import { useTranslation } from "react-i18next";
 import { type User, type AppRoleType } from "@app-providers";
 import { RoleChip } from "@ui-components";
 import { useStyles } from "./style";
@@ -64,6 +64,7 @@ export const CandidateListPanel = ({
   studentsCount,
   teachersCount,
 }: Props) => {
+  const { t } = useTranslation();
   const classes = useStyles();
 
   return (
@@ -83,14 +84,18 @@ export const CandidateListPanel = ({
           }
           className={classes.roleSelect}
         >
-          <MenuItem value="All">All roles</MenuItem>
-          <MenuItem value="student">Students ({studentsCount})</MenuItem>
-          <MenuItem value="teacher">Teachers ({teachersCount})</MenuItem>
+          <MenuItem value="All">{t("pages.classes.allRoles")}</MenuItem>
+          <MenuItem value="student">
+            {t("pages.classes.students")} ({studentsCount})
+          </MenuItem>
+          <MenuItem value="teacher">
+            {t("pages.classes.teachers")} ({teachersCount})
+          </MenuItem>
         </Select>
 
         <TextField
           size="small"
-          placeholder="Search by name / email"
+          placeholder={t("pages.classes.searchByNameEmail")}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           slotProps={{
@@ -109,10 +114,10 @@ export const CandidateListPanel = ({
       {/* Toolbar */}
       <Box className={classes.toolbarRow}>
         <Button size="small" onClick={onSelectAll}>
-          Select all
+          {t("pages.classes.selectAll")}
         </Button>
         <Button size="small" onClick={onClearAll}>
-          Clear
+          {t("pages.classes.clear")}
         </Button>
         <Button
           size="small"
@@ -120,7 +125,7 @@ export const CandidateListPanel = ({
           onClick={onBatchAdd}
           disabled={pendingAdd || addableCount === 0}
         >
-          Add selected ({addableCount})
+          {t("pages.classes.addSelected")} ({addableCount})
         </Button>
       </Box>
 
@@ -137,7 +142,13 @@ export const CandidateListPanel = ({
               disablePadding
               className={`${classes.listItem} ${isMember ? classes.listItemDisabled : ""}`}
               secondaryAction={
-                <Tooltip title={isMember ? "Already in class" : "Add to class"}>
+                <Tooltip
+                  title={
+                    isMember
+                      ? t("pages.classes.alreadyInClass")
+                      : t("pages.classes.addToClass")
+                  }
+                >
                   <span>
                     <IconButton
                       edge="end"
@@ -188,7 +199,7 @@ export const CandidateListPanel = ({
         {users.length === 0 && (
           <Box className={classes.emptyBox}>
             <Typography variant="body2" className={classes.emptyText}>
-              No users match the current filters.
+              {t("pages.classes.noUsersMatch")}
             </Typography>
           </Box>
         )}

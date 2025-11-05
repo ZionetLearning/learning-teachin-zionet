@@ -23,9 +23,11 @@ import {
   type ClassSummary,
 } from "@admin/api";
 import { CreateClassDialog, ManageMembersDialog } from "./components";
+import { useTranslation } from "react-i18next";
 import { useStyles } from "./style";
 
 export const Classes = () => {
+  const { t } = useTranslation();
   const classes = useStyles();
   const { data, isLoading, isError } = useGetAllClasses();
   const { mutate: deleteClass } = useDeleteClass();
@@ -40,14 +42,14 @@ export const Classes = () => {
     <Box className={classes.container}>
       <Toolbar className={classes.toolbar}>
         <Typography variant="h5" className={classes.title}>
-          Classes
+          {t("pages.classes.title")}
         </Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => setCreateOpen(true)}
         >
-          Create Class
+          {t("pages.classes.createClass")}
         </Button>
       </Toolbar>
 
@@ -55,9 +57,11 @@ export const Classes = () => {
         <Table>
           <TableHead className={classes.tableHead}>
             <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Members</TableCell>
-              <TableCell className={classes.actionsCell}>Actions</TableCell>
+              <TableCell>{t("pages.classes.name")}</TableCell>
+              <TableCell>{t("pages.classes.members")}</TableCell>
+              <TableCell className={classes.actionsCell}>
+                {t("pages.classes.actions")}
+              </TableCell>
             </TableRow>
           </TableHead>
 
@@ -65,7 +69,7 @@ export const Classes = () => {
             {isLoading && (
               <TableRow>
                 <TableCell colSpan={3} className={classes.loadingCell}>
-                  Loading…
+                  {t("pages.classes.loading")}
                 </TableCell>
               </TableRow>
             )}
@@ -73,7 +77,7 @@ export const Classes = () => {
             {isError && (
               <TableRow>
                 <TableCell colSpan={3} className={classes.errorCell}>
-                  Failed to load classes
+                  {t("pages.classes.loadError")}
                 </TableCell>
               </TableRow>
             )}
@@ -81,7 +85,7 @@ export const Classes = () => {
             {!isLoading && rows.length === 0 && (
               <TableRow>
                 <TableCell colSpan={3} className={classes.emptyCell}>
-                  No classes yet
+                  {t("pages.classes.noClasses")}
                 </TableCell>
               </TableRow>
             )}
@@ -91,7 +95,7 @@ export const Classes = () => {
                 <TableCell>{cls.name}</TableCell>
                 <TableCell>{cls.members?.length ?? "—"}</TableCell>
                 <TableCell className={classes.actionsCell}>
-                  <Tooltip title="Manage members">
+                  <Tooltip title={t("pages.classes.manageMembers")}>
                     <IconButton
                       className={classes.iconButton}
                       onClick={() => {
@@ -103,7 +107,7 @@ export const Classes = () => {
                     </IconButton>
                   </Tooltip>
 
-                  <Tooltip title="Delete class">
+                  <Tooltip title={t("pages.classes.deleteClass")}>
                     <span>
                       <IconButton
                         className={classes.iconButton}

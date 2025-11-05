@@ -16,7 +16,7 @@ import {
   useGetAllUsers,
 } from "@admin/api";
 import { type User, type AppRoleType, useAuth } from "@app-providers";
-
+import { useTranslation } from "react-i18next";
 import { CandidateListPanel, ClassMembersListPanel } from "./elements";
 import { useStyles } from "./style";
 
@@ -37,6 +37,7 @@ export const ManageMembersDialog = ({
   className,
   onClose,
 }: Props) => {
+  const { t } = useTranslation();
   const classes = useStyles();
   const { user } = useAuth();
 
@@ -169,7 +170,7 @@ export const ManageMembersDialog = ({
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
       <DialogTitle className={classes.title}>
-        Manage Members — {className}
+        {t("pages.classes.manageMembers")} — {className}
       </DialogTitle>
 
       <DialogContent className={classes.content}>
@@ -218,7 +219,7 @@ export const ManageMembersDialog = ({
 
       <DialogActions className={classes.actions}>
         <Button onClick={onClose} color="inherit">
-          Close
+           {t("pages.classes.close")}
         </Button>
       </DialogActions>
     </Dialog>

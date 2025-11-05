@@ -8,7 +8,9 @@ import {
   Stack,
   TextField,
 } from "@mui/material";
+
 import { useCreateClass } from "@admin/api";
+import { useTranslation } from "react-i18next";
 
 type Props = {
   open: boolean;
@@ -16,6 +18,7 @@ type Props = {
 };
 
 export const CreateClassDialog = ({ open, onClose }: Props) => {
+  const { t } = useTranslation();
   const { mutate: createClass } = useCreateClass();
   const [name, setName] = useState("");
   const [description, setDescription] = useState<string>("");
@@ -42,17 +45,17 @@ export const CreateClassDialog = ({ open, onClose }: Props) => {
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Create Class</DialogTitle>
+      <DialogTitle>{t("pages.classes.createClass")}</DialogTitle>
       <DialogContent>
         <Stack gap={2} sx={{ mt: 1 }}>
           <TextField
-            label="Class name"
+            label={t("pages.classes.className")}
             value={name}
             onChange={(e) => setName(e.target.value)}
             autoFocus
           />
           <TextField
-            label="Description (optional)"
+            label={t("pages.classes.descriptionOptional")}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             multiline
@@ -62,10 +65,10 @@ export const CreateClassDialog = ({ open, onClose }: Props) => {
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} color="inherit">
-          Cancel
+          {t("pages.classes.cancel")}
         </Button>
         <Button onClick={handleCreate} disabled={!name} variant="contained">
-          Create
+          {t("pages.classes.create")}
         </Button>
       </DialogActions>
     </Dialog>
