@@ -55,7 +55,7 @@ public static class ClassesEndpoints
     [FromServices] ILogger<ClassesEndpointsLoggerMarker> logger,
     CancellationToken ct)
     {
-        using var _ = logger.BeginScope("Method={Method}, UserId={UserId}", nameof(GetClassAsync), userId);
+        using var _ = logger.BeginScope("Method={Method}, UserId={UserId}", nameof(GetMyClassesAsync), userId);
 
         if (userId == Guid.Empty)
         {
