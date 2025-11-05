@@ -60,11 +60,9 @@ public class UserGameConfigurationService : IUserGameConfigurationService
             _logger.LogWarning("Game config not found for deletion: UserId={UserId}, GameName={GameName}", userId, gameName);
             return;
         }
-        else
-        {
-            _db.UserGameConfigs.Remove(removeConfig);
-            await _db.SaveChangesAsync(ct);
-            _logger.LogInformation("Game config deleted successfully: UserId={UserId}, GameName={GameName}", userId, gameName);
-        }
+
+        _db.UserGameConfigs.Remove(removeConfig);
+        await _db.SaveChangesAsync(ct);
+        _logger.LogInformation("Game config deleted successfully: UserId={UserId}, GameName={GameName}", userId, gameName);
     }
 }

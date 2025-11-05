@@ -33,7 +33,7 @@ public static class UserGameConfigurationEndpoints
         [FromServices] ILogger<GameConfigurationEndpoint> logger,
         CancellationToken ct)
     {
-        var scope = logger.BeginScope("GetConfigAsync");
+        using var scope = logger.BeginScope("GetConfigAsync");
 
         try
         {
@@ -67,7 +67,7 @@ public static class UserGameConfigurationEndpoints
         [FromServices] ILogger<GameConfigurationEndpoint> logger,
         CancellationToken ct)
     {
-        var scope = logger.BeginScope("SaveConfigAsync");
+        using var scope = logger.BeginScope("SaveConfigAsync");
         try
         {
             var userIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
@@ -95,6 +95,7 @@ public static class UserGameConfigurationEndpoints
         [FromServices] ILogger<GameConfigurationEndpoint> logger,
         CancellationToken ct)
     {
+        using var scope = logger.BeginScope("DeleteConfigAsync");
         try
         {
             var userIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);

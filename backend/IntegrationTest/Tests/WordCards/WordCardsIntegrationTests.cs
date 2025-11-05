@@ -9,11 +9,11 @@ using Xunit.Abstractions;
 namespace IntegrationTests.Tests.WordCards;
 
 [Collection("IntegrationTests")]
-public class UserGameConfigurationIntegrationTests(
+public class WordCardsIntegrationTests(
     HttpClientFixture httpClientFixture,
     ITestOutputHelper outputHelper,
     SignalRTestFixture signalRFixture
-) : UserGameConfigurationTestBase(httpClientFixture, outputHelper, signalRFixture)
+) : WordCardsTestBase(httpClientFixture, outputHelper, signalRFixture)
 {
     [Fact(DisplayName = "POST /wordcards-manager - Can create and fetch card")]
     public async Task Can_Create_And_Fetch_Card()

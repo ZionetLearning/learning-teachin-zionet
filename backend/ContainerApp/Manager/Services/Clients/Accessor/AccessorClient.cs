@@ -16,7 +16,6 @@ using Manager.Models.QueueMessages;
 using Manager.Models.Users;
 using Manager.Models.WordCards;
 using Manager.Services.Clients.Accessor.Models;
-//using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Services.Clients.Accessor;
 
