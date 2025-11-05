@@ -1,8 +1,8 @@
 import { AppRoleType } from "@app-providers";
-import { useStyles } from "./style";
 import { useTranslation } from "react-i18next";
+import { useStyles } from "./style";
 
-export const RoleBadge = ({
+export const RoleChip = ({
   role,
   ...rest
 }: {
