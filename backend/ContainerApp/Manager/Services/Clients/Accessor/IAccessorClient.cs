@@ -48,6 +48,8 @@ public interface IAccessorClient
     Task<WordCard> CreateWordCardAsync(Guid userId, CreateWordCardRequest request, CancellationToken ct);
     Task<WordCardLearnedStatus> UpdateLearnedStatusAsync(Guid userId, LearnedStatus request, CancellationToken ct);
     Task<ClassDto?> GetClassAsync(Guid classId, CancellationToken ct = default);
+    Task<List<ClassDto?>?> GetMyClassesAsync(Guid callerId, CancellationToken ct = default);
+    Task<List<ClassDto?>?> GetAllClassesAsync(CancellationToken ct = default);
     Task<Class?> CreateClassAsync(CreateClassRequest request, CancellationToken ct = default);
     Task<bool> AddMembersToClassAsync(Guid classId, AddMembersRequest request, CancellationToken ct = default);
     Task<bool> RemoveMembersFromClassAsync(Guid classId, RemoveMembersRequest request, CancellationToken ct = default);
