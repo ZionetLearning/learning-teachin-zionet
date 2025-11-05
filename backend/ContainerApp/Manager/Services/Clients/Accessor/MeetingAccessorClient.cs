@@ -25,7 +25,7 @@ public class MeetingAccessorClient : IMeetingAccessorClient
             var meeting = await _daprClient.InvokeMethodAsync<MeetingDto>(
                 HttpMethod.Get,
                 AppIds.Accessor,
-                $"meetings-accessor/{meetingId}",
+                MeetingRoutesEndpoints.ById(meetingId),
                 ct);
 
             return meeting;
@@ -50,7 +50,7 @@ public class MeetingAccessorClient : IMeetingAccessorClient
             var meetings = await _daprClient.InvokeMethodAsync<List<MeetingDto>>(
                 HttpMethod.Get,
                 AppIds.Accessor,
-                $"meetings-accessor/user/{userId}",
+                MeetingRoutesEndpoints.ForUser(userId),
                 ct);
 
             return meetings ?? new List<MeetingDto>();
@@ -83,7 +83,7 @@ public class MeetingAccessorClient : IMeetingAccessorClient
             var meeting = await _daprClient.InvokeMethodAsync<CreateMeetingAccessorRequest, MeetingDto>(
                 HttpMethod.Post,
                 AppIds.Accessor,
-                "meetings-accessor",
+                MeetingRoutesEndpoints.Base,
                 accessorRequest,
                 ct);
 
@@ -104,7 +104,7 @@ public class MeetingAccessorClient : IMeetingAccessorClient
             await _daprClient.InvokeMethodAsync(
                 HttpMethod.Put,
                 AppIds.Accessor,
-                $"meetings-accessor/{meetingId}",
+                MeetingRoutesEndpoints.ById(meetingId),
                 request,
                 ct);
 
@@ -130,7 +130,7 @@ public class MeetingAccessorClient : IMeetingAccessorClient
             await _daprClient.InvokeMethodAsync(
                 HttpMethod.Delete,
                 AppIds.Accessor,
-                $"meetings-accessor/{meetingId}",
+                MeetingRoutesEndpoints.ById(meetingId),
                 ct);
 
             return true;
@@ -155,7 +155,7 @@ public class MeetingAccessorClient : IMeetingAccessorClient
             var tokenResponse = await _daprClient.InvokeMethodAsync<AcsTokenResponse>(
                 HttpMethod.Post,
                 AppIds.Accessor,
-                $"meetings-accessor/{meetingId}/token?userId={userId}",
+                MeetingRoutesEndpoints.GenerateToken(meetingId, userId),
                 ct);
 
             return tokenResponse;
@@ -175,7 +175,7 @@ public class MeetingAccessorClient : IMeetingAccessorClient
             var identity = await _daprClient.InvokeMethodAsync<AcsIdentityResponse>(
                 HttpMethod.Post,
                 AppIds.Accessor,
-                $"meetings-accessor/identity/{userId}",
+                MeetingRoutesEndpoints.Identity(userId),
                 ct);
 
             return identity;

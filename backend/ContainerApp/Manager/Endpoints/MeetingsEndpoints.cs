@@ -10,7 +10,7 @@ namespace Manager.Endpoints;
 
 public static class MeetingsEndpoints
 {
-    private sealed class MeetingsEndpointsLoggerMarker { }
+    private sealed class MeetingsEndpoint { }
 
     public static IEndpointRouteBuilder MapMeetingsEndpoints(this IEndpointRouteBuilder app)
     {
@@ -46,7 +46,7 @@ public static class MeetingsEndpoints
     private static async Task<IResult> GetMeetingAsync(
         [FromRoute] Guid meetingId,
         [FromServices] IMeetingAccessorClient meetingAccessorClient,
-        [FromServices] ILogger<MeetingsEndpointsLoggerMarker> logger,
+        [FromServices] ILogger<MeetingsEndpoint> logger,
         HttpContext httpContext,
         CancellationToken ct)
     {
@@ -96,7 +96,7 @@ public static class MeetingsEndpoints
     private static async Task<IResult> GetMeetingsForUserAsync(
         [FromRoute] Guid userId,
         [FromServices] IMeetingAccessorClient meetingAccessorClient,
-        [FromServices] ILogger<MeetingsEndpointsLoggerMarker> logger,
+        [FromServices] ILogger<MeetingsEndpoint> logger,
         HttpContext httpContext,
         CancellationToken ct)
     {
@@ -137,7 +137,7 @@ public static class MeetingsEndpoints
     private static async Task<IResult> CreateMeetingAsync(
         [FromBody] CreateMeetingRequest request,
         [FromServices] IMeetingAccessorClient meetingAccessorClient,
-        [FromServices] ILogger<MeetingsEndpointsLoggerMarker> logger,
+        [FromServices] ILogger<MeetingsEndpoint> logger,
         HttpContext httpContext,
         CancellationToken ct)
     {
@@ -225,7 +225,7 @@ public static class MeetingsEndpoints
         [FromRoute] Guid meetingId,
         [FromBody] UpdateMeetingRequest request,
         [FromServices] IMeetingAccessorClient meetingAccessorClient,
-        [FromServices] ILogger<MeetingsEndpointsLoggerMarker> logger,
+        [FromServices] ILogger<MeetingsEndpoint> logger,
         HttpContext httpContext,
         CancellationToken ct)
     {
@@ -297,7 +297,7 @@ public static class MeetingsEndpoints
     private static async Task<IResult> DeleteMeetingAsync(
         [FromRoute] Guid meetingId,
         [FromServices] IMeetingAccessorClient meetingAccessorClient,
-        [FromServices] ILogger<MeetingsEndpointsLoggerMarker> logger,
+        [FromServices] ILogger<MeetingsEndpoint> logger,
         HttpContext httpContext,
         CancellationToken ct)
     {
@@ -345,7 +345,7 @@ public static class MeetingsEndpoints
     private static async Task<IResult> GenerateTokenForMeetingAsync(
         [FromRoute] Guid meetingId,
         [FromServices] IMeetingAccessorClient meetingAccessorClient,
-        [FromServices] ILogger<MeetingsEndpointsLoggerMarker> logger,
+        [FromServices] ILogger<MeetingsEndpoint> logger,
         HttpContext httpContext,
         CancellationToken ct)
     {

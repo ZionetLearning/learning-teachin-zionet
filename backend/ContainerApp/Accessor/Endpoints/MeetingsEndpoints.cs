@@ -1,5 +1,4 @@
 using Accessor.Models.Meetings;
-using Accessor.Services;
 using Accessor.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,7 +6,7 @@ namespace Accessor.Endpoints;
 
 public static class MeetingsEndpoints
 {
-    private sealed class MeetingsEndpointsLoggerMarker { }
+    private sealed class MeetingsEndpoint { }
 
     public static IEndpointRouteBuilder MapMeetingsEndpoints(this IEndpointRouteBuilder app)
     {
@@ -40,7 +39,7 @@ public static class MeetingsEndpoints
     private static async Task<IResult> GetMeetingAsync(
         [FromRoute] Guid meetingId,
         [FromServices] IMeetingService meetingService,
-        [FromServices] ILogger<MeetingService> logger,
+        [FromServices] ILogger<MeetingsEndpoint> logger,
         CancellationToken ct)
     {
         using var scope = logger.BeginScope("Method: {Method}, MeetingId: {MeetingId}",
@@ -67,7 +66,7 @@ public static class MeetingsEndpoints
     private static async Task<IResult> GetMeetingsForUserAsync(
         [FromRoute] Guid userId,
         [FromServices] IMeetingService meetingService,
-        [FromServices] ILogger<MeetingsEndpointsLoggerMarker> logger,
+        [FromServices] ILogger<MeetingsEndpoint> logger,
         CancellationToken ct)
     {
         using var scope = logger.BeginScope("Method: {Method}, UserId: {UserId}",
@@ -95,7 +94,7 @@ public static class MeetingsEndpoints
     private static async Task<IResult> CreateMeetingAsync(
         [FromBody] CreateMeetingRequest request,
         [FromServices] IMeetingService meetingService,
-        [FromServices] ILogger<MeetingsEndpointsLoggerMarker> logger,
+        [FromServices] ILogger<MeetingsEndpoint> logger,
         CancellationToken ct)
     {
         using var scope = logger.BeginScope("Method: {Method}", nameof(CreateMeetingAsync));
@@ -136,7 +135,7 @@ public static class MeetingsEndpoints
         [FromRoute] Guid meetingId,
         [FromBody] UpdateMeetingRequest request,
         [FromServices] IMeetingService meetingService,
-        [FromServices] ILogger<MeetingsEndpointsLoggerMarker> logger,
+        [FromServices] ILogger<MeetingsEndpoint> logger,
         CancellationToken ct)
     {
         using var scope = logger.BeginScope("Method: {Method}, MeetingId: {MeetingId}",
@@ -171,7 +170,7 @@ public static class MeetingsEndpoints
     private static async Task<IResult> DeleteMeetingAsync(
         [FromRoute] Guid meetingId,
         [FromServices] IMeetingService meetingService,
-        [FromServices] ILogger<MeetingsEndpointsLoggerMarker> logger,
+        [FromServices] ILogger<MeetingsEndpoint> logger,
         CancellationToken ct)
     {
         using var scope = logger.BeginScope("Method: {Method}, MeetingId: {MeetingId}",
@@ -201,7 +200,7 @@ public static class MeetingsEndpoints
         [FromRoute] Guid meetingId,
         [FromQuery] Guid userId,
         [FromServices] IAzureCommunicationService acsService,
-        [FromServices] ILogger<MeetingsEndpointsLoggerMarker> logger,
+        [FromServices] ILogger<MeetingsEndpoint> logger,
         CancellationToken ct)
     {
         using var scope = logger.BeginScope("Method: {Method}, MeetingId: {MeetingId}, UserId: {UserId}",
@@ -245,7 +244,7 @@ public static class MeetingsEndpoints
     private static async Task<IResult> CreateOrGetIdentityAsync(
         [FromRoute] Guid userId,
         [FromServices] IAzureCommunicationService acsService,
-        [FromServices] ILogger<MeetingsEndpointsLoggerMarker> logger,
+        [FromServices] ILogger<MeetingsEndpoint> logger,
         CancellationToken ct)
     {
         using var scope = logger.BeginScope("Method: {Method}, UserId: {UserId}",

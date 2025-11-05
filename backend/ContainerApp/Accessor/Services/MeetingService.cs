@@ -60,11 +60,23 @@ public class MeetingService : IMeetingService
                 .ToListAsync(ct);
 
             // Filter meetings where the user is in the Attendees list
-            var userMeetings = meetings
+            var userMeetings = await _db.Meetings
+                .AsNoTracking()
                 .Where(m => m.Attendees.Any(a => a.UserId == userId))
-                .Select(MapToDto)
                 .OrderByDescending(m => m.StartTimeUtc)
-                .ToList();
+                .Select(m => new MeetingDto
+                {
+                    Id = m.Id,
+                    Attendees = m.Attendees,
+                    StartTimeUtc = m.StartTimeUtc,
+                    DurationMinutes = m.DurationMinutes,
+                    Description = m.Description,
+                    Status = m.Status,
+                    GroupCallId = m.GroupCallId,
+                    CreatedOn = m.CreatedOn,
+                    CreatedByUserId = m.CreatedByUserId
+                })
+                .ToListAsync(ct);
 
             _logger.LogInformation("GetMeetingsForUser END: returned {Count} meetings for user {UserId}",
                 userMeetings.Count, userId);
@@ -83,10 +95,8 @@ public class MeetingService : IMeetingService
 
         try
         {
-            // Always create a new ACS room in the backend
             _logger.LogInformation("Creating new ACS room for meeting");
 
-            // Set room validity: from start time to start time + duration
             var validFrom = request.StartTimeUtc;
             var validUntil = request.StartTimeUtc.AddMinutes(request.DurationMinutes);
 
@@ -133,7 +143,6 @@ public class MeetingService : IMeetingService
                 return false;
             }
 
-            // Update only provided fields
             if (request.Attendees != null)
             {
                 meeting.Attendees = request.Attendees;
