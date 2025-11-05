@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient as axios } from "@app-providers";
 import { toast } from "react-toastify";
+import axiosBase from "axios";
 
 const USERS_MANAGER_URL = import.meta.env.VITE_USERS_URL!;
 
@@ -22,6 +23,11 @@ export type ConfirmAvatarRequest = {
   contentType: string;
 };
 
+export type UploadToBlobRequest = {
+  uploadUrl: string;
+  file: File;
+};
+
 export const useGetAvatarUploadUrl = (userId: string) => {
   return useMutation<UploadUrlResponse, Error, UploadUrlRequest>({
     mutationFn: async (body) => {
@@ -30,10 +36,6 @@ export const useGetAvatarUploadUrl = (userId: string) => {
         body,
       );
       return res.data;
-    },
-    onError: (error) => {
-      console.error("Failed to get upload URL:", error);
-      toast.error("Failed to prepare avatar upload. Please try again.");
     },
   });
 };
@@ -51,10 +53,6 @@ export const useConfirmAvatar = (userId: string) => {
     onSuccess: () => {
       toast.success("Avatar uploaded successfully!");
       qc.invalidateQueries({ queryKey: ["avatar", userId] });
-    },
-    onError: (error) => {
-      console.error("Failed to confirm avatar:", error);
-      toast.error("Failed to save avatar. Please try again.");
     },
   });
 };
@@ -91,6 +89,31 @@ export const useDeleteAvatar = (userId: string) => {
     onError: (error) => {
       console.error("Failed to delete avatar:", error);
       toast.error("Failed to delete avatar. Please try again.");
+    },
+  });
+};
+
+export const useUploadToBlob = () => {
+  return useMutation<void, Error, UploadToBlobRequest>({
+    mutationFn: async ({ uploadUrl, file }) => {
+      // use base axios instance (not apiClient) to avoid Authorization header
+      // Azure Blob Storage authenticates via SAS token in the URL
+      const response = await axiosBase.put(uploadUrl, file, {
+        headers: {
+          "Content-Type": file.type,
+          "x-ms-blob-type": "BlockBlob",
+        },
+        timeout: 60000, // 60 second timeout
+      });
+
+      if (response.status !== 201) {
+        throw new Error(
+          `Upload failed with status ${response.status}: ${response.statusText}`,
+        );
+      }
+    },
+    onError: (error) => {
+      console.error("Failed to upload to blob storage:", error);
     },
   });
 };

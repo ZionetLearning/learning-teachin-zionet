@@ -1,15 +1,15 @@
-import { useRef, useState, ChangeEvent } from "react";
+import { useRef, ChangeEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Box, Avatar, IconButton, CircularProgress } from "@mui/material";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import DeleteIcon from "@mui/icons-material/Delete";
-import axios, { AxiosError } from "axios";
 import { toast } from "react-toastify";
 import {
   useGetAvatarUploadUrl,
   useConfirmAvatar,
   useGetAvatarUrl,
   useDeleteAvatar,
+  useUploadToBlob,
 } from "@api";
 import { useStyles } from "./style";
 
@@ -27,11 +27,12 @@ export const AvatarUpload = ({ userId, userName }: AvatarUploadProps) => {
   const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [isUploading, setIsUploading] = useState(false);
-
   const { data: avatarUrl, isLoading: isLoadingUrl } = useGetAvatarUrl(userId);
   const { mutateAsync: getUploadUrl } = useGetAvatarUploadUrl(userId);
-  const { mutateAsync: confirmAvatar } = useConfirmAvatar(userId);
+  const { mutateAsync: uploadToBlob, isPending: isUploadingToBlob } =
+    useUploadToBlob();
+  const { mutateAsync: confirmAvatar, isPending: isConfirming } =
+    useConfirmAvatar(userId);
   const { mutateAsync: deleteAvatar, isPending: isDeleting } =
     useDeleteAvatar(userId);
 
@@ -73,8 +74,6 @@ export const AvatarUpload = ({ userId, userName }: AvatarUploadProps) => {
       return;
     }
 
-    setIsUploading(true);
-
     try {
       const uploadData = await getUploadUrl({
         contentType: file.type,
@@ -85,19 +84,10 @@ export const AvatarUpload = ({ userId, userName }: AvatarUploadProps) => {
         throw new Error("Invalid upload URL received from server");
       }
 
-      const uploadResponse = await axios.put(uploadData.uploadUrl, file, {
-        headers: {
-          "Content-Type": file.type,
-          "x-ms-blob-type": "BlockBlob",
-        },
-        timeout: 60000, // 60 second timeout
+      await uploadToBlob({
+        uploadUrl: uploadData.uploadUrl,
+        file,
       });
-
-      if (uploadResponse.status !== 201) {
-        throw new Error(
-          `Upload failed with status ${uploadResponse.status}: ${uploadResponse.statusText}`,
-        );
-      }
 
       await confirmAvatar({
         blobPath: uploadData.blobPath,
@@ -105,33 +95,6 @@ export const AvatarUpload = ({ userId, userName }: AvatarUploadProps) => {
       });
     } catch (error) {
       console.error("Avatar upload failed:", error);
-
-      if (axios.isAxiosError(error)) {
-        const axiosError = error as AxiosError;
-        if (axiosError.code === "ECONNABORTED") {
-          toast.error(t("pages.profile.avatar.uploadTimeout"));
-        } else if (axiosError.response?.status === 413) {
-          toast.error(t("pages.profile.avatar.fileTooLarge"));
-        } else if (axiosError.response?.status === 403) {
-          toast.error(t("pages.profile.avatar.uploadForbidden"));
-        } else if (!navigator.onLine) {
-          toast.error(t("pages.profile.avatar.noConnection"));
-        } else {
-          toast.error(
-            t("pages.profile.avatar.uploadFailed", {
-              error: axiosError.message,
-            }),
-          );
-        }
-      } else if (error instanceof Error) {
-        toast.error(
-          t("pages.profile.avatar.uploadFailed", { error: error.message }),
-        );
-      } else {
-        toast.error(t("pages.profile.avatar.uploadFailedGeneric"));
-      }
-    } finally {
-      setIsUploading(false);
     }
   };
 
@@ -149,7 +112,8 @@ export const AvatarUpload = ({ userId, userName }: AvatarUploadProps) => {
     return userName.substring(0, 2).toUpperCase();
   };
 
-  const isLoading = isLoadingUrl || isUploading || isDeleting;
+  const isLoading =
+    isLoadingUrl || isUploadingToBlob || isConfirming || isDeleting;
 
   return (
     <Box className={classes.container}>

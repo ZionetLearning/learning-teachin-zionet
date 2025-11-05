@@ -170,11 +170,6 @@ export const Profile = ({ user }: { user: User }) => {
       </Box>
 
       <Box className={classes.formCard}>
-        <AvatarUpload
-          userId={user.userId}
-          userName={`${user.firstName} ${user.lastName}`}
-        />
-
         <Box className={classes.formHeader}>
           <Typography variant="h6" color="text.secondary">
             {t("pages.profile.subTitle")}
@@ -183,6 +178,10 @@ export const Profile = ({ user }: { user: User }) => {
             {t("pages.profile.secondSubTitle")}
           </Typography>
         </Box>
+        <AvatarUpload
+          userId={user.userId}
+          userName={`${user.firstName} ${user.lastName}`}
+        />
 
         <Stack spacing={3}>
           <Grid container spacing={2}>
