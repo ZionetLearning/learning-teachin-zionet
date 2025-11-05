@@ -51,6 +51,15 @@ resource "azurerm_key_vault_secret" "redis_password" {
 }
 
 ########################
+# Communication Service secret
+########################
+resource "azurerm_key_vault_secret" "communication_service_connection" {
+  name         = "${var.environment_name}-comm-svc-connection"
+  value        = var.communication_service_connection_string
+  key_vault_id = data.azurerm_key_vault.shared.id
+}
+
+########################
 # Storage Account secret for Avatars
 ########################
 resource "azurerm_key_vault_secret" "avatars_storage_connection" {
