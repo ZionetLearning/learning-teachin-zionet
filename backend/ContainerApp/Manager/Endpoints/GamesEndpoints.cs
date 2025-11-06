@@ -45,16 +45,14 @@ public static class GamesEndpoints
             var callerRole = http.User.FindFirstValue(AuthSettings.RoleClaimType);
             var callerIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
 
-            logger.LogInformation("SubmitAttempts called by role={Role}, callerId={CallerId}, studentId={StudentId}", callerRole, callerIdRaw, request.StudentId);
-
-            if (callerRole?.Equals(Role.Student.ToString(), StringComparison.OrdinalIgnoreCase) == true &&
-                Guid.TryParse(callerIdRaw, out var callerId) && callerId != request.StudentId)
+            if (!Guid.TryParse(callerIdRaw, out var studentId))
             {
-                logger.LogWarning("Forbidden attempt: Student {CallerId} tried to submit attempt for Student {StudentId}", callerId, request.StudentId);
-                return Results.Forbid();
+                logger.LogWarning("Invalid or missing UserId in token: {CallerIdRaw}", callerIdRaw);
+                return Results.Unauthorized();
             }
 
-            var result = await accessorClient.SubmitAttemptAsync(request, ct);
+            logger.LogInformation("SubmitAttempts called by role={Role}, studentId={StudentId}", callerRole, studentId);
+            var result = await accessorClient.SubmitAttemptAsync(studentId, request, ct);
 
             logger.LogInformation("Attempt submitted successfully for StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}, Status={Status}, AttemptNumber={AttemptNumber}", result.StudentId, result.GameType, result.Difficulty, result.Status, result.AttemptNumber);
 
@@ -62,7 +60,7 @@ public static class GamesEndpoints
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error while submitting attempt for StudentId={StudentId}", request.StudentId);
+            logger.LogError(ex, "Error while submitting attempt");
             return Results.Problem("Failed to submit attempt. Please try again later.");
         }
     }
@@ -93,8 +91,16 @@ public static class GamesEndpoints
             logger.LogInformation("Fetching history for StudentId={StudentId}, Summary={Summary}, GetPending={GetPending}, Page={Page}, PageSize={PageSize}", studentId, summary, getPending, page, pageSize);
 
             var result = await accessorClient.GetHistoryAsync(studentId, summary, page, pageSize, getPending, ct);
-
-            return Results.Ok(result);
+            if (result.IsSummary)
+            {
+                logger.LogInformation("Returned {Records} summary records", result.Summary?.Items.Count() ?? 0);
+                return Results.Ok(result.Summary);
+            }
+            else
+            {
+                logger.LogInformation("Returned {Records} detailed records", result.Detailed?.Items.Count() ?? 0);
+                return Results.Ok(result.Detailed);
+            }
         }
         catch (Exception ex)
         {

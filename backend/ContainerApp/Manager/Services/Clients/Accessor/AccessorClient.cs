@@ -671,14 +671,21 @@ public class AccessorClient(
         }
     }
 
-    public async Task<SubmitAttemptResult> SubmitAttemptAsync(SubmitAttemptRequest request, CancellationToken ct = default)
+    public async Task<SubmitAttemptResult> SubmitAttemptAsync(Guid studentId, SubmitAttemptRequest request, CancellationToken ct = default)
     {
         try
         {
-            _logger.LogInformation("Forwarding SubmitAttempt to Accessor. StudentId={StudentId}", request.StudentId);
+            _logger.LogInformation("Forwarding SubmitAttempt to Accessor. StudentId={StudentId}, ExerciseId={ExerciseId}", studentId, request.ExerciseId);
 
-            var result = await _daprClient.InvokeMethodAsync<SubmitAttemptRequest, SubmitAttemptResult>(
-                HttpMethod.Post, AppIds.Accessor, "games-accessor/attempt", request, ct
+            var accessorRequest = new SubmitAttemptRequestDto
+            {
+                StudentId = studentId,
+                ExerciseId = request.ExerciseId,
+                GivenAnswer = request.GivenAnswer
+            };
+
+            var result = await _daprClient.InvokeMethodAsync<SubmitAttemptRequestDto, SubmitAttemptResult>(
+                HttpMethod.Post, AppIds.Accessor, "games-accessor/attempt", accessorRequest, ct
             );
 
             _logger.LogInformation("Received SubmitAttemptResult from Accessor. StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}, Status={Status}, AttemptNumber={AttemptNumber}", result.StudentId, result.GameType, result.Difficulty, result.Status, result.AttemptNumber);
@@ -687,38 +694,74 @@ public class AccessorClient(
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to forward SubmitAttempt to Accessor. StudentId={StudentId}", request.StudentId);
+            _logger.LogError(ex, "Failed to forward SubmitAttempt to Accessor. StudentId={StudentId}, ExerciseId={ExerciseId}", studentId, request.ExerciseId);
             throw; // rethrow so Manager endpoint can handle with Results.Problem()
         }
     }
 
-    public async Task<PagedResult<object>> GetHistoryAsync(Guid studentId, bool summary, int page, int pageSize, bool getPending, CancellationToken ct = default)
+    public async Task<GameHistoryResponse> GetHistoryAsync(Guid studentId, bool summary, int page, int pageSize, bool getPending, CancellationToken ct = default)
     {
         try
         {
             _logger.LogInformation("Requesting history from Accessor. StudentId={StudentId}, Summary={Summary}, Page={Page}, PageSize={PageSize}, GetPending={GetPending}", studentId, summary, page, pageSize, getPending);
 
-            var result = await _daprClient.InvokeMethodAsync<PagedResult<object>>(
-                HttpMethod.Get,
-                AppIds.Accessor,
-                $"games-accessor/history/{studentId}?summary={summary}&page={page}&pageSize={pageSize}&getPending={getPending}",
-                cancellationToken: ct
-            );
-
-            if (result == null)
+            if (summary)
             {
-                _logger.LogWarning("Accessor returned null history. StudentId={StudentId}, Summary={Summary}, GetPending={GetPending}", studentId, summary, getPending);
-                return new PagedResult<object> { Page = page, PageSize = pageSize, TotalCount = 0 };
+                var summaryResult = await _daprClient.InvokeMethodAsync<PagedResult<SummaryHistoryDto>>(
+                    HttpMethod.Get,
+                    AppIds.Accessor,
+                    $"games-accessor/history/{studentId}?summary=true&page={page}&pageSize={pageSize}&getPending={getPending}",
+                    cancellationToken: ct
+                );
+
+                if (summaryResult == null)
+                {
+                    _logger.LogWarning("Accessor returned null summary history. StudentId={StudentId}", studentId);
+                    summaryResult = new PagedResult<SummaryHistoryDto> { Page = page, PageSize = pageSize, TotalCount = 0 };
+                }
+
+                _logger.LogInformation("Received summary history from Accessor. StudentId={StudentId}, Items={Count}, TotalCount={TotalCount}", studentId, summaryResult.Items.Count(), summaryResult.TotalCount);
+
+                return new GameHistoryResponse { Summary = summaryResult };
             }
+            else
+            {
+                var detailedResult = await _daprClient.InvokeMethodAsync<PagedResult<AttemptHistoryDto>>(
+                    HttpMethod.Get,
+                    AppIds.Accessor,
+                    $"games-accessor/history/{studentId}?summary=false&page={page}&pageSize={pageSize}&getPending={getPending}",
+                    cancellationToken: ct
+                );
 
-            _logger.LogInformation("Received history from Accessor. StudentId={StudentId}, Summary={Summary}, GetPending={GetPending}, Items={Count}, TotalCount={TotalCount}", studentId, summary, getPending, result.Items.Count(), result.TotalCount);
+                if (detailedResult == null)
+                {
+                    _logger.LogWarning("Accessor returned null detailed history. StudentId={StudentId}", studentId);
+                    detailedResult = new PagedResult<AttemptHistoryDto> { Page = page, PageSize = pageSize, TotalCount = 0 };
+                }
 
-            return result;
+                _logger.LogInformation("Received detailed history from Accessor. StudentId={StudentId}, Items={Count}, TotalCount={TotalCount}", studentId, detailedResult.Items.Count(), detailedResult.TotalCount);
+
+                return new GameHistoryResponse { Detailed = detailedResult };
+            }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get history from Accessor. StudentId={StudentId}, Summary={Summary}, GetPending={GetPending}", studentId, summary, getPending);
-            return new PagedResult<object> { Page = page, PageSize = pageSize, TotalCount = 0 };
+
+            if (summary)
+            {
+                return new GameHistoryResponse
+                {
+                    Summary = new PagedResult<SummaryHistoryDto> { Page = page, PageSize = pageSize, TotalCount = 0 }
+                };
+            }
+            else
+            {
+                return new GameHistoryResponse
+                {
+                    Detailed = new PagedResult<AttemptHistoryDto> { Page = page, PageSize = pageSize, TotalCount = 0 }
+                };
+            }
         }
     }
 

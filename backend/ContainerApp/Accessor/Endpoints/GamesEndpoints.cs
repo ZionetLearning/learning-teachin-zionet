@@ -33,13 +33,13 @@ public static class GamesEndpoints
             return Results.BadRequest(new { message = "Request body must not be null." });
         }
 
-        if (request.AttemptId == Guid.Empty)
+        if (request.ExerciseId == Guid.Empty)
         {
-            logger.LogWarning("SubmitAttemptAsync rejected. Invalid AttemptId provided.");
-            return Results.BadRequest(new { message = "AttemptId must be a non-empty GUID." });
+            logger.LogWarning("SubmitAttemptAsync rejected. Invalid ExerciseId provided.");
+            return Results.BadRequest(new { message = "ExerciseId must be a non-empty GUID." });
         }
 
-        using var scope = logger.BeginScope("Method: {Method}, AttemptId: {AttemptId}", nameof(SubmitAttemptAsync), request.AttemptId);
+        using var scope = logger.BeginScope("Method: {Method}, ExerciseId: {ExerciseId}", nameof(SubmitAttemptAsync), request.ExerciseId);
 
         try
         {
@@ -51,7 +51,7 @@ public static class GamesEndpoints
         }
         catch (InvalidOperationException ex)
         {
-            logger.LogWarning(ex, "Validation failed. AttemptId={AttemptId}", request.AttemptId);
+            logger.LogWarning(ex, "Validation failed. ExerciseId={ExerciseId}", request.ExerciseId);
             return Results.BadRequest(new { message = ex.Message });
         }
         catch (KeyNotFoundException ex)
@@ -78,12 +78,21 @@ public static class GamesEndpoints
     {
         try
         {
-            logger.LogInformation("GetHistoryAsync called. StudentId={StudentId}, Summary={Summary}, GetPending={GetPending}, Page={Page}, PageSize={PageSize}", studentId, summary, getPending, page, pageSize
-            );
+            logger.LogInformation("GetHistoryAsync called. StudentId={StudentId}, Summary={Summary}, GetPending={GetPending}, Page={Page}, PageSize={PageSize}",
+                studentId, summary, getPending, page, pageSize);
 
             var result = await service.GetHistoryAsync(studentId, summary, page, pageSize, getPending, ct);
 
-            logger.LogInformation("GetHistoryAsync returned {Records} records (page). TotalCount={TotalCount}", result.Items.Count(), result.TotalCount);
+            if (result.IsSummary)
+            {
+                logger.LogInformation("GetHistoryAsync returned {Records} summary records (page). TotalCount={TotalCount}",
+                    result.Summary?.Items.Count() ?? 0, result.Summary?.TotalCount ?? 0);
+            }
+            else
+            {
+                logger.LogInformation("GetHistoryAsync returned {Records} detailed records (page). TotalCount={TotalCount}",
+                    result.Detailed?.Items.Count() ?? 0, result.Detailed?.TotalCount ?? 0);
+            }
 
             return Results.Ok(result);
         }

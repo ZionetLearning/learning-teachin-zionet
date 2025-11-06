@@ -34,35 +34,28 @@ public class GameService : IGameService
 
         try
         {
-            _logger.LogInformation("Submit attempt requested. AttemptId={AttemptId}, StudentId={StudentId}", request.AttemptId, request.StudentId);
+            _logger.LogInformation("Submit attempt requested. ExerciseId={ExerciseId}, StudentId={StudentId}", request.ExerciseId, request.StudentId);
 
             var original = await _db.GameAttempts
-                .FirstOrDefaultAsync(a => a.StudentId == request.StudentId && a.AttemptId == request.AttemptId, ct);
+                .FirstOrDefaultAsync(a => a.StudentId == request.StudentId &&
+                a.ExerciseId == request.ExerciseId &&
+                a.AttemptId == request.ExerciseId, ct); // the original attempt has AttemptId == ExerciseId (exercise without answer)
 
             if (original is null)
             {
-                _logger.LogWarning("Attempt not found. AttemptId={AttemptId}", request.AttemptId);
-                throw new KeyNotFoundException("Original attempt not found.");
+                _logger.LogWarning("Exercise not found. ExerciseId={ExerciseId}", request.ExerciseId);
+                throw new KeyNotFoundException("Original exercise not found.");
             }
 
-            // If already successful, return as-is
-            if (original.Status == AttemptStatus.Success)
-            {
-                _logger.LogInformation("Attempt already successful. Returning result. AttemptId={AttemptId}", original.AttemptId);
-                return _mapper.Map<SubmitAttemptResult>(original);
-            }
-
-            // Check correctness
             var isCorrect = request.GivenAnswer.SequenceEqual(original.CorrectAnswer);
 
-            // Calculate accuracy based on game type
-            var accuracy = AccuracyCalculator.Calculate(
+            // If correct, accuracy is 100%, otherwise calculate accuracy
+            var accuracy = isCorrect ? 100m : AccuracyCalculator.Calculate(
                 original.GameType,
                 original.CorrectAnswer,
                 request.GivenAnswer
             );
 
-            // Determine next attempt number
             var last = await _db.GameAttempts
                 .Where(a => a.StudentId == original.StudentId && a.ExerciseId == original.ExerciseId)
                 .OrderByDescending(a => a.AttemptNumber)
@@ -70,7 +63,6 @@ public class GameService : IGameService
 
             var nextNumber = (last?.AttemptNumber ?? 0) + 1;
 
-            // Create new attempt with calculated accuracy
             var newAttempt = new GameAttempt
             {
                 AttemptId = Guid.NewGuid(),
@@ -87,21 +79,30 @@ public class GameService : IGameService
             };
 
             _db.GameAttempts.Add(newAttempt);
+
+            // If the answer is correct, update the original attempt (first attempt) to Success
+            if (isCorrect)
+            {
+                original.Status = AttemptStatus.Success;
+                _db.GameAttempts.Update(original);
+                _logger.LogInformation("Original attempt updated to Success. ExerciseId={ExerciseId}", original.ExerciseId);
+            }
+
             await _db.SaveChangesAsync(ct);
 
-            _logger.LogInformation("New attempt saved. AttemptId={NewId}, BasedOn={OriginalId}, Number={Number}, Status={Status}, Accuracy={Accuracy}%",
-                newAttempt.AttemptId, original.AttemptId, nextNumber, newAttempt.Status, newAttempt.Accuracy);
+            _logger.LogInformation("New attempt saved. AttemptId={NewId}, ExerciseId={ExerciseId}, Number={Number}, Status={Status}, Accuracy={Accuracy}%",
+                newAttempt.AttemptId, original.ExerciseId, nextNumber, newAttempt.Status, newAttempt.Accuracy);
 
             return _mapper.Map<SubmitAttemptResult>(newAttempt);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error while submitting attempt. AttemptId={AttemptId}, StudentId={StudentId}", request.AttemptId, request.StudentId);
+            _logger.LogError(ex, "Error while submitting attempt. ExerciseId={ExerciseId}, StudentId={StudentId}", request.ExerciseId, request.StudentId);
             throw;
         }
     }
 
-    public async Task<PagedResult<object>> GetHistoryAsync(
+    public async Task<GameHistoryResponse> GetHistoryAsync(
     Guid studentId, bool summary, int page, int pageSize, bool getPending, CancellationToken ct)
     {
         try
@@ -160,12 +161,15 @@ public class GameService : IGameService
                     "Summary history retrieved. StudentId={StudentId}, Records={Count}, TotalCount={Total}, GetPending={GetPending}",
                     studentId, items.Count, total, getPending);
 
-                return new PagedResult<object>
+                return new GameHistoryResponse
                 {
-                    Items = items,
-                    Page = page,
-                    PageSize = pageSize,
-                    TotalCount = total
+                    Summary = new PagedResult<SummaryHistoryDto>
+                    {
+                        Items = items,
+                        Page = page,
+                        PageSize = pageSize,
+                        TotalCount = total
+                    }
                 };
             }
             else
@@ -195,12 +199,15 @@ public class GameService : IGameService
                     "Full history retrieved. StudentId={StudentId}, Records={Count}, TotalCount={Total}, GetPending={GetPending}",
                     studentId, items.Count, total, getPending);
 
-                return new PagedResult<object>
+                return new GameHistoryResponse
                 {
-                    Items = items,
-                    Page = page,
-                    PageSize = pageSize,
-                    TotalCount = total
+                    Detailed = new PagedResult<AttemptHistoryDto>
+                    {
+                        Items = items,
+                        Page = page,
+                        PageSize = pageSize,
+                        TotalCount = total
+                    }
                 };
             }
         }
@@ -210,13 +217,27 @@ public class GameService : IGameService
                 "Unexpected error while fetching history. StudentId={StudentId}, Summary={Summary}, GetPending={GetPending}",
                 studentId, summary, getPending);
 
-            return new PagedResult<object>
-            {
-                Items = Array.Empty<object>(),
-                Page = page,
-                PageSize = pageSize,
-                TotalCount = 0
-            };
+            return summary
+                ? new GameHistoryResponse
+                {
+                    Summary = new PagedResult<SummaryHistoryDto>
+                    {
+                        Items = Array.Empty<SummaryHistoryDto>(),
+                        Page = page,
+                        PageSize = pageSize,
+                        TotalCount = 0
+                    }
+                }
+                : new GameHistoryResponse
+                {
+                    Detailed = new PagedResult<AttemptHistoryDto>
+                    {
+                        Items = Array.Empty<AttemptHistoryDto>(),
+                        Page = page,
+                        PageSize = pageSize,
+                        TotalCount = 0
+                    }
+                };
         }
     }
 
@@ -244,22 +265,32 @@ public class GameService : IGameService
 
             _logger.LogInformation("Fetching mistakes. StudentId={StudentId}, Page={Page}, PageSize={PageSize}", studentId, page, pageSize);
 
-            var attempts = await _db.GameAttempts
+            // Get all attempts, group by exercise, and filter for exercises with only failures
+            var allAttempts = await _db.GameAttempts
+                .AsNoTracking()
                 .Where(a => a.StudentId == studentId && a.Status != AttemptStatus.Pending)
-                .OrderBy(a => a.CreatedAt)
                 .ToListAsync(ct);
 
-            var mistakes = attempts
+            var mistakes = allAttempts
                 .GroupBy(a => a.ExerciseId)
-                .Where(g => !g.Any(x => x.Status == AttemptStatus.Success))
+                .Where(g => !g.Any(a => a.Status == AttemptStatus.Success))
                 .Select(g => new MistakeDto
                 {
-                    AttemptId = g.First().AttemptId,
+                    ExerciseId = g.Key,
                     GameType = g.First().GameType,
                     Difficulty = g.First().Difficulty,
                     CorrectAnswer = g.First().CorrectAnswer,
-                    WrongAnswers = g.Where(x => x.Status == AttemptStatus.Failure).Select(x => x.GivenAnswer).ToList()
+                    Mistakes = g.Where(a => a.Status == AttemptStatus.Failure)
+                                .OrderByDescending(a => a.CreatedAt)
+                                .Select(a => new MistakeAttemptDto
+                                {
+                                    AttemptId = a.AttemptId,
+                                    WrongAnswer = a.GivenAnswer,
+                                    Accuracy = a.Accuracy,
+                                    CreatedAt = a.CreatedAt
+                                }).ToList()
                 })
+                .OrderByDescending(m => m.Mistakes.Max(a => a.CreatedAt))
                 .ToList();
 
             var total = mistakes.Count;
