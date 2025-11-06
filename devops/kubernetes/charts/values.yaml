@@ -218,6 +218,13 @@ accessor:
       data:
         - remote: accessor-speech-key
           key: Speech__Key
+    langfuse:
+      enabled: true
+      name: accessor-langfuse-secret
+      keys:
+        baseUrl: Langfuse__BaseUrl
+        publicKey: Langfuse__PublicKey
+        secretKey: Langfuse__SecretKey
   resources:
     requests:
       cpu: "100m"

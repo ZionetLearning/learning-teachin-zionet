@@ -754,18 +754,18 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
     private async Task<string> GetOrLoadSystemPromptAsync(CancellationToken ct)
     {
-
-        var keys = new[] { PromptsKeys.SystemDefault, PromptsKeys.DetailedExplanation };
+        var configs = new[] { PromptsKeys.SystemDefault, PromptsKeys.DetailedExplanation };
         var fallback = "You are a helpful assistant. Keep answers concise.";
 
         try
         {
-            var batch = await _accessorClient.GetPromptsBatchAsync(keys, ct);
+            var batch = await _accessorClient.GetPromptsBatchAsync(configs, ct);
             var map = batch.Prompts.ToDictionary(p => p.PromptKey, p => p.Content, StringComparer.Ordinal);
+
             var combined = string.Join(
-            "\n\n",
-            keys.Select(k => map.TryGetValue(k, out var v) ? v : null)
-                .Where(v => !string.IsNullOrWhiteSpace(v)));
+                "\n\n",
+                configs.Select(c => map.TryGetValue(c.Key, out var v) ? v : null)
+                    .Where(v => !string.IsNullOrWhiteSpace(v)));
 
             if (string.IsNullOrWhiteSpace(combined))
             {

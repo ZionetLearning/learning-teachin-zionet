@@ -10,6 +10,7 @@ using Accessor.Services.Interfaces;
 using Azure.Messaging.ServiceBus;
 using DotQueue;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -43,6 +44,7 @@ builder.Services.AddScoped<ISpeechService, SpeechService>();
 builder.Services.AddScoped<IStudentPracticeHistoryService, StudentPracticeHistoryService>();
 builder.Services.AddScoped<IWordCardService, WordCardService>();
 builder.Services.AddScoped<IClassService, ClassService>();
+builder.Services.AddScoped<IUserGameConfigurationService, UserGameConfigurationService>();
 
 builder.Services.AddHttpClient("SpeechClient", client =>
 {
@@ -51,6 +53,20 @@ builder.Services.AddHttpClient("SpeechClient", client =>
 
     client.BaseAddress = new Uri($"https://{region}.api.cognitive.microsoft.com/");
     client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", key);
+});
+
+builder.Services.AddHttpClient<ILangfuseService, LangfuseService>((serviceProvider, client) =>
+{
+    var options = serviceProvider.GetRequiredService<IOptions<LangfuseOptions>>().Value;
+    // Only set BaseAddress if configured, otherwise use a dummy URL to prevent exception
+    if (!string.IsNullOrWhiteSpace(options.BaseUrl))
+    {
+        client.BaseAddress = new Uri(options.BaseUrl);
+    }
+    else
+    {
+        client.BaseAddress = new Uri("http://localhost");
+    }
 });
 
 builder.Services.AddScoped<IPromptService, PromptService>();
@@ -73,6 +89,10 @@ builder.Services.AddOptions<TaskCacheOptions>()
 
 builder.Services.AddOptions<PromptsOptions>()
     .Bind(builder.Configuration.GetSection("Prompts"))
+    .ValidateOnStart();
+
+builder.Services.AddOptions<LangfuseOptions>()
+    .Bind(builder.Configuration.GetSection("Langfuse"))
     .ValidateOnStart();
 
 // Register Dapr client with custom JSON options
@@ -129,8 +149,6 @@ using (var scope = app.Services.CreateScope())
 {
     var initializer = scope.ServiceProvider.GetRequiredService<DatabaseInitializer>();
     await initializer.InitializeAsync();
-    var promptStartup = scope.ServiceProvider.GetRequiredService<IPromptService>();
-    await promptStartup.InitializeDefaultPromptsAsync();
 }
 
 // Configure middleware and Dapr
@@ -167,4 +185,6 @@ app.MapMediaEndpoints();
 app.MapGamesEndpoints();
 app.MapWordCardsEndpoints();
 app.MapClassesEndpoints();
+app.MapUserGameConfigurationEndpoints();
+
 await app.RunAsync();
