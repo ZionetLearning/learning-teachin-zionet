@@ -483,10 +483,6 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
             var attemptDetails = await _accessorClient.GetAttemptDetailsAsync(request.UserId, request.AttemptId, ct);
             getAttemptDetailsTime = sw.ElapsedMilliseconds;
 
-            _logger.LogInformation("Fetching user details for UserId {UserId}", request.UserId);
-            var userDetails = await _accessorClient.GetUserAsync(request.UserId, ct);
-            var lang = userDetails?.PreferredLanguageCode.ToString() ?? "en";
-
             var storyForKernel = new ChatHistory();
             var systemPrompt = await _accessorClient.GetPromptAsync(PromptsKeys.ExplainMistakeSystem, ct);
             if (systemPrompt?.Content is not null)
@@ -501,7 +497,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
             }
 
             getSystemPromptTime = sw.ElapsedMilliseconds;
-            var mistakeExplanationPrompt = await BuildMistakeExplanationPromptAsync(attemptDetails, request.GameType, lang, ct);
+            var mistakeExplanationPrompt = await BuildMistakeExplanationPromptAsync(attemptDetails, request.GameType, ct);
             storyForKernel.AddUserMessage(mistakeExplanationPrompt, DateTimeOffset.UtcNow);
 
             getMistakePromptTime = sw.ElapsedMilliseconds;
@@ -712,7 +708,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         }
     }
 
-    private async Task<string> BuildMistakeExplanationPromptAsync(AttemptDetailsResponse attemptDetails, string gameType, string lang, CancellationToken ct)
+    private async Task<string> BuildMistakeExplanationPromptAsync(AttemptDetailsResponse attemptDetails, string gameType, CancellationToken ct)
     {
         var userAnswerText = string.Join(" ", attemptDetails.GivenAnswer);
         var correctAnswerText = string.Join(" ", attemptDetails.CorrectAnswer);
@@ -725,8 +721,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
                 .Replace("{gameType}", gameType)
                 .Replace("{difficulty}", attemptDetails.Difficulty)
                 .Replace("{userAnswer}", userAnswerText)
-                .Replace("{correctAnswer}", correctAnswerText)
-                .Replace("{lang}", lang);
+                .Replace("{correctAnswer}", correctAnswerText);
         }
         else
         {
@@ -747,7 +742,6 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
                 3. Tips to avoid this mistake in the future
 
                 Be encouraging and focus on learning rather than just pointing out the error.
-                Use only language with this code: {lang} for an answer.
                 """;
         }
     }

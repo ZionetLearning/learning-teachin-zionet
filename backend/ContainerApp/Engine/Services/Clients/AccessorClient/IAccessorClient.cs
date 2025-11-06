@@ -1,5 +1,4 @@
 ﻿using Engine.Models.Prompts;
-using Engine.Models.Users;
 using Engine.Options;
 using Engine.Services.Clients.AccessorClient.Models;
 
@@ -20,7 +19,5 @@ public interface IAccessorClient
 
     // User Interests
     Task<List<string>> GetUserInterestsAsync(Guid userId, CancellationToken ct);
-    Task<UserData?> GetUserAsync(Guid userId, CancellationToken ct = default);
-
 }
 
