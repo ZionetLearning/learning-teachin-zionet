@@ -1,3 +1,5 @@
+using Manager.Models.UserGameConfiguration;
+
 namespace IntegrationTests.Constants;
 
 public static class ApiRoutes
@@ -46,6 +48,11 @@ public static class ApiRoutes
     // -------- Word Cards --------
     public const string WordCards = "wordcards-manager";
     public const string WordCardsUpdateLearnedStatus = "wordcards-manager/learned";
+
+    // -------- User Game Config --------
+    public const string GameConfig = "game-config-manager";
+    public static string GameConfigByName(GameName gameName) => $"game-config-manager/{gameName}";
+
 
 
 }

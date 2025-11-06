@@ -17,9 +17,8 @@ import { toast } from "react-toastify";
 import { useDeleteUserByUserId } from "@admin/api";
 import { UpdateUserInput, useUpdateUserByUserId } from "@app-providers";
 import { AppRole, AppRoleType, User } from "@app-providers";
-import { Dropdown } from "@ui-components";
+import { Dropdown, RoleChip } from "@ui-components";
 import { useStyles } from "./style";
-import { RoleBadge } from "./components";
 
 interface UserListItemProps {
   user: User;
@@ -172,10 +171,7 @@ export const UserListItem = ({
             data-testid="users-edit-role"
           />
         ) : (
-          <RoleBadge
-            role={role as AppRoleType}
-            data-testid="users-role-badge"
-          />
+          <RoleChip role={role as AppRoleType} data-testid="users-role-badge" />
         )}
       </TableCell>
       <TableCell className={classes.tableCell} align="center" width="20%">

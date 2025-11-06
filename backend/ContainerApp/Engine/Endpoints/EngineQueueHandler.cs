@@ -743,6 +743,10 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
             var attemptDetails = await _accessorClient.GetAttemptDetailsAsync(request.UserId, request.AttemptId, ct);
             getAttemptDetailsTime = sw.ElapsedMilliseconds;
 
+            _logger.LogInformation("Fetching user details for UserId {UserId}", request.UserId);
+            var userDetails = await _accessorClient.GetUserAsync(request.UserId, ct);
+            var lang = userDetails?.PreferredLanguageCode.ToString() ?? "en";
+
             var storyForKernel = new ChatHistory();
             var systemPrompt = await _accessorClient.GetPromptAsync(PromptsKeys.ExplainMistakeSystem, ct);
             if (systemPrompt?.Content is not null)
@@ -757,7 +761,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
             }
 
             getSystemPromptTime = sw.ElapsedMilliseconds;
-            var mistakeExplanationPrompt = await BuildMistakeExplanationPromptAsync(attemptDetails, request.GameType, ct);
+            var mistakeExplanationPrompt = await BuildMistakeExplanationPromptAsync(attemptDetails, request.GameType, lang, ct);
             storyForKernel.AddUserMessage(mistakeExplanationPrompt, DateTimeOffset.UtcNow);
 
             getMistakePromptTime = sw.ElapsedMilliseconds;
@@ -968,7 +972,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         }
     }
 
-    private async Task<string> BuildMistakeExplanationPromptAsync(AttemptDetailsResponse attemptDetails, string gameType, CancellationToken ct)
+    private async Task<string> BuildMistakeExplanationPromptAsync(AttemptDetailsResponse attemptDetails, string gameType, string lang, CancellationToken ct)
     {
         var userAnswerText = string.Join(" ", attemptDetails.GivenAnswer);
         var correctAnswerText = string.Join(" ", attemptDetails.CorrectAnswer);
@@ -981,7 +985,8 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
                 .Replace("{gameType}", gameType)
                 .Replace("{difficulty}", attemptDetails.Difficulty)
                 .Replace("{userAnswer}", userAnswerText)
-                .Replace("{correctAnswer}", correctAnswerText);
+                .Replace("{correctAnswer}", correctAnswerText)
+                .Replace("{lang}", lang);
         }
         else
         {
@@ -1002,24 +1007,25 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
                 3. Tips to avoid this mistake in the future
 
                 Be encouraging and focus on learning rather than just pointing out the error.
+                Use only language with this code: {lang} for an answer.
                 """;
         }
     }
 
     private async Task<string> GetOrLoadSystemPromptAsync(CancellationToken ct)
     {
-
-        var keys = new[] { PromptsKeys.SystemDefault, PromptsKeys.DetailedExplanation };
+        var configs = new[] { PromptsKeys.SystemDefault, PromptsKeys.DetailedExplanation };
         var fallback = "You are a helpful assistant. Keep answers concise.";
 
         try
         {
-            var batch = await _accessorClient.GetPromptsBatchAsync(keys, ct);
+            var batch = await _accessorClient.GetPromptsBatchAsync(configs, ct);
             var map = batch.Prompts.ToDictionary(p => p.PromptKey, p => p.Content, StringComparer.Ordinal);
+
             var combined = string.Join(
-            "\n\n",
-            keys.Select(k => map.TryGetValue(k, out var v) ? v : null)
-                .Where(v => !string.IsNullOrWhiteSpace(v)));
+                "\n\n",
+                configs.Select(c => map.TryGetValue(c.Key, out var v) ? v : null)
+                    .Where(v => !string.IsNullOrWhiteSpace(v)));
 
             if (string.IsNullOrWhiteSpace(combined))
             {
