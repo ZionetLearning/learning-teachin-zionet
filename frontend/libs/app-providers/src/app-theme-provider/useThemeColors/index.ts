@@ -10,6 +10,7 @@ export const useThemeColors = () => {
       primary: { main: "#7c4dff", dark: "#6a40e6", contrastText: "#fff" },
       action: { hover: "rgba(0,0,0,0.04)", selected: "rgba(0,0,0,0.08)" },
       divider: "rgba(0,0,0,0.12)",
+      error: "#FE3737FF",
     },
   };
 
@@ -26,6 +27,7 @@ export const useThemeColors = () => {
     hover: vars.palette.action.hover,
     selected: vars.palette.action.selected,
     divider: vars.palette.divider,
+    error: vars.palette.error as string,
     primaryMainChannel,
   };
 };
