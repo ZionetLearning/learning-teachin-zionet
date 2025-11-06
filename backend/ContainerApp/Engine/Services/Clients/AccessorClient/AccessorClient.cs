@@ -301,12 +301,12 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
             return [];
         }
     }
-    public async Task<UserData?> GetUserAsync(Guid userId)
+    public async Task<UserData?> GetUserAsync(Guid userId, CancellationToken ct)
     {
         try
         {
             return await _daprClient.InvokeMethodAsync<UserData?>(
-                HttpMethod.Get, AppIds.Accessor, $"users-accessor/{userId}");
+                HttpMethod.Get, AppIds.Accessor, $"users-accessor/{userId}", ct);
         }
         catch (Exception ex)
         {

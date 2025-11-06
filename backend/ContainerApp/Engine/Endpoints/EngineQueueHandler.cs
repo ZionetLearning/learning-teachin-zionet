@@ -484,7 +484,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
             getAttemptDetailsTime = sw.ElapsedMilliseconds;
 
             _logger.LogInformation("Fetching user details for UserId {UserId}", request.UserId);
-            var userDetails = await _accessorClient.GetUserAsync(request.UserId);
+            var userDetails = await _accessorClient.GetUserAsync(request.UserId, ct);
             var lang = userDetails?.PreferredLanguageCode.ToString() ?? "en";
 
             var storyForKernel = new ChatHistory();

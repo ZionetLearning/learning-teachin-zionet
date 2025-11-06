@@ -20,7 +20,7 @@ public interface IAccessorClient
 
     // User Interests
     Task<List<string>> GetUserInterestsAsync(Guid userId, CancellationToken ct);
-    Task<UserData?> GetUserAsync(Guid userId);
+    Task<UserData?> GetUserAsync(Guid userId, CancellationToken ct = default);
 
 }
 
