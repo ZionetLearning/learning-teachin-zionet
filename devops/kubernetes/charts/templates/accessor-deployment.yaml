@@ -55,6 +55,28 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.accessor.secrets.speech.name }}
                   key: {{ .Values.accessor.secrets.speech.keys.speechKey }}
+            - name: CommunicationService__ConnectionString
+              valueFrom:
+                secretKeyRef:
+                  name: communication-service-connection
+                  key: CommunicationServiceConnectionString
+            {{- if .Values.accessor.secrets.langfuse.enabled }}
+            - name: Langfuse__BaseUrl
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.accessor.secrets.langfuse.name }}
+                  key: {{ .Values.accessor.secrets.langfuse.keys.baseUrl }}
+            - name: Langfuse__PublicKey
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.accessor.secrets.langfuse.name }}
+                  key: {{ .Values.accessor.secrets.langfuse.keys.publicKey }}
+            - name: Langfuse__SecretKey
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.accessor.secrets.langfuse.name }}
+                  key: {{ .Values.accessor.secrets.langfuse.keys.secretKey }}
+            {{- end }}
           resources:
             {{- toYaml .Values.accessor.resources | nindent 12 }}
 ---

@@ -10,6 +10,7 @@ import HistoryIcon from "@mui/icons-material/History";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import SchoolIcon from "@mui/icons-material/School";
 import GBFlag from "country-flag-icons/react/3x2/GB";
 import ILFlag from "country-flag-icons/react/3x2/IL";
 import { useAuth } from "@app-providers/auth";
@@ -55,16 +56,22 @@ export const SidebarMenu = () => {
       testId: "sidebar-online-users",
     },
     {
-      label: t("sidebar.tasks"),
-      icon: <AssignmentIcon />,
-      path: "/tasks",
-      testId: "sidebar-tasks",
+      label: t("sidebar.classes"),
+      icon: <SchoolIcon />,
+      path: "/classes",
+      testId: "sidebar-classes",
     },
     {
       label: t("sidebar.studentPracticeHistory"),
       icon: <HistoryIcon />,
       path: "/student-practice-history",
       testId: "sidebar-student-practice-history",
+    },
+    {
+      label: t("sidebar.tasks"),
+      icon: <AssignmentIcon />,
+      path: "/tasks",
+      testId: "sidebar-tasks",
     },
   ];
 

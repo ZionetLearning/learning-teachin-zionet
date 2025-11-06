@@ -1,0 +1,30 @@
+{
+  "Prompts": {
+    "Keys": {
+      "ChatTitlePrompt": {
+        "Key": "chat.title.generate",
+        "Label": "production"
+      },
+      "SystemDefault": {
+        "Key": "chat.system.default",
+        "Label": "production"
+      },
+      "FriendlyTone": {
+        "Key": "prompts.tone.friendly",
+        "Label": "production"
+      },
+      "DetailedExplanation": {
+        "Key": "prompts.explanation.detailed",
+        "Label": "production"
+      },
+      "ExplainMistakeSystem": {
+        "Key": "chat.system.explain.mistake",
+        "Label": "production"
+      },
+      "MistakeTemplate": {
+        "Key": "prompts.mistake.template",
+        "Label": "production"
+      }
+    }
+  }
+}

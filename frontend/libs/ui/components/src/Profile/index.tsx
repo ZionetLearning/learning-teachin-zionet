@@ -8,7 +8,7 @@ import {
   PreferredLanguageCode,
 } from "@app-providers/types";
 import { useStyles } from "./style";
-import { Dropdown, Button, InterestChip } from "@ui-components";
+import { Dropdown, Button, InterestChip, AvatarUpload } from "@ui-components";
 
 export const Profile = ({ user }: { user: User }) => {
   const classes = useStyles();
@@ -178,6 +178,10 @@ export const Profile = ({ user }: { user: User }) => {
             {t("pages.profile.secondSubTitle")}
           </Typography>
         </Box>
+        <AvatarUpload
+          userId={user.userId}
+          userName={`${user.firstName} ${user.lastName}`}
+        />
 
         <Stack spacing={3}>
           <Grid container spacing={2}>
