@@ -111,3 +111,23 @@ output "avatars_container_name" {
   description = "Name of the avatars container"
   value       = module.storage.avatars_container_name
 }
+
+
+# Langfuse secrets for Accessor (only output when dev environment creates them)
+output "langfuse_baseurl" {
+  description = "Langfuse Base URL - Global API endpoint for all environments"
+  value       = var.environment_name == "dev" ? azurerm_key_vault_secret.langfuse_baseurl[0].value : null
+  sensitive   = true
+}
+
+output "langfuse_public_key" {
+  description = "Langfuse Public Key - Global API key for all environments"
+  value       = var.environment_name == "dev" ? azurerm_key_vault_secret.langfuse_public_key[0].value : null
+  sensitive   = true
+}
+
+output "langfuse_secret_key" {
+  description = "Langfuse Secret Key - Global API key for all environments"
+  value       = var.environment_name == "dev" ? azurerm_key_vault_secret.langfuse_secret_key[0].value : null
+  sensitive   = true
+}
