@@ -148,6 +148,7 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddScoped<IAccessorClient, AccessorClient>();
+builder.Services.AddScoped<IGameAccessorClient, GameAccessorClient>();
 builder.Services.AddScoped<IEngineClient, EngineClient>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IAuthService, AuthService>();

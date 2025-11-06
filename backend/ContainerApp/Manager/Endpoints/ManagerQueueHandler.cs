@@ -14,7 +14,7 @@ namespace Manager.Endpoints;
 public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
 {
     private readonly INotificationService _notificationService;
-    private readonly IAccessorClient _accessorClient;
+    private readonly IGameAccessorClient _gameAccessorClient;
     private readonly ILogger<ManagerQueueHandler> _logger;
     protected override MessageAction GetAction(Message message) => message.ActionName;
 
@@ -27,11 +27,11 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
     public ManagerQueueHandler(
         ILogger<ManagerQueueHandler> logger,
         INotificationService notificationService,
-        IAccessorClient accessorClient) : base(logger)
+        IGameAccessorClient gameAccessorClient) : base(logger)
     {
         _notificationService = notificationService;
         _logger = logger;
-        _accessorClient = accessorClient;
+        _gameAccessorClient = gameAccessorClient;
     }
 
     public async Task HandleNotifyUserAsync(Message message, IReadOnlyDictionary<string, string>? metadata, Func<Task> renewLock, CancellationToken cancellationToken)
@@ -266,7 +266,7 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
                 })]
             };
 
-            var result = await _accessorClient.SaveGeneratedSentencesAsync(dto, cancellationToken);
+            var result = await _gameAccessorClient.SaveGeneratedSentencesAsync(dto, cancellationToken);
 
             await _notificationService.SendEventAsync(
                 EventType.SplitSentenceGeneration,
