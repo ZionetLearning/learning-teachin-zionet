@@ -401,7 +401,22 @@
         "edit": "Edit",
         "saveChanges": "Save changes",
         "cancel": "Cancel",
-        "interests": "Interests"
+        "interests": "Interests",
+        "avatar": {
+          "upload": "Upload Avatar",
+          "delete": "Delete Avatar",
+          "confirmDelete": "Are you sure you want to delete your avatar?",
+          "invalidType": "Please select a PNG or JPEG image.",
+          "fileTooLarge": "File size must be less than 1MB.",
+          "uploadTimeout": "Upload timed out. Please check your connection and try again.",
+          "uploadForbidden": "Upload permission denied. Please try again later.",
+          "noConnection": "No internet connection. Please check your network.",
+          "uploadFailed": "Upload failed: {{error}}",
+          "uploadFailedGeneric": "Failed to upload avatar. Please try again.",
+          "uploadSuccess": "Avatar uploaded successfully!",
+          "deleteSuccess": "Avatar deleted successfully!",
+          "deleteFailed": "Failed to delete avatar. Please try again."
+        }
       },
       "tasks": {
         "title": "Tasks Management",
