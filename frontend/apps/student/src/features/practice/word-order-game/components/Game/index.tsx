@@ -3,7 +3,11 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 
-import { useAvatarSpeech, useHebrewSentence } from "@student/hooks";
+import {
+  useAvatarSpeech,
+  useHebrewSentence,
+  useGameConfig,
+} from "@student/hooks";
 import { ChosenWordsArea, WordsBank, ActionButtons, Speaker } from "../";
 import {
   GameConfig,
@@ -40,6 +44,11 @@ export const Game = ({ retryData }: GameProps) => {
 
   const studentId = user?.userId ?? "";
   const { mutateAsync: submitAttempt } = useSubmitGameAttempt();
+  const {
+    config: savedConfig,
+    isLoading: configLoading,
+    updateConfig,
+  } = useGameConfig("WordOrder");
 
   const [chosen, setChosen] = useState<string[]>([]);
   const [shuffledSentence, setShuffledSentence] = useState<string[]>([]);
@@ -75,12 +84,16 @@ export const Game = ({ retryData }: GameProps) => {
   const { speak, stop, isLoading: speechLoading } = useAvatarSpeech({});
 
   useEffect(
-    function showConfigModalOnFirstLoad() {
-      if (!gameStarted && !gameConfig && !isRetryMode) {
+    function initializeGameConfig() {
+      if (isRetryMode || gameConfig) return;
+      if (configLoading) return;
+      if (savedConfig) {
+        setGameConfig(savedConfig);
+      } else {
         setConfigModalOpen(true);
       }
     },
-    [gameStarted, gameConfig, isRetryMode],
+    [isRetryMode, gameConfig, configLoading, savedConfig],
   );
 
   const shuffleDistinct = useCallback((words: string[]) => {
@@ -146,6 +159,7 @@ export const Game = ({ retryData }: GameProps) => {
 
   const handleConfigConfirm = (config: GameConfig) => {
     setGameConfig(config);
+    updateConfig(config);
     setConfigModalOpen(false);
     // Reset game state when config changes
     setChosen([]);

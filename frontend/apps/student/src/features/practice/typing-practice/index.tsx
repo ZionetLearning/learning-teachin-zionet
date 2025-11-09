@@ -11,10 +11,16 @@ import {
   GameSettings,
 } from "@ui-components";
 import { getDifficultyLabel } from "@student/features";
+import { useGameConfig } from "@student/hooks";
 
 export const TypingPractice = () => {
   const { t, i18n } = useTranslation();
   const classes = useStyles();
+  const {
+    config: savedConfig,
+    isLoading: configLoading,
+    updateConfig,
+  } = useGameConfig("TypingPractice");
   const [gameOverModalOpen, setGameOverModalOpen] = useState(false);
   const [gameConfig, setGameConfig] = useState<GameConfig | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
@@ -37,11 +43,18 @@ export const TypingPractice = () => {
     handleNextExercise,
   } = useTypingPractice(gameConfig || undefined);
 
-  useEffect(() => {
-    if (!gameStarted && !gameConfig) {
-      setConfigModalOpen(true);
-    }
-  }, [gameStarted, gameConfig]);
+  useEffect(
+    function initializeGameConfig() {
+      if (gameConfig) return;
+      if (configLoading) return;
+      if (savedConfig) {
+        setGameConfig(savedConfig);
+      } else {
+        setConfigModalOpen(true);
+      }
+    },
+    [gameConfig, configLoading, savedConfig],
+  );
 
   useEffect(() => {
     if (gameConfig && !gameStarted) {
@@ -53,11 +66,12 @@ export const TypingPractice = () => {
   const handleConfigConfirm = useCallback(
     (config: GameConfig) => {
       setGameConfig(config);
+      updateConfig(config);
       setConfigModalOpen(false);
       setGameStarted(false);
       resetGame();
     },
-    [resetGame],
+    [resetGame, updateConfig],
   );
 
   const handleConfigChange = useCallback(() => {
