@@ -318,6 +318,9 @@ jobs:
 
       - name: Add Langfuse
         if: steps.setup.outputs.deploy_langfuse == 'true'
+        env:
+          SMTP_USER: ${{ secrets.LANGFUSE_SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.LANGFUSE_SMTP_PASSWORD }}
         run: |
           echo "Deploying Langfuse..."
           cd devops/helm-tools

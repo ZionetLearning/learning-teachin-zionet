@@ -86,6 +86,16 @@ helm $ACTION langfuse langfuse/langfuse \
   --set-string langfuse.additionalEnv[7].value="https://teachin.westeurope.cloudapp.azure.com/langfuse" \
   --set langfuse.additionalEnv[8].name="NEXT_PUBLIC_BASE_PATH" \
   --set-string langfuse.additionalEnv[8].value="/langfuse" \
+  --set langfuse.additionalEnv[9].name="EMAIL_PROVIDER" \
+  --set-string langfuse.additionalEnv[9].value="smtp" \
+  --set langfuse.additionalEnv[10].name="SMTP_HOST" \
+  --set-string langfuse.additionalEnv[10].value="smtp.gmail.com" \
+  --set langfuse.additionalEnv[11].name="SMTP_PORT" \
+  --set-string langfuse.additionalEnv[11].value="587" \
+  --set langfuse.additionalEnv[12].name="SMTP_USER" \
+  --set-string langfuse.additionalEnv[12].value="${SMTP_USER:-your-email@gmail.com}" \
+  --set langfuse.additionalEnv[13].name="SMTP_PASSWORD" \
+  --set-string langfuse.additionalEnv[13].value="${SMTP_PASSWORD:-your-app-specific-password}" \
   --timeout=5m
 
 echo "✅ Chart applied with web=0."
