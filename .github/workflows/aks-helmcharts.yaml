@@ -325,13 +325,13 @@ jobs:
           kubectl apply -f "../kubernetes/ingress/langfuse-ingress.yaml"
           chmod +x langfuse.sh
           
-          if [ -z "${{ secrets.LANGFUSE_SMTP_USER }}" ] || [ -z "${{ secrets.LANGFUSE_SMTP_PASSWORD }}" ]; then
+          if [ -z "${{ secrets.SMTP_USER }}" ] || [ -z "${{ secrets.SMTP_PASSWORD }}" ]; then
             echo "❌ Error: LANGFUSE_SMTP_USER and LANGFUSE_SMTP_PASSWORD secrets are required for email functionality"
             exit 1
           fi
           
-          SMTP_USER="${{ secrets.LANGFUSE_SMTP_USER }}" \
-          SMTP_PASSWORD="${{ secrets.LANGFUSE_SMTP_PASSWORD }}" \
+          SMTP_USER="${{ secrets.SMTP_USER }}" \
+          SMTP_PASSWORD="${{ secrets.SMTP_PASSWORD }}" \
           ./langfuse.sh $ENVIRONMENT_NAME "${{ secrets.LANGFUSE_ADMIN_EMAIL }}" "${{ secrets.LANGFUSE_ADMIN_PASSWORD }}" "${{ secrets.POSTGRES_USER }}" "${{ secrets.POSTGRES_PASSWORD }}"
 
           echo "Langfuse deployment completed"
