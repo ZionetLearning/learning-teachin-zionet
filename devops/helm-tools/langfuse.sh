@@ -93,7 +93,6 @@ helm $ACTION langfuse langfuse/langfuse \
   --set langfuse.additionalEnv[11].name="SMTP_HOST" \
   --set-string langfuse.additionalEnv[11].value="smtp.gmail.com" \
   --set langfuse.additionalEnv[12].name="SMTP_PORT" \
-  --set langfuse.additionalEnv[12].name="SMTP_PORT" \
   --set-string langfuse.additionalEnv[12].value="465" \
   --set langfuse.additionalEnv[13].name="SMTP_USER" \
   --set-string langfuse.additionalEnv[13].value="$SMTP_USER" \
