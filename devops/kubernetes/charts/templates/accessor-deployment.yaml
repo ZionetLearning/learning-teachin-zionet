@@ -55,6 +55,11 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.accessor.secrets.speech.name }}
                   key: {{ .Values.accessor.secrets.speech.keys.speechKey }}
+            - name: CommunicationService__ConnectionString
+              valueFrom:
+                secretKeyRef:
+                  name: communication-service-connection
+                  key: CommunicationServiceConnectionString
             {{- if .Values.accessor.secrets.langfuse.enabled }}
             - name: Langfuse__BaseUrl
               valueFrom:
