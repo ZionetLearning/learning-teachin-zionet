@@ -49,5 +49,10 @@ public class UsersConfiguration : IEntityTypeConfiguration<UserModel>
             .HasDefaultValueSql("'[]'::jsonb")
             .IsRequired();
 
+        builder.Property(u => u.AcsUserId)
+            .HasMaxLength(255)
+            .IsRequired(false);
+
+        builder.HasIndex(u => u.AcsUserId);
     }
 }

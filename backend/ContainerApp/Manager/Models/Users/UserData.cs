@@ -1,5 +1,4 @@
-﻿
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace Manager.Models.Users;
 
@@ -15,6 +14,7 @@ public class UserData
     public SupportedLanguage PreferredLanguageCode { get; set; } = SupportedLanguage.en;
     public HebrewLevel? HebrewLevelValue { get; set; } // only for students
     public List<string>? Interests { get; set; } // only for students
+    public string? AcsUserId { get; set; }
     public string? AvatarPath { get; set; }
     public string? AvatarContentType { get; set; }
     public DateTime? AvatarUpdatedAtUtc { get; set; }

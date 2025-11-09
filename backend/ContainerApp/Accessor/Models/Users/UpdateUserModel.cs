@@ -1,5 +1,4 @@
-﻿
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace Accessor.Models.Users;
 
@@ -16,4 +15,5 @@ public class UpdateUserModel
     public string? AvatarPath { get; set; }
     public string? AvatarContentType { get; set; }
     public bool? ClearAvatar { get; set; }
+    public string? AcsUserId { get; set; }
 }
