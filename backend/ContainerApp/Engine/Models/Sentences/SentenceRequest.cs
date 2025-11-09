@@ -8,6 +8,7 @@ public sealed class SentenceRequest
     public bool Nikud { get; init; } = false;
     public int Count { get; init; } = 1;
     public required Guid UserId { get; init; }
+    public GameType GameType { get; init; } = GameType.WordOrderGame;
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter))]

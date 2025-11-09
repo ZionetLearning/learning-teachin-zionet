@@ -186,8 +186,27 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
                     $"Validation failed for {nameof(SentenceResponse)}: {string.Join("; ", validationErrors)}");
             }
 
-            await _notificationService.SendEventAsync(EventType.SentenceGeneration, userId, generatedResponse);
+            var gameType = generatedResponse.Sentences.FirstOrDefault()?.GameType ?? "typingPractice";
 
+            var dto = new GeneratedSentenceDto
+            {
+                StudentId = Guid.Parse(userId),
+                GameType = gameType,
+                Difficulty = Enum.TryParse<Models.Games.Difficulty>(generatedResponse.Sentences.FirstOrDefault()?.Difficulty, ignoreCase: true, out var difficulty)
+                    ? difficulty
+                    : Manager.Models.Games.Difficulty.Easy,
+                Sentences = [.. generatedResponse.Sentences
+                    .Select(s => new GeneratedSentenceItem
+                    {
+                        Original = s.Text,
+                        CorrectAnswer = [s.Text],
+                        Nikud = s.Nikud
+                    })]
+            };
+
+            var result = await _gameAccessorClient.SaveGeneratedSentencesAsync(dto, cancellationToken);
+
+            await _notificationService.SendEventAsync(EventType.SentenceGeneration, userId, result);
         }
         catch (NonRetryableException ex)
         {
@@ -250,10 +269,13 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
                 throw new NonRetryableException("No sentences found after splitting.");
             }
 
+            // Get GameType from the first sentence, default to WordOrderGame if not specified
+            var gameType = generatedResponse.Sentences.FirstOrDefault()?.GameType ?? "wordOrderGame";
+
             var dto = new GeneratedSentenceDto
             {
                 StudentId = Guid.Parse(userId),
-                GameType = "wordOrderGame",
+                GameType = gameType,
                 Difficulty = Enum.TryParse<Models.Games.Difficulty>(generatedResponse.Sentences.FirstOrDefault()?.Difficulty, ignoreCase: true, out var difficulty)
                 ? difficulty
                 : Manager.Models.Games.Difficulty.Easy,

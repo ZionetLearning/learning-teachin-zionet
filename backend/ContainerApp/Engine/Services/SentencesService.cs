@@ -33,7 +33,7 @@ public class SentencesService : ISentencesService
 
     public async Task<SentenceResponse> GenerateAsync(SentenceRequest req, List<string> userInterests, CancellationToken ct = default)
     {
-        _log.LogInformation("Inside sentence generator service");
+        _log.LogInformation("Inside sentence generator service for GameType={GameType}", req.GameType);
 
         var func = _genKernel.Plugins["Sentences"]["Generate"];
 
@@ -82,6 +82,14 @@ public class SentencesService : ISentencesService
         {
             _log.LogError("Error while generating sentences. The response is empty or invalid JSON");
             throw new RetryableException("Error while generating sentences. The response is empty or invalid JSON");
+        }
+
+        // Set GameType from request on all generated sentences
+        var gameType = req.GameType.ToString();
+        foreach (var sentence in parsed.Sentences)
+        {
+            var prop = sentence.GetType().GetProperty(nameof(SentenceItem.GameType));
+            prop?.SetValue(sentence, gameType);
         }
 
         return parsed;

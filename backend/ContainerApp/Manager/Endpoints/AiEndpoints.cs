@@ -250,7 +250,7 @@ public static class AiEndpoints
             return Results.BadRequest(new { error = "Request is required" });
         }
 
-        logger.LogInformation("Received sentence generation request");
+        logger.LogInformation("Received sentence generation request for GameType={GameType}", dto.GameType);
 
         try
         {
@@ -261,7 +261,8 @@ public static class AiEndpoints
                 Difficulty = dto.Difficulty,
                 Nikud = dto.Nikud,
                 Count = dto.Count,
-                UserId = userId
+                UserId = userId,
+                GameType = dto.GameType
             };
 
             await engineClient.GenerateSentenceAsync(request);
@@ -283,6 +284,7 @@ public static class AiEndpoints
             return Results.Problem("An error occurred during sentence generation.");
         }
     }
+
     private static async Task<IResult> SplitSentenceGenerateAsync(
        [FromBody] SentenceRequestDto dto,
        [FromServices] IEngineClient engineClient,
@@ -295,7 +297,7 @@ public static class AiEndpoints
             return Results.BadRequest(new { error = "Request is required" });
         }
 
-        logger.LogInformation("Received split sentence generation request");
+        logger.LogInformation("Received split sentence generation request for GameType={GameType}", dto.GameType);
 
         try
         {
@@ -306,7 +308,8 @@ public static class AiEndpoints
                 Difficulty = dto.Difficulty,
                 Nikud = dto.Nikud,
                 Count = dto.Count,
-                UserId = userId
+                UserId = userId,
+                GameType = dto.GameType
             };
 
             await engineClient.GenerateSplitSentenceAsync(request);
