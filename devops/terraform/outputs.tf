@@ -68,6 +68,11 @@ output "redis_primary_access_key" {
   sensitive = true
 }
 
+output "communication_service_connection_string" {
+  value     = var.communication_service_connection_string
+  sensitive = true
+}
+
 # Frontend outputs (conditional based on frontend_apps array)
 output "static_web_app_urls" {
   description = "URLs of the Azure Static Web Apps"

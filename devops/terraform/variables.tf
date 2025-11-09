@@ -95,6 +95,14 @@ variable "db_location" {
   default     = "Israel Central"
 }
 
+# communication_service_connection_string
+variable "communication_service_connection_string" {
+  type        = string
+  sensitive   = true
+  description = "Azure Communication Service connection string"
+  default     = null
+}
+
 # admin_username - passed from GitHub Actions as TF_VAR_admin_username
 variable "admin_username" {
   type        = string
