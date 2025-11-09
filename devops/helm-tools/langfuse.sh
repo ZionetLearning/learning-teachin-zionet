@@ -108,6 +108,13 @@ helm $ACTION langfuse langfuse/langfuse \
   --set-string langfuse.additionalEnv[18].value="debug" \
   --set langfuse.additionalEnv[19].name="SMTP_LOGGER" \
   --set-string langfuse.additionalEnv[19].value="$SMTP_USER" \
+  --set langfuse.additionalEnv[20].name="NEXT_PUBLIC_INVITE_URL" \
+  --set-string langfuse.additionalEnv[20].value="https://teachin.westeurope.cloudapp.azure.com/langfuse" \
+  --set langfuse.additionalEnv[21].name="NEXTAUTH_INVITATION_EMAIL_SUBJECT" \
+  --set-string langfuse.additionalEnv[21].value="You have been invited to TeachIn's Langfuse" \
+  --set langfuse.additionalEnv[22].name="NEXTAUTH_INVITATION_EMAIL_TEMPLATE" \
+  --set-string langfuse.additionalEnv[22].value="<p>You have been invited to join TeachIn's Langfuse instance.</p><p>Click the button below to accept the invitation:</p>" \
+  --set-string langfuse.additionalEnv[19].value="$SMTP_USER" \
   --set langfuse.additionalEnv[20].name="INVITE_FROM_NAME" \
   --set-string langfuse.additionalEnv[20].value="TeachIn Admin" \
   --set langfuse.additionalEnv[21].name="INVITE_FROM_EMAIL" \
