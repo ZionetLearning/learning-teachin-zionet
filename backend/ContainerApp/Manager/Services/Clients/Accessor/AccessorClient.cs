@@ -2,6 +2,7 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using AutoMapper;
 using Dapr.Client;
 using Manager.Constants;
 using Manager.Models;
@@ -9,6 +10,8 @@ using Manager.Models.Auth;
 using Manager.Models.Auth.RefreshSessions;
 using Manager.Models.Chat;
 using Manager.Models.Classes;
+using Manager.Models.UserGameConfiguration;
+using Manager.Models.Games;
 using Manager.Models.QueueMessages;
 using Manager.Models.Users;
 using Manager.Models.WordCards;
@@ -19,12 +22,14 @@ namespace Manager.Services.Clients.Accessor;
 public class AccessorClient(
     ILogger<AccessorClient> logger,
     DaprClient daprClient,
-    IHttpContextAccessor httpContextAccessor
+    IHttpContextAccessor httpContextAccessor,
+    IMapper mapper
     ) : IAccessorClient
 {
     private readonly ILogger<AccessorClient> _logger = logger;
     private readonly DaprClient _daprClient = daprClient;
     private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
+    private readonly IMapper _mapper = mapper;
 
     public async Task<TaskModel?> GetTaskAsync(int id)
     {
@@ -778,7 +783,58 @@ public class AccessorClient(
             throw;
         }
     }
+    public async Task<List<ClassDto?>?> GetMyClassesAsync(Guid callerId, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Fetching classes for {CallerId} from Accessor", callerId);
 
+        try
+        {
+            var cls = await _daprClient.InvokeMethodAsync<List<ClassDto?>?>(
+                HttpMethod.Get,
+                AppIds.Accessor,
+                $"classes-accessor/my/{callerId:D}",
+                ct
+            );
+
+            return cls;
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("Classes for user {CallerId} not found (404)", callerId);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to fetch classes for user {CallerId} from Accessor", callerId);
+            throw;
+        }
+    }
+    public async Task<List<ClassDto?>?> GetAllClassesAsync(CancellationToken ct = default)
+    {
+        _logger.LogInformation("Fetching class from Accessor");
+
+        try
+        {
+            var cls = await _daprClient.InvokeMethodAsync<List<ClassDto?>?>(
+                HttpMethod.Get,
+                AppIds.Accessor,
+                $"classes-accessor/",
+                ct
+            );
+
+            return cls;
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("Classes not found (404)");
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to fetch classes from Accessor");
+            throw;
+        }
+    }
     public async Task<Class?> CreateClassAsync(CreateClassRequest request, CancellationToken ct = default)
     {
         _logger.LogInformation("Creating class {Name} via Accessor", request.Name);
@@ -890,6 +946,77 @@ public class AccessorClient(
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to deleting class {ClassId}", classId);
+            throw;
+        }
+    }
+
+    public async Task<UserGameConfig> GetUserGameConfigAsync(Guid userId, GameName gameName, CancellationToken ct)
+    {
+        _logger.LogInformation("Get User's Game Configuration. UserId={UserId}, Game Name={GameName}", userId, gameName);
+
+        try
+        {
+
+            var response = await _daprClient.InvokeMethodAsync<UserGameConfig>(
+                HttpMethod.Get,
+                AppIds.Accessor,
+                $"game-config-accessor?userId={userId}&gameName={gameName}",
+                cancellationToken: ct
+            );
+            return response;
+        }
+        catch (Exception)
+        {
+            _logger.LogInformation("Failed to get user configuration for UserId={UserId}", userId);
+            throw;
+        }
+    }
+
+    public async Task SaveUserGameConfigAsync(Guid userId, UserNewGameConfig gameName, CancellationToken ct)
+    {
+        _logger.LogInformation("Save User's Game Configuration. UserId={UserId}, Game Name={GameName}", userId, gameName);
+        try
+        {
+            var payload = _mapper.Map<UserGameConfig>(gameName);
+            payload.UserId = userId;
+
+            await _daprClient.InvokeMethodAsync(
+                HttpMethod.Put,
+                AppIds.Accessor,
+                $"game-config-accessor",
+                payload,
+                cancellationToken: ct
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save user configuration for UserId={UserId}", userId);
+            throw;
+        }
+    }
+
+    public async Task DeleteUserGameConfigAsync(Guid userId, GameName gameName, CancellationToken ct)
+    {
+        _logger.LogInformation("Delete User's Game Configuration. UserId={UserId}, Game Name={GameName}", userId, gameName);
+        try
+        {
+            var payload = new UserGameConfigKey
+            {
+                UserId = userId,
+                GameName = gameName
+            };
+
+            await _daprClient.InvokeMethodAsync(
+                HttpMethod.Delete,
+                AppIds.Accessor,
+                $"game-config-accessor",
+                payload,
+                cancellationToken: ct
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to delete user configuration for UserId={UserId}", userId);
             throw;
         }
     }

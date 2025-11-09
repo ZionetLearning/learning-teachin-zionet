@@ -401,7 +401,22 @@
         "edit": "עריכה",
         "saveChanges": "שמור שינויים",
         "cancel": "ביטול",
-        "interests": "תחומי עניין"
+        "interests": "תחומי עניין",
+        "avatar": {
+          "upload": "העלה תמונת פרופיל",
+          "delete": "מחק תמונת פרופיל",
+          "confirmDelete": "האם אתה בטוח שברצונך למחוק את תמונת הפרופיל שלך?",
+          "invalidType": "אנא בחר תמונה בפורמט PNG או JPEG.",
+          "fileTooLarge": "גודל הקובץ חייב להיות פחות מ-1MB.",
+          "uploadTimeout": "זמן ההעלאה פג. אנא בדוק את החיבור שלך ונסה שוב.",
+          "uploadForbidden": "הרשאת העלאה נדחתה. אנא נסה שוב מאוחר יותר.",
+          "noConnection": "אין חיבור לאינטרנט. אנא בדוק את הרשת שלך.",
+          "uploadFailed": "ההעלאה נכשלה: {{error}}",
+          "uploadFailedGeneric": "נכשל בהעלאת תמונת הפרופיל. אנא נסה שוב.",
+          "uploadSuccess": "תמונת הפרופיל הועלתה בהצלחה!",
+          "deleteSuccess": "תמונת הפרופיל נמחקה בהצלחה!",
+          "deleteFailed": "נכשל במחיקת תמונת הפרופיל. אנא נסה שוב."
+        }
       },
       "tasks": {
         "title": "ניהול משימות",
@@ -571,6 +586,38 @@
         "correctAnswers": "{{correct}} מתוך {{total}} נכונות",
         "playAgain": "שחק שוב",
         "switchDirection": "החלף כיוון"
+      },
+      "classes": {
+        "title": "כיתות",
+        "createClass": "צור כיתה",
+        "name": "שם",
+        "members": "משתתפים",
+        "actions": "פעולות",
+        "loading": "טוען…",
+        "loadError": "נכשל בטעינת הכיתות",
+        "noClasses": "אין כיתות עדיין",
+        "manageMembers": "ניהול משתתפים",
+        "deleteClass": "מחק כיתה",
+        "close": "סגור",
+        "allRoles": "כל התפקידים",
+        "students": "תלמידים",
+        "teachers": "מורים",
+        "searchPlaceholder": "חיפוש לפי שם / אימייל",
+        "selectAll": "בחר הכל",
+        "clear": "נקה",
+        "addSelected": "הוסף נבחרים",
+        "alreadyInClass": "כבר בקבוצה",
+        "addToClass": "הוסף לקבוצה",
+        "noUsersMatch": "לא נמצאו משתמשים התואמים לסינון.",
+        "cancel": "בטל",
+        "create": "צור",
+        "className": "שם הקבוצה",
+        "descriptionOptional": "תיאור (אופציונלי)",
+        "currentMembers": "משתתפים נוכחיים",
+        "removeSelected": "הסר נבחרים",
+        "removeFromClass": "הסר מהקבוצה",
+        "noMembersYet": "אין עדיין משתתפים בקבוצה זו.",
+        "searchByNameEmail": "חיפוש לפי שם / אימייל"
       }
     },
     "mistakeChat": {
@@ -618,7 +665,8 @@
       "appearance": "מראה",
       "lightMode": "מצב בהיר",
       "darkMode": "מצב כהה",
-      "systemDefault": "מצב מערכת"
+      "systemDefault": "מצב מערכת",
+      "classes": "כיתות"
     },
     "errorBoundary": {
       "title": "אופס! משהו השתבש",

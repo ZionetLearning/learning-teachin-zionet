@@ -120,6 +120,29 @@ namespace Accessor.DB.Migrations
                     b.ToTable("ClassMemberships", (string)null);
                 });
 
+            modelBuilder.Entity("Accessor.Models.GameConfiguration.UserGameConfig", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("GameName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Difficulty")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("Nikud")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("NumberOfSentences")
+                        .HasColumnType("integer");
+
+                    b.HasKey("UserId", "GameName");
+
+                    b.ToTable("UserGameConfigs", (string)null);
+                });
+
             modelBuilder.Entity("Accessor.Models.Games.GameAttempt", b =>
                 {
                     b.Property<Guid>("AttemptId")
