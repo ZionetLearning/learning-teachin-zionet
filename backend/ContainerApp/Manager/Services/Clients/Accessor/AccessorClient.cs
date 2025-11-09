@@ -11,7 +11,6 @@ using Manager.Models.Auth.RefreshSessions;
 using Manager.Models.Chat;
 using Manager.Models.Classes;
 using Manager.Models.UserGameConfiguration;
-using Manager.Models.Games;
 using Manager.Models.QueueMessages;
 using Manager.Models.Users;
 using Manager.Models.WordCards;
