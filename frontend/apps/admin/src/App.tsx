@@ -11,6 +11,7 @@ import {
   TasksPage,
   StudentPracticeHistoryPage,
   OnlineUsersPage,
+  ClassesPage,
 } from "./pages";
 import "./App.css";
 import { AppRole } from "@app-providers";
@@ -47,6 +48,7 @@ function App() {
             path="/student-practice-history"
             element={<StudentPracticeHistoryPage />}
           />
+          <Route path="/classes" element={<ClassesPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

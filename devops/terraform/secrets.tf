@@ -51,6 +51,15 @@ resource "azurerm_key_vault_secret" "redis_password" {
 }
 
 ########################
+# Communication Service secret
+########################
+resource "azurerm_key_vault_secret" "communication_service_connection" {
+  name         = "${var.environment_name}-comm-svc-connection"
+  value        = var.communication_service_connection_string
+  key_vault_id = data.azurerm_key_vault.shared.id
+}
+
+########################
 # Storage Account secret for Avatars
 ########################
 resource "azurerm_key_vault_secret" "avatars_storage_connection" {
@@ -127,5 +136,29 @@ resource "azurerm_key_vault_secret" "langfuse_db_url" {
 resource "azurerm_key_vault_secret" "langfuse_direct_url" {
   name         = "${var.environment_name}-langfuse-direct-url"
   value        = "postgresql://${var.admin_username}:${var.admin_password}@${var.database_server_name}.postgres.database.azure.com:5432/langfuse-${var.environment_name}?schema=public&sslmode=require"
+  key_vault_id = data.azurerm_key_vault.shared.id
+}
+
+########################
+# Langfuse API Keys - Global/Shared for all environments (dev environment only)
+########################
+resource "azurerm_key_vault_secret" "langfuse_baseurl" {
+  count        = var.environment_name == "dev" ? 1 : 0
+  name         = "langfuse-baseurl"
+  value        = "https://teachin.westeurope.cloudapp.azure.com/langfuse"
+  key_vault_id = data.azurerm_key_vault.shared.id
+}
+
+resource "azurerm_key_vault_secret" "langfuse_public_key" {
+  count        = var.environment_name == "dev" ? 1 : 0
+  name         = "langfuse-public-key"
+  value        = "pk-lf-78a4be40-1031-43d6-b2a0-4b1cf15f8ff6"
+  key_vault_id = data.azurerm_key_vault.shared.id
+}
+
+resource "azurerm_key_vault_secret" "langfuse_secret_key" {
+  count        = var.environment_name == "dev" ? 1 : 0
+  name         = "langfuse-secret-key"
+  value        = "sk-lf-7e889621-246f-4bdb-8954-d298ef5d67a1"
   key_vault_id = data.azurerm_key_vault.shared.id
 }

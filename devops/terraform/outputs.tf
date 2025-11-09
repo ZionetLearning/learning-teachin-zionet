@@ -69,6 +69,11 @@ output "redis_primary_access_key" {
   sensitive = true
 }
 
+output "communication_service_connection_string" {
+  value     = var.communication_service_connection_string
+  sensitive = true
+}
+
 # Frontend outputs (conditional based on frontend_apps array)
 output "static_web_app_urls" {
   description = "URLs of the Azure Static Web Apps"
@@ -111,4 +116,23 @@ output "avatars_storage_account_primary_endpoint" {
 output "avatars_container_name" {
   description = "Name of the avatars container"
   value       = azurerm_storage_container.avatars.name
+}
+
+# Langfuse secrets for Accessor (only output when dev environment creates them)
+output "langfuse_baseurl" {
+  description = "Langfuse Base URL - Global API endpoint for all environments"
+  value       = var.environment_name == "dev" ? azurerm_key_vault_secret.langfuse_baseurl[0].value : null
+  sensitive   = true
+}
+
+output "langfuse_public_key" {
+  description = "Langfuse Public Key - Global API key for all environments"
+  value       = var.environment_name == "dev" ? azurerm_key_vault_secret.langfuse_public_key[0].value : null
+  sensitive   = true
+}
+
+output "langfuse_secret_key" {
+  description = "Langfuse Secret Key - Global API key for all environments"
+  value       = var.environment_name == "dev" ? azurerm_key_vault_secret.langfuse_secret_key[0].value : null
+  sensitive   = true
 }
