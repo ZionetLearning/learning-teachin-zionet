@@ -3,8 +3,10 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using Accessor.DB;
+using Accessor.Models.Meetings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -13,9 +15,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Accessor.DB.Migrations
 {
     [DbContext(typeof(AccessorDbContext))]
-    partial class AccessorDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251029144623_AddAcsUserIdToUsers")]
+    partial class AddAcsUserIdToUsers
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -60,87 +64,6 @@ namespace Accessor.DB.Migrations
                     b.HasKey("ThreadId");
 
                     b.ToTable("ChatHistorySnapshots", (string)null);
-                });
-
-            modelBuilder.Entity("Accessor.Models.Classes.Class", b =>
-                {
-                    b.Property<Guid>("ClassId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Code")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.HasKey("ClassId");
-
-                    b.HasIndex("Name")
-                        .IsUnique()
-                        .HasDatabaseName("IX_Classes_Name_CI");
-
-                    b.ToTable("Classes", (string)null);
-                });
-
-            modelBuilder.Entity("Accessor.Models.Classes.ClassMembership", b =>
-                {
-                    b.Property<Guid>("ClassId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Role")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("AddedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("AddedBy")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("ClassId", "UserId", "Role");
-
-                    b.HasIndex("ClassId", "Role", "UserId");
-
-                    b.HasIndex("UserId", "Role", "ClassId");
-
-                    b.ToTable("ClassMemberships", (string)null);
-                });
-
-            modelBuilder.Entity("Accessor.Models.GameConfiguration.UserGameConfig", b =>
-                {
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("GameName")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Difficulty")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<bool>("Nikud")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("NumberOfSentences")
-                        .HasColumnType("integer");
-
-                    b.HasKey("UserId", "GameName");
-
-                    b.ToTable("UserGameConfigs", (string)null);
                 });
 
             modelBuilder.Entity("Accessor.Models.Games.GameAttempt", b =>
@@ -207,7 +130,7 @@ namespace Accessor.DB.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Attendees")
+                    b.Property<List<MeetingAttendee>>("Attendees")
                         .IsRequired()
                         .HasColumnType("jsonb");
 
@@ -219,17 +142,8 @@ namespace Accessor.DB.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("NOW()");
 
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<int>("DurationMinutes")
-                        .HasColumnType("integer");
-
                     b.Property<string>("GroupCallId")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("text");
 
                     b.Property<DateTimeOffset>("StartTimeUtc")
                         .HasColumnType("timestamp with time zone");
@@ -249,10 +163,7 @@ namespace Accessor.DB.Migrations
 
                     b.HasIndex("Status");
 
-                    b.ToTable("Meetings", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_Meetings_DurationMinutes", "\"DurationMinutes\" >= 1 AND \"DurationMinutes\" <= 1440");
-                        });
+                    b.ToTable("Meetings", (string)null);
                 });
 
             modelBuilder.Entity("Accessor.Models.Prompts.PromptModel", b =>
@@ -408,15 +319,6 @@ namespace Accessor.DB.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("AvatarContentType")
-                        .HasColumnType("text");
-
-                    b.Property<string>("AvatarPath")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime?>("AvatarUpdatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<string>("AcsUserId")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
@@ -510,30 +412,6 @@ namespace Accessor.DB.Migrations
                     b.HasIndex("UserId", "IsLearned");
 
                     b.ToTable("WordCards", (string)null);
-                });
-
-            modelBuilder.Entity("Accessor.Models.Classes.ClassMembership", b =>
-                {
-                    b.HasOne("Accessor.Models.Classes.Class", "Class")
-                        .WithMany("Memberships")
-                        .HasForeignKey("ClassId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Accessor.Models.Users.UserModel", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Class");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Accessor.Models.Classes.Class", b =>
-                {
-                    b.Navigation("Memberships");
                 });
 #pragma warning restore 612, 618
         }
