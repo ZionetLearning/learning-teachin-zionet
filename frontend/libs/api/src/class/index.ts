@@ -1,83 +1,59 @@
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { apiClient as axios } from "@app-providers";
 
-export type Role = "Teacher" | "Student";
-
-export type ClassSummary = {
-  classId: string;
-  name: string;
-  // add fields if your API returns more
-};
+export type RoleMode = "Teacher" | "Student";
 
 export type Member = {
   memberId: string;
   name: string;
-  // role/email/avatar etc. can be added later without breaking callers
+  role: number; // or "Teacher" | "Student" if your backend returns strings
 };
 
-const BASE = import.meta.env.VITE_CLASSES_MANAGER_URL;
-
-// Query Keys
-const qk = {
-  myClasses: (role: Role) => ["classes", "me", role] as const,
-  classStudents: (classId: string) =>
-    ["classes", "members", "students", classId] as const,
-  classTeachers: (classId: string) =>
-    ["classes", "members", "teachers", classId] as const,
+export type ClassSummary = {
+  classId: string;
+  name: string;
 };
+
+export type ClassItem = {
+  classId: string;
+  name: string;
+  members: Member[];
+};
+
+const CLASSES_BASE_URL = import.meta.env.VITE_CLASSES_MANAGER_URL;
 
 // GET /me/classes?role=Teacher|Student
 export const useMyClasses = (
-  role: Role,
-  opts?: { enabled?: boolean },
+  mode: RoleMode,
 ): UseQueryResult<ClassSummary[], Error> => {
   return useQuery({
-    queryKey: qk.myClasses(role),
-    enabled: opts?.enabled ?? true,
+    queryKey: ["me", "classes", mode],
     staleTime: 60_000,
-    gcTime: 5 * 60_000,
     queryFn: async () => {
-      const res = await axios.get<ClassSummary[]>(`${BASE}/me/classes`, {
-        params: { role },
-      });
-      // sort by name for stable UI
-      return [...res.data].sort((a, b) => a.name.localeCompare(b.name));
-    },
-  });
-};
-
-// GET /classes/{classId}/students
-export const useClassStudents = (
-  classId: string,
-  opts?: { enabled?: boolean },
-): UseQueryResult<Member[], Error> => {
-  return useQuery({
-    queryKey: qk.classStudents(classId),
-    enabled: (opts?.enabled ?? true) && Boolean(classId),
-    staleTime: 60_000,
-    gcTime: 5 * 60_000,
-    queryFn: async () => {
-      const res = await axios.get<Member[]>(
-        `${BASE}/classes/${encodeURIComponent(classId)}/students`,
+      const res = await axios.get<ClassSummary[]>(
+        `${CLASSES_BASE_URL}/me/classes`,
+        { params: { role: mode } },
       );
       return res.data;
     },
   });
 };
 
-// GET /classes/{classId}/teachers
-export const useClassTeachers = (
-  classId: string,
-  opts?: { enabled?: boolean },
+// GET /classes/{classId}/students or /classes/{classId}/teachers
+export const useClassMembers = (
+  classId: string | undefined,
+  mode: RoleMode,
+  opts: { enabled?: boolean } = {},
 ): UseQueryResult<Member[], Error> => {
+  const enabled = Boolean(classId) && (opts.enabled ?? true);
   return useQuery({
-    queryKey: qk.classTeachers(classId),
-    enabled: (opts?.enabled ?? true) && Boolean(classId),
-    staleTime: 60_000,
-    gcTime: 5 * 60_000,
+    queryKey: ["classMembers", classId, mode],
+    enabled,
     queryFn: async () => {
+      if (!classId) throw new Error("Missing classId");
+      const suffix = mode === "Teacher" ? "students" : "teachers";
       const res = await axios.get<Member[]>(
-        `${BASE}/classes/${encodeURIComponent(classId)}/teachers`,
+        `${CLASSES_BASE_URL}/classes/${encodeURIComponent(classId)}/${suffix}`,
       );
       return res.data;
     },

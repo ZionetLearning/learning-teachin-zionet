@@ -7,6 +7,7 @@ import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import HomeIcon from "@mui/icons-material/Home";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import HistoryIcon from "@mui/icons-material/History";
+import CastForEducationIcon from "@mui/icons-material/CastForEducation";
 import GBFlag from "country-flag-icons/react/3x2/GB";
 import ILFlag from "country-flag-icons/react/3x2/IL";
 import { useAuth } from "@app-providers/auth";
@@ -38,6 +39,12 @@ export const SidebarMenu = () => {
       icon: <HomeIcon />,
       path: "/",
       testId: "sidebar-home",
+    },
+    {
+      label: t("sidebar.classes"),
+      icon: <CastForEducationIcon />,
+      path: "/classes",
+      testId: "sidebar-classes",
     },
     {
       label: t("sidebar.studentPracticeHistory"),
