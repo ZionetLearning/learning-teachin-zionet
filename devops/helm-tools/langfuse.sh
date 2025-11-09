@@ -79,7 +79,7 @@ helm $ACTION langfuse langfuse/langfuse \
   --set langfuse.additionalEnv[4].name="NEXT_PUBLIC_DISABLE_SIGNUP" \
   --set-string langfuse.additionalEnv[4].value="true" \
   --set langfuse.additionalEnv[5].name="DISABLE_SIGNUP" \
-  --set-string langfuse.additionalEnv[5].value="true" \
+  --set-string langfuse.additionalEnv[5].value="false" \
   --set langfuse.additionalEnv[6].name="AUTH_DISABLE_SIGNUP" \
   --set-string langfuse.additionalEnv[6].value="false" \
   --set langfuse.additionalEnv[7].name="NEXTAUTH_URL" \
@@ -136,6 +136,12 @@ helm $ACTION langfuse langfuse/langfuse \
   --set-string langfuse.additionalEnv[32].value="You have been invited to join TeachIn's Langfuse instance. Click the link below to accept the invitation." \
   --set langfuse.additionalEnv[33].name="INVITE_URL_BASE" \
   --set-string langfuse.additionalEnv[33].value="https://teachin.westeurope.cloudapp.azure.com/langfuse" \
+  --set langfuse.additionalEnv[34].name="NEXT_PUBLIC_SIGNUP_DISABLED" \
+  --set-string langfuse.additionalEnv[34].value="true" \
+  --set langfuse.additionalEnv[35].name="INVITATION_REQUIRED" \
+  --set-string langfuse.additionalEnv[35].value="true" \
+  --set langfuse.additionalEnv[36].name="VALIDATE_INVITATION_EMAIL" \
+  --set-string langfuse.additionalEnv[36].value="true" \
   --set redis.auth.existingSecret="langfuse-secrets" \
   --set redis.auth.existingSecretPasswordKey="REDIS_PASSWORD" \
   --set redis.auth.username="default" \
