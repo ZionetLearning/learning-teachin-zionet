@@ -88,8 +88,7 @@ public class SentencesService : ISentencesService
         var gameType = req.GameType.ToString();
         foreach (var sentence in parsed.Sentences)
         {
-            var prop = sentence.GetType().GetProperty(nameof(SentenceItem.GameType));
-            prop?.SetValue(sentence, gameType);
+            sentence.GameType = gameType;
         }
 
         return parsed;
