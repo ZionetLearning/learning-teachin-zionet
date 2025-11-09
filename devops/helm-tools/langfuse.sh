@@ -93,9 +93,9 @@ helm $ACTION langfuse langfuse/langfuse \
   --set langfuse.additionalEnv[11].name="SMTP_PORT" \
   --set-string langfuse.additionalEnv[11].value="587" \
   --set langfuse.additionalEnv[12].name="SMTP_USER" \
-  --set-string langfuse.additionalEnv[12].value="${SMTP_USER:-your-email@gmail.com}" \
+  --set-string langfuse.additionalEnv[12].value="$SMTP_USER" \
   --set langfuse.additionalEnv[13].name="SMTP_PASSWORD" \
-  --set-string langfuse.additionalEnv[13].value="${SMTP_PASSWORD:-your-app-specific-password}" \
+  --set-string langfuse.additionalEnv[13].value="$SMTP_PASSWORD" \
   --timeout=5m
 
 echo "✅ Chart applied with web=0."
