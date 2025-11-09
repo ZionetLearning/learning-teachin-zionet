@@ -61,7 +61,7 @@ public static class AccuracyCalculator
     {
 
         var normalizedGameType = gameType.ToLowerInvariant();
-        if (normalizedGameType is "typingPractice" or "speakingPractice")
+        if (normalizedGameType is "typingpractice" or "speakingpractice")
         {
             var correctText = correctAnswer.FirstOrDefault() ?? string.Empty;
             var givenText = givenAnswer.FirstOrDefault() ?? string.Empty;
