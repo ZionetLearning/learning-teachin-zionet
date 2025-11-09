@@ -485,12 +485,6 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
             var attemptDetails = await _accessorClient.GetLastAttemptAsync(request.UserId, request.GameType, ct);
 
-            _logger.LogInformation(
-                "Fetched attempt details for AttemptId {AttemptId}. GivenAnswer: {GivenAnswer}",
-                attemptDetails.AttemptId,
-                string.Join(", ", attemptDetails.GivenAnswer)
-            );
-
             getAttemptDetailsTime = sw.ElapsedMilliseconds;
 
             _logger.LogInformation("Fetching user details for UserId {UserId}", request.UserId);
@@ -511,8 +505,16 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
             }
 
             getSystemPromptTime = sw.ElapsedMilliseconds;
-            var mistakeExplanationPrompt = await BuildMistakeExplanationPromptAsync(attemptDetails, request.GameType, lang, ct);
-            storyForKernel.AddUserMessage(mistakeExplanationPrompt, DateTimeOffset.UtcNow);
+            var userPrompt = await BuildUserMistakeExplanationPromptAsync(attemptDetails, request.GameType, ct);
+            storyForKernel.AddUserMessage(userPrompt, DateTimeOffset.UtcNow);
+
+            // now add again the system prompt for accuracy
+
+            var rulesPrompt = await _accessorClient.GetPromptAsync(PromptsKeys.MistakeRuleTemplate, ct);
+            var systemRules = rulesPrompt?.Content?.Replace("{lang}", lang)
+                ?? "Explain mistake, correct answer, and learning tip. Reply in {lang}";
+
+            storyForKernel.Add(new ChatMessageContent(AuthorRole.System, systemRules));
 
             getMistakePromptTime = sw.ElapsedMilliseconds;
 
@@ -722,27 +724,29 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         }
     }
 
-    private async Task<string> BuildMistakeExplanationPromptAsync(AttemptDetailsResponse attemptDetails, GameName gameType, string lang, CancellationToken ct)
+    private async Task<string> BuildUserMistakeExplanationPromptAsync(AttemptDetailsResponse attemptDetails, GameName gameType, CancellationToken ct)
     {
         var userAnswerText = string.Join(" ", attemptDetails.GivenAnswer);
         var correctAnswerText = string.Join(" ", attemptDetails.CorrectAnswer);
 
-        var mistakeTemplatePrompt = await _accessorClient.GetPromptAsync(PromptsKeys.MistakeTemplate, ct);
+        // Need to change the prompt in the langfuse
+        var mistakeTemplatePrompt = await _accessorClient.GetPromptAsync(PromptsKeys.MistakeUserTemplate, ct);
 
         if (mistakeTemplatePrompt?.Content is not null)
         {
             return mistakeTemplatePrompt.Content
-                .Replace("{gameType}", gameType.ToString())
-                .Replace("{difficulty}", attemptDetails.Difficulty)
-                .Replace("{userAnswer}", userAnswerText)
-                .Replace("{correctAnswer}", correctAnswerText)
-                .Replace("{lang}", lang);
+                .Replace("{gameType}", gameType.ToString(), StringComparison.Ordinal)
+                .Replace("{difficulty}", attemptDetails.Difficulty, StringComparison.Ordinal)
+                .Replace("{userAnswer}", userAnswerText, StringComparison.Ordinal)
+                .Replace("{correctAnswer}", correctAnswerText, StringComparison.Ordinal);
+
+            //.Replace("{lang}", lang);
         }
         else
         {
             _logger.LogWarning("Mistake explanation template not found in database, using fallback");
             return $"""
-                Please explain the mistake in this {gameType} exercise:
+                Explain the mistake in this {gameType} exercise:
 
                 **Exercise Details:**
                 - Game Type: {gameType}
@@ -750,15 +754,16 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
                 **Student's Answer:** {userAnswerText}
                 **Correct Answer:** {correctAnswerText}
-
-                Please provide a clear, educational explanation of:
-                1. What the mistake was
-                2. Why the correct answer is right
-                3. Tips to avoid this mistake in the future
-
-                Be encouraging and focus on learning rather than just pointing out the error.
-                Use only language with this code: {lang} for an answer.
                 """;
+
+            //Please provide a clear, educational explanation of:
+            //1. What the mistake was
+            //2. Why the correct answer is right
+            //3. Tips to avoid this mistake in the future
+
+            //Be encouraging and focus on learning rather than just pointing out the error.
+            //Use only language with this code: {lang} for an answer.
+            //""";
         }
     }
 

@@ -9,8 +9,9 @@ public static class PromptsKeys
     public static PromptConfiguration FriendlyTone { get; private set; } = new() { Key = "prompts.tone.friendly", Label = "production" };
     public static PromptConfiguration DetailedExplanation { get; private set; } = new() { Key = "prompts.explanation.detailed", Label = "production" };
     public static PromptConfiguration ExplainMistakeSystem { get; private set; } = new() { Key = "chat.system.explain.mistake", Label = "production" };
-    public static PromptConfiguration MistakeTemplate { get; private set; } = new() { Key = "prompts.mistake.template", Label = "production" };
-
+    //public static PromptConfiguration MistakeTemplate { get; private set; } = new() { Key = "prompts.mistake.template", Label = "production" };
+    public static PromptConfiguration MistakeUserTemplate { get; private set; } = new() { Key = "prompts.mistake.user.template", Label = "test" };
+    public static PromptConfiguration MistakeRuleTemplate { get; private set; } = new() { Key = "prompts.mistake.rule.template", Label = "test" };
     public static void Configure(PromptKeyOptions? options)
     {
         if (options is null)
@@ -43,9 +44,14 @@ public static class PromptsKeys
             ExplainMistakeSystem = options.ExplainMistakeSystem;
         }
 
-        if (options.MistakeTemplate is not null)
+        if (options.MistakeUserTemplate is not null)
         {
-            MistakeTemplate = options.MistakeTemplate;
+            MistakeUserTemplate = options.MistakeUserTemplate;
+        }
+
+        if (options.MistakeRuleTemplate is not null)
+        {
+            MistakeRuleTemplate = options.MistakeRuleTemplate;
         }
     }
 }

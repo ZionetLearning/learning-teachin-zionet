@@ -7,5 +7,6 @@ public sealed class PromptKeyOptions
     public PromptConfiguration? FriendlyTone { get; set; }
     public PromptConfiguration? DetailedExplanation { get; set; }
     public PromptConfiguration? ExplainMistakeSystem { get; set; }
-    public PromptConfiguration? MistakeTemplate { get; set; }
+    public PromptConfiguration? MistakeUserTemplate { get; set; }
+    public PromptConfiguration? MistakeRuleTemplate { get; set; }
 }
