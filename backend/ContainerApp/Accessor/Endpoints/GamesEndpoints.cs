@@ -15,7 +15,7 @@ public static class GamesEndpoints
         gamesGroup.MapGet("/mistakes/{studentId:guid}", GetMistakesAsync);
         gamesGroup.MapGet("/all-history", GetAllHistoriesAsync);
         gamesGroup.MapGet("/attempt/{userId:guid}/{attemptId:guid}", GetAttemptDetailsAsync);
-        gamesGroup.MapGet("/attempt/last/{userId:guid}/{gameType:string}", GetLastAttemptAsync);
+        gamesGroup.MapGet("/attempt/last/{userId:guid}/{gameType}", GetLastAttemptAsync);
         gamesGroup.MapPost("/generated-sentences", SaveGeneratedSentencesAsync);
         gamesGroup.MapDelete("/all-history", DeleteAllGamesHistoryAsync);
 
