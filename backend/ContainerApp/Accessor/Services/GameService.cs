@@ -32,74 +32,66 @@ public class GameService : IGameService
             throw new InvalidOperationException("GivenAnswer must not be null.");
         }
 
-        try
+        _logger.LogInformation("Submit attempt requested. ExerciseId={ExerciseId}, StudentId={StudentId}", request.ExerciseId, request.StudentId);
+
+        var original = await _db.GameAttempts
+            .FirstOrDefaultAsync(a => a.StudentId == request.StudentId &&
+            a.ExerciseId == request.ExerciseId &&
+            a.AttemptId == request.ExerciseId, ct); // the original attempt has AttemptId == ExerciseId (exercise without answer)
+
+        if (original is null)
         {
-            _logger.LogInformation("Submit attempt requested. ExerciseId={ExerciseId}, StudentId={StudentId}", request.ExerciseId, request.StudentId);
-
-            var original = await _db.GameAttempts
-                .FirstOrDefaultAsync(a => a.StudentId == request.StudentId &&
-                a.ExerciseId == request.ExerciseId &&
-                a.AttemptId == request.ExerciseId, ct); // the original attempt has AttemptId == ExerciseId (exercise without answer)
-
-            if (original is null)
-            {
-                _logger.LogWarning("Exercise not found. ExerciseId={ExerciseId}", request.ExerciseId);
-                throw new KeyNotFoundException("Original exercise not found.");
-            }
-
-            var isCorrect = request.GivenAnswer.SequenceEqual(original.CorrectAnswer);
-
-            // If correct, accuracy is 100%, otherwise calculate accuracy
-            var accuracy = isCorrect ? 100m : AccuracyCalculator.Calculate(
-                original.GameType,
-                original.CorrectAnswer,
-                request.GivenAnswer
-            );
-
-            var last = await _db.GameAttempts
-                .Where(a => a.StudentId == original.StudentId && a.ExerciseId == original.ExerciseId)
-                .OrderByDescending(a => a.AttemptNumber)
-                .FirstOrDefaultAsync(ct);
-
-            var nextNumber = (last?.AttemptNumber ?? 0) + 1;
-
-            var newAttempt = new GameAttempt
-            {
-                AttemptId = Guid.NewGuid(),
-                ExerciseId = original.ExerciseId,
-                StudentId = original.StudentId,
-                GameType = original.GameType,
-                Difficulty = original.Difficulty,
-                CorrectAnswer = original.CorrectAnswer,
-                GivenAnswer = request.GivenAnswer,
-                Status = isCorrect ? AttemptStatus.Success : AttemptStatus.Failure,
-                AttemptNumber = nextNumber,
-                Accuracy = accuracy,
-                CreatedAt = DateTimeOffset.UtcNow
-            };
-
-            _db.GameAttempts.Add(newAttempt);
-
-            // If the answer is correct, update the original attempt (first attempt) to Success
-            if (isCorrect)
-            {
-                original.Status = AttemptStatus.Success;
-                _db.GameAttempts.Update(original);
-                _logger.LogInformation("Original attempt updated to Success. ExerciseId={ExerciseId}", original.ExerciseId);
-            }
-
-            await _db.SaveChangesAsync(ct);
-
-            _logger.LogInformation("New attempt saved. AttemptId={NewId}, ExerciseId={ExerciseId}, Number={Number}, Status={Status}, Accuracy={Accuracy}%",
-                newAttempt.AttemptId, original.ExerciseId, nextNumber, newAttempt.Status, newAttempt.Accuracy);
-
-            return _mapper.Map<SubmitAttemptResult>(newAttempt);
+            _logger.LogWarning("Exercise not found. ExerciseId={ExerciseId}, StudentId={StudentId}", request.ExerciseId, request.StudentId);
+            throw new KeyNotFoundException($"Exercise {request.ExerciseId} not found for student {request.StudentId}.");
         }
-        catch (Exception ex)
+
+        var isCorrect = request.GivenAnswer.SequenceEqual(original.CorrectAnswer);
+
+        // If correct, accuracy is 100%, otherwise calculate accuracy
+        var accuracy = isCorrect ? 100m : AccuracyCalculator.Calculate(
+            original.GameType,
+            original.CorrectAnswer,
+            request.GivenAnswer
+        );
+
+        var last = await _db.GameAttempts
+            .Where(a => a.StudentId == original.StudentId && a.ExerciseId == original.ExerciseId)
+            .OrderByDescending(a => a.AttemptNumber)
+            .FirstOrDefaultAsync(ct);
+
+        var nextNumber = (last?.AttemptNumber ?? 0) + 1;
+
+        var newAttempt = new GameAttempt
         {
-            _logger.LogError(ex, "Error while submitting attempt. ExerciseId={ExerciseId}, StudentId={StudentId}", request.ExerciseId, request.StudentId);
-            throw;
+            AttemptId = Guid.NewGuid(),
+            ExerciseId = original.ExerciseId,
+            StudentId = original.StudentId,
+            GameType = original.GameType,
+            Difficulty = original.Difficulty,
+            CorrectAnswer = original.CorrectAnswer,
+            GivenAnswer = request.GivenAnswer,
+            Status = isCorrect ? AttemptStatus.Success : AttemptStatus.Failure,
+            AttemptNumber = nextNumber,
+            Accuracy = accuracy,
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+
+        _db.GameAttempts.Add(newAttempt);
+
+        // If the answer is correct, update the original attempt (first attempt) to Success
+        if (isCorrect)
+        {
+            original.Status = AttemptStatus.Success;
+            _db.GameAttempts.Update(original);
+            _logger.LogInformation("Original attempt updated to Success. ExerciseId={ExerciseId}", original.ExerciseId);
         }
+
+        await _db.SaveChangesAsync(ct);
+
+        _logger.LogInformation("New attempt saved. AttemptId={NewId}, ExerciseId={ExerciseId}, Number={Number}, Status={Status}, Accuracy={Accuracy}%",
+            newAttempt.AttemptId, original.ExerciseId, nextNumber, newAttempt.Status, newAttempt.Accuracy);
+
+        return _mapper.Map<SubmitAttemptResult>(newAttempt);
     }
 
     public async Task<GameHistoryResponse> GetHistoryAsync(
@@ -141,6 +133,7 @@ public class GameService : IGameService
             if (summary)
             {
                 var query = attempts
+                    .Where(a => a.AttemptId != a.ExerciseId)
                     .GroupBy(a => new { a.GameType, a.Difficulty })
                     .Select(g => new SummaryHistoryDto
                     {
@@ -174,9 +167,12 @@ public class GameService : IGameService
             }
             else
             {
-                var total = await attempts.CountAsync(ct);
+                // Exclude pending exercises (where AttemptId == ExerciseId) from detailed history
+                var filteredAttempts = attempts.Where(a => a.AttemptId != a.ExerciseId);
 
-                var items = await attempts
+                var total = await filteredAttempts.CountAsync(ct);
+
+                var items = await filteredAttempts
                     .OrderByDescending(a => a.CreatedAt)
                     .ThenByDescending(a => a.AttemptId)
                     .Select(a => new AttemptHistoryDto
@@ -332,7 +328,7 @@ public class GameService : IGameService
             _logger.LogInformation("Fetching all histories. Page={Page}, PageSize={PageSize}", page, pageSize);
 
             var query = _db.GameAttempts
-                .Where(a => a.Status != AttemptStatus.Pending)
+                .Where(a => a.Status != AttemptStatus.Pending && a.AttemptId != a.ExerciseId) // Exclude pending and original exercises
                 .GroupBy(a => new { a.StudentId, a.GameType, a.Difficulty })
                 .Select(g => new SummaryHistoryWithStudentDto
                 {
@@ -407,6 +403,11 @@ public class GameService : IGameService
         {
             var resultList = new List<AttemptedSentenceResult>();
 
+            // Normalize GameType to camelCase for consistent storage
+            var normalizedGameType = string.IsNullOrEmpty(dto.GameType) || dto.GameType.Length < 2
+                ? dto.GameType
+                : char.ToLowerInvariant(dto.GameType[0]) + dto.GameType[1..];
+
             foreach (var sentence in dto.Sentences)
             {
                 var exerciseId = Guid.NewGuid();
@@ -416,7 +417,7 @@ public class GameService : IGameService
                     AttemptId = exerciseId,
                     ExerciseId = exerciseId,
                     StudentId = dto.StudentId,
-                    GameType = dto.GameType,
+                    GameType = normalizedGameType,
                     Difficulty = dto.Difficulty,
                     CorrectAnswer = sentence.CorrectAnswer,
                     GivenAnswer = new(),

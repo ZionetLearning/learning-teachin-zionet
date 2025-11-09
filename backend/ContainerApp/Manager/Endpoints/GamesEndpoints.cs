@@ -58,9 +58,19 @@ public static class GamesEndpoints
 
             return Results.Ok(result);
         }
+        catch (KeyNotFoundException ex)
+        {
+            logger.LogInformation("Exercise not found. ExerciseId={ExerciseId}", request.ExerciseId);
+            return Results.NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            logger.LogWarning(ex, "Invalid attempt submission. ExerciseId={ExerciseId}", request.ExerciseId);
+            return Results.BadRequest(new { message = ex.Message });
+        }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error while submitting attempt");
+            logger.LogError(ex, "Error while submitting attempt. ExerciseId={ExerciseId}", request.ExerciseId);
             return Results.Problem("Failed to submit attempt. Please try again later.");
         }
     }
@@ -91,6 +101,7 @@ public static class GamesEndpoints
             logger.LogInformation("Fetching history for StudentId={StudentId}, Summary={Summary}, GetPending={GetPending}, Page={Page}, PageSize={PageSize}", studentId, summary, getPending, page, pageSize);
 
             var result = await gameAccessorClient.GetHistoryAsync(studentId, summary, page, pageSize, getPending, ct);
+
             if (result.IsSummary)
             {
                 logger.LogInformation("Returned {Records} summary records", result.Summary?.Items.Count() ?? 0);

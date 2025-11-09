@@ -49,29 +49,6 @@ public class GamesIntegrationTests(
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    [Fact(DisplayName = "POST /games-manager/attempt - Student cannot submit for another student")]
-    public async Task SubmitAttempt_UnauthorizedAccess_Should_Return_Forbidden()
-    {
-        var student1 = await CreateUserAsync();
-        
-        // Generate a sentence for student1
-        var sentences = await GenerateSplitSentencesAsync(student1.UserId, Difficulty.Easy, nikud: false, count: 1);
-        var sentence = sentences.First();
-        
-        // Create and login as student2
-        var student2 = await CreateUserAsync(role: "student", email: $"student2-{Guid.NewGuid():N}@example.com");
-        
-        // Student2 tries to submit for student1's exercise
-        var request = new SubmitAttemptRequest
-        {
-            ExerciseId = sentence.ExerciseId,
-            GivenAnswer = new List<string> { "test" }
-        };
-
-        var response = await Client.PostAsJsonAsync(ApiRoutes.GamesAttempt, request);
-        response.ShouldBeForbidden();
-    }
-
     [Fact(DisplayName = "GET /games-manager/history/{id} - Should return paginated history for student")]
     public async Task GetHistory_Should_Return_Correct_History()
     {

@@ -38,6 +38,24 @@ public class GameAccessorClient : IGameAccessorClient
 
             return result;
         }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("Exercise not found. StudentId={StudentId}, ExerciseId={ExerciseId}, StatusCode={StatusCode}",
+                studentId, request.ExerciseId, ex.Response?.StatusCode);
+            throw new KeyNotFoundException($"Exercise {request.ExerciseId} not found for student {studentId}.", ex);
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.BadRequest)
+        {
+            _logger.LogWarning("Bad request for SubmitAttempt. StudentId={StudentId}, ExerciseId={ExerciseId}, StatusCode={StatusCode}",
+                studentId, request.ExerciseId, ex.Response?.StatusCode);
+            throw new InvalidOperationException("Invalid attempt submission request.", ex);
+        }
+        catch (InvocationException ex)
+        {
+            _logger.LogError(ex, "Dapr invocation failed for SubmitAttempt. StudentId={StudentId}, ExerciseId={ExerciseId}, StatusCode={StatusCode}, AppId={AppId}, Method={Method}",
+                studentId, request.ExerciseId, ex.Response?.StatusCode, AppIds.Accessor, "games-accessor/attempt");
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to forward SubmitAttempt to Accessor. StudentId={StudentId}, ExerciseId={ExerciseId}", studentId, request.ExerciseId);
@@ -52,65 +70,46 @@ public class GameAccessorClient : IGameAccessorClient
             _logger.LogInformation("Requesting history from Accessor. StudentId={StudentId}, Summary={Summary}, Page={Page}, PageSize={PageSize}, GetPending={GetPending}",
                 studentId, summary, page, pageSize, getPending);
 
-            if (summary)
+            // Call Accessor and expect GameHistoryResponse (not PagedResult directly)
+            var result = await _daprClient.InvokeMethodAsync<GameHistoryResponse>(
+                HttpMethod.Get,
+                AppIds.Accessor,
+                $"games-accessor/history/{studentId}?summary={summary}&page={page}&pageSize={pageSize}&getPending={getPending}",
+                cancellationToken: ct
+            );
+
+            if (result == null)
             {
-                var summaryResult = await _daprClient.InvokeMethodAsync<PagedResult<SummaryHistoryDto>>(
-                    HttpMethod.Get,
-                    AppIds.Accessor,
-                    $"games-accessor/history/{studentId}?summary=true&page={page}&pageSize={pageSize}&getPending={getPending}",
-                    cancellationToken: ct
-                );
-
-                if (summaryResult == null)
+                _logger.LogWarning("Accessor returned null history response. StudentId={StudentId}", studentId);
+                return new GameHistoryResponse
                 {
-                    _logger.LogWarning("Accessor returned null summary history. StudentId={StudentId}", studentId);
-                    summaryResult = new PagedResult<SummaryHistoryDto> { Page = page, PageSize = pageSize, TotalCount = 0 };
-                }
+                    Summary = summary ? new PagedResult<SummaryHistoryDto> { Page = page, PageSize = pageSize, TotalCount = 0 } : null,
+                    Detailed = !summary ? new PagedResult<AttemptHistoryDto> { Page = page, PageSize = pageSize, TotalCount = 0 } : null
+                };
+            }
 
+            if (summary && result.Summary != null)
+            {
                 _logger.LogInformation("Received summary history from Accessor. StudentId={StudentId}, Items={Count}, TotalCount={TotalCount}",
-                    studentId, summaryResult.Items.Count(), summaryResult.TotalCount);
-
-                return new GameHistoryResponse { Summary = summaryResult };
+                    studentId, result.Summary.Items.Count(), result.Summary.TotalCount);
             }
-            else
+            else if (!summary && result.Detailed != null)
             {
-                var detailedResult = await _daprClient.InvokeMethodAsync<PagedResult<AttemptHistoryDto>>(
-                    HttpMethod.Get,
-                    AppIds.Accessor,
-                    $"games-accessor/history/{studentId}?summary=false&page={page}&pageSize={pageSize}&getPending={getPending}",
-                    cancellationToken: ct
-                );
-
-                if (detailedResult == null)
-                {
-                    _logger.LogWarning("Accessor returned null detailed history. StudentId={StudentId}", studentId);
-                    detailedResult = new PagedResult<AttemptHistoryDto> { Page = page, PageSize = pageSize, TotalCount = 0 };
-                }
-
                 _logger.LogInformation("Received detailed history from Accessor. StudentId={StudentId}, Items={Count}, TotalCount={TotalCount}",
-                    studentId, detailedResult.Items.Count(), detailedResult.TotalCount);
-
-                return new GameHistoryResponse { Detailed = detailedResult };
+                    studentId, result.Detailed.Items.Count(), result.Detailed.TotalCount);
             }
+
+            return result;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get history from Accessor. StudentId={StudentId}, Summary={Summary}, GetPending={GetPending}", studentId, summary, getPending);
 
-            if (summary)
+            return new GameHistoryResponse
             {
-                return new GameHistoryResponse
-                {
-                    Summary = new PagedResult<SummaryHistoryDto> { Page = page, PageSize = pageSize, TotalCount = 0 }
-                };
-            }
-            else
-            {
-                return new GameHistoryResponse
-                {
-                    Detailed = new PagedResult<AttemptHistoryDto> { Page = page, PageSize = pageSize, TotalCount = 0 }
-                };
-            }
+                Summary = summary ? new PagedResult<SummaryHistoryDto> { Page = page, PageSize = pageSize, TotalCount = 0 } : null,
+                Detailed = !summary ? new PagedResult<AttemptHistoryDto> { Page = page, PageSize = pageSize, TotalCount = 0 } : null
+            };
         }
     }
 
@@ -208,7 +207,7 @@ public class GameAccessorClient : IGameAccessorClient
             await _daprClient.InvokeMethodAsync(
                 HttpMethod.Delete,
                 AppIds.Accessor,
-                $"/games-accessor/all-history",
+                "games-accessor/all-history",
                 ct);
             _logger.LogInformation("All games history deleted successfully.");
             return true;

@@ -154,19 +154,21 @@ public class GameServiceTests
         var db = NewDb(Guid.NewGuid().ToString());
         var service = NewGameService(db);
 
-        var StudentId = Guid.NewGuid();
-        var ExerciseId = Guid.NewGuid();
+        var studentId = Guid.NewGuid();
+        var exerciseId = Guid.NewGuid();
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
             service.SubmitAttemptAsync(new SubmitAttemptRequest
             {
-                StudentId = StudentId,
-                ExerciseId = ExerciseId,
+                StudentId = studentId,
+                ExerciseId = exerciseId,
                 GivenAnswer = new List<string> { "test" }
             }, CancellationToken.None));
 
-        exception.Message.Should().Contain("Original exercise not found.");
+        exception.Message.Should().Contain("not found");
+        exception.Message.Should().Contain(exerciseId.ToString());
+        exception.Message.Should().Contain(studentId.ToString());
     }
 
     [Fact]
@@ -562,7 +564,7 @@ public class GameServiceTests
         var savedAttempts = await db.GameAttempts.Where(a => a.StudentId == studentId).ToListAsync();
         savedAttempts.Should().HaveCount(1);
         savedAttempts.First().Status.Should().Be(AttemptStatus.Pending);
+        savedAttempts.First().GameType.Should().Be("wordOrderGame"); // Verify camelCase normalization
     }
-
     #endregion
 }

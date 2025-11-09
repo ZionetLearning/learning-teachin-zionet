@@ -32,10 +32,10 @@ public static class AccuracyCalculator
     }
 
     /// <summary>
-    /// Calculates accuracy for Typing Practice using Levenshtein distance algorithm.
+    /// Calculates accuracy for Typing Practice and Speaking Practice using Levenshtein distance algorithm.
     /// Returns character-level accuracy percentage.
     /// </summary>
-    public static decimal CalculateTypingAccuracy(string correctText, string givenText)
+    public static decimal CalculateTextAccuracy(string correctText, string givenText)
     {
         if (string.IsNullOrEmpty(correctText))
         {
@@ -59,18 +59,16 @@ public static class AccuracyCalculator
     /// </summary>
     public static decimal Calculate(string gameType, List<string> correctAnswer, List<string> givenAnswer)
     {
-        if (gameType.Equals("typingPractice", StringComparison.OrdinalIgnoreCase))
+
+        var normalizedGameType = gameType.ToLowerInvariant();
+        if (normalizedGameType is "typingPractice" or "speakingPractice")
         {
-            // For typing practice, answers are single-element arrays containing full sentences
             var correctText = correctAnswer.FirstOrDefault() ?? string.Empty;
             var givenText = givenAnswer.FirstOrDefault() ?? string.Empty;
-            return CalculateTypingAccuracy(correctText, givenText);
+            return CalculateTextAccuracy(correctText, givenText);
         }
-        else
-        {
-            // For word order game and other games
-            return CalculateWordOrderAccuracy(correctAnswer, givenAnswer);
-        }
+
+        return CalculateWordOrderAccuracy(correctAnswer, givenAnswer);
     }
 
     /// <summary>
@@ -91,8 +89,6 @@ public static class AccuracyCalculator
 
         var sourceLength = source.Length;
         var targetLength = target.Length;
-
-        // Use jagged array instead of multidimensional for better performance
         var distance = new int[sourceLength + 1][];
         for (var i = 0; i <= sourceLength; i++)
         {

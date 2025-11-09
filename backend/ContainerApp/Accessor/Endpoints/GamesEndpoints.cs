@@ -56,12 +56,12 @@ public static class GamesEndpoints
         }
         catch (KeyNotFoundException ex)
         {
-            logger.LogWarning(ex, "SubmitAttemptAsync failed. StudentId={StudentId} - Game not found", request.StudentId);
+            logger.LogInformation("SubmitAttemptAsync - Exercise not found. StudentId={StudentId}, ExerciseId={ExerciseId}", request.StudentId, request.ExerciseId);
             return Results.NotFound(new { message = ex.Message });
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unexpected error in SubmitAttemptAsync. StudentId={StudentId}", request.StudentId);
+            logger.LogError(ex, "Unexpected error in SubmitAttemptAsync. StudentId={StudentId}, ExerciseId={ExerciseId}", request.StudentId, request.ExerciseId);
             return Results.Problem("Unexpected error occurred while submitting attempt.");
         }
     }
