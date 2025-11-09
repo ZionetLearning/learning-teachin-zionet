@@ -115,6 +115,9 @@ helm $ACTION langfuse langfuse/langfuse \
   --set redis.auth.username="default" \
   --set redis.auth.enabled=true \
   --set redis.architecture="standalone" \
+  --set redis.host="langfuse-redis-primary.devops-tools.svc.cluster.local" \
+  --set redis.master.service.ports.redis=6379 \
+  --set redis.tls.enabled=false \
   --timeout=5m
 
 echo "✅ Chart applied with web=0."
