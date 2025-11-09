@@ -60,15 +60,15 @@ namespace IntegrationTests.Tests.AI
 
             var evtRaw = received.Event;
 
-            
-            var res = JsonSerializer.Deserialize<SentenceResponse>(
-            evtRaw.Payload.GetRawText(), options)!;
+            // Backend sends List<AttemptedSentenceResult> not SentenceResponse
+            var res = JsonSerializer.Deserialize<List<AttemptedSentenceResult>>(
+                evtRaw.Payload.GetRawText(), options)!;
 
-            res.Sentences.Count.Should().Be(count);
+            res.Count.Should().Be(count);
 
-            Assert.All(res.Sentences, s =>
+            Assert.All(res, s =>
             {
-                Assert.Equal(request.Difficulty.ToString(), s.Difficulty);
+                Assert.Equal(request.Difficulty.ToString(), s.Difficulty, ignoreCase: true);
                 Assert.Equal(request.Nikud, s.Nikud);
             });
         }
@@ -113,7 +113,7 @@ namespace IntegrationTests.Tests.AI
 
             Assert.All(res, s =>
             {
-                Assert.Equal(request.Difficulty.ToString(), s.Difficulty);
+                Assert.Equal(request.Difficulty.ToString(), s.Difficulty, ignoreCase: true);
                 Assert.Equal(request.Nikud, s.Nikud);
             });
 
