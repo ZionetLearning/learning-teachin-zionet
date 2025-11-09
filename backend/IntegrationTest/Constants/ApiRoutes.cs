@@ -39,11 +39,7 @@ public static class ApiRoutes
     public const string ChatMistakeExplanation = "ai-manager/chat/mistake-explanation";
 
     // -------- Games --------
-
-    public const string GamesAttempt = "games-manager/attempt";
-    public static string GameHistory(Guid studentId) => $"games-manager/history/{studentId}";
-    public static string GameMistakes(Guid studentId) => $"games-manager/mistakes/{studentId}";
-    public const string GameAllHistory = "games-manager/all-history";
+    // NOTE: Game routes have been moved to GamesRoutes.cs
 
     // -------- Word Cards --------
     public const string WordCards = "wordcards-manager";
@@ -52,7 +48,4 @@ public static class ApiRoutes
     // -------- User Game Config --------
     public const string GameConfig = "game-config-manager";
     public static string GameConfigByName(GameName gameName) => $"game-config-manager/{gameName}";
-
-
-
 }

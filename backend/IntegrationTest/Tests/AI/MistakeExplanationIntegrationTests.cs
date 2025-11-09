@@ -77,7 +77,7 @@ public class MistakeExplanationIntegrationTests(
             GivenAnswer = wrongAnswer
         };
 
-        var attemptResponse = await PostAsJsonAsync(ApiRoutes.GamesAttempt, attemptRequest);
+        var attemptResponse = await PostAsJsonAsync(GamesRoutes.Attempt, attemptRequest);
         attemptResponse.EnsureSuccessStatusCode();
 
         var attemptResult = await ReadAsJsonAsync<SubmitAttemptResult>(attemptResponse);

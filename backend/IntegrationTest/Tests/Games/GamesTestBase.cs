@@ -287,7 +287,7 @@ public abstract class GamesTestBase(
             GivenAnswer = givenAnswer
         };
 
-        var response = await Client.PostAsJsonAsync(ApiRoutes.GamesAttempt, request);
+        var response = await Client.PostAsJsonAsync(GamesRoutes.Attempt, request);
         response.EnsureSuccessStatusCode();
 
         return await ReadAsJsonAsync<SubmitAttemptResult>(response)
@@ -360,7 +360,8 @@ public abstract class GamesTestBase(
         for (int i = 0; i < count; i++)
         {
             var difficulty = difficulties[i % difficulties.Length];
-            await CreateMistakeAsync(studentId, difficulty);
+            
+            var result = await CreateMistakeAsync(studentId, difficulty);
         }
     }
 
