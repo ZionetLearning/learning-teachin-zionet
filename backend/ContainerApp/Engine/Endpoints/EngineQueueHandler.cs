@@ -481,6 +481,13 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
             _logger.LogInformation("Fetching attempt details for AttemptId {AttemptId}", request.AttemptId);
             var attemptDetails = await _accessorClient.GetAttemptDetailsAsync(request.UserId, request.AttemptId, ct);
+
+            _logger.LogInformation(
+                "Fetched attempt details for AttemptId {AttemptId}. GivenAnswer: {GivenAnswer}",
+                attemptDetails.AttemptId,
+                string.Join(", ", attemptDetails.GivenAnswer)
+            );
+
             getAttemptDetailsTime = sw.ElapsedMilliseconds;
 
             _logger.LogInformation("Fetching user details for UserId {UserId}", request.UserId);
