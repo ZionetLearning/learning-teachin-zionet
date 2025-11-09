@@ -2,7 +2,7 @@ namespace IntegrationTests.Constants;
 
 public static class MeetingRoutes
 {
-    private const string Base = "/meetings-manager";
+    private const string Base = "meetings-manager";
 
     public static string GetMeeting(Guid meetingId) => $"{Base}/{meetingId}";
     public static string GetMeetingsForUser(Guid userId) => $"{Base}/user/{userId}";
