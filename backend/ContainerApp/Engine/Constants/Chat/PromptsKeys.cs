@@ -10,6 +10,7 @@ public static class PromptsKeys
     public static PromptConfiguration DetailedExplanation { get; private set; } = new() { Key = "prompts.explanation.detailed", Label = "production" };
     public static PromptConfiguration ExplainMistakeSystem { get; private set; } = new() { Key = "chat.system.explain.mistake", Label = "production" };
     public static PromptConfiguration MistakeTemplate { get; private set; } = new() { Key = "prompts.mistake.template", Label = "production" };
+    public static PromptConfiguration GlobalChatSystemDefault { get; private set; } = new() { Key = "chat.global.system.default", Label = "production" };
 
     public static void Configure(PromptKeyOptions? options)
     {
@@ -46,6 +47,11 @@ public static class PromptsKeys
         if (options.MistakeTemplate is not null)
         {
             MistakeTemplate = options.MistakeTemplate;
+        }
+
+        if (options.GlobalChatSystemDefault is not null)
+        {
+            GlobalChatSystemDefault = options.GlobalChatSystemDefault;
         }
     }
 }

@@ -8,4 +8,5 @@ public sealed class PromptKeyOptions
     public PromptConfiguration? DetailedExplanation { get; set; }
     public PromptConfiguration? ExplainMistakeSystem { get; set; }
     public PromptConfiguration? MistakeTemplate { get; set; }
+    public PromptConfiguration? GlobalChatSystemDefault { get; set; }
 }

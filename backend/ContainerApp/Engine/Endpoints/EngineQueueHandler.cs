@@ -167,14 +167,13 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         Stopwatch? elapsed = null;
         var seq = 0;
         Func<int> NextSeq = () => Interlocked.Increment(ref seq) - 1;
-
-        var (request, userContext) = DeserializeAndValidateChatRequest(message);
+        EngineChatRequest? request = null;
+        UserContextMetadata? userContext = null;
 
         try
         {
+            (request, userContext) = DeserializeAndValidateChatRequest(message);
             using var _ = _logger.BeginScope(new { request.RequestId, request.ThreadId, request.UserId });
-
-            ValidateChatRequestCore(request);
 
             var snapshot = await _accessorClient.GetHistorySnapshotAsync(request.ThreadId, request.UserId, ct);
             getHistoryTime = sw.ElapsedMilliseconds;
@@ -383,14 +382,14 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         Stopwatch? elapsed = null;
         var seq = 0;
         Func<int> NextSeq = () => Interlocked.Increment(ref seq) - 1;
-
-        var (request, userContext) = DeserializeAndValidateChatRequest(message);
+        EngineChatRequest? request = null;
+        UserContextMetadata? userContext = null;
 
         try
         {
-            using var _ = _logger.BeginScope(new { request.RequestId, request.ThreadId, request.UserId });
+            (request, userContext) = DeserializeAndValidateChatRequest(message);
 
-            ValidateChatRequestCore(request);
+            using var _ = _logger.BeginScope(new { request.RequestId, request.ThreadId, request.UserId });
 
             if (request.UserDetail == null)
             {
@@ -404,11 +403,12 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
             if (!storyForKernel.Any(m => m.Role == AuthorRole.System))
             {
-                var systemPrompt = CreateFirstSystemPromptForGlobalChat(request.UserDetail, ct);
+                var systemPrompt = await CreateFirstSystemPromptForGlobalChatAsync(request.UserDetail, ct);
+
                 storyForKernel.Insert(0, new ChatMessageContent(AuthorRole.System, systemPrompt));
             }
 
-            var pageContextToolContent = CreatePageContextToolMessage(request.PageContext, ct);
+            var pageContextToolContent = CreatePageContextDevelopMessage(request.PageContext, ct);
             if (!string.IsNullOrWhiteSpace(pageContextToolContent))
             {
                 var devMessage = new ChatMessageContent
@@ -600,6 +600,23 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
         var userContext = MetadataValidation.DeserializeOrThrow<UserContextMetadata>(message, _logger);
         MetadataValidation.ValidateUserContext(userContext, _logger);
+
+        if (request.UserId == Guid.Empty)
+        {
+            throw new NonRetryableException("UserId is required.");
+        }
+
+        if (request.TtlSeconds <= 0)
+        {
+            throw new NonRetryableException("TtlSeconds must be greater than 0.");
+        }
+
+        var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        if (now > request.SentAt + request.TtlSeconds)
+        {
+            _logger.LogWarning("Chat request {RequestId} expired. Skipping.", request.RequestId);
+            throw new NonRetryableException("Request TTL expired.");
+        }
 
         return (request, userContext);
     }
@@ -1047,22 +1064,13 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         }
     }
 
-    private string CreateFirstSystemPromptForGlobalChat(UserDetailForChat userDetails, CancellationToken ct)
+    private async Task<string> CreateFirstSystemPromptForGlobalChatAsync(
+        UserDetailForChat userDetails,
+        CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
-        var firstName = userDetails.FirstName?.Trim() ?? "";
-        var lastName = userDetails.LastName?.Trim() ?? "";
-        var prefLang = string.IsNullOrWhiteSpace(userDetails.PreferredLanguageCode)
-            ? "en"
-            : userDetails.PreferredLanguageCode.Trim();
-        var hebLevel = string.IsNullOrWhiteSpace(userDetails.HebrewLevelValue)
-            ? "unknown"
-            : userDetails.HebrewLevelValue!.Trim();
-        var role = string.IsNullOrWhiteSpace(userDetails.Role) ? "Student" : userDetails.Role!.Trim();
-        var interests = JoinInterests(userDetails.Interests);
-
-        var prompt = $"""
+        const string fallbackTemplate = """
 You are the in-app tutor for a language-learning platform. Your job is to help the user learn efficiently and finish their current exercise. Be concise, kind, and actionable.
 
 ## Output language
@@ -1094,10 +1102,69 @@ You are the in-app tutor for a language-learning platform. Your job is to help t
 Now wait for the user's message and respond accordingly.
 """;
 
-        return prompt;
+        var configs = new[]
+        {
+        PromptsKeys.GlobalChatSystemDefault,
+    };
+
+        try
+        {
+            var batch = await _accessorClient.GetPromptsBatchAsync(configs, ct);
+            var map = batch.Prompts.ToDictionary(
+                p => p.PromptKey,
+                p => p.Content,
+                StringComparer.Ordinal);
+
+            var baseTemplate =
+                map.TryGetValue(PromptsKeys.GlobalChatSystemDefault.Key, out var t) &&
+                !string.IsNullOrWhiteSpace(t)
+                    ? t
+                    : fallbackTemplate;
+
+            if (batch.NotFound?.Count > 0)
+            {
+                _logger.LogWarning("Missing prompt keys for global chat: {Keys}", string.Join(",", batch.NotFound));
+            }
+
+            return ApplyUserPlaceholders(baseTemplate, userDetails);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed retrieving global chat system prompt; using fallback.");
+            return ApplyUserPlaceholders(fallbackTemplate, userDetails);
+        }
     }
 
-    private string CreatePageContextToolMessage(JsonElement? pageContext, CancellationToken ct)
+    private static string ApplyUserPlaceholders(string template, UserDetailForChat userDetails)
+    {
+        var firstName = userDetails.FirstName?.Trim() ?? "";
+        var lastName = userDetails.LastName?.Trim() ?? "";
+        var prefLang = string.IsNullOrWhiteSpace(userDetails.PreferredLanguageCode)
+            ? "en"
+            : userDetails.PreferredLanguageCode.Trim();
+        var hebLevel = string.IsNullOrWhiteSpace(userDetails.HebrewLevelValue)
+            ? "unknown"
+            : userDetails.HebrewLevelValue!.Trim();
+        var role = string.IsNullOrWhiteSpace(userDetails.Role)
+            ? "Student"
+            : userDetails.Role!.Trim();
+        var interests = JoinInterests(userDetails.Interests);
+
+        return template
+            .Replace("{prefLang}", prefLang)
+            .Replace("{hebLevel}", hebLevel)
+            .Replace("{firstName}", firstName)
+            .Replace("{lastName}", lastName)
+            .Replace("{role}", role)
+            .Replace("{interests}", interests);
+    }
+
+    private static string JoinInterests(List<string>? interests) =>
+    (interests is { Count: > 0 })
+    ? string.Join(", ", interests)
+    : "none";
+
+    private string CreatePageContextDevelopMessage(JsonElement? pageContext, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
@@ -1127,11 +1194,6 @@ Never invent hidden fields and do not quote this block verbatim to the user.
 
         return prompt;
     }
-
-    private static string JoinInterests(List<string>? interests) =>
-    (interests is { Count: > 0 })
-        ? string.Join(", ", interests)
-        : "none";
 
     private static string NormalizePageContext(string? pageContext)
     {

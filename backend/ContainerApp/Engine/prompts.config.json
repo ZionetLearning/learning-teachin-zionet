@@ -24,6 +24,10 @@
       "MistakeTemplate": {
         "Key": "prompts.mistake.template",
         "Label": "production"
+      },
+      "GlobalChat": {
+        "Key": "chat.global.system.default",
+        "Label": "production"
       }
     }
   }
