@@ -480,7 +480,9 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
             }
 
             _logger.LogInformation("Fetching attempt details for AttemptId {AttemptId}", request.AttemptId);
-            var attemptDetails = await _accessorClient.GetAttemptDetailsAsync(request.UserId, request.AttemptId, ct);
+            //var attemptDetails = await _accessorClient.GetAttemptDetailsAsync(request.UserId, request.AttemptId, ct);
+
+            var attemptDetails = await _accessorClient.GetLastAttemptAsync(request.UserId, request.GameType, ct);
 
             _logger.LogInformation(
                 "Fetched attempt details for AttemptId {AttemptId}. GivenAnswer: {GivenAnswer}",

@@ -11,4 +11,5 @@ public interface IGameService
     Task<List<AttemptedSentenceResult>> SaveGeneratedSentencesAsync(GeneratedSentenceDto dto, CancellationToken ct);
     Task<AttemptHistoryDto> GetAttemptDetailsAsync(Guid studentId, Guid attemptId, CancellationToken ct);
     Task DeleteAllGamesHistoryAsync(CancellationToken ct);
+    Task<AttemptHistoryDto> GetLastAttemptAsync(Guid studentId, string gameType, CancellationToken ct);
 }

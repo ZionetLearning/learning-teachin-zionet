@@ -15,6 +15,7 @@ public static class GamesEndpoints
         gamesGroup.MapGet("/mistakes/{studentId:guid}", GetMistakesAsync);
         gamesGroup.MapGet("/all-history", GetAllHistoriesAsync);
         gamesGroup.MapGet("/attempt/{userId:guid}/{attemptId:guid}", GetAttemptDetailsAsync);
+        gamesGroup.MapGet("/attempt/last/{userId:guid}/{gameType:string}", GetLastAttemptAsync);
         gamesGroup.MapPost("/generated-sentences", SaveGeneratedSentencesAsync);
         gamesGroup.MapDelete("/all-history", DeleteAllGamesHistoryAsync);
 
@@ -209,6 +210,46 @@ public static class GamesEndpoints
         {
             logger.LogError(ex, "Error occurred while deleting games history.");
             return Results.Problem("Failed to delete all games history.");
+        }
+    }
+
+    private static async Task<IResult> GetLastAttemptAsync(
+        [FromRoute] Guid userId,
+        [FromRoute] string gameType,
+        [FromServices] IGameService service,
+        ILogger<IGameService> logger,
+        CancellationToken ct)
+    {
+        try
+        {
+            logger.LogInformation("GetLastAttemptAsync called. UserId={UserId}", userId);
+
+            var result = await service.GetLastAttemptAsync(userId, gameType, ct);
+
+            logger.LogInformation(
+                "GetLastAttemptAsync succeeded. UserId={UserId}, AttemptId={AttemptId}, GameType={GameType}",
+                userId, result.AttemptId, result.GameType
+            );
+
+            return Results.Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            logger.LogWarning(
+                ex,
+                "GetLastAttemptAsync failed. UserId={UserId} - No attempts found",
+                userId
+            );
+            return Results.NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "Unexpected error in GetLastAttemptAsync. UserId={UserId}",
+                userId
+            );
+            return Results.Problem("Unexpected error occurred while fetching last attempt.");
         }
     }
 }

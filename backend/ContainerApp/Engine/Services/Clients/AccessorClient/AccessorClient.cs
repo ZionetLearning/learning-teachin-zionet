@@ -116,6 +116,32 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
         }
     }
 
+    public async Task<AttemptDetailsResponse> GetLastAttemptAsync(Guid userId, string gameType, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Getting last attempt for UserId {UserId}", userId);
+
+        try
+        {
+            var response = await _daprClient.InvokeMethodAsync<AttemptDetailsResponse>(
+                HttpMethod.Get,
+                "accessor",
+                $"games-accessor/attempt/last/{userId:D}/{gameType}",
+                cancellationToken: ct);
+
+            return response;
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("No attempts found for UserId {UserId}", userId);
+            throw new InvalidOperationException($"No attempts found for user {userId}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get last attempt for UserId {UserId}", userId);
+            throw;
+        }
+    }
+
     // ========== PROMPTS ==========
 
     public async Task<PromptResponse> CreatePromptAsync(CreatePromptRequest request, CancellationToken ct = default)

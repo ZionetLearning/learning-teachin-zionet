@@ -10,8 +10,8 @@ public interface IAccessorClient
     Task<IReadOnlyList<ChatMessage>> GetChatHistoryAsync(Guid threadId, CancellationToken ct = default);
     Task<HistorySnapshotDto> GetHistorySnapshotAsync(Guid threadId, Guid userId, CancellationToken ct = default);
     Task<HistorySnapshotDto> UpsertHistorySnapshotAsync(UpsertHistoryRequest request, CancellationToken ct = default);
-
     Task<AttemptDetailsResponse> GetAttemptDetailsAsync(Guid userId, Guid attemptId, CancellationToken ct = default);
+    Task<AttemptDetailsResponse> GetLastAttemptAsync(Guid userId, string gameType, CancellationToken ct = default);
 
     // Prompts
     Task<PromptResponse> CreatePromptAsync(CreatePromptRequest request, CancellationToken ct = default);
