@@ -100,6 +100,10 @@ helm $ACTION langfuse langfuse/langfuse \
   --set-string langfuse.additionalEnv[14].value="Langfuse" \
   --set langfuse.additionalEnv[15].name="SMTP_FROM_EMAIL" \
   --set-string langfuse.additionalEnv[15].value="$SMTP_USER" \
+  --set langfuse.additionalEnv[16].name="INVITE_FROM_NAME" \
+  --set-string langfuse.additionalEnv[16].value="Langfuse Admin" \
+  --set langfuse.additionalEnv[17].name="INVITE_FROM_EMAIL" \
+  --set-string langfuse.additionalEnv[17].value="$SMTP_USER" \
   --set redis.auth.existingSecret="langfuse-secrets" \
   --set redis.auth.existingSecretPasswordKey="REDIS_PASSWORD" \
   --set redis.auth.username="default" \
