@@ -100,6 +100,8 @@ helm $ACTION langfuse langfuse/langfuse \
   --set-string langfuse.additionalEnv[14].value="Langfuse" \
   --set langfuse.additionalEnv[15].name="SMTP_FROM_EMAIL" \
   --set-string langfuse.additionalEnv[15].value="$SMTP_USER" \
+  --set langfuse.additionalEnv[16].name="REDIS_CONNECTION_STRING" \
+  --set-string langfuse.additionalEnv[16].value="redis://default:Langfuse@Redis123!@langfuse-redis-primary:6379/0" \
   --timeout=5m
 
 echo "✅ Chart applied with web=0."
