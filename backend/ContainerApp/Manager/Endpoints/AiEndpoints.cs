@@ -2,6 +2,7 @@
 using Manager.Models.Chat;
 using Manager.Models.ModelValidation;
 using Manager.Models.Sentences;
+using Manager.Models.Words;
 using Manager.Services.Clients.Accessor;
 using Manager.Services.Clients.Engine;
 using Manager.Services.Clients.Engine.Models;
@@ -17,6 +18,7 @@ public static class AiEndpoints
     private sealed class ChatPostEndpoint { }
     private sealed class SpeechEndpoints { }
     private sealed class ExplainMistakeEndpoint { }
+    private sealed class WordsEndpoint { }
 
     public static WebApplication MapAiEndpoints(this WebApplication app)
     {
@@ -35,6 +37,7 @@ public static class AiEndpoints
         aiGroup.MapPost("/chat/mistake-explanation", ExplainMistakeAsync).WithName("ExplainMistake");
         aiGroup.MapPost("/sentence", SentenceGenerateAsync).WithName("GenerateSentence");
         aiGroup.MapPost("/sentence/split", SplitSentenceGenerateAsync).WithName("GenerateSplitSentence");
+        aiGroup.MapPost("/word-explain", WordExplainAsync).WithName("GenerateWordExplain");
 
         #endregion
 
@@ -446,6 +449,69 @@ public static class AiEndpoints
             return Results.Problem(
                 title: "Unexpected server error",
                 statusCode: StatusCodes.Status500InternalServerError);
+        }
+    }
+
+    private static async Task<IResult> WordExplainAsync(
+    [FromBody] WordExplainRequestDto dto,
+    [FromServices] IEngineClient engineClient,
+    [FromServices] ILogger<WordsEndpoint> logger,
+    HttpContext httpContext,
+    CancellationToken ct)
+    {
+        if (dto is null)
+        {
+            return Results.BadRequest(new { error = "Request is required" });
+        }
+
+        if (string.IsNullOrWhiteSpace(dto.Word))
+        {
+            return Results.BadRequest(new { error = "Word is required" });
+        }
+
+        if (string.IsNullOrWhiteSpace(dto.Context))
+        {
+            return Results.BadRequest(new { error = "Context is required" });
+        }
+
+        logger.LogInformation("Received word explanation request for {Word}", dto.Word);
+
+        try
+        {
+            var userId = GetUserId(httpContext, logger);
+
+            var request = new WordExplainRequest
+            {
+                Word = dto.Word,
+                Context = dto.Context,
+                UserId = userId
+            };
+
+            await engineClient.GenerateWordExplainAsync(request, ct);
+            logger.LogInformation("Word explanation request for {Word} sent to engine", dto.Word);
+
+            return Results.Ok();
+        }
+        catch (InvalidOperationException ex) when (ex.Data.Contains("Tag") &&
+                                           Equals(ex.Data["Tag"], "MissingOrInvalidUserId"))
+        {
+            logger.LogWarning(ex, "Invalid or missing UserId");
+            return Results.Problem("Invalid or missing UserId", statusCode: StatusCodes.Status403Forbidden);
+        }
+        catch (OperationCanceledException)
+        {
+            logger.LogWarning("Word explanation operation was canceled by user");
+            return Results.StatusCode(StatusCodes.Status499ClientClosedRequest);
+        }
+        catch (TimeoutException)
+        {
+            logger.LogWarning("Word explanation operation timed out");
+            return Results.Problem("Word explanation is taking too long.", statusCode: StatusCodes.Status408RequestTimeout);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error in word explanation manager");
+            return Results.Problem("An error occurred during word explanation.");
         }
     }
 

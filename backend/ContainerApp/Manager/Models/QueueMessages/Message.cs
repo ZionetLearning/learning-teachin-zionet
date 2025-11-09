@@ -21,5 +21,6 @@ public enum MessageAction
     ProcessingExplainMistake,
     NotifyUser,
     GenerateSentences,
-    GenerateSplitSentences
+    GenerateSplitSentences,
+    GenerateWordExplain
 }

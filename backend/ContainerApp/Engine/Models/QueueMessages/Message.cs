@@ -19,5 +19,6 @@ public enum MessageAction
     ProcessingExplainMistake,
     AnswerAi,
     GenerateSentences,
-    GenerateSplitSentences
+    GenerateSplitSentences,
+    GenerateWordExplain
 }

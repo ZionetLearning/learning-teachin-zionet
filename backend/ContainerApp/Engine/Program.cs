@@ -104,15 +104,26 @@ builder.Services.AddKeyedSingleton("gen", (sp, key) =>
 
     var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("KernelGenPluginRegistration");
 
-    var dir = Path.Combine(AppContext.BaseDirectory, "Plugins", "Sentences");
+    var sentencesDir = Path.Combine(AppContext.BaseDirectory, "Plugins", "Sentences");
     try
     {
-        kb.Plugins.AddFromPromptDirectory(dir, "Sentences");
-        logger.LogInformation("Prompt plugin 'Sentences' loaded from {Dir}", dir);
+        kb.Plugins.AddFromPromptDirectory(sentencesDir, "Sentences");
+        logger.LogInformation("Prompt plugin 'Sentences' loaded from {Dir}", sentencesDir);
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "Failed to load prompt plugin from {Dir}", dir);
+        logger.LogError(ex, "Failed to load prompt plugin from {Dir}", sentencesDir);
+    }
+
+    var wordExplainDir = Path.Combine(AppContext.BaseDirectory, "Plugins", "WordExplain");
+    try
+    {
+        kb.Plugins.AddFromPromptDirectory(wordExplainDir, "WordExplain");
+        logger.LogInformation("Prompt plugin 'WordExplain' loaded from {Dir}", wordExplainDir);
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Failed to load prompt plugin from {Dir}", wordExplainDir);
     }
 
     var kernel = kb.Build();

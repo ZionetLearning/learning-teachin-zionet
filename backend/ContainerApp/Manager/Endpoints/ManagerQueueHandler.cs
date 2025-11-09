@@ -9,6 +9,7 @@ using Manager.Models.Sentences;
 using Manager.Services;
 using Manager.Services.Clients.Accessor.Models;
 using Manager.Services.Clients.Accessor;
+using Manager.Models.Words;
 
 namespace Manager.Endpoints;
 public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
@@ -22,7 +23,8 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
         .On(MessageAction.NotifyUser, HandleNotifyUserAsync)
         .On(MessageAction.ProcessingChatMessage, HandleAIChatAnswerAsync)
         .On(MessageAction.GenerateSentences, HandleGenerateAnswer)
-        .On(MessageAction.GenerateSplitSentences, HandleGenerateSplitAnswer);
+        .On(MessageAction.GenerateSplitSentences, HandleGenerateSplitAnswer)
+        .On(MessageAction.GenerateWordExplain, HandleWordExplainAnswer);
 
     public ManagerQueueHandler(
         ILogger<ManagerQueueHandler> logger,
@@ -294,6 +296,69 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
             _logger.LogError(ex, "Error processing answer");
             throw new RetryableException("Transient error while processing answer.", ex);
+        }
+    }
+    public async Task HandleWordExplainAnswer(
+    Message message,
+    IReadOnlyDictionary<string, string>? metadata,
+    Func<Task> renewLock,
+    CancellationToken cancellationToken)
+    {
+        try
+        {
+            var explainResponse = message.Payload.Deserialize<WordExplainResponse>();
+            if (explainResponse is null)
+            {
+                _logger.LogError("Payload deserialization returned null for word explanation.");
+                throw new NonRetryableException("Payload deserialization returned null for word explanation.");
+            }
+
+            var userId = string.Empty;
+            if (message.Metadata.HasValue)
+            {
+                userId = JsonSerializer.Deserialize<string>(message.Metadata.Value);
+            }
+
+            if (userId is null)
+            {
+                _logger.LogWarning("Metadata is null for word explanation action");
+                throw new NonRetryableException("User metadata is required for word explanation action.");
+            }
+
+            if (!ValidationExtensions.TryValidate(explainResponse, out var validationErrors))
+            {
+                _logger.LogWarning("Validation failed for {Model}: {Errors}",
+                    nameof(WordExplainResponse), validationErrors);
+                throw new NonRetryableException(
+                    $"Validation failed for {nameof(WordExplainResponse)}: {string.Join("; ", validationErrors)}");
+            }
+
+            _logger.LogInformation("Sending WordExplain event to user {UserId}", userId);
+
+            await _notificationService.SendEventAsync(EventType.WordExplain, userId, explainResponse);
+
+            _logger.LogInformation("Word explanation sent successfully to user {UserId}", userId);
+        }
+        catch (NonRetryableException ex)
+        {
+            _logger.LogError(ex, "Non-retryable error processing message {Action}", message.ActionName);
+            throw;
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "Invalid JSON for {Action}", message.ActionName);
+            throw new NonRetryableException("Invalid JSON response.", ex);
+        }
+        catch (Exception ex)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning("Operation cancelled while processing message {Action}", message.ActionName);
+                throw new OperationCanceledException("Operation was cancelled.", ex, cancellationToken);
+            }
+
+            _logger.LogError(ex, "Error processing word explanation response");
+            throw new RetryableException("Transient error while processing word explanation.", ex);
         }
     }
 }
