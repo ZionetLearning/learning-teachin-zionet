@@ -168,10 +168,10 @@ public static class PayloadValidation
             Fail(logger, "AttemptId is required.", nameof(req.AttemptId));
         }
 
-        if (string.IsNullOrWhiteSpace(req.GameType))
-        {
-            Fail(logger, "GameType is required.", nameof(req.GameType));
-        }
+        //if (string.IsNullOrWhiteSpace(req.GameType))
+        //{
+        //    Fail(logger, "GameType is required.", nameof(req.GameType));
+        //}
 
         if (req.TtlSeconds <= 0)
         {

@@ -5,9 +5,12 @@ using IntegrationTests.Constants;
 using IntegrationTests.Fixtures;
 using IntegrationTests.Helpers;
 using IntegrationTests.Models.Games;
+using Manager.Models.UserGameConfiguration;
 using Manager.Models.Users;
 using Models.Ai.Sentences;
 using Xunit.Abstractions;
+using Manager.Models.UserGameConfiguration;
+
 
 namespace IntegrationTests.Tests.Games;
 
@@ -94,7 +97,7 @@ public class GamesIntegrationTests(
         // Verify the structure of submitted history items
         foreach (var item in submittedAttempts)
         {
-            item.GameType.Should().Be("wordOrderGame");
+            item.GameType.Should().Be(GameName.WordOrder.ToString());
             item.Difficulty.ToLower().Should().BeOneOf("easy", "medium");
             item.Status.Should().BeOneOf("Success", "Failure");
             item.CorrectAnswer.Should().NotBeEmpty();
@@ -125,7 +128,7 @@ public class GamesIntegrationTests(
         result.Items.Should().HaveCount(1); // One group: wordOrderGame + easy
         
         var summary = result.Items.First();
-        summary.GameType.Should().Be("wordOrderGame");
+        summary.GameType.Should().Be(GameName.WordOrder.ToString());
         summary.Difficulty.ToLower().Should().Be("easy");
         summary.AttemptsCount.Should().Be(3); // 2 successes + 1 failure
         summary.TotalSuccesses.Should().Be(2);
@@ -158,7 +161,7 @@ public class GamesIntegrationTests(
         submittedAttempts.Should().HaveCount(1);
         
         var historyItem = submittedAttempts.First();
-        historyItem.GameType.Should().Be("wordOrderGame");
+        historyItem.GameType.Should().Be(GameName.WordOrder.ToString());
         historyItem.Difficulty.ToLower().Should().Be("easy");
         historyItem.Status.Should().Be("Success");
     }
@@ -274,7 +277,7 @@ public class GamesIntegrationTests(
         foreach (var mistake in result.Items)
         {
             mistake.AttemptId.Should().NotBeEmpty();
-            mistake.GameType.Should().Be("wordOrderGame");
+            mistake.GameType.Should().Be(GameName.WordOrder.ToString());
             mistake.Difficulty.ToLower().Should().BeOneOf("easy", "medium", "hard");
             mistake.CorrectAnswer.Should().NotBeEmpty();
             mistake.WrongAnswers.Should().NotBeEmpty();
@@ -322,7 +325,7 @@ public class GamesIntegrationTests(
         foreach (var mistake in result.Items)
         {
             mistake.AttemptId.Should().NotBeEmpty();
-            mistake.GameType.Should().Be("wordOrderGame");
+            mistake.GameType.Should().Be(GameName.WordOrder.ToString());
             mistake.Difficulty.ToLower().Should().BeOneOf("easy", "medium");
             mistake.CorrectAnswer.Should().NotBeEmpty();
             mistake.WrongAnswers.Should().NotBeEmpty();
@@ -358,7 +361,7 @@ public class GamesIntegrationTests(
         
         var mistake = result.Items.First();
         mistake.AttemptId.Should().NotBeEmpty();
-        mistake.GameType.Should().Be("wordOrderGame");
+        mistake.GameType.Should().Be(GameName.WordOrder.ToString());
         mistake.Difficulty.ToLower().Should().Be("hard");
         mistake.CorrectAnswer.Should().NotBeEmpty();
         mistake.WrongAnswers.Should().HaveCount(1);

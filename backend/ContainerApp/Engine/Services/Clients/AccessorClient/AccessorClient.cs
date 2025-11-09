@@ -6,6 +6,7 @@ using Engine.Options;
 using Engine.Services.Clients.AccessorClient.Models;
 using Engine.Constants;
 using Engine.Models.Users;
+using Engine.Models.Games;
 
 namespace Engine.Services.Clients.AccessorClient;
 
@@ -116,7 +117,7 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
         }
     }
 
-    public async Task<AttemptDetailsResponse> GetLastAttemptAsync(Guid userId, string gameType, CancellationToken ct = default)
+    public async Task<AttemptDetailsResponse> GetLastAttemptAsync(Guid userId, GameName gameType, CancellationToken ct = default)
     {
         _logger.LogInformation("Getting last attempt for UserId {UserId}", userId);
 

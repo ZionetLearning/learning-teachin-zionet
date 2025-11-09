@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
+using Manager.Models.UserGameConfiguration;
 
 namespace Manager.Models.Chat;
 
@@ -15,10 +16,9 @@ public sealed record ExplainMistakeRequest
     public string ThreadId { get; init; } = string.Empty;
 
     [Required(ErrorMessage = "GameType is required.")]
-    [MinLength(1, ErrorMessage = "GameType must be at least 1 character.")]
-    [MaxLength(50, ErrorMessage = "GameType cannot exceed 50 characters.")]
     [JsonPropertyName("gameType")]
-    public string GameType { get; init; } = string.Empty;
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public GameName GameType { get; init; }
 
     [JsonPropertyName("chatType")]
     [JsonConverter(typeof(JsonStringEnumConverter))]

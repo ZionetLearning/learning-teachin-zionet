@@ -2,6 +2,7 @@
 using Engine.Models.Users;
 using Engine.Options;
 using Engine.Services.Clients.AccessorClient.Models;
+using Engine.Models.Games;
 
 namespace Engine.Services.Clients.AccessorClient;
 
@@ -11,7 +12,7 @@ public interface IAccessorClient
     Task<HistorySnapshotDto> GetHistorySnapshotAsync(Guid threadId, Guid userId, CancellationToken ct = default);
     Task<HistorySnapshotDto> UpsertHistorySnapshotAsync(UpsertHistoryRequest request, CancellationToken ct = default);
     Task<AttemptDetailsResponse> GetAttemptDetailsAsync(Guid userId, Guid attemptId, CancellationToken ct = default);
-    Task<AttemptDetailsResponse> GetLastAttemptAsync(Guid userId, string gameType, CancellationToken ct = default);
+    Task<AttemptDetailsResponse> GetLastAttemptAsync(Guid userId, GameName gameType, CancellationToken ct = default);
 
     // Prompts
     Task<PromptResponse> CreatePromptAsync(CreatePromptRequest request, CancellationToken ct = default);

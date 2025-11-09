@@ -1,6 +1,7 @@
 using Accessor.Models.Games;
 using Accessor.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Accessor.Models.GameConfiguration;
 
 namespace Accessor.Endpoints;
 
@@ -215,7 +216,7 @@ public static class GamesEndpoints
 
     private static async Task<IResult> GetLastAttemptAsync(
         [FromRoute] Guid userId,
-        [FromRoute] string gameType,
+        [FromRoute] GameName gameType,
         [FromServices] IGameService service,
         ILogger<IGameService> logger,
         CancellationToken ct)

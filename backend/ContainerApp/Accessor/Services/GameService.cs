@@ -1,4 +1,5 @@
 using Accessor.DB;
+using Accessor.Models.GameConfiguration;
 using Accessor.Models.Games;
 using Accessor.Services.Interfaces;
 using AutoMapper;
@@ -424,11 +425,11 @@ public class GameService : IGameService
         }
     }
 
-    public async Task<AttemptHistoryDto> GetLastAttemptAsync(Guid studentId, string gameType, CancellationToken ct)
+    public async Task<AttemptHistoryDto> GetLastAttemptAsync(Guid studentId, GameName gameType, CancellationToken ct)
     {
         try
         {
-            _logger.LogInformation("Fetching last attempt. UserId={UserId}", studentId);
+            _logger.LogInformation("Fetching last attempt. UserId={UserId}, GameType={GameType}", studentId, gameType);
 
             var attempt = await _db.GameAttempts
              .Where(a => a.StudentId == studentId && a.GameType == gameType)

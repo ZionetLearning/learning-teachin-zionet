@@ -24,6 +24,7 @@ public class GameAttemptsConfiguration : IEntityTypeConfiguration<GameAttempt>
             .IsRequired();
 
         builder.Property(a => a.GameType)
+            .HasConversion<string>()
             .HasMaxLength(50)
             .IsRequired();
 

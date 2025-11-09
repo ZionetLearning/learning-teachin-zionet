@@ -6,6 +6,7 @@ using Engine.Constants.Chat;
 using Engine.Helpers;
 using Engine.Models;
 using Engine.Models.Chat;
+using Engine.Models.Games;
 using Engine.Models.QueueMessages;
 using Engine.Models.Sentences;
 using Engine.Services;
@@ -721,7 +722,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         }
     }
 
-    private async Task<string> BuildMistakeExplanationPromptAsync(AttemptDetailsResponse attemptDetails, string gameType, string lang, CancellationToken ct)
+    private async Task<string> BuildMistakeExplanationPromptAsync(AttemptDetailsResponse attemptDetails, GameName gameType, string lang, CancellationToken ct)
     {
         var userAnswerText = string.Join(" ", attemptDetails.GivenAnswer);
         var correctAnswerText = string.Join(" ", attemptDetails.CorrectAnswer);
@@ -731,7 +732,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         if (mistakeTemplatePrompt?.Content is not null)
         {
             return mistakeTemplatePrompt.Content
-                .Replace("{gameType}", gameType)
+                .Replace("{gameType}", gameType.ToString())
                 .Replace("{difficulty}", attemptDetails.Difficulty)
                 .Replace("{userAnswer}", userAnswerText)
                 .Replace("{correctAnswer}", correctAnswerText)
