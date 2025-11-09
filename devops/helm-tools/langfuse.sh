@@ -96,6 +96,10 @@ helm $ACTION langfuse langfuse/langfuse \
   --set-string langfuse.additionalEnv[12].value="$SMTP_USER" \
   --set langfuse.additionalEnv[13].name="SMTP_PASSWORD" \
   --set-string langfuse.additionalEnv[13].value="$SMTP_PASSWORD" \
+  --set langfuse.additionalEnv[14].name="SMTP_FROM_NAME" \
+  --set-string langfuse.additionalEnv[14].value="Langfuse" \
+  --set langfuse.additionalEnv[15].name="SMTP_FROM_EMAIL" \
+  --set-string langfuse.additionalEnv[15].value="$SMTP_USER" \
   --timeout=5m
 
 echo "✅ Chart applied with web=0."
