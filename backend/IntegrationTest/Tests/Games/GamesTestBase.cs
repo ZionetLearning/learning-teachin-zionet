@@ -1,18 +1,17 @@
 using IntegrationTests.Constants;
 using IntegrationTests.Fixtures;
 using IntegrationTests.Infrastructure;
-using IntegrationTests.Models.Ai.Sentences;
 using IntegrationTests.Models.Auth;
-using IntegrationTests.Models.Games;
 using IntegrationTests.Models.Notification;
 using Manager.Models.Auth;
+using Manager.Models.Games;
 using Manager.Models.Users;
-using Models.Ai.Sentences;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Xunit.Abstractions;
+using SentenceRequest = Manager.Models.Sentences.SentenceRequest;
 
 namespace IntegrationTests.Tests.Games;
 
@@ -238,11 +237,11 @@ public abstract class GamesTestBase(
 
     /// <summary>
     /// Generates split sentences for word order game and waits for SignalR event.
-    /// Returns the list of generated sentences with attempt IDs.
+    /// Returns the list of generated sentences with exercise IDs.
     /// </summary>
     protected async Task<List<AttemptedSentenceResult>> GenerateSplitSentencesAsync(
         Guid userId,
-        Difficulty difficulty = Difficulty.easy,
+        Difficulty difficulty = Difficulty.Easy,
         bool nikud = false,
         int count = 1,
         TimeSpan? timeout = null)
@@ -254,7 +253,7 @@ public abstract class GamesTestBase(
         var sentenceRequest = new SentenceRequest
         {
             UserId = userId,
-            Difficulty = difficulty,
+            Difficulty = (Manager.Models.Sentences.Difficulty)difficulty,
             Nikud = nikud,
             Count = count
         };
@@ -279,14 +278,12 @@ public abstract class GamesTestBase(
     /// Submits a game attempt with the given answer.
     /// </summary>
     protected async Task<SubmitAttemptResult> SubmitGameAttemptAsync(
-        Guid studentId,
-        Guid attemptId,
+        Guid exerciseId,
         List<string> givenAnswer)
     {
         var request = new SubmitAttemptRequest
         {
-            StudentId = studentId,
-            AttemptId = attemptId,
+            ExerciseId = exerciseId,
             GivenAnswer = givenAnswer
         };
 
@@ -324,14 +321,14 @@ public abstract class GamesTestBase(
     /// </summary>
     protected async Task<SubmitAttemptResult> CreateMistakeAsync(
         Guid studentId,
-        Difficulty difficulty = Difficulty.easy,
+        Difficulty difficulty = Difficulty.Easy,
         bool nikud = false)
     {
         var sentences = await GenerateSplitSentencesAsync(studentId, difficulty, nikud, count: 1);
         var sentence = sentences.First();
 
         var wrongAnswer = CreateWrongAnswer(sentence.Words);
-        var result = await SubmitGameAttemptAsync(studentId, sentence.AttemptId, wrongAnswer);
+        var result = await SubmitGameAttemptAsync(sentence.ExerciseId, wrongAnswer);
 
         return result;
     }
@@ -342,13 +339,13 @@ public abstract class GamesTestBase(
     /// </summary>
     protected async Task<SubmitAttemptResult> CreateSuccessfulAttemptAsync(
         Guid studentId,
-        Difficulty difficulty = Difficulty.easy,
+        Difficulty difficulty = Difficulty.Easy,
         bool nikud = false)
     {
         var sentences = await GenerateSplitSentencesAsync(studentId, difficulty, nikud, count: 1);
         var sentence = sentences.First();
 
-        var result = await SubmitGameAttemptAsync(studentId, sentence.AttemptId, sentence.Words);
+        var result = await SubmitGameAttemptAsync(sentence.ExerciseId, sentence.Words);
 
         return result;
     }
@@ -358,7 +355,7 @@ public abstract class GamesTestBase(
     /// </summary>
     protected async Task CreateMultipleMistakesAsync(Guid studentId, int count = 3)
     {
-        var difficulties = new[] { Difficulty.easy, Difficulty.medium, Difficulty.hard };
+        var difficulties = new[] { Difficulty.Easy, Difficulty.Medium, Difficulty.Hard };
         
         for (int i = 0; i < count; i++)
         {
@@ -372,16 +369,16 @@ public abstract class GamesTestBase(
     /// Submits the same sentence twice: wrong answer first, then correct answer.
     /// </summary>
     protected async Task<(AttemptedSentenceResult sentence, SubmitAttemptResult failureResult, SubmitAttemptResult successResult)> 
-        CreateMistakeWithLaterSuccessAsync(Guid studentId, Difficulty difficulty = Difficulty.easy)
+        CreateMistakeWithLaterSuccessAsync(Guid studentId, Difficulty difficulty = Difficulty.Easy)
     {
         // Generate one sentence
         var sentences = await GenerateSplitSentencesAsync(studentId, difficulty, nikud: false, count: 1);
         var sentence = sentences.First();
 
         var wrongAnswer = CreateWrongAnswer(sentence.Words);
-        var failureResult = await SubmitGameAttemptAsync(studentId, sentence.AttemptId, wrongAnswer);
+        var failureResult = await SubmitGameAttemptAsync(sentence.ExerciseId, wrongAnswer);
 
-        var successResult = await SubmitGameAttemptAsync(studentId, sentence.AttemptId, sentence.Words);
+        var successResult = await SubmitGameAttemptAsync(sentence.ExerciseId, sentence.Words);
 
         return (sentence, failureResult, successResult);
     }

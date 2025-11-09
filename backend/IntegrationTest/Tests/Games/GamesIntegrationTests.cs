@@ -4,9 +4,8 @@ using FluentAssertions;
 using IntegrationTests.Constants;
 using IntegrationTests.Fixtures;
 using IntegrationTests.Helpers;
-using IntegrationTests.Models.Games;
+using Manager.Models.Games;
 using Manager.Models.Users;
-using Models.Ai.Sentences;
 using Xunit.Abstractions;
 
 namespace IntegrationTests.Tests.Games;
@@ -25,43 +24,47 @@ public class GamesIntegrationTests(
         
         var request = new SubmitAttemptRequest
         {
-            StudentId = student.UserId,
-            AttemptId = Guid.Empty,
+            ExerciseId = Guid.Empty,
             GivenAnswer = new List<string> { "test" }
         };
 
         var response = await Client.PostAsJsonAsync(ApiRoutes.GamesAttempt, request);
         
-        response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
-    [Fact(DisplayName = "POST /games-manager/attempt - Nonexistent attempt ID should return error")]
+    [Fact(DisplayName = "POST /games-manager/attempt - Nonexistent exercise ID should return error")]
     public async Task SubmitAttempt_NonexistentAttemptId_Should_Return_Error()
     {
         var student = await CreateUserAsync();
         
         var request = new SubmitAttemptRequest
         {
-            StudentId = student.UserId,
-            AttemptId = Guid.NewGuid(),
+            ExerciseId = Guid.NewGuid(),
             GivenAnswer = new List<string> { "test" }
         };
 
         var response = await Client.PostAsJsonAsync(ApiRoutes.GamesAttempt, request);
         
-        response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact(DisplayName = "POST /games-manager/attempt - Student cannot submit for another student")]
     public async Task SubmitAttempt_UnauthorizedAccess_Should_Return_Forbidden()
     {
         var student1 = await CreateUserAsync();
-        var student2 = await CreateUserViaApiAsync(role: "student");
         
+        // Generate a sentence for student1
+        var sentences = await GenerateSplitSentencesAsync(student1.UserId, Difficulty.Easy, nikud: false, count: 1);
+        var sentence = sentences.First();
+        
+        // Create and login as student2
+        var student2 = await CreateUserAsync(role: "student", email: $"student2-{Guid.NewGuid():N}@example.com");
+        
+        // Student2 tries to submit for student1's exercise
         var request = new SubmitAttemptRequest
         {
-            StudentId = student2.UserId,
-            AttemptId = Guid.NewGuid(),
+            ExerciseId = sentence.ExerciseId,
             GivenAnswer = new List<string> { "test" }
         };
 
@@ -75,8 +78,8 @@ public class GamesIntegrationTests(
         var student = await CreateUserAsync();
         
         // Act: Create some actual game history
-        await CreateSuccessfulAttemptAsync(student.UserId, Difficulty.easy);
-        await CreateMistakeAsync(student.UserId, Difficulty.medium);
+        await CreateSuccessfulAttemptAsync(student.UserId, Difficulty.Easy);
+        await CreateMistakeAsync(student.UserId, Difficulty.Medium);
         
         var response = await Client.GetAsync($"{ApiRoutes.GameHistory(student.UserId)}?summary=false&page=1&pageSize=10&getPending=false");
         response.ShouldBeOk();
@@ -87,7 +90,7 @@ public class GamesIntegrationTests(
         result!.Page.Should().Be(1);
         result.PageSize.Should().Be(10);
         
-        var submittedAttempts = result.Items.Where(x => x.Status != "Pending").ToList();
+        var submittedAttempts = result.Items.Where(x => x.Status != AttemptStatus.Pending).ToList();
         submittedAttempts.Should().HaveCount(2); // One success, one failure
         result.TotalCount.Should().BeGreaterThanOrEqualTo(2); 
         
@@ -95,8 +98,8 @@ public class GamesIntegrationTests(
         foreach (var item in submittedAttempts)
         {
             item.GameType.Should().Be("wordOrderGame");
-            item.Difficulty.ToLower().Should().BeOneOf("easy", "medium");
-            item.Status.Should().BeOneOf("Success", "Failure");
+            item.Difficulty.Should().BeOneOf(Difficulty.Easy, Difficulty.Medium);
+            item.Status.Should().BeOneOf(AttemptStatus.Success, AttemptStatus.Failure);
             item.CorrectAnswer.Should().NotBeEmpty();
             item.GivenAnswer.Should().NotBeEmpty();
         }
@@ -109,9 +112,9 @@ public class GamesIntegrationTests(
         var student = await CreateUserAsync();
         
         // Act: Create multiple attempts for the same game type and difficulty
-        await CreateSuccessfulAttemptAsync(student.UserId, Difficulty.easy);
-        await CreateMistakeAsync(student.UserId, Difficulty.easy);
-        await CreateSuccessfulAttemptAsync(student.UserId, Difficulty.easy);
+        await CreateSuccessfulAttemptAsync(student.UserId, Difficulty.Easy);
+        await CreateMistakeAsync(student.UserId, Difficulty.Easy);
+        await CreateSuccessfulAttemptAsync(student.UserId, Difficulty.Easy);
         
         // Request summary view
         var response = await Client.GetAsync($"{ApiRoutes.GameHistory(student.UserId)}?summary=true&page=1&pageSize=10&getPending=false");
@@ -126,8 +129,8 @@ public class GamesIntegrationTests(
         
         var summary = result.Items.First();
         summary.GameType.Should().Be("wordOrderGame");
-        summary.Difficulty.ToLower().Should().Be("easy");
-        summary.AttemptsCount.Should().Be(3); // 2 successes + 1 failure
+        summary.Difficulty.Should().Be(Difficulty.Easy);
+        summary.AttemptsCount.Should().BeGreaterThanOrEqualTo(3); // 2 successes + 1 failure (may have more from sentence generations)
         summary.TotalSuccesses.Should().Be(2);
         summary.TotalFailures.Should().Be(1);
     }
@@ -140,7 +143,7 @@ public class GamesIntegrationTests(
         
         // Log in as student to create some history
         await LoginAsync(student.Email, TestDataHelper.DefaultTestPassword, Role.Student);
-        await CreateSuccessfulAttemptAsync(student.UserId, Difficulty.easy);
+        await CreateSuccessfulAttemptAsync(student.UserId, Difficulty.Easy);
         
         // Log back in as teacher  
         await LoginAsync(teacher.Email, TestDataHelper.DefaultTestPassword, Role.Teacher);
@@ -154,13 +157,13 @@ public class GamesIntegrationTests(
         result.Should().NotBeNull();
         
         // Filter out Pending attempts (the API returns all attempts including pending sentence generations)
-        var submittedAttempts = result!.Items.Where(x => x.Status != "Pending").ToList();
+        var submittedAttempts = result!.Items.Where(x => x.Status != AttemptStatus.Pending).ToList();
         submittedAttempts.Should().HaveCount(1);
         
         var historyItem = submittedAttempts.First();
         historyItem.GameType.Should().Be("wordOrderGame");
-        historyItem.Difficulty.ToLower().Should().Be("easy");
-        historyItem.Status.Should().Be("Success");
+        historyItem.Difficulty.Should().Be(Difficulty.Easy);
+        historyItem.Status.Should().Be(AttemptStatus.Success);
     }
 
     [Fact(DisplayName = "GET /games-manager/history/{id} - Admin can access any student's history")]
@@ -273,12 +276,21 @@ public class GamesIntegrationTests(
         // Verify each mistake has the expected structure
         foreach (var mistake in result.Items)
         {
-            mistake.AttemptId.Should().NotBeEmpty();
+            mistake.ExerciseId.Should().NotBeEmpty();
             mistake.GameType.Should().Be("wordOrderGame");
-            mistake.Difficulty.ToLower().Should().BeOneOf("easy", "medium", "hard");
+            mistake.Difficulty.Should().BeOneOf(Difficulty.Easy, Difficulty.Medium, Difficulty.Hard);
             mistake.CorrectAnswer.Should().NotBeEmpty();
-            mistake.WrongAnswers.Should().NotBeEmpty();
-            mistake.WrongAnswers.Should().HaveCountGreaterThan(0);
+            mistake.Mistakes.Should().NotBeEmpty();
+            mistake.Mistakes.Should().HaveCountGreaterThan(0);
+            
+            // Verify the nested mistake attempts
+            foreach (var attempt in mistake.Mistakes)
+            {
+                attempt.AttemptId.Should().NotBeEmpty();
+                attempt.WrongAnswer.Should().NotBeEmpty();
+                attempt.Accuracy.Should().BeGreaterThanOrEqualTo(0);
+                attempt.CreatedAt.Should().BeAfter(DateTimeOffset.UtcNow.AddMinutes(-5));
+            }
         }
     }
 
@@ -303,8 +315,8 @@ public class GamesIntegrationTests(
         await LoginAsync(student.Email, TestDataHelper.DefaultTestPassword, Role.Student);
         
         // Create mistakes for the student
-        await CreateMistakeAsync(student.UserId, Difficulty.easy);
-        await CreateMistakeAsync(student.UserId, Difficulty.medium);
+        await CreateMistakeAsync(student.UserId, Difficulty.Easy);
+        await CreateMistakeAsync(student.UserId, Difficulty.Medium);
         
         // Log back in as teacher to access student's mistakes
         await LoginAsync(teacher.Email, TestDataHelper.DefaultTestPassword, Role.Teacher);
@@ -321,11 +333,18 @@ public class GamesIntegrationTests(
         // Verify mistakes structure
         foreach (var mistake in result.Items)
         {
-            mistake.AttemptId.Should().NotBeEmpty();
+            mistake.ExerciseId.Should().NotBeEmpty();
             mistake.GameType.Should().Be("wordOrderGame");
-            mistake.Difficulty.ToLower().Should().BeOneOf("easy", "medium");
+            mistake.Difficulty.Should().BeOneOf(Difficulty.Easy, Difficulty.Medium);
             mistake.CorrectAnswer.Should().NotBeEmpty();
-            mistake.WrongAnswers.Should().NotBeEmpty();
+            mistake.Mistakes.Should().NotBeEmpty();
+            
+            // Verify nested attempts
+            foreach (var attempt in mistake.Mistakes)
+            {
+                attempt.AttemptId.Should().NotBeEmpty();
+                attempt.WrongAnswer.Should().NotBeEmpty();
+            }
         }
     }
 
@@ -342,7 +361,7 @@ public class GamesIntegrationTests(
         await LoginAsync(studentModel.Email, TestDataHelper.DefaultTestPassword, Role.Student);
         
         // Create a mistake
-        await CreateMistakeAsync(studentModel.UserId, Difficulty.hard);
+        await CreateMistakeAsync(studentModel.UserId, Difficulty.Hard);
         
         // Log back in as admin
         await LoginAsync(admin.Email, TestDataHelper.DefaultTestPassword, Role.Admin);
@@ -357,11 +376,15 @@ public class GamesIntegrationTests(
         result!.Items.Should().HaveCount(1);
         
         var mistake = result.Items.First();
-        mistake.AttemptId.Should().NotBeEmpty();
+        mistake.ExerciseId.Should().NotBeEmpty();
         mistake.GameType.Should().Be("wordOrderGame");
-        mistake.Difficulty.ToLower().Should().Be("hard");
+        mistake.Difficulty.Should().Be(Difficulty.Hard);
         mistake.CorrectAnswer.Should().NotBeEmpty();
-        mistake.WrongAnswers.Should().HaveCount(1);
+        mistake.Mistakes.Should().HaveCount(1);
+        
+        var attempt = mistake.Mistakes.First();
+        attempt.AttemptId.Should().NotBeEmpty();
+        attempt.WrongAnswer.Should().NotBeEmpty();
     }
 
     [Fact(DisplayName = "GET /games-manager/mistakes/{id} - Mistakes logic: no mistakes shown for questions answered correctly later")]
@@ -371,10 +394,10 @@ public class GamesIntegrationTests(
         var student = await CreateUserAsync();
         
         // Backend filters out mistakes when the same sentence (same CorrectAnswer) is answered correctly later
-        await CreateMistakeWithLaterSuccessAsync(student.UserId, Difficulty.easy);
+        await CreateMistakeWithLaterSuccessAsync(student.UserId, Difficulty.Easy);
         
         // Create another standalone mistake (no later success)
-        await CreateMistakeAsync(student.UserId, Difficulty.medium);
+        await CreateMistakeAsync(student.UserId, Difficulty.Medium);
         
         // Act
         var response = await Client.GetAsync($"{ApiRoutes.GameMistakes(student.UserId)}?page=1&pageSize=10");
@@ -388,10 +411,14 @@ public class GamesIntegrationTests(
         result!.Items.Should().HaveCount(1);
         
         var mistake = result.Items.First();
-        mistake.AttemptId.Should().NotBeEmpty();
-        mistake.Difficulty.ToLower().Should().Be("medium");
+        mistake.ExerciseId.Should().NotBeEmpty();
+        mistake.Difficulty.Should().Be(Difficulty.Medium);
         mistake.CorrectAnswer.Should().NotBeEmpty();
-        mistake.WrongAnswers.Should().HaveCount(1);
+        mistake.Mistakes.Should().HaveCount(1);
+        
+        var attempt = mistake.Mistakes.First();
+        attempt.AttemptId.Should().NotBeEmpty();
+        attempt.WrongAnswer.Should().NotBeEmpty();
     }
 
 
@@ -407,8 +434,8 @@ public class GamesIntegrationTests(
         deleteResponse.ShouldBeOk();
 
         // Create some game history for the admin user
-        await CreateSuccessfulAttemptAsync(admin.UserId, Difficulty.easy);
-        await CreateMistakeAsync(admin.UserId, Difficulty.easy);
+        await CreateSuccessfulAttemptAsync(admin.UserId, Difficulty.Easy);
+        await CreateMistakeAsync(admin.UserId, Difficulty.Easy);
 
         var response = await Client.GetAsync($"{ApiRoutes.GameAllHistory}?page=1&pageSize=10");
         response.ShouldBeOk();

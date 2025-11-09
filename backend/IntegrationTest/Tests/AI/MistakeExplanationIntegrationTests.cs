@@ -1,15 +1,14 @@
 ﻿using FluentAssertions;
 using IntegrationTests.Constants;
 using IntegrationTests.Fixtures;
-using IntegrationTests.Models.Ai.Sentences;
-using IntegrationTests.Models.Games;
 using IntegrationTests.Models.Notification;
-using Models.Ai.Sentences;
 using Manager.Models.Chat;
+using Manager.Models.Games;
 using Manager.Models.Users;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Xunit.Abstractions;
+using SentenceRequest = Manager.Models.Sentences.SentenceRequest;
 
 namespace IntegrationTests.Tests.AI;
 
@@ -32,7 +31,7 @@ public class MistakeExplanationIntegrationTests(
         var sentenceRequest = new SentenceRequest
         {
             UserId = userInfo.UserId,
-            Difficulty = Difficulty.easy,
+            Difficulty = (Manager.Models.Sentences.Difficulty)Difficulty.Easy,
             Nikud = false,
             Count = 1
         };
@@ -74,17 +73,16 @@ public class MistakeExplanationIntegrationTests(
 
         var attemptRequest = new SubmitAttemptRequest
         {
-            StudentId = userInfo.UserId,
-            AttemptId = sentence.AttemptId,
+            ExerciseId = sentence.ExerciseId,
             GivenAnswer = wrongAnswer
         };
 
         var attemptResponse = await PostAsJsonAsync(ApiRoutes.GamesAttempt, attemptRequest);
         attemptResponse.EnsureSuccessStatusCode();
 
-        var attemptResult = await ReadAsJsonAsync<SubmitAttemptResponse>(attemptResponse);
+        var attemptResult = await ReadAsJsonAsync<SubmitAttemptResult>(attemptResponse);
         attemptResult.Should().NotBeNull();
-        attemptResult!.Status.Should().Be("Failure", "The wrong answer should result in failure");
+        attemptResult!.Status.Should().Be(AttemptStatus.Failure, "The wrong answer should result in failure");
         
         OutputHelper.WriteLine($"Attempt failed as expected. Status: {attemptResult.Status}");
         OutputHelper.WriteLine($"Wrong answer submitted: {string.Join(" ", wrongAnswer)}");
@@ -95,7 +93,7 @@ public class MistakeExplanationIntegrationTests(
         var threadId = Guid.NewGuid().ToString();
         var explainRequest = new ExplainMistakeRequest
         {
-            AttemptId = sentence.AttemptId,
+            AttemptId = attemptResult.AttemptId,
             ThreadId = threadId,
             GameType = "wordOrderGame",
             ChatType = ChatType.ExplainMistake
