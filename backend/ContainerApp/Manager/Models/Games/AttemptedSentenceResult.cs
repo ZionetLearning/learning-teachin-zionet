@@ -2,7 +2,7 @@
 
 public class AttemptedSentenceResult
 {
-    public Guid AttemptId { get; set; }
+    public Guid ExerciseId { get; set; }
 
     public string Original { get; set; } = string.Empty;
 

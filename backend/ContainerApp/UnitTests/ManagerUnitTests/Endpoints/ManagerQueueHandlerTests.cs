@@ -110,7 +110,7 @@ public class ManagerQueueHandlerTests
         {
             new()
             {
-                AttemptId = Guid.NewGuid(),
+                ExerciseId = Guid.NewGuid(),
                 Original = "generated sentence",
                 Words = new List<string> { "generated sentence" },
                 Difficulty = "easy",
