@@ -111,7 +111,7 @@ public class ManagerQueueHandlerTests
             new()
             {
                 ExerciseId = Guid.NewGuid(),
-                Original = "generated sentence",
+                Text = "generated sentence",
                 Words = new List<string> { "generated sentence" },
                 Difficulty = "easy",
                 Nikud = true

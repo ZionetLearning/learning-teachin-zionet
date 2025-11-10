@@ -4,7 +4,7 @@ public class AttemptedSentenceResult
 {
     public Guid ExerciseId { get; set; }
 
-    public string Original { get; set; } = string.Empty;
+    public string Text { get; set; } = string.Empty;
 
     public List<string> Words { get; set; } = [];
 
