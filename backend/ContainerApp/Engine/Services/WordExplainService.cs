@@ -24,7 +24,7 @@ public class WordExplainService : IWordExplainService
 
     public async Task<WordExplainResponse> ExplainAsync(WordExplainRequest req, CancellationToken ct = default)
     {
-        _log.LogInformation("Inside word explain service for: {Word}", req.Word);
+        _log.LogInformation("Inside word explain service");
 
         var func = _kernel.Plugins["WordExplain"]["Explain"];
 

@@ -2,8 +2,8 @@
 Your task is to define a Hebrew word and explain its meaning in context.
 
 Input:
-- Word: {{word}}
-- Context: {{context}}
+- Word: {{$word}}
+- Context: {{$context}}
 
 Output JSON structure:
 {
