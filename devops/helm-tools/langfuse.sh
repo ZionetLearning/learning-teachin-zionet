@@ -131,9 +131,9 @@ helm $ACTION langfuse langfuse/langfuse \
   --set langfuse.additionalEnv[30].name="EMAIL_FROM" \
   --set-string langfuse.additionalEnv[30].value="$SMTP_USER" \
   --set langfuse.additionalEnv[31].name="MEMBERSHIP_INVITATION_EMAIL_SUBJECT" \
-  --set-string langfuse.additionalEnv[31].value="You're invited to join TeachIn's Langfuse" \
+  --set-string langfuse.additionalEnv[31].value="You're invited to join the Zionet organization on Langfuse" \
   --set langfuse.additionalEnv[32].name="MEMBERSHIP_INVITATION_EMAIL_TEMPLATE" \
-  --set-string langfuse.additionalEnv[32].value="You have been invited to join TeachIn's Langfuse instance. Click the link below to accept the invitation." \
+  --set-string langfuse.additionalEnv[32].value="<p>Admin User ({{inviterName}}) has invited you to join the Zionet organization on Langfuse.</p><p><a href=\"{{url}}\" style=\"background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;\">Accept Invitation</a></p><p><em>(you need to create an account with this email address)</em></p><p>or copy and paste this URL into your browser: {{url}}</p>" \
   --set langfuse.additionalEnv[33].name="INVITE_URL_BASE" \
   --set-string langfuse.additionalEnv[33].value="https://teachin.westeurope.cloudapp.azure.com/langfuse" \
   --set langfuse.additionalEnv[34].name="NEXT_PUBLIC_SIGNUP_DISABLED" \
