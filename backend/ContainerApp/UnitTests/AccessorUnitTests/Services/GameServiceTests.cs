@@ -552,7 +552,7 @@ public class GameServiceTests
                     {
                         new GeneratedSentenceItem
                         {
-                            Original = "שלום עולם",
+                            Text = "שלום עולם",
                             CorrectAnswer = new List<string> { "שלום", "עולם" },
                             Nikud = true
                         }

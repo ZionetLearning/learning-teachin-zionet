@@ -432,7 +432,7 @@ public class GameService : IGameService
                 resultList.Add(new AttemptedSentenceResult
                 {
                     ExerciseId = exerciseId,
-                    Original = sentence.Original,
+                    Original = sentence.Text,
                     Words = sentence.CorrectAnswer,
                     Difficulty = dto.Difficulty.ToString().ToLowerInvariant(),
                     Nikud = sentence.Nikud
