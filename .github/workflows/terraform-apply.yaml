@@ -44,6 +44,11 @@ on:
         options:
           - 'all'
           - 'none'
+      plan_only:
+        description: 'Plan only - show what would be deployed without actually deploying'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   terraform:
@@ -96,6 +101,9 @@ jobs:
             ENVIRONMENT_NAME="${{ github.event.inputs.environment_name }}"
           fi
           
+          # Set plan only mode
+          PLAN_ONLY="${{ inputs.plan_only || github.event.inputs.plan_only || 'false' }}"
+          
           # Choose tfvars file based on environment name
           if [ "$ENVIRONMENT_NAME" = "dev" ]; then
             TFVARS_FILE="terraform.tfvars.dev"
@@ -113,10 +121,12 @@ jobs:
           fi
           
           echo "📄 Using tfvars file: $TFVARS_FILE"
+          echo "Plan only mode: $PLAN_ONLY"
           
           echo "environment_name=$ENVIRONMENT_NAME" >> $GITHUB_ENV
           echo "TFVARS_FILE=$TFVARS_FILE" >> $GITHUB_ENV
           echo "backend_key=${ENVIRONMENT_NAME}.terraform.tfstate" >> $GITHUB_ENV
+          echo "plan_only=$PLAN_ONLY" >> $GITHUB_ENV
 
       - name: Terraform Init with dynamic backend
         run: |
@@ -171,12 +181,24 @@ jobs:
         working-directory: ${{ env.TF_DIR }}
 
       - name: Terraform Apply
+        if: env.plan_only != 'true'
         env:
           TF_VAR_communication_service_connection_string: ${{ secrets.COMMUNICATION_SERVICE_CONNECTION_STRING }}
-        run: terraform apply -auto-approve -var-file=${{ env.TFVARS_FILE }}
+        run: |
+          echo "Applying Terraform changes..."
+          terraform apply -auto-approve -var-file=${{ env.TFVARS_FILE }}
+        working-directory: ${{ env.TF_DIR }}
+
+      - name: Skip Apply (Plan Only Mode)
+        if: env.plan_only == 'true'
+        run: |
+          echo "⏭️ PLAN ONLY MODE - Skipping terraform apply"
+          echo "Terraform plan completed above shows what would be deployed"
+          echo "No actual resources will be created or modified"
         working-directory: ${{ env.TF_DIR }}
 
       - name: Get Terraform Outputs
+        if: env.plan_only != 'true'
         id: terraform_output
         run: |
           echo "Getting terraform outputs..."
