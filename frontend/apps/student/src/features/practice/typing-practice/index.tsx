@@ -45,15 +45,18 @@ export const TypingPractice = () => {
 
   useEffect(
     function initializeGameConfig() {
-      if (gameConfig) return;
-      if (configLoading) return;
+      if (gameConfig || configLoading) return;
+
       if (savedConfig) {
         setGameConfig(savedConfig);
+        if (configModalOpen) {
+          setConfigModalOpen(false);
+        }
       } else {
         setConfigModalOpen(true);
       }
     },
-    [gameConfig, configLoading, savedConfig],
+    [gameConfig, configLoading, savedConfig, configModalOpen],
   );
 
   useEffect(() => {

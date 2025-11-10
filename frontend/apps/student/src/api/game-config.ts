@@ -6,6 +6,15 @@ import { GameDifficulty } from "./game";
 
 export type GameName = "WordOrder" | "TypingPractice" | "SpeakingPractice";
 
+type GameConfigApiDifficulty = "Easy" | "Medium" | "Hard";
+
+type GameConfigApiResponse = {
+  gameName: GameName;
+  difficulty: GameConfigApiDifficulty;
+  nikud: boolean;
+  numberOfSentences: number;
+};
+
 export type GameConfig = {
   gameName: GameName;
   difficulty: GameDifficulty;
@@ -15,16 +24,49 @@ export type GameConfig = {
 
 export type GameConfigResponse = GameConfig;
 
+const apiDifficultyToFrontend = (
+  apiDifficulty: GameConfigApiDifficulty,
+): GameDifficulty => {
+  switch (apiDifficulty) {
+    case "Easy":
+      return "easy";
+    case "Medium":
+      return "medium";
+    case "Hard":
+      return "hard";
+    default:
+      return "medium";
+  }
+};
+
+const frontendDifficultyToApi = (
+  difficulty: GameDifficulty,
+): GameConfigApiDifficulty => {
+  switch (difficulty) {
+    case "easy":
+      return "Easy";
+    case "medium":
+      return "Medium";
+    case "hard":
+      return "Hard";
+    default:
+      return "Medium";
+  }
+};
+
 export const useGetGameConfig = (gameName: GameName) => {
   const GAME_CONFIG_MANAGER_URL = import.meta.env.VITE_GAME_CONFIG_MANAGER_URL;
 
   return useQuery<GameConfigResponse, Error>({
     queryKey: ["gameConfig", gameName],
     queryFn: async () => {
-      const res = await axios.get<GameConfigResponse>(
+      const res = await axios.get<GameConfigApiResponse>(
         `${GAME_CONFIG_MANAGER_URL}/${gameName}`,
       );
-      return res.data;
+      return {
+        ...res.data,
+        difficulty: apiDifficultyToFrontend(res.data.difficulty),
+      };
     },
     staleTime: 300_000, // 5 minutes
     retry: (failureCount, error) => {
@@ -42,11 +84,18 @@ export const useUpsertGameConfig = () => {
 
   return useMutation<GameConfigResponse, Error, GameConfig>({
     mutationFn: async (config: GameConfig) => {
-      const res = await axios.put<GameConfigResponse>(
+      const apiConfig: GameConfigApiResponse = {
+        ...config,
+        difficulty: frontendDifficultyToApi(config.difficulty),
+      };
+      const res = await axios.put<GameConfigApiResponse>(
         GAME_CONFIG_MANAGER_URL,
-        config,
+        apiConfig,
       );
-      return res.data;
+      return {
+        ...res.data,
+        difficulty: apiDifficultyToFrontend(res.data.difficulty),
+      };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({

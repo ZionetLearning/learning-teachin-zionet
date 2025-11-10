@@ -85,15 +85,18 @@ export const Game = ({ retryData }: GameProps) => {
 
   useEffect(
     function initializeGameConfig() {
-      if (isRetryMode || gameConfig) return;
-      if (configLoading) return;
+      if (isRetryMode || gameConfig || configLoading) return;
+
       if (savedConfig) {
         setGameConfig(savedConfig);
+        if (configModalOpen) {
+          setConfigModalOpen(false);
+        }
       } else {
         setConfigModalOpen(true);
       }
     },
-    [isRetryMode, gameConfig, configLoading, savedConfig],
+    [isRetryMode, gameConfig, configLoading, savedConfig, configModalOpen],
   );
 
   const shuffleDistinct = useCallback((words: string[]) => {
