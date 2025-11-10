@@ -40,7 +40,7 @@ export const SpeakingPractice = () => {
   const [feedback, setFeedback] = useState<FeedbackType>(Feedback.None);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [isRecording, setIsRecording] = useState(false);
-  const [configModalOpen, setConfigModalOpen] = useState(!configLoading);
+  const [configModalOpen, setConfigModalOpen] = useState(false);
   const [gameOverOpen, setGameOverOpen] = useState(false);
   const [difficulty, setDifficulty] = useState<DifficultyLevel>(1);
   const [nikud, setNikud] = useState(true);
@@ -326,7 +326,7 @@ export const SpeakingPractice = () => {
     requestSentences(difficulty, nikud, count);
   };
 
-  if (configLoading) {
+  if (configLoading || (savedConfig && signalRStatus !== "connected")) {
     return (
       <div className={classes.loader}>
         <CircularProgress />
