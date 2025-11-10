@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
+import { CircularProgress } from "@mui/material";
 
 import {
   useAvatarSpeech,
@@ -352,6 +353,15 @@ export const Game = ({ retryData }: GameProps) => {
   const handleCloseMistakeChat = useCallback(() => {
     setMistakeChatOpen(false);
   }, []);
+
+  // Show loading spinner while config is loading
+  if (configLoading) {
+    return (
+      <div className={classes.gameContainer}>
+        <CircularProgress />
+      </div>
+    );
+  }
 
   // Show welcome screen if game hasn't started yet
   if (!gameStarted || !gameConfig) {

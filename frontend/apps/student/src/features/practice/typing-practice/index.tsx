@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useState, useEffect, useCallback } from "react";
+import { CircularProgress } from "@mui/material";
 import { useStyles } from "./style";
 import { FeedbackDisplay, AudioControls } from "./components";
 import { useTypingPractice } from "./hooks";
@@ -153,6 +154,16 @@ export const TypingPractice = () => {
     </div>
   );
 
+  if (configLoading) {
+    return (
+      <div className={classes.pageWrapper}>
+        <div className={`${classes.container} ${classes.loadingContainer}`}>
+          <CircularProgress />
+        </div>
+      </div>
+    );
+  }
+
   if (!gameStarted || !gameConfig) {
     return (
       <GameSetupPanel
@@ -190,7 +201,7 @@ export const TypingPractice = () => {
 
         {exerciseState.isLoading && (
           <div className={classes.loadingOverlay}>
-            <div className={classes.loadingSpinner} />
+            <CircularProgress />
           </div>
         )}
 

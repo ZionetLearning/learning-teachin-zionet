@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import { comparePhrases } from "./utils";
 
 import { useAzureSpeechToken, useGenerateSentences } from "@student/api";
-import { useAvatarSpeech, useGameConfig } from "@student/hooks";
+import { useAvatarSpeech, useGameConfig, useSignalR } from "@student/hooks";
 import { DifficultyLevel } from "@student/types";
 import {
   GameConfigModal,
@@ -105,6 +105,7 @@ export const SpeakingPractice = () => {
   );
 
   const generateMutation = useGenerateSentences();
+  const { status: signalRStatus } = useSignalR();
 
   const requestSentences = useCallback(
     (difficulty: DifficultyLevel, nikud: boolean, count: number) => {
@@ -131,7 +132,8 @@ export const SpeakingPractice = () => {
 
   useEffect(
     function initializeGameConfig() {
-      if (configLoading || isConfigured) return;
+      if (configLoading || isConfigured || signalRStatus !== "connected")
+        return;
 
       if (savedConfig) {
         setDifficulty(savedConfig.difficulty);
@@ -148,7 +150,7 @@ export const SpeakingPractice = () => {
         setConfigModalOpen(true);
       }
     },
-    [configLoading, savedConfig, isConfigured, requestSentences],
+    [configLoading, savedConfig, isConfigured, requestSentences, signalRStatus],
   );
 
   const {
@@ -323,6 +325,14 @@ export const SpeakingPractice = () => {
     setSkipped(new Set());
     requestSentences(difficulty, nikud, count);
   };
+
+  if (configLoading) {
+    return (
+      <div className={classes.loader}>
+        <CircularProgress />
+      </div>
+    );
+  }
 
   if (!isConfigured) {
     return (

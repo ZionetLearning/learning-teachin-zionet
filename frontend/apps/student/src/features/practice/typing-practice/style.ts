@@ -177,13 +177,11 @@ export const useStyles = createUseStyles({
   feedbackMode: {
     marginTop: "20px",
   },
-  loadingSpinner: {
-    width: "24px",
-    height: "24px",
-    border: "2px solid #e1e5e9",
-    borderTop: "2px solid #007bff",
-    borderRadius: "50%",
-    animation: "$spin 1s linear infinite",
+  loadingContainer: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    minHeight: "400px",
   },
   "@keyframes spin": {
     "0%": { transform: "rotate(0deg)" },
