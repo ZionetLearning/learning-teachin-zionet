@@ -17,22 +17,10 @@ jobs:
     steps:
       - name: Validate confirmation code
         env:
-          EXPECTED_CODE: ${{ secrets.CICD_CONFIRMATION_CODE }}
+          EXPECTED_CODE: ${{ secrets.CODE_DEVOPS }}
           PROVIDED_CODE: ${{ inputs.confirmation_code }}
           EVENT_NAME: ${{ github.event_name }}
         run: |
-          # Skip validation if called from another workflow (workflow_call)
-          if [ "$EVENT_NAME" != "workflow_dispatch" ] && [ -z "$PROVIDED_CODE" ]; then
-            echo "⏭️ Skipping validation - called from another workflow"
-            exit 0
-          fi
-          
-          if [ -z "$EXPECTED_CODE" ]; then
-            echo "❌ Error: CICD_CONFIRMATION_CODE secret is not set"
-            echo "Please set this secret in Settings -> Secrets and variables -> Actions"
-            exit 1
-          fi
-          
           if [ "$PROVIDED_CODE" != "$EXPECTED_CODE" ]; then
             echo "❌ Invalid confirmation code. Deployment cancelled."
             exit 1
