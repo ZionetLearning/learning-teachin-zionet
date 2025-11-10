@@ -139,7 +139,7 @@ public class ManagerQueueHandlerTests
                     dto.StudentId == Guid.Parse(userId) &&
                     dto.GameType == "WordOrderGame" &&
                     dto.Sentences.Count == 1 &&
-                    dto.Sentences[0].Original == "generated sentence" &&
+                    dto.Sentences[0].Text == "generated sentence" &&
                     dto.Sentences[0].CorrectAnswer.Count == 1 &&
                     dto.Sentences[0].CorrectAnswer[0] == "generated sentence"
                 ),

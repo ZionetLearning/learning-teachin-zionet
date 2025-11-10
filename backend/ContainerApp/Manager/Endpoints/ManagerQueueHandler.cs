@@ -198,7 +198,7 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
                 Sentences = [.. generatedResponse.Sentences
                     .Select(s => new GeneratedSentenceItem
                     {
-                        Original = s.Text,
+                        Text = s.Text,
                         CorrectAnswer = [s.Text],
                         Nikud = s.Nikud
                     })]
@@ -282,7 +282,7 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
                 Sentences = [.. split.Sentences
                 .Select(s => new GeneratedSentenceItem
                 {
-                    Original = s.Original,
+                    Text = s.Text,
                     CorrectAnswer = s.Words,
                     Nikud = s.Nikud
                 })]
