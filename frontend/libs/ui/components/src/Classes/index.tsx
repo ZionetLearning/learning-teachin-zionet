@@ -51,48 +51,55 @@ export const Classes = () => {
   // States
   if (isLoading) {
     return (
-      <Paper className={classes.panel}>
-        <Box className={classes.centerState}>
-          <Typography variant="h6">
-            {t("common.loading") || "Loading…"}
-          </Typography>
-          <Typography variant="body2" className={classes.subtle}>
-            {t("classes.loadingHint") || "Fetching your classes and members"}
-          </Typography>
-          <div className={classes.updatingLine} />
-        </Box>
-      </Paper>
+      <Box className={classes.rootWrapper}>
+        <Paper className={classes.panel}>
+          <Box className={classes.centerState}>
+            <Typography variant="h6">
+              {t("common.loading") || "Loading…"}
+            </Typography>
+            <Typography variant="body2" className={classes.subtle}>
+              {t("pages.classes.my.loadingHint") ||
+                "Fetching your classes and members"}
+            </Typography>
+            <div className={classes.updatingLine} />
+          </Box>
+        </Paper>
+      </Box>
     );
   }
 
   if (isError) {
     return (
-      <Paper className={classes.panel}>
-        <Box className={classes.centerState}>
-          <Typography color="error" fontWeight={700}>
-            {t("common.error") || "Failed to load classes."}
-          </Typography>
-          <Typography variant="body2" className={classes.subtle}>
-            {t("common.tryAgain") || "Please try again."}
-          </Typography>
-        </Box>
-      </Paper>
+      <Box className={classes.rootWrapper}>
+        <Paper className={classes.panel}>
+          <Box className={classes.centerState}>
+            <Typography color="error" fontWeight={700}>
+              {t("common.error") || "Failed to load classes."}
+            </Typography>
+            <Typography variant="body2" className={classes.subtle}>
+              {t("common.tryAgain") || "Please try again."}
+            </Typography>
+          </Box>
+        </Paper>
+      </Box>
     );
   }
 
   if (!data || data.length === 0) {
     return (
-      <Paper className={classes.panel}>
-        <Box className={classes.centerState}>
-          <Typography variant="h6">
-            {t("classes.emptyTitle") || "No classes yet"}
-          </Typography>
-          <Typography variant="body2" className={classes.subtle}>
-            {t("classes.emptySubtitle") ||
-              "Create your first class to get started"}
-          </Typography>
-        </Box>
-      </Paper>
+      <Box className={classes.rootWrapper}>
+        <Paper className={classes.panel}>
+          <Box className={classes.centerState}>
+            <Typography variant="h6">
+              {t("pages.classes.my.emptyTitle") || "No classes yet"}
+            </Typography>
+            <Typography variant="body2" className={classes.subtle}>
+              {t("pages.classes.my.emptySubtitle") ||
+                "Create your first class to get started"}
+            </Typography>
+          </Box>
+        </Paper>
+      </Box>
     );
   }
 
@@ -103,7 +110,7 @@ export const Classes = () => {
         <Paper className={classes.sidebar}>
           <Box className={classes.sidebarHeader} dir={isRTL ? "rtl" : "ltr"}>
             <Typography className={classes.sidebarTitle}>
-              {t("classes.title") || "My Classes"}
+              {t("pages.classes.my.title") || "My Classes"}
             </Typography>
             <Chip
               size="small"
@@ -142,10 +149,10 @@ export const Classes = () => {
           {!selectedClass ? (
             <Box className={classes.centerState}>
               <Typography variant="h6">
-                {t("classes.selectPrompt") || "Select a class"}
+                {t("pages.classes.my.selectPrompt") || "Select a class"}
               </Typography>
               <Typography variant="body2" className={classes.subtle}>
-                {t("classes.selectHint") ||
+                {t("pages.classes.my.selectHint") ||
                   "Members and roles will appear here"}
               </Typography>
             </Box>
@@ -158,7 +165,7 @@ export const Classes = () => {
                 <Chip
                   size="small"
                   className={classes.countChip}
-                  label={`${selectedClass.members?.length ?? 0} ${t("classes.members") || "members"}`}
+                  label={`${selectedClass.members?.length ?? 0} ${t("pages.classes.my.members") || "members"}`}
                 />
               </Box>
 
@@ -166,7 +173,8 @@ export const Classes = () => {
 
               {selectedClass.members.length === 0 ? (
                 <Typography variant="body2" className={classes.emptyNote}>
-                  {t("classes.noMembers") || "No members in this class yet."}
+                  {t("pages.classes.my.noMembers") ||
+                    "No members in this class yet."}
                 </Typography>
               ) : (
                 <Box className={classes.sectionGrid}>
@@ -177,7 +185,7 @@ export const Classes = () => {
                       dir={isRTL ? "rtl" : "ltr"}
                     >
                       <Typography className={classes.sectionTitle}>
-                        {t("classes.teachers") || "Teachers"}
+                        {t("pages.classes.my.teachers") || "Teachers"}
                       </Typography>
                       <span className={classes.countChip}>
                         {teachers.length}
@@ -200,7 +208,6 @@ export const Classes = () => {
                                 {m.name}
                               </span>
                             }
-                            secondary={t("classes.role.teacher") || "Teacher"}
                           />
                         </ListItem>
                       ))}
@@ -209,7 +216,7 @@ export const Classes = () => {
                           variant="body2"
                           className={classes.emptyNote}
                         >
-                          {t("classes.noTeachers") || "No teachers."}
+                          {t("pages.classes.my.noTeachers") || "No teachers."}
                         </Typography>
                       )}
                     </List>
@@ -222,7 +229,7 @@ export const Classes = () => {
                       dir={isRTL ? "rtl" : "ltr"}
                     >
                       <Typography className={classes.sectionTitle}>
-                        {t("classes.students") || "Students"}
+                        {t("pages.classes.my.students") || "Students"}
                       </Typography>
                       <span className={classes.countChip}>
                         {students.length}
@@ -245,7 +252,6 @@ export const Classes = () => {
                                 {m.name}
                               </span>
                             }
-                            secondary={t("classes.role.student") || "Student"}
                           />
                         </ListItem>
                       ))}
@@ -254,7 +260,7 @@ export const Classes = () => {
                           variant="body2"
                           className={classes.emptyNote}
                         >
-                          {t("classes.noStudents") || "No students."}
+                          {t("pages.classes.my.noStudents") || "No students."}
                         </Typography>
                       )}
                     </List>
