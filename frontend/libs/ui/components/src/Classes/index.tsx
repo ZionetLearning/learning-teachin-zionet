@@ -1,29 +1,44 @@
 import { useMemo, useState } from "react";
 import {
+  Avatar,
   Box,
-  Paper,
+  Chip,
+  Divider,
   List,
+  ListItem,
+  ListItemAvatar,
   ListItemButton,
   ListItemText,
+  Paper,
   Typography,
-  ListItem,
-  Divider,
-  Grid,
 } from "@mui/material";
+import { useTranslation } from "react-i18next";
 
 import { useMyClasses, type Member, type ClassItem } from "@api";
+import { useStyles } from "./style";
+
+const getInitials = (name?: string) =>
+  (name ?? "")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((x) => x[0]?.toUpperCase())
+    .join("") || "?";
 
 export const Classes = () => {
-  const { data: classes, isLoading, isError, isFetching } = useMyClasses();
+  const { t, i18n } = useTranslation();
+  const isRTL = i18n.dir() === "rtl";
+  const classes = useStyles();
+
+  const { data, isLoading, isError, isFetching } = useMyClasses();
   const [selectedClassId, setSelectedClassId] = useState<string | undefined>();
 
-  // pick the selected class from the list
   const selectedClass: ClassItem | undefined = useMemo(() => {
-    if (!classes || !selectedClassId) return undefined;
-    return classes.find((c) => c.classId === selectedClassId);
-  }, [classes, selectedClassId]);
+    if (!data || !selectedClassId) return undefined;
+    return data.find((c) => c.classId === selectedClassId);
+  }, [data, selectedClassId]);
 
-  // split by role (0=Student, 1=Teacher per your payload)
+  // split by role (0=Student, 1=Teacher)
   const { teachers, students } = useMemo(() => {
     const none = { teachers: [] as Member[], students: [] as Member[] };
     if (!selectedClass?.members) return none;
@@ -33,89 +48,225 @@ export const Classes = () => {
     };
   }, [selectedClass]);
 
-  if (isLoading) return <Typography>Loading classes…</Typography>;
-  if (isError)
-    return <Typography color="error">Failed to load classes.</Typography>;
-  if (!classes || classes.length === 0)
-    return <Typography>No classes yet.</Typography>;
+  // States
+  if (isLoading) {
+    return (
+      <Paper className={classes.panel}>
+        <Box className={classes.centerState}>
+          <Typography variant="h6">
+            {t("common.loading") || "Loading…"}
+          </Typography>
+          <Typography variant="body2" className={classes.subtle}>
+            {t("classes.loadingHint") || "Fetching your classes and members"}
+          </Typography>
+          <div className={classes.updatingLine} />
+        </Box>
+      </Paper>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Paper className={classes.panel}>
+        <Box className={classes.centerState}>
+          <Typography color="error" fontWeight={700}>
+            {t("common.error") || "Failed to load classes."}
+          </Typography>
+          <Typography variant="body2" className={classes.subtle}>
+            {t("common.tryAgain") || "Please try again."}
+          </Typography>
+        </Box>
+      </Paper>
+    );
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <Paper className={classes.panel}>
+        <Box className={classes.centerState}>
+          <Typography variant="h6">
+            {t("classes.emptyTitle") || "No classes yet"}
+          </Typography>
+          <Typography variant="body2" className={classes.subtle}>
+            {t("classes.emptySubtitle") ||
+              "Create your first class to get started"}
+          </Typography>
+        </Box>
+      </Paper>
+    );
+  }
 
   return (
-    <Box display="grid" gridTemplateColumns="320px 1fr" gap={2}>
-      {/* Left: classes list */}
-      <Paper>
-        <List dense disablePadding>
-          {classes.map((c) => (
-            <ListItemButton
-              key={c.classId}
-              selected={c.classId === selectedClassId}
-              onClick={() => setSelectedClassId(c.classId)}
-            >
-              <ListItemText
-                primary={c.name}
-                secondary={
-                  isFetching && c.classId === selectedClassId
-                    ? "Updating…"
-                    : undefined
-                }
-              />
-            </ListItemButton>
-          ))}
-        </List>
-      </Paper>
-
-      {/* Right: members split into two columns */}
-      <Paper style={{ padding: 16 }}>
-        {!selectedClass ? (
-          <Typography>Select a class…</Typography>
-        ) : selectedClass.members.length === 0 ? (
-          <Typography>No members.</Typography>
-        ) : (
-          <>
-            <Typography variant="h6" gutterBottom>
-              {selectedClass.name}
+    <Box className={classes.rootWrapper}>
+      <Box className={classes.root} dir={isRTL ? "rtl" : "ltr"}>
+        {/* LEFT: classes list */}
+        <Paper className={classes.sidebar}>
+          <Box className={classes.sidebarHeader} dir={isRTL ? "rtl" : "ltr"}>
+            <Typography className={classes.sidebarTitle}>
+              {t("classes.title") || "My Classes"}
             </Typography>
-            <Divider sx={{ mb: 2 }} />
+            <Chip
+              size="small"
+              label={data.length}
+              className={classes.countChip}
+            />
+          </Box>
 
-            <Grid container spacing={2}>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Typography variant="subtitle1" gutterBottom>
-                  Teachers ({teachers.length})
-                </Typography>
-                <List dense>
-                  {teachers.map((m) => (
-                    <ListItem key={m.memberId}>
-                      <ListItemText primary={m.name} />
-                    </ListItem>
-                  ))}
-                  {teachers.length === 0 && (
-                    <Typography variant="body2" color="text.secondary">
-                      No teachers.
-                    </Typography>
-                  )}
-                </List>
-              </Grid>
+          <List disablePadding className={classes.list}>
+            {data.map((c) => {
+              const selected = c.classId === selectedClassId;
+              return (
+                <ListItem disablePadding key={c.classId}>
+                  <ListItemButton
+                    className={classes.listItem}
+                    selected={selected}
+                    onClick={() => setSelectedClassId(c.classId)}
+                  >
+                    <ListItemText
+                      primary={c.name}
+                      secondary={
+                        isFetching && selected
+                          ? t("common.updating") || "Updating…"
+                          : undefined
+                      }
+                    />
+                  </ListItemButton>
+                </ListItem>
+              );
+            })}
+          </List>
+        </Paper>
 
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Typography variant="subtitle1" gutterBottom>
-                  Students ({students.length})
+        {/* RIGHT: details */}
+        <Paper className={classes.panel}>
+          {!selectedClass ? (
+            <Box className={classes.centerState}>
+              <Typography variant="h6">
+                {t("classes.selectPrompt") || "Select a class"}
+              </Typography>
+              <Typography variant="body2" className={classes.subtle}>
+                {t("classes.selectHint") ||
+                  "Members and roles will appear here"}
+              </Typography>
+            </Box>
+          ) : (
+            <>
+              <Box className={classes.headerRow} dir={isRTL ? "rtl" : "ltr"}>
+                <Typography className={classes.className}>
+                  {selectedClass.name}
                 </Typography>
-                <List dense>
-                  {students.map((m) => (
-                    <ListItem key={m.memberId}>
-                      <ListItemText primary={m.name} />
-                    </ListItem>
-                  ))}
-                  {students.length === 0 && (
-                    <Typography variant="body2" color="text.secondary">
-                      No students.
-                    </Typography>
-                  )}
-                </List>
-              </Grid>
-            </Grid>
-          </>
-        )}
-      </Paper>
+                <Chip
+                  size="small"
+                  className={classes.countChip}
+                  label={`${selectedClass.members?.length ?? 0} ${t("classes.members") || "members"}`}
+                />
+              </Box>
+
+              <Divider className={classes.divider} />
+
+              {selectedClass.members.length === 0 ? (
+                <Typography variant="body2" className={classes.emptyNote}>
+                  {t("classes.noMembers") || "No members in this class yet."}
+                </Typography>
+              ) : (
+                <Box className={classes.sectionGrid}>
+                  {/* Teachers */}
+                  <Box className={classes.sectionCard}>
+                    <Box
+                      className={classes.sectionHeader}
+                      dir={isRTL ? "rtl" : "ltr"}
+                    >
+                      <Typography className={classes.sectionTitle}>
+                        {t("classes.teachers") || "Teachers"}
+                      </Typography>
+                      <span className={classes.countChip}>
+                        {teachers.length}
+                      </span>
+                    </Box>
+                    <List dense className={classes.memberList}>
+                      {teachers.map((m) => (
+                        <ListItem key={m.memberId}>
+                          <ListItemAvatar>
+                            <Avatar
+                              className={classes.memberAvatar}
+                              dir={isRTL ? "rtl" : "ltr"}
+                            >
+                              {getInitials(m.name)}
+                            </Avatar>
+                          </ListItemAvatar>
+                          <ListItemText
+                            primary={
+                              <span className={classes.memberName}>
+                                {m.name}
+                              </span>
+                            }
+                            secondary={t("classes.role.teacher") || "Teacher"}
+                          />
+                        </ListItem>
+                      ))}
+                      {teachers.length === 0 && (
+                        <Typography
+                          variant="body2"
+                          className={classes.emptyNote}
+                        >
+                          {t("classes.noTeachers") || "No teachers."}
+                        </Typography>
+                      )}
+                    </List>
+                  </Box>
+
+                  {/* Students */}
+                  <Box className={classes.sectionCard}>
+                    <Box
+                      className={classes.sectionHeader}
+                      dir={isRTL ? "rtl" : "ltr"}
+                    >
+                      <Typography className={classes.sectionTitle}>
+                        {t("classes.students") || "Students"}
+                      </Typography>
+                      <span className={classes.countChip}>
+                        {students.length}
+                      </span>
+                    </Box>
+                    <List dense className={classes.memberList}>
+                      {students.map((m) => (
+                        <ListItem key={m.memberId}>
+                          <ListItemAvatar>
+                            <Avatar
+                              className={classes.memberAvatar}
+                              dir={isRTL ? "rtl" : "ltr"}
+                            >
+                              {getInitials(m.name)}
+                            </Avatar>
+                          </ListItemAvatar>
+                          <ListItemText
+                            primary={
+                              <span className={classes.memberName}>
+                                {m.name}
+                              </span>
+                            }
+                            secondary={t("classes.role.student") || "Student"}
+                          />
+                        </ListItem>
+                      ))}
+                      {students.length === 0 && (
+                        <Typography
+                          variant="body2"
+                          className={classes.emptyNote}
+                        >
+                          {t("classes.noStudents") || "No students."}
+                        </Typography>
+                      )}
+                    </List>
+                  </Box>
+                </Box>
+              )}
+
+              {isFetching && <div className={classes.updatingLine} />}
+            </>
+          )}
+        </Paper>
+      </Box>
     </Box>
   );
 };
