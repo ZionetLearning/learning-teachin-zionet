@@ -15,4 +15,5 @@ public class UserData
     public SupportedLanguage PreferredLanguageCode { get; set; } = SupportedLanguage.en;
     public HebrewLevel? HebrewLevelValue { get; set; }
     public List<string> Interests { get; set; } = [];
+    public string? AcsUserId { get; set; }
 }
