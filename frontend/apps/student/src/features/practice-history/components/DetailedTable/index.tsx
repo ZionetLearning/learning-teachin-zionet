@@ -154,7 +154,7 @@ export const DetailedTable = ({
               className={classes.tablePaginationWrapper}
               component="div"
               count={total}
-              page={page - 1}
+              page={page}
               onPageChange={(_, p) => onPageChange(p)}
               rowsPerPage={rowsPerPage}
               onRowsPerPageChange={(e) =>

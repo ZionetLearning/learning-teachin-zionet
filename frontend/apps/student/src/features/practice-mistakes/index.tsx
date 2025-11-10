@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import {
@@ -34,11 +34,10 @@ export const PracticeMistakes = () => {
 
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const apiPage = useMemo(() => page + 1, [page]);
 
   const { data, isLoading, isFetching, error } = useGetGameMistakes({
     studentId,
-    page: apiPage,
+    page,
     pageSize: rowsPerPage,
   });
 
@@ -47,10 +46,10 @@ export const PracticeMistakes = () => {
 
   const handleRetry = (item: GameMistakeItem) => {
     const retryData = {
+      exerciseId: item.exerciseId,
       correctAnswer: item.correctAnswer,
-      attemptId: item.attemptId,
-      wrongAnswers: item.wrongAnswers,
-      difficulty: item.difficulty,
+      mistakes: item.mistakes,
+      difficulty: item.difficulty === "Easy" ? 0 : item.difficulty === "Medium" ? 1 : 2,
     };
 
     navigate("/word-order-game", {
@@ -124,15 +123,16 @@ export const PracticeMistakes = () => {
 
                   <TableBody>
                     {items.map((item: GameMistakeItem, idx: number) => {
-                      const last =
-                        item.wrongAnswers.length > 0
-                          ? item.wrongAnswers[item.wrongAnswers.length - 1]
-                          : [];
-                      const lastAnswer =
-                        last && last.length > 0 ? last.join(" ") : "-";
+                      const lastMistake =
+                        item.mistakes.length > 0
+                          ? item.mistakes[item.mistakes.length - 1]
+                          : null;
+                      const lastAnswer = lastMistake
+                        ? lastMistake.wrongAnswer.join(" ")
+                        : "-";
 
                       return (
-                        <TableRow key={`${apiPage}-${idx}`} hover>
+                        <TableRow key={`${page}-${idx}`} hover>
                           <TableCell className={classes.td}>
                             <Typography fontWeight={600}>
                               {t(
