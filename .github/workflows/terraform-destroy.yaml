@@ -18,6 +18,10 @@ on:
         type: string
   workflow_dispatch:
     inputs:
+      confirmation_code:
+        description: 'Enter confirmation code to proceed with destroy'
+        required: true
+        type: string
       environment:
         description: 'Select environment (GitHub Environment)'
         required: true
@@ -35,7 +39,15 @@ on:
         type: boolean
 
 jobs:
+  validate-confirmation:
+    if: github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/validate-confirmation.yaml
+    with:
+      confirmation_code: ${{ github.event.inputs.confirmation_code }}
+    secrets: inherit
+
   terraform-destroy:
+    needs: [validate-confirmation]
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || github.event.inputs.environment }}
     permissions:
