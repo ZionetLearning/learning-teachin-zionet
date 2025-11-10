@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Box,
   Paper,
@@ -6,25 +6,32 @@ import {
   ListItemButton,
   ListItemText,
   Typography,
+  ListItem,
+  Divider,
+  Grid,
 } from "@mui/material";
-import { useMyClasses, useClassMembers, type RoleMode } from "@api";
 
-type Props = {
-  mode: RoleMode; // "Teacher" | "Student"
-  onSelectClass?: (classId: string) => void;
-};
+import { useMyClasses, type Member, type ClassItem } from "@api";
 
-export const Classes = ({ mode, onSelectClass }: Props) => {
-  const { data: classes, isLoading, isError } = useMyClasses(mode);
-  const [selectedClassId, setSelectedClassId] = useState<string | undefined>(
-    undefined,
-  );
+export const Classes = () => {
+  const { data: classes, isLoading, isError, isFetching } = useMyClasses();
+  const [selectedClassId, setSelectedClassId] = useState<string | undefined>();
 
-  const { data: members, isLoading: membersLoading } = useClassMembers(
-    selectedClassId,
-    mode,
-    { enabled: Boolean(selectedClassId) },
-  );
+  // pick the selected class from the list
+  const selectedClass: ClassItem | undefined = useMemo(() => {
+    if (!classes || !selectedClassId) return undefined;
+    return classes.find((c) => c.classId === selectedClassId);
+  }, [classes, selectedClassId]);
+
+  // split by role (0=Student, 1=Teacher per your payload)
+  const { teachers, students } = useMemo(() => {
+    const none = { teachers: [] as Member[], students: [] as Member[] };
+    if (!selectedClass?.members) return none;
+    return {
+      teachers: selectedClass.members.filter((m) => m.role === 1),
+      students: selectedClass.members.filter((m) => m.role === 0),
+    };
+  }, [selectedClass]);
 
   if (isLoading) return <Typography>Loading classes…</Typography>;
   if (isError)
@@ -34,40 +41,78 @@ export const Classes = ({ mode, onSelectClass }: Props) => {
 
   return (
     <Box display="grid" gridTemplateColumns="320px 1fr" gap={2}>
+      {/* Left: classes list */}
       <Paper>
-        <List>
+        <List dense disablePadding>
           {classes.map((c) => (
             <ListItemButton
               key={c.classId}
               selected={c.classId === selectedClassId}
-              onClick={() => {
-                setSelectedClassId(c.classId);
-                onSelectClass?.(c.classId);
-              }}
+              onClick={() => setSelectedClassId(c.classId)}
             >
-              <ListItemText primary={c.name} />
+              <ListItemText
+                primary={c.name}
+                secondary={
+                  isFetching && c.classId === selectedClassId
+                    ? "Updating…"
+                    : undefined
+                }
+              />
             </ListItemButton>
           ))}
         </List>
       </Paper>
 
+      {/* Right: members split into two columns */}
       <Paper style={{ padding: 16 }}>
-        {!selectedClassId ? (
+        {!selectedClass ? (
           <Typography>Select a class…</Typography>
-        ) : membersLoading ? (
-          <Typography>Loading members…</Typography>
-        ) : !members || members.length === 0 ? (
+        ) : selectedClass.members.length === 0 ? (
           <Typography>No members.</Typography>
         ) : (
           <>
             <Typography variant="h6" gutterBottom>
-              {mode === "Teacher" ? "Students" : "Teachers"}
+              {selectedClass.name}
             </Typography>
-            <List>
-              {members.map((m) => (
-                <ListItemText key={m.memberId} primary={m.name} />
-              ))}
-            </List>
+            <Divider sx={{ mb: 2 }} />
+
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Typography variant="subtitle1" gutterBottom>
+                  Teachers ({teachers.length})
+                </Typography>
+                <List dense>
+                  {teachers.map((m) => (
+                    <ListItem key={m.memberId}>
+                      <ListItemText primary={m.name} />
+                    </ListItem>
+                  ))}
+                  {teachers.length === 0 && (
+                    <Typography variant="body2" color="text.secondary">
+                      No teachers.
+                    </Typography>
+                  )}
+                </List>
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Typography variant="subtitle1" gutterBottom>
+                  Students ({students.length})
+                </Typography>
+                <List dense>
+                  {students.map((m) => (
+                    <ListItem key={m.memberId}>
+                      <ListItemText primary={m.name} />
+                    </ListItem>
+                  ))}
+                  {students.length === 0 && (
+                    <Typography variant="body2" color="text.secondary">
+                      No students.
+                    </Typography>
+                  )}
+                </List>
+              </Grid>
+            </Grid>
           </>
         )}
       </Paper>
