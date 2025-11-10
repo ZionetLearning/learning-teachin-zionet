@@ -481,7 +481,6 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
             }
 
             _logger.LogInformation("Fetching attempt details for AttemptId {AttemptId}", request.AttemptId);
-            //var attemptDetails = await _accessorClient.GetAttemptDetailsAsync(request.UserId, request.AttemptId, ct);
 
             var attemptDetails = await _accessorClient.GetLastAttemptAsync(request.UserId, request.GameType, ct);
 
@@ -508,10 +507,9 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
             var userPrompt = await BuildUserMistakeExplanationPromptAsync(attemptDetails, request.GameType, ct);
             storyForKernel.AddUserMessage(userPrompt, DateTimeOffset.UtcNow);
 
-            // now add again the system prompt for accuracy
-
+            // Add the system prompt again to improve context accuracy for the AI response
             var rulesPrompt = await _accessorClient.GetPromptAsync(PromptsKeys.MistakeRuleTemplate, ct);
-            var systemRules = rulesPrompt?.Content?.Replace("{lang}", lang)
+            var systemRules = rulesPrompt?.Content?.Replace("{lang}", lang, StringComparison.Ordinal)
                 ?? "Explain mistake, correct answer, and learning tip. Reply in {lang}";
 
             storyForKernel.Add(new ChatMessageContent(AuthorRole.System, systemRules));

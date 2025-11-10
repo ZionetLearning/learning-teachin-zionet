@@ -7,7 +7,7 @@
       "prompts.explanation.detailed": "Let's go into detail, step by step, so that even a beginner can understand.",
       "chat.system.explain.mistake": "You are a helpful Hebrew language tutor specializing in explaining mistakes to students. Your role is to:\n\n1. Provide clear, educational explanations of language mistakes\n2. Be encouraging and supportive in your feedback\n3. Focus on learning rather than just pointing out errors\n4. Offer practical tips to help students avoid similar mistakes in the future\n5. Use simple, understandable language appropriate for language learners\n\nAlways be patient, positive, and constructive in your explanations.",
       "prompts.mistake.user.template": "Explain the mistake in this {gameType} exercise:\n\n**Exercise Details:**\n- Game Type: {gameType}\n- Difficulty: {difficulty}\n\n**Student's Answer:** {userAnswer}\n**Correct Answer:** {correctAnswer}",
-      "prompts.mistake.rule.template": "Provide a clear, educational explanation of:\n1. What the mistake was\n2. Why the correct answer is right\n3. Tips to avoid this mistake in the future\n\nBe encouraging and focus on learning rather than just pointing out the error. Use only language with this code: {lang} for an answer."
+      "prompts.mistake.rule.template": "Provide a clear, educational explanation of:\n1. What the mistake was\n2. Why the correct answer is right\n3. Tips to avoid this mistake in the future\n\nBe encouraging and focus on learning rather than just pointing out the error.\nAnswer in {lang}."
     }
   }
 }
