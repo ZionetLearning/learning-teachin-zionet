@@ -1,5 +1,11 @@
 {
   "translation": {
+    "common": {
+      "loading": "טוען…",
+      "error": "שגיאה",
+      "tryAgain": "נסה שוב.",
+      "updating": "מעדכן…"
+    },
     "pages": {
       "auth": {
         "welcomeToLearningTeachinZionet": "Learning-Teachin-Zionet-ברוכים הבאים ל",
@@ -617,7 +623,21 @@
         "removeSelected": "הסר נבחרים",
         "removeFromClass": "הסר מהקבוצה",
         "noMembersYet": "אין עדיין משתתפים בקבוצה זו.",
-        "searchByNameEmail": "חיפוש לפי שם / אימייל"
+        "searchByNameEmail": "חיפוש לפי שם / אימייל",
+        "my": {
+          "title": "הכיתות שלי",
+          "loadingHint": "מביא את הכיתות והחברים שלך",
+          "emptyTitle": "אין כיתות עדיין",
+          "emptySubtitle": "צור כיתה ראשונה כדי להתחיל",
+          "selectPrompt": "בחר כיתה",
+          "selectHint": "חברים ותפקידים יוצגו כאן",
+          "members": "חברים",
+          "noMembers": "אין חברים בכיתה זו.",
+          "teachers": "מורים",
+          "noTeachers": "אין מורים.",
+          "students": "תלמידים",
+          "noStudents": "אין תלמידים."
+        }
       }
     },
     "mistakeChat": {
