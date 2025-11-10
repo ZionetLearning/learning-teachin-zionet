@@ -49,7 +49,7 @@ export const SpeakingPractice = () => {
   const [attempted, setAttempted] = useState<Set<number>>(new Set());
   const [correctIdxs, setCorrectIdxs] = useState<Set<number>>(new Set());
   const [skipped, setSkipped] = useState<Set<number>>(new Set());
-  const [isConfigured, setIsConfigured] = useState(false);
+  const isConfiguredRef = useRef(false);
 
   const recognizerRef = useRef<sdk.SpeechRecognizer | null>(null);
   const audioConfigRef = useRef<sdk.AudioConfig | null>(null);
@@ -132,7 +132,11 @@ export const SpeakingPractice = () => {
 
   useEffect(
     function initializeGameConfig() {
-      if (configLoading || isConfigured || signalRStatus !== "connected")
+      if (
+        configLoading ||
+        isConfiguredRef.current ||
+        signalRStatus !== "connected"
+      )
         return;
 
       if (savedConfig) {
@@ -140,7 +144,7 @@ export const SpeakingPractice = () => {
         setNikud(savedConfig.nikud);
         setCount(savedConfig.count);
         setConfigModalOpen(false);
-        setIsConfigured(true);
+        isConfiguredRef.current = true;
         requestSentences(
           savedConfig.difficulty,
           savedConfig.nikud,
@@ -150,7 +154,7 @@ export const SpeakingPractice = () => {
         setConfigModalOpen(true);
       }
     },
-    [configLoading, savedConfig, isConfigured, requestSentences, signalRStatus],
+    [configLoading, savedConfig, requestSentences, signalRStatus],
   );
 
   const {
@@ -312,7 +316,7 @@ export const SpeakingPractice = () => {
     updateConfig(config);
     setConfigModalOpen(false);
     setFeedback(Feedback.None);
-    setIsConfigured(true);
+    isConfiguredRef.current = true;
     requestSentences(config.difficulty, config.nikud, config.count);
   };
 
@@ -326,7 +330,7 @@ export const SpeakingPractice = () => {
     requestSentences(difficulty, nikud, count);
   };
 
-  if (configLoading || (savedConfig && signalRStatus !== "connected")) {
+  if (configLoading) {
     return (
       <div className={classes.loader}>
         <CircularProgress />
@@ -334,7 +338,18 @@ export const SpeakingPractice = () => {
     );
   }
 
-  if (!isConfigured) {
+  if (savedConfig && signalRStatus !== "connected") {
+    return (
+      <div className={classes.loader}>
+        <CircularProgress />
+      </div>
+    );
+  }
+
+  if (
+    !isConfiguredRef.current ||
+    (!sentences.length && !generateMutation.isPending)
+  ) {
     return (
       <div className={classes.loader}>
         <GameSetupPanel
@@ -347,7 +362,7 @@ export const SpeakingPractice = () => {
     );
   }
 
-  if (!sentences.length && generateMutation.isPending) {
+  if (generateMutation.isPending) {
     return (
       <div className={classes.loader}>
         <CircularProgress />

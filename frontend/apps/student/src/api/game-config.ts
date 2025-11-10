@@ -68,7 +68,7 @@ export const useGetGameConfig = (gameName: GameName) => {
         difficulty: apiDifficultyToFrontend(res.data.difficulty),
       };
     },
-    staleTime: 300_000, // 5 minutes
+    staleTime: Infinity,
     retry: (failureCount, error) => {
       if (isAxiosError(error) && error.response?.status === 404) {
         return false;

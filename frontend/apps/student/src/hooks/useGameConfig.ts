@@ -54,7 +54,8 @@ export const useGameConfig = (gameName: GameName) => {
         });
       }
     },
-    [apiConfig, localConfig],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [apiConfig],
   );
 
   const updateConfig = useCallback(
