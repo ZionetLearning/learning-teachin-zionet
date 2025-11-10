@@ -15,15 +15,8 @@ import {
 import { useTranslation } from "react-i18next";
 
 import { useMyClasses, type Member, type ClassItem } from "@api";
+import { getInitials } from "./utils";
 import { useStyles } from "./style";
-
-const getInitials = (name?: string) =>
-  (name ?? "")
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((x) => x[0]?.toUpperCase())
-    .join("") || "?";
 
 export const Classes = () => {
   const { t, i18n } = useTranslation();
@@ -48,7 +41,6 @@ export const Classes = () => {
     };
   }, [selectedClass]);
 
-  // States
   if (isLoading) {
     return (
       <Box className={classes.rootWrapper}>
