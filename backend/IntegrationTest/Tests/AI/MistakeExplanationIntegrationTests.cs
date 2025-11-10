@@ -52,7 +52,7 @@ public class MistakeExplanationIntegrationTests(
         sentences.Should().NotBeEmpty("Should have generated at least one sentence");
         var sentence = sentences.First();
         
-        OutputHelper.WriteLine($"Generated sentence: {sentence.Original}");
+        OutputHelper.WriteLine($"Generated sentence: {sentence.Text}");
         OutputHelper.WriteLine($"Correct words: {string.Join(" ", sentence.Words)}");
 
         // Step 2: Submit a wrong answer attempt
