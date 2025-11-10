@@ -354,7 +354,6 @@ export const Game = ({ retryData }: GameProps) => {
     setMistakeChatOpen(false);
   }, []);
 
-  // Show loading spinner while config is loading
   if (configLoading) {
     return (
       <div className={classes.gameContainer}>
