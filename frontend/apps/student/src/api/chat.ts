@@ -23,7 +23,6 @@ export const useSendChatMessageStream = () => {
       userMessage,
       threadId = crypto.randomUUID(),
       chatType = "default",
-      userId,
       pageContext,
       userLanguage,
     }: SendMessageRequest,
@@ -46,7 +45,6 @@ export const useSendChatMessageStream = () => {
         userMessage,
         threadId,
         chatType,
-        userId,
       };
 
       if (pageContext) {
