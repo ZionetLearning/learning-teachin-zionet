@@ -206,7 +206,20 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
             var result = await _gameAccessorClient.SaveGeneratedSentencesAsync(dto, cancellationToken);
 
-            await _notificationService.SendEventAsync(EventType.SentenceGeneration, userId, result);
+            var response = new SentenceGenerationResponse
+            {
+                RequestId = generatedResponse.RequestId,
+                Sentences = result.Select(r => new GeneratedSentenceResultItem
+                {
+                    ExerciseId = r.ExerciseId,
+                    Text = r.Text,
+                    Words = r.Words,
+                    Difficulty = r.Difficulty,
+                    Nikud = r.Nikud
+                }).ToList()
+            };
+
+            await _notificationService.SendEventAsync(EventType.SentenceGeneration, userId, response);
         }
         catch (NonRetryableException ex)
         {
@@ -290,10 +303,23 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
             var result = await _gameAccessorClient.SaveGeneratedSentencesAsync(dto, cancellationToken);
 
+            var response = new SentenceGenerationResponse
+            {
+                RequestId = generatedResponse.RequestId,
+                Sentences = result.Select(r => new GeneratedSentenceResultItem
+                {
+                    ExerciseId = r.ExerciseId,
+                    Text = r.Text,
+                    Words = r.Words,
+                    Difficulty = r.Difficulty,
+                    Nikud = r.Nikud
+                }).ToList()
+            };
+
             await _notificationService.SendEventAsync(
                 EventType.SplitSentenceGeneration,
                 userId,
-                result
+                response
                 );
         }
         catch (NonRetryableException ex)

@@ -4,6 +4,7 @@ namespace Engine.Models.Sentences;
 
 public sealed class SentenceRequest
 {
+    public required string RequestId { get; init; }
     public Difficulty Difficulty { get; init; } = Difficulty.Medium;
     public bool Nikud { get; init; } = false;
     public int Count { get; init; } = 1;

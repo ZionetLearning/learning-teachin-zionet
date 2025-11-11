@@ -1,6 +1,6 @@
 ﻿namespace Engine.Models.Sentences;
 
-public sealed class SentenceResponse
+public sealed class GeneratedSentences
 {
     public List<SentenceItem> Sentences { get; init; } = new();
 }

@@ -255,9 +255,11 @@ public static class AiEndpoints
         try
         {
             var userId = GetUserId(httpContext, logger);
+            var requestId = Guid.NewGuid().ToString("N");
 
             var request = new SentenceRequest
             {
+                RequestId = requestId,
                 Difficulty = dto.Difficulty,
                 Nikud = dto.Nikud,
                 Count = dto.Count,
@@ -266,7 +268,7 @@ public static class AiEndpoints
             };
 
             await engineClient.GenerateSentenceAsync(request);
-            return Results.Ok();
+            return Results.Ok(new { requestId });
         }
         catch (OperationCanceledException)
         {
@@ -302,9 +304,11 @@ public static class AiEndpoints
         try
         {
             var userId = GetUserId(httpContext, logger);
+            var requestId = Guid.NewGuid().ToString("N");
 
             var request = new SentenceRequest
             {
+                RequestId = requestId,
                 Difficulty = dto.Difficulty,
                 Nikud = dto.Nikud,
                 Count = dto.Count,
@@ -313,7 +317,7 @@ public static class AiEndpoints
             };
 
             await engineClient.GenerateSplitSentenceAsync(request);
-            return Results.Ok();
+            return Results.Ok(new { requestId });
         }
         catch (InvalidOperationException ex) when (ex.Data.Contains("Tag") &&
                                           Equals(ex.Data["Tag"], "MissingOrInvalidUserId"))

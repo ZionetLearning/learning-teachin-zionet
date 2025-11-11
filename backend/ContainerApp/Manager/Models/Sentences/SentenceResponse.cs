@@ -2,6 +2,7 @@
 
 public sealed class SentenceResponse
 {
+    public required string RequestId { get; set; }
     public List<SentenceItem> Sentences { get; init; } = new();
 }
 

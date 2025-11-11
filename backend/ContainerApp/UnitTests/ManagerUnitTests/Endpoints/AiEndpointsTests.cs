@@ -120,6 +120,7 @@ public class AiEndpointsTests
     {
         var request = new SentenceRequest
         {
+            RequestId = Guid.NewGuid().ToString(),
             UserId = Guid.NewGuid(),
             Difficulty = Difficulty.Medium,
             Nikud = true,
@@ -127,6 +128,7 @@ public class AiEndpointsTests
         };
         var dto = new SentenceRequestDto
         {
+            RequestId = request.RequestId,
             Difficulty = request.Difficulty,
             Nikud = request.Nikud,
             Count = request.Count

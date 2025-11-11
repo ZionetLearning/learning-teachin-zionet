@@ -94,6 +94,7 @@ public class ManagerQueueHandlerTests
         var userId = Guid.NewGuid().ToString();
         var sentenceResponse = new SentenceResponse
         {
+            RequestId = Guid.NewGuid().ToString(),
             Sentences = new List<SentenceItem>
             {
                 new()

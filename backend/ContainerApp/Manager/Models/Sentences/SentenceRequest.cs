@@ -5,6 +5,7 @@ namespace Manager.Models.Sentences;
 
 public sealed class SentenceRequestDto
 {
+    public required string RequestId { get; set; }
     public Difficulty Difficulty { get; init; } = Difficulty.Medium;
     public bool Nikud { get; init; } = false;
     public int Count { get; init; } = 1;
@@ -13,6 +14,7 @@ public sealed class SentenceRequestDto
 
 public sealed class SentenceRequest
 {
+    public required string RequestId { get; set; }
     public Difficulty Difficulty { get; init; } = Difficulty.Medium;
     public bool Nikud { get; init; } = false;
     public int Count { get; init; } = 1;
