@@ -8,6 +8,8 @@ ADMIN_EMAIL="${2:-admin@teachin.local}"
 ADMIN_PASSWORD="${3:-ChangeMe123!}"
 PG_USERNAME="${4:-postgres}"
 PG_PASSWORD="${5:-postgres}"
+SMTP_USER="${6:-}"
+SMTP_PASSWORD="${7:-}"
 
 echo "🎯 Deploying Langfuse into $NAMESPACE (DB suffix: $ENVIRONMENT_NAME)"
 echo "📊 PostgreSQL Host: $PG_HOST"
@@ -75,7 +77,7 @@ helm $ACTION langfuse langfuse/langfuse \
   --set langfuse.additionalEnv[2].name="NEXT_PUBLIC_DISABLE_SIGNUP" \
   --set-string langfuse.additionalEnv[2].value="true" \
   --set langfuse.additionalEnv[3].name="DISABLE_SIGNUP" \
-  --set-string langfuse.additionalEnv[3].value="true" \
+  --set-string langfuse.additionalEnv[3].value="false" \
   --set langfuse.additionalEnv[4].name="AUTH_DISABLE_SIGNUP" \
   --set-string langfuse.additionalEnv[4].value="true" \
   --set langfuse.additionalEnv[5].name="NEXT_PUBLIC_BASE_PATH" \
