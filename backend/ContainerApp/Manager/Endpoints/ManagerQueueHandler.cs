@@ -314,15 +314,16 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
                 throw new NonRetryableException("Payload deserialization returned null for word explanation.");
             }
 
-            var userId = string.Empty;
-            if (message.Metadata.HasValue)
+            if (!message.Metadata.HasValue)
             {
-                userId = JsonSerializer.Deserialize<string>(message.Metadata.Value);
+                _logger.LogWarning("Metadata is missing for word explanation action");
+                throw new NonRetryableException("User metadata is required for word explanation action.");
             }
 
-            if (userId is null)
+            var userId = JsonSerializer.Deserialize<string>(message.Metadata.Value);
+            if (string.IsNullOrWhiteSpace(userId))
             {
-                _logger.LogWarning("Metadata is null for word explanation action");
+                _logger.LogWarning("UserId is null or empty for word explanation action");
                 throw new NonRetryableException("User metadata is required for word explanation action.");
             }
 
