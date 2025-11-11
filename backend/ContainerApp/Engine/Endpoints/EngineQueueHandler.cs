@@ -9,6 +9,7 @@ using Engine.Models;
 using Engine.Models.Chat;
 using Engine.Models.QueueMessages;
 using Engine.Models.Sentences;
+using Engine.Options;
 using Engine.Services;
 using Engine.Services.Clients.AccessorClient;
 using Engine.Services.Clients.AccessorClient.Models;
@@ -408,7 +409,8 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
                 storyForKernel.Insert(0, new ChatMessageContent(AuthorRole.System, systemPrompt));
             }
 
-            var pageContextToolContent = CreatePageContextDevelopMessage(request.PageContext, ct);
+            var pageContextToolContent = await CreatePageContextPromptAsync(request.PageContext, ct);
+
             if (!string.IsNullOrWhiteSpace(pageContextToolContent))
             {
                 var devMessage = new ChatMessageContent
@@ -619,26 +621,6 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         }
 
         return (request, userContext);
-    }
-
-    private void ValidateChatRequestCore(EngineChatRequest request)
-    {
-        if (request.UserId == Guid.Empty)
-        {
-            throw new NonRetryableException("UserId is required.");
-        }
-
-        if (request.TtlSeconds <= 0)
-        {
-            throw new NonRetryableException("TtlSeconds must be greater than 0.");
-        }
-
-        var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        if (now > request.SentAt + request.TtlSeconds)
-        {
-            _logger.LogWarning("Chat request {RequestId} expired. Skipping.", request.RequestId);
-            throw new NonRetryableException("Request TTL expired.");
-        }
     }
 
     private async Task<string> StreamChatAsync(
@@ -1064,6 +1046,73 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         }
     }
 
+    private async Task<string> CreatePromptForGlobalChatAsync(
+        UserDetailForChat userDetails,
+        IReadOnlyList<PromptConfiguration> configs,
+        CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        if (userDetails is null)
+        {
+            throw new ArgumentNullException(nameof(userDetails));
+        }
+
+        if (configs is null || configs.Count == 0)
+        {
+            throw new ArgumentException("At least one prompt configuration must be provided.", nameof(configs));
+        }
+
+        try
+        {
+            var batch = await _accessorClient.GetPromptsBatchAsync(configs, ct);
+
+            // PromptKey -> Content
+            var map = batch.Prompts.ToDictionary(
+                p => p.PromptKey,
+                p => p.Content,
+                StringComparer.Ordinal);
+
+            string? baseTemplate = null;
+            foreach (var cfg in configs)
+            {
+                if (cfg is null)
+                {
+                    continue;
+                }
+
+                if (map.TryGetValue(cfg.Key, out var content) && !string.IsNullOrWhiteSpace(content))
+                {
+                    baseTemplate = content;
+                    break;
+                }
+            }
+
+            if (batch.NotFound?.Count > 0)
+            {
+                _logger.LogWarning("Missing prompt keys for global chat: {Keys}", string.Join(",", batch.NotFound));
+            }
+
+            if (string.IsNullOrWhiteSpace(baseTemplate))
+            {
+                var requestedKeys = string.Join(", ", configs.Where(c => c != null).Select(c => c.Key));
+                throw new InvalidOperationException(
+                    $"No prompt template found for the provided keys: {requestedKeys}.");
+            }
+
+            return ApplyUserPlaceholders(baseTemplate, userDetails);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed retrieving prompt.");
+            throw;
+        }
+    }
+
     private async Task<string> CreateFirstSystemPromptForGlobalChatAsync(
         UserDetailForChat userDetails,
         CancellationToken ct)
@@ -1164,24 +1213,13 @@ Now wait for the user's message and respond accordingly.
     ? string.Join(", ", interests)
     : "none";
 
-    private string CreatePageContextDevelopMessage(JsonElement? pageContext, CancellationToken ct)
+    private async Task<string> CreatePageContextPromptAsync(
+    JsonElement? pageContext,
+    CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
-        if (pageContext is null)
-        {
-            return string.Empty;
-        }
-
-        var raw = pageContext.ToString();
-        var normalized = NormalizePageContext(raw);
-
-        if (string.IsNullOrWhiteSpace(normalized) || normalized == "null")
-        {
-            return string.Empty;
-        }
-
-        var prompt = $"""
+        const string fallbackTemplate = """
 [PAGE_CONTEXT]
 This message contains the current page/UI context as JSON. Use it to tailor your response
 (e.g., page, courseId, unitId, exerciseId, questionIds, visibleHints, ui.lang).
@@ -1192,7 +1230,50 @@ Never invent hidden fields and do not quote this block verbatim to the user.
 </page_context_json>
 """;
 
-        return prompt;
+        if (pageContext is null)
+        {
+            return fallbackTemplate;
+        }
+
+        var raw = pageContext.ToString();
+        var normalized = NormalizePageContext(raw);
+
+        if (string.IsNullOrWhiteSpace(normalized) || normalized == "null")
+        {
+            return string.Empty;
+        }
+
+        var configs = new[]
+        {
+        PromptsKeys.GlobalChatPageContext,
+    };
+
+        try
+        {
+            var batch = await _accessorClient.GetPromptsBatchAsync(configs, ct);
+            var map = batch.Prompts.ToDictionary(
+                p => p.PromptKey,
+                p => p.Content,
+                StringComparer.Ordinal);
+
+            var baseTemplate =
+                map.TryGetValue(PromptsKeys.GlobalChatPageContext.Key, out var t) &&
+                !string.IsNullOrWhiteSpace(t)
+                    ? t
+                    : fallbackTemplate;
+
+            if (batch.NotFound?.Count > 0)
+            {
+                _logger.LogWarning("Missing prompt keys for page context: {Keys}", string.Join(",", batch.NotFound));
+            }
+
+            return baseTemplate.Replace("{normalized}", normalized);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed retrieving page context prompt; using fallback.");
+            return fallbackTemplate.Replace("{normalized}", normalized);
+        }
     }
 
     private static string NormalizePageContext(string? pageContext)

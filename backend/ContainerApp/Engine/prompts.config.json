@@ -28,6 +28,10 @@
       "GlobalChat": {
         "Key": "chat.global.system.default",
         "Label": "production"
+      },
+      "GlobalChatPageContext": {
+        "Key": "chat.global.page.context",
+        "Label": "production"
       }
     }
   }
