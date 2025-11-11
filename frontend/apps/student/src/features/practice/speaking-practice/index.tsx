@@ -1,13 +1,12 @@
 /// <reference types="vite/client" />
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { CircularProgress } from "@mui/material";
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";
 import { useTranslation } from "react-i18next";
 import { comparePhrases } from "./utils";
-
 import { useAzureSpeechToken, useGenerateSentences, useSubmitGameAttempt } from "@student/api";
-import { useAvatarSpeech } from "@student/hooks";
+import { useAvatarSpeech , useGameConfig, useSignalR} from "@student/hooks";
 import { DifficultyLevel, GameType } from "@student/types";
 import {
   GameConfigModal,
@@ -31,12 +30,17 @@ type FeedbackType = (typeof Feedback)[keyof typeof Feedback];
 export const SpeakingPractice = () => {
   const classes = useStyles();
   const { t, i18n } = useTranslation();
+  const {
+    config: savedConfig,
+    isLoading: configLoading,
+    updateConfig,
+  } = useGameConfig("SpeakingPractice");
   const isHebrew = i18n.language === "he" || i18n.language === "heb";
   const [currentIdx, setCurrentIdx] = useState(0);
   const [feedback, setFeedback] = useState<FeedbackType>(Feedback.None);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [isRecording, setIsRecording] = useState(false);
-  const [configModalOpen, setConfigModalOpen] = useState(true);
+  const [configModalOpen, setConfigModalOpen] = useState(false);
   const [gameOverOpen, setGameOverOpen] = useState(false);
   const [difficulty, setDifficulty] = useState<DifficultyLevel>(1);
   const [nikud, setNikud] = useState(true);
@@ -46,7 +50,7 @@ export const SpeakingPractice = () => {
   const [attempted, setAttempted] = useState<Set<number>>(new Set());
   const [correctIdxs, setCorrectIdxs] = useState<Set<number>>(new Set());
   const [skipped, setSkipped] = useState<Set<number>>(new Set());
-  const [isConfigured, setIsConfigured] = useState(false);
+  const isConfiguredRef = useRef(false);
 
   const { mutateAsync: submitAttempt } = useSubmitGameAttempt();
 
@@ -104,32 +108,58 @@ export const SpeakingPractice = () => {
   );
 
   const generateMutation = useGenerateSentences();
+  const { status: signalRStatus } = useSignalR();
 
-  const requestSentences = (
-    difficulty: DifficultyLevel,
-    nikud: boolean,
-    count: number,
-  ) => {
-    generateMutation.mutate(
-      { difficulty, nikud, count, gameType: GameType.SpeakingPractice },
-      {
-        onSuccess: (data) => {
-          setSentences(data.map((item) => item.text));
-          setExerciseIds(data.map((item) => item.exerciseId));
-          setCurrentIdx(0);
-          setAttempted(new Set());
-          setCorrectIdxs(new Set());
-          setSkipped(new Set());
-          setConfigModalOpen(false);
+  const requestSentences = useCallback(
+    (difficulty: DifficultyLevel, nikud: boolean, count: number) => {
+      generateMutation.mutate(
+        { difficulty, nikud, count, gameType: GameType.SpeakingPractice },
+        {
+          onSuccess: (data) => {
+            setSentences(data.map((item) => item.text));
+            setExerciseIds(data.map((item) => item.exerciseId));
+            setCurrentIdx(0);
+            setAttempted(new Set());
+            setCorrectIdxs(new Set());
+            setSkipped(new Set());
+            setConfigModalOpen(false);
+          },
+          onError: (error) => {
+            console.error("Error fetching sentences:", error);
+            setSentences([]);
+          },
         },
-        onError: (error) => {
-          console.error("Error fetching sentences:", error);
-          setSentences([]);
-          setExerciseIds([]);
-        },
-      },
-    );
-  };
+      );
+    },
+    [generateMutation],
+  );
+
+  useEffect(
+    function initializeGameConfig() {
+      if (
+        configLoading ||
+        isConfiguredRef.current ||
+        signalRStatus !== "connected"
+      )
+        return;
+
+      if (savedConfig) {
+        setDifficulty(savedConfig.difficulty);
+        setNikud(savedConfig.nikud);
+        setCount(savedConfig.count);
+        setConfigModalOpen(false);
+        isConfiguredRef.current = true;
+        requestSentences(
+          savedConfig.difficulty,
+          savedConfig.nikud,
+          savedConfig.count,
+        );
+      } else {
+        setConfigModalOpen(true);
+      }
+    },
+    [configLoading, savedConfig, requestSentences, signalRStatus],
+  );
 
   const {
     speak,
@@ -334,9 +364,10 @@ export const SpeakingPractice = () => {
     setDifficulty(config.difficulty);
     setNikud(config.nikud);
     setCount(config.count);
+    updateConfig(config);
     setConfigModalOpen(false);
     setFeedback(Feedback.None);
-    setIsConfigured(true);
+    isConfiguredRef.current = true;
     requestSentences(config.difficulty, config.nikud, config.count);
   };
 
@@ -350,7 +381,26 @@ export const SpeakingPractice = () => {
     requestSentences(difficulty, nikud, count);
   };
 
-  if (!isConfigured) {
+  if (configLoading) {
+    return (
+      <div className={classes.loader}>
+        <CircularProgress />
+      </div>
+    );
+  }
+
+  if (savedConfig && signalRStatus !== "connected") {
+    return (
+      <div className={classes.loader}>
+        <CircularProgress />
+      </div>
+    );
+  }
+
+  if (
+    !isConfiguredRef.current ||
+    (!sentences.length && !generateMutation.isPending)
+  ) {
     return (
       <div className={classes.loader}>
         <GameSetupPanel
@@ -363,7 +413,7 @@ export const SpeakingPractice = () => {
     );
   }
 
-  if (!sentences.length && generateMutation.isPending) {
+  if (generateMutation.isPending) {
     return (
       <div className={classes.loader}>
         <CircularProgress />

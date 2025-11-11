@@ -2,8 +2,12 @@ import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-
-import { useAvatarSpeech, useWordOrderSentence } from "@student/hooks";
+import { CircularProgress } from "@mui/material";
+import {
+  useAvatarSpeech,
+  useWordOrderSentence,
+  useGameConfig,
+} from "@student/hooks";
 import { ChosenWordsArea, WordsBank, ActionButtons, Speaker } from "../";
 import {
   GameConfig,
@@ -45,6 +49,11 @@ export const Game = ({ retryData }: GameProps) => {
 
   const studentId = user?.userId ?? "";
   const { mutateAsync: submitAttempt } = useSubmitGameAttempt();
+  const {
+    config: savedConfig,
+    isLoading: configLoading,
+    updateConfig,
+  } = useGameConfig("WordOrder");
 
   const [chosen, setChosen] = useState<string[]>([]);
   const [shuffledSentence, setShuffledSentence] = useState<string[]>([]);
@@ -79,12 +88,19 @@ export const Game = ({ retryData }: GameProps) => {
   const { speak, stop, isLoading: speechLoading } = useAvatarSpeech({});
 
   useEffect(
-    function showConfigModalOnFirstLoad() {
-      if (!gameStarted && !gameConfig && !isRetryMode) {
+    function initializeGameConfig() {
+      if (isRetryMode || gameConfig || configLoading) return;
+
+      if (savedConfig) {
+        setGameConfig(savedConfig);
+        if (configModalOpen) {
+          setConfigModalOpen(false);
+        }
+      } else {
         setConfigModalOpen(true);
       }
     },
-    [gameStarted, gameConfig, isRetryMode],
+    [isRetryMode, gameConfig, configLoading, savedConfig, configModalOpen],
   );
 
   const shuffleDistinct = useCallback((words: string[]) => {
@@ -150,6 +166,7 @@ export const Game = ({ retryData }: GameProps) => {
 
   const handleConfigConfirm = (config: GameConfig) => {
     setGameConfig(config);
+    updateConfig(config);
     setConfigModalOpen(false);
     // Reset game state when config changes
     setChosen([]);
@@ -347,6 +364,14 @@ export const Game = ({ retryData }: GameProps) => {
   const handleCloseMistakeChat = useCallback(() => {
     setMistakeChatOpen(false);
   }, []);
+
+  if (configLoading) {
+    return (
+      <div className={classes.gameContainer}>
+        <CircularProgress />
+      </div>
+    );
+  }
 
   // Show welcome screen if game hasn't started yet
   if (!gameStarted || !gameConfig) {

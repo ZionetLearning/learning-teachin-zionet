@@ -1,11 +1,12 @@
 using Manager.Models.Games;
+using Manager.Models.UserGameConfiguration;
 
 namespace Manager.Services.Clients.Accessor.Models;
 
 public class GeneratedSentenceDto
 {
     public Guid StudentId { get; set; }
-    public string GameType { get; set; } = string.Empty;
+    public GameName GameType { get; set; }
     public Difficulty Difficulty { get; set; }
     public List<GeneratedSentenceItem> Sentences { get; set; } = [];
 }

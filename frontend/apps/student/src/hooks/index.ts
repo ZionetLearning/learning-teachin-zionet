@@ -4,3 +4,4 @@ export * from "./useSignalR";
 export * from "./useHebrewSentence";
 export * from "./useWordOrderSentence";
 export * from "./useMistakeChat";
+export * from "./useGameConfig";

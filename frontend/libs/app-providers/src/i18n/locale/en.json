@@ -1,5 +1,11 @@
 {
   "translation": {
+    "common": {
+      "loading": "Loading…",
+      "error": "Error",
+      "tryAgain": "Please try again.",
+      "updating": "Updating…"
+    },
     "pages": {
       "auth": {
         "welcomeToLearningTeachinZionet": "Welcome to Learning-Teachin-Zionet",
@@ -623,7 +629,21 @@
         "removeSelected": "Remove selected",
         "removeFromClass": "Remove from class",
         "noMembersYet": "This class has no members yet.",
-        "searchByNameEmail": "Search by name / email"
+        "searchByNameEmail": "Search by name / email",
+        "my": {
+          "title": "My Classes",
+          "loadingHint": "Fetching your classes and members",
+          "emptyTitle": "No classes yet",
+          "emptySubtitle": "Create your first class to get started",
+          "selectPrompt": "Select a class",
+          "selectHint": "Members and roles will appear here",
+          "members": "members",
+          "noMembers": "No members in this class yet.",
+          "teachers": "Teachers",
+          "noTeachers": "No teachers.",
+          "students": "Students",
+          "noStudents": "No students."
+        }
       }
     },
     "mistakeChat": {
