@@ -10,6 +10,7 @@ using Manager.Services;
 using Manager.Services.Clients.Accessor.Models;
 using Manager.Services.Clients.Accessor;
 using Manager.Models.Words;
+using Manager.Models.UserGameConfiguration;
 
 namespace Manager.Endpoints;
 public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
@@ -255,7 +256,7 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
             var dto = new GeneratedSentenceDto
             {
                 StudentId = Guid.Parse(userId),
-                GameType = "wordOrderGame",
+                GameType = GameName.WordOrder,
                 Difficulty = Enum.TryParse<Models.Games.Difficulty>(generatedResponse.Sentences.FirstOrDefault()?.Difficulty, ignoreCase: true, out var difficulty)
                 ? difficulty
                 : Manager.Models.Games.Difficulty.Easy,

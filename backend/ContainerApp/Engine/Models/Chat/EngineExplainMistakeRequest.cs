@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Engine.Models.Games;
 
 namespace Engine.Models.Chat;
 
@@ -12,7 +13,7 @@ public sealed record EngineExplainMistakeRequest
 
     public required Guid AttemptId { get; init; }
 
-    public required string GameType { get; init; } = string.Empty;
+    public required GameName GameType { get; init; }
 
     public required ChatType ChatType { get; init; } = ChatType.ExplainMistake;
 

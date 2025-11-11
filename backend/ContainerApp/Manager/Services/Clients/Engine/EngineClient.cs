@@ -90,6 +90,44 @@ public class EngineClient : IEngineClient
         }
     }
 
+    public async Task<(bool success, string message)> GlobalChatAsync(EngineChatRequest request)
+    {
+        _logger.LogInformation("Invoke Engine /chat asynchronously (thread {Thread})", request.ThreadId);
+        try
+        {
+            var requestMetadata = new UserContextMetadata
+            {
+                UserId = request.UserId.ToString()
+            };
+
+            var message = new Message
+            {
+                ActionName = MessageAction.ProcessingGlobalChatMessage,
+                Payload = JsonSerializer.SerializeToElement(request),
+                Metadata = JsonSerializer.SerializeToElement(requestMetadata)
+            };
+
+            var queueMetadata = new Dictionary<string, string>
+            {
+                ["sessionId"] = request.ThreadId.ToString()
+            };
+
+            await _daprClient.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message, queueMetadata);
+
+            _logger.LogDebug(
+                "ProcessingGlobalChatMessage request for thread {ThreadId} sent to Engine via binding '{Binding}'",
+                request.ThreadId,
+                QueueNames.EngineQueue
+            );
+            return (true, "sent to engine");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send chat request to Engine");
+            return (false, "failed to send chat request");
+        }
+    }
+
     public async Task<ChatHistoryForFrontDto?> GetHistoryChatAsync(Guid chatId, Guid userId, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetHistoryChatAsync), nameof(EngineClient));

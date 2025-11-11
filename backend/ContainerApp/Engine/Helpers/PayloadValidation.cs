@@ -118,7 +118,7 @@ public static class PayloadValidation
             Fail(logger, "Request TTL expired.", "TTL");
         }
 
-        logger.LogDebug("ChatAiServiseRequest validation passed.");
+        logger.LogDebug("ChatAiServiceRequest validation passed.");
     }
     public static void ValidateEngineExplainMistakeRequest(EngineExplainMistakeRequest req, ILogger logger)
     {
@@ -166,11 +166,6 @@ public static class PayloadValidation
         if (req.AttemptId == Guid.Empty)
         {
             Fail(logger, "AttemptId is required.", nameof(req.AttemptId));
-        }
-
-        if (string.IsNullOrWhiteSpace(req.GameType))
-        {
-            Fail(logger, "GameType is required.", nameof(req.GameType));
         }
 
         if (req.TtlSeconds <= 0)
