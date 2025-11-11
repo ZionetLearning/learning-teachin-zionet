@@ -1,9 +1,12 @@
+using Accessor.Models.GameConfiguration;
+
 namespace Accessor.Models.Games;
 
 public class MistakeDto
 {
     public required Guid ExerciseId { get; set; }
-    public required string GameType { get; set; } = string.Empty;
+    public required Guid AttemptId { get; set; }
+    public required GameName GameType { get; set; }
     public required Difficulty Difficulty { get; set; }
     public required List<string> CorrectAnswer { get; set; } = new();
     public required List<MistakeAttemptDto> Mistakes { get; set; } = new();

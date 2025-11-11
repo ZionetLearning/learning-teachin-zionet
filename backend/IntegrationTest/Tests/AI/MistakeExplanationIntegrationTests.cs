@@ -8,7 +8,9 @@ using Manager.Models.Users;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Xunit.Abstractions;
+using Manager.Models.UserGameConfiguration;
 using SentenceRequestDto = Manager.Models.Sentences.SentenceRequestDto;
+
 
 namespace IntegrationTests.Tests.AI;
 
@@ -95,7 +97,7 @@ public class MistakeExplanationIntegrationTests(
         {
             AttemptId = attemptResult.AttemptId,
             ThreadId = threadId,
-            GameType = "wordOrderGame",
+            GameType = GameName.WordOrder,
             ChatType = ChatType.ExplainMistake
         };
 

@@ -21,8 +21,20 @@
         "Key": "chat.system.explain.mistake",
         "Label": "production"
       },
-      "MistakeTemplate": {
-        "Key": "prompts.mistake.template",
+      "MistakeUserTemplate": {
+        "Key": "prompts.mistake.user.template",
+        "Label": "production"
+      },
+      "MistakeRuleTemplate": {
+        "Key": "prompts.mistake.rule.template",
+        "Label": "production"
+      },
+      "GlobalChat": {
+        "Key": "chat.global.system.default",
+        "Label": "production"
+      },
+      "GlobalChatPageContext": {
+        "Key": "chat.global.page.context",
         "Label": "production"
       }
     }

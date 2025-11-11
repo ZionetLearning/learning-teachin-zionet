@@ -1,5 +1,6 @@
 using Accessor.DB;
 using Accessor.Helpers;
+using Accessor.Models.GameConfiguration;
 using Accessor.Models.Games;
 using Accessor.Services.Interfaces;
 using AutoMapper;
@@ -466,6 +467,48 @@ public class GameService : IGameService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error occurred while deleting all game history.");
+            throw;
+        }
+    }
+
+    public async Task<AttemptHistoryDto> GetLastAttemptAsync(Guid studentId, GameName gameType, CancellationToken ct)
+    {
+        try
+        {
+            _logger.LogInformation("Fetching last attempt. UserId={UserId}, GameType={GameType}", studentId, gameType);
+
+            var attempt = await _db.GameAttempts
+             .Where(a => a.StudentId == studentId && a.GameType == gameType)
+             .OrderByDescending(a => a.CreatedAt)
+             .FirstOrDefaultAsync(ct);
+
+            if (attempt == null)
+            {
+                _logger.LogWarning("No attempts found. UserId={UserId}", studentId);
+                throw new InvalidOperationException($"No attempts found for user {studentId}");
+            }
+
+            var result = new AttemptHistoryDto
+            {
+                AttemptId = attempt.AttemptId,
+                GameType = attempt.GameType,
+                Difficulty = attempt.Difficulty,
+                GivenAnswer = attempt.GivenAnswer,
+                CorrectAnswer = attempt.CorrectAnswer,
+                Status = attempt.Status,
+                CreatedAt = attempt.CreatedAt
+            };
+
+            _logger.LogInformation(
+                "Last attempt retrieved. UserId={UserId}, AttemptId={AttemptId}, GameType={GameType}, Status={Status}",
+                studentId, result.AttemptId, result.GameType, result.Status
+            );
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error while fetching last attempt. UserId={UserId}", studentId);
             throw;
         }
     }

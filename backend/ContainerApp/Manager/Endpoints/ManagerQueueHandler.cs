@@ -9,6 +9,7 @@ using Manager.Models.Sentences;
 using Manager.Services;
 using Manager.Services.Clients.Accessor.Models;
 using Manager.Services.Clients.Accessor;
+using Manager.Models.UserGameConfiguration;
 
 namespace Manager.Endpoints;
 public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
@@ -282,13 +283,10 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
                 throw new NonRetryableException("No sentences found after splitting.");
             }
 
-            // Get GameType from the first sentence, default to WordOrderGame if not specified
-            var gameType = generatedResponse.Sentences.FirstOrDefault()?.GameType ?? "wordOrderGame";
-
             var dto = new GeneratedSentenceDto
             {
                 StudentId = Guid.Parse(userId),
-                GameType = gameType,
+                GameType = Enum.Parse<GameName>("WordOrder"),
                 Difficulty = Enum.TryParse<Models.Games.Difficulty>(generatedResponse.Sentences.FirstOrDefault()?.Difficulty, ignoreCase: true, out var difficulty)
                 ? difficulty
                 : Manager.Models.Games.Difficulty.Easy,

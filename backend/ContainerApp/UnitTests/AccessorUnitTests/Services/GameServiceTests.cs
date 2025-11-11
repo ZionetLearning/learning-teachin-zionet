@@ -7,12 +7,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Accessor.Models.GameConfiguration;
+
 
 namespace AccessorUnitTests.Services;
 
 public class GameServiceTests
 {
-    private const string WordOrderGame = "wordOrderGame";
+    //private const string WordOrderGame = GameName.WordOrder;
 
     private static AccessorDbContext NewDb(string name)
     {
@@ -65,7 +67,7 @@ public class GameServiceTests
             AttemptId = exerciseId, // For pending attempts, AttemptId == ExerciseId
             ExerciseId = exerciseId,
             StudentId = studentId,
-            GameType = WordOrderGame,
+            GameType = GameName.WordOrder,
             Difficulty = Difficulty.Easy,
             CorrectAnswer = correctAnswer,
             GivenAnswer = new(),
@@ -105,7 +107,7 @@ public class GameServiceTests
             AttemptId = exerciseId, // For pending attempts, AttemptId == ExerciseId
             ExerciseId = exerciseId,
             StudentId = studentId,
-            GameType = WordOrderGame,
+            GameType = GameName.WordOrder,
             Difficulty = Difficulty.Medium,
             CorrectAnswer = correctAnswer,
             GivenAnswer = new(),
@@ -229,7 +231,7 @@ public class GameServiceTests
                 AttemptId = Guid.NewGuid(),
                 ExerciseId = Guid.NewGuid(),
                 StudentId = studentId,
-                GameType = WordOrderGame,
+                GameType = GameName.WordOrder,
                 Difficulty = Difficulty.Easy,
                 CorrectAnswer = new List<string> { "a" },
                 GivenAnswer = new List<string> { "a" },
@@ -243,7 +245,7 @@ public class GameServiceTests
                 AttemptId = Guid.NewGuid(),
                 ExerciseId = Guid.NewGuid(),
                 StudentId = otherStudentId,
-                GameType = WordOrderGame,
+                GameType = GameName.WordOrder,
                 Difficulty = Difficulty.Easy,
                 CorrectAnswer = new List<string> { "b" },
                 GivenAnswer = new List<string> { "b" },
@@ -306,7 +308,7 @@ public class GameServiceTests
                 AttemptId = Guid.NewGuid(),
                 ExerciseId = exerciseId1,
                 StudentId = studentId,
-                GameType = WordOrderGame,
+                GameType = GameName.WordOrder,
                 Difficulty = Difficulty.Easy,
                 CorrectAnswer = correctAnswer1,
                 GivenAnswer = new List<string> { "עולם", "שלום" },
@@ -321,7 +323,7 @@ public class GameServiceTests
                 AttemptId = Guid.NewGuid(),
                 ExerciseId = exerciseId2,
                 StudentId = studentId,
-                GameType = WordOrderGame,
+                GameType = GameName.WordOrder,
                 Difficulty = Difficulty.Medium,
                 CorrectAnswer = correctAnswer2,
                 GivenAnswer = new List<string> { "אוהב", "אני" },
@@ -335,7 +337,7 @@ public class GameServiceTests
                 AttemptId = Guid.NewGuid(),
                 ExerciseId = exerciseId2,
                 StudentId = studentId,
-                GameType = WordOrderGame,
+                GameType =  GameName.WordOrder,
                 Difficulty = Difficulty.Medium,
                 CorrectAnswer = correctAnswer2,
                 GivenAnswer = correctAnswer2,
@@ -374,7 +376,7 @@ public class GameServiceTests
                 AttemptId = Guid.NewGuid(),
                 ExerciseId = Guid.NewGuid(),
                 StudentId = studentId,
-                GameType = WordOrderGame,
+                GameType = GameName.WordOrder,
                 Difficulty = Difficulty.Easy,
                 CorrectAnswer = correctAnswer,
                 GivenAnswer = new List<string> { "wrong" },
@@ -388,7 +390,7 @@ public class GameServiceTests
                 AttemptId = Guid.NewGuid(),
                 ExerciseId = Guid.NewGuid(),
                 StudentId = otherStudentId,
-                GameType = WordOrderGame,
+                GameType = GameName.WordOrder,
                 Difficulty = Difficulty.Easy,
                 CorrectAnswer = correctAnswer,
                 GivenAnswer = new List<string> { "other" },
@@ -546,7 +548,7 @@ public class GameServiceTests
         var result = await service.SaveGeneratedSentencesAsync(new GeneratedSentenceDto
         {
             StudentId = studentId,
-            GameType = WordOrderGame,
+            GameType = GameName.WordOrder,
             Difficulty = Difficulty.Easy,
             Sentences = new List<GeneratedSentenceItem>
                     {
