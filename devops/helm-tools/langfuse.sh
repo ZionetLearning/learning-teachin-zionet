@@ -81,7 +81,7 @@ helm $ACTION langfuse langfuse/langfuse \
   --set langfuse.additionalEnv[5].name="DISABLE_SIGNUP" \
   --set-string langfuse.additionalEnv[5].value="true" \
   --set langfuse.additionalEnv[6].name="AUTH_DISABLE_SIGNUP" \
-  --set-string langfuse.additionalEnv[6].value="true" \
+  --set-string langfuse.additionalEnv[6].value="false" \
   --set langfuse.additionalEnv[7].name="NEXTAUTH_URL" \
   --set-string langfuse.additionalEnv[7].value="https://teachin.westeurope.cloudapp.azure.com/langfuse" \
   --set langfuse.additionalEnv[8].name="NEXT_PUBLIC_BASE_PATH" \
