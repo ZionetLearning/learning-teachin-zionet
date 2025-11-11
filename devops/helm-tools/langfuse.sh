@@ -138,10 +138,12 @@ helm $ACTION langfuse langfuse/langfuse \
   --set-string langfuse.additionalEnv[33].value="https://teachin.westeurope.cloudapp.azure.com/langfuse" \
   --set langfuse.additionalEnv[34].name="NEXT_PUBLIC_SIGNUP_DISABLED" \
   --set-string langfuse.additionalEnv[34].value="true" \
-  --set langfuse.additionalEnv[35].name="INVITATION_REQUIRED" \
+  --set langfuse.additionalEnv[35].name="AUTH_DISABLE_SIGNUP_DEFAULT_DOMAIN" \
   --set-string langfuse.additionalEnv[35].value="true" \
-  --set langfuse.additionalEnv[36].name="VALIDATE_INVITATION_EMAIL" \
+  --set langfuse.additionalEnv[36].name="INVITATION_REQUIRED" \
   --set-string langfuse.additionalEnv[36].value="true" \
+  --set langfuse.additionalEnv[37].name="VALIDATE_INVITATION_EMAIL" \
+  --set-string langfuse.additionalEnv[37].value="true" \
   --set redis.auth.existingSecret="langfuse-secrets" \
   --set redis.auth.existingSecretPasswordKey="REDIS_PASSWORD" \
   --set redis.auth.username="default" \
