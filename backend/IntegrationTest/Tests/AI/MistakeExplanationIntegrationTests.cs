@@ -10,6 +10,8 @@ using Manager.Models.Users;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Xunit.Abstractions;
+using Manager.Models.UserGameConfiguration;
+
 
 namespace IntegrationTests.Tests.AI;
 
@@ -97,7 +99,7 @@ public class MistakeExplanationIntegrationTests(
         {
             AttemptId = sentence.AttemptId,
             ThreadId = threadId,
-            GameType = "wordOrderGame",
+            GameType = GameName.WordOrder,
             ChatType = ChatType.ExplainMistake
         };
 

@@ -7,6 +7,7 @@ using Engine.Constants.Chat;
 using Engine.Helpers;
 using Engine.Models;
 using Engine.Models.Chat;
+using Engine.Models.Games;
 using Engine.Models.QueueMessages;
 using Engine.Models.Sentences;
 using Engine.Options;
@@ -739,7 +740,9 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
             }
 
             _logger.LogInformation("Fetching attempt details for AttemptId {AttemptId}", request.AttemptId);
-            var attemptDetails = await _accessorClient.GetAttemptDetailsAsync(request.UserId, request.AttemptId, ct);
+
+            var attemptDetails = await _accessorClient.GetLastAttemptAsync(request.UserId, request.GameType, ct);
+
             getAttemptDetailsTime = sw.ElapsedMilliseconds;
 
             _logger.LogInformation("Fetching user details for UserId {UserId}", request.UserId);
@@ -760,8 +763,15 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
             }
 
             getSystemPromptTime = sw.ElapsedMilliseconds;
-            var mistakeExplanationPrompt = await BuildMistakeExplanationPromptAsync(attemptDetails, request.GameType, lang, ct);
-            storyForKernel.AddUserMessage(mistakeExplanationPrompt, DateTimeOffset.UtcNow);
+            var userPrompt = await BuildUserMistakeExplanationPromptAsync(attemptDetails, request.GameType, ct);
+            storyForKernel.AddUserMessage(userPrompt, DateTimeOffset.UtcNow);
+
+            // Add the system prompt again to improve context accuracy for the AI response
+            var rulesPrompt = await _accessorClient.GetPromptAsync(PromptsKeys.MistakeRuleTemplate, ct);
+            var systemRules = rulesPrompt?.Content?.Replace("{lang}", lang, StringComparison.Ordinal)
+                ?? "Explain mistake, correct answer, and learning tip. Reply in {lang}";
+
+            storyForKernel.Add(new ChatMessageContent(AuthorRole.System, systemRules));
 
             getMistakePromptTime = sw.ElapsedMilliseconds;
 
@@ -971,42 +981,35 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         }
     }
 
-    private async Task<string> BuildMistakeExplanationPromptAsync(AttemptDetailsResponse attemptDetails, string gameType, string lang, CancellationToken ct)
+    private async Task<string> BuildUserMistakeExplanationPromptAsync(AttemptDetailsResponse attemptDetails, GameName gameType, CancellationToken ct)
     {
         var userAnswerText = string.Join(" ", attemptDetails.GivenAnswer);
         var correctAnswerText = string.Join(" ", attemptDetails.CorrectAnswer);
 
-        var mistakeTemplatePrompt = await _accessorClient.GetPromptAsync(PromptsKeys.MistakeTemplate, ct);
+        var mistakeTemplatePrompt = await _accessorClient.GetPromptAsync(PromptsKeys.MistakeUserTemplate, ct);
+
+        var readableGameType = gameType.GetDescription();
 
         if (mistakeTemplatePrompt?.Content is not null)
         {
             return mistakeTemplatePrompt.Content
-                .Replace("{gameType}", gameType)
-                .Replace("{difficulty}", attemptDetails.Difficulty)
-                .Replace("{userAnswer}", userAnswerText)
-                .Replace("{correctAnswer}", correctAnswerText)
-                .Replace("{lang}", lang);
+                .Replace("{gameType}", readableGameType, StringComparison.Ordinal)
+                .Replace("{difficulty}", attemptDetails.Difficulty, StringComparison.Ordinal)
+                .Replace("{userAnswer}", userAnswerText, StringComparison.Ordinal)
+                .Replace("{correctAnswer}", correctAnswerText, StringComparison.Ordinal);
         }
         else
         {
             _logger.LogWarning("Mistake explanation template not found in database, using fallback");
             return $"""
-                Please explain the mistake in this {gameType} exercise:
+                Explain the mistake in this {readableGameType} exercise:
 
                 **Exercise Details:**
-                - Game Type: {gameType}
+                - Game Type: {readableGameType}
                 - Difficulty: {attemptDetails.Difficulty}
 
                 **Student's Answer:** {userAnswerText}
                 **Correct Answer:** {correctAnswerText}
-
-                Please provide a clear, educational explanation of:
-                1. What the mistake was
-                2. Why the correct answer is right
-                3. Tips to avoid this mistake in the future
-
-                Be encouraging and focus on learning rather than just pointing out the error.
-                Use only language with this code: {lang} for an answer.
                 """;
         }
     }
