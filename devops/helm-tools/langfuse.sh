@@ -69,7 +69,7 @@ helm $ACTION langfuse langfuse/langfuse \
   --set s3.auth.rootPasswordSecretKey="S3_PASSWORD" \
   --set s3.bucket="langfuse-bucket" \
   --set langfuse.additionalEnv[0].name="LANGFUSE_LOG_LEVEL" \
-  --set-string langfuse.additionalEnv[0].value="debug" \
+  --set-string langfuse.additionalEnv[0].value="info" \
   --set langfuse.additionalEnv[1].name="LANGFUSE_AUTO_POSTGRES_MIGRATION_DISABLED" \
   --set-string langfuse.additionalEnv[1].value="false" \
   --set langfuse.additionalEnv[2].name="DISABLE_LIVENESS_PROBE" \
@@ -81,7 +81,7 @@ helm $ACTION langfuse langfuse/langfuse \
   --set langfuse.additionalEnv[5].name="DISABLE_SIGNUP" \
   --set-string langfuse.additionalEnv[5].value="true" \
   --set langfuse.additionalEnv[6].name="AUTH_DISABLE_SIGNUP" \
-  --set-string langfuse.additionalEnv[6].value="false" \
+  --set-string langfuse.additionalEnv[6].value="true" \
   --set langfuse.additionalEnv[7].name="NEXTAUTH_URL" \
   --set-string langfuse.additionalEnv[7].value="https://teachin.westeurope.cloudapp.azure.com/langfuse" \
   --set langfuse.additionalEnv[8].name="NEXT_PUBLIC_BASE_PATH" \
@@ -107,9 +107,9 @@ helm $ACTION langfuse langfuse/langfuse \
   --set langfuse.additionalEnv[18].name="AUTH_SMTP_PASS" \
   --set-string langfuse.additionalEnv[18].value="$SMTP_PASSWORD" \
   --set langfuse.additionalEnv[19].name="SMTP_DEBUG" \
-  --set-string langfuse.additionalEnv[19].value="true" \
+  --set-string langfuse.additionalEnv[19].value="false" \
   --set langfuse.additionalEnv[20].name="SMTP_LOG_LEVEL" \
-  --set-string langfuse.additionalEnv[20].value="debug" \
+  --set-string langfuse.additionalEnv[20].value="info" \
   --set langfuse.additionalEnv[21].name="SMTP_LOGGER" \
   --set-string langfuse.additionalEnv[21].value="true" \
   --set langfuse.additionalEnv[22].name="NEXT_PUBLIC_INVITE_URL" \

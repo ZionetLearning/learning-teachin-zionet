@@ -78,6 +78,7 @@ delete_user() {
 
   USER_INFO=$($KUBECTL run -n $NAMESPACE temp-check-user-$$ --image=postgres:16 --rm -i --restart=Never -- \
     psql "host=$PG_HOST port=5432 dbname=langfuse-${ENVIRONMENT_NAME} user=$PG_USERNAME password=$PG_PASSWORD sslmode=require" \
+    -v email="$user_email" \
     -t -c "
       SELECT 
         email, 
@@ -85,7 +86,7 @@ delete_user() {
         CASE WHEN admin THEN 'YES' ELSE 'NO' END as is_admin,
         (SELECT COUNT(*) FROM organization_memberships WHERE user_id = users.id) as org_count
       FROM users 
-      WHERE email = '$user_email';
+      WHERE email = :'email';
     " | xargs)
 
   if [ -z "$USER_INFO" ]; then
@@ -113,15 +114,17 @@ delete_user() {
 
   $KUBECTL run -n $NAMESPACE temp-delete-user-$$ --image=postgres:16 --rm -i --restart=Never -- \
     psql "host=$PG_HOST port=5432 dbname=langfuse-${ENVIRONMENT_NAME} user=$PG_USERNAME password=$PG_PASSWORD sslmode=require" \
+    -v email="$user_email" \
     -c "
       DO \$BODY\$
       DECLARE
           v_user_id text;
+          v_email text := :'email';
       BEGIN
-          SELECT id INTO v_user_id FROM users WHERE email = '$user_email';
+          SELECT id INTO v_user_id FROM users WHERE email = v_email;
           
           IF v_user_id IS NULL THEN
-              RAISE EXCEPTION 'User not found: $user_email';
+              RAISE EXCEPTION 'User not found: %', v_email;
           END IF;
 
           -- Delete organization memberships
@@ -164,7 +167,7 @@ delete_user() {
 
           -- Finally, delete the user account
           DELETE FROM users WHERE id = v_user_id;
-          RAISE NOTICE 'User deleted successfully: $user_email';
+          RAISE NOTICE 'User deleted successfully: %', v_email;
       END \$BODY\$;
     "
 

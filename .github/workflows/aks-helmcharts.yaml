@@ -326,7 +326,7 @@ jobs:
           chmod +x langfuse.sh
           
           if [ -z "${{ secrets.SMTP_USER }}" ] || [ -z "${{ secrets.SMTP_PASSWORD }}" ]; then
-            echo "❌ Error: LANGFUSE_SMTP_USER and LANGFUSE_SMTP_PASSWORD secrets are required for email functionality"
+            echo "❌ Error: SMTP_USER and SMTP_PASSWORD secrets are required for email functionality"
             exit 1
           fi
           
