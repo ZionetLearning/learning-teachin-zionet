@@ -2,7 +2,7 @@ export type SendMessageRequest = {
   userMessage: string;
   threadId?: string;
   chatType?: "default" | "Global" | string;
-  userId: string;
+  userId?: string;
   pageContext?: {
     jsonContext: string;
   };

@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using DotQueue;
+using Manager.Models.UserGameConfiguration;
 using Manager.Models.Notifications;
 using Manager.Models.QueueMessages;
 
@@ -9,6 +10,9 @@ internal sealed class AutoMapperProfile : Profile
     {
         CreateMap<FrameKind, StreamEventStage>()
             .ConvertUsing(static src => ConvertFrameKindToStreamEventStage(src));
+
+        CreateMap<UserNewGameConfig, UserGameConfig>()
+            .ForMember(dest => dest.UserId, opt => opt.Ignore());
     }
 
     private static StreamEventStage ConvertFrameKindToStreamEventStage(FrameKind src)

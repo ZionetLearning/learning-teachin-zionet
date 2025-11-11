@@ -4,12 +4,14 @@ namespace Engine.Constants.Chat;
 
 public static class PromptsKeys
 {
-    public static string ChatTitlePrompt { get; private set; } = "chat.title.generate";
-    public static string SystemDefault { get; private set; } = "prompts.system.default";
-    public static string FriendlyTone { get; private set; } = "prompts.tone.friendly";
-    public static string DetailedExplanation { get; private set; } = "prompts.explanation.detailed";
-    public static string ExplainMistakeSystem { get; private set; } = "chat.system.explain.mistake";
-    public static string MistakeTemplate { get; private set; } = "prompts.mistake.template";
+    public static PromptConfiguration ChatTitlePrompt { get; private set; } = new() { Key = "chat.title.generate", Label = "production" };
+    public static PromptConfiguration SystemDefault { get; private set; } = new() { Key = "prompts.system.default", Label = "production" };
+    public static PromptConfiguration FriendlyTone { get; private set; } = new() { Key = "prompts.tone.friendly", Label = "production" };
+    public static PromptConfiguration DetailedExplanation { get; private set; } = new() { Key = "prompts.explanation.detailed", Label = "production" };
+    public static PromptConfiguration ExplainMistakeSystem { get; private set; } = new() { Key = "chat.system.explain.mistake", Label = "production" };
+    public static PromptConfiguration MistakeTemplate { get; private set; } = new() { Key = "prompts.mistake.template", Label = "production" };
+    public static PromptConfiguration GlobalChatSystemDefault { get; private set; } = new() { Key = "chat.global.system.default", Label = "production" };
+    public static PromptConfiguration GlobalChatPageContext { get; private set; } = new() { Key = "chat.global.page.context", Label = "production" };
 
     public static void Configure(PromptKeyOptions? options)
     {
@@ -18,34 +20,44 @@ public static class PromptsKeys
             return;
         }
 
-        if (!string.IsNullOrWhiteSpace(options.ChatTitlePrompt))
+        if (options.ChatTitlePrompt is not null)
         {
             ChatTitlePrompt = options.ChatTitlePrompt;
         }
 
-        if (!string.IsNullOrWhiteSpace(options.SystemDefault))
+        if (options.SystemDefault is not null)
         {
             SystemDefault = options.SystemDefault;
         }
 
-        if (!string.IsNullOrWhiteSpace(options.FriendlyTone))
+        if (options.FriendlyTone is not null)
         {
             FriendlyTone = options.FriendlyTone;
         }
 
-        if (!string.IsNullOrWhiteSpace(options.DetailedExplanation))
+        if (options.DetailedExplanation is not null)
         {
             DetailedExplanation = options.DetailedExplanation;
         }
 
-        if (!string.IsNullOrWhiteSpace(options.ExplainMistakeSystem))
+        if (options.ExplainMistakeSystem is not null)
         {
             ExplainMistakeSystem = options.ExplainMistakeSystem;
         }
 
-        if (!string.IsNullOrWhiteSpace(options.MistakeTemplate))
+        if (options.MistakeTemplate is not null)
         {
             MistakeTemplate = options.MistakeTemplate;
+        }
+
+        if (options.GlobalChatSystemDefault is not null)
+        {
+            GlobalChatSystemDefault = options.GlobalChatSystemDefault;
+        }
+
+        if (options.GlobalChatPageContext is not null)
+        {
+            GlobalChatPageContext = options.GlobalChatPageContext;
         }
     }
 }

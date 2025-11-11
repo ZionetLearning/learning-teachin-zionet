@@ -1,5 +1,11 @@
 {
   "translation": {
+    "common": {
+      "loading": "Loading…",
+      "error": "Error",
+      "tryAgain": "Please try again.",
+      "updating": "Updating…"
+    },
     "pages": {
       "auth": {
         "welcomeToLearningTeachinZionet": "Welcome to Learning-Teachin-Zionet",
@@ -401,7 +407,22 @@
         "edit": "Edit",
         "saveChanges": "Save changes",
         "cancel": "Cancel",
-        "interests": "Interests"
+        "interests": "Interests",
+        "avatar": {
+          "upload": "Upload Avatar",
+          "delete": "Delete Avatar",
+          "confirmDelete": "Are you sure you want to delete your avatar?",
+          "invalidType": "Please select a PNG or JPEG image.",
+          "fileTooLarge": "File size must be less than 1MB.",
+          "uploadTimeout": "Upload timed out. Please check your connection and try again.",
+          "uploadForbidden": "Upload permission denied. Please try again later.",
+          "noConnection": "No internet connection. Please check your network.",
+          "uploadFailed": "Upload failed: {{error}}",
+          "uploadFailedGeneric": "Failed to upload avatar. Please try again.",
+          "uploadSuccess": "Avatar uploaded successfully!",
+          "deleteSuccess": "Avatar deleted successfully!",
+          "deleteFailed": "Failed to delete avatar. Please try again."
+        }
       },
       "tasks": {
         "title": "Tasks Management",
@@ -571,6 +592,52 @@
         "correctAnswers": "{{correct}} out of {{total}} correct",
         "playAgain": "Play Again",
         "switchDirection": "Switch Direction"
+      },
+      "classes": {
+        "title": "Classes",
+        "createClass": "Create Class",
+        "name": "Name",
+        "members": "Members",
+        "actions": "Actions",
+        "loading": "Loading…",
+        "loadError": "Failed to load classes",
+        "noClasses": "No classes yet",
+        "manageMembers": "Manage members",
+        "deleteClass": "Delete class",
+        "close": "Close",
+        "allRoles": "All roles",
+        "students": "Students",
+        "teachers": "Teachers",
+        "searchPlaceholder": "Search by name / email",
+        "selectAll": "Select all",
+        "clear": "Clear",
+        "addSelected": "Add selected",
+        "alreadyInClass": "Already in class",
+        "addToClass": "Add to class",
+        "noUsersMatch": "No users match the current filters.",
+        "cancel": "Cancel",
+        "create": "Create",
+        "className": "Class name",
+        "descriptionOptional": "Description (optional)",
+        "currentMembers": "Current Members",
+        "removeSelected": "Remove selected",
+        "removeFromClass": "Remove from class",
+        "noMembersYet": "This class has no members yet.",
+        "searchByNameEmail": "Search by name / email",
+        "my": {
+          "title": "My Classes",
+          "loadingHint": "Fetching your classes and members",
+          "emptyTitle": "No classes yet",
+          "emptySubtitle": "Create your first class to get started",
+          "selectPrompt": "Select a class",
+          "selectHint": "Members and roles will appear here",
+          "members": "members",
+          "noMembers": "No members in this class yet.",
+          "teachers": "Teachers",
+          "noTeachers": "No teachers.",
+          "students": "Students",
+          "noStudents": "No students."
+        }
       }
     },
     "mistakeChat": {
@@ -637,7 +704,8 @@
       "appearance": "Appearance",
       "lightMode": "Light Mode",
       "darkMode": "Dark Mode",
-      "systemDefault": "System Default"
+      "systemDefault": "System Default",
+      "classes": "Classes"
     },
     "errorBoundary": {
       "title": "Oops! Something went wrong",
