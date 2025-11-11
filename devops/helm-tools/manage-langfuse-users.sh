@@ -76,18 +76,31 @@ delete_user() {
   echo ""
   echo -e "${YELLOW}🔍 Checking if user exists: $user_email${NC}"
 
-  USER_INFO=$($KUBECTL run -n $NAMESPACE temp-check-user-$$ --image=postgres:16 --rm -i --restart=Never -- \
-    psql "host=$PG_HOST port=5432 dbname=langfuse-${ENVIRONMENT_NAME} user=$PG_USERNAME password=$PG_PASSWORD sslmode=require" \
-    -v email="$user_email" \
-    -t -c "
+  # Temporarily disable exit on error for kubectl command
+  set +e
+  USER_INFO=$($KUBECTL run -n $NAMESPACE temp-check-user-$$ --image=postgres:16 --rm -i --restart=Never --env="USER_EMAIL=$user_email" -- \
+    bash -c "psql \"host=$PG_HOST port=5432 dbname=langfuse-${ENVIRONMENT_NAME} user=$PG_USERNAME password=$PG_PASSWORD sslmode=require\" \
+    -t -c \"
       SELECT 
         email, 
         name, 
         CASE WHEN admin THEN 'YES' ELSE 'NO' END as is_admin,
         (SELECT COUNT(*) FROM organization_memberships WHERE user_id = users.id) as org_count
       FROM users 
-      WHERE email = :'email';
-    " | xargs)
+      WHERE email = '\$USER_EMAIL';
+    \"" 2>&1)
+  local exit_code=$?
+  set -e
+
+  # Check if the command failed
+  if [ $exit_code -ne 0 ]; then
+    echo -e "${RED}❌ Error checking user:${NC}"
+    echo "$USER_INFO"
+    return 1
+  fi
+
+  # Clean up output and check if user exists
+  USER_INFO=$(echo "$USER_INFO" | grep -v "pod" | grep -v "If you don't see" | xargs)
 
   if [ -z "$USER_INFO" ]; then
     echo -e "${RED}❌ User not found: $user_email${NC}"
@@ -112,19 +125,19 @@ delete_user() {
 
   echo -e "${BLUE}🗑️  Deleting user: $user_email${NC}"
 
-  $KUBECTL run -n $NAMESPACE temp-delete-user-$$ --image=postgres:16 --rm -i --restart=Never -- \
-    psql "host=$PG_HOST port=5432 dbname=langfuse-${ENVIRONMENT_NAME} user=$PG_USERNAME password=$PG_PASSWORD sslmode=require" \
-    -v email="$user_email" \
-    -c "
-      DO \$BODY\$
+  # Temporarily disable exit on error for kubectl command
+  set +e
+  DELETE_RESULT=$($KUBECTL run -n $NAMESPACE temp-delete-user-$$ --image=postgres:16 --rm -i --restart=Never --env="USER_EMAIL=$user_email" -- \
+    bash -c "psql \"host=$PG_HOST port=5432 dbname=langfuse-${ENVIRONMENT_NAME} user=$PG_USERNAME password=$PG_PASSWORD sslmode=require\" \
+    -c \"
+      DO \\\$\\\$
       DECLARE
           v_user_id text;
-          v_email text := :'email';
       BEGIN
-          SELECT id INTO v_user_id FROM users WHERE email = v_email;
+          SELECT id INTO v_user_id FROM users WHERE email = '\$USER_EMAIL';
           
           IF v_user_id IS NULL THEN
-              RAISE EXCEPTION 'User not found: %', v_email;
+              RAISE EXCEPTION 'User not found: %', '\$USER_EMAIL';
           END IF;
 
           -- Delete organization memberships
@@ -167,9 +180,17 @@ delete_user() {
 
           -- Finally, delete the user account
           DELETE FROM users WHERE id = v_user_id;
-          RAISE NOTICE 'User deleted successfully: %', v_email;
-      END \$BODY\$;
-    "
+          RAISE NOTICE 'User deleted successfully: %', '\$USER_EMAIL';
+      END \\\$\\\$;
+    \"" 2>&1)
+  local exit_code=$?
+  set -e
+
+  if [ $exit_code -ne 0 ]; then
+    echo -e "${RED}❌ Error deleting user:${NC}"
+    echo "$DELETE_RESULT"
+    return 1
+  fi
 
   echo ""
   echo -e "${GREEN}✅ User deleted successfully: $user_email${NC}"
@@ -183,6 +204,7 @@ delete_all_non_admin() {
   
   # Show non-admin users that will be deleted
   echo -e "${BLUE}The following users will be deleted:${NC}"
+  set +e
   $KUBECTL run -n $NAMESPACE temp-show-nonadmin-$$ --image=postgres:16 --rm -i --restart=Never -- \
     psql "host=$PG_HOST port=5432 dbname=langfuse-${ENVIRONMENT_NAME} user=$PG_USERNAME password=$PG_PASSWORD sslmode=require" \
     -c "
@@ -190,7 +212,8 @@ delete_all_non_admin() {
       FROM users 
       WHERE admin = false
       ORDER BY created_at DESC;
-    "
+    " 2>&1
+  set -e
 
   echo ""
   read -p "$(echo -e ${RED}Type 'DELETE ALL NON-ADMIN' to confirm deletion: ${NC})" CONFIRM
@@ -202,7 +225,8 @@ delete_all_non_admin() {
 
   echo -e "${BLUE}🗑️  Deleting all non-admin users...${NC}"
 
-  $KUBECTL run -n $NAMESPACE temp-delete-nonadmin-$$ --image=postgres:16 --rm -i --restart=Never -- \
+  set +e
+  DELETE_RESULT=$($KUBECTL run -n $NAMESPACE temp-delete-nonadmin-$$ --image=postgres:16 --rm -i --restart=Never -- \
     psql "host=$PG_HOST port=5432 dbname=langfuse-${ENVIRONMENT_NAME} user=$PG_USERNAME password=$PG_PASSWORD sslmode=require" \
     -c "
       DO \$BODY\$
@@ -259,7 +283,15 @@ delete_all_non_admin() {
         COUNT(*) FILTER (WHERE admin = true) as admin_users,
         COUNT(*) FILTER (WHERE admin = false) as non_admin_users
       FROM users;
-    "
+    " 2>&1)
+  local exit_code=$?
+  set -e
+
+  if [ $exit_code -ne 0 ]; then
+    echo -e "${RED}❌ Error deleting users:${NC}"
+    echo "$DELETE_RESULT"
+    return 1
+  fi
 
   echo ""
   echo -e "${GREEN}✅ All non-admin users have been deleted${NC}"
