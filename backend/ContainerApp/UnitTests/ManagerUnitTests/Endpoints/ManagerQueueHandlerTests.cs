@@ -101,7 +101,7 @@ public class ManagerQueueHandlerTests
             {
                 new()
                 {
-                    GameType = "WordOrderGame",
+                    GameType = "WordOrder",
                     Text = "generated sentence",
                     Difficulty = "easy",
                     Nikud = true
