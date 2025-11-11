@@ -29,7 +29,7 @@ public abstract class AiChatTestBase(
     protected async Task<(string RequestId, ReceivedEvent Event, AIChatStreamResponse[] Frames)>
         PostChatAndWaitAsync(ChatRequest request, TimeSpan? timeout = null)
     {
-        var resp = await Client.PostAsJsonAsync(AiRoutes.PostNewMessage, request);
+        var resp = await Client.PostAsJsonAsync(AiRoutes.PostNewMessageChat, request);
         resp.EnsureSuccessStatusCode();
 
         var doc = await resp.Content.ReadFromJsonAsync<JsonElement>();
@@ -37,6 +37,22 @@ public abstract class AiChatTestBase(
         var requestId = ridEl.GetString();
         requestId.Should().NotBeNullOrWhiteSpace();
     
+        var (ev, frames) = await WaitForChatResponseAsync(requestId!, timeout);
+
+        return (requestId!, ev, frames);
+    }
+
+    protected async Task<(string RequestId, ReceivedEvent Event, AIChatStreamResponse[] Frames)>
+    PostGlobalChatAndWaitAsync(ChatRequest request, TimeSpan? timeout = null)
+    {
+        var resp = await Client.PostAsJsonAsync(AiRoutes.PostNewMessageGlobalChat, request);
+        resp.EnsureSuccessStatusCode();
+
+        var doc = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        doc.TryGetProperty("requestId", out var ridEl).Should().BeTrue();
+        var requestId = ridEl.GetString();
+        requestId.Should().NotBeNullOrWhiteSpace();
+
         var (ev, frames) = await WaitForChatResponseAsync(requestId!, timeout);
 
         return (requestId!, ev, frames);

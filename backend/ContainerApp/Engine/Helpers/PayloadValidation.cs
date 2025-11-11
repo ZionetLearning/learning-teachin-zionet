@@ -118,7 +118,7 @@ public static class PayloadValidation
             Fail(logger, "Request TTL expired.", "TTL");
         }
 
-        logger.LogDebug("ChatAiServiseRequest validation passed.");
+        logger.LogDebug("ChatAiServiceRequest validation passed.");
     }
     public static void ValidateEngineExplainMistakeRequest(EngineExplainMistakeRequest req, ILogger logger)
     {
