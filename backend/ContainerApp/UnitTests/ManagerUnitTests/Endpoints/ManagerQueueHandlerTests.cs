@@ -92,9 +92,10 @@ public class ManagerQueueHandlerTests
         var handler = CreateSut(mockNotif, mockAccessor);
 
         var userId = Guid.NewGuid().ToString();
+        var requestId = Guid.NewGuid().ToString();
         var sentenceResponse = new SentenceResponse
         {
-            RequestId = Guid.NewGuid().ToString(),
+            RequestId = requestId,
             Sentences = new List<SentenceItem>
             {
                 new()
@@ -149,9 +150,15 @@ public class ManagerQueueHandlerTests
             Times.Once
         );
 
-        // Verify event was sent with the result from accessor
+        // Verify event was sent with SentenceGenerationResponse containing RequestId
         mockNotif.Verify(
-            s => s.SendEventAsync(EventType.SentenceGeneration, userId, It.Is<List<AttemptedSentenceResult>>(list => list.Count == 1)),
+            s => s.SendEventAsync(
+                EventType.SentenceGeneration,
+                userId,
+                It.Is<SentenceGenerationResponse>(response =>
+                    response.RequestId == requestId &&
+                    response.Sentences.Count == 1 &&
+                    response.Sentences[0].Text == "generated sentence")),
             Times.Once);
     }
 }
