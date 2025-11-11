@@ -1,6 +1,7 @@
 import { useMutation, useQuery, UseQueryResult } from "@tanstack/react-query";
 import { apiClient as axios } from "@app-providers";
 import { toast } from "react-toastify";
+import { GameType } from "@student/types";
 
 export type AttemptStatus = "Success" | "Failure" | "Pending";
 export type GameDifficulty = "Easy" | "Medium" | "Hard";
@@ -15,7 +16,7 @@ export type GameAttemptResponse = {
   attemptId: string;
   exerciseId: string;
   studentId: string;
-  gameType: string;
+  gameType: GameType;
   difficulty: GameDifficulty;
   status: AttemptStatus;
   correctAnswer: string[];
@@ -27,7 +28,7 @@ export type GameAttemptResponse = {
 
 // Game History Summary
 export type GameHistorySummaryItem = {
-  gameType: string;
+  gameType: GameType;
   difficulty: GameDifficulty;
   attemptsCount: number;
   totalSuccesses: number;
@@ -48,7 +49,7 @@ export type GameHistorySummaryResponse = {
 export type GameHistoryDetailedItem = {
   exerciseId: string;
   attemptId: string;
-  gameType: string;
+  gameType: GameType;
   difficulty: GameDifficulty;
   givenAnswer: string[];
   correctAnswer: string[];
@@ -83,7 +84,7 @@ export type MistakeAttemptDto = {
 
 export type GameMistakeItem = {
   exerciseId: string;
-  gameType: string;
+  gameType: GameType;
   difficulty: GameDifficulty;
   correctAnswer: string[];
   mistakes: MistakeAttemptDto[];

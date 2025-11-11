@@ -146,7 +146,8 @@
         "stop": "⏹ עצור",
         "play": "▶ הפעל",
         "record": "🎤 הקלט",
-        "noData": "אין נתונים"
+        "noData": "אין נתונים",
+        "accuracy": "דיוק"
       },
       "typingPractice": {
         "hebrewTypingPractice": "תרגול הקלדה בעברית",
@@ -228,6 +229,7 @@
         "no": "לא",
         "correct": "נכון!",
         "incorrect": "לא נכון. נסה שוב.",
+        "accuracy": "דיוק",
         "wordBankTitle": "מאגר מילים",
         "wordBankHint": "לחץ על מילה כדי להוסיף אותה למשפט",
         "explainMistake": "הסבר טעות",
@@ -475,13 +477,16 @@
         "practiceName": "שם התרגול",
         "difficulty": "רמת קושי",
         "yourLastAnswer": "התשובה האחרונה שלך",
+        "lastAccuracy": "דיוק אחרון",
         "status": "סטטוס",
         "action": "פעולה",
         "tryAgain": "נסה שוב!",
         "retry": "נסה שוב",
         "failedToLoad": "טעינת טעויות התרגול נכשלה",
         "gameType": {
-          "wordOrderGame": "משחק סידור מילים"
+          "wordOrderGame": "משחק סידור מילים",
+          "typingPractice": "תרגול הקלדה",
+          "speakingPractice": "תרגול דיבור"
         }
       },
       "practiceHistory": {
@@ -498,6 +503,7 @@
         "totalFailures": "ניסיונות כושלים",
         "successRate": "אחוז הצלחה",
         "yourLastAnswer": "התשובה האחרונה שלך",
+        "accuracy": "דיוק",
         "status": "סטטוס",
         "date": "תאריך",
         "succeeded": "הצלחה",

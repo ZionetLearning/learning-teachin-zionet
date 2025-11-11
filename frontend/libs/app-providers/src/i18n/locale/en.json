@@ -146,7 +146,8 @@
         "stop": "⏹ Stop",
         "play": "▶ Play",
         "record": "🎤 Record",
-        "noData": "No data"
+        "noData": "No data",
+        "accuracy": "Accuracy"
       },
       "typingPractice": {
         "hebrewTypingPractice": "Hebrew Typing Practice",
@@ -228,6 +229,7 @@
         "no": "No",
         "correct": "Correct!",
         "incorrect": "Incorrect. Try again.",
+        "accuracy": "Accuracy",
         "wordBankTitle": "Word Bank",
         "wordBankHint": "Click a word to add it to the sentence",
         "explainMistake": "Explain Mistake",
@@ -475,13 +477,16 @@
         "practiceName": "Practice Name",
         "difficulty": "Difficulty",
         "yourLastAnswer": "Your Last Answer",
+        "lastAccuracy": "Last Accuracy",
         "status": "Status",
         "action": "Action",
         "tryAgain": "Try Again!",
         "retry": "Retry",
         "failedToLoad": "Failed to load mistakes",
         "gameType": {
-          "wordOrderGame": "Word Order Game"
+          "wordOrderGame": "Word Order Game",
+          "typingPractice": "Typing Practice",
+          "speakingPractice": "Speaking Practice"
         }
       },
       "practiceHistory": {
@@ -498,6 +503,7 @@
         "totalFailures": "Failures",
         "successRate": "Success Rate",
         "yourLastAnswer": "Your Last Answer",
+        "accuracy": "Accuracy",
         "status": "Status",
         "date": "Date",
         "succeeded": "Succeeded",

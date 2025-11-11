@@ -113,6 +113,9 @@ export const PracticeMistakes = () => {
                         {t("pages.practiceMistakes.yourLastAnswer")}
                       </TableCell>
                       <TableCell className={classes.th}>
+                        {t("pages.practiceMistakes.lastAccuracy")}
+                      </TableCell>
+                      <TableCell className={classes.th}>
                         {t("pages.practiceMistakes.status")}
                       </TableCell>
                       <TableCell className={classes.th} align="right">
@@ -151,6 +154,25 @@ export const PracticeMistakes = () => {
                                 {lastAnswer}
                               </Box>
                             </Tooltip>
+                          </TableCell>
+
+                          <TableCell className={classes.td}>
+                            {lastMistake ? (
+                              <Typography
+                                fontWeight={600}
+                                color={
+                                  lastMistake.accuracy >= 80
+                                    ? "success.main"
+                                    : lastMistake.accuracy >= 60
+                                      ? "warning.main"
+                                      : "error.main"
+                                }
+                              >
+                                {lastMistake.accuracy.toFixed(1)}%
+                              </Typography>
+                            ) : (
+                              "-"
+                            )}
                           </TableCell>
 
                           <TableCell className={classes.td}>

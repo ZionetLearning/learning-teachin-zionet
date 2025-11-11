@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 
-import { useAvatarSpeech, useHebrewSentence } from "@student/hooks";
+import { useAvatarSpeech, useWordOrderSentence } from "@student/hooks";
 import { ChosenWordsArea, WordsBank, ActionButtons, Speaker } from "../";
 import {
   GameConfig,
@@ -74,7 +74,7 @@ export const Game = ({ retryData }: GameProps) => {
     resetGame,
     sentenceCount,
     currentSentenceIndex,
-  } = useHebrewSentence(gameConfig || undefined);
+  } = useWordOrderSentence(gameConfig || undefined);
 
   const { speak, stop, isLoading: speechLoading } = useAvatarSpeech({});
 
@@ -311,10 +311,14 @@ export const Game = ({ retryData }: GameProps) => {
     } else {
       if (isServerCorrect) {
         setCorrectSentencesCount((c) => c + 1);
-        toast.success(t("pages.wordOrderGame.correct"));
+        toast.success(
+          `${t("pages.wordOrderGame.correct")} - ${res.accuracy.toFixed(1)}% ${t("pages.wordOrderGame.accuracy")}`,
+        );
         setLastCheckWasIncorrect(false);
       } else {
-        toast.error(t("pages.wordOrderGame.incorrect"));
+        toast.error(
+          `${t("pages.wordOrderGame.incorrect")} - ${res.accuracy.toFixed(1)}% ${t("pages.wordOrderGame.accuracy")}`,
+        );
         setLastCheckWasIncorrect(true);
         setCurrentAttemptId(res.attemptId);
       }
@@ -436,7 +440,7 @@ export const Game = ({ retryData }: GameProps) => {
         open={mistakeChatOpen}
         onClose={handleCloseMistakeChat}
         attemptId={currentAttemptId}
-        gameType="word-order"
+        gameType="wordOrder"
         title={t("pages.wordOrderGame.explainMistake")}
       />
 
