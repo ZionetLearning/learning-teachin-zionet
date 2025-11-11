@@ -727,41 +727,31 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         var userAnswerText = string.Join(" ", attemptDetails.GivenAnswer);
         var correctAnswerText = string.Join(" ", attemptDetails.CorrectAnswer);
 
-        // Need to change the prompt in the langfuse
         var mistakeTemplatePrompt = await _accessorClient.GetPromptAsync(PromptsKeys.MistakeUserTemplate, ct);
+
+        var readableGameType = gameType.GetDescription();
 
         if (mistakeTemplatePrompt?.Content is not null)
         {
             return mistakeTemplatePrompt.Content
-                .Replace("{gameType}", gameType.ToString(), StringComparison.Ordinal)
+                .Replace("{gameType}", readableGameType, StringComparison.Ordinal)
                 .Replace("{difficulty}", attemptDetails.Difficulty, StringComparison.Ordinal)
                 .Replace("{userAnswer}", userAnswerText, StringComparison.Ordinal)
                 .Replace("{correctAnswer}", correctAnswerText, StringComparison.Ordinal);
-
-            //.Replace("{lang}", lang);
         }
         else
         {
             _logger.LogWarning("Mistake explanation template not found in database, using fallback");
             return $"""
-                Explain the mistake in this {gameType} exercise:
+                Explain the mistake in this {readableGameType} exercise:
 
                 **Exercise Details:**
-                - Game Type: {gameType}
+                - Game Type: {readableGameType}
                 - Difficulty: {attemptDetails.Difficulty}
 
                 **Student's Answer:** {userAnswerText}
                 **Correct Answer:** {correctAnswerText}
                 """;
-
-            //Please provide a clear, educational explanation of:
-            //1. What the mistake was
-            //2. Why the correct answer is right
-            //3. Tips to avoid this mistake in the future
-
-            //Be encouraging and focus on learning rather than just pointing out the error.
-            //Use only language with this code: {lang} for an answer.
-            //""";
         }
     }
 
