@@ -274,6 +274,7 @@ public class GameService : IGameService
                 .Select(g => new MistakeDto
                 {
                     ExerciseId = g.Key,
+                    AttemptId = g.First().AttemptId,
                     GameType = g.First().GameType,
                     Difficulty = g.First().Difficulty,
                     CorrectAnswer = g.First().CorrectAnswer,
@@ -404,11 +405,6 @@ public class GameService : IGameService
         {
             var resultList = new List<AttemptedSentenceResult>();
 
-            // Normalize GameType to camelCase for consistent storage
-            var normalizedGameType = string.IsNullOrEmpty(dto.GameType) || dto.GameType.Length < 2
-                ? dto.GameType
-                : char.ToLowerInvariant(dto.GameType[0]) + dto.GameType[1..];
-
             foreach (var sentence in dto.Sentences)
             {
                 var exerciseId = Guid.NewGuid();
@@ -418,7 +414,7 @@ public class GameService : IGameService
                     AttemptId = exerciseId,
                     ExerciseId = exerciseId,
                     StudentId = dto.StudentId,
-                    GameType = normalizedGameType,
+                    GameType = dto.GameType,
                     Difficulty = dto.Difficulty,
                     CorrectAnswer = sentence.CorrectAnswer,
                     GivenAnswer = new(),
@@ -490,12 +486,14 @@ public class GameService : IGameService
 
             var result = new AttemptHistoryDto
             {
+                ExerciseId = attempt.ExerciseId,
                 AttemptId = attempt.AttemptId,
                 GameType = attempt.GameType,
                 Difficulty = attempt.Difficulty,
                 GivenAnswer = attempt.GivenAnswer,
                 CorrectAnswer = attempt.CorrectAnswer,
                 Status = attempt.Status,
+                Accuracy = attempt.Accuracy,
                 CreatedAt = attempt.CreatedAt
             };
 

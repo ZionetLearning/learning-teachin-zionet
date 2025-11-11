@@ -128,7 +128,6 @@ public class AiEndpointsTests
         };
         var dto = new SentenceRequestDto
         {
-            RequestId = request.RequestId,
             Difficulty = request.Difficulty,
             Nikud = request.Nikud,
             Count = request.Count

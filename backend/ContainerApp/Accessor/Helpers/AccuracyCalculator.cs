@@ -1,3 +1,5 @@
+using Accessor.Models.GameConfiguration;
+
 namespace Accessor.Helpers;
 
 /// <summary>
@@ -57,11 +59,9 @@ public static class AccuracyCalculator
     /// <summary>
     /// Calculates accuracy based on game type.
     /// </summary>
-    public static decimal Calculate(string gameType, List<string> correctAnswer, List<string> givenAnswer)
+    public static decimal Calculate(GameName gameType, List<string> correctAnswer, List<string> givenAnswer)
     {
-
-        var normalizedGameType = gameType.ToLowerInvariant();
-        if (normalizedGameType is "typingpractice" or "speakingpractice")
+        if (gameType is GameName.TypingPractice or GameName.SpeakingPractice)
         {
             var correctText = correctAnswer.FirstOrDefault() ?? string.Empty;
             var givenText = givenAnswer.FirstOrDefault() ?? string.Empty;

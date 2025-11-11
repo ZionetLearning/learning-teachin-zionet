@@ -187,7 +187,10 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
                     $"Validation failed for {nameof(SentenceResponse)}: {string.Join("; ", validationErrors)}");
             }
 
-            var gameType = generatedResponse.Sentences.FirstOrDefault()?.GameType ?? "typingPractice";
+            var gameTypeString = generatedResponse.Sentences.FirstOrDefault()?.GameType ?? "typingPractice";
+            var gameType = Enum.TryParse<GameName>(gameTypeString, ignoreCase: true, out var parsedGameType)
+     ? parsedGameType
+  : Manager.Models.UserGameConfiguration.GameName.TypingPractice;
 
             var dto = new GeneratedSentenceDto
             {
@@ -244,6 +247,7 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
             throw new RetryableException("Transient error while processing answer.", ex);
         }
     }
+
     public async Task HandleGenerateSplitAnswer(Message message, IReadOnlyDictionary<string, string>? metadata, Func<Task> renewLock, CancellationToken cancellationToken)
     {
         try

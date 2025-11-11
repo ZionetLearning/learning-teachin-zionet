@@ -5,6 +5,7 @@ using Manager.Models.Games;
 using Manager.Models.Notifications;
 using Manager.Models.QueueMessages;
 using Manager.Models.Sentences;
+using Manager.Models.UserGameConfiguration;
 using Manager.Services;
 using Manager.Services.Clients.Accessor;
 using Manager.Services.Clients.Accessor.Models;
@@ -136,19 +137,17 @@ public class ManagerQueueHandlerTests
 
         // Verify SaveGeneratedSentencesAsync was called with correct data
         mockAccessor.Verify(
-            x => x.SaveGeneratedSentencesAsync(
-                It.Is<GeneratedSentenceDto>(dto =>
-                    dto.StudentId == Guid.Parse(userId) &&
-                    dto.GameType == "WordOrderGame" &&
-                    dto.Sentences.Count == 1 &&
-                    dto.Sentences[0].Text == "generated sentence" &&
-                    dto.Sentences[0].CorrectAnswer.Count == 1 &&
-                    dto.Sentences[0].CorrectAnswer[0] == "generated sentence"
-                ),
-                It.IsAny<CancellationToken>()
+          x => x.SaveGeneratedSentencesAsync(
+             It.Is<GeneratedSentenceDto>(dto =>
+               dto.StudentId == Guid.Parse(userId) &&
+               dto.GameType == GameName.WordOrder &&
+               dto.Sentences.Count == 1 &&
+               dto.Sentences[0].Text == "generated sentence" &&
+               dto.Sentences[0].CorrectAnswer.Count == 1 &&
+               dto.Sentences[0].CorrectAnswer[0] == "generated sentence"),It.IsAny<CancellationToken>()
             ),
-            Times.Once
-        );
+      Times.Once
+   );
 
         // Verify event was sent with SentenceGenerationResponse containing RequestId
         mockNotif.Verify(

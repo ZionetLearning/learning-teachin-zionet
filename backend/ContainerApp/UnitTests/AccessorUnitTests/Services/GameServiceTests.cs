@@ -188,7 +188,7 @@ public class GameServiceTests
             AttemptId = exerciseId, // For pending attempts, AttemptId == ExerciseId
             ExerciseId = exerciseId,
             StudentId = studentId,
-            GameType = WordOrderGame,
+            GameType = GameName.WordOrder,
             Difficulty = Difficulty.Easy,
             CorrectAnswer = correctAnswer,
             GivenAnswer = new(),
@@ -428,7 +428,7 @@ public class GameServiceTests
                 AttemptId = attemptId1,
                 ExerciseId = exerciseId,
                 StudentId = studentId,
-                GameType = WordOrderGame,
+                GameType = GameName.WordOrder,
                 Difficulty = Difficulty.Easy,
                 CorrectAnswer = correctAnswer,
                 GivenAnswer = new List<string> { "עולם", "שלום" },
@@ -442,7 +442,7 @@ public class GameServiceTests
                 AttemptId = attemptId2,
                 ExerciseId = exerciseId,
                 StudentId = studentId,
-                GameType = WordOrderGame,
+                GameType = GameName.WordOrder,
                 Difficulty = Difficulty.Easy,
                 CorrectAnswer = correctAnswer,
                 GivenAnswer = new List<string> { "wrong", "order" },
@@ -484,7 +484,7 @@ public class GameServiceTests
                 AttemptId = Guid.NewGuid(),
                 ExerciseId = exerciseId,
                 StudentId = studentId,
-                GameType = WordOrderGame,
+                GameType = GameName.WordOrder,
                 Difficulty = Difficulty.Easy,
                 CorrectAnswer = correctAnswer,
                 GivenAnswer = new List<string> { "עולם", "שלום" },
@@ -499,7 +499,7 @@ public class GameServiceTests
                 AttemptId = Guid.NewGuid(),
                 ExerciseId = exerciseId,
                 StudentId = studentId,
-                GameType = WordOrderGame,
+                GameType = GameName.WordOrder,
                 Difficulty = Difficulty.Easy,
                 CorrectAnswer = correctAnswer,
                 GivenAnswer = new List<string> { "wrong", "order" },
@@ -514,7 +514,7 @@ public class GameServiceTests
                 AttemptId = Guid.NewGuid(),
                 ExerciseId = exerciseId,
                 StudentId = studentId,
-                GameType = WordOrderGame,
+                GameType = GameName.WordOrder,
                 Difficulty = Difficulty.Easy,
                 CorrectAnswer = correctAnswer,
                 GivenAnswer = correctAnswer,
@@ -566,7 +566,7 @@ public class GameServiceTests
         var savedAttempts = await db.GameAttempts.Where(a => a.StudentId == studentId).ToListAsync();
         savedAttempts.Should().HaveCount(1);
         savedAttempts.First().Status.Should().Be(AttemptStatus.Pending);
-        savedAttempts.First().GameType.Should().Be("wordOrderGame"); // Verify camelCase normalization
+        savedAttempts.First().GameType.Should().Be(GameName.WordOrder); // GameType is now an enum
     }
     #endregion
 }
