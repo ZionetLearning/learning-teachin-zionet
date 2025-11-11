@@ -11,3 +11,4 @@ export * from "./StudentPracticeHistory";
 export * from "./Chips";
 export * from "./AvatarUpload";
 export * from "./Classes";
+export * from "./ContextAwareChat";
