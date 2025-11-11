@@ -6,7 +6,7 @@ import type { ChatMessage, PageContext } from "../types";
 
 export const useContextAwareChat = (pageContext: PageContext) => {
   const { user } = useAuth();
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const threadIdRef = useRef<string>(crypto.randomUUID());
@@ -38,7 +38,6 @@ export const useContextAwareChat = (pageContext: PageContext) => {
             userMessage: text,
             threadId: threadIdRef.current,
             chatType: "Global",
-            userId: user.userId,
             pageContext: {
               jsonContext: JSON.stringify(pageContext),
             },
@@ -75,14 +74,14 @@ export const useContextAwareChat = (pageContext: PageContext) => {
 
         const errorMessage: ChatMessage = {
           id: crypto.randomUUID(),
-          text: "Sorry, I encountered an error. Please try again.",
+          text: t("contextChat.errorMessage"),
           sender: "assistant",
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, errorMessage]);
       }
     },
-    [pageContext, user?.userId, i18n.language, startStream],
+    [pageContext, user?.userId, i18n.language, startStream, t],
   );
 
   return {

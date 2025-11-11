@@ -651,6 +651,7 @@
       "title": "עוזר תרגול",
       "emptyState": "שאל אותי כל שאלה על התרגיל הזה!",
       "inputPlaceholder": "שאל שאלה...",
+      "errorMessage": "מצטער, נתקלתי בשגיאה. אנא נסה שוב.",
       "exerciseType": {
         "typing": "הקלדה",
         "word-order": "סידור מילים",

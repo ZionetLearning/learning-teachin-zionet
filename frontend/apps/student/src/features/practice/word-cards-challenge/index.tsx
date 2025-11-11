@@ -173,23 +173,17 @@ export const WordCardsChallenge = () => {
   }
 
   if (gameState === "mode-selection") {
-    return (
-      <>
-        <ModeSelection onStartGame={startGame} />
-      </>
-    );
+    return <ModeSelection onStartGame={startGame} />;
   }
 
   if (gameState === "summary") {
     return (
-      <>
-        <GameSummary
-          correctCount={correctCount}
-          totalCards={shuffledCards.length}
-          currentMode={mode}
-          onPlayAgain={startGame}
-        />
-      </>
+      <GameSummary
+        correctCount={correctCount}
+        totalCards={shuffledCards.length}
+        currentMode={mode}
+        onPlayAgain={startGame}
+      />
     );
   }
 

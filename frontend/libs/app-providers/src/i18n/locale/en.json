@@ -651,6 +651,7 @@
       "title": "Practice Assistant",
       "emptyState": "Ask me anything about this exercise!",
       "inputPlaceholder": "Ask a question...",
+      "errorMessage": "Sorry, I encountered an error. Please try again.",
       "exerciseType": {
         "typing": "Typing",
         "word-order": "Word Order",
