@@ -18,6 +18,7 @@ public enum MessageAction
     TestLongTask,
     AnswerAi,
     ProcessingChatMessage,
+    ProcessingGlobalChatMessage,
     ProcessingExplainMistake,
     NotifyUser,
     GenerateSentences,

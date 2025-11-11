@@ -70,6 +70,12 @@ vi.mock("@student/hooks", () => {
       currentDifficulty: 1,
       hasNikud: true,
     })),
+    useGameConfig: vi.fn(() => ({
+      config: null,
+      isLoading: false,
+      updateConfig: vi.fn(),
+      setConfig: vi.fn(),
+    })),
     resetSentenceGameHook: vi.fn(),
     initOnce: vi.fn(),
   };

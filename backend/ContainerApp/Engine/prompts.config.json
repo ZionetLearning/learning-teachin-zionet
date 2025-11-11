@@ -28,6 +28,14 @@
       "MistakeRuleTemplate": {
         "Key": "prompts.mistake.rule.template",
         "Label": "production"
+      },
+      "GlobalChat": {
+        "Key": "chat.global.system.default",
+        "Label": "production"
+      },
+      "GlobalChatPageContext": {
+        "Key": "chat.global.page.context",
+        "Label": "production"
       }
     }
   }
