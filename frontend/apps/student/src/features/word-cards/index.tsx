@@ -15,7 +15,7 @@ import { useGetWordCards } from "@student/api";
 import { AddWordCardDialog } from "@student/components";
 import { WordCardItem } from "./components";
 import { useStyles } from "./style";
-import { ContextAwareChat, PageContext } from "@ui-components";
+import { ContextAwareChat, PageContext } from "@ui-components/ContextAwareChat";
 
 export const WordCards = () => {
   const classes = useStyles();
