@@ -3,6 +3,7 @@ using IntegrationTests.Fixtures;
 using IntegrationTests.Infrastructure;
 using IntegrationTests.Models.Auth;
 using IntegrationTests.Models.Notification;
+using IntegrationTests.Models.Ai.Sentences;
 using Manager.Models.Auth;
 using Manager.Models.Games;
 using Manager.Models.Users;
@@ -11,7 +12,8 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Xunit.Abstractions;
-using SentenceRequest = Manager.Models.Sentences.SentenceRequest;
+using SentenceRequestDto = Manager.Models.Sentences.SentenceRequestDto;
+using AttemptedSentence = IntegrationTests.Models.Ai.Sentences.AttemptedSentenceResult;
 
 namespace IntegrationTests.Tests.Games;
 
@@ -239,7 +241,7 @@ public abstract class GamesTestBase(
     /// Generates split sentences for word order game and waits for SignalR event.
     /// Returns the list of generated sentences with exercise IDs.
     /// </summary>
-    protected async Task<List<AttemptedSentenceResult>> GenerateSplitSentencesAsync(
+    protected async Task<List<AttemptedSentence>> GenerateSplitSentencesAsync(
         Guid userId,
         Difficulty difficulty = Difficulty.Easy,
         bool nikud = false,
@@ -250,12 +252,12 @@ public abstract class GamesTestBase(
         
         SignalRFixture.ClearReceivedMessages();
 
-        var sentenceRequest = new SentenceRequest
+        var sentenceRequest = new SentenceRequestDto
         {
-            UserId = userId,
             Difficulty = (Manager.Models.Sentences.Difficulty)difficulty,
             Nikud = nikud,
-            Count = count
+            Count = count,
+
         };
         OutputHelper.WriteLine($"Generating sentences for userId: {userId}");
         var response = await PostAsJsonAsync(ApiRoutes.SplitSentences, sentenceRequest);
@@ -267,9 +269,19 @@ public abstract class GamesTestBase(
             );
 
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-        var sentences = JsonSerializer.Deserialize<List<AttemptedSentenceResult>>(
+        var sentenceGenerationResponse = JsonSerializer.Deserialize<SentenceGenerationResponse>(
             sentenceEvent.Event.Payload.GetRawText(), options)
             ?? throw new InvalidOperationException("Failed to deserialize sentence generation event");
+
+        // Convert from GeneratedSentenceResultItem to AttemptedSentenceResult
+        var sentences = sentenceGenerationResponse.Sentences.Select(s => new AttemptedSentence
+        {
+            ExerciseId = s.ExerciseId,
+            Original = s.Text,
+            Words = s.Words,
+            Difficulty = s.Difficulty,
+            Nikud = s.Nikud
+        }).ToList();
 
         return sentences;
     }
@@ -369,7 +381,7 @@ public abstract class GamesTestBase(
     /// Tests that mistakes are filtered out when the same sentence is answered correctly later.
     /// Submits the same sentence twice: wrong answer first, then correct answer.
     /// </summary>
-    protected async Task<(AttemptedSentenceResult sentence, SubmitAttemptResult failureResult, SubmitAttemptResult successResult)> 
+    protected async Task<(AttemptedSentence sentence, SubmitAttemptResult failureResult, SubmitAttemptResult successResult)> 
         CreateMistakeWithLaterSuccessAsync(Guid studentId, Difficulty difficulty = Difficulty.Easy)
     {
         // Generate one sentence

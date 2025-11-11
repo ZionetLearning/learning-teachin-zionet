@@ -8,7 +8,7 @@ using Manager.Models.Users;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Xunit.Abstractions;
-using SentenceRequest = Manager.Models.Sentences.SentenceRequest;
+using SentenceRequestDto = Manager.Models.Sentences.SentenceRequestDto;
 
 namespace IntegrationTests.Tests.AI;
 
@@ -28,12 +28,12 @@ public class MistakeExplanationIntegrationTests(
 
         // Step 1: Generate split sentences for word order game
         OutputHelper.WriteLine("Step 1: Generating split sentences for word order game");
-        var sentenceRequest = new SentenceRequest
+        var sentenceRequest = new SentenceRequestDto
         {
-            UserId = userInfo.UserId,
             Difficulty = (Manager.Models.Sentences.Difficulty)Difficulty.Easy,
             Nikud = false,
-            Count = 1
+            Count = 1,
+            GameType = GameType.WordOrderGame
         };
 
         var sentenceResponse = await PostAsJsonAsync(ApiRoutes.SplitSentences, sentenceRequest);
