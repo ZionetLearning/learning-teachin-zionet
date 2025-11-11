@@ -254,7 +254,7 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
             var dto = new GeneratedSentenceDto
             {
                 StudentId = Guid.Parse(userId),
-                GameType = GameName.WordOrder,
+                GameType = Enum.Parse<GameName>("WordOrder"),
                 Difficulty = Enum.TryParse<Models.Games.Difficulty>(generatedResponse.Sentences.FirstOrDefault()?.Difficulty, ignoreCase: true, out var difficulty)
                 ? difficulty
                 : Manager.Models.Games.Difficulty.Easy,
