@@ -65,6 +65,13 @@ spec:
             name: langfuse-web
             port:
               number: 3000
+      - path: /organization
+        pathType: Prefix
+        backend:
+          service:
+            name: langfuse-web
+            port:
+              number: 3000
 ---
 # Langfuse API routes ingress (no rewriting for API calls)
 apiVersion: networking.k8s.io/v1
