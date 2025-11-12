@@ -13,6 +13,6 @@ jobs:
       - name: Run Reviewabot with Azure OpenAI
         uses: Reviewabot/action@v3.0.0
         with:
-          azure-open-ai-key: ${{ secrets.AZURE_OPENAI_KEY }}
+          azure-open-ai-key: ${{ secrets.AZURE_OPENAI_API_KEY }}
           azure-open-ai-endpoint: "https://france-teachin-open-ai.openai.azure.com/"
           reviewer-pat: ${{ secrets.REVIEWER_GITHUB_PAT }}
