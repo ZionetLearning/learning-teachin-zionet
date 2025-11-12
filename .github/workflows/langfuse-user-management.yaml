@@ -82,7 +82,7 @@ jobs:
             exit 1
           fi
           
-          cd devops/helm-tools
+          cd devops/helm-tools/langfuse
           chmod +x create-langfuse-user.sh
           
           echo "## 👤 Creating Langfuse User" >> $GITHUB_STEP_SUMMARY
@@ -119,7 +119,7 @@ jobs:
           PG_USERNAME: ${{ secrets.POSTGRES_USER }}
           PG_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         run: |
-          cd devops/helm-tools
+          cd devops/helm-tools/langfuse
           chmod +x manage-langfuse-users-ci.sh
           
           echo "## 📋 Langfuse User Management" >> $GITHUB_STEP_SUMMARY
