@@ -64,18 +64,20 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Upgrade typing_extensions
+      - name: Create clean Python virtualenv
         run: |
-          pip install --upgrade typing_extensions
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install --upgrade pip
+          pip install typing_extensions==4.11.0
+          pip install gpt-review
 
-      - name: Install gpt-review CLI
-        run: pip install gpt-review
-
-      - name: Run gpt-review on PR
-        run: |
+          # Run GPT review from inside virtualenv
           PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
           REPO_NAME="${{ github.repository }}"
-          gpt github review \
+
+          .venv/bin/gpt github review \
             --access-token $GITHUB_TOKEN \
             --pull-request $PR_NUMBER \
             --repository $REPO_NAME
+
