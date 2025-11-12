@@ -58,11 +58,12 @@ vi.mock("@student/hooks", () => {
     }),
 
     useHebrewSentence: vi.fn(() => ({
+      attemptId: "easy-xyz",
       sentence: "שלום",
       words: ["שלום"],
       sentenceCount: 1,
       currentSentenceIndex: 0,
-      isLoading: false,
+      loading: false,
       error: null,
       initOnce: vi.fn(),
       resetGame: vi.fn(),
@@ -80,3 +81,27 @@ vi.mock("@student/hooks", () => {
     initOnce: vi.fn(),
   };
 });
+
+vi.mock("@student/api", () => ({
+  useSubmitGameAttempt: vi.fn(() => ({
+    mutateAsync: vi.fn(async ({ givenAnswer }: { givenAnswer: string[] }) => {
+      // Calculate accuracy based on the answer
+      const expectedAnswer = "שלום";
+      const userAnswer = givenAnswer[0] || "";
+      const isCorrect = userAnswer === expectedAnswer;
+      const accuracy = isCorrect ? 100 : Math.round((userAnswer.length / expectedAnswer.length) * 100);
+      
+      return {
+        attemptId: "attempt-123",
+        exerciseId: "easy-xyz",
+        studentId: "student-1",
+        gameType: "TypingPractice",
+        difficulty: "Easy",
+        status: isCorrect ? "Success" : "Failure",
+        correctAnswer: [expectedAnswer],
+        attemptNumber: 1,
+        accuracy: accuracy,
+      };
+    }),
+  })),
+}));
