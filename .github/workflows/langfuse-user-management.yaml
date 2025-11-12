@@ -3,6 +3,21 @@ name: Langfuse User Management
 on:
   workflow_dispatch:
     inputs:
+      environment:
+        description: 'Environment'
+        required: true
+        type: choice
+        options:
+          - Development
+          - Production
+        default: Development
+      environment_name:
+        description: 'Environment name (prefix)'
+        required: true
+        type: choice
+        options:
+          - dev
+        default: dev
       action:
         description: 'Action to perform'
         required: true
@@ -21,21 +36,6 @@ on:
         description: 'User full name (required for create-user)'
         required: false
         type: string
-      environment:
-        description: 'Environment'
-        required: true
-        type: choice
-        options:
-          - Development
-          - Production
-        default: Development
-      environment_name:
-        description: 'Environment name (prefix)'
-        required: true
-        type: choice
-        options:
-          - dev
-        default: dev
 
 permissions:
   id-token: write
