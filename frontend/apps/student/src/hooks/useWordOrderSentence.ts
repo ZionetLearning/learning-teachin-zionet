@@ -99,7 +99,7 @@ export const useWordOrderSentence = (
     updateSentenceState("", "", []);
     pendingRef.current = false;
     return { sentence: "", words: [] };
-  }, [finalConfig, fetchSplitSentences, updateSentenceState, sentenceState]);
+  }, [finalConfig, fetchSplitSentences, updateSentenceState]);
 
   const getNextFromPool = useCallback(() => {
     if (sentencePool.length === 0) return { sentence: "", words: [] };
