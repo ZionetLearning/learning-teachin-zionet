@@ -79,7 +79,6 @@ export const useHebrewSentence = (config: UseHebrewSentenceConfig = {}) => {
       gameType: finalConfig.gameType,
     });
 
-    console.log({ response });
 
     setSentencePool(response);
     setCurrentIndex(0);
