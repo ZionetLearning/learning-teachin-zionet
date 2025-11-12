@@ -73,30 +73,15 @@ export const AddWordCardDialog = ({
           { word: hebrew, context },
           {
             onSuccess: async (requestId) => {
-              console.log(
-                "[WordExplain] Received requestId from API:",
-                requestId,
-              );
-              console.log("[WordExplain] Waiting for SignalR event with:", {
-                eventType: EventType.WordExplain,
-                requestId,
-              });
               try {
                 const response = await waitForResponse<WordExplanationResponse>(
                   EventType.WordExplain,
                   requestId,
                   30000,
                 );
-                console.log(
-                  "[WordExplain] Received response from SignalR:",
-                  response,
-                );
                 setExplanation(response.explanation);
               } catch (error) {
-                console.error(
-                  "[WordExplain] Failed to receive explanation:",
-                  error,
-                );
+                console.error("Failed to receive explanation:", error);
                 hasRequestedExplanation.current = false;
               }
             },

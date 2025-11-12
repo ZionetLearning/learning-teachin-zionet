@@ -112,12 +112,9 @@ export const SignalRProvider = ({ hubUrl, children }: SignalRProviderProps) => {
           const pendingRequest = pendingRequestsRef.current.get(requestKey);
 
           if (pendingRequest) {
-            console.log(`[SignalR] Matched pending request for ${requestKey}`);
             clearTimeout(pendingRequest.timeout);
             pendingRequestsRef.current.delete(requestKey);
             pendingRequest.resolve(payload);
-          } else {
-            console.log(`[SignalR] No pending request found for ${requestKey}`);
           }
         }
       }
