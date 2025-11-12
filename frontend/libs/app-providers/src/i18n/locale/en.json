@@ -515,7 +515,9 @@
         "succeeded": "Succeeded",
         "failed": "Failed",
         "gameType": {
-          "wordOrderGame": "Word Order Game"
+          "WordOrder": "Word Order Game",
+          "TypingPractice": "Typing Practice",
+          "SpeakingPractice": "Speaking Practice"
         }
       },
       "studentPracticeHistory": {

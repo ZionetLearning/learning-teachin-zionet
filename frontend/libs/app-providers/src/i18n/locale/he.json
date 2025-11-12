@@ -515,7 +515,9 @@
         "succeeded": "הצלחה",
         "failed": "כישלון",
         "gameType": {
-          "wordOrderGame": "משחק סדר מילים"
+          "WordOrder": "משחק סדר מילים",
+          "TypingPractice": "תרגול הקלדה",
+          "SpeakingPractice": "תרגול דיבור"
         }
       },
       "studentPracticeHistory": {
