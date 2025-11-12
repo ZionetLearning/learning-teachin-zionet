@@ -15,5 +15,6 @@ public enum EventType
     ChatAiAnswer,
     TaskUpdate,
     SentenceGeneration,
-    SplitSentenceGeneration
+    SplitSentenceGeneration,
+    WordExplain
 }

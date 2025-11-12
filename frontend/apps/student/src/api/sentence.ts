@@ -3,21 +3,24 @@ import { apiClient as axios } from "@app-providers";
 import { toast } from "react-toastify";
 import {
   EventType,
-  UserEventUnion,
   SentenceItem,
   SplitSentenceItem,
+  SentenceGenerationResponse,
+  SplitSentenceGenerationResponse,
 } from "@app-providers/types";
 
 import { useSignalR } from "@student/hooks";
+import { GameType } from "@student/types";
 
 export type SentenceRequest = {
   difficulty: 0 | 1 | 2;
   nikud: boolean;
   count: number;
+  gameType?: GameType;
 };
 
 export const useGenerateSentences = () => {
-  const { subscribe, status } = useSignalR();
+  const { waitForResponse, status } = useSignalR();
 
   return useMutation<SentenceItem[], Error, SentenceRequest>({
     mutationKey: ["generateSentences", status],
@@ -25,30 +28,21 @@ export const useGenerateSentences = () => {
       if (status !== "connected") {
         throw new Error("SignalR is not connected");
       }
-      const sentencesPromise = new Promise<SentenceItem[]>(
-        (resolve, reject) => {
-          const timeout = setTimeout(() => {
-            off();
-            reject(new Error("Timeout waiting for SentenceGeneration event"));
-          }, 120_000);
 
-          const off = subscribe<{ sentences?: SentenceItem[] }>(
-            EventType.SentenceGeneration,
-            (payload) => {
-              const list = payload?.sentences ?? [];
-              if (list.length > 0) {
-                clearTimeout(timeout);
-                off();
-                resolve(list);
-              }
-            },
-          );
-        },
+      const { data } = await axios.post<{ requestId: string }>(
+        `${import.meta.env.VITE_AI_URL!}/sentence`,
+        requestBody,
       );
 
-      await axios.post(`${import.meta.env.VITE_AI_URL!}/sentence`, requestBody);
+      const requestId = data.requestId;
 
-      return sentencesPromise;
+      const response = await waitForResponse<SentenceGenerationResponse>(
+        EventType.SentenceGeneration,
+        requestId,
+        120_000, 
+      );
+
+      return response.sentences;
     },
     onError: (error) => {
       console.error("Failed to fetch sentences:", error);
@@ -57,47 +51,38 @@ export const useGenerateSentences = () => {
   });
 };
 
-// Hook for fetching split sentences
 export const useGenerateSplitSentences = () => {
   const AI_BASE_URL = import.meta.env.VITE_AI_URL!;
-  const { subscribe } = useSignalR();
+  const { waitForResponse, status } = useSignalR();
 
   return useMutation<SplitSentenceItem[], Error, SentenceRequest>({
-    mutationFn: async ({ difficulty, nikud, count }) => {
+    mutationKey: ["generateSplitSentences", status],
+    mutationFn: async ({ difficulty, nikud, count, gameType = GameType.WordOrderGame }) => {
+      if (status !== "connected") {
+        throw new Error("SignalR is not connected");
+      }
+
       const requestBody = {
         difficulty,
         nikud,
         count,
+        gameType,
       };
 
-      let timeout: NodeJS.Timeout;
-      let unsubscribe: (() => void) | undefined;
-
-      // Set up a promise to wait for the SignalR response
-      const responsePromise = new Promise<SplitSentenceItem[]>(
-        (resolve, reject) => {
-          timeout = setTimeout(() => {
-            reject(new Error("Timeout waiting for split sentence response"));
-          }, 30000);
-
-          // Subscribe to SignalR events
-          unsubscribe = subscribe("ReceiveEvent", (event: UserEventUnion) => {
-            // Check if this is our split sentence event
-            if (event.eventType === EventType.SplitSentenceGeneration) {
-              // Clean up when we get our response
-              clearTimeout(timeout);
-              unsubscribe?.();
-              resolve(event.payload);
-            }
-          });
-        },
+      const { data } = await axios.post<{ requestId: string }>(
+        `${AI_BASE_URL}/sentence/split`,
+        requestBody,
       );
 
-      // Make the API call
-      await axios.post(`${AI_BASE_URL}/sentence/split`, requestBody);
+      const requestId = data.requestId;
 
-      const splitSentenceResponse = await responsePromise;
-      return splitSentenceResponse;
+      const response = await waitForResponse<SplitSentenceGenerationResponse>(
+        EventType.SplitSentenceGeneration,
+        requestId,
+        60_000, 
+      );
+
+      return response.sentences;
     },
 
     onError: (error) => {

@@ -1,7 +1,9 @@
-﻿using Manager.Constants;
+﻿using System.Text.Json;
+using Manager.Constants;
 using Manager.Models.Chat;
 using Manager.Models.ModelValidation;
 using Manager.Models.Sentences;
+using Manager.Models.Words;
 using Manager.Services.Clients.Accessor;
 using Manager.Services.Clients.Engine;
 using Manager.Services.Clients.Engine.Models;
@@ -15,8 +17,10 @@ public static class AiEndpoints
     private sealed class AnswerEndpoint { }
     private sealed class PubSubEndpoint { }
     private sealed class ChatPostEndpoint { }
+    private sealed class GlobalChatEndpoint { }
     private sealed class SpeechEndpoints { }
     private sealed class ExplainMistakeEndpoint { }
+    private sealed class WordsEndpoint { }
 
     public static WebApplication MapAiEndpoints(this WebApplication app)
     {
@@ -32,9 +36,11 @@ public static class AiEndpoints
         #region HTTP POST
 
         aiGroup.MapPost("/chat", ChatAsync).WithName("Chat");
+        aiGroup.MapPost("/global-chat", GlobalChatAsync).WithName("Globalchat");
         aiGroup.MapPost("/chat/mistake-explanation", ExplainMistakeAsync).WithName("ExplainMistake");
         aiGroup.MapPost("/sentence", SentenceGenerateAsync).WithName("GenerateSentence");
         aiGroup.MapPost("/sentence/split", SplitSentenceGenerateAsync).WithName("GenerateSplitSentence");
+        aiGroup.MapPost("/word-explain", WordExplainAsync).WithName("GenerateWordExplain");
 
         #endregion
 
@@ -104,6 +110,7 @@ public static class AiEndpoints
       [FromBody] ChatRequest request,
       [FromServices] IEngineClient engine,
       [FromServices] ILogger<ChatPostEndpoint> log,
+      HttpContext httpContext,
       CancellationToken ct)
     {
         using var scope = log.BeginScope("ThreadId: {ThreadId}", request.ThreadId);
@@ -117,24 +124,14 @@ public static class AiEndpoints
             return Results.BadRequest(new { error = "threadId is required" });
         }
 
-        if (string.IsNullOrWhiteSpace(request.UserId))
-        {
-            return Results.BadRequest(new { error = "userId is required" });
-        }
-
         var requestId = Guid.NewGuid().ToString("N");
-
-        //todo: takeUserId from token.
 
         if (!TryResolveThreadId(request.ThreadId, out var threadId, out var errorThread))
         {
             return Results.BadRequest(new { error = "If threadId is present, it must be a GUID" });
         }
 
-        if (!TryResolveThreadId(request.UserId, out var userId, out var errorUser))
-        {
-            return Results.BadRequest(new { error = "If userId is present, it must be a GUID" });
-        }
+        var userId = GetUserId(httpContext, log);
 
         var engineRequest = new EngineChatRequest
         {
@@ -215,6 +212,149 @@ public static class AiEndpoints
         }
     }
 
+    private static async Task<IResult> GlobalChatAsync(
+      [FromBody] ChatRequest request,
+      [FromServices] IEngineClient engine,
+      [FromServices] IAccessorClient accessorClient,
+      [FromServices] ILogger<GlobalChatEndpoint> log,
+      HttpContext httpContext,
+      CancellationToken ct)
+    {
+        using var scope = log.BeginScope("ThreadId: {ThreadId}", request.ThreadId);
+        if (string.IsNullOrWhiteSpace(request.UserMessage))
+        {
+            return Results.BadRequest(new { error = "userMessage is required" });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.ThreadId))
+        {
+            return Results.BadRequest(new { error = "threadId is required" });
+        }
+
+        var requestId = Guid.NewGuid().ToString("N");
+
+        var userId = GetUserId(httpContext, log);
+
+        if (!TryResolveThreadId(request.ThreadId, out var threadId, out var errorThread))
+        {
+            return Results.BadRequest(new { error = "If threadId is present, it must be a GUID" });
+        }
+
+        JsonElement? parsedPageContext = null;
+        if (request.PageContext is not null)
+        {
+            var raw = request.PageContext.JsonContext;
+            parsedPageContext = ToJsonElementOrNull(raw, out var ctxErr);
+            if (ctxErr is not null)
+            {
+                return Results.BadRequest(new { error = ctxErr });
+            }
+        }
+
+        EngineChatRequest? engineRequest = null;
+
+        try
+        {
+            var user = await accessorClient.GetUserAsync(userId);
+
+            if (user == null)
+            {
+                log.LogWarning("User {UserId} not found in accessor", userId);
+                return Results.BadRequest(new { error = "User not found" });
+
+            }
+
+            var userDetail = new UserDetailForChat
+            {
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                HebrewLevelValue = user.HebrewLevelValue.ToString(),
+                PreferredLanguageCode = user.PreferredLanguageCode.ToString(),
+                Interests = user.Interests,
+                Role = user.Role.ToString()
+
+            };
+
+            engineRequest = new EngineChatRequest
+            {
+                RequestId = requestId,
+                ThreadId = threadId,
+                UserId = userId,
+                UserMessage = request.UserMessage.Trim(),
+                ChatType = request.ChatType,
+                UserDetail = userDetail,
+                PageContext = parsedPageContext
+
+            };
+
+            var engineResponse = await engine.GlobalChatAsync(engineRequest);
+
+            if (engineResponse.success)
+            {
+                log.LogInformation("Request {RequestId} (thread {Thread}) accepted", requestId, threadId);
+                return Results.Ok(new
+                {
+                    requestId
+                });
+            }
+            else
+            {
+                log.LogError("Engine chat failed - service returned failure for request {RequestId}", requestId);
+                return Results.Problem(
+                    title: "Engine chat failed",
+                    detail: "Upstream service returned an error.",
+                    statusCode: StatusCodes.Status502BadGateway,
+                    extensions: new Dictionary<string, object?>
+                    {
+                        ["upstreamStatus"] = 500,
+                        ["requestId"] = engineRequest.RequestId
+                    });
+            }
+        }
+        catch (Dapr.Client.InvocationException ex) when (ex.Response?.StatusCode is not null)
+        {
+            var upstream = (int)ex.Response!.StatusCode!;
+            log.LogError(ex, "Engine call failed with upstream status {Status}", upstream);
+
+            return Results.Problem(
+                title: "Engine call failed",
+                detail: "Upstream service returned an error.",
+                statusCode: StatusCodes.Status502BadGateway,
+                extensions: new Dictionary<string, object?>
+                {
+                    ["upstreamStatus"] = upstream,
+                    ["requestId"] = engineRequest?.RequestId ?? requestId
+                });
+        }
+        catch (HttpRequestException ex)
+        {
+            log.LogError(ex, "Engine is unreachable");
+            return Results.Problem(
+                title: "Engine unavailable",
+                detail: "Unable to connect to the upstream service.",
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+        catch (TaskCanceledException ex) when (!ct.IsCancellationRequested)
+        {
+            log.LogWarning(ex, "Engine call timed out");
+            return Results.Problem(
+                title: "Engine timeout",
+                detail: "Upstream service did not respond in time.",
+                statusCode: StatusCodes.Status504GatewayTimeout);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return Results.StatusCode(499);
+        }
+        catch (Exception ex)
+        {
+            log.LogError(ex, "Unhandled error in Manager");
+            return Results.Problem(
+                title: "Unexpected server error",
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
+    }
+
     private static bool TryResolveThreadId(
         string? rawThreadId,
         out Guid threadId,
@@ -250,22 +390,25 @@ public static class AiEndpoints
             return Results.BadRequest(new { error = "Request is required" });
         }
 
-        logger.LogInformation("Received sentence generation request");
+        logger.LogInformation("Received sentence generation request for GameType={GameType}", dto.GameType);
 
         try
         {
             var userId = GetUserId(httpContext, logger);
+            var requestId = Guid.NewGuid().ToString("N");
 
             var request = new SentenceRequest
             {
+                RequestId = requestId,
                 Difficulty = dto.Difficulty,
                 Nikud = dto.Nikud,
                 Count = dto.Count,
-                UserId = userId
+                UserId = userId,
+                GameType = dto.GameType
             };
 
             await engineClient.GenerateSentenceAsync(request);
-            return Results.Ok();
+            return Results.Ok(new { requestId });
         }
         catch (OperationCanceledException)
         {
@@ -283,6 +426,7 @@ public static class AiEndpoints
             return Results.Problem("An error occurred during sentence generation.");
         }
     }
+
     private static async Task<IResult> SplitSentenceGenerateAsync(
        [FromBody] SentenceRequestDto dto,
        [FromServices] IEngineClient engineClient,
@@ -295,22 +439,25 @@ public static class AiEndpoints
             return Results.BadRequest(new { error = "Request is required" });
         }
 
-        logger.LogInformation("Received split sentence generation request");
+        logger.LogInformation("Received split sentence generation request for GameType={GameType}", dto.GameType);
 
         try
         {
             var userId = GetUserId(httpContext, logger);
+            var requestId = Guid.NewGuid().ToString("N");
 
             var request = new SentenceRequest
             {
+                RequestId = requestId,
                 Difficulty = dto.Difficulty,
                 Nikud = dto.Nikud,
                 Count = dto.Count,
-                UserId = userId
+                UserId = userId,
+                GameType = dto.GameType
             };
 
             await engineClient.GenerateSplitSentenceAsync(request);
-            return Results.Ok();
+            return Results.Ok(new { requestId });
         }
         catch (InvalidOperationException ex) when (ex.Data.Contains("Tag") &&
                                           Equals(ex.Data["Tag"], "MissingOrInvalidUserId"))
@@ -449,6 +596,70 @@ public static class AiEndpoints
         }
     }
 
+    private static async Task<IResult> WordExplainAsync(
+    [FromBody] WordExplainRequestDto dto,
+    [FromServices] IEngineClient engineClient,
+    [FromServices] ILogger<WordsEndpoint> logger,
+    HttpContext httpContext,
+    CancellationToken ct)
+    {
+        if (dto is null)
+        {
+            return Results.BadRequest(new { error = "Request is required" });
+        }
+
+        if (string.IsNullOrWhiteSpace(dto.Word))
+        {
+            return Results.BadRequest(new { error = "Word is required" });
+        }
+
+        if (string.IsNullOrWhiteSpace(dto.Context))
+        {
+            return Results.BadRequest(new { error = "Context is required" });
+        }
+
+        logger.LogInformation("Received word explanation request for {Word}", dto.Word);
+
+        try
+        {
+            var userId = GetUserId(httpContext, logger);
+
+            var request = new WordExplainRequest
+            {
+                Id = Guid.NewGuid(),
+                Word = dto.Word,
+                Context = dto.Context,
+                UserId = userId,
+            };
+
+            await engineClient.GenerateWordExplainAsync(request, ct);
+            logger.LogInformation("Word explanation request for {Word} sent to engine", dto.Word);
+
+            return Results.Ok(request.Id);
+        }
+        catch (InvalidOperationException ex) when (ex.Data.Contains("Tag") &&
+                                           Equals(ex.Data["Tag"], "MissingOrInvalidUserId"))
+        {
+            logger.LogWarning(ex, "Invalid or missing UserId");
+            return Results.Problem("Invalid or missing UserId", statusCode: StatusCodes.Status403Forbidden);
+        }
+        catch (OperationCanceledException)
+        {
+            logger.LogWarning("Word explanation operation was canceled by user");
+            return Results.StatusCode(StatusCodes.Status499ClientClosedRequest);
+        }
+        catch (TimeoutException)
+        {
+            logger.LogWarning("Word explanation operation timed out");
+            return Results.Problem("Word explanation is taking too long.", statusCode: StatusCodes.Status408RequestTimeout);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error in word explanation manager");
+            return Results.Problem("An error occurred during word explanation.");
+        }
+    }
+
     private static Guid GetUserId(HttpContext httpContext, ILogger logger)
     {
         var raw = httpContext?.User?.Identity?.Name;
@@ -462,5 +673,25 @@ public static class AiEndpoints
         }
 
         return userId;
+    }
+
+    private static JsonElement? ToJsonElementOrNull(string? rawJson, out string? error)
+    {
+        error = null;
+        if (string.IsNullOrWhiteSpace(rawJson))
+        {
+            return null;
+        }
+
+        try
+        {
+            using var doc = JsonDocument.Parse(rawJson);
+            return doc.RootElement.Clone();
+        }
+        catch (Exception ex)
+        {
+            error = $"Invalid pageContext.json: {ex.Message}";
+            return null;
+        }
     }
 }

@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useState, useEffect, useCallback } from "react";
+import { CircularProgress } from "@mui/material";
 import { useStyles } from "./style";
 import { FeedbackDisplay, AudioControls } from "./components";
 import { useTypingPractice } from "./hooks";
@@ -10,11 +11,21 @@ import {
   GameOverModal,
   GameSettings,
 } from "@ui-components";
+import {
+  ContextAwareChat,
+  useTypingPracticeContext,
+} from "@ui-components/ContextAwareChat";
 import { getDifficultyLabel } from "@student/features";
+import { useGameConfig } from "@student/hooks";
 
 export const TypingPractice = () => {
   const { t, i18n } = useTranslation();
   const classes = useStyles();
+  const {
+    config: savedConfig,
+    isLoading: configLoading,
+    updateConfig,
+  } = useGameConfig("TypingPractice");
   const [gameOverModalOpen, setGameOverModalOpen] = useState(false);
   const [gameConfig, setGameConfig] = useState<GameConfig | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
@@ -24,6 +35,7 @@ export const TypingPractice = () => {
 
   const {
     exerciseState,
+    currentExercise,
     currentSentenceIndex,
     correctSentencesCount,
     sentenceCount,
@@ -37,11 +49,21 @@ export const TypingPractice = () => {
     handleNextExercise,
   } = useTypingPractice(gameConfig || undefined);
 
-  useEffect(() => {
-    if (!gameStarted && !gameConfig) {
-      setConfigModalOpen(true);
-    }
-  }, [gameStarted, gameConfig]);
+  useEffect(
+    function initializeGameConfig() {
+      if (gameConfig || configLoading) return;
+
+      if (savedConfig) {
+        setGameConfig(savedConfig);
+        if (configModalOpen) {
+          setConfigModalOpen(false);
+        }
+      } else {
+        setConfigModalOpen(true);
+      }
+    },
+    [gameConfig, configLoading, savedConfig, configModalOpen],
+  );
 
   useEffect(() => {
     if (gameConfig && !gameStarted) {
@@ -53,11 +75,12 @@ export const TypingPractice = () => {
   const handleConfigConfirm = useCallback(
     (config: GameConfig) => {
       setGameConfig(config);
+      updateConfig(config);
       setConfigModalOpen(false);
       setGameStarted(false);
       resetGame();
     },
-    [resetGame],
+    [resetGame, updateConfig],
   );
 
   const handleConfigChange = useCallback(() => {
@@ -86,6 +109,20 @@ export const TypingPractice = () => {
       setGameOverModalOpen(true);
     }
   }, [handleNextExercise]);
+
+  const pageContext = useTypingPracticeContext({
+    currentExercise: currentSentenceIndex + 1,
+    totalExercises: sentenceCount,
+    difficulty: gameConfig?.difficulty.toString(),
+    phraseToSpeak: currentExercise?.hebrewText,
+    userAttempt: exerciseState.userInput,
+    correctAnswer: exerciseState.feedbackResult?.expectedText,
+    additionalContext: {
+      phase: exerciseState.phase,
+      correctCount: correctSentencesCount,
+      isCorrect: exerciseState.feedbackResult?.isCorrect,
+    },
+  });
 
   const renderExerciseArea = () => (
     <div className={classes.exerciseArea} data-testid="typing-exercise-area">
@@ -136,6 +173,16 @@ export const TypingPractice = () => {
     </div>
   );
 
+  if (configLoading) {
+    return (
+      <div className={classes.pageWrapper}>
+        <div className={`${classes.container} ${classes.loadingContainer}`}>
+          <CircularProgress />
+        </div>
+      </div>
+    );
+  }
+
   if (!gameStarted || !gameConfig) {
     return (
       <GameSetupPanel
@@ -173,11 +220,10 @@ export const TypingPractice = () => {
 
         {exerciseState.isLoading && (
           <div className={classes.loadingOverlay}>
-            <div className={classes.loadingSpinner} />
+            <CircularProgress />
           </div>
         )}
 
-        {/* Configuration Modal */}
         <GameConfigModal
           open={configModalOpen}
           onClose={() => setConfigModalOpen(false)}
@@ -186,7 +232,6 @@ export const TypingPractice = () => {
           initialConfig={gameConfig || undefined}
         />
 
-        {/* Game Over Modal */}
         <GameOverModal
           open={gameOverModalOpen}
           onPlayAgain={handleGameOverPlayAgain}
@@ -195,6 +240,8 @@ export const TypingPractice = () => {
           totalSentences={sentenceCount}
         />
       </div>
+
+      <ContextAwareChat pageContext={pageContext} />
     </div>
   );
 };

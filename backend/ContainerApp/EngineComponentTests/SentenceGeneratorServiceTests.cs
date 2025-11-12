@@ -43,6 +43,7 @@ public class SentenceGeneratorServiceTests
         var userId = Guid.NewGuid();
         var request = new SentenceRequest
         {
+            RequestId = Guid.NewGuid().ToString(),
             UserId = userId,
             Count = 1,
             Difficulty = Difficulty.Medium,
@@ -61,6 +62,7 @@ public class SentenceGeneratorServiceTests
     {
         var req = new SentenceRequest
         {
+            RequestId = Guid.NewGuid().ToString(),
             UserId = Guid.NewGuid(),
             Count = count,
             Difficulty = Difficulty.Medium,

@@ -1,29 +1,30 @@
 import { useState, useCallback, useRef, useMemo } from "react";
-import { useGenerateSplitSentences } from "@student/api";
-import { DifficultyLevel } from "@student/types";
-import { SplitSentenceItem } from "@app-providers";
+import { useGenerateSentences } from "@student/api";
+import { DifficultyLevel, GameType } from "@student/types";
+import { SentenceItem } from "@app-providers";
 
 export interface UseHebrewSentenceConfig {
   difficulty?: DifficultyLevel;
   nikud?: boolean;
   count?: number;
+  gameType?: GameType;
 }
 
 // Create a single state object to prevent sync issues
 interface SentenceState {
-  attemptId: string;
+  exerciseId: string;
   sentence: string;
   words: string[];
 }
 
 export const useHebrewSentence = (config: UseHebrewSentenceConfig = {}) => {
   const [sentenceState, setSentenceState] = useState<SentenceState>({
-    attemptId: "",
+    exerciseId: "",
     sentence: "",
     words: [],
   });
 
-  const [sentencePool, setSentencePool] = useState<SplitSentenceItem[]>([]);
+  const [sentencePool, setSentencePool] = useState<SentenceItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,10 +32,10 @@ export const useHebrewSentence = (config: UseHebrewSentenceConfig = {}) => {
   const didInitRef = useRef(false);
 
   const {
-    mutateAsync: fetchSplitSentences,
-    isPending: splitLoading,
-    error: splitError,
-  } = useGenerateSplitSentences();
+    mutateAsync: fetchSentences,
+    isPending: sentencesLoading,
+    error: sentencesError,
+  } = useGenerateSentences();
 
   // Default configuration
   const defaultConfig = useMemo(() => {
@@ -49,14 +50,14 @@ export const useHebrewSentence = (config: UseHebrewSentenceConfig = {}) => {
     return { ...defaultConfig, ...config };
   }, [defaultConfig, config]);
 
-  const loading = splitLoading;
-  const mutationError = splitError;
+  const loading = sentencesLoading;
+  const mutationError = sentencesError;
 
   // Helper to update state atomically
   const updateSentenceState = useCallback(
-    (newAttemptId: string, newSentence: string, newWords: string[]) => {
+    (newExerciseId: string, newSentence: string, newWords: string[]) => {
       setSentenceState({
-        attemptId: newAttemptId,
+        exerciseId: newExerciseId,
         sentence: newSentence,
         words: newWords,
       });
@@ -70,30 +71,28 @@ export const useHebrewSentence = (config: UseHebrewSentenceConfig = {}) => {
     pendingRef.current = true;
     setError(null);
 
-    // Fetch split sentences
-    const response = await fetchSplitSentences({
+    // Fetch sentences
+    const response = await fetchSentences({
       difficulty: finalConfig.difficulty,
       nikud: finalConfig.nikud,
       count: finalConfig.count,
+      gameType: finalConfig.gameType,
     });
-
-    console.log({ response });
-
     setSentencePool(response);
     setCurrentIndex(0);
 
     if (response.length > 0) {
-      const firstSentence = response[0] as SplitSentenceItem;
+      const firstSentence = response[0] as SentenceItem;
 
       updateSentenceState(
-        firstSentence.attemptId,
-        firstSentence.original,
+        firstSentence.exerciseId,
+        firstSentence.text,
         firstSentence.words,
       );
 
       pendingRef.current = false;
       return {
-        sentence: firstSentence.original,
+        sentence: firstSentence.text,
         words: firstSentence.words,
       };
     }
@@ -102,7 +101,7 @@ export const useHebrewSentence = (config: UseHebrewSentenceConfig = {}) => {
     updateSentenceState("", "", []);
     pendingRef.current = false;
     return { sentence: "", words: [] };
-  }, [finalConfig, fetchSplitSentences, updateSentenceState, sentenceState]);
+  }, [finalConfig, fetchSentences, updateSentenceState, sentenceState]);
 
   const getNextFromPool = useCallback(() => {
     if (sentencePool.length === 0) return { sentence: "", words: [] };
@@ -116,8 +115,8 @@ export const useHebrewSentence = (config: UseHebrewSentenceConfig = {}) => {
 
     setCurrentIndex(nextIndex);
     const nextItem = sentencePool[nextIndex];
-    updateSentenceState(nextItem.attemptId, nextItem.original, nextItem.words);
-    return { sentence: nextItem.original, words: nextItem.words };
+    updateSentenceState(nextItem.exerciseId, nextItem.text, nextItem.words);
+    return { sentence: nextItem.text, words: nextItem.words };
   }, [sentencePool, currentIndex, updateSentenceState]);
 
   const fetchSentence = useCallback(async () => {
@@ -157,7 +156,7 @@ export const useHebrewSentence = (config: UseHebrewSentenceConfig = {}) => {
   const combinedError = error || (mutationError?.message ?? null);
 
   return {
-    attemptId: sentenceState.attemptId,
+    attemptId: sentenceState.exerciseId,
     sentence: sentenceState.sentence,
     words: sentenceState.words,
     loading,

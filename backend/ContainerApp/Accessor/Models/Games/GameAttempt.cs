@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Accessor.Models.GameConfiguration;
 
 namespace Accessor.Models.Games;
 
@@ -17,7 +18,7 @@ public class GameAttempt
     public Guid StudentId { get; set; }
 
     [Required]
-    public string GameType { get; set; } = string.Empty; // "wordOrderGame", etc.
+    public GameName GameType { get; set; }
 
     [Required]
     public Difficulty Difficulty { get; set; }
@@ -35,6 +36,9 @@ public class GameAttempt
 
     [Required]
     public int AttemptNumber { get; set; }
+
+    [Required]
+    public decimal Accuracy { get; set; }
 
     [Required]
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;

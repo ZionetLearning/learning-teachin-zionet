@@ -90,6 +90,9 @@ export const DetailedTable = ({
                       {t("pages.practiceHistory.yourLastAnswer")}
                     </TableCell>
                     <TableCell className={classes.th}>
+                      {t("pages.practiceHistory.accuracy")}
+                    </TableCell>
+                    <TableCell className={classes.th}>
                       {t("pages.practiceHistory.status")}
                     </TableCell>
                     <TableCell className={classes.th}>
@@ -100,7 +103,7 @@ export const DetailedTable = ({
                 <TableBody>
                   {items.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} align="center">
+                      <TableCell colSpan={6} align="center">
                         <Typography variant="h6">
                           {t("pages.practiceHistory.noMistakes")}
                         </Typography>
@@ -131,6 +134,20 @@ export const DetailedTable = ({
                             </Tooltip>
                           </TableCell>
                           <TableCell className={classes.td}>
+                            <Typography
+                              fontWeight={600}
+                              color={
+                                item.accuracy >= 80
+                                  ? "success.main"
+                                  : item.accuracy >= 60
+                                    ? "warning.main"
+                                    : "error.main"
+                              }
+                            >
+                              {item.accuracy.toFixed(1)}%
+                            </Typography>
+                          </TableCell>
+                          <TableCell className={classes.td}>
                             <StatusChip
                               text={
                                 item.status === "Success"
@@ -154,7 +171,7 @@ export const DetailedTable = ({
               className={classes.tablePaginationWrapper}
               component="div"
               count={total}
-              page={page - 1}
+              page={page}
               onPageChange={(_, p) => onPageChange(p)}
               rowsPerPage={rowsPerPage}
               onRowsPerPageChange={(e) =>

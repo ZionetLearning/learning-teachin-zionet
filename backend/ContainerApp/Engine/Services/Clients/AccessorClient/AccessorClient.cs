@@ -6,6 +6,7 @@ using Engine.Options;
 using Engine.Services.Clients.AccessorClient.Models;
 using Engine.Constants;
 using Engine.Models.Users;
+using Engine.Models.Games;
 
 namespace Engine.Services.Clients.AccessorClient;
 
@@ -112,6 +113,32 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get attempt details for UserId {UserId}, AttemptId {AttemptId}", userId, attemptId);
+            throw;
+        }
+    }
+
+    public async Task<AttemptDetailsResponse> GetLastAttemptAsync(Guid userId, GameName gameType, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Getting last attempt for UserId {UserId}", userId);
+
+        try
+        {
+            var response = await _daprClient.InvokeMethodAsync<AttemptDetailsResponse>(
+                HttpMethod.Get,
+                "accessor",
+                $"games-accessor/attempt/last/{userId:D}/{gameType}",
+                cancellationToken: ct);
+
+            return response;
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("No attempts found for UserId {UserId}", userId);
+            throw new InvalidOperationException($"No attempts found for user {userId}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get last attempt for UserId {UserId}", userId);
             throw;
         }
     }

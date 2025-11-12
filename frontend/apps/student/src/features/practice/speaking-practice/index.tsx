@@ -1,22 +1,26 @@
 /// <reference types="vite/client" />
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { CircularProgress } from "@mui/material";
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";
 import { useTranslation } from "react-i18next";
 import { comparePhrases } from "./utils";
-
-import { useAzureSpeechToken, useGenerateSentences } from "@student/api";
-import { useAvatarSpeech } from "@student/hooks";
-import { DifficultyLevel } from "@student/types";
+import { useAzureSpeechToken, useGenerateSentences, useSubmitGameAttempt } from "@student/api";
+import { useAvatarSpeech, useGameConfig, useSignalR } from "@student/hooks";
+import { DifficultyLevel, GameType } from "@student/types";
 import {
   GameConfigModal,
   GameOverModal,
   GameSettings,
   GameSetupPanel,
 } from "@ui-components";
+import {
+  ContextAwareChat,
+  useSpeakingPracticeContext,
+} from "@ui-components/ContextAwareChat";
 import { getDifficultyLabel } from "../utils";
 import { useStyles } from "./style";
+import { toast } from "react-toastify";
 
 const Feedback = {
   Perfect: "Perfect!",
@@ -30,21 +34,29 @@ type FeedbackType = (typeof Feedback)[keyof typeof Feedback];
 export const SpeakingPractice = () => {
   const classes = useStyles();
   const { t, i18n } = useTranslation();
+  const {
+    config: savedConfig,
+    isLoading: configLoading,
+    updateConfig,
+  } = useGameConfig("SpeakingPractice");
   const isHebrew = i18n.language === "he" || i18n.language === "heb";
   const [currentIdx, setCurrentIdx] = useState(0);
   const [feedback, setFeedback] = useState<FeedbackType>(Feedback.None);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [isRecording, setIsRecording] = useState(false);
-  const [configModalOpen, setConfigModalOpen] = useState(true);
+  const [configModalOpen, setConfigModalOpen] = useState(false);
   const [gameOverOpen, setGameOverOpen] = useState(false);
   const [difficulty, setDifficulty] = useState<DifficultyLevel>(1);
   const [nikud, setNikud] = useState(true);
   const [count, setCount] = useState(3);
   const [sentences, setSentences] = useState<string[]>([]);
+  const [exerciseIds, setExerciseIds] = useState<string[]>([]);
   const [attempted, setAttempted] = useState<Set<number>>(new Set());
   const [correctIdxs, setCorrectIdxs] = useState<Set<number>>(new Set());
   const [skipped, setSkipped] = useState<Set<number>>(new Set());
-  const [isConfigured, setIsConfigured] = useState(false);
+  const isConfiguredRef = useRef(false);
+
+  const { mutateAsync: submitAttempt } = useSubmitGameAttempt();
 
   const recognizerRef = useRef<sdk.SpeechRecognizer | null>(null);
   const audioConfigRef = useRef<sdk.AudioConfig | null>(null);
@@ -100,30 +112,58 @@ export const SpeakingPractice = () => {
   );
 
   const generateMutation = useGenerateSentences();
+  const { status: signalRStatus } = useSignalR();
 
-  const requestSentences = (
-    difficulty: DifficultyLevel,
-    nikud: boolean,
-    count: number,
-  ) => {
-    generateMutation.mutate(
-      { difficulty, nikud, count },
-      {
-        onSuccess: (data) => {
-          setSentences(data.map((item) => item.text));
-          setCurrentIdx(0);
-          setAttempted(new Set());
-          setCorrectIdxs(new Set());
-          setSkipped(new Set());
-          setConfigModalOpen(false);
+  const requestSentences = useCallback(
+    (difficulty: DifficultyLevel, nikud: boolean, count: number) => {
+      generateMutation.mutate(
+        { difficulty, nikud, count, gameType: GameType.SpeakingPractice },
+        {
+          onSuccess: (data) => {
+            setSentences(data.map((item) => item.text));
+            setExerciseIds(data.map((item) => item.exerciseId));
+            setCurrentIdx(0);
+            setAttempted(new Set());
+            setCorrectIdxs(new Set());
+            setSkipped(new Set());
+            setConfigModalOpen(false);
+          },
+          onError: (error) => {
+            console.error("Error fetching sentences:", error);
+            setSentences([]);
+          },
         },
-        onError: (error) => {
-          console.error("Error fetching sentences:", error);
-          setSentences([]);
-        },
-      },
-    );
-  };
+      );
+    },
+    [generateMutation],
+  );
+
+  useEffect(
+    function initializeGameConfig() {
+      if (
+        configLoading ||
+        isConfiguredRef.current ||
+        signalRStatus !== "connected"
+      )
+        return;
+
+      if (savedConfig) {
+        setDifficulty(savedConfig.difficulty);
+        setNikud(savedConfig.nikud);
+        setCount(savedConfig.count);
+        setConfigModalOpen(false);
+        isConfiguredRef.current = true;
+        requestSentences(
+          savedConfig.difficulty,
+          savedConfig.nikud,
+          savedConfig.count,
+        );
+      } else {
+        setConfigModalOpen(true);
+      }
+    },
+    [configLoading, savedConfig, requestSentences, signalRStatus],
+  );
 
   const {
     speak,
@@ -179,19 +219,65 @@ export const SpeakingPractice = () => {
     setIsRecording(true);
 
     recognizer.recognizeOnceAsync(
-      (result) => {
+      async (result) => {
         const userText = result.text ?? "";
         const correct = userText
           ? comparePhrases(sentences[currentIdx], userText)
           : false;
-        setCorrectIdxs((prev) => {
-          const next = new Set(prev);
-          if (correct) next.add(currentIdx);
-          else next.delete(currentIdx);
-          return next;
-        });
-        setIsCorrect(correct);
-        setFeedback(correct ? Feedback.Perfect : Feedback.TryAgain);
+
+        // Submit attempt to backend
+        const currentExerciseId = exerciseIds[currentIdx];
+        if (currentExerciseId) {
+          try {
+            const res = await submitAttempt({
+              exerciseId: currentExerciseId,
+              givenAnswer: [userText],
+            });
+
+
+            const isServerCorrect = res.status === "Success";
+            setCorrectIdxs((prev) => {
+              const next = new Set(prev);
+              if (isServerCorrect) next.add(currentIdx);
+              else next.delete(currentIdx);
+              return next;
+            });
+            setIsCorrect(isServerCorrect);
+            setFeedback(isServerCorrect ? Feedback.Perfect : Feedback.TryAgain);
+            // Show accuracy in toast
+            if (isServerCorrect) {
+              toast.success(
+                `${Feedback.Perfect} - ${res.accuracy.toFixed(1)}% ${t("pages.speakingPractice.accuracy")}`,
+              );
+            } else {
+              toast.error(
+                `${Feedback.TryAgain} - ${res.accuracy.toFixed(1)}% ${t("pages.speakingPractice.accuracy")}`,
+              );
+            }
+          } catch (error) {
+            console.error("Failed to submit speaking practice attempt:", error);
+            // Fallback to local comparison if submission fails
+            setCorrectIdxs((prev) => {
+              const next = new Set(prev);
+              if (correct) next.add(currentIdx);
+              else next.delete(currentIdx);
+              return next;
+            });
+            setIsCorrect(correct);
+            setFeedback(correct ? Feedback.Perfect : Feedback.TryAgain);
+          }
+        } else {
+          // No exerciseId available, use local comparison
+          setCorrectIdxs((prev) => {
+            const next = new Set(prev);
+            if (correct) next.add(currentIdx);
+            else next.delete(currentIdx);
+            return next;
+          });
+          setIsCorrect(correct);
+          setFeedback(correct ? Feedback.Perfect : Feedback.TryAgain);
+        }
+
         stopRecognition();
         const total = sentences.length;
         const isLast = currentIdx === total - 1;
@@ -281,9 +367,10 @@ export const SpeakingPractice = () => {
     setDifficulty(config.difficulty);
     setNikud(config.nikud);
     setCount(config.count);
+    updateConfig(config);
     setConfigModalOpen(false);
     setFeedback(Feedback.None);
-    setIsConfigured(true);
+    isConfiguredRef.current = true;
     requestSentences(config.difficulty, config.nikud, config.count);
   };
 
@@ -297,7 +384,41 @@ export const SpeakingPractice = () => {
     requestSentences(difficulty, nikud, count);
   };
 
-  if (!isConfigured) {
+  const pageContext = useSpeakingPracticeContext({
+    currentExercise: currentIdx + 1,
+    totalExercises: sentences.length,
+    difficulty: difficulty.toString(),
+    phraseToSpeak: sentences[currentIdx],
+    additionalContext: {
+      isRecording,
+      isPlaying,
+      correctCount: correctIdxs.size,
+      attemptedCount: attempted.size,
+      isCorrect,
+      feedback,
+    },
+  });
+
+  if (configLoading) {
+    return (
+      <div className={classes.loader}>
+        <CircularProgress />
+      </div>
+    );
+  }
+
+  if (savedConfig && signalRStatus !== "connected") {
+    return (
+      <div className={classes.loader}>
+        <CircularProgress />
+      </div>
+    );
+  }
+
+  if (
+    !isConfiguredRef.current ||
+    (!sentences.length && !generateMutation.isPending)
+  ) {
     return (
       <div className={classes.loader}>
         <GameSetupPanel
@@ -310,7 +431,7 @@ export const SpeakingPractice = () => {
     );
   }
 
-  if (!sentences.length && generateMutation.isPending) {
+  if (generateMutation.isPending) {
     return (
       <div className={classes.loader}>
         <CircularProgress />
@@ -406,6 +527,7 @@ export const SpeakingPractice = () => {
         correctSentences={correctIdxs.size}
         totalSentences={sentences.length}
       />
+      <ContextAwareChat pageContext={pageContext} hasSettings />
     </div>
   );
 };

@@ -149,6 +149,9 @@ namespace Accessor.DB.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<decimal>("Accuracy")
+                        .HasColumnType("numeric");
+
                     b.Property<int>("AttemptNumber")
                         .HasColumnType("integer");
 
@@ -408,6 +411,10 @@ namespace Accessor.DB.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("AcsUserId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
                     b.Property<string>("AvatarContentType")
                         .HasColumnType("text");
 
@@ -416,10 +423,6 @@ namespace Accessor.DB.Migrations
 
                     b.Property<DateTime?>("AvatarUpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("AcsUserId")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
 
                     b.Property<string>("Email")
                         .IsRequired()

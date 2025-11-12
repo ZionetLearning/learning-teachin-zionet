@@ -17,6 +17,7 @@ import PendingActionsIcon from "@mui/icons-material/PendingActions";
 import DashboardCustomizeIcon from "@mui/icons-material/DashboardCustomize";
 import EmojiSymbolsIcon from "@mui/icons-material/EmojiSymbols";
 import SchoolIcon from "@mui/icons-material/School";
+import CastForEducationIcon from "@mui/icons-material/CastForEducation";
 import FlagIcon from "@mui/icons-material/Flag";
 import NoteAltIcon from "@mui/icons-material/NoteAlt";
 import GBFlag from "country-flag-icons/react/3x2/GB";
@@ -52,6 +53,12 @@ export const SidebarMenu = () => {
       icon: <AccountCircleIcon />,
       path: "/profile",
       testId: "sidebar-profile",
+    },
+    {
+      label: t("sidebar.classes"),
+      icon: <CastForEducationIcon />,
+      path: "/classes",
+      testId: "sidebar-classes",
     },
     {
       label: t("sidebar.myLearning"),

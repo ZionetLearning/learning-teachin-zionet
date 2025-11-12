@@ -94,18 +94,31 @@ export interface SystemMessagePayload {
 
 // Regular sentence types
 export interface SentenceItem {
+  exerciseId: string;
   text: string;
+  words: string[];
   difficulty: string;
   nikud: boolean;
 }
 
 // Split sentence types
 export interface SplitSentenceItem {
-  attemptId: string;
+  exerciseId: string;
   words: string[];
-  original: string;
+  text: string;
   difficulty: string;
   nikud: boolean;
+}
+
+
+export interface SentenceGenerationResponse {
+  requestId: string;
+  sentences: SentenceItem[];
+}
+
+export interface SplitSentenceGenerationResponse {
+  requestId: string;
+  sentences: SplitSentenceItem[];
 }
 
 // Union Type for all possible events
@@ -113,8 +126,12 @@ export type UserEventUnion =
   | { eventType: typeof EventType.ChatAiAnswer; payload: ChatAiAnswerPayload }
   | { eventType: typeof EventType.SystemMessage; payload: SystemMessagePayload }
   | {
+      eventType: typeof EventType.SentenceGeneration;
+      payload: SentenceGenerationResponse;
+    }
+  | {
       eventType: typeof EventType.SplitSentenceGeneration;
-      payload: SplitSentenceItem[];
+      payload: SplitSentenceGenerationResponse;
     };
 
 // Event Handler Type
