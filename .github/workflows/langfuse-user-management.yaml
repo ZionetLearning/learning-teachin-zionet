@@ -1,0 +1,153 @@
+name: Langfuse User Management
+
+on:
+  push:
+    branches:
+      - snir/963/implement-user-roles-and-permissions-system-for-langfuse
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        type: choice
+        options:
+          - create-user
+          - list-users
+          - delete-user
+          - delete-all-non-admin
+        default: list-users
+      user_email:
+        description: 'User email (required for create-user and delete-user)'
+        required: false
+        type: string
+      user_name:
+        description: 'User full name (required for create-user)'
+        required: false
+        type: string
+      environment:
+        description: 'Environment'
+        required: true
+        type: choice
+        options:
+          - Development
+          - Production
+        default: Development
+      environment_name:
+        description: 'Environment name (prefix)'
+        required: true
+        type: choice
+        options:
+          - dev
+        default: dev
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  manage-langfuse:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Azure Login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+    #   - name: Get AKS credentials
+    #     run: |
+    #       az aks get-credentials \
+    #         --resource-group dev-zionet-learning-2025 \
+    #         --name aks-cluster-dev \
+    #         --overwrite-existing
+
+    #   - name: Verify kubectl connection
+    #     run: |
+    #       kubectl cluster-info
+    #       kubectl get nodes
+
+    #   - name: Create Langfuse User
+    #     if: inputs.action == 'create-user'
+    #     env:
+    #       SMTP_USER: ${{ secrets.SMTP_USER }}
+    #       SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+    #       PG_USERNAME: ${{ secrets.POSTGRES_USER }}
+    #       PG_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+    #     run: |
+    #       if [ -z "${{ inputs.user_email }}" ] || [ -z "${{ inputs.user_name }}" ]; then
+    #         echo "❌ Error: user_email and user_name are required for create-user action" >> $GITHUB_STEP_SUMMARY
+    #         exit 1
+    #       fi
+          
+    #       cd devops/helm-tools
+    #       chmod +x create-langfuse-user.sh
+          
+    #       echo "## 👤 Creating Langfuse User" >> $GITHUB_STEP_SUMMARY
+    #       echo "" >> $GITHUB_STEP_SUMMARY
+    #       echo "**Email:** ${{ inputs.user_email }}" >> $GITHUB_STEP_SUMMARY
+    #       echo "**Name:** ${{ inputs.user_name }}" >> $GITHUB_STEP_SUMMARY
+    #       echo "**Environment:** ${{ inputs.environment_name }}" >> $GITHUB_STEP_SUMMARY
+    #       echo "" >> $GITHUB_STEP_SUMMARY
+    #       echo "### Output:" >> $GITHUB_STEP_SUMMARY
+    #       echo '```' >> $GITHUB_STEP_SUMMARY
+          
+    #       ./create-langfuse-user.sh \
+    #         "${{ inputs.user_email }}" \
+    #         "${{ inputs.user_name }}" \
+    #         "${{ inputs.environment_name }}" \
+    #         "$PG_USERNAME" \
+    #         "$PG_PASSWORD" 2>&1 | tee -a $GITHUB_STEP_SUMMARY
+          
+    #       echo '```' >> $GITHUB_STEP_SUMMARY
+    #       echo "" >> $GITHUB_STEP_SUMMARY
+    #       echo "✅ User created successfully!" >> $GITHUB_STEP_SUMMARY
+    #       echo "" >> $GITHUB_STEP_SUMMARY
+    #       echo "📧 Credentials have been sent to **${{ inputs.user_email }}**" >> $GITHUB_STEP_SUMMARY
+    #       echo "" >> $GITHUB_STEP_SUMMARY
+    #       echo "### ⚠️ Next Steps:" >> $GITHUB_STEP_SUMMARY
+    #       echo "1. Log in to Langfuse as admin: https://teachin.westeurope.cloudapp.azure.com/langfuse" >> $GITHUB_STEP_SUMMARY
+    #       echo "2. Navigate to Organization Settings" >> $GITHUB_STEP_SUMMARY
+    #       echo "3. Add the user to the organization with appropriate role (MEMBER/ADMIN/OWNER)" >> $GITHUB_STEP_SUMMARY
+
+    #   - name: Manage Users (List/Delete)
+    #     if: inputs.action != 'create-user'
+    #     env:
+    #       PG_USERNAME: ${{ secrets.POSTGRES_USER }}
+    #       PG_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+    #     run: |
+    #       cd devops/helm-tools
+    #       chmod +x manage-langfuse-users-ci.sh
+          
+    #       echo "## 📋 Langfuse User Management" >> $GITHUB_STEP_SUMMARY
+    #       echo "" >> $GITHUB_STEP_SUMMARY
+    #       echo "**Action:** ${{ inputs.action }}" >> $GITHUB_STEP_SUMMARY
+    #       echo "**Environment:** ${{ inputs.environment_name }}" >> $GITHUB_STEP_SUMMARY
+    #       if [ -n "${{ inputs.user_email }}" ]; then
+    #         echo "**User Email:** ${{ inputs.user_email }}" >> $GITHUB_STEP_SUMMARY
+    #       fi
+    #       echo "" >> $GITHUB_STEP_SUMMARY
+    #       echo "### Output:" >> $GITHUB_STEP_SUMMARY
+    #       echo '```' >> $GITHUB_STEP_SUMMARY
+          
+    #       ./manage-langfuse-users-ci.sh \
+    #         "${{ inputs.action }}" \
+    #         "${{ inputs.user_email }}" \
+    #         "${{ inputs.environment_name }}" \
+    #         "$PG_USERNAME" \
+    #         "$PG_PASSWORD" 2>&1 | tee -a $GITHUB_STEP_SUMMARY
+          
+    #       echo '```' >> $GITHUB_STEP_SUMMARY
+
+    #   - name: Summary Footer
+    #     if: always()
+    #     run: |
+    #       echo "" >> $GITHUB_STEP_SUMMARY
+    #       echo "---" >> $GITHUB_STEP_SUMMARY
+    #       echo "" >> $GITHUB_STEP_SUMMARY
+    #       echo "**Workflow Run:** [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
