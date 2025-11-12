@@ -240,7 +240,6 @@ export const SpeakingPractice = () => {
             });
             setIsCorrect(isServerCorrect);
             setFeedback(isServerCorrect ? Feedback.Perfect : Feedback.TryAgain);
-            
             // Show accuracy in toast
             if (isServerCorrect) {
               toast.success(
