@@ -23,6 +23,8 @@ export const useSendChatMessageStream = () => {
       userMessage,
       threadId = crypto.randomUUID(),
       chatType = "default",
+      pageContext,
+      userLanguage,
     }: SendMessageRequest,
     onDelta: (delta: string) => void,
     onCompleted: (final: AIChatStreamResponse) => void,
@@ -34,10 +36,28 @@ export const useSendChatMessageStream = () => {
     }
 
     try {
+      const endpoint =
+        chatType === "Global"
+          ? `${AI_BASE_URL}/global-chat`
+          : `${AI_BASE_URL}/chat`;
+
+      const requestBody: SendMessageRequest = {
+        userMessage,
+        threadId,
+        chatType,
+      };
+
+      if (pageContext) {
+        requestBody.pageContext = pageContext;
+      }
+      if (userLanguage) {
+        requestBody.userLanguage = userLanguage;
+      }
+
       // Start the request
       const { data } = await axios.post<{ requestId: string }>(
-        `${AI_BASE_URL}/chat`,
-        { userMessage, threadId, chatType },
+        endpoint,
+        requestBody,
       );
 
       const requestId = data.requestId;

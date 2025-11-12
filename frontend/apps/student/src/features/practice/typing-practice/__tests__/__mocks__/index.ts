@@ -26,12 +26,41 @@ vi.mock("react-i18next", async (importOriginal) => {
     ...actual,
     useTranslation: () => ({
       t: (key: string) => key,
-      i18n: { language: "en", changeLanguage: vi.fn() },
+      i18n: { language: "en", changeLanguage: vi.fn(), dir: () => "ltr" },
     }),
     initReactI18next: {
       type: "3rdParty",
       init: () => {},
     },
+  };
+});
+
+vi.mock("@app-providers", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@app-providers")>();
+  return {
+    ...actual,
+    useAuth: () => ({
+      user: {
+        userId: "test-user-id",
+        email: "test@example.com",
+        firstName: "Test",
+        lastName: "User",
+        role: "student",
+      },
+      isAuthenticated: true,
+      isLoading: false,
+    }),
+  };
+});
+
+vi.mock("@student/api", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@student/api")>();
+  return {
+    ...actual,
+    useSendChatMessageStream: () => ({
+      startStream: vi.fn(),
+      isStreaming: false,
+    }),
   };
 });
 

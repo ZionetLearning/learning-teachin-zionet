@@ -12,7 +12,7 @@ public class GeneratedSentenceDto
 
 public class GeneratedSentenceItem
 {
-    public string Original { get; set; } = string.Empty;
+    public string Text { get; set; } = string.Empty;
     public List<string> CorrectAnswer { get; set; } = [];
     public bool Nikud { get; set; }
 }

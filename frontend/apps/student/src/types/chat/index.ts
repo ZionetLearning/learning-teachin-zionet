@@ -1,8 +1,12 @@
 export type SendMessageRequest = {
   userMessage: string;
   threadId?: string;
-  chatType?: "default" | string;
+  chatType?: "default" | "Global" | string;
   userId?: string;
+  pageContext?: {
+    jsonContext: string;
+  };
+  userLanguage?: string;
 };
 
 export type SendMessageResponse = {

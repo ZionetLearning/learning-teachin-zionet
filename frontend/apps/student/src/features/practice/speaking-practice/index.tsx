@@ -14,6 +14,10 @@ import {
   GameSettings,
   GameSetupPanel,
 } from "@ui-components";
+import {
+  ContextAwareChat,
+  useSpeakingPracticeContext,
+} from "@ui-components/ContextAwareChat";
 import { getDifficultyLabel } from "../utils";
 import { useStyles } from "./style";
 import { toast } from "react-toastify";
@@ -380,6 +384,21 @@ export const SpeakingPractice = () => {
     requestSentences(difficulty, nikud, count);
   };
 
+  const pageContext = useSpeakingPracticeContext({
+    currentExercise: currentIdx + 1,
+    totalExercises: sentences.length,
+    difficulty: difficulty.toString(),
+    phraseToSpeak: sentences[currentIdx],
+    additionalContext: {
+      isRecording,
+      isPlaying,
+      correctCount: correctIdxs.size,
+      attemptedCount: attempted.size,
+      isCorrect,
+      feedback,
+    },
+  });
+
   if (configLoading) {
     return (
       <div className={classes.loader}>
@@ -508,6 +527,7 @@ export const SpeakingPractice = () => {
         correctSentences={correctIdxs.size}
         totalSentences={sentences.length}
       />
+      <ContextAwareChat pageContext={pageContext} hasSettings />
     </div>
   );
 };

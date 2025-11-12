@@ -78,8 +78,6 @@ export const useHebrewSentence = (config: UseHebrewSentenceConfig = {}) => {
       count: finalConfig.count,
       gameType: finalConfig.gameType,
     });
-
-
     setSentencePool(response);
     setCurrentIndex(0);
 

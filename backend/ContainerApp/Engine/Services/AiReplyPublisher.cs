@@ -67,7 +67,7 @@ public sealed class AiReplyPublisher : IAiReplyPublisher
             throw;
         }
     }
-    public async Task SendGeneratedMessagesAsync(string userId, SentenceResponse response, MessageAction action, CancellationToken ct = default)
+    public async Task SendGeneratedMessagesAsync(string userId, SentencesResponse response, MessageAction action, CancellationToken ct = default)
     {
         if (response is null)
         {
