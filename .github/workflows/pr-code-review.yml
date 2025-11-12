@@ -1,20 +1,45 @@
-name: Azure OpenAI PR Review
+# name: Azure OpenAI PR Review
+
+# on:
+#   workflow_dispatch:
+#   pull_request:
+#     types: [opened, synchronize]
+
+# jobs:
+#   review:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - name: Run Reviewabot with Azure OpenAI
+#         uses: Reviewabot/action@v3.0.0
+#         with:
+#           azure-open-ai-key: ${{ secrets.AZURE_OPENAI_API_KEY }}
+#           azure-open-ai-endpoint: https://france-teachin-open-ai.openai.azure.com/
+#           reviewer-pat: ${{ secrets.REVIEWER_GITHUB_PAT }}
+
+
+name: AI Code Reviewer
 
 on:
   workflow_dispatch:
   pull_request:
     types: [opened, synchronize]
 
+permissions: write-all
 jobs:
   review:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Run Reviewabot with Azure OpenAI
-        uses: Reviewabot/action@v3.0.0
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: AI PR Review Action
+        uses: cheton/ai-code-reviewer@v0.1.0
         with:
-          azure-open-ai-key: ${{ secrets.AZURE_OPENAI_API_KEY }}
-          azure-open-ai-endpoint: https://france-teachin-open-ai.openai.azure.com/
-          azure-open-ai-deployment-name: gpt-4o-mini
-          reviewer-pat: ${{ secrets.REVIEWER_GITHUB_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # The GITHUB_TOKEN is there by default so you just need to keep it like it is and not necessarily need to add it as secret as it will throw an error. [More Details](https://docs.github.com/en/actions/security-guides/automatic-token-authentication#about-the-github_token-secret)
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          AZURE_OPENAI_API_VERSION: "2024-04-01-preview"
+          AZURE_OPENAI_DEPLOYMENT: "gpt-4.1-mini"
+          AZURE_OPENAI_ENDPOINT: "https://france-teachin-open-ai.openai.azure.com/"
+          exclude: "**/*.json, **/*.md" # Optional: exclude patterns separated by commas
 
