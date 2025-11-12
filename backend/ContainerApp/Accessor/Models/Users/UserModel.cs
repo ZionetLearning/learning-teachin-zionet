@@ -1,5 +1,4 @@
-﻿
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
@@ -27,4 +26,6 @@ public class UserModel
     public string? AvatarPath { get; set; }
     public string? AvatarContentType { get; set; }
     public DateTime? AvatarUpdatedAtUtc { get; set; }
+
+    public string? AcsUserId { get; set; }
 }

@@ -149,6 +149,9 @@ namespace Accessor.DB.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<decimal>("Accuracy")
+                        .HasColumnType("numeric");
+
                     b.Property<int>("AttemptNumber")
                         .HasColumnType("integer");
 
@@ -199,6 +202,60 @@ namespace Accessor.DB.Migrations
                     b.HasIndex("StudentId", "GameType", "Difficulty");
 
                     b.ToTable("GameAttempts", (string)null);
+                });
+
+            modelBuilder.Entity("Accessor.Models.Meetings.MeetingModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Attendees")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedOn")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("DurationMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("GroupCallId")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset>("StartTimeUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("GroupCallId");
+
+                    b.HasIndex("StartTimeUtc");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("Meetings", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Meetings_DurationMinutes", "\"DurationMinutes\" >= 1 AND \"DurationMinutes\" <= 1440");
+                        });
                 });
 
             modelBuilder.Entity("Accessor.Models.Prompts.PromptModel", b =>
@@ -354,6 +411,10 @@ namespace Accessor.DB.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("AcsUserId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
                     b.Property<string>("AvatarContentType")
                         .HasColumnType("text");
 
@@ -401,6 +462,8 @@ namespace Accessor.DB.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("UserId");
+
+                    b.HasIndex("AcsUserId");
 
                     b.HasIndex("Email")
                         .IsUnique();

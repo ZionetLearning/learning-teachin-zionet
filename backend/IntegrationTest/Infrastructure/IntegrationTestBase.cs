@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using FluentAssertions;
 using IntegrationTests.Fixtures;
 using IntegrationTests.Models.Notification;
@@ -18,7 +19,11 @@ public abstract class IntegrationTestBase
     protected readonly SignalRTestFixture SignalRFixture;
     protected readonly HttpClientFixture ClientFixture;
     protected readonly ITestOutputHelper OutputHelper;
-    private static readonly JsonSerializerOptions CachedJsonOptions = new() { PropertyNameCaseInsensitive = true };
+    private static readonly JsonSerializerOptions CachedJsonOptions = new() 
+    { 
+        PropertyNameCaseInsensitive = true,
+        Converters = { new JsonStringEnumConverter() }
+    };
     public IConfiguration Configuration { get; }
 
 

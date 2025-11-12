@@ -9,12 +9,14 @@ using Manager.Models.Sentences;
 using Manager.Services;
 using Manager.Services.Clients.Accessor.Models;
 using Manager.Services.Clients.Accessor;
+using Manager.Models.Words;
+using Manager.Models.UserGameConfiguration;
 
 namespace Manager.Endpoints;
 public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
 {
     private readonly INotificationService _notificationService;
-    private readonly IAccessorClient _accessorClient;
+    private readonly IGameAccessorClient _gameAccessorClient;
     private readonly ILogger<ManagerQueueHandler> _logger;
     protected override MessageAction GetAction(Message message) => message.ActionName;
 
@@ -22,16 +24,17 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
         .On(MessageAction.NotifyUser, HandleNotifyUserAsync)
         .On(MessageAction.ProcessingChatMessage, HandleAIChatAnswerAsync)
         .On(MessageAction.GenerateSentences, HandleGenerateAnswer)
-        .On(MessageAction.GenerateSplitSentences, HandleGenerateSplitAnswer);
+        .On(MessageAction.GenerateSplitSentences, HandleGenerateSplitAnswer)
+        .On(MessageAction.GenerateWordExplain, HandleWordExplainAnswer);
 
     public ManagerQueueHandler(
         ILogger<ManagerQueueHandler> logger,
         INotificationService notificationService,
-        IAccessorClient accessorClient) : base(logger)
+        IGameAccessorClient gameAccessorClient) : base(logger)
     {
         _notificationService = notificationService;
         _logger = logger;
-        _accessorClient = accessorClient;
+        _gameAccessorClient = gameAccessorClient;
     }
 
     public async Task HandleNotifyUserAsync(Message message, IReadOnlyDictionary<string, string>? metadata, Func<Task> renewLock, CancellationToken cancellationToken)
@@ -186,8 +189,43 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
                     $"Validation failed for {nameof(SentenceResponse)}: {string.Join("; ", validationErrors)}");
             }
 
-            await _notificationService.SendEventAsync(EventType.SentenceGeneration, userId, generatedResponse);
+            var gameTypeString = generatedResponse.Sentences.FirstOrDefault()?.GameType ?? "typingPractice";
+            var gameType = Enum.TryParse<GameName>(gameTypeString, ignoreCase: true, out var parsedGameType)
+     ? parsedGameType
+  : Manager.Models.UserGameConfiguration.GameName.TypingPractice;
 
+            var dto = new GeneratedSentenceDto
+            {
+                StudentId = Guid.Parse(userId),
+                GameType = gameType,
+                Difficulty = Enum.TryParse<Models.Games.Difficulty>(generatedResponse.Sentences.FirstOrDefault()?.Difficulty, ignoreCase: true, out var difficulty)
+                    ? difficulty
+                    : Manager.Models.Games.Difficulty.Easy,
+                Sentences = [.. generatedResponse.Sentences
+                    .Select(s => new GeneratedSentenceItem
+                    {
+                        Text = s.Text,
+                        CorrectAnswer = [s.Text],
+                        Nikud = s.Nikud
+                    })]
+            };
+
+            var result = await _gameAccessorClient.SaveGeneratedSentencesAsync(dto, cancellationToken);
+
+            var response = new SentenceGenerationResponse
+            {
+                RequestId = generatedResponse.RequestId,
+                Sentences = result.Select(r => new GeneratedSentenceResultItem
+                {
+                    ExerciseId = r.ExerciseId,
+                    Text = r.Text,
+                    Words = r.Words,
+                    Difficulty = r.Difficulty,
+                    Nikud = r.Nikud
+                }).ToList()
+            };
+
+            await _notificationService.SendEventAsync(EventType.SentenceGeneration, userId, response);
         }
         catch (NonRetryableException ex)
         {
@@ -211,6 +249,7 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
             throw new RetryableException("Transient error while processing answer.", ex);
         }
     }
+
     public async Task HandleGenerateSplitAnswer(Message message, IReadOnlyDictionary<string, string>? metadata, Func<Task> renewLock, CancellationToken cancellationToken)
     {
         try
@@ -253,25 +292,38 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
             var dto = new GeneratedSentenceDto
             {
                 StudentId = Guid.Parse(userId),
-                GameType = "wordOrderGame",
+                GameType = Enum.Parse<GameName>("WordOrder"),
                 Difficulty = Enum.TryParse<Models.Games.Difficulty>(generatedResponse.Sentences.FirstOrDefault()?.Difficulty, ignoreCase: true, out var difficulty)
                 ? difficulty
                 : Manager.Models.Games.Difficulty.Easy,
                 Sentences = [.. split.Sentences
                 .Select(s => new GeneratedSentenceItem
                 {
-                    Original = s.Original,
+                    Text = s.Text,
                     CorrectAnswer = s.Words,
                     Nikud = s.Nikud
                 })]
             };
 
-            var result = await _accessorClient.SaveGeneratedSentencesAsync(dto, cancellationToken);
+            var result = await _gameAccessorClient.SaveGeneratedSentencesAsync(dto, cancellationToken);
+
+            var response = new SentenceGenerationResponse
+            {
+                RequestId = generatedResponse.RequestId,
+                Sentences = result.Select(r => new GeneratedSentenceResultItem
+                {
+                    ExerciseId = r.ExerciseId,
+                    Text = r.Text,
+                    Words = r.Words,
+                    Difficulty = r.Difficulty,
+                    Nikud = r.Nikud
+                }).ToList()
+            };
 
             await _notificationService.SendEventAsync(
                 EventType.SplitSentenceGeneration,
                 userId,
-                result
+                response
                 );
         }
         catch (NonRetryableException ex)
@@ -294,6 +346,70 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
             _logger.LogError(ex, "Error processing answer");
             throw new RetryableException("Transient error while processing answer.", ex);
+        }
+    }
+    public async Task HandleWordExplainAnswer(
+    Message message,
+    IReadOnlyDictionary<string, string>? metadata,
+    Func<Task> renewLock,
+    CancellationToken cancellationToken)
+    {
+        try
+        {
+            var explainResponse = message.Payload.Deserialize<WordExplainResponse>();
+            if (explainResponse is null)
+            {
+                _logger.LogError("Payload deserialization returned null for word explanation.");
+                throw new NonRetryableException("Payload deserialization returned null for word explanation.");
+            }
+
+            if (!message.Metadata.HasValue)
+            {
+                _logger.LogWarning("Metadata is missing for word explanation action");
+                throw new NonRetryableException("User metadata is required for word explanation action.");
+            }
+
+            var userId = JsonSerializer.Deserialize<string>(message.Metadata.Value);
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                _logger.LogWarning("UserId is null or empty for word explanation action");
+                throw new NonRetryableException("User metadata is required for word explanation action.");
+            }
+
+            if (!ValidationExtensions.TryValidate(explainResponse, out var validationErrors))
+            {
+                _logger.LogWarning("Validation failed for {Model}: {Errors}",
+                    nameof(WordExplainResponse), validationErrors);
+                throw new NonRetryableException(
+                    $"Validation failed for {nameof(WordExplainResponse)}: {string.Join("; ", validationErrors)}");
+            }
+
+            _logger.LogInformation("Sending WordExplain event to user {UserId}", userId);
+
+            await _notificationService.SendEventAsync(EventType.WordExplain, userId, explainResponse);
+
+            _logger.LogInformation("Word explanation sent successfully to user {UserId}", userId);
+        }
+        catch (NonRetryableException ex)
+        {
+            _logger.LogError(ex, "Non-retryable error processing message {Action}", message.ActionName);
+            throw;
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "Invalid JSON for {Action}", message.ActionName);
+            throw new NonRetryableException("Invalid JSON response.", ex);
+        }
+        catch (Exception ex)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning("Operation cancelled while processing message {Action}", message.ActionName);
+                throw new OperationCanceledException("Operation was cancelled.", ex, cancellationToken);
+            }
+
+            _logger.LogError(ex, "Error processing word explanation response");
+            throw new RetryableException("Transient error while processing word explanation.", ex);
         }
     }
 }

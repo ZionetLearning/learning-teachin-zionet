@@ -35,7 +35,7 @@ public static class GamesEndpoints
 
     private static async Task<IResult> SubmitAttemptAsync(
         [FromBody] SubmitAttemptRequest request,
-        [FromServices] IAccessorClient accessorClient,
+        [FromServices] IGameAccessorClient gameAccessorClient,
         HttpContext http,
         ILogger<GameEndpoint> logger,
         CancellationToken ct)
@@ -45,24 +45,32 @@ public static class GamesEndpoints
             var callerRole = http.User.FindFirstValue(AuthSettings.RoleClaimType);
             var callerIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
 
-            logger.LogInformation("SubmitAttempts called by role={Role}, callerId={CallerId}, studentId={StudentId}", callerRole, callerIdRaw, request.StudentId);
-
-            if (callerRole?.Equals(Role.Student.ToString(), StringComparison.OrdinalIgnoreCase) == true &&
-                Guid.TryParse(callerIdRaw, out var callerId) && callerId != request.StudentId)
+            if (!Guid.TryParse(callerIdRaw, out var studentId))
             {
-                logger.LogWarning("Forbidden attempt: Student {CallerId} tried to submit attempt for Student {StudentId}", callerId, request.StudentId);
-                return Results.Forbid();
+                logger.LogWarning("Invalid or missing UserId in token: {CallerIdRaw}", callerIdRaw);
+                return Results.Unauthorized();
             }
 
-            var result = await accessorClient.SubmitAttemptAsync(request, ct);
+            logger.LogInformation("SubmitAttempts called by role={Role}, studentId={StudentId}", callerRole, studentId);
+            var result = await gameAccessorClient.SubmitAttemptAsync(studentId, request, ct);
 
             logger.LogInformation("Attempt submitted successfully for StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}, Status={Status}, AttemptNumber={AttemptNumber}", result.StudentId, result.GameType, result.Difficulty, result.Status, result.AttemptNumber);
 
             return Results.Ok(result);
         }
+        catch (KeyNotFoundException ex)
+        {
+            logger.LogInformation("Exercise not found. ExerciseId={ExerciseId}", request.ExerciseId);
+            return Results.NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            logger.LogWarning(ex, "Invalid attempt submission. ExerciseId={ExerciseId}", request.ExerciseId);
+            return Results.BadRequest(new { message = ex.Message });
+        }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error while submitting attempt for StudentId={StudentId}", request.StudentId);
+            logger.LogError(ex, "Error while submitting attempt. ExerciseId={ExerciseId}", request.ExerciseId);
             return Results.Problem("Failed to submit attempt. Please try again later.");
         }
     }
@@ -73,7 +81,7 @@ public static class GamesEndpoints
         [FromQuery] int page,
         [FromQuery] int pageSize,
         [FromQuery] bool getPending,
-        [FromServices] IAccessorClient accessorClient,
+        [FromServices] IGameAccessorClient gameAccessorClient,
         HttpContext http,
         ILogger<GameEndpoint> logger,
         CancellationToken ct)
@@ -92,9 +100,18 @@ public static class GamesEndpoints
 
             logger.LogInformation("Fetching history for StudentId={StudentId}, Summary={Summary}, GetPending={GetPending}, Page={Page}, PageSize={PageSize}", studentId, summary, getPending, page, pageSize);
 
-            var result = await accessorClient.GetHistoryAsync(studentId, summary, page, pageSize, getPending, ct);
+            var result = await gameAccessorClient.GetHistoryAsync(studentId, summary, page, pageSize, getPending, ct);
 
-            return Results.Ok(result);
+            if (result.IsSummary)
+            {
+                logger.LogInformation("Returned {Records} summary records", result.Summary?.Items.Count() ?? 0);
+                return Results.Ok(result.Summary);
+            }
+            else
+            {
+                logger.LogInformation("Returned {Records} detailed records", result.Detailed?.Items.Count() ?? 0);
+                return Results.Ok(result.Detailed);
+            }
         }
         catch (Exception ex)
         {
@@ -107,7 +124,7 @@ public static class GamesEndpoints
         [FromRoute] Guid studentId,
         [FromQuery] int page,
         [FromQuery] int pageSize,
-        [FromServices] IAccessorClient accessorClient,
+        [FromServices] IGameAccessorClient gameAccessorClient,
         HttpContext http,
         ILogger<GameEndpoint> logger,
         CancellationToken ct)
@@ -126,7 +143,7 @@ public static class GamesEndpoints
 
             logger.LogInformation("Fetching mistakes for StudentId={StudentId}, Page={Page}, PageSize={PageSize}", studentId, page, pageSize);
 
-            var result = await accessorClient.GetMistakesAsync(studentId, page, pageSize, ct);
+            var result = await gameAccessorClient.GetMistakesAsync(studentId, page, pageSize, ct);
 
             return Results.Ok(result);
         }
@@ -140,7 +157,7 @@ public static class GamesEndpoints
     private static async Task<IResult> GetAllHistoriesAsync(
         [FromQuery] int page,
         [FromQuery] int pageSize,
-        [FromServices] IAccessorClient accessorClient,
+        [FromServices] IGameAccessorClient gameAccessorClient,
         ILogger<GameEndpoint> logger,
         CancellationToken ct)
     {
@@ -148,7 +165,7 @@ public static class GamesEndpoints
         {
             logger.LogInformation("Fetching all histories Page={Page}, PageSize={PageSize}", page, pageSize);
 
-            var result = await accessorClient.GetAllHistoriesAsync(page, pageSize, ct);
+            var result = await gameAccessorClient.GetAllHistoriesAsync(page, pageSize, ct);
 
             return Results.Ok(result);
         }
@@ -160,14 +177,14 @@ public static class GamesEndpoints
     }
 
     private static async Task<IResult> DeleteAllGamesHistoryAsync(
-        [FromServices] IAccessorClient accessorClient,
+        [FromServices] IGameAccessorClient gameAccessorClient,
         ILogger<GameEndpoint> logger,
         CancellationToken ct)
     {
         try
         {
             logger.LogInformation("Request received to delete all games history.");
-            var success = await accessorClient.DeleteAllGamesHistoryAsync(ct);
+            var success = await gameAccessorClient.DeleteAllGamesHistoryAsync(ct);
 
             if (success)
             {

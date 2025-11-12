@@ -9,7 +9,7 @@ import mkcert from "vite-plugin-mkcert";
 const r = (...x: string[]) =>
   path.resolve(__dirname, "..", "..", ...x).replace(/\\/g, "/");
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   root: __dirname,
   server: {
     port: 4000,
@@ -33,7 +33,8 @@ export default defineConfig({
       applicationKey: "teach-in-app", // for thirdPartyErrorFilterIntegration
       debug: true,
     }),
-    mkcert(),
+    // Only use mkcert in development mode, not during tests
+    ...(mode !== 'test' && process.env.NODE_ENV !== 'test' ? [mkcert()] : []),
   ],
   resolve: {
     alias: {
@@ -52,4 +53,4 @@ export default defineConfig({
     setupFiles: "./src/test/setup.ts",
     exclude: ["node_modules", "dist", "**/*.jest.{test,spec}.{ts,tsx,js,jsx}"],
   },
-});
+}));

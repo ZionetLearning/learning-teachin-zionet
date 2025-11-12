@@ -1,6 +1,7 @@
 using Accessor.Models.Games;
 using Accessor.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Accessor.Models.GameConfiguration;
 
 namespace Accessor.Endpoints;
 
@@ -15,6 +16,7 @@ public static class GamesEndpoints
         gamesGroup.MapGet("/mistakes/{studentId:guid}", GetMistakesAsync);
         gamesGroup.MapGet("/all-history", GetAllHistoriesAsync);
         gamesGroup.MapGet("/attempt/{userId:guid}/{attemptId:guid}", GetAttemptDetailsAsync);
+        gamesGroup.MapGet("/attempt/last/{userId:guid}/{gameType}", GetLastAttemptAsync);
         gamesGroup.MapPost("/generated-sentences", SaveGeneratedSentencesAsync);
         gamesGroup.MapDelete("/all-history", DeleteAllGamesHistoryAsync);
 
@@ -33,13 +35,13 @@ public static class GamesEndpoints
             return Results.BadRequest(new { message = "Request body must not be null." });
         }
 
-        if (request.AttemptId == Guid.Empty)
+        if (request.ExerciseId == Guid.Empty)
         {
-            logger.LogWarning("SubmitAttemptAsync rejected. Invalid AttemptId provided.");
-            return Results.BadRequest(new { message = "AttemptId must be a non-empty GUID." });
+            logger.LogWarning("SubmitAttemptAsync rejected. Invalid ExerciseId provided.");
+            return Results.BadRequest(new { message = "ExerciseId must be a non-empty GUID." });
         }
 
-        using var scope = logger.BeginScope("Method: {Method}, AttemptId: {AttemptId}", nameof(SubmitAttemptAsync), request.AttemptId);
+        using var scope = logger.BeginScope("Method: {Method}, ExerciseId: {ExerciseId}", nameof(SubmitAttemptAsync), request.ExerciseId);
 
         try
         {
@@ -51,17 +53,17 @@ public static class GamesEndpoints
         }
         catch (InvalidOperationException ex)
         {
-            logger.LogWarning(ex, "Validation failed. AttemptId={AttemptId}", request.AttemptId);
+            logger.LogWarning(ex, "Validation failed. ExerciseId={ExerciseId}", request.ExerciseId);
             return Results.BadRequest(new { message = ex.Message });
         }
         catch (KeyNotFoundException ex)
         {
-            logger.LogWarning(ex, "SubmitAttemptAsync failed. StudentId={StudentId} - Game not found", request.StudentId);
+            logger.LogInformation("SubmitAttemptAsync - Exercise not found. StudentId={StudentId}, ExerciseId={ExerciseId}", request.StudentId, request.ExerciseId);
             return Results.NotFound(new { message = ex.Message });
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unexpected error in SubmitAttemptAsync. StudentId={StudentId}", request.StudentId);
+            logger.LogError(ex, "Unexpected error in SubmitAttemptAsync. StudentId={StudentId}, ExerciseId={ExerciseId}", request.StudentId, request.ExerciseId);
             return Results.Problem("Unexpected error occurred while submitting attempt.");
         }
     }
@@ -78,12 +80,21 @@ public static class GamesEndpoints
     {
         try
         {
-            logger.LogInformation("GetHistoryAsync called. StudentId={StudentId}, Summary={Summary}, GetPending={GetPending}, Page={Page}, PageSize={PageSize}", studentId, summary, getPending, page, pageSize
-            );
+            logger.LogInformation("GetHistoryAsync called. StudentId={StudentId}, Summary={Summary}, GetPending={GetPending}, Page={Page}, PageSize={PageSize}",
+                studentId, summary, getPending, page, pageSize);
 
             var result = await service.GetHistoryAsync(studentId, summary, page, pageSize, getPending, ct);
 
-            logger.LogInformation("GetHistoryAsync returned {Records} records (page). TotalCount={TotalCount}", result.Items.Count(), result.TotalCount);
+            if (result.IsSummary)
+            {
+                logger.LogInformation("GetHistoryAsync returned {Records} summary records (page). TotalCount={TotalCount}",
+                    result.Summary?.Items.Count() ?? 0, result.Summary?.TotalCount ?? 0);
+            }
+            else
+            {
+                logger.LogInformation("GetHistoryAsync returned {Records} detailed records (page). TotalCount={TotalCount}",
+                    result.Detailed?.Items.Count() ?? 0, result.Detailed?.TotalCount ?? 0);
+            }
 
             return Results.Ok(result);
         }
@@ -209,6 +220,46 @@ public static class GamesEndpoints
         {
             logger.LogError(ex, "Error occurred while deleting games history.");
             return Results.Problem("Failed to delete all games history.");
+        }
+    }
+
+    private static async Task<IResult> GetLastAttemptAsync(
+        [FromRoute] Guid userId,
+        [FromRoute] GameName gameType,
+        [FromServices] IGameService service,
+        ILogger<IGameService> logger,
+        CancellationToken ct)
+    {
+        try
+        {
+            logger.LogInformation("GetLastAttemptAsync called. UserId={UserId}", userId);
+
+            var result = await service.GetLastAttemptAsync(userId, gameType, ct);
+
+            logger.LogInformation(
+                "GetLastAttemptAsync succeeded. UserId={UserId}, AttemptId={AttemptId}, GameType={GameType}",
+                userId, result.AttemptId, result.GameType
+            );
+
+            return Results.Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            logger.LogWarning(
+                ex,
+                "GetLastAttemptAsync failed. UserId={UserId} - No attempts found",
+                userId
+            );
+            return Results.NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "Unexpected error in GetLastAttemptAsync. UserId={UserId}",
+                userId
+            );
+            return Results.Problem("Unexpected error occurred while fetching last attempt.");
         }
     }
 }

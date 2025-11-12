@@ -15,6 +15,7 @@ import { useGetWordCards } from "@student/api";
 import { AddWordCardDialog } from "@student/components";
 import { WordCardItem } from "./components";
 import { useStyles } from "./style";
+import { ContextAwareChat, PageContext } from "@ui-components/ContextAwareChat";
 
 export const WordCards = () => {
   const classes = useStyles();
@@ -31,6 +32,20 @@ export const WordCards = () => {
     const list = data ?? [];
     return hideLearned ? list.filter((c) => !c.isLearned) : list;
   }, [data, hideLearned]);
+
+  const pageContext: PageContext = useMemo(
+    () => ({
+      pageName: "Word Cards",
+      exerciseType: "word-cards",
+      totalExercises: data?.length ?? 0,
+      additionalContext: {
+        hideLearned,
+        filteredCount: filtered.length,
+        learnedCount: (data ?? []).filter((c) => c.isLearned).length,
+      },
+    }),
+    [data, hideLearned, filtered.length],
+  );
 
   return (
     <Box>
@@ -121,6 +136,8 @@ export const WordCards = () => {
       {addOpen && (
         <AddWordCardDialog open={addOpen} onClose={() => setAddOpen(false)} />
       )}
+
+      <ContextAwareChat pageContext={pageContext} />
     </Box>
   );
 };

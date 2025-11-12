@@ -26,7 +26,7 @@ public static class Splitter
             result.Sentences.Add(new SplitSentenceItem
             {
                 Words = words,
-                Original = s?.Text ?? string.Empty,
+                Text = s?.Text ?? string.Empty,
                 Difficulty = s?.Difficulty ?? string.Empty,
                 Nikud = s?.Nikud ?? false
             });

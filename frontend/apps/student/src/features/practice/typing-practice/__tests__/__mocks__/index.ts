@@ -26,12 +26,62 @@ vi.mock("react-i18next", async (importOriginal) => {
     ...actual,
     useTranslation: () => ({
       t: (key: string) => key,
-      i18n: { language: "en", changeLanguage: vi.fn() },
+      i18n: { language: "en", changeLanguage: vi.fn(), dir: () => "ltr" },
     }),
     initReactI18next: {
       type: "3rdParty",
       init: () => {},
     },
+  };
+});
+
+vi.mock("@app-providers", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@app-providers")>();
+  return {
+    ...actual,
+    useAuth: () => ({
+      user: {
+        userId: "test-user-id",
+        email: "test@example.com",
+        firstName: "Test",
+        lastName: "User",
+        role: "student",
+      },
+      isAuthenticated: true,
+      isLoading: false,
+    }),
+  };
+});
+
+vi.mock("@student/api", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@student/api")>();
+  return {
+    ...actual,
+    useSendChatMessageStream: () => ({
+      startStream: vi.fn(),
+      isStreaming: false,
+    }),
+    useSubmitGameAttempt: vi.fn(() => ({
+      mutateAsync: vi.fn(async ({ givenAnswer }: { givenAnswer: string[] }) => {
+        // Calculate accuracy based on the answer
+        const expectedAnswer = "שלום";
+        const userAnswer = givenAnswer[0] || "";
+        const isCorrect = userAnswer === expectedAnswer;
+        const accuracy = isCorrect ? 100 : Math.round((userAnswer.length / expectedAnswer.length) * 100);
+        
+        return {
+          attemptId: "attempt-123",
+          exerciseId: "easy-xyz",
+          studentId: "student-1",
+          gameType: "TypingPractice",
+          difficulty: "Easy",
+          status: isCorrect ? "Success" : "Failure",
+          correctAnswer: [expectedAnswer],
+          attemptNumber: 1,
+          accuracy: accuracy,
+        };
+      }),
+    })),
   };
 });
 
@@ -58,17 +108,24 @@ vi.mock("@student/hooks", () => {
     }),
 
     useHebrewSentence: vi.fn(() => ({
+      attemptId: "easy-xyz",
       sentence: "שלום",
       words: ["שלום"],
       sentenceCount: 1,
       currentSentenceIndex: 0,
-      isLoading: false,
+      loading: false,
       error: null,
       initOnce: vi.fn(),
       resetGame: vi.fn(),
       fetchSentence: vi.fn(),
       currentDifficulty: 1,
       hasNikud: true,
+    })),
+    useGameConfig: vi.fn(() => ({
+      config: null,
+      isLoading: false,
+      updateConfig: vi.fn(),
+      setConfig: vi.fn(),
     })),
     resetSentenceGameHook: vi.fn(),
     initOnce: vi.fn(),

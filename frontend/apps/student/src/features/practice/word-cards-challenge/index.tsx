@@ -9,6 +9,10 @@ import {
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useGetWordCards, type WordCard } from "@student/api";
+import {
+  ContextAwareChat,
+  useWordCardsContext,
+} from "@ui-components/ContextAwareChat";
 import { useStyles } from "./style";
 import { ModeSelection, GameSummary } from "./components";
 import { FEEDBACK_DISPLAY_DURATION } from "./constants";
@@ -106,6 +110,32 @@ export const WordCardsChallenge = () => {
       }
     }, FEEDBACK_DISPLAY_DURATION);
   }, [userAnswer, currentCard, mode, currentIndex, shuffledCards.length]);
+
+  const pageContext = useWordCardsContext({
+    currentExercise: currentIndex + 1,
+    totalExercises: shuffledCards.length,
+    question:
+      currentCard && mode === "heb-to-eng"
+        ? currentCard.hebrew
+        : currentCard?.english,
+    correctAnswer:
+      currentCard && mode === "heb-to-eng"
+        ? currentCard.english
+        : currentCard?.hebrew,
+    userAttempt: userAnswer,
+    currentWord: currentCard
+      ? {
+          hebrew: currentCard.hebrew,
+          english: currentCard.english,
+        }
+      : undefined,
+    additionalContext: {
+      mode,
+      gameState,
+      correctCount,
+      feedback,
+    },
+  });
 
   if (isLoading) {
     return (
@@ -266,6 +296,8 @@ export const WordCardsChallenge = () => {
           ) : null}
         </Box>
       </Dialog>
+
+      <ContextAwareChat pageContext={pageContext} />
     </Box>
   );
 };
