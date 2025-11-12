@@ -14,6 +14,7 @@
 		</PackageReference>
 		<PackageReference Include="Dapr.AspNetCore" Version="1.15.4" />
 		<PackageReference Include="DotQueue" Version="1.0.5" />
+		<PackageReference Include="Microsoft.Agents.AI" Version="1.0.0-preview.251110.2" />
 		<PackageReference Include="Microsoft.CognitiveServices.Speech" Version="1.45.0" />
 		<PackageReference Include="Polly" Version="8.6.3" />
 		<PackageReference Include="Microsoft.SemanticKernel" Version="1.67.1" />
