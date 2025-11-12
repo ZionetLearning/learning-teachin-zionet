@@ -48,8 +48,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Run GPT Review
-        uses: elogne/gpt-review@v1.0.2
+      - name: gpt-review
+        uses: microsoft/gpt-review@v0.9.5
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           openai-api-key: ${{ secrets.AZURE_OPENAI_API_KEY }}
