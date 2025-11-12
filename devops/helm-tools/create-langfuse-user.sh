@@ -54,6 +54,7 @@ USER_NAME="$2"
 ENVIRONMENT_NAME="${3:-dev}"
 PG_USERNAME="${4:-postgres}"
 PG_PASSWORD="${5:-postgres}"
+HIDE_PASSWORD="${6:-false}"  # Set to 'true' in CI/CD to hide password
 
 # Generate a random password (12 characters: letters, numbers, and special chars)
 GENERATED_PASSWORD=$(openssl rand -base64 12 | tr -d "=+/" | cut -c1-12)
@@ -76,7 +77,11 @@ fi
 echo "👤 Creating Langfuse user: $USER_EMAIL"
 echo "📧 Name: $USER_NAME"
 echo "🗄️  Database: langfuse-$ENVIRONMENT_NAME"
-echo "🔑 Generated Password: $GENERATED_PASSWORD"
+if [ "$HIDE_PASSWORD" = "true" ]; then
+  echo "🔑 Generated Password: ********** (hidden for security)"
+else
+  echo "🔑 Generated Password: $GENERATED_PASSWORD"
+fi
 
 # Generate bcrypt hash for the password
 echo "🔐 Generating bcrypt hash..."
@@ -270,9 +275,11 @@ EMAIL_EXIT_CODE=$?
 if [ "$EMAIL_EXIT_CODE" != "0" ]; then
   echo "❌ Failed to send email"
   echo "⚠️  User was created but email notification failed"
-  echo "📋 Please manually provide credentials to user:"
-  echo "   Email: $USER_EMAIL"
-  echo "   Password: $GENERATED_PASSWORD"
+  if [ "$HIDE_PASSWORD" != "true" ]; then
+    echo "📋 Please manually provide credentials to user:"
+    echo "   Email: $USER_EMAIL"
+    echo "   Password: $GENERATED_PASSWORD"
+  fi
   exit 1
 fi
 
@@ -282,9 +289,17 @@ echo "✅ User created and email sent successfully!"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "👤 Name: $USER_NAME"
 echo "📧 Email: $USER_EMAIL"
-echo "🔑 Password: $GENERATED_PASSWORD"
+if [ "$HIDE_PASSWORD" = "true" ]; then
+  echo "🔑 Password: ********** (sent to user via email)"
+else
+  echo "🔑 Password: $GENERATED_PASSWORD"
+fi
 echo "🔗 Login URL: https://teachin.westeurope.cloudapp.azure.com/langfuse"
 echo "📬 Email sent to: $USER_EMAIL"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "⚠️  Remind the user to change their password after first login"
+if [ "$HIDE_PASSWORD" != "true" ]; then
+  echo "⚠️  Remind the user to change their password after first login"
+else
+  echo "✅ Password has been securely sent to the user's email"
+fi
 echo ""

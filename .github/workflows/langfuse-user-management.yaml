@@ -99,7 +99,8 @@ jobs:
             "${{ inputs.user_name }}" \
             "${{ inputs.environment_name }}" \
             "$PG_USERNAME" \
-            "$PG_PASSWORD" 2>&1 | tee -a $GITHUB_STEP_SUMMARY
+            "$PG_PASSWORD" \
+            "true" 2>&1 | tee -a $GITHUB_STEP_SUMMARY
           
           echo '```' >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
