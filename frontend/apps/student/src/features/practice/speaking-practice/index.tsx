@@ -6,7 +6,7 @@ import * as sdk from "microsoft-cognitiveservices-speech-sdk";
 import { useTranslation } from "react-i18next";
 import { comparePhrases } from "./utils";
 import { useAzureSpeechToken, useGenerateSentences, useSubmitGameAttempt } from "@student/api";
-import { useAvatarSpeech , useGameConfig, useSignalR} from "@student/hooks";
+import { useAvatarSpeech, useGameConfig, useSignalR } from "@student/hooks";
 import { DifficultyLevel, GameType } from "@student/types";
 import {
   GameConfigModal,
