@@ -1,9 +1,6 @@
 name: Create Langfuse User
 
 on:
-  push:
-    branches:
-      - snir/963/implement-user-roles-and-permissions-system-for-langfuse
   workflow_dispatch:
     inputs:
       user_email:
@@ -24,6 +21,7 @@ on:
         default: dev
 
 permissions:
+  id-token: write
   contents: read
 
 jobs:
@@ -41,7 +39,6 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
 
       # - name: Get AKS credentials
       #   run: |
