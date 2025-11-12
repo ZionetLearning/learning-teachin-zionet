@@ -12,10 +12,6 @@ permissions:
 on:
     workflow_dispatch:
       inputs:
-        confirmation_code:
-          description: 'Enter confirmation code to proceed with deployment'
-          required: true
-          type: string
         environment:
           description: 'Select environment (GitHub Environment)'
           required: true
@@ -41,14 +37,12 @@ on:
             - 'none'
           
 jobs:
-  validate-confirmation:
+  validate-authorization:
     uses: ./.github/workflows/validate-confirmation.yaml
-    with:
-      confirmation_code: ${{ github.event.inputs.confirmation_code }}
     secrets: inherit
 
   build-and-push-images:
-    needs: validate-confirmation
+    needs: validate-authorization
     uses: ./.github/workflows/build-and-push-images.yaml
     with:
       environment: ${{ github.event.inputs.environment }}
@@ -57,7 +51,7 @@ jobs:
     secrets: inherit
  
   terraform-apply:
-    needs: [validate-confirmation]
+    needs: [validate-authorization]
     uses: ./.github/workflows/terraform-apply.yaml
     with:
       environment_name: ${{ github.event.inputs.environment_name }}
