@@ -5,6 +5,10 @@ run-name: >
     inputs.environment_name || github.event.inputs.environment_name || 'dev'
   }} | GitHub Env: ${{ inputs.environment || github.event.inputs.environment }}
 
+concurrency:
+  group: aks-helm-deploy-${{ inputs.environment_name || github.event.inputs.environment_name || 'dev' }}
+  cancel-in-progress: false
+
 on:
   workflow_dispatch:
     inputs:
