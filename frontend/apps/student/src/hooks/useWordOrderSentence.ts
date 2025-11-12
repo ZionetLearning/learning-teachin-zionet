@@ -76,7 +76,6 @@ export const useWordOrderSentence = (
       gameType: GameType.WordOrderGame,
     });
 
-    console.log({ response });
 
     setSentencePool(response);
     setCurrentIndex(0);
