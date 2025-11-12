@@ -42,24 +42,22 @@ export const WordCardItem = ({ card }: { card: WordCard }) => {
         </Box>
 
         {card.explanation && (
-          <Box sx={{ mt: 1 }}>
+          <Box className={classes.explanationContainer}>
             <Button
               size="small"
               onClick={() => setShowExplanation(!showExplanation)}
               endIcon={
                 showExplanation ? <ExpandLessIcon /> : <ExpandMoreIcon />
               }
-              sx={{ textTransform: "none", fontSize: "0.75rem" }}
+              className={classes.explanationButton}
             >
               {showExplanation
                 ? t("pages.wordCards.hideExplanation")
                 : t("pages.wordCards.showExplanation")}
             </Button>
             <Collapse in={showExplanation}>
-              <Box
-                sx={{ mt: 1, p: 1, bgcolor: "action.hover", borderRadius: 1 }}
-              >
-                <Typography variant="body2" color="text.secondary">
+              <Box className={classes.explanationContent}>
+                <Typography className={classes.explanationText}>
                   {card.explanation}
                 </Typography>
               </Box>

@@ -76,5 +76,22 @@ export const useStyles = () => {
       gap: 8,
       "& .MuiCheckbox-root": { padding: 6 },
     },
+    explanationContainer: {
+      marginTop: 8,
+    },
+    explanationButton: {
+      textTransform: "none",
+      fontSize: "0.75rem",
+    },
+    explanationContent: {
+      marginTop: 8,
+      padding: 8,
+      backgroundColor: `rgba(var(${color.primaryMainChannel}) / 0.06)`,
+      borderRadius: 8,
+    },
+    explanationText: {
+      fontSize: 14,
+      color: color.textMuted,
+    },
   })();
 };

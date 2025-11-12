@@ -189,25 +189,14 @@ export const AddWordCardDialog = ({
               />
 
               {requestExplanation.isPending && (
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ mt: 1 }}
-                >
+                <Typography className={classes.loadingText}>
                   {t("pages.wordCards.generatingExplanation")}
                 </Typography>
               )}
 
               {explanation && (
-                <Box
-                  sx={{
-                    mt: 2,
-                    p: 1.5,
-                    bgcolor: "action.hover",
-                    borderRadius: 1,
-                  }}
-                >
-                  <Typography variant="body2" color="text.secondary">
+                <Box className={classes.explanationBox}>
+                  <Typography className={classes.explanationText}>
                     {explanation}
                   </Typography>
                 </Box>
