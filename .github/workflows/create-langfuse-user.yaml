@@ -16,9 +16,9 @@ on:
         required: true
         type: choice
         options:
-          - dev
-          - prod
-        default: dev
+          - Development
+          - Production
+        default: Development
 
 permissions:
   id-token: write
