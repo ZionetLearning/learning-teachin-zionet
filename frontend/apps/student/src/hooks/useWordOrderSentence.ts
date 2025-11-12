@@ -106,7 +106,6 @@ export const useWordOrderSentence = (
 
     const nextIndex = currentIndex + 1;
 
-
     if (nextIndex >= sentencePool.length) {
       return { sentence: "", words: [] };
     }
