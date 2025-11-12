@@ -6,7 +6,6 @@ using IntegrationTests.Models.Ai.Sentences;
 using IntegrationTests.Models.Notification;
 using Manager.Models.Users;
 using Models.Ai.Sentences;
-
 using System.Text.Json;
 using Xunit.Abstractions;
 
@@ -60,16 +59,17 @@ namespace IntegrationTests.Tests.AI
 
             var evtRaw = received.Event;
 
-            // Backend sends List<AttemptedSentenceResult> not SentenceResponse
-            var res = JsonSerializer.Deserialize<List<AttemptedSentenceResult>>(
-                evtRaw.Payload.GetRawText(), options)!;
+            // Deserialize to SentenceGenerationResponse
+            var sentenceGenerationResponse = JsonSerializer.Deserialize<SentenceGenerationResponse>(
+                evtRaw.Payload.GetRawText(), options)
+                ?? throw new InvalidOperationException("Failed to deserialize sentence generation event");
 
-            res.Count.Should().Be(count);
+            sentenceGenerationResponse.Sentences.Count.Should().Be(count);
 
-            Assert.All(res, s =>
+            Assert.All(sentenceGenerationResponse.Sentences, s =>
             {
-                Assert.Equal(request.Difficulty.ToString(), s.Difficulty, ignoreCase: true);
-                Assert.Equal(request.Nikud, s.Nikud);
+                Assert.Equal(difficulty.ToString(), s.Difficulty, ignoreCase: true);
+                Assert.Equal(nikud, s.Nikud);
             });
         }
 
@@ -105,18 +105,18 @@ namespace IntegrationTests.Tests.AI
 
             var evtRaw = received.Event;
 
-            var res = JsonSerializer.Deserialize<List<AttemptedSentenceResult>>(
-            evtRaw.Payload.GetRawText(), options)!;
+            // Deserialize to SentenceGenerationResponse
+            var sentenceGenerationResponse = JsonSerializer.Deserialize<SentenceGenerationResponse>(
+                evtRaw.Payload.GetRawText(), options)
+                ?? throw new InvalidOperationException("Failed to deserialize sentence generation event");
 
-            res.Count.Should().Be(count);
+            sentenceGenerationResponse.Sentences.Count.Should().Be(count);
 
-
-            Assert.All(res, s =>
+            Assert.All(sentenceGenerationResponse.Sentences, s =>
             {
-                Assert.Equal(request.Difficulty.ToString(), s.Difficulty, ignoreCase: true);
-                Assert.Equal(request.Nikud, s.Nikud);
+                Assert.Equal(difficulty.ToString(), s.Difficulty, ignoreCase: true);
+                Assert.Equal(nikud, s.Nikud);
             });
-
         }
     }
 }
