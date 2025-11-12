@@ -619,15 +619,16 @@ public static class AiEndpoints
 
             var request = new WordExplainRequest
             {
+                Id = Guid.NewGuid(),
                 Word = dto.Word,
                 Context = dto.Context,
-                UserId = userId
+                UserId = userId,
             };
 
             await engineClient.GenerateWordExplainAsync(request, ct);
             logger.LogInformation("Word explanation request for {Word} sent to engine", dto.Word);
 
-            return Results.Ok();
+            return Results.Ok(request.Id);
         }
         catch (InvalidOperationException ex) when (ex.Data.Contains("Tag") &&
                                            Equals(ex.Data["Tag"], "MissingOrInvalidUserId"))

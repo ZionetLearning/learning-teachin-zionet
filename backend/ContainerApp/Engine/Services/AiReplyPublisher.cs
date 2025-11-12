@@ -103,7 +103,7 @@ public sealed class AiReplyPublisher : IAiReplyPublisher
         }
     }
 
-    public async Task SendExplainMessageAsync(string userId, WordExplainResponse response, MessageAction action, CancellationToken ct = default)
+    public async Task SendExplainMessageAsync(string userId, WordExplainResponseDto response, MessageAction action, CancellationToken ct = default)
     {
         if (response is null)
         {
