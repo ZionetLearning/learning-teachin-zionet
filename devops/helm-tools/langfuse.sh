@@ -77,9 +77,9 @@ helm $ACTION langfuse langfuse/langfuse \
   --set langfuse.additionalEnv[2].name="NEXT_PUBLIC_DISABLE_SIGNUP" \
   --set-string langfuse.additionalEnv[2].value="true" \
   --set langfuse.additionalEnv[3].name="DISABLE_SIGNUP" \
-  --set-string langfuse.additionalEnv[3].value="false" \
+  --set-string langfuse.additionalEnv[3].value="true" \
   --set langfuse.additionalEnv[4].name="AUTH_DISABLE_SIGNUP" \
-  --set-string langfuse.additionalEnv[4].value="false" \
+  --set-string langfuse.additionalEnv[4].value="true" \
   --set langfuse.additionalEnv[5].name="NEXT_PUBLIC_BASE_PATH" \
   --set-string langfuse.additionalEnv[5].value="/langfuse" \
   --set langfuse.additionalEnv[6].name="EMAIL_PROVIDER" \
@@ -141,9 +141,9 @@ helm $ACTION langfuse langfuse/langfuse \
   --set langfuse.additionalEnv[34].name="EMAIL_FROM" \
   --set-string langfuse.additionalEnv[34].value="$SMTP_USER" \
   --set langfuse.additionalEnv[35].name="MEMBERSHIP_INVITATION_EMAIL_SUBJECT" \
-  --set-string langfuse.additionalEnv[35].value="You're invited to join the Zionet organization on Langfuse" \
+  --set-string langfuse.additionalEnv[35].value="You've been granted access to TeachIn's Langfuse - {{organizationName}}" \
   --set langfuse.additionalEnv[36].name="MEMBERSHIP_INVITATION_EMAIL_TEMPLATE" \
-  --set-string langfuse.additionalEnv[36].value="<p>Admin User ({{inviterName}}) has invited you to join the Zionet organization on Langfuse.</p><p><a href=\"{{url}}\" style=\"background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;\">Accept Invitation</a></p><p><em>(you need to create an account with this email address)</em></p><p>or copy and paste this URL into your browser: {{url}}</p>" \
+  --set-string langfuse.additionalEnv[36].value="<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'><div style='background: #667eea; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0;'><h1 style='margin: 0;'>Welcome to TeachIn Langfuse!</h1></div><div style='background: #f9f9f9; padding: 30px; border-radius: 0 0 5px 5px;'><p>Hello,</p><p><strong>{{inviterName}}</strong> has granted you access to the <strong>{{organizationName}}</strong> organization on Langfuse.</p><div style='background: white; padding: 20px; border-left: 4px solid #667eea; margin: 20px 0;'><p style='margin: 0;'><strong>🎯 Your Role:</strong> {{role}}</p><p style='margin: 10px 0 0 0;'><strong>🏢 Organization:</strong> {{organizationName}}</p></div><p>Click the button below to accept the invitation and access Langfuse:</p><a href='{{url}}' style='background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;'>Accept Invitation & Access Langfuse</a><p style='color: #666; font-size: 14px;'><em>Note: You need to create an account with this email address if you don't have one yet.</em></p><p>Or copy and paste this URL into your browser:</p><p style='background: #f4f4f4; padding: 10px; border-radius: 3px; word-break: break-all; font-family: monospace; font-size: 12px;'>{{url}}</p><hr style='border: none; border-top: 1px solid #ddd; margin: 30px 0;'/><p style='color: #666; font-size: 12px;'>If you have any questions, please contact us at {{contactEmail}}</p></div></div>" \
   --set langfuse.additionalEnv[37].name="INVITE_URL_BASE" \
   --set-string langfuse.additionalEnv[37].value="https://teachin.westeurope.cloudapp.azure.com/langfuse" \
   --set langfuse.additionalEnv[38].name="NEXT_PUBLIC_SIGNUP_DISABLED" \
