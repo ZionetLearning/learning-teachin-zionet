@@ -490,9 +490,9 @@
         "retry": "נסה שוב",
         "failedToLoad": "טעינת טעויות התרגול נכשלה",
         "gameType": {
-          "wordOrderGame": "משחק סידור מילים",
-          "typingPractice": "תרגול הקלדה",
-          "speakingPractice": "תרגול דיבור"
+          "WordOrder": "משחק סידור מילים",
+          "TypingPractice": "תרגול הקלדה",
+          "SpeakingPractice": "תרגול דיבור"
         }
       },
       "practiceHistory": {
