@@ -72,17 +72,6 @@ jobs:
           cd devops/helm-tools
           chmod +x manage-langfuse-users-ci.sh
           
-          # Capture output to both console and file for summary
-          ./manage-langfuse-users-ci.sh \
-            "${{ inputs.action }}" \
-            "${{ inputs.user_email }}" \
-            "${{ inputs.environment_name }}" \
-            "$PG_USERNAME" \
-            "$PG_PASSWORD" | tee action_output.txt
-
-      - name: Create summary
-        if: always()
-        run: |
           echo "## 📋 Langfuse User Management" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Action:** ${{ inputs.action }}" >> $GITHUB_STEP_SUMMARY
@@ -92,4 +81,13 @@ jobs:
           fi
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Output:" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          
+          ./manage-langfuse-users-ci.sh \
+            "${{ inputs.action }}" \
+            "${{ inputs.user_email }}" \
+            "${{ inputs.environment_name }}" \
+            "$PG_USERNAME" \
+            "$PG_PASSWORD" 2>&1 | tee -a $GITHUB_STEP_SUMMARY
+          
           echo '```' >> $GITHUB_STEP_SUMMARY
