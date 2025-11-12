@@ -71,7 +71,7 @@ jobs:
           ./create-langfuse-user.sh \
             "${{ inputs.user_email }}" \
             "${{ inputs.user_name }}" \
-            "${{ inputs.environment }}" \
+            "${{ inputs.environment_name }}" \
             "$PG_USERNAME" \
             "$PG_PASSWORD"
 
@@ -83,7 +83,7 @@ jobs:
           echo "**User Details:**" >> $GITHUB_STEP_SUMMARY
           echo "- Email: ${{ inputs.user_email }}" >> $GITHUB_STEP_SUMMARY
           echo "- Name: ${{ inputs.user_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Environment: ${{ inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Environment: ${{ inputs.environment_name }}" >> $GITHUB_STEP_SUMMARY
           echo "- Login URL: https://teachin.westeurope.cloudapp.azure.com/langfuse" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "📧 Credentials have been sent to the user's email address." >> $GITHUB_STEP_SUMMARY
