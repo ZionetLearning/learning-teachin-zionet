@@ -5,6 +5,7 @@ using Manager.Constants;
 using Manager.Models;
 using Manager.Models.QueueMessages;
 using Manager.Models.Sentences;
+using Manager.Models.Words;
 using Manager.Services.Clients.Engine.Models;
 
 namespace Manager.Services.Clients.Engine;
@@ -252,6 +253,39 @@ public class EngineClient : IEngineClient
         {
             _logger.LogError(ex, "Failed to send explain mistake request to Engine");
             return (false, "failed to send explain mistake request");
+        }
+    }
+    public async Task<(bool success, string message)> GenerateWordExplainAsync(WordExplainRequest request, CancellationToken ct = default)
+    {
+        try
+        {
+            _logger.LogInformation("Received WordExplain request for word '{Word}'", request.Word);
+
+            var payload = JsonSerializer.SerializeToElement(request);
+
+            var message = new Message
+            {
+                ActionName = MessageAction.GenerateWordExplain,
+                Payload = payload
+            };
+
+            await _daprClient.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message, cancellationToken: ct);
+
+            _logger.LogInformation("WordExplain request for '{Word}' sent to Engine via binding '{Binding}'",
+                request.Word,
+                QueueNames.EngineQueue);
+
+            return (true, "sent to engine");
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning("WordExplain request for '{Word}' was canceled", request.Word);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send WordExplain request for '{Word}' to Engine", request.Word);
+            throw;
         }
     }
 }

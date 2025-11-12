@@ -42,6 +42,7 @@ public class EngineQueueHandlerTests
         Mock<IAccessorClient> accessorClient,
         Mock<ISentencesService> sentService,
         Mock<IChatTitleService> titleService,
+        Mock<IWordExplainService> explainService,
         Mock<ILogger<EngineQueueHandler>> log,
         Mock<ILogger<StreamingChatAIBatcher>> batcherLog,
         EngineQueueHandler sut
@@ -55,6 +56,7 @@ public class EngineQueueHandlerTests
         var titleService = new Mock<IChatTitleService>(MockBehavior.Strict);
         var log = new Mock<ILogger<EngineQueueHandler>>();
         var batcherLog = new Mock<ILogger<StreamingChatAIBatcher>>();
+        var explainService = new Mock<IWordExplainService>(MockBehavior.Strict);
 
         var sut = new EngineQueueHandler(
             dapr.Object,
@@ -64,16 +66,17 @@ public class EngineQueueHandlerTests
             pub.Object,
             accessorClient.Object,
             sentService.Object,
-            titleService.Object
+            titleService.Object,
+            explainService.Object
         );
-        return (dapr, ai, pub, accessorClient, sentService, titleService, log, batcherLog, sut);
+        return (dapr, ai, pub, accessorClient, sentService, titleService, explainService, log, batcherLog, sut);
     }
 
     [Fact]
     public async Task HandleAsync_CreateTask_Processes_TaskModel()
     {
         // Arrange
-        var (daprClient, ai, pub, accessorClient, sentService, titleService, log, batcherLog, sut) = CreateSut();
+        var (daprClient, ai, pub, accessorClient, sentService, titleService, explainService, log, batcherLog, sut) = CreateSut();
 
         var task = new TaskModel
         {
@@ -101,7 +104,7 @@ public class EngineQueueHandlerTests
     [Fact]
     public async Task HandleAsync_CreateTask_InvalidPayload_DoesNotCall_Dapr()
     {
-        var (daprClient, ai, pub, accessorClient, sentService, titleService, log, batcherLog, sut) = CreateSut();
+        var (daprClient, ai, pub, accessorClient, sentService, titleService, explainService, log, batcherLog, sut) = CreateSut();
 
         // payload = "null"
         var msg = new Message
@@ -124,7 +127,7 @@ public class EngineQueueHandlerTests
     public async Task HandleAsync_ProcessingQuestionAi_HappyPath_Calls_Ai_And_Publishes()
     {
         // Arrange
-        var (daprClient, ai, pub, accessorClient, sentService, titleService, log, batcherLog, sut) = CreateSut();
+        var (daprClient, ai, pub, accessorClient, sentService, titleService, explainService, log, batcherLog, sut) = CreateSut();
 
         var requestId = Guid.NewGuid().ToString();
         var threadId = Guid.NewGuid();
@@ -242,7 +245,7 @@ public class EngineQueueHandlerTests
     [Fact(Skip = "Todo: do after refactoring ai Chat for queue")]
     public async Task HandleAsync_ProcessingQuestionAi_MissingThreadId_ThrowsRetryable()
     {
-        var (daprClient, ai, pub, accessorClient, sentService, titleService, log, batcherLog, sut) = CreateSut();
+        var (daprClient, ai, pub, accessorClient, sentService, titleService, explainService, log, batcherLog, sut) = CreateSut();
 
         var requestId = Guid.NewGuid().ToString();
         var userId = Guid.NewGuid();
@@ -283,7 +286,7 @@ public class EngineQueueHandlerTests
     public async Task HandleAsync_ProcessingQuestionAi_AiThrows_WrappedInRetryable()
     {
         // Arrange
-        var (daprClient, ai, pub, accessorClient, sentService, titleService, log, batcherLog, sut) = CreateSut();
+        var (daprClient, ai, pub, accessorClient, sentService, titleService, explainService, log, batcherLog, sut) = CreateSut();
 
         var requestId = Guid.NewGuid().ToString();
         var threadId = Guid.NewGuid();
@@ -371,7 +374,7 @@ public class EngineQueueHandlerTests
     [Fact]
     public async Task HandleAsync_UnknownAction_ThrowsNonRetryable_AndSkipsWork()
     {
-        var (daprClient, ai, pub, accessorClient, sentService, titleService, log, batcherLog, sut) = CreateSut();
+        var (daprClient, ai, pub, accessorClient, sentService, titleService, explainService, log, batcherLog, sut) = CreateSut();
 
 
         var msg = new Message

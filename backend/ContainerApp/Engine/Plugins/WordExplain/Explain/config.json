@@ -1,0 +1,17 @@
+﻿{
+  "type": "prompt",
+  "template_format": "semantic-kernel",
+  "description": "Explain a Hebrew word meaning and usage in context as strict JSON",
+  "input_variables": [
+    {
+      "name": "word",
+      "description": "Hebrew word to explain",
+      "is_required": true
+    },
+    {
+      "name": "context",
+      "description": "Sentence or situation where the word was used",
+      "is_required": true
+    }
+  ]
+}
