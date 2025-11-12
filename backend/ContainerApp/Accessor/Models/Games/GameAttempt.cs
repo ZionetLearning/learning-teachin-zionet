@@ -38,5 +38,8 @@ public class GameAttempt
     public int AttemptNumber { get; set; }
 
     [Required]
+    public decimal Accuracy { get; set; }
+
+    [Required]
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 }

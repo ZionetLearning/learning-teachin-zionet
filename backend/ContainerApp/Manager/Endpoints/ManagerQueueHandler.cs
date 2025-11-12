@@ -15,7 +15,7 @@ namespace Manager.Endpoints;
 public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
 {
     private readonly INotificationService _notificationService;
-    private readonly IAccessorClient _accessorClient;
+    private readonly IGameAccessorClient _gameAccessorClient;
     private readonly ILogger<ManagerQueueHandler> _logger;
     protected override MessageAction GetAction(Message message) => message.ActionName;
 
@@ -28,11 +28,11 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
     public ManagerQueueHandler(
         ILogger<ManagerQueueHandler> logger,
         INotificationService notificationService,
-        IAccessorClient accessorClient) : base(logger)
+        IGameAccessorClient gameAccessorClient) : base(logger)
     {
         _notificationService = notificationService;
         _logger = logger;
-        _accessorClient = accessorClient;
+        _gameAccessorClient = gameAccessorClient;
     }
 
     public async Task HandleNotifyUserAsync(Message message, IReadOnlyDictionary<string, string>? metadata, Func<Task> renewLock, CancellationToken cancellationToken)
@@ -187,8 +187,43 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
                     $"Validation failed for {nameof(SentenceResponse)}: {string.Join("; ", validationErrors)}");
             }
 
-            await _notificationService.SendEventAsync(EventType.SentenceGeneration, userId, generatedResponse);
+            var gameTypeString = generatedResponse.Sentences.FirstOrDefault()?.GameType ?? "typingPractice";
+            var gameType = Enum.TryParse<GameName>(gameTypeString, ignoreCase: true, out var parsedGameType)
+     ? parsedGameType
+  : Manager.Models.UserGameConfiguration.GameName.TypingPractice;
 
+            var dto = new GeneratedSentenceDto
+            {
+                StudentId = Guid.Parse(userId),
+                GameType = gameType,
+                Difficulty = Enum.TryParse<Models.Games.Difficulty>(generatedResponse.Sentences.FirstOrDefault()?.Difficulty, ignoreCase: true, out var difficulty)
+                    ? difficulty
+                    : Manager.Models.Games.Difficulty.Easy,
+                Sentences = [.. generatedResponse.Sentences
+                    .Select(s => new GeneratedSentenceItem
+                    {
+                        Text = s.Text,
+                        CorrectAnswer = [s.Text],
+                        Nikud = s.Nikud
+                    })]
+            };
+
+            var result = await _gameAccessorClient.SaveGeneratedSentencesAsync(dto, cancellationToken);
+
+            var response = new SentenceGenerationResponse
+            {
+                RequestId = generatedResponse.RequestId,
+                Sentences = result.Select(r => new GeneratedSentenceResultItem
+                {
+                    ExerciseId = r.ExerciseId,
+                    Text = r.Text,
+                    Words = r.Words,
+                    Difficulty = r.Difficulty,
+                    Nikud = r.Nikud
+                }).ToList()
+            };
+
+            await _notificationService.SendEventAsync(EventType.SentenceGeneration, userId, response);
         }
         catch (NonRetryableException ex)
         {
@@ -212,6 +247,7 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
             throw new RetryableException("Transient error while processing answer.", ex);
         }
     }
+
     public async Task HandleGenerateSplitAnswer(Message message, IReadOnlyDictionary<string, string>? metadata, Func<Task> renewLock, CancellationToken cancellationToken)
     {
         try
@@ -261,18 +297,31 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
                 Sentences = [.. split.Sentences
                 .Select(s => new GeneratedSentenceItem
                 {
-                    Original = s.Original,
+                    Text = s.Text,
                     CorrectAnswer = s.Words,
                     Nikud = s.Nikud
                 })]
             };
 
-            var result = await _accessorClient.SaveGeneratedSentencesAsync(dto, cancellationToken);
+            var result = await _gameAccessorClient.SaveGeneratedSentencesAsync(dto, cancellationToken);
+
+            var response = new SentenceGenerationResponse
+            {
+                RequestId = generatedResponse.RequestId,
+                Sentences = result.Select(r => new GeneratedSentenceResultItem
+                {
+                    ExerciseId = r.ExerciseId,
+                    Text = r.Text,
+                    Words = r.Words,
+                    Difficulty = r.Difficulty,
+                    Nikud = r.Nikud
+                }).ToList()
+            };
 
             await _notificationService.SendEventAsync(
                 EventType.SplitSentenceGeneration,
                 userId,
-                result
+                response
                 );
         }
         catch (NonRetryableException ex)

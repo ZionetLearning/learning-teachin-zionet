@@ -1332,7 +1332,13 @@ Never invent hidden fields and do not quote this block verbatim to the user.
 
             var response = await _sentencesService.GenerateAsync(payload, userInterests, cancellationToken);
             var userId = payload.UserId;
-            await _publisher.SendGeneratedMessagesAsync(userId.ToString(), response, message.ActionName, cancellationToken);
+
+            var sentencesResponse = new SentencesResponse
+            {
+                RequestId = payload.RequestId,
+                Sentences = response.Sentences
+            };
+            await _publisher.SendGeneratedMessagesAsync(userId.ToString(), sentencesResponse, message.ActionName, cancellationToken);
         }
         catch (NonRetryableException ex)
         {

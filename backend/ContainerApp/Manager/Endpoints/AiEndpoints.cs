@@ -387,22 +387,25 @@ public static class AiEndpoints
             return Results.BadRequest(new { error = "Request is required" });
         }
 
-        logger.LogInformation("Received sentence generation request");
+        logger.LogInformation("Received sentence generation request for GameType={GameType}", dto.GameType);
 
         try
         {
             var userId = GetUserId(httpContext, logger);
+            var requestId = Guid.NewGuid().ToString("N");
 
             var request = new SentenceRequest
             {
+                RequestId = requestId,
                 Difficulty = dto.Difficulty,
                 Nikud = dto.Nikud,
                 Count = dto.Count,
-                UserId = userId
+                UserId = userId,
+                GameType = dto.GameType
             };
 
             await engineClient.GenerateSentenceAsync(request);
-            return Results.Ok();
+            return Results.Ok(new { requestId });
         }
         catch (OperationCanceledException)
         {
@@ -420,6 +423,7 @@ public static class AiEndpoints
             return Results.Problem("An error occurred during sentence generation.");
         }
     }
+
     private static async Task<IResult> SplitSentenceGenerateAsync(
        [FromBody] SentenceRequestDto dto,
        [FromServices] IEngineClient engineClient,
@@ -432,22 +436,25 @@ public static class AiEndpoints
             return Results.BadRequest(new { error = "Request is required" });
         }
 
-        logger.LogInformation("Received split sentence generation request");
+        logger.LogInformation("Received split sentence generation request for GameType={GameType}", dto.GameType);
 
         try
         {
             var userId = GetUserId(httpContext, logger);
+            var requestId = Guid.NewGuid().ToString("N");
 
             var request = new SentenceRequest
             {
+                RequestId = requestId,
                 Difficulty = dto.Difficulty,
                 Nikud = dto.Nikud,
                 Count = dto.Count,
-                UserId = userId
+                UserId = userId,
+                GameType = dto.GameType
             };
 
             await engineClient.GenerateSplitSentenceAsync(request);
-            return Results.Ok();
+            return Results.Ok(new { requestId });
         }
         catch (InvalidOperationException ex) when (ex.Data.Contains("Tag") &&
                                           Equals(ex.Data["Tag"], "MissingOrInvalidUserId"))

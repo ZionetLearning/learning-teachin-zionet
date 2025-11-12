@@ -149,6 +149,9 @@ namespace Accessor.DB.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<decimal>("Accuracy")
+                        .HasColumnType("numeric");
+
                     b.Property<int>("AttemptNumber")
                         .HasColumnType("integer");
 
