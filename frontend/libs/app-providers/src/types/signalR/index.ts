@@ -62,6 +62,7 @@ export const EventType = {
   SystemMessage: "SystemMessage",
   SentenceGeneration: "SentenceGeneration", // Must match backend exactly
   SplitSentenceGeneration: "SplitSentenceGeneration", // Must match backend exactly
+  WordExplain: "WordExplain", // Must match backend exactly
 } as const;
 
 export type EventType = (typeof EventType)[keyof typeof EventType];
@@ -110,7 +111,6 @@ export interface SplitSentenceItem {
   nikud: boolean;
 }
 
-
 export interface SentenceGenerationResponse {
   requestId: string;
   sentences: SentenceItem[];
@@ -119,6 +119,12 @@ export interface SentenceGenerationResponse {
 export interface SplitSentenceGenerationResponse {
   requestId: string;
   sentences: SplitSentenceItem[];
+}
+
+export interface WordExplanationResponse {
+  id: string;
+  definition: string;
+  explanation: string;
 }
 
 // Union Type for all possible events
@@ -132,6 +138,10 @@ export type UserEventUnion =
   | {
       eventType: typeof EventType.SplitSentenceGeneration;
       payload: SplitSentenceGenerationResponse;
+    }
+  | {
+      eventType: typeof EventType.WordExplain;
+      payload: WordExplanationResponse;
     };
 
 // Event Handler Type

@@ -576,7 +576,10 @@
         "markAsLearned": "סמן כנלמד",
         "markAsUnlearned": "סמן כלא נלמד",
         "learned": "נלמד",
-        "practice": "תרגול"
+        "practice": "תרגול",
+        "showExplanation": "הצג הסבר",
+        "hideExplanation": "הסתר הסבר",
+        "generatingExplanation": "מייצר הסבר..."
       },
       "wordCardsChallenge": {
         "title": "אתגר כרטיסי מילים",

@@ -15,6 +15,7 @@ export const WordCaptureProvider = ({
 }: WordCaptureProviderProps) => {
   const [open, setOpen] = useState(false);
   const [hebrewWord, setHebrewWord] = useState<string>("");
+  const [context, setContext] = useState<string>("");
 
   // Detect a single Hebrew "word" in a selection.
   const extractHebrewWord = (raw: string): string | null => {
@@ -32,6 +33,22 @@ export const WordCaptureProvider = ({
     return word;
   };
 
+  const extractContext = (selection: Selection): string => {
+    const range = selection.getRangeAt(0);
+    const container = range.commonAncestorContainer;
+
+    const parentElement =
+      container.nodeType === Node.TEXT_NODE
+        ? container.parentElement
+        : (container as Element);
+
+    if (parentElement) {
+      return parentElement.textContent?.trim() || "";
+    }
+
+    return "";
+  };
+
   // mouseup listener to catch selections
   useEffect(() => {
     const handleMouseUp = () => {
@@ -40,11 +57,12 @@ export const WordCaptureProvider = ({
       if (!text) return;
 
       const word = extractHebrewWord(text);
-      if (word) {
+      if (word && selection && selection.rangeCount > 0) {
         setHebrewWord(word);
+        setContext(extractContext(selection));
         setOpen(true);
         // Clear selection
-        selection?.removeAllRanges();
+        selection.removeAllRanges();
       }
     };
 
@@ -56,6 +74,7 @@ export const WordCaptureProvider = ({
   const handleClose = () => {
     setOpen(false);
     setHebrewWord("");
+    setContext("");
   };
 
   return (
@@ -65,6 +84,7 @@ export const WordCaptureProvider = ({
         open={open}
         onClose={handleClose}
         initialHebrew={hebrewWord}
+        context={context}
       />
     </Box>
   );

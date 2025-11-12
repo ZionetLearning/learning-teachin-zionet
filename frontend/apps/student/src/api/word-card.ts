@@ -12,11 +12,19 @@ export type WordCard = {
   hebrew: string;
   english: string;
   isLearned: boolean;
+  explanation?: string;
 };
 
 export type CreateWordCardRequest = {
   hebrew: string;
   english: string;
+  context?: string;
+  explanation?: string;
+};
+
+export type WordExplainRequest = {
+  word: string;
+  context: string;
 };
 
 export type SetLearnedRequest = {
@@ -25,6 +33,7 @@ export type SetLearnedRequest = {
 };
 
 const WORD_CARDS_MANAGER_URL = import.meta.env.VITE_WORD_CARDS_MANAGER_URL!;
+const AI_MANAGER_URL = import.meta.env.VITE_AI_URL!;
 
 export const useGetWordCards = (): UseQueryResult<WordCard[], Error> => {
   return useQuery<WordCard[], Error>({
@@ -76,6 +85,22 @@ export const useSetWordCardLearned = () => {
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["wordcards"] });
+    },
+  });
+};
+
+export const useRequestWordExplanation = () => {
+  return useMutation<string, Error, WordExplainRequest>({
+    mutationFn: async (body) => {
+      const res = await axios.post<string>(
+        `${AI_MANAGER_URL}/word-explain`,
+        body,
+      );
+      return res.data;
+    },
+    onError: (error) => {
+      console.error("Failed to request word explanation:", error);
+      toast.error("Couldn't request explanation. Please try again.");
     },
   });
 };

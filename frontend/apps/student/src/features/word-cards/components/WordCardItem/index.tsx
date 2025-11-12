@@ -1,6 +1,16 @@
-import { Box, Checkbox, Tooltip, Typography } from "@mui/material";
+import { useState } from "react";
+import {
+  Box,
+  Button,
+  Checkbox,
+  Collapse,
+  Tooltip,
+  Typography,
+} from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import { useSetWordCardLearned, type WordCard } from "@student/api";
 import { useStyles } from "./style";
 import { useTranslation } from "react-i18next";
@@ -11,6 +21,7 @@ export const WordCardItem = ({ card }: { card: WordCard }) => {
   const setLearned = useSetWordCardLearned();
 
   const isHebrew = i18n.language === "he";
+  const [showExplanation, setShowExplanation] = useState(false);
 
   const toggle = () => {
     setLearned.mutate({ cardId: card.cardId, isLearned: !card.isLearned });
@@ -29,6 +40,32 @@ export const WordCardItem = ({ card }: { card: WordCard }) => {
           </Typography>
           <Typography className={classes.english}>{card.english}</Typography>
         </Box>
+
+        {card.explanation && (
+          <Box sx={{ mt: 1 }}>
+            <Button
+              size="small"
+              onClick={() => setShowExplanation(!showExplanation)}
+              endIcon={
+                showExplanation ? <ExpandLessIcon /> : <ExpandMoreIcon />
+              }
+              sx={{ textTransform: "none", fontSize: "0.75rem" }}
+            >
+              {showExplanation
+                ? t("pages.wordCards.hideExplanation")
+                : t("pages.wordCards.showExplanation")}
+            </Button>
+            <Collapse in={showExplanation}>
+              <Box
+                sx={{ mt: 1, p: 1, bgcolor: "action.hover", borderRadius: 1 }}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  {card.explanation}
+                </Typography>
+              </Box>
+            </Collapse>
+          </Box>
+        )}
 
         <Tooltip title={tooltipTitle}>
           <Box className={classes.learnRow} dir={isHebrew ? "rtl" : "ltr"}>
