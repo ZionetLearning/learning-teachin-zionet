@@ -1,9 +1,8 @@
 ﻿using FluentAssertions;
-using IntegrationTests.Constants;
 using IntegrationTests.Fixtures;
 using Manager.Models.Chat;
 using Manager.Models.Users;
-using System.Net.Http.Json;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using Xunit.Abstractions;
 
@@ -27,7 +26,6 @@ public class ChatIntegrationTests(
         var (req1, ev1, frames1) = await PostChatAndWaitAsync(new ChatRequest
         {
             ThreadId = chatId1.ToString(),
-            UserId = userInfo.UserId.ToString(),
             UserMessage = "Remember number 42",
             ChatType = ChatType.Default
         }, TimeSpan.FromSeconds(60));
@@ -48,7 +46,6 @@ public class ChatIntegrationTests(
         var (req2, ev2, frames2) = await PostChatAndWaitAsync(new ChatRequest
         {
             ThreadId = chatId1.ToString(),
-            UserId = userInfo.UserId.ToString(),
             UserMessage = "What number did you remember?",
             ChatType = ChatType.Default
         }, TimeSpan.FromSeconds(60));
@@ -69,7 +66,6 @@ public class ChatIntegrationTests(
         var (req3, ev3, frames3) = await PostChatAndWaitAsync(new ChatRequest
         {
             ThreadId = chatId1.ToString(),
-            UserId = userInfo.UserId.ToString(),
             UserMessage = "Give me the current time in ISO-8601 (UTC). Return only the timestamp.",
             ChatType = ChatType.Default
         }, TimeSpan.FromSeconds(60));
@@ -93,5 +89,71 @@ public class ChatIntegrationTests(
 
         frames3.Any(f => f.Stage == ChatStreamStage.Tool && (f.ToolCall ?? string.Empty).Equals("Time-current_time", StringComparison.OrdinalIgnoreCase))
                .Should().BeTrue("time tool should be invoked and present in SignalR stream");
+    }
+
+    [Fact(DisplayName = "Global chat: pageContext is stored and used by LLM")]
+    public async Task GlobalChat_Uses_PageContext()
+    {
+        var userInfo = ClientFixture.GetUserInfo(Role.Admin);
+
+        var chatId = Guid.NewGuid();
+
+        var pageContextPayload = new
+        {
+            pageId = "lesson-123",
+            topic = "fractions",
+            magicNumber = 777
+        };
+
+        var pageContextJson = JsonSerializer.Serialize(pageContextPayload);
+
+        var (req, ev, frames) = await PostGlobalChatAndWaitAsync(
+            new ChatRequest
+            {
+                ThreadId = chatId.ToString(),
+                UserMessage = "What is the magic number from the page context? Answer only the number.",
+                ChatType = ChatType.Global,
+                PageContext = new()
+                {
+                    JsonContext = pageContextJson
+                }
+            },
+            TimeSpan.FromSeconds(60)
+        );
+
+        var chatName = frames.Last().ChatName;
+        chatName.Should().NotBeNullOrWhiteSpace();
+
+        var history = await AIChatHelper.CheckCountMessageInChatHistory(
+            Client,
+            chatId,
+            userInfo.UserId,
+            waitMessages: 3,
+            timeoutSeconds: 30
+        );
+
+        history.Messages.Count.Should().Be(3);
+
+        var devopsMessage = history.Messages
+            .SingleOrDefault(m => m.Role == "developer");
+
+        devopsMessage.Should().NotBeNull("pageContext must be stored as DevOps message in history");
+        devopsMessage!.Text.Should().Contain("magicNumber");
+        devopsMessage.Text.Should().Contain("777");
+        devopsMessage.Text.Should().Contain("lesson-123");
+
+        var regexMagic = new Regex(@"\b777\b");
+
+        var combined = string.Concat(
+            frames
+                .Where(f => f.Stage == ChatStreamStage.Model)
+                .Select(f => f.Delta)
+        ) ?? string.Empty;
+
+        combined.Should().MatchRegex(regexMagic);
+
+        var lastAssistant = history.Messages.LastOrDefault(m => m.Role == "assistant");
+        lastAssistant.Should().NotBeNull();
+        (lastAssistant!.Text ?? string.Empty).Should().MatchRegex(regexMagic);
     }
 }

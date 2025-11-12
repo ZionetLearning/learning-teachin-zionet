@@ -152,7 +152,8 @@
         "stop": "⏹ Stop",
         "play": "▶ Play",
         "record": "🎤 Record",
-        "noData": "No data"
+        "noData": "No data",
+        "accuracy": "Accuracy"
       },
       "typingPractice": {
         "hebrewTypingPractice": "Hebrew Typing Practice",
@@ -234,6 +235,7 @@
         "no": "No",
         "correct": "Correct!",
         "incorrect": "Incorrect. Try again.",
+        "accuracy": "Accuracy",
         "wordBankTitle": "Word Bank",
         "wordBankHint": "Click a word to add it to the sentence",
         "explainMistake": "Explain Mistake",
@@ -481,13 +483,16 @@
         "practiceName": "Practice Name",
         "difficulty": "Difficulty",
         "yourLastAnswer": "Your Last Answer",
+        "lastAccuracy": "Last Accuracy",
         "status": "Status",
         "action": "Action",
         "tryAgain": "Try Again!",
         "retry": "Retry",
         "failedToLoad": "Failed to load mistakes",
         "gameType": {
-          "wordOrderGame": "Word Order Game"
+          "wordOrderGame": "Word Order Game",
+          "typingPractice": "Typing Practice",
+          "speakingPractice": "Speaking Practice"
         }
       },
       "practiceHistory": {
@@ -504,12 +509,15 @@
         "totalFailures": "Failures",
         "successRate": "Success Rate",
         "yourLastAnswer": "Your Last Answer",
+        "accuracy": "Accuracy",
         "status": "Status",
         "date": "Date",
         "succeeded": "Succeeded",
         "failed": "Failed",
         "gameType": {
-          "wordOrderGame": "Word Order Game"
+          "WordOrder": "Word Order Game",
+          "TypingPractice": "Typing Practice",
+          "SpeakingPractice": "Speaking Practice"
         }
       },
       "studentPracticeHistory": {
@@ -646,6 +654,26 @@
       "errorLoadingExplanation": "Sorry, couldn't load explanation.",
       "askFollowUp": "Ask a follow-up question...",
       "send": "Send"
+    },
+    "contextChat": {
+      "title": "Practice Assistant",
+      "emptyState": "Ask me anything about this exercise!",
+      "inputPlaceholder": "Ask a question...",
+      "errorMessage": "Sorry, I encountered an error. Please try again.",
+      "exerciseType": {
+        "typing": "Typing",
+        "word-order": "Word Order",
+        "speaking": "Speaking",
+        "word-cards": "Word Cards"
+      },
+      "difficulty": {
+        "0": "Easy",
+        "1": "Medium",
+        "2": "Hard",
+        "easy": "Easy",
+        "medium": "Medium",
+        "hard": "Hard"
+      }
     },
     "sidebar": {
       "toggleSidebar": "Toggle Sidebar",

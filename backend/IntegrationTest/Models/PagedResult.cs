@@ -1,4 +1,4 @@
-namespace IntegrationTests.Models.Games;
+namespace IntegrationTests.Models;
 
 public class PagedResult<T>
 {

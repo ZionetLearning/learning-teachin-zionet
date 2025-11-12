@@ -5,18 +5,22 @@ import { CircularProgress } from "@mui/material";
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";
 import { useTranslation } from "react-i18next";
 import { comparePhrases } from "./utils";
-
-import { useAzureSpeechToken, useGenerateSentences } from "@student/api";
+import { useAzureSpeechToken, useGenerateSentences, useSubmitGameAttempt } from "@student/api";
 import { useAvatarSpeech, useGameConfig, useSignalR } from "@student/hooks";
-import { DifficultyLevel } from "@student/types";
+import { DifficultyLevel, GameType } from "@student/types";
 import {
   GameConfigModal,
   GameOverModal,
   GameSettings,
   GameSetupPanel,
 } from "@ui-components";
+import {
+  ContextAwareChat,
+  useSpeakingPracticeContext,
+} from "@ui-components/ContextAwareChat";
 import { getDifficultyLabel } from "../utils";
 import { useStyles } from "./style";
+import { toast } from "react-toastify";
 
 const Feedback = {
   Perfect: "Perfect!",
@@ -46,10 +50,13 @@ export const SpeakingPractice = () => {
   const [nikud, setNikud] = useState(true);
   const [count, setCount] = useState(3);
   const [sentences, setSentences] = useState<string[]>([]);
+  const [exerciseIds, setExerciseIds] = useState<string[]>([]);
   const [attempted, setAttempted] = useState<Set<number>>(new Set());
   const [correctIdxs, setCorrectIdxs] = useState<Set<number>>(new Set());
   const [skipped, setSkipped] = useState<Set<number>>(new Set());
   const isConfiguredRef = useRef(false);
+
+  const { mutateAsync: submitAttempt } = useSubmitGameAttempt();
 
   const recognizerRef = useRef<sdk.SpeechRecognizer | null>(null);
   const audioConfigRef = useRef<sdk.AudioConfig | null>(null);
@@ -110,10 +117,11 @@ export const SpeakingPractice = () => {
   const requestSentences = useCallback(
     (difficulty: DifficultyLevel, nikud: boolean, count: number) => {
       generateMutation.mutate(
-        { difficulty, nikud, count },
+        { difficulty, nikud, count, gameType: GameType.SpeakingPractice },
         {
           onSuccess: (data) => {
             setSentences(data.map((item) => item.text));
+            setExerciseIds(data.map((item) => item.exerciseId));
             setCurrentIdx(0);
             setAttempted(new Set());
             setCorrectIdxs(new Set());
@@ -211,19 +219,65 @@ export const SpeakingPractice = () => {
     setIsRecording(true);
 
     recognizer.recognizeOnceAsync(
-      (result) => {
+      async (result) => {
         const userText = result.text ?? "";
         const correct = userText
           ? comparePhrases(sentences[currentIdx], userText)
           : false;
-        setCorrectIdxs((prev) => {
-          const next = new Set(prev);
-          if (correct) next.add(currentIdx);
-          else next.delete(currentIdx);
-          return next;
-        });
-        setIsCorrect(correct);
-        setFeedback(correct ? Feedback.Perfect : Feedback.TryAgain);
+
+        // Submit attempt to backend
+        const currentExerciseId = exerciseIds[currentIdx];
+        if (currentExerciseId) {
+          try {
+            const res = await submitAttempt({
+              exerciseId: currentExerciseId,
+              givenAnswer: [userText],
+            });
+
+
+            const isServerCorrect = res.status === "Success";
+            setCorrectIdxs((prev) => {
+              const next = new Set(prev);
+              if (isServerCorrect) next.add(currentIdx);
+              else next.delete(currentIdx);
+              return next;
+            });
+            setIsCorrect(isServerCorrect);
+            setFeedback(isServerCorrect ? Feedback.Perfect : Feedback.TryAgain);
+            // Show accuracy in toast
+            if (isServerCorrect) {
+              toast.success(
+                `${Feedback.Perfect} - ${res.accuracy.toFixed(1)}% ${t("pages.speakingPractice.accuracy")}`,
+              );
+            } else {
+              toast.error(
+                `${Feedback.TryAgain} - ${res.accuracy.toFixed(1)}% ${t("pages.speakingPractice.accuracy")}`,
+              );
+            }
+          } catch (error) {
+            console.error("Failed to submit speaking practice attempt:", error);
+            // Fallback to local comparison if submission fails
+            setCorrectIdxs((prev) => {
+              const next = new Set(prev);
+              if (correct) next.add(currentIdx);
+              else next.delete(currentIdx);
+              return next;
+            });
+            setIsCorrect(correct);
+            setFeedback(correct ? Feedback.Perfect : Feedback.TryAgain);
+          }
+        } else {
+          // No exerciseId available, use local comparison
+          setCorrectIdxs((prev) => {
+            const next = new Set(prev);
+            if (correct) next.add(currentIdx);
+            else next.delete(currentIdx);
+            return next;
+          });
+          setIsCorrect(correct);
+          setFeedback(correct ? Feedback.Perfect : Feedback.TryAgain);
+        }
+
         stopRecognition();
         const total = sentences.length;
         const isLast = currentIdx === total - 1;
@@ -329,6 +383,21 @@ export const SpeakingPractice = () => {
     setSkipped(new Set());
     requestSentences(difficulty, nikud, count);
   };
+
+  const pageContext = useSpeakingPracticeContext({
+    currentExercise: currentIdx + 1,
+    totalExercises: sentences.length,
+    difficulty: difficulty.toString(),
+    phraseToSpeak: sentences[currentIdx],
+    additionalContext: {
+      isRecording,
+      isPlaying,
+      correctCount: correctIdxs.size,
+      attemptedCount: attempted.size,
+      isCorrect,
+      feedback,
+    },
+  });
 
   if (configLoading) {
     return (
@@ -458,6 +527,7 @@ export const SpeakingPractice = () => {
         correctSentences={correctIdxs.size}
         totalSentences={sentences.length}
       />
+      <ContextAwareChat pageContext={pageContext} hasSettings />
     </div>
   );
 };

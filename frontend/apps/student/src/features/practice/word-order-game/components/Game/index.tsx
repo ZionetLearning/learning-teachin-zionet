@@ -3,10 +3,9 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { CircularProgress } from "@mui/material";
-
 import {
   useAvatarSpeech,
-  useHebrewSentence,
+  useWordOrderSentence,
   useGameConfig,
 } from "@student/hooks";
 import { ChosenWordsArea, WordsBank, ActionButtons, Speaker } from "../";
@@ -18,6 +17,10 @@ import {
   GameSetupPanel,
   RetryResultModal,
 } from "@ui-components";
+import {
+  ContextAwareChat,
+  useWordOrderContext,
+} from "@ui-components/ContextAwareChat";
 import { MistakeChatPopup, WrongAnswerDisplay } from "@student/components";
 import { getDifficultyLabel } from "@student/features";
 import { useAuth } from "@app-providers";
@@ -26,9 +29,14 @@ import { useStyles } from "./style";
 import { toast } from "react-toastify";
 
 interface RetryData {
+  exerciseId: string;
   correctAnswer: string[];
-  attemptId: string;
-  wrongAnswers: string[][];
+  mistakes: Array<{
+    attemptId: string;
+    wrongAnswer: string[];
+    accuracy: number;
+    createdAt: string;
+  }>;
   difficulty: number;
 }
 
@@ -63,7 +71,6 @@ export const Game = ({ retryData }: GameProps) => {
   const [mistakeChatOpen, setMistakeChatOpen] = useState(false);
   const [currentAttemptId, setCurrentAttemptId] = useState<string>("");
   const [isRetryMode] = useState(!!retryData);
-  const [retryAttemptId] = useState(retryData?.attemptId || "");
   const [retryResultModalOpen, setRetryResultModalOpen] = useState(false);
   const [retryResult, setRetryResult] = useState<boolean | null>(null);
 
@@ -80,7 +87,7 @@ export const Game = ({ retryData }: GameProps) => {
     resetGame,
     sentenceCount,
     currentSentenceIndex,
-  } = useHebrewSentence(gameConfig || undefined);
+  } = useWordOrderSentence(gameConfig || undefined);
 
   const { speak, stop, isLoading: speechLoading } = useAvatarSpeech({});
 
@@ -299,11 +306,15 @@ export const Game = ({ retryData }: GameProps) => {
   };
 
   const handleCheck = useCallback(async () => {
-    const currentAttemptId = isRetryMode ? retryAttemptId : attemptId;
+    const currentExerciseId = isRetryMode ? retryData?.exerciseId : attemptId;
+
+    if (!currentExerciseId) {
+      toast.error("No exercise ID available");
+      return false;
+    }
 
     const res = await submitAttempt({
-      attemptId: currentAttemptId,
-      studentId,
+      exerciseId: currentExerciseId,
       givenAnswer: chosen,
     });
 
@@ -321,12 +332,16 @@ export const Game = ({ retryData }: GameProps) => {
     } else {
       if (isServerCorrect) {
         setCorrectSentencesCount((c) => c + 1);
-        toast.success(t("pages.wordOrderGame.correct"));
+        toast.success(
+          `${t("pages.wordOrderGame.correct")} - ${res.accuracy.toFixed(1)}% ${t("pages.wordOrderGame.accuracy")}`,
+        );
         setLastCheckWasIncorrect(false);
       } else {
-        toast.error(t("pages.wordOrderGame.incorrect"));
+        toast.error(
+          `${t("pages.wordOrderGame.incorrect")} - ${res.accuracy.toFixed(1)}% ${t("pages.wordOrderGame.accuracy")}`,
+        );
         setLastCheckWasIncorrect(true);
-        setCurrentAttemptId(attemptId);
+        setCurrentAttemptId(res.attemptId);
       }
     }
 
@@ -336,7 +351,7 @@ export const Game = ({ retryData }: GameProps) => {
   }, [
     submitAttempt,
     attemptId,
-    retryAttemptId,
+    retryData,
     isRetryMode,
     studentId,
     chosen,
@@ -353,6 +368,21 @@ export const Game = ({ retryData }: GameProps) => {
   const handleCloseMistakeChat = useCallback(() => {
     setMistakeChatOpen(false);
   }, []);
+
+  const pageContext = useWordOrderContext({
+    currentExercise: currentSentenceIndex + 1,
+    totalExercises: sentenceCount,
+    difficulty: gameConfig?.difficulty?.toString(),
+    targetSentence: isRetryMode ? retryData?.correctAnswer.join(" ") : sentence,
+    availableWords: shuffledSentence,
+    userAnswer: chosen,
+    additionalContext: {
+      isRetryMode,
+      correctCount: correctSentencesCount,
+      hasChecked: hasCheckedThisSentence,
+      chosenWordsCount: chosen.length,
+    },
+  });
 
   if (configLoading) {
     return (
@@ -416,11 +446,11 @@ export const Game = ({ retryData }: GameProps) => {
 
           <WrongAnswerDisplay
             wrongAnswer={
-              isRetryMode && retryData && retryData.wrongAnswers.length > 0
-                ? retryData.wrongAnswers[retryData.wrongAnswers.length - 1]
+              isRetryMode && retryData && retryData.mistakes.length > 0
+                ? retryData.mistakes[retryData.mistakes.length - 1].wrongAnswer
                 : []
             }
-            show={isRetryMode && retryData && retryData.wrongAnswers.length > 0}
+            show={isRetryMode && retryData && retryData.mistakes.length > 0}
           />
 
           <WordsBank
@@ -431,6 +461,9 @@ export const Game = ({ retryData }: GameProps) => {
           />
         </div>
       </div>
+
+      <ContextAwareChat pageContext={pageContext} hasSettings />
+
       {/* Configuration Modal */}
       <GameConfigModal
         open={configModalOpen}
@@ -454,7 +487,7 @@ export const Game = ({ retryData }: GameProps) => {
         open={mistakeChatOpen}
         onClose={handleCloseMistakeChat}
         attemptId={currentAttemptId}
-        gameType="word-order"
+        gameType="wordOrder"
         title={t("pages.wordOrderGame.explainMistake")}
       />
 

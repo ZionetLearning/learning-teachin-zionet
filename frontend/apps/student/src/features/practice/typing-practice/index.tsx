@@ -11,6 +11,10 @@ import {
   GameOverModal,
   GameSettings,
 } from "@ui-components";
+import {
+  ContextAwareChat,
+  useTypingPracticeContext,
+} from "@ui-components/ContextAwareChat";
 import { getDifficultyLabel } from "@student/features";
 import { useGameConfig } from "@student/hooks";
 
@@ -31,6 +35,7 @@ export const TypingPractice = () => {
 
   const {
     exerciseState,
+    currentExercise,
     currentSentenceIndex,
     correctSentencesCount,
     sentenceCount,
@@ -104,6 +109,20 @@ export const TypingPractice = () => {
       setGameOverModalOpen(true);
     }
   }, [handleNextExercise]);
+
+  const pageContext = useTypingPracticeContext({
+    currentExercise: currentSentenceIndex + 1,
+    totalExercises: sentenceCount,
+    difficulty: gameConfig?.difficulty.toString(),
+    phraseToSpeak: currentExercise?.hebrewText,
+    userAttempt: exerciseState.userInput,
+    correctAnswer: exerciseState.feedbackResult?.expectedText,
+    additionalContext: {
+      phase: exerciseState.phase,
+      correctCount: correctSentencesCount,
+      isCorrect: exerciseState.feedbackResult?.isCorrect,
+    },
+  });
 
   const renderExerciseArea = () => (
     <div className={classes.exerciseArea} data-testid="typing-exercise-area">
@@ -205,7 +224,6 @@ export const TypingPractice = () => {
           </div>
         )}
 
-        {/* Configuration Modal */}
         <GameConfigModal
           open={configModalOpen}
           onClose={() => setConfigModalOpen(false)}
@@ -214,7 +232,6 @@ export const TypingPractice = () => {
           initialConfig={gameConfig || undefined}
         />
 
-        {/* Game Over Modal */}
         <GameOverModal
           open={gameOverModalOpen}
           onPlayAgain={handleGameOverPlayAgain}
@@ -223,6 +240,8 @@ export const TypingPractice = () => {
           totalSentences={sentenceCount}
         />
       </div>
+
+      <ContextAwareChat pageContext={pageContext} />
     </div>
   );
 };

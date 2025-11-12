@@ -31,16 +31,16 @@ public class SentencesService : ISentencesService
         _hardWords = new(() => LoadList(HardPath));
     }
 
-    public async Task<SentenceResponse> GenerateAsync(SentenceRequest req, List<string> userInterests, CancellationToken ct = default)
+    public async Task<GeneratedSentences> GenerateAsync(SentenceRequest req, List<string> userInterests, CancellationToken ct = default)
     {
-        _log.LogInformation("Inside sentence generator service");
+        _log.LogInformation("Inside sentence generator service for GameType={GameType}", req.GameType);
 
         var func = _genKernel.Plugins["Sentences"]["Generate"];
 
         var exec = new AzureOpenAIPromptExecutionSettings
         {
             Temperature = 0.3,
-            ResponseFormat = typeof(SentenceResponse)
+            ResponseFormat = typeof(GeneratedSentences)
         };
 
         var difficulty = req.Difficulty.ToString().ToLowerInvariant();
@@ -77,11 +77,18 @@ public class SentencesService : ISentencesService
             throw new RetryableException("Error while generating sentences. The response is empty");
         }
 
-        var parsed = JsonSerializer.Deserialize<SentenceResponse>(json);
+        var parsed = JsonSerializer.Deserialize<GeneratedSentences>(json);
         if (parsed is null)
         {
             _log.LogError("Error while generating sentences. The response is empty or invalid JSON");
             throw new RetryableException("Error while generating sentences. The response is empty or invalid JSON");
+        }
+
+        // Set GameType from request on all generated sentences
+        var gameType = req.GameType.ToString();
+        foreach (var sentence in parsed.Sentences)
+        {
+            sentence.GameType = gameType;
         }
 
         return parsed;
