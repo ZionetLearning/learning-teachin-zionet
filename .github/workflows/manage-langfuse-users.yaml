@@ -1,9 +1,6 @@
 name: Manage Langfuse Users
 
 on:
-  push:
-    branches:
-      - snir/963/implement-user-roles-and-permissions-system-for-langfuse
   workflow_dispatch:
     inputs:
       action:
