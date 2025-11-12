@@ -52,48 +52,44 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-    #   - name: Get AKS credentials
-    #     run: |
-    #       az aks get-credentials \
-    #         --resource-group dev-zionet-learning-2025 \
-    #         --name aks-cluster-dev \
-    #         --overwrite-existing
+      - name: Get AKS credentials
+        run: |
+          az aks get-credentials \
+            --resource-group dev-zionet-learning-2025 \
+            --name aks-cluster-dev \
+            --overwrite-existing
 
-    #   - name: Verify kubectl connection
-    #     run: |
-    #       kubectl cluster-info
-    #       kubectl get nodes
+      - name: Verify kubectl connection
+        run: |
+          kubectl cluster-info
+          kubectl get nodes
 
-    #   - name: Run user management action
-    #     env:
-    #       PG_USERNAME: ${{ secrets.POSTGRES_USER }}
-    #       PG_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-    #     run: |
-    #       cd devops/helm-tools
-    #       chmod +x manage-langfuse-users-ci.sh
+      - name: Run user management action
+        env:
+          PG_USERNAME: ${{ secrets.POSTGRES_USER }}
+          PG_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+        run: |
+          cd devops/helm-tools
+          chmod +x manage-langfuse-users-ci.sh
           
-    #       # Capture output to both console and file for summary
-    #       ./manage-langfuse-users-ci.sh \
-    #         "${{ inputs.action }}" \
-    #         "${{ inputs.user_email }}" \
-    #         "${{ inputs.environment_name }}" \
-    #         "$PG_USERNAME" \
-    #         "$PG_PASSWORD" | tee action_output.txt
+          # Capture output to both console and file for summary
+          ./manage-langfuse-users-ci.sh \
+            "${{ inputs.action }}" \
+            "${{ inputs.user_email }}" \
+            "${{ inputs.environment_name }}" \
+            "$PG_USERNAME" \
+            "$PG_PASSWORD" | tee action_output.txt
 
-    #   - name: Create summary
-    #     if: always()
-    #     run: |
-    #       echo "## 📋 Langfuse User Management" >> $GITHUB_STEP_SUMMARY
-    #       echo "" >> $GITHUB_STEP_SUMMARY
-    #       echo "**Action:** ${{ inputs.action }}" >> $GITHUB_STEP_SUMMARY
-    #       echo "**Environment:** ${{ inputs.environment_name }}" >> $GITHUB_STEP_SUMMARY
-    #       if [ -n "${{ inputs.user_email }}" ]; then
-    #         echo "**User Email:** ${{ inputs.user_email }}" >> $GITHUB_STEP_SUMMARY
-    #       fi
-    #       echo "" >> $GITHUB_STEP_SUMMARY
-    #       echo "### Output:" >> $GITHUB_STEP_SUMMARY
-    #       echo '```' >> $GITHUB_STEP_SUMMARY
-    #       if [ -f devops/helm-tools/action_output.txt ]; then
-    #         cat devops/helm-tools/action_output.txt >> $GITHUB_STEP_SUMMARY
-    #       fi
-    #       echo '```' >> $GITHUB_STEP_SUMMARY
+      - name: Create summary
+        if: always()
+        run: |
+          echo "## 📋 Langfuse User Management" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Action:** ${{ inputs.action }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** ${{ inputs.environment_name }}" >> $GITHUB_STEP_SUMMARY
+          if [ -n "${{ inputs.user_email }}" ]; then
+            echo "**User Email:** ${{ inputs.user_email }}" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Output:" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
