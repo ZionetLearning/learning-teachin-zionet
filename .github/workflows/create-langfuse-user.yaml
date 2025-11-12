@@ -19,6 +19,13 @@ on:
           - Development
           - Production
         default: Development
+      environment_name:
+        description: 'Environment name (prefix)'
+        required: true
+        type: choice
+        options:
+          - dev
+        default: dev
 
 permissions:
   id-token: write
