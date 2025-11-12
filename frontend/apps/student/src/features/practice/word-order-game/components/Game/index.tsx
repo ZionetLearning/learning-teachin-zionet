@@ -18,6 +18,10 @@ import {
   GameSetupPanel,
   RetryResultModal,
 } from "@ui-components";
+import {
+  ContextAwareChat,
+  useWordOrderContext,
+} from "@ui-components/ContextAwareChat";
 import { MistakeChatPopup, WrongAnswerDisplay } from "@student/components";
 import { getDifficultyLabel } from "@student/features";
 import { useAuth } from "@app-providers";
@@ -354,6 +358,21 @@ export const Game = ({ retryData }: GameProps) => {
     setMistakeChatOpen(false);
   }, []);
 
+  const pageContext = useWordOrderContext({
+    currentExercise: currentSentenceIndex + 1,
+    totalExercises: sentenceCount,
+    difficulty: gameConfig?.difficulty?.toString(),
+    targetSentence: isRetryMode ? retryData?.correctAnswer.join(" ") : sentence,
+    availableWords: shuffledSentence,
+    userAnswer: chosen,
+    additionalContext: {
+      isRetryMode,
+      correctCount: correctSentencesCount,
+      hasChecked: hasCheckedThisSentence,
+      chosenWordsCount: chosen.length,
+    },
+  });
+
   if (configLoading) {
     return (
       <div className={classes.gameContainer}>
@@ -431,6 +450,9 @@ export const Game = ({ retryData }: GameProps) => {
           />
         </div>
       </div>
+
+      <ContextAwareChat pageContext={pageContext} hasSettings />
+
       {/* Configuration Modal */}
       <GameConfigModal
         open={configModalOpen}

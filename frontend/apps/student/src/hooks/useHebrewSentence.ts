@@ -77,8 +77,6 @@ export const useHebrewSentence = (config: UseHebrewSentenceConfig = {}) => {
       count: finalConfig.count,
     });
 
-    console.log({ response });
-
     setSentencePool(response);
     setCurrentIndex(0);
 
