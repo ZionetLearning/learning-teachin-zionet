@@ -1,30 +1,30 @@
 import { useState, useCallback, useRef, useMemo } from "react";
-import { useGenerateSentences } from "@student/api";
+import { useGenerateSplitSentences } from "@student/api";
 import { DifficultyLevel, GameType } from "@student/types";
-import { SentenceItem } from "@app-providers";
+import { SplitSentenceItem } from "@app-providers";
 
-export interface UseHebrewSentenceConfig {
+export interface UseWordOrderSentenceConfig {
   difficulty?: DifficultyLevel;
   nikud?: boolean;
   count?: number;
-  gameType?: GameType;
 }
 
-// Create a single state object to prevent sync issues
 interface SentenceState {
   exerciseId: string;
   sentence: string;
   words: string[];
 }
 
-export const useHebrewSentence = (config: UseHebrewSentenceConfig = {}) => {
+export const useWordOrderSentence = (
+  config: UseWordOrderSentenceConfig = {},
+) => {
   const [sentenceState, setSentenceState] = useState<SentenceState>({
     exerciseId: "",
     sentence: "",
     words: [],
   });
 
-  const [sentencePool, setSentencePool] = useState<SentenceItem[]>([]);
+  const [sentencePool, setSentencePool] = useState<SplitSentenceItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,17 +32,16 @@ export const useHebrewSentence = (config: UseHebrewSentenceConfig = {}) => {
   const didInitRef = useRef(false);
 
   const {
-    mutateAsync: fetchSentences,
+    mutateAsync: fetchSplitSentences,
     isPending: sentencesLoading,
     error: sentencesError,
-  } = useGenerateSentences();
+  } = useGenerateSplitSentences();
 
-  // Default configuration
   const defaultConfig = useMemo(() => {
     return {
-      difficulty: 1 as DifficultyLevel, // medium
+      difficulty: 1 as DifficultyLevel,
       nikud: true,
-      count: 3, // Fetch multiple sentences to reduce API calls
+      count: 3,
     };
   }, []);
 
@@ -53,7 +52,6 @@ export const useHebrewSentence = (config: UseHebrewSentenceConfig = {}) => {
   const loading = sentencesLoading;
   const mutationError = sentencesError;
 
-  // Helper to update state atomically
   const updateSentenceState = useCallback(
     (newExerciseId: string, newSentence: string, newWords: string[]) => {
       setSentenceState({
@@ -71,18 +69,19 @@ export const useHebrewSentence = (config: UseHebrewSentenceConfig = {}) => {
     pendingRef.current = true;
     setError(null);
 
-    // Fetch sentences
-    const response = await fetchSentences({
+    const response = await fetchSplitSentences({
       difficulty: finalConfig.difficulty,
       nikud: finalConfig.nikud,
       count: finalConfig.count,
-      gameType: finalConfig.gameType,
+      gameType: GameType.WordOrderGame,
     });
+
+
     setSentencePool(response);
     setCurrentIndex(0);
 
     if (response.length > 0) {
-      const firstSentence = response[0] as SentenceItem;
+      const firstSentence = response[0] as SplitSentenceItem;
 
       updateSentenceState(
         firstSentence.exerciseId,
@@ -97,20 +96,18 @@ export const useHebrewSentence = (config: UseHebrewSentenceConfig = {}) => {
       };
     }
 
-    // Clear state if no sentences
     updateSentenceState("", "", []);
     pendingRef.current = false;
     return { sentence: "", words: [] };
-  }, [finalConfig, fetchSentences, updateSentenceState, sentenceState]);
+  }, [finalConfig, fetchSplitSentences, updateSentenceState]);
 
   const getNextFromPool = useCallback(() => {
     if (sentencePool.length === 0) return { sentence: "", words: [] };
 
     const nextIndex = currentIndex + 1;
 
-    // Check if we've reached the end of all sentences
     if (nextIndex >= sentencePool.length) {
-      return { sentence: "", words: [] }; // Game over - no more sentences
+      return { sentence: "", words: [] };
     }
 
     setCurrentIndex(nextIndex);
@@ -120,20 +117,17 @@ export const useHebrewSentence = (config: UseHebrewSentenceConfig = {}) => {
   }, [sentencePool, currentIndex, updateSentenceState]);
 
   const fetchSentence = useCallback(async () => {
-    // If we have sentences in the pool and haven't reached the end, use next from pool
     if (sentencePool.length > 0 && currentIndex < sentencePool.length - 1) {
       const result = getNextFromPool();
-      return result; // Return both sentence and words
+      return result;
     }
 
-    // If we're at the last sentence, return empty to signal game over
     if (sentencePool.length > 0 && currentIndex >= sentencePool.length - 1) {
       return { sentence: "", words: [] };
     }
 
-    // Otherwise, fetch new sentences from API
     const result = await fetchNewSentences();
-    return result; // Return both sentence and words
+    return result;
   }, [sentencePool.length, currentIndex, getNextFromPool, fetchNewSentences]);
 
   const initOnce = useCallback(async () => {
@@ -142,17 +136,15 @@ export const useHebrewSentence = (config: UseHebrewSentenceConfig = {}) => {
     await fetchNewSentences();
   }, [fetchNewSentences]);
 
-  // Reset function for restarting the game
   const resetGame = useCallback(() => {
     setCurrentIndex(0);
     setSentencePool([]);
-    updateSentenceState(" ", "", []);
+    updateSentenceState("", "", []);
     didInitRef.current = false;
     pendingRef.current = false;
     setError(null);
   }, [updateSentenceState]);
 
-  // Combine mutation error with any local errors
   const combinedError = error || (mutationError?.message ?? null);
 
   return {

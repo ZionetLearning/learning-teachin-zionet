@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import type { ExerciseState, DifficultyLevel } from "../types";
 import { compareTexts } from "../utils";
 import { useAvatarSpeech, useHebrewSentence } from "@student/hooks";
-import { CypressWindow } from "@student/types";
+import { CypressWindow, GameType } from "@student/types";
 import { GameConfig } from "@ui-components";
+import { useSubmitGameAttempt } from "@student/api";
 
 const mapDifficultyToDifficultyLevel = (
   difficulty: 0 | 1 | 2,
@@ -36,8 +37,10 @@ export const useTypingPractice = (gameConfig?: GameConfig) => {
   });
 
   const [correctSentencesCount, setCorrectSentencesCount] = useState<number>(0);
+  const { mutateAsync: submitAttempt } = useSubmitGameAttempt();
 
   const {
+    attemptId: exerciseId,
     sentence,
     loading,
     error: sentenceError,
@@ -46,7 +49,7 @@ export const useTypingPractice = (gameConfig?: GameConfig) => {
     resetGame: resetSentenceGameHook,
     sentenceCount,
     currentSentenceIndex,
-  } = useHebrewSentence(gameConfig);
+  } = useHebrewSentence(gameConfig ? { ...gameConfig, gameType: GameType.TypingPractice } : undefined);
 
   const { speak, stop, isPlaying, error } = useAvatarSpeech({
     volume: 1,
@@ -228,20 +231,46 @@ export const useTypingPractice = (gameConfig?: GameConfig) => {
     }));
   };
 
-  const handleSubmitAnswer = () => {
-    if (!sentence || !exerciseState.userInput.trim()) return;
+  const handleSubmitAnswer = async () => {
+    if (!sentence || !exerciseState.userInput.trim() || !exerciseId) return;
 
     const feedbackResult = compareTexts(exerciseState.userInput, sentence);
 
-    setExerciseState((prev) => ({
-      ...prev,
-      phase: "feedback",
-      feedbackResult,
-    }));
+    // Submit attempt to backend
+    try {
+      const res = await submitAttempt({
+        exerciseId: exerciseId,
+        givenAnswer: [exerciseState.userInput], // Send the full sentence as first element
+      });
 
-    // Track correct answers using the isCorrect from compareTexts
-    if (feedbackResult.isCorrect) {
-      setCorrectSentencesCount((prev) => prev + 1);
+      // Update feedback with server accuracy
+      const updatedFeedback = {
+        ...feedbackResult,
+        accuracy: res.accuracy,
+      };
+
+      setExerciseState((prev) => ({
+        ...prev,
+        phase: "feedback",
+        feedbackResult: updatedFeedback,
+      }));
+
+      // Track correct answers based on server response
+      if (res.status === "Success") {
+        setCorrectSentencesCount((prev) => prev + 1);
+      }
+    } catch (error) {
+      console.error("Failed to submit typing practice attempt:", error);
+      // Still show local feedback even if submission fails
+      setExerciseState((prev) => ({
+        ...prev,
+        phase: "feedback",
+        feedbackResult,
+      }));
+
+      if (feedbackResult.isCorrect) {
+        setCorrectSentencesCount((prev) => prev + 1);
+      }
     }
   };
 

@@ -59,7 +59,7 @@ export const PracticeHistory = () => {
       {view === "summary" ? (
         <SummaryTable
           studentId={studentId}
-          page={summaryPage + 1}
+          page={summaryPage}
           rowsPerPage={summaryRowsPerPage}
           onPageChange={(p) => setSummaryPage(p)}
           onRowsPerPageChange={(r) => {
@@ -70,7 +70,7 @@ export const PracticeHistory = () => {
       ) : (
         <DetailedTable
           studentId={studentId}
-          page={detailedPage + 1}
+          page={detailedPage}
           rowsPerPage={detailedRowsPerPage}
           onPageChange={(p) => setDetailedPage(p)}
           onRowsPerPageChange={(r) => {
