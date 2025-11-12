@@ -234,107 +234,107 @@ historyItem.GameType.Should().Be(GameName.WordOrder.ToString());
     [Fact(DisplayName = "GET /games-manager/history/{id} - getPending=true should return pending attempts")]
     public async Task GetHistory_GetPendingTrue_Should_Return_Pending_Attempts()
     {
-     // Arrange
+        // Arrange
         var student = await CreateUserAsync();
     
-   // Generate sentences but do not submit them - this creates pending attempts
+        // Generate sentences but do not submit them - this creates pending attempts
         var pendingSentences = await GenerateSplitSentencesAsync(student.UserId, Difficulty.Easy, count: 2);
      
-  // Also create one submitted attempt for comparison
+        // Also create one submitted attempt for comparison
         await CreateSuccessfulAttemptAsync(student.UserId, Difficulty.Medium);
         
         // Act: Request history with getPending=true
         var response = await Client.GetAsync($"{GamesRoutes.History(student.UserId)}?summary=false&page=1&pageSize=10&getPending=true");
-  response.ShouldBeOk();
+        response.ShouldBeOk();
 
         // Assert
         var result = await ReadAsJsonAsync<PagedResult<AttemptHistoryDto>>(response);
-   result.Should().NotBeNull();
-     result!.Page.Should().Be(1);
+        result.Should().NotBeNull();
+        result!.Page.Should().Be(1);
         result.PageSize.Should().Be(10);
 
-   // Log what we got for debugging
-   var allItems = result.Items.ToList();
+        // Log what we got for debugging
+        var allItems = result.Items.ToList();
         var pendingCount = allItems.Count(x => x.Status == AttemptStatus.Pending);
         var submittedCount = allItems.Count(x => x.Status != AttemptStatus.Pending);
         OutputHelper.WriteLine($"Total items returned: {allItems.Count}");
         OutputHelper.WriteLine($"Pending count: {pendingCount}");
-     OutputHelper.WriteLine($"Submitted count: {submittedCount}");
+        OutputHelper.WriteLine($"Submitted count: {submittedCount}");
     
         // Should have both pending and submitted attempts
         var pendingAttempts = allItems.Where(x => x.Status == AttemptStatus.Pending).ToList();
-     var submittedAttempts = allItems.Where(x => x.Status != AttemptStatus.Pending).ToList();
+        var submittedAttempts = allItems.Where(x => x.Status != AttemptStatus.Pending).ToList();
      
         // When getPending=true, we should get pending attempts if they exist
-  // The test should verify that getPending parameter affects the results
+        // The test should verify that getPending parameter affects the results
         allItems.Should().NotBeEmpty("getPending=true should return at least some attempts");
    
-   // Should have at least 1 submitted attempt (the one we created successfully)
+        // Should have at least 1 submitted attempt (the one we created successfully)
         submittedAttempts.Should().HaveCountGreaterThanOrEqualTo(1);
     
         // If there are pending attempts, verify their structure
-   foreach (var pendingAttempt in pendingAttempts)
+        foreach (var pendingAttempt in pendingAttempts)
         {
             pendingAttempt.GameType.Should().Be(GameName.WordOrder.ToString());
             pendingAttempt.Status.Should().Be(AttemptStatus.Pending);
-    pendingAttempt.CorrectAnswer.Should().NotBeEmpty();
- // Pending attempts should not have a given answer yet
-  if (pendingAttempt.GivenAnswer != null)
-   {
-  pendingAttempt.GivenAnswer.Should().BeEmpty();
-  }
-      }
+            pendingAttempt.CorrectAnswer.Should().NotBeEmpty();
+            // Pending attempts should not have a given answer yet
+            if (pendingAttempt.GivenAnswer != null)
+            {
+                pendingAttempt.GivenAnswer.Should().BeEmpty();
+            }
+        }
  
-   // Verify submitted attempts structure
-   foreach (var submittedAttempt in submittedAttempts)
-    {
-   submittedAttempt.Status.Should().BeOneOf(AttemptStatus.Success, AttemptStatus.Failure);
+         // Verify submitted attempts structure
+        foreach (var submittedAttempt in submittedAttempts)
+        {
+            submittedAttempt.Status.Should().BeOneOf(AttemptStatus.Success, AttemptStatus.Failure);
             submittedAttempt.GivenAnswer.Should().NotBeEmpty();
- }
+        }
     }
 
     [Fact(DisplayName = "GET /games-manager/history/{id} - getPending=false should exclude pending attempts")]
-  public async Task GetHistory_GetPendingFalse_Should_Exclude_Pending_Attempts()
+    public async Task GetHistory_GetPendingFalse_Should_Exclude_Pending_Attempts()
     {
- // Arrange
-     var student = await CreateUserAsync();
+        // Arrange
+        var student = await CreateUserAsync();
    
         // Generate sentences do not submit them - this creates pending attempts
- await GenerateSplitSentencesAsync(student.UserId, Difficulty.Easy, count: 2);
+        await GenerateSplitSentencesAsync(student.UserId, Difficulty.Easy, count: 2);
         
-   // Create submitted attempts
+        // Create submitted attempts
         await CreateSuccessfulAttemptAsync(student.UserId, Difficulty.Medium);
         await CreateMistakeAsync(student.UserId, Difficulty.Hard);
     
-     // Act: Request history with getPending=false
+        // Act: Request history with getPending=false
         var response = await Client.GetAsync($"{GamesRoutes.History(student.UserId)}?summary=false&page=1&pageSize=10&getPending=false");
-response.ShouldBeOk();
+        response.ShouldBeOk();
      
-      // Assert
-   var result = await ReadAsJsonAsync<PagedResult<AttemptHistoryDto>>(response);
-   result.Should().NotBeNull();
+        // Assert
+        var result = await ReadAsJsonAsync<PagedResult<AttemptHistoryDto>>(response);
+         result.Should().NotBeNull();
       
         // Log what we got for debugging
         var allItems = result!.Items.ToList();
         var pendingCount = allItems.Count(x => x.Status == AttemptStatus.Pending);
-  var submittedCount = allItems.Count(x => x.Status != AttemptStatus.Pending);
+        var submittedCount = allItems.Count(x => x.Status != AttemptStatus.Pending);
         OutputHelper.WriteLine($"Total items returned: {allItems.Count}");
         OutputHelper.WriteLine($"Pending count: {pendingCount}");
-   OutputHelper.WriteLine($"Submitted count: {submittedCount}");
+        OutputHelper.WriteLine($"Submitted count: {submittedCount}");
      
-     // Should NOT have any pending attempts when getPending=false
-  var pendingAttempts = allItems.Where(x => x.Status == AttemptStatus.Pending).ToList();
+        // Should NOT have any pending attempts when getPending=false
+        var pendingAttempts = allItems.Where(x => x.Status == AttemptStatus.Pending).ToList();
         pendingAttempts.Should().BeEmpty("getPending=false should exclude all pending attempts");
      
         // Should have only submitted attempts (success and failure)
         var submittedAttempts = allItems.Where(x => x.Status != AttemptStatus.Pending).ToList();
-      submittedAttempts.Should().HaveCountGreaterThanOrEqualTo(2, "we created 2 submitted attempts");
+        submittedAttempts.Should().HaveCountGreaterThanOrEqualTo(2, "we created 2 submitted attempts");
   
         // Verify all returned items are submitted attempts
         foreach (var attempt in allItems)
-   {
-       attempt.Status.Should().BeOneOf(AttemptStatus.Success, AttemptStatus.Failure);
-   attempt.GivenAnswer.Should().NotBeEmpty();
+        {
+            attempt.Status.Should().BeOneOf(AttemptStatus.Success, AttemptStatus.Failure);
+            attempt.GivenAnswer.Should().NotBeEmpty();
         }
     }
 
