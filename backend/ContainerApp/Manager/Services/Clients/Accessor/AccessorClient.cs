@@ -707,7 +707,7 @@ public class AccessorClient(
                 UserId = userId,
                 Hebrew = request.Hebrew,
                 English = request.English,
-                Definition = request.Definition,
+                Explanation = request.Explanation,
             };
 
             var response = await _daprClient.InvokeMethodAsync<CreateWordCard, WordCard>(

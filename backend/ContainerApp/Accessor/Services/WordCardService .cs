@@ -33,7 +33,7 @@ public class WordCardService : IWordCardService
                 Hebrew = card.Hebrew,
                 English = card.English,
                 IsLearned = card.IsLearned,
-                Definition = card.Definition,
+                Explanation = card.Explanation,
             }).ToList();
         }
         catch (Exception ex)
@@ -60,7 +60,7 @@ public class WordCardService : IWordCardService
                 IsLearned = false,
                 CreatedAt = now,
                 UpdatedAt = now,
-                Definition = request.Definition,
+                Explanation = request.Explanation,
             };
 
             _db.WordCards.Add(newCard);
@@ -72,7 +72,7 @@ public class WordCardService : IWordCardService
                 Hebrew = newCard.Hebrew,
                 English = newCard.English,
                 IsLearned = newCard.IsLearned,
-                Definition = newCard.Definition,
+                Explanation = newCard.Explanation,
             };
         }
         catch (Exception ex)
