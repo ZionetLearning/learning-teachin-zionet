@@ -7,7 +7,7 @@ run-name: >
 
 concurrency:
   group: aks-helm-deploy-${{ inputs.environment_name || github.event.inputs.environment_name || 'dev' }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 on:
   workflow_dispatch:
