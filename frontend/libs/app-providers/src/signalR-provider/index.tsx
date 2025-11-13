@@ -93,32 +93,31 @@ export const SignalRProvider = ({ hubUrl, children }: SignalRProviderProps) => {
     }
   }, []);
 
+  // Check for different variations of request ID field
+  // Some events use 'requestId', others use 'RequestId' (capitalized),
+  // and word explanation uses 'id'. This handles all cases.
   const checkPendingRequests = useCallback(
     (eventType: string, payload: unknown) => {
-      if (payload && typeof payload === "object" && "requestId" in payload) {
-        const requestId = (payload as { requestId: string }).requestId;
-        const requestKey = `${eventType}:${requestId}`;
+      if (payload && typeof payload === "object") {
+        let requestId: string | undefined;
 
-        const pendingRequest = pendingRequestsRef.current.get(requestKey);
-        if (pendingRequest) {
-          clearTimeout(pendingRequest.timeout);
-          pendingRequestsRef.current.delete(requestKey);
-          pendingRequest.resolve(payload);
+        if ("requestId" in payload) {
+          requestId = (payload as { requestId: string }).requestId;
+        } else if ("RequestId" in payload) {
+          requestId = (payload as { RequestId: string }).RequestId;
+        } else if ("id" in payload) {
+          requestId = (payload as { id: string }).id;
         }
-      } else if (
-        payload &&
-        typeof payload === "object" &&
-        "RequestId" in payload
-      ) {
-        // Check for capital R RequestId as well
-        const requestId = (payload as { RequestId: string }).RequestId;
-        const requestKey = `${eventType}:${requestId}`;
 
-        const pendingRequest = pendingRequestsRef.current.get(requestKey);
-        if (pendingRequest) {
-          clearTimeout(pendingRequest.timeout);
-          pendingRequestsRef.current.delete(requestKey);
-          pendingRequest.resolve(payload);
+        if (requestId) {
+          const requestKey = `${eventType}:${requestId}`;
+          const pendingRequest = pendingRequestsRef.current.get(requestKey);
+
+          if (pendingRequest) {
+            clearTimeout(pendingRequest.timeout);
+            pendingRequestsRef.current.delete(requestKey);
+            pendingRequest.resolve(payload);
+          }
         }
       }
     },

@@ -130,5 +130,18 @@ export const useStyles = () => {
         boxShadow: "none",
       },
     },
+    loadingText: {
+      marginTop: 8,
+    },
+    explanationBox: {
+      marginTop: 16,
+      padding: 12,
+      backgroundColor: `rgba(var(${color.primaryMainChannel}) / 0.08)`,
+      borderRadius: 8,
+    },
+    explanationText: {
+      fontSize: 14,
+      color: color.textMuted,
+    },
   })();
 };

@@ -490,9 +490,9 @@
         "retry": "Retry",
         "failedToLoad": "Failed to load mistakes",
         "gameType": {
-          "wordOrderGame": "Word Order Game",
-          "typingPractice": "Typing Practice",
-          "speakingPractice": "Speaking Practice"
+          "WordOrder": "Word Order Game",
+          "TypingPractice": "Typing Practice",
+          "SpeakingPractice": "Speaking Practice"
         }
       },
       "practiceHistory": {
@@ -576,7 +576,10 @@
         "markAsLearned": "Mark as Learned",
         "markAsUnlearned": "Mark as Unlearned",
         "learned": "Learned",
-        "practice": "Practice"
+        "practice": "Practice",
+        "showExplanation": "Show explanation",
+        "hideExplanation": "Hide explanation",
+        "generatingExplanation": "Generating explanation..."
       },
       "wordCardsChallenge": {
         "title": "Word Cards Challenge",

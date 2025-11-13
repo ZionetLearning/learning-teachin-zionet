@@ -13,18 +13,21 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import { useTranslation } from "react-i18next";
 import { useCreateWordCard, type CreateWordCardRequest } from "../../api";
+import { useWordExplanation } from "../../hooks";
 import { useStyles } from "./style";
 
 export type AddWordCardDialogProps = {
   open: boolean;
   onClose: () => void;
   initialHebrew?: string;
+  context?: string;
 };
 
 export const AddWordCardDialog = ({
   open,
   onClose,
   initialHebrew,
+  context,
 }: AddWordCardDialogProps) => {
   const classes = useStyles();
   const { t } = useTranslation();
@@ -39,11 +42,20 @@ export const AddWordCardDialog = ({
   const [hebrew, setHebrew] = useState<string>(initialHebrew?.trim() ?? "");
   const [english, setEnglish] = useState<string>("");
 
-  // keep state in sync if initialHebrew changes between opens
+  const {
+    explanation,
+    isLoading: isLoadingExplanation,
+    reset: resetExplanation,
+  } = useWordExplanation(hebrew, context ?? "", open && selectionMode);
+
+  // keep state in sync when dialog opens or word changes
   useEffect(() => {
-    setHebrew(initialHebrew?.trim() ?? "");
-    setEnglish("");
-  }, [initialHebrew, open]);
+    if (open) {
+      setHebrew(initialHebrew?.trim() ?? "");
+      setEnglish("");
+      resetExplanation();
+    }
+  }, [initialHebrew, open, resetExplanation]);
 
   const disabled = useMemo(() => {
     if (selectionMode) {
@@ -64,10 +76,13 @@ export const AddWordCardDialog = ({
     const body: CreateWordCardRequest = {
       hebrew: hebrew.trim(),
       english: english.trim(),
+      context: context?.trim(),
+      explanation: explanation?.trim(),
     };
     createCard.mutate(body, {
       onSuccess: () => {
         setEnglish("");
+        resetExplanation();
         if (!selectionMode) setHebrew("");
         onClose();
       },
@@ -119,6 +134,18 @@ export const AddWordCardDialog = ({
                   }
                 }}
               />
+              {isLoadingExplanation && (
+                <Typography className={classes.loadingText}>
+                  {t("pages.wordCards.generatingExplanation")}
+                </Typography>
+              )}
+              {explanation && (
+                <Box className={classes.explanationBox}>
+                  <Typography className={classes.explanationText}>
+                    {explanation}
+                  </Typography>
+                </Box>
+              )}
             </>
           ) : (
             <Box className={classes.wordPanel}>
