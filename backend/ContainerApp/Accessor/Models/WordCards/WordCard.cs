@@ -6,4 +6,5 @@ public class WordCard
     public string Hebrew { get; set; } = default!;
     public string English { get; set; } = default!;
     public bool IsLearned { get; set; }
+    public string? Explanation { get; set; }
 }
