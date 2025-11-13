@@ -98,7 +98,6 @@ export const SignalRProvider = ({ hubUrl, children }: SignalRProviderProps) => {
       if (payload && typeof payload === "object") {
         let requestId: string | undefined;
 
-        // Check for different variations of request ID field
         if ("requestId" in payload) {
           requestId = (payload as { requestId: string }).requestId;
         } else if ("RequestId" in payload) {

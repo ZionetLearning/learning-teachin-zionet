@@ -48,11 +48,13 @@ export const AddWordCardDialog = ({
     reset: resetExplanation,
   } = useWordExplanation(hebrew, context ?? "", open && selectionMode);
 
-  // keep state in sync if initialHebrew changes between opens
+  // keep state in sync when dialog opens or word changes
   useEffect(() => {
-    setHebrew(initialHebrew?.trim() ?? "");
-    setEnglish("");
-    resetExplanation();
+    if (open) {
+      setHebrew(initialHebrew?.trim() ?? "");
+      setEnglish("");
+      resetExplanation();
+    }
   }, [initialHebrew, open, resetExplanation]);
 
   const disabled = useMemo(() => {
@@ -132,13 +134,11 @@ export const AddWordCardDialog = ({
                   }
                 }}
               />
-
               {isLoadingExplanation && (
                 <Typography className={classes.loadingText}>
                   {t("pages.wordCards.generatingExplanation")}
                 </Typography>
               )}
-
               {explanation && (
                 <Box className={classes.explanationBox}>
                   <Typography className={classes.explanationText}>
