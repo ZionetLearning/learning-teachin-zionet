@@ -1,10 +1,15 @@
 import { useStyles } from "./style";
 import { Header, Description, Game } from "./components";
 
-interface RetryData {
+export interface RetryData {
+  exerciseId: string;
   correctAnswer: string[];
-  attemptId: string;
-  wrongAnswers: string[][];
+  mistakes: Array<{
+    attemptId: string;
+    wrongAnswer: string[];
+    accuracy: number;
+    createdAt: string;
+  }>;
   difficulty: number;
 }
 
