@@ -1,10 +1,3 @@
-# Data source for shared Redis (used if use_shared_redis is true)
-data "azurerm_redis_cache" "shared" {
-  count                = var.use_shared_redis ? 1 : 0
-  name                 = var.name
-  resource_group_name  = var.resource_group_name
-}
-
 # Create new Redis only if not using shared
 resource "azurerm_redis_cache" "this" {
   count               = var.use_shared_redis ? 0 : 1
@@ -27,7 +20,7 @@ resource "azurerm_redis_cache" "this" {
 resource "azurerm_redis_firewall_rule" "allow_aks" {
   count = var.allowed_subnet != null && !var.use_shared_redis ? 1 : 0
   name                = "allow_aks"
-  redis_cache_name    = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].name : azurerm_redis_cache.this[0].name
+  redis_cache_name    = var.shared_redis_name != null ? var.shared_redis_name : azurerm_redis_cache.this[0].name
   resource_group_name = var.resource_group_name
   start_ip            = var.allowed_subnet
   end_ip              = var.allowed_subnet
