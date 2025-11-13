@@ -3,6 +3,8 @@ import { useRequestWordExplanation } from "../api";
 import { useSignalR } from "./useSignalR";
 import { EventType, type WordExplanationResponse } from "@app-providers";
 
+const REQUEST_TIMEOUT = 30000; // 30 seconds
+
 export const useWordExplanation = (
   word: string,
   context: string,
@@ -16,6 +18,7 @@ export const useWordExplanation = (
   useEffect(
     function fetchExplanation() {
       const requestKey = `${word}:${context}:${enabled}`;
+      let cancelled = false;
 
       if (
         !enabled ||
@@ -36,20 +39,32 @@ export const useWordExplanation = (
               const response = await waitForResponse<WordExplanationResponse>(
                 EventType.WordExplain,
                 requestId,
-                30000,
+                REQUEST_TIMEOUT,
               );
-              setExplanation(response.explanation);
+
+              if (!cancelled) {
+                setExplanation(response.explanation);
+              }
             } catch (error) {
-              console.error("Failed to receive explanation:", error);
-              requestKeyRef.current = "";
+              if (!cancelled) {
+                console.error("Failed to receive explanation:", error);
+                requestKeyRef.current = "";
+              }
             }
           },
           onError: () => {
-            requestKeyRef.current = "";
+            if (!cancelled) {
+              requestKeyRef.current = "";
+            }
           },
         },
       );
+
+      return () => {
+        cancelled = true;
+      };
     },
+    // requestExplanation.mutate and waitForResponse are stable functions
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [enabled, word, context],
   );

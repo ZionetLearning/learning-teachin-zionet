@@ -89,6 +89,10 @@ export const useSetWordCardLearned = () => {
   });
 };
 
+/**
+ * Requests an AI-generated explanation for a word in context.
+ * @returns A request ID that can be used to track the response via SignalR
+ */
 export const useRequestWordExplanation = () => {
   return useMutation<string, Error, WordExplainRequest>({
     mutationFn: async (body) => {

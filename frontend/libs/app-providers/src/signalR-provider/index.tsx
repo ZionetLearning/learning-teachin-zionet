@@ -93,6 +93,9 @@ export const SignalRProvider = ({ hubUrl, children }: SignalRProviderProps) => {
     }
   }, []);
 
+  // Check for different variations of request ID field
+  // Some events use 'requestId', others use 'RequestId' (capitalized),
+  // and word explanation uses 'id'. This handles all cases.
   const checkPendingRequests = useCallback(
     (eventType: string, payload: unknown) => {
       if (payload && typeof payload === "object") {
