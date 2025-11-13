@@ -24,36 +24,6 @@ export type GameConfig = {
 
 export type GameConfigResponse = GameConfig;
 
-const apiDifficultyToFrontend = (
-  apiDifficulty: GameConfigApiDifficulty,
-): GameDifficulty => {
-  switch (apiDifficulty) {
-    case "Easy":
-      return "easy";
-    case "Medium":
-      return "medium";
-    case "Hard":
-      return "hard";
-    default:
-      return "medium";
-  }
-};
-
-const frontendDifficultyToApi = (
-  difficulty: GameDifficulty,
-): GameConfigApiDifficulty => {
-  switch (difficulty) {
-    case "easy":
-      return "Easy";
-    case "medium":
-      return "Medium";
-    case "hard":
-      return "Hard";
-    default:
-      return "Medium";
-  }
-};
-
 export const useGetGameConfig = (gameName: GameName) => {
   const GAME_CONFIG_MANAGER_URL = import.meta.env.VITE_GAME_CONFIG_MANAGER_URL;
 
@@ -65,7 +35,7 @@ export const useGetGameConfig = (gameName: GameName) => {
       );
       return {
         ...res.data,
-        difficulty: apiDifficultyToFrontend(res.data.difficulty),
+        difficulty: res.data.difficulty,
       };
     },
     staleTime: Infinity,
@@ -86,7 +56,7 @@ export const useUpsertGameConfig = () => {
     mutationFn: async (config: GameConfig) => {
       const apiConfig: GameConfigApiResponse = {
         ...config,
-        difficulty: frontendDifficultyToApi(config.difficulty),
+        difficulty: config.difficulty,
       };
       const res = await axios.put<GameConfigApiResponse>(
         GAME_CONFIG_MANAGER_URL,
@@ -94,7 +64,7 @@ export const useUpsertGameConfig = () => {
       );
       return {
         ...res.data,
-        difficulty: apiDifficultyToFrontend(res.data.difficulty),
+        difficulty: res.data.difficulty,
       };
     },
     onSuccess: (data) => {
