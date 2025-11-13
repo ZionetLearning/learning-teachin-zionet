@@ -80,5 +80,5 @@ jobs:
         working-directory: frontend
         run: |
           echo "Building ${{ matrix.app }} app..."
-          npm run build ${{ matrix.app }}
+          npm run build:${{ matrix.app }}
           echo "Build completed successfully for ${{ matrix.app }}"
