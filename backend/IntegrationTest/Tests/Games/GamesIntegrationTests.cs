@@ -238,7 +238,7 @@ historyItem.GameType.Should().Be(GameName.WordOrder.ToString());
         var student = await CreateUserAsync();
     
         // Generate sentences but do not submit them - this creates pending attempts
-        var pendingSentences = await GenerateSplitSentencesAsync(student.UserId, Difficulty.Easy, count: 2);
+        await GenerateSplitSentencesAsync(student.UserId, Difficulty.Easy, count: 2);
      
         // Also create one submitted attempt for comparison
         await CreateSuccessfulAttemptAsync(student.UserId, Difficulty.Medium);
