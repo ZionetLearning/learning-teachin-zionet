@@ -5,3 +5,4 @@ export * from "./useHebrewSentence";
 export * from "./useWordOrderSentence";
 export * from "./useMistakeChat";
 export * from "./useGameConfig";
+export * from "./useWordExplanation";

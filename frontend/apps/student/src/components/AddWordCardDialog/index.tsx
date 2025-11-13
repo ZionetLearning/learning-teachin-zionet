@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Button,
@@ -12,13 +12,8 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { useTranslation } from "react-i18next";
-import {
-  useCreateWordCard,
-  useRequestWordExplanation,
-  type CreateWordCardRequest,
-} from "../../api";
-import { useSignalR } from "../../hooks";
-import { EventType, type WordExplanationResponse } from "@app-providers";
+import { useCreateWordCard, type CreateWordCardRequest } from "../../api";
+import { useWordExplanation } from "../../hooks";
 import { useStyles } from "./style";
 
 export type AddWordCardDialogProps = {
@@ -36,10 +31,8 @@ export const AddWordCardDialog = ({
 }: AddWordCardDialogProps) => {
   const classes = useStyles();
   const { t } = useTranslation();
-  const { waitForResponse } = useSignalR();
 
   const createCard = useCreateWordCard();
-  const requestExplanation = useRequestWordExplanation();
 
   const selectionMode = useMemo(
     () => Boolean(initialHebrew?.trim()),
@@ -48,52 +41,19 @@ export const AddWordCardDialog = ({
 
   const [hebrew, setHebrew] = useState<string>(initialHebrew?.trim() ?? "");
   const [english, setEnglish] = useState<string>("");
-  const [explanation, setExplanation] = useState<string>("");
-  const hasRequestedExplanation = useRef(false);
+
+  const {
+    explanation,
+    isLoading: isLoadingExplanation,
+    reset: resetExplanation,
+  } = useWordExplanation(hebrew, context ?? "", open && selectionMode);
 
   // keep state in sync if initialHebrew changes between opens
   useEffect(() => {
     setHebrew(initialHebrew?.trim() ?? "");
     setEnglish("");
-    setExplanation("");
-    hasRequestedExplanation.current = false;
-  }, [initialHebrew, open]);
-
-  useEffect(
-    function requestExplanationOnOpen() {
-      if (
-        open &&
-        context &&
-        hebrew &&
-        !explanation &&
-        !hasRequestedExplanation.current
-      ) {
-        hasRequestedExplanation.current = true;
-        requestExplanation.mutate(
-          { word: hebrew, context },
-          {
-            onSuccess: async (requestId) => {
-              try {
-                const response = await waitForResponse<WordExplanationResponse>(
-                  EventType.WordExplain,
-                  requestId,
-                  30000,
-                );
-                setExplanation(response.explanation);
-              } catch (error) {
-                console.error("Failed to receive explanation:", error);
-                hasRequestedExplanation.current = false;
-              }
-            },
-            onError: () => {
-              hasRequestedExplanation.current = false;
-            },
-          },
-        );
-      }
-    },
-    [open, context, hebrew, explanation, requestExplanation, waitForResponse],
-  );
+    resetExplanation();
+  }, [initialHebrew, open, resetExplanation]);
 
   const disabled = useMemo(() => {
     if (selectionMode) {
@@ -120,7 +80,7 @@ export const AddWordCardDialog = ({
     createCard.mutate(body, {
       onSuccess: () => {
         setEnglish("");
-        setExplanation("");
+        resetExplanation();
         if (!selectionMode) setHebrew("");
         onClose();
       },
@@ -173,7 +133,7 @@ export const AddWordCardDialog = ({
                 }}
               />
 
-              {requestExplanation.isPending && (
+              {isLoadingExplanation && (
                 <Typography className={classes.loadingText}>
                   {t("pages.wordCards.generatingExplanation")}
                 </Typography>
