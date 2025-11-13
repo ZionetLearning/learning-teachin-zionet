@@ -1,0 +1,81 @@
+import { createUseStyles } from "react-jss";
+
+export const useStyles = createUseStyles({
+  container: {
+    display: "flex",
+    flexDirection: "column",
+    height: "100vh",
+    width: "100%",
+    margin: "auto",
+    boxSizing: "border-box",
+    padding: 16,
+    backgroundColor: "#fff",
+    color: "#333",
+  },
+  main: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 16,
+  },
+  phrase: {
+    fontSize: "3.5rem",
+    backgroundColor: "#fff",
+    color: "#222",
+    padding: "16px",
+    marginBottom: 24,
+    direction: "rtl",
+  },
+  controls: {
+    display: "flex",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 16,
+    "& button": {
+      cursor: "pointer",
+      backgroundColor: "#7ed321",
+      color: "#fff",
+      border: "none",
+      padding: "10px 16px",
+      borderRadius: 4,
+      fontSize: "1rem",
+      transition: "background-color 0.2s, transform 0.1s",
+      "&:hover": { backgroundColor: "#5ea815", transform: "scale(1.05)" },
+      "&:active": { transform: "scale(0.98)" },
+      "& + button": { marginLeft: 8 },
+    },
+    "& button:nth-of-type(2)": {
+      backgroundColor: "#f5a623",
+      "&:hover": { backgroundColor: "#d4881a" },
+    },
+    "& button:disabled": {
+      backgroundColor: "#bcd7f3",
+      color: "#f2f7fc",
+      cursor: "not-allowed",
+      opacity: 0.7,
+    },
+  },
+  feedback: {
+    minHeight: "1.5em",
+    fontSize: 50,
+    visibility: "hidden",
+    "&.correct, &.incorrect": {
+      visibility: "visible",
+    },
+    "&.correct": { color: "#4a9e46" },
+    "&.incorrect": { color: "#e94b35" },
+    marginTop: 8,
+  },
+  loader: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    height: "100vh",
+  },
+  backButtonWrapper: {
+    marginTop: "20px",
+    textAlign: "center",
+  },
+});
