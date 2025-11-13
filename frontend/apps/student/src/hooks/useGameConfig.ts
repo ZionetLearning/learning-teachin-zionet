@@ -16,23 +16,23 @@ export interface LocalGameConfig {
 const difficultyLevelToApi = (level: DifficultyLevel): GameDifficulty => {
   switch (level) {
     case 0:
-      return "easy";
+      return "Easy";
     case 1:
-      return "medium";
+      return "Medium";
     case 2:
-      return "hard";
+      return "Hard";
     default:
-      return "medium";
+      return "Medium";
   }
 };
 
 const difficultyApiToLevel = (difficulty: GameDifficulty): DifficultyLevel => {
   switch (difficulty) {
-    case "easy":
+    case "Easy":
       return 0;
-    case "medium":
+    case "Medium":
       return 1;
-    case "hard":
+    case "Hard":
       return 2;
     default:
       return 1;

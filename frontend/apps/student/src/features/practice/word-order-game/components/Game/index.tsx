@@ -22,23 +22,11 @@ import {
   useWordOrderContext,
 } from "@ui-components/ContextAwareChat";
 import { MistakeChatPopup, WrongAnswerDisplay } from "@student/components";
-import { getDifficultyLabel } from "@student/features";
+import { getDifficultyLabel, RetryData } from "@student/features";
 import { useAuth } from "@app-providers";
 import { useSubmitGameAttempt } from "@student/api";
 import { useStyles } from "./style";
 import { toast } from "react-toastify";
-
-interface RetryData {
-  exerciseId: string;
-  correctAnswer: string[];
-  mistakes: Array<{
-    attemptId: string;
-    wrongAnswer: string[];
-    accuracy: number;
-    createdAt: string;
-  }>;
-  difficulty: number;
-}
 
 interface GameProps {
   retryData?: RetryData;

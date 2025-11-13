@@ -48,6 +48,7 @@ jobs:
           echo "Tests completed successfully for ${{ matrix.app }}"
 
   frontend-lint:
+    needs: frontend-test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -61,3 +62,25 @@ jobs:
       - name: Lint Code
         working-directory: frontend
         run: npm run lint
+
+  frontend-build:
+    needs: frontend-lint
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [student, teacher, admin]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Frontend Environment
+        uses: ./.github/actions/setup-frontend
+        with:
+          node-version: ${{ inputs.node_version || '20' }}
+
+      - name: Build ${{ matrix.app }} app
+        working-directory: frontend
+        run: |
+          echo "Building ${{ matrix.app }} app..."
+          npm run build:${{ matrix.app }}
+          echo "Build completed successfully for ${{ matrix.app }}"
