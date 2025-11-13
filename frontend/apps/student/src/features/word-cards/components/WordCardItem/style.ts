@@ -16,38 +16,45 @@ export const useStyles = () => {
           rgba(var(${color.primaryMainChannel}) / 0.05)
         ) border-box`,
       border: "1px solid transparent",
-      borderRadius: 14,
-      padding: "10px 14px",
-      minHeight: 100,
-      boxShadow: "0 3px 10px rgba(0,0,0,0.04)",
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "center",
-      transition: "transform .1s ease, box-shadow .1s ease",
+      borderRadius: 16,
+      padding: 0,
+      overflow: "hidden",
+      boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+      transition: "transform .2s ease, box-shadow .2s ease",
       "&:hover": {
-        transform: "translateY(-2px)",
-        boxShadow: "0 6px 16px rgba(0,0,0,0.08)",
+        transform: "translateY(-3px)",
+        boxShadow: "0 8px 20px rgba(0,0,0,0.12)",
       },
     },
-    innerCard: {
+    cardContent: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 0,
+    },
+    topRow: {
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
-      gap: 14,
+      gap: 16,
+      padding: "16px 18px",
+      minHeight: 100,
     },
     wordGroup: {
-      maxWidth: "76%",
+      flex: 1,
+      minWidth: 0,
     },
     hebrew: {
       direction: "rtl",
-      fontSize: 20,
+      fontSize: 22,
+      fontWeight: 600,
       color: color.text,
-      marginBottom: 2,
+      marginBottom: 6,
+      lineHeight: 1.3,
     },
     english: {
       fontSize: 16,
       color: color.textMuted,
-      marginBottom: 2,
+      lineHeight: 1.4,
     },
     learnControl: {
       alignSelf: "flex-end",
@@ -62,6 +69,7 @@ export const useStyles = () => {
       fontWeight: 600,
       fontSize: 13,
       color: color.text,
+      userSelect: "none",
     },
     learnIconActive: {
       color: GREEN,
@@ -73,25 +81,62 @@ export const useStyles = () => {
     learnRow: {
       display: "inline-flex",
       alignItems: "center",
-      gap: 8,
+      gap: 6,
+      flexShrink: 0,
       "& .MuiCheckbox-root": { padding: 6 },
     },
-    explanationContainer: {
-      marginTop: 8,
+    definitionSection: {
+      borderTop: `1px solid ${color.divider}`,
+      backgroundColor: `rgba(var(${color.primaryMainChannel}) / 0.02)`,
     },
-    explanationButton: {
+    definitionToggle: {
       textTransform: "none",
-      fontSize: "0.75rem",
+      fontSize: "0.8125rem",
+      fontWeight: 500,
+      color: color.primary,
+      padding: "10px 18px",
+      justifyContent: "space-between",
+      borderRadius: 0,
+      transition: "background-color .2s ease",
+      "&:hover": {
+        backgroundColor: `rgba(var(${color.primaryMainChannel}) / 0.06)`,
+      },
+      "&:focus": {
+        outline: "none",
+        boxShadow: "none",
+      },
+      "&:focus-visible": {
+        outline: "none",
+        boxShadow: "none",
+      },
+      "& .MuiButton-endIcon": {
+        marginLeft: "auto",
+        marginRight: -4,
+      },
     },
-    explanationContent: {
-      marginTop: 8,
-      padding: 8,
-      backgroundColor: `rgba(var(${color.primaryMainChannel}) / 0.06)`,
-      borderRadius: 8,
+    definitionContent: {
+      padding: "0 18px 16px 18px",
+      animation: "$fadeIn 0.3s ease-in-out",
     },
-    explanationText: {
+    definitionText: {
       fontSize: 14,
+      lineHeight: 1.6,
       color: color.textMuted,
+      padding: "12px 16px",
+      backgroundColor: color.paper,
+      borderRadius: 10,
+      border: `1px solid ${color.divider}`,
+      boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+    },
+    "@keyframes fadeIn": {
+      from: {
+        opacity: 0,
+        transform: "translateY(-8px)",
+      },
+      to: {
+        opacity: 1,
+        transform: "translateY(0)",
+      },
     },
   })();
 };

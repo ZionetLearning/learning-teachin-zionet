@@ -33,56 +33,59 @@ export const WordCardItem = ({ card }: { card: WordCard }) => {
 
   return (
     <Box className={classes.card} role="group" aria-label="word card">
-      <Box className={classes.innerCard}>
-        <Box className={classes.wordGroup}>
-          <Typography className={classes.hebrew} dir="rtl">
-            {card.hebrew}
-          </Typography>
-          <Typography className={classes.english}>{card.english}</Typography>
+      <Box className={classes.cardContent}>
+        <Box className={classes.topRow}>
+          <Box className={classes.wordGroup}>
+            <Typography className={classes.hebrew} dir="rtl">
+              {card.hebrew}
+            </Typography>
+            <Typography className={classes.english}>{card.english}</Typography>
+          </Box>
+
+          <Tooltip title={tooltipTitle}>
+            <Box className={classes.learnRow} dir={isHebrew ? "rtl" : "ltr"}>
+              <Checkbox
+                checked={card.isLearned}
+                onChange={toggle}
+                disabled={setLearned.isPending}
+                icon={
+                  <RadioButtonUncheckedIcon className={classes.learnIconIdle} />
+                }
+                checkedIcon={
+                  <CheckCircleIcon className={classes.learnIconActive} />
+                }
+              />
+              <Typography className={classes.learnLabel}>
+                {t("pages.wordCards.learned")}
+              </Typography>
+            </Box>
+          </Tooltip>
         </Box>
 
         {card.explanation && (
-          <Box className={classes.explanationContainer}>
+          <Box className={classes.definitionSection}>
             <Button
               size="small"
               onClick={() => setShowExplanation(!showExplanation)}
               endIcon={
                 showExplanation ? <ExpandLessIcon /> : <ExpandMoreIcon />
               }
-              className={classes.explanationButton}
+              className={classes.definitionToggle}
+              fullWidth
             >
               {showExplanation
                 ? t("pages.wordCards.hideExplanation")
                 : t("pages.wordCards.showExplanation")}
             </Button>
-            <Collapse in={showExplanation}>
-              <Box className={classes.explanationContent}>
-                <Typography className={classes.explanationText}>
+            <Collapse in={showExplanation} timeout="auto">
+              <Box className={classes.definitionContent}>
+                <Typography className={classes.definitionText}>
                   {card.explanation}
                 </Typography>
               </Box>
             </Collapse>
           </Box>
         )}
-
-        <Tooltip title={tooltipTitle}>
-          <Box className={classes.learnRow} dir={isHebrew ? "rtl" : "ltr"}>
-            <Checkbox
-              checked={card.isLearned}
-              onChange={toggle}
-              disabled={setLearned.isPending}
-              icon={
-                <RadioButtonUncheckedIcon className={classes.learnIconIdle} />
-              }
-              checkedIcon={
-                <CheckCircleIcon className={classes.learnIconActive} />
-              }
-            />
-            <Typography className={classes.learnLabel}>
-              {t("pages.wordCards.learned")}
-            </Typography>
-          </Box>
-        </Tooltip>
       </Box>
     </Box>
   );
