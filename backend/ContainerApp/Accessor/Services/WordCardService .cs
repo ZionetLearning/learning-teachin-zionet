@@ -32,7 +32,8 @@ public class WordCardService : IWordCardService
                 CardId = card.CardId,
                 Hebrew = card.Hebrew,
                 English = card.English,
-                IsLearned = card.IsLearned
+                IsLearned = card.IsLearned,
+                Definition = card.Definition,
             }).ToList();
         }
         catch (Exception ex)
@@ -58,7 +59,8 @@ public class WordCardService : IWordCardService
                 English = request.English.Trim(),
                 IsLearned = false,
                 CreatedAt = now,
-                UpdatedAt = now
+                UpdatedAt = now,
+                Definition = request.Definition,
             };
 
             _db.WordCards.Add(newCard);
@@ -69,7 +71,8 @@ public class WordCardService : IWordCardService
                 CardId = newCard.CardId,
                 Hebrew = newCard.Hebrew,
                 English = newCard.English,
-                IsLearned = newCard.IsLearned
+                IsLearned = newCard.IsLearned,
+                Definition = newCard.Definition,
             };
         }
         catch (Exception ex)

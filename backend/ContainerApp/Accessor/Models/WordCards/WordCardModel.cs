@@ -9,4 +9,5 @@ public class WordCardModel
     public bool IsLearned { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+    public string? Definition { get; set; }
 }
