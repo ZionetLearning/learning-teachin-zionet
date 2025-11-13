@@ -90,11 +90,11 @@ public sealed class AiReplyPublisher : IAiReplyPublisher
                 Metadata = messageMetadata
             };
 
-            _log.LogInformation("Publishing answer to callback binding {Binding}", CallbackBindingName);
+            _log.LogDebug("Publishing answer to callback binding {Binding}", CallbackBindingName);
 
             await _dapr.InvokeBindingAsync(CallbackBindingName, BindingOperation, message, cancellationToken: ct);
 
-            _log.LogDebug("Answer published successfully");
+            _log.LogInformation("Sentences sent to callback binding {Binding} successfully", CallbackBindingName);
         }
         catch (Exception ex)
         {
