@@ -59,7 +59,6 @@ output "signalr_connection_string" {
   sensitive = true
 }
 
-
 output "redis_hostname" {
   value = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].hostname : module.redis[0].hostname
 }
@@ -100,23 +99,24 @@ output "frontend_apps_enabled" {
 # Storage Account Outputs
 output "storage_resource_group_name" {
   description = "Name of the shared storage resource group"
-  value       = data.azurerm_resource_group.storage.name
+  value       = module.storage.storage_resource_group_name
 }
 
 output "avatars_storage_account_name" {
   description = "Name of the avatars storage account"
-  value       = azurerm_storage_account.avatars.name
+  value       = module.storage.avatars_storage_account_name
 }
 
 output "avatars_storage_account_primary_endpoint" {
   description = "Primary blob endpoint for the avatars storage account"
-  value       = azurerm_storage_account.avatars.primary_blob_endpoint
+  value       = module.storage.avatars_storage_account_primary_endpoint
 }
 
 output "avatars_container_name" {
   description = "Name of the avatars container"
-  value       = azurerm_storage_container.avatars.name
+  value       = module.storage.avatars_container_name
 }
+
 
 # Langfuse secrets for Accessor (only output when dev environment creates them)
 output "langfuse_baseurl" {
