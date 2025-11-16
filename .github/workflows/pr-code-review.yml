@@ -25,11 +25,13 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Run OpenAI PR Reviewer
-        uses: fluxninja/openai-pr-reviewer@latest
+        uses: coderabbitai/ai-pr-reviewer@1.16.2        
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
           OPENAI_API_TYPE: azure
+          OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          OPENAI_API_BASE: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+          OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
         with:
           openai_base_url: https://france-teachin-open-ai.openai.azure.com/
           openai_heavy_model: gpt-4.1-mini
