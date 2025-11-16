@@ -34,15 +34,26 @@ async def startup_event():
     global k8s_ready
 
     logger.info("Loading Kubernetes config...")
+
     try:
-        await config.load_incluster_config()
-    except:
-        await config.load_kube_config()
+        # kubeconfig local? (useful for local dev)
+        import os
+        kube_path = os.path.expanduser("~/.kube/config")
+
+        if os.path.exists(kube_path):
+            logger.info("Loading kubeconfig from file...")
+            await config.load_kube_config()
+        else:
+            logger.info("Loading in-cluster config...")
+            config.load_incluster_config()   # שים לב – בלי await
+
+    except Exception as e:
+        logger.error(f"Kubernetes config load FAILED: {e}")
+        raise
 
     k8s_ready = True
     logger.info("Kubernetes client initialized")
 
-    # start scale down background loop
     asyncio.create_task(scale_down_loop())
 
 
