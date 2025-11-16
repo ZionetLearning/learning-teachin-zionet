@@ -15,6 +15,6 @@ COPY proxy.py /app/proxy.py
 RUN useradd -m proxyuser
 USER proxyuser
 
-EXPOSE 80
+EXPOSE 8000
 
-CMD ["uvicorn", "proxy:app", "--host", "0.0.0.0", "--port", "80", "--loop", "asyncio"]
+CMD ["uvicorn", "proxy:app", "--host", "0.0.0.0", "--port", "8000", "--loop", "asyncio"]
