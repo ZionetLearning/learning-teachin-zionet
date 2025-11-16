@@ -1,0 +1,4 @@
+apiVersion: v2
+name: proxy
+description: Shared scaling proxy for all environments
+version: 1.0.0

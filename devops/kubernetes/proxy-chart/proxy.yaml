@@ -1,0 +1,92 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.namespace }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: proxy
+  namespace: {{ .Values.namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: proxy-cluster-role
+rules:
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["get", "list", "patch", "update"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: proxy-cluster-rolebinding
+subjects:
+- kind: ServiceAccount
+  name: proxy
+  namespace: {{ .Values.namespace }}
+roleRef:
+  kind: ClusterRole
+  name: proxy-cluster-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: proxy
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    app: proxy
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: proxy
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: proxy
+  template:
+    metadata:
+      labels:
+        app: proxy
+    spec:
+      serviceAccountName: proxy
+      {{- if .Values.imagePullSecret.enabled }}
+      imagePullSecrets:
+      - name: {{ .Values.imagePullSecret.name }}
+      {{- end }}
+      containers:
+      - name: proxy
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: 80
+        env:
+        - name: TARGET_SERVICE_NAME
+          value: "{{ .Values.targetServiceName }}"
+        - name: TARGET_SERVICE_PORT
+          value: "{{ .Values.targetServicePort }}"
+        - name: SCALE_UP_REPLICAS
+          value: "{{ .Values.scaleUp }}"
+        - name: SCALE_DOWN_REPLICAS
+          value: "{{ .Values.scaleDown }}"
+        - name: INACTIVITY_TIMEOUT
+          value: "{{ .Values.inactivity }}"
+        - name: MAX_SCALEUP_WAIT
+          value: "{{ .Values.scaleWait }}"
+        - name: CHECK_INTERVAL
+          value: "{{ .Values.checkInterval }}"
+        - name: LOG_LEVEL
+          value: "{{ .Values.logLevel }}"
