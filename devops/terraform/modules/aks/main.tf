@@ -12,7 +12,7 @@ resource "azurerm_kubernetes_cluster" "main" {
   dns_prefix          = "${var.cluster_name}-dns"
 
   default_node_pool {
-    name                 = "system"
+    name                 = "default"
     vm_size              = var.stable_vm_size
     node_count           = var.stable_node_count
     auto_scaling_enabled = false
