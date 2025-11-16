@@ -52,20 +52,6 @@ variable "spot_max_price" {
   description = "Maximum price for spot instances (-1 = pay up to on-demand price)"
 }
 
-# Deprecated variables (kept for backward compatibility)
-variable "max_node_count" {
-  type    = number
-  default = 4
-}
-variable "min_node_count" {
-  type    = number
-  default = 1
-}
-variable "vm_size" {
-  type    = string
-  default = "Standard_B2s"
-}
-
 variable "identity_ids" {	
   description = "Optional list of UserAssigned Identity IDs to use if type is UserAssigned"	
   type        = list(string)	
