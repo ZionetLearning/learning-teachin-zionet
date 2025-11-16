@@ -32,7 +32,6 @@ jobs:
           OPENAI_API_TYPE: azure
         with:
           openai_base_url: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
-          openai_api_version: ${{ secrets.AZURE_OPENAI_API_VERSION }}
           openai_heavy_model: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
           review_simple_changes: false
           review_comment_lgtm: false
