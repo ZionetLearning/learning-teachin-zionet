@@ -1,33 +1,37 @@
 name: AI Code Reviewer
 
 on:
-  workflow_dispatch: 
-  pull_request: 
+  workflow_dispatch:
+  pull_request:
     types: [opened, synchronize]
 
 permissions:
   contents: read
   pull-requests: write
+
 jobs:
   review:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v3
 
-      - name: Ensure pip and typing_extensions are up to date
+      - name: Setup Python and Clean Virtual Env
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install --upgrade typing_extensions
+          python -m venv .env
+          source .env/bin/activate
+          pip install --upgrade pip
+          pip install typing_extensions==4.10.0
+          pip install gpt-review==0.9.5
 
-
-
-      - name: Run GPT Review
-        uses: microsoft/gpt-review@v0.9.5
+      - name: Run GPT Review via CLI
+        run: |
+          source .env/bin/activate
+          gpt review
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           AZURE_OPENAI_API_URL: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
           AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
           AZURE_OPENAI_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
           AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
-
