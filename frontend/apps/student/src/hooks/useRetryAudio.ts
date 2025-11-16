@@ -32,13 +32,7 @@ export const useRetryAudio = ({
     speak(sentence);
   }, [isPlaying, stop, speak, sentence]);
 
-  const handleReplayAudio = useCallback(() => {
-    if (isPlaying) {
-      stop();
-      return;
-    }
-    speak(sentence);
-  }, [isPlaying, stop, speak, sentence]);
+  const handleReplayAudio = handlePlayAudio;
 
   return {
     handlePlayAudio,

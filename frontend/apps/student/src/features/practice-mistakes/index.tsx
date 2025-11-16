@@ -64,8 +64,6 @@ export const PracticeMistakes = () => {
       case "SpeakingPractice":
         route = "/speaking";
         break;
-      default:
-        route = "/word-order-game";
     }
 
     navigate(route, {
