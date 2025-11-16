@@ -48,6 +48,16 @@ helm $ACTION langfuse langfuse/langfuse \
   --set langfuse.worker.resources.requests.memory="256Mi" \
   --set langfuse.worker.resources.limits.cpu="500m" \
   --set langfuse.worker.resources.limits.memory="512Mi" \
+  --set langfuse.nodeSelector."node-type"="spot" \
+  --set langfuse.tolerations[0].key="kubernetes.azure.com/scalesetpriority" \
+  --set langfuse.tolerations[0].operator="Equal" \
+  --set langfuse.tolerations[0].value="spot" \
+  --set langfuse.tolerations[0].effect="NoSchedule" \
+  --set langfuse.worker.nodeSelector."node-type"="spot" \
+  --set langfuse.worker.tolerations[0].key="kubernetes.azure.com/scalesetpriority" \
+  --set langfuse.worker.tolerations[0].operator="Equal" \
+  --set langfuse.worker.tolerations[0].value="spot" \
+  --set langfuse.worker.tolerations[0].effect="NoSchedule" \
   --set postgresql.deploy=false \
   --set postgresql.host="${PG_HOST}" \
   --set postgresql.port=5432 \
