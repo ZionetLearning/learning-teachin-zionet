@@ -50,8 +50,22 @@ spec:
             name: langfuse-web
             port:
               number: 3000
-      # Auth routes that Langfuse redirects to at root level - pass through as-is
-      - path: /auth
+      # Only allow sign-in, not sign-up
+      - path: /auth/sign-in
+        pathType: Prefix
+        backend:
+          service:
+            name: langfuse-web
+            port:
+              number: 3000
+      - path: /auth/error
+        pathType: Prefix
+        backend:
+          service:
+            name: langfuse-web
+            port:
+              number: 3000
+      - path: /auth/verify-request
         pathType: Prefix
         backend:
           service:
@@ -59,6 +73,13 @@ spec:
             port:
               number: 3000
       - path: /sign-in
+        pathType: Prefix
+        backend:
+          service:
+            name: langfuse-web
+            port:
+              number: 3000
+      - path: /organization
         pathType: Prefix
         backend:
           service:
