@@ -52,6 +52,9 @@ jobs:
           - name: engine
             context: backend/ContainerApp/Engine
             dockerfile: backend/ContainerApp/Engine/Dockerfile
+          - name: proxy
+            context: backend/ContainerApp/WakeupProxy
+            dockerfile: backend/ContainerApp/WakeupProxy/Dockerfile
     steps:
       - name: Checkout code
         uses: actions/checkout@v5

@@ -233,6 +233,20 @@ accessor:
       cpu: "500m"
       memory: "512Mi"
 
+proxy:
+  namespace: proxy
+  image:
+    repository: teachindevacr.azurecr.io/proxy
+    tag: latest
+  targetServiceName: manager
+  targetServicePort: 80
+  scaleUp: 1
+  scaleDown: 0
+  inactivity: 300
+  scaleWait: 90
+  checkInterval: 30
+  logLevel: INFO
+
 dapr:
   # Shared connection for Service Bus components
   connection:
