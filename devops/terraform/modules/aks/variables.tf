@@ -36,7 +36,7 @@ variable "spot_max_node_count" {
 
 variable "spot_vm_size" {
   type        = string
-  default     = "Standard_D2s_v3"
+  default     = "Standard_B2s"
   description = "VM size for spot instance nodes"
 }
 
