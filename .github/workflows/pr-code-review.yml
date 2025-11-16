@@ -15,6 +15,13 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v3
 
+      - name: Ensure pip and typing_extensions are up to date
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade typing_extensions
+
+
+
       - name: Run GPT Review
         uses: microsoft/gpt-review@v0.9.5
         env:
