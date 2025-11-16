@@ -6,7 +6,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: redis
-  namespace: { { default (include "app.namespace" .) .Values.redis.namespace } }
+  namespace: {{ default (include "app.namespace" .) .Values.redis.namespace }}
   labels:
     app: redis
     component: cache
@@ -91,7 +91,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: redis-pvc
-  namespace: { { default (include "app.namespace" .) .Values.redis.namespace } }
+  namespace: {{ default (include "app.namespace" .) .Values.redis.namespace }}
   labels:
     app: redis
 spec:
