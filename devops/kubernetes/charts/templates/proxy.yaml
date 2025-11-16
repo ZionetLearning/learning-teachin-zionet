@@ -1,7 +1,9 @@
+{{- if .Values.namespace.create }}
 apiVersion: v1
 kind: Namespace
 metadata:
   name: proxy
+{{- end }}
 ---
 apiVersion: v1
 kind: ServiceAccount
