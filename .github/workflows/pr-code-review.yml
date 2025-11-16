@@ -34,6 +34,7 @@ jobs:
           OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
         with:
           openai_base_url: https://france-teachin-open-ai.openai.azure.com/
+          openai_light_model: gpt-4.1-mini
           openai_heavy_model: gpt-4.1-mini
           review_simple_changes: false
           review_comment_lgtm: false
