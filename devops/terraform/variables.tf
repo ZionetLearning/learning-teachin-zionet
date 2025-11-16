@@ -149,16 +149,31 @@ variable "redis_name" {
   default     = "redis-teachin-shared"
 }
 
-variable "use_shared_redis" {
-  description = "Use shared Redis instance instead of creating new one"
-  type        = bool
-  default     = true
+# Azure Redis variables (commented out - not used with self-hosted Redis)
+# variable "use_shared_redis" {
+#   description = "Use shared Redis instance instead of creating new one"
+#   type        = bool
+#   default     = true
+# }
+
+# variable "shared_redis_name" {
+#   type        = string
+#   default     = null
+#   description = "Name of shared Redis cache, if using shared"
+# }
+
+# Self-hosted Redis variables
+variable "selfhosted_redis_password" {
+  description = "Password for self-hosted Redis instance - provided by GitHub Actions"
+  type        = string
+  sensitive   = true
+  default     = "change-me-in-production"
 }
 
-variable "shared_redis_name" {
+variable "selfhosted_redis_namespace" {
+  description = "Kubernetes namespace where the self-hosted Redis service runs"
   type        = string
-  default     = null
-  description = "Name of shared Redis cache, if using shared"
+  default     = "redis"
 }
 
 #------------- Environment Variables -------------

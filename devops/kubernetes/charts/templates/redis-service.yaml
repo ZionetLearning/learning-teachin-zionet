@@ -1,0 +1,20 @@
+# Redis Service
+# Exposes the self-hosted Redis deployment to other pods in the cluster
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: { { default (include "app.namespace" .) .Values.redis.namespace } }
+  labels:
+    app: redis
+    component: cache
+spec:
+  type: ClusterIP
+  ports:
+    - port: 6379
+      targetPort: redis
+      protocol: TCP
+      name: redis
+  selector:
+    app: redis

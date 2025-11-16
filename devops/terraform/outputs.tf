@@ -60,12 +60,18 @@ output "signalr_connection_string" {
 }
 
 output "redis_hostname" {
-  value = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].hostname : module.redis[0].hostname
+  # Self-hosted Redis in Kubernetes cluster
+  value = local.redis_hostname
+  # For Azure Redis, uncomment below and comment above:
+  # value = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].hostname : module.redis[0].hostname
 }
 
 output "redis_primary_access_key" {
-  value     = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].primary_access_key : module.redis[0].primary_access_key
+  # Self-hosted Redis password
+  value     = local.redis_key
   sensitive = true
+  # For Azure Redis, uncomment below and comment above:
+  # value     = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].primary_access_key : module.redis[0].primary_access_key
 }
 
 output "communication_service_connection_string" {

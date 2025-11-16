@@ -75,7 +75,7 @@ jobs:
         run: |
           ENVIRONMENT_NAME="${{ inputs.environment_name || github.event.inputs.environment_name }}"
           echo "🔍 DEBUG: ENVIRONMENT_NAME='$ENVIRONMENT_NAME'"
-          
+
           # Set TARGET_NAMESPACE as both shell variable (for this step) and env variable (for next steps)
           if [ -n "$ENVIRONMENT_NAME" ]; then
             echo "✅ ENVIRONMENT_NAME is not empty, using custom namespace"
@@ -150,6 +150,11 @@ jobs:
         if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
         run: |
           kubectl create namespace "$ENVIRONMENT_NAME" --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Create redis namespace (for self-hosted Redis)
+        if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
+        run: |
+          kubectl create namespace redis --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Check and fix Helm release status
         run: |
@@ -328,12 +333,12 @@ jobs:
           echo "Applying Langfuse ingress..."
           kubectl apply -f "../kubernetes/ingress/langfuse-ingress.yaml"
           chmod +x langfuse.sh
-          
+
           if [ -z "${{ secrets.SMTP_USER }}" ] || [ -z "${{ secrets.SMTP_PASSWORD }}" ]; then
             echo "❌ Error: SMTP_USER and SMTP_PASSWORD secrets are required for email functionality"
             exit 1
           fi
-          
+
           ./langfuse.sh \
             "$ENVIRONMENT_NAME" \
             "${{ secrets.LANGFUSE_ADMIN_EMAIL }}" \

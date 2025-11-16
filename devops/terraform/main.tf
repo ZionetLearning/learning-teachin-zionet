@@ -34,7 +34,7 @@ locals {
   aks_resource_group   = var.use_shared_aks ? var.shared_resource_group : azurerm_resource_group.main.name
   kubernetes_namespace = var.kubernetes_namespace != "" ? var.kubernetes_namespace : var.environment_name
   aks_kube_config      = var.use_shared_aks ? data.azurerm_kubernetes_cluster.shared[0].kube_config[0] : module.aks[0].kube_config
-  
+
   # Secure credential management - use GitHub Actions environment variables
   admin_username = var.admin_username
   admin_password = var.admin_password
@@ -113,13 +113,13 @@ resource "kubernetes_service_account" "environment" {
 }
 
 module "servicebus" {
-  source              = "./modules/servicebus"
-  resource_group_name = azurerm_resource_group.main.name
-  location            = var.location
-  namespace_name      = "${var.environment_name}-${var.servicebus_namespace}"
-  queue_names         = var.queue_names
+  source                 = "./modules/servicebus"
+  resource_group_name    = azurerm_resource_group.main.name
+  location               = var.location
+  namespace_name         = "${var.environment_name}-${var.servicebus_namespace}"
+  queue_names            = var.queue_names
   session_enabled_queues = var.session_enabled_queues
-  depends_on          = [azurerm_resource_group.main]
+  depends_on             = [azurerm_resource_group.main]
 }
 
 #--------------------PostgreSQL-----------------------
@@ -192,34 +192,53 @@ module "signalr" {
   signalr_name        = "${var.signalr_name}-${var.environment_name}"
 }
 
-# ------------- Shared Redis -----------------------
-data "azurerm_redis_cache" "shared" {
-  count               = var.use_shared_redis ? 1 : 0
-  name                = var.redis_name
-  resource_group_name = var.shared_resource_group
-}
+# ------------- Redis Configuration -----------------------
+# SELF-HOSTED REDIS: Azure Cache for Redis is disabled to save costs
+# Redis is now deployed as a container in the AKS cluster
+# To revert to Azure Cache for Redis, uncomment the sections below and comment out the self-hosted configuration
 
-# Create new Redis only if not using shared
-module "redis" {
-  count                = var.use_shared_redis ? 0 : 1
-  source               = "./modules/redis"
-  name                 = var.redis_name
-  location             = azurerm_resource_group.main.location
-  resource_group_name  = azurerm_resource_group.main.name
-  shared_redis_name    = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].name : null
-}
+# --- AZURE CACHE FOR REDIS (COMMENTED OUT FOR COST SAVINGS) ---
+# data "azurerm_redis_cache" "shared" {
+#   count               = var.use_shared_redis ? 1 : 0
+#   name                = var.redis_name
+#   resource_group_name = var.shared_resource_group
+# }
 
-# Use shared Redis outputs if enabled, otherwise use module outputs
+# # Create new Redis only if not using shared
+# module "redis" {
+#   count                = var.use_shared_redis ? 0 : 1
+#   source               = "./modules/redis"
+#   name                 = var.redis_name
+#   location             = azurerm_resource_group.main.location
+#   resource_group_name  = azurerm_resource_group.main.name
+#   shared_redis_name    = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].name : null
+# }
+
+# # Use shared Redis outputs if enabled, otherwise use module outputs
+# locals {
+#   redis_hostname = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].hostname : module.redis[0].hostname
+#   redis_port     = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].port : module.redis[0].port
+#   redis_key      = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].primary_access_key : module.redis[0].primary_access_key
+# }
+# --- END OF AZURE CACHE FOR REDIS ---
+
+# --- SELF-HOSTED REDIS CONFIGURATION ---
+# Self-hosted Redis runs as a container in the Kubernetes cluster
+# Connection details are managed directly in Kubernetes secrets
 locals {
-  redis_hostname = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].hostname : module.redis[0].hostname
-  redis_port     = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].port : module.redis[0].port
-  redis_key      = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].primary_access_key : module.redis[0].primary_access_key
+  # Namespace where the Redis service runs (defaults to environment namespace if not set)
+  redis_runtime_namespace = var.selfhosted_redis_namespace != "" ? var.selfhosted_redis_namespace : local.kubernetes_namespace
+  # Self-hosted Redis service name and port in Kubernetes
+  redis_hostname = "redis-service.${local.redis_runtime_namespace}.svc.cluster.local"
+  redis_port     = 6379
+  # Password is set in Kubernetes secret (see kubernetes/charts/templates/kv/externalsecret-redis*.yaml)
+  redis_key = var.selfhosted_redis_password
 }
 
 # ------------- Storage Account for Avatars (Optimized for Cost) -----------------------
 module "storage" {
-  source              = "./modules/storage"
-  environment_name    = var.environment_name
+  source           = "./modules/storage"
+  environment_name = var.environment_name
 }
 
 # Monitoring - Diagnostic Settings for resources to Log Analytics
@@ -240,39 +259,41 @@ module "monitoring" {
   count  = var.environment_name == "dev" ? 1 : 0
   source = "./modules/monitoring"
 
-  log_analytics_workspace_id  = local.log_analytics_workspace_id
-  servicebus_namespace_id     = module.servicebus.namespace_id
-  postgres_server_id          = local.use_shared_postgres ? data.azurerm_postgresql_flexible_server.shared[0].id : module.database[0].id
-  signalr_id                  = module.signalr.id
-  redis_id                    = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].id : module.redis[0].id
-  frontend_static_web_app_id  = length(var.frontend_apps) > 0 ? [for f in module.frontend : f.static_web_app_id] : []
+  log_analytics_workspace_id = local.log_analytics_workspace_id
+  servicebus_namespace_id    = module.servicebus.namespace_id
+  postgres_server_id         = local.use_shared_postgres ? data.azurerm_postgresql_flexible_server.shared[0].id : module.database[0].id
+  signalr_id                 = module.signalr.id
+  # Redis monitoring disabled for self-hosted Redis (no Azure resource to monitor)
+  # redis_id                    = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].id : module.redis[0].id
+  redis_id                   = null # Self-hosted Redis has no Azure resource ID
+  frontend_static_web_app_id = length(var.frontend_apps) > 0 ? [for f in module.frontend : f.static_web_app_id] : []
 
   frontend_application_insights_ids = length(var.frontend_apps) > 0 ? [for f in module.frontend : f.application_insights_id] : []
 
-    depends_on = [
+  depends_on = [
     module.log_analytics,
     module.servicebus,
     module.database,
     module.signalr,
-    module.redis,
+    # module.redis,  # Commented out - self-hosted Redis
     module.frontend
   ]
 }
 
 module "frontend" {
   for_each = toset(var.frontend_apps)
-  
-  source              = "./modules/frontend"
-  resource_group_name = azurerm_resource_group.main.name
-  location            = azurerm_resource_group.main.location
-  static_web_app_name = "${var.static_web_app_name}-${each.key}-${var.environment_name}"
+
+  source                     = "./modules/frontend"
+  resource_group_name        = azurerm_resource_group.main.name
+  location                   = azurerm_resource_group.main.location
+  static_web_app_name        = "${var.static_web_app_name}-${each.key}-${var.environment_name}"
   log_analytics_workspace_id = local.log_analytics_workspace_id
-  
+
   tags = {
     Environment = var.environment_name
     Project     = "Frontend"
   }
-  
+
   depends_on = [azurerm_resource_group.main]
 }
 
@@ -287,7 +308,7 @@ data "azurerm_key_vault" "shared" {
 
 module "clustersecretstore" {
   count       = var.environment_name == "dev" ? 1 : 0
-  source     = "./modules/clustersecretstore"
+  source      = "./modules/clustersecretstore"
   identity_id = var.identity_id
   tenant_id   = var.tenant_id
 }

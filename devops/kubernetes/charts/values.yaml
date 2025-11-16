@@ -233,6 +233,13 @@ accessor:
       cpu: "500m"
       memory: "512Mi"
 
+# Self-hosted Redis settings
+redis:
+  # Namespace to deploy Redis into. Leave empty to use app namespace.
+  namespace: "redis"
+  # Create a copy of the redis connection secret in the Redis namespace so the pod can read it
+  createNamespaceSecret: true
+
 dapr:
   # Shared connection for Service Bus components
   connection:
@@ -252,7 +259,9 @@ dapr:
     disableEntityManagement: "true"
     scopes: [manager, engine, accessor]
 
-  # Redis state store (optional)
+  # Redis state store - Self-Hosted Configuration
+  # Changed from Azure Cache for Redis to self-hosted Redis in Kubernetes
+  # To revert to Azure Redis: set enableTLS to "true" and update connection string
   stateStore:
     enabled: true
     name: statestore
@@ -260,8 +269,8 @@ dapr:
       secretName: "redis-connection"
       hostKey: "redis-hostport"
       passwordKey: "redis-password"
-      enableTLS: "true"
-      redisDB: "5"  # default Redis database index
+      enableTLS: "false"  # Self-hosted Redis doesn't use TLS (use "true" for Azure Redis)
+      redisDB: "0"        # Default DB index - can use 0-15 for different environments (set via workflow)
       options:
         dialTimeout: "30s"
         readTimeout: "30s"
