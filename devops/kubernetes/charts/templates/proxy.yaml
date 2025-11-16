@@ -1,39 +1,36 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: {{ .Values.proxy.namespace | default "proxy" }}
+  name: proxy
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: proxy
-  namespace: {{ .Values.proxy.namespace | default "proxy" }}
+  namespace: proxy
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: proxy-role
-  namespace: {{ .Values.proxy.namespace | default "proxy" }}
+  namespace: proxy
 rules:
-  # Authorizations to get and update deployments
-  - apiGroups: ["apps"]
-    resources: ["deployments"]
-    verbs: ["get", "list", "patch", "update"]
-
-  # Authorizations to check if the pod is ready
-  - apiGroups: [""]
-    resources: ["pods"]
-    verbs: ["get", "list", "watch"]
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["get", "list", "patch", "update"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: proxy-rolebinding
-  namespace: {{ .Values.proxy.namespace | default "proxy" }}
+  namespace: proxy
 subjects:
-  - kind: ServiceAccount
-    name: proxy
-    namespace: {{ .Values.proxy.namespace | default "proxy" }}
+- kind: ServiceAccount
+  name: proxy
+  namespace: proxy
 roleRef:
   kind: Role
   name: proxy-role
@@ -43,20 +40,20 @@ apiVersion: v1
 kind: Service
 metadata:
   name: proxy
-  namespace: {{ .Values.proxy.namespace | default "proxy" }}
+  namespace: proxy
 spec:
   selector:
     app: proxy
   ports:
-    - port: 80
-      targetPort: 80
-      protocol: TCP
+  - port: 80
+    targetPort: 80
+    protocol: TCP
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: proxy
-  namespace: {{ .Values.proxy.namespace | default "proxy" }}
+  namespace: proxy
 spec:
   replicas: 1
   selector:
@@ -69,25 +66,25 @@ spec:
     spec:
       serviceAccountName: proxy
       containers:
-        - name: proxy
-          image: "{{ .Values.proxy.image.repository }}:{{ .Values.proxy.image.tag }}"
-          imagePullPolicy: Always
-          ports:
-            - containerPort: 80
-          env:
-            - name: TARGET_SERVICE_NAME
-              value: "{{ .Values.proxy.targetServiceName }}"
-            - name: TARGET_SERVICE_PORT
-              value: "{{ .Values.proxy.targetServicePort | default 80 | quote }}"
-            - name: SCALE_UP_REPLICAS
-              value: "{{ .Values.proxy.scaleUp | default 1 | quote }}"
-            - name: SCALE_DOWN_REPLICAS
-              value: "{{ .Values.proxy.scaleDown | default 0 | quote }}"
-            - name: INACTIVITY_TIMEOUT
-              value: "{{ .Values.proxy.inactivity | default 300 | quote }}"
-            - name: MAX_SCALEUP_WAIT
-              value: "{{ .Values.proxy.scaleWait | default 90 | quote }}"
-            - name: CHECK_INTERVAL
-              value: "{{ .Values.proxy.checkInterval | default 30 | quote }}"
-            - name: LOG_LEVEL
-              value: '{{ .Values.proxy.logLevel | default "INFO" }}'
+      - name: proxy
+        image: "teachindevacr.azurecr.io/proxy:latest"
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+        env:
+        - name: TARGET_SERVICE_NAME
+          value: "manager"
+        - name: TARGET_SERVICE_PORT
+          value: "80"
+        - name: SCALE_UP_REPLICAS
+          value: "1"
+        - name: SCALE_DOWN_REPLICAS
+          value: "0"
+        - name: INACTIVITY_TIMEOUT
+          value: "300"
+        - name: MAX_SCALEUP_WAIT
+          value: "90"
+        - name: CHECK_INTERVAL
+          value: "30"
+        - name: LOG_LEVEL
+          value: "INFO"
