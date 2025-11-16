@@ -24,17 +24,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Run OpenAI PR Reviewer with Azure OpenAI
+      - name: Run OpenAI PR Reviewer
         uses: fluxninja/openai-pr-reviewer@latest
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          OPENAI_API_TYPE: azure
           OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
-          OPENAI_API_BASE: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
-          OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
+          OPENAI_API_TYPE: azure
         with:
-          model: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
-          debug: false
+          openai_base_url: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+          openai_api_version: ${{ secrets.AZURE_OPENAI_API_VERSION }}
+          openai_heavy_model: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
           review_simple_changes: false
           review_comment_lgtm: false
+          debug: false
 
