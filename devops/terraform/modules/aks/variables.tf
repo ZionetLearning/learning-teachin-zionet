@@ -7,6 +7,46 @@ variable "location" {
 variable "cluster_name" {
   type = string
 }
+
+# Stable node pool configuration
+variable "stable_node_count" {
+  type        = number
+  default     = 2
+  description = "Number of stable nodes (not spot instances)"
+}
+
+variable "stable_vm_size" {
+  type        = string
+  default     = "Standard_B2s"
+  description = "VM size for stable nodes"
+}
+
+# Spot instance node pool configuration
+variable "spot_min_node_count" {
+  type        = number
+  default     = 0
+  description = "Minimum number of spot instance nodes"
+}
+
+variable "spot_max_node_count" {
+  type        = number
+  default     = 4
+  description = "Maximum number of spot instance nodes"
+}
+
+variable "spot_vm_size" {
+  type        = string
+  default     = "Standard_D2s_v3"
+  description = "VM size for spot instance nodes"
+}
+
+variable "spot_max_price" {
+  type        = number
+  default     = -1
+  description = "Maximum price for spot instances (-1 = pay up to on-demand price)"
+}
+
+# Deprecated variables (kept for backward compatibility)
 variable "max_node_count" {
   type    = number
   default = 4
