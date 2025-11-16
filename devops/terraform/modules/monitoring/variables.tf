@@ -15,7 +15,9 @@ variable "signalr_id" {
 }
 
 variable "redis_id" {
-  type = string
+  description = "Azure Resource ID of Redis Cache. Set to null when using self-hosted Redis."
+  type        = string
+  default     = null
 }
 
 variable "frontend_static_web_app_id" {
