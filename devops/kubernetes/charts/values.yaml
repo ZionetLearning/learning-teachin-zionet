@@ -235,7 +235,7 @@ accessor:
 
 proxy:
   image:
-    repository: teachindevacr.azurecr.io/proxy
+    repository: teachindevacr.azurecr.io/scaling
     tag: latest
   targetServiceName: manager
   targetServicePort: 80
