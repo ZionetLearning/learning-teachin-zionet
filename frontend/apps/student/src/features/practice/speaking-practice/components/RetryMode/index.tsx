@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
 import { Button, CircularProgress } from "@mui/material";
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";
-import { useAvatarSpeech } from "@student/hooks";
-import { useAzureSpeechToken, useSubmitGameAttempt } from "@student/api";
-import { useAuth } from "@app-providers";
+import {
+  useAvatarSpeech,
+  useGameSubmission,
+  useRetryNavigation,
+} from "@student/hooks";
+import { useAzureSpeechToken } from "@student/api";
 import { comparePhrases } from "../../utils";
 import { toast } from "react-toastify";
 import { useStyles } from "./style";
@@ -37,17 +38,15 @@ type FeedbackType = (typeof Feedback)[keyof typeof Feedback];
 export const RetryMode = ({ retryData }: RetryModeProps) => {
   const { t } = useTranslation();
   const classes = useStyles();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const studentId = user?.userId ?? "";
 
   const [feedback, setFeedback] = useState<FeedbackType>(Feedback.None);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [isRecording, setIsRecording] = useState(false);
 
-  const { mutateAsync: submitAttempt } = useSubmitGameAttempt();
   const correctSentence = retryData.correctAnswer.join(" ");
+
+  const { submitAttempt } = useGameSubmission();
+  const { navigateToMistakes } = useRetryNavigation();
 
   const recognizerRef = useRef<sdk.SpeechRecognizer | null>(null);
   const audioConfigRef = useRef<sdk.AudioConfig | null>(null);
@@ -152,10 +151,7 @@ export const RetryMode = ({ retryData }: RetryModeProps) => {
           : false;
 
         try {
-          const res = await submitAttempt({
-            exerciseId: retryData.exerciseId,
-            givenAnswer: [userText],
-          });
+          const res = await submitAttempt(retryData.exerciseId, [userText]);
 
           const isServerCorrect = res.status === "Success";
           setIsCorrect(isServerCorrect);
@@ -165,9 +161,6 @@ export const RetryMode = ({ retryData }: RetryModeProps) => {
             toast.success(
               `${Feedback.Perfect} - ${res.accuracy.toFixed(1)}% ${t("pages.speakingPractice.accuracy")}`,
             );
-            queryClient.invalidateQueries({
-              queryKey: ["gamesMistakes", { studentId }],
-            });
           } else {
             toast.error(
               `${Feedback.TryAgain} - ${res.accuracy.toFixed(1)}% ${t("pages.speakingPractice.accuracy")}`,
@@ -198,10 +191,6 @@ export const RetryMode = ({ retryData }: RetryModeProps) => {
     if (isRecording) stopRecognition();
     setFeedback(Feedback.None);
     speak(correctSentence);
-  };
-
-  const handleBackToMistakes = () => {
-    navigate("/practice-mistakes");
   };
 
   if (tokenLoading) {
@@ -249,7 +238,7 @@ export const RetryMode = ({ retryData }: RetryModeProps) => {
       </div>
 
       <div className={classes.backButtonWrapper}>
-        <Button variant="outlined" onClick={handleBackToMistakes}>
+        <Button variant="outlined" onClick={navigateToMistakes}>
           {t("pages.practiceMistakes.title")}
         </Button>
       </div>

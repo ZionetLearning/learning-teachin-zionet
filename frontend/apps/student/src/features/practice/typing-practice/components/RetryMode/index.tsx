@@ -1,11 +1,11 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
 import { Button, CircularProgress } from "@mui/material";
-import { useAvatarSpeech } from "@student/hooks";
-import { useSubmitGameAttempt } from "@student/api";
-import { useAuth } from "@app-providers";
+import {
+  useGameSubmission,
+  useRetryAudio,
+  useRetryNavigation,
+} from "@student/hooks";
 import { compareTexts } from "../../utils";
 import { FeedbackDisplay } from "../FeedbackDisplay";
 import { AudioControls } from "../AudioControls";
@@ -29,10 +29,6 @@ interface RetryModeProps {
 export const RetryMode = ({ retryData }: RetryModeProps) => {
   const { t } = useTranslation();
   const classes = useStyles();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const studentId = user?.userId ?? "";
 
   const [phase, setPhase] = useState<
     "ready" | "playing" | "typing" | "feedback"
@@ -43,34 +39,16 @@ export const RetryMode = ({ retryData }: RetryModeProps) => {
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { mutateAsync: submitAttempt } = useSubmitGameAttempt();
   const correctSentence = retryData.correctAnswer.join(" ");
 
-  const { speak, stop, isPlaying, error } = useAvatarSpeech({
-    volume: 1,
-    onAudioStart: () => {
-      setPhase("playing");
-    },
-    onAudioEnd: () => {
-      setPhase("typing");
-    },
-  });
-
-  const handlePlayAudio = useCallback(() => {
-    if (isPlaying) {
-      stop();
-      return;
-    }
-    speak(correctSentence);
-  }, [isPlaying, stop, speak, correctSentence]);
-
-  const handleReplayAudio = useCallback(() => {
-    if (isPlaying) {
-      stop();
-      return;
-    }
-    speak(correctSentence);
-  }, [isPlaying, stop, speak, correctSentence]);
+  const { submitAttempt } = useGameSubmission();
+  const { navigateToMistakes } = useRetryNavigation();
+  const { handlePlayAudio, handleReplayAudio, isPlaying, audioError } =
+    useRetryAudio({
+      sentence: correctSentence,
+      onAudioStart: () => setPhase("playing"),
+      onAudioEnd: () => setPhase("typing"),
+    });
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setUserInput(event.target.value);
@@ -83,10 +61,7 @@ export const RetryMode = ({ retryData }: RetryModeProps) => {
     const localFeedback = compareTexts(userInput, correctSentence);
 
     try {
-      const res = await submitAttempt({
-        exerciseId: retryData.exerciseId,
-        givenAnswer: [userInput],
-      });
+      const res = await submitAttempt(retryData.exerciseId, [userInput]);
 
       const updatedFeedback = {
         ...localFeedback,
@@ -95,12 +70,6 @@ export const RetryMode = ({ retryData }: RetryModeProps) => {
 
       setFeedbackResult(updatedFeedback);
       setPhase("feedback");
-
-      if (res.status === "Success") {
-        queryClient.invalidateQueries({
-          queryKey: ["gamesMistakes", { studentId }],
-        });
-      }
     } catch (error) {
       console.error("Failed to submit typing practice attempt:", error);
       setFeedbackResult(localFeedback);
@@ -116,16 +85,12 @@ export const RetryMode = ({ retryData }: RetryModeProps) => {
     setFeedbackResult(null);
   };
 
-  const handleBackToMistakes = () => {
-    navigate("/practice-mistakes");
-  };
-
   const audioState = {
     isPlaying,
     hasPlayed: phase !== "ready",
-    error: error
-      ? error instanceof Error
-        ? error.message
+    error: audioError
+      ? audioError instanceof Error
+        ? audioError.message
         : "TTS error"
       : null,
   };
@@ -176,14 +141,14 @@ export const RetryMode = ({ retryData }: RetryModeProps) => {
                 <FeedbackDisplay
                   feedbackResult={feedbackResult}
                   onTryAgain={handleTryAgain}
-                  onNextExercise={handleBackToMistakes}
+                  onNextExercise={navigateToMistakes}
                 />
               )}
             </div>
           </div>
 
           <div className={classes.backButtonWrapper}>
-            <Button variant="outlined" onClick={handleBackToMistakes}>
+            <Button variant="outlined" onClick={navigateToMistakes}>
               {t("pages.practiceMistakes.title")}
             </Button>
           </div>
