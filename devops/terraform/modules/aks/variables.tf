@@ -9,10 +9,16 @@ variable "cluster_name" {
 }
 
 # Stable node pool configuration
-variable "stable_node_count" {
+variable "stable_min_node_count" {
+  type        = number
+  default     = 1
+  description = "Minimum number of stable nodes (not spot instances)"
+}
+
+variable "stable_max_node_count" {
   type        = number
   default     = 2
-  description = "Number of stable nodes (not spot instances)"
+  description = "Maximum number of stable nodes (not spot instances)"
 }
 
 variable "stable_vm_size" {

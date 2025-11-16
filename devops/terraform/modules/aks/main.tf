@@ -14,8 +14,9 @@ resource "azurerm_kubernetes_cluster" "main" {
   default_node_pool {
     name                 = "default"
     vm_size              = var.stable_vm_size
-    node_count           = var.stable_node_count
-    auto_scaling_enabled = false
+    auto_scaling_enabled = true
+    min_count            = var.stable_min_node_count
+    max_count            = var.stable_max_node_count
     
     # System pods and critical workloads
     node_labels = {
