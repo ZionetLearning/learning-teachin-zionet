@@ -1,10 +1,13 @@
-﻿using Microsoft.SemanticKernel.ChatCompletion;
+﻿using Engine.Services.Clients.AccessorClient.Models;
+using Microsoft.SemanticKernel.ChatCompletion;
 
 namespace Engine.Models.Chat;
 
 public sealed record ChatAiServiceRequest
 {
     public required string RequestId { get; init; }
+    public HistorySnapshotDto? AgentThreadState { get; init; }
+    public required string UserMessage { get; set; }
     public required ChatHistory History { get; init; }
     public ChatType ChatType { get; init; } = ChatType.Default; // todo: use for systemPrompt
     public Guid ThreadId { get; init; }
