@@ -36,7 +36,7 @@ variable "spot_min_node_count" {
 
 variable "spot_max_node_count" {
   type        = number
-  default     = 4
+  default     = 1
   description = "Maximum number of spot instance nodes"
 }
 
