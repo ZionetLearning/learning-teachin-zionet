@@ -1,5 +1,6 @@
 ﻿using Manager.Models;
 using Manager.Models.Sentences;
+using Manager.Models.Words;
 using Manager.Services.Clients.Engine.Models;
 
 namespace Manager.Services.Clients.Engine;
@@ -13,4 +14,5 @@ public interface IEngineClient
     Task<ChatHistoryForFrontDto?> GetHistoryChatAsync(Guid chatId, Guid userId, CancellationToken cancellationToken = default);
     Task<(bool success, string message)> GenerateSentenceAsync(SentenceRequest request);
     Task<(bool success, string message)> GenerateSplitSentenceAsync(SentenceRequest request);
+    Task<(bool success, string message)> GenerateWordExplainAsync(WordExplainRequest request, CancellationToken ct = default);
 }

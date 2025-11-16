@@ -17,6 +17,9 @@ on:
         description: "The generated image tag (commit hash)"
         value: ${{ jobs.generate_tag.outputs.image_tag }}
 
+permissions:
+  contents: read
+
 jobs:
   generate_tag:
     runs-on: ubuntu-latest

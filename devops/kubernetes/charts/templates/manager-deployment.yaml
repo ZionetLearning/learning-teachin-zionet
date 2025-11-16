@@ -73,7 +73,7 @@ spec:
             - name: Avatars__StorageConnectionString
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.manager.secrets.avatars.name }}
+                  name: {{ .Values.global.namePrefix }}-{{ .Values.manager.secrets.avatars.name }}
                   key: {{ .Values.manager.secrets.avatars.key }}
           resources:
             {{- toYaml .Values.manager.resources | nindent 12 }}

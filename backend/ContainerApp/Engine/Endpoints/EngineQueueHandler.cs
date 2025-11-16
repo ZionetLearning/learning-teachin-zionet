@@ -10,6 +10,7 @@ using Engine.Models.Chat;
 using Engine.Models.Games;
 using Engine.Models.QueueMessages;
 using Engine.Models.Sentences;
+using Engine.Models.Words;
 using Engine.Options;
 using Engine.Services;
 using Engine.Services.Clients.AccessorClient;
@@ -29,6 +30,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
     private readonly IAiReplyPublisher _publisher;
     private readonly IAccessorClient _accessorClient;
     private readonly IChatTitleService _chatTitleService;
+    private readonly IWordExplainService _wordExplainService;
     protected override MessageAction GetAction(Message message) => message.ActionName;
     protected override void Configure(RouteBuilder routes) => routes
         .On(MessageAction.CreateTask, HandleCreateTaskAsync)
@@ -37,7 +39,8 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         .On(MessageAction.ProcessingGlobalChatMessage, HandleProcessingGlobalChatMessageAsync)
         .On(MessageAction.ProcessingExplainMistake, HandleProcessingExplainMistakeAsync)
         .On(MessageAction.GenerateSentences, HandleSentenceGenerationAsync)
-        .On(MessageAction.GenerateSplitSentences, HandleSentenceGenerationAsync);
+        .On(MessageAction.GenerateSplitSentences, HandleSentenceGenerationAsync)
+        .On(MessageAction.GenerateWordExplain, HandleWordExplainAsync);
     public EngineQueueHandler(
         DaprClient daprClient,
         ILogger<EngineQueueHandler> logger,
@@ -46,7 +49,8 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         IAiReplyPublisher publisher,
         IAccessorClient accessorClient,
         ISentencesService sentencesService,
-        IChatTitleService chatTitleService) : base(logger)
+        IChatTitleService chatTitleService,
+        IWordExplainService wordExplainService) : base(logger)
     {
         _daprClient = daprClient;
         _logger = logger;
@@ -56,6 +60,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         _accessorClient = accessorClient;
         _chatTitleService = chatTitleService;
         _sentencesService = sentencesService;
+        _wordExplainService = wordExplainService;
     }
     private async Task HandleCreateTaskAsync(Message message, IReadOnlyDictionary<string, string>? metadata, Func<Task> renewLock, CancellationToken cancellationToken)
     {
@@ -1354,6 +1359,61 @@ Never invent hidden fields and do not quote this block verbatim to the user.
             }
 
             _logger.LogError(ex, "Transient error while processing for action {Action}", message.ActionName);
+            throw new RetryableException("Transient error while processing.", ex);
+        }
+    }
+    private async Task HandleWordExplainAsync(
+    Message message,
+    IReadOnlyDictionary<string, string>? metadata,
+    Func<Task> renewLock,
+    CancellationToken cancellationToken)
+    {
+        try
+        {
+            var payload = PayloadValidation.DeserializeOrThrow<WordExplainRequest>(message, _logger);
+
+            if (string.IsNullOrWhiteSpace(payload.Word))
+            {
+                throw new NonRetryableException("Word is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(payload.Context))
+            {
+                throw new NonRetryableException("Context is required.");
+            }
+
+            _logger.LogInformation("Processing WordExplain for word '{Word}'", payload.Word);
+
+            var result = await _wordExplainService.ExplainAsync(payload, cancellationToken);
+            var response = new WordExplainResponseDto
+            {
+                Id = payload.Id,
+                Definition = result.Definition,
+                Explanation = result.Explanation,
+            };
+
+            await _publisher.SendExplainMessageAsync(
+                payload.UserId.ToString(),
+                response,
+                message.ActionName,
+                cancellationToken);
+
+            _logger.LogInformation("WordExplain completed for word '{Word}'", payload.Word);
+        }
+        catch (NonRetryableException ex)
+        {
+            _logger.LogError(ex, "Non-retryable error processing message {Action}", message.ActionName);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning(ex, "Operation cancelled while processing message {Action}", message.ActionName);
+                throw new OperationCanceledException("Operation was cancelled.", ex, cancellationToken);
+            }
+
+            _logger.LogError(ex, "Transient error while processing {Action}", message.ActionName);
             throw new RetryableException("Transient error while processing.", ex);
         }
     }

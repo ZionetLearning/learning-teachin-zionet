@@ -1,31 +1,34 @@
 import { useMutation, useQuery, UseQueryResult } from "@tanstack/react-query";
 import { apiClient as axios } from "@app-providers";
 import { toast } from "react-toastify";
+import { GameType } from "@student/types";
 
 export type AttemptStatus = "Success" | "Failure" | "Pending";
-export type GameDifficulty = "easy" | "medium" | "hard";
+export type GameDifficulty = "Easy" | "Medium" | "Hard";
 
-// Game Attempt
+// Game Attempt - Submit Attempt
 export type GameAttemptRequest = {
-  attemptId: string;
-  studentId: string;
+  exerciseId: string;
   givenAnswer: string[];
 };
 
 export type GameAttemptResponse = {
+  attemptId: string;
+  exerciseId: string;
   studentId: string;
-  gameType: string; // for example => "wordOrderGame"
+  gameType: GameType;
   difficulty: GameDifficulty;
   status: AttemptStatus;
   correctAnswer: string[];
   attemptNumber: number;
+  accuracy: number;
 };
 
 // --------------
 
 // Game History Summary
 export type GameHistorySummaryItem = {
-  gameType: string;
+  gameType: GameType;
   difficulty: GameDifficulty;
   attemptsCount: number;
   totalSuccesses: number;
@@ -44,13 +47,14 @@ export type GameHistorySummaryResponse = {
 
 // Game History Detailed
 export type GameHistoryDetailedItem = {
+  exerciseId: string;
   attemptId: string;
-  gameType: string;
+  gameType: GameType;
   difficulty: GameDifficulty;
   givenAnswer: string[];
   correctAnswer: string[];
   status: AttemptStatus;
-  attemptNumber: number;
+  accuracy: number;
   createdAt: string; // ISO timestamp
 };
 
@@ -64,20 +68,26 @@ export type GameHistoryDetailedResponse = {
 
 type GetGameArgs = {
   studentId?: string;
-  page?: number;
+  page?: number; // 0-indexed page number
   pageSize?: number;
 };
 
 // ------------
 
 // Game Mistakes
+export type MistakeAttemptDto = {
+  attemptId: string;
+  wrongAnswer: string[];
+  accuracy: number;
+  createdAt: string; // ISO timestamp
+};
 
 export type GameMistakeItem = {
-  gameType: string;
+  exerciseId: string;
+  gameType: GameType;
   difficulty: GameDifficulty;
   correctAnswer: string[];
-  wrongAnswers: string[][];
-  attemptId: string;
+  mistakes: MistakeAttemptDto[];
 };
 
 export type GameMistakesResponse = {
@@ -100,15 +110,15 @@ export const useSubmitGameAttempt = () => {
       return res.data;
     },
     onError: (error) => {
-      console.error("Failed to attempt:", error);
-      toast.error("Your answer couldn’t be submitted. Please try again.");
+      console.error("Failed to submit attempt:", error);
+      toast.error("Your answer couldn't be submitted. Please try again.");
     },
   });
 };
 
 export const useGetGameHistorySummary = ({
   studentId,
-  page = 1,
+  page = 0,
   pageSize = 10,
 }: GetGameArgs) => {
   const GAMES_MANAGER_URL = import.meta.env.VITE_GAMES_MANAGER_URL;
@@ -120,8 +130,9 @@ export const useGetGameHistorySummary = ({
 
       const res = await axios.get<GameHistorySummaryResponse>(
         `${GAMES_MANAGER_URL}/history/${encodeURIComponent(studentId)}`,
-        { params: { summary: true, page, pageSize, getPending: false } },
+        { params: { summary: true, page: page + 1, pageSize, getPending: false } },
       );
+
       return res.data;
     },
     enabled: Boolean(studentId),
@@ -131,7 +142,7 @@ export const useGetGameHistorySummary = ({
 
 export const useGetGameHistoryDetailed = ({
   studentId,
-  page = 1,
+  page = 0,
   pageSize = 10,
 }: GetGameArgs): UseQueryResult<GameHistoryDetailedResponse, Error> => {
   const GAMES_MANAGER_URL = import.meta.env.VITE_GAMES_MANAGER_URL!;
@@ -141,10 +152,12 @@ export const useGetGameHistoryDetailed = ({
     staleTime: 60_000,
     queryFn: async () => {
       if (!studentId) throw new Error("Missing studentId");
+
       const res = await axios.get<GameHistoryDetailedResponse>(
         `${GAMES_MANAGER_URL}/history/${encodeURIComponent(studentId)}`,
-        { params: { summary: false, page, pageSize, getPending: false } },
+        { params: { summary: false, page: page + 1, pageSize, getPending: false } },
       );
+
       return res.data;
     },
     enabled: Boolean(studentId),
@@ -153,7 +166,7 @@ export const useGetGameHistoryDetailed = ({
 
 export const useGetGameMistakes = ({
   studentId,
-  page = 1,
+  page = 0,
   pageSize = 10,
 }: GetGameArgs): UseQueryResult<GameMistakesResponse, Error> => {
   const GAMES_MANAGER_URL = import.meta.env.VITE_GAMES_MANAGER_URL!;
