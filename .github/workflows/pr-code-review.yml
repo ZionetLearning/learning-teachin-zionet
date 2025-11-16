@@ -1,43 +1,25 @@
 name: AI Code Reviewer
 
 on:
-  workflow_dispatch:
   pull_request:
-    types: [opened, synchronize]
-  pull_request_review_comment:
-    types: [created]
+    types: [opened]
 
 permissions:
   contents: read
   pull-requests: write
-
-concurrency:
-  group: >-
-    ${{ github.repository }}-${{ github.event.number || github.head_ref || github.sha }}-${{ github.workflow }}-${{ github.event_name == 'pull_request_review_comment' && 'pr_comment' || 'pr' }}
-  cancel-in-progress: ${{ github.event_name != 'pull_request_review_comment' }}
-
 jobs:
   review:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
+      - name: Checkout Repo
         uses: actions/checkout@v3
 
-      - name: Run OpenAI PR Reviewer
-        uses: coderabbitai/ai-pr-reviewer@1.16.2        
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          OPENAI_API_TYPE: azure
-          OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
-          # OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
-          OPENAI_API_VERSION: 2024-04-01-preview
-
+      - name: AI PR Review Action
+        uses: cheton/ai-code-reviewer@v0.1.0
         with:
-          openai_base_url: https://france-teachin-open-ai.openai.azure.com
-          openai_light_model: gpt-4.1-mini
-          openai_heavy_model: gpt-4.1-mini
-          review_simple_changes: false
-          review_comment_lgtm: false
-          debug: true
-
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
+          AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
+          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+          exclude: "**/*.json, **/*.md"
