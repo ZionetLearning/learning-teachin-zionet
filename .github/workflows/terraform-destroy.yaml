@@ -35,7 +35,12 @@ on:
         type: boolean
 
 jobs:
+  validate-authorization:
+    uses: ./.github/workflows/validate-confirmation.yaml
+    secrets: inherit
+
   terraform-destroy:
+    needs: [validate-authorization]
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || github.event.inputs.environment }}
     permissions:

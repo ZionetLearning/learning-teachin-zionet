@@ -5,6 +5,10 @@ run-name: >
     inputs.environment_name || github.event.inputs.environment_name || 'dev'
   }} | GitHub Env: ${{ inputs.environment || github.event.inputs.environment }}
 
+concurrency:
+  group: aks-helm-deploy-${{ inputs.environment_name || github.event.inputs.environment_name || 'dev' }}
+  cancel-in-progress: false
+
 on:
   workflow_dispatch:
     inputs:
@@ -249,7 +253,7 @@ jobs:
           exit 1
 
       - name: Create devops-tools namespace
-        if: steps.setup.outputs.deploy_langfuse == 'true'
+        if: steps.setup.outputs.deploy_langfuse == 'true' && github.event_name == 'workflow_dispatch'
         run: |
           echo "Creating devops-tools namespace..."
           kubectl create namespace devops-tools --dry-run=client -o yaml | kubectl apply -f -
@@ -317,14 +321,27 @@ jobs:
             --set dapr.installComponents=false
 
       - name: Add Langfuse
-        if: steps.setup.outputs.deploy_langfuse == 'true'
+        if: steps.setup.outputs.deploy_langfuse == 'true' && github.event_name == 'workflow_dispatch'
         run: |
           echo "Deploying Langfuse..."
           cd devops/helm-tools
           echo "Applying Langfuse ingress..."
           kubectl apply -f "../kubernetes/ingress/langfuse-ingress.yaml"
           chmod +x langfuse.sh
-          ./langfuse.sh $ENVIRONMENT_NAME "${{ secrets.LANGFUSE_ADMIN_EMAIL }}" "${{ secrets.LANGFUSE_ADMIN_PASSWORD }}" "${{ secrets.POSTGRES_USER }}" "${{ secrets.POSTGRES_PASSWORD }}"
+          
+          if [ -z "${{ secrets.SMTP_USER }}" ] || [ -z "${{ secrets.SMTP_PASSWORD }}" ]; then
+            echo "❌ Error: SMTP_USER and SMTP_PASSWORD secrets are required for email functionality"
+            exit 1
+          fi
+          
+          ./langfuse.sh \
+            "$ENVIRONMENT_NAME" \
+            "${{ secrets.LANGFUSE_ADMIN_EMAIL }}" \
+            "${{ secrets.LANGFUSE_ADMIN_PASSWORD }}" \
+            "${{ secrets.POSTGRES_USER }}" \
+            "${{ secrets.POSTGRES_PASSWORD }}" \
+            "${{ secrets.SMTP_USER }}" \
+            "${{ secrets.SMTP_PASSWORD }}"
 
           echo "Langfuse deployment completed"
 

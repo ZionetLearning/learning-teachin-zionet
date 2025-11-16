@@ -64,7 +64,7 @@ resource "azurerm_key_vault_secret" "communication_service_connection" {
 ########################
 resource "azurerm_key_vault_secret" "avatars_storage_connection" {
   name         = "${var.environment_name}-avatars-storage-connection"
-  value        = azurerm_storage_account.avatars.primary_connection_string
+  value        = module.storage.connection_string
   key_vault_id = data.azurerm_key_vault.shared.id
 }
 
@@ -102,7 +102,7 @@ resource "azurerm_key_vault_secret" "langfuse_salt" {
 resource "azurerm_key_vault_secret" "langfuse_redis_password" {
   count        = 1
   name         = "${var.environment_name}-langfuse-redis-password"
-  value        = "redis-password-change-in-production"
+  value        = "redis-password-change-in-production"  # Keeping original for now to minimize changes
   key_vault_id = data.azurerm_key_vault.shared.id
 }
 

@@ -1,0 +1,44 @@
+name: Validate User Authorization
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate user authorization
+        env:
+          ALLOWED_USERS: ${{ secrets.ALLOWED_DEVOPS_USERS }}
+          CURRENT_USER: ${{ github.actor }}
+        run: |
+          echo "🔍 Checking authorization for user: $CURRENT_USER"
+          
+          if [ -z "$ALLOWED_USERS" ]; then
+            echo "❌ ALLOWED_DEVOPS_USERS secret is not configured. Deployment cancelled."
+            exit 1
+          fi
+          
+          # Convert comma-separated list to array and check if user is in the list
+          IFS=',' read -ra USER_LIST <<< "$ALLOWED_USERS"
+          USER_FOUND=false
+          
+          for allowed_user in "${USER_LIST[@]}"; do
+            # Trim whitespace
+            allowed_user=$(echo "$allowed_user" | xargs)
+            if [ "$allowed_user" = "$CURRENT_USER" ]; then
+              USER_FOUND=true
+              break
+            fi
+          done
+          
+          if [ "$USER_FOUND" = false ]; then
+            echo "❌ User '$CURRENT_USER' is not authorized to run this workflow."
+            echo "Please contact your DevOps administrator."
+            exit 1
+          fi
+          
+          echo "✅ User '$CURRENT_USER' is authorized to proceed"
