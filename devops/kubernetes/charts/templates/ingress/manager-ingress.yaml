@@ -32,7 +32,7 @@ spec:
             pathType: ImplementationSpecific
             backend:
               service:
-                name: "{{ .Values.manager.name }}"
+                name: proxy
                 port:
-                  number: {{ .Values.manager.ports.service }}
+                  number: 80
 {{- end }}
