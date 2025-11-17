@@ -64,24 +64,24 @@ spec:
       {{- end }}
       containers:
       - name: proxy
-        image: "{{ .Values.proxy.image.repository }}:{{ include "app.namespace" . }}"
+        image: "{{ .Values.proxy.image.repository }}:{{ .Values.proxy.image.tag | default .Values.global.environment }}"
         imagePullPolicy: {{ .Values.global.imagePullPolicy }}
         ports:
         - containerPort: 8000
         env:
         - name: TARGET_SERVICE_NAME
-          value: "{{ .Values.targetServiceName }}"
+          value: "{{ .Values.proxy.targetServiceName }}"
         - name: TARGET_SERVICE_PORT
-          value: "{{ .Values.targetServicePort }}"
+          value: "{{ .Values.proxy.targetServicePort }}"
         - name: SCALE_UP_REPLICAS
-          value: "{{ .Values.scaleUp }}"
+          value: "{{ .Values.proxy.scaleUp }}"
         - name: SCALE_DOWN_REPLICAS
-          value: "{{ .Values.scaleDown }}"
+          value: "{{ .Values.proxy.scaleDown }}"
         - name: INACTIVITY_TIMEOUT
-          value: "{{ .Values.inactivity }}"
+          value: "{{ .Values.proxy.inactivity }}"
         - name: MAX_SCALEUP_WAIT
-          value: "{{ .Values.scaleWait }}"
+          value: "{{ .Values.proxy.scaleWait }}"
         - name: CHECK_INTERVAL
-          value: "{{ .Values.checkInterval }}"
+          value: "{{ .Values.proxy.checkInterval }}"
         - name: LOG_LEVEL
-          value: "{{ .Values.logLevel }}"
+          value: "{{ .Values.proxy.logLevel }}"

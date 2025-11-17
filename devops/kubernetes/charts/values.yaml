@@ -237,7 +237,7 @@ proxy:
   name: proxy
   image:
     repository: teachindevacr.azurecr.io/proxy
-    tag: latest
+    tag: ""
   targetServiceName: manager
   targetServicePort: 80
   scaleUp: 1
