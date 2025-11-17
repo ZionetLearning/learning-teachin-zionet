@@ -13,5 +13,6 @@ public sealed class TavilySettings
 
     public bool IncludeRawContent { get; set; } = false;
 
+    [RegularExpression("^(basic|advanced)$", ErrorMessage = "SearchDepth must be either 'basic' or 'advanced'")]
     public string SearchDepth { get; set; } = "basic"; // "basic" or "advanced"
 }
