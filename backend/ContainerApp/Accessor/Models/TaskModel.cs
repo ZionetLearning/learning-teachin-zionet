@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
 namespace Accessor.Models;
+
 [Table("Tasks")]
 public record TaskModel
 {

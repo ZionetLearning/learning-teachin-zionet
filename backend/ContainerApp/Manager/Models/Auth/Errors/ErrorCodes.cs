@@ -1,4 +1,4 @@
-﻿namespace Manager.Models.Auth.Erros;
+﻿namespace Manager.Models.Auth.Errors;
 
 public static class ErrorCodes
 {

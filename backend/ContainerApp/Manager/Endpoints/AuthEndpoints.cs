@@ -2,7 +2,7 @@
 using Manager.Constants;
 using Manager.Helpers;
 using Manager.Models.Auth;
-using Manager.Models.Auth.Erros;
+using Manager.Models.Auth.Errors;
 using Manager.Services;
 using Manager.Services.Clients.Accessor;
 using Microsoft.AspNetCore.Mvc;
