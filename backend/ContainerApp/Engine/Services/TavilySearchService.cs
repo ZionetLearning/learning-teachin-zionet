@@ -54,7 +54,7 @@ public sealed class TavilySearchService : ITavilySearchService
             {
                 if (ct.IsCancellationRequested)
                 {
-                    break;
+                    ct.ThrowIfCancellationRequested();
                 }
 
                 resultsList.Add(result);
