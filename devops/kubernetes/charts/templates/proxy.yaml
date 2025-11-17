@@ -64,8 +64,8 @@ spec:
       {{- end }}
       containers:
       - name: proxy
-        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        image: "{{ .Values.proxy.image.repository }}:{{ .Values.proxy.image.tag }}"
+        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
         ports:
         - containerPort: 8000
         env:
