@@ -185,14 +185,14 @@ async def forward_request(namespace: str, path: str, request: Request) -> Respon
 # -----------------------------------
 # Main route
 # -----------------------------------
-@app.api_route("/scaling}",
-               methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
+@app.api_route("/scaling/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
 async def handle(env: str, path: str, request: Request):
     if not k8s_ready:
         raise HTTPException(status_code=500, detail="Kubernetes client not ready")
 
-    namespace = "scaling"  # EXACT match to namespace
-    logger.info(f"[{namespace}] Received request for /{path}")
+    logger.info(f"Received request for env='scaling', path='/{path}'")
+    namespace = 'scaling'  # dynamic by design
+
     last_access[namespace] = time.time()
 
     await scale_up_if_needed(namespace)
