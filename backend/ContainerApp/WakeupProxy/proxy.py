@@ -185,12 +185,13 @@ async def forward_request(namespace: str, path: str, request: Request) -> Respon
 # -----------------------------------
 # Main route
 # -----------------------------------
-@app.api_route("/{env}/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
+@app.api_route("/api/{env}/{path:path}",
+               methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
 async def handle(env: str, path: str, request: Request):
     if not k8s_ready:
         raise HTTPException(status_code=500, detail="Kubernetes client not ready")
 
-    namespace = env  # dynamic by design
+    namespace = env  # EXACT match to namespace
 
     last_access[namespace] = time.time()
 
