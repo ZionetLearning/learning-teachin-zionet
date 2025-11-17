@@ -30,13 +30,13 @@ variable "stable_vm_size" {
 # Spot instance node pool configuration
 variable "spot_min_node_count" {
   type        = number
-  default     = 0
+  default     = 1
   description = "Minimum number of spot instance nodes"
 }
 
 variable "spot_max_node_count" {
   type        = number
-  default     = 2
+  default     = 1
   description = "Maximum number of spot instance nodes"
 }
 
