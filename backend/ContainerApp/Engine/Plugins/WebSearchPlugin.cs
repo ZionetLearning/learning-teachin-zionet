@@ -40,7 +40,7 @@ public sealed class WebSearchPlugin : ISemanticKernelPlugin
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error in WebSearchPlugin for query: {Query}", query);
-            return $"I encountered an error while searching the web: {ex.Message}";
+            return "I encountered an error while searching the web. Please try again later.";
         }
     }
 }
