@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 # configuration
-TARGET_SERVICE_NAME = "target-service"
+TARGET_SERVICE_NAME = "manager"
 TARGET_SERVICE_PORT = 80
 FORWARD_TIMEOUT = httpx.Timeout(20.0)
 SCALE_UP_REPLICAS = 1
@@ -45,7 +45,7 @@ async def startup_event():
             await config.load_kube_config()
         else:
             logger.info("Loading in-cluster config...")
-            config.load_incluster_config()   # שים לב – בלי await
+            config.load_incluster_config()
 
     except Exception as e:
         logger.error(f"Kubernetes config load FAILED: {e}")
