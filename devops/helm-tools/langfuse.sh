@@ -388,14 +388,14 @@ echo "✅ Admin user created with password: $ADMIN_PASSWORD"
 # --- Phase 2: scale web back up ---
 helm upgrade langfuse langfuse/langfuse \
   --namespace "$NAMESPACE" \
+  --reuse-values \
   --set langfuse.replicas=1 \
   --set langfuse.livenessProbe.initialDelaySeconds=60 \
   --set langfuse.livenessProbe.timeoutSeconds=30 \
   --set langfuse.livenessProbe.periodSeconds=30 \
   --set langfuse.readinessProbe.initialDelaySeconds=60 \
   --set langfuse.readinessProbe.timeoutSeconds=30 \
-  --set langfuse.readinessProbe.periodSeconds=30 \
-  --reuse-values
+  --set langfuse.readinessProbe.periodSeconds=30
 
 kubectl rollout status deploy/langfuse-web -n "$NAMESPACE" --timeout=300s
 kubectl rollout status deploy/langfuse-worker -n "$NAMESPACE" --timeout=300s
