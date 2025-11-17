@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
 namespace Accessor.Services;
+
 public class ClassService : IClassService
 {
     private readonly ILogger<ClassService> _logger;
