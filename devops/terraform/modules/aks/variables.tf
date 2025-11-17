@@ -42,13 +42,13 @@ variable "spot_max_node_count" {
 
 variable "spot_vm_size" {
   type        = string
-  default     = "Standard_D2ls_v5"
+  default     = "D4as_v5"
   description = "VM size for spot instance nodes"
 }
 
 variable "spot_max_price" {
   type        = number
-  default     = -1
+  default     = 0.0486
   description = "Maximum price for spot instances (-1 = pay up to on-demand price)"
 }
 
