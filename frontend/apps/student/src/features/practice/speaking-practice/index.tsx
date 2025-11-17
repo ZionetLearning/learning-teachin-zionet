@@ -5,7 +5,11 @@ import { CircularProgress } from "@mui/material";
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";
 import { useTranslation } from "react-i18next";
 import { comparePhrases } from "./utils";
-import { useAzureSpeechToken, useGenerateSentences, useSubmitGameAttempt } from "@student/api";
+import {
+  useAzureSpeechToken,
+  useGenerateSentences,
+  useSubmitGameAttempt,
+} from "@student/api";
 import { useAvatarSpeech, useGameConfig, useSignalR } from "@student/hooks";
 import { DifficultyLevel, GameType } from "@student/types";
 import {
@@ -21,6 +25,7 @@ import {
 import { getDifficultyLabel } from "../utils";
 import { useStyles } from "./style";
 import { toast } from "react-toastify";
+import { RetryMode } from "./components";
 
 const Feedback = {
   Perfect: "Perfect!",
@@ -31,7 +36,21 @@ const Feedback = {
 
 type FeedbackType = (typeof Feedback)[keyof typeof Feedback];
 
-export const SpeakingPractice = () => {
+interface RetryData {
+  exerciseId: string;
+  correctAnswer: string[];
+  mistakes: Array<{
+    wrongAnswer: string[];
+    accuracy: number;
+  }>;
+  difficulty: number;
+}
+
+interface SpeakingPracticeProps {
+  retryData?: RetryData;
+}
+
+const SpeakingPracticeMain = () => {
   const classes = useStyles();
   const { t, i18n } = useTranslation();
   const {
@@ -233,7 +252,6 @@ export const SpeakingPractice = () => {
               exerciseId: currentExerciseId,
               givenAnswer: [userText],
             });
-
 
             const isServerCorrect = res.status === "Success";
             setCorrectIdxs((prev) => {
@@ -530,4 +548,11 @@ export const SpeakingPractice = () => {
       <ContextAwareChat pageContext={pageContext} hasSettings />
     </div>
   );
+};
+
+export const SpeakingPractice = ({ retryData }: SpeakingPracticeProps) => {
+  if (retryData) {
+    return <RetryMode retryData={retryData} />;
+  }
+  return <SpeakingPracticeMain />;
 };
