@@ -1,6 +1,7 @@
 ﻿using Manager.Constants;
 
 namespace Manager.Helpers;
+
 public static class CookieHelper
 {
 
