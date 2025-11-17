@@ -215,7 +215,26 @@ helm $ACTION langfuse langfuse/langfuse \
   --set langfuse.redis.tls="false" \
   --timeout=5m
 
-echo "✅ Chart applied with web=0."
+echo "✅ Chart applied."
+
+# --- Patch probe timeouts (workaround for Helm chart not respecting values) ---
+echo "⚙️  Patching health probe timeouts..."
+kubectl patch deployment langfuse-web -n "$NAMESPACE" --type='json' -p='[
+  {"op": "replace", "path": "/spec/template/spec/containers/0/livenessProbe/initialDelaySeconds", "value": 120},
+  {"op": "replace", "path": "/spec/template/spec/containers/0/livenessProbe/timeoutSeconds", "value": 60},
+  {"op": "replace", "path": "/spec/template/spec/containers/0/livenessProbe/periodSeconds", "value": 30},
+  {"op": "replace", "path": "/spec/template/spec/containers/0/readinessProbe/initialDelaySeconds", "value": 120},
+  {"op": "replace", "path": "/spec/template/spec/containers/0/readinessProbe/timeoutSeconds", "value": 60},
+  {"op": "replace", "path": "/spec/template/spec/containers/0/readinessProbe/periodSeconds", "value": 30}
+]' 2>/dev/null || echo "⚠️  Patch failed (deployment may not exist yet)"
+
+kubectl patch deployment langfuse-worker -n "$NAMESPACE" --type='json' -p='[
+  {"op": "replace", "path": "/spec/template/spec/containers/0/livenessProbe/initialDelaySeconds", "value": 120},
+  {"op": "replace", "path": "/spec/template/spec/containers/0/livenessProbe/timeoutSeconds", "value": 60},
+  {"op": "replace", "path": "/spec/template/spec/containers/0/livenessProbe/periodSeconds", "value": 30}
+]' 2>/dev/null || echo "⚠️  Worker patch failed (deployment may not exist yet)"
+
+echo "✅ Probe timeouts patched."
 
 # Wait for the External Secret to be created by Helm and then create the Kubernetes secret
 echo "⏳ Waiting for langfuse-secrets to be created by External Secrets..."
