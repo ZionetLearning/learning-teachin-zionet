@@ -3,6 +3,8 @@ global:
   dockerRegistry: ""
   imagePullPolicy: IfNotPresent
   environment: ""  # Environment name/tag (e.g., dev, devacr, prod) - set by CI/CD
+  spot:
+    enabled: true  # Enable spot nodes for cost optimization (default for all environments)
   dapr:
     enabled: true
     configName: dapr-config
