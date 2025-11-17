@@ -389,6 +389,12 @@ echo "✅ Admin user created with password: $ADMIN_PASSWORD"
 helm upgrade langfuse langfuse/langfuse \
   --namespace "$NAMESPACE" \
   --set langfuse.replicas=1 \
+  --set langfuse.livenessProbe.initialDelaySeconds=60 \
+  --set langfuse.livenessProbe.timeoutSeconds=30 \
+  --set langfuse.livenessProbe.periodSeconds=30 \
+  --set langfuse.readinessProbe.initialDelaySeconds=60 \
+  --set langfuse.readinessProbe.timeoutSeconds=30 \
+  --set langfuse.readinessProbe.periodSeconds=30 \
   --reuse-values
 
 kubectl rollout status deploy/langfuse-web -n "$NAMESPACE" --timeout=300s
