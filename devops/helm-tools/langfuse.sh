@@ -110,6 +110,10 @@ helm $ACTION langfuse langfuse/langfuse \
   --set s3.tolerations[0].operator="Equal" \
   --set s3.tolerations[0].value="spot" \
   --set s3.tolerations[0].effect="NoSchedule" \
+  --set langfuse.livenessProbe.enabled=false \
+  --set langfuse.readinessProbe.enabled=false \
+  --set langfuse.worker.livenessProbe.enabled=false \
+  --set langfuse.worker.readinessProbe.enabled=false \
   --set langfuse.additionalEnv[0].name="DISABLE_LIVENESS_PROBE" \
   --set-string langfuse.additionalEnv[0].value="true" \
   --set langfuse.additionalEnv[1].name="DISABLE_READINESS_PROBE" \
