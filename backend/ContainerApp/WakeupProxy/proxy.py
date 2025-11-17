@@ -192,6 +192,7 @@ async def handle(env: str, path: str, request: Request):
         raise HTTPException(status_code=500, detail="Kubernetes client not ready")
 
     namespace = env  # EXACT match to namespace
+    print(f"Received request for namespace: {namespace}, path: {path}")
 
     last_access[namespace] = time.time()
 
