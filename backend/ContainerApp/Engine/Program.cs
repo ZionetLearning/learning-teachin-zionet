@@ -43,6 +43,15 @@ builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
 builder.Services.AddSingleton<ISemanticKernelPlugin, TimePlugin>();
 builder.Services.AddScoped<IWordExplainService, WordExplainService>();
 
+builder.Services.AddScoped<ITavilySearchService, TavilySearchService>();
+builder.Services.AddSingleton<ISemanticKernelPlugin, WebSearchPlugin>();
+
+builder.Services
+    .AddOptions<TavilySettings>()
+    .Bind(builder.Configuration.GetSection("Tavily"))
+    .ValidateDataAnnotations()
+    .Validate(s => !string.IsNullOrWhiteSpace(s.ApiKey), "Tavily API key is required");
+
 builder.Services.AddMemoryCache();
 builder.Services
        .AddOptions<MemoryCacheEntryOptions>()

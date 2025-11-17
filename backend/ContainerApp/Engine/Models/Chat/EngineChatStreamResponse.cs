@@ -1,4 +1,5 @@
 ﻿namespace Engine.Models.Chat;
+
 public sealed class EngineChatStreamResponse
 {
     public required string RequestId { get; set; }
