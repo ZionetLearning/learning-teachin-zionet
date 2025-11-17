@@ -172,6 +172,8 @@ For multi-service debugging, define a compound configuration referencing whichev
 
 Omit services you do not want to debug—only include those needing breakpoints.
 
+> In VS Code’s Run and Debug panel you will see the compound entry (e.g., “Debug All Docker Services”). Select that rather than the individual hidden configurations; presentation settings in `launch.json` can keep the single-service entries out of the dropdown to reduce clutter.
+
 ---
 
 ## 7. Debugging Workflow
