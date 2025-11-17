@@ -49,10 +49,24 @@ export const PracticeMistakes = () => {
       exerciseId: item.exerciseId,
       correctAnswer: item.correctAnswer,
       mistakes: item.mistakes,
-      difficulty: item.difficulty === "Easy" ? 0 : item.difficulty === "Medium" ? 1 : 2,
+      difficulty:
+        item.difficulty === "Easy" ? 0 : item.difficulty === "Medium" ? 1 : 2,
     };
 
-    navigate("/word-order-game", {
+    let route = "/word-order-game"; // default
+    switch (item.gameType) {
+      case "WordOrderGame":
+        route = "/word-order-game";
+        break;
+      case "TypingPractice":
+        route = "/typing";
+        break;
+      case "SpeakingPractice":
+        route = "/speaking";
+        break;
+    }
+
+    navigate(route, {
       state: { retryData },
     });
   };
