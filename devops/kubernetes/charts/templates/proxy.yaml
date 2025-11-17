@@ -58,9 +58,9 @@ spec:
         app: proxy
     spec:
       serviceAccountName: proxy
-      {{- if .Values.imagePullSecret.enabled }}
+      {{- if .Values.global.imagePullSecret.enabled }}
       imagePullSecrets:
-      - name: {{ .Values.imagePullSecret.name }}
+      - name: {{ .Values.global.imagePullSecret.name }}
       {{- end }}
       containers:
       - name: proxy

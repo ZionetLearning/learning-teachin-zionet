@@ -319,47 +319,7 @@ jobs:
             --set accessor.secrets.langfuse.enabled="${{ steps.setup.outputs.langfuse_secrets_enabled }}" \
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false
-
-      - name: Deploy Proxy (shared infrastructure)
-        run: |
-          echo "🚀 Deploying shared proxy to 'proxy' namespace..."
-          
-          # Use the same image tag as the main deployment
-          IMAGE_TAG="${{ inputs.image_tag || github.event.inputs.image_tag }}"
-          if [ -z "$IMAGE_TAG" ]; then
-            IMAGE_TAG="$ENVIRONMENT_NAME"
-          fi
-          
-          echo "Using image tag: $IMAGE_TAG"
-          
-          helm upgrade --install proxy ./devops/kubernetes/proxy-chart \
-            --namespace proxy \
-            --create-namespace \
-            --set image.repository="$ACR_LOGIN_SERVER/proxy" \
-            --set image.tag="$IMAGE_TAG" \
-            --set image.pullPolicy="IfNotPresent" \
-            --set targetServiceName="manager" \
-            --set targetServicePort=80 \
-            --set scaleUp=1 \
-            --set scaleDown=0 \
-            --set inactivity=300 \
-            --set scaleWait=90 \
-            --set checkInterval=30 \
-            --set logLevel="INFO" \
-            --wait \
-            --timeout 5m
-          
-          echo "✅ Proxy deployment completed"
-          
-          # Verify deployment
-          echo "📋 Proxy namespace resources:"
-          kubectl get all -n proxy
-          
-          echo "⏳ Waiting for proxy rollout..."
-          kubectl rollout status deployment/proxy -n proxy --timeout=3m
-          
-          echo "✅ Proxy is ready!"
-
+            
       - name: Add Langfuse
         if: steps.setup.outputs.deploy_langfuse == 'true' && github.event_name == 'workflow_dispatch'
         run: |
@@ -395,14 +355,4 @@ jobs:
             echo "## $p"
             kubectl -n "$ns" describe "$p" || true
             kubectl -n "$ns" logs "$p" --all-containers --tail=200 || true
-          done
-          
-          # Also check proxy namespace if deployment failed
-          echo "=== Proxy namespace diagnostics ==="
-          kubectl -n proxy get all || true
-          kubectl -n proxy get events --sort-by=.lastTimestamp | tail -n 50 || true
-          for p in $(kubectl -n proxy get pods -o name 2>/dev/null); do
-            echo "## $p"
-            kubectl -n proxy describe "$p" || true
-            kubectl -n proxy logs "$p" --all-containers --tail=100 || true
           done
