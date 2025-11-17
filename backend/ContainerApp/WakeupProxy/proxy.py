@@ -191,7 +191,7 @@ async def handle(env: str, path: str, request: Request):
     if not k8s_ready:
         raise HTTPException(status_code=500, detail="Kubernetes client not ready")
 
-    namespace = env  # EXACT match to namespace
+    namespace = "scaling"  # EXACT match to namespace
     logger.info(f"[{namespace}] Received request for /{path}")
     last_access[namespace] = time.time()
 
