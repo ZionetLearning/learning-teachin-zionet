@@ -30,10 +30,10 @@ if helm status langfuse -n "$NAMESPACE" >/dev/null 2>&1; then
   sleep 5
 fi
 
-# --- Phase 1: install with web=0 (avoid race with migrations) ---
+# --- Phase 1: install with proper probe timeouts ---
 helm $ACTION langfuse langfuse/langfuse \
   --namespace "$NAMESPACE" \
-  --set langfuse.replicas=0 \
+  --set langfuse.replicas=1 \
   --set langfuse.nextauth.url="https://teachin.westeurope.cloudapp.azure.com/langfuse" \
   --set langfuse.salt.secretKeyRef.name="langfuse-secrets" \
   --set langfuse.salt.secretKeyRef.key="SALT" \
@@ -385,22 +385,11 @@ kubectl run -n $NAMESPACE temp-add-org-membership --image=postgres:16 --rm -i --
 
 echo "✅ Admin user created with password: $ADMIN_PASSWORD"
 
-# --- Phase 2: scale web back up ---
-helm upgrade langfuse langfuse/langfuse \
-  --namespace "$NAMESPACE" \
-  --reuse-values \
-  --set langfuse.replicas=1 \
-  --set langfuse.livenessProbe.initialDelaySeconds=60 \
-  --set langfuse.livenessProbe.timeoutSeconds=30 \
-  --set langfuse.livenessProbe.periodSeconds=30 \
-  --set langfuse.readinessProbe.initialDelaySeconds=60 \
-  --set langfuse.readinessProbe.timeoutSeconds=30 \
-  --set langfuse.readinessProbe.periodSeconds=30
-
+# --- Wait for deployments to be ready ---
 kubectl rollout status deploy/langfuse-web -n "$NAMESPACE" --timeout=300s
 kubectl rollout status deploy/langfuse-worker -n "$NAMESPACE" --timeout=300s
 
-# --- Phase 3: Deploy ingress ---
+# --- Deploy ingress ---
 echo "🌐 Deploying Langfuse ingress..."
 INGRESS_FILE="../kubernetes/ingress/langfuse-ingress.yaml"
 
