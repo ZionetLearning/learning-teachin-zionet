@@ -45,7 +45,7 @@ async def startup_event():
             await config.load_kube_config()
         else:
             logger.info("Loading in-cluster config...")
-            config.load_incluster_config()   # שים לב – בלי await
+            config.load_incluster_config()
 
     except Exception as e:
         logger.error(f"Kubernetes config load FAILED: {e}")
@@ -185,13 +185,14 @@ async def forward_request(namespace: str, path: str, request: Request) -> Respon
 # -----------------------------------
 # Main route
 # -----------------------------------
-@app.api_route("/{env}/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
+@app.api_route("/scaling}",
+               methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
 async def handle(env: str, path: str, request: Request):
     if not k8s_ready:
         raise HTTPException(status_code=500, detail="Kubernetes client not ready")
 
-    namespace = env  # dynamic by design
-
+    namespace = env  # EXACT match to namespace
+    logger.info(f"[{namespace}] Received request for /{path}")
     last_access[namespace] = time.time()
 
     await scale_up_if_needed(namespace)
