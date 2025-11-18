@@ -13,6 +13,8 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-next-upstream-tries: "2"
     nginx.ingress.kubernetes.io/upstream-vhost: "proxy"
     nginx.ingress.kubernetes.io/default-backend: "proxy"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120s"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "120s"
     {{- if and .Values.manager.ingress.tls.enabled .Values.manager.ingress.tls.clusterIssuer }}
     cert-manager.io/cluster-issuer: "{{ .Values.manager.ingress.tls.clusterIssuer }}"
     {{- end }}
