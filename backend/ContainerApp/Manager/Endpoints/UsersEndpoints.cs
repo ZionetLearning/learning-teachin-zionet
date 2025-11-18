@@ -841,7 +841,13 @@ public static class UsersEndpoints
         HttpContext httpContext,
         CancellationToken ct)
     {
-        using var scope = logger.BeginScope("UpdateUserLanguage with language: {UserId}", request);
+        if (request is null)
+        {
+            logger.LogInformation("request is null.");
+            return Results.BadRequest();
+        }
+
+        using var scope = logger.BeginScope("UpdateUserLanguage with language: {Language}", request);
 
         try
         {
