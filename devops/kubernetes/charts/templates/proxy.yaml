@@ -74,8 +74,10 @@ spec:
         ports:
         - containerPort: 8000
         env:
-        - name: TARGET_SERVICE_NAME
-          value: "{{ .Values.proxy.targetServiceName }}"
+        - name: TARGET_SERVICES_NAME
+          value: "{{ .Values.proxy.targetServicesName }}"
+        - name: FORWARD_TO_SERVICE
+          value: "{{ .Values.proxy.forwardToService }}"
         - name: NAMESPACE
           value: {{ include "app.namespace" . }}
         - name: TARGET_SERVICE_PORT

@@ -238,7 +238,8 @@ proxy:
   image:
     repository: teachindevacr.azurecr.io/proxy
     tag: ""
-  targetServiceName: manager
+  targetServicesName: manager,accessor,engine
+  forwardToService: manager
   targetServicePort: 80
   scaleUp: 1
   scaleDown: 0

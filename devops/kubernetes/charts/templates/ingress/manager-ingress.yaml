@@ -9,7 +9,6 @@ metadata:
     nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/rewrite-target: "/$2"
     nginx.ingress.kubernetes.io/service-upstream: "true"
-    nginx.ingress.kubernetes.io/proxy-next-upstream: "error timeout http_502 http_503 http_504 http_404"
     nginx.ingress.kubernetes.io/proxy-next-upstream-tries: "2"
     {{- if and .Values.manager.ingress.tls.enabled .Values.manager.ingress.tls.clusterIssuer }}
     cert-manager.io/cluster-issuer: "{{ .Values.manager.ingress.tls.clusterIssuer }}"

@@ -2,7 +2,7 @@ import asyncio
 import time
 import logging
 import os
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import httpx
 from fastapi import FastAPI, Request, Response, HTTPException
@@ -10,11 +10,15 @@ from kubernetes_asyncio import client, config
 from kubernetes_asyncio.client.exceptions import ApiException
 
 app = FastAPI()
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("proxy")
 logging.basicConfig(level=logging.INFO)
 
-# Configuration - READ FROM ENVIRONMENT
-TARGET_SERVICE_NAME = os.getenv("TARGET_SERVICE_NAME", "manager")
+# Configuration from environment
+TARGET_SERVICE_NAMES: List[str] = [
+    s.strip() for s in os.getenv("TARGET_SERVICE_NAME", "manager,accessor,engine").split(",") if s.strip()
+]
+# the service which will actually receive the forwarded HTTP request
+FORWARD_TO_SERVICE = os.getenv("FORWARD_TO_SERVICE", "manager")
 NAMESPACE = os.getenv("NAMESPACE", "default")
 TARGET_SERVICE_PORT = int(os.getenv("TARGET_SERVICE_PORT", "80"))
 FORWARD_TIMEOUT = httpx.Timeout(float(os.getenv("FORWARD_TIMEOUT", "60.0")))
@@ -29,38 +33,40 @@ k8s_ready = False
 k8s_apis = {}
 http_client: Optional[httpx.AsyncClient] = None
 
-logger.info(f"Config: TARGET_SERVICE={TARGET_SERVICE_NAME}, NAMESPACE={NAMESPACE}, PORT={TARGET_SERVICE_PORT}")
+logger.info(
+    "Config: TARGET_SERVICES=%s FORWARD_TO=%s NAMESPACE=%s PORT=%s",
+    TARGET_SERVICE_NAMES,
+    FORWARD_TO_SERVICE,
+    NAMESPACE,
+    TARGET_SERVICE_PORT,
+)
 
 
-# -----------------------------------
-# Kubernetes initialization
-# -----------------------------------
+# ---------------------------
+# Kubernetes & HTTP client init/teardown
+# ---------------------------
 @app.on_event("startup")
 async def startup_event():
     global k8s_ready, http_client, k8s_apis
-
     logger.info("Loading Kubernetes config...")
-
     try:
         kube_path = os.path.expanduser("~/.kube/config")
         if os.path.exists(kube_path):
-            logger.info("Loading kubeconfig from file...")
+            logger.info("Loading kubeconfig from file")
             await config.load_kube_config()
         else:
-            logger.info("Loading in-cluster config...")
+            logger.info("Loading in-cluster config")
             config.load_incluster_config()
     except Exception as e:
-        logger.error(f"Kubernetes config load FAILED: {e}")
+        logger.exception("Failed loading kube config: %s", e)
         raise
 
-    # Create and store API clients (reused to avoid unclosed session warnings)
-    k8s_apis['apps'] = client.AppsV1Api()
-    k8s_apis['core'] = client.CoreV1Api()
-    k8s_apis['coordination'] = client.CoordinationV1Api()
-    
+    k8s_apis["apps"] = client.AppsV1Api()
+    k8s_apis["core"] = client.CoreV1Api()
+    k8s_apis["coordination"] = client.CoordinationV1Api()
+
     http_client = httpx.AsyncClient(timeout=FORWARD_TIMEOUT)
     k8s_ready = True
-    
     logger.info("Kubernetes client initialized")
     asyncio.create_task(scale_down_loop())
 
@@ -68,284 +74,273 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     global http_client, k8s_apis
-    
     if http_client:
         await http_client.aclose()
         logger.info("HTTP client closed")
-    
-    # Close all k8s API clients
     for name, api_client in k8s_apis.items():
         try:
             await api_client.api_client.close()
-            logger.info(f"Closed K8s API client: {name}")
-        except:
+            logger.info("Closed K8s API client: %s", name)
+        except Exception:
             pass
 
 
-# -----------------------------------
-# Scale helpers
-# -----------------------------------
-async def get_deployment(namespace: str):
+# ---------------------------
+# Helpers: deployments, scale, leases
+# ---------------------------
+async def read_deployment(namespace: str, name: str):
     try:
-        return await k8s_apis['apps'].read_namespaced_deployment(TARGET_SERVICE_NAME, namespace)
+        return await k8s_apis["apps"].read_namespaced_deployment(name, namespace)
     except ApiException as e:
         if e.status == 404:
-            raise HTTPException(
-                status_code=404, 
-                detail=f"Deployment '{TARGET_SERVICE_NAME}' not found in {namespace}"
-            )
+            return None
         raise
 
 
-async def get_replicas(namespace: str) -> int:
-    dep = await get_deployment(namespace)
+async def get_replicas(namespace: str, name: str) -> int:
+    dep = await read_deployment(namespace, name)
+    if dep is None:
+        return 0
     return dep.spec.replicas or 0
 
 
-async def scale(namespace: str, replicas: int):
+async def patch_scale(namespace: str, name: str, replicas: int):
     body = {"spec": {"replicas": replicas}}
-    await k8s_apis['apps'].patch_namespaced_deployment_scale(
-        name=TARGET_SERVICE_NAME,
-        namespace=namespace,
-        body=body
+    await k8s_apis["apps"].patch_namespaced_deployment_scale(
+        name=name, namespace=namespace, body=body
     )
-    logger.info(f"[{namespace}] Scaled to {replicas}")
+    logger.info("[%s] patch_scale %s -> %d", namespace, name, replicas)
 
 
-# -----------------------------------
-# Lease lock (one scaling at a time)
-# -----------------------------------
-async def acquire_lock(namespace: str) -> bool:
-    lease_name = f"{TARGET_SERVICE_NAME}-scaler-lock"
+async def try_acquire_lease(namespace: str, service: str) -> bool:
+    lease_name = f"{service}-scaler-lock"
     body = client.V1Lease(
         metadata=client.V1ObjectMeta(name=lease_name, namespace=namespace),
-        spec=client.V1LeaseSpec(holder_identity="proxy")
+        spec=client.V1LeaseSpec(holder_identity="proxy"),
     )
-
     try:
-        await k8s_apis['coordination'].create_namespaced_lease(namespace, body)
+        await k8s_apis["coordination"].create_namespaced_lease(namespace, body)
         return True
     except ApiException as e:
-        if e.status != 409:
-            raise
-
-    # Lease exists → try to acquire it
-    for _ in range(10):
-        try:
-            lease = await k8s_apis['coordination'].read_namespaced_lease(lease_name, namespace)
-            lease.spec.holder_identity = "proxy"
-            await k8s_apis['coordination'].replace_namespaced_lease(lease_name, namespace, lease)
+        # 409 = already exists, 403 = forbidden (no permission)
+        if e.status == 409:
+            # try to replace the lease (optimistic)
+            try:
+                lease = await k8s_apis["coordination"].read_namespaced_lease(lease_name, namespace)
+                lease.spec.holder_identity = "proxy"
+                await k8s_apis["coordination"].replace_namespaced_lease(lease_name, namespace, lease)
+                return True
+            except Exception:
+                # race or other failure
+                return False
+        if e.status == 403:
+            # no permission to use leases — continue without lease
+            logger.warning("[%s][%s] Cannot create lease (forbidden). Continuing without lock.", namespace, service)
             return True
-        except:
-            await asyncio.sleep(1)
-
-    return False
+        raise
 
 
-# -----------------------------------
-# Wait for pods to be Ready
-# -----------------------------------
-async def wait_for_ready(namespace: str, timeout: int = MAX_SCALEUP_WAIT) -> bool:
-    """Wait for at least one pod to be Ready"""
+# ---------------------------
+# Wait for pods to be ready
+# tries several label selectors to be robust
+# ---------------------------
+async def wait_for_pod_ready(namespace: str, service: str, timeout: int = MAX_SCALEUP_WAIT) -> bool:
     waited = 0
-    logger.info(f"[{namespace}] Waiting for pods to be ready (timeout={timeout}s)...")
-    
+    logger.info("[%s][%s] Waiting for pod ready (timeout=%ds)...", namespace, service, timeout)
+    selectors = [f"io.kompose.service={service}", f"app={service}", f"app.kubernetes.io/name={service}"]
+
     while waited < timeout:
         try:
-            pods = await k8s_apis['core'].list_namespaced_pod(
-                namespace, 
-                label_selector=f"io.kompose.service={TARGET_SERVICE_NAME}"
-            )
-
-            for p in pods.items:
-                conds = p.status.conditions or []
-                for c in conds:
-                    if c.type == "Ready" and c.status == "True":
-                        logger.info(f"[{namespace}] Pod {p.metadata.name} is Ready after {waited}s")
-                        return True
+            for sel in selectors:
+                pods = await k8s_apis["core"].list_namespaced_pod(namespace, label_selector=sel)
+                for p in pods.items:
+                    if p.status.phase != "Running":
+                        continue
+                    conds = p.status.conditions or []
+                    for c in conds:
+                        if c.type == "Ready" and c.status == "True":
+                            logger.info("[%s][%s] Pod %s ready after %ds (selector=%s)", namespace, service, p.metadata.name, waited, sel)
+                            return True
         except Exception as e:
-            logger.warning(f"[{namespace}] Error checking pod status: {e}")
+            logger.warning("[%s][%s] Error listing pods: %s", namespace, service, e)
 
         await asyncio.sleep(1)
         waited += 1
-        
-        # Log progress every 10 seconds
         if waited % 10 == 0:
-            logger.info(f"[{namespace}] Still waiting for pods... ({waited}/{timeout}s)")
+            logger.info("[%s][%s] Still waiting for pods... (%d/%d)", namespace, service, waited, timeout)
 
-    logger.warning(f"[{namespace}] Pods did NOT become ready within {timeout}s")
+    logger.warning("[%s][%s] Pods did NOT become ready within %ds", namespace, service, timeout)
     return False
 
 
-# -----------------------------------
-# Scale-up logic with lock and wait
-# -----------------------------------
-async def scale_up_and_wait(namespace: str) -> bool:
-    """Scale up the deployment and wait for it to be ready. Returns True if successful."""
-    logger.info(f"[{namespace}] Checking if scale-up is needed...")
-    
-    replicas = await get_replicas(namespace)
-    if replicas > 0:
-        # Already scaled up, check if pods are ready
-        logger.info(f"[{namespace}] Already scaled to {replicas}, checking pod readiness...")
-        return await wait_for_ready(namespace, timeout=30)
+# ---------------------------
+# Scale up multiple services (concurrently)
+# ---------------------------
+async def scale_up_services(namespace: str, services: List[str]) -> bool:
+    """
+    Ensure services are scaled up. Returns True if at least FORWARD_TO_SERVICE became ready.
+    We'll attempt to scale each service to SCALE_UP_REPLICAS if it's currently 0.
+    """
+    # Acquire leases and issue scale patches concurrently
+    tasks = []
+    for svc in services:
+        tasks.append(_scale_service_if_needed(namespace, svc))
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    # After scaling, make sure the forward target is ready (wait)
+    ready = await wait_for_pod_ready(namespace, FORWARD_TO_SERVICE, timeout=MAX_SCALEUP_WAIT)
+    return ready
 
-    # Need to scale up
-    if not await acquire_lock(namespace):
-        logger.warning(f"[{namespace}] Lock is busy, another process is scaling")
-        # Wait for the other process to finish scaling
-        return await wait_for_ready(namespace, timeout=MAX_SCALEUP_WAIT)
 
+async def _scale_service_if_needed(namespace: str, service: str):
     try:
-        logger.info(f"[{namespace}] Scaling UP to {SCALE_UP_REPLICAS} replicas")
-        await scale(namespace, SCALE_UP_REPLICAS)
-        return await wait_for_ready(namespace, timeout=MAX_SCALEUP_WAIT)
+        replicas = await get_replicas(namespace, service)
+        if replicas and replicas > 0:
+            logger.info("[%s][%s] already has %d replicas, skipping scale", namespace, service, replicas)
+            return
+        # Acquire lease (if possible)
+        ok = await try_acquire_lease(namespace, service)
+        if not ok:
+            logger.warning("[%s][%s] failed to acquire lease, skipping", namespace, service)
+            return
+        logger.info("[%s][%s] scaling up to %d", namespace, service, SCALE_UP_REPLICAS)
+        await patch_scale(namespace, service, SCALE_UP_REPLICAS)
+        # wait a short time for k8s to create pods before checking readiness
+        await asyncio.sleep(1)
+        # optionally we can wait here for each service but main wait is for FORWARD_TO_SERVICE
+        await wait_for_pod_ready(namespace, service, timeout=30)
     except Exception as e:
-        logger.error(f"[{namespace}] Scale-up failed: {e}")
-        return False
+        logger.exception("[%s][%s] error during scale-up: %s", namespace, service, e)
 
 
-# -----------------------------------
-# Proxy request with retries
-# -----------------------------------
-async def forward_request(namespace: str, path: str, request: Request) -> Response:
-    """Forward the request to the target service with retries"""
+# ---------------------------
+# Scale down all configured services in a namespace
+# ---------------------------
+async def scale_down_services(namespace: str, services: List[str]):
+    tasks = []
+    for svc in services:
+        tasks.append(_scale_service_down(namespace, svc))
+    await asyncio.gather(*tasks, return_exceptions=True)
+
+
+async def _scale_service_down(namespace: str, service: str):
+    try:
+        replicas = await get_replicas(namespace, service)
+        if replicas == 0:
+            logger.info("[%s][%s] already at 0, skipping scale-down", namespace, service)
+            return
+        logger.info("[%s][%s] scaling down to %d", namespace, service, SCALE_DOWN_REPLICAS)
+        await patch_scale(namespace, service, SCALE_DOWN_REPLICAS)
+    except Exception as e:
+        logger.exception("[%s][%s] error during scale-down: %s", namespace, service, e)
+
+
+# ---------------------------
+# Forwarding logic
+# ---------------------------
+HOP_BY_HOP_HEADERS = {
+    "connection",
+    "keep-alive",
+    "proxy-authenticate",
+    "proxy-authorization",
+    "te",
+    "trailers",
+    "transfer-encoding",
+    "upgrade",
+}
+
+
+async def forward_to_manager(namespace: str, path: str, request: Request) -> Response:
     global http_client
-    
-    target_url = f"http://{TARGET_SERVICE_NAME}.{namespace}.svc.cluster.local:{TARGET_SERVICE_PORT}/{path}"
-    
-    MAX_RETRIES = 5
-    RETRY_DELAY = 2.0
-    
-    HOP_BY_HOP_HEADERS = {
-        'connection', 'keep-alive', 'proxy-authenticate', 'proxy-authorization', 
-        'te', 'trailers', 'transfer-encoding', 'upgrade'
-    }
-    
-    request_headers = {
-        k: v for k, v in request.headers.items() 
-        if k.lower() not in ["host", "connection"]
-    }
-    
-    # Read request body once (can't be re-read)
+    target_url = f"http://{FORWARD_TO_SERVICE}.{namespace}.svc.cluster.local:{TARGET_SERVICE_PORT}/{path.lstrip('/')}"
     try:
-        body_content = await request.body()
-    except Exception as e:
-        logger.error(f"[{namespace}] Failed to read request body: {e}")
-        raise HTTPException(status_code=400, detail="Failed to read request body")
+        body = await request.body()
+    except Exception:
+        body = None
 
-    for attempt in range(MAX_RETRIES):
+    headers = {k: v for k, v in request.headers.items() if k.lower() not in {"host", "connection"}}
+    # Use existing http_client
+    attempt = 0
+    max_attempts = 3
+    while attempt < max_attempts:
         try:
-            logger.info(f"[{namespace}] Forwarding request to {target_url} (attempt {attempt + 1}/{MAX_RETRIES})")
-            
+            logger.info("[%s] forwarding to %s (attempt %d)", namespace, target_url, attempt + 1)
             resp = await http_client.request(
                 request.method,
                 target_url,
                 params=request.query_params,
-                content=body_content,
-                headers=request_headers,
+                content=body,
+                headers=headers,
             )
-            
-            # Success! Filter hop-by-hop headers and return
-            response_headers = {
-                k: v for k, v in resp.headers.items() 
-                if k.lower() not in HOP_BY_HOP_HEADERS
-            }
-            
-            logger.info(f"[{namespace}] Successfully forwarded request (status={resp.status_code})")
-            return Response(
-                content=resp.content,
-                status_code=resp.status_code,
-                headers=response_headers
-            )
-        
+            response_headers = {k: v for k, v in resp.headers.items() if k.lower() not in HOP_BY_HOP_HEADERS}
+            return Response(content=resp.content, status_code=resp.status_code, headers=response_headers)
         except (httpx.ConnectError, httpx.TimeoutException) as e:
-            if attempt < MAX_RETRIES - 1:
-                logger.warning(
-                    f"[{namespace}] Connection failed on attempt {attempt + 1}: {e}. "
-                    f"Retrying in {RETRY_DELAY}s..."
-                )
-                await asyncio.sleep(RETRY_DELAY)
-                continue
-            
-            logger.error(f"[{namespace}] All {MAX_RETRIES} forwarding attempts failed")
-            raise HTTPException(
-                status_code=502,
-                detail=f"Service unavailable after {MAX_RETRIES} attempts"
-            )
-        
+            logger.warning("[%s] connection/timeout when forwarding: %s", namespace, e)
+            attempt += 1
+            await asyncio.sleep(1)
+            continue
         except Exception as e:
-            logger.exception(f"[{namespace}] Unexpected forwarding error: {e}")
-            raise HTTPException(status_code=502, detail="Internal proxy error")
+            logger.exception("[%s] unexpected error when forwarding: %s", namespace, e)
+            raise HTTPException(status_code=502, detail="Bad Gateway")
+    raise HTTPException(status_code=502, detail="Service unavailable")
 
 
-# -----------------------------------
-# Main route - HANDLES SCALING AUTOMATICALLY
-# -----------------------------------
+# ---------------------------
+# Main route
+# ---------------------------
 @app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
 async def handle(path: str, request: Request):
     if not k8s_ready:
         raise HTTPException(status_code=500, detail="Kubernetes client not ready")
-    
+
     namespace = NAMESPACE
-    logger.info(f"[{namespace}] Received {request.method} request for path='/{path}'")
-    
-    # Update last access time
+    logger.info("[%s] Received %s request for /%s", namespace, request.method, path.lstrip("/"))
     last_access[namespace] = time.time()
-    
-    # Scale up if needed and wait for it to be ready
-    is_ready = await scale_up_and_wait(namespace)
-    
-    if not is_ready:
-        logger.error(f"[{namespace}] Service failed to become ready within timeout")
+
+    # Scale up all configured services (non-blocking per-service, but waits for manager readiness)
+    ready = await scale_up_services(namespace, TARGET_SERVICE_NAMES)
+
+    if not ready:
+        logger.error("[%s] Forward target did not become ready in time", namespace)
         raise HTTPException(
             status_code=503,
-            detail=f"Service failed to start within {MAX_SCALEUP_WAIT} seconds. Please try again."
+            detail=f"Service '{FORWARD_TO_SERVICE}' failed to start within {MAX_SCALEUP_WAIT} seconds",
         )
-    
-    # Service is ready, forward the request
-    return await forward_request(namespace, path, request)
+
+    # Forward the request to manager
+    return await forward_to_manager(namespace, path, request)
 
 
-# -----------------------------------
+# ---------------------------
 # Background scale-down loop
-# -----------------------------------
+# ---------------------------
 async def scale_down_loop():
-    """Background task that scales down inactive services"""
-    await asyncio.sleep(5)  # Initial delay
-    
+    await asyncio.sleep(5)
     logger.info("Scale-down loop started")
-    
     while True:
         try:
             now = time.time()
             for ns, last_t in list(last_access.items()):
-                inactive_seconds = now - last_t
-                
-                if inactive_seconds > INACTIVITY_TIMEOUT:
-                    logger.info(
-                        f"[{ns}] Inactivity timeout reached ({inactive_seconds:.0f}s) - scaling DOWN"
-                    )
+                if now - last_t > INACTIVITY_TIMEOUT:
+                    logger.info("[%s] inactivity timeout reached, scaling down services", ns)
                     try:
-                        await scale(ns, SCALE_DOWN_REPLICAS)
+                        await scale_down_services(ns, TARGET_SERVICE_NAMES)
                         last_access.pop(ns, None)
                     except Exception as e:
-                        logger.exception(f"[{ns}] Scale-down failed: {e}")
+                        logger.exception("[%s] error during scale-down loop: %s", ns, e)
         except Exception as e:
-            logger.exception(f"Error in scale-down loop: {e}")
-        
+            logger.exception("Error in scale-down loop: %s", e)
         await asyncio.sleep(CHECK_INTERVAL)
 
 
-# -----------------------------------
-# Health check endpoint
-# -----------------------------------
+# ---------------------------
+# Health endpoint
+# ---------------------------
 @app.get("/health")
 async def health():
-    """Health check endpoint"""
     return {
-        "status": "healthy",
+        "status": "ok",
         "k8s_ready": k8s_ready,
-        "target_service": TARGET_SERVICE_NAME,
-        "namespace": NAMESPACE
+        "forward_to": FORWARD_TO_SERVICE,
+        "namespace": NAMESPACE,
+        "target_services": TARGET_SERVICE_NAMES,
     }
