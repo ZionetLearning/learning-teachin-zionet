@@ -90,5 +90,5 @@ spec:
           value: "{{ .Values.proxy.scaleWait }}"
         - name: CHECK_INTERVAL
           value: "{{ .Values.proxy.checkInterval }}"
-        - name: LOG_LEVEL
-          value: "{{ .Values.proxy.logLevel }}"
+        - name: FORWARD_TIMEOUT
+          value: "60.0""
