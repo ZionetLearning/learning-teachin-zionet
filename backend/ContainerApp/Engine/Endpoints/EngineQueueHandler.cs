@@ -278,18 +278,8 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
             await batcher.FlushAsync();
 
-            JsonElement afHistory;
-
-            if (!string.IsNullOrWhiteSpace(finalThreadJson))
-            {
-                using var doc = JsonDocument.Parse(finalThreadJson);
-                afHistory = doc.RootElement.Clone();
-            }
-            else
-            {
-                using var doc = JsonDocument.Parse("{\"storeState\":{\"messages\":[]}}");
-                afHistory = doc.RootElement.Clone();
-            }
+            using var doc = JsonDocument.Parse(string.IsNullOrWhiteSpace(finalThreadJson) ? "null" : finalThreadJson);
+            var afHistory = doc.RootElement.Clone();
 
             await _accessorClient.UpsertHistorySnapshotAsync(new UpsertHistoryRequest
             {
