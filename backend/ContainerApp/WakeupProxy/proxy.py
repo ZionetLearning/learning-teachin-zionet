@@ -154,7 +154,7 @@ async def wait_for_ready(namespace: str, timeout: int = MAX_SCALEUP_WAIT) -> boo
         try:
             pods = await k8s_apis['core'].list_namespaced_pod(
                 namespace, 
-                label_selector=f"app={TARGET_SERVICE_NAME}"
+                label_selector=f"io.kompose.service={TARGET_SERVICE_NAME}"
             )
 
             for p in pods.items:
