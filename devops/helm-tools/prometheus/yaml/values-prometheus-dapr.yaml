@@ -11,6 +11,23 @@ prometheus:
     scrapeInterval: "60s"
     evaluationInterval: "60s"
     
+    # Spot node configuration
+    affinity:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          preference:
+            matchExpressions:
+            - key: node-type
+              operator: In
+              values:
+              - spot
+    tolerations:
+    - key: kubernetes.azure.com/scalesetpriority
+      operator: Equal
+      value: spot
+      effect: NoSchedule
+    
     # Additional scrape configs for Dapr metrics
     additionalScrapeConfigs:
       # Dapr sidecar metrics (port 9090)
@@ -84,3 +101,19 @@ grafana:
 # Keep AlertManager enabled
 alertmanager:
   enabled: true
+  alertmanagerSpec:
+    affinity:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          preference:
+            matchExpressions:
+            - key: node-type
+              operator: In
+              values:
+              - spot
+    tolerations:
+    - key: kubernetes.azure.com/scalesetpriority
+      operator: Equal
+      value: spot
+      effect: NoSchedule
