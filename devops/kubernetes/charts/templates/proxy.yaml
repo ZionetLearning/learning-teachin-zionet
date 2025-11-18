@@ -91,4 +91,4 @@ spec:
         - name: CHECK_INTERVAL
           value: "{{ .Values.proxy.checkInterval }}"
         - name: FORWARD_TIMEOUT
-          value: "60.0""
+          value: "60.0"
