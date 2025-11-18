@@ -83,6 +83,7 @@ manager:
   labels:
     selectorKey: io.kompose.service
     selectorValue: manager
+    app: manager
   image:
     name: manager
     # tag: defaults to global.environment, set by CI/CD
