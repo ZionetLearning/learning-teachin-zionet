@@ -148,6 +148,7 @@ async def wait_for_ready(namespace: str) -> bool:
 # Scale-up logic with lock
 # -----------------------------------
 async def scale_up_if_needed(namespace: str):
+    logger.info(f"[{namespace}] checking scale-up need")
     replicas = await get_replicas(namespace)
     if replicas > 0:
         return
