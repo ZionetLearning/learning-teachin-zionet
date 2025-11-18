@@ -33,13 +33,12 @@ k8s_ready = False
 # -----------------------------------
 @app.on_event("startup")
 async def startup_event():
-    global k8s_ready
+    global k8s_ready, http_client
 
     logger.info("Loading Kubernetes config...")
 
     try:
         # kubeconfig local? (useful for local dev)
-        import os
         kube_path = os.path.expanduser("~/.kube/config")
 
         if os.path.exists(kube_path):
@@ -53,11 +52,17 @@ async def startup_event():
         logger.error(f"Kubernetes config load FAILED: {e}")
         raise
 
+    http_client = httpx.AsyncClient(timeout=FORWARD_TIMEOUT)
+
     k8s_ready = True
     logger.info("Kubernetes client initialized")
 
     asyncio.create_task(scale_down_loop())
 
+@app.on_event("shutdown")
+async def shutdown_event():
+    if http_client:
+        await http_client.aclose()
 
 # -----------------------------------
 # Scale helpers
@@ -168,22 +173,25 @@ async def scale_up_if_needed(namespace: str):
 # Proxy request
 # -----------------------------------
 async def forward_request(namespace: str, path: str, request: Request) -> Response:
+    global http_client
+    
+    if not http_client:
+        raise HTTPException(status_code=500, detail="HTTP client not initialized")
+                            
     target_url = f"http://{TARGET_SERVICE_NAME}.{namespace}.svc.cluster.local:{TARGET_SERVICE_PORT}/{path}"
 
-    async with httpx.AsyncClient(timeout=FORWARD_TIMEOUT) as client_http:
-        try:
-            resp = await client_http.request(
-                request.method,
-                target_url,
-                params=request.query_params,
-                content=await request.body(),
-                headers={k: v for k, v in request.headers.items() if k.lower() not in ["host", "connection"]},
-            )
-            return Response(content=resp.content, status_code=resp.status_code, headers=resp.headers)
-        except Exception as e:
-            logger.exception(f"[{namespace}] forwarding failed: {e}")
-            raise HTTPException(status_code=502, detail="Bad Gateway")
-
+    try:
+        resp = await http_client.request(
+            request.method,
+            target_url,
+            params=request.query_params,
+            content=await request.body(),
+            headers={k: v for k, v in request.headers.items() if k.lower() not in ["host", "connection"]},
+        )
+        return Response(content=resp.content, status_code=resp.status_code, headers=resp.headers)
+    except Exception as e:
+        logger.exception(f"[{namespace}] forwarding failed: {e}")
+        raise HTTPException(status_code=502, detail="Bad Gateway")
 
 # -----------------------------------
 # Main route
