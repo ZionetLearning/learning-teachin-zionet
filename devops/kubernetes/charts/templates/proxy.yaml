@@ -71,6 +71,8 @@ spec:
         env:
         - name: TARGET_SERVICE_NAME
           value: "{{ .Values.proxy.targetServiceName }}"
+        - name: NAMESPACE
+          value: "{{ .Values.global.environment }}"
         - name: TARGET_SERVICE_PORT
           value: "{{ .Values.proxy.targetServicePort }}"
         - name: SCALE_UP_REPLICAS
