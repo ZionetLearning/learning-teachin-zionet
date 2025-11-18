@@ -1,6 +1,7 @@
 import asyncio
 import time
 import logging
+import os
 from typing import Dict
 
 import httpx
@@ -14,6 +15,7 @@ logging.basicConfig(level=logging.INFO)
 
 # configuration
 TARGET_SERVICE_NAME = "manager"
+NAMESPACE = os.getenv("NAMESPACE")
 TARGET_SERVICE_PORT = 80
 FORWARD_TIMEOUT = httpx.Timeout(20.0)
 SCALE_UP_REPLICAS = 1
@@ -185,13 +187,13 @@ async def forward_request(namespace: str, path: str, request: Request) -> Respon
 # -----------------------------------
 # Main route
 # -----------------------------------
-@app.api_route("/{env}/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
-async def handle(env: str, path: str, request: Request):
+@app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
+async def handle(path: str, request: Request):
     if not k8s_ready:
         raise HTTPException(status_code=500, detail="Kubernetes client not ready")
-
-    logger.info(f"Received request for env='{env}', path='/{path}'")
-    namespace = env  # dynamic by design
+    namespace = NAMESPACE  # dynamic by design
+    logger.info(f" Received request for path='/{path}' in namespace='{namespace}' ")
+    
 
     last_access[namespace] = time.time()
 
