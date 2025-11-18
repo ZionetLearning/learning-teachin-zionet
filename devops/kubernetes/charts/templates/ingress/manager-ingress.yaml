@@ -13,9 +13,11 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-next-upstream-tries: "2"
     nginx.ingress.kubernetes.io/upstream-vhost: "proxy"
     nginx.ingress.kubernetes.io/default-backend: "proxy"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "120s"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "120s"
-    nginx.ingress.kubernetes.io/proxy-connect-timeout: "120s"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "180s"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "180s"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "180s"
+    nginx.ingress.kubernetes.io/upstream-keepalive-timeout: "180"
+    nginx.ingress.kubernetes.io/keepalive-timeout: "180"
     {{- if and .Values.manager.ingress.tls.enabled .Values.manager.ingress.tls.clusterIssuer }}
     cert-manager.io/cluster-issuer: "{{ .Values.manager.ingress.tls.clusterIssuer }}"
     {{- end }}
