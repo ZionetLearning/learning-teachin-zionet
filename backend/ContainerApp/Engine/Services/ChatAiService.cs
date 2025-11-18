@@ -79,7 +79,7 @@ public sealed class ChatAiService : IChatAiService
 
             var thread = isNewThread
                 ? agent.GetNewThread()
-                : agent.DeserializeThread(NormalizeTypeFirst(request.AgentThreadState!.History));
+                : agent.DeserializeThread(request.AgentThreadState!.History);
 
             var runOptions = new ChatClientAgentRunOptions(new ChatOptions { Temperature = 0.2f });
 
@@ -151,7 +151,7 @@ public sealed class ChatAiService : IChatAiService
 
         var thread = isNewThread
             ? agent.GetNewThread()
-            : agent.DeserializeThread(NormalizeTypeFirst(request.AgentThreadState!.History));
+            : agent.DeserializeThread(request.AgentThreadState!.History);
 
         var messages = new List<Microsoft.Extensions.AI.ChatMessage>();
 
@@ -255,80 +255,6 @@ public sealed class ChatAiService : IChatAiService
         }
 
         return "You are a helpful assistant. Keep answers concise.";
-    }
-
-    private static JsonElement NormalizeTypeFirst(JsonElement root)
-    {
-        using var ms = new MemoryStream();
-        using (var w = new Utf8JsonWriter(ms))
-        {
-            WriteWithTypeFirst(root, w);
-        }
-
-        using var doc = JsonDocument.Parse(ms.ToArray());
-        return doc.RootElement.Clone();
-    }
-
-    private static void WriteWithTypeFirst(JsonElement el, Utf8JsonWriter w)
-    {
-        switch (el.ValueKind)
-        {
-            case JsonValueKind.Object:
-                w.WriteStartObject();
-
-                // Сначала пишем $type (если есть)
-                if (el.TryGetProperty("$type", out var typeVal))
-                {
-                    w.WritePropertyName("$type");
-                    WriteWithTypeFirst(typeVal, w);
-                }
-
-                // Затем остальные свойства, кроме $type
-                foreach (var prop in el.EnumerateObject())
-                {
-                    if (prop.NameEquals("$type"))
-                    {
-                        continue;
-                    }
-
-                    w.WritePropertyName(prop.Name);
-                    WriteWithTypeFirst(prop.Value, w);
-                }
-
-                w.WriteEndObject();
-                break;
-
-            case JsonValueKind.Array:
-                w.WriteStartArray();
-                foreach (var item in el.EnumerateArray())
-                {
-                    WriteWithTypeFirst(item, w);
-                }
-
-                w.WriteEndArray();
-                break;
-
-            case JsonValueKind.String:
-                w.WriteStringValue(el.GetString());
-                break;
-
-            case JsonValueKind.Number:
-                // сохраняем точное значение (целое/вещественное) через сырые байты
-                w.WriteRawValue(el.GetRawText());
-                break;
-
-            case JsonValueKind.True:
-                w.WriteBooleanValue(true);
-                break;
-
-            case JsonValueKind.False:
-                w.WriteBooleanValue(false);
-                break;
-
-            case JsonValueKind.Null:
-                w.WriteNullValue();
-                break;
-        }
     }
 
     // temporary bridge: SK → AF ChatMessage (current turn only)

@@ -63,7 +63,8 @@ public class AccessorDbContext : DbContext
 
             // jsonb в Postgres
             e.Property(x => x.History)
-             .HasColumnType("jsonb")
+             .HasColumnType("json")
+             .HasDefaultValue("""null""")
              .IsRequired();
 
             e.Property(x => x.CreatedAt)
