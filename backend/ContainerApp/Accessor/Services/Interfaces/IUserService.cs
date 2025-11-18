@@ -18,4 +18,5 @@ public interface IUserService
     Task<IEnumerable<UserData>> GetTeachersForStudentAsync(Guid studentId, CancellationToken ct = default);
     Task<IReadOnlyList<string>?> GetUserInterestsAsync(Guid userId, CancellationToken ct = default);
     Task<Dictionary<Guid, UserNameDto>> GetUserFullNamesAsync(IEnumerable<Guid> userIds, CancellationToken ct);
+    Task<bool> UpdateUserLanguageAsync(Guid userId, SupportedLanguage language, CancellationToken ct = default);
 }

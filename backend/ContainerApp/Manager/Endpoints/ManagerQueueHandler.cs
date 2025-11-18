@@ -13,6 +13,7 @@ using Manager.Models.Words;
 using Manager.Models.UserGameConfiguration;
 
 namespace Manager.Endpoints;
+
 public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
 {
     private readonly INotificationService _notificationService;
