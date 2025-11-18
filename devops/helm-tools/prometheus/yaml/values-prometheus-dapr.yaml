@@ -98,6 +98,42 @@ prometheus:
 grafana:
   enabled: false
 
+# Prometheus Operator
+prometheusOperator:
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
+          - key: node-type
+            operator: In
+            values:
+            - spot
+  tolerations:
+  - key: kubernetes.azure.com/scalesetpriority
+    operator: Equal
+    value: spot
+    effect: NoSchedule
+
+# Kube State Metrics
+kube-state-metrics:
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
+          - key: node-type
+            operator: In
+            values:
+            - spot
+  tolerations:
+  - key: kubernetes.azure.com/scalesetpriority
+    operator: Equal
+    value: spot
+    effect: NoSchedule
+
 # Keep AlertManager enabled
 alertmanager:
   enabled: true
