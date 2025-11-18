@@ -174,24 +174,55 @@ async def scale_up_if_needed(namespace: str):
 # -----------------------------------
 async def forward_request(namespace: str, path: str, request: Request) -> Response:
     global http_client
-    
-    if not http_client:
-        raise HTTPException(status_code=500, detail="HTTP client not initialized")
-                            
     target_url = f"http://{TARGET_SERVICE_NAME}.{namespace}.svc.cluster.local:{TARGET_SERVICE_PORT}/{path}"
+    
+    MAX_RETRIES = 3
+    RETRY_DELAY = 1.5
+    
+    # Hop-by-Hop headers to filter out in response
+    HOP_BY_HOP_HEADERS = {
+        'connection', 'keep-alive', 'proxy-authenticate', 'proxy-authorization', 
+        'te', 'trailers', 'transfer-encoding', 'upgrade'
+    }
+    
+    # Create request headers
+    request_headers = {
+        k: v 
+        for k, v in request.headers.items() 
+        if k.lower() not in ["host", "connection"]
+    }
 
-    try:
-        resp = await http_client.request(
-            request.method,
-            target_url,
-            params=request.query_params,
-            content=await request.body(),
-            headers={k: v for k, v in request.headers.items() if k.lower() not in ["host", "connection"]},
-        )
-        return Response(content=resp.content, status_code=resp.status_code, headers=resp.headers)
-    except Exception as e:
-        logger.exception(f"[{namespace}] forwarding failed: {e}")
-        raise HTTPException(status_code=502, detail="Bad Gateway")
+    for attempt in range(MAX_RETRIES):
+        try:
+            resp = await http_client.request(
+                request.method, target_url, params=request.query_params,
+                content=await request.body(), headers=request_headers,
+            )
+            
+            # If successful: filter headers and return response
+            response_headers = {
+                k: v for k, v in resp.headers.items() 
+                if k.lower() not in HOP_BY_HOP_HEADERS
+            }
+            return Response(
+                content=resp.content, status_code=resp.status_code, headers=response_headers 
+            )
+        
+        except (httpx.ConnectError, httpx.TimeoutException) as e:
+            # Handles immediate connection failure (181ms)
+            if attempt < MAX_RETRIES - 1:
+                logger.warning(
+                    f"[{namespace}] Connection failed immediately on attempt {attempt + 1}. Retrying in {RETRY_DELAY}s..."
+                )
+                await asyncio.sleep(RETRY_DELAY)
+                continue
+            
+            logger.error(f"[{namespace}] Forwarding failed after {MAX_RETRIES} attempts: {e}")
+            raise HTTPException(status_code=502, detail="Bad Gateway (Service unavailable/Connect failed)")
+        
+        except Exception as e:
+            logger.exception(f"[{namespace}] forwarding failed due to unexpected error: {e}")
+            raise HTTPException(status_code=502, detail="Bad Gateway (Internal Proxy Error)")
 
 # -----------------------------------
 # Main route
