@@ -4,7 +4,7 @@ global:
   imagePullPolicy: IfNotPresent
   environment: ""      # Will be set by CI/CD to TARGET_NAMESPACE (e.g., "devacr2")
   spot:
-    enabled: true  # Dev stays on stable nodes for reliability
+    enabled: true  # Enable spot nodes for cost optimization in test environments
   dapr:
     enabled: true
     configName: dapr-config
