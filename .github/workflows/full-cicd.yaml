@@ -74,6 +74,7 @@ jobs:
       environment_name: ${{ github.event.inputs.environment_name }}
       environment: ${{ github.event.inputs.environment }}
       image_tag: ${{ needs.build-and-push-images.outputs.image_tag }}
+      proxy_enabled: ${{ fromJson(github.event.inputs.proxy_enabled) }}
       skip_infra_steps: false
     secrets: inherit
  

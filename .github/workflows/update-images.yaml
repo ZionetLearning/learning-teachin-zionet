@@ -126,6 +126,6 @@ jobs:
       environment: ${{ needs.set-defaults.outputs.environment }}
       environment_name: ${{ needs.set-defaults.outputs.environment_name }}
       image_tag: ${{ needs.build-and-push-images.outputs.image_tag }}
-      proxy_enabled: ${{ inputs.proxy_enabled || github.event.inputs.proxy_enabled || true }}
+      proxy_enabled: ${{ fromJson(github.event.inputs.proxy_enabled) || fromJson(inputs.proxy_enabled) }}
       skip_infra_steps: true
     secrets: inherit

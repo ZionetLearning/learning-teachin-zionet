@@ -313,7 +313,7 @@ jobs:
             --set accessor.secrets.langfuse.enabled="${{ steps.setup.outputs.langfuse_secrets_enabled }}" \
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false \
-            --set proxy.enabled=${{ inputs.proxy_enabled || github.event.inputs.proxy_enabled || true }}  \
+            --set proxy.enabled=${{ inputs.proxy_enabled || github.event.inputs.proxy_enabled }}  \
           | grep -n '^kind: Namespace' && { echo "Namespace still rendered"; exit 1; } || echo "OK: no Namespace in chart"
 
       - name: Helm upgrade/install app
@@ -345,7 +345,7 @@ jobs:
             --set accessor.secrets.langfuse.enabled="${{ steps.setup.outputs.langfuse_secrets_enabled }}" \
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false \
-            --set proxy.enabled=${{ inputs.proxy_enabled || github.event.inputs.proxy_enabled || true }}
+            --set proxy.enabled=${{ inputs.proxy_enabled || github.event.inputs.proxy_enabled }}
             
       - name: Add Langfuse
         if: steps.setup.outputs.deploy_langfuse == 'true' && github.event_name == 'workflow_dispatch'
