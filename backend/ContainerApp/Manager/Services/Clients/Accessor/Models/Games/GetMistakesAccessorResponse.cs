@@ -7,7 +7,7 @@ namespace Manager.Services.Clients.Accessor.Models.Games;
 /// </summary>
 public class GetMistakesAccessorResponse
 {
-    public required IEnumerable<MistakeDto> Items { get; set; } = new List<MistakeDto>();
+    public required IEnumerable<ExerciseMistakes> Items { get; set; } = new List<ExerciseMistakes>();
     public required int Page { get; set; }
     public required int PageSize { get; set; }
     public required int TotalCount { get; set; }

@@ -2,7 +2,7 @@ using Manager.Models.UserGameConfiguration;
 
 namespace Manager.Models.Games;
 
-public class SummaryHistoryWithStudentDto
+public class StudentExerciseHistory
 {
     public required Guid StudentId { get; set; }
     public required GameName GameType { get; set; }

@@ -80,7 +80,7 @@ public static class GamesMapper
     /// <summary>
     /// Maps PagedResult to GetMistakesResponse
     /// </summary>
-    public static GetMistakesResponse ToFront(this PagedResult<MistakeDto> pagedResult)
+    public static GetMistakesResponse ToFront(this PagedResult<ExerciseMistakes> pagedResult)
     {
         return new GetMistakesResponse
         {
@@ -112,7 +112,7 @@ public static class GamesMapper
     /// <summary>
     /// Maps PagedResult to GetAllHistoriesResponse
     /// </summary>
-    public static GetAllHistoriesResponse ToFront(this PagedResult<SummaryHistoryWithStudentDto> pagedResult)
+    public static GetAllHistoriesResponse ToFront(this PagedResult<StudentExerciseHistory> pagedResult)
     {
         return new GetAllHistoriesResponse
         {
@@ -130,7 +130,7 @@ public static class GamesMapper
     /// <summary>
     /// Maps PagedResult to Accessor response format for GetMistakes
     /// </summary>
-    public static GetMistakesAccessorResponse ToAccessor(this PagedResult<MistakeDto> pagedResult)
+    public static GetMistakesAccessorResponse ToAccessor(this PagedResult<ExerciseMistakes> pagedResult)
     {
         return new GetMistakesAccessorResponse
         {
@@ -144,7 +144,7 @@ public static class GamesMapper
     /// <summary>
     /// Maps PagedResult to Accessor response format for GetAllHistories
     /// </summary>
-    public static GetAllHistoriesAccessorResponse ToAccessor(this PagedResult<SummaryHistoryWithStudentDto> pagedResult)
+    public static GetAllHistoriesAccessorResponse ToAccessor(this PagedResult<StudentExerciseHistory> pagedResult)
     {
         return new GetAllHistoriesAccessorResponse
         {

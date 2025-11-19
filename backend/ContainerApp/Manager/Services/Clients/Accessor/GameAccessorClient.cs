@@ -120,7 +120,7 @@ public class GameAccessorClient : IGameAccessorClient
         {
             _logger.LogInformation("Requesting mistakes from Accessor. StudentId={StudentId}, Page={Page}, PageSize={PageSize}", studentId, page, pageSize);
 
-            var result = await _daprClient.InvokeMethodAsync<PagedResult<MistakeDto>>(
+            var result = await _daprClient.InvokeMethodAsync<PagedResult<ExerciseMistakes>>(
                 HttpMethod.Get,
                 AppIds.Accessor,
                 $"games-accessor/mistakes/{studentId}?page={page}&pageSize={pageSize}",
@@ -132,7 +132,7 @@ public class GameAccessorClient : IGameAccessorClient
                 _logger.LogWarning("Accessor returned null mistakes. StudentId={StudentId}", studentId);
                 return new GetMistakesAccessorResponse
                 {
-                    Items = new List<MistakeDto>(),
+                    Items = new List<ExerciseMistakes>(),
                     Page = page,
                     PageSize = pageSize,
                     TotalCount = 0
@@ -155,7 +155,7 @@ public class GameAccessorClient : IGameAccessorClient
             _logger.LogError(ex, "Failed to get mistakes from Accessor. StudentId={StudentId}", studentId);
             return new GetMistakesAccessorResponse
             {
-                Items = new List<MistakeDto>(),
+                Items = new List<ExerciseMistakes>(),
                 Page = page,
                 PageSize = pageSize,
                 TotalCount = 0
@@ -169,7 +169,7 @@ public class GameAccessorClient : IGameAccessorClient
         {
             _logger.LogInformation("Requesting all histories from Accessor. Page={Page}, PageSize={PageSize}", page, pageSize);
 
-            var result = await _daprClient.InvokeMethodAsync<PagedResult<SummaryHistoryWithStudentDto>>(
+            var result = await _daprClient.InvokeMethodAsync<PagedResult<StudentExerciseHistory>>(
                 HttpMethod.Get,
                 AppIds.Accessor,
                 $"games-accessor/all-history?page={page}&pageSize={pageSize}",
@@ -181,7 +181,7 @@ public class GameAccessorClient : IGameAccessorClient
                 _logger.LogWarning("Accessor returned null for all histories.");
                 return new GetAllHistoriesAccessorResponse
                 {
-                    Items = new List<SummaryHistoryWithStudentDto>(),
+                    Items = new List<StudentExerciseHistory>(),
                     Page = page,
                     PageSize = pageSize,
                     TotalCount = 0
@@ -203,7 +203,7 @@ public class GameAccessorClient : IGameAccessorClient
             _logger.LogError(ex, "Failed to get all histories from Accessor");
             return new GetAllHistoriesAccessorResponse
             {
-                Items = new List<SummaryHistoryWithStudentDto>(),
+                Items = new List<StudentExerciseHistory>(),
                 Page = page,
                 PageSize = pageSize,
                 TotalCount = 0

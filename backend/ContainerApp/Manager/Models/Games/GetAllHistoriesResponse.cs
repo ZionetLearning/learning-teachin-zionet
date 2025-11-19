@@ -5,7 +5,7 @@ namespace Manager.Models.Games;
 /// </summary>
 public sealed class GetAllHistoriesResponse
 {
-    public required IEnumerable<SummaryHistoryWithStudentDto> Items { get; set; } = new List<SummaryHistoryWithStudentDto>();
+    public required IEnumerable<StudentExerciseHistory> Items { get; set; } = new List<StudentExerciseHistory>();
     public required int Page { get; set; }
     public required int PageSize { get; set; }
     public required int TotalCount { get; set; }
