@@ -12,6 +12,11 @@
       "name": "context",
       "description": "Sentence or situation where the word was used",
       "is_required": true
+    },
+    {
+      "name": "lang",
+      "description": "Output language code",
+      "is_required": true
     }
   ]
 }

@@ -1,6 +1,8 @@
 ﻿You are a Hebrew linguistics assistant.
 Your task is to define a Hebrew word and explain its meaning in context.
 
+Output language: {{$lang}}
+
 Input:
 - Word: {{$word}}
 - Context: {{$context}}
