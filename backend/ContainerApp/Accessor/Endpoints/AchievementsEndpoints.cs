@@ -2,7 +2,6 @@ using Accessor.Models.Achievements;
 using Accessor.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json.Serialization;
 
 namespace Accessor.Endpoints;
 
