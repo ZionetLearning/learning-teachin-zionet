@@ -128,7 +128,6 @@ public class AchievementService : IAchievementService
 
             await _context.SaveChangesAsync(ct);
 
-            // Check for achievements to unlock
             await CheckAndUnlockAchievementsAsync(userId, feature, count, ct);
 
             return true;
