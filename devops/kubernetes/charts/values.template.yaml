@@ -11,7 +11,7 @@ global:
 
 namespace:
   create: true
-  name: dev
+  name: {{ .Values.global.environment }}
 
 cronjobs:
   statsPing:
