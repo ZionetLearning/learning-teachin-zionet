@@ -2,6 +2,8 @@
 global:
   dockerRegistry: ""   # CI sets: docker.io/<org> or <acr>.azurecr.io
   imagePullPolicy: IfNotPresent   # or Always if you rely on :latest
+  spot:
+    enabled: false  # Enable spot nodes for cost optimization in prod
   dapr:
     enabled: true
     configName: dapr-config

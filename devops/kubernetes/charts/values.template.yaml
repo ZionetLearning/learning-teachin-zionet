@@ -1,17 +1,17 @@
-# DEV overrides for the Helm chart
+# Template overrides for non-dev/non-prod environments (e.g., test, featest, featest2) for the Helm chart
 global:
   dockerRegistry: ""   # CI sets: docker.io/<org> or <acr>.azurecr.io
   imagePullPolicy: IfNotPresent
   environment: ""      # Will be set by CI/CD to TARGET_NAMESPACE (e.g., "devacr2")
   spot:
-    enabled: false  # Dev stays on stable nodes for reliability
+    enabled: true  # Enable spot nodes for cost optimization in test environments
   dapr:
     enabled: true
     configName: dapr-config
 
 namespace:
   create: true
-  name: dev
+  name: ""  # Will be set dynamically by the deployment pipeline
 
 cronjobs:
   statsPing:

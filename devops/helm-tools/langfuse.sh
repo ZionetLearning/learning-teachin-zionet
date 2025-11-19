@@ -30,10 +30,10 @@ if helm status langfuse -n "$NAMESPACE" >/dev/null 2>&1; then
   sleep 5
 fi
 
-# --- Phase 1: install with web=0 (avoid race with migrations) ---
+# --- Phase 1: install with proper probe timeouts ---
 helm $ACTION langfuse langfuse/langfuse \
   --namespace "$NAMESPACE" \
-  --set langfuse.replicas=0 \
+  --set langfuse.replicas=1 \
   --set langfuse.nextauth.url="https://teachin.westeurope.cloudapp.azure.com/langfuse" \
   --set langfuse.salt.secretKeyRef.name="langfuse-secrets" \
   --set langfuse.salt.secretKeyRef.key="SALT" \
@@ -48,6 +48,22 @@ helm $ACTION langfuse langfuse/langfuse \
   --set langfuse.worker.resources.requests.memory="256Mi" \
   --set langfuse.worker.resources.limits.cpu="500m" \
   --set langfuse.worker.resources.limits.memory="512Mi" \
+  --set langfuse.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].weight=100 \
+  --set langfuse.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].preference.matchExpressions[0].key="node-type" \
+  --set langfuse.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].preference.matchExpressions[0].operator="In" \
+  --set langfuse.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].preference.matchExpressions[0].values[0]="spot" \
+  --set langfuse.tolerations[0].key="kubernetes.azure.com/scalesetpriority" \
+  --set langfuse.tolerations[0].operator="Equal" \
+  --set langfuse.tolerations[0].value="spot" \
+  --set langfuse.tolerations[0].effect="NoSchedule" \
+  --set langfuse.worker.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].weight=100 \
+  --set langfuse.worker.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].preference.matchExpressions[0].key="node-type" \
+  --set langfuse.worker.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].preference.matchExpressions[0].operator="In" \
+  --set langfuse.worker.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].preference.matchExpressions[0].values[0]="spot" \
+  --set langfuse.worker.tolerations[0].key="kubernetes.azure.com/scalesetpriority" \
+  --set langfuse.worker.tolerations[0].operator="Equal" \
+  --set langfuse.worker.tolerations[0].value="spot" \
+  --set langfuse.worker.tolerations[0].effect="NoSchedule" \
   --set postgresql.deploy=false \
   --set postgresql.host="${PG_HOST}" \
   --set postgresql.port=5432 \
@@ -64,12 +80,46 @@ helm $ACTION langfuse langfuse/langfuse \
   --set clickhouse.resources.limits.cpu="200m" \
   --set clickhouse.resources.limits.memory="1Gi" \
   --set clickhouse.zookeeper.enabled=false \
+  --set clickhouse.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].weight=100 \
+  --set clickhouse.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].preference.matchExpressions[0].key="node-type" \
+  --set clickhouse.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].preference.matchExpressions[0].operator="In" \
+  --set clickhouse.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].preference.matchExpressions[0].values[0]="spot" \
+  --set clickhouse.tolerations[0].key="kubernetes.azure.com/scalesetpriority" \
+  --set clickhouse.tolerations[0].operator="Equal" \
+  --set clickhouse.tolerations[0].value="spot" \
+  --set clickhouse.tolerations[0].effect="NoSchedule" \
   --set redis.auth.existingSecret="langfuse-secrets" \
   --set redis.auth.existingSecretPasswordKey="REDIS_PASSWORD" \
+  --set redis.master.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].weight=100 \
+  --set redis.master.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].preference.matchExpressions[0].key="node-type" \
+  --set redis.master.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].preference.matchExpressions[0].operator="In" \
+  --set redis.master.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].preference.matchExpressions[0].values[0]="spot" \
+  --set redis.master.tolerations[0].key="kubernetes.azure.com/scalesetpriority" \
+  --set redis.master.tolerations[0].operator="Equal" \
+  --set redis.master.tolerations[0].value="spot" \
+  --set redis.master.tolerations[0].effect="NoSchedule" \
   --set s3.auth.existingSecret="langfuse-secrets" \
   --set s3.auth.rootUserSecretKey="S3_USER" \
   --set s3.auth.rootPasswordSecretKey="S3_PASSWORD" \
   --set s3.bucket="langfuse-bucket" \
+  --set s3.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].weight=100 \
+  --set s3.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].preference.matchExpressions[0].key="node-type" \
+  --set s3.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].preference.matchExpressions[0].operator="In" \
+  --set s3.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].preference.matchExpressions[0].values[0]="spot" \
+  --set s3.tolerations[0].key="kubernetes.azure.com/scalesetpriority" \
+  --set s3.tolerations[0].operator="Equal" \
+  --set s3.tolerations[0].value="spot" \
+  --set s3.tolerations[0].effect="NoSchedule" \
+  --set langfuse.livenessProbe.initialDelaySeconds=60 \
+  --set langfuse.livenessProbe.timeoutSeconds=30 \
+  --set langfuse.livenessProbe.periodSeconds=30 \
+  --set langfuse.readinessProbe.initialDelaySeconds=60 \
+  --set langfuse.readinessProbe.timeoutSeconds=30 \
+  --set langfuse.readinessProbe.periodSeconds=30 \
+  --set langfuse.worker.livenessProbe.initialDelaySeconds=60 \
+  --set langfuse.worker.livenessProbe.timeoutSeconds=30 \
+  --set langfuse.worker.readinessProbe.initialDelaySeconds=60 \
+  --set langfuse.worker.readinessProbe.timeoutSeconds=30 \
   --set langfuse.additionalEnv[0].name="DISABLE_LIVENESS_PROBE" \
   --set-string langfuse.additionalEnv[0].value="true" \
   --set langfuse.additionalEnv[1].name="DISABLE_READINESS_PROBE" \
@@ -165,7 +215,26 @@ helm $ACTION langfuse langfuse/langfuse \
   --set langfuse.redis.tls="false" \
   --timeout=5m
 
-echo "✅ Chart applied with web=0."
+echo "✅ Chart applied."
+
+# --- Patch probe timeouts (workaround for Helm chart not respecting values) ---
+echo "⚙️  Patching health probe timeouts..."
+kubectl patch deployment langfuse-web -n "$NAMESPACE" --type='json' -p='[
+  {"op": "replace", "path": "/spec/template/spec/containers/0/livenessProbe/initialDelaySeconds", "value": 120},
+  {"op": "replace", "path": "/spec/template/spec/containers/0/livenessProbe/timeoutSeconds", "value": 60},
+  {"op": "replace", "path": "/spec/template/spec/containers/0/livenessProbe/periodSeconds", "value": 30},
+  {"op": "replace", "path": "/spec/template/spec/containers/0/readinessProbe/initialDelaySeconds", "value": 120},
+  {"op": "replace", "path": "/spec/template/spec/containers/0/readinessProbe/timeoutSeconds", "value": 60},
+  {"op": "replace", "path": "/spec/template/spec/containers/0/readinessProbe/periodSeconds", "value": 30}
+]' 2>/dev/null || echo "⚠️  Patch failed (deployment may not exist yet)"
+
+kubectl patch deployment langfuse-worker -n "$NAMESPACE" --type='json' -p='[
+  {"op": "replace", "path": "/spec/template/spec/containers/0/livenessProbe/initialDelaySeconds", "value": 120},
+  {"op": "replace", "path": "/spec/template/spec/containers/0/livenessProbe/timeoutSeconds", "value": 60},
+  {"op": "replace", "path": "/spec/template/spec/containers/0/livenessProbe/periodSeconds", "value": 30}
+]' 2>/dev/null || echo "⚠️  Worker patch failed (deployment may not exist yet)"
+
+echo "✅ Probe timeouts patched."
 
 # Wait for the External Secret to be created by Helm and then create the Kubernetes secret
 echo "⏳ Waiting for langfuse-secrets to be created by External Secrets..."
@@ -335,16 +404,11 @@ kubectl run -n $NAMESPACE temp-add-org-membership --image=postgres:16 --rm -i --
 
 echo "✅ Admin user created with password: $ADMIN_PASSWORD"
 
-# --- Phase 2: scale web back up ---
-helm upgrade langfuse langfuse/langfuse \
-  --namespace "$NAMESPACE" \
-  --set langfuse.replicas=1 \
-  --reuse-values
-
+# --- Wait for deployments to be ready ---
 kubectl rollout status deploy/langfuse-web -n "$NAMESPACE" --timeout=300s
 kubectl rollout status deploy/langfuse-worker -n "$NAMESPACE" --timeout=300s
 
-# --- Phase 3: Deploy ingress ---
+# --- Deploy ingress ---
 echo "🌐 Deploying Langfuse ingress..."
 INGRESS_FILE="../kubernetes/ingress/langfuse-ingress.yaml"
 

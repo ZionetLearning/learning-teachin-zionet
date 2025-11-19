@@ -3,13 +3,15 @@ global:
   dockerRegistry: ""
   imagePullPolicy: IfNotPresent
   environment: ""  # Environment name/tag (e.g., dev, devacr, prod) - set by CI/CD
+  spot:
+    enabled: true  # Enable spot nodes for cost optimization (default for all environments)
   dapr:
     enabled: true
     configName: dapr-config
     sidecar:
       requests:
-        cpu: "100m"
-        memory: "128Mi"
+        cpu: "25m"        # Reduced from 100m to 25m based on actual usage (0.1%)
+        memory: "64Mi"    # Reduced from 128Mi to 64Mi based on actual usage (45MiB)
       limits:
         cpu: "200m"
         memory: "256Mi"
@@ -131,8 +133,8 @@ manager:
     enabled: false
   resources:
     requests:
-      cpu: "100m"
-      memory: "256Mi"
+      cpu: "50m"       # Reduced from 100m to 50m based on actual usage (0.06%)
+      memory: "128Mi"  # Reduced from 256Mi to 128Mi based on actual usage (~91MiB)
     limits:
       cpu: "500m"
       memory: "512Mi"
@@ -179,8 +181,8 @@ engine:
           key: AzureSpeech__SubscriptionKey
   resources:
     requests:
-      cpu: "100m"
-      memory: "256Mi"
+      cpu: "50m"       # Reduced from 100m to 50m based on actual usage
+      memory: "128Mi"  # Reduced from 256Mi to 128Mi based on actual usage
     limits:
       cpu: "500m"
       memory: "512Mi"
@@ -227,8 +229,8 @@ accessor:
         secretKey: Langfuse__SecretKey
   resources:
     requests:
-      cpu: "100m"
-      memory: "256Mi"
+      cpu: "50m"       # Reduced from 100m to 50m based on actual usage (0.06%)
+      memory: "128Mi"  # Reduced from 256Mi to 128Mi based on actual usage (~91MiB)
     limits:
       cpu: "500m"
       memory: "512Mi"
