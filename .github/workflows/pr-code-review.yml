@@ -1,25 +1,62 @@
-name: AI Code Reviewer
+name: AI Code Review
 
 on:
   pull_request:
-    types: [opened]
+    types: [opened, synchronize]
 
-permissions:
-  contents: read
-  pull-requests: write
 jobs:
-  review:
+  code-review:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v5
+    permissions:
+      pull-requests: write
+      contents: read
 
-      - name: AI PR Review Action
-        uses: cheton/ai-code-reviewer@v0.1.0
-        with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
-          AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
-          AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
-          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
-          exclude: "**/*.json, **/*.md"
+    steps:
+
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 2
+
+
+    - name: Detect meaningful code changes
+      id: diffcheck
+      run: |
+        git fetch origin ${{ github.base_ref }}
+        git diff origin/${{ github.base_ref }}...HEAD --ignore-all-space --ignore-blank-lines > diff.txt
+        if [ -s diff.txt ]; then
+          echo "run_review=true" >> $GITHUB_OUTPUT
+        else
+          echo "run_review=false" >> $GITHUB_OUTPUT
+        fi
+
+
+
+    - name: Skip if only whitespace or empty line changes
+      if: steps.diffcheck.outputs.run_review == 'false'
+      run: echo "No meaningful code changes detected. Skipping AI review."
+
+
+
+    - name: Delete previous bot comment
+      if: steps.diffcheck.outputs.run_review == 'true'
+      uses: peter-evans/delete-comment@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        issue-number: ${{ github.event.pull_request.number }}
+        comment-author: 'github-actions[bot]'
+
+
+
+    - name: Azure OpenAI CodeReviewer
+      uses: stanlee000/ChatGPT-CodeReview@0.0.3
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+        AZURE_API_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+        AZURE_OPENAI_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
+        AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
+      top_p: 0.9
+      temperature: 0.3
+      max_tokens: 8000
+      MAX_PATCH_LENGTH: 15000
