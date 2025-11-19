@@ -101,7 +101,7 @@ public class AchievementService : IAchievementService
         }
     }
 
-    public async Task<bool> UpdateUserProgressAsync(Guid userId, PracticeFeature feature, int count, CancellationToken ct)
+    public async Task UpdateUserProgressAsync(Guid userId, PracticeFeature feature, int count, CancellationToken ct)
     {
         try
         {
@@ -129,8 +129,6 @@ public class AchievementService : IAchievementService
             await _context.SaveChangesAsync(ct);
 
             await CheckAndUnlockAchievementsAsync(userId, feature, count, ct);
-
-            return true;
         }
         catch (Exception ex)
         {

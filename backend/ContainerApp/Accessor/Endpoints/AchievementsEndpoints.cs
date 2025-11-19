@@ -38,15 +38,10 @@ public static class AchievementsEndpoints
             logger.LogWarning("Request cancelled while retrieving achievements");
             return Results.StatusCode(499);
         }
-        catch (DbUpdateException ex)
-        {
-            logger.LogError(ex, "Database error retrieving achievements");
-            return Results.Problem("Database error occurred while fetching achievements.", statusCode: 503);
-        }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unexpected error retrieving achievements");
-            return Results.Problem("Unexpected error occurred while fetching achievements.");
+            logger.LogError(ex, "Error retrieving achievements");
+            return Results.Problem("Error occurred while fetching achievements.", statusCode: 500);
         }
     }
 
@@ -75,15 +70,10 @@ public static class AchievementsEndpoints
             logger.LogWarning("Request cancelled while retrieving unlocked achievements for user {UserId}", userId);
             return Results.StatusCode(499);
         }
-        catch (DbUpdateException ex)
-        {
-            logger.LogError(ex, "Database error retrieving unlocked achievements for user {UserId}", userId);
-            return Results.Problem("Database error occurred while fetching unlocked achievements.", statusCode: 503);
-        }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unexpected error retrieving unlocked achievements for user {UserId}", userId);
-            return Results.Problem("Unexpected error occurred while fetching unlocked achievements.");
+            logger.LogError(ex, "Error retrieving unlocked achievements for user {UserId}", userId);
+            return Results.Problem("Error occurred while fetching unlocked achievements.", statusCode: 500);
         }
     }
 
@@ -171,15 +161,10 @@ public static class AchievementsEndpoints
             logger.LogWarning("Request cancelled while retrieving progress for user {UserId}, feature {Feature}", userId, practiceFeature);
             return Results.StatusCode(499);
         }
-        catch (DbUpdateException ex)
-        {
-            logger.LogError(ex, "Database error retrieving progress for user {UserId}, feature {Feature}", userId, practiceFeature);
-            return Results.Problem("Database error occurred while fetching progress.", statusCode: 503);
-        }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unexpected error retrieving progress for user {UserId}, feature {Feature}", userId, practiceFeature);
-            return Results.Problem("Unexpected error occurred while fetching progress.");
+            logger.LogError(ex, "Error retrieving progress for user {UserId}, feature {Feature}", userId, practiceFeature);
+            return Results.Problem("Error occurred while fetching progress.", statusCode: 500);
         }
     }
 
@@ -202,17 +187,17 @@ public static class AchievementsEndpoints
             return Results.BadRequest("Request body cannot be null.");
         }
 
+        if (request.Count < 0)
+        {
+            logger.LogWarning("UpdateUserProgressAsync called with negative count: {Count}", request.Count);
+            return Results.BadRequest("Count cannot be negative.");
+        }
+
         using var scope = logger.BeginScope("UpdateUserProgressAsync. UserId={UserId}, Feature={Feature}, Count={Count}", userId, request.Feature, request.Count);
 
         try
         {
-            var success = await achievementService.UpdateUserProgressAsync(userId, request.Feature, request.Count, ct);
-
-            if (!success)
-            {
-                logger.LogWarning("Failed to update progress for user {UserId}, feature {Feature}", userId, request.Feature);
-                return Results.Problem("Failed to update progress.");
-            }
+            await achievementService.UpdateUserProgressAsync(userId, request.Feature, request.Count, ct);
 
             logger.LogInformation("Successfully updated progress for user {UserId}, feature {Feature} to count {Count}", userId, request.Feature, request.Count);
             return Results.Ok(new { message = "Progress updated successfully" });
