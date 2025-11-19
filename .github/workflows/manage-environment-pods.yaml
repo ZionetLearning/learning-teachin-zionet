@@ -27,6 +27,21 @@ on:
           - start
         default: stop
 
+  workflow_call:
+    inputs:
+      environment:
+        description: "Environment type"
+        required: true
+        type: string
+      environment_name:
+        description: "Environment name (namespace)"
+        required: true
+        type: string
+      action:
+        description: "What do you want to do?"
+        required: true
+        type: string
+
 jobs:
   manage-env:
     runs-on: ubuntu-latest
@@ -53,8 +68,9 @@ jobs:
 
       - name: Stop / Start environment
         run: |
-          ENV_NAME="${{ github.event.inputs.environment_name }}"
-          ACTION="${{ github.event.inputs.action }}"
+          ENV_TYPE="${{ inputs.environment || github.event.inputs.environment }}"
+          ENV_NAME="${{ inputs.environment_name || github.event.inputs.environment_name }}"
+          ACTION="${{ inputs.action || github.event.inputs.action }}"
 
           NAMESPACE="$ENV_NAME"
 

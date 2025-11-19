@@ -25,10 +25,14 @@ on:
 permissions:
   issues: write
   contents: read
+  id-token: write  # Required for Azure OIDC authentication
 
 jobs:
   manage-lock:
     runs-on: ubuntu-latest
+    outputs:
+      state_changed: ${{ steps.lock-action.outputs.state_changed }}
+      notification_needed: ${{ steps.lock-action.outputs.notification_needed }}
     steps:
       - name: Ensure lock issue exists
         id: find-issue
@@ -85,12 +89,14 @@ jobs:
           USER="$GITHUB_ACTOR"
           REPO="$GITHUB_REPOSITORY"
           NOTIFICATION_NEEDED=false
+          STATE_CHANGED=false
 
           if [ "$ACTION" = "lock" ]; then
             if [ "$IS_LOCKED" = "true" ]; then
               if [ "$CURRENT_LOCKED_BY" = "$USER" ]; then
                 echo "✅ Environment already locked by $USER. Nothing to do."
                 echo "notification_needed=false" >> $GITHUB_OUTPUT
+                echo "state_changed=false" >> $GITHUB_OUTPUT
                 exit 0
               else
                 echo "::error::Environment is already locked by $CURRENT_LOCKED_BY. You must unlock it first."
@@ -98,18 +104,21 @@ jobs:
               fi
             fi
 
-            echo "🔒 Locking featest by $USER"
+            echo "🔒 Locking featest by $USER (STATE CHANGE: unlocked → locked)"
             BODY=$(echo -e "locked_by=$USER\nlocked_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)")
             gh issue edit "$ISSUE" \
               --repo "$REPO" \
               --add-label "locked" \
               --body "$BODY"
             echo "notification_needed=true" >> $GITHUB_OUTPUT
+            echo "state_changed=true" >> $GITHUB_OUTPUT
 
           elif [ "$ACTION" = "unlock" ]; then
             if [ "$IS_LOCKED" != "true" ]; then
-              echo "::error::Environment is not locked. Nothing to unlock."
-              exit 1
+              echo "✅ Environment is already unlocked. Nothing to do."
+              echo "notification_needed=false" >> $GITHUB_OUTPUT
+              echo "state_changed=false" >> $GITHUB_OUTPUT
+              exit 0
             fi
 
             if [ "$USER" = "$CURRENT_LOCKED_BY" ]; then
@@ -126,13 +135,14 @@ jobs:
               echo "✅ Unlock approved: $USER provided correct locker name ($INPUT_LOCKED_BY)."
             fi
 
-            echo "🔓 Unlocking featest by $USER"
+            echo "🔓 Unlocking featest by $USER (STATE CHANGE: locked → unlocked)"
             BODY=$(echo -e "Unlocked by $USER\nunlocked_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)")
             gh issue edit "$ISSUE" \
               --repo "$REPO" \
               --remove-label "locked" \
               --body "$BODY"
             echo "notification_needed=true" >> $GITHUB_OUTPUT
+            echo "state_changed=true" >> $GITHUB_OUTPUT
           else
             echo "::error::Unknown action: $ACTION"
             exit 1
@@ -157,14 +167,14 @@ jobs:
           TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
           
           if [ "$ACTION" = "lock" ]; then
-            TITLE="🔒 Featest Environment Locked"
+            TITLE="🔒 Featest Environment Locked & Started"
             COLOR="FF6B35"
-            MESSAGE="Featest environment has been locked"
+            MESSAGE="Featest environment has been locked and pods scaled UP (ready for use)"
             ACTION_TEXT="Locked by"
           else
-            TITLE="🔓 Featest Environment Unlocked" 
+            TITLE="🔓 Featest Environment Unlocked & Stopped" 
             COLOR="28A745"
-            MESSAGE="Featest environment has been unlocked"
+            MESSAGE="Featest environment has been unlocked and pods scaled DOWN (sleeping)"
             ACTION_TEXT="Unlocked by"
           fi
 
@@ -214,3 +224,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           TEAMS_WEBHOOK_URL_FEATEST: ${{ secrets.TEAMS_WEBHOOK_URL_FEATEST }}
+
+  manage-pods:
+    needs: manage-lock
+    if: success() && needs.manage-lock.outputs.state_changed == 'true'
+    uses: ./.github/workflows/manage-environment-pods.yaml
+    with:
+      environment: Development
+      environment_name: featest
+      action: ${{ (inputs.action || github.event.inputs.action) == 'lock' && 'start' || 'stop' }}
+    secrets: inherit
