@@ -1,9 +1,6 @@
 name: Manage Environment Pods
 
 on:
-  push:
-    branches:
-      - snir/1022/create-workflow-to-start-stop-environment-pods-in-aks
   workflow_dispatch:
     inputs:
       environment:
