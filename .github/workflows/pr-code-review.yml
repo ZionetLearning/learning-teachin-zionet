@@ -42,8 +42,8 @@ jobs:
       if: steps.diffcheck.outputs.run_review == 'true'
       uses: izhangzhihao/delete-comment@master
       with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        issue-number: ${{ github.event.pull_request.number }}
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        issue_number: ${{ github.event.pull_request.number }}
         delete_user_name: github-actions[bot]
 
 
