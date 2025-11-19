@@ -1,4 +1,4 @@
-# DEV overrides for the Helm chart
+# Template overrides for non-dev/non-prod environments (e.g., test, featest, featest2) for the Helm chart
 global:
   dockerRegistry: ""   # CI sets: docker.io/<org> or <acr>.azurecr.io
   imagePullPolicy: IfNotPresent
