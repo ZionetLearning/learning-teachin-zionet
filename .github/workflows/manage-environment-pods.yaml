@@ -43,29 +43,29 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      # - name: Set AKS variables
-      #   run: |
-      #     echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
-      #     echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
+      - name: Set AKS variables
+        run: |
+          echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
+          echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
 
-      # - name: Get AKS credentials
-      #   run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
+      - name: Get AKS credentials
+        run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
 
-      # - name: Stop / Start environment
-      #   run: |
-      #     ENV_NAME="${{ github.event.inputs.environment_name }}"
-      #     ACTION="${{ github.event.inputs.action }}"
+      - name: Stop / Start environment
+        run: |
+          ENV_NAME="${{ github.event.inputs.environment_name }}"
+          ACTION="${{ github.event.inputs.action }}"
 
-      #     NAMESPACE="$ENV_NAME"
+          NAMESPACE="$ENV_NAME"
 
-      #     echo "Managing environment: $ENV_TYPE ($ENV_NAME), namespace: $NAMESPACE, action: $ACTION"
+          echo "Managing environment: $ENV_TYPE ($ENV_NAME), namespace: $NAMESPACE, action: $ACTION"
 
-      #     if [ "$ACTION" = "stop" ]; then
-      #       echo "Stopping all deployments and statefulsets in $NAMESPACE..."
-      #       kubectl scale deploy -n "$NAMESPACE" --all --replicas=0
-      #       kubectl scale statefulset -n "$NAMESPACE" --all --replicas=0 || true
-      #     else
-      #       echo "Starting all deployments and statefulsets in $NAMESPACE..."
-      #       kubectl scale deploy -n "$NAMESPACE" --all --replicas=1
-      #       kubectl scale statefulset -n "$NAMESPACE" --all --replicas=1 || true
-      #     fi
+          if [ "$ACTION" = "stop" ]; then
+            echo "Stopping all deployments and statefulsets in $NAMESPACE..."
+            kubectl scale deploy -n "$NAMESPACE" --all --replicas=0
+            kubectl scale statefulset -n "$NAMESPACE" --all --replicas=0 || true
+          else
+            echo "Starting all deployments and statefulsets in $NAMESPACE..."
+            kubectl scale deploy -n "$NAMESPACE" --all --replicas=1
+            kubectl scale statefulset -n "$NAMESPACE" --all --replicas=1 || true
+          fi
