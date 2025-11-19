@@ -31,5 +31,10 @@ public class UserAchievementsConfiguration : IEntityTypeConfiguration<UserAchiev
         builder.HasIndex(ua => ua.UserId);
         builder.HasIndex(ua => ua.AchievementId);
         builder.HasIndex(ua => new { ua.UserId, ua.AchievementId }).IsUnique();
+
+        builder.HasOne<AchievementModel>()
+            .WithMany()
+            .HasForeignKey(ua => ua.AchievementId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
