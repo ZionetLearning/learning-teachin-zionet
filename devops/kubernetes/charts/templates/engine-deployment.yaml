@@ -30,6 +30,8 @@ spec:
       imagePullSecrets:
         - name: {{ .Values.global.imagePullSecret.name }}
       {{- end }}
+      {{- include "app.spot.affinity" . | nindent 6 }}
+      {{- include "app.spot.tolerations" . | nindent 6 }}
       containers:
         - name: {{ .Values.engine.name }}
           image: {{ include "app.image" (dict "name" .Values.engine.image.name "tag" .Values.engine.image.tag "Values" .Values) }}
