@@ -47,7 +47,7 @@ logger.info(
 # Kubernetes & HTTP client init/teardown
 # ---------------------------
 @asynccontextmanager
-async def lifespan():
+async def lifespan(app):
     global k8s_ready, http_client, k8s_apis
 
     # Startup - your existing startup code
