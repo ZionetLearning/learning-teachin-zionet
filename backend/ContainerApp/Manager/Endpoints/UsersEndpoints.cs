@@ -539,7 +539,6 @@ public static class UsersEndpoints
             var updateUser = new UpdateUserRequest
             {
                 Interests = request.Interests,
-
             };
 
             var updated = await usersAccessorClient.UpdateUserAsync(updateUser.ToAccessor(), userId);
