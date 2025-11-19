@@ -10,12 +10,14 @@ on:
         options:
           - Development
           - Production
+        default: Development
       environment_name:
         description: "Environment name (namespace)"
         required: true
         type: choice
         options:
           - featest
+        default: featest
       action:
         description: "What do you want to do?"
         required: true
@@ -23,6 +25,7 @@ on:
         options:
           - stop
           - start
+        default: stop
 
 jobs:
   manage-env:
