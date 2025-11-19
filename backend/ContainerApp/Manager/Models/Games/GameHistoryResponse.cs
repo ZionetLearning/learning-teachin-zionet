@@ -3,7 +3,7 @@ namespace Manager.Models.Games;
 /// <summary>
 /// Wrapper for game history response that can contain either summary or detailed data
 /// </summary>
-public class GameHistoryResponse
+public sealed record GameHistoryResponse
 {
     public PagedResult<SummaryHistoryDto>? Summary { get; set; }
     public PagedResult<AttemptHistoryDto>? Detailed { get; set; }

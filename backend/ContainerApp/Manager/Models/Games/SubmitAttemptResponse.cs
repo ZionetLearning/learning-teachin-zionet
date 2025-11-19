@@ -3,7 +3,7 @@ namespace Manager.Models.Games;
 /// <summary>
 /// Response model to frontend after submitting a game attempt
 /// </summary>
-public sealed class SubmitAttemptResponse
+public sealed record SubmitAttemptResponse
 {
     public required Guid AttemptId { get; set; }
     public required Guid ExerciseId { get; set; }

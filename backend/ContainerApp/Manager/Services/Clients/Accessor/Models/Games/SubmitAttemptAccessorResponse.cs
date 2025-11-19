@@ -6,7 +6,7 @@ namespace Manager.Services.Clients.Accessor.Models.Games;
 /// <summary>
 /// Response model received from Accessor service after submitting a game attempt
 /// </summary>
-public class SubmitAttemptAccessorResponse
+public sealed record SubmitAttemptAccessorResponse
 {
     public required Guid AttemptId { get; set; }
     public required Guid ExerciseId { get; set; }

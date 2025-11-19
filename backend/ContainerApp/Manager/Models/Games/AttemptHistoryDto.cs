@@ -1,6 +1,6 @@
 namespace Manager.Models.Games;
 
-public class AttemptHistoryDto
+public sealed record AttemptHistoryDto
 {
     public required Guid ExerciseId { get; set; }
     public required Guid AttemptId { get; set; }

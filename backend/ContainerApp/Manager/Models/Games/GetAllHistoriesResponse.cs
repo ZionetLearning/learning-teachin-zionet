@@ -3,7 +3,7 @@ namespace Manager.Models.Games;
 /// <summary>
 /// Response model for getting all student histories (admin/teacher view)
 /// </summary>
-public sealed class GetAllHistoriesResponse
+public sealed record GetAllHistoriesResponse
 {
     public required IEnumerable<StudentExerciseHistory> Items { get; set; } = new List<StudentExerciseHistory>();
     public required int Page { get; set; }

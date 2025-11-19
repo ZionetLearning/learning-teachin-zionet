@@ -6,7 +6,7 @@ namespace Manager.Services.Clients.Accessor.Models.Games;
 /// <summary>
 /// Response model received from Accessor service for game history
 /// </summary>
-public class GetHistoryAccessorResponse
+public sealed record GetHistoryAccessorResponse
 {
     public PagedResult<SummaryHistoryDto>? Summary { get; set; }
     public PagedResult<AttemptHistoryDto>? Detailed { get; set; }

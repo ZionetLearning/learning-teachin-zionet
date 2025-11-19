@@ -1,10 +1,12 @@
 using System.Security.Claims;
 using Manager.Constants;
-using Manager.Models.Users;
+using Manager.Mapping;
+using Manager.Models;
 using Manager.Models.Games;
+using Manager.Models.ModelValidation;
+using Manager.Models.Users;
 using Manager.Services.Clients.Accessor;
 using Microsoft.AspNetCore.Mvc;
-using Manager.Mapping;
 
 namespace Manager.Endpoints;
 
@@ -45,6 +47,11 @@ public static class GamesEndpoints
         {
             var callerRole = http.User.FindFirstValue(AuthSettings.RoleClaimType);
             var callerIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
+            if (!ValidationExtensions.TryValidate(request, out var validationErrors))
+            {
+                logger.LogWarning("Validation failed for {Model}: {Errors}", nameof(TaskModel), validationErrors);
+                return Results.BadRequest(new { errors = validationErrors });
+            }
 
             if (!Guid.TryParse(callerIdRaw, out var studentId))
             {

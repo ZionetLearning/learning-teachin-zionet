@@ -2,7 +2,7 @@ using Manager.Models.UserGameConfiguration;
 
 namespace Manager.Models.Games;
 
-public class StudentExerciseHistory
+public sealed record StudentExerciseHistory
 {
     public required Guid StudentId { get; set; }
     public required GameName GameType { get; set; }

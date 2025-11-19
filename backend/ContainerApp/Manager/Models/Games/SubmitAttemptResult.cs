@@ -2,7 +2,7 @@ using Manager.Models.UserGameConfiguration;
 
 namespace Manager.Models.Games;
 
-public class SubmitAttemptResult
+public sealed record SubmitAttemptResult
 {
     public required Guid AttemptId { get; set; }
     public required Guid ExerciseId { get; set; }

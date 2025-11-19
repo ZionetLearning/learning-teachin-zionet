@@ -5,7 +5,7 @@ namespace Manager.Services.Clients.Accessor.Models.Games;
 /// <summary>
 /// Response model received from Accessor service for all student histories
 /// </summary>
-public class GetAllHistoriesAccessorResponse
+public sealed record GetAllHistoriesAccessorResponse
 {
     public required IEnumerable<StudentExerciseHistory> Items { get; set; } = new List<StudentExerciseHistory>();
     public required int Page { get; set; }

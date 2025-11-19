@@ -1,6 +1,6 @@
 namespace Manager.Models.Games;
 
-public class SummaryHistoryDto
+public sealed record SummaryHistoryDto
 {
     public required string GameType { get; set; } = string.Empty;
     public required Difficulty Difficulty { get; set; }

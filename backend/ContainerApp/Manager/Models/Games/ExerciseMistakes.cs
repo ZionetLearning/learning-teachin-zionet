@@ -2,7 +2,7 @@ using Manager.Models.UserGameConfiguration;
 
 namespace Manager.Models.Games;
 
-public class ExerciseMistakes
+public sealed record ExerciseMistakes
 {
     public required GameName GameType { get; set; }
     public required Guid ExerciseId { get; set; }
@@ -11,7 +11,7 @@ public class ExerciseMistakes
     public required List<MistakeAttempt> Mistakes { get; set; } = new();
 }
 
-public class MistakeAttempt
+public sealed record MistakeAttempt
 {
     public required Guid AttemptId { get; set; }
     public required List<string> WrongAnswer { get; set; } = new();
