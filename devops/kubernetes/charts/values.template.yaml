@@ -11,7 +11,7 @@ global:
 
 namespace:
   create: true
-  name: {{ .Values.global.environment }}
+  name: ""  # Will be set dynamically by the deployment pipeline
 
 cronjobs:
   statsPing:
