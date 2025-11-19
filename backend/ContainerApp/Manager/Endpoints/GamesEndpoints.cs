@@ -4,7 +4,7 @@ using Manager.Mapping;
 using Manager.Models.Games;
 using Manager.Models.ModelValidation;
 using Manager.Models.Users;
-using Manager.Services.Clients.Accessor;
+using Manager.Services.Clients.Accessor.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Endpoints;

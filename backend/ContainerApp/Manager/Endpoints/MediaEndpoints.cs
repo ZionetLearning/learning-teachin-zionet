@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Manager.Services.Clients.Accessor;
+using Manager.Services.Clients.Accessor.Interfaces;
 
 namespace Manager.Endpoints;
 

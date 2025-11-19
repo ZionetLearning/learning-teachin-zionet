@@ -1,7 +1,7 @@
 ﻿using Manager.Endpoints;
 using Manager.Models;
 using Manager.Services;
-using Manager.Services.Clients.Accessor;
+using Manager.Services.Clients.Accessor.Interfaces;
 using Manager.Services.Clients.Engine;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;

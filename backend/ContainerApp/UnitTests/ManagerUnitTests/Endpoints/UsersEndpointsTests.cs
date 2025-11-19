@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Manager.Endpoints;
 using Manager.Models.Users;
-using Manager.Services.Clients.Accessor;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Logging;
@@ -11,12 +10,13 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Xunit;
 using Manager.Constants;
+using Manager.Services.Clients.Accessor.Interfaces;
 
 namespace ManagerUnitTests.Endpoints;
 
 public class UsersEndpointsTests
 {
-    private readonly Mock<IAccessorClient> _mockAccessor = new(MockBehavior.Strict);
+    private readonly Mock<IUsersAccessorClient> _mockUsersAccessor = new(MockBehavior.Strict);
     private readonly Mock<ILogger<object>> _mockLogger = new();
 
     // ---- CREATE USER ----
@@ -26,7 +26,7 @@ public class UsersEndpointsTests
         var newUser = MakeCreateUser("fail@test.com", role: "alien");
         var ctx = new DefaultHttpContext();
 
-        var result = await Invoke("CreateUserAsync", newUser, _mockAccessor.Object, _mockLogger.Object, ctx);
+        var result = await Invoke("CreateUserAsync", newUser, _mockUsersAccessor.Object, _mockLogger.Object, ctx);
 
         var status = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
         status.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
@@ -38,14 +38,14 @@ public class UsersEndpointsTests
         var newUser = MakeCreateUser("dupe@test.com");
         var ctx = new DefaultHttpContext();
 
-        _mockAccessor.Setup(a => a.CreateUserAsync(It.IsAny<UserModel>())).ReturnsAsync(false);
+        _mockUsersAccessor.Setup(a => a.CreateUserAsync(It.IsAny<UserModel>())).ReturnsAsync(false);
 
-        var result = await Invoke("CreateUserAsync", newUser, _mockAccessor.Object, _mockLogger.Object, ctx);
+        var result = await Invoke("CreateUserAsync", newUser, _mockUsersAccessor.Object, _mockLogger.Object, ctx);
 
         var status = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
         status.StatusCode.Should().Be(StatusCodes.Status409Conflict);
 
-        _mockAccessor.VerifyAll();
+        _mockUsersAccessor.VerifyAll();
     }
 
     [Fact]
@@ -55,14 +55,14 @@ public class UsersEndpointsTests
         var ctx = new DefaultHttpContext();
         ctx.Request.Headers["Accept-Language"] = "he-IL";
 
-        _mockAccessor.Setup(a => a.CreateUserAsync(It.IsAny<UserModel>())).ReturnsAsync(true);
+        _mockUsersAccessor.Setup(a => a.CreateUserAsync(It.IsAny<UserModel>())).ReturnsAsync(true);
 
-        var result = await Invoke("CreateUserAsync", newUser, _mockAccessor.Object, _mockLogger.Object, ctx);
+        var result = await Invoke("CreateUserAsync", newUser, _mockUsersAccessor.Object, _mockLogger.Object, ctx);
 
         var status = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
         status.StatusCode.Should().Be(StatusCodes.Status201Created);
 
-        _mockAccessor.VerifyAll();
+        _mockUsersAccessor.VerifyAll();
     }
 
     // ---- GET USER ----
@@ -70,29 +70,29 @@ public class UsersEndpointsTests
     public async Task GetUser_Should_Return_NotFound_When_NoUser()
     {
         var userId = Guid.NewGuid();
-        _mockAccessor.Setup(a => a.GetUserAsync(userId)).ReturnsAsync((UserData?)null);
+        _mockUsersAccessor.Setup(a => a.GetUserAsync(userId)).ReturnsAsync((UserData?)null);
 
-        var result = await Invoke("GetUserAsync", userId, _mockAccessor.Object, _mockLogger.Object);
+        var result = await Invoke("GetUserAsync", userId, _mockUsersAccessor.Object, _mockLogger.Object);
 
         var status = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
         status.StatusCode.Should().Be(StatusCodes.Status404NotFound);
 
-        _mockAccessor.VerifyAll();
+        _mockUsersAccessor.VerifyAll();
     }
 
     [Fact]
     public async Task GetUser_Should_Return_Ok_When_UserExists()
     {
         var userId = Guid.NewGuid();
-        _mockAccessor.Setup(a => a.GetUserAsync(userId)).ReturnsAsync(MakeUserData(Role.Student, "found@test.com", userId));
+        _mockUsersAccessor.Setup(a => a.GetUserAsync(userId)).ReturnsAsync(MakeUserData(Role.Student, "found@test.com", userId));
 
-        var result = await Invoke("GetUserAsync", userId, _mockAccessor.Object, _mockLogger.Object);
+        var result = await Invoke("GetUserAsync", userId, _mockUsersAccessor.Object, _mockLogger.Object);
 
         var ok = Assert.IsType<Ok<UserData>>(result);
         ok.Value.Should().NotBeNull();
         ok.Value!.Email.Should().Be("found@test.com");
 
-        _mockAccessor.VerifyAll();
+        _mockUsersAccessor.VerifyAll();
     }
 
     // ---- UPDATE USER ----
@@ -100,7 +100,7 @@ public class UsersEndpointsTests
     public async Task UpdateUser_Should_Return_NotFound_When_UserMissing()
     {
         var userId = Guid.NewGuid();
-        _mockAccessor.Setup(a => a.GetUserAsync(userId)).ReturnsAsync((UserData?)null);
+        _mockUsersAccessor.Setup(a => a.GetUserAsync(userId)).ReturnsAsync((UserData?)null);
 
         var update = new UpdateUserModel { PreferredLanguageCode = SupportedLanguage.he };
 
@@ -110,19 +110,19 @@ public class UsersEndpointsTests
         new ClaimsIdentity([new Claim(AuthSettings.RoleClaimType, "Admin")], "TestAuth"))
         };
 
-        var result = await Invoke("UpdateUserAsync", userId, update, _mockAccessor.Object, _mockLogger.Object, httpContext);
+        var result = await Invoke("UpdateUserAsync", userId, update, _mockUsersAccessor.Object, _mockLogger.Object, httpContext);
 
         var status = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
         status.StatusCode.Should().Be(StatusCodes.Status404NotFound);
 
-        _mockAccessor.VerifyAll();
+        _mockUsersAccessor.VerifyAll();
     }
 
     [Fact]
     public async Task UpdateUser_Should_Return_BadRequest_When_InvalidLanguage()
     {
         var userId = Guid.NewGuid();
-        _mockAccessor.Setup(a => a.GetUserAsync(userId)).ReturnsAsync(MakeUserData(Role.Student, "lang@test.com", userId));
+        _mockUsersAccessor.Setup(a => a.GetUserAsync(userId)).ReturnsAsync(MakeUserData(Role.Student, "lang@test.com", userId));
 
         var update = new UpdateUserModel { PreferredLanguageCode = (SupportedLanguage)999 };
         var httpContext = new DefaultHttpContext
@@ -131,19 +131,19 @@ public class UsersEndpointsTests
        new ClaimsIdentity([new Claim(AuthSettings.RoleClaimType, "Admin")], "TestAuth"))
         };
 
-        var result = await Invoke("UpdateUserAsync", userId, update, _mockAccessor.Object, _mockLogger.Object, httpContext);
+        var result = await Invoke("UpdateUserAsync", userId, update, _mockUsersAccessor.Object, _mockLogger.Object, httpContext);
 
         var status = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
         status.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
 
-        _mockAccessor.VerifyAll();
+        _mockUsersAccessor.VerifyAll();
     }
 
     [Fact]
     public async Task UpdateUser_Should_Return_BadRequest_When_NonStudentSetsHebrewLevel()
     {
         var userId = Guid.NewGuid();
-        _mockAccessor.Setup(a => a.GetUserAsync(userId)).ReturnsAsync(MakeUserData(Role.Teacher, "teach@test.com", userId));
+        _mockUsersAccessor.Setup(a => a.GetUserAsync(userId)).ReturnsAsync(MakeUserData(Role.Teacher, "teach@test.com", userId));
 
         var update = new UpdateUserModel { HebrewLevelValue = HebrewLevel.fluent };
         var httpContext = new DefaultHttpContext
@@ -152,20 +152,20 @@ public class UsersEndpointsTests
        new ClaimsIdentity([new Claim(AuthSettings.RoleClaimType, "Admin")], "TestAuth"))
         };
 
-        var result = await Invoke("UpdateUserAsync", userId, update, _mockAccessor.Object, _mockLogger.Object, httpContext);
+        var result = await Invoke("UpdateUserAsync", userId, update, _mockUsersAccessor.Object, _mockLogger.Object, httpContext);
 
         var status = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
         status.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
 
-        _mockAccessor.VerifyAll();
+        _mockUsersAccessor.VerifyAll();
     }
 
     [Fact]
     public async Task UpdateUser_Should_Return_Ok_When_Valid()
     {
         var userId = Guid.NewGuid();
-        _mockAccessor.Setup(a => a.GetUserAsync(userId)).ReturnsAsync(MakeUserData(Role.Student, "update@test.com", userId));
-        _mockAccessor.Setup(a => a.UpdateUserAsync(It.IsAny<UpdateUserModel>(), userId)).ReturnsAsync(true);
+        _mockUsersAccessor.Setup(a => a.GetUserAsync(userId)).ReturnsAsync(MakeUserData(Role.Student, "update@test.com", userId));
+        _mockUsersAccessor.Setup(a => a.UpdateUserAsync(It.IsAny<UpdateUserModel>(), userId)).ReturnsAsync(true);
 
         var update = new UpdateUserModel { PreferredLanguageCode = SupportedLanguage.he };
 
@@ -176,12 +176,12 @@ public class UsersEndpointsTests
        new ClaimsIdentity([new Claim(AuthSettings.RoleClaimType, "Admin")], "TestAuth"))
         };
 
-        var result = await Invoke("UpdateUserAsync", userId, update, _mockAccessor.Object, _mockLogger.Object, httpContext);
+        var result = await Invoke("UpdateUserAsync", userId, update, _mockUsersAccessor.Object, _mockLogger.Object, httpContext);
 
         var status = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
         status.StatusCode.Should().Be(StatusCodes.Status200OK);
 
-        _mockAccessor.VerifyAll();
+        _mockUsersAccessor.VerifyAll();
     }
 
     // ---- DELETE USER ----
@@ -189,28 +189,28 @@ public class UsersEndpointsTests
     public async Task DeleteUser_Should_Return_NotFound_When_Missing()
     {
         var userId = Guid.NewGuid();
-        _mockAccessor.Setup(a => a.DeleteUserAsync(userId)).ReturnsAsync(false);
+        _mockUsersAccessor.Setup(a => a.DeleteUserAsync(userId)).ReturnsAsync(false);
 
-        var result = await Invoke("DeleteUserAsync", userId, _mockAccessor.Object, _mockLogger.Object);
+        var result = await Invoke("DeleteUserAsync", userId, _mockUsersAccessor.Object, _mockLogger.Object);
 
         var status = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
         status.StatusCode.Should().Be(StatusCodes.Status404NotFound);
 
-        _mockAccessor.VerifyAll();
+        _mockUsersAccessor.VerifyAll();
     }
 
     [Fact]
     public async Task DeleteUser_Should_Return_Ok_When_Deleted()
     {
         var userId = Guid.NewGuid();
-        _mockAccessor.Setup(a => a.DeleteUserAsync(userId)).ReturnsAsync(true);
+        _mockUsersAccessor.Setup(a => a.DeleteUserAsync(userId)).ReturnsAsync(true);
 
-        var result = await Invoke("DeleteUserAsync", userId, _mockAccessor.Object, _mockLogger.Object);
+        var result = await Invoke("DeleteUserAsync", userId, _mockUsersAccessor.Object, _mockLogger.Object);
 
         var status = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
         status.StatusCode.Should().Be(StatusCodes.Status200OK);
 
-        _mockAccessor.VerifyAll();
+        _mockUsersAccessor.VerifyAll();
     }
 
     // ---- UTILS ----

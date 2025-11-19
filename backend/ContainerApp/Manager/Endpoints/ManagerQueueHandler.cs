@@ -8,9 +8,9 @@ using Manager.Models.QueueMessages;
 using Manager.Models.Sentences;
 using Manager.Services;
 using Manager.Services.Clients.Accessor.Models;
-using Manager.Services.Clients.Accessor;
 using Manager.Models.Words;
 using Manager.Models.UserGameConfiguration;
+using Manager.Services.Clients.Accessor.Interfaces;
 
 namespace Manager.Endpoints;
 
