@@ -69,9 +69,10 @@ resource "azurerm_key_vault_secret" "avatars_storage_connection" {
 }
 
 ########################
-# Engine Tavily API Key secret
+# Engine Tavily API Key secret - Global/Shared for all environments (dev environment only)
 ########################
 resource "azurerm_key_vault_secret" "engine_tavily_apikey" {
+  count        = var.environment_name == "dev" ? 1 : 0
   name         = "engine-tavily-apikey"
   value        = var.tavily_api_key
   key_vault_id = data.azurerm_key_vault.shared.id
