@@ -5,13 +5,13 @@ namespace Manager.Models.Games;
 /// </summary>
 public sealed record SubmitAttemptResponse
 {
-    public required Guid AttemptId { get; set; }
-    public required Guid ExerciseId { get; set; }
-    public required Guid StudentId { get; set; }
-    public required string GameType { get; set; }
-    public required Difficulty Difficulty { get; set; }
-    public required AttemptStatus Status { get; set; }
-    public required List<string> CorrectAnswer { get; set; } = new();
-    public required int AttemptNumber { get; set; }
-    public required decimal Accuracy { get; set; }
+    public required Guid AttemptId { get; init; }
+    public required Guid ExerciseId { get; init; }
+    public required Guid StudentId { get; init; }
+    public required string GameType { get; init; }
+    public required Difficulty Difficulty { get; init; }
+    public required AttemptStatus Status { get; init; }
+    public required IReadOnlyList<string> CorrectAnswer { get; init; }
+    public required int AttemptNumber { get; init; }
+    public required decimal Accuracy { get; init; }
 }

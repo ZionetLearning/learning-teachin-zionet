@@ -84,20 +84,20 @@ public class GameAccessorClient : IGameAccessorClient
                 _logger.LogWarning("Accessor returned null history response. StudentId={StudentId}", studentId);
                 return new GetHistoryAccessorResponse
                 {
-                    Summary = summary ? new PagedResult<SummaryHistoryDto> { Page = page, PageSize = pageSize, TotalCount = 0 } : null,
-                    Detailed = !summary ? new PagedResult<AttemptHistoryDto> { Page = page, PageSize = pageSize, TotalCount = 0 } : null
+                    Summary = summary ? new PagedResult<SummaryHistoryDto> { Items = [], Page = page, PageSize = pageSize, TotalCount = 0 } : null,
+                    Detailed = !summary ? new PagedResult<AttemptHistoryDto> { Items = [], Page = page, PageSize = pageSize, TotalCount = 0 } : null
                 };
             }
 
             if (summary && result.Summary != null)
             {
                 _logger.LogInformation("Received summary history from Accessor. StudentId={StudentId}, Items={Count}, TotalCount={TotalCount}",
-                    studentId, result.Summary.Items.Count(), result.Summary.TotalCount);
+                    studentId, result.Summary.Items.Count, result.Summary.TotalCount);
             }
             else if (!summary && result.Detailed != null)
             {
                 _logger.LogInformation("Received detailed history from Accessor. StudentId={StudentId}, Items={Count}, TotalCount={TotalCount}",
-                    studentId, result.Detailed.Items.Count(), result.Detailed.TotalCount);
+                    studentId, result.Detailed.Items.Count, result.Detailed.TotalCount);
             }
 
             return result;
@@ -108,8 +108,8 @@ public class GameAccessorClient : IGameAccessorClient
 
             return new GetHistoryAccessorResponse
             {
-                Summary = summary ? new PagedResult<SummaryHistoryDto> { Page = page, PageSize = pageSize, TotalCount = 0 } : null,
-                Detailed = !summary ? new PagedResult<AttemptHistoryDto> { Page = page, PageSize = pageSize, TotalCount = 0 } : null
+                Summary = summary ? new PagedResult<SummaryHistoryDto> { Items = [], Page = page, PageSize = pageSize, TotalCount = 0 } : null,
+                Detailed = !summary ? new PagedResult<AttemptHistoryDto> { Items = [], Page = page, PageSize = pageSize, TotalCount = 0 } : null
             };
         }
     }
@@ -140,7 +140,7 @@ public class GameAccessorClient : IGameAccessorClient
             }
 
             _logger.LogInformation("Received mistakes from Accessor. StudentId={StudentId}, Items={Count}, TotalCount={TotalCount}",
-                studentId, result.Items.Count(), result.TotalCount);
+                studentId, result.Items.Count, result.TotalCount);
 
             return new GetMistakesAccessorResponse
             {
@@ -188,7 +188,7 @@ public class GameAccessorClient : IGameAccessorClient
                 };
             }
 
-            _logger.LogInformation("Received all histories from Accessor. Items={Count}, TotalCount={TotalCount}", result.Items.Count(), result.TotalCount);
+            _logger.LogInformation("Received all histories from Accessor. Items={Count}, TotalCount={TotalCount}", result.Items.Count, result.TotalCount);
 
             return new GetAllHistoriesAccessorResponse
             {

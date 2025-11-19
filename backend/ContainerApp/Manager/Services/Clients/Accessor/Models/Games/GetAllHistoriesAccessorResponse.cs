@@ -7,8 +7,8 @@ namespace Manager.Services.Clients.Accessor.Models.Games;
 /// </summary>
 public sealed record GetAllHistoriesAccessorResponse
 {
-    public required IEnumerable<StudentExerciseHistory> Items { get; set; } = new List<StudentExerciseHistory>();
-    public required int Page { get; set; }
-    public required int PageSize { get; set; }
-    public required int TotalCount { get; set; }
+    public required IReadOnlyList<StudentExerciseHistory> Items { get; init; }
+    public required int Page { get; init; }
+    public required int PageSize { get; init; }
+    public required int TotalCount { get; init; }
 }

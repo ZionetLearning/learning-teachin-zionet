@@ -5,7 +5,7 @@ namespace Manager.Services.Clients.Accessor.Models.Games;
 /// </summary>
 public sealed record SubmitAttemptAccessorRequest
 {
-    public required Guid StudentId { get; set; }
-    public Guid ExerciseId { get; set; }
-    public required List<string> GivenAnswer { get; set; } = new();
+    public required Guid StudentId { get; init; }
+    public Guid ExerciseId { get; init; }
+    public required IReadOnlyList<string> GivenAnswer { get; init; }
 }

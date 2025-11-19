@@ -4,13 +4,13 @@ namespace Manager.Models.Games;
 
 public sealed record StudentExerciseHistory
 {
-    public required Guid StudentId { get; set; }
-    public required GameName GameType { get; set; }
-    public required Difficulty Difficulty { get; set; }
-    public required int AttemptsCount { get; set; }
-    public required int TotalSuccesses { get; set; }
-    public required int TotalFailures { get; set; }
-    public required string StudentFirstName { get; set; }
-    public required string StudentLastName { get; set; }
-    public required DateTimeOffset Timestamp { get; set; }
+    public required Guid StudentId { get; init; }
+    public required GameName GameType { get; init; }
+    public required Difficulty Difficulty { get; init; }
+    public required int AttemptsCount { get; init; }
+    public required int TotalSuccesses { get; init; }
+    public required int TotalFailures { get; init; }
+    public required string StudentFirstName { get; init; }
+    public required string StudentLastName { get; init; }
+    public required DateTimeOffset Timestamp { get; init; }
 }

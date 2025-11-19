@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using Manager.Constants;
 using Manager.Mapping;
-using Manager.Models;
 using Manager.Models.Games;
 using Manager.Models.ModelValidation;
 using Manager.Models.Users;
@@ -49,7 +48,7 @@ public static class GamesEndpoints
             var callerIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
             if (!ValidationExtensions.TryValidate(request, out var validationErrors))
             {
-                logger.LogWarning("Validation failed for {Model}: {Errors}", nameof(TaskModel), validationErrors);
+                logger.LogWarning("Validation failed for {Model}: {Errors}", nameof(SubmitAttemptRequest), validationErrors);
                 return Results.BadRequest(new { errors = validationErrors });
             }
 
@@ -117,12 +116,12 @@ public static class GamesEndpoints
 
             if (response.IsSummary)
             {
-                logger.LogInformation("Returned {Records} summary records", response.Summary?.Items.Count() ?? 0);
+                logger.LogInformation("Returned {Records} summary records", response.Summary?.Items.Count ?? 0);
                 return Results.Ok(response.Summary);
             }
             else
             {
-                logger.LogInformation("Returned {Records} detailed records", response.Detailed?.Items.Count() ?? 0);
+                logger.LogInformation("Returned {Records} detailed records", response.Detailed?.Items.Count ?? 0);
                 return Results.Ok(response.Detailed);
             }
         }

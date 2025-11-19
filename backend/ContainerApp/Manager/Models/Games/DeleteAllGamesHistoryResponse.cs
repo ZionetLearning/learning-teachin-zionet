@@ -5,5 +5,5 @@ namespace Manager.Models.Games;
 /// </summary>
 public sealed record DeleteAllGamesHistoryResponse
 {
-    public required string Message { get; set; }
+    public required string Message { get; init; }
 }
