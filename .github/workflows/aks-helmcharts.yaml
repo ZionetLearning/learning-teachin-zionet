@@ -26,6 +26,11 @@ on:
         description: "Optional image tag (e.g., commit hash). Empty -> uses environment_name"
         required: false
         default: ""
+      proxy_enabled:
+        description: "Enable the proxy. Set to false to disable proxy and deploy services without it."
+        required: false
+        default: true
+        type: boolean
 
   workflow_call:
     inputs:
@@ -39,6 +44,10 @@ on:
         required: false
         type: string
         description: "Docker image tag to deploy (e.g., commit hash)"
+      proxy_enabled:
+        required: false
+        type: boolean
+        description: "Enable the proxy. Set to false to disable proxy and deploy services without it."
       skip_infra_steps:
         required: false
         type: boolean
@@ -303,6 +312,7 @@ jobs:
             --set accessor.secrets.langfuse.enabled="${{ steps.setup.outputs.langfuse_secrets_enabled }}" \
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false \
+            --set proxy.enabled=${{ inputs.proxy_enabled || github.event.inputs.proxy_enabled || true }}  \
           | grep -n '^kind: Namespace' && { echo "Namespace still rendered"; exit 1; } || echo "OK: no Namespace in chart"
 
       - name: Helm upgrade/install app
@@ -333,7 +343,8 @@ jobs:
             --set langfuse.enabled="$LANGFUSE_ENABLED" \
             --set accessor.secrets.langfuse.enabled="${{ steps.setup.outputs.langfuse_secrets_enabled }}" \
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
-            --set dapr.installComponents=false
+            --set dapr.installComponents=false \
+            --set proxy.enabled=${{ inputs.proxy_enabled || github.event.inputs.proxy_enabled || true }}
             
       - name: Add Langfuse
         if: steps.setup.outputs.deploy_langfuse == 'true' && github.event_name == 'workflow_dispatch'

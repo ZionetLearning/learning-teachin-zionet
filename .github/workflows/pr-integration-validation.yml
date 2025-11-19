@@ -24,7 +24,7 @@ jobs:
       environment_name: test
       # leave empty to build all services (accessor/manager/engine).
       # or set like: "manager,engine"
-      list_services_names: ''
+      proxy_enabled: false
     secrets: inherit
 
   run-integration-tests:

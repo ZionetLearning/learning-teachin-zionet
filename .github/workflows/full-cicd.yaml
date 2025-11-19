@@ -22,11 +22,11 @@ on:
           description: 'Enter custom prefix (lowercase letters & digits only). This will be used as the Kubernetes namespace and environment identifier.'
           required: true
           type: string
-        list_services_names:
-          description: 'Optional comma-separated list of services to build (e.g., accessor,manager). Leave empty for all.'
+        proxy_enabled:
+          description: 'Enable the proxy. Set to false to disable proxy and deploy services without it.'
           required: false
-          type: string
-          default: ''
+          default: true
+          type: boolean
         frontend_apps:
           description: 'Select frontend deployment option'
           required: false
@@ -47,7 +47,6 @@ jobs:
     with:
       environment: ${{ github.event.inputs.environment }}
       environment_name: ${{ github.event.inputs.environment_name }}
-      list_services_names: ${{ github.event.inputs.list_services_names }}
     secrets: inherit
  
   terraform-apply:
@@ -75,6 +74,7 @@ jobs:
       environment_name: ${{ github.event.inputs.environment_name }}
       environment: ${{ github.event.inputs.environment }}
       image_tag: ${{ needs.build-and-push-images.outputs.image_tag }}
+      proxy_enabled: ${{ github.event.inputs.proxy_enabled || true }}
       skip_infra_steps: false
     secrets: inherit
  

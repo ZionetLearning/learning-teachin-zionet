@@ -6,7 +6,7 @@ metadata:
   labels:
     {{ .Values.manager.labels.selectorKey }}: {{ .Values.manager.labels.selectorValue }}
 spec:
-  replicas: 0
+  replicas: {{ ternary 0 1 .Values.proxy.enabled }}
   selector:
     matchLabels:
       {{ .Values.manager.labels.selectorKey }}: {{ .Values.manager.labels.selectorValue }}

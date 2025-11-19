@@ -33,11 +33,11 @@ on:
         description: 'Custom prefix (This is for devops guys only, leave empty otherwise)'
         required: false
         type: string
-      list_services_names:
-        description: 'Optional comma-separated list of services to build (e.g., accessor,manager). Leave empty for all.'
+      proxy_enabled:
+        description: 'Enable the proxy. Set to false to disable proxy and deploy services without it.'
         required: false
-        type: string
-        default: ''
+        default: true
+        type: boolean
       unlock_featest:
         description: 'Set to true to only unlock featest environment (skips deployment)'
         required: false
@@ -52,10 +52,10 @@ on:
         required: false
         type: string
         default: ''
-      list_services_names:
+      proxy_enabled:
         required: false
-        type: string
-        default: ''
+        type: boolean
+        default: true
         
 jobs:
   lock-featest:
@@ -82,7 +82,6 @@ jobs:
     outputs:
       environment: ${{ steps.defaults.outputs.environment }}
       environment_name: ${{ steps.defaults.outputs.environment_name }}
-      list_services_names: ${{ steps.defaults.outputs.list_services_names }}
     steps:
       - name: Set default values
         id: defaults
@@ -91,13 +90,11 @@ jobs:
           IN_ENVIRONMENT: ${{ inputs.environment || github.event.inputs.environment || '' }}
           IN_ENVIRONMENT_NAME: ${{ inputs.environment_name || github.event.inputs.environment_name || '' }}
           IN_CUSTOM_ENVIRONMENT_NAME: ${{ inputs.custom_environment_name || github.event.inputs.custom_environment_name || '' }}
-          IN_LIST_SERVICES_NAMES: ${{ inputs.list_services_names || github.event.inputs.list_services_names || '' }}
         run: |
           if [[ "$EVENT_NAME" == "push" ]]; then
             # Push to main → always deploy "dev"
             echo "environment=Development" >> $GITHUB_OUTPUT
             echo "environment_name=dev" >> $GITHUB_OUTPUT
-            echo "list_services_names=" >> $GITHUB_OUTPUT
           else
             echo "environment=${IN_ENVIRONMENT:-Development}" >> $GITHUB_OUTPUT
             if [[ -n "$IN_CUSTOM_ENVIRONMENT_NAME" ]]; then
@@ -105,7 +102,6 @@ jobs:
             else
               echo "environment_name=${IN_ENVIRONMENT_NAME:-dev}" >> $GITHUB_OUTPUT
             fi
-            echo "list_services_names=$IN_LIST_SERVICES_NAMES" >> $GITHUB_OUTPUT
           fi
 
   build-and-push-images:
@@ -117,7 +113,6 @@ jobs:
     with:
       environment: ${{ needs.set-defaults.outputs.environment }}
       environment_name: ${{ needs.set-defaults.outputs.environment_name }}
-      list_services_names: ${{ needs.set-defaults.outputs.list_services_names }}
     secrets: inherit
 
   helm-deploy:
@@ -131,5 +126,6 @@ jobs:
       environment: ${{ needs.set-defaults.outputs.environment }}
       environment_name: ${{ needs.set-defaults.outputs.environment_name }}
       image_tag: ${{ needs.build-and-push-images.outputs.image_tag }}
+      proxy_enabled: ${{ inputs.proxy_enabled || github.event.inputs.proxy_enabled || true }}
       skip_infra_steps: true
     secrets: inherit
