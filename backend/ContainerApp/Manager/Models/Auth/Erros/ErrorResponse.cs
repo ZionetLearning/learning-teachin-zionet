@@ -1,4 +1,5 @@
 ﻿namespace Manager.Models.Auth.Erros;
+
 public class ErrorResponse
 {
     public int Status { get; init; }

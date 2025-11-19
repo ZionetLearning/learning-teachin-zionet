@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { useState, useEffect, useCallback } from "react";
 import { CircularProgress } from "@mui/material";
 import { useStyles } from "./style";
-import { FeedbackDisplay, AudioControls } from "./components";
+import { FeedbackDisplay, AudioControls, RetryMode } from "./components";
 import { useTypingPractice } from "./hooks";
 import {
   GameConfig,
@@ -18,7 +18,21 @@ import {
 import { getDifficultyLabel } from "@student/features";
 import { useGameConfig } from "@student/hooks";
 
-export const TypingPractice = () => {
+interface RetryData {
+  exerciseId: string;
+  correctAnswer: string[];
+  mistakes: Array<{
+    wrongAnswer: string[];
+    accuracy: number;
+  }>;
+  difficulty: number;
+}
+
+interface TypingPracticeProps {
+  retryData?: RetryData;
+}
+
+const TypingPracticeMain = () => {
   const { t, i18n } = useTranslation();
   const classes = useStyles();
   const {
@@ -244,4 +258,11 @@ export const TypingPractice = () => {
       <ContextAwareChat pageContext={pageContext} />
     </div>
   );
+};
+
+export const TypingPractice = ({ retryData }: TypingPracticeProps) => {
+  if (retryData) {
+    return <RetryMode retryData={retryData} />;
+  }
+  return <TypingPracticeMain />;
 };

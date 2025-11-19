@@ -440,4 +440,29 @@ public class UserService : IUserService
             throw;
         }
     }
+
+    public async Task<bool> UpdateUserLanguageAsync(Guid userId, SupportedLanguage language, CancellationToken ct = default)
+    {
+        _logger.LogInformation("UpdateUserLanguage START (language={Language})", language);
+        try
+        {
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.UserId == userId, ct);
+
+            if (user == null)
+            {
+                _logger.LogWarning("UpdateUserLanguage: user not found (userId={UserId})", userId);
+                return false;
+            }
+
+            user.PreferredLanguageCode = language;
+            await _db.SaveChangesAsync(ct);
+            _logger.LogInformation("UpdateUserLanguage END: language updated (userId={UserId})", userId);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "UpdateUserLanguage FAILED (language={Language})", language);
+            throw;
+        }
+    }
 }

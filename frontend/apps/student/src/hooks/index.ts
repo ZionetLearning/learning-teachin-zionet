@@ -5,3 +5,7 @@ export * from "./useHebrewSentence";
 export * from "./useWordOrderSentence";
 export * from "./useMistakeChat";
 export * from "./useGameConfig";
+export * from "./useGameSubmission";
+export * from "./useRetryAudio";
+export * from "./useRetryNavigation";
+export * from "./useWordExplanation";

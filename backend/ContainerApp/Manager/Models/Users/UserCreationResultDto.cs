@@ -1,6 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 
 namespace Manager.Models.Users;
+
 public class UserCreationResultDto
 {
     public Guid UserId { get; init; }
