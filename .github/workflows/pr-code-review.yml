@@ -40,11 +40,11 @@ jobs:
 
     - name: Delete previous bot comments
       if: steps.diffcheck.outputs.run_review == 'true'
-      uses: izhangzhihao/delete-comment@v1
+      uses: izhangzhihao/delete-comment@master
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         issue-number: ${{ github.event.pull_request.number }}
-        username: github-actions[bot]
+        delete_user_name: github-actions[bot]
 
 
 
