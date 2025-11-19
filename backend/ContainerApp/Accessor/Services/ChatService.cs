@@ -18,7 +18,6 @@ public class ChatService : IChatService
 
     public async Task CreateChatAsync(ChatHistorySnapshot chat)
     {
-        // Гарантируем валидный jsonb: "null" как строка
         chat.History ??= "null";
         await _db.ChatHistorySnapshots.AddAsync(chat);
         await _db.SaveChangesAsync();
