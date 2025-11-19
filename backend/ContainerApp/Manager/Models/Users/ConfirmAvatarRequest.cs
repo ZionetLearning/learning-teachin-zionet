@@ -1,6 +1,6 @@
-﻿namespace Manager.Services.Avatars.Models;
+﻿namespace Manager.Models.Users;
 
-public sealed class ConfirmAvatarRequest
+public class ConfirmAvatarRequest
 {
     public string BlobPath { get; set; } = default!;
     public string ContentType { get; set; } = default!;

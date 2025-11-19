@@ -1,7 +1,7 @@
 using System.Net;
 using Dapr.Client;
 using Manager.Constants;
-using Manager.Models.Users;
+using Manager.Services.Clients.Accessor.Models.Users;
 using Manager.Services.Clients.Accessor.Interfaces;
 
 namespace Manager.Services.Clients.Accessor;
@@ -14,11 +14,11 @@ public class UsersAccessorClient(
     private readonly ILogger<UsersAccessorClient> _logger = logger;
     private readonly DaprClient _daprClient = daprClient;
 
-    public async Task<UserData?> GetUserAsync(Guid userId)
+    public async Task<GetUserAccessorResponse?> GetUserAsync(Guid userId)
     {
         try
         {
-            return await _daprClient.InvokeMethodAsync<UserData?>(
+            return await _daprClient.InvokeMethodAsync<GetUserAccessorResponse?>(
                 HttpMethod.Get, AppIds.Accessor, $"users-accessor/{userId}");
         }
         catch (Exception ex)
@@ -28,7 +28,7 @@ public class UsersAccessorClient(
         }
     }
 
-    public async Task<bool> CreateUserAsync(UserModel user)
+    public async Task<bool> CreateUserAsync(CreateUserAccessorRequest user)
     {
         try
         {
@@ -56,7 +56,7 @@ public class UsersAccessorClient(
         }
     }
 
-    public async Task<bool> UpdateUserAsync(UpdateUserModel user, Guid userId)
+    public async Task<bool> UpdateUserAsync(UpdateUserAccessorRequest user, Guid userId)
     {
         try
         {
@@ -84,17 +84,17 @@ public class UsersAccessorClient(
         }
     }
 
-    public async Task<IEnumerable<UserData>> GetAllUsersAsync(CancellationToken ct = default)
+    public async Task<IEnumerable<GetUserAccessorResponse>> GetAllUsersAsync(CancellationToken ct = default)
     {
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetAllUsersAsync), nameof(UsersAccessorClient));
 
         try
         {
-            var users = await _daprClient.InvokeMethodAsync<List<UserData>>(
+            var users = await _daprClient.InvokeMethodAsync<List<GetUserAccessorResponse>>(
                 HttpMethod.Get, AppIds.Accessor, "users-accessor", ct);
 
             _logger.LogInformation("Retrieved {Count} users from accessor", users?.Count ?? 0);
-            return users ?? Enumerable.Empty<UserData>();
+            return users ?? Enumerable.Empty<GetUserAccessorResponse>();
         }
         catch (Exception ex)
         {
@@ -103,7 +103,7 @@ public class UsersAccessorClient(
         }
     }
 
-    public async Task<IEnumerable<UserData>> GetUsersForCallerAsync(CallerContextDto context, CancellationToken ct = default)
+    public async Task<IEnumerable<GetUserAccessorResponse>> GetUsersForCallerAsync(GetUsersForCallerAccessorRequest context, CancellationToken ct = default)
     {
         _logger.LogInformation("GetUsersForCallerAsync(role={Role}, id={Id})", context?.CallerRole, context?.CallerId);
 
@@ -114,14 +114,14 @@ public class UsersAccessorClient(
             var callerId = context?.CallerId ?? Guid.Empty;
             var path = $"users-accessor?callerRole={roleQP}&callerId={callerId:D}";
 
-            var users = await _daprClient.InvokeMethodAsync<List<UserData>>(
+            var users = await _daprClient.InvokeMethodAsync<List<GetUserAccessorResponse>>(
                 HttpMethod.Get,
                 AppIds.Accessor,
                 path,
                 ct);
 
             _logger.LogInformation("Accessor returned {Count} users for {Role}", users?.Count ?? 0, context?.CallerRole);
-            return users ?? Enumerable.Empty<UserData>();
+            return users ?? Enumerable.Empty<GetUserAccessorResponse>();
         }
         catch (Exception ex)
         {
@@ -130,7 +130,7 @@ public class UsersAccessorClient(
         }
     }
 
-    public async Task<bool> AssignStudentToTeacherAsync(TeacherStudentMapDto map, CancellationToken ct = default)
+    public async Task<bool> AssignStudentToTeacherAsync(AssignStudentAccessorRequest map, CancellationToken ct = default)
     {
         try
         {
@@ -153,7 +153,7 @@ public class UsersAccessorClient(
         }
     }
 
-    public async Task<bool> UnassignStudentFromTeacherAsync(TeacherStudentMapDto map, CancellationToken ct = default)
+    public async Task<bool> UnassignStudentFromTeacherAsync(UnassignStudentAccessorRequest map, CancellationToken ct = default)
     {
         try
         {
@@ -176,16 +176,16 @@ public class UsersAccessorClient(
         }
     }
 
-    public async Task<IEnumerable<UserData>> GetStudentsForTeacherAsync(Guid teacherId, CancellationToken ct = default)
+    public async Task<IEnumerable<GetUserAccessorResponse>> GetStudentsForTeacherAsync(Guid teacherId, CancellationToken ct = default)
     {
         try
         {
-            var list = await _daprClient.InvokeMethodAsync<List<UserData>>(
+            var list = await _daprClient.InvokeMethodAsync<List<GetUserAccessorResponse>>(
                 HttpMethod.Get,
                 AppIds.Accessor,
                 $"users-accessor/teacher/{teacherId:D}/students",
                 ct);
-            return list ?? Enumerable.Empty<UserData>();
+            return list ?? Enumerable.Empty<GetUserAccessorResponse>();
         }
         catch (Exception ex)
         {
@@ -194,16 +194,16 @@ public class UsersAccessorClient(
         }
     }
 
-    public async Task<IEnumerable<UserData>> GetTeachersForStudentAsync(Guid studentId, CancellationToken ct = default)
+    public async Task<IEnumerable<GetUserAccessorResponse>> GetTeachersForStudentAsync(Guid studentId, CancellationToken ct = default)
     {
         try
         {
-            var list = await _daprClient.InvokeMethodAsync<List<UserData>>(
+            var list = await _daprClient.InvokeMethodAsync<List<GetUserAccessorResponse>>(
                 HttpMethod.Get,
                 AppIds.Accessor,
                 $"users-accessor/student/{studentId:D}/teachers",
                 ct);
-            return list ?? Enumerable.Empty<UserData>();
+            return list ?? Enumerable.Empty<GetUserAccessorResponse>();
         }
         catch (Exception ex)
         {
@@ -212,15 +212,9 @@ public class UsersAccessorClient(
         }
     }
 
-    public async Task UpdateUserLanguageAsync(Guid callerId, SupportedLanguage language, CancellationToken ct = default)
+    public async Task UpdateUserLanguageAsync(UpdateUserLanguageAccessorRequest request, CancellationToken ct = default)
     {
-        _logger.LogInformation("Updating user language to {Language}", language);
-
-        var payload = new UserLanguage
-        {
-            UserId = callerId,
-            Language = language
-        };
+        _logger.LogInformation("Updating user language to {Language}", request.Language);
 
         try
         {
@@ -228,13 +222,13 @@ public class UsersAccessorClient(
                 HttpMethod.Put,
                 AppIds.Accessor,
                 $"users-accessor/language",
-                payload,
+                request,
                 cancellationToken: ct
             );
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to update user language to {Language}", language);
+            _logger.LogError(ex, "Failed to update user language to {Language}", request.Language);
             throw;
         }
     }

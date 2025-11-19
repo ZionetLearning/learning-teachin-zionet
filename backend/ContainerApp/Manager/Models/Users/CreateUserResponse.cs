@@ -2,7 +2,7 @@
 
 namespace Manager.Models.Users;
 
-public class UserCreationResultDto
+public sealed record CreateUserResponse
 {
     public Guid UserId { get; init; }
     public string Email { get; init; } = null!;

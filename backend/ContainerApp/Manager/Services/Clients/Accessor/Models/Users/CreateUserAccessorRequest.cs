@@ -1,8 +1,9 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
+using Manager.Models.Users;
 
-namespace Manager.Models.Users;
+namespace Manager.Services.Clients.Accessor.Models.Users;
 
-public sealed record UserModel
+public sealed record CreateUserAccessorRequest
 {
     public Guid UserId { get; init; }
     public required string FirstName { get; init; }
