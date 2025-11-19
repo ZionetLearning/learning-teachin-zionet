@@ -490,6 +490,10 @@ namespace Accessor.DB.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("english");
 
+                    b.Property<string>("Explanation")
+                        .HasColumnType("text")
+                        .HasColumnName("explanation");
+
                     b.Property<string>("Hebrew")
                         .IsRequired()
                         .HasMaxLength(100)

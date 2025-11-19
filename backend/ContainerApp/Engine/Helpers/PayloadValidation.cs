@@ -6,6 +6,7 @@ using Engine.Models.QueueMessages;
 using Engine.Models.Sentences;
 
 namespace Engine.Helpers;
+
 public static class PayloadValidation
 {
     public static T DeserializeOrThrow<T>(Message msg, ILogger logger)

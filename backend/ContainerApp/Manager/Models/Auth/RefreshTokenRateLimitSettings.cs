@@ -1,4 +1,5 @@
 ﻿namespace Manager.Models.Auth;
+
 public class RefreshTokenRateLimitSettings
 {
     public int PermitLimit { get; set; }
