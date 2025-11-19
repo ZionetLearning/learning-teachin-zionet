@@ -69,6 +69,15 @@ resource "azurerm_key_vault_secret" "avatars_storage_connection" {
 }
 
 ########################
+# Engine Tavily API Key secret
+########################
+resource "azurerm_key_vault_secret" "engine_tavily_apikey" {
+  name         = "engine-tavily-apikey"
+  value        = var.tavily_api_key
+  key_vault_id = data.azurerm_key_vault.shared.id
+}
+
+########################
 # Langfuse secrets (always create, controlled by Helm values)
 ########################
 resource "azurerm_key_vault_secret" "langfuse_db_username" {
@@ -149,14 +158,7 @@ resource "azurerm_key_vault_secret" "langfuse_baseurl" {
   key_vault_id = data.azurerm_key_vault.shared.id
 }
 
-########################
-# Engine Tavily API Key secret
-########################
-resource "azurerm_key_vault_secret" "engine_tavily_apikey" {
-  name         = "engine-tavily-apikey"
-  value        = var.tavily_api_key
-  key_vault_id = data.azurerm_key_vault.shared.id
-}
+
 
 resource "azurerm_key_vault_secret" "langfuse_public_key" {
   count        = var.environment_name == "dev" ? 1 : 0
