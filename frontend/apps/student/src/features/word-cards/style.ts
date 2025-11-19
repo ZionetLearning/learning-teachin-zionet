@@ -23,6 +23,7 @@ export const useStyles = () => {
       gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
       gap: 15,
       padding: "2%",
+      alignItems: "start",
     },
 
     headerWrapper: {

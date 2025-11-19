@@ -52,4 +52,5 @@ public interface IAccessorClient
     Task<UserGameConfig> GetUserGameConfigAsync(Guid userId, GameName gameName, CancellationToken ct = default);
     Task SaveUserGameConfigAsync(Guid userId, UserNewGameConfig gameName, CancellationToken ct = default);
     Task DeleteUserGameConfigAsync(Guid userId, GameName gameName, CancellationToken ct = default);
+    Task UpdateUserLanguageAsync(Guid callerId, SupportedLanguage language, CancellationToken ct = default);
 }

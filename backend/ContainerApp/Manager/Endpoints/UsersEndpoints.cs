@@ -1,6 +1,8 @@
-﻿using System.Security.Claims;
+﻿using System.Net;
+using System.Security.Claims;
 using Azure;
 using Azure.Storage.Blobs.Models;
+using Dapr.Client;
 using Manager.Constants;
 using Manager.Helpers;
 using Manager.Models.Users;
@@ -27,6 +29,7 @@ public static class UsersEndpoints
         usersGroup.MapPut("/user/{userId:guid}", UpdateUserAsync).WithName("UpdateUser").RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
         usersGroup.MapDelete("/user/{userId:guid}", DeleteUserAsync).WithName("DeleteUser").RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
         usersGroup.MapPut("user/interests/{userId:guid}", SetUserInterestsAsync).WithName("SetUserInterests").RequireAuthorization(PolicyNames.AdminOrStudent);
+        usersGroup.MapPut("/user/language", UpdateUserLanguageAsync).WithName("UpdateUserLanguage").RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
 
         usersGroup.MapGet("/teacher/{teacherId:guid}/students", ListStudentsForTeacherAsync).WithName("ListStudentsForTeacher").RequireAuthorization(PolicyNames.AdminOrTeacher);
         usersGroup.MapPost("/teacher/{teacherId:guid}/students/{studentId:guid}", AssignStudentAsync).WithName("AssignStudentToTeacher").RequireAuthorization(PolicyNames.AdminOrTeacher);
@@ -486,6 +489,7 @@ public static class UsersEndpoints
             return Results.Problem("Failed to retrieve omline users.");
         }
     }
+
     private static async Task<IResult> SetUserInterestsAsync(
         [FromRoute] Guid userId,
         [FromBody] UpdateInterestsRequest request,
@@ -547,13 +551,13 @@ public static class UsersEndpoints
     }
 
     private static async Task<IResult> GenerateUploadAvatarUrlAsync(
-     [FromRoute] Guid userId,
-     [FromBody] GetUploadUrlRequest req,
-     [FromServices] IAvatarStorageService storage,
-     [FromServices] IOptions<AvatarsOptions> opt,
-     [FromServices] ILogger<UserEndpoint> logger,
-     HttpContext http,
-     CancellationToken ct)
+        [FromRoute] Guid userId,
+        [FromBody] GetUploadUrlRequest req,
+        [FromServices] IAvatarStorageService storage,
+        [FromServices] IOptions<AvatarsOptions> opt,
+        [FromServices] ILogger<UserEndpoint> logger,
+        HttpContext http,
+        CancellationToken ct)
     {
         using var _ = logger.BeginScope("UploadUrl: userId={UserId}", userId);
 
@@ -827,6 +831,50 @@ public static class UsersEndpoints
         {
             log.LogError(ex, "Unexpected error when generating read SAS");
             return Results.Problem("Unexpected error.");
+        }
+    }
+
+    private static async Task<IResult> UpdateUserLanguageAsync(
+        [FromBody] UpdateLanguageRequest request,
+        [FromServices] IAccessorClient accessorClient,
+        [FromServices] ILogger<UserEndpoint> logger,
+        HttpContext httpContext,
+        CancellationToken ct)
+    {
+        if (request is null)
+        {
+            logger.LogInformation("request is null.");
+            return Results.BadRequest();
+        }
+
+        using var scope = logger.BeginScope("UpdateUserLanguage with language: {Language}", request);
+
+        try
+        {
+            var callerIdRaw = httpContext.User.FindFirstValue(AuthSettings.UserIdClaimType);
+            if (!Guid.TryParse(callerIdRaw, out var callerId))
+            {
+                logger.LogWarning("Unauthorized: missing or invalid caller ID.");
+                return Results.Unauthorized();
+            }
+
+            await accessorClient.UpdateUserLanguageAsync(callerId, request.PreferredLanguage, ct);
+            return Results.Ok("Language updated.");
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            logger.LogWarning(ex, "User not found");
+            return Results.NotFound("User not found.");
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.BadRequest)
+        {
+            logger.LogWarning(ex, "Bad request from accessor: {Message}", ex.Message);
+            return Results.BadRequest("Invalid request to update user language.");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to update user language");
+            return Results.Problem("Failed to update user language.");
         }
     }
 }

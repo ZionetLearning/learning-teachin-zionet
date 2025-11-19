@@ -706,7 +706,8 @@ public class AccessorClient(
             {
                 UserId = userId,
                 Hebrew = request.Hebrew,
-                English = request.English
+                English = request.English,
+                Explanation = request.Explanation,
             };
 
             var response = await _daprClient.InvokeMethodAsync<CreateWordCard, WordCard>(
@@ -1016,6 +1017,33 @@ public class AccessorClient(
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to delete user configuration for UserId={UserId}", userId);
+            throw;
+        }
+    }
+
+    public async Task UpdateUserLanguageAsync(Guid callerId, SupportedLanguage language, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Updating user language to {Language}", language);
+
+        var payload = new UserLanguage
+        {
+            UserId = callerId,
+            Language = language
+        };
+
+        try
+        {
+            await _daprClient.InvokeMethodAsync(
+                HttpMethod.Put,
+                AppIds.Accessor,
+                $"users-accessor/language",
+                payload,
+                cancellationToken: ct
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update user language to {Language}", language);
             throw;
         }
     }

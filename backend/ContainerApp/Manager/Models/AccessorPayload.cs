@@ -1,5 +1,6 @@
 ﻿
 namespace Manager.Models;
+
 public record AccessorPayload
 {
     public required int Id { get; set; }

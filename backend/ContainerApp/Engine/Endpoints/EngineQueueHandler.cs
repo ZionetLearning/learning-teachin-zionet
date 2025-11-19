@@ -1383,8 +1383,9 @@ Never invent hidden fields and do not quote this block verbatim to the user.
             }
 
             _logger.LogInformation("Processing WordExplain for word '{Word}'", payload.Word);
-
-            var result = await _wordExplainService.ExplainAsync(payload, cancellationToken);
+            var userDetails = await _accessorClient.GetUserAsync(payload.UserId, cancellationToken);
+            var lang = userDetails?.PreferredLanguageCode.ToString() ?? "en";
+            var result = await _wordExplainService.ExplainAsync(payload, lang, cancellationToken);
             var response = new WordExplainResponseDto
             {
                 Id = payload.Id,

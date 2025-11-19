@@ -29,6 +29,8 @@ public class WordCardsConfiguration : IEntityTypeConfiguration<WordCardModel>
             .HasColumnName("english")
             .HasMaxLength(100)
             .IsRequired();
+        builder.Property(w => w.Explanation)
+            .HasColumnName("explanation");
 
         builder.Property(w => w.IsLearned)
             .HasColumnName("is_learned")
