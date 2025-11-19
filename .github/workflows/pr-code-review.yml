@@ -40,7 +40,7 @@ jobs:
 
     - name: Delete previous bot comment
       if: steps.diffcheck.outputs.run_review == 'true'
-      uses: peter-evans/delete-comment@v3
+      uses: peter-evans/delete-issue-comment@v3
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         issue-number: ${{ github.event.pull_request.number }}
