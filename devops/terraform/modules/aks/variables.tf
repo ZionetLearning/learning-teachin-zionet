@@ -17,7 +17,7 @@ variable "stable_min_node_count" {
 
 variable "stable_max_node_count" {
   type        = number
-  default     = 2
+  default     = 3
   description = "Maximum number of stable nodes (not spot instances)"
 }
 
