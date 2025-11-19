@@ -86,7 +86,22 @@ jobs:
           fi
 
           echo "CHART_DIR=devops/kubernetes/charts" >> $GITHUB_ENV
-          echo "VALUES_FILE=devops/kubernetes/charts/values.dev.yaml" >> $GITHUB_ENV
+          
+          # Select values file based on environment
+          # dev uses values.dev.yaml (spot disabled for stability)
+          # prod uses values.prod.yaml (spot enabled explicitly)
+          # all other environments (test, featest, featest2) use values.template.yaml (spot enabled)
+          if [ "$ENVIRONMENT_NAME" = "dev" ]; then
+            echo "VALUES_FILE=devops/kubernetes/charts/values.dev.yaml" >> $GITHUB_ENV
+            echo "📋 Using values.dev.yaml (spot disabled for dev stability)"
+          elif [ "$ENVIRONMENT_NAME" = "prod" ]; then
+            echo "VALUES_FILE=devops/kubernetes/charts/values.prod.yaml" >> $GITHUB_ENV
+            echo "📋 Using values.prod.yaml (spot enabled for production)"
+          else
+            echo "VALUES_FILE=devops/kubernetes/charts/values.template.yaml" >> $GITHUB_ENV
+            echo "📋 Using values.template.yaml (spot enabled for $ENVIRONMENT_NAME)"
+          fi
+          
           echo "ACR_LOGIN_SERVER=teachindevacr.azurecr.io" >> $GITHUB_ENV
 
           # Shared AKS
