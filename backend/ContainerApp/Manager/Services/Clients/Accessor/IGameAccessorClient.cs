@@ -1,5 +1,6 @@
 using Manager.Models.Games;
 using Manager.Services.Clients.Accessor.Models;
+using Manager.Services.Clients.Accessor.Models.Games;
 
 namespace Manager.Services.Clients.Accessor;
 

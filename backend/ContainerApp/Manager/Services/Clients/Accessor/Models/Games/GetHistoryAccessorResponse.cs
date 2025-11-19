@@ -1,7 +1,7 @@
 using Manager.Models;
 using Manager.Models.Games;
 
-namespace Manager.Services.Clients.Accessor.Models;
+namespace Manager.Services.Clients.Accessor.Models.Games;
 
 /// <summary>
 /// Response model received from Accessor service for game history

@@ -1,4 +1,4 @@
-namespace Manager.Services.Clients.Accessor.Models;
+namespace Manager.Services.Clients.Accessor.Models.Games;
 
 /// <summary>
 /// Request model sent to Accessor service for submitting a game attempt
