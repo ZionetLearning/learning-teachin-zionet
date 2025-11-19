@@ -169,6 +169,7 @@ public class EngineQueueHandlerTests
             UserId = userId,
             SentAt = engineReq.SentAt,
             TtlSeconds = 120,
+            UserMessage = "null", //todo Fix when will fix all tests
             History = history
         };
 
@@ -343,6 +344,7 @@ public class EngineQueueHandlerTests
             UserId = userId,
             SentAt = engineReq.SentAt,
             TtlSeconds = 120,
+            UserMessage = "null", //todo Fix when will fix all tests
             History = history
         };
 

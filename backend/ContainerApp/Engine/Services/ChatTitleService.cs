@@ -1,28 +1,32 @@
 ﻿using System.Text.Json;
+using Azure.AI.OpenAI;
 using Engine.Constants.Chat;
+using Engine.Models;
 using Engine.Services.Clients.AccessorClient;
+using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
-using Polly;
+using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
 namespace Engine.Services;
 
 public sealed class ChatTitleService : IChatTitleService
 {
-    private readonly Kernel _kernel;
-    private readonly IChatCompletionService _chat;
-    private readonly IAsyncPolicy<ChatMessageContent> _kernelPolicy;
+    private readonly AzureOpenAIClient _azureClient;
+    private readonly AzureOpenAiSettings _cfg;
     private readonly IAccessorClient _accessorClient;
 
     private const int TailMessages = 6;
     private const int TitleMaxLen = 64;
 
-    public ChatTitleService(Kernel kernel, IRetryPolicy retryPolicy, ILogger<ChatTitleService> log, IAccessorClient accessorClient)
+    public ChatTitleService(
+        AzureOpenAIClient azureClient,
+        IOptions<AzureOpenAiSettings> options,
+        IAccessorClient accessorClient)
     {
-        _kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
-        _chat = _kernel.GetRequiredService<IChatCompletionService>();
-        _kernelPolicy = retryPolicy.CreateKernelPolicy(log);
+        _azureClient = azureClient ?? throw new ArgumentNullException(nameof(azureClient));
+        _cfg = options?.Value ?? throw new ArgumentNullException(nameof(options));
         _accessorClient = accessorClient ?? throw new ArgumentNullException(nameof(accessorClient));
     }
 
@@ -30,49 +34,45 @@ public sealed class ChatTitleService : IChatTitleService
     {
         var tail = new ChatHistory();
         var onlyUser = history
-               .Where(m => m.Role == AuthorRole.User && !string.IsNullOrWhiteSpace(m.Content))
-               .Reverse()
-               .Take(TailMessages)
-               .Reverse();
+            .Where(m => m.Role == AuthorRole.User && !string.IsNullOrWhiteSpace(m.Content))
+            .Reverse()
+            .Take(TailMessages)
+            .Reverse();
 
         foreach (var m in onlyUser)
         {
             tail.Add(new ChatMessageContent(AuthorRole.User, m.Content!.Trim()));
-
         }
 
-        var prompt = await _accessorClient.GetPromptAsync(PromptsKeys.ChatTitlePrompt, ct);
-        if (prompt is null)
-        {
-            throw new InvalidOperationException("Chat title prompt not found");
-        }
+        var prompt = await _accessorClient.GetPromptAsync(PromptsKeys.ChatTitlePrompt, ct)
+            ?? throw new InvalidOperationException("Chat title prompt not found");
 
         var system = prompt.Content ?? throw new InvalidOperationException("Prompt content is null");
 
-        var tmp = new ChatHistory();
-        tmp.AddSystemMessage(system);
-        foreach (var m in tail)
-        {
-            tmp.Add(m);
+        var chatClient = _azureClient.GetChatClient(_cfg.DeploymentName).AsIChatClient();
 
-        }
-
-        var settings = new AzureOpenAIPromptExecutionSettings
+        var messages = new List<ChatMessage>
         {
-            Temperature = 0,
-            FunctionChoiceBehavior = FunctionChoiceBehavior.Auto()
+            new(ChatRole.System, system)
         };
 
-        var result = await _kernelPolicy.ExecuteAsync(
-            ct2 => _chat.GetChatMessageContentAsync(tmp, settings, _kernel, ct2), ct);
+        foreach (var m in tail)
+        {
+            if (!string.IsNullOrWhiteSpace(m.Content))
+            {
+                messages.Add(new ChatMessage(ChatRole.User, m.Content!));
+            }
+        }
 
-        var raw = result?.Content?.Trim() ?? string.Empty;
+        var options = new ChatOptions { Temperature = 0 };
+
+        var resp = await chatClient.GetResponseAsync(messages, options, ct);
+        var raw = resp.Text?.Trim() ?? string.Empty;
 
         var title = TryParseJsonTitle(raw);
         if (string.IsNullOrWhiteSpace(title))
         {
             title = FallbackTitle(tail);
-
         }
 
         return PostprocessTitle(title!);
@@ -86,10 +86,8 @@ public sealed class ChatTitleService : IChatTitleService
             if (doc.RootElement.TryGetProperty("title", out var t) && t.ValueKind == JsonValueKind.String)
             {
                 return t.GetString();
-
             }
         }
-        // TODO: think about what I need to do here
         catch { }
 
         return null;
@@ -97,7 +95,6 @@ public sealed class ChatTitleService : IChatTitleService
 
     private static string FallbackTitle(ChatHistory tail)
     {
-
         var txt = tail.LastOrDefault(m => m.Role == AuthorRole.User)?.Content
                   ?? tail.LastOrDefault()?.Content
                   ?? "New chat";

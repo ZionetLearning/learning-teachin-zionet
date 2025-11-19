@@ -4,19 +4,22 @@
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 	</PropertyGroup>
-
 	<ItemGroup>
+		<PackageReference Include="Azure.AI.OpenAI" Version="2.5.0-beta.1" />
+		<PackageReference Include="Azure.Identity" Version="1.17.0" />
 		<PackageReference Include="Azure.Messaging.ServiceBus" Version="7.20.1" />
 		<PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
 		<PackageReference Include="coverlet.collector" Version="6.0.4">
-		  <PrivateAssets>all</PrivateAssets>
-		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="Dapr.AspNetCore" Version="1.15.4" />
 		<PackageReference Include="DotQueue" Version="1.0.5" />
+		<PackageReference Include="Microsoft.Agents.AI" Version="1.0.0-preview.251110.2" />
+		<PackageReference Include="Microsoft.Agents.AI.OpenAI" Version="1.0.0-preview.251110.2" />
 		<PackageReference Include="Microsoft.CognitiveServices.Speech" Version="1.45.0" />
 		<PackageReference Include="Polly" Version="8.6.3" />
-		<PackageReference Include="Microsoft.SemanticKernel" Version="1.65.0" />
+		<PackageReference Include="Microsoft.SemanticKernel" Version="1.67.1" />
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(Configuration)' == 'Debug'">
@@ -25,24 +28,24 @@
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 	</ItemGroup>
-  <ItemGroup>
-    <None Include="Plugins\Sentences\**\*.*" CopyToOutputDirectory="PreserveNewest" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Plugins\WordExplain\**\*.*" CopyToOutputDirectory="PreserveNewest" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Update="Constants\Words\hintsEasy.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Constants\Words\hintsHard.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Constants\Words\hintsMedium.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="prompts.config.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
+	<ItemGroup>
+		<None Include="Plugins\Sentences\**\*.*" CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
+	<ItemGroup>
+		<None Include="Plugins\WordExplain\**\*.*" CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
+	<ItemGroup>
+		<None Update="Constants\Words\hintsEasy.txt">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+		<None Update="Constants\Words\hintsHard.txt">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+		<None Update="Constants\Words\hintsMedium.txt">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+		<None Update="prompts.config.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
 </Project>

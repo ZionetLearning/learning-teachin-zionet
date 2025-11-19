@@ -1,18 +1,22 @@
+using Azure;
+using Azure.AI.OpenAI;
 using Azure.Messaging.ServiceBus;
+using DotQueue;
+using Engine;
 using Engine.Constants;
+using Engine.Constants.Chat;
 using Engine.Endpoints;
 using Engine.Models;
+using Engine.Models.QueueMessages;
+using Engine.Options;
 using Engine.Plugins;
 using Engine.Services;
 using Engine.Services.Clients.AccessorClient;
+using Engine.Tools;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
-using DotQueue;
-using Engine;
-using Engine.Models.QueueMessages;
-using Engine.Options;
-using Engine.Constants.Chat;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -65,6 +69,16 @@ builder.Services.AddSingleton(sp =>
 {
     var cfg = sp.GetRequiredService<IOptions<AzureOpenAiSettings>>().Value;
 
+    return new AzureOpenAIClient(
+        new Uri(cfg.Endpoint),
+        new AzureKeyCredential(cfg.ApiKey));
+});
+
+builder.Services.AddSingleton(sp =>
+{
+    var cfg = sp.GetRequiredService<IOptions<AzureOpenAiSettings>>().Value;
+
+    //delete after migration
     var kernel = Kernel.CreateBuilder()
                  .AddAzureOpenAIChatCompletion(
                      deploymentName: cfg.DeploymentName,
@@ -91,6 +105,23 @@ builder.Services.AddSingleton(sp =>
 
     return kernel;
 
+});
+
+builder.Services.AddSingleton<TimeTools>();
+
+builder.Services.AddSingleton<IReadOnlyList<AITool>>(sp =>
+{
+    var time = sp.GetRequiredService<TimeTools>();
+
+    var getCurrentTimeTool = AIFunctionFactory.Create(
+        time.GetCurrentTime,
+        new AIFunctionFactoryOptions
+        {
+            Name = "get_current_time",
+            Description = "Returns the current time in ISO-8601 (UTC)."
+        });
+
+    return new List<AITool> { getCurrentTimeTool };
 });
 
 builder.Services.AddKeyedSingleton("gen", (sp, key) =>
