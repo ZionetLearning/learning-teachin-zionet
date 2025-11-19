@@ -86,7 +86,7 @@ public class MistakeExplanationIntegrationTests(
         var attemptResponse = await PostAsJsonAsync(GamesRoutes.Attempt, attemptRequest);
         attemptResponse.EnsureSuccessStatusCode();
 
-        var attemptResult = await ReadAsJsonAsync<SubmitAttemptResult>(attemptResponse);
+        var attemptResult = await ReadAsJsonAsync<SubmitAttemptResponse>(attemptResponse);
         attemptResult.Should().NotBeNull();
         attemptResult!.Status.Should().Be(AttemptStatus.Failure, "The wrong answer should result in failure");
     
