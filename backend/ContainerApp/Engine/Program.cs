@@ -109,7 +109,7 @@ builder.Services.AddSingleton(sp =>
 
 builder.Services.AddSingleton<TimeTools>();
 
-builder.Services.AddSingleton<IList<AITool>>(sp =>
+builder.Services.AddSingleton<IReadOnlyList<AITool>>(sp =>
 {
     var time = sp.GetRequiredService<TimeTools>();
 
