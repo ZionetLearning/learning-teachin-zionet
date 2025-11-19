@@ -25,8 +25,13 @@ export const SidebarMenu = () => {
   const handleNavigate = (path: string) => navigate(path);
 
   const handleLanguageChange = (lang: PreferredLanguageCode) => {
+    const previousLang = i18n.language as PreferredLanguageCode;
     i18n.changeLanguage(lang);
-    updateLanguage.mutate(lang);
+    updateLanguage.mutate(lang, {
+      onError: () => {
+        i18n.changeLanguage(previousLang);
+      },
+    });
   };
 
   const toggleItem: SidebarLink = {

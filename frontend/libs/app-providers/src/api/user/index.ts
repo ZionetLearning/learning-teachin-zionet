@@ -138,13 +138,13 @@ export const useUpdateUserLanguage = (): UseMutationResult<
     mutationFn: async (
       preferredLanguage: PreferredLanguageCode,
     ): Promise<void> => {
-      const response = await axios.put(
-        `${import.meta.env.VITE_USERS_URL}/user/language`,
-        { preferredLanguage: preferredLanguage },
-      );
-      if (response.status !== 200) {
-        throw new Error(response.data?.message || "Failed to update language");
-      }
+      await axios.put(`${import.meta.env.VITE_USERS_URL}/user/language`, {
+        preferredLanguage,
+      });
+    },
+    onError: (error) => {
+      console.error("Language update failed:", error);
+      toast.error("Failed to update language. Please try again.");
     },
   });
 };
