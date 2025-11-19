@@ -1,23 +1,24 @@
 import asyncio
+from contextlib import asynccontextmanager
+
 import time
 import logging
 import os
 from typing import Dict, List, Optional
-
 import httpx
 from fastapi import FastAPI, Request, Response, HTTPException
 from kubernetes_asyncio import client, config
 from kubernetes_asyncio.client.exceptions import ApiException
 
-app = FastAPI()
 logger = logging.getLogger("proxy")
 logging.basicConfig(level=logging.INFO)
 
+# ---------------------------
 # Configuration from environment
+# ---------------------------
 TARGET_SERVICE_NAMES: List[str] = [
     s.strip() for s in os.getenv("TARGET_SERVICE_NAME", "manager,accessor,engine").split(",") if s.strip()
 ]
-# the service which will actually receive the forwarded HTTP request
 FORWARD_TO_SERVICE = os.getenv("FORWARD_TO_SERVICE", "manager")
 NAMESPACE = os.getenv("NAMESPACE", "default")
 TARGET_SERVICE_PORT = int(os.getenv("TARGET_SERVICE_PORT", "80"))
@@ -45,9 +46,11 @@ logger.info(
 # ---------------------------
 # Kubernetes & HTTP client init/teardown
 # ---------------------------
-@app.on_event("startup")
-async def startup_event():
+@asynccontextmanager
+async def lifespan():
     global k8s_ready, http_client, k8s_apis
+
+    # Startup - your existing startup code
     logger.info("Loading Kubernetes config...")
     try:
         kube_path = os.path.expanduser("~/.kube/config")
@@ -70,10 +73,9 @@ async def startup_event():
     logger.info("Kubernetes client initialized")
     asyncio.create_task(scale_down_loop())
 
+    yield  # App runs here
 
-@app.on_event("shutdown")
-async def shutdown_event():
-    global http_client, k8s_apis
+    # Shutdown - your existing shutdown code
     if http_client:
         await http_client.aclose()
         logger.info("HTTP client closed")
@@ -83,6 +85,10 @@ async def shutdown_event():
             logger.info("Closed K8s API client: %s", name)
         except Exception:
             pass
+
+
+# Create an app with lifespan
+app = FastAPI(lifespan=lifespan)
 
 
 # ---------------------------
@@ -134,7 +140,7 @@ async def try_acquire_lease(namespace: str, service: str) -> bool:
                 # race or other failure
                 return False
         if e.status == 403:
-            # no permission to use leases — continue without lease
+            # no permission to use leases — continue without a lease
             logger.warning("[%s][%s] Cannot create lease (forbidden). Continuing without lock.", namespace, service)
             return True
         raise
@@ -159,7 +165,8 @@ async def wait_for_pod_ready(namespace: str, service: str, timeout: int = MAX_SC
                     conds = p.status.conditions or []
                     for c in conds:
                         if c.type == "Ready" and c.status == "True":
-                            logger.info("[%s][%s] Pod %s ready after %ds (selector=%s)", namespace, service, p.metadata.name, waited, sel)
+                            logger.info("[%s][%s] Pod %s ready after %ds (selector=%s)", namespace, service,
+                                        p.metadata.name, waited, sel)
                             return True
         except Exception as e:
             logger.warning("[%s][%s] Error listing pods: %s", namespace, service, e)
@@ -185,7 +192,7 @@ async def scale_up_services(namespace: str, services: List[str]) -> bool:
     tasks = []
     for svc in services:
         tasks.append(_scale_service_if_needed(namespace, svc))
-    results = await asyncio.gather(*tasks, return_exceptions=True)
+    await asyncio.gather(*tasks, return_exceptions=True)
     # After scaling, make sure the forward target is ready (wait)
     ready = await wait_for_pod_ready(namespace, FORWARD_TO_SERVICE, timeout=MAX_SCALEUP_WAIT)
     return ready
@@ -197,7 +204,7 @@ async def _scale_service_if_needed(namespace: str, service: str):
         if replicas and replicas > 0:
             logger.info("[%s][%s] already has %d replicas, skipping scale", namespace, service, replicas)
             return
-        # Acquire lease (if possible)
+        # Acquire a lease (if possible)
         ok = await try_acquire_lease(namespace, service)
         if not ok:
             logger.warning("[%s][%s] failed to acquire lease, skipping", namespace, service)
@@ -206,7 +213,7 @@ async def _scale_service_if_needed(namespace: str, service: str):
         await patch_scale(namespace, service, SCALE_UP_REPLICAS)
         # wait a short time for k8s to create pods before checking readiness
         await asyncio.sleep(1)
-        # optionally we can wait here for each service but main wait is for FORWARD_TO_SERVICE
+        # optionally, we can wait here for each service, but the main wait is for FORWARD_TO_SERVICE
         await wait_for_pod_ready(namespace, service, timeout=30)
     except Exception as e:
         logger.exception("[%s][%s] error during scale-up: %s", namespace, service, e)
@@ -258,7 +265,7 @@ async def forward_to_manager(namespace: str, path: str, request: Request) -> Res
         body = None
 
     headers = {k: v for k, v in request.headers.items() if k.lower() not in {"host", "connection"}}
-    # Use existing http_client
+    # Use the existing http_client
     attempt = 0
     max_attempts = 3
     while attempt < max_attempts:
@@ -306,7 +313,7 @@ async def handle(path: str, request: Request):
             detail=f"Service '{FORWARD_TO_SERVICE}' failed to start within {MAX_SCALEUP_WAIT} seconds",
         )
 
-    # Forward the request to manager
+    # Forward the request to the manager
     return await forward_to_manager(namespace, path, request)
 
 

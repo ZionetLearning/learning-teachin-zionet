@@ -3,6 +3,7 @@ global:
   dockerRegistry: ""
   imagePullPolicy: IfNotPresent
   environment: ""  # Environment name/tag (e.g., dev, devacr, prod) - set by CI/CD
+
   dapr:
     enabled: true
     configName: dapr-config
@@ -235,6 +236,7 @@ accessor:
 
 proxy:
   name: proxy
+  port: 80
   image:
     repository: teachindevacr.azurecr.io/proxy
     tag: ""
@@ -246,7 +248,7 @@ proxy:
   inactivity: 300
   scaleWait: 150
   checkInterval: 30
-  logLevel: INFO
+  enabled: true
 
 dapr:
   # Shared connection for Service Bus components
