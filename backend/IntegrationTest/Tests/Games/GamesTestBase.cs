@@ -55,9 +55,9 @@ public abstract class GamesTestBase(
         var createRes = await Client.PostAsJsonAsync(UserRoutes.UserBase, user);
         createRes.EnsureSuccessStatusCode();
         
-        // The API returns UserCreationResultDto with the actual UserId from the server
+        // The API returns CreateUserResponse with the actual UserId from the server
         var createdUser = await ReadAsJsonAsync<CreateUserResponse>(createRes)
-                          ?? throw new InvalidOperationException("Failed to deserialize UserCreationResultDto");
+                          ?? throw new InvalidOperationException("Failed to deserialize CreateUserResponse");
         
         return await LoginAsync(user.Email, TestDataHelper.DefaultTestPassword, parsedRole);
     }
@@ -84,9 +84,9 @@ public abstract class GamesTestBase(
         var response = await Client.PostAsJsonAsync(UserRoutes.UserBase, user);
         response.EnsureSuccessStatusCode();
         
-        // The API returns UserCreationResultDto with the actual UserId from the server
+        // The API returns CreateUserResponse with the actual UserId from the server
         var createdUser = await ReadAsJsonAsync<CreateUserResponse>(response)
-                          ?? throw new InvalidOperationException("Failed to deserialize UserCreationResultDto");
+                          ?? throw new InvalidOperationException("Failed to deserialize CreateUserResponse");
         
         return new GetUserResponse
         {
@@ -321,7 +321,7 @@ public abstract class GamesTestBase(
         else
         {
             // If only one word, add a fake word
-            wrongAnswer.Add("ùâåé");
+            wrongAnswer.Add("ï¿½ï¿½ï¿½ï¿½");
         }
 
         return wrongAnswer;
