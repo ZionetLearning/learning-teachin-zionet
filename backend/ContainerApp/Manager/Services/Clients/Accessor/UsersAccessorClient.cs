@@ -21,10 +21,15 @@ public class UsersAccessorClient(
             return await _daprClient.InvokeMethodAsync<GetUserAccessorResponse?>(
                 HttpMethod.Get, AppIds.Accessor, $"users-accessor/{userId}");
         }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("User {UserId} not found", userId);
+            return null;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting user {UserId}", userId);
-            return null;
+            throw;
         }
     }
 
@@ -63,10 +68,15 @@ public class UsersAccessorClient(
             await _daprClient.InvokeMethodAsync(HttpMethod.Put, AppIds.Accessor, $"users-accessor/{userId}", user);
             return true;
         }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("User {UserId} not found for update", userId);
+            return false;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating user {UserId}", userId);
-            return false;
+            throw;
         }
     }
 
@@ -77,10 +87,15 @@ public class UsersAccessorClient(
             await _daprClient.InvokeMethodAsync(HttpMethod.Delete, AppIds.Accessor, $"users-accessor/{userId}");
             return true;
         }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("User {UserId} not found for deletion", userId);
+            return false;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting user {UserId}", userId);
-            return false;
+            throw;
         }
     }
 
@@ -151,6 +166,11 @@ public class UsersAccessorClient(
             _logger.LogWarning("Assign failed: {Status}", ex.Response?.StatusCode);
             return false;
         }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error assigning student to teacher: Teacher={TeacherId}, Student={StudentId}", map.TeacherId, map.StudentId);
+            throw;
+        }
     }
 
     public async Task<bool> UnassignStudentFromTeacherAsync(UnassignStudentAccessorRequest map, CancellationToken ct = default)
@@ -171,8 +191,8 @@ public class UsersAccessorClient(
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unassign failed");
-            return false;
+            _logger.LogError(ex, "Unassign failed for Teacher={TeacherId}, Student={StudentId}", map.TeacherId, map.StudentId);
+            throw;
         }
     }
 
