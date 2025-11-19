@@ -14,7 +14,6 @@ public static class AchievementsEndpoints
         group.MapGet("", GetAllAchievementsAsync);
         group.MapGet("/user/{userId:guid}/unlocked", GetUserUnlockedAchievementsAsync);
         group.MapPost("/user/{userId:guid}/unlock/{achievementId:guid}", UnlockAchievementAsync);
-        group.MapGet("/user/{userId:guid}/progress/{feature}", GetUserProgressAsync);
         group.MapPut("/user/{userId:guid}/progress", UpdateUserProgressAsync);
 
         return app;
@@ -119,52 +118,6 @@ public static class AchievementsEndpoints
         {
             logger.LogError(ex, "Unexpected error unlocking achievement {AchievementId} for user {UserId}", achievementId, userId);
             return Results.Problem("Unexpected error occurred while unlocking achievement.");
-        }
-    }
-
-    private static async Task<IResult> GetUserProgressAsync(
-        [FromRoute] Guid userId,
-        [FromRoute] string feature,
-        [FromServices] IAchievementService achievementService,
-        ILogger<IAchievementService> logger,
-        CancellationToken ct)
-    {
-        if (userId == Guid.Empty)
-        {
-            logger.LogWarning("GetUserProgressAsync called with empty UserId");
-            return Results.BadRequest("UserId cannot be empty.");
-        }
-
-        if (!Enum.TryParse<PracticeFeature>(feature, true, out var practiceFeature))
-        {
-            logger.LogWarning("GetUserProgressAsync called with invalid feature: {Feature}", feature);
-            return Results.BadRequest($"Invalid feature: {feature}");
-        }
-
-        using var scope = logger.BeginScope("GetUserProgressAsync. UserId={UserId}, Feature={Feature}", userId, practiceFeature);
-
-        try
-        {
-            var progress = await achievementService.GetUserProgressAsync(userId, practiceFeature, ct);
-
-            if (progress == null)
-            {
-                logger.LogInformation("No progress found for user {UserId}, feature {Feature}", userId, practiceFeature);
-                return Results.Ok(new { userId, feature = practiceFeature, count = 0 });
-            }
-
-            logger.LogInformation("Retrieved progress for user {UserId}, feature {Feature}: count={Count}", userId, practiceFeature, progress.Count);
-            return Results.Ok(progress);
-        }
-        catch (OperationCanceledException)
-        {
-            logger.LogWarning("Request cancelled while retrieving progress for user {UserId}, feature {Feature}", userId, practiceFeature);
-            return Results.StatusCode(499);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error retrieving progress for user {UserId}, feature {Feature}", userId, practiceFeature);
-            return Results.Problem("Error occurred while fetching progress.", statusCode: 500);
         }
     }
 

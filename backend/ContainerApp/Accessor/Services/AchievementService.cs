@@ -87,20 +87,6 @@ public class AchievementService : IAchievementService
         }
     }
 
-    public async Task<UserProgressModel?> GetUserProgressAsync(Guid userId, PracticeFeature feature, CancellationToken ct)
-    {
-        try
-        {
-            return await _context.UserProgress
-                .FirstOrDefaultAsync(up => up.UserId == userId && up.Feature == feature, ct);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving progress for user {UserId}, feature {Feature}", userId, feature);
-            throw;
-        }
-    }
-
     public async Task UpdateUserProgressAsync(Guid userId, PracticeFeature feature, int count, CancellationToken ct)
     {
         try
@@ -127,8 +113,6 @@ public class AchievementService : IAchievementService
             }
 
             await _context.SaveChangesAsync(ct);
-
-            await CheckAndUnlockAchievementsAsync(userId, feature, count, ct);
         }
         catch (Exception ex)
         {
@@ -137,47 +121,18 @@ public class AchievementService : IAchievementService
         }
     }
 
-    private async Task CheckAndUnlockAchievementsAsync(Guid userId, PracticeFeature feature, int currentCount, CancellationToken ct)
+    public async Task<List<AchievementModel>> GetEligibleAchievementsAsync(PracticeFeature feature, int count, CancellationToken ct)
     {
         try
         {
-            var eligibleAchievements = await _context.Achievements
-                .Where(a => a.IsActive && a.Feature == feature && a.TargetCount <= currentCount)
+            return await _context.Achievements
+                .Where(a => a.IsActive && a.Feature == feature && a.TargetCount <= count)
+                .OrderBy(a => a.TargetCount)
                 .ToListAsync(ct);
-
-            var alreadyUnlockedIds = await _context.UserAchievements
-                .Where(ua => ua.UserId == userId)
-                .Select(ua => ua.AchievementId)
-                .ToListAsync(ct);
-
-            var achievementsToUnlock = eligibleAchievements
-                .Where(a => !alreadyUnlockedIds.Contains(a.AchievementId))
-                .ToList();
-
-            foreach (var achievement in achievementsToUnlock)
-            {
-                var userAchievement = new UserAchievementModel
-                {
-                    UserAchievementId = Guid.NewGuid(),
-                    UserId = userId,
-                    AchievementId = achievement.AchievementId,
-                    UnlockedAt = DateTime.UtcNow
-                };
-
-                _context.UserAchievements.Add(userAchievement);
-                _logger.LogInformation(
-                    "Auto-unlocked achievement {AchievementId} ({Name}) for user {UserId}",
-                    achievement.AchievementId, achievement.Name, userId);
-            }
-
-            if (achievementsToUnlock.Any())
-            {
-                await _context.SaveChangesAsync(ct);
-            }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error checking and unlocking achievements for user {UserId}, feature {Feature}", userId, feature);
+            _logger.LogError(ex, "Error retrieving eligible achievements for feature {Feature}, count {Count}", feature, count);
             throw;
         }
     }
