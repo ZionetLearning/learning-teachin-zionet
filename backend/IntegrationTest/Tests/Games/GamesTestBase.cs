@@ -289,7 +289,7 @@ public abstract class GamesTestBase(
     /// <summary>
     /// Submits a game attempt with the given answer.
     /// </summary>
-    protected async Task<SubmitAttemptResult> SubmitGameAttemptAsync(
+    protected async Task<SubmitAttemptResponse> SubmitGameAttemptAsync(
         Guid exerciseId,
         List<string> givenAnswer)
     {
@@ -302,7 +302,7 @@ public abstract class GamesTestBase(
         var response = await Client.PostAsJsonAsync(GamesRoutes.Attempt, request);
         response.EnsureSuccessStatusCode();
 
-        return await ReadAsJsonAsync<SubmitAttemptResult>(response)
+        return await ReadAsJsonAsync<SubmitAttemptResponse>(response)
                ?? throw new InvalidOperationException("Failed to deserialize SubmitAttemptResult");
     }
 
@@ -331,7 +331,7 @@ public abstract class GamesTestBase(
     /// Creates a mistake by generating a sentence and submitting a wrong answer.
     /// Returns the attempt result.
     /// </summary>
-    protected async Task<SubmitAttemptResult> CreateMistakeAsync(
+    protected async Task<SubmitAttemptResponse> CreateMistakeAsync(
         Guid studentId,
         Difficulty difficulty = Difficulty.Easy,
         bool nikud = false)
@@ -349,7 +349,7 @@ public abstract class GamesTestBase(
     /// Creates a successful attempt by generating a sentence and submitting the correct answer.
     /// Returns the attempt result.
     /// </summary>
-    protected async Task<SubmitAttemptResult> CreateSuccessfulAttemptAsync(
+    protected async Task<SubmitAttemptResponse> CreateSuccessfulAttemptAsync(
         Guid studentId,
         Difficulty difficulty = Difficulty.Easy,
         bool nikud = false)
@@ -381,7 +381,7 @@ public abstract class GamesTestBase(
     /// Tests that mistakes are filtered out when the same sentence is answered correctly later.
     /// Submits the same sentence twice: wrong answer first, then correct answer.
     /// </summary>
-    protected async Task<(AttemptedSentence sentence, SubmitAttemptResult failureResult, SubmitAttemptResult successResult)> 
+    protected async Task<(AttemptedSentence sentence, SubmitAttemptResponse failureResult, SubmitAttemptResponse successResult)> 
         CreateMistakeWithLaterSuccessAsync(Guid studentId, Difficulty difficulty = Difficulty.Easy)
     {
         // Generate one sentence

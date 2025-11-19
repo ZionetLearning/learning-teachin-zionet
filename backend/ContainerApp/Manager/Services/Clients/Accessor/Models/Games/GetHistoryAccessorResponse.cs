@@ -1,9 +1,12 @@
-namespace Manager.Models.Games;
+using Manager.Models;
+using Manager.Models.Games;
+
+namespace Manager.Services.Clients.Accessor.Models.Games;
 
 /// <summary>
-/// Wrapper for game history response that can contain either summary or detailed data
+/// Response model received from Accessor service for game history
 /// </summary>
-public sealed record GameHistoryResponse
+public sealed record GetHistoryAccessorResponse
 {
     public PagedResult<SummaryHistoryDto>? Summary { get; init; }
     public PagedResult<AttemptHistoryDto>? Detailed { get; init; }

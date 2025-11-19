@@ -1,9 +1,9 @@
 namespace Manager.Models.Games;
 
 /// <summary>
-/// Wrapper for game history response that can contain either summary or detailed data
+/// Response model for game history endpoint (can contain either summary or detailed data)
 /// </summary>
-public sealed record GameHistoryResponse
+public sealed record GetHistoryResponse
 {
     public PagedResult<SummaryHistoryDto>? Summary { get; init; }
     public PagedResult<AttemptHistoryDto>? Detailed { get; init; }

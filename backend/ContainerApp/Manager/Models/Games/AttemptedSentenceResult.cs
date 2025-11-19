@@ -1,6 +1,6 @@
 ﻿namespace Manager.Models.Games;
 
-public class AttemptedSentenceResult
+public sealed record AttemptedSentenceResult
 {
     public Guid ExerciseId { get; set; }
 
