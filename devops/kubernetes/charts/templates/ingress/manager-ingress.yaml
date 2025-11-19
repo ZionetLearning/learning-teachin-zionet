@@ -36,3 +36,4 @@ spec:
                 port:
                   number: {{ .Values.manager.ports.service }}
                 {{- end }}
+{{- end }}
