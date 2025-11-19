@@ -32,6 +32,6 @@ public abstract class MediaTestBase(
         var response = await Client.GetAsync("media-manager/speech/token");
         response.EnsureSuccessStatusCode();
         var responseContent = await response.Content.ReadFromJsonAsync<SpeechTokenResponse>(JsonSerializationOptions);
-        return responseContent;
+        return responseContent!;
     }
 }

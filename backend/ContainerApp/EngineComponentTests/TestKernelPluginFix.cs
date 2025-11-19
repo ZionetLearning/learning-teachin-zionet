@@ -2,6 +2,7 @@
 using Microsoft.SemanticKernel;
 
 namespace EngineComponentTests;
+
 public sealed class TestKernelPluginFix : IAsyncLifetime
 {
     public Kernel Kernel { get; private set; } = default!;

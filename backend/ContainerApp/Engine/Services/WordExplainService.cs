@@ -8,7 +8,7 @@ namespace Engine.Services;
 
 public interface IWordExplainService
 {
-    Task<WordExplainResponse> ExplainAsync(WordExplainRequest req, CancellationToken ct = default);
+    Task<WordExplainResponse> ExplainAsync(WordExplainRequest req, string lang, CancellationToken ct = default);
 }
 
 public class WordExplainService : IWordExplainService
@@ -22,7 +22,7 @@ public class WordExplainService : IWordExplainService
         _log = log;
     }
 
-    public async Task<WordExplainResponse> ExplainAsync(WordExplainRequest req, CancellationToken ct = default)
+    public async Task<WordExplainResponse> ExplainAsync(WordExplainRequest req, string lang, CancellationToken ct = default)
     {
         _log.LogInformation("Inside word explain service");
 
@@ -37,7 +37,8 @@ public class WordExplainService : IWordExplainService
         var args = new KernelArguments(exec)
         {
             ["word"] = req.Word,
-            ["context"] = req.Context
+            ["context"] = req.Context,
+            ["lang"] = lang
         };
 
         var result = await _kernel.InvokeAsync(func, args, ct);
