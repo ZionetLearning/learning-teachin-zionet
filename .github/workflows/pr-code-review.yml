@@ -50,7 +50,7 @@ jobs:
 
 
     - name: Azure OpenAI CodeReviewer
-      uses: stanlee000/ChatGPT-CodeReview@0.0.3
+      uses: stanlee000/ChatGPT-CodeReview@0.0.1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
