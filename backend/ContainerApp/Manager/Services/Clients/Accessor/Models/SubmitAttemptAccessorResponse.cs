@@ -1,0 +1,20 @@
+using Manager.Models.UserGameConfiguration;
+using Manager.Models.Games;
+
+namespace Manager.Services.Clients.Accessor.Models;
+
+/// <summary>
+/// Response model received from Accessor service after submitting a game attempt
+/// </summary>
+public class SubmitAttemptAccessorResponse
+{
+    public required Guid AttemptId { get; set; }
+    public required Guid ExerciseId { get; set; }
+    public required Guid StudentId { get; set; }
+    public required GameName GameType { get; set; }
+    public required Difficulty Difficulty { get; set; }
+    public required AttemptStatus Status { get; set; }
+    public required List<string> CorrectAnswer { get; set; } = new();
+    public required int AttemptNumber { get; set; }
+    public required decimal Accuracy { get; set; }
+}

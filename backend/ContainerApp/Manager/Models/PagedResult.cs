@@ -1,4 +1,4 @@
-namespace Manager.Models.Games;
+namespace Manager.Models;
 
 public class PagedResult<T>
 {

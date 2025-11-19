@@ -1,5 +1,6 @@
 using Dapr.Client;
 using Manager.Constants;
+using Manager.Models;
 using Manager.Models.Games;
 using Manager.Services.Clients.Accessor.Models;
 
@@ -16,24 +17,24 @@ public class GameAccessorClient : IGameAccessorClient
         _daprClient = daprClient;
     }
 
-    public async Task<SubmitAttemptResult> SubmitAttemptAsync(Guid studentId, SubmitAttemptRequest request, CancellationToken ct = default)
+    public async Task<SubmitAttemptAccessorResponse> SubmitAttemptAsync(Guid studentId, SubmitAttemptRequest request, CancellationToken ct = default)
     {
         try
         {
             _logger.LogInformation("Forwarding SubmitAttempt to Accessor. StudentId={StudentId}, ExerciseId={ExerciseId}", studentId, request.ExerciseId);
 
-            var accessorRequest = new SubmitAttemptRequestDto
+            var accessorRequest = new SubmitAttemptAccessorRequest
             {
                 StudentId = studentId,
                 ExerciseId = request.ExerciseId,
                 GivenAnswer = request.GivenAnswer
             };
 
-            var result = await _daprClient.InvokeMethodAsync<SubmitAttemptRequestDto, SubmitAttemptResult>(
+            var result = await _daprClient.InvokeMethodAsync<SubmitAttemptAccessorRequest, SubmitAttemptAccessorResponse>(
                 HttpMethod.Post, AppIds.Accessor, "games-accessor/attempt", accessorRequest, ct
             );
 
-            _logger.LogInformation("Received SubmitAttemptResult from Accessor. StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}, Status={Status}, AttemptNumber={AttemptNumber}",
+            _logger.LogInformation("Received SubmitAttemptAccessorResponse from Accessor. StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}, Status={Status}, AttemptNumber={AttemptNumber}",
                 result.StudentId, result.GameType, result.Difficulty, result.Status, result.AttemptNumber);
 
             return result;
@@ -63,15 +64,14 @@ public class GameAccessorClient : IGameAccessorClient
         }
     }
 
-    public async Task<GameHistoryResponse> GetHistoryAsync(Guid studentId, bool summary, int page, int pageSize, bool getPending, CancellationToken ct = default)
+    public async Task<GetHistoryAccessorResponse> GetHistoryAsync(Guid studentId, bool summary, int page, int pageSize, bool getPending, CancellationToken ct = default)
     {
         try
         {
             _logger.LogInformation("Requesting history from Accessor. StudentId={StudentId}, Summary={Summary}, Page={Page}, PageSize={PageSize}, GetPending={GetPending}",
                 studentId, summary, page, pageSize, getPending);
 
-            // Call Accessor and expect GameHistoryResponse (not PagedResult directly)
-            var result = await _daprClient.InvokeMethodAsync<GameHistoryResponse>(
+            var result = await _daprClient.InvokeMethodAsync<GetHistoryAccessorResponse>(
                 HttpMethod.Get,
                 AppIds.Accessor,
                 $"games-accessor/history/{studentId}?summary={summary}&page={page}&pageSize={pageSize}&getPending={getPending}",
@@ -81,7 +81,7 @@ public class GameAccessorClient : IGameAccessorClient
             if (result == null)
             {
                 _logger.LogWarning("Accessor returned null history response. StudentId={StudentId}", studentId);
-                return new GameHistoryResponse
+                return new GetHistoryAccessorResponse
                 {
                     Summary = summary ? new PagedResult<SummaryHistoryDto> { Page = page, PageSize = pageSize, TotalCount = 0 } : null,
                     Detailed = !summary ? new PagedResult<AttemptHistoryDto> { Page = page, PageSize = pageSize, TotalCount = 0 } : null
@@ -105,7 +105,7 @@ public class GameAccessorClient : IGameAccessorClient
         {
             _logger.LogError(ex, "Failed to get history from Accessor. StudentId={StudentId}, Summary={Summary}, GetPending={GetPending}", studentId, summary, getPending);
 
-            return new GameHistoryResponse
+            return new GetHistoryAccessorResponse
             {
                 Summary = summary ? new PagedResult<SummaryHistoryDto> { Page = page, PageSize = pageSize, TotalCount = 0 } : null,
                 Detailed = !summary ? new PagedResult<AttemptHistoryDto> { Page = page, PageSize = pageSize, TotalCount = 0 } : null
@@ -113,7 +113,7 @@ public class GameAccessorClient : IGameAccessorClient
         }
     }
 
-    public async Task<PagedResult<MistakeDto>> GetMistakesAsync(Guid studentId, int page, int pageSize, CancellationToken ct = default)
+    public async Task<GetMistakesAccessorResponse> GetMistakesAsync(Guid studentId, int page, int pageSize, CancellationToken ct = default)
     {
         try
         {
@@ -129,22 +129,40 @@ public class GameAccessorClient : IGameAccessorClient
             if (result == null)
             {
                 _logger.LogWarning("Accessor returned null mistakes. StudentId={StudentId}", studentId);
-                return new PagedResult<MistakeDto> { Page = page, PageSize = pageSize, TotalCount = 0 };
+                return new GetMistakesAccessorResponse
+                {
+                    Items = new List<MistakeDto>(),
+                    Page = page,
+                    PageSize = pageSize,
+                    TotalCount = 0
+                };
             }
 
             _logger.LogInformation("Received mistakes from Accessor. StudentId={StudentId}, Items={Count}, TotalCount={TotalCount}",
                 studentId, result.Items.Count(), result.TotalCount);
 
-            return result;
+            return new GetMistakesAccessorResponse
+            {
+                Items = result.Items,
+                Page = result.Page,
+                PageSize = result.PageSize,
+                TotalCount = result.TotalCount
+            };
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get mistakes from Accessor. StudentId={StudentId}", studentId);
-            return new PagedResult<MistakeDto> { Page = page, PageSize = pageSize, TotalCount = 0 };
+            return new GetMistakesAccessorResponse
+            {
+                Items = new List<MistakeDto>(),
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = 0
+            };
         }
     }
 
-    public async Task<PagedResult<SummaryHistoryWithStudentDto>> GetAllHistoriesAsync(int page, int pageSize, CancellationToken ct = default)
+    public async Task<GetAllHistoriesAccessorResponse> GetAllHistoriesAsync(int page, int pageSize, CancellationToken ct = default)
     {
         try
         {
@@ -160,17 +178,35 @@ public class GameAccessorClient : IGameAccessorClient
             if (result == null)
             {
                 _logger.LogWarning("Accessor returned null for all histories.");
-                return new PagedResult<SummaryHistoryWithStudentDto> { Page = page, PageSize = pageSize, TotalCount = 0 };
+                return new GetAllHistoriesAccessorResponse
+                {
+                    Items = new List<SummaryHistoryWithStudentDto>(),
+                    Page = page,
+                    PageSize = pageSize,
+                    TotalCount = 0
+                };
             }
 
             _logger.LogInformation("Received all histories from Accessor. Items={Count}, TotalCount={TotalCount}", result.Items.Count(), result.TotalCount);
 
-            return result;
+            return new GetAllHistoriesAccessorResponse
+            {
+                Items = result.Items,
+                Page = result.Page,
+                PageSize = result.PageSize,
+                TotalCount = result.TotalCount
+            };
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get all histories from Accessor");
-            return new PagedResult<SummaryHistoryWithStudentDto> { Page = page, PageSize = pageSize, TotalCount = 0 };
+            return new GetAllHistoriesAccessorResponse
+            {
+                Items = new List<SummaryHistoryWithStudentDto>(),
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = 0
+            };
         }
     }
 
