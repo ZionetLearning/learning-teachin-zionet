@@ -44,7 +44,6 @@ builder.Services.AddScoped<ISentencesService, SentencesService>();
 builder.Services.AddSingleton<IRetryPolicyProvider, RetryPolicyProvider>();
 builder.Services.AddSingleton<IRetryPolicy, RetryPolicy>();
 builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
-builder.Services.AddSingleton<ISemanticKernelPlugin, TimePlugin>();
 builder.Services.AddScoped<IWordExplainService, WordExplainService>();
 
 builder.Services.AddMemoryCache();
@@ -109,7 +108,7 @@ builder.Services.AddSingleton(sp =>
 
 builder.Services.AddSingleton<TimeTools>();
 
-builder.Services.AddSingleton<IReadOnlyList<AITool>>(sp =>
+builder.Services.AddSingleton<IList<AITool>>(sp =>
 {
     var time = sp.GetRequiredService<TimeTools>();
 
