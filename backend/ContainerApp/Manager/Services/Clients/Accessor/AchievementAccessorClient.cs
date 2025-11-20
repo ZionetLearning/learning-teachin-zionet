@@ -35,11 +35,18 @@ public class AchievementAccessorClient(
     {
         try
         {
-            var unlocked = await _daprClient.InvokeMethodAsync<List<UserAchievementAccessorModel>>(
+            var unlockedAchievements = await _daprClient.InvokeMethodAsync<List<AchievementAccessorModel>>(
                 HttpMethod.Get, AppIds.Accessor, $"achievements-accessor/user/{userId}/unlocked", ct);
 
-            _logger.LogInformation("Retrieved {Count} unlocked achievements for user {UserId}", unlocked?.Count ?? 0, userId);
-            return unlocked ?? new List<UserAchievementAccessorModel>();
+            _logger.LogInformation("Retrieved {Count} unlocked achievements for user {UserId}", unlockedAchievements?.Count ?? 0, userId);
+
+            return unlockedAchievements?.Select(a => new UserAchievementAccessorModel
+            {
+                UserAchievementId = Guid.Empty,
+                UserId = userId,
+                AchievementId = a.AchievementId,
+                UnlockedAt = a.CreatedAt
+            }).ToList() ?? new List<UserAchievementAccessorModel>();
         }
         catch (Exception ex)
         {
@@ -52,8 +59,9 @@ public class AchievementAccessorClient(
     {
         try
         {
+            var request = new UnlockAchievementAccessorRequest(userId, achievementId);
             await _daprClient.InvokeMethodAsync(
-                HttpMethod.Post, AppIds.Accessor, $"achievements-accessor/user/{userId}/unlock/{achievementId}", ct);
+                HttpMethod.Post, AppIds.Accessor, "achievements-accessor/unlock", request, ct);
 
             _logger.LogInformation("Unlocked achievement {AchievementId} for user {UserId}", achievementId, userId);
         }
