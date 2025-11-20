@@ -16,6 +16,7 @@ using Manager.Models.Meetings;
 using Manager.Services;
 using Manager.Services.Clients.Accessor;
 using Manager.Services.Clients.Engine;
+using Manager.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -157,10 +158,12 @@ builder.Services.AddScoped<IAccessorClient, AccessorClient>();
 builder.Services.AddScoped<IUsersAccessorClient, UsersAccessorClient>();
 builder.Services.AddScoped<IGameAccessorClient, GameAccessorClient>();
 builder.Services.AddScoped<IMeetingAccessorClient, MeetingAccessorClient>();
+builder.Services.AddScoped<IAchievementAccessorClient, AchievementAccessorClient>();
 builder.Services.AddScoped<IEngineClient, EngineClient>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IOnlinePresenceService, OnlinePresenceService>();
+builder.Services.AddScoped<IAchievementManagerService, AchievementManagerService>();
 
 builder.Services
   .AddOptions<AvatarsOptions>()
@@ -268,6 +271,7 @@ app.MapWordCardsEndpoints();
 app.MapClassesEndpoints();
 app.MapMeetingsEndpoints();
 app.MapGameConfigEndpoints();
+app.MapAchievementManager();
 
 app.MapStatsPing();
 if (env.IsDevelopment())
