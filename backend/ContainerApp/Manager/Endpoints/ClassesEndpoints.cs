@@ -1,7 +1,7 @@
 ﻿using System.Security.Claims;
 using Manager.Constants;
 using Manager.Models.Classes;
-using Manager.Services.Clients.Accessor;
+using Manager.Services.Clients.Accessor.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Endpoints;

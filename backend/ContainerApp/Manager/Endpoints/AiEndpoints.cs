@@ -4,7 +4,7 @@ using Manager.Models.Chat;
 using Manager.Models.ModelValidation;
 using Manager.Models.Sentences;
 using Manager.Models.Words;
-using Manager.Services.Clients.Accessor;
+using Manager.Services.Clients.Accessor.Interfaces;
 using Manager.Services.Clients.Engine;
 using Manager.Services.Clients.Engine.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -215,7 +215,7 @@ public static class AiEndpoints
     private static async Task<IResult> GlobalChatAsync(
       [FromBody] ChatRequest request,
       [FromServices] IEngineClient engine,
-      [FromServices] IAccessorClient accessorClient,
+      [FromServices] IUsersAccessorClient usersAccessorClient,
       [FromServices] ILogger<GlobalChatEndpoint> log,
       HttpContext httpContext,
       CancellationToken ct)
@@ -255,7 +255,7 @@ public static class AiEndpoints
 
         try
         {
-            var user = await accessorClient.GetUserAsync(userId);
+            var user = await usersAccessorClient.GetUserAsync(userId);
 
             if (user == null)
             {

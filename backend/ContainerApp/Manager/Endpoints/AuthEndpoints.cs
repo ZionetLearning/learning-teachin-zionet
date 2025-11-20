@@ -4,7 +4,7 @@ using Manager.Helpers;
 using Manager.Models.Auth;
 using Manager.Models.Auth.Erros;
 using Manager.Services;
-using Manager.Services.Clients.Accessor;
+using Manager.Services.Clients.Accessor.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Endpoints;

@@ -1,6 +1,6 @@
 using Manager.Models.Meetings;
 
-namespace Manager.Services.Clients.Accessor;
+namespace Manager.Services.Clients.Accessor.Interfaces;
 
 public interface IMeetingAccessorClient
 {

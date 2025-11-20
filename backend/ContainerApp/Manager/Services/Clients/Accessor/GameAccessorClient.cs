@@ -2,6 +2,7 @@ using Dapr.Client;
 using Manager.Constants;
 using Manager.Models;
 using Manager.Models.Games;
+using Manager.Services.Clients.Accessor.Interfaces;
 using Manager.Services.Clients.Accessor.Models;
 using Manager.Services.Clients.Accessor.Models.Games;
 

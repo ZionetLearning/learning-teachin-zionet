@@ -1,7 +1,7 @@
 ﻿using Manager.Constants;
 using Manager.Models.Users;
 using Manager.Services;
-using Manager.Services.Clients.Accessor;
+using Manager.Services.Clients.Accessor.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
@@ -12,13 +12,16 @@ public class NotificationHub : Hub<INotificationClient>
 {
     private readonly ILogger<NotificationHub> _logger;
     private readonly IOnlinePresenceService _presence;
-    private readonly IAccessorClient _accessorClient;
+    private readonly IUsersAccessorClient _usersAccessorClient;
 
-    public NotificationHub(ILogger<NotificationHub> logger, IOnlinePresenceService presence, IAccessorClient accessorClient)
+    public NotificationHub(
+        ILogger<NotificationHub> logger,
+        IOnlinePresenceService presence,
+        IUsersAccessorClient usersAccessorClient)
     {
         _logger = logger;
         _presence = presence;
-        _accessorClient = accessorClient;
+        _usersAccessorClient = usersAccessorClient;
     }
 
     public override async Task OnConnectedAsync()
@@ -30,7 +33,7 @@ public class NotificationHub : Hub<INotificationClient>
                 Context.ConnectionId, Context.UserIdentifier, Context.User?.Identity?.Name);
             if (Context.UserIdentifier != null)
             {
-                var user = await _accessorClient.GetUserAsync(Guid.Parse(Context.UserIdentifier)).ConfigureAwait(false);
+                var user = await _usersAccessorClient.GetUserAsync(Guid.Parse(Context.UserIdentifier)).ConfigureAwait(false);
                 if (user != null)
                 {
                     if (user.Role == Role.Admin)
@@ -72,7 +75,7 @@ public class NotificationHub : Hub<INotificationClient>
 
             if (Context.UserIdentifier != null)
             {
-                var user = await _accessorClient.GetUserAsync(Guid.Parse(Context.UserIdentifier)).ConfigureAwait(false);
+                var user = await _usersAccessorClient.GetUserAsync(Guid.Parse(Context.UserIdentifier)).ConfigureAwait(false);
                 if (user != null)
                 {
                     var userId = user.UserId.ToString();

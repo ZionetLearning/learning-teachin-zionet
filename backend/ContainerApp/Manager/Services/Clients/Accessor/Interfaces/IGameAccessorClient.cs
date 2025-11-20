@@ -2,7 +2,7 @@ using Manager.Models.Games;
 using Manager.Services.Clients.Accessor.Models;
 using Manager.Services.Clients.Accessor.Models.Games;
 
-namespace Manager.Services.Clients.Accessor;
+namespace Manager.Services.Clients.Accessor.Interfaces;
 
 public interface IGameAccessorClient
 {

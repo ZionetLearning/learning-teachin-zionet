@@ -1,7 +1,7 @@
 ﻿using Manager.Constants;
 using Manager.Models;
 using Manager.Models.ModelValidation;
-using Manager.Services.Clients.Accessor;
+using Manager.Services.Clients.Accessor.Interfaces;
 using Manager.Services.Clients.Engine;
 using Microsoft.AspNetCore.Mvc;
 
