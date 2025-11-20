@@ -68,6 +68,8 @@ spec:
       imagePullSecrets:
       - name: {{ .Values.global.imagePullSecret.name }}
       {{- end }}
+      {{- include "app.spot.affinity" . | nindent 6 }}
+      {{- include "app.spot.tolerations" . | nindent 6 }}
       containers:
       - name: proxy
         image: "{{ .Values.proxy.image.repository }}:{{ .Values.proxy.image.tag | default .Values.global.environment }}"
