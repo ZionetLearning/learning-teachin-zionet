@@ -36,12 +36,12 @@ jobs:
     
       - name: Get AKS credentials
         run: |
-            
             echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
             echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
             
-            echo "Connecting to cluster: $AKS_NAME in $AKS_RG"
-            az aks get-credentials --resource-group "$AKS_RG" --name "$AKS_NAME" --overwrite-existing
+
+      - name: Get AKS credentials
+        run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
         
       - name: Restart all namespaces if spot nodes exist
         run: |
