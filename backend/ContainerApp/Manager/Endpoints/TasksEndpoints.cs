@@ -27,7 +27,7 @@ public static class TasksEndpoints
 
     private static async Task<IResult> GetTaskAsync(
         [FromRoute] int id,
-        [FromServices] IAccessorClient accessorClient,
+        [FromServices] ITaskAccessorClient taskAccessorClient,
         [FromServices] ILogger<TaskEndpoint> logger,
         HttpResponse response)
     {
@@ -41,7 +41,7 @@ public static class TasksEndpoints
 
         try
         {
-            var (task, etag) = await accessorClient.GetTaskWithEtagAsync(id);
+            var (task, etag) = await taskAccessorClient.GetTaskWithEtagAsync(id);
 
             if (task is not null)
             {
@@ -66,7 +66,7 @@ public static class TasksEndpoints
 
     private static async Task<IResult> CreateTaskAsync(
         [FromBody] TaskModel task,
-        [FromServices] IAccessorClient accessorClient,
+        [FromServices] ITaskAccessorClient taskAccessorClient,
         [FromServices] ILogger<TaskEndpoint> logger)
     {
         using var scope = logger.BeginScope("TaskId {TaskId}:", task.Id);
@@ -92,7 +92,7 @@ public static class TasksEndpoints
         try
         {
             logger.LogInformation("Posting task {TaskId} with name '{TaskName}'", task.Id, task.Name);
-            var result = await accessorClient.PostTaskAsync(task);
+            var result = await taskAccessorClient.PostTaskAsync(task);
 
             if (result.success)
             {
@@ -134,13 +134,13 @@ public static class TasksEndpoints
     }
 
     private static async Task<IResult> GetTasksAsync(
-        [FromServices] IAccessorClient accessorClient,
+        [FromServices] ITaskAccessorClient taskAccessorClient,
         [FromServices] ILogger<TaskEndpoint> logger)
     {
         using var scope = logger.BeginScope("List all tasks");
         try
         {
-            var items = await accessorClient.GetTaskSummariesAsync();
+            var items = await taskAccessorClient.GetTaskSummariesAsync();
             logger.LogInformation("Retrieved {Count} tasks", items?.Count ?? 0);
             return Results.Ok(items);
         }
@@ -154,7 +154,7 @@ public static class TasksEndpoints
         [FromRoute] int id,
         [FromRoute] string name,
         [FromHeader(Name = "If-Match")] string? ifMatch,
-        [FromServices] IAccessorClient accessorClient,
+        [FromServices] ITaskAccessorClient taskAccessorClient,
         [FromServices] ILogger<TaskEndpoint> logger,
         HttpResponse response)
     {
@@ -187,7 +187,7 @@ public static class TasksEndpoints
         try
         {
             logger.LogInformation("Attempting to update task name");
-            var result = await accessorClient.UpdateTaskNameAsync(id, name, ifMatch!);
+            var result = await taskAccessorClient.UpdateTaskNameAsync(id, name, ifMatch!);
 
             if (result.NotFound)
             {
@@ -218,7 +218,7 @@ public static class TasksEndpoints
 
     private static async Task<IResult> DeleteTaskAsync(
         [FromRoute] int id,
-        [FromServices] IAccessorClient accessorClient,
+        [FromServices] ITaskAccessorClient taskAccessorClient,
         [FromServices] ILogger<TaskEndpoint> logger)
     {
         using var scope = logger.BeginScope("TaskId {TaskId}:", id);
@@ -232,7 +232,7 @@ public static class TasksEndpoints
         try
         {
             logger.LogInformation("Attempting to delete task");
-            var success = await accessorClient.DeleteTask(id);
+            var success = await taskAccessorClient.DeleteTask(id);
 
             if (success)
             {

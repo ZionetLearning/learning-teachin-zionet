@@ -12,7 +12,7 @@ using System.Text.Json;
 namespace ManagerUnitTests.Endpoints;
 public class ManagerEndpointsTests
 {
-    private readonly Mock<IAccessorClient> _accessor = new(MockBehavior.Strict);
+    private readonly Mock<ITaskAccessorClient> _taskAccessor = new(MockBehavior.Strict);
     private readonly Mock<IEngineClient> _engine = new(MockBehavior.Strict);
     private readonly Mock<ILogger> _log = new();
 
@@ -34,14 +34,14 @@ public class ManagerEndpointsTests
                                         id,
                                         name!,
                                         ifMatch,
-                                        _accessor.Object,
+                                        _taskAccessor.Object,
                                         _log.Object,
                                         http.Response),
             "DeleteTaskAsync" => PrivateInvoker.InvokePrivateEndpointAsync(
                                         typeof(TasksEndpoints),
                                         "DeleteTaskAsync",
                                         id,
-                                        _accessor.Object,
+                                        _taskAccessor.Object,
                                         _log.Object),
             _ => throw new ArgumentOutOfRangeException(nameof(method), method, "Unknown endpoint")
         };
@@ -51,7 +51,7 @@ public class ManagerEndpointsTests
     public async Task GetTask_Returns_Ok_When_Found()
     {
         var task = MakeTask(7, "X");
-        _accessor.Setup(s => s.GetTaskWithEtagAsync(7, It.IsAny<CancellationToken>()))
+        _taskAccessor.Setup(s => s.GetTaskWithEtagAsync(7, It.IsAny<CancellationToken>()))
                  .ReturnsAsync((task, "abc"));
 
         var http = new DefaultHttpContext();
@@ -59,7 +59,7 @@ public class ManagerEndpointsTests
             typeof(TasksEndpoints),
             "GetTaskAsync",
             7,
-            _accessor.Object,
+            _taskAccessor.Object,
             _log.Object,
             http.Response
         );
@@ -69,13 +69,13 @@ public class ManagerEndpointsTests
         Assert.Equal("X", ok.Value!.Name);
         Assert.Equal("\"abc\"", http.Response.Headers.ETag.ToString());
 
-        _accessor.VerifyAll();
+        _taskAccessor.VerifyAll();
     }
 
     [Fact(DisplayName = "GET /task/{id} => 404 when missing")]
     public async Task GetTask_Returns_NotFound_When_Missing()
     {
-        _accessor.Setup(s => s.GetTaskWithEtagAsync(999, It.IsAny<CancellationToken>()))
+        _taskAccessor.Setup(s => s.GetTaskWithEtagAsync(999, It.IsAny<CancellationToken>()))
                  .ReturnsAsync(((TaskModel? Task, string? ETag))(null, null));
 
         var http = new DefaultHttpContext();
@@ -83,7 +83,7 @@ public class ManagerEndpointsTests
             typeof(TasksEndpoints),
             "GetTaskAsync",
             999,
-            _accessor.Object,
+            _taskAccessor.Object,
             _log.Object,
             http.Response
         );
@@ -91,7 +91,7 @@ public class ManagerEndpointsTests
         var status = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
         Assert.Equal(StatusCodes.Status404NotFound, status.StatusCode);
 
-        _accessor.VerifyAll();
+        _taskAccessor.VerifyAll();
     }
 
     [Fact(DisplayName = "POST /task => 202 + body when valid")]
@@ -99,14 +99,14 @@ public class ManagerEndpointsTests
     {
         var model = MakeTask(42, "UnitTest Task");
 
-        _accessor.Setup(s => s.PostTaskAsync(model))
+        _taskAccessor.Setup(s => s.PostTaskAsync(model))
                  .ReturnsAsync((true, "queued"));
 
         var result = await PrivateInvoker.InvokePrivateEndpointAsync(
             typeof(TasksEndpoints),
             "CreateTaskAsync",
             model,
-            _accessor.Object,
+            _taskAccessor.Object,
             _log.Object);
 
         var status = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
@@ -121,7 +121,7 @@ public class ManagerEndpointsTests
         Assert.Equal("queued", root.GetProperty("status").GetString());
         Assert.Equal(42, root.GetProperty("Id").GetInt32());
 
-        _accessor.VerifyAll();
+        _taskAccessor.VerifyAll();
     }
 
     [Fact(DisplayName = "POST /tasklong => 202 Accepted")]
@@ -154,7 +154,7 @@ public class ManagerEndpointsTests
         switch (method)
         {
             case "UpdateTaskNameAsync":
-                _accessor
+                _taskAccessor
                     .SetupSequence(s => s.UpdateTaskNameAsync(
                         It.IsAny<int>(),
                         It.IsAny<string>(),
@@ -173,7 +173,7 @@ public class ManagerEndpointsTests
                 break;
 
             case "DeleteTaskAsync":
-                _accessor
+                _taskAccessor
                     .SetupSequence(s => s.DeleteTask(It.IsAny<int>()))
                     .ReturnsAsync(successFirst)
                     .ReturnsAsync(false);
@@ -186,7 +186,7 @@ public class ManagerEndpointsTests
         // Act + Assert: common helper for both methods
         await AssertEndpointBehavior(method, okType, notFoundStatus);
 
-        _accessor.VerifyAll();
+        _taskAccessor.VerifyAll();
     }
 
     private async Task AssertEndpointBehavior(string method, Type okType, int notFoundStatus)
