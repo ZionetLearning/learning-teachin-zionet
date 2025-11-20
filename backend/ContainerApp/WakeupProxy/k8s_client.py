@@ -6,6 +6,7 @@ import httpx
 from kubernetes_asyncio import client, config
 from config import FORWARD_TIMEOUT
 from contextlib import asynccontextmanager
+from k8s_state import k8s_apis
 
 
 logger = logging.getLogger("proxy")
@@ -13,7 +14,6 @@ logger = logging.getLogger("proxy")
 # ---------------------------
 # Kubernetes & HTTP client init/teardown
 # ---------------------------
-k8s_apis: Dict[str, object] = {}
 http_client: Optional[httpx.AsyncClient] = None
 k8s_ready = False
 

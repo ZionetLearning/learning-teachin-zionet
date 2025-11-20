@@ -1,4 +1,3 @@
-from contextlib import asynccontextmanager
 import logging
 from fastapi import FastAPI
 from k8s_client import lifespan

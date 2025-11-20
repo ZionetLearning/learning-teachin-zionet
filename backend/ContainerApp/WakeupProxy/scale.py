@@ -3,8 +3,7 @@ import asyncio
 import logging
 from typing import List
 from k8s_helpers import try_acquire_lease, wait_for_pod_ready
-from kubernetes_asyncio.client.exceptions import ApiException
-from k8s_client import k8s_apis
+from k8s_state import k8s_apis
 from config import SCALE_UP_REPLICAS, SCALE_DOWN_REPLICAS, MAX_SCALEUP_WAIT, CHECK_INTERVAL, INACTIVITY_TIMEOUT
 import time
 

@@ -2,7 +2,7 @@
 import asyncio
 import logging
 from config import MAX_SCALEUP_WAIT
-from k8s_client import k8s_apis
+from k8s_state import k8s_apis
 from kubernetes_asyncio import client
 from kubernetes_asyncio.client.exceptions import ApiException
 
