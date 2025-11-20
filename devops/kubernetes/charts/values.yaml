@@ -252,6 +252,14 @@ proxy:
   scaleWait: 150
   checkInterval: 30
   enabled: true
+  resources:
+    requests:
+      cpu: "5m"
+      memory: "90Mi"
+    limits:
+      cpu: "50m"
+      memory: "128Mi"
+
 
 dapr:
   # Shared connection for Service Bus components
