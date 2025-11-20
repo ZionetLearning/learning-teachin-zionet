@@ -3,7 +3,7 @@ name: Spot Node Optimization
 on:
   push:
     branches:
-      - snir/1035/restart-all-the-namespaces-that-need-for-sending-them-to-spot-nodes
+      - snir/1035/restart-all-the-namespaces-that-need-for-sending-them-to-spot-node
   workflow_dispatch:  # Allow manual triggering
     inputs:
       environment:
