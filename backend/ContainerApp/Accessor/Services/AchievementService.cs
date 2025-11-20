@@ -87,7 +87,7 @@ public class AchievementService : IAchievementService
         }
     }
 
-    public async Task UpdateUserProgressAsync(Guid userId, PracticeFeature feature, int count, CancellationToken ct)
+    public async Task UpsertUserProgressAsync(Guid userId, PracticeFeature feature, int count, CancellationToken ct)
     {
         try
         {

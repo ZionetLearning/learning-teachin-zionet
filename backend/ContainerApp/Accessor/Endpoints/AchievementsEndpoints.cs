@@ -155,7 +155,7 @@ public static class AchievementsEndpoints
 
         try
         {
-            await achievementService.UpdateUserProgressAsync(userId, request.Feature, request.Count, ct);
+            await achievementService.UpsertUserProgressAsync(userId, request.Feature, request.Count, ct);
 
             logger.LogInformation("Successfully updated progress for user {UserId}, feature {Feature} to count {Count}", userId, request.Feature, request.Count);
             return Results.Ok(new { message = "Progress updated successfully" });
