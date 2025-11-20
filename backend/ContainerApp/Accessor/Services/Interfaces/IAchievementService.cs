@@ -4,9 +4,9 @@ namespace Accessor.Services.Interfaces;
 
 public interface IAchievementService
 {
-    Task<List<AchievementModel>> GetAllActiveAchievementsAsync(CancellationToken ct);
-    Task<List<AchievementModel>> GetUserUnlockedAchievementsAsync(Guid userId, CancellationToken ct);
+    Task<IReadOnlyList<AchievementModel>> GetAllActiveAchievementsAsync(CancellationToken ct);
+    Task<IReadOnlyList<AchievementModel>> GetUserUnlockedAchievementsAsync(Guid userId, CancellationToken ct);
     Task<bool> UnlockAchievementAsync(Guid userId, Guid achievementId, CancellationToken ct);
     Task UpdateUserProgressAsync(Guid userId, PracticeFeature feature, int count, CancellationToken ct);
-    Task<List<AchievementModel>> GetEligibleAchievementsAsync(PracticeFeature feature, int count, CancellationToken ct);
+    Task<IReadOnlyList<AchievementModel>> GetEligibleAchievementsAsync(PracticeFeature feature, int count, CancellationToken ct);
 }

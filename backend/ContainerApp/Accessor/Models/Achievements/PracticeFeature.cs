@@ -7,7 +7,7 @@ public enum PracticeFeature
 {
     WordCards,
     PracticeMistakes,
-    WordOrderGame,
+    WordOrder,
     TypingPractice,
     SpeakingPractice,
     WordCardsChallenge

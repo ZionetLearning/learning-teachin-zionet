@@ -16,7 +16,7 @@ public class AchievementService : IAchievementService
         _logger = logger;
     }
 
-    public async Task<List<AchievementModel>> GetAllActiveAchievementsAsync(CancellationToken ct)
+    public async Task<IReadOnlyList<AchievementModel>> GetAllActiveAchievementsAsync(CancellationToken ct)
     {
         try
         {
@@ -33,7 +33,7 @@ public class AchievementService : IAchievementService
         }
     }
 
-    public async Task<List<AchievementModel>> GetUserUnlockedAchievementsAsync(Guid userId, CancellationToken ct)
+    public async Task<IReadOnlyList<AchievementModel>> GetUserUnlockedAchievementsAsync(Guid userId, CancellationToken ct)
     {
         try
         {
@@ -121,7 +121,7 @@ public class AchievementService : IAchievementService
         }
     }
 
-    public async Task<List<AchievementModel>> GetEligibleAchievementsAsync(PracticeFeature feature, int count, CancellationToken ct)
+    public async Task<IReadOnlyList<AchievementModel>> GetEligibleAchievementsAsync(PracticeFeature feature, int count, CancellationToken ct)
     {
         try
         {

@@ -13,7 +13,7 @@ public static class AchievementsEndpoints
 
         group.MapGet("", GetAllAchievementsAsync);
         group.MapGet("/user/{userId:guid}/unlocked", GetUserUnlockedAchievementsAsync);
-        group.MapPost("/user/{userId:guid}/unlock/{achievementId:guid}", UnlockAchievementAsync);
+        group.MapPost("/unlock", UnlockAchievementAsync);
         group.MapPut("/user/{userId:guid}/progress", UpdateUserProgressAsync);
 
         return app;
@@ -77,46 +77,51 @@ public static class AchievementsEndpoints
     }
 
     private static async Task<IResult> UnlockAchievementAsync(
-        [FromRoute] Guid userId,
-        [FromRoute] Guid achievementId,
+        [FromBody] UnlockAchievementRequest request,
         [FromServices] IAchievementService achievementService,
         ILogger<IAchievementService> logger,
         CancellationToken ct)
     {
-        if (userId == Guid.Empty || achievementId == Guid.Empty)
+        if (request == null)
+        {
+            logger.LogWarning("UnlockAchievementAsync called with null request");
+            return Results.BadRequest("Request body cannot be null.");
+        }
+
+        if (request.UserId == Guid.Empty || request.AchievementId == Guid.Empty)
         {
             logger.LogWarning("UnlockAchievementAsync called with empty UserId or AchievementId");
             return Results.BadRequest("UserId and AchievementId cannot be empty.");
         }
 
-        using var scope = logger.BeginScope("UnlockAchievementAsync. UserId={UserId}, AchievementId={AchievementId}", userId, achievementId);
+        using var scope = logger.BeginScope("UnlockAchievementAsync. UserId={UserId}, AchievementId={AchievementId}", request.UserId, request.AchievementId);
 
         try
         {
-            var success = await achievementService.UnlockAchievementAsync(userId, achievementId, ct);
+            var success = await achievementService.UnlockAchievementAsync(request.UserId, request.AchievementId, ct);
 
             if (!success)
             {
-                logger.LogWarning("Achievement {AchievementId} already unlocked for user {UserId}", achievementId, userId);
+                logger.LogWarning("Achievement {AchievementId} already unlocked for user {UserId}", request.AchievementId, request.UserId);
                 return Results.Conflict("Achievement already unlocked.");
             }
 
-            logger.LogInformation("Successfully unlocked achievement {AchievementId} for user {UserId}", achievementId, userId);
+            logger.LogInformation("Successfully unlocked achievement {AchievementId} for user {UserId}", request.AchievementId, request.UserId);
             return Results.Ok(new { message = "Achievement unlocked successfully" });
         }
         catch (OperationCanceledException)
         {
-            logger.LogWarning("Request cancelled while unlocking achievement {AchievementId} for user {UserId}", achievementId, userId);
+            logger.LogWarning("Request cancelled while unlocking achievement {AchievementId} for user {UserId}", request.AchievementId, request.UserId);
             return Results.StatusCode(499);
         }
         catch (DbUpdateException ex)
         {
-            logger.LogError(ex, "Database error unlocking achievement {AchievementId} for user {UserId}. Achievement or user may not exist.", achievementId, userId);
+            logger.LogError(ex, "Database error unlocking achievement {AchievementId} for user {UserId}. Achievement or user may not exist.", request.AchievementId, request.UserId);
             return Results.Problem("Database error occurred. Achievement or user may not exist.", statusCode: 400);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unexpected error unlocking achievement {AchievementId} for user {UserId}", achievementId, userId);
+            logger.LogError(ex, "Unexpected error unlocking achievement {AchievementId} for user {UserId}", request.AchievementId, request.UserId);
             return Results.Problem("Unexpected error occurred while unlocking achievement.");
         }
     }
@@ -172,8 +177,3 @@ public static class AchievementsEndpoints
         }
     }
 }
-
-public record UpdateProgressRequest(
-    PracticeFeature Feature,
-    int Count
-);
