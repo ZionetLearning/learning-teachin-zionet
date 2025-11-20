@@ -1,7 +1,7 @@
 ﻿using FluentAssertions;
 using IntegrationTests.Constants;
 using IntegrationTests.Fixtures;
-using Manager.Models.WordCards;
+using Manager.Models.WordCards.Requests;
 using System.Net;
 using System.Net.Http.Json;
 using Xunit.Abstractions;
@@ -60,7 +60,7 @@ public class WordCardsIntegrationTests(
     {
         var fakeCardId = Guid.NewGuid();
 
-        var request = new LearnedStatus
+        var request = new UpdateLearnedStatusRequest
         {
             CardId = fakeCardId,
             IsLearned = true
@@ -81,7 +81,7 @@ public class WordCardsIntegrationTests(
             ("ספר", "Book")
         };
 
-        var createdCards = new List<WordCard>();
+        var createdCards = new List<Manager.Models.WordCards.Responses.CreateWordCardResponse>();
 
         foreach (var (hebrew, english) in cardsToCreate)
         {
