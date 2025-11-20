@@ -1,5 +1,3 @@
-using System.Text.Json.Serialization;
-
 namespace Manager.Services.Clients.Accessor.Models.Meetings;
 
 /// <summary>
