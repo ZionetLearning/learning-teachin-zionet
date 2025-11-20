@@ -1,6 +1,8 @@
 ﻿using System.Security.Claims;
 using Manager.Constants;
-using Manager.Models.Classes;
+using Manager.Mapping;
+using Manager.Models.Classes.Responses;
+using Manager.Models.Classes.Requests;
 using Manager.Services.Clients.Accessor.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -40,7 +42,7 @@ public static class ClassesEndpoints
 
     private static async Task<IResult> GetClassAsync(
         [FromRoute] Guid classId,
-        [FromServices] IAccessorClient accessorClient,
+        [FromServices] IClassesAccessorClient classesAccessorClient,
         ILogger<ClassEndpoint> logger,
         CancellationToken ct)
     {
@@ -48,9 +50,15 @@ public static class ClassesEndpoints
         {
             using var scope = logger.BeginScope("ClassID: {ClassId}:", classId);
             logger.LogInformation("Fetching class info");
-            var cls = await accessorClient.GetClassAsync(classId, ct);
+            var accessorResult = await classesAccessorClient.GetClassAsync(classId, ct);
 
-            return cls is not null ? Results.Ok(cls) : Results.NotFound("Class not found.");
+            if (accessorResult is null)
+            {
+                return Results.NotFound("Class not found.");
+            }
+
+            var response = accessorResult.ToFront();
+            return Results.Ok(response);
         }
         catch (Exception ex)
         {
@@ -58,17 +66,24 @@ public static class ClassesEndpoints
             return Results.Problem("Failed to retrieve class. Please try again later.");
         }
     }
+
     private static async Task<IResult> GetAllClassesAsync(
-    [FromServices] IAccessorClient accessorClient,
-    ILogger<ClassEndpoint> logger,
-    CancellationToken ct)
+        [FromServices] IClassesAccessorClient classesAccessorClient,
+        ILogger<ClassEndpoint> logger,
+        CancellationToken ct)
     {
         try
         {
             logger.LogInformation("Fetching all classes");
-            var cls = await accessorClient.GetAllClassesAsync(ct);
+            var accessorResult = await classesAccessorClient.GetAllClassesAsync(ct);
 
-            return cls is not null ? Results.Ok(cls) : Results.NotFound("Classes not found.");
+            if (accessorResult is null)
+            {
+                return Results.NotFound("Classes not found.");
+            }
+
+            var response = accessorResult.ToFront();
+            return Results.Ok(response);
         }
         catch (Exception ex)
         {
@@ -78,10 +93,10 @@ public static class ClassesEndpoints
     }
 
     private static async Task<IResult> GetMyClassesAsync(
-    [FromServices] IAccessorClient accessorClient,
-    HttpContext http,
-    ILogger<ClassEndpoint> logger,
-    CancellationToken ct)
+        [FromServices] IClassesAccessorClient classesAccessorClient,
+        HttpContext http,
+        ILogger<ClassEndpoint> logger,
+        CancellationToken ct)
     {
         try
         {
@@ -93,9 +108,15 @@ public static class ClassesEndpoints
 
             using var scope = logger.BeginScope("UserId: {CallerId}:", callerId);
             logger.LogInformation("Fetching classes info");
-            var cls = await accessorClient.GetMyClassesAsync(Guid.Parse(callerId), ct);
+            var accessorResult = await classesAccessorClient.GetMyClassesAsync(Guid.Parse(callerId), ct);
 
-            return cls is not null ? Results.Ok(cls) : Results.NotFound("Classes not found.");
+            if (accessorResult is null)
+            {
+                return Results.NotFound("Classes not found.");
+            }
+
+            var response = accessorResult.ToFront();
+            return Results.Ok(response);
         }
         catch (Exception ex)
         {
@@ -106,7 +127,7 @@ public static class ClassesEndpoints
 
     private static async Task<IResult> CreateClassAsync(
         [FromBody] CreateClassRequest request,
-        [FromServices] IAccessorClient accessorClient,
+        [FromServices] IClassesAccessorClient classesAccessorClient,
         HttpContext http,
         ILogger<ClassEndpoint> logger,
         CancellationToken ct)
@@ -116,15 +137,22 @@ public static class ClassesEndpoints
             var callerRole = http.User.FindFirstValue(AuthSettings.RoleClaimType);
             var callerId = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
             logger.LogInformation("CreateClass called by {Role} ({CallerId}) for {Name}", callerRole, callerId, request.Name);
+
             if (string.IsNullOrWhiteSpace(request.Name))
             {
                 return Results.BadRequest("Class name is required.");
             }
 
-            var result = await accessorClient.CreateClassAsync(request, ct);
-            return result is not null
-                ? Results.Created($"/classes-manager/{result.ClassId}", result)
-                : Results.Conflict("Class with same name or code already exists.");
+            var accessorRequest = request.ToAccessor();
+            var accessorResult = await classesAccessorClient.CreateClassAsync(accessorRequest, ct);
+
+            if (accessorResult is null)
+            {
+                return Results.Conflict("Class with same name or code already exists.");
+            }
+
+            var response = accessorResult.ToFront();
+            return Results.Created($"/classes-manager/{response.ClassId}", response);
         }
         catch (Exception ex)
         {
@@ -136,7 +164,7 @@ public static class ClassesEndpoints
     private static async Task<IResult> AddMembersAsync(
         [FromRoute] Guid classId,
         [FromBody] AddMembersRequest request,
-        [FromServices] IAccessorClient accessorClient,
+        [FromServices] IClassesAccessorClient classesAccessorClient,
         HttpContext http,
         ILogger<ClassEndpoint> logger,
         CancellationToken ct)
@@ -154,10 +182,16 @@ public static class ClassesEndpoints
                 return Results.BadRequest("Invalid classId or empty user list.");
             }
 
-            var ok = await accessorClient.AddMembersToClassAsync(classId, request, ct);
-            return ok
-                ? Results.Ok(new { message = "Members added successfully." })
-                : Results.Problem("Failed to add members.");
+            var accessorRequest = request.ToAccessor();
+            var ok = await classesAccessorClient.AddMembersToClassAsync(classId, accessorRequest, ct);
+
+            if (!ok)
+            {
+                return Results.Problem("Failed to add members.");
+            }
+
+            var response = new AddMembersResponse { Message = "Members added successfully." };
+            return Results.Ok(response);
         }
         catch (Exception ex)
         {
@@ -169,7 +203,7 @@ public static class ClassesEndpoints
     private static async Task<IResult> RemoveMembersAsync(
         [FromRoute] Guid classId,
         [FromBody] RemoveMembersRequest request,
-        [FromServices] IAccessorClient accessorClient,
+        [FromServices] IClassesAccessorClient classesAccessorClient,
         HttpContext http,
         ILogger<ClassEndpoint> logger,
         CancellationToken ct)
@@ -187,10 +221,16 @@ public static class ClassesEndpoints
                 return Results.BadRequest("Invalid classId or empty user list.");
             }
 
-            var ok = await accessorClient.RemoveMembersFromClassAsync(classId, request, ct);
-            return ok
-                ? Results.Ok(new { message = "Members removed successfully." })
-                : Results.Problem("Failed to remove members.");
+            var accessorRequest = request.ToAccessor();
+            var ok = await classesAccessorClient.RemoveMembersFromClassAsync(classId, accessorRequest, ct);
+
+            if (!ok)
+            {
+                return Results.Problem("Failed to remove members.");
+            }
+
+            var response = new RemoveMembersResponse { Message = "Members removed successfully." };
+            return Results.Ok(response);
         }
         catch (Exception ex)
         {
@@ -198,17 +238,18 @@ public static class ClassesEndpoints
             return Results.Problem("Failed to remove members. Please try again later.");
         }
     }
+
     private static async Task<IResult> DeleteClassAsync(
-    [FromRoute] Guid classId,
-    [FromServices] IAccessorClient accessorClient,
-    ILogger<ClassEndpoint> logger,
-    CancellationToken ct)
+        [FromRoute] Guid classId,
+        [FromServices] IClassesAccessorClient classesAccessorClient,
+        ILogger<ClassEndpoint> logger,
+        CancellationToken ct)
     {
         using var scope = logger.BeginScope("ClassID: {ClassId}:", classId);
 
         try
         {
-            var deleted = await accessorClient.DeleteClassAsync(classId, ct);
+            var deleted = await classesAccessorClient.DeleteClassAsync(classId, ct);
 
             return deleted
                 ? Results.NoContent()
