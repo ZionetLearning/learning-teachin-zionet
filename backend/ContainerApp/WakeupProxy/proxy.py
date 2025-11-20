@@ -185,7 +185,7 @@ async def wait_for_pod_ready(namespace: str, service: str, timeout: int = MAX_SC
 # ---------------------------
 async def scale_up_services(namespace: str, services: List[str]) -> bool:
     """
-    Ensure services are scaled up. Returns True if at least FORWARD_TO_SERVICE became ready.
+    Ensure services are scaled up. Returns True if all the services became ready.
     We'll attempt to scale each service to SCALE_UP_REPLICAS if it's currently 0.
     """
     # Acquire leases and issue scale patches concurrently
@@ -193,9 +193,13 @@ async def scale_up_services(namespace: str, services: List[str]) -> bool:
     for svc in services:
         tasks.append(_scale_service_if_needed(namespace, svc))
     await asyncio.gather(*tasks, return_exceptions=True)
-    # After scaling, make sure the forward target is ready (wait)
-    ready = await wait_for_pod_ready(namespace, FORWARD_TO_SERVICE, timeout=MAX_SCALEUP_WAIT)
-    return ready
+
+     # Wait for all services to be ready
+    ready_list = await asyncio.gather(
+        *(wait_for_pod_ready(namespace, svc, timeout=MAX_SCALEUP_WAIT) for svc in services)
+    )
+    all_ready = all(ready_list)
+    return all_ready
 
 
 async def _scale_service_if_needed(namespace: str, service: str):
