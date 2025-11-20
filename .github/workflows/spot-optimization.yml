@@ -1,6 +1,9 @@
 name: Spot Node Optimization
 
 on:
+  push:
+    branches:
+      - snir/1035/restart-all-the-namespaces-that-need-for-sending-them-to-spot-nodes
   workflow_dispatch:  # Allow manual triggering
     inputs:
       environment:
@@ -34,52 +37,52 @@ jobs:
         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
     
-    - name: Get AKS credentials
-      run: |
-        # Set AKS cluster details
-        echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
-        echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
+    # - name: Get AKS credentials
+    #   run: |
+    #     # Set AKS cluster details
+    #     echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
+    #     echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
         
-        echo "Connecting to cluster: $AKS_NAME in $AKS_RG"
-        az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
+    #     echo "Connecting to cluster: $AKS_NAME in $AKS_RG"
+    #     az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
     
-    - name: Restart all namespaces if spot nodes exist
-      run: |
-        # Check spot nodes - just check if any exist
-        echo "Checking if spot nodes exist..."
-        SPOT_NODES=$(kubectl get nodes -l node-type=spot --no-headers | awk '{print $1}' || echo "")
+    # - name: Restart all namespaces if spot nodes exist
+    #   run: |
+    #     # Check spot nodes - just check if any exist
+    #     echo "Checking if spot nodes exist..."
+    #     SPOT_NODES=$(kubectl get nodes -l node-type=spot --no-headers | awk '{print $1}' || echo "")
         
-        if [ -z "$SPOT_NODES" ]; then
-          echo "No spot nodes exist - skipping optimization"
-          exit 0
-        fi
+    #     if [ -z "$SPOT_NODES" ]; then
+    #       echo "No spot nodes exist - skipping optimization"
+    #       exit 0
+    #     fi
         
-        echo "Spot nodes exist: $SPOT_NODES"
+    #     echo "Spot nodes exist: $SPOT_NODES"
         
-        # Get all namespaces except excluded ones
-        ALL_NAMESPACES=$(kubectl get namespaces -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n' | grep -v -E '^(dev|devops-ingress-nginx|external-secrets|cert-manager|dapr-system|kube-public|kube-node-lease|kube-system|default|db-proxy)$')
+    #     # Get all namespaces except excluded ones
+    #     ALL_NAMESPACES=$(kubectl get namespaces -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n' | grep -v -E '^(dev|devops-ingress-nginx|external-secrets|cert-manager|dapr-system|kube-public|kube-node-lease|kube-system|default|db-proxy)$')
         
-        echo "Found namespaces to restart: $ALL_NAMESPACES"
+    #     echo "Found namespaces to restart: $ALL_NAMESPACES"
         
-        # Restart all deployments in each namespace
-        for namespace in $ALL_NAMESPACES; do
-          echo ""
-          echo "Processing namespace: $namespace"
+    #     # Restart all deployments in each namespace
+    #     for namespace in $ALL_NAMESPACES; do
+    #       echo ""
+    #       echo "Processing namespace: $namespace"
           
-          DEPLOYMENTS=$(kubectl get deployments -n "$namespace" -o jsonpath='{.items[*].metadata.name}' 2>/dev/null || echo "")
+    #       DEPLOYMENTS=$(kubectl get deployments -n "$namespace" -o jsonpath='{.items[*].metadata.name}' 2>/dev/null || echo "")
           
-          if [ -n "$DEPLOYMENTS" ]; then
-            echo "Restarting deployments: $DEPLOYMENTS"
+    #       if [ -n "$DEPLOYMENTS" ]; then
+    #         echo "Restarting deployments: $DEPLOYMENTS"
             
-            for deployment in $DEPLOYMENTS; do
-              echo "Restarting $deployment"
-              kubectl rollout restart deployment/"$deployment" -n "$namespace" 2>/dev/null || echo "Failed to restart $deployment"
-            done
-          else
-            echo "No deployments found in $namespace"
-          fi
+    #         for deployment in $DEPLOYMENTS; do
+    #           echo "Restarting $deployment"
+    #           kubectl rollout restart deployment/"$deployment" -n "$namespace" 2>/dev/null || echo "Failed to restart $deployment"
+    #         done
+    #       else
+    #         echo "No deployments found in $namespace"
+    #       fi
           
-          sleep 5  # Brief pause between namespaces
-        done
+    #       sleep 5  # Brief pause between namespaces
+    #     done
         
-        echo "All deployments restarted!"
+    #     echo "All deployments restarted!"
