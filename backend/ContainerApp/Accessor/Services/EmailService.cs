@@ -34,7 +34,7 @@ public class EmailService : IEmailService
                 .Where(u =>
                     EF.Functions.ILike(u.FirstName, exactName) ||
                     EF.Functions.ILike(u.LastName, exactName) ||
-                    EF.Functions.ILike(u.FirstName + "" + u.LastName, exactName))
+                    EF.Functions.ILike(u.FirstName + " " + u.LastName, exactName))
                 .Select(u => u.Email)
                 .Distinct()
                 .ToListAsync(ct);

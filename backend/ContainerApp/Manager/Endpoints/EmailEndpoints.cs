@@ -15,7 +15,7 @@ public static class EmailEndpoints
         var emailsGroup = app.MapGroup("/emails-manager").WithTags("Emails");
 
         emailsGroup.MapGet("/recipients/{name}", GetRecipientEmailsByName)
-            .RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
+            .RequireAuthorization(PolicyNames.AdminOrTeacher);
 
         // emailsGroup.MapPost("/draft", CreateEmailDraftAsync)
         //     .RequireAuthorization(PolicyNames.AdminOrTeacher);
