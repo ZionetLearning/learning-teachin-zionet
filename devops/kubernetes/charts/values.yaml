@@ -165,6 +165,11 @@ engine:
     AzureSpeech__Region: "eastus"
     AzureSpeech__DefaultVoice: "he-IL-HilaNeural"
     AzureSpeech__TimeoutSeconds: "70"
+    Tavily__ApiKey: ""
+    Tavily__MaxResults: "5"
+    Tavily__IncludeAnswer: "true"
+    Tavily__IncludeRawContent: "false"
+    Tavily__SearchDepth: "basic"
   secrets:
     serviceBus:
       name: azure-service-bus-secret
@@ -174,11 +179,14 @@ engine:
       keys:
         openaiApiKey: AzureOpenAI__ApiKey
         speechKey: AzureSpeech__SubscriptionKey
+        tavilyApiKey: Tavily__ApiKey
       data:
         - remote: engine-azureopenai-apikey
           key: AzureOpenAI__ApiKey
         - remote: engine-azurespeech-subscriptionkey
           key: AzureSpeech__SubscriptionKey
+        - remote: engine-tavily-apikey
+          key: Tavily__ApiKey
   resources:
     requests:
       cpu: "50m"       # Reduced from 100m to 50m based on actual usage
