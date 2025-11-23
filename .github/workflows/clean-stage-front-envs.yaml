@@ -16,6 +16,7 @@ on:
 jobs:
   clean-stage-envs:
     runs-on: ubuntu-latest
+    environment: Development
     strategy:
       matrix:
         app: [student, teacher, admin]
