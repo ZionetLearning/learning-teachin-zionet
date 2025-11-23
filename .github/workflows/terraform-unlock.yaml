@@ -79,7 +79,10 @@ jobs:
             echo "$LOCK_OUTPUT"
             
             # Extract the lock ID from the error message
-            LOCK_ID=$(echo "$LOCK_OUTPUT" | grep "ID:" | awk '{print $2}' | head -1)
+            LOCK_ID=$(echo "$LOCK_OUTPUT" | grep "ID:" | sed 's/.*ID:[[:space:]]*//' | sed 's/[[:space:]]*$//' | head -1)
+            
+            # Clean up any ANSI color codes
+            LOCK_ID=$(echo "$LOCK_ID" | sed 's/\x1b\[[0-9;]*m//g' | tr -d '\r\n' | xargs)
             
             if [ -n "$LOCK_ID" ]; then
               echo "Found lock ID: $LOCK_ID"
