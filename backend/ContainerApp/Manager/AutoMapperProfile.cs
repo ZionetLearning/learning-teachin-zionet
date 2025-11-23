@@ -16,7 +16,6 @@ internal sealed class AutoMapperProfile : Profile
         CreateMap<UserNewGameConfig, UserGameConfig>()
             .ForMember(dest => dest.UserId, opt => opt.Ignore());
 
-        // Achievement mappings
         CreateMap<AchievementAccessorModel, AchievementDto>()
             .ForMember(dest => dest.IsUnlocked, opt => opt.Ignore())
             .ForMember(dest => dest.UnlockedAt, opt => opt.Ignore());
