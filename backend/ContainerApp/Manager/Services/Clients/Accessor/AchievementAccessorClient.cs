@@ -31,7 +31,7 @@ public class AchievementAccessorClient(
         }
     }
 
-    public async Task<IReadOnlyList<UserAchievementAccessorModel>> GetUserUnlockedAchievementsAsync(Guid userId, CancellationToken ct = default)
+    public async Task<IReadOnlyDictionary<Guid, DateTime>> GetUserUnlockedAchievementsAsync(Guid userId, CancellationToken ct = default)
     {
         try
         {
@@ -40,13 +40,8 @@ public class AchievementAccessorClient(
 
             _logger.LogInformation("Retrieved {Count} unlocked achievements for user {UserId}", unlockedAchievements?.Count ?? 0, userId);
 
-            return unlockedAchievements?.Select(a => new UserAchievementAccessorModel
-            {
-                UserAchievementId = Guid.Empty,
-                UserId = userId,
-                AchievementId = a.AchievementId,
-                UnlockedAt = a.CreatedAt
-            }).ToList() ?? new List<UserAchievementAccessorModel>();
+            return unlockedAchievements?.ToDictionary(a => a.AchievementId, a => a.CreatedAt)
+                ?? new Dictionary<Guid, DateTime>();
         }
         catch (Exception ex)
         {

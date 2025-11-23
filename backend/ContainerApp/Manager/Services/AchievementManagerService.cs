@@ -31,8 +31,7 @@ public class AchievementManagerService(
         try
         {
             var allAchievements = await _achievementAccessorClient.GetAllActiveAchievementsAsync(ct);
-            var unlockedAchievements = await _achievementAccessorClient.GetUserUnlockedAchievementsAsync(userId, ct);
-            var unlockedMap = unlockedAchievements.ToDictionary(ua => ua.AchievementId);
+            var unlockedMap = await _achievementAccessorClient.GetUserUnlockedAchievementsAsync(userId, ct);
 
             var result = allAchievements.Select(a => new AchievementDto
             {
@@ -44,7 +43,7 @@ public class AchievementManagerService(
                 Feature = a.Feature,
                 TargetCount = a.TargetCount,
                 IsUnlocked = unlockedMap.ContainsKey(a.AchievementId),
-                UnlockedAt = unlockedMap.TryGetValue(a.AchievementId, out var ua) ? ua.UnlockedAt : null
+                UnlockedAt = unlockedMap.TryGetValue(a.AchievementId, out var unlockedAt) ? unlockedAt : null
             }).ToList();
 
             _logger.LogInformation("Returning {Total} achievements ({Unlocked} unlocked) for user {UserId}", result.Count, unlockedMap.Count, userId);
@@ -85,8 +84,8 @@ public class AchievementManagerService(
 
             _logger.LogInformation("Found {Count} achievements for feature {Feature}", featureAchievements.Count, request.Feature);
 
-            var unlockedAchievements = await _achievementAccessorClient.GetUserUnlockedAchievementsAsync(request.UserId, ct);
-            var unlockedIds = unlockedAchievements.Select(ua => ua.AchievementId).ToHashSet();
+            var unlockedMap = await _achievementAccessorClient.GetUserUnlockedAchievementsAsync(request.UserId, ct);
+            var unlockedIds = unlockedMap.Keys.ToHashSet();
 
             foreach (var achievement in featureAchievements)
             {
