@@ -161,6 +161,7 @@ builder.Services.AddScoped<IEngineClient, EngineClient>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IOnlinePresenceService, OnlinePresenceService>();
+builder.Services.AddScoped<IEmailAccessorClient, EmailAccessorClient>();
 
 builder.Services
   .AddOptions<AvatarsOptions>()
@@ -268,6 +269,7 @@ app.MapWordCardsEndpoints();
 app.MapClassesEndpoints();
 app.MapMeetingsEndpoints();
 app.MapGameConfigEndpoints();
+app.MapEmailEndpoints();
 
 app.MapStatsPing();
 if (env.IsDevelopment())
