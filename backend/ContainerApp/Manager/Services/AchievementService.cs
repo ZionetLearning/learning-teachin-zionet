@@ -1,23 +1,25 @@
 using System.Text.Json;
+using AutoMapper;
 using Manager.Hubs;
 using Manager.Models.Achievements;
 using Manager.Models.Notifications;
 using Manager.Services.Clients.Accessor.Interfaces;
 using Manager.Services.Clients.Accessor.Models.Achievements;
-using Manager.Services.Interfaces;
 using Microsoft.AspNetCore.SignalR;
 
 namespace Manager.Services;
 
-public class AchievementManagerService(
-    ILogger<AchievementManagerService> logger,
+public class AchievementService(
+    ILogger<AchievementService> logger,
     IAchievementAccessorClient achievementAccessorClient,
-    IHubContext<NotificationHub, INotificationClient> hubContext
-    ) : IAchievementManagerService
+    IHubContext<NotificationHub, INotificationClient> hubContext,
+    IMapper mapper
+    ) : IAchievementService
 {
-    private readonly ILogger<AchievementManagerService> _logger = logger;
+    private readonly ILogger<AchievementService> _logger = logger;
     private readonly IAchievementAccessorClient _achievementAccessorClient = achievementAccessorClient;
     private readonly IHubContext<NotificationHub, INotificationClient> _hubContext = hubContext;
+    private readonly IMapper _mapper = mapper;
 
     private static readonly JsonSerializerOptions s_jsonOptions = new()
     {
@@ -33,17 +35,12 @@ public class AchievementManagerService(
             var allAchievements = await _achievementAccessorClient.GetAllActiveAchievementsAsync(ct);
             var unlockedMap = await _achievementAccessorClient.GetUserUnlockedAchievementsAsync(userId, ct);
 
-            var result = allAchievements.Select(a => new AchievementDto
+            var result = allAchievements.Select(a =>
             {
-                AchievementId = a.AchievementId,
-                Key = a.Key,
-                Name = a.Name,
-                Description = a.Description,
-                Type = a.Type,
-                Feature = a.Feature,
-                TargetCount = a.TargetCount,
-                IsUnlocked = unlockedMap.ContainsKey(a.AchievementId),
-                UnlockedAt = unlockedMap.TryGetValue(a.AchievementId, out var unlockedAt) ? unlockedAt : null
+                var dto = _mapper.Map<AchievementDto>(a);
+                dto.IsUnlocked = unlockedMap.ContainsKey(a.AchievementId);
+                dto.UnlockedAt = unlockedMap.TryGetValue(a.AchievementId, out var unlockedAt) ? unlockedAt : null;
+                return dto;
             }).ToList();
 
             _logger.LogInformation("Returning {Total} achievements ({Unlocked} unlocked) for user {UserId}", result.Count, unlockedMap.Count, userId);
@@ -57,7 +54,7 @@ public class AchievementManagerService(
         }
     }
 
-    public async Task TrackProgressAsync(TrackProgressRequest request, CancellationToken ct)
+    public async Task<TrackProgressResponse> TrackProgressAsync(TrackProgressRequest request, CancellationToken ct)
     {
         _logger.LogInformation("Tracking progress for user {UserId}, feature {Feature}, increment {IncrementBy}", request.UserId, request.Feature, request.IncrementBy);
 
@@ -87,6 +84,12 @@ public class AchievementManagerService(
             var unlockedMap = await _achievementAccessorClient.GetUserUnlockedAchievementsAsync(request.UserId, ct);
             var unlockedIds = unlockedMap.Keys.ToHashSet();
 
+            var response = new TrackProgressResponse
+            {
+                Success = true,
+                NewCount = newCount
+            };
+
             foreach (var achievement in featureAchievements)
             {
                 if (unlockedIds.Contains(achievement.AchievementId))
@@ -100,6 +103,8 @@ public class AchievementManagerService(
                     _logger.LogInformation("Unlocking achievement {Key} for user {UserId} (count: {Count} >= target: {Target})", achievement.Key, request.UserId, newCount, achievement.TargetCount);
 
                     await _achievementAccessorClient.UnlockAchievementAsync(request.UserId, achievement.AchievementId, ct);
+
+                    response.UnlockedAchievements.Add(achievement.Key);
 
                     var notification = new AchievementUnlockedNotification
                     {
@@ -122,6 +127,8 @@ public class AchievementManagerService(
                     _logger.LogInformation("Sent AchievementUnlocked notification for {Key} to user {UserId}", achievement.Key, request.UserId);
                 }
             }
+
+            return response;
         }
         catch (Exception ex)
         {

@@ -163,7 +163,7 @@ builder.Services.AddScoped<IEngineClient, EngineClient>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IOnlinePresenceService, OnlinePresenceService>();
-builder.Services.AddScoped<IAchievementManagerService, AchievementManagerService>();
+builder.Services.AddScoped<IAchievementService, AchievementService>();
 
 builder.Services
   .AddOptions<AvatarsOptions>()
@@ -271,7 +271,7 @@ app.MapWordCardsEndpoints();
 app.MapClassesEndpoints();
 app.MapMeetingsEndpoints();
 app.MapGameConfigEndpoints();
-app.MapAchievementManager();
+app.MapAchievementEndpoints();
 
 app.MapStatsPing();
 if (env.IsDevelopment())
