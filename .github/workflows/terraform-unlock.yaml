@@ -11,6 +11,8 @@ on:
 
 jobs:
   validate-authorization:
+    permissions:
+      contents: read
     uses: ./.github/workflows/validate-confirmation.yaml
     secrets: inherit
 
