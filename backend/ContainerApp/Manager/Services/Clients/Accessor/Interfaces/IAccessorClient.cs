@@ -4,7 +4,6 @@ using Manager.Models.Auth.RefreshSessions;
 using Manager.Models.Chat;
 using Manager.Models.Classes;
 using Manager.Models.UserGameConfiguration;
-using Manager.Models.WordCards;
 using Manager.Services.Clients.Accessor.Models;
 
 namespace Manager.Services.Clients.Accessor.Interfaces;
@@ -28,9 +27,6 @@ public interface IAccessorClient
     Task<SpeechTokenResponse> GetSpeechTokenAsync(CancellationToken ct = default);
     Task<IReadOnlyList<TaskSummaryDto>> GetTaskSummariesAsync(CancellationToken ct = default);
 
-    Task<IReadOnlyList<WordCard>> GetWordCardsAsync(Guid userId, CancellationToken ct);
-    Task<WordCard> CreateWordCardAsync(Guid userId, CreateWordCardRequest request, CancellationToken ct);
-    Task<WordCardLearnedStatus> UpdateLearnedStatusAsync(Guid userId, LearnedStatus request, CancellationToken ct);
     Task<ClassDto?> GetClassAsync(Guid classId, CancellationToken ct = default);
     Task<List<ClassDto?>?> GetMyClassesAsync(Guid callerId, CancellationToken ct = default);
     Task<List<ClassDto?>?> GetAllClassesAsync(CancellationToken ct = default);

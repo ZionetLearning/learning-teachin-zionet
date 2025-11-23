@@ -2,7 +2,8 @@
 using IntegrationTests.Constants;
 using IntegrationTests.Fixtures;
 using IntegrationTests.Infrastructure;
-using Manager.Models.WordCards;
+using Manager.Models.WordCards.Requests;
+using Manager.Models.WordCards.Responses;
 using Manager.Models.Users;
 using System.Net.Http.Json;
 using Xunit.Abstractions;
@@ -26,7 +27,7 @@ public abstract class WordCardsTestBase(
     /// <summary>
     /// Creates a new word card for the specified user
     /// </summary>
-    protected async Task<WordCard> CreateWordCardAsync(string hebrew, string english)
+    protected async Task<CreateWordCardResponse> CreateWordCardAsync(string hebrew, string english)
     {
         var request = new CreateWordCardRequest
         {
@@ -37,7 +38,7 @@ public abstract class WordCardsTestBase(
         var response = await Client.PostAsJsonAsync(ApiRoutes.WordCards, request);
         response.EnsureSuccessStatusCode();
 
-        var createdCard = await ReadAsJsonAsync<WordCard>(response);
+        var createdCard = await ReadAsJsonAsync<CreateWordCardResponse>(response);
         createdCard.Should().NotBeNull();
         return createdCard!;
     }
@@ -45,12 +46,12 @@ public abstract class WordCardsTestBase(
     /// <summary>
     /// Returns the list of word cards for the user
     /// </summary>
-    protected async Task<List<WordCard>> GetWordCardsAsync()
+    protected async Task<List<GetWordCardsResponse>> GetWordCardsAsync()
     {
         var response = await Client.GetAsync($"{ApiRoutes.WordCards}");
         response.EnsureSuccessStatusCode();
 
-        var cards = await ReadAsJsonAsync<List<WordCard>>(response);
+        var cards = await ReadAsJsonAsync<List<GetWordCardsResponse>>(response);
         cards.Should().NotBeNull();
         return cards!;
     }
@@ -58,9 +59,9 @@ public abstract class WordCardsTestBase(
     /// <summary>
     /// Updates the learned status of a word card
     /// </summary>
-    protected async Task<WordCardLearnedStatus> PatchLearnedStatusAsync(Guid cardId, bool isLearned)
+    protected async Task<UpdateLearnedStatusResponse> PatchLearnedStatusAsync(Guid cardId, bool isLearned)
     {
-        var payload = new LearnedStatus
+        var payload = new UpdateLearnedStatusRequest
         {
             CardId = cardId,
             IsLearned = isLearned
@@ -69,7 +70,7 @@ public abstract class WordCardsTestBase(
         var response = await Client.PatchAsJsonAsync($"{ApiRoutes.WordCardsUpdateLearnedStatus}", payload);
         response.EnsureSuccessStatusCode();
 
-        var result = await ReadAsJsonAsync<WordCardLearnedStatus>(response);
+        var result = await ReadAsJsonAsync<UpdateLearnedStatusResponse>(response);
         result.Should().NotBeNull();
         return result!;
     }

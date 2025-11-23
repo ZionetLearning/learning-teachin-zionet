@@ -5,9 +5,9 @@ namespace Manager.Models.Meetings;
 public sealed record MeetingAttendee
 {
     [JsonPropertyName("userId")]
-    public required Guid UserId { get; set; }
+    public required Guid UserId { get; init; }
 
     [JsonPropertyName("role")]
     [JsonConverter(typeof(JsonStringEnumConverter))]
-    public required AttendeeRole Role { get; set; }
+    public required AttendeeRole Role { get; init; }
 }

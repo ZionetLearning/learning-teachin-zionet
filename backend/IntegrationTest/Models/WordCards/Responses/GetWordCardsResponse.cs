@@ -1,6 +1,6 @@
-﻿namespace Manager.Models.WordCards;
+namespace Manager.Models.WordCards.Responses;
 
-public class WordCard
+public class GetWordCardsResponse
 {
     public Guid CardId { get; set; }
     public string Hebrew { get; set; } = default!;

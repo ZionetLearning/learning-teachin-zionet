@@ -1,24 +1,27 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
-namespace Manager.Models.Meetings;
+namespace Manager.Models.Meetings.Requests;
 
+/// <summary>
+/// Request model from frontend for creating a meeting
+/// </summary>
 public sealed record CreateMeetingRequest
 {
     [Required]
     [JsonPropertyName("attendees")]
-    public required List<MeetingAttendee> Attendees { get; set; }
+    public required IReadOnlyList<MeetingAttendee> Attendees { get; init; }
 
     [Required]
     [JsonPropertyName("startTimeUtc")]
-    public DateTimeOffset StartTimeUtc { get; set; }
+    public required DateTimeOffset StartTimeUtc { get; init; }
 
     [Required]
     [JsonPropertyName("durationMinutes")]
     [Range(1, 1440, ErrorMessage = "Duration must be between 1 minute and 24 hours (1440 minutes)")]
-    public required int DurationMinutes { get; set; }
+    public required int DurationMinutes { get; init; }
 
     [JsonPropertyName("description")]
     [MaxLength(500, ErrorMessage = "Description cannot exceed 500 characters")]
-    public string? Description { get; set; }
+    public string? Description { get; init; }
 }

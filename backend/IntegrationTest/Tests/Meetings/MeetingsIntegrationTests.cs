@@ -2,7 +2,9 @@ using FluentAssertions;
 using IntegrationTests.Constants;
 using IntegrationTests.Fixtures;
 using Manager.Models.Users;
+using Manager.Models.Meetings.Requests;
 using Manager.Models.Meetings;
+
 using System.Net;
 using System.Net.Http.Json;
 using Xunit.Abstractions;

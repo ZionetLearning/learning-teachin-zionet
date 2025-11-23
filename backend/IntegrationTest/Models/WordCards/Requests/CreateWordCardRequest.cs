@@ -1,4 +1,4 @@
-﻿namespace Manager.Models.WordCards;
+namespace Manager.Models.WordCards.Requests;
 
 public class CreateWordCardRequest
 {

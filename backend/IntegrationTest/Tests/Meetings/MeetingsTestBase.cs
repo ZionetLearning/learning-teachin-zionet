@@ -3,6 +3,8 @@ using IntegrationTests.Fixtures;
 using IntegrationTests.Infrastructure;
 using Manager.Models.Users;
 using Manager.Models.Meetings;
+using Manager.Models.Meetings.Requests;
+using Manager.Models.Meetings.Responses;
 using System.Net.Http.Json;
 using Xunit.Abstractions;
 
@@ -36,7 +38,7 @@ public abstract class MeetingsTestBase(
     /// Creates a meeting with default or specified parameters.
     /// If no request is provided, creates a valid meeting with at least 2 attendees (backend requirement).
     /// </summary>
-    protected async Task<MeetingDto> CreateMeetingAsync(
+    protected async Task<GetMeetingResponse> CreateMeetingAsync(
         UserInfo currentUser,
         CreateMeetingRequest? request = null)
     {
@@ -62,14 +64,14 @@ public abstract class MeetingsTestBase(
         var response = await Client.PostAsJsonAsync(MeetingRoutes.CreateMeeting, request);
         response.EnsureSuccessStatusCode();
 
-        var meeting = await ReadAsJsonAsync<MeetingDto>(response);
+        var meeting = await ReadAsJsonAsync<GetMeetingResponse>(response);
         return meeting ?? throw new InvalidOperationException("Failed to create meeting");
     }
 
     /// <summary>
     /// Gets a meeting by ID.
     /// </summary>
-    protected async Task<MeetingDto?> GetMeetingAsync(Guid meetingId)
+    protected async Task<GetMeetingResponse?> GetMeetingAsync(Guid meetingId)
     {
         var response = await Client.GetAsync(MeetingRoutes.GetMeeting(meetingId));
         
@@ -77,18 +79,18 @@ public abstract class MeetingsTestBase(
             return null;
             
         response.EnsureSuccessStatusCode();
-        return await ReadAsJsonAsync<MeetingDto>(response);
+        return await ReadAsJsonAsync<GetMeetingResponse>(response);
     }
 
     /// <summary>
     /// Gets all meetings for a user.
     /// </summary>
-    protected async Task<List<MeetingDto>> GetMeetingsForUserAsync(Guid userId)
+    protected async Task<List<GetMeetingResponse>> GetMeetingsForUserAsync(Guid userId)
     {
         var response = await Client.GetAsync(MeetingRoutes.GetMeetingsForUser(userId));
         response.EnsureSuccessStatusCode();
         
-        var meetings = await ReadAsJsonAsync<List<MeetingDto>>(response);
+        var meetings = await ReadAsJsonAsync<List<GetMeetingResponse>>(response);
         return meetings ?? [];
     }
 
@@ -113,7 +115,7 @@ public abstract class MeetingsTestBase(
     /// <summary>
     /// Generates an ACS token for a meeting participant.
     /// </summary>
-    protected async Task<AcsTokenResponse?> GenerateTokenForMeetingAsync(Guid meetingId)
+    protected async Task<GenerateMeetingTokenResponse?> GenerateTokenForMeetingAsync(Guid meetingId)
     {
         var response = await Client.PostAsync(MeetingRoutes.GenerateToken(meetingId), null);
         
@@ -122,7 +124,7 @@ public abstract class MeetingsTestBase(
             return null;
             
         response.EnsureSuccessStatusCode();
-        return await ReadAsJsonAsync<AcsTokenResponse>(response);
+        return await ReadAsJsonAsync<GenerateMeetingTokenResponse>(response);
     }
 
     /// <summary>
