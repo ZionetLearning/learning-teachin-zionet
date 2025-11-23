@@ -42,6 +42,7 @@ builder.Services.AddSingleton<IRetryPolicy, RetryPolicy>();
 builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
 builder.Services.AddSingleton<ISemanticKernelPlugin, TimePlugin>();
 builder.Services.AddScoped<IWordExplainService, WordExplainService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddScoped<ITavilySearchService, TavilySearchService>();
 builder.Services.AddSingleton<ISemanticKernelPlugin, WebSearchPlugin>();
@@ -133,6 +134,17 @@ builder.Services.AddKeyedSingleton("gen", (sp, key) =>
     catch (Exception ex)
     {
         logger.LogError(ex, "Failed to load prompt plugin from {Dir}", wordExplainDir);
+    }
+
+    var emailDir = Path.Combine(AppContext.BaseDirectory, "Plugins", "Email");
+    try
+    {
+        kb.Plugins.AddFromPromptDirectory(emailDir, "Email");
+        logger.LogInformation("Prompt plugin 'Email' loaded from {Dir}", emailDir);
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Failed to load prompt plugin from {Dir}", emailDir);
     }
 
     var kernel = kb.Build();

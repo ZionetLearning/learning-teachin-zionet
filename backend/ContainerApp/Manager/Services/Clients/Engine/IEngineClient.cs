@@ -15,4 +15,5 @@ public interface IEngineClient
     Task<(bool success, string message)> GenerateSentenceAsync(SentenceRequest request);
     Task<(bool success, string message)> GenerateSplitSentenceAsync(SentenceRequest request);
     Task<(bool success, string message)> GenerateWordExplainAsync(WordExplainRequest request, CancellationToken ct = default);
+    Task<(bool success, string message)> GenerateEmailDraftAsync(EmailDraftRequest request, CancellationToken ct = default);
 }

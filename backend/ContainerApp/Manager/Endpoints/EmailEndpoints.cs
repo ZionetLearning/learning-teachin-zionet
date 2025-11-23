@@ -1,7 +1,9 @@
 ﻿// using System.Security.Claims;
 using Manager.Constants;
-// using Manager.Models.Emails;
+using Manager.Models.Emails;
 using Manager.Services.Clients.Accessor.Interfaces;
+using Manager.Services.Clients.Engine;
+using Manager.Services.Clients.Engine.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Endpoints;
@@ -17,8 +19,8 @@ public static class EmailEndpoints
         emailsGroup.MapGet("/recipients/{name}", GetRecipientEmailsByName)
             .RequireAuthorization(PolicyNames.AdminOrTeacher);
 
-        // emailsGroup.MapPost("/draft", CreateEmailDraftAsync)
-        //     .RequireAuthorization(PolicyNames.AdminOrTeacher);
+        emailsGroup.MapPost("/draft", CreateEmailDraftAsync)
+            .RequireAuthorization(PolicyNames.AdminOrTeacher);
 
         // emailsGroup.MapPost("/send", SendEmailAsync)
         //     .RequireAuthorization(PolicyNames.AdminOrTeacher);
@@ -54,36 +56,41 @@ public static class EmailEndpoints
         }
     }
 
-    // private static async Task<IResult> CreateEmailDraftAsync(
-    //     [FromBody] AiGeneratedEmailRequest request,
-    //     [FromServices] IAccessorClient accessorClient,
-    //     HttpContext http,
-    //     ILogger<EmailsEndpoint> logger,
-    //     CancellationToken ct)
-    // {
-    //     using var scope = logger.BeginScope("CreateEmailDraftAsync");
+    private static async Task<IResult> CreateEmailDraftAsync(
+        [FromBody] AiGeneratedEmailRequest request,
+        [FromServices] IEngineClient engineClient,
+        HttpContext http,
+        ILogger<EmailsEndpoint> logger,
+        CancellationToken ct)
+    {
+        using var scope = logger.BeginScope("CreateEmailDraftAsync");
 
-    //     try
-    //     {
-    //         var userIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
-    //         if (!Guid.TryParse(userIdRaw, out var userId))
-    //         {
-    //             logger.LogWarning("Invalid user ID in token");
-    //             return Results.Unauthorized();
-    //         }
+        try
+        {
+            logger.LogInformation("Generating AI email draft, Purpose={Purpose}", request.Purpose);
 
-    //         logger.LogInformation("Generating AI email draft. UserId={UserId}, Purpose={Purpose}", userId, request.Purpose);
+            var engineRequest = new EmailDraftRequest
+            {
+                Purpose = request.Purpose,
+                Notes = request.Notes
+            };
 
-    //         var draft = await accessorClient.GenerateEmailDraftAsync(userId, request, ct);
+            var (success, message) = await engineClient.GenerateEmailDraftAsync(engineRequest, ct);
 
-    //         return Results.Ok(draft);
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         logger.LogError(ex, "Failed to generate AI email draft");
-    //         return Results.Problem("Email draft generation failed.");
-    //     }
-    // }
+            if (!success)
+            {
+                logger.LogWarning("Failed to send email draft request to Engine: {Message}", message);
+                return Results.Problem("Failed to send email draft request to Engine.");
+            }
+
+            return Results.Ok(new { message = "Email draft generation request sent successfully." });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to generate AI email draft");
+            return Results.Problem("Email draft generation failed.");
+        }
+    }
 
     // private static async Task<IResult> SendEmailAsync(
     //     [FromBody] SendEmailRequest request,

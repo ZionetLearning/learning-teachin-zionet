@@ -2,6 +2,7 @@
 using Dapr.Client;
 using Engine.Constants;
 using Engine.Models.Chat;
+using Engine.Models.Emails;
 using Engine.Models.QueueMessages;
 using Engine.Models.Sentences;
 using Engine.Models.Words;
@@ -186,6 +187,37 @@ public sealed class AiReplyPublisher : IAiReplyPublisher
         catch (Exception ex)
         {
             _log.LogError(ex, "Failed to publish stream delta for RequestId {RequestId}", chunk.RequestId);
+            throw;
+        }
+    }
+
+    public async Task SendEmailDraftAsync(EmailDraftResponse response, MessageAction action, CancellationToken ct = default)
+    {
+        if (response is null)
+        {
+            _log.LogWarning("Email draft response cannot be null.");
+            return;
+        }
+
+        try
+        {
+            var payload = JsonSerializer.SerializeToElement(response);
+
+            var message = new Message
+            {
+                ActionName = action,
+                Payload = payload
+            };
+
+            _log.LogInformation("Publishing email draft to callback binding {Binding}", CallbackBindingName);
+
+            await _dapr.InvokeBindingAsync(CallbackBindingName, BindingOperation, message, cancellationToken: ct);
+
+            _log.LogDebug("Email draft published successfully");
+        }
+        catch (Exception ex)
+        {
+            _log.LogError(ex, "Failed to publish email draft");
             throw;
         }
     }

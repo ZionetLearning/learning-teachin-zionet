@@ -288,4 +288,38 @@ public class EngineClient : IEngineClient
             throw;
         }
     }
+
+    public async Task<(bool success, string message)> GenerateEmailDraftAsync(EmailDraftRequest request, CancellationToken ct = default)
+    {
+        try
+        {
+            _logger.LogInformation("Inside: {Method} in {Class}, Purpose={Purpose}",
+                nameof(GenerateEmailDraftAsync), nameof(EngineClient), request.Purpose);
+
+            var payload = JsonSerializer.SerializeToElement(request);
+            var message = new Message
+            {
+                ActionName = MessageAction.GenerateEmailDraft,
+                Payload = payload
+            };
+
+            await _daprClient.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message, cancellationToken: ct);
+
+            _logger.LogDebug(
+                "GenerateEmailDraft request sent to Engine via binding '{Binding}'",
+                QueueNames.EngineQueue
+            );
+            return (true, "sent to engine");
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning("GenerateEmailDraft request was canceled");
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send GenerateEmailDraft request to Engine");
+            throw;
+        }
+    }
 }

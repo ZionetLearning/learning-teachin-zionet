@@ -21,5 +21,6 @@ public enum MessageAction
     AnswerAi,
     GenerateSentences,
     GenerateSplitSentences,
-    GenerateWordExplain
+    GenerateWordExplain,
+    GenerateEmailDraft
 }
