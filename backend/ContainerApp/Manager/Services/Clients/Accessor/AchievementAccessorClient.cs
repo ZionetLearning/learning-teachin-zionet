@@ -80,12 +80,16 @@ public class AchievementAccessorClient(
         }
         catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
         {
-            _logger.LogInformation("No progress found for user {UserId} and feature {Feature}", userId, feature);
+            var sanitizedFeature = feature?.Replace("\r", string.Empty).Replace("\n", string.Empty);
+            _logger.LogInformation("No progress found for user {UserId} and feature {Feature}", 
+                userId, sanitizedFeature);
             return null;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting progress for user {UserId} and feature {Feature}", userId, feature);
+            var sanitizedFeature = feature?.Replace("\r", string.Empty).Replace("\n", string.Empty);
+            _logger.LogError(ex, "Error getting progress for user {UserId} and feature {Feature}", 
+                userId, sanitizedFeature);
             throw;
         }
     }
@@ -97,11 +101,15 @@ public class AchievementAccessorClient(
             await _daprClient.InvokeMethodAsync(
                 HttpMethod.Put, AppIds.Accessor, $"achievements-accessor/user/{userId}/progress", request, ct);
 
-            _logger.LogInformation("Updated progress for user {UserId}, feature {Feature} to count {Count}", userId, request.Feature, request.Count);
+            var sanitizedFeature = request.Feature?.Replace("\r", string.Empty).Replace("\n", string.Empty);
+            _logger.LogInformation("Updated progress for user {UserId}, feature {Feature} to count {Count}", 
+                userId, sanitizedFeature, request.Count);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating progress for user {UserId} and feature {Feature}", userId, request.Feature);
+            var sanitizedFeature = request.Feature?.Replace("\r", string.Empty).Replace("\n", string.Empty);
+            _logger.LogError(ex, "Error updating progress for user {UserId} and feature {Feature}", 
+                userId, sanitizedFeature);
             throw;
         }
     }

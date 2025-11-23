@@ -74,7 +74,9 @@ public static class AchievementEndpoints
                 }
                 catch (Exception ex)
                 {
-                    log.LogError(ex, "Failed to track progress for user {UserId}, feature {Feature}", request.UserId, request.Feature);
+                    var sanitizedFeature = request.Feature?.Replace("\r", string.Empty).Replace("\n", string.Empty);
+                    log.LogError(ex, "Failed to track progress for user {UserId}, feature {Feature}", 
+                        request.UserId, sanitizedFeature);
                     return Results.Problem("Failed to track progress");
                 }
             })

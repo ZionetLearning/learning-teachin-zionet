@@ -56,14 +56,17 @@ public class AchievementService(
 
     public async Task<TrackProgressResponse> TrackProgressAsync(TrackProgressRequest request, CancellationToken ct)
     {
-        _logger.LogInformation("Tracking progress for user {UserId}, feature {Feature}, increment {IncrementBy}", request.UserId, request.Feature, request.IncrementBy);
+        var sanitizedFeature = request.Feature?.Replace("\r", string.Empty).Replace("\n", string.Empty);
+        _logger.LogInformation("Tracking progress for user {UserId}, feature {Feature}, increment {IncrementBy}", 
+            request.UserId, sanitizedFeature, request.IncrementBy);
 
         try
         {
             var progress = await _achievementAccessorClient.GetUserProgressAsync(request.UserId, request.Feature, ct);
             var newCount = (progress?.Count ?? 0) + request.IncrementBy;
 
-            _logger.LogInformation("User {UserId} progress for {Feature}: {OldCount} -> {NewCount}", request.UserId, request.Feature, progress?.Count ?? 0, newCount);
+            _logger.LogInformation("User {UserId} progress for {Feature}: {OldCount} -> {NewCount}", 
+                request.UserId, sanitizedFeature, progress?.Count ?? 0, newCount);
 
             await _achievementAccessorClient.UpdateUserProgressAsync(
                 request.UserId,
@@ -79,7 +82,8 @@ public class AchievementService(
                 .Where(a => a.Feature.Equals(request.Feature, StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
-            _logger.LogInformation("Found {Count} achievements for feature {Feature}", featureAchievements.Count, request.Feature);
+            _logger.LogInformation("Found {Count} achievements for feature {Feature}", 
+                featureAchievements.Count, sanitizedFeature);
 
             var unlockedMap = await _achievementAccessorClient.GetUserUnlockedAchievementsAsync(request.UserId, ct);
             var unlockedIds = unlockedMap.Keys.ToHashSet();
@@ -94,13 +98,17 @@ public class AchievementService(
             {
                 if (unlockedIds.Contains(achievement.AchievementId))
                 {
-                    _logger.LogDebug("Achievement {Key} already unlocked for user {UserId}", achievement.Key, request.UserId);
+                    var sanitizedKey = achievement.Key?.Replace("\r", string.Empty).Replace("\n", string.Empty);
+                    _logger.LogDebug("Achievement {Key} already unlocked for user {UserId}", 
+                        sanitizedKey, request.UserId);
                     continue;
                 }
 
                 if (newCount >= achievement.TargetCount)
                 {
-                    _logger.LogInformation("Unlocking achievement {Key} for user {UserId} (count: {Count} >= target: {Target})", achievement.Key, request.UserId, newCount, achievement.TargetCount);
+                    var sanitizedKey = achievement.Key?.Replace("\r", string.Empty).Replace("\n", string.Empty);
+                    _logger.LogInformation("Unlocking achievement {Key} for user {UserId} (count: {Count} >= target: {Target})", 
+                        sanitizedKey, request.UserId, newCount, achievement.TargetCount);
 
                     await _achievementAccessorClient.UnlockAchievementAsync(request.UserId, achievement.AchievementId, ct);
 
@@ -124,7 +132,8 @@ public class AchievementService(
                             Payload = jsonPayload
                         });
 
-                    _logger.LogInformation("Sent AchievementUnlocked notification for {Key} to user {UserId}", achievement.Key, request.UserId);
+                    _logger.LogInformation("Sent AchievementUnlocked notification for {Key} to user {UserId}", 
+                        sanitizedKey, request.UserId);
                 }
             }
 
@@ -132,7 +141,8 @@ public class AchievementService(
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error tracking progress for user {UserId}, feature {Feature}", request.UserId, request.Feature);
+            _logger.LogError(ex, "Error tracking progress for user {UserId}, feature {Feature}", 
+                request.UserId, sanitizedFeature);
             throw;
         }
     }
