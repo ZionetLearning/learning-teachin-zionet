@@ -10,7 +10,12 @@ on:
         default: 'testrg'
 
 jobs:
+  validate-authorization:
+    uses: ./.github/workflows/validate-confirmation.yaml
+    secrets: inherit
+
   unlock:
+    needs: [validate-authorization]
     runs-on: ubuntu-latest
     environment: Development
     permissions:
