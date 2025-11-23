@@ -33,9 +33,9 @@ public static class TestDataHelper
         Payload = $"Payload-{id}"
     };
 
-    public static CreateUser CreateUser(string role = "student", string? email = null)
+    public static CreateUserRequest CreateUser(string role = "student", string? email = null)
     {
-        return new CreateUser
+        return new CreateUserRequest
         {
             UserId = Guid.NewGuid(),
             Email = email ?? $"user_{Guid.NewGuid():N}@test.com",
@@ -46,9 +46,9 @@ public static class TestDataHelper
         };
     }
     
-    public static CreateUser CreateUserWithFixedEmail(string? email = null)
+    public static CreateUserRequest CreateUserWithFixedEmail(string? email = null)
     {
-        return new CreateUser
+        return new CreateUserRequest
         {
             UserId = Guid.NewGuid(),
             Email = email ?? $"dup_{Guid.NewGuid()}@test.com",

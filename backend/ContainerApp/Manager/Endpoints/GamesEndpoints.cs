@@ -1,8 +1,10 @@
 using System.Security.Claims;
 using Manager.Constants;
-using Manager.Models.Users;
+using Manager.Mapping;
 using Manager.Models.Games;
-using Manager.Services.Clients.Accessor;
+using Manager.Models.ModelValidation;
+using Manager.Models.Users;
+using Manager.Services.Clients.Accessor.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Endpoints;
@@ -44,6 +46,11 @@ public static class GamesEndpoints
         {
             var callerRole = http.User.FindFirstValue(AuthSettings.RoleClaimType);
             var callerIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
+            if (!ValidationExtensions.TryValidate(request, out var validationErrors))
+            {
+                logger.LogWarning("Validation failed for {Model}: {Errors}", nameof(SubmitAttemptRequest), validationErrors);
+                return Results.BadRequest(new { errors = validationErrors });
+            }
 
             if (!Guid.TryParse(callerIdRaw, out var studentId))
             {
@@ -52,11 +59,15 @@ public static class GamesEndpoints
             }
 
             logger.LogInformation("SubmitAttempts called by role={Role}, studentId={StudentId}", callerRole, studentId);
-            var result = await gameAccessorClient.SubmitAttemptAsync(studentId, request, ct);
 
-            logger.LogInformation("Attempt submitted successfully for StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}, Status={Status}, AttemptNumber={AttemptNumber}", result.StudentId, result.GameType, result.Difficulty, result.Status, result.AttemptNumber);
+            var accessorResult = await gameAccessorClient.SubmitAttemptAsync(studentId, request, ct);
+            var response = accessorResult.ToFront();
 
-            return Results.Ok(result);
+            logger.LogInformation(
+                "Attempt submitted successfully for StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}, Status={Status}, AttemptNumber={AttemptNumber}",
+                response.StudentId, response.GameType, response.Difficulty, response.Status, response.AttemptNumber);
+
+            return Results.Ok(response);
         }
         catch (KeyNotFoundException ex)
         {
@@ -100,17 +111,18 @@ public static class GamesEndpoints
 
             logger.LogInformation("Fetching history for StudentId={StudentId}, Summary={Summary}, GetPending={GetPending}, Page={Page}, PageSize={PageSize}", studentId, summary, getPending, page, pageSize);
 
-            var result = await gameAccessorClient.GetHistoryAsync(studentId, summary, page, pageSize, getPending, ct);
+            var accessorResult = await gameAccessorClient.GetHistoryAsync(studentId, summary, page, pageSize, getPending, ct);
+            var response = accessorResult.ToFront();
 
-            if (result.IsSummary)
+            if (response.IsSummary)
             {
-                logger.LogInformation("Returned {Records} summary records", result.Summary?.Items.Count() ?? 0);
-                return Results.Ok(result.Summary);
+                logger.LogInformation("Returned {Records} summary records", response.Summary?.Items.Count ?? 0);
+                return Results.Ok(response.Summary);
             }
             else
             {
-                logger.LogInformation("Returned {Records} detailed records", result.Detailed?.Items.Count() ?? 0);
-                return Results.Ok(result.Detailed);
+                logger.LogInformation("Returned {Records} detailed records", response.Detailed?.Items.Count ?? 0);
+                return Results.Ok(response.Detailed);
             }
         }
         catch (Exception ex)
@@ -143,9 +155,10 @@ public static class GamesEndpoints
 
             logger.LogInformation("Fetching mistakes for StudentId={StudentId}, Page={Page}, PageSize={PageSize}", studentId, page, pageSize);
 
-            var result = await gameAccessorClient.GetMistakesAsync(studentId, page, pageSize, ct);
+            var accessorResult = await gameAccessorClient.GetMistakesAsync(studentId, page, pageSize, ct);
+            var response = accessorResult.ToFront();
 
-            return Results.Ok(result);
+            return Results.Ok(response);
         }
         catch (Exception ex)
         {
@@ -165,9 +178,10 @@ public static class GamesEndpoints
         {
             logger.LogInformation("Fetching all histories Page={Page}, PageSize={PageSize}", page, pageSize);
 
-            var result = await gameAccessorClient.GetAllHistoriesAsync(page, pageSize, ct);
+            var accessorResult = await gameAccessorClient.GetAllHistoriesAsync(page, pageSize, ct);
+            var response = accessorResult.ToFront();
 
-            return Results.Ok(result);
+            return Results.Ok(response);
         }
         catch (Exception ex)
         {
@@ -189,7 +203,8 @@ public static class GamesEndpoints
             if (success)
             {
                 logger.LogInformation("All games history deleted successfully.");
-                return Results.Ok(new { message = "All games history deleted." });
+                var response = new DeleteAllGamesHistoryResponse { Message = "All games history deleted." };
+                return Results.Ok(response);
             }
 
             return Results.Problem("Failed to delete games history.");

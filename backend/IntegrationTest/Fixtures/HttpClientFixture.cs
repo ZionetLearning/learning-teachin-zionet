@@ -138,7 +138,7 @@ public class HttpClientFixture : IAsyncLifetime
 
     private async Task EnsureUserExistsAsync(string email, string password, Guid userId, Role role)
     {
-        var res = await Client.PostAsJsonAsync(UserRoutes.UserBase, new CreateUser
+        var res = await Client.PostAsJsonAsync(UserRoutes.UserBase, new CreateUserRequest
         {
             UserId = userId,
             Email = email,
@@ -156,7 +156,7 @@ public class HttpClientFixture : IAsyncLifetime
 
     private async Task RegisterUserAsync(string email, string password, Role role)
     {
-        var res = await Client.PostAsJsonAsync(UserRoutes.UserBase, new CreateUser
+        var res = await Client.PostAsJsonAsync(UserRoutes.UserBase, new CreateUserRequest
         {
             UserId = Guid.NewGuid(),
             Email = email,

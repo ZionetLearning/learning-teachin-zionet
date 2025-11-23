@@ -9,7 +9,8 @@ using Manager.Models.Users;
 using Manager.Services;
 using Manager.Services.Avatars;
 using Manager.Services.Avatars.Models;
-using Manager.Services.Clients.Accessor;
+using Manager.Services.Clients.Accessor.Interfaces;
+using Manager.Mapping;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
@@ -49,14 +50,14 @@ public static class UsersEndpoints
 
     private static async Task<IResult> GetUserAsync(
         [FromRoute] Guid userId,
-        [FromServices] IAccessorClient accessorClient,
+        [FromServices] IUsersAccessorClient usersAccessorClient,
         [FromServices] ILogger<UserEndpoint> logger)
     {
         using var scope = logger.BeginScope("UserId {UserId}:", userId);
 
         try
         {
-            var user = await accessorClient.GetUserAsync(userId);
+            var user = await usersAccessorClient.GetUserAsync(userId);
             if (user is null)
             {
                 logger.LogWarning("User not found");
@@ -64,7 +65,7 @@ public static class UsersEndpoints
             }
 
             logger.LogInformation("User retrieved");
-            return Results.Ok(user);
+            return Results.Ok(user.ToFront());
         }
         catch (Exception ex)
         {
@@ -74,8 +75,8 @@ public static class UsersEndpoints
     }
 
     private static async Task<IResult> CreateUserAsync(
-        [FromBody] CreateUser newUser,
-        [FromServices] IAccessorClient accessorClient,
+        [FromBody] CreateUserRequest newUser,
+        [FromServices] IUsersAccessorClient usersAccessorClient,
         [FromServices] ILogger<UserEndpoint> logger,
         HttpContext httpContext)
     {
@@ -115,7 +116,7 @@ public static class UsersEndpoints
             };
 
             // Send to accessor
-            var success = await accessorClient.CreateUserAsync(user);
+            var success = await usersAccessorClient.CreateUserAsync(user.ToAccessor());
             if (!success)
             {
                 logger.LogWarning("User creation failed: {Email}", user.Email);
@@ -123,7 +124,7 @@ public static class UsersEndpoints
             }
 
             // DTO for response 
-            var result = new UserCreationResultDto
+            var result = new CreateUserResponse
             {
                 UserId = user.UserId,
                 Email = user.Email,
@@ -144,8 +145,8 @@ public static class UsersEndpoints
 
     private static async Task<IResult> UpdateUserAsync(
         [FromRoute] Guid userId,
-        [FromBody] UpdateUserModel user,
-        [FromServices] IAccessorClient accessorClient,
+        [FromBody] UpdateUserRequest user,
+        [FromServices] IUsersAccessorClient usersAccessorClient,
         [FromServices] ILogger<UserEndpoint> logger,
         HttpContext httpContext)
     {
@@ -175,7 +176,7 @@ public static class UsersEndpoints
             logger.LogInformation("Caller authenticated with role: {CallerRole}", callerRole);
 
             // Fetch current user to check role
-            var existingUser = await accessorClient.GetUserAsync(userId);
+            var existingUser = await usersAccessorClient.GetUserAsync(userId);
             if (existingUser is null)
             {
                 logger.LogWarning("User {UserId} not found", userId);
@@ -217,7 +218,7 @@ public static class UsersEndpoints
                 return Results.Forbid();
             }
 
-            var success = await accessorClient.UpdateUserAsync(user, userId);
+            var success = await usersAccessorClient.UpdateUserAsync(user.ToAccessor(), userId);
             return success ? Results.Ok("User updated.") : Results.NotFound("User not found.");
         }
         catch (Exception ex)
@@ -229,14 +230,14 @@ public static class UsersEndpoints
 
     private static async Task<IResult> DeleteUserAsync(
         [FromRoute] Guid userId,
-        [FromServices] IAccessorClient accessorClient,
+        [FromServices] IUsersAccessorClient usersAccessorClient,
         [FromServices] ILogger<UserEndpoint> logger)
     {
         using var scope = logger.BeginScope("DeleteUser {UserId}:", userId);
 
         try
         {
-            var success = await accessorClient.DeleteUserAsync(userId);
+            var success = await usersAccessorClient.DeleteUserAsync(userId);
             return success ? Results.Ok("User deleted.") : Results.NotFound("User not found.");
         }
         catch (Exception ex)
@@ -247,7 +248,7 @@ public static class UsersEndpoints
     }
 
     private static async Task<IResult> GetAllUsersAsync(
-        [FromServices] IAccessorClient accessorClient,
+        [FromServices] IUsersAccessorClient usersAccessorClient,
         [FromServices] ILogger<UserEndpoint> logger,
         HttpContext http,
         CancellationToken ct)
@@ -271,8 +272,8 @@ public static class UsersEndpoints
 
         try
         {
-            var users = await accessorClient.GetUsersForCallerAsync(
-                new CallerContextDto { CallerRole = callerRole, CallerId = callerId },
+            var users = await usersAccessorClient.GetUsersForCallerAsync(
+                new CallerContextDto { CallerRole = callerRole, CallerId = callerId }.ToAccessor(),
                 ct);
 
             if (users is null || !users.Any())
@@ -283,7 +284,7 @@ public static class UsersEndpoints
 
             logger.LogInformation("Returned {Count} users for {CallerId} ({Role})",
                 users.Count(), callerId, callerRole);
-            return Results.Ok(users);
+            return Results.Ok(users.ToFront());
         }
         catch (Exception ex)
         {
@@ -294,7 +295,7 @@ public static class UsersEndpoints
 
     private static async Task<IResult> ListStudentsForTeacherAsync(
         [FromRoute] Guid teacherId,
-        [FromServices] IAccessorClient accessorClient,
+        [FromServices] IUsersAccessorClient usersAccessorClient,
         [FromServices] ILogger<UserEndpoint> logger,
         HttpContext http,
         CancellationToken ct)
@@ -331,8 +332,9 @@ public static class UsersEndpoints
 
         try
         {
-            var students = await accessorClient.GetStudentsForTeacherAsync(teacherId, ct);
-            return Results.Ok(students);
+            var students = await usersAccessorClient.GetStudentsForTeacherAsync(teacherId, ct);
+
+            return Results.Ok(students.ToFront());
         }
         catch (Exception ex)
         {
@@ -344,7 +346,7 @@ public static class UsersEndpoints
     private static async Task<IResult> AssignStudentAsync(
         [FromRoute] Guid teacherId,
         [FromRoute] Guid studentId,
-        [FromServices] IAccessorClient accessorClient,
+        [FromServices] IUsersAccessorClient usersAccessorClient,
         [FromServices] ILogger<UserEndpoint> logger,
         HttpContext http,
         CancellationToken ct)
@@ -376,8 +378,8 @@ public static class UsersEndpoints
 
         try
         {
-            var ok = await accessorClient.AssignStudentToTeacherAsync(
-                new TeacherStudentMapDto { TeacherId = teacherId, StudentId = studentId },
+            var ok = await usersAccessorClient.AssignStudentToTeacherAsync(
+                new TeacherStudentMapDto { TeacherId = teacherId, StudentId = studentId }.ToAccessorAssign(),
                 ct);
             return ok ? Results.Ok(new { message = "Assigned" })
                       : Results.BadRequest(new { error = "Assign failed" });
@@ -392,7 +394,7 @@ public static class UsersEndpoints
     private static async Task<IResult> UnassignStudentAsync(
         [FromRoute] Guid teacherId,
         [FromRoute] Guid studentId,
-        [FromServices] IAccessorClient accessorClient,
+        [FromServices] IUsersAccessorClient usersAccessorClient,
         [FromServices] ILogger<UserEndpoint> logger,
         HttpContext http,
         CancellationToken ct)
@@ -429,8 +431,8 @@ public static class UsersEndpoints
 
         try
         {
-            var ok = await accessorClient.UnassignStudentFromTeacherAsync(
-                new TeacherStudentMapDto { TeacherId = teacherId, StudentId = studentId },
+            var ok = await usersAccessorClient.UnassignStudentFromTeacherAsync(
+                new TeacherStudentMapDto { TeacherId = teacherId, StudentId = studentId }.ToAccessorUnassign(),
                 ct);
             return ok ? Results.Ok(new { message = "Unassigned" })
                       : Results.BadRequest(new { error = "Unassign failed" });
@@ -444,7 +446,7 @@ public static class UsersEndpoints
 
     private static async Task<IResult> ListTeachersForStudentAsync(
         [FromRoute] Guid studentId,
-        [FromServices] IAccessorClient accessorClient,
+        [FromServices] IUsersAccessorClient usersAccessorClient,
         [FromServices] ILogger<UserEndpoint> logger,
         CancellationToken ct)
     {
@@ -458,8 +460,8 @@ public static class UsersEndpoints
 
         try
         {
-            var teachers = await accessorClient.GetTeachersForStudentAsync(studentId, ct);
-            return Results.Ok(teachers);
+            var teachers = await usersAccessorClient.GetTeachersForStudentAsync(studentId, ct);
+            return Results.Ok(teachers.ToFront());
         }
         catch (Exception ex)
         {
@@ -492,8 +494,8 @@ public static class UsersEndpoints
 
     private static async Task<IResult> SetUserInterestsAsync(
         [FromRoute] Guid userId,
-        [FromBody] UpdateInterestsRequest request,
-        [FromServices] IAccessorClient accessorClient,
+        [FromBody] SetUserInterestsRequest request,
+        [FromServices] IUsersAccessorClient usersAccessorClient,
         [FromServices] ILogger<UserEndpoint> logger,
         HttpContext httpContext)
     {
@@ -511,7 +513,7 @@ public static class UsersEndpoints
             }
 
             // Fetch target user
-            var targetUser = await accessorClient.GetUserAsync(userId);
+            var targetUser = await usersAccessorClient.GetUserAsync(userId);
             if (targetUser is null)
             {
                 logger.LogWarning("User {UserId} not found", userId);
@@ -533,14 +535,13 @@ public static class UsersEndpoints
             }
 
             // Update interests and save
-            targetUser.Interests = request.Interests;
 
-            var updateUser = new UpdateUserModel
+            var updateUser = new UpdateUserRequest
             {
-                Interests = targetUser.Interests
+                Interests = request.Interests,
             };
 
-            var updated = await accessorClient.UpdateUserAsync(updateUser, userId);
+            var updated = await usersAccessorClient.UpdateUserAsync(updateUser.ToAccessor(), userId);
             return updated ? Results.Ok("Interests updated.") : Results.Problem("Failed to update interests.");
         }
         catch (Exception ex)
@@ -552,7 +553,7 @@ public static class UsersEndpoints
 
     private static async Task<IResult> GenerateUploadAvatarUrlAsync(
         [FromRoute] Guid userId,
-        [FromBody] GetUploadUrlRequest req,
+        [FromBody] GetUploadAvatarUrlRequest req,
         [FromServices] IAvatarStorageService storage,
         [FromServices] IOptions<AvatarsOptions> opt,
         [FromServices] ILogger<UserEndpoint> logger,
@@ -575,7 +576,7 @@ public static class UsersEndpoints
 
             logger.LogInformation("Generated upload SAS: blobPath={BlobPath}, expiresAt={Expires}", blobPath, exp);
 
-            return Results.Ok(new AvatarUploadUrlResponse
+            return Results.Ok(new GetUploadAvatarUrlResponse
             {
                 UploadUrl = url.ToString(),
                 BlobPath = blobPath,
@@ -605,7 +606,7 @@ public static class UsersEndpoints
         [FromRoute] Guid userId,
         [FromBody] ConfirmAvatarRequest req,
         [FromServices] IAvatarStorageService storage,
-        [FromServices] IAccessorClient accessorClient,
+        [FromServices] IUsersAccessorClient usersAccessorClient,
         [FromServices] IOptions<AvatarsOptions> opt,
         [FromServices] ILogger<UserEndpoint> log,
         HttpContext http,
@@ -688,16 +689,16 @@ public static class UsersEndpoints
             log.LogWarning("ETag mismatch: {Blob} != {Req}", props.ETag, req.ETag);
         }
 
-        var user = await accessorClient.GetUserAsync(userId);
+        var user = await usersAccessorClient.GetUserAsync(userId);
         var old = user?.AvatarPath;
 
         log.LogInformation("Updating avatar in DB. OldPath={Old}, NewPath={New}", old, req.BlobPath);
 
-        var updated = await accessorClient.UpdateUserAsync(new UpdateUserModel
+        var updated = await usersAccessorClient.UpdateUserAsync(new UpdateUserRequest
         {
             AvatarPath = req.BlobPath,
             AvatarContentType = req.ContentType
-        }, userId);
+        }.ToAccessor(), userId);
         if (!updated)
         {
             log.LogError("DB update failed while confirming avatar");
@@ -731,7 +732,7 @@ public static class UsersEndpoints
 
     private static async Task<IResult> DeleteAvatarAsync(
         [FromRoute] Guid userId,
-        [FromServices] IAccessorClient accessorClient,
+        [FromServices] IUsersAccessorClient usersAccessorClient,
         [FromServices] IAvatarStorageService storage,
         [FromServices] ILogger<UserEndpoint> log,
         HttpContext http,
@@ -745,7 +746,7 @@ public static class UsersEndpoints
             return Results.Forbid();
         }
 
-        var user = await accessorClient.GetUserAsync(userId);
+        var user = await usersAccessorClient.GetUserAsync(userId);
         if (user is null)
         {
             log.LogWarning("User not found");
@@ -775,12 +776,12 @@ public static class UsersEndpoints
             log.LogWarning(ex, "Delete blob failed for {Path}", user.AvatarPath);
         }
 
-        var ok = await accessorClient.UpdateUserAsync(new UpdateUserModel
+        var ok = await usersAccessorClient.UpdateUserAsync(new UpdateUserRequest
         {
             AvatarPath = null,
             AvatarContentType = null,
             ClearAvatar = true
-        }, userId);
+        }.ToAccessor(), userId);
 
         log.LogInformation("Avatar removed in DB");
         return ok ? Results.Ok() : Results.NotFound("User not found.");
@@ -788,7 +789,7 @@ public static class UsersEndpoints
 
     private static async Task<IResult> GenerateAvatarReadUrlAsync(
         [FromRoute] Guid userId,
-        [FromServices] IAccessorClient accessorClient,
+        [FromServices] IUsersAccessorClient usersAccessorClient,
         [FromServices] IAvatarStorageService storage,
         [FromServices] IOptions<AvatarsOptions> opt,
         [FromServices] ILogger<UserEndpoint> log,
@@ -803,7 +804,7 @@ public static class UsersEndpoints
             return Results.Forbid();
         }
 
-        var user = await accessorClient.GetUserAsync(userId);
+        var user = await usersAccessorClient.GetUserAsync(userId);
         if (user is null || string.IsNullOrEmpty(user.AvatarPath))
         {
             log.LogWarning("Avatar not set for {UserId}", userId);
@@ -835,8 +836,8 @@ public static class UsersEndpoints
     }
 
     private static async Task<IResult> UpdateUserLanguageAsync(
-        [FromBody] UpdateLanguageRequest request,
-        [FromServices] IAccessorClient accessorClient,
+        [FromBody] UpdateUserLanguageRequest request,
+        [FromServices] IUsersAccessorClient usersAccessorClient,
         [FromServices] ILogger<UserEndpoint> logger,
         HttpContext httpContext,
         CancellationToken ct)
@@ -858,7 +859,8 @@ public static class UsersEndpoints
                 return Results.Unauthorized();
             }
 
-            await accessorClient.UpdateUserLanguageAsync(callerId, request.PreferredLanguage, ct);
+            var accessorRequest = request.ToAccessor(callerId);
+            await usersAccessorClient.UpdateUserLanguageAsync(accessorRequest, ct);
             return Results.Ok("Language updated.");
         }
         catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)

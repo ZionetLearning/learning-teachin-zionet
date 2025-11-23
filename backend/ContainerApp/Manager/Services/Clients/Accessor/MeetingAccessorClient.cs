@@ -2,6 +2,7 @@ using System.Net;
 using Dapr.Client;
 using Manager.Constants;
 using Manager.Models.Meetings;
+using Manager.Services.Clients.Accessor.Interfaces;
 using Manager.Services.Clients.Accessor.Models;
 
 namespace Manager.Services.Clients.Accessor;

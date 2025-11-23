@@ -24,6 +24,348 @@ namespace Accessor.DB.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Accessor.Models.Achievements.AchievementModel", b =>
+                {
+                    b.Property<Guid>("AchievementId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("achievement_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<string>("Feature")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("feature");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("key");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
+
+                    b.Property<int>("TargetCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("target_count");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("type");
+
+                    b.HasKey("AchievementId");
+
+                    b.HasIndex("Feature");
+
+                    b.HasIndex("Key")
+                        .IsUnique();
+
+                    b.ToTable("Achievements", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            AchievementId = new Guid("10000000-0000-0000-0000-000000000001"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Complete your first word card",
+                            Feature = "WordCards",
+                            IsActive = true,
+                            Key = "word_cards_first",
+                            Name = "First Steps",
+                            TargetCount = 1,
+                            Type = "Milestone"
+                        },
+                        new
+                        {
+                            AchievementId = new Guid("10000000-0000-0000-0000-000000000002"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Complete 3 word cards",
+                            Feature = "WordCards",
+                            IsActive = true,
+                            Key = "word_cards_3",
+                            Name = "Word Explorer",
+                            TargetCount = 3,
+                            Type = "Count"
+                        },
+                        new
+                        {
+                            AchievementId = new Guid("10000000-0000-0000-0000-000000000003"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Complete 5 word cards",
+                            Feature = "WordCards",
+                            IsActive = true,
+                            Key = "word_cards_5",
+                            Name = "Word Master",
+                            TargetCount = 5,
+                            Type = "Count"
+                        },
+                        new
+                        {
+                            AchievementId = new Guid("20000000-0000-0000-0000-000000000001"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Complete your first typing practice",
+                            Feature = "TypingPractice",
+                            IsActive = true,
+                            Key = "typing_first",
+                            Name = "Keyboard Warrior",
+                            TargetCount = 1,
+                            Type = "Milestone"
+                        },
+                        new
+                        {
+                            AchievementId = new Guid("20000000-0000-0000-0000-000000000002"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Complete 3 typing practices",
+                            Feature = "TypingPractice",
+                            IsActive = true,
+                            Key = "typing_3",
+                            Name = "Speed Typer",
+                            TargetCount = 3,
+                            Type = "Count"
+                        },
+                        new
+                        {
+                            AchievementId = new Guid("20000000-0000-0000-0000-000000000003"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Complete 5 typing practices",
+                            Feature = "TypingPractice",
+                            IsActive = true,
+                            Key = "typing_5",
+                            Name = "Typing Champion",
+                            TargetCount = 5,
+                            Type = "Count"
+                        },
+                        new
+                        {
+                            AchievementId = new Guid("30000000-0000-0000-0000-000000000001"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Complete your first speaking practice",
+                            Feature = "SpeakingPractice",
+                            IsActive = true,
+                            Key = "speaking_first",
+                            Name = "Breaking the Ice",
+                            TargetCount = 1,
+                            Type = "Milestone"
+                        },
+                        new
+                        {
+                            AchievementId = new Guid("30000000-0000-0000-0000-000000000002"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Complete 3 speaking practices",
+                            Feature = "SpeakingPractice",
+                            IsActive = true,
+                            Key = "speaking_3",
+                            Name = "Confident Speaker",
+                            TargetCount = 3,
+                            Type = "Count"
+                        },
+                        new
+                        {
+                            AchievementId = new Guid("30000000-0000-0000-0000-000000000003"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Complete 5 speaking practices",
+                            Feature = "SpeakingPractice",
+                            IsActive = true,
+                            Key = "speaking_5",
+                            Name = "Voice Master",
+                            TargetCount = 5,
+                            Type = "Count"
+                        },
+                        new
+                        {
+                            AchievementId = new Guid("40000000-0000-0000-0000-000000000001"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Complete your first word order game",
+                            Feature = "WordOrder",
+                            IsActive = true,
+                            Key = "word_order_first",
+                            Name = "Sentence Builder",
+                            TargetCount = 1,
+                            Type = "Milestone"
+                        },
+                        new
+                        {
+                            AchievementId = new Guid("40000000-0000-0000-0000-000000000002"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Complete 3 word order games",
+                            Feature = "WordOrder",
+                            IsActive = true,
+                            Key = "word_order_3",
+                            Name = "Grammar Guru",
+                            TargetCount = 3,
+                            Type = "Count"
+                        },
+                        new
+                        {
+                            AchievementId = new Guid("40000000-0000-0000-0000-000000000003"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Complete 5 word order games",
+                            Feature = "WordOrder",
+                            IsActive = true,
+                            Key = "word_order_5",
+                            Name = "Syntax Master",
+                            TargetCount = 5,
+                            Type = "Count"
+                        },
+                        new
+                        {
+                            AchievementId = new Guid("50000000-0000-0000-0000-000000000001"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Practice your first mistake",
+                            Feature = "PracticeMistakes",
+                            IsActive = true,
+                            Key = "mistakes_first",
+                            Name = "Learning from Errors",
+                            TargetCount = 1,
+                            Type = "Milestone"
+                        },
+                        new
+                        {
+                            AchievementId = new Guid("50000000-0000-0000-0000-000000000002"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Practice 3 mistakes",
+                            Feature = "PracticeMistakes",
+                            IsActive = true,
+                            Key = "mistakes_3",
+                            Name = "Mistake Master",
+                            TargetCount = 3,
+                            Type = "Count"
+                        },
+                        new
+                        {
+                            AchievementId = new Guid("50000000-0000-0000-0000-000000000003"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Practice 5 mistakes",
+                            Feature = "PracticeMistakes",
+                            IsActive = true,
+                            Key = "mistakes_5",
+                            Name = "Error Eliminator",
+                            TargetCount = 5,
+                            Type = "Count"
+                        },
+                        new
+                        {
+                            AchievementId = new Guid("60000000-0000-0000-0000-000000000001"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Complete your first word cards challenge",
+                            Feature = "WordCardsChallenge",
+                            IsActive = true,
+                            Key = "challenge_first",
+                            Name = "Challenge Accepted",
+                            TargetCount = 1,
+                            Type = "Milestone"
+                        },
+                        new
+                        {
+                            AchievementId = new Guid("60000000-0000-0000-0000-000000000002"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Complete 3 word cards challenges",
+                            Feature = "WordCardsChallenge",
+                            IsActive = true,
+                            Key = "challenge_3",
+                            Name = "Challenge Champion",
+                            TargetCount = 3,
+                            Type = "Count"
+                        },
+                        new
+                        {
+                            AchievementId = new Guid("60000000-0000-0000-0000-000000000003"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Complete 5 word cards challenges",
+                            Feature = "WordCardsChallenge",
+                            IsActive = true,
+                            Key = "challenge_5",
+                            Name = "Ultimate Challenger",
+                            TargetCount = 5,
+                            Type = "Count"
+                        });
+                });
+
+            modelBuilder.Entity("Accessor.Models.Achievements.UserAchievementModel", b =>
+                {
+                    b.Property<Guid>("UserAchievementId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_achievement_id");
+
+                    b.Property<Guid>("AchievementId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("achievement_id");
+
+                    b.Property<DateTime>("UnlockedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("unlocked_at");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("UserAchievementId");
+
+                    b.HasIndex("AchievementId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "AchievementId")
+                        .IsUnique();
+
+                    b.ToTable("UserAchievements", (string)null);
+                });
+
+            modelBuilder.Entity("Accessor.Models.Achievements.UserProgressModel", b =>
+                {
+                    b.Property<Guid>("UserProgressId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_progress_id");
+
+                    b.Property<int>("Count")
+                        .HasColumnType("integer")
+                        .HasColumnName("count");
+
+                    b.Property<string>("Feature")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("feature");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("UserProgressId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "Feature")
+                        .IsUnique();
+
+                    b.ToTable("UserProgress", (string)null);
+                });
+
             modelBuilder.Entity("Accessor.Models.ChatHistorySnapshot", b =>
                 {
                     b.Property<Guid>("ThreadId")
@@ -517,6 +859,15 @@ namespace Accessor.DB.Migrations
                     b.HasIndex("UserId", "IsLearned");
 
                     b.ToTable("WordCards", (string)null);
+                });
+
+            modelBuilder.Entity("Accessor.Models.Achievements.UserAchievementModel", b =>
+                {
+                    b.HasOne("Accessor.Models.Achievements.AchievementModel", null)
+                        .WithMany()
+                        .HasForeignKey("AchievementId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Accessor.Models.Classes.ClassMembership", b =>

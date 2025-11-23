@@ -4,7 +4,7 @@ using Manager.Helpers;
 using Manager.Models.Meetings;
 using Manager.Models.ModelValidation;
 using Manager.Models.Users;
-using Manager.Services.Clients.Accessor;
+using Manager.Services.Clients.Accessor.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
