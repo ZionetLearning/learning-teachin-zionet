@@ -1,15 +1,24 @@
 ﻿using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using Azure.AI.OpenAI;
 using DotQueue;
+using Engine.Constants.Chat;
+using Engine.Models;
 using Engine.Models.Sentences;
-using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
+using Engine.Services.Clients.AccessorClient;
+using Microsoft.Agents.AI;
+using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Options;
 
 namespace Engine.Services;
 
 public class SentencesService : ISentencesService
 {
-    private readonly Kernel _genKernel;
+    private readonly IChatClient _chatClient;
+    private readonly AzureOpenAIClient _azureClient;
+    private readonly AzureOpenAiSettings _cfg;
+    private readonly IAccessorClient _accessorClient;
     private readonly ILogger<SentencesService> _log;
 
     private static readonly string ContentRoot = AppContext.BaseDirectory;
@@ -21,70 +30,119 @@ public class SentencesService : ISentencesService
     private readonly Lazy<string[]> _mediumWords;
     private readonly Lazy<string[]> _hardWords;
 
-    public SentencesService([FromKeyedServices("gen")] Kernel genKernel, ILogger<SentencesService> log)
+    public SentencesService(
+        AzureOpenAIClient azureClient,
+        IOptions<AzureOpenAiSettings> options,
+        IAccessorClient accessorClient,
+        ILogger<SentencesService> log)
     {
-        _genKernel = genKernel;
+        _azureClient = azureClient ?? throw new ArgumentNullException(nameof(azureClient));
+        _cfg = options?.Value ?? throw new ArgumentNullException(nameof(options));
+        _accessorClient = accessorClient ?? throw new ArgumentNullException(nameof(accessorClient));
         _log = log;
 
         _easyWords = new(() => LoadList(EasyPath));
         _mediumWords = new(() => LoadList(MediumPath));
         _hardWords = new(() => LoadList(HardPath));
+
+        _chatClient = _azureClient.GetChatClient(_cfg.DeploymentName).AsIChatClient();
+
     }
 
-    public async Task<GeneratedSentences> GenerateAsync(SentenceRequest req, List<string> userInterests, CancellationToken ct = default)
+    public async Task<GeneratedSentences> GenerateAsync(
+        SentenceRequest req,
+        List<string> userInterests,
+        CancellationToken ct = default)
     {
         _log.LogInformation("Inside sentence generator service for GameType={GameType}", req.GameType);
 
-        var func = _genKernel.Plugins["Sentences"]["Generate"];
-
-        var exec = new AzureOpenAIPromptExecutionSettings
-        {
-            Temperature = 0.3,
-            ResponseFormat = typeof(GeneratedSentences)
-        };
-
         var difficulty = req.Difficulty.ToString().ToLowerInvariant();
         var hints = GetRandomHints(difficulty, 3);
+
+        var nikudStr = req.Nikud.ToString().ToLowerInvariant();
+        var countStr = req.Count.ToString(System.Globalization.CultureInfo.InvariantCulture);
         var hintsStr = string.Join(", ", hints);
 
-        var args = new KernelArguments(exec)
+        var interest = string.Empty;
+
+        if (userInterests is { Count: > 0 } && Random.Shared.NextDouble() < 0.5)
         {
-            ["difficulty"] = difficulty,
-            ["nikud"] = req.Nikud.ToString().ToLowerInvariant(),
-            ["count"] = req.Count.ToString(System.Globalization.CultureInfo.InvariantCulture),
-            ["hints"] = hintsStr
+            interest = userInterests[Random.Shared.Next(userInterests.Count)];
+            _log.LogInformation("Injecting user interest into sentence generation: {Interest}", interest);
+        }
+
+        var promptCfg = await _accessorClient.GetPromptAsync(PromptsKeys.SentencesGenerateTemplate, ct);
+        var systemPrompt = promptCfg?.Content;
+
+        if (string.IsNullOrWhiteSpace(systemPrompt))
+        {
+            _log.LogError(
+                "Sentences generate template not found or empty for key {Key}, label {Label}",
+                PromptsKeys.SentencesGenerateTemplate.Key,
+                PromptsKeys.SentencesGenerateTemplate.Label);
+
+            throw new NonRetryableException(
+                $"Sentences generation prompt '{PromptsKeys.SentencesGenerateTemplate.Key}' is not configured.");
+        }
+
+        var requestPayload = new
+        {
+            difficulty,
+            nikud = req.Nikud,
+            count = req.Count,
+            hints,
+            interest
         };
 
-        // Add user interest with 50% probability
-        if (userInterests != null && userInterests.Count > 0 && Random.Shared.NextDouble() < 0.5)
-        {
-            var selectedInterest = userInterests[Random.Shared.Next(userInterests.Count)];
-            args["interest"] = selectedInterest;
-            _log.LogInformation("Injecting user interest into sentence generation: {Interest}", selectedInterest);
-        }
-        else
-        {
-            // Ensure no stale variable exists
-            args["interest"] = string.Empty;
-        }
+        var userMessage = JsonSerializer.Serialize(requestPayload);
 
-        var result = await _genKernel.InvokeAsync(func, args, ct);
-        var json = result.GetValue<string>();
+        var jsonSerializerOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            Converters = { new JsonStringEnumConverter() }
+        };
 
-        if (json is null)
+        var responseFormat = ChatResponseFormat.ForJsonSchema<GeneratedSentences>(jsonSerializerOptions);
+
+        var runOptions = new ChatClientAgentRunOptions
+        {
+            ChatOptions = new ChatOptions
+            {
+                Temperature = 0.3f,
+                ResponseFormat = responseFormat
+            }
+        };
+
+        var agent = _chatClient.CreateAIAgent(
+            instructions: systemPrompt,
+            name: "GenerateSentences");
+
+        var agentResult = await agent.RunAsync(userMessage, thread: null, runOptions, ct);
+        var answer = agentResult.Text?.Trim();
+
+        if (string.IsNullOrWhiteSpace(answer))
         {
             _log.LogError("Error while generating sentences. The response is empty");
             throw new RetryableException("Error while generating sentences. The response is empty");
         }
 
-        var parsed = JsonSerializer.Deserialize<GeneratedSentences>(json);
-        if (parsed is null)
+        GeneratedSentences? parsed;
+        try
         {
-            _log.LogError("Error while generating sentences. The response is empty or invalid JSON");
-            throw new RetryableException("Error while generating sentences. The response is empty or invalid JSON");
+            parsed = JsonSerializer.Deserialize<GeneratedSentences>(answer, jsonSerializerOptions);
+        }
+        catch (Exception ex)
+        {
+            _log.LogError(ex, "Error while deserializing GeneratedSentences. Answer: {Answer}", answer);
+            throw new RetryableException("Error while generating sentences. The response is invalid JSON");
         }
 
-        // Set GameType from request on all generated sentences
+        if (parsed is null || parsed.Sentences is null)
+        {
+            _log.LogError("GeneratedSentences is null or has no sentences. Answer: {Answer}", answer);
+            throw new RetryableException("Error while generating sentences. Parsed result is empty");
+        }
+
         var gameType = req.GameType.ToString();
         foreach (var sentence in parsed.Sentences)
         {

@@ -1,8 +1,15 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
+using Azure.AI.OpenAI;
 using DotQueue;
+using Engine.Constants.Chat;
+using Engine.Models;
 using Engine.Models.Words;
-using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
+using Engine.Services.Clients.AccessorClient;
+using Microsoft.Agents.AI;
+using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Options;
 
 namespace Engine.Services;
 
@@ -11,52 +18,122 @@ public interface IWordExplainService
     Task<WordExplainResponse> ExplainAsync(WordExplainRequest req, string lang, CancellationToken ct = default);
 }
 
-public class WordExplainService : IWordExplainService
+public sealed class WordExplainService : IWordExplainService
 {
-    private readonly Kernel _kernel;
+    private readonly IChatClient _chatClient;
+    private readonly AzureOpenAIClient _azureClient;
+    private readonly AzureOpenAiSettings _cfg;
+    private readonly IAccessorClient _accessorClient;
     private readonly ILogger<WordExplainService> _log;
 
-    public WordExplainService([FromKeyedServices("gen")] Kernel kernel, ILogger<WordExplainService> log)
+    public WordExplainService(
+        AzureOpenAIClient azureClient,
+        IOptions<AzureOpenAiSettings> options,
+        IAccessorClient accessorClient,
+        ILogger<WordExplainService> log)
     {
-        _kernel = kernel;
-        _log = log;
+        _azureClient = azureClient ?? throw new ArgumentNullException(nameof(azureClient));
+        _cfg = options?.Value ?? throw new ArgumentNullException(nameof(options));
+        _accessorClient = accessorClient ?? throw new ArgumentNullException(nameof(accessorClient));
+        _log = log ?? throw new ArgumentNullException(nameof(log));
+
+        _chatClient = _azureClient.GetChatClient(_cfg.DeploymentName).AsIChatClient();
     }
 
-    public async Task<WordExplainResponse> ExplainAsync(WordExplainRequest req, string lang, CancellationToken ct = default)
+    public async Task<WordExplainResponse> ExplainAsync(
+        WordExplainRequest req,
+        string lang,
+        CancellationToken ct = default)
     {
-        _log.LogInformation("Inside word explain service");
+        _log.LogInformation("Inside word explain service for word {Word}", req.Word);
 
-        var func = _kernel.Plugins["WordExplain"]["Explain"];
+        var promptCfg = await _accessorClient.GetPromptAsync(PromptsKeys.WordExplanationTemplate, ct);
+        var template = promptCfg?.Content;
 
-        var exec = new AzureOpenAIPromptExecutionSettings
+        if (string.IsNullOrWhiteSpace(template))
         {
-            Temperature = 0.2,
-            ResponseFormat = typeof(WordExplainResponse)
+            _log.LogError(
+                "Word explain template not found or empty. Key={Key}, Label={Label}",
+                PromptsKeys.WordExplanationTemplate.Key,
+                PromptsKeys.WordExplanationTemplate.Label);
+
+            throw new NonRetryableException(
+                $"Word explain prompt '{PromptsKeys.WordExplanationTemplate.Key}' is not configured.");
+        }
+
+        var systemPrompt = template
+            .Replace("{{$lang}}", lang, StringComparison.Ordinal)
+            .Replace("{{$word}}", req.Word, StringComparison.Ordinal)
+            .Replace("{{$context}}", req.Context, StringComparison.Ordinal);
+
+        var payload = new
+        {
+            word = req.Word,
+            context = req.Context,
+            lang
         };
 
-        var args = new KernelArguments(exec)
+        var userMessage = JsonSerializer.Serialize(payload);
+
+        var jsonSerializerOptions = new JsonSerializerOptions
         {
-            ["word"] = req.Word,
-            ["context"] = req.Context,
-            ["lang"] = lang
+            PropertyNameCaseInsensitive = true,
+            TypeInfoResolver = new DefaultJsonTypeInfoResolver(),
+            Converters = { new JsonStringEnumConverter() }
         };
 
-        var result = await _kernel.InvokeAsync(func, args, ct);
-        var json = result.GetValue<string>();
+        var agent = _chatClient.CreateAIAgent(
+            instructions: systemPrompt,
+            name: "WordExplain");
 
-        if (string.IsNullOrWhiteSpace(json))
+        var responseFormat = ChatResponseFormat.ForJsonSchema<WordExplainResponse>(jsonSerializerOptions);
+
+        var runOptions = new ChatClientAgentRunOptions
+        {
+            ChatOptions = new ChatOptions
+            {
+                Temperature = 0.2f,
+                ResponseFormat = responseFormat
+            }
+        };
+
+        var result = await agent.RunAsync(userMessage, thread: null, runOptions, ct);
+
+        var answer = result.Text?.Trim();
+
+        if (string.IsNullOrWhiteSpace(answer))
         {
             _log.LogError("Empty response for word {Word}", req.Word);
             throw new RetryableException($"Empty response for word {req.Word}");
         }
 
-        var parsed = JsonSerializer.Deserialize<WordExplainResponse>(json);
-        if (parsed is null)
+        WordExplainResponse? parsed;
+        try
         {
-            _log.LogError("Invalid JSON for word {Word}: {Json}", req.Word, json);
+            parsed = JsonSerializer.Deserialize<WordExplainResponse>(answer, jsonSerializerOptions);
+        }
+        catch (Exception ex)
+        {
+            _log.LogError(
+                ex,
+                "Error while deserializing WordExplainResponse for word {Word}. Answer: {Answer}",
+                req.Word,
+                answer);
+
             throw new RetryableException("Invalid JSON format from model");
         }
 
+        if (parsed is null)
+        {
+            _log.LogError(
+                "Parsed WordExplainResponse is null for word {Word}. Answer: {Answer}",
+                req.Word,
+                answer);
+
+            throw new RetryableException("Empty parsed WordExplainResponse");
+        }
+
         return parsed;
+
     }
 }

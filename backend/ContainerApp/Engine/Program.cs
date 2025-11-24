@@ -9,7 +9,6 @@ using Engine.Endpoints;
 using Engine.Models;
 using Engine.Models.QueueMessages;
 using Engine.Options;
-using Engine.Plugins;
 using Engine.Services;
 using Engine.Services.Clients.AccessorClient;
 using Engine.Tools;
@@ -84,23 +83,7 @@ builder.Services.AddSingleton(sp =>
                      endpoint: cfg.Endpoint,
                      apiKey: cfg.ApiKey)
                  .Build();
-    var logger = sp.GetRequiredService<ILoggerFactory>()
-    .CreateLogger("KernelPluginRegistration");
-    foreach (var plugin in sp.GetServices<ISemanticKernelPlugin>())
-    {
-        try
-        {
-            var pluginName = plugin.GetType().ToPluginName();
-            kernel.Plugins.AddFromObject(plugin, pluginName);
-            logger.LogInformation("Plugin {Name} registered.", pluginName);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex,
-                "Failed to register plugin {PluginType}", plugin.GetType().FullName);
-
-        }
-    }
+    var logger = sp.GetRequiredService<ILoggerFactory>();
 
     return kernel;
 
