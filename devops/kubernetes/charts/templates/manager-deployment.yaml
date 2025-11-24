@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Values.manager.name }}-{{ .Release.Namespace }}
+  name: {{ .Values.manager.name }}
   namespace: {{ include "app.namespace" . }}
   labels:
     {{ .Values.manager.labels.selectorKey }}: {{ .Values.manager.labels.selectorValue }}
@@ -77,7 +77,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.manager.name }}-{{ .Release.Namespace }}
+  name: {{ .Values.manager.name }}
   namespace: {{ include "app.namespace" . }}
 spec:
   type: {{ .Values.manager.service.type }}
