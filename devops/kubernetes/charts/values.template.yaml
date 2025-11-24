@@ -61,6 +61,11 @@ engine:
     AzureSpeech__Region: "eastus"
     AzureSpeech__DefaultVoice: "he-IL-HilaNeural"
     AzureSpeech__TimeoutSeconds: "70"
+    Tavily__ApiKey: ""
+    Tavily__MaxResults: "5"
+    Tavily__IncludeAnswer: "true"
+    Tavily__IncludeRawContent: "false"
+    Tavily__SearchDepth: "basic"
 
 accessor:
   image:

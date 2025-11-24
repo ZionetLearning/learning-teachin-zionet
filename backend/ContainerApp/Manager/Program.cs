@@ -154,10 +154,12 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddScoped<IAccessorClient, AccessorClient>();
+builder.Services.AddScoped<ITaskAccessorClient, TaskAccessorClient>();
 builder.Services.AddScoped<IUsersAccessorClient, UsersAccessorClient>();
 builder.Services.AddScoped<IGameAccessorClient, GameAccessorClient>();
 builder.Services.AddScoped<IClassesAccessorClient, ClassesAccessorClient>();
 builder.Services.AddScoped<IMeetingAccessorClient, MeetingAccessorClient>();
+builder.Services.AddScoped<IWordCardsAccessorClient, WordCardsAccessorClient>();
 builder.Services.AddScoped<IEngineClient, EngineClient>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
