@@ -22,7 +22,7 @@ public static class TasksEndpoints
         tasksGroup.MapGet("/tasks", GetTasksAsync).WithName("GetTasks").RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
         tasksGroup.MapPost("/task", CreateTaskAsync).WithName("CreateTask").RequireAuthorization(PolicyNames.AdminOrTeacher);
         tasksGroup.MapPost("/tasklong", CreateTaskLongAsync).WithName("CreateTaskLongTest").RequireAuthorization(PolicyNames.AdminOrTeacher);
-        tasksGroup.MapPut("/task/{id:int}", UpdateTaskNameAsync).WithName("UpdateTaskName").RequireAuthorization(PolicyNames.AdminOrTeacher);
+        tasksGroup.MapPut("/task/{id:int}/{name}", UpdateTaskNameAsync).WithName("UpdateTaskName").RequireAuthorization(PolicyNames.AdminOrTeacher);
         tasksGroup.MapDelete("/task/{id:int}", DeleteTaskAsync).WithName("DeleteTask").RequireAuthorization(PolicyNames.AdminOrTeacher);
 
         return app;
@@ -148,7 +148,7 @@ public static class TasksEndpoints
 
     private static async Task<IResult> UpdateTaskNameAsync(
         [FromRoute] int id,
-        [FromBody] UpdateTaskNameRequest request,
+        [FromRoute] string name,
         [FromHeader(Name = "If-Match")] string? ifMatch,
         [FromServices] ITaskAccessorClient taskAccessorClient,
         [FromServices] ILogger<TaskEndpoint> logger,
@@ -162,10 +162,10 @@ public static class TasksEndpoints
             return Results.NotFound(new { Message = $"Task with ID {id} not found" });
         }
 
-        if (!ValidationExtensions.TryValidate(request, out var validationErrors))
+        if (string.IsNullOrWhiteSpace(name))
         {
-            logger.LogWarning("Validation failed for {Model}: {Errors}", nameof(UpdateTaskNameRequest), validationErrors);
-            return Results.BadRequest(new { errors = validationErrors });
+            logger.LogWarning("Task name is required");
+            return Results.BadRequest(new { Message = "Task name is required" });
         }
 
         if (string.IsNullOrWhiteSpace(ifMatch))
@@ -176,8 +176,8 @@ public static class TasksEndpoints
 
         try
         {
-            logger.LogInformation("Attempting to update task name");
-            var accessorResult = await taskAccessorClient.UpdateTaskNameAsync(id, request.Name, ifMatch!);
+            logger.LogInformation("Attempting to update task name to '{Name}'", name);
+            var accessorResult = await taskAccessorClient.UpdateTaskNameAsync(id, name, ifMatch!);
 
             if (accessorResult.NotFound)
             {

@@ -160,7 +160,7 @@ public class TaskAccessorClient : ITaskAccessorClient
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetTasksAsync), nameof(TaskAccessorClient));
         try
         {
-            var list = await _daprClient.InvokeMethodAsync<List<TaskModel>>(
+            var list = await _daprClient.InvokeMethodAsync<List<TaskSummaryDto>>(
                 HttpMethod.Get,
                 AppIds.Accessor,
                 "tasks-accessor/tasks",
