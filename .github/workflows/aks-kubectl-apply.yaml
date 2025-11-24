@@ -14,6 +14,11 @@ on:
         default: 'Development'
         type: choice
         options: [Development, Production]
+      environment_name:
+        description: 'Enter custom prefix (lowercase letters & digits only). This will be used as the Kubernetes namespace and environment identifier.'
+        required: false
+        type: string
+        default: 'dev'
   workflow_call:
     inputs:
       environment:
@@ -41,12 +46,23 @@ jobs:
 
       - name: Set up variables
         run: |
-          # Directory for K8S manifests
+          # Resolve environment name in GitHub Actions syntax (not in Bash)
+          ENV_NAME="${{ inputs.environment_name != '' && inputs.environment_name || github.event.inputs.environment_name }}"
+          
           echo "K8S_DIR=devops/kubernetes/" >> $GITHUB_ENV
 
-          # Shared AKS
-          echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
-          echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
+          if [ "$ENV_NAME" = "dev" ]; then
+            # Dedicated AKS for dev/test
+            echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
+            echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
+          elif [ "$ENV_NAME" = "prod" ]; then
+            # Shared AKS for production
+            echo "AKS_RG=prod-zionet-learning-2025" >> $GITHUB_ENV
+            echo "AKS_NAME=prod-cluster-dev" >> $GITHUB_ENV
+          else
+            echo "Error: Unsupported environment name '$ENV_NAME'. Only 'dev' and 'prod' are supported."
+            exit 1
+          fi
 
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
