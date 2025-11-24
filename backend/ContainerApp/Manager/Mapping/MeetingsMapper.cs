@@ -86,14 +86,11 @@ public static class MeetingsMapper
     #region GetUserMeetings Mappings
 
     /// <summary>
-    /// Maps list of GetMeetingAccessorResponse to GetUserMeetingsResponse
+    /// Maps list of GetMeetingAccessorResponse to enumerable of GetMeetingResponse
     /// </summary>
-    public static GetUserMeetingsResponse ToFront(this IReadOnlyList<GetMeetingAccessorResponse> accessorMeetings)
+    public static IEnumerable<GetMeetingResponse> ToFront(this IReadOnlyList<GetMeetingAccessorResponse> accessorMeetings)
     {
-        return new GetUserMeetingsResponse
-        {
-            Meetings = accessorMeetings.Select(m => m.ToFront()).ToList()
-        };
+        return accessorMeetings.Select(m => m.ToFront());
     }
 
     #endregion
