@@ -37,8 +37,9 @@ resource "azurerm_kubernetes_cluster" "main" {
 
 }
 
-# Spot instance node pool for cost-effective workloads
+# Spot instance node pool for cost-effective workloads (disabled for production)
 resource "azurerm_kubernetes_cluster_node_pool" "spot" {
+  count                 = var.enable_spot_nodes ? 1 : 0
   name                  = "spot"
   kubernetes_cluster_id = azurerm_kubernetes_cluster.main.id
   vm_size               = var.spot_vm_size
