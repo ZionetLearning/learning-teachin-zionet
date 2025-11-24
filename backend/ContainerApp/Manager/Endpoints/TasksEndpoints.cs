@@ -1,6 +1,9 @@
 ﻿using Manager.Constants;
+using Manager.Mapping;
 using Manager.Models;
 using Manager.Models.ModelValidation;
+using Manager.Models.Tasks.Requests;
+using Manager.Models.Tasks.Responses;
 using Manager.Services.Clients.Accessor.Interfaces;
 using Manager.Services.Clients.Engine;
 using Microsoft.AspNetCore.Mvc;
@@ -19,7 +22,7 @@ public static class TasksEndpoints
         tasksGroup.MapGet("/tasks", GetTasksAsync).WithName("GetTasks").RequireAuthorization(PolicyNames.AdminOrTeacherOrStudent);
         tasksGroup.MapPost("/task", CreateTaskAsync).WithName("CreateTask").RequireAuthorization(PolicyNames.AdminOrTeacher);
         tasksGroup.MapPost("/tasklong", CreateTaskLongAsync).WithName("CreateTaskLongTest").RequireAuthorization(PolicyNames.AdminOrTeacher);
-        tasksGroup.MapPut("/task/{id:int}/{name}", UpdateTaskNameAsync).WithName("UpdateTaskName").RequireAuthorization(PolicyNames.AdminOrTeacher);
+        tasksGroup.MapPut("/task/{id:int}", UpdateTaskNameAsync).WithName("UpdateTaskName").RequireAuthorization(PolicyNames.AdminOrTeacher);
         tasksGroup.MapDelete("/task/{id:int}", DeleteTaskAsync).WithName("DeleteTask").RequireAuthorization(PolicyNames.AdminOrTeacher);
 
         return app;
@@ -41,17 +44,18 @@ public static class TasksEndpoints
 
         try
         {
-            var (task, etag) = await taskAccessorClient.GetTaskWithEtagAsync(id);
+            var (accessorTask, etag) = await taskAccessorClient.GetTaskWithEtagAsync(id);
 
-            if (task is not null)
+            if (accessorTask is not null)
             {
                 if (!string.IsNullOrWhiteSpace(etag))
                 {
                     response.Headers.ETag = $"\"{etag}\"";
                 }
 
+                var taskResponse = accessorTask.ToFront();
                 logger.LogInformation("Successfully retrieved task (ETag forwarded).");
-                return Results.Ok(task);
+                return Results.Ok(taskResponse);
             }
 
             logger.LogWarning("Task not found");
@@ -65,43 +69,33 @@ public static class TasksEndpoints
     }
 
     private static async Task<IResult> CreateTaskAsync(
-        [FromBody] TaskModel task,
+        [FromBody] CreateTaskRequest request,
         [FromServices] ITaskAccessorClient taskAccessorClient,
         [FromServices] ILogger<TaskEndpoint> logger)
     {
-        using var scope = logger.BeginScope("TaskId {TaskId}:", task.Id);
+        using var scope = logger.BeginScope("TaskId {TaskId}:", request.Id);
 
-        if (!ValidationExtensions.TryValidate(task, out var validationErrors))
+        if (!ValidationExtensions.TryValidate(request, out var validationErrors))
         {
-            logger.LogWarning("Validation failed for {Model}: {Errors}", nameof(TaskModel), validationErrors);
+            logger.LogWarning("Validation failed for {Model}: {Errors}", nameof(CreateTaskRequest), validationErrors);
             return Results.BadRequest(new { errors = validationErrors });
-        }
-
-        if (string.IsNullOrWhiteSpace(task.Name))
-        {
-            logger.LogWarning("Task {TaskId} has invalid name", task.Id);
-            return Results.BadRequest("Task name is required");
-        }
-
-        if (string.IsNullOrWhiteSpace(task.Payload))
-        {
-            logger.LogWarning("Task {TaskId} has invalid payload", task.Id);
-            return Results.BadRequest("Task payload is required");
         }
 
         try
         {
-            logger.LogInformation("Posting task {TaskId} with name '{TaskName}'", task.Id, task.Name);
-            var result = await taskAccessorClient.PostTaskAsync(task);
+            logger.LogInformation("Posting task {TaskId} with name '{TaskName}'", request.Id, request.Name);
+            var accessorRequest = request.ToAccessor();
+            var accessorResult = await taskAccessorClient.PostTaskAsync(accessorRequest);
 
-            if (result.success)
+            if (accessorResult.Success)
             {
-                logger.LogInformation("Task {TaskId} successfully posted", task.Id);
-                return Results.Accepted($"/tasks-manager/task/{task.Id}", new { status = result.message, task.Id });
+                var response = accessorResult.ToFront();
+                logger.LogInformation("Task {TaskId} successfully posted", request.Id);
+                return Results.Accepted($"/tasks-manager/task/{request.Id}", response);
             }
 
-            logger.LogWarning("Task {TaskId} failed: {Message}", task.Id, result.message);
-            return Results.Problem(result.message);
+            logger.LogWarning("Task {TaskId} failed: {Message}", request.Id, accessorResult.Message);
+            return Results.Problem(accessorResult.Message);
         }
         catch (Exception ex)
         {
@@ -140,9 +134,10 @@ public static class TasksEndpoints
         using var scope = logger.BeginScope("List all tasks");
         try
         {
-            var items = await taskAccessorClient.GetTaskSummariesAsync();
-            logger.LogInformation("Retrieved {Count} tasks", items?.Count ?? 0);
-            return Results.Ok(items);
+            var accessorResult = await taskAccessorClient.GetTasksAsync();
+            var response = accessorResult.ToFront();
+            logger.LogInformation("Retrieved {Count} tasks", response.Count);
+            return Results.Ok(response);
         }
         catch (Exception ex)
         {
@@ -150,9 +145,10 @@ public static class TasksEndpoints
             return Results.Problem("An error occurred while retrieving tasks.");
         }
     }
+
     private static async Task<IResult> UpdateTaskNameAsync(
         [FromRoute] int id,
-        [FromRoute] string name,
+        [FromBody] UpdateTaskNameRequest request,
         [FromHeader(Name = "If-Match")] string? ifMatch,
         [FromServices] ITaskAccessorClient taskAccessorClient,
         [FromServices] ILogger<TaskEndpoint> logger,
@@ -166,16 +162,10 @@ public static class TasksEndpoints
             return Results.NotFound(new { Message = $"Task with ID {id} not found" });
         }
 
-        if (string.IsNullOrWhiteSpace(name))
+        if (!ValidationExtensions.TryValidate(request, out var validationErrors))
         {
-            logger.LogWarning("Invalid task name");
-            return Results.BadRequest("Invalid task name");
-        }
-
-        if (name.Length > 100)
-        {
-            logger.LogWarning("Task name too long");
-            return Results.BadRequest("Task name too long");
+            logger.LogWarning("Validation failed for {Model}: {Errors}", nameof(UpdateTaskNameRequest), validationErrors);
+            return Results.BadRequest(new { errors = validationErrors });
         }
 
         if (string.IsNullOrWhiteSpace(ifMatch))
@@ -187,27 +177,28 @@ public static class TasksEndpoints
         try
         {
             logger.LogInformation("Attempting to update task name");
-            var result = await taskAccessorClient.UpdateTaskNameAsync(id, name, ifMatch!);
+            var accessorResult = await taskAccessorClient.UpdateTaskNameAsync(id, request.Name, ifMatch!);
 
-            if (result.NotFound)
+            if (accessorResult.NotFound)
             {
                 logger.LogWarning("Task not found for update");
                 return Results.NotFound("Task not found");
             }
 
-            if (result.PreconditionFailed)
+            if (accessorResult.PreconditionFailed)
             {
                 logger.LogWarning("Precondition failed (ETag mismatch)");
                 return Results.StatusCode(StatusCodes.Status412PreconditionFailed);
             }
 
-            if (!string.IsNullOrWhiteSpace(result.NewEtag))
+            if (!string.IsNullOrWhiteSpace(accessorResult.NewEtag))
             {
-                response.Headers.ETag = $"\"{result.NewEtag}\"";
+                response.Headers.ETag = $"\"{accessorResult.NewEtag}\"";
             }
 
+            var updateResponse = accessorResult.ToFront();
             logger.LogInformation("Successfully updated task name");
-            return Results.Ok("Task name updated");
+            return Results.Ok(updateResponse);
         }
         catch (Exception ex)
         {
@@ -237,7 +228,8 @@ public static class TasksEndpoints
             if (success)
             {
                 logger.LogInformation("Successfully deleted task");
-                return Results.Ok("Task deleted");
+                var response = new DeleteTaskResponse { Message = "Task deleted" };
+                return Results.Ok(response);
             }
 
             logger.LogWarning("Task not found for deletion");
