@@ -2,6 +2,8 @@
 using IntegrationTests.Constants;
 using IntegrationTests.Fixtures;
 using Manager.Models.WordCards.Requests;
+using Manager.Models.WordCards.Responses;
+using Manager.Models.WordCards;
 using System.Net;
 using System.Net.Http.Json;
 using Xunit.Abstractions;
@@ -81,7 +83,7 @@ public class WordCardsIntegrationTests(
             ("ספר", "Book")
         };
 
-        var createdCards = new List<Manager.Models.WordCards.Responses.CreateWordCardResponse>();
+        var createdCards = new List<CreateWordCardResponse>();
 
         foreach (var (hebrew, english) in cardsToCreate)
         {

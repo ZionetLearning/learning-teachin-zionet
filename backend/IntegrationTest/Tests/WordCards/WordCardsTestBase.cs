@@ -2,9 +2,10 @@
 using IntegrationTests.Constants;
 using IntegrationTests.Fixtures;
 using IntegrationTests.Infrastructure;
+using Manager.Models.Users;
+using Manager.Models.WordCards;
 using Manager.Models.WordCards.Requests;
 using Manager.Models.WordCards.Responses;
-using Manager.Models.Users;
 using System.Net.Http.Json;
 using Xunit.Abstractions;
 
@@ -46,12 +47,12 @@ public abstract class WordCardsTestBase(
     /// <summary>
     /// Returns the list of word cards for the user
     /// </summary>
-    protected async Task<List<GetWordCardsResponse>> GetWordCardsAsync()
+    protected async Task<List<WordCardDto>> GetWordCardsAsync()
     {
         var response = await Client.GetAsync($"{ApiRoutes.WordCards}");
         response.EnsureSuccessStatusCode();
 
-        var cards = await ReadAsJsonAsync<List<GetWordCardsResponse>>(response);
+        var cards = await ReadAsJsonAsync<List<WordCardDto>>(response);
         cards.Should().NotBeNull();
         return cards!;
     }

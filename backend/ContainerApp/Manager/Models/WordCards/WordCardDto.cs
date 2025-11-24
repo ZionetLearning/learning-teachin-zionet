@@ -1,12 +1,4 @@
-namespace Manager.Models.WordCards.Responses;
-
-/// <summary>
-/// Response model for getting word cards (sent to frontend)
-/// </summary>
-public sealed record GetWordCardsResponse
-{
-    public required IReadOnlyList<WordCardDto> WordCards { get; init; }
-}
+namespace Manager.Models.WordCards;
 
 /// <summary>
 /// Word card data transfer object

@@ -1,3 +1,4 @@
+using Manager.Models.WordCards;
 using Manager.Models.WordCards.Requests;
 using Manager.Models.WordCards.Responses;
 using Manager.Services.Clients.Accessor.Models.WordCards;
@@ -12,21 +13,18 @@ public static class WordCardsMapper
     #region GetWordCards Mappings
 
     /// <summary>
-    /// Maps Accessor GetWordCardsAccessorResponse to frontend GetWordCardsResponse
+    /// Maps Accessor GetWordCardsAccessorResponse to frontend WordCardDto enumerable
     /// </summary>
-    public static GetWordCardsResponse ToFront(this GetWordCardsAccessorResponse accessorResponse)
+    public static IEnumerable<WordCardDto> ToFront(this GetWordCardsAccessorResponse accessorResponse)
     {
-        return new GetWordCardsResponse
+        return accessorResponse.WordCards.Select(wc => new WordCardDto
         {
-            WordCards = accessorResponse.WordCards.Select(wc => new WordCardDto
-            {
-                CardId = wc.CardId,
-                Hebrew = wc.Hebrew,
-                English = wc.English,
-                IsLearned = wc.IsLearned,
-                Explanation = wc.Explanation
-            }).ToList()
-        };
+            CardId = wc.CardId,
+            Hebrew = wc.Hebrew,
+            English = wc.English,
+            IsLearned = wc.IsLearned,
+            Explanation = wc.Explanation
+        });
     }
 
     #endregion
