@@ -71,11 +71,11 @@ public class AchievementAccessorClient(
         }
     }
 
-    public async Task<UserProgressAccessorModel?> GetUserProgressAsync(Guid userId, string feature, CancellationToken ct = default)
+    public async Task<GetUserProgressAccessorResponse?> GetUserProgressAsync(Guid userId, string feature, CancellationToken ct = default)
     {
         try
         {
-            return await _daprClient.InvokeMethodAsync<UserProgressAccessorModel?>(
+            return await _daprClient.InvokeMethodAsync<GetUserProgressAccessorResponse?>(
                 HttpMethod.Get, AppIds.Accessor, $"achievements-accessor/user/{userId}/progress/{feature}", ct);
         }
         catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)

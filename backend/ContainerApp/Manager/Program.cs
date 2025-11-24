@@ -162,7 +162,6 @@ builder.Services.AddScoped<IEngineClient, EngineClient>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IOnlinePresenceService, OnlinePresenceService>();
-builder.Services.AddScoped<IAchievementService, AchievementService>();
 
 builder.Services
   .AddOptions<AvatarsOptions>()

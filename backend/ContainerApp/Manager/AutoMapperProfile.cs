@@ -3,8 +3,6 @@ using DotQueue;
 using Manager.Models.UserGameConfiguration;
 using Manager.Models.Notifications;
 using Manager.Models.QueueMessages;
-using Manager.Models.Achievements;
-using Manager.Services.Clients.Accessor.Models.Achievements;
 
 internal sealed class AutoMapperProfile : Profile
 {
@@ -15,10 +13,6 @@ internal sealed class AutoMapperProfile : Profile
 
         CreateMap<UserNewGameConfig, UserGameConfig>()
             .ForMember(dest => dest.UserId, opt => opt.Ignore());
-
-        CreateMap<AchievementAccessorModel, AchievementDto>()
-            .ForMember(dest => dest.IsUnlocked, opt => opt.Ignore())
-            .ForMember(dest => dest.UnlockedAt, opt => opt.Ignore());
     }
 
     private static StreamEventStage ConvertFrameKindToStreamEventStage(FrameKind src)

@@ -1,8 +1,8 @@
 namespace Manager.Models.Achievements;
 
-public class TrackProgressResponse
+public sealed record TrackProgressResponse
 {
-    public bool Success { get; set; }
-    public int NewCount { get; set; }
-    public List<string> UnlockedAchievements { get; set; } = new();
+    public required bool Success { get; init; }
+    public required int NewCount { get; init; }
+    public required List<string> UnlockedAchievements { get; init; }
 }
