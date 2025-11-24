@@ -1,5 +1,0 @@
-﻿namespace Manager.Models.Classes;
-
-public record AddMembersRequest(IEnumerable<Guid> UserIds, Guid AddedBy);
-public record RemoveMembersRequest(IEnumerable<Guid> UserIds);
-public record CreateClassRequest(string Name, string? Description);

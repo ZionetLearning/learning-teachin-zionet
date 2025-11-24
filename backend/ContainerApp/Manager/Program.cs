@@ -157,6 +157,7 @@ builder.Services.AddScoped<IAccessorClient, AccessorClient>();
 builder.Services.AddScoped<ITaskAccessorClient, TaskAccessorClient>();
 builder.Services.AddScoped<IUsersAccessorClient, UsersAccessorClient>();
 builder.Services.AddScoped<IGameAccessorClient, GameAccessorClient>();
+builder.Services.AddScoped<IClassesAccessorClient, ClassesAccessorClient>();
 builder.Services.AddScoped<IMeetingAccessorClient, MeetingAccessorClient>();
 builder.Services.AddScoped<IWordCardsAccessorClient, WordCardsAccessorClient>();
 builder.Services.AddScoped<IAchievementAccessorClient, AchievementAccessorClient>();
