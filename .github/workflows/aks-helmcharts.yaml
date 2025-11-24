@@ -338,7 +338,7 @@ jobs:
             --set accessor.secrets.langfuse.enabled="${{ steps.setup.outputs.langfuse_secrets_enabled }}" \
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false \
-            --set keda.enabled=${{ inputs.use_keda }} \
+            --set keda.enabled=true \
 
       - name: Add Langfuse
         if: steps.setup.outputs.deploy_langfuse == 'true' && github.event_name == 'workflow_dispatch'
