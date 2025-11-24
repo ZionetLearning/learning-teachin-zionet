@@ -7,8 +7,10 @@ import {
   SignalRProvider,
   initAppInsights,
   initializeSentry,
-  SentryErrorBoundary
+  SentryErrorBoundary,
+  AppThemeProvider,
 } from "@app-providers";
+import { WordCaptureProvider } from "./providers";
 import { AppRole } from "@app-providers/types";
 import "./index.css";
 import App from "./App.tsx";
@@ -26,7 +28,11 @@ createRoot(document.getElementById("root")!).render(
       <AuthProvider appRole={AppRole.student}>
         <SignalRProvider hubUrl={HUB_URL}>
           <SentryErrorBoundary>
-            <App />
+            <WordCaptureProvider>
+              <AppThemeProvider>
+                <App />
+              </AppThemeProvider>
+            </WordCaptureProvider>
             <ToastContainer />
           </SentryErrorBoundary>
         </SignalRProvider>

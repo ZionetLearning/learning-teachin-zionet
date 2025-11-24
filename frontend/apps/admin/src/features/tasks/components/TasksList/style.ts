@@ -1,111 +1,116 @@
 import { createUseStyles } from "react-jss";
+import { useThemeColors } from "@app-providers";
 
-export const useStyles = createUseStyles({
-  listContainer: {
-    display: "flex",
-    flexDirection: "column",
-    flex: 1,
-    backgroundColor: "#ffffff",
-    borderRadius: "12px",
-    boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
-    border: "1px solid rgba(255, 255, 255, 0.2)",
-    backdropFilter: "blur(20px)",
-    padding: "2rem",
-    minHeight: "600px",
-  },
-  sectionTitle: {
-    fontSize: "1.5rem",
-    fontWeight: "600",
-    color: "#2c3e50",
-    marginBottom: "1.5rem",
-    borderBottom: "2px solid #3498db",
-    paddingBottom: "0.5rem",
-  },
-  tableArea: {
-    flex: 1,
-    display: "flex",
-    flexDirection: "column",
-  },
-  tableShell: {
-    flex: 1,
-    border: "1px solid #e0e0e0",
-    borderRadius: "8px",
-    overflow: "hidden",
-    display: "flex",
-    flexDirection: "column",
-  },
-  headerTable: {
-    backgroundColor: "#f8f9fa",
-    "& .MuiTableCell-head": {
+export const useStyles = () => {
+  const color = useThemeColors();
+
+  return createUseStyles({
+    listContainer: {
+      display: "flex",
+      flexDirection: "column",
+      flex: 1,
+      backgroundColor: color.paper,
+      borderRadius: "12px",
+      boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
+      border: `1px solid ${color.divider}`,
+      backdropFilter: "blur(20px)",
+      padding: "2rem",
+      minHeight: "600px",
+    },
+    sectionTitle: {
+      fontSize: "1.5rem",
       fontWeight: "600",
-      color: "#2c3e50",
-      borderBottom: "2px solid #dee2e6",
+      color: color.text,
+      marginBottom: "1.5rem",
+      borderBottom: `2px solid rgba(var(${color.primaryMainChannel}) / 1)`,
+      paddingBottom: "0.5rem",
     },
-  },
-  searchBar: {
-    padding: "1rem",
-    backgroundColor: "#f8f9fa",
-    borderBottom: "1px solid #e0e0e0",
-  },
-  searchField: {
-    backgroundColor: "#ffffff",
-    "& .MuiOutlinedInput-root": {
+    tableArea: {
+      flex: 1,
+      display: "flex",
+      flexDirection: "column",
+    },
+    tableShell: {
+      flex: 1,
+      border: `1px solid ${color.divider}`,
       borderRadius: "8px",
+      overflow: "hidden",
+      display: "flex",
+      flexDirection: "column",
     },
-  },
-  rowsScroll: {
-    flex: 1,
-    overflowY: "auto",
-    maxHeight: "400px",
-  },
-  bodyTable: {
-    "& .MuiTableCell-root": {
-      borderBottom: "1px solid #f0f0f0",
-      padding: "12px 16px",
+    headerTable: {
+      backgroundColor: color.bg,
+      "& .MuiTableCell-head": {
+        fontWeight: "600",
+        color: color.text,
+        borderBottom: `2px solid ${color.divider}`,
+      },
     },
-  },
-  tableRow: {
-    cursor: 'pointer',
-    transition: 'background-color 0.2s ease',
-    "&:hover": {
-      backgroundColor: "#e3f2fd",
+    searchBar: {
+      padding: "1rem",
+      backgroundColor: color.bg,
+      borderBottom: `1px solid ${color.divider}`,
     },
-    "&:nth-child(even)": {
-      backgroundColor: "#fafafa",
+    searchField: {
+      backgroundColor: color.paper,
+      "& .MuiOutlinedInput-root": {
+        borderRadius: "8px",
+      },
     },
-    "&:nth-child(even):hover": {
-      backgroundColor: "#e3f2fd",
+    rowsScroll: {
+      flex: 1,
+      overflowY: "auto",
+      maxHeight: "400px",
     },
-  },
-  taskName: {
-    fontWeight: "500",
-    color: "#2c3e50",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-  },
-  taskPayload: {
-    color: "#6c757d",
-    fontSize: "0.9rem",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    fontFamily: "monospace",
-    backgroundColor: "#f8f9fa",
-    padding: "4px 8px",
-    borderRadius: "4px",
-    border: "1px solid #e9ecef",
-  },
-  actionsContainer: {
-    display: "flex",
-    gap: "4px",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  paginationBar: {
-    borderTop: "1px solid #e0e0e0",
-    backgroundColor: "#f8f9fa",
-    "& .MuiTablePagination-toolbar": {
-      paddingLeft: "1rem",
-      paddingRight: "1rem",
+    bodyTable: {
+      "& .MuiTableCell-root": {
+        borderBottom: `1px solid ${color.divider}`,
+        padding: "12px 16px",
+      },
     },
-  },
-});
+    tableRow: {
+      cursor: "pointer",
+      transition: "background-color 0.2s ease",
+      "&:hover": {
+        backgroundColor: `rgba(var(${color.primaryMainChannel}) / 0.08)`,
+      },
+      "&:nth-child(even)": {
+        backgroundColor: `rgba(var(${color.primaryMainChannel}) / 0.03)`,
+      },
+      "&:nth-child(even):hover": {
+        backgroundColor: `rgba(var(${color.primaryMainChannel}) / 0.08)`,
+      },
+    },
+    taskName: {
+      fontWeight: "500",
+      color: color.text,
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+    },
+    taskPayload: {
+      color: color.textMuted,
+      fontSize: "0.9rem",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      fontFamily: "monospace",
+      backgroundColor: color.bg,
+      padding: "4px 8px",
+      borderRadius: "4px",
+      border: `1px solid ${color.divider}`,
+    },
+    actionsContainer: {
+      display: "flex",
+      gap: "4px",
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    paginationBar: {
+      borderTop: `1px solid ${color.divider}`,
+      backgroundColor: color.bg,
+      "& .MuiTablePagination-toolbar": {
+        paddingLeft: "1rem",
+        paddingRight: "1rem",
+      },
+    },
+  })();
+};

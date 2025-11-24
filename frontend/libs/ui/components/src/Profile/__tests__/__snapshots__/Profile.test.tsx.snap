@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`<Profile /> > renders correctly and matches snapshot 1`] = `
+exports[`<Profile /> > matches snapshot 1`] = `
 <DocumentFragment>
   <div
     data-testid="mui-box"
@@ -35,36 +35,93 @@ exports[`<Profile /> > renders correctly and matches snapshot 1`] = `
         data-testid="mui-stack"
       >
         <div
-          data-testid="mui-box"
+          data-testid="mui-grid"
         >
           <div
-            data-testid="typography-body2"
+            data-testid="mui-grid"
           >
-            pages.profile.firstName
+            <div
+              data-testid="mui-box"
+            >
+              <div
+                data-testid="typography-body2"
+              >
+                pages.profile.firstName
+              </div>
+              <input
+                type="text"
+                value="Alice"
+              />
+            </div>
           </div>
-          <input
-            disabled=""
-            type="text"
-            value="John"
-          />
+          <div
+            data-testid="mui-grid"
+          >
+            <div
+              data-testid="mui-box"
+            >
+              <div
+                data-testid="typography-body2"
+              >
+                pages.profile.lastName
+              </div>
+              <input
+                type="text"
+                value="Smith"
+              />
+            </div>
+          </div>
         </div>
         <div
           data-testid="mui-box"
         >
           <div
-            data-testid="typography-body2"
+            data-testid="mui-box"
           >
-            pages.profile.lastName
+            <div
+              data-testid="typography-body2"
+            >
+              pages.profile.preferredLanguage
+            </div>
+            <div
+              data-testid="mui-box"
+            >
+              <select
+                data-testid="ui-dropdown"
+              >
+                <option
+                  value="he"
+                >
+                  languages.hebrew
+                </option>
+                <option
+                  value="en"
+                >
+                  languages.english
+                </option>
+              </select>
+            </div>
           </div>
-          <input
-            disabled=""
-            type="text"
-            value="Doe"
-          />
-        </div>
-        <div
-          data-testid="mui-box"
-        >
+          <div
+            data-testid="mui-box"
+          >
+            <div
+              data-testid="typography-body2"
+            >
+              pages.profile.interests
+            </div>
+            <div
+              data-testid="mui-box"
+            >
+              <input
+                type="text"
+                value=""
+              />
+            </div>
+            <div
+              data-testid="mui-box"
+            />
+          </div>
           <div
             data-testid="typography-body2"
           >
@@ -73,7 +130,7 @@ exports[`<Profile /> > renders correctly and matches snapshot 1`] = `
           <input
             disabled=""
             type="text"
-            value="john.doe@example.com"
+            value="alice@example.com"
           />
           <div
             data-testid="typography-body2"
@@ -85,8 +142,16 @@ exports[`<Profile /> > renders correctly and matches snapshot 1`] = `
       <div
         data-testid="mui-box"
       >
-        <button>
-          pages.profile.edit
+        <button
+          disabled=""
+        >
+          pages.profile.saveChanges
+        </button>
+        <button
+          data-variant="outlined"
+          disabled=""
+        >
+          pages.profile.cancel
         </button>
       </div>
     </div>

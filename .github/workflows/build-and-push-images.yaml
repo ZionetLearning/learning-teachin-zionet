@@ -1,4 +1,4 @@
-name: For Full CICD - Build and push images
+name: Backend - Build and push images
 
 on:
   workflow_call:
@@ -16,6 +16,9 @@ on:
       image_tag:
         description: "The generated image tag (commit hash)"
         value: ${{ jobs.generate_tag.outputs.image_tag }}
+
+permissions:
+  contents: read
 
 jobs:
   generate_tag:
@@ -54,7 +57,7 @@ jobs:
             dockerfile: backend/ContainerApp/Engine/Dockerfile
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Azure Login via OIDC
         uses: azure/login@v2

@@ -1,12 +1,32 @@
 import { useStyles } from "./style";
 import { Header, Description, Game } from "./components";
-export const WordOrderGame = () => {
+
+export interface RetryData {
+  exerciseId: string;
+  correctAnswer: string[];
+  mistakes: Array<{
+    attemptId: string;
+    wrongAnswer: string[];
+    accuracy: number;
+    createdAt: string;
+  }>;
+  difficulty: number;
+}
+
+interface WordOrderGameProps {
+  retryData?: RetryData;
+}
+
+export const WordOrderGame = ({ retryData }: WordOrderGameProps) => {
   const classes = useStyles();
+
   return (
     <div className={classes.container}>
-      <Header />
-      <Description />
-      <Game />
+      <div className={classes.headerSection}>
+        <Header />
+        <Description />
+      </div>
+      <Game retryData={retryData} />
     </div>
   );
 };

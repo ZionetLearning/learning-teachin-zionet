@@ -1,5 +1,4 @@
-﻿
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace Accessor.Models.Users;
 
@@ -14,4 +13,9 @@ public class UserData
     public required Role Role { get; set; }
     public SupportedLanguage PreferredLanguageCode { get; set; }
     public HebrewLevel? HebrewLevelValue { get; set; }
+    public List<string> Interests { get; set; } = [];
+    public string? AvatarPath { get; set; }
+    public string? AvatarContentType { get; set; }
+    public DateTime? AvatarUpdatedAtUtc { get; set; }
+    public string? AcsUserId { get; set; }
 }

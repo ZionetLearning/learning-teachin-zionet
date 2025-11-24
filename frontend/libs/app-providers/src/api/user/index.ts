@@ -21,6 +21,7 @@ export interface UpdateUserInput {
   role?: string;
   hebrewLevelValue?: HebrewLevelValue;
   preferredLanguageCode?: PreferredLanguageCode;
+  interests?: string[];
 }
 
 export const mapUser = (dto: UserDto): User => ({
@@ -113,6 +114,7 @@ export const useUpdateUserByUserId = (
         role: existingUser?.role || "student", // Preserve the role or default to student
         hebrewLevelValue: updated.hebrewLevelValue,
         preferredLanguageCode: updated.preferredLanguageCode,
+        interests: updated.interests,
       };
       // Update the cache with the correct structure
       qc.setQueryData(["user", userId], updatedUserDto);
@@ -123,6 +125,26 @@ export const useUpdateUserByUserId = (
     onError: (error) => {
       console.error("Update failed:", error);
       toast.error("Failed to update profile. Please try again.");
+    },
+  });
+};
+
+export const useUpdateUserLanguage = (): UseMutationResult<
+  void,
+  Error,
+  PreferredLanguageCode
+> => {
+  return useMutation<void, Error, PreferredLanguageCode>({
+    mutationFn: async (
+      preferredLanguage: PreferredLanguageCode,
+    ): Promise<void> => {
+      await axios.put(`${import.meta.env.VITE_USERS_URL}/user/language`, {
+        preferredLanguage,
+      });
+    },
+    onError: (error) => {
+      console.error("Language update failed:", error);
+      toast.error("Failed to update language. Please try again.");
     },
   });
 };

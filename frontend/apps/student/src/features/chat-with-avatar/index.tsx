@@ -1,5 +1,8 @@
 import { useEffect, useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { IconButton } from "@mui/material";
+import VolumeUpIcon from "@mui/icons-material/VolumeUp";
+import VolumeOffIcon from "@mui/icons-material/VolumeOff";
 import { useAvatarSpeech, useChat } from "@student/hooks";
 import { ReactChatElements } from "@student/components";
 import { ChatHistory } from "./components";
@@ -10,9 +13,9 @@ import { useStyles } from "./style";
 export const ChatWithAvatar = () => {
   const classes = useStyles();
   const { t, i18n } = useTranslation();
-  const { 
-    sendMessage, 
-    loading, 
+  const {
+    sendMessage,
+    loading,
     messages,
     allChats,
     isLoadingChats,
@@ -21,55 +24,157 @@ export const ChatWithAvatar = () => {
     loadChatHistory,
     loadHistoryIntoMessages,
     startNewChat,
-    threadId
+    threadId,
+    currentStage,
+    currentToolCall,
   } = useChat();
+
+  const { currentVisemeSrc, speak, stop, isPlaying, toggleMute, isMuted } =
+    useAvatarSpeech({ lipsArray });
+
   const [text, setText] = useState("");
   const [showSidebar, setShowSidebar] = useState(false);
-  const [lastHistoryLoadTime, setLastHistoryLoadTime] = useState<number>(0);
-  const { currentVisemeSrc, speak } = useAvatarSpeech({ lipsArray });
   const lastSpokenTextRef = useRef<string | null>(null);
-  const isRTL = i18n.language === 'he';
+  const lastUnmuteTimeRef = useRef<number>(0);
+  const suppressSpeechUntilUserMessageRef = useRef<boolean>(false);
 
-  useEffect(() => {
-    const now = Date.now();
-    const isRecentHistoryLoad = now - lastHistoryLoadTime < 1000;
+  const [visibleTool, setVisibleTool] = useState<string>(""); // state to show current tool call
+  const lingerMs = 1200; // delayed in 1200 ms so we can see the tool call after tool ends
+  const hideTimerRef = useRef<number | null>(null);
 
-    if (isRecentHistoryLoad) return;
-    
-    const last = messages[messages.length - 1];
-    if (
-      last?.position === "left" &&
-      last.text &&
-      last.text !== lastSpokenTextRef.current &&
-      messages.length > 0
-    ) {
-      speak(last.text);
-      lastSpokenTextRef.current = last.text;
-    }
-  }, [messages, speak, lastHistoryLoadTime]);
-  
-  useEffect(() => {
-    if (chatHistory && chatHistory.messages.length > 0) {
-      setLastHistoryLoadTime(Date.now());
-      loadHistoryIntoMessages();
-    }
-  }, [chatHistory, loadHistoryIntoMessages]);
+  const isRTL = i18n.language === "he";
 
-  const handleSend = () => {
+  useEffect(
+    function handleToolCallStart() {
+      if (currentStage === "Tool" && currentToolCall) {
+        if (hideTimerRef.current) {
+          window.clearTimeout(hideTimerRef.current);
+          hideTimerRef.current = null;
+        }
+        setVisibleTool(currentToolCall);
+      }
+    },
+    [currentStage, currentToolCall],
+  );
+
+  useEffect(
+    function handleToolCallEnd() {
+      if (currentStage !== "Tool" && visibleTool) {
+        if (hideTimerRef.current) {
+          window.clearTimeout(hideTimerRef.current);
+        }
+        hideTimerRef.current = window.setTimeout(() => {
+          setVisibleTool("");
+          hideTimerRef.current = null;
+        }, lingerMs);
+      }
+      return () => {
+        if (hideTimerRef.current) {
+          window.clearTimeout(hideTimerRef.current);
+          hideTimerRef.current = null;
+        }
+      };
+    },
+    [currentStage, visibleTool],
+  );
+
+  useEffect(
+    function handleAvatarSpeech() {
+      const now = Date.now();
+      const isRecentUnmute = now - lastUnmuteTimeRef.current < 500;
+
+      if (suppressSpeechUntilUserMessageRef.current) return;
+      if (isRecentUnmute) return;
+      if (isLoadingHistory) return;
+      if (isMuted) return;
+
+      const last = messages[messages.length - 1];
+
+      if (
+        last?.position === "left" &&
+        last.text &&
+        last.text !== lastSpokenTextRef.current
+      ) {
+        if (isPlaying) {
+          stop().then(() => {
+            speak(last.text);
+            lastSpokenTextRef.current = last.text;
+          });
+        } else {
+          speak(last.text);
+          lastSpokenTextRef.current = last.text;
+        }
+      }
+    },
+    [messages, speak, stop, isPlaying, isMuted, isLoadingHistory],
+  );
+
+  useEffect(
+    function handleChatHistoryLoad() {
+      if (chatHistory && chatHistory.messages.length > 0) {
+        lastSpokenTextRef.current = null;
+        loadHistoryIntoMessages();
+        suppressSpeechUntilUserMessageRef.current = true;
+      } else if (chatHistory && chatHistory.messages.length === 0) {
+        suppressSpeechUntilUserMessageRef.current = true;
+      }
+    },
+    [chatHistory, loadHistoryIntoMessages],
+  );
+
+  const handleSend = async () => {
     if (!text.trim()) return;
+
+    // Stop current speech when user sends a new message
+    if (isPlaying) {
+      await stop();
+    }
+
+    suppressSpeechUntilUserMessageRef.current = false;
+
     sendMessage(text);
     setText("");
   };
 
-  const handleChatSelect = (chatId: string) => {
-    setLastHistoryLoadTime(Date.now());
+  const handleMuteToggle = async () => {
+    // If currently playing and about to mute, stop the speech
+    if (!isMuted && isPlaying) {
+      await stop();
+    }
+
+    if (isMuted) {
+      lastUnmuteTimeRef.current = Date.now();
+    }
+
+    toggleMute();
+  };
+
+  const handleChatSelect = async (chatId: string) => {
+    // Stop current speech when switching chats
+    if (isPlaying) {
+      await stop();
+    }
+
+    suppressSpeechUntilUserMessageRef.current = true;
+
+    // Clear spoken text reference for new chat
     lastSpokenTextRef.current = null;
+
     loadChatHistory(chatId);
     setShowSidebar(false);
   };
 
-  const handleNewChat = () => {
+  const handleNewChat = async () => {
+    // Stop current speech when starting new chat
+    if (isPlaying) {
+      await stop();
+    }
+
+    suppressSpeechUntilUserMessageRef.current = true;
+
+    // Clear references for new chat
     lastSpokenTextRef.current = null;
+
     startNewChat();
     setShowSidebar(false);
   };
@@ -83,7 +188,7 @@ export const ChatWithAvatar = () => {
   };
 
   return (
-    <div className={classes.chatWrapper} dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className={classes.chatWrapper} dir={isRTL ? "rtl" : "ltr"}>
       <ChatHistory
         allChats={allChats}
         isLoadingChats={isLoadingChats}
@@ -96,9 +201,21 @@ export const ChatWithAvatar = () => {
         onCloseSidebar={handleCloseSidebar}
       />
 
-      {/* Main Chat Area */}
-      <div className={`${classes.mainContent} ${showSidebar ? classes.mainContentShifted : ''}`}>
-        {/* Avatar Section */}
+      <div
+        className={`${classes.mainContent} ${showSidebar ? classes.mainContentShifted : ""}`}
+      >
+        <IconButton
+          onClick={handleMuteToggle}
+          className={`${classes.muteButton} ${isMuted ? classes.muteButtonMuted : classes.muteButtonUnmuted}`}
+          aria-label={
+            isMuted ? t("pages.chatAvatar.unmute") : t("pages.chatAvatar.mute")
+          }
+          title={
+            isMuted ? t("pages.chatAvatar.unmute") : t("pages.chatAvatar.mute")
+          }
+        >
+          {isMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}
+        </IconButton>
         <div className={classes.wrapper}>
           <img
             src={avatar}
@@ -110,18 +227,22 @@ export const ChatWithAvatar = () => {
             alt={t("pages.chatAvatar.lips")}
             className={classes.lipsImage}
           />
+
+          {/* Tool badge - Renders even after Tool ends—until linger timeout */}
+          {!!visibleTool && (
+            <div className={classes.toolCallBadge} aria-live="polite">
+              {t("pages.chatAvatar.callingTool", { tool: visibleTool })}
+            </div>
+          )}
         </div>
-        
-        {/* Chat Messages and Input */}
+
         <div className={classes.chatElementsWrapper}>
           <ReactChatElements
             loading={loading}
             messages={messages}
-            avatarMode
             value={text}
             onChange={setText}
             handleSendMessage={handleSend}
-            handlePlay={() => speak(lastSpokenTextRef.current ?? "")}
           />
         </div>
       </div>

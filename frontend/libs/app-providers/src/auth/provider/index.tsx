@@ -146,6 +146,7 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
         firstName: data.firstName,
         lastName: data.lastName,
         role: data.role,
+        interests: data.interests,
       });
       await login(data.email, data.password);
     },
@@ -159,6 +160,20 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
     }
   }, []);
 
+  const refreshSession = useCallback(async (): Promise<boolean> => {
+    try {
+      const creds = credentials;
+      if (!creds) return false;
+      const { accessToken } = await refreshTokens();
+      const tokenRole = decodeJwtRole(accessToken) ?? creds.role;
+      persistSession(creds.email, accessToken, tokenRole);
+      return true;
+    } catch (error) {
+      console.error("Failed to refresh session:", error);
+      return false;
+    }
+  }, [credentials, refreshTokens, persistSession]);
+
   const scheduleRefresh = useCallback(
     (creds: Credentials) => {
       clearRefreshTimer();
@@ -167,16 +182,13 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
       let delay = target - now;
       if (delay < MIN_REFRESH_DELAY_MS) delay = MIN_REFRESH_DELAY_MS;
       refreshTimerRef.current = window.setTimeout(async () => {
-        try {
-          const { accessToken } = await refreshTokens();
-          const tokenRole = decodeJwtRole(accessToken) ?? creds.role;
-          persistSession(creds.email, accessToken, tokenRole);
-        } catch {
+        const success = await refreshSession();
+        if (!success) {
           clearSession();
         }
       }, delay);
     },
-    [clearRefreshTimer, refreshTokens, persistSession, clearSession],
+    [clearRefreshTimer, refreshSession, clearSession],
   );
 
   useEffect(() => {
@@ -207,6 +219,7 @@ export const AuthProvider = ({ children, appRole }: AuthProviderProps) => {
         login,
         signup,
         logout,
+        refreshSession,
         accessToken: credentials?.accessToken ?? null,
         loginStatus: {
           isLoading:

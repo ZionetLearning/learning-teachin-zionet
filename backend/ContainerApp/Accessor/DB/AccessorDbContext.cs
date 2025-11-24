@@ -2,8 +2,13 @@ using Accessor.DB.Configurations;
 using Accessor.Models;
 using Microsoft.EntityFrameworkCore;
 using Accessor.Models.Users;
-using Microsoft.EntityFrameworkCore.Diagnostics;
+using Accessor.Models.Games;
 using Accessor.Models.Prompts;
+using Accessor.Models.Classes;
+using Accessor.Models.WordCards;
+using Accessor.Models.Meetings;
+using Accessor.Models.GameConfiguration;
+using Accessor.Models.Achievements;
 
 namespace Accessor.DB;
 
@@ -19,15 +24,23 @@ public class AccessorDbContext : DbContext
     public DbSet<UserModel> Users { get; set; } = default!;
     public DbSet<PromptModel> Prompts { get; set; } = default!;
     public DbSet<TeacherStudent> TeacherStudents { get; set; } = default!;
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        optionsBuilder.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
-        base.OnConfiguring(optionsBuilder);
-    }
+    public DbSet<GameAttempt> GameAttempts { get; set; } = default!;
+    public DbSet<Class> Class { get; set; } = default!;
+    public DbSet<ClassMembership> ClassMembership { get; set; } = default!;
+    public DbSet<WordCardModel> WordCards { get; set; } = default!;
+    public DbSet<MeetingModel> Meetings { get; set; } = default!;
+    public DbSet<UserGameConfig> UserGameConfigs { get; set; } = default!;
+    public DbSet<AchievementModel> Achievements { get; set; } = default!;
+    public DbSet<UserAchievementModel> UserAchievements { get; set; } = default!;
+    public DbSet<UserProgressModel> UserProgress { get; set; } = default!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.ApplyConfiguration(new ClassesConfiguration());
+        modelBuilder.ApplyConfiguration(new ClassMembershipConfiguration());
+
+        modelBuilder.ApplyConfiguration(new GameAttemptsConfiguration());
+
         // Users table
         modelBuilder.ApplyConfiguration(new UsersConfiguration());
 
@@ -92,6 +105,20 @@ public class AccessorDbContext : DbContext
 
             entity.HasIndex(e => e.PromptKey);
         });
+
+        // Word cards table
+        modelBuilder.ApplyConfiguration(new WordCardsConfiguration());
+
+        // Meetings table
+        modelBuilder.ApplyConfiguration(new MeetingsConfiguration());
+
+        // User game configuration table
+        modelBuilder.ApplyConfiguration(new UserGameConfigConfiguration());
+
+        // Achievements tables
+        modelBuilder.ApplyConfiguration(new AchievementsConfiguration());
+        modelBuilder.ApplyConfiguration(new UserAchievementsConfiguration());
+        modelBuilder.ApplyConfiguration(new UserProgressConfiguration());
 
         base.OnModelCreating(modelBuilder);
     }

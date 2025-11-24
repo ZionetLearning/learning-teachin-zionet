@@ -5,10 +5,11 @@ run-name: >
     github.event.inputs.environment_name || 'custom' 
   }} | GitHub Env: ${{ github.event.inputs.environment }}
 
+permissions:
+  id-token: write
+  contents: read
+
 on:
-  # push:
-  #  branches:
-  #    - main
     workflow_dispatch:
       inputs:
         environment:
@@ -41,11 +42,13 @@ on:
           default: false
           
 jobs:
+  validate-authorization:
+    uses: ./.github/workflows/validate-confirmation.yaml
+    secrets: inherit
+
   build-and-push-images:
+    needs: validate-authorization
     uses: ./.github/workflows/build-and-push-images.yaml
-    permissions:
-      id-token: write
-      contents: read
     with:
       environment: ${{ github.event.inputs.environment }}
       environment_name: ${{ github.event.inputs.environment_name }}
@@ -53,10 +56,8 @@ jobs:
     secrets: inherit
  
   terraform-apply:
+    needs: [validate-authorization]
     uses: ./.github/workflows/terraform-apply.yaml
-    permissions:
-      id-token: write
-      contents: read
     with:
       environment_name: ${{ github.event.inputs.environment_name }}
       environment: ${{ github.event.inputs.environment }}
@@ -67,53 +68,26 @@ jobs:
     if: ${{ github.event.inputs.environment_name == 'dev' || github.event.inputs.environment_name == 'prod' }}
     needs: [build-and-push-images, terraform-apply]
     uses: ./.github/workflows/aks-kubectl-apply.yaml
-    permissions:
-      id-token: write
-      contents: read
     with:
-      environment_name: ${{ github.event.inputs.environment_name }}
       environment: ${{ github.event.inputs.environment }}
     secrets: inherit
    
   helmcharts-setup:
     needs: [build-and-push-images, terraform-apply, aks-kubectl-apply]
-    if: ${{ always() && contains(fromJson('["success","skipped"]'), needs.aks-kubectl-apply.result) }}
+    if: ${{ always() && needs.terraform-apply.result == 'success' && contains(fromJson('["success","skipped"]'), needs.aks-kubectl-apply.result) }}
     uses: ./.github/workflows/aks-helmcharts.yaml
-    permissions:
-      id-token: write
-      contents: read
     with:
       environment_name: ${{ github.event.inputs.environment_name }}
       environment: ${{ github.event.inputs.environment }}
       image_tag: ${{ needs.build-and-push-images.outputs.image_tag }}
       skip_infra_steps: false
-      use_keda: ${{ fromJSON(github.event.inputs.use_keda) }}
-    secrets: inherit
-
-  keda-setup:
-    needs: [aks-kubectl-apply, helmcharts-setup]
-    if: ${{ always() && contains(fromJson('["success","skipped"]'), needs.aks-kubectl-apply.result) && inputs.use_keda == true }}
-    uses: ./.github/workflows/aks-keda.yaml
-    permissions:
-      id-token: write
-      contents: read
-    with:
-      environment_name: ${{ github.event.inputs.environment_name }}
-      environment: ${{ github.event.inputs.environment }}
-      skip_infra_steps: true
-      use_chart: false
     secrets: inherit
  
   deploy-frontend:
     if: ${{ github.event.inputs.environment_name == 'dev' || github.event.inputs.frontend_apps == 'all' }}
     needs: [terraform-apply]
-    uses: ./.github/workflows/deploy-frontend.yaml
-    permissions:
-      id-token: write
-      contents: read
+    uses: ./.github/workflows/frontend-pipeline.yaml
     with:
       environment: ${{ github.event.inputs.environment }}
       environment_name: ${{ github.event.inputs.environment_name }}
-      deployment_token: ${{ needs.terraform-apply.outputs.static_web_app_api_keys }}
-      app_insights_connection_string: ${{ needs.terraform-apply.outputs.application_insights_connection_strings }}
     secrets: inherit

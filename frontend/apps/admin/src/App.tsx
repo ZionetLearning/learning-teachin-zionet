@@ -8,7 +8,10 @@ import {
   HomePage,
   UsersPage,
   ProfilePage,
-  TasksPage
+  TasksPage,
+  StudentPracticeHistoryPage,
+  OnlineUsersPage,
+  ClassesPage,
 } from "./pages";
 import "./App.css";
 import { AppRole } from "@app-providers";
@@ -38,8 +41,14 @@ function App() {
         <Route element={<ProtectedLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/users" element={<UsersPage />} />
+          <Route path="/online-users" element={<OnlineUsersPage />} />
           <Route path="/tasks" element={<TasksPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route
+            path="/student-practice-history"
+            element={<StudentPracticeHistoryPage />}
+          />
+          <Route path="/classes" element={<ClassesPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

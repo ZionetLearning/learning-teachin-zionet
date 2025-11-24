@@ -2,9 +2,9 @@
 using Manager.Constants;
 using Manager.Helpers;
 using Manager.Models.Auth;
-using Manager.Models.Auth.Erros;
+using Manager.Models.Auth.Errors;
 using Manager.Services;
-using Manager.Services.Clients.Accessor;
+using Manager.Services.Clients.Accessor.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Manager.Endpoints;

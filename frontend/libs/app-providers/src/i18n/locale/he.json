@@ -1,5 +1,11 @@
 {
   "translation": {
+    "common": {
+      "loading": "טוען…",
+      "error": "שגיאה",
+      "tryAgain": "נסה שוב.",
+      "updating": "מעדכן…"
+    },
     "pages": {
       "auth": {
         "welcomeToLearningTeachinZionet": "Learning-Teachin-Zionet-ברוכים הבאים ל",
@@ -16,7 +22,8 @@
         "studentDashboard": "תלמידים",
         "adminDashboard": "מנהל מערכת",
         "genericError": "משהו השתבש. אנא נסה שוב מאוחר יותר.",
-        "forbiddenRole": "אין לך הרשאה לגשת לדף זה."
+        "forbiddenRole": "אין לך הרשאה לגשת לדף זה.",
+        "interestsPlaceholder": "תחומי עניין, לדוגמה מתמטיקה, מדע, אמנות"
       },
       "home": {
         "title": "ברוכים הבאים למגרש המשחקים הפנימי שלנו",
@@ -75,7 +82,12 @@
         "chatAvatarPage": "צ'אט עם אווטאר",
         "typeMessage": "הקלד הודעה…",
         "avatar": "אווטאר",
-        "lips": "שפתיים"
+        "lips": "שפתיים",
+        "mute": "השתק",
+        "unmute": "הפעל קול",
+        "callingTool": "מפעיל כלי: {{tool}}",
+        "send": "שלח",
+        "me": "אני"
       },
       "chatHistory": {
         "title": "היסטוריית צ'אט",
@@ -140,8 +152,8 @@
         "stop": "⏹ עצור",
         "play": "▶ הפעל",
         "record": "🎤 הקלט",
-        "hideNikud": "הסתר ניקוד",
-        "showNikud": "הצג ניקוד"
+        "noData": "אין נתונים",
+        "accuracy": "דיוק"
       },
       "typingPractice": {
         "hebrewTypingPractice": "תרגול הקלדה בעברית",
@@ -204,7 +216,8 @@
           "completed": "השלמת {{correct}} משפטים נכונים מתוך {{total}}.",
           "whatNext": "מה תרצה לעשות כעת?",
           "playAgain": "משחק חדש",
-          "changeSettings": "שינוי הגדרות משחק"
+          "changeSettings": "שינוי הגדרות משחק",
+          "viewMyMistakes": "צפה בטעויות שלי"
         },
         "title": "משחק סידור מילים",
         "subTitle": "סדר את המילים בסדר הנכון",
@@ -215,10 +228,28 @@
         "next": "הבא",
         "playAudio": "הפעל קטע אודיו",
         "playAudioSlowly": "הפעל קטע אודיו במהירות איטית (0.6x)",
+        "playSentence": "השמע משפט",
         "cancel": "בטל",
         "close": "סגור",
         "yes": "כן",
-        "no": "לא"
+        "no": "לא",
+        "correct": "נכון!",
+        "incorrect": "לא נכון. נסה שוב.",
+        "accuracy": "דיוק",
+        "wordBankTitle": "מאגר מילים",
+        "wordBankHint": "לחץ על מילה כדי להוסיף אותה למשפט",
+        "explainMistake": "הסבר טעות",
+        "yourLastWrongAnswer": "התשובה השגויה האחרונה שלך:"
+      },
+      "retryResultModal": {
+        "successTitle": "🎉 מעולה!",
+        "failureTitle": "המשך לנסות!",
+        "successMessage": "תיקנת את הטעות!",
+        "failureMessage": "לא בדיוק נכון הפעם.",
+        "successDescription": "כל הכבוד! תיקנת בהצלחה את הטעות הזו. אתה יכול לתרגל עוד טעויות או לנסות שוב את זו.",
+        "failureDescription": "אל תדאג! למידה דורשת תרגול. אתה יכול לנסות שוב או לעבור לטעויות אחרות.",
+        "tryAgain": "נסה שוב",
+        "backToMistakes": "חזור לטעויות"
       },
       "earthquakeMap": {
         "title": "מפת רעידות אדמה",
@@ -310,7 +341,11 @@
         "posting": "שולח...",
         "send": "שלח",
         "noNotifications": "אין התראות",
-        "notifications": "התראות"
+        "notifications": "התראות",
+        "reconnects": "חיבורים מחדש",
+        "errors": "שגיאות",
+        "signalRStatus": "סטטוס SignalR",
+        "noEventsYet": "עדיין אין אירועי SignalR."
       },
       "users": {
         "createUsers": "צור משתמשים",
@@ -343,6 +378,20 @@
         "actions": "פעולות",
         "searchPlaceholder": "חפש לפי אימייל, שם פרטי, שם משפחה...",
         "clear": "נקה",
+        "onlineUsersTitle": "משתמשים מקוונים",
+        "onlineUsersSubtitle": "תצוגה בזמן אמת של משתמשים פעילים במערכת",
+        "signalRStatus": "SignalR",
+        "loadingOnlineUsers": "טוען משתמשים מקוונים...",
+        "errorLoadingOnlineUsers": "שגיאה בטעינת משתמשים מקוונים",
+        "errorLoadingOnlineUsersSubtext": "אנא נסה לרענן את הדף או בדוק את החיבור שלך.",
+        "noUsersOnline": "אין משתמשים מקוונים",
+        "noUsersOnlineSubtext": "משתמשים יופיעו כאן כשהם יתחברו למערכת",
+        "user": "משתמש",
+        "status": "סטטוס",
+        "connections": "חיבורים",
+        "online": "מקוון",
+        "unknown": "לא ידוע",
+        "connection": "חיבור",
         "rowsPerPage": "שורות בעמוד:",
         "page": "עמוד:",
         "of": "של",
@@ -359,7 +408,23 @@
         "emailCannotBeChanged": "דואר אלקטרוני לא ניתן לשינוי",
         "edit": "עריכה",
         "saveChanges": "שמור שינויים",
-        "cancel": "ביטול"
+        "cancel": "ביטול",
+        "interests": "תחומי עניין",
+        "avatar": {
+          "upload": "העלה תמונת פרופיל",
+          "delete": "מחק תמונת פרופיל",
+          "confirmDelete": "האם אתה בטוח שברצונך למחוק את תמונת הפרופיל שלך?",
+          "invalidType": "אנא בחר תמונה בפורמט PNG או JPEG.",
+          "fileTooLarge": "גודל הקובץ חייב להיות פחות מ-1MB.",
+          "uploadTimeout": "זמן ההעלאה פג. אנא בדוק את החיבור שלך ונסה שוב.",
+          "uploadForbidden": "הרשאת העלאה נדחתה. אנא נסה שוב מאוחר יותר.",
+          "noConnection": "אין חיבור לאינטרנט. אנא בדוק את הרשת שלך.",
+          "uploadFailed": "ההעלאה נכשלה: {{error}}",
+          "uploadFailedGeneric": "נכשל בהעלאת תמונת הפרופיל. אנא נסה שוב.",
+          "uploadSuccess": "תמונת הפרופיל הועלתה בהצלחה!",
+          "deleteSuccess": "תמונת הפרופיל נמחקה בהצלחה!",
+          "deleteFailed": "נכשל במחיקת תמונת הפרופיל. אנא נסה שוב."
+        }
       },
       "tasks": {
         "title": "ניהול משימות",
@@ -410,6 +475,207 @@
           "taskNameMinLength": "שם המשימה חייב להכיל לפחות 2 תווים",
           "taskNameMaxLength": "שם המשימה לא יכול להכיל יותר מ-100 תווים"
         }
+      },
+      "practiceMistakes": {
+        "title": "טעויות התרגול שלי",
+        "description": "סקור ונסה שוב תרגילים שענית עליהם בעבר בצורה שגויה.",
+        "noMistakes": "אין טעויות כלל! עבודה טובה!",
+        "practiceName": "שם התרגול",
+        "difficulty": "רמת קושי",
+        "yourLastAnswer": "התשובה האחרונה שלך",
+        "lastAccuracy": "דיוק אחרון",
+        "status": "סטטוס",
+        "action": "פעולה",
+        "tryAgain": "נסה שוב!",
+        "retry": "נסה שוב",
+        "failedToLoad": "טעינת טעויות התרגול נכשלה",
+        "gameType": {
+          "WordOrder": "משחק סידור מילים",
+          "TypingPractice": "תרגול הקלדה",
+          "SpeakingPractice": "תרגול דיבור"
+        }
+      },
+      "practiceHistory": {
+        "title": "היסטוריית התרגולים שלי",
+        "description": "צפה בהיסטוריית התרגולים שלך כסיכום קצר או גש לפרטים מלאים על כל ניסיון.",
+        "failedToLoad": "טעינת היסטוריית התרגולים נכשלה.",
+        "noMistakes": "לא נמצאה היסטוריית תרגולים.",
+        "summary": "סיכום קצר",
+        "detailed": "פירוט מלא",
+        "practiceName": "שם התרגול",
+        "difficulty": "רמת קושי",
+        "attemptsCount": "מספר ניסיונות",
+        "totalSuccesses": "ניסיונות מוצלחים",
+        "totalFailures": "ניסיונות כושלים",
+        "successRate": "אחוז הצלחה",
+        "yourLastAnswer": "התשובה האחרונה שלך",
+        "accuracy": "דיוק",
+        "status": "סטטוס",
+        "date": "תאריך",
+        "succeeded": "הצלחה",
+        "failed": "כישלון",
+        "gameType": {
+          "WordOrder": "משחק סדר מילים",
+          "TypingPractice": "תרגול הקלדה",
+          "SpeakingPractice": "תרגול דיבור"
+        }
+      },
+      "studentPracticeHistory": {
+        "title": "היסטוריית תרגול תלמידים",
+        "columns": {
+          "studentName": "שם תלמיד",
+          "gameType": "סוג משחק",
+          "difficulty": "רמת קושי",
+          "attempts": "ניסיונות",
+          "successes": "הצלחות",
+          "failures": "כישלונות",
+          "successRate": "שיעור הצלחה",
+          "lastAttemptTime": "זמן ניסיון אחרון",
+          "metrics": "מדדים"
+        },
+        "loading": "טוען...",
+        "failedToLoad": "הטעינה נכשלה:",
+        "noDataFound": "לא נמצאו נתונים.",
+        "rowsPerPage": "שורות בעמוד:",
+        "of": "מתוך",
+        "filters": {
+          "gameType": "סוג משחק",
+          "difficulty": "רמת קושי",
+          "all": "הכל",
+          "student": "תלמיד",
+          "from": "מתאריך",
+          "to": "עד תאריך",
+          "clear": "נקה",
+          "resetAll": "איפוס מסננים"
+        },
+        "exportPage": "ייצוא (עמוד)",
+        "exportCurrentPage": "ייצוא את העמוד הנוכחי"
+      },
+      "wordCards": {
+        "title": "כרטיסיות מילים",
+        "buildYourOwnWordDescription": "בנה לעצמך רשימת מילים ותרגל אוצר מילים בעברית–אנגלית.",
+        "addNewWordsDescription": "הוסף מילים חדשות, עיין באוסף שלך, וסמן את המילים שכבר למדת.",
+        "tipHelperNote": "<0>טיפ:</0> אפשר גם <1>לבחור כל מילה בעברית באתר</1>. תופיע חלונית קטנה שתאפשר להוסיף אותה ישירות לכרטיסיות שלך.",
+        "hideLearnedWords": "הסתר מילים שנלמדו",
+        "addCard": "הוסף כרטיסיה",
+        "loadingCards": "טוען כרטיסיות…",
+        "failedToLoad": "נכשל בטעינת כרטיסיות המילים.",
+        "noWordCardsYet": "אין עדיין כרטיסיות מילים.",
+        "clickAddCardOrSelect": "לחץ על ”הוסף כרטיסיה” או בחר מילה בעברית בכל מקום באפליקציה כדי ליצור אחת.",
+        "addTranslation": "הוסף תרגום",
+        "hebrewWord": "מילה בעברית",
+        "englishTranslation": "תרגום לאנגלית",
+        "typeTheEnglishTranslation": "הקלד את התרגום לאנגלית...",
+        "hebrew": "עברית",
+        "english": "אנגלית",
+        "enterTheHebrewWord": "הקלד את המילה בעברית...",
+        "enterTheEnglishTranslation": "הקלד את התרגום לאנגלית...",
+        "cancel": "ביטול",
+        "save": "שמור",
+        "saving": "שומר...",
+        "markAsLearned": "סמן כנלמד",
+        "markAsUnlearned": "סמן כלא נלמד",
+        "learned": "נלמד",
+        "practice": "תרגול",
+        "showExplanation": "הצג הסבר",
+        "hideExplanation": "הסתר הסבר",
+        "generatingExplanation": "מייצר הסבר..."
+      },
+      "wordCardsChallenge": {
+        "title": "אתגר כרטיסי מילים",
+        "selectMode": "בחר את מצב התרגול שלך:",
+        "hebToEng": "עברית ← אנגלית",
+        "engToHeb": "אנגלית ← עברית",
+        "loading": "טוען כרטיסיות...",
+        "errorTitle": "נכשל בטעינת הכרטיסיות",
+        "errorDescription": "משהו השתבש בעת טעינת כרטיסיות המילים שלך. אנא נסה שוב מאוחר יותר.",
+        "noCardsTitle": "אין עדיין כרטיסיות מילים",
+        "noCardsDescription": "צור כמה כרטיסיות מילים כדי להתחיל לתרגל!",
+        "cardProgress": "כרטיסיה {{current}} מתוך {{total}}",
+        "translateToEnglish": "תרגם לאנגלית:",
+        "translateToHebrew": "תרגם לעברית:",
+        "typeYourAnswer": "הקלד את התשובה שלך...",
+        "submit": "שלח",
+        "correct": "✅ נכון!",
+        "wrongLabel": "❌ לא נכון. התשובה הנכונה:",
+        "gameComplete": "המשחק הסתיים!",
+        "yourScore": "הציון שלך",
+        "correctAnswers": "{{correct}} מתוך {{total}} נכונות",
+        "playAgain": "שחק שוב",
+        "switchDirection": "החלף כיוון"
+      },
+      "classes": {
+        "title": "כיתות",
+        "createClass": "צור כיתה",
+        "name": "שם",
+        "members": "משתתפים",
+        "actions": "פעולות",
+        "loading": "טוען…",
+        "loadError": "נכשל בטעינת הכיתות",
+        "noClasses": "אין כיתות עדיין",
+        "manageMembers": "ניהול משתתפים",
+        "deleteClass": "מחק כיתה",
+        "close": "סגור",
+        "allRoles": "כל התפקידים",
+        "students": "תלמידים",
+        "teachers": "מורים",
+        "searchPlaceholder": "חיפוש לפי שם / אימייל",
+        "selectAll": "בחר הכל",
+        "clear": "נקה",
+        "addSelected": "הוסף נבחרים",
+        "alreadyInClass": "כבר בקבוצה",
+        "addToClass": "הוסף לקבוצה",
+        "noUsersMatch": "לא נמצאו משתמשים התואמים לסינון.",
+        "cancel": "בטל",
+        "create": "צור",
+        "className": "שם הקבוצה",
+        "descriptionOptional": "תיאור (אופציונלי)",
+        "currentMembers": "משתתפים נוכחיים",
+        "removeSelected": "הסר נבחרים",
+        "removeFromClass": "הסר מהקבוצה",
+        "noMembersYet": "אין עדיין משתתפים בקבוצה זו.",
+        "searchByNameEmail": "חיפוש לפי שם / אימייל",
+        "my": {
+          "title": "הכיתות שלי",
+          "loadingHint": "מביא את הכיתות והחברים שלך",
+          "emptyTitle": "אין כיתות עדיין",
+          "emptySubtitle": "צור כיתה ראשונה כדי להתחיל",
+          "selectPrompt": "בחר כיתה",
+          "selectHint": "חברים ותפקידים יוצגו כאן",
+          "members": "חברים",
+          "noMembers": "אין חברים בכיתה זו.",
+          "teachers": "מורים",
+          "noTeachers": "אין מורים.",
+          "students": "תלמידים",
+          "noStudents": "אין תלמידים."
+        }
+      }
+    },
+    "mistakeChat": {
+      "title": "הסבר טעות",
+      "loadingExplanation": "טוען הסבר...",
+      "errorLoadingExplanation": "מצטערים, לא ניתן לטעון את ההסבר.",
+      "askFollowUp": "שאל שאלת המשך...",
+      "send": "שלח"
+    },
+    "contextChat": {
+      "title": "עוזר תרגול",
+      "emptyState": "שאל אותי כל שאלה על התרגיל הזה!",
+      "inputPlaceholder": "שאל שאלה...",
+      "errorMessage": "מצטער, נתקלתי בשגיאה. אנא נסה שוב.",
+      "exerciseType": {
+        "typing": "הקלדה",
+        "word-order": "סידור מילים",
+        "speaking": "דיבור",
+        "word-cards": "כרטיסיות מילים"
+      },
+      "difficulty": {
+        "0": "קל",
+        "1": "בינוני",
+        "2": "קשה",
+        "easy": "קל",
+        "medium": "בינוני",
+        "hard": "קשה"
       }
     },
     "sidebar": {
@@ -439,7 +705,19 @@
       "countryExplorer": "ספריית מדינות",
       "users": "משתמשים",
       "tasks": "משימות",
-      "profile": "פרופיל"
+      "profile": "פרופיל",
+      "myPracticeMistakes": "טעויות התרגול שלי",
+      "studentPracticeHistory": "היסטוריית תרגול",
+      "wordCards": "כרטיסיות מילים",
+      "wordCardsChallenge": "אתגר כרטיסי מילים",
+      "myLearning": "הלמידה שלי",
+      "sandbox": "ארגז חול",
+      "onlineUsers": "משתמשים מקוונים",
+      "appearance": "מראה",
+      "lightMode": "מצב בהיר",
+      "darkMode": "מצב כהה",
+      "systemDefault": "מצב מערכת",
+      "classes": "כיתות"
     },
     "errorBoundary": {
       "title": "אופס! משהו השתבש",

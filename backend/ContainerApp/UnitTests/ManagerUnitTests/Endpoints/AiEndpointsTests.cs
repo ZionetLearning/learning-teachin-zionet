@@ -1,7 +1,7 @@
 ﻿using Manager.Endpoints;
 using Manager.Models.Chat;
 using Manager.Models.Sentences;
-using Manager.Services.Clients.Accessor;
+using Manager.Services.Clients.Accessor.Interfaces;
 using Manager.Services.Clients.Engine;
 using Manager.Services.Clients.Engine.Models;
 using Microsoft.AspNetCore.Http;
@@ -120,8 +120,9 @@ public class AiEndpointsTests
     {
         var request = new SentenceRequest
         {
+            RequestId = Guid.NewGuid().ToString(),
             UserId = Guid.NewGuid(),
-            Difficulty = Difficulty.medium,
+            Difficulty = Difficulty.Medium,
             Nikud = true,
             Count = 1
         };

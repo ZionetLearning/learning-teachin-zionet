@@ -12,6 +12,7 @@ using Manager.Models;
 using Manager.Models.Auth;
 using Manager.Models.QueueMessages;
 using Manager.Models.Users;
+using Manager.Models.Meetings;
 using Manager.Services;
 using Manager.Services.Clients.Accessor;
 using Manager.Services.Clients.Engine;
@@ -25,6 +26,9 @@ using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using Manager;
+using Manager.Services.Avatars;
+using Manager.Services.Avatars.Models;
+using Manager.Services.Clients.Accessor.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,6 +46,10 @@ builder.Services.Configure<JwtSettings>(
 
 builder.Services.Configure<CorsSettings>(
     builder.Configuration.GetSection("Cors"));
+
+builder.Services
+  .AddOptions<MeetingOptions>()
+  .Bind(builder.Configuration.GetSection(MeetingOptions.SectionName));
 
 var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>()!;
 var key = Encoding.UTF8.GetBytes(jwtSettings.Secret);
@@ -97,6 +105,10 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy(PolicyNames.TeacherOnly, p =>
         p.RequireRole(Role.Teacher.ToString()));
 
+    // Admin or Student, for set interests
+    options.AddPolicy(PolicyNames.AdminOrStudent, p =>
+        p.RequireRole(Role.Admin.ToString(), Role.Student.ToString()));
+
     // Any authenticated role (handy for groups)
     options.AddPolicy(PolicyNames.AdminOrTeacherOrStudent, p =>
         p.RequireRole(Role.Admin.ToString(), Role.Teacher.ToString(), Role.Student.ToString()));
@@ -106,7 +118,15 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddControllers();
 
 builder.Services.AddControllers().AddDapr();
-var signalRBuilder = builder.Services.AddSignalR();
+var signalROptions = builder.Configuration.GetSection("SignalR");
+var keepAlive = signalROptions.GetValue("KeepAliveSeconds", 15);
+var clientTimeout = signalROptions.GetValue("ClientTimeoutSeconds", 30);
+var signalRBuilder = builder.Services.AddSignalR(o =>
+{
+    o.KeepAliveInterval = TimeSpan.FromSeconds(keepAlive);
+    o.ClientTimeoutInterval = TimeSpan.FromSeconds(clientTimeout);
+}
+);
 
 var signalRConnString = builder.Configuration["SignalR:ConnectionString"];
 if (!string.IsNullOrEmpty(signalRConnString))
@@ -134,9 +154,19 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddScoped<IAccessorClient, AccessorClient>();
+builder.Services.AddScoped<IUsersAccessorClient, UsersAccessorClient>();
+builder.Services.AddScoped<IGameAccessorClient, GameAccessorClient>();
+builder.Services.AddScoped<IMeetingAccessorClient, MeetingAccessorClient>();
 builder.Services.AddScoped<IEngineClient, EngineClient>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IOnlinePresenceService, OnlinePresenceService>();
+
+builder.Services
+  .AddOptions<AvatarsOptions>()
+  .Bind(builder.Configuration.GetSection(AvatarsOptions.SectionName));
+
+builder.Services.AddSingleton<IAvatarStorageService, AzureBlobAvatarStorageService>();
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
@@ -231,8 +261,13 @@ app.MapAiEndpoints();
 app.MapAuthEndpoints();
 app.MapTasksEndpoints();
 app.MapUsersEndpoints();
+app.MapGamesEndpoints();
 app.MapHub<NotificationHub>("/NotificationHub");
 app.MapMediaEndpoints();
+app.MapWordCardsEndpoints();
+app.MapClassesEndpoints();
+app.MapMeetingsEndpoints();
+app.MapGameConfigEndpoints();
 
 app.MapStatsPing();
 if (env.IsDevelopment())

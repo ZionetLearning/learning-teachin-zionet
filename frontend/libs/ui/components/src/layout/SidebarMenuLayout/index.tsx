@@ -1,17 +1,23 @@
 import { ReactNode } from "react";
 import { Outlet } from "react-router-dom";
-import { Box } from "@mui/material";
+import { Box, Container } from "@mui/material";
+import { useStyles } from "./style";
 
 export interface SidebarMenuLayoutProps {
   sidebarMenu: ReactNode;
 }
 
 export const SidebarMenuLayout = ({ sidebarMenu }: SidebarMenuLayoutProps) => {
+  const classes = useStyles();
+
   return (
-    <Box sx={{ display: "flex", height: "100vh" }}>
+    <Box className={classes.layout}>
       {sidebarMenu}
-      <Box sx={{ flexGrow: 1, position: "relative", overflow: "hidden" }}>
-        <Outlet />
+
+      <Box className={classes.content}>
+        <Container>
+          <Outlet />
+        </Container>
       </Box>
     </Box>
   );

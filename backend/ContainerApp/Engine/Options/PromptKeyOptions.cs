@@ -2,8 +2,13 @@ namespace Engine.Options;
 
 public sealed class PromptKeyOptions
 {
-    public string? ChatTitlePrompt { get; set; }
-    public string? SystemDefault { get; set; }
-    public string? FriendlyTone { get; set; }
-    public string? DetailedExplanation { get; set; }
+    public PromptConfiguration? ChatTitlePrompt { get; set; }
+    public PromptConfiguration? SystemDefault { get; set; }
+    public PromptConfiguration? FriendlyTone { get; set; }
+    public PromptConfiguration? DetailedExplanation { get; set; }
+    public PromptConfiguration? ExplainMistakeSystem { get; set; }
+    public PromptConfiguration? GlobalChatSystemDefault { get; set; }
+    public PromptConfiguration? GlobalChatPageContext { get; set; }
+    public PromptConfiguration? MistakeUserTemplate { get; set; }
+    public PromptConfiguration? MistakeRuleTemplate { get; set; }
 }

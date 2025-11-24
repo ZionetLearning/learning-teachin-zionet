@@ -7,6 +7,9 @@ export const initializeSentry = ({ appName }: SentryProps) => {
   const allowedOrigins = [
     /https?:\/\/teachin\.westeurope\.cloudapp\.azure\.com/,
     /https?:\/\/[a-z0-9-]+\.1\.azurestaticapps\.net/,
+    /https?:\/\/admin\.teachin\.cloudns\.pro/,
+    /https?:\/\/teacher\.teachin\.cloudns\.pro/,
+    /https?:\/\/student\.teachin\.cloudns\.pro/,
   ];
 
   Sentry.init({

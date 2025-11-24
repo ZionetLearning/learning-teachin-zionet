@@ -12,6 +12,7 @@ using DotQueue;
 using Engine;
 using Engine.Models.QueueMessages;
 using Engine.Options;
+using Engine.Constants.Chat;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +22,7 @@ builder.Configuration
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
     .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
     .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
+    .AddJsonFile("prompts.config.json", optional: false, reloadOnChange: true)
     .AddEnvironmentVariables();
 
 builder.Services.Configure<PromptKeyOptions>(builder.Configuration.GetSection("Prompts:Keys"));
@@ -39,6 +41,15 @@ builder.Services.AddSingleton<IRetryPolicyProvider, RetryPolicyProvider>();
 builder.Services.AddSingleton<IRetryPolicy, RetryPolicy>();
 builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
 builder.Services.AddSingleton<ISemanticKernelPlugin, TimePlugin>();
+builder.Services.AddScoped<IWordExplainService, WordExplainService>();
+
+builder.Services.AddScoped<ITavilySearchService, TavilySearchService>();
+builder.Services.AddSingleton<ISemanticKernelPlugin, WebSearchPlugin>();
+
+builder.Services
+    .AddOptions<TavilySettings>()
+    .Bind(builder.Configuration.GetSection("Tavily"))
+    .ValidateDataAnnotations();
 
 builder.Services.AddMemoryCache();
 builder.Services
@@ -102,15 +113,26 @@ builder.Services.AddKeyedSingleton("gen", (sp, key) =>
 
     var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("KernelGenPluginRegistration");
 
-    var dir = Path.Combine(AppContext.BaseDirectory, "Plugins", "Sentences");
+    var sentencesDir = Path.Combine(AppContext.BaseDirectory, "Plugins", "Sentences");
     try
     {
-        kb.Plugins.AddFromPromptDirectory(dir, "Sentences");
-        logger.LogInformation("Prompt plugin 'Sentences' loaded from {Dir}", dir);
+        kb.Plugins.AddFromPromptDirectory(sentencesDir, "Sentences");
+        logger.LogInformation("Prompt plugin 'Sentences' loaded from {Dir}", sentencesDir);
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "Failed to load prompt plugin from {Dir}", dir);
+        logger.LogError(ex, "Failed to load prompt plugin from {Dir}", sentencesDir);
+    }
+
+    var wordExplainDir = Path.Combine(AppContext.BaseDirectory, "Plugins", "WordExplain");
+    try
+    {
+        kb.Plugins.AddFromPromptDirectory(wordExplainDir, "WordExplain");
+        logger.LogInformation("Prompt plugin 'WordExplain' loaded from {Dir}", wordExplainDir);
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Failed to load prompt plugin from {Dir}", wordExplainDir);
     }
 
     var kernel = kb.Build();

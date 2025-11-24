@@ -1,35 +1,71 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { useStyles } from "./style";
-import { Speaker } from "../Speaker";
-import { useHebrewSentence } from "../../hooks";
-import { useAvatarSpeech } from "@student/hooks";
-import { DifficultyLevel } from "@student/types";
+import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import { CircularProgress } from "@mui/material";
 import {
-  GameConfigModal,
+  useAvatarSpeech,
+  useWordOrderSentence,
+  useGameConfig,
+} from "@student/hooks";
+import { ChosenWordsArea, WordsBank, ActionButtons, Speaker } from "../";
+import {
   GameConfig,
+  GameConfigModal,
   GameOverModal,
-  WelcomeScreen,
-  GameHeaderSettings,
-  ChosenWordsArea,
-  WordsBank,
-  SideButtons,
-} from "../";
+  GameSettings,
+  GameSetupPanel,
+  RetryResultModal,
+} from "@ui-components";
+import {
+  ContextAwareChat,
+  useWordOrderContext,
+} from "@ui-components/ContextAwareChat";
+import { MistakeChatPopup, WrongAnswerDisplay } from "@student/components";
+import { getDifficultyLabel, RetryData } from "@student/features";
+import { useAuth } from "@app-providers";
+import { useSubmitGameAttempt } from "@student/api";
+import { useStyles } from "./style";
+import { toast } from "react-toastify";
 
-export const Game = () => {
+interface GameProps {
+  retryData?: RetryData;
+}
+
+export const Game = ({ retryData }: GameProps) => {
+  const { user } = useAuth();
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const classes = useStyles();
+
+  const studentId = user?.userId ?? "";
+  const { mutateAsync: submitAttempt } = useSubmitGameAttempt();
+  const {
+    config: savedConfig,
+    isLoading: configLoading,
+    updateConfig,
+  } = useGameConfig("WordOrder");
+
   const [chosen, setChosen] = useState<string[]>([]);
   const [shuffledSentence, setShuffledSentence] = useState<string[]>([]);
-  const [isCorrect, setIsCorrect] = useState<boolean>(false);
   const [configModalOpen, setConfigModalOpen] = useState(false);
   const [gameOverModalOpen, setGameOverModalOpen] = useState(false);
   const [gameConfig, setGameConfig] = useState<GameConfig | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
   const [correctSentencesCount, setCorrectSentencesCount] = useState<number>(0);
-  const isHebrew = i18n.language === "he" || i18n.language === "heb";
+  const [hasCheckedThisSentence, setHasCheckedThisSentence] = useState(false);
+  const [lastCheckWasIncorrect, setLastCheckWasIncorrect] = useState(false);
+  const [mistakeChatOpen, setMistakeChatOpen] = useState(false);
+  const [currentAttemptId, setCurrentAttemptId] = useState<string>("");
+  const [isRetryMode] = useState(!!retryData);
+  const [retryResultModalOpen, setRetryResultModalOpen] = useState(false);
+  const [retryResult, setRetryResult] = useState<boolean | null>(null);
+
+  const isHebrew = i18n.language === "he";
 
   const {
+    attemptId,
     sentence,
     words,
     loading,
@@ -39,140 +75,27 @@ export const Game = () => {
     resetGame,
     sentenceCount,
     currentSentenceIndex,
-  } = useHebrewSentence(gameConfig || undefined);
+  } = useWordOrderSentence(gameConfig || undefined);
 
   const { speak, stop, isLoading: speechLoading } = useAvatarSpeech({});
 
-  // Show config modal on first load
-  useEffect(() => {
-    if (!gameStarted && !gameConfig) {
-      setConfigModalOpen(true);
-    }
-  }, [gameStarted, gameConfig]);
+  useEffect(
+    function initializeGameConfig() {
+      if (isRetryMode || gameConfig || configLoading) return;
 
-  // Initialize game when config is set
-  useEffect(() => {
-    if (gameConfig && !gameStarted) {
-      initOnce();
-      setGameStarted(true);
-    }
-  }, [gameConfig, gameStarted, initOnce]);
-
-  // Handle new sentences
-  useEffect(() => {
-    const handleNewSentence = () => {
-      if (!sentence || words.length === 0) {
-        return;
+      if (savedConfig) {
+        setGameConfig(savedConfig);
+        if (configModalOpen) {
+          setConfigModalOpen(false);
+        }
+      } else {
+        setConfigModalOpen(true);
       }
-      setChosen([]);
-      setShuffledSentence(shuffleDistinct(words));
-    };
-    handleNewSentence();
-  }, [sentence, words]);
+    },
+    [isRetryMode, gameConfig, configLoading, savedConfig, configModalOpen],
+  );
 
-  useEffect(() => {
-    if (words.length > 0) {
-      setIsCorrect(chosen.join(" ") === words.join(" "));
-    }
-  }, [words, chosen]);
-
-  const handleConfigConfirm = (config: GameConfig) => {
-    setGameConfig(config);
-    setConfigModalOpen(false);
-    // Reset game state when config changes
-    setChosen([]);
-    setShuffledSentence([]);
-    setCorrectSentencesCount(0);
-    setGameStarted(false);
-    // Reset the hook's internal state
-    resetGame();
-  };
-
-  const handleConfigChange = () => {
-    setConfigModalOpen(true);
-  };
-
-  const handlePlay = () => {
-    if (!sentence || sentence.trim() === "" || speechLoading) {
-      return;
-    }
-    speak(sentence);
-  };
-
-  const handleNextClick = useCallback(async () => {
-    stop();
-    if (isCorrect) {
-      setCorrectSentencesCount(correctSentencesCount + 1);
-    }
-
-    const result = await fetchSentence();
-
-    // Check if we've completed all sentences
-    if (!result || !result.sentence) {
-      setGameOverModalOpen(true);
-      return;
-    }
-
-    setChosen([]);
-    if (result.words && result.words.length > 0) {
-      setShuffledSentence(shuffleDistinct(result.words));
-    }
-  }, [stop, fetchSentence, isCorrect]);
-
-  const handleGameOverPlayAgain = () => {
-    setGameOverModalOpen(false);
-    // Reset the hook's internal state
-    resetGame();
-    // Reset component state
-    setChosen([]);
-    setShuffledSentence([]);
-    setGameStarted(false);
-    setCorrectSentencesCount(0);
-    // Restart the game with same config
-    setTimeout(() => {
-      setGameStarted(true);
-      initOnce();
-    }, 100);
-  };
-
-  const handleGameOverChangeSettings = () => {
-    setGameOverModalOpen(false);
-    setConfigModalOpen(true);
-  };
-
-  const handleReset = () => {
-    if (!sentence) return;
-    setChosen([]);
-
-    if (words.length > 0) {
-      setShuffledSentence(shuffleDistinct(words));
-    }
-  };
-
-  const handleChooseWord = (word: string) => {
-    setShuffledSentence((prev) => {
-      const index = prev.indexOf(word);
-      if (index > -1) {
-        const newArray = [...prev];
-        newArray.splice(index, 1); // Remove only the first occurrence
-        return newArray;
-      }
-      return prev;
-    });
-    setChosen((prev) => [...prev, word]);
-  };
-
-  const handleUnchooseWord = (index: number, word: string) => {
-    setChosen((prev) => prev.filter((_, i) => i !== index));
-    setShuffledSentence((prev) => [word, ...prev]);
-  };
-
-  const handleCheck = () => {
-    alert(isCorrect ? "Correct!" : "Incorrect! Try again");
-    return isCorrect;
-  };
-
-  const shuffleDistinct = (words: string[]) => {
+  const shuffleDistinct = useCallback((words: string[]) => {
     if (words.length < 2) return [...words];
 
     const shuffled = [...words];
@@ -187,24 +110,280 @@ export const Game = () => {
     }
 
     return shuffled;
+  }, []);
+
+  useEffect(
+    function initializeGameOrRetryMode() {
+      if (isRetryMode && retryData && !gameStarted) {
+        const shuffledWords = shuffleDistinct(retryData.correctAnswer);
+
+        setChosen([]);
+        setShuffledSentence(shuffledWords);
+        setGameStarted(true);
+        setHasCheckedThisSentence(false);
+
+        const retryConfig = {
+          difficulty: retryData.difficulty as 0 | 1 | 2,
+          nikud: true,
+          count: 1,
+        };
+        setGameConfig(retryConfig);
+      } else if (gameConfig && !gameStarted && !isRetryMode) {
+        initOnce();
+        setGameStarted(true);
+      }
+    },
+    [
+      gameConfig,
+      gameStarted,
+      initOnce,
+      isRetryMode,
+      retryData,
+      shuffleDistinct,
+    ],
+  );
+
+  // Handle new sentences
+  useEffect(
+    function handleNewSentenceData() {
+      if (!sentence || words.length === 0) {
+        return;
+      }
+      setChosen([]);
+      setShuffledSentence(shuffleDistinct(words));
+      setHasCheckedThisSentence(false);
+    },
+    [sentence, words, shuffleDistinct],
+  );
+
+  const handleConfigConfirm = (config: GameConfig) => {
+    setGameConfig(config);
+    updateConfig(config);
+    setConfigModalOpen(false);
+    // Reset game state when config changes
+    setChosen([]);
+    setShuffledSentence([]);
+    setCorrectSentencesCount(0);
+    setGameStarted(false);
+    setHasCheckedThisSentence(false);
+    setLastCheckWasIncorrect(false);
+    setCurrentAttemptId("");
+    setMistakeChatOpen(false);
+    resetGame();
   };
 
-  const getDifficultyLabel = (difficulty: DifficultyLevel) => {
-    switch (difficulty) {
-      case 0:
-        return t("pages.wordOrderGame.difficulty.easy");
-      case 1:
-        return t("pages.wordOrderGame.difficulty.medium");
-      case 2:
-        return t("pages.wordOrderGame.difficulty.hard");
-      default:
-        return t("pages.wordOrderGame.difficulty.medium");
+  const handleConfigChange = () => {
+    setConfigModalOpen(true);
+  };
+
+  const handlePlay = () => {
+    let sentenceToSpeak = sentence;
+
+    if (isRetryMode && retryData) {
+      sentenceToSpeak = retryData.correctAnswer.join(" ");
+    }
+
+    if (!sentenceToSpeak || sentenceToSpeak.trim() === "" || speechLoading) {
+      return;
+    }
+    speak(sentenceToSpeak);
+  };
+
+  const handleNextClick = useCallback(async () => {
+    stop();
+
+    const result = await fetchSentence();
+
+    // Game over?
+    if (!result || !result.sentence) {
+      setGameOverModalOpen(true);
+      return;
+    }
+
+    // Prepare next sentence
+    setChosen([]);
+    if (result?.words?.length > 0) {
+      setShuffledSentence(shuffleDistinct(result.words));
+    }
+    setHasCheckedThisSentence(false);
+    setLastCheckWasIncorrect(false);
+    setCurrentAttemptId("");
+    setMistakeChatOpen(false);
+  }, [stop, fetchSentence, shuffleDistinct]);
+
+  const handleGameOverPlayAgain = () => {
+    setGameOverModalOpen(false);
+    resetGame();
+    // Reset component state
+    setChosen([]);
+    setShuffledSentence([]);
+    setGameStarted(false);
+    setCorrectSentencesCount(0);
+    setHasCheckedThisSentence(false);
+    setLastCheckWasIncorrect(false);
+    setCurrentAttemptId("");
+    setMistakeChatOpen(false);
+
+    // Restart the game with same config
+    setTimeout(() => {
+      setGameStarted(true);
+      initOnce();
+    }, 100);
+  };
+
+  const handleGameOverChangeSettings = () => {
+    setGameOverModalOpen(false);
+    setConfigModalOpen(true);
+  };
+
+  const handleReset = () => {
+    setChosen([]);
+
+    const wordsToShuffle =
+      isRetryMode && retryData ? retryData.correctAnswer : words;
+
+    if (wordsToShuffle.length > 0) {
+      setShuffledSentence(shuffleDistinct(wordsToShuffle));
+    }
+
+    setHasCheckedThisSentence(false);
+    setLastCheckWasIncorrect(false);
+    setCurrentAttemptId("");
+  };
+
+  const handleRetryAgain = () => {
+    setChosen([]);
+    setHasCheckedThisSentence(false);
+    setRetryResultModalOpen(false);
+
+    if (retryData) {
+      const shuffledWords = shuffleDistinct(retryData.correctAnswer);
+      setShuffledSentence(shuffledWords);
     }
   };
+
+  const handleBackToMistakes = () => {
+    navigate("/practice-mistakes");
+  };
+
+  const handleModalBackToMistakes = () => {
+    setRetryResultModalOpen(false);
+    handleBackToMistakes();
+  };
+
+  const handleChooseWord = (word: string) => {
+    setShuffledSentence((prev) => {
+      const index = prev.indexOf(word);
+      if (index > -1) {
+        const newArray = [...prev];
+        newArray.splice(index, 1); // Remove only the first occurrence
+        return newArray;
+      }
+      return prev;
+    });
+    setChosen((prev) => [...prev, word]);
+    setHasCheckedThisSentence(false); // changing answer invalidates prior check
+    setLastCheckWasIncorrect(false);
+  };
+
+  const handleUnchooseWord = (index: number, word: string) => {
+    setChosen((prev) => prev.filter((_, i) => i !== index));
+    setShuffledSentence((prev) => [word, ...prev]);
+    setHasCheckedThisSentence(false); // changing answer invalidates prior check
+    setLastCheckWasIncorrect(false);
+  };
+
+  const handleCheck = useCallback(async () => {
+    const currentExerciseId = isRetryMode ? retryData?.exerciseId : attemptId;
+
+    if (!currentExerciseId) {
+      toast.error("No exercise ID available");
+      return false;
+    }
+
+    const res = await submitAttempt({
+      exerciseId: currentExerciseId,
+      givenAnswer: chosen,
+    });
+
+    const isServerCorrect = res.status === "Success";
+
+    if (isRetryMode) {
+      setRetryResult(isServerCorrect);
+      setRetryResultModalOpen(true);
+
+      if (isServerCorrect) {
+        queryClient.invalidateQueries({
+          queryKey: ["gamesMistakes", { studentId }],
+        });
+      }
+    } else {
+      if (isServerCorrect) {
+        setCorrectSentencesCount((c) => c + 1);
+        toast.success(
+          `${t("pages.wordOrderGame.correct")} - ${res.accuracy.toFixed(1)}% ${t("pages.wordOrderGame.accuracy")}`,
+        );
+        setLastCheckWasIncorrect(false);
+      } else {
+        toast.error(
+          `${t("pages.wordOrderGame.incorrect")} - ${res.accuracy.toFixed(1)}% ${t("pages.wordOrderGame.accuracy")}`,
+        );
+        setLastCheckWasIncorrect(true);
+        setCurrentAttemptId(res.attemptId);
+      }
+    }
+
+    setHasCheckedThisSentence(true);
+
+    return isServerCorrect;
+  }, [
+    submitAttempt,
+    attemptId,
+    retryData,
+    isRetryMode,
+    studentId,
+    chosen,
+    t,
+    queryClient,
+  ]);
+
+  const handleExplainMistake = useCallback(() => {
+    if (currentAttemptId) {
+      setMistakeChatOpen(true);
+    }
+  }, [currentAttemptId]);
+
+  const handleCloseMistakeChat = useCallback(() => {
+    setMistakeChatOpen(false);
+  }, []);
+
+  const pageContext = useWordOrderContext({
+    currentExercise: currentSentenceIndex + 1,
+    totalExercises: sentenceCount,
+    difficulty: gameConfig?.difficulty?.toString(),
+    targetSentence: isRetryMode ? retryData?.correctAnswer.join(" ") : sentence,
+    availableWords: shuffledSentence,
+    userAnswer: chosen,
+    additionalContext: {
+      isRetryMode,
+      correctCount: correctSentencesCount,
+      hasChecked: hasCheckedThisSentence,
+      chosenWordsCount: chosen.length,
+    },
+  });
+
+  if (configLoading) {
+    return (
+      <div className={classes.gameContainer}>
+        <CircularProgress />
+      </div>
+    );
+  }
+
   // Show welcome screen if game hasn't started yet
   if (!gameStarted || !gameConfig) {
     return (
-      <WelcomeScreen
+      <GameSetupPanel
         configModalOpen={configModalOpen}
         setConfigModalOpen={setConfigModalOpen}
         handleConfigConfirm={handleConfigConfirm}
@@ -216,8 +395,7 @@ export const Game = () => {
   return (
     <>
       <div className={classes.gameContainer}>
-        {/* Game Header with Settings */}
-        <GameHeaderSettings
+        <GameSettings
           gameConfig={gameConfig}
           currentSentenceIndex={currentSentenceIndex}
           sentenceCount={sentenceCount}
@@ -228,20 +406,41 @@ export const Game = () => {
 
         <div className={classes.gameLogic}>
           <div className={classes.speakersContainer}>
-            {speechLoading ? (
-              <div>{t("pages.wordOrderGame.loading")}</div>
-            ) : (
-              <Speaker
-                onClick={() => handlePlay()}
-                disabled={!sentence || sentence.trim() === "" || speechLoading}
-              />
-            )}
+            <Speaker
+              onClick={() => handlePlay()}
+              disabled={
+                isRetryMode
+                  ? !retryData?.correctAnswer?.length || speechLoading
+                  : !sentence || sentence.trim() === "" || speechLoading
+              }
+            />
+            <ActionButtons
+              loading={loading}
+              handleNextClick={handleNextClick}
+              handleCheck={handleCheck}
+              handleReset={handleReset}
+              showNext={hasCheckedThisSentence}
+              showExplainMistake={
+                hasCheckedThisSentence && lastCheckWasIncorrect
+              }
+              handleExplainMistake={handleExplainMistake}
+            />
           </div>
 
           <ChosenWordsArea
             chosenWords={chosen}
             handleUnchooseWord={handleUnchooseWord}
           />
+
+          <WrongAnswerDisplay
+            wrongAnswer={
+              isRetryMode && retryData && retryData.mistakes.length > 0
+                ? retryData.mistakes[retryData.mistakes.length - 1].wrongAnswer
+                : []
+            }
+            show={isRetryMode && retryData && retryData.mistakes.length > 0}
+          />
+
           <WordsBank
             loading={loading}
             error={error}
@@ -249,13 +448,10 @@ export const Game = () => {
             handleChooseWord={handleChooseWord}
           />
         </div>
-        <SideButtons
-          loading={loading}
-          handleNextClick={handleNextClick}
-          handleCheck={handleCheck}
-          handleReset={handleReset}
-        />
       </div>
+
+      <ContextAwareChat pageContext={pageContext} hasSettings />
+
       {/* Configuration Modal */}
       <GameConfigModal
         open={configModalOpen}
@@ -272,6 +468,23 @@ export const Game = () => {
         onChangeSettings={handleGameOverChangeSettings}
         correctSentences={correctSentencesCount}
         totalSentences={sentenceCount}
+      />
+
+      {/* Mistake Chat Popup */}
+      <MistakeChatPopup
+        open={mistakeChatOpen}
+        onClose={handleCloseMistakeChat}
+        attemptId={currentAttemptId}
+        gameType="wordOrder"
+        title={t("pages.wordOrderGame.explainMistake")}
+      />
+
+      {/* Retry Result Modal */}
+      <RetryResultModal
+        open={retryResultModalOpen}
+        isCorrect={retryResult === true}
+        onRetryAgain={handleRetryAgain}
+        onBackToMistakes={handleModalBackToMistakes}
       />
     </>
   );

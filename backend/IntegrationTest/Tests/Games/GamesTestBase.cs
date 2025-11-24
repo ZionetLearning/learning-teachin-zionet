@@ -1,0 +1,399 @@
+using IntegrationTests.Constants;
+using IntegrationTests.Fixtures;
+using IntegrationTests.Infrastructure;
+using IntegrationTests.Models.Auth;
+using IntegrationTests.Models.Notification;
+using IntegrationTests.Models.Ai.Sentences;
+using Manager.Models.Auth;
+using Manager.Models.Games;
+using Manager.Models.Users;
+using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Text.Json;
+using Xunit.Abstractions;
+using SentenceRequestDto = Manager.Models.Sentences.SentenceRequestDto;
+using AttemptedSentence = IntegrationTests.Models.Ai.Sentences.AttemptedSentenceResult;
+
+namespace IntegrationTests.Tests.Games;
+
+[Collection("IntegrationTests")]
+public abstract class GamesTestBase(
+    HttpClientFixture httpClientFixture,
+    ITestOutputHelper outputHelper,
+    SignalRTestFixture signalRFixture
+) : IntegrationTestBase(httpClientFixture, outputHelper, signalRFixture)
+{
+    public override async Task InitializeAsync()
+    {
+        // Don't login by default - let tests choose which role to use
+        // Just clear SignalR messages
+        SignalRFixture.ClearReceivedMessages();
+    }
+
+    /// <summary>
+    /// Creates a user (default role: student) and logs them in.
+    /// Returns UserData for the created user.
+    /// </summary>
+    protected async Task<GetUserResponse> CreateUserAsync(
+        string role = "student",
+        string? email = null)
+    {
+        var parsedRole = Enum.TryParse<Role>(role, true, out var r) ? r : Role.Student;
+        email ??= $"{role}-{Guid.NewGuid():N}@example.com";
+
+        var user = new UserModel
+        {
+            UserId = Guid.NewGuid(),
+            Email = email,
+            Password = TestDataHelper.DefaultTestPassword,
+            FirstName = "Test",
+            LastName = "User",
+            Role = parsedRole
+        };
+
+        var createRes = await Client.PostAsJsonAsync(UserRoutes.UserBase, user);
+        createRes.EnsureSuccessStatusCode();
+        
+        // The API returns UserCreationResultDto with the actual UserId from the server
+        var createdUser = await ReadAsJsonAsync<CreateUserResponse>(createRes)
+                          ?? throw new InvalidOperationException("Failed to deserialize UserCreationResultDto");
+        
+        return await LoginAsync(user.Email, TestDataHelper.DefaultTestPassword, parsedRole);
+    }
+
+    /// <summary>
+    /// Creates a user via API without logging them in.
+    /// Returns UserData with the created user's information (including UserId from response).
+    /// </summary>
+    protected async Task<GetUserResponse> CreateUserViaApiAsync(string role = "student", string? email = null)
+    {
+        var parsedRole = Enum.TryParse<Role>(role, true, out var r) ? r : Role.Student;
+        email ??= $"{role}-{Guid.NewGuid():N}@example.com";
+        
+        var user = new UserModel
+        {
+            UserId = Guid.NewGuid(),
+            Email = email,
+            Password = TestDataHelper.DefaultTestPassword,
+            FirstName = "Test",
+            LastName = "User",
+            Role = parsedRole
+        };
+        
+        var response = await Client.PostAsJsonAsync(UserRoutes.UserBase, user);
+        response.EnsureSuccessStatusCode();
+        
+        // The API returns UserCreationResultDto with the actual UserId from the server
+        var createdUser = await ReadAsJsonAsync<CreateUserResponse>(response)
+                          ?? throw new InvalidOperationException("Failed to deserialize UserCreationResultDto");
+        
+        return new GetUserResponse
+        {
+            UserId = createdUser.UserId,
+            Email = createdUser.Email,
+            FirstName = createdUser.FirstName,
+            LastName = createdUser.LastName,
+            Role = createdUser.Role,
+            PreferredLanguageCode = SupportedLanguage.en,
+            HebrewLevelValue = HebrewLevel.beginner
+        };
+    }
+
+    /// <summary>
+    /// Logs in with existing credentials and sets the bearer token.
+    /// Returns UserData for the logged-in user.
+    /// </summary>
+    protected async Task<GetUserResponse> LoginAsync(string email, string password, Role role)
+    {
+        // Clear previous authorization header before logging in with new credentials
+        Client.DefaultRequestHeaders.Authorization = null;
+
+        var loginReq = new LoginRequest { Email = email, Password = password };
+        var loginRes = await Client.PostAsJsonAsync(AuthRoutes.Login, loginReq);
+        loginRes.EnsureSuccessStatusCode();
+
+        var body = await loginRes.Content.ReadAsStringAsync();
+        var tokenRes = JsonSerializer.Deserialize<AccessTokenResponse>(body)
+                       ?? throw new InvalidOperationException("Invalid login response");
+
+        Client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", tokenRes.AccessToken);
+
+        // Extract UserId from JWT token
+        var handler = new JwtSecurityTokenHandler();
+        var jwtToken = handler.ReadJwtToken(tokenRes.AccessToken);
+        var userIdClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == TestConstants.UserId)?.Value;
+
+        if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var userId))
+            throw new InvalidOperationException("Invalid or missing userId in JWT token");
+
+        return new GetUserResponse
+        {
+            UserId = userId,
+            Email = email,
+            FirstName = "Test",
+            LastName = "User",
+            Role = role,
+            PreferredLanguageCode = SupportedLanguage.en,
+            HebrewLevelValue = HebrewLevel.beginner
+        };
+    }
+
+    /// <summary>
+    /// Logs in with a UserData model (uses email from the model).
+    /// </summary>
+    protected async Task<GetUserResponse> LoginAsync(GetUserResponse user)
+    {
+        // Clear previous authorization header before logging in with new credentials
+        Client.DefaultRequestHeaders.Authorization = null;
+        
+        var loginReq = new LoginRequest { Email = user.Email, Password = TestDataHelper.DefaultTestPassword };
+        var loginRes = await Client.PostAsJsonAsync(AuthRoutes.Login, loginReq);
+        loginRes.EnsureSuccessStatusCode();
+
+        var body = await loginRes.Content.ReadAsStringAsync();
+        var tokenRes = JsonSerializer.Deserialize<AccessTokenResponse>(body)
+                       ?? throw new InvalidOperationException("Invalid login response");
+
+        Client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", tokenRes.AccessToken);
+
+        // Extract UserId from JWT token to ensure consistency
+        var handler = new JwtSecurityTokenHandler();
+        var jwtToken = handler.ReadJwtToken(tokenRes.AccessToken);
+        var userIdClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == TestConstants.UserId)?.Value;
+
+        if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var jwtUserId))
+            throw new InvalidOperationException("Invalid or missing userId in JWT token");
+
+        return new GetUserResponse
+        {
+            UserId = jwtUserId,
+            Email = user.Email,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            Role = user.Role,
+            PreferredLanguageCode = SupportedLanguage.en,
+            HebrewLevelValue = HebrewLevel.beginner
+        };
+    }
+
+    /// <summary>
+    /// Assigns a student to a teacher.
+    /// </summary>
+    protected async Task AssignStudentToTeacherAsync(Guid teacherId, Guid studentId)
+    {
+        var response = await Client.PostAsync(MappingRoutes.Assign(teacherId, studentId), null);
+        response.EnsureSuccessStatusCode();
+    }
+
+    /// <summary>
+    /// Sets up a teacher-student relationship and logs in as the teacher.
+    /// Returns the teacher and student user data.
+    /// </summary>
+    protected async Task<(GetUserResponse teacher, GetUserResponse student)> SetupTeacherStudentRelationshipAsync()
+    {
+        // Login as Admin to set up teacher-student relationship
+        var admin = await CreateUserAsync(role: "admin");
+        
+        // Create teacher and student
+        var teacher = await CreateUserViaApiAsync(role: "teacher");
+        var student = await CreateUserViaApiAsync(role: "student");
+        
+        // Assign student to teacher
+        await AssignStudentToTeacherAsync(teacher.UserId, student.UserId);
+        
+        // Now login as teacher and get the updated UserData with the JWT userId
+        var loggedInTeacher = await LoginAsync(teacher);
+
+        return (loggedInTeacher, student);
+    }
+
+    /// <summary>
+    /// Ensures SignalR is connected with the current authenticated user's token.
+    /// </summary>
+    protected async Task EnsureSignalRConnectedAsync()
+    {
+        // Extract the current bearer token from HttpClient
+        var authHeader = Client.DefaultRequestHeaders.Authorization;
+        if (authHeader == null || string.IsNullOrEmpty(authHeader.Parameter))
+        {
+            throw new InvalidOperationException("No authentication token found. Ensure user is logged in before using SignalR.");
+        }
+
+        // Set the token for SignalR and start the connection
+        SignalRFixture.UseAccessToken(authHeader.Parameter);
+        
+        try
+        {
+            await SignalRFixture.StartAsync();
+            OutputHelper.WriteLine($"SignalR connection started successfully with authenticated token");
+        }
+        catch (Exception ex)
+        {
+            OutputHelper.WriteLine($"Failed to start SignalR connection: {ex.Message}");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Generates split sentences for word order game and waits for SignalR event.
+    /// Returns the list of generated sentences with exercise IDs.
+    /// </summary>
+    protected async Task<List<AttemptedSentence>> GenerateSplitSentencesAsync(
+        Guid userId,
+        Difficulty difficulty = Difficulty.Easy,
+        bool nikud = false,
+        int count = 1,
+        TimeSpan? timeout = null)
+    {
+        await EnsureSignalRConnectedAsync();
+        
+        SignalRFixture.ClearReceivedMessages();
+
+        var sentenceRequest = new SentenceRequestDto
+        {
+            Difficulty = (Manager.Models.Sentences.Difficulty)difficulty,
+            Nikud = nikud,
+            Count = count,
+
+        };
+        OutputHelper.WriteLine($"Generating sentences for userId: {userId}");
+        var response = await PostAsJsonAsync(ApiRoutes.SplitSentences, sentenceRequest);
+        response.EnsureSuccessStatusCode();
+
+        var sentenceEvent = await WaitForEventAsync(
+                n => n.EventType == EventType.SplitSentenceGeneration,
+                timeout ?? TimeSpan.FromSeconds(30)
+            );
+
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var sentenceGenerationResponse = JsonSerializer.Deserialize<SentenceGenerationResponse>(
+            sentenceEvent.Event.Payload.GetRawText(), options)
+            ?? throw new InvalidOperationException("Failed to deserialize sentence generation event");
+
+        // Convert from GeneratedSentenceResultItem to AttemptedSentenceResult
+        var sentences = sentenceGenerationResponse.Sentences.Select(s => new AttemptedSentence
+        {
+            ExerciseId = s.ExerciseId,
+            Original = s.Text,
+            Words = s.Words,
+            Difficulty = s.Difficulty,
+            Nikud = s.Nikud
+        }).ToList();
+
+        return sentences;
+    }
+
+    /// <summary>
+    /// Submits a game attempt with the given answer.
+    /// </summary>
+    protected async Task<SubmitAttemptResponse> SubmitGameAttemptAsync(
+        Guid exerciseId,
+        List<string> givenAnswer)
+    {
+        var request = new SubmitAttemptRequest
+        {
+            ExerciseId = exerciseId,
+            GivenAnswer = givenAnswer
+        };
+
+        var response = await Client.PostAsJsonAsync(GamesRoutes.Attempt, request);
+        response.EnsureSuccessStatusCode();
+
+        return await ReadAsJsonAsync<SubmitAttemptResponse>(response)
+               ?? throw new InvalidOperationException("Failed to deserialize SubmitAttemptResult");
+    }
+
+    /// <summary>
+    /// Creates a wrong answer by reversing or shuffling the correct answer.
+    /// </summary>
+    protected List<string> CreateWrongAnswer(List<string> correctAnswer)
+    {
+        var wrongAnswer = correctAnswer.ToList();
+        
+        if (wrongAnswer.Count > 1)
+        {
+            // Reverse the order to make it wrong
+            wrongAnswer.Reverse();
+        }
+        else
+        {
+            // If only one word, add a fake word
+            wrongAnswer.Add("שגוי");
+        }
+
+        return wrongAnswer;
+    }
+
+    /// <summary>
+    /// Creates a mistake by generating a sentence and submitting a wrong answer.
+    /// Returns the attempt result.
+    /// </summary>
+    protected async Task<SubmitAttemptResponse> CreateMistakeAsync(
+        Guid studentId,
+        Difficulty difficulty = Difficulty.Easy,
+        bool nikud = false)
+    {
+        var sentences = await GenerateSplitSentencesAsync(studentId, difficulty, nikud, count: 1);
+        var sentence = sentences.First();
+
+        var wrongAnswer = CreateWrongAnswer(sentence.Words);
+        var result = await SubmitGameAttemptAsync(sentence.ExerciseId, wrongAnswer);
+
+        return result;
+    }
+
+    /// <summary>
+    /// Creates a successful attempt by generating a sentence and submitting the correct answer.
+    /// Returns the attempt result.
+    /// </summary>
+    protected async Task<SubmitAttemptResponse> CreateSuccessfulAttemptAsync(
+        Guid studentId,
+        Difficulty difficulty = Difficulty.Easy,
+        bool nikud = false)
+    {
+        var sentences = await GenerateSplitSentencesAsync(studentId, difficulty, nikud, count: 1);
+        var sentence = sentences.First();
+
+        var result = await SubmitGameAttemptAsync(sentence.ExerciseId, sentence.Words);
+
+        return result;
+    }
+
+    /// <summary>
+    /// Creates multiple mistakes for a student at different difficulty levels.
+    /// </summary>
+    protected async Task CreateMultipleMistakesAsync(Guid studentId, int count = 3)
+    {
+        var difficulties = new[] { Difficulty.Easy, Difficulty.Medium, Difficulty.Hard };
+        
+        for (int i = 0; i < count; i++)
+        {
+            var difficulty = difficulties[i % difficulties.Length];
+            
+            var result = await CreateMistakeAsync(studentId, difficulty);
+        }
+    }
+
+    /// <summary>
+    /// Tests that mistakes are filtered out when the same sentence is answered correctly later.
+    /// Submits the same sentence twice: wrong answer first, then correct answer.
+    /// </summary>
+    protected async Task<(AttemptedSentence sentence, SubmitAttemptResponse failureResult, SubmitAttemptResponse successResult)> 
+        CreateMistakeWithLaterSuccessAsync(Guid studentId, Difficulty difficulty = Difficulty.Easy)
+    {
+        // Generate one sentence
+        var sentences = await GenerateSplitSentencesAsync(studentId, difficulty, nikud: false, count: 1);
+        var sentence = sentences.First();
+
+        var wrongAnswer = CreateWrongAnswer(sentence.Words);
+        var failureResult = await SubmitGameAttemptAsync(sentence.ExerciseId, wrongAnswer);
+
+        var successResult = await SubmitGameAttemptAsync(sentence.ExerciseId, sentence.Words);
+
+        return (sentence, failureResult, successResult);
+    }
+
+}

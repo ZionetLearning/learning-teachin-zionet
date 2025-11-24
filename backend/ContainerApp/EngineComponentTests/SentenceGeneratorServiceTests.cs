@@ -43,13 +43,14 @@ public class SentenceGeneratorServiceTests
         var userId = Guid.NewGuid();
         var request = new SentenceRequest
         {
+            RequestId = Guid.NewGuid().ToString(),
             UserId = userId,
             Count = 1,
-            Difficulty = Difficulty.medium,
+            Difficulty = Difficulty.Medium,
             Nikud = false,
         };
 
-        var response = await _sentenceService.GenerateAsync(request, CancellationToken.None);
+        var response = await _sentenceService.GenerateAsync(request, [], CancellationToken.None);
         Assert.Equal(request.Count, response.Sentences.Count);
     }
 
@@ -61,13 +62,14 @@ public class SentenceGeneratorServiceTests
     {
         var req = new SentenceRequest
         {
+            RequestId = Guid.NewGuid().ToString(),
             UserId = Guid.NewGuid(),
             Count = count,
-            Difficulty = Difficulty.medium,
+            Difficulty = Difficulty.Medium,
             Nikud = false
         };
 
-        var res = await _sentenceService.GenerateAsync(req, CancellationToken.None);
+        var res = await _sentenceService.GenerateAsync(req, [], CancellationToken.None);
 
         Assert.Equal(count, res.Sentences.Count);
     }

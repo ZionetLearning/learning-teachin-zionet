@@ -7,28 +7,50 @@ variable "location" {
 variable "cluster_name" {
   type = string
 }
-variable "node_count" {
-  type    = number
-  default = 2
-}
-variable "max_node_count" {
-  type    = number
-  default = 3
-}
-variable "min_node_count" {
-  type    = number
-  default = 1
-}
-variable "vm_size" {
-  type    = string
-  default = "Standard_B2s"
+
+# Stable node pool configuration
+variable "stable_min_node_count" {
+  type        = number
+  default     = 1
+  description = "Minimum number of stable nodes (not spot instances)"
 }
 
-variable "identity_type" {	
-  description = "The type of identity to assign to the AKS cluster (SystemAssigned or UserAssigned)"	
-  type        = string	
-  default     = "SystemAssigned"	
-}	
+variable "stable_max_node_count" {
+  type        = number
+  default     = 4
+  description = "Maximum number of stable nodes (not spot instances)"
+}
+
+variable "stable_vm_size" {
+  type        = string
+  default     = "Standard_B2s"
+  description = "VM size for stable nodes"
+}
+
+# Spot instance node pool configuration
+variable "spot_min_node_count" {
+  type        = number
+  default     = 1
+  description = "Minimum number of spot instance nodes"
+}
+
+variable "spot_max_node_count" {
+  type        = number
+  default     = 1
+  description = "Maximum number of spot instance nodes"
+}
+
+variable "spot_vm_size" {
+  type        = string
+  default     = "Standard_A2m_v2"
+  description = "VM size for spot instance nodes"
+}
+
+variable "spot_max_price" {
+  type        = number
+  default     = 0.0486
+  description = "Maximum price for spot instances (-1 = pay up to on-demand price)"
+}
 
 variable "identity_ids" {	
   description = "Optional list of UserAssigned Identity IDs to use if type is UserAssigned"	

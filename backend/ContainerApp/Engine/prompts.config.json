@@ -1,0 +1,42 @@
+{
+  "Prompts": {
+    "Keys": {
+      "ChatTitlePrompt": {
+        "Key": "chat.title.generate",
+        "Label": "production"
+      },
+      "SystemDefault": {
+        "Key": "chat.system.default",
+        "Label": "production"
+      },
+      "FriendlyTone": {
+        "Key": "prompts.tone.friendly",
+        "Label": "production"
+      },
+      "DetailedExplanation": {
+        "Key": "prompts.explanation.detailed",
+        "Label": "production"
+      },
+      "ExplainMistakeSystem": {
+        "Key": "chat.system.explain.mistake",
+        "Label": "production"
+      },
+      "MistakeUserTemplate": {
+        "Key": "prompts.mistake.user.template",
+        "Label": "production"
+      },
+      "MistakeRuleTemplate": {
+        "Key": "prompts.mistake.rule.template",
+        "Label": "production"
+      },
+      "GlobalChat": {
+        "Key": "chat.global.system.default",
+        "Label": "production"
+      },
+      "GlobalChatPageContext": {
+        "Key": "chat.global.page.context",
+        "Label": "production"
+      }
+    }
+  }
+}

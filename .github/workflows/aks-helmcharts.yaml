@@ -5,23 +5,27 @@ run-name: >
     inputs.environment_name || github.event.inputs.environment_name || 'dev'
   }} | GitHub Env: ${{ inputs.environment || github.event.inputs.environment }}
 
+concurrency:
+  group: aks-helm-deploy-${{ inputs.environment_name || github.event.inputs.environment_name || 'dev' }}
+  cancel-in-progress: false
+
 on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Select environment (GitHub Environment)'
+        description: "Select environment (GitHub Environment)"
         required: true
-        default: 'Development'
+        default: "Development"
         type: choice
         options: [Development, Production]
       environment_name:
-        description: 'Optional namespace/prefix (lowercase letters & digits). Empty -> dev'
+        description: "Optional namespace/prefix (lowercase letters & digits). Empty -> dev"
         required: false
-        default: ''
+        default: ""
       image_tag:
-        description: 'Optional image tag (e.g., commit hash). Empty -> uses environment_name'
+        description: "Optional image tag (e.g., commit hash). Empty -> uses environment_name"
         required: false
-        default: ''
+        default: ""
 
   workflow_call:
     inputs:
@@ -34,7 +38,7 @@ on:
       image_tag:
         required: false
         type: string
-        description: 'Docker image tag to deploy (e.g., commit hash)'
+        description: "Docker image tag to deploy (e.g., commit hash)"
       skip_infra_steps:
         required: false
         type: boolean
@@ -61,7 +65,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Azure Login via OIDC
         uses: azure/login@v2
@@ -74,19 +78,34 @@ jobs:
         id: setup
         run: |
           ENVIRONMENT_NAME="${{ inputs.environment_name || github.event.inputs.environment_name }}"
+          echo "🔍 DEBUG: ENVIRONMENT_NAME='$ENVIRONMENT_NAME'"
+          
+          # Set TARGET_NAMESPACE as both shell variable (for this step) and env variable (for next steps)
           if [ -n "$ENVIRONMENT_NAME" ]; then
+            echo "✅ ENVIRONMENT_NAME is not empty, using custom namespace"
             [[ "$ENVIRONMENT_NAME" =~ ^[a-z0-9]+$ ]] || { echo "environment_name must be ^[a-z0-9]+$"; exit 1; }
-            echo "TARGET_NAMESPACE=$ENVIRONMENT_NAME" >> $GITHUB_ENV
-            echo "RESOLVED_TARGET=custom($ENVIRONMENT_NAME)" >> $GITHUB_ENV
+            echo "ENVIRONMENT_NAME=$ENVIRONMENT_NAME" >> $GITHUB_ENV
           else
-            echo "TARGET_NAMESPACE=dev" >> $GITHUB_ENV
-            echo "RESOLVED_TARGET=dev" >> $GITHUB_ENV
+            echo "ENVIRONMENT_NAME=dev" >> $GITHUB_ENV
           fi
 
-          echo "K8S_DIR=devops/kubernetes/" >> $GITHUB_ENV
           echo "CHART_DIR=devops/kubernetes/charts" >> $GITHUB_ENV
-          echo "VALUES_FILE=devops/kubernetes/charts/values.dev.yaml" >> $GITHUB_ENV
-          echo "ACR_NAME=teachindevacr" >> $GITHUB_ENV
+          
+          # Select values file based on environment
+          # dev uses values.dev.yaml (spot disabled for stability)
+          # prod uses values.prod.yaml (spot enabled explicitly)
+          # all other environments (test, featest, featest2) use values.template.yaml (spot enabled)
+          if [ "$ENVIRONMENT_NAME" = "dev" ]; then
+            echo "VALUES_FILE=devops/kubernetes/charts/values.dev.yaml" >> $GITHUB_ENV
+            echo "📋 Using values.dev.yaml (spot disabled for dev stability)"
+          elif [ "$ENVIRONMENT_NAME" = "prod" ]; then
+            echo "VALUES_FILE=devops/kubernetes/charts/values.prod.yaml" >> $GITHUB_ENV
+            echo "📋 Using values.prod.yaml (spot enabled for production)"
+          else
+            echo "VALUES_FILE=devops/kubernetes/charts/values.template.yaml" >> $GITHUB_ENV
+            echo "📋 Using values.template.yaml (spot enabled for $ENVIRONMENT_NAME)"
+          fi
+          
           echo "ACR_LOGIN_SERVER=teachindevacr.azurecr.io" >> $GITHUB_ENV
 
           # Shared AKS
@@ -97,22 +116,15 @@ jobs:
           echo "PG_DB=dev-pg-zionet-learning" >> $GITHUB_ENV
           echo "PG_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
 
-
           # Determine if infrastructure steps should be skipped
           # Skip for: push events (auto PR merge) OR manual dispatch (no skip_infra_steps input) OR when skip_infra_steps=true
           # Run for: CI/CD workflows (when skip_infra_steps is explicitly false)
-          if [[ "${{ github.event_name }}" == "push" ]]; then
-            echo "Push event detected, skipping infrastructure"
-            echo "skip_infra_steps=true" >> $GITHUB_OUTPUT
-          elif [ "${{ inputs.skip_infra_steps }}" = "" ]; then
-            echo "Manual dispatch - no skip_infra_steps input, skipping infrastructure"
-            echo "skip_infra_steps=true" >> $GITHUB_OUTPUT
-          elif [ "${{ inputs.skip_infra_steps }}" = "true" ]; then
-            echo "skip_infra_steps=true passed, skipping infrastructure"
-            echo "skip_infra_steps=true" >> $GITHUB_OUTPUT
-          else
+          if [[ "${{ inputs.skip_infra_steps }}" == "false" ]]; then
             echo "skip_infra_steps=false passed, running infrastructure"
             echo "skip_infra_steps=false" >> $GITHUB_OUTPUT
+          else
+            echo "Push event detected or manual dispatch update images workflow, skipping infrastructure"
+            echo "skip_infra_steps=true" >> $GITHUB_OUTPUT
           fi
 
           # Redis (shared)
@@ -138,6 +150,17 @@ jobs:
               ;;
           esac
 
+          # Determine if Langfuse should be deployed (only for dev environment)
+          if [ "$ENVIRONMENT_NAME" = "dev" ]; then
+            echo "deploy_langfuse=true" >> $GITHUB_OUTPUT
+            echo "deploy_langfuse=true"
+          else
+            echo "deploy_langfuse=false" >> $GITHUB_OUTPUT
+            echo "deploy_langfuse=false"
+          fi
+
+          # Langfuse secrets should be available in all environments
+          echo "langfuse_secrets_enabled=true" >> $GITHUB_OUTPUT
 
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
@@ -145,18 +168,18 @@ jobs:
       - name: Create namespace
         if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
         run: |
-          kubectl create namespace "$TARGET_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
+          kubectl create namespace "$ENVIRONMENT_NAME" --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Check and fix Helm release status
         run: |
-          echo "Checking Helm release status for namespace: $TARGET_NAMESPACE"
-          RELEASE_STATUS=$(helm status app -n "$TARGET_NAMESPACE" -o json 2>/dev/null | jq -r '.info.status' || echo "not-found")
+          echo "Checking Helm release status for namespace: $ENVIRONMENT_NAME"
+          RELEASE_STATUS=$(helm status app -n "$ENVIRONMENT_NAME" -o json 2>/dev/null | jq -r '.info.status' || echo "not-found")
           echo "Current release status: $RELEASE_STATUS"
 
           if [[ "$RELEASE_STATUS" == "pending-install" ]] || [[ "$RELEASE_STATUS" == "pending-upgrade" ]] || [[ "$RELEASE_STATUS" == "pending-rollback" ]]; then
             echo "Found pending operation. Attempting rollback..."
-            helm rollback app -n "$TARGET_NAMESPACE" || echo "Rollback failed, trying to delete release history..."
-            helm delete app -n "$TARGET_NAMESPACE" --wait || echo "Delete failed, continuing anyway..."
+            helm rollback app -n "$ENVIRONMENT_NAME" || echo "Rollback failed, trying to delete release history..."
+            helm delete app -n "$ENVIRONMENT_NAME" --wait || echo "Delete failed, continuing anyway..."
             sleep 5
           fi
 
@@ -221,7 +244,6 @@ jobs:
             --rule-name allow-aks-egress \
             --start-ip-address $AKS_EGRESS_IP \
             --end-ip-address $AKS_EGRESS_IP
-            
 
       - name: Install External Secrets Operator (with CRDs)
         if: ${{ steps.setup.outputs.skip_infra_steps == 'false' }}
@@ -249,51 +271,104 @@ jobs:
           echo "❌ Timeout waiting for ExternalSecrets API"
           exit 1
 
+      - name: Create devops-tools namespace
+        if: steps.setup.outputs.deploy_langfuse == 'true' && github.event_name == 'workflow_dispatch'
+        run: |
+          echo "Creating devops-tools namespace..."
+          kubectl create namespace devops-tools --dry-run=client -o yaml | kubectl apply -f -
+
+          # Wait for namespace to be ready
+          kubectl wait --for=condition=ready namespace/devops-tools --timeout=60s || true
+
+          echo "✅ devops-tools namespace is ready"
+
       - name: Helm template sanity (no Namespace objects)
         run: |
-          # Use image_tag if provided, otherwise fall back to TARGET_NAMESPACE
+          # Use image_tag if provided, otherwise fall back to ENVIRONMENT_NAME
           IMAGE_TAG="${{ inputs.image_tag || github.event.inputs.image_tag }}"
           if [ -z "$IMAGE_TAG" ]; then
-            IMAGE_TAG="$TARGET_NAMESPACE"
+            IMAGE_TAG="$ENVIRONMENT_NAME"
           fi
-          
+
+          # Prepare Langfuse setting based on environment
+          LANGFUSE_ENABLED="true"
+          if [ "${{ steps.setup.outputs.deploy_langfuse }}" = "false" ]; then
+            LANGFUSE_ENABLED="false"
+          fi
+
           helm template app "$CHART_DIR" -f "$VALUES_FILE" \
-            --set namespace.name="$TARGET_NAMESPACE" \
+            --set namespace.name="$ENVIRONMENT_NAME" \
             --set namespace.create=false \
-            --set global.namePrefix="$TARGET_NAMESPACE" \
+            --set global.namePrefix="$ENVIRONMENT_NAME" \
+            --set namePrefix="$ENVIRONMENT_NAME" \
             --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
             --set global.environment="$IMAGE_TAG" \
-            --set global.keyvault.clientId="$KEYVAULT_CLIENT_ID" \
-            --set global.keyvault.tenantId="$KEYVAULT_TENANT_ID" \
+            --set langfuse.enabled="$LANGFUSE_ENABLED" \
+            --set accessor.secrets.langfuse.enabled="${{ steps.setup.outputs.langfuse_secrets_enabled }}" \
+            --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false \
           | grep -n '^kind: Namespace' && { echo "Namespace still rendered"; exit 1; } || echo "OK: no Namespace in chart"
 
       - name: Helm upgrade/install app
         run: |
-          # Use image_tag if provided, otherwise fall back to TARGET_NAMESPACE
+          # Use image_tag if provided, otherwise fall back to ENVIRONMENT_NAME
           IMAGE_TAG="${{ inputs.image_tag || github.event.inputs.image_tag }}"
           if [ -z "$IMAGE_TAG" ]; then
-            IMAGE_TAG="$TARGET_NAMESPACE"
+            IMAGE_TAG="$ENVIRONMENT_NAME"
           fi
-          
+
+          # Prepare Langfuse setting based on environment
+          # langfuse.enabled controls if Langfuse app is deployed (only dev)
+          # accessor.secrets.langfuse.enabled controls if accessor gets Langfuse secrets (all envs)
+          LANGFUSE_ENABLED="true"
+          if [ "${{ steps.setup.outputs.deploy_langfuse }}" = "false" ]; then
+            LANGFUSE_ENABLED="false"
+          fi
+
           helm upgrade --install app "$CHART_DIR" \
-            --namespace "$TARGET_NAMESPACE" \
+            --namespace "$ENVIRONMENT_NAME" \
             -f "$VALUES_FILE" \
-            --set namespace.name="$TARGET_NAMESPACE" \
+            --set namespace.name="$ENVIRONMENT_NAME" \
             --set namespace.create=false \
-            --set global.namePrefix="$TARGET_NAMESPACE" \
+            --set global.namePrefix="$ENVIRONMENT_NAME" \
+            --set namePrefix="$ENVIRONMENT_NAME" \
             --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
             --set global.environment="$IMAGE_TAG" \
-            --set global.keyvault.clientId="$KEYVAULT_CLIENT_ID" \
-            --set global.keyvault.tenantId="$KEYVAULT_TENANT_ID" \
+            --set langfuse.enabled="$LANGFUSE_ENABLED" \
+            --set accessor.secrets.langfuse.enabled="${{ steps.setup.outputs.langfuse_secrets_enabled }}" \
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false \
             --set keda.enabled=${{ inputs.use_keda }} \
 
+      - name: Add Langfuse
+        if: steps.setup.outputs.deploy_langfuse == 'true' && github.event_name == 'workflow_dispatch'
+        run: |
+          echo "Deploying Langfuse..."
+          cd devops/helm-tools
+          echo "Applying Langfuse ingress..."
+          kubectl apply -f "../kubernetes/ingress/langfuse-ingress.yaml"
+          chmod +x langfuse.sh
+          
+          if [ -z "${{ secrets.SMTP_USER }}" ] || [ -z "${{ secrets.SMTP_PASSWORD }}" ]; then
+            echo "❌ Error: SMTP_USER and SMTP_PASSWORD secrets are required for email functionality"
+            exit 1
+          fi
+          
+          ./langfuse.sh \
+            "$ENVIRONMENT_NAME" \
+            "${{ secrets.LANGFUSE_ADMIN_EMAIL }}" \
+            "${{ secrets.LANGFUSE_ADMIN_PASSWORD }}" \
+            "${{ secrets.POSTGRES_USER }}" \
+            "${{ secrets.POSTGRES_PASSWORD }}" \
+            "${{ secrets.SMTP_USER }}" \
+            "${{ secrets.SMTP_PASSWORD }}"
+
+          echo "Langfuse deployment completed"
+
       - name: Diagnostics (on failure)
         if: failure()
         run: |
-          ns="$TARGET_NAMESPACE"
+          ns="$ENVIRONMENT_NAME"
           kubectl -n "$ns" get all
           kubectl -n "$ns" get events --sort-by=.lastTimestamp | tail -n 200 || true
           for p in $(kubectl -n "$ns" get pods -o name); do

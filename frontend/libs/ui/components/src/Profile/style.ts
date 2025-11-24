@@ -1,158 +1,120 @@
+import { useThemeColors } from "@app-providers";
 import { createUseStyles } from "react-jss";
 
-export const useStyles = createUseStyles({
-  container: {
-    minHeight: "100dvh",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    padding: 16,
-    "@media (min-width: 600px)": {
-      paddingLeft: 32,
-      paddingRight: 32,
+export const useStyles = () => {
+  const color = useThemeColors();
+
+  return createUseStyles({
+    container: {
+      height: "100vh",
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center",
+      padding: 24,
+      "@media (max-width: 700px)": { padding: 12 },
     },
-    "@media (min-width: 900px)": {
-      paddingLeft: 64,
-      paddingRight: 64,
+
+    titleContainer: { marginBottom: 16 },
+    title: { fontWeight: 700 },
+
+    formCard: {
+      border: `1px solid ${color.divider}`,
+      borderRadius: 24,
+      padding: 16,
+      backgroundColor: color.paper,
+      color: color.text,
+      maxWidth: 600,
+      marginLeft: "auto",
+      marginRight: "auto",
+      width: "100%",
+      "@media (min-width: 600px)": { padding: 24 },
+      "@media (max-width: 700px)": { width: "80%" },
     },
-    "@media (min-width: 1200px)": {
-      paddingLeft: 320,
-      paddingRight: 320,
+
+    formHeader: { marginBottom: 24 },
+
+    fieldContainer: {
+      marginBottom: 16,
+      "@media (min-width: 600px)": { marginBottom: 24 },
     },
-  },
 
-  titleContainer: {
-    marginBottom: 16,
-  },
+    fieldLabel: { marginBottom: 2.4, fontWeight: 300 },
+    fieldLabelRTL: { marginBottom: 2.4, fontWeight: 300, textAlign: "right" },
+    fieldLabelLTR: { marginBottom: 2.4, fontWeight: 300, textAlign: "left" },
 
-  title: {
-    fontWeight: 700,
-  },
-
-  formCard: {
-    border: "1px solid #e0e0e0",
-    borderRadius: 24,
-    padding: 24,
-    backgroundColor: "#ffffff",
-    maxWidth: 600,
-    marginLeft: "auto",
-    marginRight: "auto",
-    width: "100%",
-  },
-
-  formHeader: {
-    marginBottom: 24,
-  },
-
-  fieldContainer: {
-    marginBottom: 24,
-  },
-
-  fieldLabel: {
-    marginBottom: 2.4,
-    fontWeight: 300,
-  },
-
-  fieldLabelRTL: {
-    marginBottom: 2.4,
-    fontWeight: 300,
-    textAlign: "right",
-  },
-
-  fieldLabelLTR: {
-    marginBottom: 2.4,
-    fontWeight: 300,
-    textAlign: "left",
-  },
-
-  emailFieldLabel: {
-    marginBottom: 2.4,
-    fontWeight: 100,
-  },
-
-  emailFieldLabelRTL: {
-    marginBottom: 2.4,
-    fontWeight: 100,
-    textAlign: "right",
-  },
-
-  emailFieldLabelLTR: {
-    marginBottom: 2.4,
-    fontWeight: 100,
-    textAlign: "left",
-  },
-
-  textField: {
-    width: "100%",
-    "& .MuiInputLabel-root": {
-      display: "none",
+    emailFieldLabel: { marginBottom: 2.4, fontWeight: 100 },
+    emailFieldLabelRTL: {
+      marginBottom: 2.4,
+      fontWeight: 100,
+      textAlign: "right",
     },
-    "&.Mui-disabled": {
-      color: "#9e9e9e",
+    emailFieldLabelLTR: {
+      marginBottom: 2.4,
+      fontWeight: 100,
+      textAlign: "left",
     },
-    "&.Mui-error": {
-      color: "#f44336",
-    },
-  },
 
-  textFieldRTL: {
-    width: "100%",
-    "& .MuiInputLabel-root": {
-      display: "none",
+    textField: {
+      width: "100%",
+      "& .MuiInputLabel-root": { display: "none" },
+      "& .MuiOutlinedInput-root": {
+        backgroundColor: "transparent",
+      },
+      "& .MuiInputBase-input.Mui-disabled": {
+        color: "var(--mui-palette-text-disabled)",
+        WebkitTextFillColor: "var(--mui-palette-text-disabled)", // Safari
+      },
+      "& .MuiInputBase-input.Mui-error": {
+        color: "var(--mui-palette-error-main)",
+      },
     },
-    "& .MuiInputBase-root": {
-      direction: "rtl",
-    },
-    "&.Mui-disabled": {
-      color: "#9e9e9e",
-    },
-    "&.Mui-error": {
-      color: "#f44336",
-    },
-  },
 
-  textFieldLTR: {
-    width: "100%",
-    "& .MuiInputLabel-root": {
-      display: "none",
+    textFieldRTL: {
+      composes: "$textField",
+      "& .MuiInputBase-root": { direction: "rtl" },
     },
-    "& .MuiInputBase-root": {
-      direction: "ltr",
+    textFieldLTR: {
+      composes: "$textField",
+      "& .MuiInputBase-root": { direction: "ltr" },
     },
-    "&.Mui-disabled": {
-      color: "#9e9e9e",
+
+    emailDisabledNote: {
+      marginTop: 4,
+      fontWeight: 100,
+      fontSize: "0.75rem",
+      color: "var(--mui-palette-text-disabled)",
     },
-    "&.Mui-error": {
-      color: "#f44336",
+    emailDisabledNoteRTL: {
+      composes: "$emailDisabledNote",
+      textAlign: "right",
     },
-  },
+    emailDisabledNoteLTR: {
+      composes: "$emailDisabledNote",
+      textAlign: "left",
+    },
 
-  emailDisabledNote: {
-    marginTop: 4,
-    fontWeight: 100,
-    fontSize: "0.75rem",
-    color: "#9e9e9e",
-  },
+    buttonContainer: {
+      marginTop: 24,
+      display: "flex",
+      gap: 8,
+      flexWrap: "wrap",
+      "@media (max-width: 600px)": { flexDirection: "column", gap: 12 },
+    },
 
-  emailDisabledNoteRTL: {
-    marginTop: 4,
-    fontWeight: 100,
-    fontSize: "0.75rem",
-    color: "#9e9e9e",
-    textAlign: "right",
-  },
+    interestsContainer: {
+      display: "flex",
+      gap: 8,
+      flexWrap: "wrap",
+      marginTop: 8,
+    },
 
-  emailDisabledNoteLTR: {
-    marginTop: 4,
-    fontWeight: 100,
-    fontSize: "0.75rem",
-    color: "#9e9e9e",
-    textAlign: "left",
-  },
-
-  buttonContainer: {
-    marginTop: 24,
-    display: "flex",
-    gap: 8,
-  },
-});
+    dropdownRTL: {
+      "& .MuiInputBase-root": { direction: "rtl" },
+      "& .MuiSelect-select, & .MuiInputBase-input": { textAlign: "right" },
+    },
+    dropdownLTR: {
+      "& .MuiInputBase-root": { direction: "ltr" },
+      "& .MuiSelect-select, & .MuiInputBase-input": { textAlign: "left" },
+    },
+  })();
+};

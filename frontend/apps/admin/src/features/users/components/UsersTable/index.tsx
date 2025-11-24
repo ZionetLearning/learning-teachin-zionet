@@ -73,31 +73,53 @@ export const UsersTable = ({ dir }: { dir: "ltr" | "rtl" }) => {
       {!isUsersLoading && !getUsersError && (
         <div className={classes.tableArea} data-testid="users-table">
           <div className={classes.tableShell} data-testid="users-table-shell">
-            <Table
-              size="small"
-              className={classes.headerTable}
-              aria-label="users header"
-            >
-              <TableHead>
-                <TableRow>
-                  <TableCell align="center" width="28%">
-                    {t("pages.users.email")}
-                  </TableCell>
-                  <TableCell align="center" width="18%">
-                    {t("pages.users.firstName")}
-                  </TableCell>
-                  <TableCell align="center" width="18%">
-                    {t("pages.users.lastName")}
-                  </TableCell>
-                  <TableCell align="center" width="16%">
-                    {t("pages.users.role")}
-                  </TableCell>
-                  <TableCell align="center" width="20%">
-                    {t("pages.users.actions")}
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-            </Table>
+            <div className={classes.tableScrollX}>
+              <Table
+                size="small"
+                className={classes.headerTable}
+                aria-label="users header"
+              >
+                <TableHead>
+                  <TableRow>
+                    <TableCell
+                      align="center"
+                      width="28%"
+                      className={classes.headerCell}
+                    >
+                      {t("pages.users.email")}
+                    </TableCell>
+                    <TableCell
+                      align="center"
+                      width="18%"
+                      className={classes.headerCell}
+                    >
+                      {t("pages.users.firstName")}
+                    </TableCell>
+                    <TableCell
+                      align="center"
+                      width="18%"
+                      className={classes.headerCell}
+                    >
+                      {t("pages.users.lastName")}
+                    </TableCell>
+                    <TableCell
+                      align="center"
+                      width="16%"
+                      className={classes.headerCell}
+                    >
+                      {t("pages.users.role")}
+                    </TableCell>
+                    <TableCell
+                      align="center"
+                      width="20%"
+                      className={classes.headerCell}
+                    >
+                      {t("pages.users.actions")}
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+              </Table>
+            </div>
 
             <div className={classes.searchBar} data-testid="users-search-bar">
               <TextField
@@ -134,47 +156,49 @@ export const UsersTable = ({ dir }: { dir: "ltr" | "rtl" }) => {
             </div>
 
             <div className={classes.rowsScroll} data-testid="users-rows-scroll">
-              <Table
-                size="small"
-                className={classes.bodyTable}
-                aria-label="users body"
-              >
-                <TableBody>
-                  {currentPageUsers.map((u) => (
-                    <UserListItem key={u.userId} user={u} />
-                  ))}
-                  {filteredUsers.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={5}>
-                        {t("pages.users.noUsersFound")}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+              <div className={classes.tableScrollX}>
+                <Table
+                  size="small"
+                  className={classes.bodyTable}
+                  aria-label="users body"
+                >
+                  <TableBody>
+                    {currentPageUsers.map((u) => (
+                      <UserListItem key={u.userId} user={u} />
+                    ))}
+                    {filteredUsers.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={5}>
+                          {t("pages.users.noUsersFound")}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
-          </div>
 
-          <TablePagination
-            component="div"
-            className={classes.paginationBar}
-            data-testid="users-pagination"
-            count={filteredUsers.length}
-            page={page}
-            onPageChange={handlePageChange}
-            rowsPerPage={rowsPerPage}
-            onRowsPerPageChange={handleRowsPerPageChange}
-            rowsPerPageOptions={[
-              5,
-              10,
-              25,
-              { label: t("pages.users.all"), value: -1 },
-            ]}
-            labelRowsPerPage={t("pages.users.rowsPerPage")}
-            labelDisplayedRows={({ from, to, count }) =>
-              `${from}-${to} ${t("pages.users.of")} ${count !== -1 ? count : to}`
-            }
-          />
+            <TablePagination
+              component="div"
+              className={classes.paginationBar}
+              data-testid="users-pagination"
+              count={filteredUsers.length}
+              page={page}
+              onPageChange={handlePageChange}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={handleRowsPerPageChange}
+              rowsPerPageOptions={[
+                5,
+                10,
+                25,
+                { label: t("pages.users.all"), value: -1 },
+              ]}
+              labelRowsPerPage={t("pages.users.rowsPerPage")}
+              labelDisplayedRows={({ from, to, count }) =>
+                `${from}-${to} ${t("pages.users.of")} ${count !== -1 ? count : to}`
+              }
+            />
+          </div>
         </div>
       )}
     </div>

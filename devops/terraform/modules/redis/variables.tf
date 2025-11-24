@@ -41,3 +41,9 @@ variable "use_shared_redis" {
   default     = false
   description = "If true, use a shared Redis instance across environments."
 }
+
+variable "shared_redis_name" {
+  type        = string
+  default     = null
+  description = "Name of shared Redis, used for firewall rules if use_shared_redis is true"
+}

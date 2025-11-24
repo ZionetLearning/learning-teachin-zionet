@@ -31,6 +31,8 @@ spec:
       imagePullSecrets:
         - name: {{ .Values.global.imagePullSecret.name }}
       {{- end }}
+      {{- include "app.spot.affinity" . | nindent 6 }}
+      {{- include "app.spot.tolerations" . | nindent 6 }}
       containers:
         - name: {{ .Values.manager.name }}
           image: {{ include "app.image" (dict "name" .Values.manager.image.name "tag" .Values.manager.image.tag "Values" .Values) }}
@@ -71,6 +73,11 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.manager.secrets.signalr.name }}
                   key: {{ .Values.manager.secrets.signalr.key }}
+            - name: Avatars__StorageConnectionString
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.namePrefix }}-{{ .Values.manager.secrets.avatars.name }}
+                  key: {{ .Values.manager.secrets.avatars.key }}
           resources:
             {{- toYaml .Values.manager.resources | nindent 12 }}
 ---

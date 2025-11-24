@@ -1,10 +1,30 @@
 ﻿using AutoMapper;
+using DotQueue;
+using Manager.Models.UserGameConfiguration;
+using Manager.Models.Notifications;
+using Manager.Models.QueueMessages;
 
 internal sealed class AutoMapperProfile : Profile
 {
     public AutoMapperProfile()
     {
-        // Currently there is nothing to map, but this is where you would configure mappings
+        CreateMap<FrameKind, StreamEventStage>()
+            .ConvertUsing(static src => ConvertFrameKindToStreamEventStage(src));
 
+        CreateMap<UserNewGameConfig, UserGameConfig>()
+            .ForMember(dest => dest.UserId, opt => opt.Ignore());
+    }
+
+    private static StreamEventStage ConvertFrameKindToStreamEventStage(FrameKind src)
+    {
+        return src switch
+        {
+            FrameKind.First => StreamEventStage.First,
+            FrameKind.Chunk => StreamEventStage.Chunk,
+            FrameKind.Last => StreamEventStage.Last,
+            FrameKind.Heartbeat => StreamEventStage.Heartbeat,
+            FrameKind.Error => StreamEventStage.Error,
+            _ => throw new NonRetryableException($"Unknown FrameKind value: {src}")
+        };
     }
 }

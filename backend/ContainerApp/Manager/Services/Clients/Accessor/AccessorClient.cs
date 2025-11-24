@@ -2,27 +2,34 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using AutoMapper;
 using Dapr.Client;
 using Manager.Constants;
 using Manager.Models;
 using Manager.Models.Auth;
 using Manager.Models.Auth.RefreshSessions;
 using Manager.Models.Chat;
+using Manager.Models.Classes;
+using Manager.Models.UserGameConfiguration;
 using Manager.Models.QueueMessages;
 using Manager.Models.Users;
+using Manager.Models.WordCards;
 using Manager.Services.Clients.Accessor.Models;
+using Manager.Services.Clients.Accessor.Interfaces;
 
 namespace Manager.Services.Clients.Accessor;
 
 public class AccessorClient(
     ILogger<AccessorClient> logger,
     DaprClient daprClient,
-    IHttpContextAccessor httpContextAccessor
+    IHttpContextAccessor httpContextAccessor,
+    IMapper mapper
     ) : IAccessorClient
 {
     private readonly ILogger<AccessorClient> _logger = logger;
     private readonly DaprClient _daprClient = daprClient;
     private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
+    private readonly IMapper _mapper = mapper;
 
     public async Task<TaskModel?> GetTaskAsync(int id)
     {
@@ -213,95 +220,6 @@ public class AccessorClient(
         }
     }
 
-    public async Task<UserData?> GetUserAsync(Guid userId)
-    {
-        try
-        {
-            return await _daprClient.InvokeMethodAsync<UserData?>(
-                HttpMethod.Get, AppIds.Accessor, $"users-accessor/{userId}");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting user {UserId}", userId);
-            return null;
-        }
-    }
-
-    public async Task<bool> CreateUserAsync(UserModel user)
-    {
-        try
-        {
-            _logger.LogInformation("Creating user with email: {Email}", user.Email);
-
-            await _daprClient.InvokeMethodAsync(HttpMethod.Post, AppIds.Accessor, "users-accessor", user);
-
-            _logger.LogInformation("User {Email} created successfully", user.Email);
-            return true;
-        }
-        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.Conflict)
-        {
-            _logger.LogWarning("Conflict: User already exists: {Email}", user.Email);
-            return false;
-        }
-        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.BadRequest)
-        {
-            _logger.LogWarning("Bad request when creating user: {Email}", user.Email);
-            return false;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error creating user {Email}", user.Email);
-            throw;
-        }
-    }
-
-    public async Task<bool> UpdateUserAsync(UpdateUserModel user, Guid userId)
-    {
-        try
-        {
-            await _daprClient.InvokeMethodAsync(HttpMethod.Put, AppIds.Accessor, $"users-accessor/{userId}", user);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error updating user {UserId}", userId);
-            return false;
-        }
-    }
-
-    public async Task<bool> DeleteUserAsync(Guid userId)
-    {
-        try
-        {
-            await _daprClient.InvokeMethodAsync(HttpMethod.Delete, AppIds.Accessor, $"users-accessor/{userId}");
-            return true;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error deleting user {UserId}", userId);
-            return false;
-        }
-    }
-
-    public async Task<IEnumerable<UserData>> GetAllUsersAsync(CancellationToken ct = default)
-    {
-        _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetAllUsersAsync), nameof(AccessorClient));
-
-        try
-        {
-            var users = await _daprClient.InvokeMethodAsync<List<UserData>>(
-                HttpMethod.Get, AppIds.Accessor, "users-accessor", ct);
-
-            _logger.LogInformation("Retrieved {Count} users from accessor", users?.Count ?? 0);
-            return users ?? Enumerable.Empty<UserData>();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to get all users from accessor");
-            throw;
-        }
-    }
-
     public async Task<StatsSnapshot?> GetStatsSnapshotAsync(CancellationToken ct = default)
     {
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetStatsSnapshotAsync), nameof(AccessorClient));
@@ -451,117 +369,6 @@ public class AccessorClient(
             throw;
         }
     }
-    // GetUsersForCallerAsync now accepts a DTO
-    public async Task<IEnumerable<UserData>> GetUsersForCallerAsync(CallerContextDto context, CancellationToken ct = default)
-    {
-        _logger.LogInformation("GetUsersForCallerAsync(role={Role}, id={Id})", context?.CallerRole, context?.CallerId);
-
-        try
-        {
-            // keep same GET+query behavior; just source values from DTO
-            var roleQP = Uri.EscapeDataString(context?.CallerRole ?? string.Empty);
-            var callerId = context?.CallerId ?? Guid.Empty;
-            var path = $"users-accessor?callerRole={roleQP}&callerId={callerId:D}";
-
-            var users = await _daprClient.InvokeMethodAsync<List<UserData>>(
-                HttpMethod.Get,
-                AppIds.Accessor,
-                path,
-                ct);
-
-            _logger.LogInformation("Accessor returned {Count} users for {Role}", users?.Count ?? 0, context?.CallerRole);
-            return users ?? Enumerable.Empty<UserData>();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Accessor call failed for role={Role}", context?.CallerRole);
-            throw;
-        }
-    }
-
-    // AssignStudentToTeacherAsync now accepts a DTO
-    public async Task<bool> AssignStudentToTeacherAsync(TeacherStudentMapDto map, CancellationToken ct = default)
-    {
-        try
-        {
-            await _daprClient.InvokeMethodAsync(
-                HttpMethod.Post,
-                AppIds.Accessor,
-                $"users-accessor/teacher/{map.TeacherId:D}/students/{map.StudentId:D}",
-                ct);
-            return true;
-        }
-        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.Conflict)
-        {
-            _logger.LogInformation("Mapping already exists for Teacher={TeacherId}, Student={StudentId}", map.TeacherId, map.StudentId);
-            return true;
-        }
-        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.BadRequest || ex.Response?.StatusCode == HttpStatusCode.NotFound)
-        {
-            _logger.LogWarning("Assign failed: {Status}", ex.Response?.StatusCode);
-            return false;
-        }
-    }
-
-    // UnassignStudentFromTeacherAsync now accepts a DTO
-    public async Task<bool> UnassignStudentFromTeacherAsync(TeacherStudentMapDto map, CancellationToken ct = default)
-    {
-        try
-        {
-            await _daprClient.InvokeMethodAsync(
-                HttpMethod.Delete,
-                AppIds.Accessor,
-                $"users-accessor/teacher/{map.TeacherId:D}/students/{map.StudentId:D}",
-                ct);
-            return true;
-        }
-        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
-        {
-            _logger.LogInformation("Mapping not found (already removed) for Teacher={TeacherId}, Student={StudentId}", map.TeacherId, map.StudentId);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Unassign failed");
-            return false;
-        }
-    }
-
-    public async Task<IEnumerable<UserData>> GetStudentsForTeacherAsync(Guid teacherId, CancellationToken ct = default)
-    {
-        try
-        {
-            var list = await _daprClient.InvokeMethodAsync<List<UserData>>(
-                HttpMethod.Get,
-                AppIds.Accessor,
-                $"users-accessor/teacher/{teacherId:D}/students",
-                ct);
-            return list ?? Enumerable.Empty<UserData>();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "GetStudentsForTeacher failed");
-            throw;
-        }
-    }
-
-    public async Task<IEnumerable<UserData>> GetTeachersForStudentAsync(Guid studentId, CancellationToken ct = default)
-    {
-        try
-        {
-            var list = await _daprClient.InvokeMethodAsync<List<UserData>>(
-                HttpMethod.Get,
-                AppIds.Accessor,
-                $"users-accessor/student/{studentId:D}/teachers",
-                ct);
-            return list ?? Enumerable.Empty<UserData>();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "GetTeachersForStudent failed");
-            throw;
-        }
-    }
 
     public async Task<(TaskModel? Task, string? ETag)> GetTaskWithEtagAsync(int id, CancellationToken ct = default)
     {
@@ -623,6 +430,7 @@ public class AccessorClient(
             throw;
         }
     }
+
     public async Task<UpdateTaskNameResult> UpdateTaskNameAsync(int id, string newTaskName, string ifMatch, CancellationToken ct = default)
     {
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(UpdateTaskNameAsync), nameof(AccessorClient));
@@ -663,6 +471,380 @@ public class AccessorClient(
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to PATCH update task {TaskId} at Accessor", id);
+            throw;
+        }
+    }
+
+    public async Task<IReadOnlyList<WordCard>> GetWordCardsAsync(Guid userId, CancellationToken ct)
+    {
+        _logger.LogInformation("Fetching word cards for user {UserId}", userId);
+
+        try
+        {
+            var wordCards = await _daprClient.InvokeMethodAsync<List<WordCard>>(
+                HttpMethod.Get,
+                AppIds.Accessor,
+                $"wordcards-accessor/{userId}",
+                cancellationToken: ct
+            );
+
+            return wordCards ?? [];
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to fetch word cards for user {UserId}", userId);
+            throw;
+        }
+    }
+
+    public async Task<WordCard> CreateWordCardAsync(Guid userId, CreateWordCardRequest request, CancellationToken ct)
+    {
+        _logger.LogInformation("Creating word card for user {UserId}", userId);
+
+        try
+        {
+            var payload = new CreateWordCard
+            {
+                UserId = userId,
+                Hebrew = request.Hebrew,
+                English = request.English,
+                Explanation = request.Explanation,
+            };
+
+            var response = await _daprClient.InvokeMethodAsync<CreateWordCard, WordCard>(
+                HttpMethod.Post,
+                AppIds.Accessor,
+                $"wordcards-accessor",
+                payload,
+                cancellationToken: ct
+            );
+
+            return response;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create word card for user {UserId}", userId);
+            throw;
+        }
+    }
+
+    public async Task<WordCardLearnedStatus> UpdateLearnedStatusAsync(Guid userId, LearnedStatus request, CancellationToken ct)
+    {
+        _logger.LogInformation("Updating learned status. UserId={UserId}, CardId={CardId}, IsLearned={IsLearned}", userId, request.CardId, request.IsLearned);
+
+        try
+        {
+            var payload = new SetLearnedStatus
+            {
+                UserId = userId,
+                CardId = request.CardId,
+                IsLearned = request.IsLearned,
+            };
+
+            var response = await _daprClient.InvokeMethodAsync<SetLearnedStatus, WordCardLearnedStatus>(
+                HttpMethod.Patch,
+                AppIds.Accessor,
+                $"wordcards-accessor/learned",
+                payload,
+                cancellationToken: ct
+            );
+
+            return response;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update learned status for CardId={CardId}", request.CardId);
+            throw;
+        }
+    }
+
+    public async Task<ClassDto?> GetClassAsync(Guid classId, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Fetching class {ClassId} from Accessor", classId);
+
+        try
+        {
+            var cls = await _daprClient.InvokeMethodAsync<ClassDto?>(
+                HttpMethod.Get,
+                AppIds.Accessor,
+                $"classes-accessor/{classId:D}",
+                ct
+            );
+
+            return cls;
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("Class {ClassId} not found (404)", classId);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to fetch class {ClassId} from Accessor", classId);
+            throw;
+        }
+    }
+    public async Task<List<ClassDto?>?> GetMyClassesAsync(Guid callerId, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Fetching classes for {CallerId} from Accessor", callerId);
+
+        try
+        {
+            var cls = await _daprClient.InvokeMethodAsync<List<ClassDto?>?>(
+                HttpMethod.Get,
+                AppIds.Accessor,
+                $"classes-accessor/my/{callerId:D}",
+                ct
+            );
+
+            return cls;
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("Classes for user {CallerId} not found (404)", callerId);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to fetch classes for user {CallerId} from Accessor", callerId);
+            throw;
+        }
+    }
+    public async Task<List<ClassDto?>?> GetAllClassesAsync(CancellationToken ct = default)
+    {
+        _logger.LogInformation("Fetching class from Accessor");
+
+        try
+        {
+            var cls = await _daprClient.InvokeMethodAsync<List<ClassDto?>?>(
+                HttpMethod.Get,
+                AppIds.Accessor,
+                $"classes-accessor/",
+                ct
+            );
+
+            return cls;
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("Classes not found (404)");
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to fetch classes from Accessor");
+            throw;
+        }
+    }
+    public async Task<Class?> CreateClassAsync(CreateClassRequest request, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Creating class {Name} via Accessor", request.Name);
+
+        try
+        {
+            var cls = await _daprClient.InvokeMethodAsync<CreateClassRequest, Class?>(
+                HttpMethod.Post,
+                AppIds.Accessor,
+                "classes-accessor",
+                request,
+                ct
+            );
+
+            return cls;
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.Conflict)
+        {
+            _logger.LogWarning("Class {Name} already exists (409)", request.Name);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create class {Name}", request.Name);
+            throw;
+        }
+    }
+
+    public async Task<bool> AddMembersToClassAsync(Guid classId, AddMembersRequest request, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Adding members to class {ClassId}", classId);
+
+        try
+        {
+            await _daprClient.InvokeMethodAsync(
+                HttpMethod.Post,
+                AppIds.Accessor,
+                $"classes-accessor/{classId:D}/members",
+                request,
+                ct
+            );
+
+            return true;
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.BadRequest)
+        {
+            _logger.LogWarning("Bad request while adding members to class {ClassId}", classId);
+            return false;
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.Conflict)
+        {
+            _logger.LogWarning("Already exists");
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to add members to class {ClassId}", classId);
+            throw;
+        }
+    }
+
+    public async Task<bool> RemoveMembersFromClassAsync(Guid classId, RemoveMembersRequest request, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Removing members from class {ClassId}", classId);
+
+        try
+        {
+            await _daprClient.InvokeMethodAsync(
+                HttpMethod.Delete,
+                AppIds.Accessor,
+                $"classes-accessor/{classId:D}/members",
+                request,
+                ct
+            );
+
+            return true;
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.BadRequest)
+        {
+            _logger.LogWarning("Bad request while removing members from class {ClassId}", classId);
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to remove members from class {ClassId}", classId);
+            throw;
+        }
+    }
+    public async Task<bool> DeleteClassAsync(Guid classId, CancellationToken ct)
+    {
+        _logger.LogInformation("Deleting class {ClassId}", classId);
+
+        try
+        {
+            await _daprClient.InvokeMethodAsync(
+                HttpMethod.Delete,
+                AppIds.Accessor,
+                $"classes-accessor/{classId:D}",
+                ct
+            );
+
+            return true;
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.BadRequest)
+        {
+            _logger.LogWarning("Bad request while deleting class {ClassId}", classId);
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to deleting class {ClassId}", classId);
+            throw;
+        }
+    }
+
+    public async Task<UserGameConfig> GetUserGameConfigAsync(Guid userId, GameName gameName, CancellationToken ct)
+    {
+        _logger.LogInformation("Get User's Game Configuration. UserId={UserId}, Game Name={GameName}", userId, gameName);
+
+        try
+        {
+
+            var response = await _daprClient.InvokeMethodAsync<UserGameConfig>(
+                HttpMethod.Get,
+                AppIds.Accessor,
+                $"game-config-accessor?userId={userId}&gameName={gameName}",
+                cancellationToken: ct
+            );
+            return response;
+        }
+        catch (Exception)
+        {
+            _logger.LogInformation("Failed to get user configuration for UserId={UserId}", userId);
+            throw;
+        }
+    }
+
+    public async Task SaveUserGameConfigAsync(Guid userId, UserNewGameConfig gameName, CancellationToken ct)
+    {
+        _logger.LogInformation("Save User's Game Configuration. UserId={UserId}, Game Name={GameName}", userId, gameName);
+        try
+        {
+            var payload = _mapper.Map<UserGameConfig>(gameName);
+            payload.UserId = userId;
+
+            await _daprClient.InvokeMethodAsync(
+                HttpMethod.Put,
+                AppIds.Accessor,
+                $"game-config-accessor",
+                payload,
+                cancellationToken: ct
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save user configuration for UserId={UserId}", userId);
+            throw;
+        }
+    }
+
+    public async Task DeleteUserGameConfigAsync(Guid userId, GameName gameName, CancellationToken ct)
+    {
+        _logger.LogInformation("Delete User's Game Configuration. UserId={UserId}, Game Name={GameName}", userId, gameName);
+        try
+        {
+            var payload = new UserGameConfigKey
+            {
+                UserId = userId,
+                GameName = gameName
+            };
+
+            await _daprClient.InvokeMethodAsync(
+                HttpMethod.Delete,
+                AppIds.Accessor,
+                $"game-config-accessor",
+                payload,
+                cancellationToken: ct
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to delete user configuration for UserId={UserId}", userId);
+            throw;
+        }
+    }
+
+    public async Task UpdateUserLanguageAsync(Guid callerId, SupportedLanguage language, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Updating user language to {Language}", language);
+
+        var payload = new UserLanguage
+        {
+            UserId = callerId,
+            Language = language
+        };
+
+        try
+        {
+            await _daprClient.InvokeMethodAsync(
+                HttpMethod.Put,
+                AppIds.Accessor,
+                $"users-accessor/language",
+                payload,
+                cancellationToken: ct
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update user language to {Language}", language);
             throw;
         }
     }

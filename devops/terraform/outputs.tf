@@ -50,7 +50,7 @@ output "servicebus_connection_string" {
 }
 
 output "postgres_connection_string" {
-  value     = var.use_shared_postgres ? format("Host=%s;Database=%s;Username=%s;Password=%s;SslMode=Require", data.azurerm_postgresql_flexible_server.shared[0].fqdn, "${var.database_name}-${var.environment_name}", var.admin_username, var.admin_password) : module.database[0].postgres_connection_string
+  value     = local.use_shared_postgres ? format("Host=%s;Database=%s;Username=%s;Password=%s;SslMode=Require", data.azurerm_postgresql_flexible_server.shared[0].fqdn, "${var.database_name}-${var.environment_name}", var.admin_username, var.admin_password) : module.database[0].postgres_connection_string
   sensitive = true
 }
 
@@ -59,13 +59,17 @@ output "signalr_connection_string" {
   sensitive = true
 }
 
-
 output "redis_hostname" {
   value = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].hostname : module.redis[0].hostname
 }
 
 output "redis_primary_access_key" {
   value     = var.use_shared_redis ? data.azurerm_redis_cache.shared[0].primary_access_key : module.redis[0].primary_access_key
+  sensitive = true
+}
+
+output "communication_service_connection_string" {
+  value     = var.communication_service_connection_string
   sensitive = true
 }
 
@@ -90,4 +94,45 @@ output "application_insights_connection_strings" {
 output "frontend_apps_enabled" {
   description = "List of enabled frontend applications"
   value       = var.frontend_apps
+}
+
+# Storage Account Outputs
+output "storage_resource_group_name" {
+  description = "Name of the shared storage resource group"
+  value       = module.storage.storage_resource_group_name
+}
+
+output "avatars_storage_account_name" {
+  description = "Name of the avatars storage account"
+  value       = module.storage.avatars_storage_account_name
+}
+
+output "avatars_storage_account_primary_endpoint" {
+  description = "Primary blob endpoint for the avatars storage account"
+  value       = module.storage.avatars_storage_account_primary_endpoint
+}
+
+output "avatars_container_name" {
+  description = "Name of the avatars container"
+  value       = module.storage.avatars_container_name
+}
+
+
+# Langfuse secrets for Accessor (only output when dev environment creates them)
+output "langfuse_baseurl" {
+  description = "Langfuse Base URL - Global API endpoint for all environments"
+  value       = var.environment_name == "dev" ? azurerm_key_vault_secret.langfuse_baseurl[0].value : null
+  sensitive   = true
+}
+
+output "langfuse_public_key" {
+  description = "Langfuse Public Key - Global API key for all environments"
+  value       = var.environment_name == "dev" ? azurerm_key_vault_secret.langfuse_public_key[0].value : null
+  sensitive   = true
+}
+
+output "langfuse_secret_key" {
+  description = "Langfuse Secret Key - Global API key for all environments"
+  value       = var.environment_name == "dev" ? azurerm_key_vault_secret.langfuse_secret_key[0].value : null
+  sensitive   = true
 }

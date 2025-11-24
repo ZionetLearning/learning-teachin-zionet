@@ -10,6 +10,7 @@ using Accessor.Services.Interfaces;
 using Azure.Messaging.ServiceBus;
 using DotQueue;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -35,10 +36,18 @@ builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IStatsService, StatsService>();
+builder.Services.AddScoped<IGameService, GameService>();
 builder.Services.AddScoped<DatabaseInitializer>();
 builder.Services.AddScoped<IManagerCallbackQueueService, ManagerCallbackQueueService>();
 builder.Services.AddScoped<IRefreshSessionService, RefreshSessionService>();
 builder.Services.AddScoped<ISpeechService, SpeechService>();
+builder.Services.AddScoped<IStudentPracticeHistoryService, StudentPracticeHistoryService>();
+builder.Services.AddScoped<IWordCardService, WordCardService>();
+builder.Services.AddScoped<IClassService, ClassService>();
+builder.Services.AddScoped<IMeetingService, MeetingService>();
+builder.Services.AddScoped<IAzureCommunicationService, AzureCommunicationService>();
+builder.Services.AddScoped<IUserGameConfigurationService, UserGameConfigurationService>();
+builder.Services.AddScoped<IAchievementService, AchievementService>();
 
 builder.Services.AddHttpClient("SpeechClient", client =>
 {
@@ -47,6 +56,20 @@ builder.Services.AddHttpClient("SpeechClient", client =>
 
     client.BaseAddress = new Uri($"https://{region}.api.cognitive.microsoft.com/");
     client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", key);
+});
+
+builder.Services.AddHttpClient<ILangfuseService, LangfuseService>((serviceProvider, client) =>
+{
+    var options = serviceProvider.GetRequiredService<IOptions<LangfuseOptions>>().Value;
+    // Only set BaseAddress if configured, otherwise use a dummy URL to prevent exception
+    if (!string.IsNullOrWhiteSpace(options.BaseUrl))
+    {
+        client.BaseAddress = new Uri(options.BaseUrl);
+    }
+    else
+    {
+        client.BaseAddress = new Uri("http://localhost");
+    }
 });
 
 builder.Services.AddScoped<IPromptService, PromptService>();
@@ -71,6 +94,10 @@ builder.Services.AddOptions<PromptsOptions>()
     .Bind(builder.Configuration.GetSection("Prompts"))
     .ValidateOnStart();
 
+builder.Services.AddOptions<LangfuseOptions>()
+    .Bind(builder.Configuration.GetSection("Langfuse"))
+    .ValidateOnStart();
+
 // Register Dapr client with custom JSON options
 builder.Services.AddDaprClient(client =>
 {
@@ -83,14 +110,25 @@ builder.Services.AddDaprClient(client =>
 });
 
 // Configure PostgreSQL
-builder.Services.AddDbContext<AccessorDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres"), npgsqlOptions =>
+builder.Services.AddSingleton(sp =>
+{
+    var connString = builder.Configuration.GetConnectionString("Postgres");
+    var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(connString);
+    dataSourceBuilder.EnableDynamicJson();
+    return dataSourceBuilder.Build();
+});
+
+builder.Services.AddDbContextPool<AccessorDbContext>((sp, options) =>
+{
+    var dataSource = sp.GetRequiredService<Npgsql.NpgsqlDataSource>();
+    options.UseNpgsql(dataSource, npgsqlOptions =>
     {
         npgsqlOptions.EnableRetryOnFailure(
             maxRetryCount: 5,
             maxRetryDelay: TimeSpan.FromSeconds(5),
             errorCodesToAdd: null);
-    }));
+    });
+});
 
 // This is required for the Scalar UI to have an option to setup an authentication token
 builder.Services.AddOpenApi(
@@ -114,8 +152,6 @@ using (var scope = app.Services.CreateScope())
 {
     var initializer = scope.ServiceProvider.GetRequiredService<DatabaseInitializer>();
     await initializer.InitializeAsync();
-    var promptStartup = scope.ServiceProvider.GetRequiredService<IPromptService>();
-    await promptStartup.InitializeDefaultPromptsAsync();
 }
 
 // Configure middleware and Dapr
@@ -149,4 +185,11 @@ app.MapAuthEndpoints();
 app.MapRefreshSessionEndpoints();
 app.MapStatsEndpoints();
 app.MapMediaEndpoints();
+app.MapGamesEndpoints();
+app.MapWordCardsEndpoints();
+app.MapClassesEndpoints();
+app.MapMeetingsEndpoints();
+app.MapUserGameConfigurationEndpoints();
+app.MapAchievementsEndpoints();
+
 await app.RunAsync();

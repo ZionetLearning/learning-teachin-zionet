@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Typography, TextField, Stack } from "@mui/material";
+import { Typography, TextField, Stack, Box, Grid } from "@mui/material";
 import { useUpdateUserByUserId, toAppRole } from "@app-providers";
 import {
   User,
@@ -8,12 +8,13 @@ import {
   PreferredLanguageCode,
 } from "@app-providers/types";
 import { useStyles } from "./style";
-import { Dropdown, Button } from "@ui-components";
+import { Dropdown, Button, InterestChip, AvatarUpload } from "@ui-components";
 
 export const Profile = ({ user }: { user: User }) => {
+  const classes = useStyles();
+
   const { t, i18n } = useTranslation();
   const isRTL = i18n.dir() === "rtl";
-  const classes = useStyles();
 
   const { mutateAsync: updateUserMutation } = useUpdateUserByUserId(
     user?.userId ?? "",
@@ -24,7 +25,10 @@ export const Profile = ({ user }: { user: User }) => {
     lastName: user?.lastName ?? "",
     hebrewLevelValue: user?.hebrewLevelValue ?? "beginner",
     preferredLanguageCode: user?.preferredLanguageCode ?? "en",
+    interests: user?.interests ?? [],
   });
+
+  const [interestInput, setInterestInput] = useState("");
 
   useEffect(() => {
     setUserDetails({
@@ -32,12 +36,15 @@ export const Profile = ({ user }: { user: User }) => {
       lastName: user?.lastName ?? "",
       hebrewLevelValue: user?.hebrewLevelValue ?? "beginner",
       preferredLanguageCode: user?.preferredLanguageCode ?? "en",
+      interests: user?.interests ?? [],
     });
+    setInterestInput("");
   }, [
     user?.firstName,
     user?.hebrewLevelValue,
     user?.lastName,
     user?.preferredLanguageCode,
+    user?.interests,
     user.userId,
   ]);
 
@@ -70,7 +77,9 @@ export const Profile = ({ user }: { user: User }) => {
       lastName: user?.lastName ?? "",
       hebrewLevelValue: user?.hebrewLevelValue ?? "beginner",
       preferredLanguageCode: user?.preferredLanguageCode ?? "en",
+      interests: user?.interests ?? [],
     });
+    setInterestInput("");
   };
 
   const handleSave = async () => {
@@ -80,14 +89,20 @@ export const Profile = ({ user }: { user: User }) => {
       lastName: userDetails.lastName.trim(),
       hebrewLevelValue: userDetails.hebrewLevelValue,
       preferredLanguageCode: userDetails.preferredLanguageCode,
+      interests: userDetails.interests,
     });
   };
+
+  const haveSameItems = (a: string[] = [], b: string[] = []) =>
+    a.length === b.length && a.every((x) => b.includes(x));
 
   const dirty =
     userDetails.firstName.trim() !== (user?.firstName ?? "").trim() ||
     userDetails.lastName.trim() !== (user?.lastName ?? "").trim() ||
     userDetails.hebrewLevelValue !== (user?.hebrewLevelValue ?? "beginner") ||
-    userDetails.preferredLanguageCode !== (user?.preferredLanguageCode ?? "en");
+    userDetails.preferredLanguageCode !==
+      (user?.preferredLanguageCode ?? "en") ||
+    !haveSameItems(userDetails.interests ?? [], user?.interests ?? []);
 
   const hebrewLevelOptions = [
     { value: "beginner", label: t("hebrewLevels.beginner") },
@@ -101,66 +116,146 @@ export const Profile = ({ user }: { user: User }) => {
     { value: "en", label: t("languages.english") },
   ];
 
+  const addInterests = (tokens: string[]) => {
+    const cleaned = tokens.map((s) => s.trim()).filter((s) => s.length > 0);
+    if (cleaned.length === 0) return;
+    setUserDetails((prev) => {
+      const existing = new Set(prev.interests ?? []);
+      const merged = [...(prev.interests ?? [])];
+      cleaned.forEach((c) => {
+        if (!existing.has(c)) {
+          merged.push(c);
+          existing.add(c);
+        }
+      });
+      return { ...prev, interests: merged };
+    });
+  };
+
+  const handleInterestChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (val.includes(",")) {
+      const parts = val.split(",");
+      const complete = parts.slice(0, -1);
+      addInterests(complete);
+      setInterestInput(parts[parts.length - 1]);
+    } else {
+      setInterestInput(val);
+    }
+  };
+
+  const handleInterestKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (interestInput.trim().length > 0) {
+        addInterests([interestInput]);
+        setInterestInput("");
+      }
+    }
+  };
+
+  const removeInterest = (idx: number) => () => {
+    setUserDetails((prev) => ({
+      ...prev,
+      interests: (prev.interests ?? []).filter((_, i) => i !== idx),
+    }));
+  };
+
   return (
-    <div className={classes.container}>
-      <div className={classes.titleContainer}>
+    <Box className={classes.container}>
+      <Box className={classes.titleContainer}>
         <Typography variant="h4" className={classes.title}>
           {t("pages.profile.title")}
         </Typography>
-      </div>
+      </Box>
 
-      <div className={classes.formCard}>
-        <div className={classes.formHeader}>
-          <Typography variant="h6">{t("pages.profile.subTitle")}</Typography>
+      <Box className={classes.formCard}>
+        <Box className={classes.formHeader}>
+          <Typography variant="h6" color="text.secondary">
+            {t("pages.profile.subTitle")}
+          </Typography>
           <Typography variant="body2" color="text.secondary">
             {t("pages.profile.secondSubTitle")}
           </Typography>
-        </div>
+        </Box>
+        <AvatarUpload
+          userId={user.userId}
+          userName={`${user.firstName} ${user.lastName}`}
+        />
 
         <Stack spacing={3}>
-          <div className={classes.fieldContainer}>
-            <Typography
-              variant="body2"
-              color="text.primary"
-              className={isRTL ? classes.fieldLabelRTL : classes.fieldLabelLTR}
-            >
-              {t("pages.profile.firstName")}
-            </Typography>
-            <TextField
-              value={userDetails.firstName}
-              onChange={handleTextChange("firstName")}
-              fullWidth
-              className={isRTL ? classes.textFieldRTL : classes.textFieldLTR}
-            />
-          </div>
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Box className={classes.fieldContainer}>
+                <Typography
+                  variant="body2"
+                  color="text.primary"
+                  className={
+                    isRTL ? classes.fieldLabelRTL : classes.fieldLabelLTR
+                  }
+                >
+                  {t("pages.profile.firstName")}
+                </Typography>
+                <TextField
+                  value={userDetails.firstName}
+                  onChange={handleTextChange("firstName")}
+                  fullWidth
+                  className={
+                    isRTL ? classes.textFieldRTL : classes.textFieldLTR
+                  }
+                  size="small"
+                />
+              </Box>
+            </Grid>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Box className={classes.fieldContainer}>
+                <Typography
+                  variant="body2"
+                  color="text.primary"
+                  className={
+                    isRTL ? classes.fieldLabelRTL : classes.fieldLabelLTR
+                  }
+                >
+                  {t("pages.profile.lastName")}
+                </Typography>
+                <TextField
+                  value={userDetails.lastName}
+                  onChange={handleTextChange("lastName")}
+                  fullWidth
+                  className={
+                    isRTL ? classes.textFieldRTL : classes.textFieldLTR
+                  }
+                  size="small"
+                />
+              </Box>
+            </Grid>
+          </Grid>
 
-          <div className={classes.fieldContainer}>
-            <Typography
-              variant="body2"
-              color="text.primary"
-              className={isRTL ? classes.fieldLabelRTL : classes.fieldLabelLTR}
-            >
-              {t("pages.profile.lastName")}
-            </Typography>
-            <TextField
-              value={userDetails.lastName}
-              onChange={handleTextChange("lastName")}
-              fullWidth
-              className={isRTL ? classes.textFieldRTL : classes.textFieldLTR}
-            />
-          </div>
-
-          <div className={classes.fieldContainer}>
-            <Typography
-              variant="body2"
-              color="text.primary"
-              className={
-                isRTL ? classes.emailFieldLabelRTL : classes.emailFieldLabelLTR
-              }
-            >
-              {/* Conditionally render Hebrew Level for student role */}
-              {toAppRole(user?.role) === "student" && (
-                <div className={classes.fieldContainer}>
+          <Box>
+            <Box className={classes.fieldContainer}>
+              <Typography
+                variant="body2"
+                color="text.primary"
+                className={
+                  isRTL ? classes.fieldLabelRTL : classes.fieldLabelLTR
+                }
+              >
+                {t("pages.profile.preferredLanguage")}
+              </Typography>
+              <Box
+                className={isRTL ? classes.dropdownRTL : classes.dropdownLTR}
+              >
+                <Dropdown
+                  name="preferredLanguage"
+                  options={languageOptions}
+                  value={userDetails.preferredLanguageCode}
+                  onChange={handleLanguageChange}
+                />
+              </Box>
+            </Box>
+            {toAppRole(user?.role) === "student" && (
+              <Box>
+                <Box className={classes.fieldContainer}>
                   <Typography
                     variant="body2"
                     color="text.primary"
@@ -170,35 +265,60 @@ export const Profile = ({ user }: { user: User }) => {
                   >
                     {t("hebrewLevels.title")}
                   </Typography>
-                  <Dropdown
-                    name="hebrewLevel"
-                    options={hebrewLevelOptions}
-                    value={userDetails.hebrewLevelValue}
-                    onChange={(val) =>
-                      handleDropdownChange("hebrewLevelValue")(val)
+                  <Box
+                    className={
+                      isRTL ? classes.dropdownRTL : classes.dropdownLTR
                     }
+                  >
+                    <Dropdown
+                      name="hebrewLevel"
+                      options={hebrewLevelOptions}
+                      value={userDetails.hebrewLevelValue}
+                      onChange={(val) =>
+                        handleDropdownChange("hebrewLevelValue")(val)
+                      }
+                    />
+                  </Box>
+                </Box>
+                <Box className={classes.fieldContainer}>
+                  <Typography
+                    variant="body2"
+                    color="text.primary"
+                    className={
+                      isRTL ? classes.fieldLabelRTL : classes.fieldLabelLTR
+                    }
+                  >
+                    {t("pages.profile.interests")}
+                  </Typography>
+                  <TextField
+                    placeholder={t("pages.auth.interestsPlaceholder")}
+                    value={interestInput}
+                    onChange={handleInterestChange}
+                    onKeyDown={handleInterestKeyDown}
+                    fullWidth
+                    className={
+                      isRTL ? classes.textFieldRTL : classes.textFieldLTR
+                    }
+                    size="small"
                   />
-                </div>
-              )}
-
-              <div className={classes.fieldContainer}>
-                <Typography
-                  variant="body2"
-                  color="text.primary"
-                  className={
-                    isRTL ? classes.fieldLabelRTL : classes.fieldLabelLTR
-                  }
-                >
-                  {t("pages.profile.preferredLanguage")}
-                </Typography>
-                <Dropdown
-                  name="preferredLanguage"
-                  options={languageOptions}
-                  value={userDetails.preferredLanguageCode}
-                  onChange={handleLanguageChange}
-                />
-              </div>
-
+                  <Box className={classes.interestsContainer}>
+                    {(userDetails.interests ?? []).map((it, idx) => (
+                      <InterestChip
+                        key={`${it}-${idx}`}
+                        label={it}
+                        onDelete={removeInterest(idx)}
+                        size="small"
+                      />
+                    ))}
+                  </Box>
+                </Box>
+              </Box>
+            )}
+            <Typography
+              variant="body2"
+              color="text.primary"
+              className={isRTL ? classes.fieldLabelRTL : classes.fieldLabelLTR}
+            >
               {t("pages.profile.email")}
             </Typography>
             <TextField
@@ -206,6 +326,7 @@ export const Profile = ({ user }: { user: User }) => {
               disabled
               fullWidth
               className={isRTL ? classes.textFieldRTL : classes.textFieldLTR}
+              size="small"
             />
             <Typography
               variant="body2"
@@ -218,18 +339,18 @@ export const Profile = ({ user }: { user: User }) => {
             >
               {t("pages.profile.emailCannotBeChanged")}
             </Typography>
-          </div>
+          </Box>
         </Stack>
 
-        <div className={classes.buttonContainer}>
+        <Box className={classes.buttonContainer}>
           <Button onClick={handleSave} disabled={!dirty}>
             {t("pages.profile.saveChanges")}
           </Button>
           <Button variant="outlined" disabled={!dirty} onClick={handleCancel}>
             {t("pages.profile.cancel")}
           </Button>
-        </div>
-      </div>
-    </div>
+        </Box>
+      </Box>
+    </Box>
   );
 };

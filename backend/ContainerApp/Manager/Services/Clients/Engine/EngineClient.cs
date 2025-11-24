@@ -5,6 +5,7 @@ using Manager.Constants;
 using Manager.Models;
 using Manager.Models.QueueMessages;
 using Manager.Models.Sentences;
+using Manager.Models.Words;
 using Manager.Services.Clients.Engine.Models;
 
 namespace Manager.Services.Clients.Engine;
@@ -77,6 +78,44 @@ public class EngineClient : IEngineClient
 
             _logger.LogDebug(
                 "ProcessingChatMessage request for thread {ThreadId} sent to Engine via binding '{Binding}'",
+                request.ThreadId,
+                QueueNames.EngineQueue
+            );
+            return (true, "sent to engine");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send chat request to Engine");
+            return (false, "failed to send chat request");
+        }
+    }
+
+    public async Task<(bool success, string message)> GlobalChatAsync(EngineChatRequest request)
+    {
+        _logger.LogInformation("Invoke Engine /chat asynchronously (thread {Thread})", request.ThreadId);
+        try
+        {
+            var requestMetadata = new UserContextMetadata
+            {
+                UserId = request.UserId.ToString()
+            };
+
+            var message = new Message
+            {
+                ActionName = MessageAction.ProcessingGlobalChatMessage,
+                Payload = JsonSerializer.SerializeToElement(request),
+                Metadata = JsonSerializer.SerializeToElement(requestMetadata)
+            };
+
+            var queueMetadata = new Dictionary<string, string>
+            {
+                ["sessionId"] = request.ThreadId.ToString()
+            };
+
+            await _daprClient.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message, queueMetadata);
+
+            _logger.LogDebug(
+                "ProcessingGlobalChatMessage request for thread {ThreadId} sent to Engine via binding '{Binding}'",
                 request.ThreadId,
                 QueueNames.EngineQueue
             );
@@ -166,7 +205,7 @@ public class EngineClient : IEngineClient
             };
             await _daprClient.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message);
 
-            _logger.LogDebug(
+            _logger.LogInformation(
                 "Generate request sent to Engine via binding '{Binding}'",
                 QueueNames.EngineQueue
             );
@@ -175,6 +214,77 @@ public class EngineClient : IEngineClient
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to send request for generation to Engine");
+            throw;
+        }
+    }
+    public async Task<(bool success, string message)> ExplainMistakeAsync(EngineExplainMistakeRequest request)
+    {
+        try
+        {
+            _logger.LogInformation("Inside: {Method} in {Class}", nameof(ExplainMistakeAsync), nameof(EngineClient));
+
+            var requestMetadata = new UserContextMetadata
+            {
+                UserId = request.UserId.ToString()
+            };
+
+            var message = new Message
+            {
+                ActionName = MessageAction.ProcessingExplainMistake,
+                Payload = JsonSerializer.SerializeToElement(request),
+                Metadata = JsonSerializer.SerializeToElement(requestMetadata)
+            };
+
+            var queueMetadata = new Dictionary<string, string>
+            {
+                ["sessionId"] = request.ThreadId.ToString()
+            };
+
+            await _daprClient.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message, queueMetadata);
+
+            _logger.LogDebug(
+                "ProcessingExplainMistake request for thread {ThreadId} sent to Engine via binding '{Binding}'",
+                request.ThreadId,
+                QueueNames.EngineQueue
+            );
+            return (true, "sent to engine");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send explain mistake request to Engine");
+            return (false, "failed to send explain mistake request");
+        }
+    }
+    public async Task<(bool success, string message)> GenerateWordExplainAsync(WordExplainRequest request, CancellationToken ct = default)
+    {
+        try
+        {
+            _logger.LogInformation("Received WordExplain request for word '{Word}'", request.Word);
+
+            var payload = JsonSerializer.SerializeToElement(request);
+
+            var message = new Message
+            {
+                ActionName = MessageAction.GenerateWordExplain,
+                Payload = payload
+            };
+
+            await _daprClient.InvokeBindingAsync($"{QueueNames.EngineQueue}-out", "create", message, cancellationToken: ct);
+
+            _logger.LogInformation("WordExplain request for '{Word}' sent to Engine via binding '{Binding}'",
+                request.Word,
+                QueueNames.EngineQueue);
+
+            return (true, "sent to engine");
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning("WordExplain request for '{Word}' was canceled", request.Word);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send WordExplain request for '{Word}' to Engine", request.Word);
             throw;
         }
     }

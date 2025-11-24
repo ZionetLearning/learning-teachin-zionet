@@ -1,0 +1,86 @@
+name: Frontend - Tests & Linting
+run-name: Running Frontend Linting & Tests for all apps (student, teacher, admin)
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'frontend/**'
+  workflow_call:
+    inputs:
+      node_version:
+        description: "Node.js version to use"
+        required: false
+        type: string
+        default: '20'
+  workflow_dispatch:
+    inputs:
+      node_version:
+        description: "Node.js version to use"
+        required: false
+        type: string
+        default: '20'
+
+jobs:
+  frontend-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [student, teacher, admin]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Frontend Environment
+        uses: ./.github/actions/setup-frontend
+        with:
+          node-version: ${{ inputs.node_version || '20' }}
+
+      - name: Run Tests for ${{ matrix.app }}
+        working-directory: frontend
+        run: |
+          echo "Running tests for ${{ matrix.app }}..."
+          npx vitest run --reporter=verbose --passWithNoTests --root apps/${{ matrix.app }}
+          echo "Tests completed successfully for ${{ matrix.app }}"
+
+  frontend-lint:
+    needs: frontend-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Frontend Environment
+        uses: ./.github/actions/setup-frontend
+        with:
+          node-version: ${{ inputs.node_version || '20' }}
+
+      - name: Lint Code
+        working-directory: frontend
+        run: npm run lint
+
+  frontend-build:
+    needs: frontend-lint
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [student, teacher, admin]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Frontend Environment
+        uses: ./.github/actions/setup-frontend
+        with:
+          node-version: ${{ inputs.node_version || '20' }}
+
+      - name: Build ${{ matrix.app }} app
+        working-directory: frontend
+        run: |
+          echo "Building ${{ matrix.app }} app..."
+          npm run build:${{ matrix.app }}
+          echo "Build completed successfully for ${{ matrix.app }}"

@@ -1,4 +1,3 @@
-using IntegrationTests.Constants;
 using IntegrationTests.Models.Notification;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Configuration;
@@ -14,6 +13,7 @@ public class SignalRTestFixture : IAsyncDisposable
     private HubConnection? _connection;
     private readonly ConcurrentQueue<ReceivedNotification> _receivedNotifications = new();
     private readonly ConcurrentQueue<ReceivedEvent> _receivedEvents = new();
+    private readonly ConcurrentQueue<ReceivedStreamEvent> _receivedStreamEvents = new();
 
     private readonly string _baseUrl;
     private string? _accessToken;
@@ -41,6 +41,15 @@ public class SignalRTestFixture : IAsyncDisposable
             _receivedEvents.Enqueue(new ReceivedEvent
             {
                 Event = evt,
+                ReceivedAt = DateTimeOffset.UtcNow
+            });
+        });
+
+        _connection!.On<StreamEvent<JsonElement>>("StreamEvent", streamEvt =>
+        {
+            _receivedStreamEvents.Enqueue(new ReceivedStreamEvent
+            {
+                Event = streamEvt,
                 ReceivedAt = DateTimeOffset.UtcNow
             });
         });
@@ -97,14 +106,20 @@ public class SignalRTestFixture : IAsyncDisposable
     }
 
     public IReadOnlyList<ReceivedEvent> GetReceivedEvents()
-        {
+    {
         return _receivedEvents.ToList();
-            }
-     
+    }
+
+    public IReadOnlyList<ReceivedStreamEvent> GetReceivedStreamEvents()
+    {
+        return _receivedStreamEvents.ToList();
+    }
+
     public void ClearReceivedMessages()
     {
         _receivedNotifications.Clear();
         _receivedEvents.Clear();
+        _receivedStreamEvents.Clear();
     }
 
     public async Task<ReceivedNotification?> WaitForNotificationAsync(
@@ -149,6 +164,66 @@ public class SignalRTestFixture : IAsyncDisposable
         return null;
     }
 
+    public async Task<IReadOnlyList<ReceivedStreamEvent>> WaitForStreamUntilFinalAsync(
+        string requestId,
+        TimeSpan? timeout = null)
+    {
+        timeout ??= TimeSpan.FromSeconds(30);
+        var deadline = DateTime.UtcNow.Add(timeout.Value);
+
+        while (DateTime.UtcNow < deadline)
+        {
+            var snapshotAll = GetReceivedStreamEvents()
+                .Where(e => string.Equals(e.Event.RequestId, requestId, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(e => e.Event.SequenceNumber)
+                .ToList();
+
+            if (snapshotAll.Count > 0 && snapshotAll.Any(e => e.Event.Stage == StreamEventStage.Last))
+            {
+                return snapshotAll;
+            }
+
+            await Task.Delay(50);
+        }
+
+        // return whatever we have when timed out
+        return GetReceivedStreamEvents()
+            .Where(e => string.Equals(e.Event.RequestId, requestId, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(e => e.Event.SequenceNumber)
+            .ToList();
+    }
+
+    public async Task<IReadOnlyList<ReceivedStreamEvent>> WaitForStreamUntilFinalAsync(
+        string requestId,
+        Predicate<StreamEvent<JsonElement>>? predicate,
+        TimeSpan? timeout = null)
+    {
+        timeout ??= TimeSpan.FromSeconds(30);
+        var deadline = DateTime.UtcNow.Add(timeout.Value);
+
+        while (DateTime.UtcNow < deadline)
+        {
+            var snapshotAll = GetReceivedStreamEvents()
+                .Where(e => string.Equals(e.Event.RequestId, requestId, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(e => e.Event.SequenceNumber)
+                .ToList();
+
+            var anyMatch = snapshotAll.Any(e => predicate?.Invoke(e.Event) ?? true);
+            if (snapshotAll.Count > 0 && snapshotAll.Any(e => e.Event.Stage == StreamEventStage.Last) && anyMatch)
+            {
+                return snapshotAll;
+            }
+
+            await Task.Delay(50);
+        }
+
+        // timeout: return entire snapshot as-is, not filtered
+        return GetReceivedStreamEvents()
+            .Where(e => string.Equals(e.Event.RequestId, requestId, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(e => e.Event.SequenceNumber)
+            .ToList();
+    }
+
     private static string GetBaseUrl()
     {
         var config = new ConfigurationBuilder()
@@ -187,5 +262,11 @@ public record ReceivedNotification
 public record ReceivedEvent
 {
     public required UserEvent<JsonElement> Event { get; init; }
+    public DateTimeOffset ReceivedAt { get; init; }
+}
+
+public record ReceivedStreamEvent
+{
+    public required StreamEvent<JsonElement> Event { get; init; }
     public DateTimeOffset ReceivedAt { get; init; }
 }

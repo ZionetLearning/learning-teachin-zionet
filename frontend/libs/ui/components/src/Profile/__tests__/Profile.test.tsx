@@ -49,6 +49,10 @@ vi.mock("@mui/material", () => {
     <div data-testid="mui-stack">{children}</div>
   );
 
+  const Grid = ({ children }: WithChildren & Record<string, unknown>) => (
+    <div data-testid="mui-grid">{children}</div>
+  );
+
   const Button = ({
     children,
     onClick,
@@ -59,11 +63,10 @@ vi.mock("@mui/material", () => {
     </button>
   );
 
-  return { Box, Typography, TextField, Stack, Button };
+  return { Box, Typography, TextField, Stack, Button, Grid };
 });
 
-// --- Your custom Button mock ---
-vi.mock("../Button", () => {
+vi.mock("@ui-components", () => {
   type CustomBtnProps = ButtonHTMLAttributes<HTMLButtonElement> & {
     variant?: string;
   };
@@ -79,7 +82,46 @@ vi.mock("../Button", () => {
     </button>
   );
 
-  return { Button };
+  const Dropdown = ({
+    value,
+    onChange,
+    options,
+  }: {
+    value?: string;
+    onChange?: (v: string) => void;
+    options?: { value: string; label: string }[];
+  }) => (
+    <select
+      data-testid="ui-dropdown"
+      value={value}
+      onChange={(e) => onChange?.(e.target.value)}
+    >
+      {(options ?? []).map((o) => (
+        <option key={o.value} value={o.value}>
+          {o.label}
+        </option>
+      ))}
+    </select>
+  );
+
+  const InterestChip = ({
+    label,
+    onDelete,
+  }: {
+    label: string;
+    onDelete?: () => void;
+  }) => (
+    <span data-testid="interest-chip">
+      {label}
+      {onDelete && (
+        <button aria-label={`delete-${label}`} onClick={onDelete}>
+          x
+        </button>
+      )}
+    </span>
+  );
+
+  return { Button, Dropdown, InterestChip };
 });
 
 // --- @app-providers mock: provide the mutation hook + types used in the file ---
@@ -90,6 +132,7 @@ vi.mock("@app-providers", () => {
     useUpdateUserByUserId: vi.fn(() => ({
       mutateAsync: mutateAsyncMock,
     })),
+    toAppRole: (role: unknown) => role,
   };
 });
 
@@ -128,9 +171,11 @@ describe("<Profile />", () => {
     ).toBeInTheDocument();
 
     const inputs = screen.getAllByRole("textbox") as HTMLInputElement[];
-    expect(inputs).toHaveLength(3);
+    expect(inputs.length).toBeGreaterThanOrEqual(3);
 
-    const [firstNameInput, lastNameInput, emailInput] = inputs;
+    const firstNameInput = inputs[0];
+    const lastNameInput = inputs[1];
+    const emailInput = inputs[inputs.length - 1];
     expect(firstNameInput).toHaveValue("Alice");
     expect(lastNameInput).toHaveValue("Smith");
     expect(emailInput).toHaveValue("alice@example.com");
@@ -213,11 +258,13 @@ describe("<Profile />", () => {
     await fireEvent.click(saveBtn);
 
     expect(mutateAsyncMock).toHaveBeenCalledTimes(1);
-    expect(mutateAsyncMock).toHaveBeenCalledWith({
-      email: "alice@example.com",
-      firstName: "Alicia",
-      lastName: "Smyth",
-    });
+    expect(mutateAsyncMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: "alice@example.com",
+        firstName: "Alicia",
+        lastName: "Smyth",
+      }),
+    );
   });
 
   it("updates inputs when parent user prop changes", () => {

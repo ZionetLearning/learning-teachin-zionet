@@ -1,4 +1,4 @@
-name: Terraform Destroy (Dynamic Environment)
+name: Terraform - Destroy (Dynamic Environment)
 run-name: >
   ${{ inputs.dry_run == 'true' && '🔍 DRY RUN' || '🗑️ Destroy Infrastructure' }} in ${{
     inputs.environment_name || github.event.inputs.environment_name || 
@@ -34,9 +34,13 @@ on:
         default: false
         type: boolean
 
-
 jobs:
+  validate-authorization:
+    uses: ./.github/workflows/validate-confirmation.yaml
+    secrets: inherit
+
   terraform-destroy:
+    needs: [validate-authorization]
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || github.event.inputs.environment }}
     permissions:
@@ -52,10 +56,13 @@ jobs:
       TF_IN_AUTOMATION: true
       TF_LOG: INFO
       ARM_USE_AZUREAD: "true" # matches `use_azuread_auth = true`
+      # PostgreSQL admin credentials - passed securely from GitHub secrets
+      TF_VAR_admin_username: ${{ secrets.POSTGRES_USER }}
+      TF_VAR_admin_password: ${{ secrets.POSTGRES_PASSWORD }}
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install Terraform
         uses: hashicorp/setup-terraform@v3
@@ -146,6 +153,9 @@ jobs:
           fi
 
       - name: Terraform Plan (Destroy)
+        env:
+          TF_VAR_communication_service_connection_string: ${{ secrets.COMMUNICATION_SERVICE_CONNECTION_STRING }}
+          TF_VAR_tavily_api_key: ${{ secrets.TAVILY_API_KEY }}
         run: terraform plan -destroy -var-file=${{ env.TFVARS_FILE }}
         working-directory: ${{ env.TF_DIR }}
 
@@ -166,6 +176,9 @@ jobs:
           echo "- Terraform state file: ${{ env.backend_key }}"
 
       - name: Terraform Destroy
+        env:
+          TF_VAR_communication_service_connection_string: ${{ secrets.COMMUNICATION_SERVICE_CONNECTION_STRING }}
+          TF_VAR_tavily_api_key: ${{ secrets.TAVILY_API_KEY }}
         run: |
           if [ "${{ env.dry_run }}" = "true" ]; then
             echo "DRY RUN: Skipping actual terraform destroy"

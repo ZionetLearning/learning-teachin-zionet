@@ -3,5 +3,6 @@
 public enum ChatType
 {
     Default = 0,
-
+    ExplainMistake = 1,
+    Global = 2,
 }

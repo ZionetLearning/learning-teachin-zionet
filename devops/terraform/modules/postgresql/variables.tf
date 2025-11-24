@@ -27,44 +27,44 @@ variable "admin_password" {
 variable "db_version" {
   type        = string
   description = "PostgreSQL version"
+  default     = "16"
 }
 
 variable "sku_name" {
   type        = string
   description = "SKU name for pricing tier (e.g., B1ms)"
+  default     = "B_Standard_B1ms"
 }
 
 variable "storage_mb" {
   type        = number
   description = "Storage size in MB"
+  default     = 32768
 }
 
 variable "backup_retention_days" {
   type        = number
   description = "Number of days to retain backups"
+  default     = 7
 }
 
 variable "geo_redundant_backup_enabled" {
   type        = bool
   description = "Enable geo-redundant backup (only for supported SKUs)"
+  default     = false
 }
 
 variable "password_auth_enabled" {
   type        = bool
   description = "Enable password authentication"
+  default     = true
 }
 
 variable "active_directory_auth_enabled" {
   type        = bool
-  default     = false
   description = "Enable Active Directory authentication"
+  default     = false
 }
-
-# variable "high_availability_mode" {
-#   type        = string
-#   description = "High availability mode (e.g., 'Disabled', 'ZoneRedundant')"
-#   default     = ""
-# }
 
 variable "delegated_subnet_id" {
   type        = string
@@ -75,11 +75,6 @@ variable "database_name" {
   type        = string
   description = "Name of the PostgreSQL database"
 }
-
-# variable "aks_public_ip" {
-#   type        = string
-#   description = "Public IP of the AKS cluster"
-# }
 
 # Use shared postgres server logic (like use_shared_aks)
 variable "use_shared_postgres" {

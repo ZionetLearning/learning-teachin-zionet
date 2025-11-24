@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
 using Manager.Models.Chat;
 
 namespace Manager.Services.Clients.Engine.Models;
@@ -21,4 +22,8 @@ public sealed record EngineChatRequest
 
     [Range(1, 172800, ErrorMessage = "TtlSeconds must be between 1 and 172800 (max two day).")]
     public int TtlSeconds { get; init; } = 60;
+
+    public UserDetailForChat? UserDetail { get; init; }
+
+    public JsonElement? PageContext { get; init; }
 }

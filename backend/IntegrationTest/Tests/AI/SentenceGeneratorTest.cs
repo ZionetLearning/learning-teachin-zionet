@@ -2,9 +2,9 @@
 using IntegrationTests.Constants;
 using IntegrationTests.Fixtures;
 using IntegrationTests.Infrastructure;
+using IntegrationTests.Models.Ai.Sentences;
 using IntegrationTests.Models.Notification;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.Extensions.Options;
+using Manager.Models.Users;
 using Models.Ai.Sentences;
 using System.Text.Json;
 using Xunit.Abstractions;
@@ -12,15 +12,20 @@ using Xunit.Abstractions;
 namespace IntegrationTests.Tests.AI
 {
 
-    [Collection("Shared test collection")]
+    [Collection("IntegrationTests")]
     public class SentenceGeneratorTests(
-        SharedTestFixture sharedFixture,
+        HttpClientFixture clientFixture,
         ITestOutputHelper outputHelper,
         SignalRTestFixture signalRFixture
-    ) : IntegrationTestBase(sharedFixture.HttpFixture, outputHelper, signalRFixture), IAsyncLifetime
+    ) : IntegrationTestBase(clientFixture, outputHelper, signalRFixture), IAsyncLifetime
 
     {
-        private readonly SharedTestFixture _shared = sharedFixture;
+        public override async Task InitializeAsync()
+        {
+            await ClientFixture.LoginAsync(Role.Admin);
+            await EnsureSignalRStartedAsync();
+            SignalRFixture.ClearReceivedMessages();
+        }
 
         [Theory]
         [InlineData(1, Difficulty.hard, false)]
@@ -36,7 +41,7 @@ namespace IntegrationTests.Tests.AI
                 Count = count
             };
 
-            await _shared.EnsureSignalRStartedAsync(SignalRFixture, OutputHelper);
+            await EnsureSignalRStartedAsync();
             SignalRFixture.ClearReceivedMessages();
 
             OutputHelper.WriteLine($"Generating sentences");
@@ -54,17 +59,20 @@ namespace IntegrationTests.Tests.AI
 
             var evtRaw = received.Event;
 
-            SentenceResponse res = JsonSerializer.Deserialize<SentenceResponse>(
-                evtRaw.Payload.GetRawText(), options)!;
+            // Deserialize to SentenceGenerationResponse
+            var sentenceGenerationResponse = JsonSerializer.Deserialize<SentenceGenerationResponse>(
+                evtRaw.Payload.GetRawText(), options)
+                ?? throw new InvalidOperationException("Failed to deserialize sentence generation event");
 
-            res.Sentences.Count.Should().Be(count);
+            sentenceGenerationResponse.Sentences.Count.Should().Be(count);
 
-            Assert.All(res.Sentences, s =>
+            Assert.All(sentenceGenerationResponse.Sentences, s =>
             {
-                Assert.Equal(request.Difficulty.ToString(), s.Difficulty);
-                Assert.Equal(request.Nikud, s.Nikud);
+                Assert.Equal(difficulty.ToString(), s.Difficulty, ignoreCase: true);
+                Assert.Equal(nikud, s.Nikud);
             });
         }
+
         [Theory]
         [InlineData(1, Difficulty.hard, false)]
         [InlineData(5, Difficulty.medium, false)]
@@ -79,7 +87,7 @@ namespace IntegrationTests.Tests.AI
                 Count = count
             };
 
-            await _shared.EnsureSignalRStartedAsync(SignalRFixture, OutputHelper);
+            await EnsureSignalRStartedAsync();
             SignalRFixture.ClearReceivedMessages();
 
             OutputHelper.WriteLine($"Generating sentences");
@@ -97,15 +105,17 @@ namespace IntegrationTests.Tests.AI
 
             var evtRaw = received.Event;
 
-            SplitSentenceResponse res = JsonSerializer.Deserialize<SplitSentenceResponse>(
-                evtRaw.Payload.GetRawText(), options)!;
+            // Deserialize to SentenceGenerationResponse
+            var sentenceGenerationResponse = JsonSerializer.Deserialize<SentenceGenerationResponse>(
+                evtRaw.Payload.GetRawText(), options)
+                ?? throw new InvalidOperationException("Failed to deserialize sentence generation event");
 
-            res.Sentences.Count.Should().Be(count);
+            sentenceGenerationResponse.Sentences.Count.Should().Be(count);
 
-            Assert.All(res.Sentences, s =>
+            Assert.All(sentenceGenerationResponse.Sentences, s =>
             {
-                Assert.Equal(request.Difficulty.ToString(), s.Difficulty);
-                Assert.Equal(request.Nikud, s.Nikud);
+                Assert.Equal(difficulty.ToString(), s.Difficulty, ignoreCase: true);
+                Assert.Equal(nikud, s.Nikud);
             });
         }
     }

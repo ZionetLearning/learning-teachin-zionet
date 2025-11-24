@@ -37,4 +37,12 @@ export interface User {
   role: AppRoleType;
   preferredLanguageCode?: PreferredLanguageCode;
   hebrewLevelValue?: HebrewLevelValue;
+  interests?: string[];
+}
+
+export interface OnlineUserDto {
+  userId: string;
+  name: string;
+  role: string;
+  connectionsCount: number;
 }

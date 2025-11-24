@@ -3,13 +3,15 @@ global:
   dockerRegistry: ""
   imagePullPolicy: IfNotPresent
   environment: ""  # Environment name/tag (e.g., dev, devacr, prod) - set by CI/CD
+  spot:
+    enabled: true  # Enable spot nodes for cost optimization (default for all environments)
   dapr:
     enabled: true
     configName: dapr-config
     sidecar:
       requests:
-        cpu: "100m"
-        memory: "128Mi"
+        cpu: "25m"        # Reduced from 100m to 25m based on actual usage (0.1%)
+        memory: "64Mi"    # Reduced from 128Mi to 64Mi based on actual usage (45MiB)
       limits:
         cpu: "200m"
         memory: "256Mi"
@@ -115,6 +117,10 @@ manager:
     signalr:
       name: signalr-connection
       key: SignalRConnectionString
+    avatars:
+      enabled: true
+      name: avatars-storage-secret
+      key: AvatarsStorageConnectionString
     jwt:
       name: manager-appsettings
       keys:
@@ -131,10 +137,12 @@ manager:
           key: Jwt__Audience
         - remote: manager-jwt-refreshtokenhashkey
           key: Jwt__RefreshTokenHashKey
+  ingress:
+    enabled: false
   resources:
     requests:
-      cpu: "100m"
-      memory: "256Mi"
+      cpu: "50m"       # Reduced from 100m to 50m based on actual usage (0.06%)
+      memory: "128Mi"  # Reduced from 256Mi to 128Mi based on actual usage (~91MiB)
     limits:
       cpu: "500m"
       memory: "512Mi"
@@ -165,6 +173,11 @@ engine:
     AzureSpeech__Region: "eastus"
     AzureSpeech__DefaultVoice: "he-IL-HilaNeural"
     AzureSpeech__TimeoutSeconds: "70"
+    Tavily__ApiKey: ""
+    Tavily__MaxResults: "5"
+    Tavily__IncludeAnswer: "true"
+    Tavily__IncludeRawContent: "false"
+    Tavily__SearchDepth: "basic"
   secrets:
     serviceBus:
       name: azure-service-bus-secret
@@ -174,15 +187,18 @@ engine:
       keys:
         openaiApiKey: AzureOpenAI__ApiKey
         speechKey: AzureSpeech__SubscriptionKey
+        tavilyApiKey: Tavily__ApiKey
       data:
         - remote: engine-azureopenai-apikey
           key: AzureOpenAI__ApiKey
         - remote: engine-azurespeech-subscriptionkey
           key: AzureSpeech__SubscriptionKey
+        - remote: engine-tavily-apikey
+          key: Tavily__ApiKey
   resources:
     requests:
-      cpu: "100m"
-      memory: "256Mi"
+      cpu: "50m"       # Reduced from 100m to 50m based on actual usage
+      memory: "128Mi"  # Reduced from 256Mi to 128Mi based on actual usage
     limits:
       cpu: "500m"
       memory: "512Mi"
@@ -220,10 +236,17 @@ accessor:
       data:
         - remote: accessor-speech-key
           key: Speech__Key
+    langfuse:
+      enabled: true
+      name: accessor-langfuse-secret
+      keys:
+        baseUrl: Langfuse__BaseUrl
+        publicKey: Langfuse__PublicKey
+        secretKey: Langfuse__SecretKey
   resources:
     requests:
-      cpu: "100m"
-      memory: "256Mi"
+      cpu: "50m"       # Reduced from 100m to 50m based on actual usage (0.06%)
+      memory: "128Mi"  # Reduced from 256Mi to 128Mi based on actual usage (~91MiB)
     limits:
       cpu: "500m"
       memory: "512Mi"
@@ -264,6 +287,10 @@ dapr:
         poolTimeout: "30s"
         idleTimeout: "300s"
         maxConnAge: "30m"
+
+# Langfuse Configuration (optional observability tool)
+langfuse:
+  enabled: false  # Set to true if you want to deploy Langfuse for LLM observability
   
 # KEDA scaler (optional)
 keda:
@@ -279,8 +306,3 @@ keda:
   #     scaleToZero:
   #       responseTimeout: 60s  # Wait longer for pods to become ready
   #     targetPendingRequests: 1
-
-  serviceAccount:
-  create: false
-  name: ""
-  annotations: {}

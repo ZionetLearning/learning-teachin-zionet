@@ -2,7 +2,11 @@
 using System.Text.Json;
 using Dapr.Client;
 using Engine.Models.Prompts;
+using Engine.Options;
 using Engine.Services.Clients.AccessorClient.Models;
+using Engine.Constants;
+using Engine.Models.Users;
+using Engine.Models.Games;
 
 namespace Engine.Services.Clients.AccessorClient;
 
@@ -87,6 +91,58 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
         }
     }
 
+    public async Task<AttemptDetailsResponse> GetAttemptDetailsAsync(Guid userId, Guid attemptId, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Getting attempt details for UserId {UserId}, AttemptId {AttemptId}", userId, attemptId);
+
+        try
+        {
+            var response = await _daprClient.InvokeMethodAsync<AttemptDetailsResponse>(
+                HttpMethod.Get,
+                "accessor",
+                $"games-accessor/attempt/{userId:D}/{attemptId:D}",
+                cancellationToken: ct);
+
+            return response;
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("Attempt not found for UserId {UserId}, AttemptId {AttemptId}", userId, attemptId);
+            throw new InvalidOperationException($"Attempt {attemptId} not found for user {userId}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get attempt details for UserId {UserId}, AttemptId {AttemptId}", userId, attemptId);
+            throw;
+        }
+    }
+
+    public async Task<AttemptDetailsResponse> GetLastAttemptAsync(Guid userId, GameName gameType, CancellationToken ct = default)
+    {
+        _logger.LogInformation("Getting last attempt for UserId {UserId}", userId);
+
+        try
+        {
+            var response = await _daprClient.InvokeMethodAsync<AttemptDetailsResponse>(
+                HttpMethod.Get,
+                "accessor",
+                $"games-accessor/attempt/last/{userId:D}/{gameType}",
+                cancellationToken: ct);
+
+            return response;
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("No attempts found for UserId {UserId}", userId);
+            throw new InvalidOperationException($"No attempts found for user {userId}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get last attempt for UserId {UserId}", userId);
+            throw;
+        }
+    }
+
     // ========== PROMPTS ==========
 
     public async Task<PromptResponse> CreatePromptAsync(CreatePromptRequest request, CancellationToken ct = default)
@@ -133,62 +189,81 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
         }
     }
 
-    public async Task<PromptResponse?> GetPromptAsync(string promptKey, CancellationToken ct = default)
+    public async Task<PromptResponse?> GetPromptAsync(PromptConfiguration config, CancellationToken ct = default)
     {
-        if (string.IsNullOrWhiteSpace(promptKey))
+        ArgumentNullException.ThrowIfNull(config);
+
+        if (string.IsNullOrWhiteSpace(config.Key))
         {
-            throw new ArgumentException("promptKey cannot be empty", nameof(promptKey));
+            throw new ArgumentException("PromptConfiguration.Key cannot be empty", nameof(config));
         }
 
-        _logger.LogInformation("Getting latest prompt {PromptKey}", promptKey);
+        _logger.LogInformation("Getting prompt {PromptKey} (version: {Version}, label: {Label})",
+            config.Key, config.Version, config.Label);
 
         try
         {
+            var queryParams = new List<string>();
+            if (config.Version.HasValue)
+            {
+                queryParams.Add($"version={config.Version.Value}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(config.Label))
+            {
+                queryParams.Add($"label={Uri.EscapeDataString(config.Label)}");
+            }
+
+            var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : string.Empty;
+            var url = $"prompts/{Uri.EscapeDataString(config.Key)}{queryString}";
+
             var prompt = await _daprClient.InvokeMethodAsync<PromptResponse>(
                 HttpMethod.Get,
                 "accessor",
-                $"prompts/{Uri.EscapeDataString(promptKey)}",
+                url,
                 cancellationToken: ct);
+
+            if (prompt != null)
+            {
+                _logger.LogInformation("Retrieved prompt {PromptKey} from source: {Source}",
+                    prompt.PromptKey, prompt.Source ?? "Unknown");
+            }
 
             return prompt;
         }
         catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
         {
-            _logger.LogInformation("Prompt {PromptKey} not found", promptKey);
+            _logger.LogInformation("Prompt {PromptKey} not found", config.Key);
             return null;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to get prompt {PromptKey}", promptKey);
+            _logger.LogError(ex, "Failed to get prompt {PromptKey}", config.Key);
             throw;
         }
     }
 
-    public async Task<GetPromptsBatchResponse> GetPromptsBatchAsync(IEnumerable<string> promptKeys, CancellationToken ct = default)
+    public async Task<GetPromptsBatchResponse> GetPromptsBatchAsync(IEnumerable<PromptConfiguration> configs, CancellationToken ct = default)
     {
-        ArgumentNullException.ThrowIfNull(promptKeys);
+        ArgumentNullException.ThrowIfNull(configs);
 
-        var keys = promptKeys
-            .Where(k => !string.IsNullOrWhiteSpace(k))
-            .Distinct(StringComparer.Ordinal)
-            .ToList();
-
-        if (keys.Count == 0)
+        var configList = configs.ToList();
+        if (configList.Count == 0)
         {
-            throw new ArgumentException("At least one prompt key must be provided", nameof(promptKeys));
+            throw new ArgumentException("At least one prompt configuration must be provided", nameof(configs));
         }
 
         const int maxBatch = 100;
-        if (keys.Count > maxBatch)
+        if (configList.Count > maxBatch)
         {
-            throw new ArgumentException($"Maximum {maxBatch} prompt keys allowed. Received {keys.Count}.", nameof(promptKeys));
+            throw new ArgumentException($"Maximum {maxBatch} prompt configurations allowed. Received {configList.Count}.", nameof(configs));
         }
 
-        _logger.LogInformation("Batch requesting {Count} prompts", keys.Count);
+        _logger.LogInformation("Batch requesting {Count} prompts", configList.Count);
 
         var request = new GetPromptsBatchRequest
         {
-            PromptKeys = keys
+            Prompts = configList
         };
 
         try
@@ -200,7 +275,15 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
                 request,
                 cancellationToken: ct);
 
-            _logger.LogInformation("Batch prompt retrieval done. Found {Found} Missing {Missing}", response.Prompts.Count, response.NotFound.Count);
+            foreach (var prompt in response.Prompts)
+            {
+                _logger.LogDebug("Batch: Retrieved prompt {PromptKey} from source: {Source}",
+                    prompt.PromptKey, prompt.Source ?? "Unknown");
+            }
+
+            _logger.LogInformation("Batch prompt retrieval done. Found {Found} Missing {Missing}",
+                response.Prompts.Count, response.NotFound.Count);
+
             return response;
         }
         catch (InvocationException ex)
@@ -221,34 +304,41 @@ public class AccessorClient(ILogger<AccessorClient> logger, DaprClient daprClien
         }
     }
 
-    public async Task<IReadOnlyList<PromptResponse>> GetPromptVersionsAsync(string promptKey, CancellationToken ct = default)
+    public async Task<List<string>> GetUserInterestsAsync(Guid userId, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(promptKey))
-        {
-            throw new ArgumentException("promptKey cannot be empty", nameof(promptKey));
-        }
-
-        _logger.LogInformation("Getting all versions for prompt {PromptKey}", promptKey);
-
         try
         {
-            var versions = await _daprClient.InvokeMethodAsync<List<PromptResponse>>(
+            var userInterests = await _daprClient.InvokeMethodAsync<List<string>>(
                 HttpMethod.Get,
-                "accessor",
-                $"prompts/{Uri.EscapeDataString(promptKey)}/versions",
-                cancellationToken: ct);
+                AppIds.Accessor,
+                $"users-accessor/{userId}/interests",
+                ct);
 
-            return versions ?? new List<PromptResponse>();
-        }
-        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
-        {
-            _logger.LogInformation("No versions found for prompt {PromptKey}", promptKey);
-            return Array.Empty<PromptResponse>();
+            if (userInterests == null)
+            {
+                _logger.LogWarning("User {UserId} not found when fetching interests.", userId);
+                return [];
+            }
+
+            return userInterests;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to get prompt versions {PromptKey}", promptKey);
-            throw;
+            _logger.LogError(ex, "Error fetching interests for user {UserId}", userId);
+            return [];
+        }
+    }
+    public async Task<UserData?> GetUserAsync(Guid userId, CancellationToken ct)
+    {
+        try
+        {
+            return await _daprClient.InvokeMethodAsync<UserData?>(
+                HttpMethod.Get, AppIds.Accessor, $"users-accessor/{userId}", ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting user {UserId}", userId);
+            return null;
         }
     }
 }

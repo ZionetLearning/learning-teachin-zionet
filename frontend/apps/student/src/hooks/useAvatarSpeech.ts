@@ -3,6 +3,7 @@ import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import * as SpeechSDK from "microsoft-cognitiveservices-speech-sdk";
 import { useAzureSpeechToken } from "@student/api";
 import { CypressWindow } from "@student/types";
+import { stripHebrewNikud } from "@student/features";
 
 interface useAvatarSpeechOptions {
   lipsArray?: string[];
@@ -14,12 +15,7 @@ interface useAvatarSpeechOptions {
 const VISEME_LATENCY_MS = 40; // tweak 20–70 if needed
 const FALLBACK_VISEMES = [3, 5, 8, 10, 0]; // used only if no visemes arrive
 const FALLBACK_STEP_MS = 60;
-
-const stripHebrewNikud = (input: string): string => {
-  // Normalize, then remove Hebrew diacritics & cantillation marks
-  const noMarks = input.normalize("NFKD").replace(/[\u0591-\u05C7]/g, "");
-  return noMarks.replace(/[\u200e\u200f]/g, "");
-};
+const DEFAULT_HE_VOICE = "he-IL-HilaNeural";
 
 export const useAvatarSpeech = ({
   lipsArray = [],
@@ -100,6 +96,24 @@ export const useAvatarSpeech = ({
   }, [hardReset]);
 
   const stop = useCallback(async () => {
+    // Cancel ongoing synthesis first
+    if (synthesizerRef.current) {
+      try {
+        synthesizerRef.current.close(); // This should stop synthesis
+      } catch (error) {
+        console.warn("Error closing synthesizer:", error);
+      }
+    }
+
+    // Stop audio playback
+    if (speakerDestRef.current) {
+      try {
+        speakerDestRef.current.pause(); // If available
+      } catch (error) {
+        console.warn("Error pausing speaker:", error);
+      }
+    }
+
     hardReset();
     onAudioEnd?.();
   }, [hardReset, onAudioEnd]);
@@ -195,6 +209,7 @@ export const useAvatarSpeech = ({
       if (isPlaying) {
         await stop();
         // continue into a fresh speak immediately after stop
+        await new Promise((resolve) => setTimeout(resolve, 100));
       }
 
       try {
@@ -227,7 +242,7 @@ export const useAvatarSpeech = ({
           tokenData?.token as string,
           tokenData?.region as string,
         );
-        if (voiceName) speechConfig.speechSynthesisVoiceName = voiceName;
+        speechConfig.speechSynthesisVoiceName = voiceName ?? DEFAULT_HE_VOICE;
 
         // Ensure viseme events are emitted
         speechConfig.setProperty(
@@ -281,6 +296,20 @@ export const useAvatarSpeech = ({
             reject(err as unknown);
           }
         });
+
+        synthesizer.SynthesisCanceled = async (_s, e) => {
+          if (e.result?.errorDetails?.toLowerCase().includes("token")) {
+            await refetch(); // prep for next call
+          }
+          closeSynth();
+          // Ensure we clean up properly on cancellation
+          if (playbackStartMsRef.current) {
+            setIsPlaying(false);
+            setCurrentViseme(0);
+            onAudioEnd?.();
+            closeDest();
+          }
+        };
       } catch (err) {
         console.error("Speech synthesis error:", err);
         // Full cleanup so the *next* call works

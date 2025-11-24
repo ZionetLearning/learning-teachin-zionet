@@ -47,7 +47,12 @@ public class UserService : IUserService
             LastName = user.LastName,
             Role = user.Role,
             PreferredLanguageCode = user.PreferredLanguageCode,
-            HebrewLevelValue = user.HebrewLevelValue
+            HebrewLevelValue = user.HebrewLevelValue,
+            Interests = user.Interests,
+            AvatarPath = user.AvatarPath,
+            AvatarContentType = user.AvatarContentType,
+            AvatarUpdatedAtUtc = user.AvatarUpdatedAtUtc,
+            AcsUserId = user.AcsUserId
         };
     }
 
@@ -61,20 +66,34 @@ public class UserService : IUserService
                 LastName = u.LastName,
                 Role = u.Role,
                 PreferredLanguageCode = u.PreferredLanguageCode,
-                HebrewLevelValue = u.HebrewLevelValue
+                HebrewLevelValue = u.HebrewLevelValue,
+                Interests = u.Interests,
+                AcsUserId = u.AcsUserId,
+                AvatarPath = u.AvatarPath,
+                AvatarContentType = u.AvatarContentType,
+                AvatarUpdatedAtUtc = u.AvatarUpdatedAtUtc
             })
             .ToListAsync();
 
     public async Task<bool> CreateUserAsync(UserModel newUser)
     {
-        if (await _db.Users.AnyAsync(u => u.Email == newUser.Email))
+        try
+        {
+            if (await _db.Users.AnyAsync(u => u.Email == newUser.Email))
+            {
+                _logger.LogWarning("CreateUserAsync failed: Email already exists.");
+                return false;
+            }
+
+            await _db.Users.AddAsync(newUser);
+            await _db.SaveChangesAsync();
+            return true;
+        }
+
+        catch (DbUpdateException ex) when (IsUniqueViolation(ex))
         {
             return false;
         }
-
-        await _db.Users.AddAsync(newUser);
-        await _db.SaveChangesAsync();
-        return true;
     }
 
     public async Task<bool> UpdateUserAsync(UpdateUserModel updateUser, Guid userId)
@@ -86,6 +105,22 @@ public class UserService : IUserService
             return false;
         }
 
+        if (updateUser.ClearAvatar == true)
+        {
+            user.AvatarPath = null;
+            user.AvatarContentType = null;
+            user.AvatarUpdatedAtUtc = DateTime.UtcNow;
+        }
+        else
+        {
+            if (updateUser.AvatarPath is not null)
+            {
+                user.AvatarPath = updateUser.AvatarPath;
+                user.AvatarContentType = updateUser.AvatarContentType;
+                user.AvatarUpdatedAtUtc = DateTime.UtcNow;
+            }
+        }
+
         if (updateUser.FirstName is not null)
         {
             user.FirstName = updateUser.FirstName;
@@ -94,11 +129,6 @@ public class UserService : IUserService
         if (updateUser.LastName is not null)
         {
             user.LastName = updateUser.LastName;
-        }
-
-        if (updateUser.Email is not null)
-        {
-            user.Email = updateUser.Email;
         }
 
         if (updateUser.PreferredLanguageCode is not null)
@@ -114,6 +144,16 @@ public class UserService : IUserService
         if (updateUser.Role is not null)
         {
             user.Role = updateUser.Role.Value;
+        }
+
+        if (updateUser.Interests is not null)
+        {
+            user.Interests = updateUser.Interests;
+        }
+
+        if (updateUser.AcsUserId is not null)
+        {
+            user.AcsUserId = updateUser.AcsUserId;
         }
 
         await _db.SaveChangesAsync();
@@ -133,6 +173,7 @@ public class UserService : IUserService
         await _db.SaveChangesAsync();
         return true;
     }
+
     public async Task<IEnumerable<UserData>> GetAllUsersAsync(Role? roleFilter = null, Guid? teacherId = null, CancellationToken ct = default)
     {
         _logger.LogInformation("GetAllUsers START (roleFilter={Role}, teacherId={Teacher})",
@@ -155,7 +196,9 @@ public class UserService : IUserService
                     Email = u.Email,
                     FirstName = u.FirstName,
                     LastName = u.LastName,
-                    Role = u.Role
+                    Role = u.Role,
+                    Interests = u.Interests,
+                    AcsUserId = u.AcsUserId
                 })
                 .ToListAsync(ct);
 
@@ -199,7 +242,8 @@ public class UserService : IUserService
                     Email = u.Email,
                     FirstName = u.FirstName,
                     LastName = u.LastName,
-                    Role = u.Role
+                    Role = u.Role,
+                    AcsUserId = u.AcsUserId
                 })
                 .ToListAsync(ct);
 
@@ -319,7 +363,8 @@ public class UserService : IUserService
                     Email = u.Email,
                     FirstName = u.FirstName,
                     LastName = u.LastName,
-                    Role = u.Role
+                    Role = u.Role,
+                    AcsUserId = u.AcsUserId
                 })
                 .ToListAsync(ct);
 
@@ -329,6 +374,94 @@ public class UserService : IUserService
         catch (Exception ex)
         {
             _logger.LogError(ex, "GetTeachersForStudent FAILED (studentId={StudentId})", studentId);
+            throw;
+        }
+    }
+
+    public async Task<IReadOnlyList<string>?> GetUserInterestsAsync(Guid userId, CancellationToken ct = default)
+    {
+        _logger.LogInformation("GetUserInterests START (userId={UserId})", userId);
+        try
+        {
+            if (userId == Guid.Empty)
+            {
+                _logger.LogWarning("Invalid userId provided.");
+                return null;
+            }
+
+            var interests = await _db.Users
+                .AsNoTracking()
+                .Where(u => u.UserId == userId)
+                .Select(u => u.Interests)
+                .FirstOrDefaultAsync(ct);
+
+            if (interests == null)
+            {
+                _logger.LogWarning("No interests found for user (userId={UserId})", userId);
+                return null;
+            }
+
+            _logger.LogInformation("GetUserInterests END (userId={UserId}), {Count} interests", userId, interests.Count);
+            return interests;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetUserInterests FAILED (userId={UserId})", userId);
+            throw;
+        }
+    }
+
+    public async Task<Dictionary<Guid, UserNameDto>> GetUserFullNamesAsync(IEnumerable<Guid> userIds, CancellationToken ct)
+    {
+        if (userIds == null || !userIds.Any())
+        {
+            _logger.LogWarning("GetUserFullNamesAsync called with empty userIds.");
+            return [];
+        }
+
+        _logger.LogInformation("GetUserFullNamesAsync START for userIds: {UserIds}", string.Join(", ", userIds));
+        try
+        {
+            return await _db.Users
+                .AsNoTracking()
+                .Where(u => userIds.Contains(u.UserId))
+                .ToDictionaryAsync(
+                    u => u.UserId,
+                    u => new UserNameDto
+                    {
+                        FirstName = u.FirstName,
+                        LastName = u.LastName
+                    },
+                    cancellationToken: ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetUserFullNamesAsync FAILED for userIds: {UserIds}", string.Join(", ", userIds));
+            throw;
+        }
+    }
+
+    public async Task<bool> UpdateUserLanguageAsync(Guid userId, SupportedLanguage language, CancellationToken ct = default)
+    {
+        _logger.LogInformation("UpdateUserLanguage START (language={Language})", language);
+        try
+        {
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.UserId == userId, ct);
+
+            if (user == null)
+            {
+                _logger.LogWarning("UpdateUserLanguage: user not found (userId={UserId})", userId);
+                return false;
+            }
+
+            user.PreferredLanguageCode = language;
+            await _db.SaveChangesAsync(ct);
+            _logger.LogInformation("UpdateUserLanguage END: language updated (userId={UserId})", userId);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "UpdateUserLanguage FAILED (language={Language})", language);
             throw;
         }
     }

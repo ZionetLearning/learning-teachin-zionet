@@ -13,6 +13,14 @@ export type Status =
   | "reconnecting"
   | "disconnected";
 
+export type StreamStage = "First" | "Chunk" | "Last" | "Heartbeat" | "Error";
+
+export type StreamMessage<T = unknown> = {
+  payload: T;
+  sequenceNumber: number;
+  stage: StreamStage;
+};
+
 export type SignalRContextType = {
   connection: HubConnection | null;
   status: Status;
@@ -26,6 +34,17 @@ export type SignalRContextType = {
     requestId: string,
     timeoutMs?: number,
   ) => Promise<T>;
+  waitForStream: <T = unknown>(
+    eventType: string,
+    requestId: string,
+    onMessage?: (msg: StreamMessage<T>) => void,
+    timeoutMs?: number,
+  ) => Promise<T[]>;
+  subscribeToStream: <T = unknown>(
+    eventType: string,
+    requestId: string,
+    handler: (msg: StreamMessage<T>) => void,
+  ) => () => void;
 };
 
 export type SignalRNotificationType = "Success" | "Info" | "Warning" | "Error";
@@ -43,6 +62,7 @@ export const EventType = {
   SystemMessage: "SystemMessage",
   SentenceGeneration: "SentenceGeneration", // Must match backend exactly
   SplitSentenceGeneration: "SplitSentenceGeneration", // Must match backend exactly
+  WordExplain: "WordExplain", // Must match backend exactly
 } as const;
 
 export type EventType = (typeof EventType)[keyof typeof EventType];
@@ -60,6 +80,14 @@ export interface NotificationPayload {
   severity: "info" | "warning" | "error";
 }
 
+export interface StreamEvent<TPayload = unknown> {
+  eventType: string; // StreamEventType from backend (e.g., "ChatAiAnswer")
+  payload: TPayload;
+  sequenceNumber: number;
+  stage: "First" | "Chunk" | "Last" | "Heartbeat" | "Error";
+  requestId: string;
+}
+
 export interface SystemMessagePayload {
   code: number;
   description: string;
@@ -67,21 +95,36 @@ export interface SystemMessagePayload {
 
 // Regular sentence types
 export interface SentenceItem {
+  exerciseId: string;
   text: string;
+  words: string[];
   difficulty: string;
   nikud: boolean;
 }
 
 // Split sentence types
 export interface SplitSentenceItem {
+  exerciseId: string;
   words: string[];
-  original: string;
+  text: string;
   difficulty: string;
   nikud: boolean;
 }
 
-export interface SplitSentenceGeneratedPayload {
+export interface SentenceGenerationResponse {
+  requestId: string;
+  sentences: SentenceItem[];
+}
+
+export interface SplitSentenceGenerationResponse {
+  requestId: string;
   sentences: SplitSentenceItem[];
+}
+
+export interface WordExplanationResponse {
+  id: string;
+  definition: string;
+  explanation: string;
 }
 
 // Union Type for all possible events
@@ -89,8 +132,16 @@ export type UserEventUnion =
   | { eventType: typeof EventType.ChatAiAnswer; payload: ChatAiAnswerPayload }
   | { eventType: typeof EventType.SystemMessage; payload: SystemMessagePayload }
   | {
+      eventType: typeof EventType.SentenceGeneration;
+      payload: SentenceGenerationResponse;
+    }
+  | {
       eventType: typeof EventType.SplitSentenceGeneration;
-      payload: SplitSentenceGeneratedPayload;
+      payload: SplitSentenceGenerationResponse;
+    }
+  | {
+      eventType: typeof EventType.WordExplain;
+      payload: WordExplanationResponse;
     };
 
 // Event Handler Type

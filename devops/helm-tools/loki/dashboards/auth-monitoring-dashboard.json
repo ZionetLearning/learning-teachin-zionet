@@ -24,7 +24,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "P8E80F9AEF21F6940"
+        "uid": "loki"
       },
       "description": "Tracks login attempts per $__interval across environments. Automatically adjusts to the selected time range, helping identify spikes, drops, or anomalies in user authentication behavior.",
       "fieldConfig": {
@@ -168,7 +168,7 @@
         {
           "datasource": {
             "type": "loki",
-            "uid": "P8E80F9AEF21F6940"
+            "uid": "loki"
           },
           "direction": "backward",
           "editorMode": "code",
@@ -184,7 +184,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "P8E80F9AEF21F6940"
+        "uid":"loki"
       },
       "description": "Displays the number of active refresh sessions per environment.\nCalculated as: sessions created minus sessions deleted or cleaned.\nThe data reflects the selected time.\nIf no data exists for an environment, it's shown as zero.",
       "fieldConfig": {
@@ -261,7 +261,7 @@
         {
           "datasource": {
             "type": "loki",
-            "uid": "P8E80F9AEF21F6940"
+            "uid": "loki"
           },
           "direction": "backward",
           "editorMode": "code",
@@ -274,7 +274,7 @@
         {
           "datasource": {
             "type": "loki",
-            "uid": "P8E80F9AEF21F6940"
+            "uid": "loki"
           },
           "direction": "backward",
           "editorMode": "code",
@@ -286,7 +286,7 @@
         {
           "datasource": {
             "type": "loki",
-            "uid": "P8E80F9AEF21F6940"
+            "uid": "loki"
           },
           "direction": "backward",
           "editorMode": "code",

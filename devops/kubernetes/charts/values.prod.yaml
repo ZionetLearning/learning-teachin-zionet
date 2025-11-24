@@ -2,10 +2,11 @@
 global:
   dockerRegistry: ""   # CI sets: docker.io/<org> or <acr>.azurecr.io
   imagePullPolicy: IfNotPresent   # or Always if you rely on :latest
+  spot:
+    enabled: false  # Enable spot nodes for cost optimization in prod
   dapr:
     enabled: true
     configName: dapr-config
-
 
 namespace:
   create: true
@@ -18,7 +19,6 @@ cronjobs:
   refreshSessionsCleanup:
     enabled: true
     schedule: "30 2 * * *"   # nightly at 02:30
-
 
 manager:
   image:
@@ -54,3 +54,7 @@ accessor:
     tag: "1.0.0"
   env:
     ASPNETCORE_URLS: "http://+:5003"
+
+# Langfuse Configuration (disabled in prod)
+langfuse:
+  enabled: false

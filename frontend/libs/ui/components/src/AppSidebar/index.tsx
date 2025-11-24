@@ -1,5 +1,18 @@
-import { useState } from 'react';
-import { Sidebar, Menu, MenuItem, SubMenu, sidebarClasses } from 'react-pro-sidebar';
+import { useEffect, useState } from "react";
+import {
+  Sidebar,
+  Menu,
+  MenuItem,
+  SubMenu,
+  sidebarClasses,
+} from "react-pro-sidebar";
+import { useTranslation } from "react-i18next";
+import { useThemeColors } from "@app-providers";
+import { useColorScheme } from "@mui/material/styles";
+import BrightnessAutoIcon from "@mui/icons-material/BrightnessAuto";
+import LightModeIcon from "@mui/icons-material/LightMode";
+import DarkModeIcon from "@mui/icons-material/DarkMode";
+import PaletteIcon from "@mui/icons-material/Palette";
 
 export interface SidebarLink {
   label: React.ReactNode;
@@ -11,11 +24,11 @@ export interface SidebarLink {
 }
 
 export interface LanguageItem {
-  code: string;           // 'en' | 'he'
+  code: string; // 'en' | 'he'
   label: React.ReactNode; // visible label
   icon?: React.ReactNode; // optional flag/icon
   active?: boolean;
-  onClick: () => void;    // switch language
+  onClick: () => void; // switch language
   testId?: string;
 }
 
@@ -27,11 +40,9 @@ export interface AppSidebarProps {
     items: LanguageItem[];
   };
   toggle?: SidebarLink;
-  /* initial state only (the component manages the rest) */
-  defaultCollapsed?: boolean;
   /* notify parent when user toggles */
   onCollapsedChange?: (collapsed: boolean) => void;
-  dir?: 'ltr' | 'rtl';
+  dir?: "ltr" | "rtl";
   activePath?: string;
   onNavigate?: (path: string) => void;
   logoutItem?: {
@@ -46,17 +57,30 @@ export const AppSidebar = ({
   items,
   languages,
   toggle,
-  defaultCollapsed = false,
   onCollapsedChange,
-  dir = 'ltr',
+  dir = "ltr",
   activePath,
   onNavigate,
   logoutItem,
 }: AppSidebarProps) => {
-  const [collapsed, setCollapsed] = useState<boolean>(defaultCollapsed);
+  const [collapsed, setCollapsed] = useState<boolean>(
+    typeof window !== "undefined" ? window.innerWidth < 768 : false,
+  );
+  const { t } = useTranslation();
+  const { mode, setMode } = useColorScheme(); // 'light' | 'dark' | 'system'
+  const color = useThemeColors();
+
+  useEffect(() => {
+    const handleResize = () => {
+      setCollapsed(window.innerWidth < 768);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const handleToggle = () => {
-    setCollapsed(prev => {
+    setCollapsed((prev) => {
       const next = !prev;
       onCollapsedChange?.(next);
       return next;
@@ -103,29 +127,86 @@ export const AppSidebar = ({
       dir={dir}
       rootStyles={{
         [`.${sidebarClasses.container}`]: {
-          backgroundColor: '#f4f4f4',
-          borderRight: '1px solid #ddd',
-          height: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
+          backgroundColor: color.bg,
+          color: color.text,
+          height: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
           direction: dir,
+          borderRight: `1px solid ${color.divider}`,
         },
       }}
     >
       <Menu
         menuItemStyles={{
-          button: ({ active }) => ({
-            color: active ? 'white' : '#333',
-            backgroundColor: active ? '#7c4dff' : 'transparent',
-            borderRadius: '8px',
-            margin: '4px 8px',
-            padding: '10px',
-            '& .ps-menu-icon': { color: active ? '#fff' : '#7c4dff' },
-            '&:hover': { backgroundColor: active ? '#6a40e6' : '#f0f0f0', color: active ? '#fff' : '#000' },
-            textTransform: 'capitalize',
+          button: ({ active, open, level }) => ({
+            color: active ? color.primaryContrast : color.text,
+            backgroundColor: active
+              ? color.primary
+              : open && level === 0
+                ? `rgba(var(${color.primaryMainChannel}) / 0.12)`
+                : "transparent",
+            borderRadius: "8px",
+            margin: "4px 8px",
+            padding: "10px",
+            border:
+              open && level === 0
+                ? `1px solid rgba(var(${color.primaryMainChannel}) / 0.35)`
+                : "1px solid transparent",
+
+            "& .ps-menu-icon": {
+              color: active
+                ? color.primaryContrast
+                : open && level === 0
+                  ? color.primary
+                  : color.primary,
+            },
+
+            "&:hover": {
+              backgroundColor: active
+                ? color.primaryDark
+                : open && level === 0
+                  ? `rgba(var(${color.primaryMainChannel}) / 0.18)`
+                  : color.hover,
+              color: active ? color.primaryContrast : color.text,
+            },
+
+            textTransform: "capitalize",
           }),
-          label: { textAlign: dir === 'rtl' ? 'right' : 'left' },
+
+          label: {
+            textAlign: dir === "rtl" ? "right" : "left",
+          },
+
+          subMenuContent: ({ open }) =>
+            open
+              ? {
+                  backgroundColor:
+                    mode === "dark"
+                      ? "rgba(255,255,255,0.03)"
+                      : "rgba(255,255,255,0.06)",
+                  margin: "0 8px 4px 8px",
+                  borderRadius: 8,
+                  padding: "4px 0",
+                  border: `1px solid ${color.divider}`,
+                  borderLeft:
+                    dir === "ltr"
+                      ? `3px solid rgba(var(${color.primaryMainChannel}) / 0.6)`
+                      : undefined,
+                  borderRight:
+                    dir === "rtl"
+                      ? `3px solid rgba(var(${color.primaryMainChannel}) / 0.6)`
+                      : undefined,
+                }
+              : {
+                  backgroundColor: "transparent",
+                  margin: 0,
+                  padding: 0,
+                  border: "none",
+                  borderLeft: "none",
+                  borderRight: "none",
+                },
         }}
       >
         {toggle && (
@@ -139,7 +220,11 @@ export const AppSidebar = ({
         )}
 
         {languages?.items?.length ? (
-          <SubMenu label={languages.label} icon={languages.icon} data-testid="sidebar-languages">
+          <SubMenu
+            label={languages.label}
+            icon={languages.icon}
+            data-testid="sidebar-languages"
+          >
             {languages.items.map((lng) => (
               <MenuItem
                 key={lng.code}
@@ -154,6 +239,33 @@ export const AppSidebar = ({
           </SubMenu>
         ) : null}
 
+        <SubMenu label={t("sidebar.appearance")} icon={<PaletteIcon />}>
+          <MenuItem
+            icon={<BrightnessAutoIcon />}
+            active={mode === "system"}
+            onClick={() => setMode("system")}
+            data-testid="sidebar-theme-system"
+          >
+            {t("sidebar.systemDefault")}
+          </MenuItem>
+          <MenuItem
+            icon={<LightModeIcon />}
+            active={mode === "light"}
+            onClick={() => setMode("light")}
+            data-testid="sidebar-theme-light"
+          >
+            {t("sidebar.lightMode")}
+          </MenuItem>
+          <MenuItem
+            icon={<DarkModeIcon />}
+            active={mode === "dark"}
+            onClick={() => setMode("dark")}
+            data-testid="sidebar-theme-dark"
+          >
+            {t("sidebar.darkMode")}
+          </MenuItem>
+        </SubMenu>
+
         {items.map(renderItem)}
       </Menu>
 
@@ -161,17 +273,21 @@ export const AppSidebar = ({
         <Menu
           menuItemStyles={{
             button: {
-              color: '#333',
-              backgroundColor: 'transparent',
-              borderRadius: '8px',
-              margin: '4px 8px',
-              padding: '10px',
-              '&:hover': { backgroundColor: '#f0f0f0' },
-              textTransform: 'capitalize',
+              color: color.text,
+              backgroundColor: "transparent",
+              borderRadius: "8px",
+              margin: "4px 8px",
+              padding: "10px",
+              "&:hover": { backgroundColor: color.hover },
+              textTransform: "capitalize",
             },
           }}
         >
-          <MenuItem icon={logoutItem.icon} onClick={logoutItem.onLogout} data-testid={logoutItem.testId}>
+          <MenuItem
+            icon={logoutItem.icon}
+            onClick={logoutItem.onLogout}
+            data-testid={logoutItem.testId}
+          >
             {logoutItem.label}
           </MenuItem>
         </Menu>

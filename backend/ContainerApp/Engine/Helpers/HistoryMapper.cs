@@ -19,7 +19,7 @@ public static class HistoryMapper
             foreach (var m in arr.EnumerateArray())
             {
                 var role = GetRoleLabel(m);
-                if (!IsUserOrAssistant(role))
+                if (!IsUserAssistantOrDeveloper(role))
                 {
                     continue;
                 }
@@ -72,10 +72,11 @@ public static class HistoryMapper
         return null;
     }
 
-    private static bool IsUserOrAssistant(string? role)
+    private static bool IsUserAssistantOrDeveloper(string? role)
         => role is not null &&
            (role.Equals("user", StringComparison.OrdinalIgnoreCase) ||
-            role.Equals("assistant", StringComparison.OrdinalIgnoreCase));
+            role.Equals("assistant", StringComparison.OrdinalIgnoreCase) ||
+            role.Equals("developer", StringComparison.OrdinalIgnoreCase));
 
     private static string? GetFirstTextFromItems(JsonElement message)
     {

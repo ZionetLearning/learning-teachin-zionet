@@ -1,57 +1,104 @@
 /// <reference types="vite/client" />
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { apiClient as axios } from "@app-providers";
 import { isAxiosError } from "axios";
 import { toast } from "react-toastify";
 import { EventType } from "@app-providers/types";
 import { useSignalR } from "@student/hooks";
-import { 
-  SendMessageRequest, 
-  SendMessageResponse, 
-  Chat, 
-  ChatHistory 
+import {
+  SendMessageRequest,
+  AIChatStreamResponse,
+  Chat,
+  ChatHistory,
+  StreamMetaEvent,
+  StreamStage,
 } from "@student/types";
 
-export const useSendChatMessage = () => {
+export const useSendChatMessageStream = () => {
   const AI_BASE_URL = import.meta.env.VITE_AI_URL!;
-  const queryClient = useQueryClient();
-  const { waitForResponse } = useSignalR();
+  const { waitForStream, status } = useSignalR();
 
-  return useMutation<SendMessageResponse, Error, SendMessageRequest>({
-    mutationFn: async ({
+  const startStream = async (
+    {
       userMessage,
       threadId = crypto.randomUUID(),
       chatType = "default",
-      userId,
-    }) => {
+      pageContext,
+      userLanguage,
+    }: SendMessageRequest,
+    onDelta: (delta: string) => void,
+    onCompleted: (final: AIChatStreamResponse) => void,
+    onMeta?: (evt?: StreamMetaEvent) => void,
+  ) => {
+    // Check SignalR connection
+    if (status !== "connected") {
+      throw new Error(`SignalR not connected. Status: ${status}`);
+    }
+
+    try {
+      const endpoint =
+        chatType === "Global"
+          ? `${AI_BASE_URL}/global-chat`
+          : `${AI_BASE_URL}/chat`;
+
+      const requestBody: SendMessageRequest = {
+        userMessage,
+        threadId,
+        chatType,
+      };
+
+      if (pageContext) {
+        requestBody.pageContext = pageContext;
+      }
+      if (userLanguage) {
+        requestBody.userLanguage = userLanguage;
+      }
+
+      // Start the request
       const { data } = await axios.post<{ requestId: string }>(
-        `${AI_BASE_URL}/chat`,
-        {
-          userMessage,
-          threadId,
-          chatType,
-          userId,
-        },
+        endpoint,
+        requestBody,
       );
 
       const requestId = data.requestId;
 
-      const aiResponse = await waitForResponse<SendMessageResponse>(
+      // Use waitForStream which creates and manages the stream
+      const streamMessages = waitForStream<AIChatStreamResponse>(
         EventType.ChatAiAnswer,
         requestId,
+        (msg) => {
+          const payload = msg?.payload ?? {};
+          const stage = payload?.stage as StreamStage | undefined; // "Tool" | "Model" | "Final"
+          const toolCall = (payload?.toolCall ?? null) as string | null;
+          const isFinal = !!payload?.isFinal;
+          const delta = payload?.delta;
+
+          // 1) Emit meta
+          onMeta?.({ stage, toolCall, isFinal });
+
+          // 2) if final, complete.
+          if (isFinal) {
+            onCompleted(payload as AIChatStreamResponse);
+            return; //  prevent duplicate text
+          }
+
+          // 3) model chunks only while not final
+          if (typeof delta === "string" && delta.length > 0) {
+            onDelta(delta);
+          }
+        },
       );
-      return aiResponse;
-    },
 
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["chat", data.threadId] });
-    },
+      streamMessages.catch((error) => {
+        console.error("Stream error:", error);
+      });
+    } catch (error) {
+      console.error("Error starting stream:", error);
+      throw error;
+    }
+  };
 
-    onError: (error) => {
-      console.error("Failed to send chat message:", error);
-      toast.error("Failed to send message. Please try again.");
-    },
-  });
+  return { startStream };
 };
 
 export const useGetAllChats = (userId: string) => {
@@ -61,8 +108,8 @@ export const useGetAllChats = (userId: string) => {
     queryKey: ["chats", userId],
     queryFn: async () => {
       try {
-        const { data } = await axios.get<{chats: Chat[]}>(
-          `${AI_BASE_URL}/chats/${userId}`
+        const { data } = await axios.get<{ chats: Chat[] }>(
+          `${AI_BASE_URL}/chats/${userId}`,
         );
 
         return data.chats || [];
@@ -87,17 +134,16 @@ export const useGetChatHistory = (chatId: string, userId: string) => {
     queryFn: async () => {
       try {
         const { data } = await axios.get<ChatHistory>(
-          `${AI_BASE_URL}/chat/${chatId}/${userId}`
+          `${AI_BASE_URL}/chat/${chatId}/${userId}`,
         );
         return data;
       } catch (error: unknown) {
-       
         if (isAxiosError(error) && error.response?.status === 404) {
           return {
             chatId: chatId,
             name: "New Chat",
             chatType: "default",
-            messages: []
+            messages: [],
           };
         }
         console.error("Failed to fetch chat history:", error);

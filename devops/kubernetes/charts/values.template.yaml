@@ -1,0 +1,79 @@
+# Template overrides for non-dev/non-prod environments (e.g., test, featest, featest2) for the Helm chart
+global:
+  dockerRegistry: ""   # CI sets: docker.io/<org> or <acr>.azurecr.io
+  imagePullPolicy: IfNotPresent
+  environment: ""      # Will be set by CI/CD to TARGET_NAMESPACE (e.g., "devacr2")
+  spot:
+    enabled: true  # Enable spot nodes for cost optimization in test environments
+  dapr:
+    enabled: true
+    configName: dapr-config
+
+namespace:
+  create: true
+  name: ""  # Will be set dynamically by the deployment pipeline
+
+cronjobs:
+  statsPing:
+    enabled: true
+    schedule: "*/5 * * * *"   # every 5 minutes in dev
+    target:
+      mode: "service"
+      serviceName: "manager"
+      port: 80
+
+  refreshSessionsCleanup:
+    enabled: true
+    schedule: "30 2 * * *"   # nightly at 02:30
+    target:
+      mode: "service"
+      serviceName: "manager"
+      port: 80
+
+manager:
+  image:
+    name: manager  # Required: image name for the container
+    # tag will be set dynamically via global.environment by CI/CD
+  # service, ports, labels inherit from base values.yaml
+  env:
+    ASPNETCORE_URLS: "http://+:5001"
+  # secrets inherit from base values.yaml
+  ingress:
+    enabled: true
+    host: teachin.westeurope.cloudapp.azure.com
+    basePath: /api
+    tls:
+      enabled: true
+      clusterIssuer: letsencrypt-prod
+      secretName: teachin-tls
+      
+engine:
+  image:
+    name: engine  # Required: image name for the container
+    # tag will be set dynamically via global.environment by CI/CD
+  env:
+    ASPNETCORE_URLS: "http://+:5002"
+    AzureOpenAI__Endpoint: "https://france-teachin-open-ai.openai.azure.com/"
+    AzureOpenAI__ApiKey: ""     # injecting via secret/CI
+    AzureOpenAI__DeploymentName: "gpt-4.1-mini"
+    AzureOpenAI__ModelId: "gpt-4o-mini"
+    AzureSpeech__SubscriptionKey: ""
+    AzureSpeech__Region: "eastus"
+    AzureSpeech__DefaultVoice: "he-IL-HilaNeural"
+    AzureSpeech__TimeoutSeconds: "70"
+    Tavily__ApiKey: ""
+    Tavily__MaxResults: "5"
+    Tavily__IncludeAnswer: "true"
+    Tavily__IncludeRawContent: "false"
+    Tavily__SearchDepth: "basic"
+
+accessor:
+  image:
+    name: accessor  # Required: image name for the container
+    # tag will be set dynamically via global.environment by CI/CD
+  env:
+    ASPNETCORE_URLS: "http://+:5003"
+
+# Langfuse Configuration (dev only)
+langfuse:
+  enabled: true
