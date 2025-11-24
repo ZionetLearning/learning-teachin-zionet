@@ -15,6 +15,7 @@
 		<PackageReference Include="Dapr.AspNetCore" Version="1.15.4" />
 		<PackageReference Include="DotQueue" Version="1.0.5" />
 		<PackageReference Include="Microsoft.CognitiveServices.Speech" Version="1.45.0" />
+		<PackageReference Include="Microsoft.SemanticKernel.Plugins.Web" Version="1.67.1-alpha" />
 		<PackageReference Include="Polly" Version="8.6.3" />
 		<PackageReference Include="Microsoft.SemanticKernel" Version="1.65.0" />
 	</ItemGroup>

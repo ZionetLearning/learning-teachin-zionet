@@ -10,12 +10,6 @@ namespace Manager.Services.Clients.Accessor.Interfaces;
 
 public interface IAccessorClient
 {
-    Task<(TaskModel? Task, string? ETag)> GetTaskWithEtagAsync(int id, CancellationToken ct = default);
-    Task<UpdateTaskNameResult> UpdateTaskNameAsync(int id, string newTaskName, string ifMatch, CancellationToken ct = default);
-    Task<bool> UpdateTaskName(int id, string newTaskName);
-    Task<bool> DeleteTask(int id);
-    Task<(bool success, string message)> PostTaskAsync(TaskModel task);
-    Task<TaskModel?> GetTaskAsync(int id);
     Task<int> CleanupRefreshSessionsAsync(CancellationToken ct = default);
     Task<IReadOnlyList<ChatSummary>> GetChatsForUserAsync(Guid userId, CancellationToken ct = default);
     Task<StatsSnapshot?> GetStatsSnapshotAsync(CancellationToken ct = default);
@@ -25,7 +19,6 @@ public interface IAccessorClient
     Task UpdateSessionDBAsync(Guid sessionId, RotateRefreshSessionRequest rotatePayload, CancellationToken ct);
     Task DeleteSessionDBAsync(Guid sessionId, CancellationToken ct);
     Task<SpeechTokenResponse> GetSpeechTokenAsync(CancellationToken ct = default);
-    Task<IReadOnlyList<TaskSummaryDto>> GetTaskSummariesAsync(CancellationToken ct = default);
 
     Task<ClassDto?> GetClassAsync(Guid classId, CancellationToken ct = default);
     Task<List<ClassDto?>?> GetMyClassesAsync(Guid callerId, CancellationToken ct = default);
