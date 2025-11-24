@@ -10,7 +10,6 @@ import type { SvgIconComponent } from "@mui/icons-material";
 
 export const getAchievementIcon = (key: string): SvgIconComponent => {
   const icons: Record<string, SvgIconComponent> = {
-    //TODO: add different icons for different achievements
     word_cards_first: EmojiEventsIcon,
     word_cards_3: StarsIcon,
     word_cards_5: WorkspacePremiumIcon,
