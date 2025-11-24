@@ -4,7 +4,7 @@ metadata:
   name: zionet-apps
   namespace: argocd
 spec:
-  project: teachin-zionet
+  project: default
   source:
     repoURL: 'https://github.com/ZionetLearning/learning-teachin-zionet.git'
     targetRevision: HEAD
