@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Manager.Mapping;
 using Manager.Services.Clients.Accessor.Interfaces;
 
 namespace Manager.Endpoints;
@@ -24,15 +25,16 @@ public static class MediaEndpoints
     {
         try
         {
-            var speechTokenResponse = await accessorClient.GetSpeechTokenAsync(ct);
-            if (!string.IsNullOrWhiteSpace(speechTokenResponse.Token))
+            var accessorResponse = await accessorClient.GetSpeechTokenAsync(ct);
+            var response = accessorResponse.ToFront();
+
+            if (!string.IsNullOrWhiteSpace(response.Token))
             {
-                return Results.Ok(speechTokenResponse);
+                return Results.Ok(response);
             }
 
             logger.LogError("Accessor returned empty speech token");
             return Results.Problem("Failed to retrieve speech token");
-
         }
         catch (Exception ex)
         {
