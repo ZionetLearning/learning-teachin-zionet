@@ -36,7 +36,7 @@ public class ManagerEndpointsTests
                                         typeof(TasksEndpoints),
                                         "UpdateTaskNameAsync",
                                         id,
-                                        request!,
+                                        request!.Name,
                                         ifMatch,
                                         _taskAccessor.Object,
                                         _log.Object,
