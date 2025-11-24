@@ -21,3 +21,5 @@ frontend_apps          = ["student", "teacher", "admin"]    # Dev environment us
 
 #------------- Redis Shared Instance -------------
 use_shared_redis = false  # dev uses its own Redis instance
+
+redis_name = prod-redis-teachin-shared
