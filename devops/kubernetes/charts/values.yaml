@@ -294,7 +294,7 @@ langfuse:
   
 # KEDA scaler (optional)
 keda:
-  enabled: false
+  enabled: true
   # httpAddOn:
   #   interceptor:
   #     proxy:
