@@ -111,6 +111,7 @@ variable "tavily_api_key" {
   default     = null
 }
 
+
 # admin_username - passed from GitHub Actions as TF_VAR_admin_username
 variable "admin_username" {
   type        = string
@@ -152,7 +153,7 @@ variable "frontend_apps" {
 
 #------------- Redis Variables -------------
 variable "redis_name" {
-  description = "Name of the Redis cache instance"
+  description = "Name of the Redis cache instance (for dev/test environments)"
   type        = string
   default     = "redis-teachin-shared"
 }
