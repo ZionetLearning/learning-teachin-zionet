@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: zionet-apps
+  namespace: argocd
+spec:
+  project: teachin-zionet
+  source:
+    repoURL: 'https://github.com/ZionetLearning/learning-teachin-zionet.git'
+    targetRevision: HEAD
+    path: devops/kubernetes/charts
+    helm:
+      valueFiles:
+        - values.yaml
+        - values.dev.yaml
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+  
