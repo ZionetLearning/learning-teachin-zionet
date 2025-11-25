@@ -18,7 +18,7 @@ variable "subscription_id" {
 variable "identity_id" {
   description = "Azure AD identity ID"
   type        = string
-  default     = "0997f44d-fadf-4be8-8dc6-202f7302f680"
+  default     = "b6b2240a-f185-4225-b3d5-8b708c32a98f"
 }
 
 variable "tenant_id" {
