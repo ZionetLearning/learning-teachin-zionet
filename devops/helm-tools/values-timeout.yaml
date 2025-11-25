@@ -2,6 +2,5 @@ interceptor:
   tcpConnectTimeout: "120s"
   responseHeaderTimeout: "120s"
   
-  env:
-    - name: KEDA_CONDITION_WAIT_TIMEOUT
-      value: "120s"
+  replicas:
+    waitTimeout: "35s"
