@@ -56,6 +56,7 @@ export const AuthorizationPage = ({ allowedRoles }: AuthorizationPageProps) => {
     function redirectAfterLogin() {
       if (!isAuthorized) return;
       if (!role) return;
+      if (loginStatus?.isLoading) return;
       if (!allowedRoles.includes(role)) {
         setAuthError(t("pages.auth.forbiddenRole"));
         logout();
@@ -65,7 +66,7 @@ export const AuthorizationPage = ({ allowedRoles }: AuthorizationPageProps) => {
       sessionStorage.removeItem("redirectAfterLogin");
       navigate(to, { replace: true });
     },
-    [allowedRoles, isAuthorized, navigate, role, t, logout],
+    [allowedRoles, isAuthorized, navigate, role, t, logout, loginStatus],
   );
 
   useEffect(
