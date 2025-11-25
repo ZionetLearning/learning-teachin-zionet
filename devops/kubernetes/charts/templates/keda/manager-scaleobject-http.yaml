@@ -7,16 +7,13 @@ metadata:
 spec:
   hosts:
     - api-{{ include "app.namespace" . }}.internal
-
   scaleTargetRef:
     name: {{ .Values.manager.name }}
     service: {{ .Values.manager.name }}
-    port: 80
-
+    port: {{ .Values.manager.ports.service }}
   replicas:
     min: 0
     max: 1
-
   pollingInterval: 1
   scaledownPeriod: 100
   targetPendingRequests: 1
