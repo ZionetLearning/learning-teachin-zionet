@@ -160,8 +160,8 @@ jobs:
               ;;
           esac
 
-          # Determine if Langfuse should be deployed (only for dev environment)
-          if [ "$ENVIRONMENT_NAME" = "dev" ]; then
+          # Determine if Langfuse should be deployed (dev and prod environments)
+          if [ "$ENVIRONMENT_NAME" = "dev" ] || [ "$ENVIRONMENT_NAME" = "prod" ]; then
             echo "deploy_langfuse=true" >> $GITHUB_OUTPUT
             echo "deploy_langfuse=true"
           else
@@ -354,8 +354,6 @@ jobs:
         run: |
           echo "Deploying Langfuse..."
           cd devops/helm-tools
-          echo "Applying Langfuse ingress..."
-          kubectl apply -f "../kubernetes/ingress/langfuse-ingress.yaml"
           chmod +x langfuse.sh
           
           if [ -z "${{ secrets.SMTP_USER }}" ] || [ -z "${{ secrets.SMTP_PASSWORD }}" ]; then

@@ -2,7 +2,6 @@
 set -euo pipefail
 
 NAMESPACE="devops-tools"
-PG_HOST="dev-pg-zionet-learning.postgres.database.azure.com"
 ENVIRONMENT_NAME="${1:-dev}"
 ADMIN_EMAIL="${2:-admin@teachin.local}"
 ADMIN_PASSWORD="${3:-ChangeMe123!}"
@@ -11,8 +10,20 @@ PG_PASSWORD="${5:-postgres}"
 SMTP_USER="${6:-}"
 SMTP_PASSWORD="${7:-}"
 
-echo "🎯 Deploying Langfuse into $NAMESPACE (DB suffix: $ENVIRONMENT_NAME)"
+# Environment-specific configuration
+if [ "$ENVIRONMENT_NAME" = "prod" ]; then
+  PG_HOST="prod-pg-zionet-learning.postgres.database.azure.com"
+  DOMAIN="teachin-prod.westeurope.cloudapp.azure.com"
+  DOMAIN_SECRET="teachin-prod-tls"
+else
+  PG_HOST="dev-pg-zionet-learning.postgres.database.azure.com"
+  DOMAIN="teachin.westeurope.cloudapp.azure.com"
+  DOMAIN_SECRET="teachin-tls"
+fi
+
+echo "🎯 Deploying Langfuse into $NAMESPACE (Environment: $ENVIRONMENT_NAME)"
 echo "📊 PostgreSQL Host: $PG_HOST"
+echo "🌐 Domain: $DOMAIN"
 echo "👤 Using PostgreSQL User: $PG_USERNAME"
 
 helm repo add langfuse https://langfuse.github.io/langfuse-k8s || true
@@ -34,7 +45,7 @@ fi
 helm $ACTION langfuse langfuse/langfuse \
   --namespace "$NAMESPACE" \
   --set langfuse.replicas=1 \
-  --set langfuse.nextauth.url="https://teachin.westeurope.cloudapp.azure.com/langfuse" \
+  --set langfuse.nextauth.url="https://$DOMAIN/langfuse" \
   --set langfuse.salt.secretKeyRef.name="langfuse-secrets" \
   --set langfuse.salt.secretKeyRef.key="SALT" \
   --set langfuse.nextauth.secret.secretKeyRef.name="langfuse-secrets" \
@@ -173,7 +184,7 @@ helm $ACTION langfuse langfuse/langfuse \
   --set langfuse.additionalEnv[25].name="SMTP_LOGGER" \
   --set-string langfuse.additionalEnv[25].value="true" \
   --set langfuse.additionalEnv[26].name="NEXT_PUBLIC_INVITE_URL" \
-  --set-string langfuse.additionalEnv[26].value="https://teachin.westeurope.cloudapp.azure.com/langfuse" \
+  --set-string langfuse.additionalEnv[26].value="https://$DOMAIN/langfuse" \
   --set langfuse.additionalEnv[27].name="NEXTAUTH_INVITATION_EMAIL_SUBJECT" \
   --set-string langfuse.additionalEnv[27].value="You have been invited to TeachIn's Langfuse" \
   --set langfuse.additionalEnv[28].name="NEXTAUTH_INVITATION_EMAIL_TEMPLATE" \
@@ -195,7 +206,7 @@ helm $ACTION langfuse langfuse/langfuse \
   --set langfuse.additionalEnv[36].name="MEMBERSHIP_INVITATION_EMAIL_TEMPLATE" \
   --set-string langfuse.additionalEnv[36].value="<h2>Join {{organizationName}} on Langfuse</h2><p>Hello,</p><p><b>{{inviterName}}</b> ({{inviterEmail}}) has invited you to join <b>{{organizationName}}</b> on Langfuse.</p><p>Click the link below to accept:</p><p><a href=\"{{url}}\">Accept Invitation</a></p><p>Or copy this URL: {{url}}</p><p><small>This invitation was sent to {{inviteeEmail}}</small></p>" \
   --set langfuse.additionalEnv[37].name="INVITE_URL_BASE" \
-  --set-string langfuse.additionalEnv[37].value="https://teachin.westeurope.cloudapp.azure.com/langfuse" \
+  --set-string langfuse.additionalEnv[37].value="https://$DOMAIN/langfuse" \
   --set langfuse.additionalEnv[38].name="NEXT_PUBLIC_SIGNUP_DISABLED" \
   --set-string langfuse.additionalEnv[38].value="true" \
   --set langfuse.additionalEnv[39].name="AUTH_DISABLE_SIGNUP_DEFAULT_DOMAIN" \
@@ -413,8 +424,15 @@ echo "🌐 Deploying Langfuse ingress..."
 INGRESS_FILE="../kubernetes/ingress/langfuse-ingress.yaml"
 
 if [ -f "$INGRESS_FILE" ]; then
-  echo "📁 Applying ingress from: $INGRESS_FILE"
-  kubectl apply -f "$INGRESS_FILE"
+  echo "📁 Processing ingress template: $INGRESS_FILE"
+  echo "🔧 Applying environment-specific configuration for $ENVIRONMENT_NAME"
+  
+  # Create temporary ingress file with environment-specific substitutions
+  TEMP_INGRESS_FILE="/tmp/langfuse-ingress-${ENVIRONMENT_NAME}.yaml"
+  sed "s/DOMAIN_PLACEHOLDER/$DOMAIN/g; s/DOMAIN_SECRET_PLACEHOLDER/$DOMAIN_SECRET/g" "$INGRESS_FILE" > "$TEMP_INGRESS_FILE"
+  
+  kubectl apply -f "$TEMP_INGRESS_FILE"
+  rm -f "$TEMP_INGRESS_FILE"
 else
   echo "⚠️  Ingress file not found at $INGRESS_FILE"
   echo "📝 You may need to create an ingress manually to expose Langfuse externally."
@@ -429,7 +447,7 @@ kubectl delete job --selector=app.kubernetes.io/name=langfuse -n "$NAMESPACE" --
 echo ""
 echo "🎉 Langfuse deployed successfully!"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "🔗 Access URL: https://teachin.westeurope.cloudapp.azure.com/langfuse"
+echo "🔗 Access URL: https://$DOMAIN/langfuse"
 echo "👤 Admin Email: $ADMIN_EMAIL"
 echo "🔑 Admin Password: $ADMIN_PASSWORD"
 echo "📊 Environment: $ENVIRONMENT_NAME"
