@@ -1,7 +1,7 @@
 import { Box } from "@mui/material";
 import { useAuth } from "@app-providers";
 import { Profile } from "@ui-components";
-import { useGetUserAchievements } from "@student/api";
+import { useGetUserAchievements } from "../api/achievements";
 import { AchievementsSection } from "../components";
 
 export const ProfilePage = () => {
@@ -18,7 +18,7 @@ export const ProfilePage = () => {
     <Box>
       <Profile user={user} />
       {!isLoading && achievements.length > 0 && (
-        <Box sx={{ marginBottom: 3 }}>
+        <Box sx={{ padding: 3, paddingTop: 0 }}>
           <AchievementsSection achievements={achievements} />
         </Box>
       )}
