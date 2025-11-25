@@ -120,19 +120,19 @@ output "avatars_container_name" {
 
 # Langfuse secrets for Accessor (only output when dev environment creates them)
 output "langfuse_baseurl" {
-  description = "Langfuse Base URL - Global API endpoint for all environments"
-  value       = var.environment_name == "dev" ? azurerm_key_vault_secret.langfuse_baseurl[0].value : null
+  description = "Langfuse Base URL - Environment-specific API endpoint"
+  value       = var.environment_name == "dev" || var.environment_name == "prod" ? azurerm_key_vault_secret.langfuse_baseurl[0].value : null
   sensitive   = true
 }
 
 output "langfuse_public_key" {
-  description = "Langfuse Public Key - Global API key for all environments"
-  value       = var.environment_name == "dev" ? azurerm_key_vault_secret.langfuse_public_key[0].value : null
+  description = "Langfuse Public Key - Environment-specific API key"
+  value       = var.environment_name == "dev" || var.environment_name == "prod" ? azurerm_key_vault_secret.langfuse_public_key[0].value : null
   sensitive   = true
 }
 
 output "langfuse_secret_key" {
-  description = "Langfuse Secret Key - Global API key for all environments"
-  value       = var.environment_name == "dev" ? azurerm_key_vault_secret.langfuse_secret_key[0].value : null
+  description = "Langfuse Secret Key - Environment-specific API key"
+  value       = var.environment_name == "dev" || var.environment_name == "prod" ? azurerm_key_vault_secret.langfuse_secret_key[0].value : null
   sensitive   = true
 }
