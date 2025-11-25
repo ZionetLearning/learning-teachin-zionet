@@ -33,8 +33,12 @@
         "Key": "chat.global.system.default",
         "Label": "production"
       },
-      "GlobalChatPageContext": {
-        "Key": "chat.global.page.context",
+      "WordExplanationTemplate": {
+        "Key": "prompts.word.explain.template",
+        "Label": "production"
+      },
+      "SentencesGenerateTemplate": {
+        "Key": "prompts.sentences.generate.template",
         "Label": "production"
       }
     }

@@ -4,7 +4,7 @@ namespace Engine.Services;
 
 public interface IChatAiService
 {
-    Task<ChatAiServiceResponse> ChatHandlerAsync(ChatAiServiceRequest request, CancellationToken ct = default);
+    Task<ChatAiServiceResponse> ChatHandlerAsync(EngineChatRequest request, CancellationToken ct = default);
 
-    IAsyncEnumerable<ChatAiStreamDelta> ChatStreamAsync(ChatAiServiceRequest request, CancellationToken ct = default);
+    IAsyncEnumerable<ChatAiStreamDelta> ChatStreamAsync(EngineChatRequest request, CancellationToken ct = default);
 }

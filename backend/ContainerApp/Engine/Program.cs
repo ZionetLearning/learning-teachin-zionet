@@ -9,7 +9,6 @@ using Engine.Endpoints;
 using Engine.Models;
 using Engine.Models.QueueMessages;
 using Engine.Options;
-using Engine.Plugins;
 using Engine.Services;
 using Engine.Services.Clients.AccessorClient;
 using Engine.Tools;
@@ -44,7 +43,6 @@ builder.Services.AddScoped<ISentencesService, SentencesService>();
 builder.Services.AddSingleton<IRetryPolicyProvider, RetryPolicyProvider>();
 builder.Services.AddSingleton<IRetryPolicy, RetryPolicy>();
 builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
-builder.Services.AddSingleton<ISemanticKernelPlugin, TimePlugin>();
 builder.Services.AddScoped<IWordExplainService, WordExplainService>();
 
 builder.Services.AddMemoryCache();
@@ -85,23 +83,7 @@ builder.Services.AddSingleton(sp =>
                      endpoint: cfg.Endpoint,
                      apiKey: cfg.ApiKey)
                  .Build();
-    var logger = sp.GetRequiredService<ILoggerFactory>()
-    .CreateLogger("KernelPluginRegistration");
-    foreach (var plugin in sp.GetServices<ISemanticKernelPlugin>())
-    {
-        try
-        {
-            var pluginName = plugin.GetType().ToPluginName();
-            kernel.Plugins.AddFromObject(plugin, pluginName);
-            logger.LogInformation("Plugin {Name} registered.", pluginName);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex,
-                "Failed to register plugin {PluginType}", plugin.GetType().FullName);
-
-        }
-    }
+    var logger = sp.GetRequiredService<ILoggerFactory>();
 
     return kernel;
 
@@ -109,7 +91,7 @@ builder.Services.AddSingleton(sp =>
 
 builder.Services.AddSingleton<TimeTools>();
 
-builder.Services.AddSingleton<IReadOnlyList<AITool>>(sp =>
+builder.Services.AddSingleton<IList<AITool>>(sp =>
 {
     var time = sp.GetRequiredService<TimeTools>();
 
