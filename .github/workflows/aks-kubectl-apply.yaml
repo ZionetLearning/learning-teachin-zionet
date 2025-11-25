@@ -58,7 +58,7 @@ jobs:
           elif [ "$ENV_NAME" = "prod" ]; then
             # Shared AKS for production
             echo "AKS_RG=prod-zionet-learning-2025" >> $GITHUB_ENV
-            echo "AKS_NAME=prod-cluster-dev" >> $GITHUB_ENV
+            echo "AKS_NAME=aks-cluster-prod" >> $GITHUB_ENV
           else
             echo "Error: Unsupported environment name '$ENV_NAME'. Only 'dev' and 'prod' are supported."
             exit 1
@@ -75,9 +75,15 @@ jobs:
 
       - name: Setup ingress controller
         run: |
+          # Resolve environment name for the script
+          ENV_NAME="${{ inputs.environment_name != '' && inputs.environment_name || github.event.inputs.environment_name }}"
+          if [ -z "$ENV_NAME" ]; then
+            ENV_NAME="dev"
+          fi
+          
           cd devops/helm-tools
           chmod +x setup-ingress-controller.sh
-          ./setup-ingress-controller.sh
+          ./setup-ingress-controller.sh "$ENV_NAME"
 
       - name: Add Grafana
         run: |

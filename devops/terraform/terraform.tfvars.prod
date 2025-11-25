@@ -2,7 +2,7 @@
 environment_name       = "prod"
 use_shared_aks         = false  # dev still uses its own cluster
 kubernetes_namespace   = "prod"
-aks_cluster_name       = "prod-cluster-dev"
+aks_cluster_name       = "aks-cluster-prod"
 #------------- Resource Configuration -------------
 location               = "westeurope"
 
