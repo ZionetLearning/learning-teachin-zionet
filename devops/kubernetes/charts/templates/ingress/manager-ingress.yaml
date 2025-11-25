@@ -8,10 +8,7 @@ metadata:
     kubernetes.io/ingress.class: "nginx"
     nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/rewrite-target: "/$2"
-    {{- if .Values.keda.enabled }}
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      proxy_set_header Host {{ printf "api-%s.internal" (default .Release.Namespace .Values.namespace.name) }};
-    {{- end }}
+    nginx.ingress.kubernetes.io/upstream-vhost: "api-{{ include "app.namespace" . }}.internal"
     {{- if and .Values.manager.ingress.tls.enabled .Values.manager.ingress.tls.clusterIssuer }}
     cert-manager.io/cluster-issuer: "{{ .Values.manager.ingress.tls.clusterIssuer }}"
     {{- end }}
