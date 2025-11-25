@@ -11,7 +11,7 @@ spec:
   scaleTargetRef:
     name: {{ .Values.manager.name }}
     service: {{ .Values.manager.name }}
-    port: {{ .Values.manager.ports.container }}
+    port: 80
 
   replicas:
     min: 0
