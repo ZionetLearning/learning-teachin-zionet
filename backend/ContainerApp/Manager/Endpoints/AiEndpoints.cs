@@ -597,7 +597,7 @@ public static class AiEndpoints
     }
 
     private static async Task<IResult> WordExplainAsync(
-    [FromBody] WordExplainRequestDto dto,
+    [FromBody] WordExplainRequest dto,
     [FromServices] IEngineClient engineClient,
     [FromServices] ILogger<WordsEndpoint> logger,
     HttpContext httpContext,
@@ -624,7 +624,7 @@ public static class AiEndpoints
         {
             var userId = GetUserId(httpContext, logger);
 
-            var request = new WordExplainRequest
+            var request = new WordExplainEngineRequest
             {
                 Id = Guid.NewGuid(),
                 Word = dto.Word,
