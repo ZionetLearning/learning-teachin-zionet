@@ -38,10 +38,23 @@ helm repo add grafana https://grafana.github.io/helm-charts || true
 helm repo update
 
 # ==============================
-# 2. Create namespace
+# 2. Create namespace and required ConfigMaps
 # ==============================
 echo "2. Create namespace if not exists..."
 kubectl get ns "$NAMESPACE" >/dev/null 2>&1 || kubectl create ns "$NAMESPACE"
+
+echo "2.1. Creating alerting ConfigMaps (if they don't exist)..."
+# Create empty ConfigMaps if they don't exist to prevent mount failures
+kubectl get configmap grafana-alerting -n "$NAMESPACE" >/dev/null 2>&1 || \
+  kubectl create configmap grafana-alerting -n "$NAMESPACE" --from-literal=alerts-rules.yaml="# No alerts configured yet"
+
+kubectl get configmap grafana-notifiers -n "$NAMESPACE" >/dev/null 2>&1 || \
+  kubectl create configmap grafana-notifiers -n "$NAMESPACE" --from-literal=notifier-teams.yaml="# No notifiers configured yet"
+
+kubectl get configmap grafana-alerting-policy -n "$NAMESPACE" >/dev/null 2>&1 || \
+  kubectl create configmap grafana-alerting-policy -n "$NAMESPACE" --from-literal=notification-policy.yaml="# No policies configured yet"
+
+echo "✅ Required ConfigMaps ensured"
 
 # ==============================
 # 3. Install/upgrade Grafana
