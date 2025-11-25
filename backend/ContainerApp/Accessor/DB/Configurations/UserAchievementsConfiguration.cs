@@ -24,6 +24,10 @@ public class UserAchievementsConfiguration : IEntityTypeConfiguration<UserAchiev
             .HasColumnName("achievement_id")
             .IsRequired();
 
+        builder.Property(ua => ua.CreatedAt)
+            .HasColumnName("created_at")
+            .IsRequired();
+
         builder.Property(ua => ua.UnlockedAt)
             .HasColumnName("unlocked_at")
             .IsRequired();
