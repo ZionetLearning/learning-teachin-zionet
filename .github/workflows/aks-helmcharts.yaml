@@ -104,13 +104,27 @@ jobs:
           
           echo "ACR_LOGIN_SERVER=teachindevacr.azurecr.io" >> $GITHUB_ENV
 
-          # Shared AKS
-          echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
-          echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
+          # Set AKS cluster based on environment
+          if [ "$ENVIRONMENT_NAME" = "prod" ]; then
+            echo "AKS_RG=prod-zionet-learning-2025" >> $GITHUB_ENV
+            echo "AKS_NAME=aks-cluster-prod" >> $GITHUB_ENV
+            echo "🏭 Using Production AKS cluster"
+          else
+            echo "AKS_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
+            echo "AKS_NAME=aks-cluster-dev" >> $GITHUB_ENV
+            echo "🔧 Using Development AKS cluster"
+          fi
 
-          # PG (shared)
-          echo "PG_DB=dev-pg-zionet-learning" >> $GITHUB_ENV
-          echo "PG_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
+          # Set PostgreSQL based on environment
+          if [ "$ENVIRONMENT_NAME" = "prod" ]; then
+            echo "PG_DB=prod-pg-zionet-learning" >> $GITHUB_ENV
+            echo "PG_RG=prod-zionet-learning-2025" >> $GITHUB_ENV
+            echo "🗄️ Using Production PostgreSQL"
+          else
+            echo "PG_DB=dev-pg-zionet-learning" >> $GITHUB_ENV
+            echo "PG_RG=dev-zionet-learning-2025" >> $GITHUB_ENV
+            echo "🗄️ Using Development PostgreSQL"
+          fi
 
           # Determine if infrastructure steps should be skipped
           # Skip for: push events (auto PR merge) OR manual dispatch (no skip_infra_steps input) OR when skip_infra_steps=true
