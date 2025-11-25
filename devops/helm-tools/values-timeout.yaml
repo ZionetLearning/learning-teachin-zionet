@@ -1,3 +1,4 @@
 interceptor:
   tcpConnectTimeout: "120s"
   responseHeaderTimeout: "120s"
+  kedaConditionTimeout: "120s"
