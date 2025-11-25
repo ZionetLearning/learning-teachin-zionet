@@ -71,8 +71,6 @@ helm upgrade --install "$RELEASE_NAME" ingress-nginx/ingress-nginx \
   --set controller.config.enable-cors=true \
   --set controller.config.cors-allow-origin="*" \
   --set controller.config.cors-allow-credentials="true" \
-  --set controller.allowSnippetAnnotations=true \
-  --set controller.config.annotations-risk-level=Critical \
   --wait
 
 echo "✅ Ingress Controller installed."
