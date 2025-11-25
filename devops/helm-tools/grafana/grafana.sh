@@ -47,6 +47,8 @@ kubectl get ns "$NAMESPACE" >/dev/null 2>&1 || kubectl create ns "$NAMESPACE"
 # 3. Install/upgrade Grafana
 # ==============================
 echo "3. Install/upgrade Grafana with subpath configuration..."
+echo "🕐 This may take up to 15 minutes for production environment..."
+
 helm upgrade --install grafana grafana/grafana \
   --version "$GRAFANA_CHART_VERSION" \
   --namespace "$NAMESPACE" \
@@ -58,17 +60,32 @@ helm upgrade --install grafana grafana/grafana \
   --set env.GF_SERVER_ROOT_URL="https://$CONTROLLER_IP/grafana/" \
   --set env.GF_SERVER_SERVE_FROM_SUB_PATH="true" \
   --set env.GF_SERVER_DOMAIN="$CONTROLLER_IP" \
-  --timeout=10m \
+  --timeout=15m \
   --wait
+
+echo "✅ Grafana installation completed successfully!"
 
 # ==============================
 # 4. Checking Grafana pod status
 # ==============================
 echo "4. Checking Grafana pod status..."
 kubectl get pods -n "$NAMESPACE" -l app.kubernetes.io/name=grafana
-kubectl describe pod -n "$NAMESPACE" -l app.kubernetes.io/name=grafana | grep -A 10 "Events:"
+
+# Check if pods are ready
+echo "📊 Waiting for Grafana pods to be ready..."
+kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=grafana -n "$NAMESPACE" --timeout=300s || {
+  echo "⚠️ Grafana pods not ready within timeout. Checking events..."
+  kubectl get events -n "$NAMESPACE" --sort-by='.lastTimestamp' | tail -20
+  kubectl describe pod -n "$NAMESPACE" -l app.kubernetes.io/name=grafana
+  echo "❌ Grafana deployment may have issues. Check the logs above."
+}
+
+echo "📋 Grafana service information:"
+kubectl get svc -n "$NAMESPACE" -l app.kubernetes.io/name=grafana
 
 echo
-echo "Login:"
+echo "✅ Grafana deployment completed!"
+echo "🔗 Access URL: https://$CONTROLLER_IP/grafana/"
+echo "👤 Login:"
 echo "   Username: $ADMIN_USER"
 echo "   Password: $ADMIN_PASS"
