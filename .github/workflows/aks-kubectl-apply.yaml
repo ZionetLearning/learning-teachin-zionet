@@ -87,9 +87,15 @@ jobs:
 
       - name: Add Grafana
         run: |
+          # Resolve environment name for the script
+          ENV_NAME="${{ inputs.environment_name != '' && inputs.environment_name || github.event.inputs.environment_name }}"
+          if [ -z "$ENV_NAME" ]; then
+            ENV_NAME="dev"
+          fi
+          
           cd devops/helm-tools/grafana
           chmod +x grafana.sh
-          ./grafana.sh
+          ./grafana.sh "$ENV_NAME"
         env:
           TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
       

@@ -2,13 +2,26 @@
 set -e
 
 # ==============================
-# Configuration
+# Configuration - Environment Detection
 # ==============================
 NAMESPACE="devops-logs"
 ADMIN_USER="admin"
 ADMIN_PASS="admin123"
 GRAFANA_CHART_VERSION="10.1.2"
-CONTROLLER_IP="teachin.westeurope.cloudapp.azure.com"
+
+# Detect environment from context or parameter
+ENVIRONMENT="${1:-dev}"  # Default to dev if no parameter passed
+
+# Set domain based on environment
+if [ "$ENVIRONMENT" = "prod" ]; then
+    CONTROLLER_IP="teachin-prod.westeurope.cloudapp.azure.com"
+    echo "🏭 Production environment detected"
+else
+    CONTROLLER_IP="teachin.westeurope.cloudapp.azure.com"
+    echo "🔧 Development environment detected"
+fi
+
+echo "Using domain: $CONTROLLER_IP"
 
 # ==============================
 # Delete existing Grafana release
