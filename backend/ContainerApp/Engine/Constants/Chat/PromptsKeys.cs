@@ -4,15 +4,23 @@ namespace Engine.Constants.Chat;
 
 public static class PromptsKeys
 {
-    public static PromptConfiguration ChatTitlePrompt { get; private set; } = new() { Key = "chat.title.generate", Label = "production" };
-    public static PromptConfiguration SystemDefault { get; private set; } = new() { Key = "prompts.system.default", Label = "production" };
-    public static PromptConfiguration FriendlyTone { get; private set; } = new() { Key = "prompts.tone.friendly", Label = "production" };
-    public static PromptConfiguration DetailedExplanation { get; private set; } = new() { Key = "prompts.explanation.detailed", Label = "production" };
-    public static PromptConfiguration ExplainMistakeSystem { get; private set; } = new() { Key = "chat.system.explain.mistake", Label = "production" };
-    public static PromptConfiguration GlobalChatSystemDefault { get; private set; } = new() { Key = "chat.global.system.default", Label = "production" };
-    public static PromptConfiguration GlobalChatPageContext { get; private set; } = new() { Key = "chat.global.page.context", Label = "production" };
-    public static PromptConfiguration MistakeUserTemplate { get; private set; } = new() { Key = "prompts.mistake.user.template", Label = "production" };
-    public static PromptConfiguration MistakeRuleTemplate { get; private set; } = new() { Key = "prompts.mistake.rule.template", Label = "production" };
+
+    public static class PromptLabels
+    {
+        public const string Production = "production";
+        public const string Test = "test";
+    }
+    public static PromptConfiguration ChatTitlePrompt { get; private set; } = new() { Key = "chat.title.generate", Label = PromptLabels.Production };
+    public static PromptConfiguration SystemDefault { get; private set; } = new() { Key = "prompts.system.default", Label = PromptLabels.Production };
+    public static PromptConfiguration FriendlyTone { get; private set; } = new() { Key = "prompts.tone.friendly", Label = PromptLabels.Production };
+    public static PromptConfiguration DetailedExplanation { get; private set; } = new() { Key = "prompts.explanation.detailed", Label = PromptLabels.Production };
+    public static PromptConfiguration ExplainMistakeSystem { get; private set; } = new() { Key = "chat.system.explain.mistake", Label = PromptLabels.Production };
+    public static PromptConfiguration GlobalChatSystemDefault { get; private set; } = new() { Key = "chat.global.system.default", Label = PromptLabels.Production };
+    public static PromptConfiguration GlobalChatPageContext { get; private set; } = new() { Key = "chat.global.page.context", Label = PromptLabels.Production };
+    public static PromptConfiguration MistakeUserTemplate { get; private set; } = new() { Key = "prompts.mistake.user.template", Label = PromptLabels.Production };
+    public static PromptConfiguration MistakeRuleTemplate { get; private set; } = new() { Key = "prompts.mistake.rule.template", Label = PromptLabels.Production };
+    public static PromptConfiguration EmailDraftTemplate { get; private set; } = new() { Key = "prompts.email.template", Label = PromptLabels.Test };
+
     public static void Configure(PromptKeyOptions? options)
     {
         if (options is null)
@@ -63,6 +71,11 @@ public static class PromptsKeys
         if (options.GlobalChatPageContext is not null)
         {
             GlobalChatPageContext = options.GlobalChatPageContext;
+        }
+
+        if (options.EmailDraftTemplate is not null)
+        {
+            EmailDraftTemplate = options.EmailDraftTemplate;
         }
     }
 }

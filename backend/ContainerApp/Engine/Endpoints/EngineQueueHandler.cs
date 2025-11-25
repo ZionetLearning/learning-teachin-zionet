@@ -1441,7 +1441,26 @@ Never invent hidden fields and do not quote this block verbatim to the user.
 
             _logger.LogInformation("Processing email draft generation, Purpose={Purpose}", payload.Purpose);
 
-            var result = await _emailService.GenerateDraftAsync(payload, cancellationToken);
+            var emailPrompt = await _accessorClient.GetPromptAsync(PromptsKeys.EmailDraftTemplate, cancellationToken);
+            string emailPromptContent;
+            if (emailPrompt?.Content != null)
+            {
+                emailPromptContent = emailPrompt.Content
+                    .Replace("{purpose}", payload.Purpose, StringComparison.Ordinal)
+                    .Replace("{notes}", payload.Notes, StringComparison.Ordinal);
+            }
+            else
+            {
+                _logger.LogWarning("Email draft prompt template not found, using fallback");
+                emailPromptContent = $"""
+                    Write a professional email based on the following purpose and notes.
+                    Purpose: {payload.Purpose}; Notes: {payload.Notes}
+                    """.Replace("{purpose}", payload.Purpose, StringComparison.Ordinal)
+                    .Replace("{notes}", payload.Notes, StringComparison.Ordinal);
+            }
+
+
+            var result = await _emailService.GenerateDraftAsync(emailPromptContent, cancellationToken);
 
             await _publisher.SendEmailDraftAsync(
                 result,
