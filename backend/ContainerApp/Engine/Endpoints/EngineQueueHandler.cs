@@ -424,7 +424,16 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
             switch (chatType)
             {
                 case ChatType.Default:
-                    chatNewTitle = "Default Chat";
+                    try
+                    {
+                        chatNewTitle = await _chatTitleService.GenerateTitleAsync(userMessage, ct);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Chat title generation failed; using fallback name.");
+                        chatNewTitle = "Default Chat";
+                    }
+
                     break;
                 case ChatType.GlobalChat:
                     try
