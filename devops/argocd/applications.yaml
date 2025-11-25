@@ -13,6 +13,27 @@ spec:
       valueFiles:
         - values.yaml
         - values.dev.yaml
+      parameters:
+      - name: global.namePrefix
+        value: dev
+      - name: namespace.name
+        value: dev
+      - name: namespace.create
+        value: "false"
+      - name: namePrefix
+        value: dev
+      - name: global.dockerRegistry
+        value: teachindevacr.azurecr.io
+      - name: global.environment
+        value: dev
+      - name: langfuse.enabled
+        value: "true"
+      - name: accessor.secrets.langfuse.enabled
+        value: "true"
+      - name: dapr.stateStore.redis.redisDB
+        value: "0"
+      - name: dapr.installComponents
+        value: "false"
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: dev
