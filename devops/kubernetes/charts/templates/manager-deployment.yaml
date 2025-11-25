@@ -40,6 +40,12 @@ spec:
           ports:
             - containerPort: {{ .Values.manager.ports.container }}
               protocol: TCP
+          startupProbe:
+          tcpSocket:
+            port: {{ .Values.manager.ports.container }}
+          initialDelaySeconds: 15  # Gives other services time to start
+          periodSeconds: 2
+          failureThreshold: 30
           env:
             - name: ASPNETCORE_URLS
               value: "{{ .Values.manager.env.ASPNETCORE_URLS }}"
