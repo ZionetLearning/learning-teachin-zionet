@@ -10,7 +10,12 @@ import {
   useGenerateSentences,
   useSubmitGameAttempt,
 } from "@student/api";
-import { useAvatarSpeech, useGameConfig, useSignalR } from "@student/hooks";
+import {
+  useAvatarSpeech,
+  useGameConfig,
+  useSignalR,
+  useTrackAchievement,
+} from "@student/hooks";
 import { DifficultyLevel, GameType } from "@student/types";
 import {
   GameConfigModal,
@@ -76,6 +81,7 @@ const SpeakingPracticeMain = () => {
   const isConfiguredRef = useRef(false);
 
   const { mutateAsync: submitAttempt } = useSubmitGameAttempt();
+  const { track } = useTrackAchievement("SpeakingPractice");
 
   const recognizerRef = useRef<sdk.SpeechRecognizer | null>(null);
   const audioConfigRef = useRef<sdk.AudioConfig | null>(null);
@@ -264,6 +270,7 @@ const SpeakingPracticeMain = () => {
             setFeedback(isServerCorrect ? Feedback.Perfect : Feedback.TryAgain);
             // Show accuracy in toast
             if (isServerCorrect) {
+              track(1);
               toast.success(
                 `${Feedback.Perfect} - ${res.accuracy.toFixed(1)}% ${t("pages.speakingPractice.accuracy")}`,
               );

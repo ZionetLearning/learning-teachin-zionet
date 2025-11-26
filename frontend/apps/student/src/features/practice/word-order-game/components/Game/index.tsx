@@ -7,6 +7,7 @@ import {
   useAvatarSpeech,
   useWordOrderSentence,
   useGameConfig,
+  useTrackAchievement,
 } from "@student/hooks";
 import { ChosenWordsArea, WordsBank, ActionButtons, Speaker } from "../";
 import {
@@ -41,6 +42,8 @@ export const Game = ({ retryData }: GameProps) => {
 
   const studentId = user?.userId ?? "";
   const { mutateAsync: submitAttempt } = useSubmitGameAttempt();
+  const { track } = useTrackAchievement("WordOrder");
+  const { track: trackMistakes } = useTrackAchievement("PracticeMistakes");
   const {
     config: savedConfig,
     isLoading: configLoading,
@@ -316,10 +319,12 @@ export const Game = ({ retryData }: GameProps) => {
         queryClient.invalidateQueries({
           queryKey: ["gamesMistakes", { studentId }],
         });
+        trackMistakes(1);
       }
     } else {
       if (isServerCorrect) {
         setCorrectSentencesCount((c) => c + 1);
+        track(1);
         toast.success(
           `${t("pages.wordOrderGame.correct")} - ${res.accuracy.toFixed(1)}% ${t("pages.wordOrderGame.accuracy")}`,
         );

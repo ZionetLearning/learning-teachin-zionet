@@ -6,6 +6,7 @@ import {
   useAvatarSpeech,
   useGameSubmission,
   useRetryNavigation,
+  useTrackAchievement,
 } from "@student/hooks";
 import { useAzureSpeechToken } from "@student/api";
 import { comparePhrases } from "../../utils";
@@ -47,6 +48,7 @@ export const RetryMode = ({ retryData }: RetryModeProps) => {
 
   const { submitAttempt } = useGameSubmission();
   const { navigateToMistakes } = useRetryNavigation();
+  const { track } = useTrackAchievement("PracticeMistakes");
 
   const recognizerRef = useRef<sdk.SpeechRecognizer | null>(null);
   const audioConfigRef = useRef<sdk.AudioConfig | null>(null);
@@ -158,6 +160,7 @@ export const RetryMode = ({ retryData }: RetryModeProps) => {
           setFeedback(isServerCorrect ? Feedback.Perfect : Feedback.TryAgain);
 
           if (isServerCorrect) {
+            track(1);
             toast.success(
               `${Feedback.Perfect} - ${res.accuracy.toFixed(1)}% ${t("pages.speakingPractice.accuracy")}`,
             );

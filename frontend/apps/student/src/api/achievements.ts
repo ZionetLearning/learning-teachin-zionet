@@ -47,14 +47,10 @@ export const useTrackProgress = (): UseMutationResult<
       );
       return data;
     },
-    onSuccess: (response, variables) => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["achievements", variables.userId],
       });
-
-      if (response.unlockedAchievements.length > 0) {
-        console.log("Unlocked achievements:", response.unlockedAchievements);
-      }
     },
     onError: (error) => {
       console.error("Failed to track progress:", error);

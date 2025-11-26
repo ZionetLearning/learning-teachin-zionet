@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import type { ExerciseState, DifficultyLevel } from "../types";
 import { compareTexts } from "../utils";
-import { useAvatarSpeech, useHebrewSentence } from "@student/hooks";
+import {
+  useAvatarSpeech,
+  useHebrewSentence,
+  useTrackAchievement,
+} from "@student/hooks";
 import { CypressWindow, GameType } from "@student/types";
 import { GameConfig } from "@ui-components";
 import { useSubmitGameAttempt } from "@student/api";
@@ -38,6 +42,7 @@ export const useTypingPractice = (gameConfig?: GameConfig) => {
 
   const [correctSentencesCount, setCorrectSentencesCount] = useState<number>(0);
   const { mutateAsync: submitAttempt } = useSubmitGameAttempt();
+  const { track } = useTrackAchievement("TypingPractice");
 
   const {
     attemptId: exerciseId,
@@ -49,7 +54,11 @@ export const useTypingPractice = (gameConfig?: GameConfig) => {
     resetGame: resetSentenceGameHook,
     sentenceCount,
     currentSentenceIndex,
-  } = useHebrewSentence(gameConfig ? { ...gameConfig, gameType: GameType.TypingPractice } : undefined);
+  } = useHebrewSentence(
+    gameConfig
+      ? { ...gameConfig, gameType: GameType.TypingPractice }
+      : undefined,
+  );
 
   const { speak, stop, isPlaying, error } = useAvatarSpeech({
     volume: 1,
@@ -258,6 +267,7 @@ export const useTypingPractice = (gameConfig?: GameConfig) => {
       // Track correct answers based on server response
       if (res.status === "Success") {
         setCorrectSentencesCount((prev) => prev + 1);
+        track(1);
       }
     } catch (error) {
       console.error("Failed to submit typing practice attempt:", error);

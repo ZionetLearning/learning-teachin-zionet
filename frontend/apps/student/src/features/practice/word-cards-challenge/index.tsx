@@ -13,6 +13,7 @@ import {
   ContextAwareChat,
   useWordCardsContext,
 } from "@ui-components/ContextAwareChat";
+import { useTrackAchievement } from "@student/hooks";
 import { useStyles } from "./style";
 import { ModeSelection, GameSummary } from "./components";
 import { FEEDBACK_DISPLAY_DURATION } from "./constants";
@@ -35,6 +36,7 @@ export const WordCardsChallenge = () => {
   const [shuffledCards, setShuffledCards] = useState<WordCard[]>([]);
 
   const { data: cards, isLoading, isError } = useGetWordCards();
+  const { track } = useTrackAchievement("WordCardsChallenge");
 
   useEffect(
     function resetOnCardsChange() {
@@ -103,13 +105,21 @@ export const WordCardsChallenge = () => {
       if (currentIndex + 1 >= shuffledCards.length) {
         setGameState("summary");
         setFeedback(null);
+        track(1);
       } else {
         setCurrentIndex((prev) => prev + 1);
         setUserAnswer("");
         setFeedback(null);
       }
     }, FEEDBACK_DISPLAY_DURATION);
-  }, [userAnswer, currentCard, mode, currentIndex, shuffledCards.length]);
+  }, [
+    userAnswer,
+    currentCard,
+    mode,
+    currentIndex,
+    shuffledCards.length,
+    track,
+  ]);
 
   const pageContext = useWordCardsContext({
     currentExercise: currentIndex + 1,
