@@ -9,3 +9,4 @@ export * from "./useGameSubmission";
 export * from "./useRetryAudio";
 export * from "./useRetryNavigation";
 export * from "./useWordExplanation";
+export * from "./useAchievementNotifications";

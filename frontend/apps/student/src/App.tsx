@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { AuthorizationPage, RequireAuth } from "@authorization";
 import { SidebarMenuLayout } from "@ui-components";
 import { SidebarMenu } from "./components";
+import { useAchievementNotifications } from "./hooks";
 import {
   AnimeExplorerPage,
   AvatarDaPage,
@@ -39,6 +40,8 @@ const ProtectedLayout = () => (
 
 function App() {
   const { i18n } = useTranslation();
+
+  useAchievementNotifications();
 
   useEffect(() => {
     document.documentElement.lang = i18n.language;
