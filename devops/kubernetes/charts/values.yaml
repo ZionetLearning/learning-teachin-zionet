@@ -88,14 +88,6 @@ manager:
   image:
     name: manager
     # tag: defaults to global.environment, set by CI/CD
-  ingress:
-    enabled: true
-    host: teachin.westeurope.cloudapp.azure.com
-    basePath: /api
-    tls:
-      enabled: true
-      clusterIssuer: letsencrypt-prod
-      secretName: teachin-tls
   ports:
     container: 5001
     service: 80
@@ -294,15 +286,4 @@ langfuse:
   
 # KEDA scaler (optional)
 keda:
-  enabled: true
-  # httpAddOn:
-  #   interceptor:
-  #     proxy:
-  #       readTimeout: 60s
-  #       responseHeaderTimeout: 60s
-  #       idleTimeout: 60s
-  #       dialTimeout: 10s
-  #       keepAliveTimeout: 60s
-  #     scaleToZero:
-  #       responseTimeout: 60s  # Wait longer for pods to become ready
-  #     targetPendingRequests: 1
+  enabled: false
