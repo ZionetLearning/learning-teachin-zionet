@@ -24,7 +24,6 @@ jobs:
       environment_name: test
       # leave empty to build all services (accessor/manager/engine).
       # or set like: "manager,engine"
-      use_keda: false
     secrets: inherit
 
   run-integration-tests:
@@ -42,6 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: Development
     permissions:
+      id-token: write
       contents: read
     steps:
       - name: Install kubectl
@@ -66,23 +66,3 @@ jobs:
           kubectl scale deployment manager -n test --replicas=0
           kubectl scale deployment accessor -n test --replicas=0
           kubectl scale deployment engine -n test --replicas=0
-
-  # this needs to run even if the tests fail
-  # clear-db:
-  #   needs: run-integration-tests
-  #   if: ${{ always() }}
-  #   uses: ./.github/workflows/clear-postgres.yml
-  #   permissions:
-  #     id-token: write
-  #     contents: read
-  #   with:
-  #     mode: 'truncate'
-  #     pg_database: 'appdb-test'
-  #     dry_run: 'false'
-  #     verify_ssl: 'true'
-  #   secrets:
-  #     POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-  #     POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-  #     AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-  #     AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-  #     AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
