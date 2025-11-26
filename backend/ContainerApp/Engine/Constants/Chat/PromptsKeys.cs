@@ -13,6 +13,9 @@ public static class PromptsKeys
     public static PromptConfiguration GlobalChatPageContext { get; private set; } = new() { Key = "chat.global.page.context", Label = "production" };
     public static PromptConfiguration MistakeUserTemplate { get; private set; } = new() { Key = "prompts.mistake.user.template", Label = "production" };
     public static PromptConfiguration MistakeRuleTemplate { get; private set; } = new() { Key = "prompts.mistake.rule.template", Label = "production" };
+    public static PromptConfiguration SentencesGenerateTemplate { get; private set; } = new() { Key = "prompts.sentences.generate.template", Label = "production" };
+    public static PromptConfiguration WordExplanationTemplate { get; private set; } = new() { Key = "prompts.word.explain.template", Label = "production" };
+
     public static void Configure(PromptKeyOptions? options)
     {
         if (options is null)
@@ -63,6 +66,16 @@ public static class PromptsKeys
         if (options.GlobalChatPageContext is not null)
         {
             GlobalChatPageContext = options.GlobalChatPageContext;
+        }
+
+        if (options.SentencesGenerateTemplate is not null)
+        {
+            SentencesGenerateTemplate = options.SentencesGenerateTemplate;
+        }
+
+        if (options.WordExplanationTemplate is not null)
+        {
+            WordExplanationTemplate = options.WordExplanationTemplate;
         }
     }
 }
