@@ -11,15 +11,28 @@ import CastForEducationIcon from "@mui/icons-material/CastForEducation";
 import GBFlag from "country-flag-icons/react/3x2/GB";
 import ILFlag from "country-flag-icons/react/3x2/IL";
 import { useAuth } from "@app-providers/auth";
+import { PreferredLanguageCode } from "@app-providers";
+import { useUpdateUserLanguage } from "@app-providers/api";
 
 export const SidebarMenu = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { logout } = useAuth();
   const { t, i18n } = useTranslation();
+  const updateLanguage = useUpdateUserLanguage();
   const isHebrew = i18n.language === "he";
   const activePath = location.pathname;
   const handleNavigate = (path: string) => navigate(path);
+
+  const handleLanguageChange = (lang: PreferredLanguageCode) => {
+    const previousLang = i18n.language as PreferredLanguageCode;
+    i18n.changeLanguage(lang);
+    updateLanguage.mutate(lang, {
+      onError: () => {
+        i18n.changeLanguage(previousLang);
+      },
+    });
+  };
 
   const toggleItem: SidebarLink = {
     label: t("sidebar.toggleSidebar"),
@@ -70,7 +83,7 @@ export const SidebarMenu = () => {
             label: t("sidebar.he"),
             icon: <ILFlag style={{ width: 22, height: 16 }} />,
             active: i18n.language === "he",
-            onClick: () => i18n.changeLanguage("he"),
+            onClick: () => handleLanguageChange("he"),
             testId: "sidebar-lang-he",
           },
           {
@@ -78,7 +91,7 @@ export const SidebarMenu = () => {
             label: t("sidebar.en"),
             icon: <GBFlag style={{ width: 22, height: 16 }} />,
             active: i18n.language === "en",
-            onClick: () => i18n.changeLanguage("en"),
+            onClick: () => handleLanguageChange("en"),
             testId: "sidebar-lang-en",
           },
         ],

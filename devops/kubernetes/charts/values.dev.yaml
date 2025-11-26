@@ -3,6 +3,8 @@ global:
   dockerRegistry: ""   # CI sets: docker.io/<org> or <acr>.azurecr.io
   imagePullPolicy: IfNotPresent
   environment: ""      # Will be set by CI/CD to TARGET_NAMESPACE (e.g., "devacr2")
+  spot:
+    enabled: false  # Dev stays on stable nodes for reliability
   dapr:
     enabled: true
     configName: dapr-config
@@ -59,6 +61,11 @@ engine:
     AzureSpeech__Region: "eastus"
     AzureSpeech__DefaultVoice: "he-IL-HilaNeural"
     AzureSpeech__TimeoutSeconds: "70"
+    Tavily__ApiKey: ""
+    Tavily__MaxResults: "5"
+    Tavily__IncludeAnswer: "true"
+    Tavily__IncludeRawContent: "false"
+    Tavily__SearchDepth: "basic"
 
 accessor:
   image:

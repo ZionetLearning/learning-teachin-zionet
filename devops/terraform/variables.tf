@@ -103,6 +103,14 @@ variable "communication_service_connection_string" {
   default     = null
 }
 
+# tavily_api_key
+variable "tavily_api_key" {
+  type        = string
+  sensitive   = true
+  description = "Tavily API key for search functionality"
+  default     = null
+}
+
 # admin_username - passed from GitHub Actions as TF_VAR_admin_username
 variable "admin_username" {
   type        = string

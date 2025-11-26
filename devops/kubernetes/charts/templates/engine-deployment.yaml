@@ -30,6 +30,8 @@ spec:
       imagePullSecrets:
         - name: {{ .Values.global.imagePullSecret.name }}
       {{- end }}
+      {{- include "app.spot.affinity" . | nindent 6 }}
+      {{- include "app.spot.tolerations" . | nindent 6 }}
       containers:
         - name: {{ .Values.engine.name }}
           image: {{ include "app.image" (dict "name" .Values.engine.image.name "tag" .Values.engine.image.tag "Values" .Values) }}
@@ -67,6 +69,19 @@ spec:
               value: "{{ .Values.engine.env.AzureSpeech__DefaultVoice }}"
             - name: AzureSpeech__TimeoutSeconds
               value: "{{ .Values.engine.env.AzureSpeech__TimeoutSeconds }}"
+            - name: Tavily__ApiKey
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.engine.secrets.app.name }}
+                  key: {{ .Values.engine.secrets.app.keys.tavilyApiKey }}
+            - name: Tavily__MaxResults
+              value: "{{ .Values.engine.env.Tavily__MaxResults }}"
+            - name: Tavily__IncludeAnswer
+              value: "{{ .Values.engine.env.Tavily__IncludeAnswer }}"
+            - name: Tavily__IncludeRawContent
+              value: "{{ .Values.engine.env.Tavily__IncludeRawContent }}"
+            - name: Tavily__SearchDepth
+              value: "{{ .Values.engine.env.Tavily__SearchDepth }}"
           resources:
             {{- toYaml .Values.engine.resources | nindent 12 }}
 ---

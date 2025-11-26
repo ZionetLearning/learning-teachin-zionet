@@ -8,6 +8,7 @@ using Accessor.Models.Classes;
 using Accessor.Models.WordCards;
 using Accessor.Models.Meetings;
 using Accessor.Models.GameConfiguration;
+using Accessor.Models.Achievements;
 
 namespace Accessor.DB;
 
@@ -29,6 +30,9 @@ public class AccessorDbContext : DbContext
     public DbSet<WordCardModel> WordCards { get; set; } = default!;
     public DbSet<MeetingModel> Meetings { get; set; } = default!;
     public DbSet<UserGameConfig> UserGameConfigs { get; set; } = default!;
+    public DbSet<AchievementModel> Achievements { get; set; } = default!;
+    public DbSet<UserAchievementModel> UserAchievements { get; set; } = default!;
+    public DbSet<UserProgressModel> UserProgress { get; set; } = default!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -111,6 +115,11 @@ public class AccessorDbContext : DbContext
 
         // User game configuration table
         modelBuilder.ApplyConfiguration(new UserGameConfigConfiguration());
+
+        // Achievements tables
+        modelBuilder.ApplyConfiguration(new AchievementsConfiguration());
+        modelBuilder.ApplyConfiguration(new UserAchievementsConfiguration());
+        modelBuilder.ApplyConfiguration(new UserProgressConfiguration());
 
         base.OnModelCreating(modelBuilder);
     }

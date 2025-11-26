@@ -35,7 +35,7 @@ public abstract class GamesTestBase(
     /// Creates a user (default role: student) and logs them in.
     /// Returns UserData for the created user.
     /// </summary>
-    protected async Task<UserData> CreateUserAsync(
+    protected async Task<GetUserResponse> CreateUserAsync(
         string role = "student",
         string? email = null)
     {
@@ -56,7 +56,7 @@ public abstract class GamesTestBase(
         createRes.EnsureSuccessStatusCode();
         
         // The API returns UserCreationResultDto with the actual UserId from the server
-        var createdUser = await ReadAsJsonAsync<UserCreationResultDto>(createRes)
+        var createdUser = await ReadAsJsonAsync<CreateUserResponse>(createRes)
                           ?? throw new InvalidOperationException("Failed to deserialize UserCreationResultDto");
         
         return await LoginAsync(user.Email, TestDataHelper.DefaultTestPassword, parsedRole);
@@ -66,7 +66,7 @@ public abstract class GamesTestBase(
     /// Creates a user via API without logging them in.
     /// Returns UserData with the created user's information (including UserId from response).
     /// </summary>
-    protected async Task<UserData> CreateUserViaApiAsync(string role = "student", string? email = null)
+    protected async Task<GetUserResponse> CreateUserViaApiAsync(string role = "student", string? email = null)
     {
         var parsedRole = Enum.TryParse<Role>(role, true, out var r) ? r : Role.Student;
         email ??= $"{role}-{Guid.NewGuid():N}@example.com";
@@ -85,10 +85,10 @@ public abstract class GamesTestBase(
         response.EnsureSuccessStatusCode();
         
         // The API returns UserCreationResultDto with the actual UserId from the server
-        var createdUser = await ReadAsJsonAsync<UserCreationResultDto>(response)
+        var createdUser = await ReadAsJsonAsync<CreateUserResponse>(response)
                           ?? throw new InvalidOperationException("Failed to deserialize UserCreationResultDto");
         
-        return new UserData
+        return new GetUserResponse
         {
             UserId = createdUser.UserId,
             Email = createdUser.Email,
@@ -104,7 +104,7 @@ public abstract class GamesTestBase(
     /// Logs in with existing credentials and sets the bearer token.
     /// Returns UserData for the logged-in user.
     /// </summary>
-    protected async Task<UserData> LoginAsync(string email, string password, Role role)
+    protected async Task<GetUserResponse> LoginAsync(string email, string password, Role role)
     {
         // Clear previous authorization header before logging in with new credentials
         Client.DefaultRequestHeaders.Authorization = null;
@@ -128,7 +128,7 @@ public abstract class GamesTestBase(
         if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var userId))
             throw new InvalidOperationException("Invalid or missing userId in JWT token");
 
-        return new UserData
+        return new GetUserResponse
         {
             UserId = userId,
             Email = email,
@@ -143,7 +143,7 @@ public abstract class GamesTestBase(
     /// <summary>
     /// Logs in with a UserData model (uses email from the model).
     /// </summary>
-    protected async Task<UserData> LoginAsync(UserData user)
+    protected async Task<GetUserResponse> LoginAsync(GetUserResponse user)
     {
         // Clear previous authorization header before logging in with new credentials
         Client.DefaultRequestHeaders.Authorization = null;
@@ -167,7 +167,7 @@ public abstract class GamesTestBase(
         if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var jwtUserId))
             throw new InvalidOperationException("Invalid or missing userId in JWT token");
 
-        return new UserData
+        return new GetUserResponse
         {
             UserId = jwtUserId,
             Email = user.Email,
@@ -192,7 +192,7 @@ public abstract class GamesTestBase(
     /// Sets up a teacher-student relationship and logs in as the teacher.
     /// Returns the teacher and student user data.
     /// </summary>
-    protected async Task<(UserData teacher, UserData student)> SetupTeacherStudentRelationshipAsync()
+    protected async Task<(GetUserResponse teacher, GetUserResponse student)> SetupTeacherStudentRelationshipAsync()
     {
         // Login as Admin to set up teacher-student relationship
         var admin = await CreateUserAsync(role: "admin");
@@ -289,7 +289,7 @@ public abstract class GamesTestBase(
     /// <summary>
     /// Submits a game attempt with the given answer.
     /// </summary>
-    protected async Task<SubmitAttemptResult> SubmitGameAttemptAsync(
+    protected async Task<SubmitAttemptResponse> SubmitGameAttemptAsync(
         Guid exerciseId,
         List<string> givenAnswer)
     {
@@ -302,7 +302,7 @@ public abstract class GamesTestBase(
         var response = await Client.PostAsJsonAsync(GamesRoutes.Attempt, request);
         response.EnsureSuccessStatusCode();
 
-        return await ReadAsJsonAsync<SubmitAttemptResult>(response)
+        return await ReadAsJsonAsync<SubmitAttemptResponse>(response)
                ?? throw new InvalidOperationException("Failed to deserialize SubmitAttemptResult");
     }
 
@@ -331,7 +331,7 @@ public abstract class GamesTestBase(
     /// Creates a mistake by generating a sentence and submitting a wrong answer.
     /// Returns the attempt result.
     /// </summary>
-    protected async Task<SubmitAttemptResult> CreateMistakeAsync(
+    protected async Task<SubmitAttemptResponse> CreateMistakeAsync(
         Guid studentId,
         Difficulty difficulty = Difficulty.Easy,
         bool nikud = false)
@@ -349,7 +349,7 @@ public abstract class GamesTestBase(
     /// Creates a successful attempt by generating a sentence and submitting the correct answer.
     /// Returns the attempt result.
     /// </summary>
-    protected async Task<SubmitAttemptResult> CreateSuccessfulAttemptAsync(
+    protected async Task<SubmitAttemptResponse> CreateSuccessfulAttemptAsync(
         Guid studentId,
         Difficulty difficulty = Difficulty.Easy,
         bool nikud = false)
@@ -381,7 +381,7 @@ public abstract class GamesTestBase(
     /// Tests that mistakes are filtered out when the same sentence is answered correctly later.
     /// Submits the same sentence twice: wrong answer first, then correct answer.
     /// </summary>
-    protected async Task<(AttemptedSentence sentence, SubmitAttemptResult failureResult, SubmitAttemptResult successResult)> 
+    protected async Task<(AttemptedSentence sentence, SubmitAttemptResponse failureResult, SubmitAttemptResponse successResult)> 
         CreateMistakeWithLaterSuccessAsync(Guid studentId, Difficulty difficulty = Difficulty.Easy)
     {
         // Generate one sentence

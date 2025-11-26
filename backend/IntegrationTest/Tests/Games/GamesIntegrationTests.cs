@@ -6,6 +6,7 @@ using IntegrationTests.Fixtures;
 using IntegrationTests.Helpers;
 using Manager.Models.UserGameConfiguration;
 using Manager.Models.Games;
+using Manager.Models;
 using Manager.Models.Users;
 using Xunit.Abstractions;
 
@@ -178,7 +179,7 @@ historyItem.GameType.Should().Be(GameName.WordOrder.ToString());
         var response = await Client.GetAsync($"{GamesRoutes.AllHistory}?page=1&pageSize=10");
         response.ShouldBeOk();
 
-        var result = await ReadAsJsonAsync<PagedResult<SummaryHistoryWithStudentDto>>(response);
+        var result = await ReadAsJsonAsync<PagedResult<StudentExerciseHistory>>(response);
         result.Should().NotBeNull();
     }
 
@@ -190,7 +191,7 @@ historyItem.GameType.Should().Be(GameName.WordOrder.ToString());
         var response = await Client.GetAsync($"{GamesRoutes.AllHistory}?page=1&pageSize=10");
         response.ShouldBeOk();
 
-        var result = await ReadAsJsonAsync<PagedResult<SummaryHistoryWithStudentDto>>(response);
+        var result = await ReadAsJsonAsync<PagedResult<StudentExerciseHistory>>(response);
         result.Should().NotBeNull();
     }
 
@@ -340,42 +341,42 @@ historyItem.GameType.Should().Be(GameName.WordOrder.ToString());
 
     [Fact(DisplayName = "GET /games-manager/mistakes/{id} - Student can access their own mistakes")]
     public async Task GetMistakes_Student_Sees_Only_Their_Own()
-{
- // Arrange
+    {
+        // Arrange
         var student = await CreateUserAsync();
 
-      // Create different types of mistakes
-  await CreateMultipleMistakesAsync(student.UserId, count: 3);
+        // Create different types of mistakes
+        await CreateMultipleMistakesAsync(student.UserId, count: 3);
      
-     // Act
-      var response = await Client.GetAsync($"{GamesRoutes.Mistakes(student.UserId)}?page=1&pageSize=10");
+        // Act
+        var response = await Client.GetAsync($"{GamesRoutes.Mistakes(student.UserId)}?page=1&pageSize=10");
         response.ShouldBeOk();
         
         // Assert
-   var result = await ReadAsJsonAsync<PagedResult<MistakeDto>>(response);
-  result.Should().NotBeNull();
- result!.Page.Should().Be(1);
- result.PageSize.Should().Be(10);
- result.Items.Should().HaveCount(3);
+        var result = await ReadAsJsonAsync<PagedResult<ExerciseMistakes>>(response);
+        result.Should().NotBeNull();
+        result!.Page.Should().Be(1);
+        result.PageSize.Should().Be(10);
+        result.Items.Should().HaveCount(3);
         
         // Verify each mistake has the expected structure
         foreach (var mistake in result.Items)
         {
-         mistake.ExerciseId.Should().NotBeEmpty();
+            mistake.ExerciseId.Should().NotBeEmpty();
             mistake.GameType.Should().Be(GameName.WordOrder);
-  mistake.Difficulty.Should().BeOneOf(Difficulty.Easy, Difficulty.Medium, Difficulty.Hard);
- mistake.CorrectAnswer.Should().NotBeEmpty();
-   mistake.Mistakes.Should().NotBeEmpty();
-     mistake.Mistakes.Should().HaveCountGreaterThan(0);
+            mistake.Difficulty.Should().BeOneOf(Difficulty.Easy, Difficulty.Medium, Difficulty.Hard);
+            mistake.CorrectAnswer.Should().NotBeEmpty();
+            mistake.Mistakes.Should().NotBeEmpty();
+            mistake.Mistakes.Should().HaveCountGreaterThan(0);
             
             // Verify the nested mistake attempts
- foreach (var attempt in mistake.Mistakes)
- {
-      attempt.AttemptId.Should().NotBeEmpty();
-    attempt.WrongAnswer.Should().NotBeEmpty();
-   attempt.Accuracy.Should().BeGreaterThanOrEqualTo(0);
-    attempt.CreatedAt.Should().BeAfter(DateTimeOffset.UtcNow.AddMinutes(-5));
-    }
+            foreach (var attempt in mistake.Mistakes)
+            {
+                attempt.AttemptId.Should().NotBeEmpty();
+                attempt.WrongAnswer.Should().NotBeEmpty();
+                attempt.Accuracy.Should().BeGreaterThanOrEqualTo(0);
+                attempt.CreatedAt.Should().BeAfter(DateTimeOffset.UtcNow.AddMinutes(-5));
+            }
         }
     }
 
@@ -399,19 +400,19 @@ historyItem.GameType.Should().Be(GameName.WordOrder.ToString());
         // Log back in as the student to create mistakes
         await LoginAsync(student.Email, TestDataHelper.DefaultTestPassword, Role.Student);
   
-    // Create mistakes for the student
-   await CreateMistakeAsync(student.UserId, Difficulty.Easy);
+        // Create mistakes for the student
+        await CreateMistakeAsync(student.UserId, Difficulty.Easy);
         await CreateMistakeAsync(student.UserId, Difficulty.Medium);
     
         // Log back in as teacher to access student's mistakes
         await LoginAsync(teacher.Email, TestDataHelper.DefaultTestPassword, Role.Teacher);
         
-    // Act
+        // Act
         var response = await Client.GetAsync($"{GamesRoutes.Mistakes(student.UserId)}?page=1&pageSize=10");
         response.ShouldBeOk();
         
         // Assert
-        var result = await ReadAsJsonAsync<PagedResult<MistakeDto>>(response);
+        var result = await ReadAsJsonAsync<PagedResult<ExerciseMistakes>>(response);
         result.Should().NotBeNull();
         result!.Items.Should().HaveCount(2); // We created 2 mistakes
         
@@ -437,26 +438,26 @@ historyItem.GameType.Should().Be(GameName.WordOrder.ToString());
     public async Task GetMistakes_Admin_Sees_All()
     {
         // Arrange
-      var admin = await CreateUserAsync(role: "admin");
+        var admin = await CreateUserAsync(role: "admin");
         
         // Create a student
         var studentModel = await CreateUserViaApiAsync(role: "student");
         
- // Log in as the student to create mistakes
-     await LoginAsync(studentModel.Email, TestDataHelper.DefaultTestPassword, Role.Student);
+        // Log in as the student to create mistakes
+        await LoginAsync(studentModel.Email, TestDataHelper.DefaultTestPassword, Role.Student);
         
-     // Create a mistake
+        // Create a mistake
         await CreateMistakeAsync(studentModel.UserId, Difficulty.Hard);
         
         // Log back in as admin
         await LoginAsync(admin.Email, TestDataHelper.DefaultTestPassword, Role.Admin);
  
         // Act
-      var response = await Client.GetAsync($"{GamesRoutes.Mistakes(studentModel.UserId)}?page=1&pageSize=10");
+        var response = await Client.GetAsync($"{GamesRoutes.Mistakes(studentModel.UserId)}?page=1&pageSize=10");
         response.ShouldBeOk();
         
         // Assert
-        var result = await ReadAsJsonAsync<PagedResult<MistakeDto>>(response);
+        var result = await ReadAsJsonAsync<PagedResult<ExerciseMistakes>>(response);
         result.Should().NotBeNull();
         result!.Items.Should().HaveCount(1);
         
@@ -489,7 +490,7 @@ historyItem.GameType.Should().Be(GameName.WordOrder.ToString());
         response.ShouldBeOk();
         
         // Assert
-        var result = await ReadAsJsonAsync<PagedResult<MistakeDto>>(response);
+        var result = await ReadAsJsonAsync<PagedResult<ExerciseMistakes>>(response);
         result.Should().NotBeNull();
         
         // Only the medium mistake should appear; easy mistake was corrected with later success
@@ -525,7 +526,7 @@ historyItem.GameType.Should().Be(GameName.WordOrder.ToString());
         var response = await Client.GetAsync($"{GamesRoutes.AllHistory}?page=1&pageSize=10");
         response.ShouldBeOk();
 
-        var result = await ReadAsJsonAsync<PagedResult<SummaryHistoryWithStudentDto>>(response);
+        var result = await ReadAsJsonAsync<PagedResult<StudentExerciseHistory>>(response);
         result.Should().NotBeNull();
         result!.Items.Should().HaveCount(1);
 
