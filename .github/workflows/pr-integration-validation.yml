@@ -40,6 +40,7 @@ jobs:
     needs: run-integration-tests
     if: ${{ always() }}
     runs-on: ubuntu-latest
+    environment: Development
     permissions:
       contents: read
     steps:
