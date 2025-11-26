@@ -12,12 +12,15 @@ using DotQueue;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Scalar.AspNetCore;
+
 var builder = WebApplication.CreateBuilder(args);
+
 builder.Services.AddSingleton(sp =>
   new ServiceBusClient(builder.Configuration["ServiceBus:ConnectionString"]));
 builder.Services.AddSingleton<IRetryPolicyProvider, RetryPolicyProvider>();
 builder.Services.AddSingleton<IRetryPolicy, RetryPolicy>();
 builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
+
 builder.Services.AddQueue<Message, AccessorQueueHandler>(
     QueueNames.AccessorQueue,
     settings =>
@@ -28,6 +31,7 @@ builder.Services.AddQueue<Message, AccessorQueueHandler>(
         settings.MaxRetryAttempts = 3;
         settings.RetryDelaySeconds = 5;
     });
+
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IUserService, UserService>();
@@ -44,13 +48,16 @@ builder.Services.AddScoped<IMeetingService, MeetingService>();
 builder.Services.AddScoped<IAzureCommunicationService, AzureCommunicationService>();
 builder.Services.AddScoped<IUserGameConfigurationService, UserGameConfigurationService>();
 builder.Services.AddScoped<IAchievementService, AchievementService>();
+
 builder.Services.AddHttpClient("SpeechClient", client =>
 {
     var region = builder.Configuration["Speech:Region"];
     var key = builder.Configuration["Speech:Key"];
+
     client.BaseAddress = new Uri($"https://{region}.api.cognitive.microsoft.com/");
     client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", key);
 });
+
 builder.Services.AddHttpClient<ILangfuseService, LangfuseService>((serviceProvider, client) =>
 {
     var options = serviceProvider.GetRequiredService<IOptions<LangfuseOptions>>().Value;
@@ -64,25 +71,33 @@ builder.Services.AddHttpClient<ILangfuseService, LangfuseService>((serviceProvid
         client.BaseAddress = new Uri("http://localhost");
     }
 });
+
 builder.Services.AddScoped<IPromptService, PromptService>();
+
 var env = builder.Environment;
+
 builder.Configuration
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
     .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
     .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
     .AddJsonFile("prompts.defaults.json", optional: true, reloadOnChange: true)
     .AddEnvironmentVariables();
+
 builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddOptions<TaskCacheOptions>()
     .Bind(builder.Configuration.GetSection("TaskCache"))
     .ValidateDataAnnotations()
     .ValidateOnStart();
+
 builder.Services.AddOptions<PromptsOptions>()
     .Bind(builder.Configuration.GetSection("Prompts"))
     .ValidateOnStart();
+
 builder.Services.AddOptions<LangfuseOptions>()
     .Bind(builder.Configuration.GetSection("Langfuse"))
     .ValidateOnStart();
+
 // Register Dapr client with custom JSON options
 builder.Services.AddDaprClient(client =>
 {
@@ -93,6 +108,7 @@ builder.Services.AddDaprClient(client =>
         Converters = { new UtcDateTimeOffsetConverter() }
     });
 });
+
 // Configure PostgreSQL
 builder.Services.AddSingleton(sp =>
 {
@@ -101,6 +117,7 @@ builder.Services.AddSingleton(sp =>
     dataSourceBuilder.EnableDynamicJson();
     return dataSourceBuilder.Build();
 });
+
 builder.Services.AddDbContextPool<AccessorDbContext>((sp, options) =>
 {
     var dataSource = sp.GetRequiredService<Npgsql.NpgsqlDataSource>();
@@ -112,6 +129,7 @@ builder.Services.AddDbContextPool<AccessorDbContext>((sp, options) =>
             errorCodesToAdd: null);
     });
 });
+
 // This is required for the Scalar UI to have an option to setup an authentication token
 builder.Services.AddOpenApi(
     "v1",
@@ -120,17 +138,22 @@ builder.Services.AddOpenApi(
         options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
     }
 );
+
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.Converters.Add(new UtcDateTimeOffsetConverter());
 });
+
 var app = builder.Build();
+
 using (var scope = app.Services.CreateScope())
 {
     var initializer = scope.ServiceProvider.GetRequiredService<DatabaseInitializer>();
     await initializer.InitializeAsync();
 }
+
 // Configure middleware and Dapr
 app.UseCloudEvents();
 app.MapSubscribeHandler();
@@ -150,6 +173,7 @@ if (env.IsDevelopment())
         // {
         //     auth.Token = "Some Auth Token...";
         // });
+
     });
 }
 // Map endpoints (routes)

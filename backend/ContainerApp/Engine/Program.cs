@@ -13,19 +13,25 @@ using Engine;
 using Engine.Models.QueueMessages;
 using Engine.Options;
 using Engine.Constants.Chat;
+
 var builder = WebApplication.CreateBuilder(args);
+
 var env = builder.Environment;
+
 builder.Configuration
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
     .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
     .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
     .AddJsonFile("prompts.config.json", optional: false, reloadOnChange: true)
     .AddEnvironmentVariables();
+
 builder.Services.Configure<PromptKeyOptions>(builder.Configuration.GetSection("Prompts:Keys"));
 var promptKeyOptions = builder.Configuration.GetSection("Prompts:Keys").Get<PromptKeyOptions>() ?? new();
 PromptsKeys.Configure(promptKeyOptions);
+
 builder.Services.AddDaprClient();
 builder.Services.AddControllers().AddDapr();
+
 builder.Services.AddScoped<IChatTitleService, ChatTitleService>();
 builder.Services.AddScoped<IChatAiService, ChatAiService>();
 builder.Services.AddScoped<IAiReplyPublisher, AiReplyPublisher>();
@@ -36,12 +42,15 @@ builder.Services.AddSingleton<IRetryPolicy, RetryPolicy>();
 builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
 builder.Services.AddSingleton<ISemanticKernelPlugin, TimePlugin>();
 builder.Services.AddScoped<IWordExplainService, WordExplainService>();
+
 builder.Services.AddScoped<ITavilySearchService, TavilySearchService>();
 builder.Services.AddSingleton<ISemanticKernelPlugin, WebSearchPlugin>();
+
 builder.Services
     .AddOptions<TavilySettings>()
     .Bind(builder.Configuration.GetSection("Tavily"))
     .ValidateDataAnnotations();
+
 builder.Services.AddMemoryCache();
 builder.Services
        .AddOptions<MemoryCacheEntryOptions>()
@@ -49,6 +58,7 @@ builder.Services
        {
            var section = cfg.GetSection("CacheOptions");
        });
+
 builder.Services
     .AddOptions<AzureOpenAiSettings>()
     .Bind(builder.Configuration.GetSection("AzureOpenAI"))
@@ -58,9 +68,11 @@ builder.Services
         !string.IsNullOrWhiteSpace(s.Endpoint) &&
         !string.IsNullOrWhiteSpace(s.DeploymentName),
         "Azure OpenAI settings are incomplete");
+
 builder.Services.AddSingleton(sp =>
 {
     var cfg = sp.GetRequiredService<IOptions<AzureOpenAiSettings>>().Value;
+
     var kernel = Kernel.CreateBuilder()
                  .AddAzureOpenAIChatCompletion(
                      deploymentName: cfg.DeploymentName,
@@ -81,19 +93,26 @@ builder.Services.AddSingleton(sp =>
         {
             logger.LogError(ex,
                 "Failed to register plugin {PluginType}", plugin.GetType().FullName);
+
         }
     }
+
     return kernel;
+
 });
+
 builder.Services.AddKeyedSingleton("gen", (sp, key) =>
 {
     var cfg = sp.GetRequiredService<IOptions<AzureOpenAiSettings>>().Value;
+
     var kb = Kernel.CreateBuilder()
         .AddAzureOpenAIChatCompletion(
             deploymentName: cfg.DeploymentName,
             endpoint: cfg.Endpoint,
             apiKey: cfg.ApiKey);
+
     var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("KernelGenPluginRegistration");
+
     var sentencesDir = Path.Combine(AppContext.BaseDirectory, "Plugins", "Sentences");
     try
     {
@@ -104,6 +123,7 @@ builder.Services.AddKeyedSingleton("gen", (sp, key) =>
     {
         logger.LogError(ex, "Failed to load prompt plugin from {Dir}", sentencesDir);
     }
+
     var wordExplainDir = Path.Combine(AppContext.BaseDirectory, "Plugins", "WordExplain");
     try
     {
@@ -114,7 +134,9 @@ builder.Services.AddKeyedSingleton("gen", (sp, key) =>
     {
         logger.LogError(ex, "Failed to load prompt plugin from {Dir}", wordExplainDir);
     }
+
     var kernel = kb.Build();
+
     try
     {
         var info = string.Join("; ", kernel.Plugins.Select(p =>
@@ -125,10 +147,13 @@ builder.Services.AddKeyedSingleton("gen", (sp, key) =>
     {
         logger.LogWarning(ex, "Failed to enumerate SK plugins/functions");
     }
+
     return kernel;
 });
+
 builder.Services.AddSingleton(_ =>
     new ServiceBusClient(builder.Configuration["ServiceBus:ConnectionString"]));
+
 builder.Services.AddQueue<Message, EngineQueueHandler>(
     QueueNames.EngineQueue,
     settings =>
@@ -139,8 +164,11 @@ builder.Services.AddQueue<Message, EngineQueueHandler>(
         settings.MaxRetryAttempts = 3;
         settings.RetryDelaySeconds = 2;
     });
+
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
 var app = builder.Build();
+
 app.UseCloudEvents();
 app.MapControllers();
 app.MapSubscribeHandler();
