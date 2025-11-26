@@ -26,6 +26,11 @@ on:
         description: "Optional image tag (e.g., commit hash). Empty -> uses environment_name"
         required: false
         default: ""
+      use_keda:
+        description: "Enable KEDA setup workflow"
+        type: boolean
+        required: false
+        default: true
 
   workflow_call:
     inputs:
@@ -46,7 +51,7 @@ on:
       use_keda:
         required: false
         type: boolean
-        default: false
+        default: true
     outputs:
       app_url:
         description: "Ingress URL (if already created by platform setup)"
@@ -307,6 +312,7 @@ jobs:
             --set accessor.secrets.langfuse.enabled="${{ steps.setup.outputs.langfuse_secrets_enabled }}" \
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false \
+            --set keda.enabled=${{ inputs.use_keda || github.event.inputs.use_keda }} \
           | grep -n '^kind: Namespace' && { echo "Namespace still rendered"; exit 1; } || echo "OK: no Namespace in chart"
 
       - name: Helm upgrade/install app
@@ -338,7 +344,7 @@ jobs:
             --set accessor.secrets.langfuse.enabled="${{ steps.setup.outputs.langfuse_secrets_enabled }}" \
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false \
-            --set keda.enabled=true \
+            --set keda.enabled=${{ inputs.use_keda || github.event.inputs.use_keda }} \
 
       - name: Add Langfuse
         if: steps.setup.outputs.deploy_langfuse == 'true' && github.event_name == 'workflow_dispatch'
