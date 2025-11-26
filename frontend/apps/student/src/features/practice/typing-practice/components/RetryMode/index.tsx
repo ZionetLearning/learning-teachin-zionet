@@ -7,6 +7,7 @@ import {
   useRetryNavigation,
   useTrackAchievement,
 } from "@student/hooks";
+import { ACHIEVEMENT_INCREMENT } from "@student/constants";
 import { compareTexts } from "../../utils";
 import { FeedbackDisplay } from "../FeedbackDisplay";
 import { AudioControls } from "../AudioControls";
@@ -74,7 +75,7 @@ export const RetryMode = ({ retryData }: RetryModeProps) => {
       setPhase("feedback");
 
       if (res.status === "Success") {
-        track(1);
+        track(ACHIEVEMENT_INCREMENT);
       }
     } catch (error) {
       console.error("Failed to submit typing practice attempt:", error);

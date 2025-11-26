@@ -9,6 +9,7 @@ import {
 import { CypressWindow, GameType } from "@student/types";
 import { GameConfig } from "@ui-components";
 import { useSubmitGameAttempt } from "@student/api";
+import { ACHIEVEMENT_INCREMENT } from "@student/constants";
 
 const mapDifficultyToDifficultyLevel = (
   difficulty: 0 | 1 | 2,
@@ -267,7 +268,7 @@ export const useTypingPractice = (gameConfig?: GameConfig) => {
       // Track correct answers based on server response
       if (res.status === "Success") {
         setCorrectSentencesCount((prev) => prev + 1);
-        track(1);
+        track(ACHIEVEMENT_INCREMENT);
       }
     } catch (error) {
       console.error("Failed to submit typing practice attempt:", error);

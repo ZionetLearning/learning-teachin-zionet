@@ -14,6 +14,7 @@ import {
   useWordCardsContext,
 } from "@ui-components/ContextAwareChat";
 import { useTrackAchievement } from "@student/hooks";
+import { ACHIEVEMENT_INCREMENT } from "@student/constants";
 import { useStyles } from "./style";
 import { ModeSelection, GameSummary } from "./components";
 import { FEEDBACK_DISPLAY_DURATION } from "./constants";
@@ -105,7 +106,7 @@ export const WordCardsChallenge = () => {
       if (currentIndex + 1 >= shuffledCards.length) {
         setGameState("summary");
         setFeedback(null);
-        track(1);
+        track(ACHIEVEMENT_INCREMENT);
       } else {
         setCurrentIndex((prev) => prev + 1);
         setUserAnswer("");

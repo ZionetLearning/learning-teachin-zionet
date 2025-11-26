@@ -9,6 +9,7 @@ import {
   useTrackAchievement,
 } from "@student/hooks";
 import { useAzureSpeechToken } from "@student/api";
+import { ACHIEVEMENT_INCREMENT } from "@student/constants";
 import { comparePhrases } from "../../utils";
 import { toast } from "react-toastify";
 import { useStyles } from "./style";
@@ -160,7 +161,7 @@ export const RetryMode = ({ retryData }: RetryModeProps) => {
           setFeedback(isServerCorrect ? Feedback.Perfect : Feedback.TryAgain);
 
           if (isServerCorrect) {
-            track(1);
+            track(ACHIEVEMENT_INCREMENT);
             toast.success(
               `${Feedback.Perfect} - ${res.accuracy.toFixed(1)}% ${t("pages.speakingPractice.accuracy")}`,
             );

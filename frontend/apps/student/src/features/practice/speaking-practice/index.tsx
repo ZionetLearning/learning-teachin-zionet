@@ -17,6 +17,7 @@ import {
   useTrackAchievement,
 } from "@student/hooks";
 import { DifficultyLevel, GameType } from "@student/types";
+import { ACHIEVEMENT_INCREMENT } from "@student/constants";
 import {
   GameConfigModal,
   GameOverModal,
@@ -270,7 +271,7 @@ const SpeakingPracticeMain = () => {
             setFeedback(isServerCorrect ? Feedback.Perfect : Feedback.TryAgain);
             // Show accuracy in toast
             if (isServerCorrect) {
-              track(1);
+              track(ACHIEVEMENT_INCREMENT);
               toast.success(
                 `${Feedback.Perfect} - ${res.accuracy.toFixed(1)}% ${t("pages.speakingPractice.accuracy")}`,
               );

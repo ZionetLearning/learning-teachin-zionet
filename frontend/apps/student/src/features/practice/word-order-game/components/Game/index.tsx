@@ -9,6 +9,7 @@ import {
   useGameConfig,
   useTrackAchievement,
 } from "@student/hooks";
+import { ACHIEVEMENT_INCREMENT } from "@student/constants";
 import { ChosenWordsArea, WordsBank, ActionButtons, Speaker } from "../";
 import {
   GameConfig,
@@ -319,12 +320,12 @@ export const Game = ({ retryData }: GameProps) => {
         queryClient.invalidateQueries({
           queryKey: ["gamesMistakes", { studentId }],
         });
-        trackMistakes(1);
+        trackMistakes(ACHIEVEMENT_INCREMENT);
       }
     } else {
       if (isServerCorrect) {
         setCorrectSentencesCount((c) => c + 1);
-        track(1);
+        track(ACHIEVEMENT_INCREMENT);
         toast.success(
           `${t("pages.wordOrderGame.correct")} - ${res.accuracy.toFixed(1)}% ${t("pages.wordOrderGame.accuracy")}`,
         );
