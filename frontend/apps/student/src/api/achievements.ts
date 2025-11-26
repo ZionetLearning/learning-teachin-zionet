@@ -1,6 +1,16 @@
-import { useQuery } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  UseMutationResult,
+} from "@tanstack/react-query";
+import { toast } from "react-toastify";
 import { apiClient as axios } from "@app-providers";
-import type { Achievement } from "../types/achievement";
+import type {
+  Achievement,
+  TrackProgressRequest,
+  TrackProgressResponse,
+} from "../types/achievement";
 
 const ACHIEVEMENTS_URL = import.meta.env.VITE_ACHIEVEMENTS_MANAGER_URL;
 const ACHIEVEMENTS_STALE_TIME = 1000 * 60 * 5; // 5 minutes
@@ -19,5 +29,36 @@ export const useGetUserAchievements = (userId: string | undefined) => {
     enabled: !!userId,
     staleTime: ACHIEVEMENTS_STALE_TIME,
     refetchOnWindowFocus: true,
+  });
+};
+
+export const useTrackProgress = (): UseMutationResult<
+  TrackProgressResponse,
+  Error,
+  TrackProgressRequest
+> => {
+  const queryClient = useQueryClient();
+
+  return useMutation<TrackProgressResponse, Error, TrackProgressRequest>({
+    mutationFn: async (request: TrackProgressRequest) => {
+      const { data } = await axios.post<TrackProgressResponse>(
+        `${ACHIEVEMENTS_URL}/track`,
+        request,
+      );
+      return data;
+    },
+    onSuccess: (response, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["achievements", variables.userId],
+      });
+
+      if (response.unlockedAchievements.length > 0) {
+        console.log("Unlocked achievements:", response.unlockedAchievements);
+      }
+    },
+    onError: (error) => {
+      console.error("Failed to track progress:", error);
+      toast.error("Failed to track progress");
+    },
   });
 };
