@@ -1,4 +1,7 @@
-﻿using Accessor.Models.Classes;
+﻿using Accessor.Exceptions;
+using Accessor.Mapping;
+using Accessor.Models.Classes.Requests;
+using Accessor.Models.Classes.Responses;
 using Accessor.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -39,8 +42,14 @@ public static class ClassesEndpoints
 
         try
         {
-            var cls = await service.GetClassWithMembersAsync(classId, ct);
-            return cls is not null ? Results.Ok(cls) : Results.NotFound("Class not found.");
+            var dbModel = await service.GetClassWithMembersAsync(classId, ct);
+            if (dbModel is null)
+            {
+                return Results.NotFound("Class not found.");
+            }
+
+            var response = dbModel.ToResponse();
+            return Results.Ok(response);
         }
         catch (Exception ex)
         {
@@ -50,10 +59,10 @@ public static class ClassesEndpoints
     }
 
     private static async Task<IResult> GetMyClassesAsync(
-    [FromRoute] Guid userId,
-    [FromServices] IClassService service,
-    [FromServices] ILogger<ClassesEndpointsLoggerMarker> logger,
-    CancellationToken ct)
+        [FromRoute] Guid userId,
+        [FromServices] IClassService service,
+        [FromServices] ILogger<ClassesEndpointsLoggerMarker> logger,
+        CancellationToken ct)
     {
         using var _ = logger.BeginScope("Method={Method}, UserId={UserId}", nameof(GetMyClassesAsync), userId);
 
@@ -64,8 +73,14 @@ public static class ClassesEndpoints
 
         try
         {
-            var cls = await service.GetClassesForUserWithMembersAsync(userId, ct);
-            return cls is not null ? Results.Ok(cls) : Results.NotFound("Classes not found.");
+            var dbModels = await service.GetClassesForUserWithMembersAsync(userId, ct);
+            if (dbModels is null || dbModels.Count == 0)
+            {
+                return Results.NotFound("Classes not found.");
+            }
+
+            var response = dbModels.ToMyClassesResponse();
+            return Results.Ok(response);
         }
         catch (Exception ex)
         {
@@ -74,16 +89,22 @@ public static class ClassesEndpoints
         }
     }
     private static async Task<IResult> GetAllClassesAsync(
-    [FromServices] IClassService service,
-    [FromServices] ILogger<ClassesEndpointsLoggerMarker> logger,
-    CancellationToken ct)
+        [FromServices] IClassService service,
+        [FromServices] ILogger<ClassesEndpointsLoggerMarker> logger,
+        CancellationToken ct)
     {
-        using var _ = logger.BeginScope("Method={Method}", nameof(GetClassAsync));
+        using var _ = logger.BeginScope("Method={Method}", nameof(GetAllClassesAsync));
 
         try
         {
-            var cls = await service.GetAllClassesAsync(ct);
-            return cls is not null ? Results.Ok(cls) : Results.NotFound("Classes not found.");
+            var dbModels = await service.GetAllClassesAsync(ct);
+            if (dbModels is null || dbModels.Count == 0)
+            {
+                return Results.NotFound("Classes not found.");
+            }
+
+            var response = dbModels.ToResponse();
+            return Results.Ok(response);
         }
         catch (Exception ex)
         {
@@ -93,36 +114,29 @@ public static class ClassesEndpoints
     }
 
     private static async Task<IResult> CreateClassAsync(
-        [FromBody] CreateClassRequest model,
+        [FromBody] CreateClassRequest request,
         [FromServices] IClassService service,
-        [FromServices] ILogger<ClassesEndpointsLoggerMarker> logger, CancellationToken ct)
+        [FromServices] ILogger<ClassesEndpointsLoggerMarker> logger,
+        CancellationToken ct)
     {
-        using var _ = logger.BeginScope("Method={Method}, Name={Name}", nameof(CreateClassAsync), model.Name);
+        using var _ = logger.BeginScope("Method={Method}, Name={Name}", nameof(CreateClassAsync), request.Name);
 
-        if (string.IsNullOrWhiteSpace(model.Name))
+        if (string.IsNullOrWhiteSpace(request.Name))
         {
             return Results.BadRequest("Class name is required.");
         }
 
         try
         {
-            var newClass = new Class
-            {
-                ClassId = Guid.NewGuid(),
-                Name = model.Name,
-                Code = string.Empty,
-                Description = model.Description,
-                CreatedAt = DateTime.UtcNow,
-            };
-            var ok = await service.CreateClassAsync(newClass, ct);
-            if (ok is not null)
-            {
-                return Results.Created($"/classes-accessor/{newClass.ClassId}", newClass);
-            }
-            else
-            {
-                return Results.Conflict("Class with same name or code already exists.");
-            }
+            var dbModel = request.ToDbModel();
+            var createdClass = await service.CreateClassAsync(dbModel, ct);
+            var response = createdClass.ToResponse();
+            return Results.Created($"/classes-accessor/{response.ClassId}", response);
+        }
+        catch (ConflictException ex)
+        {
+            logger.LogWarning(ex, "Failed to create class due to conflict: {Message}", ex.Message);
+            return Results.Conflict("Class with same name or code already exists.");
         }
         catch (Exception ex)
         {
@@ -140,17 +154,18 @@ public static class ClassesEndpoints
     {
         using var _ = logger.BeginScope("Method={Method}, ClassId={ClassId}", nameof(AddMembersAsync), classId);
 
-        if (classId == Guid.Empty || request.UserIds is null || !request.UserIds.Any())
+        if (classId == Guid.Empty || request.UserIds is null || request.UserIds.Count == 0)
         {
             return Results.BadRequest("Invalid classId or empty user list.");
         }
 
         try
         {
-            var ok = await service.AddMembersAsync(classId, request.UserIds, request.AddedBy, ct);
-            return ok
-                ? Results.Ok(new { message = "Members added." })
-                : Results.BadRequest(new { error = "Failed to add members." });
+            var success = await service.AddMembersAsync(classId, request.UserIds.ToList(), request.AddedBy, ct);
+            var response = new AddMembersResponse { Success = success };
+            return success
+                ? Results.Ok(response)
+                : Results.BadRequest(response);
         }
         catch (Exception ex)
         {
@@ -168,17 +183,18 @@ public static class ClassesEndpoints
     {
         using var _ = logger.BeginScope("Method={Method}, ClassId={ClassId}", nameof(RemoveMembersAsync), classId);
 
-        if (classId == Guid.Empty || request.UserIds is null || !request.UserIds.Any())
+        if (classId == Guid.Empty || request.UserIds is null || request.UserIds.Count == 0)
         {
             return Results.BadRequest("Invalid classId or empty user list.");
         }
 
         try
         {
-            var ok = await service.RemoveMembersAsync(classId, request.UserIds, ct);
-            return ok
-                ? Results.Ok(new { message = "Members removed." })
-                : Results.BadRequest(new { error = "Failed to remove members." });
+            var success = await service.RemoveMembersAsync(classId, request.UserIds.ToList(), ct);
+            var response = new RemoveMembersResponse { Success = success };
+            return success
+                ? Results.Ok(response)
+                : Results.BadRequest(response);
         }
         catch (Exception ex)
         {
@@ -187,24 +203,30 @@ public static class ClassesEndpoints
         }
     }
     private static async Task<IResult> DeleteClassAsync(
-    [FromRoute] Guid classId,
-    [FromServices] IClassService service,
-    [FromServices] ILogger<ClassesEndpointsLoggerMarker> logger,
-    CancellationToken ct)
+        [FromRoute] Guid classId,
+        [FromServices] IClassService service,
+        [FromServices] ILogger<ClassesEndpointsLoggerMarker> logger,
+        CancellationToken ct)
     {
-        using var _ = logger.BeginScope("Method={Method}, ClassId={ClassId}", nameof(RemoveMembersAsync), classId);
+        using var _ = logger.BeginScope("Method={Method}, ClassId={ClassId}", nameof(DeleteClassAsync), classId);
+
+        if (classId == Guid.Empty)
+        {
+            return Results.BadRequest("Invalid class ID.");
+        }
 
         try
         {
-            var deleted = await service.DeleteClassAsync(classId, ct);
+            var success = await service.DeleteClassAsync(classId, ct);
+            var response = new DeleteClassResponse { Success = success };
 
-            return deleted
+            return success
                 ? Results.NoContent()
                 : Results.NotFound();
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to delete class with ID");
+            logger.LogError(ex, "Failed to delete class with ID {ClassId}", classId);
             return Results.Problem("Internal server error while deleting class");
         }
     }
