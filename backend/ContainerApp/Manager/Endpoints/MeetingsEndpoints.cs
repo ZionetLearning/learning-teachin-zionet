@@ -1,7 +1,9 @@
 using System.Security.Claims;
 using Manager.Constants;
 using Manager.Helpers;
+using Manager.Mapping;
 using Manager.Models.Meetings;
+using Manager.Models.Meetings.Requests;
 using Manager.Models.ModelValidation;
 using Manager.Models.Users;
 using Manager.Services.Clients.Accessor.Interfaces;
@@ -69,8 +71,8 @@ public static class MeetingsEndpoints
 
         try
         {
-            var meeting = await meetingAccessorClient.GetMeetingAsync(meetingId, ct);
-            if (meeting is null)
+            var accessorMeeting = await meetingAccessorClient.GetMeetingAsync(meetingId, ct);
+            if (accessorMeeting is null)
             {
                 return Results.NotFound();
             }
@@ -78,7 +80,7 @@ public static class MeetingsEndpoints
             // Check authorization: user must be an attendee or admin
             if (callerRole != Role.Admin.ToString())
             {
-                var isAttendee = meeting.Attendees.Any(a => a.UserId == callerId);
+                var isAttendee = accessorMeeting.Attendees.Any(a => a.UserId == callerId);
                 if (!isAttendee)
                 {
                     logger.LogWarning("User {UserId} is not authorized to view meeting {MeetingId}", callerId, meetingId);
@@ -86,7 +88,8 @@ public static class MeetingsEndpoints
                 }
             }
 
-            return Results.Ok(meeting);
+            var response = accessorMeeting.ToFront();
+            return Results.Ok(response);
         }
         catch (Exception ex)
         {
@@ -125,9 +128,10 @@ public static class MeetingsEndpoints
 
         try
         {
-            var meetings = await meetingAccessorClient.GetMeetingsForUserAsync(userId, ct);
-            logger.LogInformation("Retrieved {Count} meetings for user {UserId}", meetings.Count, userId);
-            return Results.Ok(meetings);
+            var accessorMeetings = await meetingAccessorClient.GetMeetingsForUserAsync(userId, ct);
+            logger.LogInformation("Retrieved {Count} meetings for user {UserId}", accessorMeetings.Count, userId);
+            var response = accessorMeetings.ToFront();
+            return Results.Ok(response);
         }
         catch (Exception ex)
         {
@@ -219,10 +223,13 @@ public static class MeetingsEndpoints
 
         try
         {
-            var meeting = await meetingAccessorClient.CreateMeetingAsync(request, createdByUserId, ct);
-            logger.LogInformation("Meeting {MeetingId} created successfully by user {UserId}", meeting.Id, createdByUserId);
+            var accessorRequest = request.ToAccessor(createdByUserId);
+            var accessorMeeting = await meetingAccessorClient.CreateMeetingAsync(accessorRequest, ct);
+            var response = accessorMeeting.ToFront();
 
-            return Results.Created($"/meetings-manager/{meeting.Id}", meeting);
+            logger.LogInformation("Meeting {MeetingId} created successfully by user {UserId}", response.Id, createdByUserId);
+
+            return Results.Created($"/meetings-manager/{response.Id}", response);
         }
         catch (Exception ex)
         {
@@ -300,7 +307,8 @@ public static class MeetingsEndpoints
                 return Results.Forbid();
             }
 
-            var updated = await meetingAccessorClient.UpdateMeetingAsync(meetingId, request, ct);
+            var accessorRequest = request.ToAccessor();
+            var updated = await meetingAccessorClient.UpdateMeetingAsync(meetingId, accessorRequest, ct);
             return updated
                 ? Results.Ok("Meeting updated successfully")
                 : Results.NotFound("Meeting not found");
@@ -396,9 +404,11 @@ public static class MeetingsEndpoints
                 return Results.Forbid();
             }
 
-            var tokenResponse = await meetingAccessorClient.GenerateTokenForMeetingAsync(meetingId, callerId, ct);
+            var accessorTokenResponse = await meetingAccessorClient.GenerateTokenForMeetingAsync(meetingId, callerId, ct);
+            var response = accessorTokenResponse.ToFront();
+
             logger.LogInformation("Generated token for user {UserId} to join meeting {MeetingId}", callerId, meetingId);
-            return Results.Ok(tokenResponse);
+            return Results.Ok(response);
         }
         catch (UnauthorizedAccessException ex)
         {
