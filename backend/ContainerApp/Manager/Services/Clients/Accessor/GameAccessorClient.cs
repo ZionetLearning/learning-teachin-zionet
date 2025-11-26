@@ -66,17 +66,37 @@ public class GameAccessorClient : IGameAccessorClient
         }
     }
 
-    public async Task<GetHistoryAccessorResponse> GetHistoryAsync(Guid studentId, bool summary, int page, int pageSize, bool getPending, CancellationToken ct = default)
+    public async Task<GetHistoryAccessorResponse> GetHistoryAsync(Guid studentId, bool summary, int page, int pageSize, bool getPending, DateTimeOffset? fromDate = null, DateTimeOffset? toDate = null, CancellationToken ct = default)
     {
         try
         {
-            _logger.LogInformation("Requesting history from Accessor. StudentId={StudentId}, Summary={Summary}, Page={Page}, PageSize={PageSize}, GetPending={GetPending}",
-                studentId, summary, page, pageSize, getPending);
+            _logger.LogInformation(
+                "Requesting history from Accessor. StudentId={StudentId}, Summary={Summary}, Page={Page}, PageSize={PageSize}, GetPending={GetPending}, FromDate={FromDate}, ToDate={ToDate}",
+                studentId, summary, page, pageSize, getPending, fromDate, toDate);
 
+            var queryParams = new List<string>
+            {
+                $"summary={summary}",
+                $"page={page}",
+                $"pageSize={pageSize}",
+                $"getPending={getPending}"
+            };
+
+            if (fromDate.HasValue)
+            {
+                queryParams.Add($"fromDate={fromDate.Value:O}");
+            }
+
+            if (toDate.HasValue)
+            {
+                queryParams.Add($"toDate={toDate.Value:O}");
+            }
+
+            var queryString = string.Join("&", queryParams);
             var result = await _daprClient.InvokeMethodAsync<GetHistoryAccessorResponse>(
                 HttpMethod.Get,
                 AppIds.Accessor,
-                $"games-accessor/history/{studentId}?summary={summary}&page={page}&pageSize={pageSize}&getPending={getPending}",
+                $"games-accessor/history/{studentId}?{queryString}",
                 cancellationToken: ct
             );
 
@@ -115,16 +135,35 @@ public class GameAccessorClient : IGameAccessorClient
         }
     }
 
-    public async Task<GetMistakesAccessorResponse> GetMistakesAsync(Guid studentId, int page, int pageSize, CancellationToken ct = default)
+    public async Task<GetMistakesAccessorResponse> GetMistakesAsync(Guid studentId, int page, int pageSize, DateTimeOffset? fromDate = null, DateTimeOffset? toDate = null, CancellationToken ct = default)
     {
         try
         {
-            _logger.LogInformation("Requesting mistakes from Accessor. StudentId={StudentId}, Page={Page}, PageSize={PageSize}", studentId, page, pageSize);
+            _logger.LogInformation(
+                "Requesting mistakes from Accessor. StudentId={StudentId}, Page={Page}, PageSize={PageSize}, FromDate={FromDate}, ToDate={ToDate}",
+                studentId, page, pageSize, fromDate, toDate);
 
+            var queryParams = new List<string>
+            {
+                $"page={page}",
+                $"pageSize={pageSize}"
+            };
+
+            if (fromDate.HasValue)
+            {
+                queryParams.Add($"fromDate={fromDate.Value:O}");
+            }
+
+            if (toDate.HasValue)
+            {
+                queryParams.Add($"toDate={toDate.Value:O}");
+            }
+
+            var queryString = string.Join("&", queryParams);
             var result = await _daprClient.InvokeMethodAsync<PagedResult<ExerciseMistakes>>(
                 HttpMethod.Get,
                 AppIds.Accessor,
-                $"games-accessor/mistakes/{studentId}?page={page}&pageSize={pageSize}",
+                $"games-accessor/mistakes/{studentId}?{queryString}",
                 cancellationToken: ct
             );
 

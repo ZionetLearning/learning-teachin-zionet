@@ -17,16 +17,32 @@ public class WordCardsAccessorClient : IWordCardsAccessorClient
         _daprClient = daprClient;
     }
 
-    public async Task<GetWordCardsAccessorResponse> GetWordCardsAsync(Guid userId, CancellationToken ct = default)
+    public async Task<GetWordCardsAccessorResponse> GetWordCardsAsync(Guid userId, DateTime? fromDate = null, DateTime? toDate = null, CancellationToken ct = default)
     {
-        _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetWordCardsAsync), nameof(WordCardsAccessorClient));
+        _logger.LogInformation(
+            "Inside: {Method} in {Class}. UserId={UserId}, FromDate={FromDate}, ToDate={ToDate}",
+            nameof(GetWordCardsAsync), nameof(WordCardsAccessorClient), userId, fromDate, toDate);
 
         try
         {
+            var queryParams = new List<string>();
+
+            if (fromDate.HasValue)
+            {
+                queryParams.Add($"fromDate={fromDate.Value:O}");
+            }
+
+            if (toDate.HasValue)
+            {
+                queryParams.Add($"toDate={toDate.Value:O}");
+            }
+
+            var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : string.Empty;
+
             var wordCards = await _daprClient.InvokeMethodAsync<List<WordCardAccessorDto>>(
                 HttpMethod.Get,
                 AppIds.Accessor,
-                $"wordcards-accessor/{userId}",
+                $"wordcards-accessor/{userId}{queryString}",
                 ct
             );
 

@@ -96,7 +96,7 @@ public class GameService : IGameService
     }
 
     public async Task<GameHistoryResponse> GetHistoryAsync(
-    Guid studentId, bool summary, int page, int pageSize, bool getPending, CancellationToken ct)
+    Guid studentId, bool summary, int page, int pageSize, bool getPending, DateTimeOffset? fromDate, DateTimeOffset? toDate, CancellationToken ct)
     {
         try
         {
@@ -119,8 +119,8 @@ public class GameService : IGameService
             }
 
             _logger.LogInformation(
-                "Fetching history. StudentId={StudentId}, Summary={Summary}, Page={Page}, PageSize={PageSize}, GetPending={GetPending}",
-                studentId, summary, page, pageSize, getPending);
+                "Fetching history. StudentId={StudentId}, Summary={Summary}, Page={Page}, PageSize={PageSize}, GetPending={GetPending}, FromDate={FromDate}, ToDate={ToDate}",
+                studentId, summary, page, pageSize, getPending, fromDate, toDate);
 
             var attempts = _db.GameAttempts
                 .AsNoTracking()
@@ -129,6 +129,16 @@ public class GameService : IGameService
             if (!getPending)
             {
                 attempts = attempts.Where(a => a.Status != AttemptStatus.Pending);
+            }
+
+            if (fromDate.HasValue)
+            {
+                attempts = attempts.Where(a => a.CreatedAt >= fromDate.Value || a.UpdatedAt >= fromDate.Value);
+            }
+
+            if (toDate.HasValue)
+            {
+                attempts = attempts.Where(a => a.CreatedAt <= toDate.Value || a.UpdatedAt <= toDate.Value);
             }
 
             if (summary)
@@ -238,7 +248,7 @@ public class GameService : IGameService
         }
     }
 
-    public async Task<PagedResult<MistakeDto>> GetMistakesAsync(Guid studentId, int page, int pageSize, CancellationToken ct)
+    public async Task<PagedResult<MistakeDto>> GetMistakesAsync(Guid studentId, int page, int pageSize, DateTimeOffset? fromDate, DateTimeOffset? toDate, CancellationToken ct)
     {
         try
         {
@@ -260,13 +270,26 @@ public class GameService : IGameService
                 pageSize = 100;
             }
 
-            _logger.LogInformation("Fetching mistakes. StudentId={StudentId}, Page={Page}, PageSize={PageSize}", studentId, page, pageSize);
+            _logger.LogInformation(
+                "Fetching mistakes. StudentId={StudentId}, Page={Page}, PageSize={PageSize}, FromDate={FromDate}, ToDate={ToDate}",
+                studentId, page, pageSize, fromDate, toDate);
+
+            var query = _db.GameAttempts
+                .AsNoTracking()
+                .Where(a => a.StudentId == studentId && a.Status != AttemptStatus.Pending);
+
+            if (fromDate.HasValue)
+            {
+                query = query.Where(a => a.CreatedAt >= fromDate.Value || a.UpdatedAt >= fromDate.Value);
+            }
+
+            if (toDate.HasValue)
+            {
+                query = query.Where(a => a.CreatedAt <= toDate.Value || a.UpdatedAt <= toDate.Value);
+            }
 
             // Get all attempts, group by exercise, and filter for exercises with only failures
-            var allAttempts = await _db.GameAttempts
-                .AsNoTracking()
-                .Where(a => a.StudentId == studentId && a.Status != AttemptStatus.Pending)
-                .ToListAsync(ct);
+            var allAttempts = await query.ToListAsync(ct);
 
             var mistakes = allAttempts
                 .GroupBy(a => a.ExerciseId)
