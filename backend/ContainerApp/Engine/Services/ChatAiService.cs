@@ -34,7 +34,7 @@ public sealed class ChatAiService : IChatAiService
         ILogger<ChatAiService> log,
         IRetryPolicy retryPolicy,
         IList<AITool> tools,
-        IAccessorClient accessorClient, IChatTitleService chatTitleService)
+        IAccessorClient accessorClient)
     {
         _azureClient = azureClient ?? throw new ArgumentNullException(nameof(azureClient));
         _cfg = options?.Value ?? throw new ArgumentNullException(nameof(options));

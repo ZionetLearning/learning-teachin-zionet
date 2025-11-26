@@ -191,14 +191,6 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
                 if (isChanged)
                 {
                     chatName = newTitle;
-
-                    var updateTitleHistory = new HistorySnapshotDto
-                    {
-                        History = historySnapshot.History,
-                        ThreadId = historySnapshot.ThreadId,
-                        UserId = historySnapshot.UserId,
-                        Name = chatName,
-                    };
                 }
             }
 
