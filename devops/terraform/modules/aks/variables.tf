@@ -7,17 +7,49 @@ variable "location" {
 variable "cluster_name" {
   type = string
 }
-variable "max_node_count" {
-  type    = number
-  default = 4
+
+# Stable node pool configuration
+variable "stable_min_node_count" {
+  type        = number
+  default     = 1
+  description = "Minimum number of stable nodes (not spot instances)"
 }
-variable "min_node_count" {
-  type    = number
-  default = 1
+
+variable "stable_max_node_count" {
+  type        = number
+  default     = 4
+  description = "Maximum number of stable nodes (not spot instances)"
 }
-variable "vm_size" {
-  type    = string
-  default = "Standard_B2s"
+
+variable "stable_vm_size" {
+  type        = string
+  default     = "Standard_B2s"
+  description = "VM size for stable nodes"
+}
+
+# Spot instance node pool configuration
+variable "spot_min_node_count" {
+  type        = number
+  default     = 1
+  description = "Minimum number of spot instance nodes"
+}
+
+variable "spot_max_node_count" {
+  type        = number
+  default     = 1
+  description = "Maximum number of spot instance nodes"
+}
+
+variable "spot_vm_size" {
+  type        = string
+  default     = "Standard_A2m_v2"
+  description = "VM size for spot instance nodes"
+}
+
+variable "spot_max_price" {
+  type        = number
+  default     = 0.0486
+  description = "Maximum price for spot instances (-1 = pay up to on-demand price)"
 }
 
 variable "identity_ids" {	

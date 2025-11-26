@@ -64,3 +64,30 @@ dapr.io/config: "{{ .config }}"
 {{- $suffix := index . 1 -}}
 {{- include "app.join" (list (include "app.prefix" $root) $suffix) -}}
 {{- end -}}
+
+{{/* Spot node affinity - used for all non-dev environments */}}
+{{- define "app.spot.affinity" -}}
+{{- if .Values.global.spot.enabled }}
+affinity:
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      preference:
+        matchExpressions:
+        - key: node-type
+          operator: In
+          values:
+          - spot
+{{- end }}
+{{- end -}}
+
+{{/* Spot node tolerations - used for all non-dev environments */}}
+{{- define "app.spot.tolerations" -}}
+{{- if .Values.global.spot.enabled }}
+tolerations:
+- key: kubernetes.azure.com/scalesetpriority
+  operator: Equal
+  value: spot
+  effect: NoSchedule
+{{- end }}
+{{- end -}}

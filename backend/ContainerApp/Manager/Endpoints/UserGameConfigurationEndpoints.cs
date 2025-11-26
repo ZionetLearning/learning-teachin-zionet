@@ -2,8 +2,8 @@
 using Manager.Constants;
 using Microsoft.AspNetCore.Mvc;
 using Manager.Models.UserGameConfiguration;
-using Manager.Services.Clients.Accessor;
 using Dapr.Client;
+using Manager.Services.Clients.Accessor.Interfaces;
 
 namespace Manager.Endpoints;
 

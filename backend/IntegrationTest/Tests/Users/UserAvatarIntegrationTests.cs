@@ -85,7 +85,7 @@ public class UserAvatarIntegrationTests(
         Assert.Equal(HttpStatusCode.OK, confirmResp.StatusCode);
 
         // 3.1) Wait until the user reflects the avatar (eventual consistency in cloud)
-        UserData? userData = null;
+        GetUserResponse? userData = null;
         var swSet = System.Diagnostics.Stopwatch.StartNew();
         var setTimeout = TimeSpan.FromSeconds(10);
         var pollDelay = TimeSpan.FromMilliseconds(200);
@@ -94,7 +94,7 @@ public class UserAvatarIntegrationTests(
         {
             var getUserResp = await Client.GetAsync(ApiRoutes.UserById(user.UserId));
             Assert.Equal(HttpStatusCode.OK, getUserResp.StatusCode);
-            userData = await ReadAsJsonAsync<UserData>(getUserResp);
+            userData = await ReadAsJsonAsync<GetUserResponse>(getUserResp);
 
             if (userData?.AvatarPath == blobPath &&
                 userData.AvatarContentType == ContentTypePng &&
@@ -172,7 +172,7 @@ public class UserAvatarIntegrationTests(
         {
             var afterDelResp = await Client.GetAsync(ApiRoutes.UserById(user.UserId));
             Assert.Equal(HttpStatusCode.OK, afterDelResp.StatusCode);
-            var afterDel = await ReadAsJsonAsync<UserData>(afterDelResp);
+            var afterDel = await ReadAsJsonAsync<GetUserResponse>(afterDelResp);
 
             if (afterDel!.AvatarPath is null &&
                 afterDel.AvatarContentType is null &&

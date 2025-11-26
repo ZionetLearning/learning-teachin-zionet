@@ -8,9 +8,9 @@ using Manager.Models.QueueMessages;
 using Manager.Models.Sentences;
 using Manager.Services;
 using Manager.Services.Clients.Accessor.Models;
-using Manager.Services.Clients.Accessor;
 using Manager.Models.Words;
 using Manager.Models.UserGameConfiguration;
+using Manager.Services.Clients.Accessor.Interfaces;
 
 namespace Manager.Endpoints;
 
@@ -128,13 +128,7 @@ public class ManagerQueueHandler : RoutedQueueHandler<Message, MessageAction>
                     $"Validation failed for {nameof(AIChatResponse)}: {string.Join("; ", validationErrors)}");
             }
 
-            var userEvent = new UserEvent<AIChatResponse>
-            {
-                EventType = EventType.ChatAiAnswer,
-                Payload = chatResponse,
-            };
-
-            await _notificationService.SendEventAsync(userEvent.EventType, userContextMetadata.UserId, userEvent.Payload);
+            await _notificationService.SendEventAsync(EventType.ChatAiAnswer, userContextMetadata.UserId, chatResponse);
 
         }
         catch (NonRetryableException ex)

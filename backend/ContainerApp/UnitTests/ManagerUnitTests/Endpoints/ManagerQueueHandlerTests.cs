@@ -7,7 +7,7 @@ using Manager.Models.QueueMessages;
 using Manager.Models.Sentences;
 using Manager.Models.UserGameConfiguration;
 using Manager.Services;
-using Manager.Services.Clients.Accessor;
+using Manager.Services.Clients.Accessor.Interfaces;
 using Manager.Services.Clients.Accessor.Models;
 using Microsoft.Extensions.Logging;
 using Moq;
