@@ -302,9 +302,15 @@ locals {
 
 module "clustersecretstore" {
   count       = var.environment_name == "dev" || var.environment_name == "prod" ? 1 : 0
-  source      = "./modules/clustersecretstore"
+  source     = "./modules/clustersecretstore"
   identity_id = local.aks_identity_client_id
   tenant_id   = var.tenant_id
-
-  depends_on = [module.aks, data.azurerm_user_assigned_identity.aks_identity]
+  
+  depends_on = [
+    data.azurerm_kubernetes_cluster.main,
+    kubernetes_namespace.environment,
+    null_resource.aks_ready,
+    module.aks,
+    data.azurerm_user_assigned_identity.aks_identity
+  ]
 }
