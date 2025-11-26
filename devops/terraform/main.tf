@@ -287,30 +287,9 @@ data "azurerm_key_vault" "shared" {
 # PostgreSQL admin credentials will come from GitHub Actions environment variables
 # No need for Key Vault data sources - credentials passed as TF_VAR_* environment variables
 
-# Get the correct managed identity for the environment
-# For shared AKS clusters, read existing identity; for new clusters, get from module output
-data "azurerm_user_assigned_identity" "aks_identity" {
-  count               = var.use_shared_aks && (var.environment_name == "dev" || var.environment_name == "prod") ? 1 : 0
-  name                = var.environment_name == "prod" ? "prod-aks-uami" : "dev-aks-uami"
-  resource_group_name = var.environment_name == "prod" ? "prod-zionet-learning-2025" : "dev-zionet-learning-2025"
-}
-
-# Determine the identity client ID based on whether we're using shared AKS or new AKS
-locals {
-  aks_identity_client_id = var.use_shared_aks ? data.azurerm_user_assigned_identity.aks_identity[0].client_id : module.aks[0].identity_client_id
-}
-
 module "clustersecretstore" {
-  count       = var.environment_name == "dev" || var.environment_name == "prod" ? 1 : 0
+  count       = var.environment_name == "dev" ? 1 : 0
   source     = "./modules/clustersecretstore"
-  identity_id = local.aks_identity_client_id
+  identity_id = var.identity_id
   tenant_id   = var.tenant_id
-  
-  depends_on = [
-    data.azurerm_kubernetes_cluster.main,
-    kubernetes_namespace.environment,
-    null_resource.aks_ready,
-    module.aks,
-    data.azurerm_user_assigned_identity.aks_identity
-  ]
 }
