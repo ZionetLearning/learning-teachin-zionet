@@ -136,17 +136,6 @@ builder.Services.AddKeyedSingleton("gen", (sp, key) =>
         logger.LogError(ex, "Failed to load prompt plugin from {Dir}", wordExplainDir);
     }
 
-    var emailDir = Path.Combine(AppContext.BaseDirectory, "Plugins", "Email");
-    try
-    {
-        kb.Plugins.AddFromPromptDirectory(emailDir, "Email");
-        logger.LogInformation("Prompt plugin 'Email' loaded from {Dir}", emailDir);
-    }
-    catch (Exception ex)
-    {
-        logger.LogError(ex, "Failed to load prompt plugin from {Dir}", emailDir);
-    }
-
     var kernel = kb.Build();
 
     try

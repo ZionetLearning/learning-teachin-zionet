@@ -17,11 +17,15 @@ public class EmailService : IEmailService
         _log = log;
     }
 
-    public async Task<EmailDraftResponse> GenerateDraftAsync(EmailDraftRequest request, CancellationToken ct = default)
+    public async Task<EmailDraftResponse> GenerateDraftAsync(string emailPromptContent, CancellationToken ct = default)
     {
-        _log.LogInformation("Inside email draft generation service, Purpose={Purpose}", request.Purpose);
+        if (string.IsNullOrWhiteSpace(emailPromptContent))
+        {
+            _log.LogError("Prompt is empty for email draft generation");
+            throw new ArgumentException("Prompt cannot be empty", nameof(emailPromptContent));
+        }
 
-        var func = _kernel.Plugins["Email"]["GenerateDraft"];
+        _log.LogInformation("Generating email draft with direct prompt invocation");
 
         var exec = new AzureOpenAIPromptExecutionSettings
         {
@@ -29,29 +33,35 @@ public class EmailService : IEmailService
             ResponseFormat = typeof(EmailDraftResponse)
         };
 
-        var args = new KernelArguments(exec)
-        {
-            ["purpose"] = request.Purpose,
-            ["notes"] = request.Notes
-        };
+        var args = new KernelArguments(exec);
 
-        var result = await _kernel.InvokeAsync(func, args, ct);
+        var result = await _kernel.InvokePromptAsync(emailPromptContent, args, null, null, null, ct);
+
         var json = result.GetValue<string>();
 
         if (string.IsNullOrWhiteSpace(json))
         {
             _log.LogError("Empty response for email draft generation");
-            throw new RetryableException("Empty response for email draft generation");
+            throw new RetryableException("Empty response from model");
         }
 
-        var parsed = JsonSerializer.Deserialize<EmailDraftResponse>(json);
-        if (parsed is null)
+        try
         {
-            _log.LogError("Invalid JSON for email draft: {Json}", json);
-            throw new RetryableException("Invalid JSON format from model");
-        }
+            var parsed = JsonSerializer.Deserialize<EmailDraftResponse>(json);
 
-        return parsed;
+            if (parsed == null || string.IsNullOrWhiteSpace(parsed.Subject) || string.IsNullOrWhiteSpace(parsed.Body))
+            {
+                _log.LogError("Invalid or incomplete email draft response: {Json}", json);
+                throw new RetryableException("Incomplete model response");
+            }
+
+            return parsed;
+        }
+        catch (JsonException ex)
+        {
+            _log.LogError(ex, "Failed to parse model output JSON: {Json}", json);
+            throw new RetryableException("Malformed JSON output from model", ex);
+        }
     }
 }
 

@@ -4,6 +4,6 @@ namespace Engine.Services;
 
 public interface IEmailService
 {
-    Task<EmailDraftResponse> GenerateDraftAsync(EmailDraftRequest request, CancellationToken ct = default);
+    Task<EmailDraftResponse> GenerateDraftAsync(string emailPromptContent, CancellationToken ct = default);
 }
 

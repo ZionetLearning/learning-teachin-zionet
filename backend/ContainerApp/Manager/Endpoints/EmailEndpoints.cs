@@ -71,8 +71,9 @@ public static class EmailEndpoints
 
             var engineRequest = new EmailDraftRequest
             {
+                Subject = request.Subject,
                 Purpose = request.Purpose,
-                Notes = request.Notes
+                Language = request.PreferredLanguageCode
             };
 
             var (success, message) = await engineClient.GenerateEmailDraftAsync(engineRequest, ct);

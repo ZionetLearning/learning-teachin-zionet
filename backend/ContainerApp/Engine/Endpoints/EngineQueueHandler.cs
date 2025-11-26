@@ -1434,9 +1434,9 @@ Never invent hidden fields and do not quote this block verbatim to the user.
         {
             var payload = PayloadValidation.DeserializeOrThrow<EmailDraftRequest>(message, _logger);
 
-            if (string.IsNullOrWhiteSpace(payload.Purpose))
+            if (string.IsNullOrWhiteSpace(payload.Subject) || string.IsNullOrWhiteSpace(payload.Purpose))
             {
-                throw new NonRetryableException("Purpose is required.");
+                throw new NonRetryableException("Message payload is required.");
             }
 
             _logger.LogInformation("Processing email draft generation, Purpose={Purpose}", payload.Purpose);
@@ -1446,19 +1446,29 @@ Never invent hidden fields and do not quote this block verbatim to the user.
             if (emailPrompt?.Content != null)
             {
                 emailPromptContent = emailPrompt.Content
+                    .Replace("{subject}", payload.Subject, StringComparison.Ordinal)
                     .Replace("{purpose}", payload.Purpose, StringComparison.Ordinal)
-                    .Replace("{notes}", payload.Notes, StringComparison.Ordinal);
+                    .Replace("{language}", payload.Language.ToString(), StringComparison.Ordinal);
             }
             else
             {
                 _logger.LogWarning("Email draft prompt template not found, using fallback");
-                emailPromptContent = $"""
-                    Write a professional email based on the following purpose and notes.
-                    Purpose: {payload.Purpose}; Notes: {payload.Notes}
-                    """.Replace("{purpose}", payload.Purpose, StringComparison.Ordinal)
-                    .Replace("{notes}", payload.Notes, StringComparison.Ordinal);
-            }
+                emailPromptContent = $$"""
+                You are a professional email writer.
 
+                Write a clear and professional email based on the following information:
+                - Subject: {payload.Subject}
+                - Purpose: {payload.Purpose}
+                - Language: {payload.Language}
+
+                Respond with **only** valid JSON in this format:
+                {
+                  "subject": "...",
+                  "body": "..."
+                }
+                """;
+
+            }
 
             var result = await _emailService.GenerateDraftAsync(emailPromptContent, cancellationToken);
 
