@@ -46,7 +46,6 @@ builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
 builder.Services.AddScoped<IWordExplainService, WordExplainService>();
 
 builder.Services.AddScoped<ITavilySearchService, TavilySearchService>();
-builder.Services.AddSingleton<ISemanticKernelPlugin, WebSearchPlugin>();
 
 builder.Services
     .AddOptions<TavilySettings>()
@@ -98,10 +97,12 @@ builder.Services.AddSingleton(sp =>
 });
 
 builder.Services.AddSingleton<TimeTools>();
+builder.Services.AddSingleton<WebSearchTool>();
 
 builder.Services.AddSingleton<IList<AITool>>(sp =>
 {
     var time = sp.GetRequiredService<TimeTools>();
+    var search = sp.GetRequiredService<WebSearchTool>();
 
     var getCurrentTimeTool = AIFunctionFactory.Create(
         time.GetCurrentTime,
@@ -111,7 +112,15 @@ builder.Services.AddSingleton<IList<AITool>>(sp =>
             Description = "Returns the current time in ISO-8601 (UTC)."
         });
 
-    return new List<AITool> { getCurrentTimeTool };
+    var searchWebTool = AIFunctionFactory.Create(
+        search.SearchWebAsync,
+        new AIFunctionFactoryOptions
+        {
+            Name = "search_web",
+            Description = "Searches the web for current information, news, facts, or any topic."
+        });
+
+    return new List<AITool> { getCurrentTimeTool, searchWebTool };
 });
 
 builder.Services.AddKeyedSingleton("gen", (sp, key) =>

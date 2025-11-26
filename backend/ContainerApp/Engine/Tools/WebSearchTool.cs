@@ -1,22 +1,19 @@
 using System.ComponentModel;
-using Microsoft.SemanticKernel;
 using Engine.Services;
-using Engine.Constants;
 
-namespace Engine.Plugins;
+namespace Engine.Tools;
 
-public sealed class WebSearchPlugin : ISemanticKernelPlugin
+public sealed class WebSearchTool
 {
     private readonly ITavilySearchService _searchService;
-    private readonly ILogger<WebSearchPlugin> _logger;
+    private readonly ILogger<WebSearchTool> _logger;
 
-    public WebSearchPlugin(ITavilySearchService searchService, ILogger<WebSearchPlugin> logger)
+    public WebSearchTool(ITavilySearchService searchService, ILogger<WebSearchTool> logger)
     {
         _searchService = searchService ?? throw new ArgumentNullException(nameof(searchService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    [KernelFunction(PluginNames.WebSearch)]
     [Description("Searches the web for current information, news, facts, or any topic. Use this when the user asks about recent events, current information, or anything that requires up-to-date knowledge from the internet.")]
     public async Task<string> SearchWebAsync(
         [Description("The search query to look up on the web")] string query,
@@ -24,7 +21,7 @@ public sealed class WebSearchPlugin : ISemanticKernelPlugin
     {
         try
         {
-            _logger.LogInformation("WebSearchPlugin invoked with query: {Query}", query);
+            _logger.LogInformation("WebSearchTool invoked with query: {Query}", query);
 
             if (string.IsNullOrWhiteSpace(query))
             {
@@ -34,12 +31,12 @@ public sealed class WebSearchPlugin : ISemanticKernelPlugin
 
             var result = await _searchService.SearchAsync(query, cancellationToken);
 
-            _logger.LogInformation("WebSearchPlugin completed successfully for query: {Query}", query);
+            _logger.LogInformation("WebSearchTool completed successfully for query: {Query}", query);
             return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error in WebSearchPlugin for query: {Query}", query);
+            _logger.LogError(ex, "Error in WebSearchTool for query: {Query}", query);
             return "I encountered an error while searching the web. Please try again later.";
         }
     }
