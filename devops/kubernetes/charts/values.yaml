@@ -283,3 +283,7 @@ dapr:
 # Langfuse Configuration (optional observability tool)
 langfuse:
   enabled: false  # Set to true if you want to deploy Langfuse for LLM observability
+  
+# KEDA scaler (optional)
+keda:
+  enabled: false

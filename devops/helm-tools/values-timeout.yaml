@@ -1,0 +1,6 @@
+interceptor:
+  tcpConnectTimeout: "60s"
+  responseHeaderTimeout: "30s"
+  
+  replicas:
+    waitTimeout: "120s"
