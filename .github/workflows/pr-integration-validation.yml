@@ -16,7 +16,14 @@ on:
       - 'backend/**'
 
 jobs:
+  acquire-test-namespace:
+    runs-on: ubuntu-latest
+    environment: testing
+    steps:
+      - name: Acquire test namespace lock
+        run: echo "Test namespace acquired"
   deploy-under-test:
+    needs: acquire-test-namespace
     uses: ./.github/workflows/update-images.yaml
     permissions:
       id-token: write
