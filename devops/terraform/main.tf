@@ -287,9 +287,9 @@ data "azurerm_key_vault" "shared" {
 # PostgreSQL admin credentials will come from GitHub Actions environment variables
 # No need for Key Vault data sources - credentials passed as TF_VAR_* environment variables
 
-# module "clustersecretstore" {
-#   count       = var.environment_name == "dev" ? 1 : 0
-#   source     = "./modules/clustersecretstore"
-#   identity_id = var.identity_id
-#   tenant_id   = var.tenant_id
-# }
+module "clustersecretstore" {
+  count       = var.environment_name == "dev" ? 1 : 0
+  source     = "./modules/clustersecretstore"
+  identity_id = var.identity_id
+  tenant_id   = var.tenant_id
+}

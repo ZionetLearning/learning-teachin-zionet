@@ -5,6 +5,7 @@ kubernetes_namespace   = "dev"
 aks_cluster_name       = "aks-cluster-dev"
 key_vault_rg           = "dev-zionet-learning-2025"
 key_vault_name         = "teachin-seo-kv"
+identity_id            = "0997f44d-fadf-4be8-8dc6-202f7302f680"
 #------------- Resource Configuration -------------
 location               = "westeurope"
 
