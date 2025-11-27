@@ -20,7 +20,8 @@ export const useTrackAchievement = (feature: PracticeFeature) => {
         incrementBy,
       });
     },
-    [user?.userId, feature, trackProgressMutation],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [user?.userId, feature],
   );
 
   return {
