@@ -218,8 +218,6 @@ public static class ClassesEndpoints
         try
         {
             var success = await service.DeleteClassAsync(classId, ct);
-            var response = new DeleteClassResponse { Success = success };
-
             return success
                 ? Results.NoContent()
                 : Results.NotFound();
