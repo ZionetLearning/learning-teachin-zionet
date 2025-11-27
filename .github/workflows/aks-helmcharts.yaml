@@ -51,7 +51,7 @@ on:
       use_keda:
         required: false
         type: boolean
-        default: true
+        default: false
     outputs:
       app_url:
         description: "Ingress URL (if already created by platform setup)"
@@ -166,15 +166,6 @@ jobs:
 
           # Langfuse secrets should be available in all environments
           echo "langfuse_secrets_enabled=true" >> $GITHUB_OUTPUT
-
-          KEDA_INPUT="${{ inputs.use_keda || github.event.inputs.use_keda }}"
-          if [ -z "$KEDA_INPUT" ] || [ "$KEDA_INPUT" = "null" ]; then
-            KEDA_ENABLED=false
-          else
-            KEDA_ENABLED=$KEDA_INPUT
-          fi
-          echo "KEDA_ENABLED=$KEDA_ENABLED" >> $GITHUB_ENV
-          echo "KEDA setup enabled: $KEDA_ENABLED"
 
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
@@ -321,7 +312,7 @@ jobs:
             --set accessor.secrets.langfuse.enabled="${{ steps.setup.outputs.langfuse_secrets_enabled }}" \
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false \
-            --set keda.enabled=$KEDA_ENABLED \
+            --set keda.enabled=${{ inputs.use_keda || github.event.inputs.use_keda }} \
           | grep -n '^kind: Namespace' && { echo "Namespace still rendered"; exit 1; } || echo "OK: no Namespace in chart"
 
       - name: Helm upgrade/install app
@@ -353,7 +344,7 @@ jobs:
             --set accessor.secrets.langfuse.enabled="${{ steps.setup.outputs.langfuse_secrets_enabled }}" \
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
             --set dapr.installComponents=false \
-            --set keda.enabled=$KEDA_ENABLED \
+            --set keda.enabled=${{ inputs.use_keda || github.event.inputs.use_keda }} \
 
       - name: Add Langfuse
         if: steps.setup.outputs.deploy_langfuse == 'true' && github.event_name == 'workflow_dispatch'
