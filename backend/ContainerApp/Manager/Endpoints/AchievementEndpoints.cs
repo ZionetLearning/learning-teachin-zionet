@@ -120,7 +120,7 @@ public static class AchievementEndpoints
                 },
                 ct);
 
-            var allAchievements = await achievementAccessorClient.GetAllActiveAchievementsAsync(null, null, ct);
+            var allAchievements = await achievementAccessorClient.GetAllActiveAchievementsAsync(ct: ct);
             var featureAchievements = allAchievements
                 .Where(a => a.Feature.Equals(feature, StringComparison.OrdinalIgnoreCase))
                 .ToList();
@@ -128,7 +128,7 @@ public static class AchievementEndpoints
             log.LogInformation("Found {Count} achievements for feature {Feature}",
                 featureAchievements.Count, sanitizedFeature);
 
-            var unlockedMap = await achievementAccessorClient.GetUserUnlockedAchievementsAsync(request.UserId, null, null, ct);
+            var unlockedMap = await achievementAccessorClient.GetUserUnlockedAchievementsAsync(request.UserId, ct: ct);
             var unlockedIds = unlockedMap.Keys.ToHashSet();
 
             var unlockedAchievements = new List<string>();
