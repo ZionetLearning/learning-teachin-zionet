@@ -14,14 +14,29 @@ public class AchievementAccessorClient(
     private readonly ILogger<AchievementAccessorClient> _logger = logger;
     private readonly DaprClient _daprClient = daprClient;
 
-    public async Task<IReadOnlyList<AchievementAccessorModel>> GetAllActiveAchievementsAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<AchievementAccessorModel>> GetAllActiveAchievementsAsync(DateTime? fromDate = null, DateTime? toDate = null, CancellationToken ct = default)
     {
         try
         {
-            var achievements = await _daprClient.InvokeMethodAsync<List<AchievementAccessorModel>>(
-                HttpMethod.Get, AppIds.Accessor, "achievements-accessor", ct);
+            var queryParams = new List<string>();
 
-            _logger.LogInformation("Retrieved {Count} achievements from accessor", achievements?.Count ?? 0);
+            if (fromDate.HasValue)
+            {
+                queryParams.Add($"fromDate={fromDate.Value:O}");
+            }
+
+            if (toDate.HasValue)
+            {
+                queryParams.Add($"toDate={toDate.Value:O}");
+            }
+
+            var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : string.Empty;
+
+            var achievements = await _daprClient.InvokeMethodAsync<List<AchievementAccessorModel>>(
+                HttpMethod.Get, AppIds.Accessor, $"achievements-accessor{queryString}", ct);
+
+            _logger.LogInformation("Retrieved {Count} achievements from accessor. FromDate={FromDate}, ToDate={ToDate}",
+                achievements?.Count ?? 0, fromDate, toDate);
             return achievements ?? new List<AchievementAccessorModel>();
         }
         catch (Exception ex)
@@ -31,14 +46,30 @@ public class AchievementAccessorClient(
         }
     }
 
-    public async Task<IReadOnlyDictionary<Guid, DateTime>> GetUserUnlockedAchievementsAsync(Guid userId, CancellationToken ct = default)
+    public async Task<IReadOnlyDictionary<Guid, DateTime>> GetUserUnlockedAchievementsAsync(Guid userId, DateTime? fromDate = null, DateTime? toDate = null, CancellationToken ct = default)
     {
         try
         {
-            var unlockedAchievements = await _daprClient.InvokeMethodAsync<List<AchievementAccessorModel>>(
-                HttpMethod.Get, AppIds.Accessor, $"achievements-accessor/user/{userId}/unlocked", ct);
+            var queryParams = new List<string>();
 
-            _logger.LogInformation("Retrieved {Count} unlocked achievements for user {UserId}", unlockedAchievements?.Count ?? 0, userId);
+            if (fromDate.HasValue)
+            {
+                queryParams.Add($"fromDate={fromDate.Value:O}");
+            }
+
+            if (toDate.HasValue)
+            {
+                queryParams.Add($"toDate={toDate.Value:O}");
+            }
+
+            var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : string.Empty;
+
+            var unlockedAchievements = await _daprClient.InvokeMethodAsync<List<AchievementAccessorModel>>(
+                HttpMethod.Get, AppIds.Accessor, $"achievements-accessor/user/{userId}/unlocked{queryString}", ct);
+
+            _logger.LogInformation(
+                "Retrieved {Count} unlocked achievements for user {UserId}. FromDate={FromDate}, ToDate={ToDate}",
+                unlockedAchievements?.Count ?? 0, userId, fromDate, toDate);
 
             return unlockedAchievements?.ToDictionary(a => a.AchievementId, a => a.CreatedAt)
                 ?? new Dictionary<Guid, DateTime>();

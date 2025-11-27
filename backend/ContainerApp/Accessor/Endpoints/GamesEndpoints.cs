@@ -74,16 +74,18 @@ public static class GamesEndpoints
         [FromQuery] int page,
         [FromQuery] int pageSize,
         [FromQuery] bool getPending,
+        [FromQuery] DateTimeOffset? fromDate,
+        [FromQuery] DateTimeOffset? toDate,
         [FromServices] IGameService service,
         ILogger<IGameService> logger,
         CancellationToken ct)
     {
         try
         {
-            logger.LogInformation("GetHistoryAsync called. StudentId={StudentId}, Summary={Summary}, GetPending={GetPending}, Page={Page}, PageSize={PageSize}",
-                studentId, summary, getPending, page, pageSize);
+            logger.LogInformation("GetHistoryAsync called. StudentId={StudentId}, Summary={Summary}, GetPending={GetPending}, Page={Page}, PageSize={PageSize}, FromDate={FromDate}, ToDate={ToDate}",
+                studentId, summary, getPending, page, pageSize, fromDate, toDate);
 
-            var result = await service.GetHistoryAsync(studentId, summary, page, pageSize, getPending, ct);
+            var result = await service.GetHistoryAsync(studentId, summary, page, pageSize, getPending, fromDate, toDate, ct);
 
             if (result.IsSummary)
             {
@@ -109,15 +111,19 @@ public static class GamesEndpoints
         [FromRoute] Guid studentId,
         [FromQuery] int page,
         [FromQuery] int pageSize,
+        [FromQuery] DateTimeOffset? fromDate,
+        [FromQuery] DateTimeOffset? toDate,
         [FromServices] IGameService service,
         ILogger<IGameService> logger,
         CancellationToken ct)
     {
         try
         {
-            logger.LogInformation("GetMistakesAsync called. StudentId={StudentId}, Page={Page}, PageSize={PageSize}", studentId, page, pageSize);
+            logger.LogInformation(
+                "GetMistakesAsync called. StudentId={StudentId}, Page={Page}, PageSize={PageSize}, FromDate={FromDate}, ToDate={ToDate}",
+                studentId, page, pageSize, fromDate, toDate);
 
-            var result = await service.GetMistakesAsync(studentId, page, pageSize, ct);
+            var result = await service.GetMistakesAsync(studentId, page, pageSize, fromDate, toDate, ct);
 
             logger.LogInformation("GetMistakesAsync returned {Records} mistakes (page). TotalCount={TotalCount}", result.Items.Count(), result.TotalCount);
 
