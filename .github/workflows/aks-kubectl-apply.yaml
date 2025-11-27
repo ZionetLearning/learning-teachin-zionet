@@ -116,19 +116,24 @@ jobs:
           
           # Set domain and TLS secret based on environment
           if [ "$ENV_NAME" = "prod" ]; then
-            export GRAFANA_DOMAIN="teachin-prod.westeurope.cloudapp.azure.com"
-            export TLS_SECRET_NAME="teachin-prod-tls"
+            GRAFANA_DOMAIN="teachin-prod.westeurope.cloudapp.azure.com"
+            TLS_SECRET_NAME="teachin-prod-tls"
           else
-            export GRAFANA_DOMAIN="teachin.westeurope.cloudapp.azure.com"
-            export TLS_SECRET_NAME="teachin-tls"
+            GRAFANA_DOMAIN="teachin.westeurope.cloudapp.azure.com"
+            TLS_SECRET_NAME="teachin-tls"
           fi
           
           echo "Applying Grafana ingress for environment: $ENV_NAME"
           echo "Domain: $GRAFANA_DOMAIN"
           echo "TLS Secret: $TLS_SECRET_NAME"
           
-          # Apply the ingress with environment variable substitution
-          envsubst < "$K8S_DIR/ingress/grafana-ingress.yaml" | kubectl apply -f -
+          # Create temporary file with substituted values
+          cp "$K8S_DIR/ingress/grafana-ingress.yaml" /tmp/grafana-ingress-temp.yaml
+          sed -i "s/\${GRAFANA_DOMAIN:-teachin.westeurope.cloudapp.azure.com}/$GRAFANA_DOMAIN/g" /tmp/grafana-ingress-temp.yaml
+          sed -i "s/\${TLS_SECRET_NAME:-teachin-tls}/$TLS_SECRET_NAME/g" /tmp/grafana-ingress-temp.yaml
+          
+          # Apply the modified ingress
+          kubectl apply -f /tmp/grafana-ingress-temp.yaml
 
       - name: Add Prometheus
         run: |
