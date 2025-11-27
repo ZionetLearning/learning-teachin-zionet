@@ -1,5 +1,8 @@
 name: AI Code Reviewer
 
+concurrency:
+  group: backend-ci-test
+  cancel-in-progress: false
 on:
   pull_request:
     types: [opened]
