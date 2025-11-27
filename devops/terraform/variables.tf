@@ -170,6 +170,17 @@ variable "shared_redis_name" {
   description = "Name of shared Redis cache, if using shared"
 }
 
+#------------- Key Vault Variables -------------
+variable "key_vault_rg" {
+  description = "Resource group name of the Key Vault"
+  type        = string
+}
+
+variable "key_vault_name" {
+  description = "Name of the Key Vault"
+  type        = string
+}
+
 #------------- Environment Variables -------------
 variable "environment_name" {
   description = "Name of the environment (e.g., dev, staging, prod, feature-123)"

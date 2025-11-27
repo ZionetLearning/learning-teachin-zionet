@@ -280,8 +280,8 @@ module "frontend" {
 
 # Reference the shared Key Vault instead of creating new ones
 data "azurerm_key_vault" "shared" {
-  name                = "teachin-seo-kv"
-  resource_group_name = "dev-zionet-learning-2025"
+  name                = var.key_vault_name
+  resource_group_name = var.key_vault_rg
 }
 
 # PostgreSQL admin credentials will come from GitHub Actions environment variables

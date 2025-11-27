@@ -3,6 +3,8 @@ environment_name       = "dev"
 use_shared_aks         = false  # dev still uses its own cluster
 kubernetes_namespace   = "dev"
 aks_cluster_name       = "aks-cluster-dev"
+key_vault_rg           = "dev-zionet-learning-2025"
+key_vault_name         = "teachin-seo-kv"
 #------------- Resource Configuration -------------
 location               = "westeurope"
 
