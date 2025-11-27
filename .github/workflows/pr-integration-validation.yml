@@ -1,9 +1,5 @@
 name: Backend - CI For PRs
 
-concurrency:
-  group: backend-ci-test
-  cancel-in-progress: false
-  
 on:
   workflow_dispatch:
   push:
@@ -22,6 +18,7 @@ jobs:
     steps:
       - name: Acquire test namespace lock
         run: echo "Test namespace acquired"
+        
   deploy-under-test:
     needs: acquire-test-namespace
     uses: ./.github/workflows/update-images.yaml
