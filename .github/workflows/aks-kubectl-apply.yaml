@@ -103,7 +103,12 @@ jobs:
           AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           AZURE_CLIENT_ID: ${{ secrets.AZURE_APPLICATION_ID }}
           AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-
+          
+      - name: Install KEDA
+        run: |
+          cd devops/helm-tools
+          chmod +x keda.sh
+          ./keda.sh
 
       # - name: Create devops-tools namespace
       #   run: |
