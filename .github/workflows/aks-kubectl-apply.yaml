@@ -106,7 +106,7 @@ jobs:
           
       - name: Install KEDA
         run: |
-          cd devops/helm-tools/keda
+          cd devops/helm-tools
           chmod +x keda.sh
           ./keda.sh
 
