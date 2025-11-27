@@ -1,5 +1,4 @@
 ﻿using System.Net;
-using AutoMapper;
 using Dapr.Client;
 using Manager.Constants;
 using Manager.Models;
@@ -9,19 +8,19 @@ using Manager.Models.Chat;
 using Manager.Models.UserGameConfiguration;
 using Manager.Models.Users;
 using Manager.Services.Clients.Accessor.Models;
+using Manager.Services.Clients.Accessor.Models.Media;
+using Manager.Services.Clients.Accessor.Models.UserGameConfiguration;
 using Manager.Services.Clients.Accessor.Interfaces;
 
 namespace Manager.Services.Clients.Accessor;
 
 public class AccessorClient(
     ILogger<AccessorClient> logger,
-    DaprClient daprClient,
-    IMapper mapper
+    DaprClient daprClient
     ) : IAccessorClient
 {
     private readonly ILogger<AccessorClient> _logger = logger;
     private readonly DaprClient _daprClient = daprClient;
-    private readonly IMapper _mapper = mapper;
 
     public async Task<int> CleanupRefreshSessionsAsync(CancellationToken ct = default)
     {
@@ -99,7 +98,7 @@ public class AccessorClient(
         }
     }
 
-    public async Task<SpeechTokenResponse> GetSpeechTokenAsync(CancellationToken ct = default)
+    public async Task<GetSpeechTokenAccessorResponse> GetSpeechTokenAsync(CancellationToken ct = default)
     {
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetSpeechTokenAsync), nameof(AccessorClient));
         try
@@ -109,7 +108,12 @@ public class AccessorClient(
                 AppIds.Accessor,
                 "media-accessor/speech/token",
                 ct);
-            return speechTokenResponse;
+
+            return new GetSpeechTokenAccessorResponse
+            {
+                Token = speechTokenResponse.Token,
+                Region = speechTokenResponse.Region
+            };
         }
         catch (Exception ex)
         {
@@ -226,20 +230,27 @@ public class AccessorClient(
         }
     }
 
-    public async Task<UserGameConfig> GetUserGameConfigAsync(Guid userId, GameName gameName, CancellationToken ct)
+    public async Task<GetGameConfigAccessorResponse> GetUserGameConfigAsync(Guid userId, GameName gameName, CancellationToken ct)
     {
         _logger.LogInformation("Get User's Game Configuration. UserId={UserId}, Game Name={GameName}", userId, gameName);
 
         try
         {
-
             var response = await _daprClient.InvokeMethodAsync<UserGameConfig>(
                 HttpMethod.Get,
                 AppIds.Accessor,
                 $"game-config-accessor?userId={userId}&gameName={gameName}",
                 cancellationToken: ct
             );
-            return response;
+
+            return new GetGameConfigAccessorResponse
+            {
+                UserId = response.UserId,
+                GameName = response.GameName,
+                Difficulty = response.Difficulty,
+                Nikud = response.Nikud,
+                NumberOfSentences = response.NumberOfSentences
+            };
         }
         catch (Exception)
         {
@@ -248,13 +259,19 @@ public class AccessorClient(
         }
     }
 
-    public async Task SaveUserGameConfigAsync(Guid userId, UserNewGameConfig gameName, CancellationToken ct)
+    public async Task SaveUserGameConfigAsync(SaveGameConfigAccessorRequest request, CancellationToken ct)
     {
-        _logger.LogInformation("Save User's Game Configuration. UserId={UserId}, Game Name={GameName}", userId, gameName);
+        _logger.LogInformation("Save User's Game Configuration. UserId={UserId}, Game Name={GameName}", request.UserId, request.GameName);
         try
         {
-            var payload = _mapper.Map<UserGameConfig>(gameName);
-            payload.UserId = userId;
+            var payload = new UserGameConfig
+            {
+                UserId = request.UserId,
+                GameName = request.GameName,
+                Difficulty = request.Difficulty,
+                Nikud = request.Nikud,
+                NumberOfSentences = request.NumberOfSentences
+            };
 
             await _daprClient.InvokeMethodAsync(
                 HttpMethod.Put,
@@ -266,7 +283,7 @@ public class AccessorClient(
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to save user configuration for UserId={UserId}", userId);
+            _logger.LogError(ex, "Failed to save user configuration for UserId={UserId}", request.UserId);
             throw;
         }
     }

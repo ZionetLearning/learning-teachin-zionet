@@ -49,7 +49,7 @@ public static class WordCardsEndpoints
                 userId, fromDate, toDate);
 
             var accessorResponse = await wordCardsAccessorClient.GetWordCardsAsync(userId, fromDate, toDate, ct);
-            var response = accessorResponse.ToFront();
+            var response = accessorResponse.ToApiModel();
 
             return Results.Ok(response);
         }
@@ -81,7 +81,7 @@ public static class WordCardsEndpoints
 
             var accessorRequest = request.ToAccessor(userId);
             var accessorResponse = await wordCardsAccessorClient.CreateWordCardAsync(accessorRequest, ct);
-            var response = accessorResponse.ToFront();
+            var response = accessorResponse.ToApiModel();
 
             return Results.Ok(response);
         }
@@ -113,7 +113,7 @@ public static class WordCardsEndpoints
 
             var accessorRequest = request.ToAccessor(userId);
             var accessorResponse = await wordCardsAccessorClient.UpdateLearnedStatusAsync(accessorRequest, ct);
-            var response = accessorResponse.ToFront();
+            var response = accessorResponse.ToApiModel();
 
             return Results.Ok(response);
         }

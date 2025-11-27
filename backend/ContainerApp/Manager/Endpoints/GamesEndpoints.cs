@@ -61,7 +61,7 @@ public static class GamesEndpoints
             logger.LogInformation("SubmitAttempts called by role={Role}, studentId={StudentId}", callerRole, studentId);
 
             var accessorResult = await gameAccessorClient.SubmitAttemptAsync(studentId, request, ct);
-            var response = accessorResult.ToFront();
+            var response = accessorResult.ToApiModel();
 
             logger.LogInformation(
                 "Attempt submitted successfully for StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}, Status={Status}, AttemptNumber={AttemptNumber}",
@@ -116,7 +116,7 @@ public static class GamesEndpoints
                 studentId, summary, getPending, page, pageSize, fromDate, toDate);
 
             var accessorResult = await gameAccessorClient.GetHistoryAsync(studentId, summary, page, pageSize, getPending, fromDate, toDate, ct);
-            var response = accessorResult.ToFront();
+            var response = accessorResult.ToApiModel();
 
             if (response.IsSummary)
             {
@@ -164,7 +164,7 @@ public static class GamesEndpoints
                 studentId, page, pageSize, fromDate, toDate);
 
             var accessorResult = await gameAccessorClient.GetMistakesAsync(studentId, page, pageSize, fromDate, toDate, ct);
-            var response = accessorResult.ToFront();
+            var response = accessorResult.ToApiModel();
 
             return Results.Ok(response);
         }
@@ -187,7 +187,7 @@ public static class GamesEndpoints
             logger.LogInformation("Fetching all histories Page={Page}, PageSize={PageSize}", page, pageSize);
 
             var accessorResult = await gameAccessorClient.GetAllHistoriesAsync(page, pageSize, ct);
-            var response = accessorResult.ToFront();
+            var response = accessorResult.ToApiModel();
 
             return Results.Ok(response);
         }

@@ -82,7 +82,7 @@ public class AiEndpointsTests
         var chatId = Guid.NewGuid();
         var userId = Guid.NewGuid();
 
-        var history = new ChatHistoryForFrontDto
+        var history = new GetChatHistoryResponse
         {
             ChatId = chatId,
             Name = "Test Chat",

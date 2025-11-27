@@ -7,6 +7,7 @@ using Manager.Constants;
 using Manager.Models;
 using Manager.Models.QueueMessages;
 using Manager.Services.Clients.Accessor.Interfaces;
+using Manager.Services.Clients.Accessor.Models.Tasks;
 
 namespace Manager.Services.Clients.Accessor;
 
@@ -24,68 +25,6 @@ public class TaskAccessorClient : ITaskAccessorClient
         _logger = logger;
         _daprClient = daprClient;
         _httpContextAccessor = httpContextAccessor;
-    }
-
-    public async Task<TaskModel?> GetTaskAsync(int id)
-    {
-        _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetTaskAsync), nameof(TaskAccessorClient));
-        try
-        {
-            var task = await _daprClient.InvokeMethodAsync<TaskModel?>(
-                HttpMethod.Get, AppIds.Accessor, $"tasks-accessor/task/{id}");
-            _logger.LogDebug("Received task {TaskId} from Accessor service", id);
-            return task;
-        }
-        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
-        {
-            _logger.LogWarning("Task with ID {TaskId} not found (404 from accessor)", id);
-            return null;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to get task {TaskId} from Accessor service", id);
-            throw;
-        }
-    }
-
-    public async Task<bool> UpdateTaskName(int id, string newTaskName)
-    {
-        _logger.LogInformation("Inside: {Method} in {Class}", nameof(UpdateTaskName), nameof(TaskAccessorClient));
-        try
-        {
-            var task = await GetTaskAsync(id);
-            if (task == null)
-            {
-                _logger.LogWarning("Task {TaskId} not found, cannot update name.", id);
-                return false;
-            }
-
-            var payload = JsonSerializer.SerializeToElement(new
-            {
-                id,
-                name = newTaskName,
-                payload = ""
-            });
-
-            var message = new Message
-            {
-                ActionName = MessageAction.UpdateTask,
-                Payload = payload
-            };
-
-            await _daprClient.InvokeBindingAsync(
-                $"{QueueNames.AccessorQueue}-out",
-                "create",
-                message
-            );
-
-            return true;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to send task name update to queue for task {TaskId}", id);
-            throw;
-        }
     }
 
     public async Task<bool> DeleteTask(int id)
@@ -110,7 +49,7 @@ public class TaskAccessorClient : ITaskAccessorClient
         }
     }
 
-    public async Task<(bool success, string message)> PostTaskAsync(TaskModel task)
+    public async Task<CreateTaskAccessorResponse> PostTaskAsync(CreateTaskAccessorRequest request)
     {
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(PostTaskAsync), nameof(TaskAccessorClient));
 
@@ -123,7 +62,15 @@ public class TaskAccessorClient : ITaskAccessorClient
                 throw new InvalidOperationException("Authenticated user id is missing or not a valid GUID.");
             }
 
-            var payload = JsonSerializer.SerializeToElement(task);
+            // Create a temporary TaskModel for queue message (keeping backward compatibility with queue structure)
+            var taskModel = new TaskModel
+            {
+                Id = request.Id,
+                Name = request.Name,
+                Payload = request.Payload
+            };
+
+            var payload = JsonSerializer.SerializeToElement(taskModel);
             var userContextMetadata = JsonSerializer.SerializeToElement(
                 new UserContextMetadata
                 {
@@ -141,21 +88,26 @@ public class TaskAccessorClient : ITaskAccessorClient
             await _daprClient.InvokeBindingAsync($"{QueueNames.AccessorQueue}-out", "create", message);
 
             _logger.LogDebug(
-                "Task {TaskId} sent to Accessor via binding '{Binding}' for user {UserId}",
-                task.Id,
+                "Task sent to Accessor via binding '{Binding}' for user {UserId}",
                 QueueNames.AccessorQueue,
                 userId
             );
-            return (true, "sent to queue");
+
+            return new CreateTaskAccessorResponse
+            {
+                Success = true,
+                Message = "sent to queue",
+                Id = request.Id
+            };
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send task {TaskId} to Accessor", task.Id);
+            _logger.LogError(ex, "Failed to send task to Accessor");
             throw;
         }
     }
 
-    public async Task<(TaskModel? Task, string? ETag)> GetTaskWithEtagAsync(int id, CancellationToken ct = default)
+    public async Task<(GetTaskAccessorResponse? Task, string? ETag)> GetTaskWithEtagAsync(int id, CancellationToken ct = default)
     {
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetTaskWithEtagAsync), nameof(TaskAccessorClient));
 
@@ -175,9 +127,21 @@ public class TaskAccessorClient : ITaskAccessorClient
 
             var etag = resp.Headers.ETag?.Tag?.Trim('"');
 
-            var task = await resp.Content.ReadFromJsonAsync<TaskModel>(cancellationToken: ct);
+            var taskModel = await resp.Content.ReadFromJsonAsync<TaskModel>(cancellationToken: ct);
 
-            return (task, etag);
+            if (taskModel is null)
+            {
+                return (null, null);
+            }
+
+            var accessorResponse = new GetTaskAccessorResponse
+            {
+                Id = taskModel.Id,
+                Name = taskModel.Name,
+                Payload = taskModel.Payload
+            };
+
+            return (accessorResponse, etag);
         }
         catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
         {
@@ -191,9 +155,9 @@ public class TaskAccessorClient : ITaskAccessorClient
         }
     }
 
-    public async Task<IReadOnlyList<TaskSummaryDto>> GetTaskSummariesAsync(CancellationToken ct = default)
+    public async Task<GetTasksAccessorResponse> GetTasksAsync(CancellationToken ct = default)
     {
-        _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetTaskSummariesAsync), nameof(TaskAccessorClient));
+        _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetTasksAsync), nameof(TaskAccessorClient));
         try
         {
             var list = await _daprClient.InvokeMethodAsync<List<TaskSummaryDto>>(
@@ -203,12 +167,25 @@ public class TaskAccessorClient : ITaskAccessorClient
                 ct);
 
             _logger.LogInformation("Accessor returned {Count} task summaries", list?.Count ?? 0);
-            return list ?? new List<TaskSummaryDto>();
+
+            var tasks = list?.Select(t => new TaskSummaryAccessorDto
+            {
+                Id = t.Id,
+                Name = t.Name
+            }).ToList() ?? new List<TaskSummaryAccessorDto>();
+
+            return new GetTasksAccessorResponse
+            {
+                Tasks = tasks
+            };
         }
         catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
         {
             _logger.LogWarning("Accessor returned 404 for tasks list");
-            return Array.Empty<TaskSummaryDto>();
+            return new GetTasksAccessorResponse
+            {
+                Tasks = Array.Empty<TaskSummaryAccessorDto>()
+            };
         }
         catch (Exception ex)
         {
@@ -217,7 +194,7 @@ public class TaskAccessorClient : ITaskAccessorClient
         }
     }
 
-    public async Task<UpdateTaskNameResult> UpdateTaskNameAsync(int id, string newTaskName, string ifMatch, CancellationToken ct = default)
+    public async Task<UpdateTaskNameAccessorResponse> UpdateTaskNameAsync(int id, string newTaskName, string ifMatch, CancellationToken ct = default)
     {
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(UpdateTaskNameAsync), nameof(TaskAccessorClient));
 
@@ -239,20 +216,38 @@ public class TaskAccessorClient : ITaskAccessorClient
             if (resp.StatusCode == HttpStatusCode.NotFound)
             {
                 _logger.LogWarning("Task {TaskId} not found for update", id);
-                return new UpdateTaskNameResult(false, true, false, null);
+                return new UpdateTaskNameAccessorResponse
+                {
+                    Updated = false,
+                    NotFound = true,
+                    PreconditionFailed = false,
+                    NewEtag = null
+                };
             }
 
             if ((int)resp.StatusCode == StatusCodes.Status412PreconditionFailed)
             {
                 _logger.LogWarning("Precondition failed for Task {TaskId} (ETag mismatch)", id);
-                return new UpdateTaskNameResult(false, false, true, null);
+                return new UpdateTaskNameAccessorResponse
+                {
+                    Updated = false,
+                    NotFound = false,
+                    PreconditionFailed = true,
+                    NewEtag = null
+                };
             }
 
             resp.EnsureSuccessStatusCode();
 
             var newEtag = resp.Headers.ETag?.Tag?.Trim('"');
             _logger.LogInformation("Task {TaskId} updated; new ETag {ETag}", id, newEtag);
-            return new UpdateTaskNameResult(true, false, false, newEtag);
+            return new UpdateTaskNameAccessorResponse
+            {
+                Updated = true,
+                NotFound = false,
+                PreconditionFailed = false,
+                NewEtag = newEtag
+            };
         }
         catch (Exception ex)
         {

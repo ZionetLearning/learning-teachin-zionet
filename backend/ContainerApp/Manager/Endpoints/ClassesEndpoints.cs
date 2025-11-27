@@ -57,7 +57,7 @@ public static class ClassesEndpoints
                 return Results.NotFound("Class not found.");
             }
 
-            var response = accessorResult.ToFront();
+            var response = accessorResult.ToApiModel();
             return Results.Ok(response);
         }
         catch (Exception ex)
@@ -82,7 +82,7 @@ public static class ClassesEndpoints
                 return Results.NotFound("Classes not found.");
             }
 
-            var response = accessorResult.ToFront();
+            var response = accessorResult.ToApiModel();
             return Results.Ok(response);
         }
         catch (Exception ex)
@@ -115,7 +115,7 @@ public static class ClassesEndpoints
                 return Results.NotFound("Classes not found.");
             }
 
-            var response = accessorResult.ToFront();
+            var response = accessorResult.ToApiModel();
             return Results.Ok(response);
         }
         catch (Exception ex)
@@ -151,7 +151,7 @@ public static class ClassesEndpoints
                 return Results.Conflict("Class with same name or code already exists.");
             }
 
-            var response = accessorResult.ToFront();
+            var response = accessorResult.ToApiModel();
             return Results.Created($"/classes-manager/{response.ClassId}", response);
         }
         catch (Exception ex)
