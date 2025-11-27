@@ -26,7 +26,7 @@ public static class MediaEndpoints
         try
         {
             var accessorResponse = await accessorClient.GetSpeechTokenAsync(ct);
-            var response = accessorResponse.ToFront();
+            var response = accessorResponse.ToApiModel();
 
             if (!string.IsNullOrWhiteSpace(response.Token))
             {

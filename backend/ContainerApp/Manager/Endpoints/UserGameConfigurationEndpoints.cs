@@ -50,7 +50,7 @@ public static class UserGameConfigurationEndpoints
             }
 
             var accessorResponse = await accessorClient.GetUserGameConfigAsync(userId, gameName, ct);
-            var response = accessorResponse.ToFront();
+            var response = accessorResponse.ToApiModel();
             return Results.Ok(response);
         }
         catch (InvocationException)

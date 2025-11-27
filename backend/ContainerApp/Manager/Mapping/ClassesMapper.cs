@@ -14,7 +14,7 @@ public static class ClassesMapper
     /// <summary>
     /// Maps Accessor response to frontend GetClassResponse
     /// </summary>
-    public static GetClassResponse ToFront(this GetClassAccessorResponse accessorResponse)
+    public static GetClassResponse ToApiModel(this GetClassAccessorResponse accessorResponse)
     {
         return new GetClassResponse
         {
@@ -36,7 +36,7 @@ public static class ClassesMapper
     /// <summary>
     /// Maps Accessor response to frontend GetAllClassesResponse
     /// </summary>
-    public static GetAllClassesResponse ToFront(this GetAllClassesAccessorResponse accessorResponse)
+    public static GetAllClassesResponse ToApiModel(this GetAllClassesAccessorResponse accessorResponse)
     {
         return new GetAllClassesResponse
         {
@@ -61,7 +61,7 @@ public static class ClassesMapper
     /// <summary>
     /// Maps Accessor response to frontend GetMyClassesResponse
     /// </summary>
-    public static GetMyClassesResponse ToFront(this GetMyClassesAccessorResponse accessorResponse)
+    public static GetMyClassesResponse ToApiModel(this GetMyClassesAccessorResponse accessorResponse)
     {
         return new GetMyClassesResponse
         {
@@ -98,7 +98,7 @@ public static class ClassesMapper
     /// <summary>
     /// Maps Accessor response to frontend CreateClassResponse
     /// </summary>
-    public static CreateClassResponse ToFront(this CreateClassAccessorResponse accessorResponse)
+    public static CreateClassResponse ToApiModel(this CreateClassAccessorResponse accessorResponse)
     {
         return new CreateClassResponse
         {

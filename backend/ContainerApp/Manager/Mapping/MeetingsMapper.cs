@@ -34,7 +34,7 @@ public static class MeetingsMapper
     /// <summary>
     /// Maps Accessor CreateMeetingAccessorResponse to frontend CreateMeetingResponse
     /// </summary>
-    public static CreateMeetingResponse ToFront(this CreateMeetingAccessorResponse accessorResponse)
+    public static CreateMeetingResponse ToApiModel(this CreateMeetingAccessorResponse accessorResponse)
     {
         return new CreateMeetingResponse
         {
@@ -61,7 +61,7 @@ public static class MeetingsMapper
     /// <summary>
     /// Maps Accessor GetMeetingAccessorResponse to frontend GetMeetingResponse
     /// </summary>
-    public static GetMeetingResponse ToFront(this GetMeetingAccessorResponse accessorResponse)
+    public static GetMeetingResponse ToApiModel(this GetMeetingAccessorResponse accessorResponse)
     {
         return new GetMeetingResponse
         {
@@ -88,9 +88,9 @@ public static class MeetingsMapper
     /// <summary>
     /// Maps list of GetMeetingAccessorResponse to enumerable of GetMeetingResponse
     /// </summary>
-    public static IEnumerable<GetMeetingResponse> ToFront(this IReadOnlyList<GetMeetingAccessorResponse> accessorMeetings)
+    public static IEnumerable<GetMeetingResponse> ToApiModel(this IReadOnlyList<GetMeetingAccessorResponse> accessorMeetings)
     {
-        return accessorMeetings.Select(m => m.ToFront());
+        return accessorMeetings.Select(m => m.ToApiModel());
     }
 
     #endregion
@@ -123,7 +123,7 @@ public static class MeetingsMapper
     /// <summary>
     /// Maps Accessor GenerateMeetingTokenAccessorResponse to frontend GenerateMeetingTokenResponse
     /// </summary>
-    public static GenerateMeetingTokenResponse ToFront(this GenerateMeetingTokenAccessorResponse accessorResponse)
+    public static GenerateMeetingTokenResponse ToApiModel(this GenerateMeetingTokenAccessorResponse accessorResponse)
     {
         return new GenerateMeetingTokenResponse
         {

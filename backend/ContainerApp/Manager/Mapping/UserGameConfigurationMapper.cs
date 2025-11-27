@@ -12,7 +12,7 @@ public static class UserGameConfigurationMapper
     /// <summary>
     /// Maps Accessor response to frontend GetGameConfigResponse
     /// </summary>
-    public static GetGameConfigResponse ToFront(this GetGameConfigAccessorResponse accessorResponse)
+    public static GetGameConfigResponse ToApiModel(this GetGameConfigAccessorResponse accessorResponse)
     {
         return new GetGameConfigResponse
         {

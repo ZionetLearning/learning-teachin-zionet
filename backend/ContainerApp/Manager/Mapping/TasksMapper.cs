@@ -15,7 +15,7 @@ public static class TasksMapper
     /// <summary>
     /// Maps Accessor response to frontend GetTaskResponse
     /// </summary>
-    public static GetTaskResponse ToFront(this GetTaskAccessorResponse accessorResponse)
+    public static GetTaskResponse ToApiModel(this GetTaskAccessorResponse accessorResponse)
     {
         return new GetTaskResponse
         {
@@ -32,7 +32,7 @@ public static class TasksMapper
     /// <summary>
     /// Maps Accessor response to frontend tasks list
     /// </summary>
-    public static IReadOnlyList<TaskSummaryDto> ToFront(this GetTasksAccessorResponse accessorResponse)
+    public static IReadOnlyList<TaskSummaryDto> ToApiModel(this GetTasksAccessorResponse accessorResponse)
     {
         return accessorResponse.Tasks.Select(t => new TaskSummaryDto
         {
@@ -61,7 +61,7 @@ public static class TasksMapper
     /// <summary>
     /// Maps Accessor response to frontend CreateTaskResponse
     /// </summary>
-    public static CreateTaskResponse ToFront(this CreateTaskAccessorResponse accessorResponse)
+    public static CreateTaskResponse ToApiModel(this CreateTaskAccessorResponse accessorResponse)
     {
         return new CreateTaskResponse
         {
@@ -89,7 +89,7 @@ public static class TasksMapper
     /// <summary>
     /// Maps Accessor response to frontend UpdateTaskNameResponse
     /// </summary>
-    public static UpdateTaskNameResponse ToFront(this UpdateTaskNameAccessorResponse accessorResponse)
+    public static UpdateTaskNameResponse ToApiModel(this UpdateTaskNameAccessorResponse accessorResponse)
     {
         return new UpdateTaskNameResponse
         {

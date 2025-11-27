@@ -11,7 +11,7 @@ public static class MediaMapper
     /// <summary>
     /// Maps Accessor response to frontend GetSpeechTokenResponse
     /// </summary>
-    public static GetSpeechTokenResponse ToFront(this GetSpeechTokenAccessorResponse accessorResponse)
+    public static GetSpeechTokenResponse ToApiModel(this GetSpeechTokenAccessorResponse accessorResponse)
     {
         return new GetSpeechTokenResponse
         {

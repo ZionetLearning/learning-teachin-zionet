@@ -156,7 +156,7 @@ public static class AiEndpoints
             }
             else
             {
-                log.LogError("Engine chat failed - service returned failure for request {RequestId}", requestId);
+                log.LogError("Engine chat failed - service returned failure for engineRequest {RequestId}", requestId);
                 return Results.Problem(
                     title: "Engine chat failed",
                     detail: "Upstream service returned an error.",
@@ -299,7 +299,7 @@ public static class AiEndpoints
             }
             else
             {
-                log.LogError("Engine chat failed - service returned failure for request {RequestId}", requestId);
+                log.LogError("Engine chat failed - service returned failure for engineRequest {RequestId}", requestId);
                 return Results.Problem(
                     title: "Engine chat failed",
                     detail: "Upstream service returned an error.",
@@ -390,7 +390,7 @@ public static class AiEndpoints
             return Results.BadRequest(new { error = "Request is required" });
         }
 
-        logger.LogInformation("Received sentence generation request for GameType={GameType}", dto.GameType);
+        logger.LogInformation("Received sentence generation engineRequest for GameType={GameType}", dto.GameType);
 
         try
         {
@@ -439,7 +439,7 @@ public static class AiEndpoints
             return Results.BadRequest(new { error = "Request is required" });
         }
 
-        logger.LogInformation("Received split sentence generation request for GameType={GameType}", dto.GameType);
+        logger.LogInformation("Received split sentence generation engineRequest for GameType={GameType}", dto.GameType);
 
         try
         {
@@ -526,7 +526,7 @@ public static class AiEndpoints
 
             if (engineResponse.success)
             {
-                log.LogInformation("Explain mistake request {RequestId} (thread {Thread}) accepted", requestId, threadId);
+                log.LogInformation("Explain mistake engineRequest {RequestId} (thread {Thread}) accepted", requestId, threadId);
                 return Results.Ok(new
                 {
                     requestId
@@ -534,7 +534,7 @@ public static class AiEndpoints
             }
             else
             {
-                log.LogError("Engine explain mistake failed - service returned failure for request {RequestId}", requestId);
+                log.LogError("Engine explain mistake failed - service returned failure for engineRequest {RequestId}", requestId);
                 return Results.Problem(
                     title: "Engine explain mistake failed",
                     detail: "Upstream service returned an error.",
@@ -597,45 +597,45 @@ public static class AiEndpoints
     }
 
     private static async Task<IResult> WordExplainAsync(
-    [FromBody] WordExplainRequest dto,
+    [FromBody] WordExplainRequest request,
     [FromServices] IEngineClient engineClient,
     [FromServices] ILogger<WordsEndpoint> logger,
     HttpContext httpContext,
     CancellationToken ct)
     {
-        if (dto is null)
+        if (request is null)
         {
             return Results.BadRequest(new { error = "Request is required" });
         }
 
-        if (string.IsNullOrWhiteSpace(dto.Word))
+        if (string.IsNullOrWhiteSpace(request.Word))
         {
             return Results.BadRequest(new { error = "Word is required" });
         }
 
-        if (string.IsNullOrWhiteSpace(dto.Context))
+        if (string.IsNullOrWhiteSpace(request.Context))
         {
             return Results.BadRequest(new { error = "Context is required" });
         }
 
-        logger.LogInformation("Received word explanation request for {Word}", dto.Word);
+        logger.LogInformation("Received word explanation engineRequest for {Word}", request.Word);
 
         try
         {
             var userId = GetUserId(httpContext, logger);
 
-            var request = new WordExplainEngineRequest
+            var engineRequest = new WordExplainEngineRequest
             {
                 Id = Guid.NewGuid(),
-                Word = dto.Word,
-                Context = dto.Context,
+                Word = request.Word,
+                Context = request.Context,
                 UserId = userId,
             };
 
-            await engineClient.GenerateWordExplainAsync(request, ct);
-            logger.LogInformation("Word explanation request for {Word} sent to engine", dto.Word);
+            await engineClient.GenerateWordExplainAsync(engineRequest, ct);
+            logger.LogInformation("Word explanation engineRequest for {Word} sent to engine", request.Word);
 
-            return Results.Ok(request.Id);
+            return Results.Ok(engineRequest.Id);
         }
         catch (InvalidOperationException ex) when (ex.Data.Contains("Tag") &&
                                            Equals(ex.Data["Tag"], "MissingOrInvalidUserId"))

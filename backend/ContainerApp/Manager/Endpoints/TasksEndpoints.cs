@@ -53,7 +53,7 @@ public static class TasksEndpoints
                     response.Headers.ETag = $"\"{etag}\"";
                 }
 
-                var taskResponse = accessorTask.ToFront();
+                var taskResponse = accessorTask.ToApiModel();
                 logger.LogInformation("Successfully retrieved task (ETag forwarded).");
                 return Results.Ok(taskResponse);
             }
@@ -89,7 +89,7 @@ public static class TasksEndpoints
 
             if (accessorResult.Success)
             {
-                var response = accessorResult.ToFront();
+                var response = accessorResult.ToApiModel();
                 logger.LogInformation("Task {TaskId} successfully posted", request.Id);
                 return Results.Accepted($"/tasks-manager/task/{request.Id}", response);
             }
@@ -135,7 +135,7 @@ public static class TasksEndpoints
         try
         {
             var accessorResult = await taskAccessorClient.GetTasksAsync();
-            var response = accessorResult.ToFront();
+            var response = accessorResult.ToApiModel();
             logger.LogInformation("Retrieved {Count} tasks", response.Count);
             return Results.Ok(response);
         }
@@ -196,7 +196,7 @@ public static class TasksEndpoints
                 response.Headers.ETag = $"\"{accessorResult.NewEtag}\"";
             }
 
-            var updateResponse = accessorResult.ToFront();
+            var updateResponse = accessorResult.ToApiModel();
             logger.LogInformation("Successfully updated task name");
             return Results.Ok(updateResponse);
         }
