@@ -73,7 +73,7 @@ resource "azurerm_key_vault_secret" "avatars_storage_connection" {
 ########################
 resource "azurerm_key_vault_secret" "engine_tavily_apikey" {
   count        = var.environment_name == "dev" || var.environment_name == "prod" ? 1 : 0
-  name         = "${var.environment_name}-engine-tavily-apikey"
+  name         = "engine-tavily-apikey"
   value        = var.tavily_api_key
   key_vault_id = data.azurerm_key_vault.shared.id
 }
@@ -214,7 +214,7 @@ resource "azurerm_key_vault_secret" "langfuse_direct_url" {
 ########################
 resource "azurerm_key_vault_secret" "langfuse_baseurl" {
   count        = var.environment_name == "dev" || var.environment_name == "prod" ? 1 : 0
-  name         = "${var.environment_name}-langfuse-baseurl"
+  name         = "langfuse-baseurl"
   value        = var.environment_name == "prod" ? "https://teachin-prod.westeurope.cloudapp.azure.com/langfuse" : "https://teachin.westeurope.cloudapp.azure.com/langfuse"
   key_vault_id = data.azurerm_key_vault.shared.id
 }
@@ -223,14 +223,14 @@ resource "azurerm_key_vault_secret" "langfuse_baseurl" {
 
 resource "azurerm_key_vault_secret" "langfuse_public_key" {
   count        = var.environment_name == "dev" || var.environment_name == "prod" ? 1 : 0
-  name         = "${var.environment_name}-langfuse-public-key"
+  name         = "langfuse-public-key"
   value        = "pk-lf-78a4be40-1031-43d6-b2a0-4b1cf15f8ff6"
   key_vault_id = data.azurerm_key_vault.shared.id
 }
 
 resource "azurerm_key_vault_secret" "langfuse_secret_key" {
   count        = var.environment_name == "dev" || var.environment_name == "prod" ? 1 : 0
-  name         = "${var.environment_name}-langfuse-secret-key"
+  name         = "langfuse-secret-key"
   value        = "sk-lf-7e889621-246f-4bdb-8954-d298ef5d67a1"
   key_vault_id = data.azurerm_key_vault.shared.id
 }
