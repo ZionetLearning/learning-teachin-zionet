@@ -24,7 +24,7 @@ jobs:
       environment_name: test
       # leave empty to build all services (accessor/manager/engine).
       # or set like: "manager,engine"
-      use_keda: false
+      use_keda: ${{ fromJSON('false') }}
     secrets: inherit
 
   run-integration-tests:
