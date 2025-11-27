@@ -278,7 +278,7 @@ metadata:
   namespace: $NAMESPACE
 spec:
   backoffLimit: 3
-  activeDeadlineSeconds: 600
+  activeDeadlineSeconds: 1200
   template:
     spec:
       restartPolicy: Never
@@ -295,6 +295,7 @@ spec:
               npx prisma migrate resolve --applied 20240104210051_add_model_indices --schema=packages/shared/prisma/schema.prisma || true
               npx prisma migrate resolve --applied 20240111152124_add_gpt_35_pricing --schema=packages/shared/prisma/schema.prisma || true
               npx prisma migrate resolve --applied 20240226165118_add_observations_index --schema=packages/shared/prisma/schema.prisma || true
+              npx prisma migrate resolve --applied 20240304222519_scores_add_index --schema=packages/shared/prisma/schema.prisma || true
               npx prisma migrate resolve --applied 20250519073249_add_trace_media_media_id_index --schema=packages/shared/prisma/schema.prisma || true
               npx prisma migrate deploy --schema=packages/shared/prisma/schema.prisma
             fi
@@ -303,7 +304,7 @@ spec:
             name: langfuse-secrets
 EOF
 
-kubectl wait --for=condition=complete job/langfuse-migrate -n "$NAMESPACE" --timeout=600s
+kubectl wait --for=condition=complete job/langfuse-migrate -n "$NAMESPACE" --timeout=1200s
 kubectl delete job langfuse-migrate -n "$NAMESPACE" --ignore-not-found
 
 echo "✅ Migrations applied."
