@@ -167,6 +167,15 @@ jobs:
           # Langfuse secrets should be available in all environments
           echo "langfuse_secrets_enabled=true" >> $GITHUB_OUTPUT
 
+          KEDA_INPUT="${{ inputs.use_keda || github.event.inputs.use_keda }}"
+          if [ -z "$KEDA_INPUT" ] || [ "$KEDA_INPUT" = "null" ]; then
+            KEDA_ENABLED=false
+          else
+            KEDA_ENABLED=$KEDA_INPUT
+          fi
+          echo "KEDA_ENABLED=$KEDA_ENABLED" >> $GITHUB_ENV
+          echo "KEDA setup enabled: $KEDA_ENABLED"
+
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
 
@@ -301,13 +310,6 @@ jobs:
             LANGFUSE_ENABLED="false"
           fi
 
-          KEDA_INPUT="${{ inputs.use_keda || github.event.inputs.use_keda }}"
-          if [ -z "$KEDA_INPUT" ] || [ "$KEDA_INPUT" = "null" ]; then
-            KEDA_ENABLED=false
-          else
-            KEDA_ENABLED=$KEDA_INPUT
-          fi
-
           helm template app "$CHART_DIR" -f "$VALUES_FILE" \
             --set namespace.name="$ENVIRONMENT_NAME" \
             --set namespace.create=false \
@@ -336,13 +338,6 @@ jobs:
           LANGFUSE_ENABLED="true"
           if [ "${{ steps.setup.outputs.deploy_langfuse }}" = "false" ]; then
             LANGFUSE_ENABLED="false"
-          fi
-
-          KEDA_INPUT="${{ inputs.use_keda || github.event.inputs.use_keda }}"
-          if [ -z "$KEDA_INPUT" ] || [ "$KEDA_INPUT" = "null" ]; then
-            KEDA_ENABLED=false
-          else
-            KEDA_ENABLED=$KEDA_INPUT
           fi
 
           helm upgrade --install app "$CHART_DIR" \
