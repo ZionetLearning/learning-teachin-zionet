@@ -127,5 +127,5 @@ jobs:
       environment_name: ${{ needs.set-defaults.outputs.environment_name }}
       image_tag: ${{ needs.build-and-push-images.outputs.image_tag }}
       skip_infra_steps: true
-      use_keda: ${{ fromJson(github.event.inputs.use_keda || inputs.use_keda) }}
+      use_keda: ${{ github.event_name == 'push' && true || fromJson(github.event.inputs.use_keda || inputs.use_keda || 'false') }}
     secrets: inherit
