@@ -291,12 +291,13 @@ spec:
             echo "Running Prisma migrations..."
             # If migration fails, try to resolve common failed migrations and retry
             if ! npx prisma migrate deploy --schema=packages/shared/prisma/schema.prisma; then
-              echo "Migration failed, attempting to resolve and retry..."
-              npx prisma migrate resolve --applied 20240104210051_add_model_indices --schema=packages/shared/prisma/schema.prisma || true
-              npx prisma migrate resolve --applied 20240111152124_add_gpt_35_pricing --schema=packages/shared/prisma/schema.prisma || true
-              npx prisma migrate resolve --applied 20240226165118_add_observations_index --schema=packages/shared/prisma/schema.prisma || true
-              npx prisma migrate resolve --applied 20240304222519_scores_add_index --schema=packages/shared/prisma/schema.prisma || true
-              npx prisma migrate resolve --applied 20250519073249_add_trace_media_media_id_index --schema=packages/shared/prisma/schema.prisma || true
+            echo "Migration failed, attempting to resolve and retry..."
+            npx prisma migrate resolve --applied 20240104210051_add_model_indices --schema=packages/shared/prisma/schema.prisma || true
+            npx prisma migrate resolve --applied 20240111152124_add_gpt_35_pricing --schema=packages/shared/prisma/schema.prisma || true
+            npx prisma migrate resolve --applied 20240226165118_add_observations_index --schema=packages/shared/prisma/schema.prisma || true
+            npx prisma migrate resolve --applied 20240304222519_scores_add_index --schema=packages/shared/prisma/schema.prisma || true
+            npx prisma migrate resolve --applied 20240618164956_create_traces_project_id_timestamp_idx --schema=packages/shared/prisma/schema.prisma || true
+            npx prisma migrate resolve --applied 20250519073249_add_trace_media_media_id_index --schema=packages/shared/prisma/schema.prisma || true
               npx prisma migrate deploy --schema=packages/shared/prisma/schema.prisma
             fi
         envFrom:
