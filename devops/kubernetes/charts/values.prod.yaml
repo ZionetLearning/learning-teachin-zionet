@@ -1,9 +1,10 @@
-# PROD overrides for the Helm chart
+# DEV overrides for the Helm chart
 global:
   dockerRegistry: ""   # CI sets: docker.io/<org> or <acr>.azurecr.io
-  imagePullPolicy: IfNotPresent   # or Always if you rely on :latest
+  imagePullPolicy: IfNotPresent
+  environment: ""      # Will be set by CI/CD to TARGET_NAMESPACE (e.g., "devacr2")
   spot:
-    enabled: false  # Enable spot nodes for cost optimization in prod
+    enabled: false  # Dev stays on stable nodes for reliability
   dapr:
     enabled: true
     configName: dapr-config
@@ -14,44 +15,65 @@ namespace:
 
 cronjobs:
   statsPing:
-    enabled: false
+    enabled: true
+    schedule: "*/5 * * * *"   # every 5 minutes in dev
+    target:
+      mode: "service"
+      serviceName: "manager"
+      port: 80
 
   refreshSessionsCleanup:
     enabled: true
     schedule: "30 2 * * *"   # nightly at 02:30
+    target:
+      mode: "service"
+      serviceName: "manager"
+      port: 80
 
 manager:
-  image: {}
+  image:
+    name: manager  # Required: image name for the container
+    # tag will be set dynamically via global.environment by CI/CD
+  # service, ports, labels inherit from base values.yaml
   env:
     ASPNETCORE_URLS: "http://+:5001"
-  # Consider adding resource limits here if you introduce them in templates
+  # secrets inherit from base values.yaml
   ingress:
     enabled: true
-    host: teachin.westeurope.cloudapp.azure.com
+    host: teachin-prod.westeurope.cloudapp.azure.com
     basePath: /api
     tls:
       enabled: true
       clusterIssuer: letsencrypt-prod
-      secretName: teachin-tls
-
+      secretName: teachin-prod-tls
+      
 engine:
-  image: {}
+  image:
+    name: engine  # Required: image name for the container
+    # tag will be set dynamically via global.environment by CI/CD
   env:
     ASPNETCORE_URLS: "http://+:5002"
     AzureOpenAI__Endpoint: "https://france-teachin-open-ai.openai.azure.com/"
-    AzureOpenAI__ApiKey: ""       # Prefer secret/KeyVault/CI variable
+    AzureOpenAI__ApiKey: ""     # injecting via secret/CI
     AzureOpenAI__DeploymentName: "gpt-4.1-mini"
     AzureOpenAI__ModelId: "gpt-4o-mini"
     AzureSpeech__SubscriptionKey: ""
     AzureSpeech__Region: "eastus"
     AzureSpeech__DefaultVoice: "he-IL-HilaNeural"
     AzureSpeech__TimeoutSeconds: "70"
+    Tavily__ApiKey: ""
+    Tavily__MaxResults: "5"
+    Tavily__IncludeAnswer: "true"
+    Tavily__IncludeRawContent: "false"
+    Tavily__SearchDepth: "basic"
 
 accessor:
-  image: {}
+  image:
+    name: accessor  # Required: image name for the container
+    # tag will be set dynamically via global.environment by CI/CD
   env:
     ASPNETCORE_URLS: "http://+:5003"
 
-# Langfuse Configuration (enabled in prod)
+# Langfuse Configuration (dev only)
 langfuse:
   enabled: true
