@@ -106,8 +106,8 @@ jobs:
       #     chmod +x setup-https.sh
       #     ./setup-https.sh
 
-      - name: Apply Grafana ingress (only)
-        run: kubectl apply -f "$K8S_DIR/ingress/grafana-ingress.yaml"
+      # Note: Grafana ingress is automatically created by grafana.sh script above with correct environment domain
+      # Removed hardcoded ingress step that was overriding the environment-specific ingress
 
       - name: Add Prometheus
         run: |
