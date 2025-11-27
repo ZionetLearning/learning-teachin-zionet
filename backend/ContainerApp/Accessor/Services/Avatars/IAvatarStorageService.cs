@@ -1,6 +1,6 @@
-﻿using Azure.Storage.Blobs.Models;
+using Azure.Storage.Blobs.Models;
 
-namespace Manager.Services.Avatars;
+namespace Accessor.Services.Avatars;
 
 public interface IAvatarStorageService
 {

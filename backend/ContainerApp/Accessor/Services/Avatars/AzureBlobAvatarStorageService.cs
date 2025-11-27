@@ -1,11 +1,10 @@
-﻿using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Sas;
-using Manager.Services.Avatars.Models;
+using Accessor.Services.Avatars.Models;
 using Microsoft.Extensions.Options;
 
-namespace Manager.Services.Avatars;
+namespace Accessor.Services.Avatars;
 
 public sealed class AzureBlobAvatarStorageService : IAvatarStorageService
 {
@@ -21,8 +20,7 @@ public sealed class AzureBlobAvatarStorageService : IAvatarStorageService
         _options = opt.Value;
         _log = log;
 
-        var raw = _options.StorageConnectionString;
-        var normConnection = NormalizeConnString(raw);
+        var normConnection = _options.StorageConnectionString;
 
         _log.LogInformation("Avatar storage init. Container={Container}",
     _options.Container);
@@ -99,114 +97,75 @@ public sealed class AzureBlobAvatarStorageService : IAvatarStorageService
 
         try
         {
+            // Ensure container exists
             await _container.CreateIfNotExistsAsync(PublicAccessType.None, cancellationToken: ct);
 
+            var sasBuilder = new BlobSasBuilder
+            {
+                BlobContainerName = _options.Container,
+                BlobName = blobPath,
+                Resource = "b",
+                StartsOn = now.AddMinutes(-1),
+                ExpiresOn = expires
+            };
+
+            sasBuilder.SetPermissions(BlobSasPermissions.Write | BlobSasPermissions.Create);
+
+            var sasUri = blob.GenerateSasUri(sasBuilder);
+
+            _log.LogInformation("Generated SAS for {BlobPath}, expires {Expires}", blobPath, expires);
+
+            return (sasUri, expires, blobPath);
         }
-        catch (RequestFailedException ex)
+        catch (Exception ex)
         {
-            _log.LogError(ex, "Failed to ensure container exists or set access policy");
+            _log.LogError(ex, "Failed to generate SAS for {BlobPath}", blobPath);
             throw;
         }
-
-        var sasBuilder = new BlobSasBuilder
-        {
-            BlobContainerName = _container.Name,
-            BlobName = blob.Name,
-            Resource = "b",
-            StartsOn = now.AddMinutes(-1),
-            ExpiresOn = expires,
-            Protocol = SasProtocol.HttpsAndHttp
-        };
-        sasBuilder.SetPermissions(BlobSasPermissions.Create | BlobSasPermissions.Write);
-
-        var sasUri = blob.GenerateSasUri(sasBuilder);
-        _log.LogInformation("Upload SAS issued. BlobPath={BlobPath}, TTLmin={TTL}", blobPath, _options.UploadUrlTtlMinutes);
-        return (sasUri, expires, blobPath);
     }
 
     public async Task<bool> BlobExistsAsync(string blobPath, CancellationToken ct)
     {
         EnsureReady();
-        return await _container!.GetBlobClient(Relative(blobPath)).ExistsAsync(ct);
+        var blob = _container!.GetBlobClient(blobPath);
+        return await blob.ExistsAsync(ct);
     }
 
     public async Task<BlobProperties?> GetBlobPropsAsync(string blobPath, CancellationToken ct)
     {
         EnsureReady();
-
-        using var _ = _log.BeginScope("GetBlobProps path={Path}", blobPath);
-        var blob = _container!.GetBlobClient(Relative(blobPath));
-        try
+        var blob = _container!.GetBlobClient(blobPath);
+        if (!await blob.ExistsAsync(ct))
         {
-            var response = await blob.GetPropertiesAsync(cancellationToken: ct);
-            var p = response.Value;
-            _log.LogInformation("Props: Len={Len}, CT={CT}, ETag={ETag}", p.ContentLength, p.ContentType, p.ETag);
-            return response.Value;
-        }
-        catch (RequestFailedException ex) when (ex.Status == 404)
-        {
-            _log.LogWarning("Blob not found (404)");
             return null;
         }
 
-        catch (RequestFailedException ex)
-        {
-            _log.LogError(ex, "GetProperties failed");
-            throw;
-        }
+        var props = await blob.GetPropertiesAsync(cancellationToken: ct);
+        return props.Value;
     }
 
     public Task<Uri> GenerateReadUrlAsync(string blobPath, TimeSpan ttl, CancellationToken ct)
     {
         EnsureReady();
+        var blob = _container!.GetBlobClient(blobPath);
 
-        using var _ = _log.BeginScope("GetReadSas path={Path}", blobPath);
-
-        var blob = _container!.GetBlobClient(Relative(blobPath));
-
-        var now = DateTimeOffset.UtcNow;
-        var expires = now.Add(ttl);
-        var b = new BlobSasBuilder
+        var sasBuilder = new BlobSasBuilder
         {
-            BlobContainerName = _container.Name,
+            BlobContainerName = _options.Container,
+            BlobName = blobPath,
             Resource = "b",
-            StartsOn = now.AddMinutes(-1),
-            ExpiresOn = expires,
-            Protocol = SasProtocol.HttpsAndHttp
+            StartsOn = DateTimeOffset.UtcNow.AddMinutes(-1),
+            ExpiresOn = DateTimeOffset.UtcNow.Add(ttl)
         };
-        b.SetPermissions(BlobSasPermissions.Read);
-        var uri = blob.GenerateSasUri(b);
-        _log.LogInformation("Read SAS issued. TTLmin={TTL}", ttl.TotalMinutes);
+        sasBuilder.SetPermissions(BlobSasPermissions.Read);
 
-        return Task.FromResult(uri);
+        return Task.FromResult(blob.GenerateSasUri(sasBuilder));
     }
 
-    public Task DeleteAsync(string blobPath, CancellationToken ct)
+    public async Task DeleteAsync(string blobPath, CancellationToken ct)
     {
         EnsureReady();
-
-        return _container!
-            .GetBlobClient(Relative(blobPath))
-            .DeleteIfExistsAsync(DeleteSnapshotsOption.IncludeSnapshots, cancellationToken: ct);
-    }
-
-    private static string Relative(string blobPath)
-        => !string.IsNullOrWhiteSpace(blobPath)
-            ? blobPath
-            : throw new ArgumentException("Invalid blobPath");
-
-    private static string NormalizeConnString(string? cs)
-    {
-        if (string.IsNullOrWhiteSpace(cs))
-        {
-            return cs ?? "";
-        }
-
-        var charsToDrop = new[] { '\uFEFF', '\u200B', '\u200C', '\u200D', '\u200E', '\u200F', '\u2060', '\u00A0' };
-        var cleaned = new string(cs.Where(c => !charsToDrop.Contains(c)).ToArray());
-
-        cleaned = cleaned.Trim().Trim('\"', '\'');
-
-        return cleaned;
+        var blob = _container!.GetBlobClient(blobPath);
+        await blob.DeleteIfExistsAsync(DeleteSnapshotsOption.IncludeSnapshots, cancellationToken: ct);
     }
 }

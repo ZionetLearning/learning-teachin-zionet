@@ -31,19 +31,19 @@ public class UserAvatarIntegrationTests(
         await ClientFixture.LoginAsync(Role.Admin);
         var url = $"{ApiRoutes.AvatarUploadUrl(userInfo.UserId)}";
 
-        var req = new
+        var req = new GetUploadAvatarUrlRequest
         {
-            contentType = ContentTypePng,
-            sizeBytes = (long?)Png1x1.Length
+            ContentType = ContentTypePng,
+            SizeBytes = (long?)Png1x1.Length
         };
 
         var resp = await Client.PostAsJsonAsync(url, req);
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
 
-        var dto = await ReadAsJsonAsync<JsonElement>(resp);
+        var dto = await ReadAsJsonAsync<GetUploadAvatarUrlResponse>(resp);
 
-        var uploadUrl = dto.GetProperty("uploadUrl").GetString();
-        var blobPath = dto.GetProperty("blobPath").GetString();
+        var uploadUrl = dto.UploadUrl;
+        var blobPath = dto.BlobPath;
 
         Assert.False(string.IsNullOrWhiteSpace(uploadUrl));
         Assert.False(string.IsNullOrWhiteSpace(blobPath));
@@ -60,13 +60,17 @@ public class UserAvatarIntegrationTests(
         var user = await CreateUserAsync();
 
         // 1) upload-url
-        var uploadReq = new { contentType = ContentTypePng, sizeBytes = (long?)Png1x1.Length };
+        var uploadReq = new GetUploadAvatarUrlRequest { ContentType = ContentTypePng, SizeBytes = (long?)Png1x1.Length };
         var uploadResp = await Client.PostAsJsonAsync($"{ApiRoutes.AvatarUploadUrl(user.UserId)}", uploadReq);
         Assert.Equal(HttpStatusCode.OK, uploadResp.StatusCode);
 
-        var uploadDto = await ReadAsJsonAsync<JsonElement>(uploadResp);
-        var uploadUrl = uploadDto.GetProperty("uploadUrl").GetString()!;
-        var blobPath = uploadDto.GetProperty("blobPath").GetString()!;
+        var uploadDto = await ReadAsJsonAsync<GetUploadAvatarUrlResponse>(uploadResp);
+        var uploadUrl = uploadDto.UploadUrl!;
+        if (uploadUrl.Contains("azurite"))
+        {
+            uploadUrl = uploadUrl.Replace("azurite", "localhost");
+        }
+        var blobPath = uploadDto.BlobPath!;
 
         // 2) PUT in Azurite/Azure
         using (var raw = new HttpClient())
@@ -80,7 +84,7 @@ public class UserAvatarIntegrationTests(
         }
 
         // 3) confirm
-        var confirmReq = new { blobPath = blobPath, contentType = ContentTypePng };
+        var confirmReq = new ConfirmAvatarRequest { BlobPath = blobPath, ContentType = ContentTypePng };
         var confirmResp = await Client.PostAsJsonAsync($"{ApiRoutes.AvatarConfirm(user.UserId)}", confirmReq);
         Assert.Equal(HttpStatusCode.OK, confirmResp.StatusCode);
 
@@ -130,6 +134,10 @@ public class UserAvatarIntegrationTests(
             var readUrlResp = await Client.GetAsync($"{ApiRoutes.AvatarReadUrl(user.UserId)}");
             Assert.Equal(HttpStatusCode.OK, readUrlResp.StatusCode);
             readUrl = (await readUrlResp.Content.ReadAsStringAsync()).Trim('"');
+            if (readUrl.Contains("azurite"))
+            {
+                readUrl = readUrl.Replace("azurite", "localhost");
+            }
             Assert.False(string.IsNullOrWhiteSpace(readUrl));
 
             using var raw = new HttpClient();
@@ -199,7 +207,7 @@ public class UserAvatarIntegrationTests(
 
         await ClientFixture.LoginAsync(Role.Admin);
 
-        var confirmReq = new { blobPath = $"some-other-user/avatar_v123.png", contentType = ContentTypePng };
+        var confirmReq = new ConfirmAvatarRequest { BlobPath = $"some-other-user/avatar_v123.png", ContentType = ContentTypePng };
         var resp = await Client.PostAsJsonAsync($"{ApiRoutes.AvatarConfirm(userInfo.UserId)}", confirmReq);
 
         Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
@@ -216,7 +224,7 @@ public class UserAvatarIntegrationTests(
 
         // get B  upload-url with token A
         var url = $"{ApiRoutes.AvatarUploadUrl(userB.UserId)}";
-        var body = new { contentType = ContentTypePng, sizeBytes = (long?)Png1x1.Length };
+        var body = new GetUploadAvatarUrlRequest { ContentType = ContentTypePng, SizeBytes = (long?)Png1x1.Length };
 
         var resp = await Client.PostAsJsonAsync(url, body);
         Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
@@ -229,7 +237,7 @@ public class UserAvatarIntegrationTests(
 
         await ClientFixture.LoginAsync(Role.Admin);
 
-        var body = new { contentType = "image/gif", sizeBytes = (long?)1234 };
+        var body = new GetUploadAvatarUrlRequest { ContentType = "image/gif", SizeBytes = (long?)1234 };
         var resp = await Client.PostAsJsonAsync($"{ApiRoutes.AvatarUploadUrl(userInfo.UserId)}", body);
 
         Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
@@ -243,7 +251,7 @@ public class UserAvatarIntegrationTests(
         await ClientFixture.LoginAsync(Role.Admin);
 
         // > 10 MB
-        var body = new { contentType = ContentTypePng, sizeBytes = (long?)(30 * 1024 * 1024) };
+        var body = new GetUploadAvatarUrlRequest { ContentType = ContentTypePng, SizeBytes = (long?)(30 * 1024 * 1024) };
         var resp = await Client.PostAsJsonAsync($"{ApiRoutes.AvatarUploadUrl(userInfo.UserId)}", body);
 
         Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
