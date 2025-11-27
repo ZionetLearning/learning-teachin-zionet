@@ -744,6 +744,11 @@
     "languages": {
       "hebrew": "עברית",
       "english": "אנגלית"
+    },
+    "achievements": {
+      "title": "הישגים",
+      "progress": "{{unlocked}} / {{total}} נפתחו",
+      "unlocked": "הישג נפתח!"
     }
   }
 }

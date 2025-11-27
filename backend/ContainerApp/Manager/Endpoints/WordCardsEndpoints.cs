@@ -28,12 +28,14 @@ public static class WordCardsEndpoints
     }
 
     private static async Task<IResult> GetWordCardsAsync(
+        [FromQuery] DateTime? fromDate,
+        [FromQuery] DateTime? toDate,
         [FromServices] IWordCardsAccessorClient wordCardsAccessorClient,
         HttpContext http,
         ILogger<WordCardsEndpoint> logger,
         CancellationToken ct)
     {
-        using var scope = logger.BeginScope("GetWordCardsAsync");
+        using var scope = logger.BeginScope("GetWordCardsAsync. FromDate={FromDate}, ToDate={ToDate}", fromDate, toDate);
         try
         {
             var userIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
@@ -43,9 +45,10 @@ public static class WordCardsEndpoints
                 return Results.Unauthorized();
             }
 
-            logger.LogInformation("Fetching word cards for UserId={UserId}", userId);
+            logger.LogInformation("Fetching word cards for UserId={UserId}, FromDate={FromDate}, ToDate={ToDate}",
+                userId, fromDate, toDate);
 
-            var accessorResponse = await wordCardsAccessorClient.GetWordCardsAsync(userId, ct);
+            var accessorResponse = await wordCardsAccessorClient.GetWordCardsAsync(userId, fromDate, toDate, ct);
             var response = accessorResponse.ToApiModel();
 
             return Results.Ok(response);

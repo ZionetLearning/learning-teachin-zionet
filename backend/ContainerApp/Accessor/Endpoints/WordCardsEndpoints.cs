@@ -19,6 +19,8 @@ public static class WordCardsEndpoints
 
     private static async Task<IResult> GetWordCardsAsync(
         [FromRoute] Guid userId,
+        [FromQuery] DateTime? fromDate,
+        [FromQuery] DateTime? toDate,
         [FromServices] IWordCardService wordCardservice,
         ILogger<IWordCardService> logger,
         CancellationToken ct)
@@ -29,10 +31,12 @@ public static class WordCardsEndpoints
             return Results.BadRequest("UserId cannot be empty.");
         }
 
-        var scope = logger.BeginScope("GetWordCardsAsync. UserId={UserId}", userId);
+        var scope = logger.BeginScope(
+            "GetWordCardsAsync. UserId={UserId}, FromDate={FromDate}, ToDate={ToDate}",
+            userId, fromDate, toDate);
         try
         {
-            var result = await wordCardservice.GetWordCardsAsync(userId, ct);
+            var result = await wordCardservice.GetWordCardsAsync(userId, fromDate, toDate, ct);
 
             if (result == null || result.Count == 0)
             {

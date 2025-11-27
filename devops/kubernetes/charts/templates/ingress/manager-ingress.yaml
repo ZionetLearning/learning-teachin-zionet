@@ -8,6 +8,10 @@ metadata:
     kubernetes.io/ingress.class: "nginx"
     nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/rewrite-target: "/$2"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/upstream-vhost: teachin.api.{{ include "app.namespace" . }}
     {{- if and .Values.manager.ingress.tls.enabled .Values.manager.ingress.tls.clusterIssuer }}
     cert-manager.io/cluster-issuer: "{{ .Values.manager.ingress.tls.clusterIssuer }}"
     {{- end }}
@@ -27,7 +31,13 @@ spec:
             pathType: ImplementationSpecific
             backend:
               service:
-                name: "{{ .Values.manager.name }}"
+                {{- if .Values.keda.enabled }}
+                name: keda-interceptor-{{ include "app.namespace" . }}
+                port:
+                  number: 8080
+                {{- else }}
+                name: {{ .Values.manager.name }}
                 port:
                   number: {{ .Values.manager.ports.service }}
+                {{- end }}
 {{- end }}
