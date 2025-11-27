@@ -55,7 +55,7 @@ on:
       use_keda:
         required: false
         type: boolean
-        default: true
+        default: false
         
 jobs:
   lock-featest:
