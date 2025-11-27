@@ -312,7 +312,8 @@ jobs:
             --set global.namePrefix="$ENVIRONMENT_NAME" \
             --set namePrefix="$ENVIRONMENT_NAME" \
             --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
-            --set global.environment="$IMAGE_TAG" \
+            --set global.environment="$ENVIRONMENT_NAME" \
+            --set global.imageTag="$IMAGE_TAG" \
             --set langfuse.enabled="$LANGFUSE_ENABLED" \
             --set accessor.secrets.langfuse.enabled="${{ steps.setup.outputs.langfuse_secrets_enabled }}" \
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
@@ -343,7 +344,8 @@ jobs:
             --set global.namePrefix="$ENVIRONMENT_NAME" \
             --set namePrefix="$ENVIRONMENT_NAME" \
             --set global.dockerRegistry="$ACR_LOGIN_SERVER" \
-            --set global.environment="$IMAGE_TAG" \
+            --set global.environment="$ENVIRONMENT_NAME" \
+            --set global.imageTag="$IMAGE_TAG" \
             --set langfuse.enabled="$LANGFUSE_ENABLED" \
             --set accessor.secrets.langfuse.enabled="${{ steps.setup.outputs.langfuse_secrets_enabled }}" \
             --set dapr.stateStore.redis.redisDB=$REDIS_DATABASE_INDEX \
