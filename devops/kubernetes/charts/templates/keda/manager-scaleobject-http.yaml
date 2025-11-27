@@ -6,7 +6,7 @@ metadata:
   namespace: {{ include "app.namespace" . }}
 spec:
   hosts:
-    - {{ include "app.namespace" . }}.teachin.westeurope.cloudapp.azure.com
+    - teachin.api.{{ include "app.namespace" . }}
   scaleTargetRef:
     name: {{ .Values.manager.name }}
     service: {{ .Values.manager.name }}
