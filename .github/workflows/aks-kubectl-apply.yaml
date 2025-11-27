@@ -106,8 +106,29 @@ jobs:
       #     chmod +x setup-https.sh
       #     ./setup-https.sh
 
-      # Note: Grafana ingress is automatically created by grafana.sh script above with correct environment domain
-      # Removed hardcoded ingress step that was overriding the environment-specific ingress
+      - name: Apply Grafana ingress with environment-specific domain
+        run: |
+          # Resolve environment name
+          ENV_NAME="${{ inputs.environment_name != '' && inputs.environment_name || github.event.inputs.environment_name }}"
+          if [ -z "$ENV_NAME" ]; then
+            ENV_NAME="dev"
+          fi
+          
+          # Set domain and TLS secret based on environment
+          if [ "$ENV_NAME" = "prod" ]; then
+            export GRAFANA_DOMAIN="teachin-prod.westeurope.cloudapp.azure.com"
+            export TLS_SECRET_NAME="teachin-prod-tls"
+          else
+            export GRAFANA_DOMAIN="teachin.westeurope.cloudapp.azure.com"
+            export TLS_SECRET_NAME="teachin-tls"
+          fi
+          
+          echo "Applying Grafana ingress for environment: $ENV_NAME"
+          echo "Domain: $GRAFANA_DOMAIN"
+          echo "TLS Secret: $TLS_SECRET_NAME"
+          
+          # Apply the ingress with environment variable substitution
+          envsubst < "$K8S_DIR/ingress/grafana-ingress.yaml" | kubectl apply -f -
 
       - name: Add Prometheus
         run: |
