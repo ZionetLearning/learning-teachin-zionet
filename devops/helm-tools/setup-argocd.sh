@@ -59,3 +59,14 @@ echo ""
 echo "💡 Password saved to: .argocd-password"
 echo "======================================"
 echo ""
+
+# Install argocd image updater
+echo "⚙️  Installing ArgoCD Image Updater..."
+helm repo add argo https://argoproj.github.io/argo-helm
+helm repo update
+
+helm upgrade --install argocd-image-updater argo/argocd-image-updater \
+  --namespace ${ARGOCD_NAMESPACE} \
+  --set config.argocdImageUpdater.applicationLabelKey=argocd.argoproj.io/app-name \
+  --wait \
+  --timeout 5m
