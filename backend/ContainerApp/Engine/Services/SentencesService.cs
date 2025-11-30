@@ -59,10 +59,6 @@ public class SentencesService : ISentencesService
         var difficulty = req.Difficulty.ToString().ToLowerInvariant();
         var hints = GetRandomHints(difficulty, 3);
 
-        var nikudStr = req.Nikud.ToString().ToLowerInvariant();
-        var countStr = req.Count.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        var hintsStr = string.Join(", ", hints);
-
         var interest = string.Empty;
 
         if (userInterests is { Count: > 0 } && Random.Shared.NextDouble() < 0.5)

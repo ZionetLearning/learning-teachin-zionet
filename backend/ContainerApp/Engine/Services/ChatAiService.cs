@@ -42,11 +42,10 @@ public sealed class ChatAiService : IChatAiService
         _retryPolicy = retryPolicy ?? throw new ArgumentNullException(nameof(retryPolicy));
         _tools = tools ?? throw new ArgumentNullException(nameof(tools));
         _accessorClient = accessorClient ?? throw new ArgumentNullException(nameof(accessorClient));
-
         _chatClient = _azureClient.GetChatClient(_cfg.DeploymentName).AsIChatClient();
     }
 
-    public async Task<ChatAiServiceResponse> ChatHandlerAsync(EngineChatRequest request, CancellationToken ct = default)
+    public async Task<ChatAiServiceResponse> ChatHandlerAsync(EngineChatRequest request, HistorySnapshotDto historySnapshot, CancellationToken ct = default)
     {
         _log.LogInformation("ChatAI request started {RequestId} for User {UserId}, Thread {ThreadId}",
             request.RequestId, request.UserId, request.ThreadId);
@@ -67,8 +66,6 @@ public sealed class ChatAiService : IChatAiService
 
         try
         {
-            var historySnapshot = await _accessorClient.GetHistorySnapshotAsync(request.ThreadId, request.UserId, ct);
-
             var isNewThread = !(historySnapshot is { History.ValueKind: not JsonValueKind.Undefined and not JsonValueKind.Null });
             string? system = null;
 
@@ -122,6 +119,7 @@ public sealed class ChatAiService : IChatAiService
 
     public async IAsyncEnumerable<ChatAiStreamDelta> ChatStreamAsync(
         EngineChatRequest request,
+        HistorySnapshotDto historySnapshot,
         [EnumeratorCancellation] CancellationToken ct = default)
     {
         _log.LogInformation("ChatAI stream started {RequestId} for User {UserId}, Thread {ThreadId}",
@@ -142,11 +140,9 @@ public sealed class ChatAiService : IChatAiService
             yield break;
         }
 
-        var historySnapshot = await _accessorClient.GetHistorySnapshotAsync(request.ThreadId, request.UserId, ct);
-
         var isNewThread = !(historySnapshot is { History.ValueKind: not JsonValueKind.Undefined and not JsonValueKind.Null });
 
-        var (seed, system, chatName, overrideUserMessage) = await BuildSeedAsync(request, isNewThread, ct);
+        var (seed, system, overrideUserMessage) = await BuildSeedAsync(request, isNewThread, ct);
 
         var agent = _chatClient.CreateAIAgent(
             name: "MainChatAgent",
@@ -238,14 +234,13 @@ public sealed class ChatAiService : IChatAiService
         };
     }
 
-    private async Task<(List<Microsoft.Extensions.AI.ChatMessage> seed, string? system, string chatName, string? overrideUserMessage)>
-        BuildSeedAsync(EngineChatRequest request, bool isNewThread, CancellationToken ct)
+    private async Task<(List<Microsoft.Extensions.AI.ChatMessage> seed, string? system, string? overrideUserMessage)>
+    BuildSeedAsync(EngineChatRequest request, bool isNewThread, CancellationToken ct)
     {
         string? overrideUserMessage = null;
 
         var seed = new List<Microsoft.Extensions.AI.ChatMessage>();
         string? system = null;
-        string chatName;
 
         switch (request.ChatType)
         {
@@ -260,7 +255,6 @@ public sealed class ChatAiService : IChatAiService
                     });
                 }
 
-                chatName = "Default Chat";
                 break;
             }
 
@@ -284,7 +278,6 @@ public sealed class ChatAiService : IChatAiService
                     });
                 }
 
-                chatName = "Global Chat";
                 break;
             }
             case ChatType.ExplainMistake:
@@ -315,15 +308,12 @@ public sealed class ChatAiService : IChatAiService
                 });
 
                 var attemptDetails = await _accessorClient.GetAttemptDetailsAsync(request.UserId, request.AttemptId.Value, ct);
-                var readableGameType = request.GameType.Value.GetDescription();
                 overrideUserMessage = await BuildUserMistakeExplanationPromptAsync(attemptDetails, request.GameType.Value, ct);
 
-                chatName = $"Mistake Explanation - {readableGameType}";
                 break;
             }
             default:
             {
-                chatName = "Chat";
                 if (isNewThread)
                 {
                     system = await ResolveSystemIfNeededAsync(ct);
@@ -333,7 +323,7 @@ public sealed class ChatAiService : IChatAiService
             }
         }
 
-        return (seed, system, chatName, overrideUserMessage);
+        return (seed, system, overrideUserMessage);
     }
 
     private async Task<string> CreateFirstSystemPromptForGlobalChatAsync(

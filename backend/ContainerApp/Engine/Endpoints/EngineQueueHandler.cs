@@ -6,6 +6,7 @@ using DotQueue;
 using Engine.Helpers;
 using Engine.Models;
 using Engine.Models.Chat;
+using Engine.Models.Games;
 using Engine.Models.QueueMessages;
 using Engine.Models.Sentences;
 using Engine.Models.Words;
@@ -176,6 +177,21 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
             (request, userContext) = DeserializeAndValidateChatRequest(message);
             using var _ = _logger.BeginScope(new { request.RequestId, request.ThreadId, request.UserId });
 
+            var historySnapshot = await _accessorClient.GetHistorySnapshotAsync(request.ThreadId, request.UserId, ct);
+
+            var isNewThread = !(historySnapshot is { History.ValueKind: not JsonValueKind.Undefined and not JsonValueKind.Null });
+
+            var chatName = historySnapshot.Name ?? "";
+            if (isNewThread)
+            {
+                var (isChanged, newTitle) = await CreateTitle(request.UserMessage, request.ChatType, chatName, request.GameType, ct);
+
+                if (isChanged)
+                {
+                    chatName = newTitle;
+                }
+            }
+
             renewalCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
             renewTask = Task.Run(async () =>
             {
@@ -198,8 +214,6 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
 
             string? finalThreadJson = null;
             var total = new StringBuilder();
-
-            var chatName = "Chat"; // todo: turn on title service
 
             EngineChatStreamResponse BuildResponse(
                 ChatStreamStage stage,
@@ -242,7 +256,7 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
                 logger: _batcherLogger,
                 ct: ct);
 
-            await foreach (var upd in _aiService.ChatStreamAsync(request, ct))
+            await foreach (var upd in _aiService.ChatStreamAsync(request, historySnapshot, ct))
             {
                 await batcher.HandleUpdateAsync(upd);
 
@@ -388,6 +402,64 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         }
 
         return (request, userContext);
+    }
+
+    private async Task<(bool isChanged, string newTitle)> CreateTitle(string userMessage, ChatType chatType, string chatTitle, GameName? gameType, CancellationToken ct)
+    {
+        var isChangeTitle = false;
+        var chatNewTitle = "";
+
+        try
+        {
+            switch (chatType)
+            {
+                case ChatType.Default:
+                    try
+                    {
+                        chatNewTitle = await _chatTitleService.GenerateTitleAsync(userMessage, ct);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Chat title generation failed; using fallback name.");
+                        chatNewTitle = "Default Chat";
+                    }
+
+                    break;
+                case ChatType.GlobalChat:
+                    try
+                    {
+                        chatNewTitle = await _chatTitleService.GenerateTitleAsync(userMessage, ct);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Chat title generation failed; using fallback name.");
+                        chatNewTitle = "Global chat";
+                    }
+
+                    break;
+                case ChatType.ExplainMistake:
+                    var readableGameType = gameType;
+
+                    chatNewTitle = $"Mistake Explanation - {readableGameType}";
+
+                    break;
+                default:
+                    chatNewTitle = "";
+                    break;
+            }
+
+            if (chatNewTitle != chatTitle)
+            {
+                isChangeTitle = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "AddTitle failed");
+        }
+
+        return (isChangeTitle, chatNewTitle);
+
     }
 
     private async Task HandleSentenceGenerationAsync(Message message, IReadOnlyDictionary<string, string>? metadata, Func<Task> renewLock, CancellationToken cancellationToken)
