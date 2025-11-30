@@ -1,8 +1,12 @@
 using System.Text.Json;
 using DotQueue;
 using Engine.Models.Emails;
+using MailKit.Security;
+using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
+using MimeKit;
+using SmtpClient = MailKit.Net.Smtp.SmtpClient;
 
 namespace Engine.Services;
 
@@ -10,11 +14,13 @@ public class EmailService : IEmailService
 {
     private readonly Kernel _kernel;
     private readonly ILogger<EmailService> _log;
+    private readonly EmailSettings _emailSettings;
 
-    public EmailService([FromKeyedServices("gen")] Kernel kernel, ILogger<EmailService> log)
+    public EmailService([FromKeyedServices("gen")] Kernel kernel, ILogger<EmailService> log, IOptions<EmailSettings> emailOptions)
     {
         _kernel = kernel;
         _log = log;
+        _emailSettings = emailOptions.Value;
     }
 
     public async Task<EmailDraftResponse> GenerateDraftAsync(string emailPromptContent, CancellationToken ct = default)
@@ -61,6 +67,36 @@ public class EmailService : IEmailService
         {
             _log.LogError(ex, "Failed to parse model output JSON: {Json}", json);
             throw new RetryableException("Malformed JSON output from model", ex);
+        }
+    }
+
+    public async Task SendEmailAsync(SendEmailRequest request, CancellationToken ct = default)
+    {
+        var email = new MimeMessage();
+        email.From.Add(new MailboxAddress(_emailSettings.Name, _emailSettings.Address));
+        email.To.Add(new MailboxAddress("", request.RecipientEmail));
+        email.Subject = request.Subject;
+
+        email.Body = new TextPart("html")
+        {
+            Text = request.Body
+        };
+
+        try
+        {
+            using var smtp = new SmtpClient();
+
+            await smtp.ConnectAsync(_emailSettings.Host, _emailSettings.Port, SecureSocketOptions.StartTls, ct);
+
+            await smtp.AuthenticateAsync(_emailSettings.Username, _emailSettings.Password, ct);
+
+            await smtp.SendAsync(email, ct);
+            await smtp.DisconnectAsync(true, ct);
+        }
+        catch (Exception ex)
+        {
+            _log.LogError(ex, "Error sending email");
+            throw;
         }
     }
 }

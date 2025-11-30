@@ -43,7 +43,8 @@ public class EngineQueueHandler : RoutedQueueHandler<Message, MessageAction>
         .On(MessageAction.GenerateSentences, HandleSentenceGenerationAsync)
         .On(MessageAction.GenerateSplitSentences, HandleSentenceGenerationAsync)
         .On(MessageAction.GenerateWordExplain, HandleWordExplainAsync)
-        .On(MessageAction.GenerateEmailDraft, HandleEmailDraftAsync);
+        .On(MessageAction.GenerateEmailDraft, HandleEmailDraftAsync)
+        .On(MessageAction.SendEmail, HandleSendEmailAsync);
     public EngineQueueHandler(
         DaprClient daprClient,
         ILogger<EngineQueueHandler> logger,
@@ -1472,12 +1473,50 @@ Never invent hidden fields and do not quote this block verbatim to the user.
 
             var result = await _emailService.GenerateDraftAsync(emailPromptContent, cancellationToken);
 
-            await _publisher.SendEmailDraftAsync(
+            await _publisher.CreateEmailDraftAsync(
                 result,
                 message.ActionName,
                 cancellationToken);
 
             _logger.LogInformation("Email draft generation completed successfully");
+        }
+        catch (NonRetryableException ex)
+        {
+            _logger.LogError(ex, "Non-retryable error processing message {Action}", message.ActionName);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning(ex, "Operation cancelled while processing message {Action}", message.ActionName);
+                throw new OperationCanceledException("Operation was cancelled.", ex, cancellationToken);
+            }
+
+            _logger.LogError(ex, "Transient error while processing {Action}", message.ActionName);
+            throw new RetryableException("Transient error while processing.", ex);
+        }
+    }
+
+    private async Task HandleSendEmailAsync(
+        Message message,
+        IReadOnlyDictionary<string, string>? metadata,
+        Func<Task> renewLock,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var payload = PayloadValidation.DeserializeOrThrow<SendEmailRequest>(message, _logger);
+            if (string.IsNullOrWhiteSpace(payload.RecipientEmail) ||
+                string.IsNullOrWhiteSpace(payload.Subject) ||
+                string.IsNullOrWhiteSpace(payload.Body))
+            {
+                throw new NonRetryableException("Message payload is required.");
+            }
+
+            _logger.LogInformation("Processing send email to {To}", payload.RecipientEmail);
+            await _emailService.SendEmailAsync(payload, cancellationToken);
+            _logger.LogInformation("Email sent successfully to {To}", payload.RecipientEmail);
         }
         catch (NonRetryableException ex)
         {

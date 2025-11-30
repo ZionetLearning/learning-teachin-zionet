@@ -13,6 +13,7 @@ using Engine;
 using Engine.Models.QueueMessages;
 using Engine.Options;
 using Engine.Constants.Chat;
+using Engine.Models.Emails;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -50,6 +51,10 @@ builder.Services.AddSingleton<ISemanticKernelPlugin, WebSearchPlugin>();
 builder.Services
     .AddOptions<TavilySettings>()
     .Bind(builder.Configuration.GetSection("Tavily"))
+    .ValidateDataAnnotations();
+
+builder.Services.AddOptions<EmailSettings>()
+    .Bind(builder.Configuration.GetSection("BrevoMailing"))
     .ValidateDataAnnotations();
 
 builder.Services.AddMemoryCache();

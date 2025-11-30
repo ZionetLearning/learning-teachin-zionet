@@ -22,8 +22,8 @@ public static class EmailEndpoints
         emailsGroup.MapPost("/draft", CreateEmailDraftAsync)
             .RequireAuthorization(PolicyNames.AdminOrTeacher);
 
-        // emailsGroup.MapPost("/send", SendEmailAsync)
-        //     .RequireAuthorization(PolicyNames.AdminOrTeacher);
+        emailsGroup.MapPost("/send", SendEmailAsync)
+             .RequireAuthorization(PolicyNames.AdminOrTeacher);
 
         return app;
     }
@@ -93,34 +93,27 @@ public static class EmailEndpoints
         }
     }
 
-    // private static async Task<IResult> SendEmailAsync(
-    //     [FromBody] SendEmailRequest request,
-    //     [FromServices] IAccessorClient accessorClient,
-    //     HttpContext http,
-    //     ILogger<EmailsEndpoint> logger,
-    //     CancellationToken ct)
-    // {
-    //     using var scope = logger.BeginScope("SendEmailAsync");
+    private static async Task<IResult> SendEmailAsync(
+        [FromBody] SendEmailRequest request,
+        [FromServices] IEngineClient engineClient,
+        HttpContext http,
+        ILogger<EmailsEndpoint> logger,
+        CancellationToken ct)
+    {
+        using var scope = logger.BeginScope("SendEmailAsync");
 
-    //     try
-    //     {
-    //         var userIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
-    //         if (!Guid.TryParse(userIdRaw, out var userId))
-    //         {
-    //             logger.LogWarning("Invalid user ID in token");
-    //             return Results.Unauthorized();
-    //         }
+        try
+        {
+            logger.LogInformation("Sending email to {RecipientEmail}", request.RecipientEmail);
 
-    //         logger.LogInformation("Sending email to {RecipientEmail} by UserId={UserId}", request.RecipientEmail, userId);
+            await engineClient.SendEmailAsync(request, ct);
 
-    //         await accessorClient.SendEmailAsync(userId, request, ct);
-
-    //         return Results.Ok(new { message = "Email sent successfully." });
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         logger.LogError(ex, "Failed to send email to {RecipientEmail}", request.RecipientEmail);
-    //         return Results.Problem("Email sending failed.");
-    //     }
-    // }
+            return Results.Ok(new { message = "Email sent successfully." });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to send email to {RecipientEmail}", request.RecipientEmail);
+            return Results.Problem("Email sending failed.");
+        }
+    }
 }

@@ -191,7 +191,7 @@ public sealed class AiReplyPublisher : IAiReplyPublisher
         }
     }
 
-    public async Task SendEmailDraftAsync(EmailDraftResponse response, MessageAction action, CancellationToken ct = default)
+    public async Task CreateEmailDraftAsync(EmailDraftResponse response, MessageAction action, CancellationToken ct = default)
     {
         if (response is null)
         {

@@ -22,5 +22,6 @@ public enum MessageAction
     GenerateSentences,
     GenerateSplitSentences,
     GenerateWordExplain,
-    GenerateEmailDraft
+    GenerateEmailDraft,
+    SendEmail,
 }
