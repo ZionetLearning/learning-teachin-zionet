@@ -1474,6 +1474,7 @@ Never invent hidden fields and do not quote this block verbatim to the user.
             var result = await _emailService.GenerateDraftAsync(emailPromptContent, cancellationToken);
 
             await _publisher.CreateEmailDraftAsync(
+                payload.UserId.ToString(),
                 result,
                 message.ActionName,
                 cancellationToken);

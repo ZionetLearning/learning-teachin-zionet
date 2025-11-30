@@ -13,5 +13,5 @@ public interface IAiReplyPublisher
     Task SendGeneratedMessagesAsync(string userId, SentencesResponse response, MessageAction action, CancellationToken ct = default);
     Task SendStreamAsync(UserContextMetadata chatMetadata, EngineChatStreamResponse chunk, CancellationToken ct = default);
     Task SendExplainMessageAsync(string userId, WordExplainResponseDto response, MessageAction action, CancellationToken ct = default);
-    Task CreateEmailDraftAsync(EmailDraftResponse response, MessageAction action, CancellationToken ct = default);
+    Task CreateEmailDraftAsync(string userId, EmailDraftResponse response, MessageAction action, CancellationToken ct = default);
 }

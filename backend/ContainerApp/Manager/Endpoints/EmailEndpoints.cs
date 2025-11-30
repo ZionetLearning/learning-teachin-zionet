@@ -1,6 +1,8 @@
-﻿// using System.Security.Claims;
+﻿using System.Security.Claims;
 using Manager.Constants;
 using Manager.Models.Emails;
+using Manager.Models.Games;
+using Manager.Models.ModelValidation;
 using Manager.Services.Clients.Accessor.Interfaces;
 using Manager.Services.Clients.Engine;
 using Manager.Services.Clients.Engine.Models;
@@ -69,8 +71,23 @@ public static class EmailEndpoints
         {
             logger.LogInformation("Generating AI email draft, Purpose={Purpose}", request.Purpose);
 
+            var callerIdRaw = http.User.FindFirstValue(AuthSettings.UserIdClaimType);
+
+            if (!ValidationExtensions.TryValidate(request, out var validationErrors))
+            {
+                logger.LogWarning("Validation failed for {Model}: {Errors}", nameof(SubmitAttemptRequest), validationErrors);
+                return Results.BadRequest(new { errors = validationErrors });
+            }
+
+            if (!Guid.TryParse(callerIdRaw, out var userId))
+            {
+                logger.LogWarning("Invalid or missing UserId in token: {CallerIdRaw}", callerIdRaw);
+                return Results.Unauthorized();
+            }
+
             var engineRequest = new EmailDraftRequest
             {
+                UserId = userId,
                 Subject = request.Subject,
                 Purpose = request.Purpose,
                 Language = request.PreferredLanguageCode

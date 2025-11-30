@@ -191,7 +191,7 @@ public sealed class AiReplyPublisher : IAiReplyPublisher
         }
     }
 
-    public async Task CreateEmailDraftAsync(EmailDraftResponse response, MessageAction action, CancellationToken ct = default)
+    public async Task CreateEmailDraftAsync(string userId, EmailDraftResponse response, MessageAction action, CancellationToken ct = default)
     {
         if (response is null)
         {
@@ -202,11 +202,13 @@ public sealed class AiReplyPublisher : IAiReplyPublisher
         try
         {
             var payload = JsonSerializer.SerializeToElement(response);
+            var messageMetadata = JsonSerializer.SerializeToElement(userId);
 
             var message = new Message
             {
                 ActionName = action,
-                Payload = payload
+                Payload = payload,
+                Metadata = messageMetadata
             };
 
             _log.LogInformation("Publishing email draft to callback binding {Binding}", CallbackBindingName);
