@@ -323,18 +323,42 @@ echo "✅ Migrations applied."
 
 # --- Phase 1.6: Clean migration state to prevent web pod startup failures ---
 echo "🧹 Cleaning migration state for reliable pod startup..."
-kubectl run temp-migration-cleanup --rm -i --image=postgres:15 --restart=Never --env="PGPASSWORD=\$DATABASE_PASSWORD" -- bash -c "
-# Mark the problematic migration as completed if it exists
-psql -h \"\$DATABASE_HOST\" -U \"\$DATABASE_USERNAME\" -d \"\$DATABASE_NAME\" -c \"
-UPDATE _prisma_migrations 
-SET finished_at = COALESCE(finished_at, NOW()), 
-    logs = COALESCE(logs, 'Migration marked as completed for pod startup')
-WHERE migration_name = '20251024193002_add_mixpanel_integration';
-\" || echo 'Migration table update completed'
-" --env="DATABASE_HOST=\$(kubectl get secret langfuse-secrets -n $NAMESPACE -o jsonpath='{.data.DATABASE_HOST}' | base64 -d)" \
---env="DATABASE_USERNAME=\$(kubectl get secret langfuse-secrets -n $NAMESPACE -o jsonpath='{.data.DATABASE_USERNAME}' | base64 -d)" \
---env="DATABASE_NAME=\$(kubectl get secret langfuse-secrets -n $NAMESPACE -o jsonpath='{.data.DATABASE_NAME}' | base64 -d)" \
---env="DATABASE_PASSWORD=\$(kubectl get secret langfuse-secrets -n $NAMESPACE -o jsonpath='{.data.DATABASE_PASSWORD}' | base64 -d)"
+
+# Use a proper job instead of kubectl run to ensure it completes reliably
+kubectl delete job temp-migration-cleanup -n "$NAMESPACE" --ignore-not-found=true
+sleep 2
+
+cat <<EOF | kubectl apply -f -
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: temp-migration-cleanup
+  namespace: $NAMESPACE
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: cleanup
+        image: postgres:15
+        command: ["bash", "-c"]
+        args:
+        - |
+          echo "Cleaning problematic migration states..."
+          psql -h "\$DATABASE_HOST" -U "\$DATABASE_USERNAME" -d "\$DATABASE_NAME" -c "
+          UPDATE _prisma_migrations 
+          SET finished_at = COALESCE(finished_at, NOW()), 
+              logs = COALESCE(logs, 'Migration marked as completed for reliable pod startup')
+          WHERE migration_name = '20251024193002_add_mixpanel_integration' AND finished_at IS NULL;
+          " && echo "Migration cleanup completed successfully"
+        envFrom:
+        - secretRef:
+            name: langfuse-secrets
+EOF
+
+echo "⏳ Waiting for migration cleanup to complete..."
+kubectl wait --for=condition=complete job/temp-migration-cleanup -n "$NAMESPACE" --timeout=120s
+kubectl delete job temp-migration-cleanup -n "$NAMESPACE" --ignore-not-found=true
 
 echo "✅ Migration state cleaned."
 
@@ -446,6 +470,10 @@ kubectl run -n $NAMESPACE temp-add-org-membership --image=postgres:16 --rm -i --
 echo "✅ Admin user created with password: $ADMIN_PASSWORD"
 
 # --- Wait for deployments to be ready ---
+echo "⏳ Waiting for deployments to start properly..."
+sleep 15  # Give pods time to start after migration cleanup
+
+echo "🔄 Checking deployment rollout status..."
 kubectl rollout status deploy/langfuse-web -n "$NAMESPACE" --timeout=300s
 kubectl rollout status deploy/langfuse-worker -n "$NAMESPACE" --timeout=300s
 
