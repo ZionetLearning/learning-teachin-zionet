@@ -131,12 +131,6 @@ public static class LessonsEndpoints
             return Results.BadRequest("Request body cannot be null.");
         }
 
-        if (request.LessonId != lessonId)
-        {
-            logger.LogWarning("UpdateLessonAsync called with mismatched LessonId. Route: {RouteLessonId}, Body: {BodyLessonId}", lessonId, request.LessonId);
-            return Results.BadRequest("LessonId in route must match LessonId in body.");
-        }
-
         if (string.IsNullOrWhiteSpace(request.Title))
         {
             logger.LogWarning("UpdateLessonAsync called with empty Title");
@@ -159,7 +153,7 @@ public static class LessonsEndpoints
 
         try
         {
-            var lesson = await lessonService.UpdateLessonAsync(request, ct);
+            var lesson = await lessonService.UpdateLessonAsync(lessonId, request, ct);
             logger.LogInformation("Updated lesson {LessonId}", lessonId);
             return Results.Ok(lesson);
         }

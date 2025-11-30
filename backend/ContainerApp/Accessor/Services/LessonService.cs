@@ -60,17 +60,17 @@ public class LessonService : ILessonService
         }
     }
 
-    public async Task<LessonModel> UpdateLessonAsync(UpdateLessonRequest request, CancellationToken ct)
+    public async Task<LessonModel> UpdateLessonAsync(Guid lessonId, UpdateLessonRequest request, CancellationToken ct)
     {
         try
         {
             var lesson = await _context.Lessons
-                .FirstOrDefaultAsync(l => l.LessonId == request.LessonId, ct);
+                .FirstOrDefaultAsync(l => l.LessonId == lessonId, ct);
 
             if (lesson == null)
             {
-                _logger.LogWarning("Lesson {LessonId} not found for update", request.LessonId);
-                throw new InvalidOperationException($"Lesson {request.LessonId} not found");
+                _logger.LogWarning("Lesson {LessonId} not found for update", lessonId);
+                throw new InvalidOperationException($"Lesson {lessonId} not found");
             }
 
             lesson.Title = request.Title;
@@ -80,12 +80,12 @@ public class LessonService : ILessonService
 
             await _context.SaveChangesAsync(ct);
 
-            _logger.LogInformation("Updated lesson {LessonId}", request.LessonId);
+            _logger.LogInformation("Updated lesson {LessonId}", lessonId);
             return lesson;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating lesson {LessonId}", request.LessonId);
+            _logger.LogError(ex, "Error updating lesson {LessonId}", lessonId);
             throw;
         }
     }
