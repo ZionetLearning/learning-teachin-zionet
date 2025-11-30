@@ -20,6 +20,25 @@ public sealed class AzureBlobAvatarStorageService : IAvatarStorageService
         _options = opt.Value;
         _log = log;
 
+        var raw = _options.StorageConnectionString ?? "<null>";
+        var length = raw.Length;
+        var last10 = length <= 10 ? raw : raw[^10..];
+
+        // Вся строка с маркерами по краям, чтобы увидеть пробелы и невидимые символы
+        _log.LogError(
+            "Avatar Blob conn string FULL: |{ConnStr}| (Length={Length})",
+            raw,
+            length);
+
+        // Последние 10 символов отдельно, тоже с маркерами
+        _log.LogError(
+            "Avatar Blob conn string LAST10: |{Last10}| (Last10Length={Last10Length})",
+            last10,
+            last10.Length);
+
+        // Явный разделитель конца, чтобы было понятно, что строка закончилась
+        _log.LogError("Avatar Blob conn string END_SEPARATOR: '<<<END>>>'");
+
         var normConnection = _options.StorageConnectionString;
 
         _log.LogInformation("Avatar storage init. Container={Container}",
