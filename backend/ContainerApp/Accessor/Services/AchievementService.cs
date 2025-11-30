@@ -16,12 +16,24 @@ public class AchievementService : IAchievementService
         _logger = logger;
     }
 
-    public async Task<IReadOnlyList<AchievementModel>> GetAllActiveAchievementsAsync(CancellationToken ct)
+    public async Task<IReadOnlyList<AchievementModel>> GetAllActiveAchievementsAsync(DateTime? fromDate, DateTime? toDate, CancellationToken ct)
     {
         try
         {
-            return await _context.Achievements
-                .Where(a => a.IsActive)
+            var query = _context.Achievements
+                .Where(a => a.IsActive);
+
+            if (fromDate.HasValue)
+            {
+                query = query.Where(a => a.CreatedAt >= fromDate.Value);
+            }
+
+            if (toDate.HasValue)
+            {
+                query = query.Where(a => a.CreatedAt <= toDate.Value);
+            }
+
+            return await query
                 .OrderBy(a => a.Feature)
                 .ThenBy(a => a.TargetCount)
                 .ToListAsync(ct);
@@ -33,12 +45,24 @@ public class AchievementService : IAchievementService
         }
     }
 
-    public async Task<IReadOnlyList<AchievementModel>> GetUserUnlockedAchievementsAsync(Guid userId, CancellationToken ct)
+    public async Task<IReadOnlyList<AchievementModel>> GetUserUnlockedAchievementsAsync(Guid userId, DateTime? fromDate, DateTime? toDate, CancellationToken ct)
     {
         try
         {
-            var unlockedAchievementIds = await _context.UserAchievements
-                .Where(ua => ua.UserId == userId)
+            var unlockedQuery = _context.UserAchievements
+                .Where(ua => ua.UserId == userId);
+
+            if (fromDate.HasValue)
+            {
+                unlockedQuery = unlockedQuery.Where(ua => ua.CreatedAt >= fromDate.Value || ua.UnlockedAt >= fromDate.Value);
+            }
+
+            if (toDate.HasValue)
+            {
+                unlockedQuery = unlockedQuery.Where(ua => ua.CreatedAt <= toDate.Value || ua.UnlockedAt <= toDate.Value);
+            }
+
+            var unlockedAchievementIds = await unlockedQuery
                 .Select(ua => ua.AchievementId)
                 .ToListAsync(ct);
 

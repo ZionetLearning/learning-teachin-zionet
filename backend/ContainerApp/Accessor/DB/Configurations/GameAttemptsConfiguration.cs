@@ -44,6 +44,9 @@ public class GameAttemptsConfiguration : IEntityTypeConfiguration<GameAttempt>
         builder.Property(a => a.CreatedAt)
             .HasDefaultValueSql("NOW()");
 
+        builder.Property(a => a.UpdatedAt)
+            .HasDefaultValueSql("NOW()");
+
         // Indexes for efficient querying
         builder.HasIndex(a => a.StudentId);
         builder.HasIndex(a => a.ExerciseId);

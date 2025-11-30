@@ -21,7 +21,7 @@ public static class UsersMapper
         };
     }
 
-    public static CreateUserResponse ToFront(this CreateUserAccessorRequest request)
+    public static CreateUserResponse ToApiModel(this CreateUserAccessorRequest request)
     {
         return new CreateUserResponse
         {
@@ -51,7 +51,7 @@ public static class UsersMapper
         };
     }
 
-    public static GetUserResponse ToFront(this GetUserAccessorResponse response)
+    public static GetUserResponse ToApiModel(this GetUserAccessorResponse response)
     {
         return new GetUserResponse
         {
@@ -70,9 +70,9 @@ public static class UsersMapper
         };
     }
 
-    public static IEnumerable<GetUserResponse> ToFront(this IEnumerable<GetUserAccessorResponse> responses)
+    public static IEnumerable<GetUserResponse> ToApiModel(this IEnumerable<GetUserAccessorResponse> responses)
     {
-        return responses.Select(ToFront);
+        return responses.Select(ToApiModel);
     }
 
     public static GetUsersForCallerAccessorRequest ToAccessor(this CallerContextDto context)

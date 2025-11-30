@@ -311,6 +311,10 @@ namespace Accessor.DB.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("achievement_id");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
                     b.Property<DateTime>("UnlockedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("unlocked_at");
@@ -341,6 +345,10 @@ namespace Accessor.DB.Migrations
                     b.Property<int>("Count")
                         .HasColumnType("integer")
                         .HasColumnName("count");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
 
                     b.Property<string>("Feature")
                         .IsRequired()
@@ -530,6 +538,11 @@ namespace Accessor.DB.Migrations
 
                     b.Property<Guid>("StudentId")
                         .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
 
                     b.HasKey("AttemptId");
 

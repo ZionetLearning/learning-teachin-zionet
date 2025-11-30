@@ -61,7 +61,7 @@ public static class GamesEndpoints
             logger.LogInformation("SubmitAttempts called by role={Role}, studentId={StudentId}", callerRole, studentId);
 
             var accessorResult = await gameAccessorClient.SubmitAttemptAsync(studentId, request, ct);
-            var response = accessorResult.ToFront();
+            var response = accessorResult.ToApiModel();
 
             logger.LogInformation(
                 "Attempt submitted successfully for StudentId={StudentId}, GameType={GameType}, Difficulty={Difficulty}, Status={Status}, AttemptNumber={AttemptNumber}",
@@ -92,6 +92,8 @@ public static class GamesEndpoints
         [FromQuery] int page,
         [FromQuery] int pageSize,
         [FromQuery] bool getPending,
+        [FromQuery] DateTimeOffset? fromDate,
+        [FromQuery] DateTimeOffset? toDate,
         [FromServices] IGameAccessorClient gameAccessorClient,
         HttpContext http,
         ILogger<GameEndpoint> logger,
@@ -109,10 +111,12 @@ public static class GamesEndpoints
                 return Results.Forbid();
             }
 
-            logger.LogInformation("Fetching history for StudentId={StudentId}, Summary={Summary}, GetPending={GetPending}, Page={Page}, PageSize={PageSize}", studentId, summary, getPending, page, pageSize);
+            logger.LogInformation(
+                "Fetching history for StudentId={StudentId}, Summary={Summary}, GetPending={GetPending}, Page={Page}, PageSize={PageSize}, FromDate={FromDate}, ToDate={ToDate}",
+                studentId, summary, getPending, page, pageSize, fromDate, toDate);
 
-            var accessorResult = await gameAccessorClient.GetHistoryAsync(studentId, summary, page, pageSize, getPending, ct);
-            var response = accessorResult.ToFront();
+            var accessorResult = await gameAccessorClient.GetHistoryAsync(studentId, summary, page, pageSize, getPending, fromDate, toDate, ct);
+            var response = accessorResult.ToApiModel();
 
             if (response.IsSummary)
             {
@@ -136,6 +140,8 @@ public static class GamesEndpoints
         [FromRoute] Guid studentId,
         [FromQuery] int page,
         [FromQuery] int pageSize,
+        [FromQuery] DateTimeOffset? fromDate,
+        [FromQuery] DateTimeOffset? toDate,
         [FromServices] IGameAccessorClient gameAccessorClient,
         HttpContext http,
         ILogger<GameEndpoint> logger,
@@ -153,10 +159,12 @@ public static class GamesEndpoints
                 return Results.Forbid();
             }
 
-            logger.LogInformation("Fetching mistakes for StudentId={StudentId}, Page={Page}, PageSize={PageSize}", studentId, page, pageSize);
+            logger.LogInformation(
+                "Fetching mistakes for StudentId={StudentId}, Page={Page}, PageSize={PageSize}, FromDate={FromDate}, ToDate={ToDate}",
+                studentId, page, pageSize, fromDate, toDate);
 
-            var accessorResult = await gameAccessorClient.GetMistakesAsync(studentId, page, pageSize, ct);
-            var response = accessorResult.ToFront();
+            var accessorResult = await gameAccessorClient.GetMistakesAsync(studentId, page, pageSize, fromDate, toDate, ct);
+            var response = accessorResult.ToApiModel();
 
             return Results.Ok(response);
         }
@@ -179,7 +187,7 @@ public static class GamesEndpoints
             logger.LogInformation("Fetching all histories Page={Page}, PageSize={PageSize}", page, pageSize);
 
             var accessorResult = await gameAccessorClient.GetAllHistoriesAsync(page, pageSize, ct);
-            var response = accessorResult.ToFront();
+            var response = accessorResult.ToApiModel();
 
             return Results.Ok(response);
         }

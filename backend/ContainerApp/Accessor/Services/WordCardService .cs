@@ -16,14 +16,28 @@ public class WordCardService : IWordCardService
         _logger = logger;
     }
 
-    public async Task<IReadOnlyList<WordCard>> GetWordCardsAsync(Guid userId, CancellationToken ct)
+    public async Task<IReadOnlyList<WordCard>> GetWordCardsAsync(Guid userId, DateTime? fromDate, DateTime? toDate, CancellationToken ct)
     {
         try
         {
-            _logger.LogInformation("Fetching word cards for user {UserId}", userId);
+            _logger.LogInformation(
+                "Fetching word cards for user {UserId}, FromDate={FromDate}, ToDate={ToDate}",
+                userId, fromDate, toDate);
 
-            var entities = await _db.WordCards
-                .Where(card => card.UserId == userId)
+            var query = _db.WordCards
+                .Where(card => card.UserId == userId);
+
+            if (fromDate.HasValue)
+            {
+                query = query.Where(card => card.CreatedAt >= fromDate.Value || card.UpdatedAt >= fromDate.Value);
+            }
+
+            if (toDate.HasValue)
+            {
+                query = query.Where(card => card.CreatedAt <= toDate.Value || card.UpdatedAt <= toDate.Value);
+            }
+
+            var entities = await query
                 .OrderByDescending(card => card.CreatedAt)
                 .ToListAsync(ct);
 
