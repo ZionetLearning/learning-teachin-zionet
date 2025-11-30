@@ -22,6 +22,8 @@ cronjobs:
 
 manager:
   image:
+    name: manager  # Required: image name for the container
+    # tag will be set dynamically via global.environment by CI/CD
   env:
     ASPNETCORE_URLS: "http://+:5001"
   # Consider adding resource limits here if you introduce them in templates
