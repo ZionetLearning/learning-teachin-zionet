@@ -1,6 +1,6 @@
 ﻿namespace Manager.Services.Clients.Engine.Models;
 
-public sealed record ChatHistoryForFrontDto
+public sealed record GetChatHistoryResponse
 {
     public required Guid ChatId { get; init; }
     public string Name { get; init; } = string.Empty;

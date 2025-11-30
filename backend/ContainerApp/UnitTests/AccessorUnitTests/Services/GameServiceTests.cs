@@ -258,7 +258,7 @@ public class GameServiceTests
         await db.SaveChangesAsync();
 
         // Act
-        var result = await service.GetHistoryAsync(studentId, summary: false, page: 1, pageSize: 10, getPending: false, CancellationToken.None);
+        var result = await service.GetHistoryAsync(studentId, summary: false, page: 1, pageSize: 10, getPending: false, fromDate: null, toDate: null, CancellationToken.None);
 
         // Assert
         result.Should().NotBeNull();
@@ -275,7 +275,7 @@ public class GameServiceTests
         var service = NewGameService(db);
 
         // Act
-        var result = await service.GetHistoryAsync(Guid.NewGuid(), summary: false, page: -1, pageSize: 200, getPending: false, CancellationToken.None);
+        var result = await service.GetHistoryAsync(Guid.NewGuid(), summary: false, page: -1, pageSize: 200, getPending: false, fromDate: null, toDate: null, CancellationToken.None);
 
         // Assert
         result.Should().NotBeNull();
@@ -350,7 +350,7 @@ public class GameServiceTests
         await db.SaveChangesAsync();
 
         // Act
-        var result = await service.GetMistakesAsync(studentId, page: 1, pageSize: 10, CancellationToken.None);
+        var result = await service.GetMistakesAsync(studentId, page: 1, pageSize: 10, fromDate: null, toDate: null, CancellationToken.None);
 
         // Assert
         result.Items.Should().HaveCount(1); // Only exercise1 should be included (exercise2 has a success)
@@ -403,7 +403,7 @@ public class GameServiceTests
         await db.SaveChangesAsync();
 
         // Act
-        var result = await service.GetMistakesAsync(studentId, page: 1, pageSize: 10, CancellationToken.None);
+        var result = await service.GetMistakesAsync(studentId, page: 1, pageSize: 10, fromDate: null, toDate: null, CancellationToken.None);
 
         // Assert
         result.Items.Should().HaveCount(1); // Only 1 exercise for this student
@@ -455,7 +455,7 @@ public class GameServiceTests
         await db.SaveChangesAsync();
 
         // Act
-        var result = await service.GetMistakesAsync(studentId, page: 1, pageSize: 10, CancellationToken.None);
+        var result = await service.GetMistakesAsync(studentId, page: 1, pageSize: 10, fromDate: null, toDate: null, CancellationToken.None);
 
         // Assert
         result.Items.Should().HaveCount(1); // 1 exercise
@@ -527,7 +527,7 @@ public class GameServiceTests
         await db.SaveChangesAsync();
 
         // Act
-        var result = await service.GetMistakesAsync(studentId, page: 1, pageSize: 10, CancellationToken.None);
+        var result = await service.GetMistakesAsync(studentId, page: 1, pageSize: 10, fromDate: null, toDate: null, CancellationToken.None);
 
         // Assert
         result.Items.Should().BeEmpty(); // Should not include this exercise since it was eventually solved
