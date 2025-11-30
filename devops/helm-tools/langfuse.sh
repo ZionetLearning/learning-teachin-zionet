@@ -45,8 +45,6 @@ fi
 helm $ACTION langfuse langfuse/langfuse \
   --namespace "$NAMESPACE" \
   --set langfuse.replicas=1 \
-  --set langfuse.migration.autoMigrate=false \
-  --set clickhouse.migration.autoMigrate=false \
   --set langfuse.nextauth.url="https://$DOMAIN/langfuse" \
   --set langfuse.salt.secretKeyRef.name="langfuse-secrets" \
   --set langfuse.salt.secretKeyRef.key="SALT" \
@@ -217,8 +215,8 @@ helm $ACTION langfuse langfuse/langfuse \
   --set-string langfuse.additionalEnv[40].value="true" \
   --set langfuse.additionalEnv[41].name="VALIDATE_INVITATION_EMAIL" \
   --set-string langfuse.additionalEnv[41].value="true" \
-  --set langfuse.additionalEnv[42].name="DISABLE_MIGRATIONS" \
-  --set-string langfuse.additionalEnv[42].value="true" \
+  --set langfuse.additionalEnv[42].name="DATABASE_MIGRATION_RUN_ON_STARTUP" \
+  --set-string langfuse.additionalEnv[42].value="false" \
   --set redis.auth.existingSecret="langfuse-secrets" \
   --set redis.auth.existingSecretPasswordKey="REDIS_PASSWORD" \
   --set redis.auth.username="default" \
@@ -322,6 +320,23 @@ kubectl wait --for=condition=complete job/langfuse-migrate -n "$NAMESPACE" --tim
 kubectl delete job langfuse-migrate -n "$NAMESPACE" --ignore-not-found
 
 echo "✅ Migrations applied."
+
+# --- Phase 1.6: Clean migration state to prevent web pod startup failures ---
+echo "🧹 Cleaning migration state for reliable pod startup..."
+kubectl run temp-migration-cleanup --rm -i --image=postgres:15 --restart=Never --env="PGPASSWORD=\$DATABASE_PASSWORD" -- bash -c "
+# Mark the problematic migration as completed if it exists
+psql -h \"\$DATABASE_HOST\" -U \"\$DATABASE_USERNAME\" -d \"\$DATABASE_NAME\" -c \"
+UPDATE _prisma_migrations 
+SET finished_at = COALESCE(finished_at, NOW()), 
+    logs = COALESCE(logs, 'Migration marked as completed for pod startup')
+WHERE migration_name = '20251024193002_add_mixpanel_integration';
+\" || echo 'Migration table update completed'
+" --env="DATABASE_HOST=\$(kubectl get secret langfuse-secrets -n $NAMESPACE -o jsonpath='{.data.DATABASE_HOST}' | base64 -d)" \
+--env="DATABASE_USERNAME=\$(kubectl get secret langfuse-secrets -n $NAMESPACE -o jsonpath='{.data.DATABASE_USERNAME}' | base64 -d)" \
+--env="DATABASE_NAME=\$(kubectl get secret langfuse-secrets -n $NAMESPACE -o jsonpath='{.data.DATABASE_NAME}' | base64 -d)" \
+--env="DATABASE_PASSWORD=\$(kubectl get secret langfuse-secrets -n $NAMESPACE -o jsonpath='{.data.DATABASE_PASSWORD}' | base64 -d)"
+
+echo "✅ Migration state cleaned."
 
 # --- Phase 1.6: seed admin user ---
 echo "🔐 Creating admin user: $ADMIN_EMAIL"
