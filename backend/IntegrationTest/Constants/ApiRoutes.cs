@@ -48,4 +48,12 @@ public static class ApiRoutes
     // -------- User Game Config --------
     public const string GameConfig = "game-config-manager";
     public static string GameConfigByName(GameName gameName) => $"game-config-manager/{gameName}";
+
+    // -------- Emails --------
+    public const string EmailDraft = "emails-manager/draft";
+    public static string GetEmailRecipients(string name) => $"/emails-manager/recipients/{name}";
+
+    public const string SendEmail = "emails-manager/send";
+
+
 }

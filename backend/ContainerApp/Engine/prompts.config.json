@@ -36,6 +36,10 @@
       "GlobalChatPageContext": {
         "Key": "chat.global.page.context",
         "Label": "production"
+      },
+      "EmailPrompt": {
+        "Key": "prompts.email.template",
+        "Label": "production"
       }
     }
   }
