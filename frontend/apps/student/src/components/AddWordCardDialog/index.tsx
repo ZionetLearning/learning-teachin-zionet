@@ -13,7 +13,8 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import { useTranslation } from "react-i18next";
 import { useCreateWordCard, type CreateWordCardRequest } from "../../api";
-import { useWordExplanation } from "../../hooks";
+import { useWordExplanation, useTrackAchievement } from "../../hooks";
+import { ACHIEVEMENT_INCREMENT } from "../../constants";
 import { useStyles } from "./style";
 
 export type AddWordCardDialogProps = {
@@ -33,6 +34,7 @@ export const AddWordCardDialog = ({
   const { t } = useTranslation();
 
   const createCard = useCreateWordCard();
+  const { track } = useTrackAchievement("WordCards");
 
   const selectionMode = useMemo(
     () => Boolean(initialHebrew?.trim()),
@@ -81,6 +83,7 @@ export const AddWordCardDialog = ({
     };
     createCard.mutate(body, {
       onSuccess: () => {
+        track(ACHIEVEMENT_INCREMENT);
         setEnglish("");
         resetExplanation();
         if (!selectionMode) setHebrew("");
