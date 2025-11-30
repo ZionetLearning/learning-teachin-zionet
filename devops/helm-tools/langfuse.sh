@@ -280,7 +280,7 @@ metadata:
   namespace: $NAMESPACE
 spec:
   backoffLimit: 3
-  activeDeadlineSeconds: 1200
+  activeDeadlineSeconds: 600
   template:
     spec:
       restartPolicy: Never
@@ -293,22 +293,11 @@ spec:
             echo "Running Prisma migrations..."
             # If migration fails, try to resolve common failed migrations and retry
             if ! npx prisma migrate deploy --schema=packages/shared/prisma/schema.prisma; then
-            echo "Migration failed, attempting to resolve and retry..."
-            # First, try to resolve the specific failed migrations
-            npx prisma migrate resolve --rolled-back 20240513082205_observations_view_add_time_to_first_token --schema=packages/shared/prisma/schema.prisma || true
-            # This migration fails because the index already exists - mark it as applied
-            npx prisma migrate resolve --applied 20240612101858_add_index_observations_project_id_prompt_id --schema=packages/shared/prisma/schema.prisma || true
-            # This migration fails because constraint already exists - mark it as applied  
-            npx prisma migrate resolve --applied "20240718011733_dataset_runs_add_unique_dataset_id_project_id_name copy" --schema=packages/shared/prisma/schema.prisma || true
-            # This migration doesn't exist in current version - mark it as rolled back
-            npx prisma migrate resolve --rolled-back 20251024193002_add_mixpanel_integration --schema=packages/shared/prisma/schema.prisma || true
-            # Then resolve other common problematic migrations
-            npx prisma migrate resolve --applied 20240104210051_add_model_indices --schema=packages/shared/prisma/schema.prisma || true
-            npx prisma migrate resolve --applied 20240111152124_add_gpt_35_pricing --schema=packages/shared/prisma/schema.prisma || true
-            npx prisma migrate resolve --applied 20240226165118_add_observations_index --schema=packages/shared/prisma/schema.prisma || true
-            npx prisma migrate resolve --applied 20240304222519_scores_add_index --schema=packages/shared/prisma/schema.prisma || true
-            npx prisma migrate resolve --applied 20240618164956_create_traces_project_id_timestamp_idx --schema=packages/shared/prisma/schema.prisma || true
-            npx prisma migrate resolve --applied 20250519073249_add_trace_media_media_id_index --schema=packages/shared/prisma/schema.prisma || true
+              echo "Migration failed, attempting to resolve and retry..."
+              npx prisma migrate resolve --applied 20240104210051_add_model_indices --schema=packages/shared/prisma/schema.prisma || true
+              npx prisma migrate resolve --applied 20240111152124_add_gpt_35_pricing --schema=packages/shared/prisma/schema.prisma || true
+              npx prisma migrate resolve --applied 20240226165118_add_observations_index --schema=packages/shared/prisma/schema.prisma || true
+              npx prisma migrate resolve --applied 20250519073249_add_trace_media_media_id_index --schema=packages/shared/prisma/schema.prisma || true
               npx prisma migrate deploy --schema=packages/shared/prisma/schema.prisma
             fi
         envFrom:
@@ -316,51 +305,10 @@ spec:
             name: langfuse-secrets
 EOF
 
-kubectl wait --for=condition=complete job/langfuse-migrate -n "$NAMESPACE" --timeout=1200s
+kubectl wait --for=condition=complete job/langfuse-migrate -n "$NAMESPACE" --timeout=600s
 kubectl delete job langfuse-migrate -n "$NAMESPACE" --ignore-not-found
 
 echo "✅ Migrations applied."
-
-# --- Phase 1.6: Clean migration state to prevent web pod startup failures ---
-echo "🧹 Cleaning migration state for reliable pod startup..."
-
-# Use a proper job instead of kubectl run to ensure it completes reliably
-kubectl delete job temp-migration-cleanup -n "$NAMESPACE" --ignore-not-found=true
-sleep 2
-
-cat <<EOF | kubectl apply -f -
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: temp-migration-cleanup
-  namespace: $NAMESPACE
-spec:
-  template:
-    spec:
-      restartPolicy: Never
-      containers:
-      - name: cleanup
-        image: postgres:15
-        command: ["bash", "-c"]
-        args:
-        - |
-          echo "Cleaning problematic migration states..."
-          psql -h "\$DATABASE_HOST" -U "\$DATABASE_USERNAME" -d "\$DATABASE_NAME" -c "
-          UPDATE _prisma_migrations 
-          SET finished_at = COALESCE(finished_at, NOW()), 
-              logs = COALESCE(logs, 'Migration marked as completed for reliable pod startup')
-          WHERE migration_name = '20251024193002_add_mixpanel_integration' AND finished_at IS NULL;
-          " && echo "Migration cleanup completed successfully"
-        envFrom:
-        - secretRef:
-            name: langfuse-secrets
-EOF
-
-echo "⏳ Waiting for migration cleanup to complete..."
-kubectl wait --for=condition=complete job/temp-migration-cleanup -n "$NAMESPACE" --timeout=120s
-kubectl delete job temp-migration-cleanup -n "$NAMESPACE" --ignore-not-found=true
-
-echo "✅ Migration state cleaned."
 
 # --- Phase 1.6: seed admin user ---
 echo "🔐 Creating admin user: $ADMIN_EMAIL"
@@ -470,10 +418,6 @@ kubectl run -n $NAMESPACE temp-add-org-membership --image=postgres:16 --rm -i --
 echo "✅ Admin user created with password: $ADMIN_PASSWORD"
 
 # --- Wait for deployments to be ready ---
-echo "⏳ Waiting for deployments to start properly..."
-sleep 15  # Give pods time to start after migration cleanup
-
-echo "🔄 Checking deployment rollout status..."
 kubectl rollout status deploy/langfuse-web -n "$NAMESPACE" --timeout=300s
 kubectl rollout status deploy/langfuse-worker -n "$NAMESPACE" --timeout=300s
 
