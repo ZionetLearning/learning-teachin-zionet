@@ -9,7 +9,7 @@ resource "kubernetes_manifest" "cluster_secret_store" {
       provider = {
         azurekv = {
           authType  = "ManagedIdentity"
-          vaultUrl  = "https://teachin-seo-kv.vault.azure.net/"
+          vaultUrl  = "https://${var.key_vault_name}.vault.azure.net/"
           identityId = var.identity_id
           tenantId   = var.tenant_id
         }

@@ -73,9 +73,69 @@ resource "azurerm_key_vault_secret" "avatars_storage_connection" {
 ########################
 resource "azurerm_key_vault_secret" "engine_tavily_apikey" {
   count        = var.environment_name == "dev" || var.environment_name == "prod" ? 1 : 0
-  name         = "${var.environment_name}-engine-tavily-apikey"
+  name         = "engine-tavily-apikey"
   value        = var.tavily_api_key
   key_vault_id = data.azurerm_key_vault.shared.id
+}
+
+########################
+# Application Secrets for Services
+########################
+# Azure OpenAI API Key for Engine
+resource "azurerm_key_vault_secret" "engine_azureopenai_apikey" {
+  name         = "engine-azureopenai-apikey"
+  value        = var.azure_openai_api_key != null ? var.azure_openai_api_key : "placeholder-openai-key-not-configured"
+  key_vault_id = data.azurerm_key_vault.shared.id
+}
+
+# Azure Speech Service Key for Engine
+resource "azurerm_key_vault_secret" "engine_azurespeech_subscriptionkey" {
+  name         = "engine-azurespeech-subscriptionkey"
+  value        = var.azure_speech_key != null ? var.azure_speech_key : "placeholder-speech-key-not-configured"
+  key_vault_id = data.azurerm_key_vault.shared.id
+}
+
+# Azure Speech Service Key for Accessor
+resource "azurerm_key_vault_secret" "accessor_speech_key" {
+  name         = "accessor-speech-key"
+  value        = var.azure_speech_key != null ? var.azure_speech_key : "placeholder-speech-key-not-configured"
+  key_vault_id = data.azurerm_key_vault.shared.id
+}
+
+# JWT Secrets for Manager
+resource "azurerm_key_vault_secret" "manager_jwt_secret" {
+  name         = "manager-jwt-secret"
+  value        = var.jwt_secret != null ? var.jwt_secret : random_password.jwt_secret.result
+  key_vault_id = data.azurerm_key_vault.shared.id
+}
+
+resource "azurerm_key_vault_secret" "manager_jwt_issuer" {
+  name         = "manager-jwt-issuer"
+  value        = var.jwt_issuer
+  key_vault_id = data.azurerm_key_vault.shared.id
+}
+
+resource "azurerm_key_vault_secret" "manager_jwt_audience" {
+  name         = "manager-jwt-audience"
+  value        = var.jwt_audience
+  key_vault_id = data.azurerm_key_vault.shared.id
+}
+
+resource "azurerm_key_vault_secret" "manager_jwt_refreshtokenhashkey" {
+  name         = "manager-jwt-refreshtokenhashkey"
+  value        = var.jwt_refresh_token_hash_key != null ? var.jwt_refresh_token_hash_key : random_password.jwt_refresh_hash.result
+  key_vault_id = data.azurerm_key_vault.shared.id
+}
+
+# Generate secure random passwords for JWT secrets if not provided
+resource "random_password" "jwt_secret" {
+  length  = 64
+  special = true
+}
+
+resource "random_password" "jwt_refresh_hash" {
+  length  = 32
+  special = true
 }
 
 ########################
@@ -154,7 +214,7 @@ resource "azurerm_key_vault_secret" "langfuse_direct_url" {
 ########################
 resource "azurerm_key_vault_secret" "langfuse_baseurl" {
   count        = var.environment_name == "dev" || var.environment_name == "prod" ? 1 : 0
-  name         = "${var.environment_name}-langfuse-baseurl"
+  name         = "langfuse-baseurl"
   value        = var.environment_name == "prod" ? "https://teachin-prod.westeurope.cloudapp.azure.com/langfuse" : "https://teachin.westeurope.cloudapp.azure.com/langfuse"
   key_vault_id = data.azurerm_key_vault.shared.id
 }
@@ -163,14 +223,14 @@ resource "azurerm_key_vault_secret" "langfuse_baseurl" {
 
 resource "azurerm_key_vault_secret" "langfuse_public_key" {
   count        = var.environment_name == "dev" || var.environment_name == "prod" ? 1 : 0
-  name         = "${var.environment_name}-langfuse-public-key"
+  name         = "langfuse-public-key"
   value        = "pk-lf-78a4be40-1031-43d6-b2a0-4b1cf15f8ff6"
   key_vault_id = data.azurerm_key_vault.shared.id
 }
 
 resource "azurerm_key_vault_secret" "langfuse_secret_key" {
   count        = var.environment_name == "dev" || var.environment_name == "prod" ? 1 : 0
-  name         = "${var.environment_name}-langfuse-secret-key"
+  name         = "langfuse-secret-key"
   value        = "sk-lf-7e889621-246f-4bdb-8954-d298ef5d67a1"
   key_vault_id = data.azurerm_key_vault.shared.id
 }
