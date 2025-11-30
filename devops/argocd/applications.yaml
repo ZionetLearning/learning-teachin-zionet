@@ -7,25 +7,25 @@ spec:
   project: default
   source:
     repoURL: 'https://github.com/ZionetLearning/learning-teachin-zionet.git'
-    targetRevision: HEAD
+    targetRevision: snir-avichai/1047/create-argocd
     path: devops/kubernetes/charts
     helm:
       valueFiles:
         - values.yaml
-        - values.dev.yaml
+        - values.prod.yaml
       parameters:
       - name: global.namePrefix
-        value: dev
+        value: prod
       - name: namespace.name
-        value: dev
+        value: prod
       - name: namespace.create
         value: "false"
       - name: namePrefix
-        value: dev
+        value: prod
       - name: global.dockerRegistry
         value: teachindevacr.azurecr.io
       - name: global.environment
-        value: dev
+        value: prod
       - name: langfuse.enabled
         value: "true"
       - name: accessor.secrets.langfuse.enabled
@@ -36,7 +36,7 @@ spec:
         value: "false"
   destination:
     server: 'https://kubernetes.default.svc'
-    namespace: dev
+    namespace: prod
   syncPolicy:
     automated:
       prune: true
