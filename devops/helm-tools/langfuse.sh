@@ -45,6 +45,8 @@ fi
 helm $ACTION langfuse langfuse/langfuse \
   --namespace "$NAMESPACE" \
   --set langfuse.replicas=1 \
+  --set langfuse.migration.autoMigrate=false \
+  --set clickhouse.migration.autoMigrate=false \
   --set langfuse.nextauth.url="https://$DOMAIN/langfuse" \
   --set langfuse.salt.secretKeyRef.name="langfuse-secrets" \
   --set langfuse.salt.secretKeyRef.key="SALT" \
@@ -215,6 +217,8 @@ helm $ACTION langfuse langfuse/langfuse \
   --set-string langfuse.additionalEnv[40].value="true" \
   --set langfuse.additionalEnv[41].name="VALIDATE_INVITATION_EMAIL" \
   --set-string langfuse.additionalEnv[41].value="true" \
+  --set langfuse.additionalEnv[42].name="DISABLE_MIGRATIONS" \
+  --set-string langfuse.additionalEnv[42].value="true" \
   --set redis.auth.existingSecret="langfuse-secrets" \
   --set redis.auth.existingSecretPasswordKey="REDIS_PASSWORD" \
   --set redis.auth.username="default" \
