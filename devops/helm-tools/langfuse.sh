@@ -296,6 +296,10 @@ spec:
             npx prisma migrate resolve --rolled-back 20240513082205_observations_view_add_time_to_first_token --schema=packages/shared/prisma/schema.prisma || true
             # This migration fails because the index already exists - mark it as applied
             npx prisma migrate resolve --applied 20240612101858_add_index_observations_project_id_prompt_id --schema=packages/shared/prisma/schema.prisma || true
+            # This migration fails because constraint already exists - mark it as applied  
+            npx prisma migrate resolve --applied "20240718011733_dataset_runs_add_unique_dataset_id_project_id_name copy" --schema=packages/shared/prisma/schema.prisma || true
+            # This migration doesn't exist in current version - mark it as rolled back
+            npx prisma migrate resolve --rolled-back 20251024193002_add_mixpanel_integration --schema=packages/shared/prisma/schema.prisma || true
             # Then resolve other common problematic migrations
             npx prisma migrate resolve --applied 20240104210051_add_model_indices --schema=packages/shared/prisma/schema.prisma || true
             npx prisma migrate resolve --applied 20240111152124_add_gpt_35_pricing --schema=packages/shared/prisma/schema.prisma || true
