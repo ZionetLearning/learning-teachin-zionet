@@ -48,6 +48,7 @@ builder.Services.AddScoped<IMeetingService, MeetingService>();
 builder.Services.AddScoped<IAzureCommunicationService, AzureCommunicationService>();
 builder.Services.AddScoped<IUserGameConfigurationService, UserGameConfigurationService>();
 builder.Services.AddScoped<IAchievementService, AchievementService>();
+builder.Services.AddScoped<ILessonService, LessonService>();
 
 builder.Services.AddHttpClient("SpeechClient", client =>
 {
@@ -191,5 +192,6 @@ app.MapClassesEndpoints();
 app.MapMeetingsEndpoints();
 app.MapUserGameConfigurationEndpoints();
 app.MapAchievementsEndpoints();
+app.MapLessonsEndpoints();
 
 await app.RunAsync();
