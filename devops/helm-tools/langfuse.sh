@@ -292,8 +292,9 @@ spec:
             # If migration fails, try to resolve common failed migrations and retry
             if ! npx prisma migrate deploy --schema=packages/shared/prisma/schema.prisma; then
             echo "Migration failed, attempting to resolve and retry..."
-            # First, try to resolve the specific failed migration
+            # First, try to resolve the specific failed migrations
             npx prisma migrate resolve --rolled-back 20240513082205_observations_view_add_time_to_first_token --schema=packages/shared/prisma/schema.prisma || true
+            npx prisma migrate resolve --rolled-back 20240612101858_add_index_observations_project_id_prompt_id --schema=packages/shared/prisma/schema.prisma || true
             # Then resolve other common problematic migrations
             npx prisma migrate resolve --applied 20240104210051_add_model_indices --schema=packages/shared/prisma/schema.prisma || true
             npx prisma migrate resolve --applied 20240111152124_add_gpt_35_pricing --schema=packages/shared/prisma/schema.prisma || true
