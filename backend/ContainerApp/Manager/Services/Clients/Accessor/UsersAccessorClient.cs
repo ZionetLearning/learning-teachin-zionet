@@ -238,17 +238,112 @@ public class UsersAccessorClient(
 
         try
         {
-            await _daprClient.InvokeMethodAsync(
-                HttpMethod.Put,
-                AppIds.Accessor,
-                $"users-accessor/language",
-                request,
-                cancellationToken: ct
-            );
+            await _daprClient.InvokeMethodAsync(HttpMethod.Put, AppIds.Accessor, "users-accessor/language", request, ct);
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("User {UserId} not found for language update", request.UserId);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to update user language to {Language}", request.Language);
+            _logger.LogError(ex, "Error updating user language {UserId}", request.UserId);
+            throw;
+        }
+    }
+
+    public async Task<GetUploadAvatarUrlAccessorResponse?> GetAvatarUploadUrlAsync(Guid userId, GetUploadAvatarUrlAccessorRequest request, CancellationToken ct = default)
+    {
+        try
+        {
+            return await _daprClient.InvokeMethodAsync<GetUploadAvatarUrlAccessorRequest, GetUploadAvatarUrlAccessorResponse>(
+                HttpMethod.Post,
+                AppIds.Accessor,
+                $"users-accessor/{userId}/avatar/upload-url",
+                request,
+                ct);
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.BadRequest)
+        {
+            _logger.LogWarning("Bad request for avatar upload url: {UserId}", userId);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting avatar upload url for {UserId}", userId);
+            throw;
+        }
+    }
+
+    public async Task<bool> ConfirmAvatarAsync(Guid userId, ConfirmAvatarAccessorRequest request, CancellationToken ct = default)
+    {
+        try
+        {
+            await _daprClient.InvokeMethodAsync(
+                HttpMethod.Post,
+                AppIds.Accessor,
+                $"users-accessor/{userId}/avatar/confirm",
+                request,
+                ct);
+            return true;
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.BadRequest)
+        {
+            _logger.LogWarning("Bad request for avatar confirm: {UserId}", userId);
+            return false;
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("User not found for avatar confirm: {UserId}", userId);
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error confirming avatar for {UserId}", userId);
+            throw;
+        }
+    }
+
+    public async Task<bool> DeleteAvatarAsync(Guid userId, CancellationToken ct = default)
+    {
+        try
+        {
+            await _daprClient.InvokeMethodAsync(
+                HttpMethod.Delete,
+                AppIds.Accessor,
+                $"users-accessor/{userId}/avatar",
+                ct);
+            return true;
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("User not found for avatar delete: {UserId}", userId);
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting avatar for {UserId}", userId);
+            throw;
+        }
+    }
+
+    public async Task<string?> GetAvatarReadUrlAsync(Guid userId, CancellationToken ct = default)
+    {
+        try
+        {
+            return await _daprClient.InvokeMethodAsync<string>(
+                HttpMethod.Get,
+                AppIds.Accessor,
+                $"users-accessor/{userId}/avatar/read-url",
+                ct);
+        }
+        catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("Avatar not found for read url: {UserId}", userId);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting avatar read url for {UserId}", userId);
             throw;
         }
     }

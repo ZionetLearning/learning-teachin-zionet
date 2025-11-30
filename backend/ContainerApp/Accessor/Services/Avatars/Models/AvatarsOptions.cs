@@ -1,4 +1,4 @@
-﻿namespace Manager.Services.Avatars.Models;
+namespace Accessor.Services.Avatars.Models;
 
 public sealed class AvatarsOptions
 {
