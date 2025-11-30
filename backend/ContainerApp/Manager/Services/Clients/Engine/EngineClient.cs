@@ -129,7 +129,7 @@ public class EngineClient : IEngineClient
         }
     }
 
-    public async Task<ChatHistoryForFrontDto?> GetHistoryChatAsync(Guid chatId, Guid userId, CancellationToken cancellationToken = default)
+    public async Task<GetChatHistoryResponse?> GetHistoryChatAsync(Guid chatId, Guid userId, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Inside: {Method} in {Class}", nameof(GetHistoryChatAsync), nameof(EngineClient));
 
@@ -145,7 +145,7 @@ public class EngineClient : IEngineClient
 
         try
         {
-            var responce = await _daprClient.InvokeMethodAsync<ChatHistoryForFrontDto>(
+            var responce = await _daprClient.InvokeMethodAsync<GetChatHistoryResponse>(
                 HttpMethod.Get,
                 "engine",
                 $"chat/{chatId}/{userId}/history",
@@ -256,7 +256,7 @@ public class EngineClient : IEngineClient
             return (false, "failed to send explain mistake request");
         }
     }
-    public async Task<(bool success, string message)> GenerateWordExplainAsync(WordExplainRequest request, CancellationToken ct = default)
+    public async Task<(bool success, string message)> GenerateWordExplainAsync(WordExplainEngineRequest request, CancellationToken ct = default)
     {
         try
         {
