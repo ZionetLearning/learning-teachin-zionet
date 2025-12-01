@@ -7,14 +7,20 @@ namespace Accessor.Endpoints;
 
 public static class LessonsEndpoints
 {
+    private sealed class LessonsEndpoint { }
+
     public static IEndpointRouteBuilder MapLessonsEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/lessons-accessor").WithTags("Lessons");
 
-        group.MapGet("/user/{userId:guid}", GetLessonsByTeacherAsync);
-        group.MapPost("", CreateLessonAsync);
-        group.MapPut("/{lessonId:guid}", UpdateLessonAsync);
-        group.MapDelete("/{lessonId:guid}", DeleteLessonAsync);
+        group.MapGet("/user/{userId:guid}", GetLessonsByTeacherAsync)
+            .WithName("GetLessonsByTeacher");
+        group.MapPost("", CreateLessonAsync)
+            .WithName("CreateLesson");
+        group.MapPut("/{lessonId:guid}", UpdateLessonAsync)
+            .WithName("UpdateLesson");
+        group.MapDelete("/{lessonId:guid}", DeleteLessonAsync)
+            .WithName("DeleteLesson");
 
         return app;
     }
@@ -22,7 +28,7 @@ public static class LessonsEndpoints
     private static async Task<IResult> GetLessonsByTeacherAsync(
         [FromRoute] Guid userId,
         [FromServices] ILessonService lessonService,
-        ILogger<ILessonService> logger,
+        [FromServices] ILogger<LessonsEndpoint> logger,
         CancellationToken ct)
     {
         if (userId == Guid.Empty)
@@ -54,7 +60,7 @@ public static class LessonsEndpoints
     private static async Task<IResult> CreateLessonAsync(
         [FromBody] CreateLessonRequest request,
         [FromServices] ILessonService lessonService,
-        ILogger<ILessonService> logger,
+        [FromServices] ILogger<LessonsEndpoint> logger,
         CancellationToken ct)
     {
         if (request == null)
@@ -93,7 +99,7 @@ public static class LessonsEndpoints
         {
             var lesson = await lessonService.CreateLessonAsync(request, ct);
             logger.LogInformation("Created lesson {LessonId} for teacher {TeacherId}", lesson.LessonId, request.TeacherId);
-            return Results.Ok(lesson);
+            return Results.Created($"/lessons-accessor/{lesson.LessonId}", lesson);
         }
         catch (OperationCanceledException)
         {
@@ -116,7 +122,7 @@ public static class LessonsEndpoints
         [FromRoute] Guid lessonId,
         [FromBody] UpdateLessonRequest request,
         [FromServices] ILessonService lessonService,
-        ILogger<ILessonService> logger,
+        [FromServices] ILogger<LessonsEndpoint> logger,
         CancellationToken ct)
     {
         if (lessonId == Guid.Empty)
@@ -177,7 +183,7 @@ public static class LessonsEndpoints
     private static async Task<IResult> DeleteLessonAsync(
         [FromRoute] Guid lessonId,
         [FromServices] ILessonService lessonService,
-        ILogger<ILessonService> logger,
+        [FromServices] ILogger<LessonsEndpoint> logger,
         CancellationToken ct)
     {
         if (lessonId == Guid.Empty)
