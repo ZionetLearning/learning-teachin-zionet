@@ -60,12 +60,6 @@ echo "💡 Password saved to: .argocd-password"
 echo "======================================"
 echo ""
 
-echo "🗂️  Creating ConfigMap for registries..."
-kubectl -n ${ARGOCD_NAMESPACE} create configmap argocd-image-updater-registries \
-  --from-file=registries.conf=registries.conf \
-  --dry-run=client -o yaml | kubectl apply -f -
-echo ""
-
 # Install argocd image updater
 echo "⚙️  Installing ArgoCD Image Updater..."
 helm upgrade --install argocd-image-updater argo/argocd-image-updater \
