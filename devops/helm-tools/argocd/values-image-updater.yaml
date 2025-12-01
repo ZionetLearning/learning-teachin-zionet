@@ -1,0 +1,21 @@
+config:
+  # ArgoCD connection
+  argocd:
+    serverAddress: "http://argocd-server.argocd.svc.cluster.local"
+    insecure: true
+    plaintext: true
+  
+  # Registry configuration
+  registries:
+    - name: ACR
+      api_url: https://teachindevacr.azurecr.io
+      prefix: teachindevacr.azurecr.io
+      ping: yes
+      credentials: pullsecret:argocd/acr-credentials
+      insecure: no
+  
+  # Log level for debugging
+  logLevel: debug
+  
+  # Interval for checking updates (default is 2m)
+  interval: 2m
