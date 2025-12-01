@@ -1,0 +1,79 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: zionet-apps-set
+  namespace: argocd
+spec:
+  generators:
+  - list:
+      elements:
+      - env: featest
+        targetNamespace: featest
+        createNamespace: "true"
+      - env: test
+        targetNamespace: test
+        createNamespace: "true"
+  template:
+    metadata:
+      name: 'zionet-apps-{{env}}'
+      annotations:
+        argocd-image-updater.argoproj.io/image-list: >-
+          manager=teachindevacr.azurecr.io/manager,
+          accessor=teachindevacr.azurecr.io/accessor,
+          engine=teachindevacr.azurecr.io/engine
+        argocd-image-updater.argoproj.io/manager.update-strategy: newest-build
+        argocd-image-updater.argoproj.io/accessor.update-strategy: newest-build
+        argocd-image-updater.argoproj.io/engine.update-strategy: newest-build
+        argocd-image-updater.argoproj.io/manager.helm.image-name: manager.image.repository
+        argocd-image-updater.argoproj.io/manager.helm.image-tag: manager.image.tag
+        argocd-image-updater.argoproj.io/accessor.helm.image-name: accessor.image.repository
+        argocd-image-updater.argoproj.io/accessor.helm.image-tag: accessor.image.tag
+        argocd-image-updater.argoproj.io/engine.helm.image-name: engine.image.repository
+        argocd-image-updater.argoproj.io/engine.helm.image-tag: engine.image.tag
+        argocd-image-updater.argoproj.io/write-back-method: argocd
+        argocd-image-updater.argoproj.io/manager.force-update: "true"
+        argocd-image-updater.argoproj.io/accessor.force-update: "true"
+        argocd-image-updater.argoproj.io/engine.force-update: "true"
+        argocd-image-updater.argoproj.io/manager.pull-secret: pullsecret:argocd/acr-credentials
+        argocd-image-updater.argoproj.io/accessor.pull-secret: pullsecret:argocd/acr-credentials
+        argocd-image-updater.argoproj.io/engine.pull-secret: pullsecret:argocd/acr-credentials
+    spec:
+      project: default
+      source:
+        repoURL: 'https://github.com/ZionetLearning/learning-teachin-zionet.git'
+        targetRevision: snir-avichai/1047/create-argocd
+        path: devops/kubernetes/charts
+        helm:
+          valueFiles:
+            - values.yaml
+            - 'values.template.yaml' 
+          parameters:
+          - name: global.namePrefix
+            value: '{{env}}'
+          - name: namespace.name
+            value: '{{targetNamespace}}'
+          - name: namespace.create
+            value: '{{createNamespace}}'
+          - name: namePrefix
+            value: '{{env}}'
+          - name: global.dockerRegistry
+            value: teachindevacr.azurecr.io
+          - name: global.environment
+            value: '{{env}}'
+          - name: langfuse.enabled
+            value: "false"
+          - name: accessor.secrets.langfuse.enabled
+            value: "false"
+          - name: dapr.stateStore.redis.redisDB
+            value: "0"
+          - name: dapr.installComponents
+            value: "false"
+      destination:
+        server: 'https://kubernetes.default.svc'
+        namespace: '{{targetNamespace}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
