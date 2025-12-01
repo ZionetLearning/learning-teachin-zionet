@@ -1,8 +1,8 @@
 #------------- Shared AKS Configuration -------------
 # Using existing dev cluster to save costs
 use_shared_aks         = true   # Use shared dev cluster to save costs
-shared_aks_cluster_name     = "aks-cluster-dev"
-shared_resource_group   = "dev-zionet-learning-2025"
+shared_aks_cluster_name     = "aks-cluster-prod"
+shared_resource_group   = "prod-zionet-learning-2025"
 #------------- Resource Configuration -------------
 location               = "westeurope"
 
