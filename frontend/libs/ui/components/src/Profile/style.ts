@@ -6,12 +6,12 @@ export const useStyles = () => {
 
   return createUseStyles({
     container: {
-      height: "100vh",
       display: "flex",
       flexDirection: "column",
-      justifyContent: "center",
+      justifyContent: "flex-start",
       padding: 24,
-      "@media (max-width: 700px)": { padding: 12 },
+      paddingTop: 48,
+      "@media (max-width: 700px)": { padding: 12, paddingTop: 24 },
     },
 
     titleContainer: { marginBottom: 16 },

@@ -65,7 +65,7 @@ public static class UsersEndpoints
             }
 
             logger.LogInformation("User retrieved");
-            return Results.Ok(user.ToFront());
+            return Results.Ok(user.ToApiModel());
         }
         catch (Exception ex)
         {
@@ -284,7 +284,7 @@ public static class UsersEndpoints
 
             logger.LogInformation("Returned {Count} users for {CallerId} ({Role})",
                 users.Count(), callerId, callerRole);
-            return Results.Ok(users.ToFront());
+            return Results.Ok(users.ToApiModel());
         }
         catch (Exception ex)
         {
@@ -334,7 +334,7 @@ public static class UsersEndpoints
         {
             var students = await usersAccessorClient.GetStudentsForTeacherAsync(teacherId, ct);
 
-            return Results.Ok(students.ToFront());
+            return Results.Ok(students.ToApiModel());
         }
         catch (Exception ex)
         {
@@ -461,7 +461,7 @@ public static class UsersEndpoints
         try
         {
             var teachers = await usersAccessorClient.GetTeachersForStudentAsync(studentId, ct);
-            return Results.Ok(teachers.ToFront());
+            return Results.Ok(teachers.ToApiModel());
         }
         catch (Exception ex)
         {

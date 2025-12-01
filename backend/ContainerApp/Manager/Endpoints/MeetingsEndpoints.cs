@@ -88,7 +88,7 @@ public static class MeetingsEndpoints
                 }
             }
 
-            var response = accessorMeeting.ToFront();
+            var response = accessorMeeting.ToApiModel();
             return Results.Ok(response);
         }
         catch (Exception ex)
@@ -130,7 +130,7 @@ public static class MeetingsEndpoints
         {
             var accessorMeetings = await meetingAccessorClient.GetMeetingsForUserAsync(userId, ct);
             logger.LogInformation("Retrieved {Count} meetings for user {UserId}", accessorMeetings.Count, userId);
-            var response = accessorMeetings.ToFront();
+            var response = accessorMeetings.ToApiModel();
             return Results.Ok(response);
         }
         catch (Exception ex)
@@ -225,7 +225,7 @@ public static class MeetingsEndpoints
         {
             var accessorRequest = request.ToAccessor(createdByUserId);
             var accessorMeeting = await meetingAccessorClient.CreateMeetingAsync(accessorRequest, ct);
-            var response = accessorMeeting.ToFront();
+            var response = accessorMeeting.ToApiModel();
 
             logger.LogInformation("Meeting {MeetingId} created successfully by user {UserId}", response.Id, createdByUserId);
 
@@ -405,7 +405,7 @@ public static class MeetingsEndpoints
             }
 
             var accessorTokenResponse = await meetingAccessorClient.GenerateTokenForMeetingAsync(meetingId, callerId, ct);
-            var response = accessorTokenResponse.ToFront();
+            var response = accessorTokenResponse.ToApiModel();
 
             logger.LogInformation("Generated token for user {UserId} to join meeting {MeetingId}", callerId, meetingId);
             return Results.Ok(response);

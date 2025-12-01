@@ -744,6 +744,11 @@
     "languages": {
       "hebrew": "Hebrew",
       "english": "English"
+    },
+    "achievements": {
+      "title": "Achievements",
+      "progress": "{{unlocked}} / {{total}} unlocked",
+      "unlocked": "Achievement Unlocked!"
     }
   }
 }

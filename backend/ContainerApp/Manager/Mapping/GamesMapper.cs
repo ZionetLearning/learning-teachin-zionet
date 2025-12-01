@@ -27,7 +27,7 @@ public static class GamesMapper
     /// <summary>
     /// Maps Accessor response to frontend SubmitAttemptResponse
     /// </summary>
-    public static SubmitAttemptResponse ToFront(this SubmitAttemptAccessorResponse accessorResponse)
+    public static SubmitAttemptResponse ToApiModel(this SubmitAttemptAccessorResponse accessorResponse)
     {
         return new SubmitAttemptResponse
         {
@@ -50,7 +50,7 @@ public static class GamesMapper
     /// <summary>
     /// Maps Accessor GetHistoryAccessorResponse to frontend GetHistoryResponse
     /// </summary>
-    public static GetHistoryResponse ToFront(this GetHistoryAccessorResponse accessorResponse)
+    public static GetHistoryResponse ToApiModel(this GetHistoryAccessorResponse accessorResponse)
     {
         return new GetHistoryResponse
         {
@@ -66,7 +66,7 @@ public static class GamesMapper
     /// <summary>
     /// Maps Accessor GetMistakesAccessorResponse to frontend GetMistakesResponse
     /// </summary>
-    public static GetMistakesResponse ToFront(this GetMistakesAccessorResponse accessorResponse)
+    public static GetMistakesResponse ToApiModel(this GetMistakesAccessorResponse accessorResponse)
     {
         return new GetMistakesResponse
         {
@@ -80,7 +80,7 @@ public static class GamesMapper
     /// <summary>
     /// Maps PagedResult to GetMistakesResponse
     /// </summary>
-    public static GetMistakesResponse ToFront(this PagedResult<ExerciseMistakes> pagedResult)
+    public static GetMistakesResponse ToApiModel(this PagedResult<ExerciseMistakes> pagedResult)
     {
         return new GetMistakesResponse
         {
@@ -98,7 +98,7 @@ public static class GamesMapper
     /// <summary>
     /// Maps Accessor GetAllHistoriesAccessorResponse to frontend GetAllHistoriesResponse
     /// </summary>
-    public static GetAllHistoriesResponse ToFront(this GetAllHistoriesAccessorResponse accessorResponse)
+    public static GetAllHistoriesResponse ToApiModel(this GetAllHistoriesAccessorResponse accessorResponse)
     {
         return new GetAllHistoriesResponse
         {
@@ -112,7 +112,7 @@ public static class GamesMapper
     /// <summary>
     /// Maps PagedResult to GetAllHistoriesResponse
     /// </summary>
-    public static GetAllHistoriesResponse ToFront(this PagedResult<StudentExerciseHistory> pagedResult)
+    public static GetAllHistoriesResponse ToApiModel(this PagedResult<StudentExerciseHistory> pagedResult)
     {
         return new GetAllHistoriesResponse
         {

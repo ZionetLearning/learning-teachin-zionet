@@ -20,15 +20,19 @@ public static class AchievementsEndpoints
     }
 
     private static async Task<IResult> GetAllAchievementsAsync(
+        [FromQuery] DateTime? fromDate,
+        [FromQuery] DateTime? toDate,
         [FromServices] IAchievementService achievementService,
         ILogger<IAchievementService> logger,
         CancellationToken ct)
     {
-        using var scope = logger.BeginScope("GetAllAchievementsAsync");
+        using var scope = logger.BeginScope(
+            "GetAllAchievementsAsync. FromDate={FromDate}, ToDate={ToDate}",
+            fromDate, toDate);
 
         try
         {
-            var achievements = await achievementService.GetAllActiveAchievementsAsync(ct);
+            var achievements = await achievementService.GetAllActiveAchievementsAsync(fromDate, toDate, ct);
             logger.LogInformation("Retrieved {Count} active achievements", achievements.Count);
             return Results.Ok(achievements);
         }
@@ -46,6 +50,8 @@ public static class AchievementsEndpoints
 
     private static async Task<IResult> GetUserUnlockedAchievementsAsync(
         [FromRoute] Guid userId,
+        [FromQuery] DateTime? fromDate,
+        [FromQuery] DateTime? toDate,
         [FromServices] IAchievementService achievementService,
         ILogger<IAchievementService> logger,
         CancellationToken ct)
@@ -56,11 +62,11 @@ public static class AchievementsEndpoints
             return Results.BadRequest("UserId cannot be empty.");
         }
 
-        using var scope = logger.BeginScope("GetUserUnlockedAchievementsAsync. UserId={UserId}", userId);
+        using var scope = logger.BeginScope("GetUserUnlockedAchievementsAsync. UserId={UserId}, FromDate={FromDate}, ToDate={ToDate}", userId, fromDate, toDate);
 
         try
         {
-            var unlockedAchievements = await achievementService.GetUserUnlockedAchievementsAsync(userId, ct);
+            var unlockedAchievements = await achievementService.GetUserUnlockedAchievementsAsync(userId, fromDate, toDate, ct);
             logger.LogInformation("Retrieved {Count} unlocked achievements for user {UserId}", unlockedAchievements.Count, userId);
             return Results.Ok(unlockedAchievements);
         }
