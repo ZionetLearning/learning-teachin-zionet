@@ -1,6 +1,20 @@
 name: Backend - Build and push images
 
 on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'The deployment environment (e.g., dev, prod)'
+        required: true
+        default: 'prod'
+      environment_name:
+        description: 'The name tag for the environment (e.g., dev, prod)'
+        required: true
+        default: 'prod'
+      list_services_names:
+        description: 'Comma-separated list of services to build and push (e.g., accessor,manager,engine)'
+        required: true
+        default: 'accessor,manager,engine'
   workflow_call:
     inputs:
       environment:
@@ -29,7 +43,7 @@ jobs:
       - name: Set image tag
         id: set-tag
         env:
-          ENV_TAG: ${{ inputs.environment_name }}
+          ENV_TAG: ${{ inputs.environment_name || github.event.inputs.environment_name }}
         run: |
           SHORT_SHA="${{ github.sha }}"
           SHORT_SHA="${SHORT_SHA:0:7}"
@@ -38,7 +52,7 @@ jobs:
 
   build_and_push:
     needs: generate_tag
-    environment: ${{ inputs.environment }}
+    environment: ${{ inputs.environment || github.event.inputs.environment }}
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -81,7 +95,7 @@ jobs:
         env:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           GITHUB_SHA: ${{ github.sha }}
-          ENV_TAG: ${{ inputs.environment_name }}
+          ENV_TAG: ${{ inputs.environment_name || github.event.inputs.environment_name }}
         run: |
           ACR_LOGIN_SERVER="teachindevacr.azurecr.io"
           IMAGE_NAME="${ACR_LOGIN_SERVER}/${{ matrix.service.name }}"
