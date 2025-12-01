@@ -16,6 +16,7 @@ using Manager.Models.Meetings;
 using Manager.Services;
 using Manager.Services.Clients.Accessor;
 using Manager.Services.Clients.Engine;
+using Manager.Services.PeriodSummary;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -165,6 +166,8 @@ builder.Services.AddScoped<IEngineClient, EngineClient>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IOnlinePresenceService, OnlinePresenceService>();
+builder.Services.AddScoped<IPeriodSummarizerService, PeriodSummarizerService>();
+builder.Services.AddScoped<IPeriodSummaryCacheService, PeriodSummaryCacheService>();
 
 builder.Services
   .AddOptions<AvatarsOptions>()
@@ -273,6 +276,7 @@ app.MapClassesEndpoints();
 app.MapMeetingsEndpoints();
 app.MapGameConfigEndpoints();
 app.MapAchievementEndpoints();
+app.MapSummaryEndpoints();
 
 app.MapStatsPing();
 if (env.IsDevelopment())
