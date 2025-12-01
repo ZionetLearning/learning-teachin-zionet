@@ -1,18 +1,14 @@
 ﻿using System.Net;
 using System.Security.Claims;
-using Azure;
-using Azure.Storage.Blobs.Models;
 using Dapr.Client;
 using Manager.Constants;
 using Manager.Helpers;
 using Manager.Models.Users;
 using Manager.Services;
-using Manager.Services.Avatars;
-using Manager.Services.Avatars.Models;
 using Manager.Services.Clients.Accessor.Interfaces;
 using Manager.Mapping;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
+using Manager.Services.Clients.Accessor.Models.Users;
 
 namespace Manager.Endpoints;
 
@@ -554,8 +550,7 @@ public static class UsersEndpoints
     private static async Task<IResult> GenerateUploadAvatarUrlAsync(
         [FromRoute] Guid userId,
         [FromBody] GetUploadAvatarUrlRequest req,
-        [FromServices] IAvatarStorageService storage,
-        [FromServices] IOptions<AvatarsOptions> opt,
+        [FromServices] IUsersAccessorClient usersAccessorClient,
         [FromServices] ILogger<UserEndpoint> logger,
         HttpContext http,
         CancellationToken ct)
@@ -572,28 +567,28 @@ public static class UsersEndpoints
 
         try
         {
-            var (url, exp, blobPath) = await storage.GetUploadSasAsync(userId, req.ContentType, req.SizeBytes, ct);
+            var accessorRequest = new GetUploadAvatarUrlAccessorRequest
+            {
+                ContentType = req.ContentType,
+                SizeBytes = req.SizeBytes,
+                ChecksumBase64 = req.ChecksumBase64
+            };
 
-            logger.LogInformation("Generated upload SAS: blobPath={BlobPath}, expiresAt={Expires}", blobPath, exp);
+            var response = await usersAccessorClient.GetAvatarUploadUrlAsync(userId, accessorRequest, ct);
+
+            if (response == null)
+            {
+                return Results.BadRequest("Failed to generate upload URL.");
+            }
 
             return Results.Ok(new GetUploadAvatarUrlResponse
             {
-                UploadUrl = url.ToString(),
-                BlobPath = blobPath,
-                ExpiresAtUtc = exp.UtcDateTime,
-                MaxBytes = opt.Value.MaxBytes,
-                AcceptedContentTypes = opt.Value.AllowedContentTypes
+                UploadUrl = response.UploadUrl,
+                BlobPath = response.BlobPath,
+                ExpiresAtUtc = response.ExpiresAtUtc,
+                MaxBytes = response.MaxBytes,
+                AcceptedContentTypes = response.AcceptedContentTypes
             });
-        }
-        catch (InvalidOperationException ex)
-        {
-            logger.LogWarning(ex, "Validation failed for upload-url");
-            return Results.BadRequest(ex.Message);
-        }
-        catch (RequestFailedException ex)
-        {
-            logger.LogError(ex, "Azure request failed");
-            return Results.Problem("Storage error.", statusCode: 502);
         }
         catch (Exception ex)
         {
@@ -605,9 +600,7 @@ public static class UsersEndpoints
     private static async Task<IResult> ConfirmAvatarAsync(
         [FromRoute] Guid userId,
         [FromBody] ConfirmAvatarRequest req,
-        [FromServices] IAvatarStorageService storage,
         [FromServices] IUsersAccessorClient usersAccessorClient,
-        [FromServices] IOptions<AvatarsOptions> opt,
         [FromServices] ILogger<UserEndpoint> log,
         HttpContext http,
         CancellationToken ct)
@@ -622,118 +615,38 @@ public static class UsersEndpoints
 
         log.LogInformation("Confirm request: BlobPath={BlobPath}, ContentType={CT}", req.BlobPath, req.ContentType);
 
-        var expectedPrefix = $"{userId}/";
-        if (!req.BlobPath.StartsWith(expectedPrefix, StringComparison.Ordinal))
-        {
-            log.LogWarning("Invalid blobPath prefix: expected prefix={Prefix}", expectedPrefix);
-            return Results.BadRequest("Invalid blobPath prefix");
-        }
-
-        BlobProperties? props;
         try
         {
-            props = await storage.GetBlobPropsAsync(req.BlobPath, ct);
-        }
-        catch (InvalidOperationException ex)
-        {
-            log.LogWarning(ex, "Validation failed when reading blob props");
-            return Results.BadRequest(ex.Message);
-        }
-        catch (RequestFailedException ex) when (ex.Status == 404)
-        {
-            log.LogWarning(ex, "Blob not found during confirm");
-            return Results.BadRequest("Blob not found");
-        }
-        catch (RequestFailedException ex)
-        {
-            log.LogError(ex, "Azure request failed when reading blob props");
-            return Results.Problem("Storage error.", statusCode: 502);
+            var accessorRequest = new ConfirmAvatarAccessorRequest
+            {
+                BlobPath = req.BlobPath,
+                ContentType = req.ContentType,
+                Width = req.Width,
+                Height = req.Height,
+                SizeBytes = req.SizeBytes,
+                ETag = req.ETag
+            };
+
+            var success = await usersAccessorClient.ConfirmAvatarAsync(userId, accessorRequest, ct);
+
+            if (!success)
+            {
+                return Results.BadRequest("Failed to confirm avatar.");
+            }
+
+            log.LogInformation("Avatar confirmed successfully");
+            return Results.Ok();
         }
         catch (Exception ex)
         {
-            log.LogError(ex, "Unexpected error when reading blob props");
+            log.LogError(ex, "Unexpected error when confirming avatar");
             return Results.Problem("Unexpected error.");
         }
-
-        if (props is null)
-        {
-            log.LogWarning("Blob not found: {BlobPath}", req.BlobPath);
-            return Results.BadRequest("Blob not found");
-        }
-
-        log.LogInformation("Blob found: Size={Size}, ContentType={BlobCT}, ETag={ETag}",
-        props.ContentLength, props.ContentType, props.ETag);
-
-        if (!opt.Value.AllowedContentTypes.Contains(req.ContentType, StringComparer.OrdinalIgnoreCase))
-        {
-            return Results.BadRequest("Unsupported content-type");
-        }
-
-        if (req.SizeBytes is > 0 && props.ContentLength != req.SizeBytes)
-        {
-            log.LogWarning("Client sizeBytes {Client} != blob size {Blob}", req.SizeBytes, props.ContentLength);
-        }
-
-        if (props.ContentLength > opt.Value.MaxBytes)
-        {
-            return Results.BadRequest("File too large");
-        }
-
-        if (!string.Equals(props.ContentType, req.ContentType, StringComparison.OrdinalIgnoreCase))
-        {
-            log.LogWarning("Uploaded content-type {BlobCT} differs from requested {ReqCT}", props.ContentType, req.ContentType);
-        }
-
-        if (req.ETag is not null && props.ETag.ToString() != req.ETag)
-        {
-            log.LogWarning("ETag mismatch: {Blob} != {Req}", props.ETag, req.ETag);
-        }
-
-        var user = await usersAccessorClient.GetUserAsync(userId);
-        var old = user?.AvatarPath;
-
-        log.LogInformation("Updating avatar in DB. OldPath={Old}, NewPath={New}", old, req.BlobPath);
-
-        var updated = await usersAccessorClient.UpdateUserAsync(new UpdateUserRequest
-        {
-            AvatarPath = req.BlobPath,
-            AvatarContentType = req.ContentType
-        }.ToAccessor(), userId);
-        if (!updated)
-        {
-            log.LogError("DB update failed while confirming avatar");
-            return Results.NotFound("User not found.");
-        }
-
-        if (!string.IsNullOrEmpty(old) && !string.Equals(old, req.BlobPath, StringComparison.Ordinal))
-        {
-            try
-            {
-                log.LogInformation("Deleting old avatar: {Old}", old);
-                await storage.DeleteAsync(old!, ct);
-            }
-            catch (RequestFailedException ex) when (ex.Status == 404)
-            {
-                log.LogWarning(ex, "Old avatar not found during delete (ignored)");
-            }
-            catch (RequestFailedException ex)
-            {
-                log.LogWarning(ex, "Azure delete failed for old avatar (ignored)");
-            }
-            catch (Exception ex)
-            {
-                log.LogWarning(ex, "Unexpected error deleting old avatar (ignored)");
-            }
-        }
-
-        log.LogInformation("Avatar confirmed successfully");
-        return Results.Ok();
     }
 
     private static async Task<IResult> DeleteAvatarAsync(
         [FromRoute] Guid userId,
         [FromServices] IUsersAccessorClient usersAccessorClient,
-        [FromServices] IAvatarStorageService storage,
         [FromServices] ILogger<UserEndpoint> log,
         HttpContext http,
         CancellationToken ct)
@@ -746,52 +659,21 @@ public static class UsersEndpoints
             return Results.Forbid();
         }
 
-        var user = await usersAccessorClient.GetUserAsync(userId);
-        if (user is null)
-        {
-            log.LogWarning("User not found");
-            return Results.NotFound("User not found.");
-        }
-
-        if (string.IsNullOrEmpty(user.AvatarPath))
-        {
-            log.LogInformation("Avatar already empty");
-            return Results.Ok();
-        }
-
         try
         {
-            await storage.DeleteAsync(user.AvatarPath!, ct);
-        }
-        catch (RequestFailedException ex) when (ex.Status == 404)
-        {
-            log.LogWarning(ex, "Avatar blob not found during delete (ignored)");
-        }
-        catch (RequestFailedException ex)
-        {
-            log.LogWarning(ex, "Azure delete failed (ignored)");
+            var success = await usersAccessorClient.DeleteAvatarAsync(userId, ct);
+            return success ? Results.Ok() : Results.NotFound("User not found.");
         }
         catch (Exception ex)
         {
-            log.LogWarning(ex, "Delete blob failed for {Path}", user.AvatarPath);
+            log.LogWarning(ex, "Delete blob failed for {UserId}", userId);
+            return Results.Problem("Delete failed.");
         }
-
-        var ok = await usersAccessorClient.UpdateUserAsync(new UpdateUserRequest
-        {
-            AvatarPath = null,
-            AvatarContentType = null,
-            ClearAvatar = true
-        }.ToAccessor(), userId);
-
-        log.LogInformation("Avatar removed in DB");
-        return ok ? Results.Ok() : Results.NotFound("User not found.");
     }
 
     private static async Task<IResult> GenerateAvatarReadUrlAsync(
         [FromRoute] Guid userId,
         [FromServices] IUsersAccessorClient usersAccessorClient,
-        [FromServices] IAvatarStorageService storage,
-        [FromServices] IOptions<AvatarsOptions> opt,
         [FromServices] ILogger<UserEndpoint> log,
         HttpContext http,
         CancellationToken ct)
@@ -804,29 +686,17 @@ public static class UsersEndpoints
             return Results.Forbid();
         }
 
-        var user = await usersAccessorClient.GetUserAsync(userId);
-        if (user is null || string.IsNullOrEmpty(user.AvatarPath))
-        {
-            log.LogWarning("Avatar not set for {UserId}", userId);
-            return Results.NotFound();
-        }
-
         try
         {
-            var uri = await storage.GenerateReadUrlAsync(user.AvatarPath!, TimeSpan.FromMinutes(opt.Value.ReadUrlTtlMinutes), ct);
-            log.LogInformation("Returning read SAS: {Url}", uri);
+            var url = await usersAccessorClient.GetAvatarReadUrlAsync(userId, ct);
+            if (url == null)
+            {
+                log.LogWarning("Avatar not set for {UserId}", userId);
+                return Results.NotFound();
+            }
 
-            return Results.Ok(uri.ToString());
-        }
-        catch (InvalidOperationException ex)
-        {
-            log.LogWarning(ex, "Validation failed when generating read SAS");
-            return Results.BadRequest(ex.Message);
-        }
-        catch (RequestFailedException ex)
-        {
-            log.LogError(ex, "Azure request failed when generating read SAS");
-            return Results.Problem("Storage error.", statusCode: 502);
+            log.LogInformation("Returning read SAS: {Url}", url);
+            return Results.Ok(url);
         }
         catch (Exception ex)
         {

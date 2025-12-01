@@ -10,6 +10,7 @@
 	<PackageReference Include="Azure.Communication.Common" Version="1.4.0" />
 	<PackageReference Include="Azure.Communication.Identity" Version="1.3.1" />
 	<PackageReference Include="Azure.Communication.Rooms" Version="1.2.0" />
+	<PackageReference Include="Azure.Storage.Blobs" Version="12.26.0" />
 	<PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
 	<PackageReference Include="DotQueue" Version="1.0.5" />
 	<PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
