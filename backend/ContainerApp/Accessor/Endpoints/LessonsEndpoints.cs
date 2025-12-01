@@ -103,12 +103,12 @@ public static class LessonsEndpoints
         catch (DbUpdateException ex)
         {
             logger.LogError(ex, "Database error creating lesson for teacher {TeacherId}. Teacher may not exist.", request.TeacherId);
-            return Results.Problem("Database error occurred. Teacher may not exist.", statusCode: 400);
+            return Results.Problem("Database error occurred. Teacher may not exist.", statusCode: 422);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Unexpected error creating lesson for teacher {TeacherId}", request.TeacherId);
-            return Results.Problem("Unexpected error occurred while creating lesson.");
+            return Results.Problem("Unexpected error occurred while creating lesson.", statusCode: 500);
         }
     }
 
@@ -170,7 +170,7 @@ public static class LessonsEndpoints
         catch (Exception ex)
         {
             logger.LogError(ex, "Unexpected error updating lesson {LessonId}", lessonId);
-            return Results.Problem("Unexpected error occurred while updating lesson.");
+            return Results.Problem("Unexpected error occurred while updating lesson.", statusCode: 500);
         }
     }
 
@@ -207,7 +207,7 @@ public static class LessonsEndpoints
         catch (Exception ex)
         {
             logger.LogError(ex, "Unexpected error deleting lesson {LessonId}", lessonId);
-            return Results.Problem("Unexpected error occurred while deleting lesson.");
+            return Results.Problem("Unexpected error occurred while deleting lesson.", statusCode: 500);
         }
     }
 }

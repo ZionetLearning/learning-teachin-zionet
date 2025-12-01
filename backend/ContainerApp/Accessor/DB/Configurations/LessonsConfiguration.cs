@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Accessor.Models.Lessons;
+using Accessor.Models.Users;
 
 namespace Accessor.DB.Configurations;
 
@@ -44,5 +45,11 @@ public class LessonsConfiguration : IEntityTypeConfiguration<LessonModel>
 
         builder.HasIndex(l => l.TeacherId);
         builder.HasIndex(l => l.CreatedAt);
+
+        builder.HasOne<UserModel>()
+            .WithMany()
+            .HasForeignKey(l => l.TeacherId)
+            .HasConstraintName("FK_lessons_users_teacher_id")
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

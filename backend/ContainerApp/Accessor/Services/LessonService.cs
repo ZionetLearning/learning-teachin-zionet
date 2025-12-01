@@ -65,7 +65,7 @@ public class LessonService : ILessonService
         try
         {
             var lesson = await _context.Lessons
-                .FirstOrDefaultAsync(l => l.LessonId == lessonId, ct);
+                .SingleOrDefaultAsync(l => l.LessonId == lessonId, ct);
 
             if (lesson == null)
             {
@@ -95,7 +95,7 @@ public class LessonService : ILessonService
         try
         {
             var lesson = await _context.Lessons
-                .FirstOrDefaultAsync(l => l.LessonId == lessonId, ct);
+                .SingleOrDefaultAsync(l => l.LessonId == lessonId, ct);
 
             if (lesson == null)
             {
