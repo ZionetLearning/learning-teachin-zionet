@@ -49,7 +49,7 @@ public static class AuthEndpoints
         using var scope = logger.BeginScope("Method: {Method}", nameof(LoginAsync));
         try
         {
-            logger.LogInformation("Attempting login for {Email}", loginRequest.Email);
+            logger.LogInformation("Attempting login for {Email} test", loginRequest.Email);
 
             var (accessToken, refreshToken) = await authService.LoginAsync(loginRequest, httpRequest, cancellationToken);
 
