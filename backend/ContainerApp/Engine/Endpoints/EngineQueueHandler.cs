@@ -1471,7 +1471,7 @@ Never invent hidden fields and do not quote this block verbatim to the user.
 
             }
 
-            var result = await _emailService.GenerateDraftAsync(emailPromptContent, cancellationToken);
+            var result = await _emailService.GenerateDraftAsync(emailPromptContent, cancellationToken) ?? throw new NonRetryableException("Email draft generation failed.");
 
             await _publisher.CreateEmailDraftAsync(
                 payload.UserId.ToString(),

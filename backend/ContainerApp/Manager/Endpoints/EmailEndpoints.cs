@@ -12,7 +12,7 @@ namespace Manager.Endpoints;
 
 public static class EmailEndpoints
 {
-    public sealed class EmailsEndpoint;
+    private sealed class EmailsEndpoint { }
 
     public static IEndpointRouteBuilder MapEmailEndpoints(this IEndpointRouteBuilder app)
     {
@@ -75,7 +75,7 @@ public static class EmailEndpoints
 
             if (!ValidationExtensions.TryValidate(request, out var validationErrors))
             {
-                logger.LogWarning("Validation failed for {Model}: {Errors}", nameof(SubmitAttemptRequest), validationErrors);
+                logger.LogWarning("Validation failed for {Model}: {Errors}", nameof(AiGeneratedEmailRequest), validationErrors);
                 return Results.BadRequest(new { errors = validationErrors });
             }
 
@@ -117,6 +117,18 @@ public static class EmailEndpoints
         ILogger<EmailsEndpoint> logger,
         CancellationToken ct)
     {
+        if (request == null)
+        {
+            logger.LogWarning("SendEmailRequest is null");
+            return Results.BadRequest(new { error = "Request body cannot be null." });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.RecipientEmail))
+        {
+            logger.LogWarning("RecipientEmail is null or whitespace");
+            return Results.BadRequest(new { error = "RecipientEmail cannot be null." });
+        }
+
         using var scope = logger.BeginScope("SendEmailAsync");
 
         try

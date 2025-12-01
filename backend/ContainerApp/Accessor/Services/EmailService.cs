@@ -22,7 +22,7 @@ public class EmailService : IEmailService
         if (string.IsNullOrWhiteSpace(name))
         {
             _logger.LogWarning("GetRecipientEmailsByNameAsync called with empty name");
-            return [];
+            return new List<string>();
         }
 
         try

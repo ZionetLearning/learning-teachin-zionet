@@ -28,7 +28,7 @@ public class EmailAccessorClient : IEmailAccessorClient
                 cancellationToken: ct
             );
 
-            return emails ?? [];
+            return emails ?? new List<string>();
         }
         catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
         {

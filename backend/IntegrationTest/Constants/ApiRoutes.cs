@@ -51,7 +51,7 @@ public static class ApiRoutes
 
     // -------- Emails --------
     public const string EmailDraft = "emails-manager/draft";
-    public static string GetEmailRecipients(string name) => $"/emails-manager/recipients/{name}";
+    public static string GetEmailRecipients(string name) => $"emails-manager/recipients/{name}";
 
     public const string SendEmail = "emails-manager/send";
 

@@ -69,8 +69,7 @@ public class EngineQueueHandlerTests
             sentService.Object,
             titleService.Object,
             explainService.Object,
-            emailService.Object
-        );
+            emailService.Object);
         return (dapr, ai, pub, accessorClient, sentService, titleService, explainService, log, batcherLog, sut);
     }
 
