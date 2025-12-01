@@ -131,11 +131,11 @@ helm $ACTION langfuse langfuse/langfuse \
   --set langfuse.worker.livenessProbe.timeoutSeconds=30 \
   --set langfuse.worker.readinessProbe.initialDelaySeconds=60 \
   --set langfuse.worker.readinessProbe.timeoutSeconds=30 \
-  --set langfuse.additionalEnv[0].name="DISABLE_LIVENESS_PROBE" \
+  --set langfuse.additionalEnv[0].name="NEXT_PUBLIC_DISABLE_SIGNUP" \
   --set-string langfuse.additionalEnv[0].value="true" \
-  --set langfuse.additionalEnv[1].name="DISABLE_READINESS_PROBE" \
+  --set langfuse.additionalEnv[1].name="DISABLE_SIGNUP" \
   --set-string langfuse.additionalEnv[1].value="true" \
-  --set langfuse.additionalEnv[2].name="NEXT_PUBLIC_DISABLE_SIGNUP" \
+  --set langfuse.additionalEnv[2].name="AUTH_DISABLE_SIGNUP" \
   --set-string langfuse.additionalEnv[2].value="true" \
   --set langfuse.additionalEnv[3].name="DISABLE_SIGNUP" \
   --set-string langfuse.additionalEnv[3].value="true" \
@@ -217,6 +217,8 @@ helm $ACTION langfuse langfuse/langfuse \
   --set-string langfuse.additionalEnv[41].value="true" \
   --set langfuse.additionalEnv[42].name="DATABASE_MIGRATION_RUN_ON_STARTUP" \
   --set-string langfuse.additionalEnv[42].value="false" \
+  --set langfuse.additionalEnv[43].name="LANGFUSE_AUTO_POSTGRES_MIGRATION_DISABLED" \
+  --set-string langfuse.additionalEnv[43].value="true" \
   --set redis.auth.existingSecret="langfuse-secrets" \
   --set redis.auth.existingSecretPasswordKey="REDIS_PASSWORD" \
   --set redis.auth.username="default" \
