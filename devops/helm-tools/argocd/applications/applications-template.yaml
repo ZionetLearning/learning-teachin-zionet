@@ -7,30 +7,25 @@ spec:
   generators:
   - list:
       elements:
-      # - env: featest
-      #   targetNamespace: featest
-      #   createNamespace: "true"
-      # - env: test
-      #   targetNamespace: test
-      #   createNamespace: "true"
+      - env: test
+        targetNamespace: test
+        createNamespace: "true"
   template:
     metadata:
       name: 'zionet-apps-{{env}}'
       annotations:
-        # Enable image updater for multiple images
+        # תיקון: הסרת מסנן התגיות מתוך image-list
         argocd-image-updater.argoproj.io/image-list: >-
-          manager=teachindevacr.azurecr.io/manager:"regexp:^{{env}}-[a-f0-9]+$",
-          accessor=teachindevacr.azurecr.io/accessor:"regexp:^{{env}}-[a-f0-9]+$",
-          engine=teachindevacr.azurecr.io/engine:"regexp:^{{env}}-[a-f0-9]+$"
+          manager=teachindevacr.azurecr.io/manager,
+          accessor=teachindevacr.azurecr.io/accessor,
+          engine=teachindevacr.azurecr.io/engine
         
-
-
-        # Update strategy - use newest-build with tag filter
+        # Update strategy - use newest-build
         argocd-image-updater.argoproj.io/manager.update-strategy: newest-build
         argocd-image-updater.argoproj.io/accessor.update-strategy: newest-build
         argocd-image-updater.argoproj.io/engine.update-strategy: newest-build
               
-        # CRITICAL: Only allow tags that match the environment
+        # CRITICAL: Only allow tags that match the environment (זה הנתיב הנכון)
         argocd-image-updater.argoproj.io/manager.allow-tags: "regexp:^{{env}}-[a-f0-9]+$"
         argocd-image-updater.argoproj.io/accessor.allow-tags: "regexp:^{{env}}-[a-f0-9]+$"
         argocd-image-updater.argoproj.io/engine.allow-tags: "regexp:^{{env}}-[a-f0-9]+$"
@@ -43,8 +38,6 @@ spec:
         argocd-image-updater.argoproj.io/engine.helm.image-name: engine.image.repository
         argocd-image-updater.argoproj.io/engine.helm.image-tag: engine.image.tag
         
- 
-
         # Write back method
         argocd-image-updater.argoproj.io/write-back-method: argocd
         
@@ -52,7 +45,6 @@ spec:
         argocd-image-updater.argoproj.io/manager.force-update: "true"
         argocd-image-updater.argoproj.io/accessor.force-update: "true"
         argocd-image-updater.argoproj.io/engine.force-update: "true"
-
 
         # Pull secret
         argocd-image-updater.argoproj.io/manager.pull-secret: pullsecret:argocd/acr-credentials
